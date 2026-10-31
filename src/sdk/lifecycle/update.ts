@@ -370,13 +370,20 @@ function normalizeLegacyNoneUpdateOptions(
   );
 }
 
-/** Refuse unsupported or empty `--unset` field names before a bulk plan can skip items silently. */
+/**
+ * Refuse unsupported or empty `--unset` field names before a bulk plan can
+ * skip items silently, returning the stored metadata keys they resolve to so
+ * planning checks the same fields validation accepted.
+ */
 export function assertUpdateUnsetFieldsSupported(
   raw: readonly string[],
   runtimeFieldRegistry: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[],
-): void {
-  parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames);
+): string[] {
+  return [
+    ...parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames)
+      .metadataKeys,
+  ];
 }
 
 function parseUpdateUnsetTargets(
@@ -2105,6 +2112,7 @@ async function routeCloseStatusUpdate(
       currentMetadata,
       context.options,
       context.statusRegistry,
+      context.settings.governance.require_close_reason,
     )
   ) {
     return applyRepeatedTerminalStateUpdate(
@@ -2112,10 +2120,10 @@ async function routeCloseStatusUpdate(
       currentMetadata,
       otherFieldKeys,
       runUpdate,
+      (fieldUpdate) => closeRoutedItem(context, fieldUpdate),
     );
   }
-  const routeWarnings: string[] = [];
-  let preChangedFields: string[] = [];
+  let preUpdate: UpdateResult | undefined;
   if (otherFieldKeys.length > 0) {
     const preUpdateOptions = transferMutationStdinTokenPolicy(context.options, {
       ...context.options,
@@ -2123,15 +2131,16 @@ async function routeCloseStatusUpdate(
       closeReason: undefined,
       message: undefined,
     });
-    const preUpdate = await runUpdate(
-      context.id,
-      preUpdateOptions,
-      context.global,
-    );
-    preChangedFields = preUpdate.changed_fields;
-    routeWarnings.push(...preUpdate.warnings);
+    preUpdate = await runUpdate(context.id, preUpdateOptions, context.global);
   }
+  return closeRoutedItem(context, preUpdate);
+}
 
+/** Run the closure writer for a routed close status, keeping the fields and warnings an earlier field update recorded. */
+async function closeRoutedItem(
+  context: CloseRouteContext,
+  preUpdate: UpdateResult | undefined,
+): Promise<UpdateResult> {
   const closeResult = await runClose(
     context.id,
     context.options.closeReason,
@@ -2146,13 +2155,16 @@ async function routeCloseStatusUpdate(
 
   const warnings = [
     ...context.workflowTransitionWarnings,
-    ...routeWarnings,
+    ...(preUpdate?.warnings ?? []),
     ...closeResult.warnings,
     "auto_routed_from_update_to_close",
   ];
   return {
     item: closeResult.item,
-    changed_fields: [...preChangedFields, ...closeResult.changed_fields],
+    changed_fields: [
+      ...(preUpdate?.changed_fields ?? []),
+      ...closeResult.changed_fields,
+    ],
     warnings,
   };
 }

@@ -777,6 +777,18 @@ export function isGenericRefusalExamples(
   return values.every((value) => PM_GENERIC_REFUSAL_GUIDANCE.examples.includes(value.trim()));
 }
 
+/**
+ * Drop each generic help pointer from an example list so a mixed list keeps
+ * only its code-specific entries; an all-generic list becomes empty.
+ */
+export function withoutGenericRefusalExamples(
+  values: readonly string[] | undefined,
+): string[] {
+  return (values ?? []).filter(
+    (value) => !PM_GENERIC_REFUSAL_GUIDANCE.examples.includes(value.trim()),
+  );
+}
+
 /** Recovery fields that only echo the caller's own invocation. */
 export const PM_RECOVERY_ECHO_FIELDS = Object.freeze([
   "attempted_command",

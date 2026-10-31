@@ -2,15 +2,51 @@ import { describe, expect, it } from "vitest";
 import {
   detectEmptyLinkedTestRun,
   findLinkedTestExecutionReceipt,
-  renderTrackerPathFlag,
+  renderLinkedTestRestoreCommand,
+  resolveLinkedTestRestoreScope,
 } from "../../../../src/sdk/test/execution-receipts.js";
 
-describe("restore command tracker path", () => {
-  it("renders --pm-path only for an explicit tracker root and quotes unsafe paths", () => {
-    expect(renderTrackerPathFlag(undefined)).toBe("");
-    expect(renderTrackerPathFlag("   ")).toBe("");
-    expect(renderTrackerPathFlag("/srv/repo/.agents/pm")).toBe(" --pm-path /srv/repo/.agents/pm");
-    expect(renderTrackerPathFlag("/srv/my repo/.agents/pm")).toBe(' --pm-path "/srv/my repo/.agents/pm"');
+describe("restore command scope", () => {
+  it("adds --pm-path only for an explicit tracker root and shell-quotes every unsafe path", () => {
+    const posix = { platform: "linux" as const };
+    expect(renderLinkedTestRestoreCommand("pm-1", posix)).toBe("pm test pm-1 --list");
+    expect(renderLinkedTestRestoreCommand("pm-1", { ...posix, trackerPath: "   " })).toBe("pm test pm-1 --list");
+    expect(renderLinkedTestRestoreCommand("pm-1", { ...posix, trackerPath: "/srv/repo/.agents/pm" })).toBe(
+      "pm test pm-1 --list --pm-path /srv/repo/.agents/pm",
+    );
+    expect(renderLinkedTestRestoreCommand("pm-1", { ...posix, trackerPath: "/srv/my repo/.agents/pm" })).toBe(
+      'pm test pm-1 --list --pm-path "/srv/my repo/.agents/pm"',
+    );
+    // `$` and backticks are escaped, so copying the command never expands them.
+    expect(renderLinkedTestRestoreCommand("pm-1", { ...posix, trackerPath: "/tmp/$HOME/`id`" })).toBe(
+      'pm test pm-1 --list --pm-path "/tmp/\\$HOME/\\`id\\`"',
+    );
+    expect(renderLinkedTestRestoreCommand("pm-1", { platform: "win32", trackerPath: "C:\\my repo\\pm" })).toBe(
+      'pm test pm-1 --list --pm-path "C:\\my repo\\pm"',
+    );
+  });
+
+  it("keeps an explicit or PM_PATH-selected tracker and leaves a discovered one implicit", () => {
+    const previous = process.env.PM_PATH;
+    try {
+      delete process.env.PM_PATH;
+      expect(resolveLinkedTestRestoreScope({ path: "/srv/flag", noExtensions: true }, "/srv/root")).toEqual({
+        trackerPath: "/srv/flag",
+        noExtensions: true,
+      });
+      expect(resolveLinkedTestRestoreScope({}, "/srv/root").trackerPath).toBeUndefined();
+      process.env.PM_PATH = "relative/pm";
+      expect(resolveLinkedTestRestoreScope({}, "/srv/root").trackerPath).toBe("/srv/root");
+    } finally {
+      if (previous === undefined) delete process.env.PM_PATH;
+      else process.env.PM_PATH = previous;
+    }
+  });
+
+  it("keeps --no-extensions when the narrowed invocation suppressed extensions", () => {
+    expect(renderLinkedTestRestoreCommand("pm-1", { platform: "linux", noExtensions: true, trackerPath: "/srv/pm" })).toBe(
+      "pm test pm-1 --list --no-extensions --pm-path /srv/pm",
+    );
   });
 });
 

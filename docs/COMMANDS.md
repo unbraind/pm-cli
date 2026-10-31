@@ -900,10 +900,16 @@ Use `pm close <id> "<reason>"` instead of `pm update --status closed`.
 An update that still names the close status routes through `pm close` and
 reports `auto_routed_from_update_to_close`. When the item is already closed
 with the same reason (and the same `--completed-at`, if given), the update is
-not a transition: it keeps `closed_at` and `updated_at`, writes no history,
-applies any other requested fields, and reports `terminal_state_unchanged`
-instead, even with `--force` (GH-1628). A different reason is a repeat
-closure, which still needs `--force`.
+not a transition: it keeps `closed_at`, writes no closure history, and reports
+`terminal_state_unchanged` instead, even with `--force` (GH-1628). Any other
+requested fields take the ordinary update path: `updated_at` moves and a
+history entry is written only when one of them changes a stored value, so a
+request whose every field already matches leaves the item untouched. A
+different reason is a repeat closure, which still needs `--force`. A blank
+reason while `governance.require_close_reason` is enabled goes to the close
+route, which refuses it exactly as it would on an open item. If another writer
+reopens the item before the other fields are written, the request is closed
+through `pm close` as usual.
 
 ## Lifecycle Aliases
 

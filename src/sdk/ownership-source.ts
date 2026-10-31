@@ -13,10 +13,22 @@ export interface ItemOwnershipConflict {
   phrase: string;
   /** Principal that currently holds the item. */
   holder: string;
-  /** Whether the latest ownership mutation was an explicit claim or a metadata assignment. */
-  source: "claim" | "assignment";
+  /**
+   * Whether the latest ownership mutation was an explicit claim or a metadata
+   * assignment; `unknown` when history is unreadable or records no assignee
+   * change, so an unproven origin is never reported as either.
+   */
+  source: "claim" | "assignment" | "unknown";
   /** Timestamp of the latest assignee change, or null when history is unavailable or silent. */
   since: string | null;
+}
+
+/** Map the operation of the latest assignee change to the holder's origin. */
+function classifyOwnershipSource(
+  operation: string | undefined,
+): ItemOwnershipConflict["source"] {
+  if (operation === undefined) return "unknown";
+  return operation === "claim" ? "claim" : "assignment";
 }
 
 /** Resolve the current holder, its source and its start time for an atomic claim conflict. */
@@ -35,7 +47,7 @@ export async function resolveItemOwnershipConflict(
         (operation) => operation.path === "/metadata/assignee",
       ),
     );
-  const source = latestOwnershipEntry?.op === "claim" ? "claim" : "assignment";
+  const source = classifyOwnershipSource(latestOwnershipEntry?.op);
   return {
     phrase: source === "claim" ? `claimed by ${assignee}` : `assigned to ${assignee}`,
     holder: assignee,

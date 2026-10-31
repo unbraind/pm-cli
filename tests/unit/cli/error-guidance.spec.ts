@@ -271,7 +271,8 @@ describe("pm cli error guidance context plumbing", () => {
         claim_source: "claim",
       });
       expect(lean).not.toHaveProperty("title");
-      expect(lean).not.toHaveProperty("why");
+      // The claim rationale is code-specific, so lean JSON keeps it like lean text.
+      expect(lean.why).toBe(claimContext.why);
       expect(lean).not.toHaveProperty("required");
       expect(lean).not.toHaveProperty("examples");
       expect(lean).not.toHaveProperty("recovery");
@@ -292,6 +293,32 @@ describe("pm cli error guidance context plumbing", () => {
       expect(specific.recovery).toEqual({
         suggested_retry: "pm update pm-1 --assignee x",
         allowed_values: ["assignee", "parent"],
+      });
+    });
+
+    it("drops a generic rationale and filters generic examples out of mixed lists in lean output", () => {
+      const context = {
+        code: "invalid_argument_value",
+        why: "Validation protects data consistency and deterministic behavior across commands.",
+        examples: ["pm --help", "pm update pm-1 --assignee x"],
+      };
+      const lean = projectLeanErrorEnvelope(formatPmCliErrorForJson("Bad value", 2, context));
+      expect(lean).not.toHaveProperty("why");
+      expect(lean.examples).toEqual(["pm update pm-1 --assignee x"]);
+      const text = formatPmCliErrorForDisplay("Bad value", context, { lean: true });
+      expect(text).not.toContain("Why:");
+      expect(text).toContain("pm update pm-1 --assignee x");
+      expect(text).not.toContain("pm --help");
+      expect(formatPmCliErrorForDisplay("Bad value", context)).toContain("pm --help");
+    });
+
+    it("renders a holder without a recorded time or origin as a bare claim", () => {
+      const context = { code: "already_claimed_by", item_id: "pm-held", claimed_by: "agent-a" };
+      expect(formatPmCliErrorForDisplay(claimMessage, context)).toContain("Held by: agent-a (claim)");
+      expect(formatPmCliErrorForJson(claimMessage, 4, context)).toMatchObject({
+        claimed_by: "agent-a",
+        claimed_at: null,
+        claim_source: "claim",
       });
     });
 

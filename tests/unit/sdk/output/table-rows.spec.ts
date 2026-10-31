@@ -220,6 +220,16 @@ describe("lossless SDK table cells", () => {
       encoding: { json_columns: [], absent: [], null_columns: ["a", "c"], null_column_index: [0, 2] },
     };
     expect(Object.keys(decodePmTableRows(positional)[0]!)).toEqual(["a", "b", "c"]);
+    const unpositioned: PmEncodedTableRows = {
+      rows: [{ b: 1 }],
+      encoding: { json_columns: [], absent: [], null_columns: ["a", "c"], null_column_index: [0] },
+    };
+    expect(Object.keys(decodePmTableRows(unpositioned)[0]!)).toEqual(["a", "b", "c"]);
+    const legacy: PmEncodedTableRows = {
+      rows: [{ b: 1 }],
+      encoding: { json_columns: [], absent: [], null_columns: ["a"] },
+    };
+    expect(Object.keys(decodePmTableRows(legacy)[0]!)).toEqual(["b", "a"]);
   });
 
   it("compacts agenda null columns and safe string lists with exact restoration", () => {

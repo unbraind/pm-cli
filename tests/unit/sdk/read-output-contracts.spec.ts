@@ -405,6 +405,21 @@ describe("read output contracts", () => {
     });
   });
 
+  it("audits a next selection budget under the universal ceiling unless an intent receipt discloses it (GH-1627)", () => {
+    const result = { recommended: { id: "pm-1" }, ready: [{ id: "pm-1" }], filters: { token_budget: 900 } };
+    for (const options of [{ tokenBudget: 900 }, { token_budget: 900 }]) {
+      expect(applyReadOutputDimensions("next", options, result)).toMatchObject({
+        read_output: { command: "next", budget_source: "default", within_budget: true },
+      });
+    }
+    expect(applyReadOutputDimensions("next", {}, result)).toBe(result);
+    const disclosed = {
+      ...result,
+      context_intent: { command: "next", token_budget: 900, within_budget: true },
+    };
+    expect(applyReadOutputDimensions("next", { tokenBudget: 900 }, disclosed)).not.toHaveProperty("read_output");
+  });
+
   it("enforces a declared default only when an otherwise-unbounded result exceeds it", () => {
     const result = {
       items: Array.from({ length: 200 }, (_, index) => ({

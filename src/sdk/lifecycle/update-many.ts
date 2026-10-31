@@ -4,7 +4,6 @@
  * Implements the pm update many command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { expandUnsetFieldTokens } from "./shared-unset-fields.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
 import { rollbackMutationCheckpoint } from "./checkpoint-rollback.js";
@@ -219,63 +218,6 @@ const COLLECTION_MUTATION_PLAN_DEFINITIONS: CollectionMutationPlanDefinition[] =
     },
   ];
 
-const UNSET_FIELD_ALIASES: Record<string, string> = {
-  close_reason: "close_reason",
-  "close-reason": "close_reason",
-  deadline: "deadline",
-  estimate: "estimated_minutes",
-  estimated_minutes: "estimated_minutes",
-  "estimated-minutes": "estimated_minutes",
-  acceptance_criteria: "acceptance_criteria",
-  "acceptance-criteria": "acceptance_criteria",
-  ac: "acceptance_criteria",
-  definition_of_ready: "definition_of_ready",
-  "definition-of-ready": "definition_of_ready",
-  order: "order",
-  rank: "order",
-  goal: "goal",
-  objective: "objective",
-  value: "value",
-  impact: "impact",
-  outcome: "outcome",
-  why_now: "why_now",
-  "why-now": "why_now",
-  assignee: "assignee",
-  parent: "parent",
-  reviewer: "reviewer",
-  risk: "risk",
-  confidence: "confidence",
-  sprint: "sprint",
-  release: "release",
-  blocked_by: "blocked_by",
-  "blocked-by": "blocked_by",
-  blocked_reason: "blocked_reason",
-  "blocked-reason": "blocked_reason",
-  unblock_note: "unblock_note",
-  "unblock-note": "unblock_note",
-  reporter: "reporter",
-  severity: "severity",
-  environment: "environment",
-  repro_steps: "repro_steps",
-  "repro-steps": "repro_steps",
-  resolution: "resolution",
-  expected_result: "expected_result",
-  "expected-result": "expected_result",
-  actual_result: "actual_result",
-  "actual-result": "actual_result",
-  affected_version: "affected_version",
-  "affected-version": "affected_version",
-  fixed_version: "fixed_version",
-  "fixed-version": "fixed_version",
-  component: "component",
-  regression: "regression",
-  customer_impact: "customer_impact",
-  "customer-impact": "customer_impact",
-  type_options: "type_options",
-  "type-options": "type_options",
-  tags: "tags",
-};
-
 interface UpdateManyCheckpoint {
   schema_version: number;
   rollback_strategy: "guarded_inverse";
@@ -448,12 +390,6 @@ const toComparablePreviewValue = (
     return undefined;
   }
   return (PREVIEW_VALUE_NORMALIZERS[optionKey] ?? trimPreviewValue)(value);
-};
-
-/** Resolves user-facing unset aliases to stored metadata keys. */
-const normalizeUnsetField = (rawField: string): string => {
-  const normalized = rawField.trim().toLowerCase().replaceAll("-", "_");
-  return UNSET_FIELD_ALIASES[normalized] ?? normalized;
 };
 
 /** Compares preview values using the canonical stable serialization contract. */
@@ -678,18 +614,27 @@ const appendRuntimeFieldMutationPlans = (
   }
 };
 
-/** Adds present fields requested through unset options to a planned item diff. */
+/**
+ * Adds present fields requested through unset options to a planned item diff.
+ * Tokens resolve through the same validated update resolver, independent of
+ * the row's current values, so an alias such as `gh-url` targets its stored
+ * `github_url` key even when the row has no value under the alias spelling.
+ */
 const appendUnsetMutationPlans = (
   changes: PlannedChange[],
   row: Record<string, unknown>,
   unset: string[] | undefined,
+  runtimeFieldRegistry: RuntimeFieldRegistry,
 ): void => {
-  const tokens = expandUnsetFieldTokens(
+  if (unset === undefined || unset.length === 0) {
+    return;
+  }
+  const fields = assertUpdateUnsetFieldsSupported(
     unset,
-    (entry) => row[normalizeUnsetField(entry)] !== undefined,
+    runtimeFieldRegistry,
+    collectRegisteredItemFieldNames(getActiveExtensionRegistrations()),
   );
-  for (const rawUnsetField of tokens) {
-    const field = normalizeUnsetField(rawUnsetField);
+  for (const field of fields) {
     const before = row[field];
     if (before !== undefined) {
       changes.push({ field, before, after: null });
@@ -724,7 +669,7 @@ const buildPlannedItemDiff = (
   }
   changes.push(...buildCollectionMutationPlans(row, update));
   appendRuntimeFieldMutationPlans(changes, row, update, runtimeFieldRegistry);
-  appendUnsetMutationPlans(changes, row, update.unset);
+  appendUnsetMutationPlans(changes, row, update.unset, runtimeFieldRegistry);
 
   return {
     id: item.id,
@@ -1350,7 +1295,6 @@ export const _testOnlyUpdateManyCommand = {
   normalizeStatusFilter,
   normalizeCollectionBeforeValue,
   normalizeExistingTags,
-  normalizeUnsetField,
   rejectBlankIdsFilter,
   sanitizeUpdateOptionsForSummary,
   toComparablePreviewValue,

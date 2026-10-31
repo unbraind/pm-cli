@@ -23755,6 +23755,7 @@
       "emitting_commands": [
         "*",
         "create",
+        "next",
         "task-composition",
         "update",
         "update-many"
@@ -23774,6 +23775,7 @@
         "sdk/lifecycle/task-composition.ts",
         "sdk/lifecycle/update-many.ts",
         "sdk/lifecycle/update.ts",
+        "sdk/query/next.ts",
         "sdk/runtime-input.ts",
         "sdk/runtime/mutation-admission.ts",
         "sdk/runtime/mutation-value-validation.ts",
