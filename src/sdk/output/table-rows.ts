@@ -15,7 +15,13 @@ export interface PmTableCellEncoding {
   list_columns?: Record<string, string>;
   /** Columns omitted from every encoded row because every source value is explicit null. */
   null_columns?: string[];
-  /** Original first-occurrence column order when omitted null columns need reinsertion. */
+  /** Zero-based original position of each omitted null column, parallel to `null_columns`. */
+  null_column_index?: number[];
+  /**
+   * Legacy full column list accepted on decode. Encoders emit
+   * `null_column_index` instead, so one omitted column no longer costs the
+   * whole column list in metadata.
+   */
   column_order?: string[];
   /** Missing field coordinates, expressed as [zero-based row, column name]. */
   absent: Array<[number, string]>;
@@ -74,8 +80,24 @@ export function encodePmTableRows(
   );
   return { rows: encoded, encoding: { json_columns: jsonColumns, absent,
     ...(listColumns.length ? { list_columns: Object.fromEntries(listColumns.map(column => [column, ";"])) } : {}),
-    ...(nullColumns.length ? { null_columns: nullColumns, column_order: columns } : {}),
+    ...(nullColumns.length
+      ? { null_columns: nullColumns, null_column_index: nullColumns.map((column) => columns.indexOf(column)) }
+      : {}),
   } };
+}
+
+/** Reinsert omitted null columns at their recorded original positions. */
+function restoreColumnOrder(encodedColumns: readonly string[], encoding: PmTableCellEncoding): string[] {
+  const nullColumns = encoding.null_columns ?? [];
+  const positions = encoding.null_column_index ?? [];
+  const columns = [...encodedColumns];
+  const insertions = nullColumns
+    .map((column, index) => ({ column, position: positions[index] }))
+    .filter((entry): entry is { column: string; position: number } => typeof entry.position === "number")
+    .sort((left, right) => left.position - right.position);
+  for (const { column, position } of insertions) columns.splice(Math.min(position, columns.length), 0, column);
+  for (const column of nullColumns) if (!columns.includes(column)) columns.push(column);
+  return columns;
 }
 
 /**
@@ -103,7 +125,7 @@ export function decodePmTableRows(
       }),
     );
     for (const column of table.encoding.null_columns ?? []) cells.set(column, null);
-    const columns = table.encoding.column_order ?? [...cells.keys()];
+    const columns = table.encoding.column_order ?? restoreColumnOrder(Object.keys(row), table.encoding);
     return Object.fromEntries(columns.filter(column => cells.has(column)).map(column => [column, cells.get(column)!]));
   });
 }

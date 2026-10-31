@@ -40,9 +40,10 @@ export const LEGACY_FLAGS_BY_COMMAND: Readonly<
     cost: ["--token-budget"],
     encoding: ["--format"],
   },
+  // `--token-budget` on next is the recommended+ready selection ceiling, not a
+  // response cost dimension; the universal default ceiling keeps binding.
   next: {
     amount: ["--blocked-limit", "--limit"],
-    cost: ["--token-budget"],
     encoding: ["--format"],
   },
   health: {

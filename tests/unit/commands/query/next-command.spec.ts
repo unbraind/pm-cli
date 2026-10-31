@@ -149,6 +149,60 @@ describe("runNext", () => {
     });
   });
 
+  it("reports a null selection budget unless requested and audits the complete envelope under the universal ceiling (GH-1627)", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, { title: "Audited ready work", priority: "1" });
+      createItem(context, { title: "Audited second work", priority: "2" });
+      const unbudgeted = await runNext({}, { path: context.pmPath });
+      expect(unbudgeted.filters.token_budget).toBeNull();
+      expect(unbudgeted.truncation?.ready_budget).toBeUndefined();
+      const budgeted = await runNext({ tokenBudget: 5000 }, { path: context.pmPath });
+      expect(budgeted.filters.token_budget).toBe(5000);
+      const plain = context.runCli(["next", "--json"], { expectJson: true });
+      expect(plain.code).toBe(0);
+      expect((plain.json as { read_output?: unknown }).read_output).toBeUndefined();
+      for (const format of ["json", "toon"] as const) {
+        const audited = context.runCli(
+          ["next", "--token-budget", "5000", "--format", format],
+          { expectJson: format === "json" },
+        );
+        expect(audited.code).toBe(0);
+        if (format === "json") {
+          const envelope = audited.json as {
+            read_output: Record<string, unknown>;
+            filters: { token_budget: number | null };
+          };
+          expect(envelope.filters.token_budget).toBe(5000);
+          expect(envelope.read_output).toMatchObject({
+            command: "next",
+            budget_source: "default",
+            within_budget: true,
+            result_omitted: false,
+          });
+          expect(envelope.read_output.legacy_aliases_used).not.toContain("--token-budget");
+          expect(typeof envelope.read_output.budget_tokens).toBe("number");
+          expect(envelope.read_output.estimated_tokens as number).toBeGreaterThan(0);
+          expect(envelope.read_output.estimated_tokens as number).toBeLessThanOrEqual(
+            envelope.read_output.budget_tokens as number,
+          );
+        } else {
+          expect(audited.stdout).toContain("read_output:");
+          expect(audited.stdout).toContain('budget_source: "default"');
+          expect(audited.stdout).toContain("token_budget: 5000");
+        }
+      }
+      const intent = context.runCli(["next", "--for", "execute", "--json"], { expectJson: true });
+      expect(intent.code).toBe(0);
+      const intentEnvelope = intent.json as {
+        context_intent?: { within_budget?: boolean };
+        read_output?: unknown;
+      };
+      if (intentEnvelope.context_intent?.within_budget === true) {
+        expect(intentEnvelope.read_output).toBeUndefined();
+      }
+    });
+  });
+
   it("resolves caller identity through settings and unknown fallbacks", () => {
     const previousAuthor = process.env.PM_AUTHOR;
     delete process.env.PM_AUTHOR;

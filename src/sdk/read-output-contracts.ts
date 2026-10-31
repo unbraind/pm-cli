@@ -1562,6 +1562,26 @@ function hasContextIntentBudgetReceipt(
   );
 }
 
+/**
+ * A `next` selection budget (`--token-budget`) bounds only the recommended and
+ * ready rows, so the complete envelope is audited under the universal ceiling
+ * whenever one is requested. An enforced intent receipt already discloses the
+ * whole-response cost and suppresses the duplicate audit (GH-1627).
+ */
+function requiresNextSelectionBudgetAudit(
+  resolved: PmResolvedReadOutputDimensions,
+  options: Record<string, unknown>,
+  result: Record<string, unknown>,
+): boolean {
+  if (resolved.command !== "next") return false;
+  if ((options.tokenBudget ?? options.token_budget) === undefined) return false;
+  return !(
+    isRecord(result.context_intent) &&
+    result.context_intent.command === "next" &&
+    result.context_intent.within_budget === true
+  );
+}
+
 /** Disclose ceilings not otherwise carried by a canonical, intent, or session control. */
 function readOutputBudgetReceiptFields(
   budget:
@@ -1649,6 +1669,7 @@ function requiresReadOutputAudit(
     (resolved.command === "context" &&
       resolved.cost?.source === "legacy" &&
       !hasContextIntentBudgetReceipt(result, resolved.cost.value)) ||
+    requiresNextSelectionBudgetAudit(resolved, options, result) ||
     options.outputRowContract === true ||
     options.output_row_contract === true ||
     resolved.canonical_options_used!.includes("--output-include") ||

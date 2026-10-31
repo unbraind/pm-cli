@@ -180,6 +180,48 @@ describe("lossless SDK table cells", () => {
     });
   });
 
+  it("encodes omitted null columns by position so one null column no longer costs the whole column list (GH-1627)", () => {
+    const rows = Array.from({ length: 5 }, (_, index) => ({
+      id: `pm-${index}`,
+      title: `Ready ${index}`,
+      priority: 1,
+      order: null,
+      deadline: index === 1 ? "2099-01-01T00:00:00.000Z" : null,
+      assignee: index === 2 ? "agent" : null,
+      tags: ["agent-ux", "github"],
+      rank: index + 1,
+    }));
+    const compact = encodePmTableRows(rows, { compact: true });
+    expect(compact.encoding.null_columns).toEqual(["order"]);
+    expect(compact.encoding.null_column_index).toEqual([3]);
+    expect(compact.encoding.column_order).toBeUndefined();
+    expect(decodePmTableRows(compact)).toEqual(rows);
+    expect(Object.keys(decodePmTableRows(compact)[0]!)).toEqual(Object.keys(rows[0]!));
+    const plain = encodePmTableRows(rows, { compact: false });
+    const size = (table: PmEncodedTableRows): number =>
+      Buffer.byteLength(encode({ ready: table.rows, ready_encoding: table.encoding }));
+    expect(size(compact)).toBeLessThan(size(plain));
+    const rendered = formatBuiltInOutput({ ready: rows }, "toon");
+    expect(rendered).toContain("list_columns");
+    expect(rendered).toContain("null_column_index");
+    expect(rendered).not.toContain("column_order");
+    expect(restoreTables(decode(rendered))).toEqual({ ready: rows });
+  });
+
+  it("still restores rows that carry legacy column_order metadata", () => {
+    const table: PmEncodedTableRows = {
+      rows: [{ b: 1 }],
+      encoding: { json_columns: [], absent: [], null_columns: ["a", "c"], column_order: ["a", "b", "c"] },
+    };
+    expect(decodePmTableRows(table)).toEqual([{ a: null, b: 1, c: null }]);
+    expect(Object.keys(decodePmTableRows(table)[0]!)).toEqual(["a", "b", "c"]);
+    const positional: PmEncodedTableRows = {
+      rows: [{ b: 1 }],
+      encoding: { json_columns: [], absent: [], null_columns: ["a", "c"], null_column_index: [0, 2] },
+    };
+    expect(Object.keys(decodePmTableRows(positional)[0]!)).toEqual(["a", "b", "c"]);
+  });
+
   it("compacts agenda null columns and safe string lists with exact restoration", () => {
     const rows = Array.from({ length: 10 }, (_, index) => ({
       item_id: `pm-${index}`, kind: "deadline", event_title: null, event_end: null,

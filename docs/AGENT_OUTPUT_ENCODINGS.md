@@ -24,6 +24,10 @@ including scalar cells, so strings that resemble JSON remain distinguishable.
 `absent` contains `[row_index, column_name]` pairs for missing fields. Null padding
 does not imply an explicit null in the original object. Column order follows
 first occurrence; row order, ranking, identities, and nested facts are preserved.
+A compact candidate omits columns that are null in every row and names them in
+`null_columns`; `null_column_index` records each omitted column's original
+position, so restoration is exact without repeating the full column list
+(decoders still accept the legacy `column_order`).
 A producer-owned `<collection>_encoding` field prevents this transformation.
 
 Package authors can use `encodePmTableRows` and `decodePmTableRows` from
@@ -117,3 +121,11 @@ answer returns an explicit omission receipt and recovery; it does not pretend
 that omitted work is an empty population. Use `--output-budget unbounded` to
 request the complete result. Markdown, NDJSON, and other command-specific
 streaming budgets remain separate contracts.
+
+`pm next --token-budget` is a selection ceiling for `recommended` and `ready`,
+not a response cost: it never replaces the universal ceiling, and requesting it
+audits the complete envelope under that ceiling, so `read_output` discloses
+`budget_source: default`, `budget_tokens`, and the measured `estimated_tokens`
+beside `truncation.ready_budget`. `filters.token_budget` is `null` unless a
+selection budget was requested. An enforced `--for` intent receipt already
+discloses the whole-response cost and suppresses the duplicate audit.

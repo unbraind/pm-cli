@@ -44280,14 +44280,7 @@
           "canonical_option": "--output-budget",
           "dimension": "cost",
           "inapplicable_reason": null,
-          "legacy_aliases": [
-            {
-              "flag": "--token-budget",
-              "migration_hint": "--token-budget is a compatibility alias; prefer --output-budget <tokens>.",
-              "semantics": "replacement",
-              "visibility": "hidden_alias"
-            }
-          ]
+          "legacy_aliases": []
         },
         "encoding": {
           "applicable": true,

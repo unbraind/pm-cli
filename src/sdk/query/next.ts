@@ -198,7 +198,12 @@ export interface NextResult {
     include_decisions: boolean;
     include_gates?: boolean;
     include_containers?: boolean;
-    token_budget: number;
+    /**
+     * Requested recommended+ready selection ceiling, or null when none was
+     * requested. The complete response is bounded by the universal output
+     * budget and disclosed by its `read_output` receipt (GH-1627).
+     */
+    token_budget: number | null;
   };
   /** Value that configures or reports suggestions for this contract. */
   suggestions?: string[];
@@ -599,7 +604,7 @@ async function finalizeNextResult(params: {
   author: string;
   packingBudget: number;
   featureStore: ContextSignalStoreReadResult;
-  tokenBudget?: number;
+  tokenBudget: number | null;
   hasIntentBudget: boolean;
 }): Promise<NextResult> {
   const warnings = [
@@ -616,7 +621,7 @@ async function finalizeNextResult(params: {
     params.blockedRows,
     params.gateCount,
   );
-  if (params.tokenBudget !== undefined) {
+  if (params.tokenBudget !== null) {
     applyNextReadyBudget(params.result, params.tokenBudget, params.hasIntentBudget);
   }
   if (params.explainRanking) {
@@ -736,6 +741,14 @@ function resolveNextCallerAuthor(
   );
 }
 
+/** Echo the requested selection ceiling; null when the caller requested none. */
+function requestedSelectionBudget(
+  options: NextOptions,
+  resolved: number,
+): number | null {
+  return options.tokenBudget === undefined ? null : resolved;
+}
+
 /** Implements `pm next`: computes the ranked ready/blocked actionable queues and a single recommended next item with rationale for the public runtime surface. */
 export async function runNext(
   options: NextOptions,
@@ -755,6 +768,7 @@ export async function runNext(
     options.tokenBudget,
     Math.max(192, limit * 128),
   );
+  const requestedTokenBudget = requestedSelectionBudget(options, tokenBudget);
   const blockedLimit = parseNextLimit(
     options.blockedLimit,
     "--blocked-limit",
@@ -885,7 +899,7 @@ export async function runNext(
       include_decisions: options.includeDecisions === true,
       include_gates: options.includeGates === true,
       include_containers: options.includeContainers === true,
-      token_budget: tokenBudget,
+      token_budget: requestedTokenBudget,
     },
     truncation: Object.keys(truncation).length > 0 ? truncation : undefined,
   };
@@ -903,7 +917,7 @@ export async function runNext(
     author: callerAuthor,
     packingBudget: tokenBudget,
     featureStore,
-    tokenBudget: options.tokenBudget === undefined ? undefined : tokenBudget,
+    tokenBudget: requestedTokenBudget,
     hasIntentBudget: typeof options.for === "string",
   });
 }
