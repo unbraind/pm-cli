@@ -475,6 +475,46 @@ describe("pm cli error guidance context plumbing", () => {
     expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
   });
 
+  it("keeps a short suggested retry when the compact recovery stage is what fits", () => {
+    const detail = "Unknown field 'owner' is not declared on Issue";
+    const attempted = `pm update pm-1 --owner "${"word ".repeat(1_200)}"`;
+    const text = formatPmCliErrorForDisplay(detail, {
+      code: "invalid_argument_value",
+      recovery: {
+        attempted_command: attempted,
+        suggested_retry: "pm update pm-1 --assignee <value>",
+        provided_fields: ["--owner"],
+        allowed_values: ["assignee", "parent", "priority", "status", "title"],
+      },
+    });
+
+    expect(text).toContain(detail);
+    expect(text).toContain("suggested_retry: pm update pm-1 --assignee <value>");
+    expect(text).toContain("allowed_values: assignee, parent, priority");
+    expect(text).not.toContain("allowed_values: assignee, parent, priority, status");
+    expect(text).not.toContain("attempted_command:");
+    expect(text).toContain("rerun with --json for the full recovery envelope");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
+  it("falls back to the full rendering when no ladder stage can fit the text ceiling", () => {
+    const detail = "Value rejected";
+    const oversizedStep = `Run pm contracts --command update ${"and inspect every declared option ".repeat(400)}`;
+    const text = formatPmCliErrorForDisplay(detail, {
+      code: "invalid_argument_value",
+      nextSteps: [oversizedStep],
+    });
+
+    // Every ladder stage still carries the oversized step, so the renderer
+    // returns the full text and the hard ceiling projects it to action-only.
+    expect(text).toContain("What is required:");
+    expect(text).toContain("Error: Value rejected");
+    expect(text).not.toContain("inspect every declared option");
+    expect(text).not.toContain("rerun with --json for the full recovery envelope");
+    expect(text).toContain("exceeded its declared 768-token ceiling");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
   it("bounds an oversized refusal detail instead of dropping it", () => {
     const detail = `Value rejected: ${"segment ".repeat(1_500)}`;
     const text = formatPmCliErrorForDisplay(detail, { code: "invalid_argument_value" });
