@@ -59,7 +59,8 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
   }
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
   const status = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
-  const claim = await runClaim(id, options.force === true, global, options);
+  // The explicit composition keeps claim and status as separate audited steps; only claim --next --start shares one write.
+  const claim = await runClaim(id, options.force === true, global, mutationOptionsWithOverrides(options, {}, ["start"]));
   const canonicalId = claim.item.id as string;
   const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global));
   return { id: canonicalId, action: "start_task", claim, update };

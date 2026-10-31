@@ -1,7 +1,7 @@
 {
   "version": 5,
   "transcript_version": 2,
-  "transcript_digest": "sha256:83d4523ca528ad5e8801cf5c7c02dcebbf2b87dc72422d4b8e648755dcdc36c2",
+  "transcript_digest": "sha256:b4b151f3d36860e73cd535d0520e9f03b4ecec4444ee81a8b868896b5b0bba47",
   "estimator": "ceil(utf8_bytes / 4)",
   "comparison_scope": "plan_recovery_tracker_root_canonicalized",
   "measurement_scope": "output_before_token_accounting",

@@ -90,6 +90,22 @@ ceiling. For row-oriented `list` and `search` intents, pm reports:
 - `binding_constraint` as `token_budget` or `explicit_limit`;
 - `limit_reason` with the selection rationale.
 
+When the intent budget reduces an explicit `--limit`, as with
+`pm context --for orient --limit 10` (the 3000-token orient budget carries 3
+rows), the reduction is never silent. `context_intent.limit_override` records
+`requested`, `effective`, the `token_budget_for_requested` that would carry the
+request, and a `restore_with` retry. `filters.requested_limit` sits beside the
+effective `filters.limit`, and `warnings` carries
+`limit_overridden_by_intent:--limit <requested>-><effective>`. The same applies
+to `context`, `list`, and `search` intents.
+
+MCP read tools (`pm_context`, `pm_get`, `pm_list`, `pm_next`, `pm_search`)
+accept every optional parameter their action contract declares either flat or
+under `options`. The runtime derives the flat-to-options mapping from
+`PM_TOOL_ACTION_PARAMETER_CONTRACTS`, so a declared argument such as `for`,
+`depth`, `limit`, or `tokenBudget` is never silently ignored; nested `options`
+win when both are present.
+
 Default intent budgets retain the ordinary page cap. Explicit budgets may
 derive larger pages; recursive compaction and resumable cursor safeguards still
 enforce the final serialized token ceiling.

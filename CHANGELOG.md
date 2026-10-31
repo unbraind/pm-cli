@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- MCP read tools silently ignore declared flat parameters: pm_context reads none, and for/tokenBudget/depth on pm_list, pm_search, pm_next and pm_get never reach the intent layer ([pm-hke9z7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hke9z7.toon))
+- GH-1642: brief pm list and pm search pages print an envelope as large as their rows; the default sort and search's default omission receipt are no longer compacted ([pm-gh1642](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1642.toon))
+- GH-1644: context --for orient silently reduces an explicit --limit to the intent's budget-derived row ceiling, and pm's own quickstart recommends that command ([pm-gh1644](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1644.toon))
+- GH-1643: pm claim --next --start is refused with 'Specify an item id or pass --next' although --next was passed; select-claim-start needs one atomic write ([pm-gh1643](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1643.toon))
+
 ## 2026.10.31 - 2026-10-31
 
 ### Changed

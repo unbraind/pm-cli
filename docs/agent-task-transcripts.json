@@ -101,7 +101,7 @@
       "steps": [
         {
           "id": "context",
-          "args": ["context", "--for", "orient", "--limit", "10"],
+          "args": ["context", "--for", "orient"],
           "expected_exit_code": 0,
           "expected_output_kind": "diagnostic",
           "expected_accounting_mode": "self_reported",
@@ -141,7 +141,7 @@
       "steps": [
         {
           "id": "context",
-          "args": ["context", "--for", "orient", "--limit", "10"],
+          "args": ["context", "--for", "orient"],
           "expected_exit_code": 0,
           "expected_output_kind": "diagnostic",
           "expected_accounting_mode": "self_reported",
@@ -187,7 +187,7 @@
         },
         {
           "id": "orient",
-          "args": ["context", "--for", "orient", "--limit", "5"],
+          "args": ["context", "--for", "orient"],
           "expected_exit_code": 0,
           "expected_output_kind": "diagnostic",
           "expected_accounting_mode": "self_reported",

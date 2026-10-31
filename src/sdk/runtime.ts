@@ -131,6 +131,7 @@ import type { AppendCommandOptions,AppendResult } from "./lifecycle/append.js";
 import type {
   ClaimNextResult,
   ClaimResult,
+  ClaimStartReceipt,
   ReleaseResult,
   ReleaseMutationOptions,
 } from "./lifecycle/claim.js";
@@ -309,6 +310,7 @@ export { runCloseTask,runPauseTask,runStartTask,type TaskCompositionOptions } fr
 
 export type {
   ClaimResult,
+  ClaimStartReceipt,
   CloseResult,
   CreateResult,
   ReleaseResult,

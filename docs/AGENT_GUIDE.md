@@ -7,7 +7,7 @@ This guide is optimized for coding agents that need to understand and mutate rep
 Run this before heavy work. The first call is the canonical cold start. Then run the request-specific duplicate and ownership checks before item mutation:
 
 ```bash
-pm context --limit 10 --for orient
+pm context --for orient
 pm search "<request keywords>" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
@@ -33,7 +33,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 1. **Orient**
 
 ```bash
-pm context --limit 10 --for orient
+pm context --for orient
 pm search "<keywords>" --limit 10
 pm list --status open --limit 20
 pm list --status in_progress --limit 20
@@ -128,7 +128,7 @@ tests compare complete history bytes while the unrelated tracker's claims change
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The single next action + why         | `pm next` (concrete ready leaves first; completed-container closeout rows surface only when no leaf work is ready; `--ready-only` for the tightest output) |
 | Next ready work in one epic          | `pm next --parent <id>`                                                                                                                                    |
-| Canonical cold-start orientation     | `pm context --limit 10 --for orient` (1,055 estimated tokens on the fixed 101-item replay corpus)                                                          |
+| Canonical cold-start orientation     | `pm context --for orient` (1,055 estimated tokens on the fixed 101-item replay corpus)                                                          |
 | Next work and agenda                 | `pm context --limit 10`                                                                                                                                    |
 | Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap)                                                                                          |
 | Status of one epic/subtree           | `pm context --parent <id> --depth deep`                                                                                                                    |

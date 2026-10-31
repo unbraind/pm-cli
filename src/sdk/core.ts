@@ -64,6 +64,7 @@ export {
   type AppendResult,
   type ClaimNextOptions,
   type ClaimResult,
+  type ClaimStartReceipt,
   type CloseResult,
   type CommentsCommandOptions,
   type CommentsResult,

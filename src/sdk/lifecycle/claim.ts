@@ -21,6 +21,11 @@ import {
 import { wrapOwnershipConflict } from "../annotations.js";
 import { resolveItemOwnershipConflict } from "../ownership-source.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
+import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
+import { resolveTypeWorkflows } from "../../core/schema/type-workflows.js";
+import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
+import type { ItemMetadata, PmSettings } from "../../types/index.js";
+import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import {
   runNext,
   type NextRecommendation,
@@ -50,6 +55,16 @@ export interface ClaimResult {
   skipped?: boolean;
   /** Value that configures or reports warnings for this contract. */
   warnings?: string[];
+  /** Lifecycle transition applied inside the claim's locked mutation when `start` was requested. */
+  start?: ClaimStartReceipt;
+}
+
+/** Status transition recorded by a claim that also started its item. */
+export interface ClaimStartReceipt {
+  /** Lifecycle status observed under the item lock before the claim. */
+  from_status: string;
+  /** Configured in-progress status the claimed item now carries. */
+  to_status: string;
 }
 
 /** Result of atomically selecting and claiming the next caller-available item. */
@@ -147,6 +162,8 @@ export interface ClaimMutationOptions {
   ifAvailable?: boolean;
   /** Maximum ranked candidates attempted by `claim --next`. */
   maxAttempts?: string | number;
+  /** Move the claimed item to the configured in-progress status in the same locked mutation. */
+  start?: boolean;
 }
 
 /** Documents the release mutation options payload exchanged by command, SDK, and package integrations. */
@@ -172,6 +189,7 @@ export async function runClaim(
   const claimPrincipal = resolveClaimPrincipal(author);
   let previousAssignee: string | null = null;
   let skipped = false;
+  let startEvidence: Pick<ClaimResult, "start"> = {};
   const mutationWarnings: string[] = [];
 
   const result = await mutateItem({
@@ -238,8 +256,12 @@ export async function runClaim(
         (field) => document.metadata[field] !== ownership[field],
       );
       Object.assign(document.metadata, ownership);
+      const { changedFields: startedFields, warnings: startWarnings, ...started } =
+        applyClaimStart(document.metadata, options.start === true, settings, statusRegistry);
+      startEvidence = started;
+      mutationWarnings.push(...startWarnings);
       return {
-        changedFields,
+        changedFields: [...changedFields, ...startedFields],
         warnings: mutationWarnings,
       };
     },
@@ -263,7 +285,78 @@ export async function runClaim(
     forced: force,
     ...(skipped ? { skipped: true } : {}),
     ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
+    ...startEvidence,
   };
+}
+
+/** Enforce the claim target XOR selection contract; refusals never ask for a flag the caller already passed. */
+export function requireClaimTarget(
+  id: string | undefined,
+  next: boolean,
+  start = false,
+): void {
+  const startSuffix = start ? " --start" : "";
+  if (!next && !id) {
+    throw new PmCliError(
+      start
+        ? "pm claim --start needs an item id, or --next to start the next available item"
+        : "Specify an item id or pass --next",
+      EXIT_CODE.USAGE,
+      {
+        code: "missing_required_argument",
+        field: "id",
+        required: "Pass an item id, or --next to select the next available item.",
+        nextSteps: [`Retry as pm claim <id>${startSuffix}, or pm claim --next${startSuffix}.`],
+      },
+    );
+  }
+  if (next && id) {
+    throw new PmCliError(
+      "Specify either an item id or --next, not both",
+      EXIT_CODE.USAGE,
+      {
+        code: "ambiguous_option_combination",
+        required: "Pass either an item id or --next.",
+        nextSteps: [`Retry as pm claim ${id}${startSuffix} to claim that item, or drop the id to select with --next.`],
+      },
+    );
+  }
+}
+
+/** Advance a just-claimed item to the in-progress status under the claim's lock, enforcing configured type workflows. */
+export function applyClaimStart(
+  metadata: ItemMetadata,
+  start: boolean,
+  settings: PmSettings,
+  registry: RuntimeStatusRegistry,
+): Pick<ClaimResult, "start"> & { changedFields: string[]; warnings: string[] } {
+  if (!start) return { changedFields: [], warnings: [] };
+  if (statusIsTerminal(metadata.status, registry)) {
+    throw new PmCliError(
+      `Cannot start terminal item ${metadata.id}; reopen it with pm item reopen before starting it`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "terminal_state_conflict",
+        item_id: metadata.id,
+        why: "Starting work moves an active item into progress; a terminal item must be reopened so its recurrence evidence is recorded.",
+        nextSteps: [`Run pm item reopen ${metadata.id} "<reason>", then pm claim ${metadata.id} --start.`],
+      },
+    );
+  }
+  const startStatus = resolveStartTaskInProgressStatus(registry);
+  const enforcement = settings.governance.workflow_enforcement ?? "off";
+  const warning = enforceTypeWorkflowTransition({
+    enforcement,
+    typeWorkflows: enforcement === "off" ? [] : resolveTypeWorkflows(settings.schema),
+    statusRegistry: registry,
+    typeName: metadata.type,
+    fromStatus: metadata.status,
+    toStatus: startStatus,
+  });
+  const receipt = { from_status: metadata.status, to_status: startStatus };
+  const changedFields = metadata.status === startStatus ? [] : ["status"];
+  metadata.status = startStatus;
+  return { start: receipt, changedFields, warnings: warning ? [warning] : [] };
 }
 
 /** Selects ranked actionable work and claims the first candidate still available under the item lock. Conflicts caused by parallel claimers advance to the next candidate instead of returning a thundering-herd failure. */

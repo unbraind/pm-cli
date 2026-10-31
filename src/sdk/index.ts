@@ -986,6 +986,7 @@ export {
   type CalendarOptions,
   type CalendarResult,
   type ClaimResult,
+  type ClaimStartReceipt,
   type CloseResult,
   type CloseTaskResult,
   type CommitImportedItemParams,

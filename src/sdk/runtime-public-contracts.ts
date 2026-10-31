@@ -170,6 +170,8 @@ export type PmClientFullMutationOptions = Omit<PmClientMutationOptions, "fullCha
 export interface ClaimNextOptions extends PmClientFullMutationOptions {
   /** Maximum ranked candidates to attempt, from 1 through 100 inclusive. */
   maxAttempts?: number | string;
+  /** Also move the selected item to the configured in-progress status inside the same locked claim write. */
+  start?: boolean;
 }
 
 /** Stable defaults applied by the reusable SDK client. */

@@ -1206,7 +1206,7 @@ describe("runInit", () => {
       expect(firstGuidance).toContain(
         "<!-- pm-cli:agent-guidance:start:v1 -->",
       );
-      expect(firstGuidance).toContain("pm context --limit 10");
+      expect(firstGuidance).toContain("pm context --for orient");
       expect(firstGuidance).toContain("Author identity is automatic");
 
       const readded = await runInit(

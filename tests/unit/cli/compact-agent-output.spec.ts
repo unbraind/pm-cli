@@ -5,7 +5,10 @@ import {
   formatCommanderErrorForJson,
 } from "../../../src/cli/error-guidance.js";
 import { attachReadOutputContracts } from "../../../src/sdk/context-intent-contracts.js";
-import { projectPmBriefListEnvelope } from "../../../src/sdk/output.js";
+import {
+  projectPmBriefListEnvelope,
+  projectPmBriefSearchEnvelope,
+} from "../../../src/sdk/output.js";
 
 const completeList = {
   items: ["one", "two", "three"].map((title, index) => ({
@@ -366,5 +369,102 @@ describe("compact agent presentation", () => {
     expect(json.recovery?.normalized_args).toEqual(
       context.normalizedInvocationArgs,
     );
+  });
+});
+
+const searchPage = {
+  query: "release workflow",
+  mode: "hybrid",
+  items: [
+    { id: "pm-a", title: "A", matched_fields: ["title"] },
+    { id: "pm-b", title: "B", matched_fields: ["title", "body"] },
+  ],
+  count: 2,
+  total: 9,
+  applied_limit: 2,
+  has_more: true,
+  truncated: true,
+  next_cursor: "next",
+  filters: { limit: "2" },
+  omission_receipt: {
+    has_omissions: true,
+    omitted_field_group_count: 1,
+    omitted_field_groups: [{ name: "projection_metadata", restore_with: "--full" }],
+  },
+};
+
+describe("GH-1642 brief search and list envelopes", () => {
+  it("drops the repeated pagination alias, limit echo and default omission receipt from a search page", () => {
+    const before = structuredClone(searchPage);
+    expect(projectPmBriefSearchEnvelope(searchPage)).toEqual({
+      query: "release workflow",
+      mode: "hybrid",
+      items: searchPage.items,
+      count: 2,
+      total: 9,
+      applied_limit: 2,
+      has_more: true,
+      next_cursor: "next",
+      details: "--full",
+    });
+    expect(searchPage).toEqual(before);
+    const text = formatBuiltInOutput(searchPage, "toon");
+    expect(text).not.toContain("truncated:");
+    expect(text).not.toContain("omission_receipt:");
+    expect(text).not.toContain("filters:");
+    expect(text).toContain('details: "--full"');
+    expect(Buffer.byteLength(text)).toBeLessThan(Buffer.byteLength(formatBuiltInOutput({ ...searchPage, details: { keep: true } }, "toon")));
+    expect(JSON.parse(formatBuiltInOutput(searchPage, "json"))).toEqual(searchPage);
+  });
+
+  it("keeps filters that carry information and drops only limit echoes and empty runtime filters", () => {
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { type: "Task", limit: "2" } })).toMatchObject({ filters: { type: "Task" } });
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { limit: "5" } })).toMatchObject({ filters: { limit: "5" } });
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: null })).toMatchObject({ filters: null });
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: undefined })).not.toHaveProperty("filters");
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { limit: "2", runtime_filters: {} } })).not.toHaveProperty("filters");
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { runtime_filters: { team: "core" } } })).toMatchObject({ filters: { runtime_filters: { team: "core" } } });
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { runtime_filters: null } })).toMatchObject({ filters: { runtime_filters: null } });
+  });
+
+  it.each([
+    null,
+    [],
+    { ...searchPage, query: 1 },
+    { ...searchPage, items: null },
+    { ...searchPage, details: "producer" },
+    { ...searchPage, truncated: false },
+    { ...searchPage, omission_receipt: { ...searchPage.omission_receipt, omitted_field_groups: [{ name: "full_item_fields", restore_with: "--full" }] } },
+    { ...searchPage, omission_receipt: { ...searchPage.omission_receipt, omitted_field_group_count: 2 } },
+  ])("leaves non-standard search envelopes intact: %j", (value) => {
+    expect(projectPmBriefSearchEnvelope(value)).toBe(value);
+  });
+
+  it("keeps the effective default order on one line and drops the legacy sort echo and limit echo", () => {
+    const value = {
+      ...completeList,
+      total: 12,
+      applied_limit: 3,
+      has_more: true,
+      truncated: true,
+      next_cursor: "continue",
+      filters: { status: "open", limit: "3", runtime_filters: {} },
+      sorting: { sort: "default", order: "asc", effective_keys: [["priority", "asc"], ["id", "asc"]] },
+    };
+    const projected = projectPmBriefListEnvelope(value) as Record<string, unknown>;
+    expect(projected.sorting).toEqual({ effective_keys: "priority asc, id asc" });
+    expect(projected.filters).toEqual({ status: "open" });
+    for (const sorting of [
+      { ...value.sorting, provider: "keep" },
+      { ...value.sorting, effective_keys: "priority" },
+      { ...value.sorting, effective_keys: [["priority"]] },
+    ]) {
+      expect(projectPmBriefListEnvelope({ ...value, sorting })).toMatchObject({ sorting });
+    }
+    const text = formatBuiltInOutput(value, "toon");
+    expect(text).toContain('effective_keys: "priority asc, id asc"');
+    expect(text).not.toContain('sort: "default"');
+    expect(text).toContain('status: "open"');
+    expect(JSON.parse(formatBuiltInOutput(value, "json"))).toEqual(value);
   });
 });

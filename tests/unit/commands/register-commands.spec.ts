@@ -82,7 +82,10 @@ vi.mock("../../../src/cli/commands/workspace/merge.js", () => ({
 vi.mock("../../../src/cli/commands/workspace/contracts.js", () => ({
   runContracts: vi.fn(),
 }));
-vi.mock("../../../src/cli/commands/lifecycle/claim.js", () => lifecyclePrimitives);
+vi.mock("../../../src/cli/commands/lifecycle/claim.js", async (importOriginal) => ({
+  ...lifecyclePrimitives,
+  requireClaimTarget: (await importOriginal<typeof import("../../../src/cli/commands/lifecycle/claim.js")>()).requireClaimTarget,
+}));
 vi.mock("../../../src/cli/commands/lifecycle/create.js", () => ({ runCreate: vi.fn() }));
 vi.mock("../../../src/cli/commands/lifecycle/copy.js", () => ({ runCopy: vi.fn() }));
 vi.mock("../../../src/cli/commands/lifecycle/focus.js", () => ({ runFocus: vi.fn() }));
@@ -93,7 +96,10 @@ vi.mock("../../../src/cli/commands/lifecycle/update-many.js", () => ({
 vi.mock("../../../src/cli/commands/lifecycle/close.js", () => lifecyclePrimitives);
 // Lifecycle composition now lives in the SDK; share the primitive spies so
 // registration tests continue checking normalized options and operation order.
-vi.mock("../../../src/sdk/lifecycle/claim.js", () => lifecyclePrimitives);
+vi.mock("../../../src/sdk/lifecycle/claim.js", async (importOriginal) => ({
+  ...lifecyclePrimitives,
+  requireClaimTarget: (await importOriginal<typeof import("../../../src/sdk/lifecycle/claim.js")>()).requireClaimTarget,
+}));
 vi.mock("../../../src/sdk/lifecycle/update.js", () => lifecyclePrimitives);
 vi.mock("../../../src/sdk/lifecycle/close.js", () => lifecyclePrimitives);
 vi.mock("../../../src/cli/commands/lifecycle/close-many.js", () => ({
@@ -941,6 +947,18 @@ describe("operation command actions", () => {
     await expect(
       runCli("workspace", "snapshot", "unknown", "registration"),
     ).rejects.toThrow("Unknown workspace snapshot action");
+  });
+
+  it("routes claim --next --start through one ranked selection that also starts the item (GH-1643)", async () => {
+    vi.mocked(runClaimNext).mockResolvedValueOnce({ id: "pm-next-start" } as never);
+    await runCli("claim", "--next", "--start", "--type", "Task");
+    expect(runClaimNext).toHaveBeenLastCalledWith(
+      false,
+      expect.any(Object),
+      expect.objectContaining({ start: true, ifAvailable: false }),
+      expect.objectContaining({ type: "Task" }),
+    );
+    await expect(runCli("claim", "--start")).rejects.toThrow("pm claim --start needs an item id");
   });
 
   it("routes claim --next through ranked atomic selection", async () => {

@@ -22,6 +22,8 @@ import type { UpdateManyCommandOptions } from "./lifecycle/update-many.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, CREATE_COMMANDER_STRING_OPTION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS, UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "./cli-contracts/commander-mutation-options.js";
 import { TOOL_CREATE_OPTION_CONTRACTS, TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS, TOOL_UPDATE_OPTION_CONTRACTS } from "./cli-contracts/tool-option-contracts.js";
 import { PM_TOOL_PARAMETER_PROPERTIES } from "./cli-contracts/tool-parameter-tables.js";
+import { PM_TOOL_ACTION_PARAMETER_CONTRACTS } from "./cli-contracts/tool-schema.js";
+import type { PmToolAction } from "./cli-contracts/enum-contracts.js";
 import type { GraphCommandOptions } from "./graph/run.js";
 import type { ListOptions } from "./query/list.js";
 import {
@@ -347,6 +349,36 @@ export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string
     append: ["body"],
   };
 
+/** Read actions whose MCP tools declare intent, projection and filter parameters flat. */
+const CONTRACT_HOISTED_READ_ACTIONS: ReadonlySet<string> = new Set([
+  "context",
+  "get",
+  "list",
+  "next",
+  "search",
+]);
+
+/** Positional operands the read handlers take from the top-level arguments rather than options. */
+const READ_ACTION_OPERAND_KEYS: ReadonlySet<string> = new Set(["query", "keywords"]);
+
+/** Hoist every optional parameter a read action's tool contract declares, so no declared flat argument is silently ignored. */
+function declaredReadActionOptionKeys(action: string): readonly string[] {
+  return CONTRACT_HOISTED_READ_ACTIONS.has(action)
+    ? PM_TOOL_ACTION_PARAMETER_CONTRACTS[action as PmToolAction].optional!.filter(
+        (key) => !READ_ACTION_OPERAND_KEYS.has(key),
+      )
+    : [];
+}
+
+/** Every top-level argument an action reads from options: its hand-listed keys, declared read parameters, and universal read-output controls. */
+function hoistedActionOptionKeys(action: string): readonly string[] {
+  return [
+    ...(HOISTED_ACTION_OPTION_KEYS[action] ?? []),
+    ...declaredReadActionOptionKeys(action),
+    ...UNIVERSAL_READ_OUTPUT_OPTION_KEYS,
+  ];
+}
+
 const UNIVERSAL_READ_OUTPUT_OPTION_KEYS = [
   "outputInclude",
   "outputLimit",
@@ -535,10 +567,7 @@ export function optionsWithAuthor(
     }
     hoistedTopLevel[key] = args[key];
   };
-  for (const key of HOISTED_ACTION_OPTION_KEYS[action ?? ""] ?? []) {
-    hoistKey(key);
-  }
-  for (const key of UNIVERSAL_READ_OUTPUT_OPTION_KEYS) {
+  for (const key of hoistedActionOptionKeys(action ?? "")) {
     hoistKey(key);
   }
   if (action !== undefined && isMcpMutationTransportInput(args)) {

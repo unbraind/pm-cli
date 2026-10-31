@@ -23,7 +23,7 @@ results, exit codes, and SDK behavior.
 | `pm ops normalize` | `pm normalize` | Normalize through an active governance package |
 | `pm history events` | `pm events` | Read or follow committed mutation events |
 
-`pm context --limit 10 --for orient` still produces a context snapshot.
+`pm context --for orient` still produces a context snapshot.
 `pm history <id> --verify` still reads and verifies one item's history.
 Namespace leaves do not change either default operation.
 

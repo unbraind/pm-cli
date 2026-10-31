@@ -1,0 +1,56 @@
+id: pm-hke9z7
+title: "MCP read tools silently ignore declared flat parameters: pm_context reads none, and for/tokenBudget/depth on pm_list, pm_search, pm_next and pm_get never reach the intent layer"
+description: "Discovered while verifying pm-gh1644 over MCP (published 2026.10.31 and current source both reproduce).\n\nEvery narrow MCP read tool declares its action parameters flat in its inputSchema (pm_context declares for, limit, depth, section, fields, tokenBudget, ...; pm_list/pm_search/pm_next/pm_get declare for and tokenBudget). The SDK runtime only moves a flat argument into the options record the handlers read when it appears in the hand-maintained HOISTED_ACTION_OPTION_KEYS table in src/sdk/runtime-input.ts. That table has no context entry at all and omits for/tokenBudget (and most filters) from list, search, next and get. A flat argument outside the table is accepted without a warning (it is declared) and then dropped.\n\nMeasured in a fresh sandbox through the MCP tools/call handler, flat vs nested options: pm_context {depth: deep} → depth brief (nested → deep); pm_context {for: orient, limit: 10} → no intent, limit null, token_budget 1600 (nested → orient, limit 3); pm_list {for: triage}, pm_search {query, for: discover}, pm_next {for: execute}, pm_get {id, for: inspect} → no context_intent receipt (nested → applied); pm_next {limit: 1} → 5 rows (nested → 1). The declared intent layer is therefore unreachable for MCP hosts that send the flat arguments the schema advertises. Same defect family as pm-wcaa (pm_files declared-but-ignored params, closed individually) and pm-hno5.\n\nDuplicate search: 'MCP pm_context flat arguments ignored options', 'MCP declared parameter silently ignored', 'mcp for intent not applied' — no open item."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,context,contracts,mcp
+created_at: "2026-10-31T21:27:47.547Z"
+updated_at: "2026-10-31T22:31:37.663Z"
+closed_at: "2026-10-31T22:31:35.081Z"
+completed_at: "2026-10-31T22:31:35.081Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "For context, get, list, next and search, every optional parameter the action's tool contract declares is hoisted from flat MCP arguments into the handler options (derived from PM_TOOL_ACTION_PARAMETER_CONTRACTS, not a hand list), nested options still win; flat and nested calls produce identical results for for, limit, depth and tokenBudget on all five tools; a regression test iterates every declared optional key of the five actions and fails if one is not hoisted"
+parent: pm-5k4v
+risk: high
+confidence: high
+resolution: "runtime-input.ts derives flat-to-options hoisting for context, get, list, next and search from PM_TOOL_ACTION_PARAMETER_CONTRACTS[action].optional, excluding the query/keywords operands. One hoisted-key list replaces three loops, and nested options still win. runMcpSearchAction reads query, then the declared keywords alias, then refuses with the unchanged missing-query error."
+expected_result: "An MCP host that sends the flat parameters a read tool's schema declares gets the same intent, projection and limits as the nested options form."
+actual_result: "Through the MCP tools/call handler, flat and nested now agree for pm_context depth/for/limit, for on pm_list/pm_search/pm_next/pm_get, pm_get depth and pm_next limit. The flat orient call also discloses the limit override. read-tool-flat-parameters spec 7/7 iterates every declared optional key; 6/7 fail with the fix stashed. mcp-handshake hoist expectations pass."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1644,discovered_from,"2026-10-31T21:27:47.547Z","harness:claude-code","cli:create:dep",detected
+  pm-hno5,related,"2026-10-31T21:27:47.547Z","harness:claude-code","cli:create:dep",detected
+  pm-wcaa,related,"2026-10-31T21:27:47.547Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-10-31T21:47:01.751Z","harness:claude-code","Implementation: runtime-input.ts derives hoisting for context, get, list, next and search from PM_TOOL_ACTION_PARAMETER_CONTRACTS[action].optional (declaredReadActionOptionKeys), after the hand table, so nested options still win. Verified through the MCP tools/call handler: flat and nested calls now agree for pm_context depth/for/limit, pm_list/pm_search/pm_next/pm_get for, pm_get depth and pm_next limit. The regression spec iterates every declared optional key of the five actions, so a new declared parameter can no longer be silently dropped."
+files[3]{path,scope}:
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime/actions.ts,project
+  tests/unit/mcp/read-tool-flat-parameters.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/mcp/read-tool-flat-parameters.spec.ts,project,"harness:claude-code","2026-10-31T21:46:36.177Z",local_mutation,fix/agent-ux-orient-claim-envelopes
+test_runs[1]:
+  - run_id: test-local-mvwz5gjx-0ayygj
+    kind: test
+    status: passed
+    started_at: "2026-10-31T22:30:08.071Z"
+    finished_at: "2026-10-31T22:30:21.453Z"
+    recorded_at: "2026-10-31T22:30:21.453Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/mcp/read-tool-flat-parameters.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK_ACTION_CONFORMANCE.md,project
+close_reason: "Fixed: MCP read tools read every declared flat parameter and pm_search honours its keywords alias"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-hke9z7
+  gate_id: tests/unit/mcp/read-tool-flat-parameters.spec.ts declared flat parameter census
+  negative_control: git stash push src/sdk/runtime-input.ts src/sdk/runtime/actions.ts && node scripts/run-tests.mjs test -- tests/unit/mcp/read-tool-flat-parameters.spec.ts; git stash pop (6 of 7 fail before the fix)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/mcp/read-tool-flat-parameters.spec.ts tests/integration/mcp-handshake.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""
