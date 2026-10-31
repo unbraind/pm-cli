@@ -2,22 +2,68 @@ id: pm-gh1618
 title: "GH-1618: prevent automated comment churn from misleading next-work priority"
 description: "**Version:** pm 2026.10.28, a real tracker with 112 next candidates (90 ready). `pm next --help` says: *\"Answers 'what should I work on now?' with the highest-priority ready item\"*.\n\n**Observed:** the recommendation is a **P2** task, an append-only automation audit log (\"Hosted auto-update runs … Never close this item\"). A host cron appends one comment to it every hour; it has 161 comments. Two **P0** issues, both open, unblocked and unassigned, rank 9th and 17th, behind six P1 items.\n\n`pm next --json --explain-ranking` shows why:\n\n| id | priority | baseline_rank | final rank | recency | activity_density | priority_pressure |\n|---|---|---|---|---|---|---|\n| audit-log task | P2 | 35 | **1** | 0.342 (hourly `comment_add`, classed `substantive`) | **0.25** | 0.175 |\n| P1 feature | P1 | 11 | 2 | 0.291 | 0.030 | 0.262 |\n| P0 issue | P0 | — | 9 | — | — | — |\n\n`recency` takes its coordinate from the latest `comment_add`, classed `event_class: substantive`. `activity_density` counts comments. So machine-written log comments outweigh priority, and a P0 incident loses to a log that grows by itself.\n\n**Why it matters for agents:** an agent that follows `pm next` (the documented \"what now?\" entry point) works on the wrong item and never gets to the P0 work. It also costs a second query and manual re-ranking to notice. Any tracker with an automation that comments regularly (CI receipts, updater runs, sync bots) has the same problem.\n\n**Expected (any of these would fix it):**\n1. Treat priority as a floor: a ready P0 always ranks above ready P1/P2 unless a caller-declared intent says otherwise. The help text promises this.\n2. Don't count automated or append-only comment churn as substantive recency or activity. For example, classify comments by `author_source` / harness, or let an item be declared non-actionable/log so it never becomes `recommended`.\n3. In the default (non-explain) output, give the reason a lower-priority item outranks a higher-priority one (`reasons` currently shows just `p2`), so an agent can see why the recommendation isn't the highest priority.\n\nRelated: #513 (ready queue not priority-ordered, closed). This is the scorer variant of it: the queue is now ranked, but by signals that automation can inflate.\n\n\nIntake only: reproduce against the current public SDK before selecting a ranking policy. Preserve custom project scoring and explicit intent while reconciling the default recommendation with its documented priority contract."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,context,github,ranking,sdk
 created_at: "2026-10-28T16:11:10.969Z"
-updated_at: "2026-10-28T16:43:22.482Z"
+updated_at: "2026-10-31T02:24:36.578Z"
+closed_at: "2026-10-31T02:24:35.947Z"
+completed_at: "2026-10-31T02:24:35.947Z"
 author: "harness:codex"
 estimated_minutes: 120
 acceptance_criteria: Reproduce a ready P0 population competing with automated P2 comment churn;Define explicit default and caller-customizable ranking policy;Verify explanations and SDK CLI MCP parity with bounded token costs
 parent: pm-4k6b
 risk: medium
 confidence: 60
+resolution: "NextOptions.rankingPolicy and the context.next_ranking_policy setting select priority_floor (default: in-progress work first, then priority tiers, relevance within a tier, applied only to the built-in weighted model) or weighted (blended order). filters.ranking_policy discloses the policy on every transport, recommendation reasons name a policy/score disagreement, unknown policies refuse as invalid_argument_value, and docs/COMMANDS.md, docs/CONFIGURATION.md and docs/SDK.md describe the contract."
 expected_result: Default next-work advice cannot silently elevate an automated P2 log above ready P0 work; documented policy and ranking explanations match tested behavior.
+actual_result: "Isolated tracker: a P2 log with 12 comments beside a P1 and a P0 is ranked [P0, P1, log] under the default and the weighted policy follows the score order while naming the passed-over priority; in-progress work still resumes first; the setting and the SDK override both drive filters.ranking_policy. Real tracker: the floor moves a churned P2 chore (baseline rank 38) below every P1. Negative control: with next.ts stashed the new tests fail. Agent-task token baseline raised by the 10-token filters field; all other gates unchanged and green."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-07pt16,related,"2026-10-28T16:11:10.969Z","harness:codex","cli:create:dep",detected
   pm-1mwk,related,"2026-10-28T16:11:10.969Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-28T16:11:10.969Z","harness:codex","Duplicate check: complete initial strict3146-item all-status corpus plus fresh specific searches and open/in-progress inventories found no existing owner for GH1618. Read full live pm-4k6b and completed pm-1mwk/pm-07pt16 lineage. This new report arrived during PR1619 validation and remains open/unclaimed; no reproduction or fix is asserted."
+  "2026-10-31T02:23:26.465Z","harness:claude-code","Reproduced on current source. The default scorer (default-weighted-v1) blends ten signals; priority_pressure carries about 11% of the normalizing weight while recency, activity_density and knowledge_density (all raised by comment_add events, which event classification treats as substantive regardless of author) carry about 27%, so a P2 item with steady comment churn can outscore ready P0/P1 work. There is no automation marker on comments or history (author_source/agent_harness only), and no settings key influenced the order. Real-tracker evidence (229 open, 112 ready, pm next --limit 5 --explain-ranking): under the blended order a P2 chore with activity_density 0.233 and recency 0.294 (baseline rank 38) ranks 5th above P1 items; under the new default priority floor it drops below every P1 and rank 5 becomes a P1 (baseline 20). An isolated-tracker test seeds a P2 log with 12 comments beside a P1 and a P0: the floor recommends the P0 and ranks [P0, P1, log]; the weighted policy follows the score order and names the passed-over priority in reasons when the log wins."
+  "2026-10-31T02:23:26.971Z","harness:claude-code","Fix: NextOptions.rankingPolicy and the context.next_ranking_policy setting (pm config project set context_next_ranking_policy weighted) select priority_floor (default) or weighted. priority_floor reorders only the built-in weighted model's output: in-progress work first (the documented resume contract), then priority tiers, relevance order inside a tier; an extension context_relevance scorer keeps its own order under either policy. filters.ranking_policy discloses the policy on CLI, SDK and MCP; the recommendation reasons add 'priority floor (relevance rank N)' or 'relevance over pN ready work' when policy and score disagree; --explain-ranking keeps each item's score beside its final rank. An unknown policy refuses as invalid_argument_value listing the accepted values. The agent-task token baseline moved by the 10 tokens the new filters field costs on the next step (722 to 732); token-budget, context-intent calibration, refusal-closure, docs-skills, static quality, contracts and capability-surface checks pass; the SDK surface snapshot acknowledges the new option, receipt field, exports and setting."
+files[13]{path,scope}:
+  docs/agent-task-token-baseline.json,project
+  sdk/public-surface.json,project
+  src/core/config/nested-settings.ts,project
+  src/core/shared/constants.ts,project
+  src/core/store/settings-validator.ts,project
+  src/core/store/settings.ts,project
+  src/sdk/config.ts,project
+  src/sdk/query/next.ts,project
+  src/types.ts,project
+  tests/fixtures/release-acceptance/installed-init.json,project
+  tests/unit/commands/query/next-command.spec.ts,project
+  tests/unit/commands/workspace/config-command.spec.ts,project
+  tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/commands/workspace/config-key-aliases-search.spec.ts tests/unit/commands/workspace/config-command.spec.ts,project,"harness:claude-code","2026-10-31T02:23:25.951Z",local_mutation,fix/next-priority-floor
+test_runs[1]:
+  - run_id: test-local-mvvs1x5b-e1veo5
+    kind: test
+    status: passed
+    started_at: "2026-10-31T02:23:27.509Z"
+    finished_at: "2026-10-31T02:23:52.847Z"
+    recorded_at: "2026-10-31T02:23:52.847Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/commands/workspace/config-key-aliases-search.spec.ts tests/unit/commands/workspace/config-command.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/CONFIGURATION.md,project
+  docs/SDK.md,project
+close_reason: pm next applies a declared ranking policy with a priority floor by default
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1618
+  gate_id: tests/unit/commands/query/next-command.spec.ts ranking policy (GH-1618)
+  negative_control: "git stash push src/sdk/query/next.ts && node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts -t GH-1618; git stash pop (the floor, weighted-reason, setting and refusal tests fail before the fix)"
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/commands/query/next-command.spec.ts tests/unit/commands/workspace/config-key-aliases-search.spec.ts tests/unit/commands/workspace/config-command.spec.ts,node scripts/release/token-budget-gate.mjs,node scripts/release/agent-task-token-gate.mjs,node --import tsx scripts/release/static-quality-gate.mts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

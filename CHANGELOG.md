@@ -19,6 +19,7 @@
 - GH-1602: keep preflight warnings inside JSON error envelopes ([pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon))
 - Bound independent native receipt regression cases ([pm-native-index-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-native-index-proof.toon))
 - GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions ([pm-gh1558](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1558.toon))
+- GH-1618: prevent automated comment churn from misleading next-work priority ([pm-gh1618](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1618.toon))
 - GH-1610: compact lean refusals and expose structured claim context ([pm-gh1610](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1610.toon))
 - GH-1627: bound the entire next response and compact optional TOON sections losslessly ([pm-gh1627](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1627.toon))
 - GH-1628: preserve terminal timestamps for identical forced SDK updates ([pm-gh1628](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1628.toon))
