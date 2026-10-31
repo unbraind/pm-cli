@@ -752,11 +752,13 @@ describe("structured mutation command registration", () => {
         why: "Needed",
       }),
     ).toEqual({
+      // A code-specific rationale survives the lean projection (GH-1610).
       type: "usage",
       code: "bad_input",
       detail: "Retry",
       exit_code: 2,
       required: "A value",
+      why: "Needed",
     });
     const usage = JSON.parse(
       await formatCommanderUsageJson(

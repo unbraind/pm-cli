@@ -30,25 +30,42 @@ function normalizeTerminalReasonInput(
   return trimmed !== undefined && trimmed.length > 0 ? trimmed : undefined;
 }
 
+/** True when a stored or returned status is the registry's configured close status. */
+function isCloseStatus(
+  status: unknown,
+  statusRegistry: RuntimeStatusRegistry,
+): boolean {
+  return (
+    normalizeStatusInput(status, statusRegistry) === statusRegistry.close_status
+  );
+}
+
 /**
  * True when the requested close status, reason and completion time already
  * describe the stored item. Such an update is not a transition: routing it to
  * the closure writer would re-stamp `closed_at` and `updated_at` on every
  * retry (GH-1628), while the same identical payload on an open item is a
- * no-op.
+ * no-op. A blank reason under `governance.require_close_reason` is not a
+ * repetition either: the closure writer must refuse it exactly as it would on
+ * an open item.
  */
 export function describesCurrentTerminalState(
   metadata: ItemMetadata,
   options: UpdateCommandOptions,
   statusRegistry: RuntimeStatusRegistry,
+  requireCloseReason = false,
 ): boolean {
-  if (
-    normalizeStatusInput(metadata.status, statusRegistry) !==
-    statusRegistry.close_status
-  ) {
+  if (!isCloseStatus(metadata.status, statusRegistry)) {
     return false;
   }
   const requestedReason = normalizeTerminalReasonInput(options.closeReason);
+  if (
+    requireCloseReason &&
+    options.closeReason !== undefined &&
+    requestedReason === undefined
+  ) {
+    return false;
+  }
   if (
     requestedReason !== undefined &&
     requestedReason !== normalizeTerminalReasonInput(metadata.close_reason)
@@ -90,7 +107,10 @@ export async function readRoutedItemMetadata(
  * Apply the non-terminal fields of an update whose close status, reason and
  * completion time already match the stored item. The closure clocks and the
  * terminal history stay untouched; the remaining fields take the ordinary
- * update path, which skips the write when nothing changes.
+ * update path, which skips the write when nothing changes. The classification
+ * read holds no item lock, so when the locked write returns an item another
+ * writer has reopened meanwhile, the request still names the close status and
+ * `closeReopened` hands it to the closure writer instead of dropping it.
  */
 export async function applyRepeatedTerminalStateUpdate(
   context: CloseRouteContext,
@@ -101,6 +121,7 @@ export async function applyRepeatedTerminalStateUpdate(
     options: UpdateCommandOptions,
     global: GlobalOptions,
   ) => Promise<UpdateResult>,
+  closeReopened: (fieldUpdate: UpdateResult) => Promise<UpdateResult>,
 ): Promise<UpdateResult> {
   if (otherFieldKeys.length === 0) {
     return {
@@ -119,6 +140,9 @@ export async function applyRepeatedTerminalStateUpdate(
     completedAt: undefined,
   });
   const result = await runUpdate(context.id, remainingOptions, context.global);
+  if (!isCloseStatus(result.item.status, context.statusRegistry)) {
+    return closeReopened(result);
+  }
   return {
     item: result.item,
     changed_fields: result.changed_fields,

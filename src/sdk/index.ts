@@ -569,6 +569,7 @@ export {
   isGenericRefusalRequired,
   isGenericRefusalWhy,
   projectLeanRecoveryPayload,
+  withoutGenericRefusalExamples,
   analyzeSdkCliParameterCompleteness,
   isPmExtensionCapabilityContract,
   isPmExtensionPolicyModeContract,

@@ -282,4 +282,5 @@ export {
   isGenericRefusalRequired,
   isGenericRefusalWhy,
   projectLeanRecoveryPayload,
+  withoutGenericRefusalExamples,
 } from "./cli-contracts/agent-output-contracts.js";

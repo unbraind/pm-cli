@@ -12,13 +12,13 @@ import {
 import { resolveRecoveryCommandName } from "../sdk/agent/command-recovery.js";
 import {
   estimatePmOutputTokens,
-  isGenericRefusalExamples,
   isGenericRefusalRequired,
   isGenericRefusalWhy,
   projectLeanRecoveryPayload,
   projectPmDiagnosticOutput,
   projectPmDiagnosticText,
   resolvePmDiagnosticOutputBudget,
+  withoutGenericRefusalExamples,
   type PmDiagnosticOutputReceipt,
   type PmProjectedDiagnostic,
 } from "../sdk/cli-contracts/agent-output-contracts.js";
@@ -167,17 +167,21 @@ export type ProjectedJsonErrorEnvelope =
 
 /**
  * Compact an error envelope to fields that change the caller's next action:
- * the duplicated title, generic `required`/`examples` and the invocation echo
- * go; code-specific recovery and typed holder evidence stay (GH-1610).
+ * the duplicated title, generic `required`/`why`/examples and the invocation
+ * echo go; code-specific rationale, examples, recovery and typed holder
+ * evidence stay (GH-1610).
  */
 export function projectLeanErrorEnvelope(
   envelope: ProjectedJsonErrorEnvelope,
 ): ProjectedJsonErrorEnvelope {
-  const { why: _why, title: _title, ...actionable } = envelope;
+  const { title: _title, ...actionable } = envelope;
+  if (isGenericRefusalWhy(actionable.why)) delete actionable.why;
   if (isGenericRefusalRequired(actionable.required)) {
     delete (actionable as Partial<ProjectedJsonErrorEnvelope>).required;
   }
-  if (isGenericRefusalExamples(actionable.examples)) delete actionable.examples;
+  const examples = withoutGenericRefusalExamples(actionable.examples);
+  if (examples.length > 0) actionable.examples = examples;
+  else delete actionable.examples;
   const recovery = projectLeanRecoveryPayload(actionable.recovery);
   if (recovery === undefined) delete actionable.recovery;
   else actionable.recovery = recovery;
@@ -762,8 +766,10 @@ function renderGuidanceExplanation(message: GuidanceMessage, lean: boolean): str
   if (message.why && !(lean && isGenericRefusalWhy(message.why))) {
     lines.push("", "Why:", `  ${message.why}`);
   }
-  const examples = message.examples ?? [];
-  if (examples.length > 0 && !(lean && isGenericRefusalExamples(examples))) {
+  const examples = lean
+    ? withoutGenericRefusalExamples(message.examples)
+    : (message.examples ?? []);
+  if (examples.length > 0) {
     lines.push("", ...renderList("Examples:", examples));
   }
   const verificationErrors = message.verificationErrors ?? [];

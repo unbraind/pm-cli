@@ -485,7 +485,7 @@ describe("runClaim/runRelease", () => {
     });
   });
 
-  it("falls back to assignment wording when ownership history is corrupt", async () => {
+  it("keeps assignment wording but reports an unknown origin when ownership history is corrupt", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {
         title: "claim-corrupt-history",
@@ -508,7 +508,7 @@ describe("runClaim/runRelease", () => {
         context: expect.objectContaining({
           code: "already_claimed_by",
           claimed_by: "other-author",
-          claim_source: "assignment",
+          claim_source: "unknown",
           claimed_at: null,
         }) as unknown as PmCliError["context"],
       });
