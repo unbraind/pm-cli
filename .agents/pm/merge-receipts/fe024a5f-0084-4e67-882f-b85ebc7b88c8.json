@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "id": "fe024a5f-0084-4e67-882f-b85ebc7b88c8",
+  "item_path": ".agents/pm/reminders/pm-7zs0.toon",
+  "item_id": "pm-7zs0",
+  "requested_preference": "ours",
+  "requested_preference_applied": false,
+  "conflict_resolution": "latest_document_update",
+  "fields_from_theirs": [
+    "expected_result"
+  ],
+  "union_fields": [],
+  "merged_field_hashes": {
+    "expected_result": "58057420894bf0069455b685502ad725872a7af30584dba33143514a243389a7"
+  },
+  "decisions": [],
+  "operation": {
+    "kind": "merge",
+    "original_head": "5c0d3c350b6ea78b0dfa0aec8b7fae5c9ceb423d",
+    "original_blob": "af742d8d5e5f55f52271abf0e5237dac2262b486"
+  },
+  "state": "reconciled",
+  "created_at": "2026-10-30T23:58:07.782Z",
+  "value_availability": "hash_only",
+  "value_policy": "bounded_non_sensitive_scalars_v1",
+  "reconciled_at": "2026-10-31T00:01:32.198Z"
+}
