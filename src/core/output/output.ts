@@ -530,9 +530,12 @@ function isQuietLinkedTestSuccess(
 
 /**
  * Lean receipts for a passing, mismatch-free run with no failure category keep
- * only the sandbox modes and trust reason that explain what the tests saw; the
- * paths, item counts and all-zero failure categories return without --lean
- * (pm-covpax).
+ * the sandbox modes, the mismatch and trust booleans and the trust reason that
+ * explain what the tests saw; a passing run can still be untrusted under an
+ * explicit override, so `trusted: false` is never dropped. The sandbox paths,
+ * item counts and all-zero failure categories are not retained by this
+ * receipt. The hint never tells the caller to rerun, because a rerun repeats
+ * any mutating flags of the original invocation (pm-covpax).
  */
 function projectQuietLinkedTestSuccess(
   value: Record<string, unknown>,
@@ -540,14 +543,16 @@ function projectQuietLinkedTestSuccess(
   runResults: unknown[],
 ): Record<string, unknown> {
   const { failure_categories: _zeroCategories, ...rest } = value;
-  const trust = isPlainObject(context.trust) ? context.trust.reason : undefined;
+  const trust = isPlainObject(context.trust) ? context.trust : {};
   return {
     ...rest,
     execution_context: {
       pm_context_mode: context.pm_context_mode,
       workspace_context_mode: context.workspace_context_mode,
-      ...(trust === undefined ? {} : { trust_reason: trust }),
-      restore_with: "rerun without --lean",
+      mismatch_detected: false,
+      ...(typeof trust.trusted === "boolean" ? { trusted: trust.trusted } : {}),
+      ...(trust.reason === undefined ? {} : { trust_reason: trust.reason }),
+      restore_with: "not retained; a run without --lean reports the full context",
     },
     run_results: runResults,
   };

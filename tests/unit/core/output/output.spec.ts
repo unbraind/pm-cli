@@ -349,11 +349,13 @@ describe("core/output/output", () => {
     const lean = JSON.parse(
       formatOutput({ ...payload, failure_categories: zeroCategories }, { json: true, lean: true, command: "test" }),
     ) as Record<string, unknown>;
-    // pm-covpax: a passing, mismatch-free lean receipt keeps only modes, trust and a restore path.
+    // pm-covpax: a passing, mismatch-free lean receipt keeps modes, the mismatch boolean and a
+    // non-rerun restore hint (a rerun would repeat any mutating flags of the invocation).
     expect(lean.execution_context).toEqual({
       pm_context_mode: "schema",
       workspace_context_mode: "snapshot",
-      restore_with: "rerun without --lean",
+      mismatch_detected: false,
+      restore_with: "not retained; a run without --lean reports the full context",
     });
     expect(lean).not.toHaveProperty("failure_categories");
     expect(lean.run_results).toEqual([
@@ -366,6 +368,14 @@ describe("core/output/output", () => {
       formatOutput({ ...payload, run_results: trustedRows }, { json: true, lean: true, command: "test" }),
     ) as Record<string, Record<string, unknown>>;
     expect(withTrust.execution_context?.trust_reason).toBe("local_mutation");
+    expect(withTrust.execution_context?.trusted).toBe(true);
+    // A pass under an explicit override can be untrusted; lean output must keep that false.
+    const untrusted = { ...context, trust: { trusted: false, reason: "foreign_source_ref" } };
+    const untrustedRows = payload.run_results.map((row) => ({ ...row, execution_context: untrusted }));
+    const withoutTrust = JSON.parse(
+      formatOutput({ ...payload, run_results: untrustedRows }, { json: true, lean: true, command: "test" }),
+    ) as Record<string, Record<string, unknown>>;
+    expect(withoutTrust.execution_context).toMatchObject({ trusted: false, trust_reason: "foreign_source_ref" });
 
     for (const variant of [
       { ...payload, ok: false, failure_categories: { assertion_failure: 1 } },

@@ -6,10 +6,9 @@ status: closed
 priority: 1
 tags[4]: bug,concurrency,data-integrity,sdk
 created_at: "2026-10-22T14:40:08.187Z"
-updated_at: "2026-10-23T01:30:46.548Z"
+updated_at: "2026-10-31T09:47:08.528Z"
 closed_at: "2026-10-22T19:15:05.583Z"
 completed_at: "2026-10-22T19:15:05.583Z"
-claim_principal: "harness:claude-code#f93f297a00e60b66e8815dbe"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: Deterministic cross-process and same-process controls preserve a newer write after lease takeover; Stale commits return a typed conflict with bounded ownership/generation evidence and no item/history write; Preserve dead-owner recovery and explicit stale-lock policy without unsafe force advice; Audit other SDK mutation paths and document the lease/fencing contract

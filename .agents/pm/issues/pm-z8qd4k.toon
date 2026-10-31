@@ -6,9 +6,8 @@ status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli",concurrency,identity,multi-agent,provenance
 created_at: "2026-07-25T21:37:44.433Z"
-updated_at: "2026-09-22T05:10:51.791Z"
+updated_at: "2026-10-31T09:47:09.181Z"
 closed_at: "2026-07-26T13:59:00.839Z"
-claim_principal: "harness:codex#96ff8a24670431caf98d1225"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "Two concurrent agents of the same harness resolve to distinct claim principals without either agent setting an identity flag, so the second pm claim on a held item is refused exactly as it is for two distinct PM_AUTHOR values. The resolved session identifier is carried into the history entry alongside agent_harness and agent_model so a completed stream can attribute a mutation to one agent process. Taking over an existing live claim is never silent: it either fails or reports the prior holder and requires --force, including when the prior holder shares the caller's harness. A regression test runs two same-harness claims against one item and asserts the second is refused, and asserts the history entries carry distinct agent identifiers."

@@ -538,12 +538,17 @@ function applyCloseReason(
   return [];
 }
 
+/**
+ * End ownership at closure: both the assignee and the claim principal clear,
+ * so a closed item never keeps an active owner that only `pm release` could
+ * remove later.
+ */
 function clearCloseAssignee(metadata: ItemMetadata): string[] {
-  if (metadata.assignee === undefined) {
-    return [];
-  }
-  delete metadata.assignee;
-  return ["assignee"];
+  const cleared = (["assignee", "claim_principal"] as const).filter(
+    (key) => metadata[key] !== undefined,
+  );
+  for (const key of cleared) delete metadata[key];
+  return [...cleared];
 }
 
 /** Enforce terminal and closure policies before applying acceptance fields and the atomic lifecycle transition. */
