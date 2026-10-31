@@ -19,6 +19,8 @@
 - GH-1602: keep preflight warnings inside JSON error envelopes ([pm-gh1602](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1602.toon))
 - Bound independent native receipt regression cases ([pm-native-index-proof](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-native-index-proof.toon))
 - GH-1558: Settle Windows generation-fixture rename rejections without weakening lock assertions ([pm-gh1558](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1558.toon))
+- Pull-request CI requests 33 hosted-runner jobs per push against the account's 20-job concurrency cap, so required checks wait hours before they start ([pm-m6ig79](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m6ig79.toon))
+- Text refusals drop the specific What happened detail when an echoed argv overflows the diagnostic ceiling ([pm-4oc353](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4oc353.toon))
 - GH-1622: investigate pm-presets SDK-loading fault blocking daily release ([pm-gh1622](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1622.toon))
 
 ## 2026.10.30 - 2026-10-30
