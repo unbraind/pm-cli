@@ -473,17 +473,7 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
     return value;
   }
   const rows = value.run_results;
-  const contexts = rows
-    .map((row) => row.execution_context)
-    .filter((context) => context !== undefined);
-  const sharedContext =
-    contexts.length === rows.length &&
-    contexts.length > 0 &&
-    contexts.every(
-      (context) => JSON.stringify(context) === JSON.stringify(contexts[0]),
-    )
-      ? contexts[0]
-      : undefined;
+  const sharedContext = resolveSharedExecutionContext(rows);
   const runResults = rows.map((row) => {
     const {
       execution_context: _executionContext,
@@ -499,14 +489,9 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
     }
     return rest;
   });
-  const quietSuccess =
-    lean &&
-    value.ok === true &&
-    isPlainObject(sharedContext) &&
-    sharedContext.mismatch_detected === false &&
-    rows.every((row) => row.status === "passed") &&
-    !(isPlainObject(value.failure_categories) && Object.values(value.failure_categories).some((count) => count !== 0));
-  if (quietSuccess) return projectQuietLinkedTestSuccess(value, sharedContext, runResults);
+  if (lean && isQuietLinkedTestSuccess(value, sharedContext, rows)) {
+    return projectQuietLinkedTestSuccess(value, sharedContext, runResults);
+  }
   return {
     ...value,
     ...(sharedContext === undefined
@@ -514,6 +499,33 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
       : { execution_context: sharedContext }),
     run_results: runResults,
   };
+}
+
+/** The one execution context every result row shares, or undefined when rows differ or lack one. */
+function resolveSharedExecutionContext(
+  rows: Record<string, unknown>[],
+): unknown {
+  const contexts = rows
+    .map((row) => row.execution_context)
+    .filter((context) => context !== undefined);
+  if (contexts.length !== rows.length || contexts.length === 0) return undefined;
+  const first = JSON.stringify(contexts[0]);
+  return contexts.every((context) => JSON.stringify(context) === first)
+    ? contexts[0]
+    : undefined;
+}
+
+/** A passing, mismatch-free run whose failure categories are all zero. */
+function isQuietLinkedTestSuccess(
+  value: Record<string, unknown>,
+  sharedContext: unknown,
+  rows: Record<string, unknown>[],
+): sharedContext is Record<string, unknown> {
+  if (value.ok !== true || !isPlainObject(sharedContext)) return false;
+  if (sharedContext.mismatch_detected !== false) return false;
+  if (!rows.every((row) => row.status === "passed")) return false;
+  const categories = value.failure_categories;
+  return !(isPlainObject(categories) && Object.values(categories).some((count) => count !== 0));
 }
 
 /**
