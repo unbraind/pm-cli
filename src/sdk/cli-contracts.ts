@@ -278,7 +278,6 @@ export {
   type PmProjectedTextDiagnostic,
   PM_GENERIC_REFUSAL_GUIDANCE,
   PM_RECOVERY_ECHO_FIELDS,
-  isGenericRefusalExamples,
   isGenericRefusalRequired,
   isGenericRefusalWhy,
   projectLeanRecoveryPayload,

@@ -769,14 +769,6 @@ export function isGenericRefusalWhy(value: string | undefined): boolean {
   return trimmed !== undefined && PM_GENERIC_REFUSAL_GUIDANCE.why.includes(trimmed);
 }
 
-/** True when the example list only points at generic help commands. */
-export function isGenericRefusalExamples(
-  values: readonly string[] | undefined,
-): boolean {
-  if (!values || values.length === 0) return false;
-  return values.every((value) => PM_GENERIC_REFUSAL_GUIDANCE.examples.includes(value.trim()));
-}
-
 /**
  * Drop each generic help pointer from an example list so a mixed list keeps
  * only its code-specific entries; an all-generic list becomes empty.

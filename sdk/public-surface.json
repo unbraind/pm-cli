@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2034,
+    "covered_symbols": 2033,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2035
+    "required_symbols": 2034
   },
   "breaking_acknowledgements": [
     {
@@ -2948,6 +2948,15 @@
       ],
       "package_version": "2026.10.30",
       "reason": "claim_source gains an explicit unknown origin (GH-1610 review); ItemOwnershipConflict.source and PmCliErrorContext.claim_source were introduced unreleased on this branch"
+    },
+    {
+      "changes": [
+        "symbol ./sdk:isGenericRefusalExamples removed",
+        "symbol ./sdk/contracts:isGenericRefusalExamples removed",
+        "symbol ./sdk/runtime:isGenericRefusalExamples removed"
+      ],
+      "package_version": "2026.10.30",
+      "reason": "isGenericRefusalExamples was introduced unreleased on this stack (absent from main and v2026.10.30) and is superseded by withoutGenericRefusalExamples, which filters per entry"
     }
   ],
   "entrypoints": {
@@ -10585,12 +10594,6 @@
           "kind": "function",
           "name": "isFileMissingError",
           "signature": "(error: unknown) => boolean | calls: (error: unknown) => boolean"
-        },
-        {
-          "classification": "contract_data",
-          "kind": "function",
-          "name": "isGenericRefusalExamples",
-          "signature": "(values: readonly string[] | undefined) => boolean | calls: (values: readonly string[] | undefined) => boolean"
         },
         {
           "classification": "contract_data",
@@ -24449,12 +24452,6 @@
         {
           "classification": "contract_data",
           "kind": "function",
-          "name": "isGenericRefusalExamples",
-          "signature": "(values: readonly string[] | undefined) => boolean | calls: (values: readonly string[] | undefined) => boolean"
-        },
-        {
-          "classification": "contract_data",
-          "kind": "function",
           "name": "isGenericRefusalRequired",
           "signature": "(value: string | undefined) => boolean | calls: (value: string | undefined) => boolean"
         },
@@ -34465,12 +34462,6 @@
           "kind": "function",
           "name": "inspectCompleteListResult",
           "signature": "(candidate: unknown) => PmCompleteListInspection | calls: (candidate: unknown) => PmCompleteListInspection"
-        },
-        {
-          "classification": "contract_data",
-          "kind": "function",
-          "name": "isGenericRefusalExamples",
-          "signature": "(values: readonly string[] | undefined) => boolean | calls: (values: readonly string[] | undefined) => boolean"
         },
         {
           "classification": "contract_data",
