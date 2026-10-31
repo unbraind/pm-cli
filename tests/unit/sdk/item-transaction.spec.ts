@@ -767,6 +767,35 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     });
   });
 
+  it("restores a released claim when a later step fails without an intervening close", async () => {
+    // Closure now clears the claim itself (pm-8xgg7i), so only a release that is not
+    // preceded by a close has ownership effects of its own to compensate.
+    await withTempPmPath(async (context) => {
+      const target = createSeedItem(context, "compensated-release");
+      expect(
+        context.runCli(["claim", target, "--author", "bulk-agent", "--json"]).code,
+      ).toBe(0);
+      const before = await readItem(context.pmPath, target);
+      expect(before.claim_principal).toEqual(expect.any(String));
+
+      await expect(
+        commitItemMutations({
+          pmRoot: context.pmPath,
+          transactionId: "release-compensate",
+          author: "bulk-agent",
+          mutations: [
+            { op: "release", id: target },
+            { op: "update", id: "pm-missing-after-release", options: { title: "failure" } },
+          ],
+        }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.NOT_FOUND });
+
+      const restored = await readItem(context.pmPath, target);
+      expect(restored.assignee).toBe(before.assignee);
+      expect(restored.claim_principal).toBe(before.claim_principal);
+    });
+  });
+
   it("keeps the transaction author authoritative over untyped mutation option bags", async () => {
     await withTempPmPath(async (context) => {
       const updateTarget = createSeedItem(context, "bulk-author-target");
