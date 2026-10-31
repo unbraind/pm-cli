@@ -1170,6 +1170,9 @@ function buildContextSettings(
     stale_threshold_days:
       settings.context?.stale_threshold_days ??
       defaults.context.stale_threshold_days,
+    next_ranking_policy:
+      settings.context?.next_ranking_policy ??
+      defaults.context.next_ranking_policy,
     sections: {
       ...defaults.context.sections,
       ...settings.context?.sections,
@@ -1425,6 +1428,7 @@ function orderSerializedSettingsSections(
     "default_depth",
     "activity_limit",
     "stale_threshold_days",
+    "next_ranking_policy",
     "sections",
   ]);
   (ordered.context as Record<string, unknown>).sections = orderObject(
@@ -1682,6 +1686,9 @@ function buildSerializedContextSettings(
     stale_threshold_days:
       baseSettings.context?.stale_threshold_days ??
       SETTINGS_DEFAULTS.context.stale_threshold_days,
+    next_ranking_policy:
+      baseSettings.context?.next_ranking_policy ??
+      SETTINGS_DEFAULTS.context.next_ranking_policy,
     sections: {
       ...SETTINGS_DEFAULTS.context.sections,
       ...baseSettings.context?.sections,

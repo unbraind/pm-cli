@@ -106,6 +106,7 @@ export interface ParsedSettings {
     default_depth?: "brief" | "standard" | "deep";
     activity_limit?: number;
     stale_threshold_days?: number;
+    next_ranking_policy?: "priority_floor" | "weighted";
     sections?: {
       hierarchy?: boolean;
       activity?: boolean;
@@ -613,6 +614,7 @@ const settingsCheck = vObject({
       default_depth: vOptional(vLiteral("brief", "standard", "deep")),
       activity_limit: vOptional(vNumber({ int: true, positive: true })),
       stale_threshold_days: vOptional(vNumber({ int: true, positive: true })),
+      next_ranking_policy: vOptional(vLiteral("priority_floor", "weighted")),
       sections: vOptional(
         vObject({
           hierarchy: vOptional(vBoolean),

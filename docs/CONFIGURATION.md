@@ -639,6 +639,7 @@ Useful commands:
 
 ```bash
 pm config project set search_default_mode keyword
+pm config project set context_next_ranking_policy weighted   # pm next: priority_floor (default) or weighted
 pm config project set search_mutation_refresh_policy cache_only
 pm config project set search_embedding_corpus_max_characters 12000
 pm config project set search_query_expansion_enabled true

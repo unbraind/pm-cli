@@ -1193,6 +1193,8 @@ export interface ContextSettings {
   activity_limit: number;
   /** Value that configures or reports stale threshold days for this contract. */
   stale_threshold_days: number;
+  /** Ready-queue ordering policy for `pm next`: `priority_floor` (default) or `weighted` (GH-1618). */
+  next_ranking_policy: "priority_floor" | "weighted";
   /** Value that configures or reports sections for this contract. */
   sections: ContextSectionSettings;
 }

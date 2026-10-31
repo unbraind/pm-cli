@@ -69,6 +69,102 @@ export type NextOutputFormat = (typeof NEXT_OUTPUT_VALUES)[number];
 const DEFAULT_NEXT_LIMIT = 5;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+/**
+ * Ordering policy applied to the ready queue after relevance scoring.
+ * `priority_floor` (default) resumes in-progress work first, then orders by
+ * priority tier and lets relevance order items only within a tier, so
+ * automated comment churn cannot lift a P2 log above ready P0 work.
+ * `weighted` keeps the blended relevance order (GH-1618).
+ */
+export type NextRankingPolicy = "priority_floor" | "weighted";
+
+/** Policies `pm next` accepts, in documentation order. */
+export const NEXT_RANKING_POLICIES: readonly NextRankingPolicy[] = [
+  "priority_floor",
+  "weighted",
+];
+
+/** The scorer model whose blended order the priority floor reorders; extension scorers keep their own order. */
+const DEFAULT_WEIGHTED_RELEVANCE_MODEL = "default-weighted-v1";
+
+/** Resolve the effective ranking policy from the call option, then the tracker setting. */
+function resolveNextRankingPolicy(
+  requested: unknown,
+  configured: unknown,
+): NextRankingPolicy {
+  const candidate = requested ?? configured ?? "priority_floor";
+  if (typeof candidate === "string" && (NEXT_RANKING_POLICIES as readonly string[]).includes(candidate)) {
+    return candidate as NextRankingPolicy;
+  }
+  throw new PmCliError(
+    `Unknown next ranking policy ${JSON.stringify(candidate)}. Accepted values: ${NEXT_RANKING_POLICIES.join(", ")}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "invalid_argument_value",
+      value: String(candidate),
+      recovery: { allowed_values: [...NEXT_RANKING_POLICIES] },
+    },
+  );
+}
+
+/**
+ * Reorder a scored ready queue under the policy. Returns each id's relevance
+ * rank before the policy so explanations and reasons can name it. Only the
+ * built-in weighted model is reordered; a project's own scorer keeps its order.
+ */
+function applyNextRankingPolicy<T extends { id: string; rank: number; item: ItemMetadata }>(
+  ranked: T[],
+  statusRegistry: RuntimeStatusRegistry,
+  policy: NextRankingPolicy,
+  model: string,
+): Map<string, number> {
+  const relevanceRank = new Map(ranked.map((entry) => [entry.id, entry.rank]));
+  if (policy !== "priority_floor" || model !== DEFAULT_WEIGHTED_RELEVANCE_MODEL) {
+    return relevanceRank;
+  }
+  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
+  const tier = (entry: T): number =>
+    normalizeStatusForRegistry(entry.item.status, statusRegistry) === inProgressStatus
+      ? -1
+      : entry.item.priority;
+  ranked.sort(
+    (left, right) =>
+      tier(left) - tier(right) ||
+      (relevanceRank.get(left.id) ?? 0) - (relevanceRank.get(right.id) ?? 0),
+  );
+  ranked.forEach((entry, index) => {
+    entry.rank = index + 1;
+  });
+  return relevanceRank;
+}
+
+/** Explain, in the default reasons, when policy and relevance disagree about the recommendation. */
+function describeRankingPolicyReason(
+  projectedReady: readonly ActionableEntry[],
+  relevanceRank: ReadonlyMap<string, number>,
+  statusRegistry: RuntimeStatusRegistry,
+  policy: NextRankingPolicy,
+): string | undefined {
+  const leader = projectedReady[0];
+  if (!leader) return undefined;
+  if (policy === "priority_floor") {
+    const rank = relevanceRank.get(leader.item.id);
+    return rank !== undefined && rank !== 1 ? `priority floor (relevance rank ${rank})` : undefined;
+  }
+  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
+  const higherPriority = projectedReady
+    .slice(1)
+    .filter(
+      (entry) =>
+        entry.item.priority < leader.item.priority &&
+        normalizeStatusForRegistry(entry.item.status, statusRegistry) !== inProgressStatus,
+    )
+    .map((entry) => entry.item.priority);
+  return higherPriority.length > 0
+    ? `relevance over p${Math.min(...higherPriority)} ready work`
+    : undefined;
+}
+
 /** Documents the `pm next` options payload exchanged by command, SDK, and package integrations. */
 export interface NextOptions {
   /** Schema type that determines the shape and validation rules for this value. */
@@ -97,6 +193,8 @@ export interface NextOptions {
   format?: string;
   /** Value that configures or reports explain ranking for this contract. */
   explainRanking?: boolean;
+  /** Ready-queue ordering policy; defaults to the `context.next_ranking_policy` setting (GH-1618). */
+  rankingPolicy?: NextRankingPolicy;
   /** Maximum rendered tokens for the recommendation and ready alternatives; companion queues use outputBudget. */
   tokenBudget?: string | number;
   /** Include human-gated Decision items in the claimable ready queue. */
@@ -204,6 +302,8 @@ export interface NextResult {
      * budget and disclosed by its `read_output` receipt (GH-1627).
      */
     token_budget: number | null;
+    /** Ordering policy that produced the ready queue (GH-1618). */
+    ranking_policy: NextRankingPolicy;
   };
   /** Value that configures or reports suggestions for this contract. */
   suggestions?: string[];
@@ -476,18 +576,23 @@ function buildNextRecommendation(params: {
   statusRegistry: RuntimeStatusRegistry;
   now: string;
   completedContainer: boolean;
+  /** Why the policy and the relevance score disagree, when they do (GH-1618). */
+  policyReason?: string;
 }): NextRecommendation | null {
   if (params.projectedReady.length === 0) {
     return null;
   }
   return {
     ...params.readyRows[0],
-    reasons: buildRecommendationReasons(
-      params.projectedReady[0],
-      params.statusRegistry,
-      params.now,
-      params.completedContainer,
-    ),
+    reasons: [
+      ...buildRecommendationReasons(
+        params.projectedReady[0],
+        params.statusRegistry,
+        params.now,
+        params.completedContainer,
+      ),
+      ...(params.policyReason ? [params.policyReason] : []),
+    ],
   };
 }
 
@@ -679,6 +784,7 @@ async function rankReadyEntriesWithRelevance(
   callerAuthor: string,
   pmRoot: string,
   includeContainers: boolean,
+  rankingPolicy: NextRankingPolicy,
 ): Promise<{
   projectedReady: ActionableEntry[];
   ranking: Awaited<
@@ -686,6 +792,7 @@ async function rankReadyEntriesWithRelevance(
   >;
   completedContainer: boolean;
   featureStore: ContextSignalStoreReadResult;
+  relevanceRank: Map<string, number>;
 }> {
   const concreteReady = rankedReady.filter(
     (entry) => !hasCompletedDescendants(entry.item, childrenByParent),
@@ -712,6 +819,12 @@ async function rankReadyEntriesWithRelevance(
     "next",
     featureStore.candidates,
   );
+  const relevanceRank = applyNextRankingPolicy(
+    ranking.ranked,
+    statusRegistry,
+    rankingPolicy,
+    ranking.model,
+  );
   const readyById = new Map(
     structuralReady.map((entry) => [entry.item.id, entry]),
   );
@@ -723,6 +836,7 @@ async function rankReadyEntriesWithRelevance(
     ranking,
     completedContainer: concreteReady.length === 0 && !includeContainers,
     featureStore,
+    relevanceRank,
   };
 }
 
@@ -761,6 +875,10 @@ export async function runNext(
     settings.author_default,
   );
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const rankingPolicy = resolveNextRankingPolicy(
+    options.rankingPolicy,
+    settings.context.next_ranking_policy,
+  );
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const now = nowIso();
   const limit = parseNextLimit(options.limit, "--limit", DEFAULT_NEXT_LIMIT);
@@ -821,6 +939,7 @@ export async function runNext(
     ranking: readyRanking,
     completedContainer,
     featureStore,
+    relevanceRank,
   } = await rankReadyEntriesWithRelevance(
     rankedReady,
     childrenByParent,
@@ -829,6 +948,7 @@ export async function runNext(
     callerAuthor,
     pmRoot,
     options.includeContainers === true,
+    rankingPolicy,
   );
 
   const readyRows = projectedReady.map((entry, index) =>
@@ -853,6 +973,12 @@ export async function runNext(
     statusRegistry,
     now,
     completedContainer,
+    policyReason: describeRankingPolicyReason(
+      projectedReady,
+      relevanceRank,
+      statusRegistry,
+      rankingPolicy,
+    ),
   });
   const truncation = buildNextTruncation(
     decisionRows.length,
@@ -900,6 +1026,7 @@ export async function runNext(
       include_gates: options.includeGates === true,
       include_containers: options.includeContainers === true,
       token_budget: requestedTokenBudget,
+      ranking_policy: rankingPolicy,
     },
     truncation: Object.keys(truncation).length > 0 ? truncation : undefined,
   };

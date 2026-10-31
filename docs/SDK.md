@@ -2364,6 +2364,13 @@ const signalRead = await store.readOrRebuild(itemsFromDerivedIndex, {
 const report = await scoreContextCandidates(signalRead.candidates);
 ```
 
+`pm next` applies a ranking policy after scoring: `priority_floor` (the
+default, from `context.next_ranking_policy` or the `rankingPolicy` option)
+resumes in-progress work, then orders by priority tier with relevance inside a
+tier; `weighted` keeps the blended score order. The response discloses it as
+`filters.ranking_policy`, and the recommendation reasons name the disagreement
+when the score leader differs from the recommendation (GH-1618).
+
 Use `--explain-ranking --json` on `pm context` or `pm next` to include the model,
 available signals, baseline rank, final rank, score, and per-signal
 contributions. Explanation data is opt-in so default agent output stays bounded.

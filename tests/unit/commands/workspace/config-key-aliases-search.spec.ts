@@ -52,6 +52,7 @@ const EXPECTED_ALIASES: Record<string, string> = {
 // pm-9byd / pm-nnaq — general workspace leaves (id/author/output/locks/schema
 // governance) exposed via the same nested-setting descriptor table.
 const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
+  context_next_ranking_policy: "context.next_ranking_policy",
   id_prefix: "id_prefix",
   ids_token_length: "ids.token_length",
   author_default: "author_default",
@@ -301,7 +302,7 @@ describe("config general-setting aliases (pm-9byd / pm-nnaq)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(19);
+    expect(Object.keys(EXPECTED_GENERAL_ALIASES)).toHaveLength(20);
   });
 
   it("resolves both kebab-case and snake_case forms of each general alias", () => {

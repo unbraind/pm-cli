@@ -181,6 +181,19 @@ triggers so the total cost and the ceiling that bound it are visible. Use
 visibility toggles: `--include-decisions`, `--include-gates` and
 `--include-containers` move those rows into the claimable `ready` queue.
 
+The ready queue is ordered by a declared policy, disclosed as
+`filters.ranking_policy`. The default, `priority_floor`, resumes in-progress
+work first, then orders ready items by priority tier and lets the relevance
+score (recency, activity, deadlines, graph proximity) order items only within
+a tier, so an automated log that gains a comment every hour cannot outrank a
+ready P0 incident (GH-1618). `weighted` keeps the blended relevance order. Set
+it per tracker with `pm config project set context_next_ranking_policy
+weighted` (SDK callers pass `rankingPolicy`); a project's own
+`context_relevance` scorer keeps its order under either policy. When the
+policy and the score disagree, the recommendation's `reasons` say so
+(`priority floor (relevance rank N)` or `relevance over pN ready work`), and
+`--explain-ranking` still shows every item's score beside its final rank.
+
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
 Use `duplicates --status all` for a true whole-history duplicate check. The
 result echoes `filters.statuses: null` for the unrestricted corpus; named or

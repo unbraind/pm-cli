@@ -54,6 +54,14 @@ export interface NestedSettingDescriptor {
 /** Search/provider/vector-store leaves. Order is the display order in `pm config list` and in error hints. */
 export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
   {
+    key: "context_next_ranking_policy",
+    path: "context.next_ranking_policy",
+    kind: "string",
+    choices: ["priority_floor", "weighted"],
+    summary:
+      "Ready-queue order for pm next: priority_floor (resume in-progress work, then priority tiers, relevance within a tier) or weighted (blended relevance order).",
+  },
+  {
     key: "search_provider",
     path: "search.provider",
     kind: "string",

@@ -565,6 +565,7 @@ describe("runConfig", () => {
           default_depth: "brief",
           activity_limit: 10,
           stale_threshold_days: 7,
+          next_ranking_policy: "priority_floor",
           sections: {
             hierarchy: true,
             activity: true,
@@ -1884,6 +1885,7 @@ describe("runConfig", () => {
         default_depth: "brief",
         activity_limit: 10,
         stale_threshold_days: 7,
+        next_ranking_policy: "priority_floor",
       });
 
       const setDeep = await runConfig(

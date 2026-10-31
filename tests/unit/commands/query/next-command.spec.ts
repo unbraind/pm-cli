@@ -203,6 +203,84 @@ describe("runNext", () => {
     });
   });
 
+  describe("ranking policy (GH-1618)", () => {
+    function seedChurnedLog(context: TempPmContext): { log: string; p0: string; p1: string } {
+      const log = createItem(context, { title: "Hosted auto-update runs (append-only log)", priority: "2" });
+      for (let index = 0; index < 12; index += 1) {
+        const comment = context.runCli(["comments", log, `hourly run ${index} ok`, "--json"], { expectJson: true });
+        expect(comment.code).toBe(0);
+      }
+      const p1 = createItem(context, { title: "Older P1 feature", priority: "1" });
+      const p0 = createItem(context, { title: "Production incident", priority: "0" });
+      return { log, p0, p1 };
+    }
+
+    it("keeps a ready P0 above an automated P2 log under the default priority floor and discloses the policy", async () => {
+      await withTempPmPath(async (context) => {
+        const { log, p0, p1 } = seedChurnedLog(context);
+        const result = await runNext({ explainRanking: true }, { path: context.pmPath });
+        expect(result.filters.ranking_policy).toBe("priority_floor");
+        expect(result.recommended?.id).toBe(p0);
+        expect([result.recommended?.id, ...result.ready.map((row) => row.id)]).toEqual([p0, p1, log]);
+        expect(result.ranking?.items.map((row) => [row.id, row.rank])).toEqual([[p0, 1], [p1, 2], [log, 3]]);
+        const reasons = result.recommended?.reasons ?? [];
+        const logScore = result.ranking?.items.find((row) => row.id === log)?.score ?? 0;
+        const p0Score = result.ranking?.items.find((row) => row.id === p0)?.score ?? 0;
+        if (logScore > p0Score) {
+          expect(reasons).toContain("priority floor (relevance rank 2)");
+        } else {
+          expect(reasons.some((reason) => reason.startsWith("priority floor"))).toBe(false);
+        }
+      });
+    });
+
+    it("keeps the blended order under the weighted policy and names the higher-priority work it passed over", async () => {
+      await withTempPmPath(async (context) => {
+        const { log, p0 } = seedChurnedLog(context);
+        const result = await runNext({ rankingPolicy: "weighted", explainRanking: true }, { path: context.pmPath });
+        expect(result.filters.ranking_policy).toBe("weighted");
+        const byScore = [...(result.ranking?.items ?? [])].sort((left, right) => right.score - left.score || left.baseline_rank - right.baseline_rank);
+        expect(result.recommended?.id).toBe(byScore[0]?.id);
+        if (result.recommended?.id === log) {
+          expect(result.recommended?.reasons).toContain("relevance over p0 ready work");
+        } else {
+          expect(result.recommended?.id).toBe(p0);
+        }
+      });
+    });
+
+    it("still resumes in-progress work before a higher-priority ready item under the floor", async () => {
+      await withTempPmPath(async (context) => {
+        const { p0 } = seedChurnedLog(context);
+        const resumed = createItem(context, { title: "Half-done chore", priority: "3", status: "in_progress" });
+        const result = await runNext({}, { path: context.pmPath });
+        expect(result.recommended?.id).toBe(resumed);
+        expect(result.ready[0]?.id).toBe(p0);
+      });
+    });
+
+    it("reads the policy from the context.next_ranking_policy setting and refuses unknown values", async () => {
+      await withTempPmPath(async (context) => {
+        seedChurnedLog(context);
+        const set = context.runCli(["config", "project", "set", "context_next_ranking_policy", "weighted", "--json"], { expectJson: true });
+        expect(set.code, set.stderr).toBe(0);
+        const configured = await runNext({}, { path: context.pmPath });
+        expect(configured.filters.ranking_policy).toBe("weighted");
+        const overridden = await runNext({ rankingPolicy: "priority_floor" }, { path: context.pmPath });
+        expect(overridden.filters.ranking_policy).toBe("priority_floor");
+        await expect(
+          runNext({ rankingPolicy: "random" as never }, { path: context.pmPath }),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          context: expect.objectContaining({ code: "invalid_argument_value" }),
+        });
+        const cli = context.runCli(["next", "--json"], { expectJson: true });
+        expect(cli.code).toBe(0);
+        expect((cli.json as { filters: { ranking_policy: string } }).filters.ranking_policy).toBe("weighted");
+      });
+    });
+  });
+
   it("resolves caller identity through settings and unknown fallbacks", () => {
     const previousAuthor = process.env.PM_AUTHOR;
     delete process.env.PM_AUTHOR;
