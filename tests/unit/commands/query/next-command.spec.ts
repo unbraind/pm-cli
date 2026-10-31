@@ -10,6 +10,9 @@ import {
   type NextResult,
 } from "../../../../src/cli/commands/query/next.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
+import type { ActionableEntry } from "../../../../src/core/item/actionability.js";
+import { describeRankingPolicyReason } from "../../../../src/sdk/query/next-ranking-policy.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { formatBuiltInOutput } from "../../../../src/core/output/output.js";
 import {
@@ -247,6 +250,25 @@ describe("runNext", () => {
           expect(result.recommended?.id).toBe(p0);
         }
       });
+    });
+
+    it("names the policy disagreement only when the leader differs from the relevance or priority order", () => {
+      const statusRegistry = resolveRuntimeStatusRegistry();
+      const entry = (id: string, priority: number, status = "open") =>
+        ({ item: { id, priority, status } }) as unknown as ActionableEntry;
+      const reasonFor = describeRankingPolicyReason;
+      const ranks = new Map([["pm-log", 1], ["pm-p0", 2], ["pm-wip", 3]]);
+      expect(reasonFor([], ranks, statusRegistry, "weighted")).toBeUndefined();
+      expect(reasonFor([entry("pm-p0", 0), entry("pm-log", 2)], ranks, statusRegistry, "priority_floor")).toBe(
+        "priority floor (relevance rank 2)",
+      );
+      expect(reasonFor([entry("pm-log", 2), entry("pm-p0", 0)], ranks, statusRegistry, "priority_floor")).toBeUndefined();
+      expect(reasonFor([entry("pm-log", 2), entry("pm-p0", 0)], ranks, statusRegistry, "weighted")).toBe(
+        "relevance over p0 ready work",
+      );
+      expect(
+        reasonFor([entry("pm-log", 2), entry("pm-wip", 0, "in_progress"), entry("pm-p3", 3)], ranks, statusRegistry, "weighted"),
+      ).toBeUndefined();
     });
 
     it("still resumes in-progress work before a higher-priority ready item under the floor", async () => {
