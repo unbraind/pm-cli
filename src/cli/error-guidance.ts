@@ -12,6 +12,10 @@ import {
 import { resolveRecoveryCommandName } from "../sdk/agent/command-recovery.js";
 import {
   estimatePmOutputTokens,
+  isGenericRefusalExamples,
+  isGenericRefusalRequired,
+  isGenericRefusalWhy,
+  projectLeanRecoveryPayload,
   projectPmDiagnosticOutput,
   projectPmDiagnosticText,
   resolvePmDiagnosticOutputBudget,
@@ -40,6 +44,12 @@ interface GuidanceMessage {
   lease?: PmCliErrorContext["lease"];
   /** Lock generation observed at a refused lock_lost commit. */
   currentOwner?: PmCliErrorContext["current_owner"];
+  /** Principal holding the item behind an already_claimed_by refusal. */
+  claimedBy?: string;
+  /** When that holder took the item; null when history was silent. */
+  claimedAt?: string | null;
+  /** Whether the holder arrived through a claim or an assignment. */
+  claimSource?: PmCliErrorContext["claim_source"];
   code: string;
   type: string;
   title: string;
@@ -107,6 +117,12 @@ export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
   lease?: PmCliErrorContext["lease"];
   /** Lock generation observed at a refused lock_lost commit, or null when none exists. */
   current_owner?: PmCliErrorContext["current_owner"];
+  /** Principal holding the item behind an already_claimed_by refusal. */
+  claimed_by?: string;
+  /** When that holder took the item, or null when history was silent. */
+  claimed_at?: string | null;
+  /** Whether the holder arrived through an explicit claim or a metadata assignment. */
+  claim_source?: PmCliErrorContext["claim_source"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -149,11 +165,22 @@ export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
 export type ProjectedJsonErrorEnvelope =
   PmProjectedDiagnostic<JsonErrorEnvelope>;
 
-/** Compact an error envelope to fields that change the caller's next action. */
+/**
+ * Compact an error envelope to fields that change the caller's next action:
+ * the duplicated title, generic `required`/`examples` and the invocation echo
+ * go; code-specific recovery and typed holder evidence stay (GH-1610).
+ */
 export function projectLeanErrorEnvelope(
   envelope: ProjectedJsonErrorEnvelope,
 ): ProjectedJsonErrorEnvelope {
   const { why: _why, title: _title, ...actionable } = envelope;
+  if (isGenericRefusalRequired(actionable.required)) {
+    delete (actionable as Partial<ProjectedJsonErrorEnvelope>).required;
+  }
+  if (isGenericRefusalExamples(actionable.examples)) delete actionable.examples;
+  const recovery = projectLeanRecoveryPayload(actionable.recovery);
+  if (recovery === undefined) delete actionable.recovery;
+  else actionable.recovery = recovery;
   return actionable;
 }
 
@@ -175,6 +202,12 @@ export interface ErrorClassification {
   lease?: PmCliErrorContext["lease"];
   /** Lock generation observed at a refused lock_lost commit, or null when none exists. */
   current_owner?: PmCliErrorContext["current_owner"];
+  /** Principal holding the item behind an already_claimed_by refusal. */
+  claimed_by?: string;
+  /** When that holder took the item, or null when history was silent. */
+  claimed_at?: string | null;
+  /** Whether the holder arrived through an explicit claim or a metadata assignment. */
+  claim_source?: PmCliErrorContext["claim_source"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -690,34 +723,69 @@ function renderRecoveryBundle(
   return lines;
 }
 
-/** Implements render guidance message for the public runtime surface of this module. */
-export function renderGuidanceMessage(message: GuidanceMessage): string {
-  const lines: string[] = [
-    `Error: ${message.title}`,
-    "",
-    "What is required:",
-    `  ${message.required}`,
-  ];
+/** Presentation controls for text refusals. */
+export interface RenderGuidanceOptions {
+  /** Omit constant boilerplate and the invocation echo; keep code-specific recovery (GH-1610). */
+  lean?: boolean;
+}
+
+/** Render the typed holder evidence of an already_claimed_by refusal on one line. */
+function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
+  if (message.claimedBy === undefined) return undefined;
+  const since = message.claimedAt ? ` since ${message.claimedAt}` : "";
+  return `Held by: ${message.claimedBy} (${message.claimSource ?? "claim"}${since})`;
+}
+
+/** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */
+function renderGuidanceLead(message: GuidanceMessage, lean: boolean): string[] {
+  const lines: string[] = [`Error: ${message.title}`];
+  if (!lean || !isGenericRefusalRequired(message.required)) {
+    lines.push("", "What is required:", `  ${message.required}`);
+  }
   if (message.nextSteps && message.nextSteps.length > 0) {
     lines.push("");
     lines.push(...renderList("Next steps:", message.nextSteps));
   }
-  lines.push("", "What happened:", `  ${message.happened}`);
-  if (message.why) {
-    lines.push("", "Why:");
-    lines.push(`  ${message.why}`);
+  // The headline already carries a single-line message; repeat it only when
+  // the title is a classification that differs from what happened.
+  if (message.happened !== message.title) {
+    lines.push("", "What happened:", `  ${message.happened}`);
   }
-  if (message.examples && message.examples.length > 0) {
-    lines.push("");
-    lines.push(...renderList("Examples:", message.examples));
+  const holderLine = renderClaimHolderLine(message);
+  if (holderLine !== undefined) lines.push("", holderLine);
+  return lines;
+}
+
+/** Rationale, examples and verifier findings; lean output drops the constant rationale and generic examples. */
+function renderGuidanceExplanation(message: GuidanceMessage, lean: boolean): string[] {
+  const lines: string[] = [];
+  if (message.why && !(lean && isGenericRefusalWhy(message.why))) {
+    lines.push("", "Why:", `  ${message.why}`);
   }
-  if (message.verificationErrors && message.verificationErrors.length > 0) {
-    lines.push("");
-    lines.push(
-      ...renderList("Verification errors:", message.verificationErrors),
-    );
+  const examples = message.examples ?? [];
+  if (examples.length > 0 && !(lean && isGenericRefusalExamples(examples))) {
+    lines.push("", ...renderList("Examples:", examples));
   }
-  const recoveryLines = renderRecoveryBundle(message.recovery);
+  const verificationErrors = message.verificationErrors ?? [];
+  if (verificationErrors.length > 0) {
+    lines.push("", ...renderList("Verification errors:", verificationErrors));
+  }
+  return lines;
+}
+
+/** Implements render guidance message for the public runtime surface of this module. */
+export function renderGuidanceMessage(
+  message: GuidanceMessage,
+  options: RenderGuidanceOptions = {},
+): string {
+  const lean = options.lean === true;
+  const lines = [
+    ...renderGuidanceLead(message, lean),
+    ...renderGuidanceExplanation(message, lean),
+  ];
+  const recoveryLines = renderRecoveryBundle(
+    lean ? projectLeanRecoveryPayload(message.recovery) : message.recovery,
+  );
   if (recoveryLines.length > 0) {
     lines.push("");
     lines.push(...recoveryLines);
@@ -756,8 +824,11 @@ function compactTextRecovery(
  * the specific "What happened" line survives an oversized echo; only text that
  * still overflows falls through to the action-only projection.
  */
-function renderBoundedGuidanceMessage(message: GuidanceMessage): string {
-  const full = renderGuidanceMessage(message);
+function renderBoundedGuidanceMessage(
+  message: GuidanceMessage,
+  options: RenderGuidanceOptions = {},
+): string {
+  const full = renderGuidanceMessage(message, options);
   const budget =
     resolvePmDiagnosticOutputBudget("error").default_max_estimated_tokens_by_format.text;
   const fits = (text: string): boolean =>
@@ -784,7 +855,7 @@ function renderBoundedGuidanceMessage(message: GuidanceMessage): string {
         : message.happened,
   };
   for (const candidate of [withoutExplanation, limitedCollections, compactRecovery, boundedHappened]) {
-    const text = `${renderGuidanceMessage(candidate)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
+    const text = `${renderGuidanceMessage(candidate, options)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
     if (fits(text)) return text;
   }
   return full;
@@ -802,6 +873,12 @@ function attachItemDiagnostics(
   if (message.lease !== undefined) {
     payload.lease = message.lease;
     payload.current_owner = message.currentOwner ?? null;
+    payload.item_id = message.itemId;
+  }
+  if (message.claimedBy !== undefined) {
+    payload.claimed_by = message.claimedBy;
+    payload.claimed_at = message.claimedAt ?? null;
+    payload.claim_source = message.claimSource ?? "claim";
     payload.item_id = message.itemId;
   }
 }
@@ -1161,6 +1238,9 @@ function applyPmCliErrorContext(
     tombstone: context.tombstone,
     lease: context.lease,
     currentOwner: context.current_owner,
+    claimedBy: context.claimed_by,
+    claimedAt: context.claimed_at,
+    claimSource: context.claim_source,
     availableDependencies: context.available_dependencies,
     recovery,
   };
@@ -2317,6 +2397,7 @@ function buildCommanderErrorGuidance(
 export function formatPmCliErrorForDisplay(
   rawMessage: string,
   context?: PmCliErrorContext,
+  options: RenderGuidanceOptions = {},
 ): string {
   const guidance = buildPmCliErrorGuidance(rawMessage, context);
   if (
@@ -2332,7 +2413,7 @@ export function formatPmCliErrorForDisplay(
     ].join("\n");
   }
   return projectPmDiagnosticText(
-    renderBoundedGuidanceMessage(guidance),
+    renderBoundedGuidanceMessage(guidance, options),
     guidance.required,
   ).output;
 }

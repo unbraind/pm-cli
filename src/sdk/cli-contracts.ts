@@ -276,4 +276,10 @@ export {
   type PmOutputDegradationStep,
   type PmProjectedDiagnostic,
   type PmProjectedTextDiagnostic,
+  PM_GENERIC_REFUSAL_GUIDANCE,
+  PM_RECOVERY_ECHO_FIELDS,
+  isGenericRefusalExamples,
+  isGenericRefusalRequired,
+  isGenericRefusalWhy,
+  projectLeanRecoveryPayload,
 } from "./cli-contracts/agent-output-contracts.js";

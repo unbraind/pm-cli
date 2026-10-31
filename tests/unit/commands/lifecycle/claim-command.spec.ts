@@ -441,8 +441,13 @@ describe("runClaim/runRelease", () => {
         message: expect.stringContaining(
           "already assigned to other-author",
         ) as unknown as string,
+        // GH-1610: the holder is a typed field, not only prose.
         context: expect.objectContaining({
           code: "already_claimed_by",
+          item_id: foreign,
+          claimed_by: "other-author",
+          claim_source: "assignment",
+          claimed_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/u),
         }) as unknown as PmCliError["context"],
       });
 
@@ -471,6 +476,11 @@ describe("runClaim/runRelease", () => {
         message: expect.stringContaining(
           "already claimed by other-author",
         ) as unknown as string,
+        context: expect.objectContaining({
+          claimed_by: "other-author",
+          claim_source: "claim",
+          claimed_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/u),
+        }) as unknown as PmCliError["context"],
       });
     });
   });
@@ -497,6 +507,9 @@ describe("runClaim/runRelease", () => {
         ) as unknown as string,
         context: expect.objectContaining({
           code: "already_claimed_by",
+          claimed_by: "other-author",
+          claim_source: "assignment",
+          claimed_at: null,
         }) as unknown as PmCliError["context"],
       });
     });

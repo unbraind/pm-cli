@@ -1856,7 +1856,7 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
         null,
         2,
       )
-    : formatPmCliErrorForDisplay(errorMessage, enrichedContext);
+    : formatPmCliErrorForDisplay(errorMessage, enrichedContext, { lean: context.bootstrapGlobal.lean === true });
   if (context.jsonErrors) writeStderr(`${renderedError}\n`);
   else printError(renderedError);
   const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({

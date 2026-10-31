@@ -72,6 +72,7 @@ Claim conflicts distinguish stored assignment from an explicit claim:
 - `claimed by <identity>` means the latest ownership mutation was `pm claim`.
 
 The structured conflict code remains `already_claimed_by` for compatibility with atomic claim retry loops.
+The refusal also carries the holder as typed fields (`claimed_by`, `claim_source`, `claimed_at`) in the error context, the JSON envelope and the public SDK `PmCliErrorContext`, so a retry loop can decide to wait, skip or coordinate without parsing the sentence; `resolveItemOwnershipConflict` exposes the same evidence to packages.
 
 ## Input and tracker recovery
 
