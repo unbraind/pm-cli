@@ -54,11 +54,8 @@ export function applyNextRankingPolicy<T extends { id: string; rank: number; ite
     normalizeStatusForRegistry(entry.item.status, statusRegistry) === inProgressStatus
       ? -1
       : entry.item.priority;
-  ranked.sort(
-    (left, right) =>
-      tier(left) - tier(right) ||
-      (relevanceRank.get(left.id) ?? 0) - (relevanceRank.get(right.id) ?? 0),
-  );
+  // Each entry still carries its relevance rank until the loop below renumbers it.
+  ranked.sort((left, right) => tier(left) - tier(right) || left.rank - right.rank);
   ranked.forEach((entry, index) => {
     entry.rank = index + 1;
   });

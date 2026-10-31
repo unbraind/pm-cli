@@ -82,7 +82,8 @@ function resolveNextRankingPolicy(
   requested: unknown,
   configured: unknown,
 ): NextRankingPolicy {
-  const candidate = requested ?? configured ?? "priority_floor";
+  // readSettings always supplies context.next_ranking_policy, so no default is repeated here.
+  const candidate = requested ?? configured;
   if (typeof candidate === "string" && (NEXT_RANKING_POLICIES as readonly string[]).includes(candidate)) {
     return candidate as NextRankingPolicy;
   }

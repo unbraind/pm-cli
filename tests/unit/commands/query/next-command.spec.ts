@@ -252,6 +252,23 @@ describe("runNext", () => {
       });
     });
 
+    it("discloses the passed-over relevance leader in the recommendation reasons under both policies", async () => {
+      await withTempPmPath(async (context) => {
+        // The P0 is older; the P2 log is newer and churned, so relevance ranks the log first.
+        const p0 = createItem(context, { title: "Older production incident", priority: "0" });
+        const log = createItem(context, { title: "Hourly automation log", priority: "2" });
+        for (let index = 0; index < 12; index += 1) {
+          expect(context.runCli(["comments", log, `hourly run ${index} ok`, "--json"], { expectJson: true }).code).toBe(0);
+        }
+        const floor = await runNext({ explainRanking: true }, { path: context.pmPath });
+        expect(floor.recommended?.id).toBe(p0);
+        expect(floor.recommended?.reasons).toContain("priority floor (relevance rank 2)");
+        const weighted = await runNext({ rankingPolicy: "weighted" }, { path: context.pmPath });
+        expect(weighted.recommended?.id).toBe(log);
+        expect(weighted.recommended?.reasons).toContain("relevance over p0 ready work");
+      });
+    });
+
     it("names the policy disagreement only when the leader differs from the relevance or priority order", () => {
       const statusRegistry = resolveRuntimeStatusRegistry();
       const entry = (id: string, priority: number, status = "open") =>
