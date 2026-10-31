@@ -34,9 +34,9 @@ import type { ItemTypeRegistry } from "../../core/item/type-registry.js";
 import type { ItemMetadata, ItemStatus } from "../../types/index.js";
 import { parseIntegerLimit } from "./parsers.js";
 import {
+  NEXT_RANKING_POLICIES,
   applyNextRankingPolicy,
   describeRankingPolicyReason,
-  resolveNextRankingPolicy,
   type NextRankingPolicy,
 } from "./next-ranking-policy.js";
 export { NEXT_RANKING_POLICIES, type NextRankingPolicy } from "./next-ranking-policy.js";
@@ -76,6 +76,26 @@ export type NextOutputFormat = (typeof NEXT_OUTPUT_VALUES)[number];
 const DEFAULT_NEXT_LIMIT = 5;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+
+/** Resolve the effective ranking policy from the call option, then the tracker setting. */
+function resolveNextRankingPolicy(
+  requested: unknown,
+  configured: unknown,
+): NextRankingPolicy {
+  const candidate = requested ?? configured ?? "priority_floor";
+  if (typeof candidate === "string" && (NEXT_RANKING_POLICIES as readonly string[]).includes(candidate)) {
+    return candidate as NextRankingPolicy;
+  }
+  throw new PmCliError(
+    `Unknown next ranking policy ${JSON.stringify(candidate)}. Accepted values: ${NEXT_RANKING_POLICIES.join(", ")}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "invalid_argument_value",
+      value: String(candidate),
+      recovery: { allowed_values: [...NEXT_RANKING_POLICIES] },
+    },
+  );
+}
 
 /** Documents the `pm next` options payload exchanged by command, SDK, and package integrations. */
 export interface NextOptions {

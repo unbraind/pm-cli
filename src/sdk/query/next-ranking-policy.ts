@@ -4,13 +4,12 @@
  * Ranking policies for the `pm next` ready queue (GH-1618). The policy
  * decides whether priority tiers bound the blended relevance order, and the
  * reason helper names any disagreement between policy and relevance. Kept
- * apart from the public `pm next` module so these internals stay off the
- * published `./sdk/query` surface while remaining directly testable.
+ * apart from the public `pm next` module so these pure internals stay off the
+ * published `./sdk/query` surface while remaining directly testable; the
+ * refusal for an unknown policy stays in `next.ts`, the command that owns it.
  */
 import type { ActionableEntry } from "../actionability.js";
 import {
-  EXIT_CODE,
-  PmCliError,
   normalizeStatusForRegistry,
   normalizeStatusInput,
   type RuntimeStatusRegistry,
@@ -34,26 +33,6 @@ export const NEXT_RANKING_POLICIES: readonly NextRankingPolicy[] = [
 
 /** The scorer model whose blended order the priority floor reorders; extension scorers keep their own order. */
 const DEFAULT_WEIGHTED_RELEVANCE_MODEL = "default-weighted-v1";
-
-/** Resolve the effective ranking policy from the call option, then the tracker setting. */
-export function resolveNextRankingPolicy(
-  requested: unknown,
-  configured: unknown,
-): NextRankingPolicy {
-  const candidate = requested ?? configured ?? "priority_floor";
-  if (typeof candidate === "string" && (NEXT_RANKING_POLICIES as readonly string[]).includes(candidate)) {
-    return candidate as NextRankingPolicy;
-  }
-  throw new PmCliError(
-    `Unknown next ranking policy ${JSON.stringify(candidate)}. Accepted values: ${NEXT_RANKING_POLICIES.join(", ")}.`,
-    EXIT_CODE.USAGE,
-    {
-      code: "invalid_argument_value",
-      value: String(candidate),
-      recovery: { allowed_values: [...NEXT_RANKING_POLICIES] },
-    },
-  );
-}
 
 /**
  * Reorder a scored ready queue under the policy. Returns each id's relevance
