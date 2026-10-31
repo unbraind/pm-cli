@@ -798,5 +798,5 @@ export function projectLeanRecoveryPayload<
 >(recovery: Recovery | undefined): Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined {
   if (!recovery) return undefined;
   const { attempted_command: _attempted, normalized_args: _args, provided_fields: _fields, ...specific } = recovery;
-  return Object.keys(specific).length > 0 ? specific : undefined;
+  return Object.values(specific).some((value) => value !== undefined) ? specific : undefined;
 }

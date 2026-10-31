@@ -5,6 +5,7 @@
  */
 import {
   applyRepeatedTerminalStateUpdate,
+  assertRoutedCloseKeepsRequiredReason,
   describesCurrentTerminalState,
   readRoutedItemMetadata,
 } from "./repeated-terminal-state.js";
@@ -135,6 +136,7 @@ import {
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
+  CLOSE_REASON_UNSET_ALIASES,
   COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
   COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   parseCommandUnsetTargets,
@@ -264,7 +266,7 @@ const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
   ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   {
     canonical: "close-reason",
-    aliases: ["close_reason", "close-reason"],
+    aliases: CLOSE_REASON_UNSET_ALIASES,
     optionKey: "closeReason",
     metadataKey: "close_reason",
   },
@@ -2098,6 +2100,7 @@ async function routeCloseStatusUpdate(
   if (targetStatus !== context.statusRegistry.close_status) {
     return undefined;
   }
+  assertRoutedCloseKeepsRequiredReason(context);
 
   const otherFieldKeys = Object.entries(context.fieldFlags)
     .filter(

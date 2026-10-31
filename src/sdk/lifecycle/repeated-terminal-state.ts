@@ -18,6 +18,8 @@ import {
   type RuntimeStatusRegistry,
 } from "../runtime-primitives.js";
 import type { ItemMetadata } from "../../types/index.js";
+import { requireTerminalReason } from "../lifecycle-policy.js";
+import { CLOSE_REASON_UNSET_ALIASES, expandUnsetFieldTokens } from "./shared-unset-fields.js";
 import type { CloseRouteContext, UpdateCommandOptions, UpdateResult } from "./update.js";
 
 /** Receipt for an update that repeats the item's current terminal state, so no closure clock is re-stamped (GH-1628). */
@@ -38,6 +40,27 @@ function isCloseStatus(
   return (
     normalizeStatusInput(status, statusRegistry) === statusRegistry.close_status
   );
+}
+
+/** True when an update's `--unset` names `close_reason`, tokenized like the update parser. */
+function unsetsCloseReason(options: UpdateCommandOptions): boolean {
+  const isCloseReasonAlias = (entry: string): boolean =>
+    CLOSE_REASON_UNSET_ALIASES.includes(entry.trim().toLowerCase());
+  return expandUnsetFieldTokens(options.unset ?? [], isCloseReasonAlias).some(isCloseReasonAlias);
+}
+
+/**
+ * Refuse, before any write, a close-status update that unsets the close
+ * reason without supplying a new one while `governance.require_close_reason`
+ * is enabled. Neither route may run first: the repeated-state path would
+ * persist the unset as a no-op closure, and the ordinary route applies its
+ * field pre-update before the closure writer's own refusal.
+ */
+export function assertRoutedCloseKeepsRequiredReason(context: CloseRouteContext): void {
+  if (!context.settings.governance.require_close_reason || !unsetsCloseReason(context.options)) {
+    return;
+  }
+  requireTerminalReason({ explicit: context.options.closeReason }, true);
 }
 
 /**
@@ -109,8 +132,9 @@ export async function readRoutedItemMetadata(
  * terminal history stay untouched; the remaining fields take the ordinary
  * update path, which skips the write when nothing changes. The classification
  * read holds no item lock, so when the locked write returns an item another
- * writer has reopened meanwhile, the request still names the close status and
- * `closeReopened` hands it to the closure writer instead of dropping it.
+ * writer has reopened, or whose reason or completion time changed meanwhile,
+ * the request no longer repeats the stored state and `closeReopened` hands it
+ * to the closure writer instead of reporting it unchanged.
  */
 export async function applyRepeatedTerminalStateUpdate(
   context: CloseRouteContext,
@@ -140,7 +164,16 @@ export async function applyRepeatedTerminalStateUpdate(
     completedAt: undefined,
   });
   const result = await runUpdate(context.id, remainingOptions, context.global);
-  if (!isCloseStatus(result.item.status, context.statusRegistry)) {
+  // Recheck under the write's own result: another writer may have reopened
+  // the item or changed its reason or completion time since classification.
+  if (
+    !describesCurrentTerminalState(
+      result.item as unknown as ItemMetadata,
+      context.options,
+      context.statusRegistry,
+      context.settings.governance.require_close_reason,
+    )
+  ) {
     return closeReopened(result);
   }
   return {

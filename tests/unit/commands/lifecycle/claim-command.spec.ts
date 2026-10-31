@@ -16,6 +16,7 @@ import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { runWithHarnessDetectionSignals } from "../../../../src/core/shared/author.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
+import { locateItem } from "../../../../src/core/store/item-store.js";
 import {
   readSettings,
   writeSettings,
@@ -508,6 +509,32 @@ describe("runClaim/runRelease", () => {
         context: expect.objectContaining({
           code: "already_claimed_by",
           claimed_by: "other-author",
+          claim_source: "unknown",
+          claimed_at: null,
+        }) as unknown as PmCliError["context"],
+      });
+    });
+  });
+
+  it("reports an unknown origin when the newest assignee history entry set a different holder", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "claim-diverged-history",
+        status: "open",
+        assignee: "other-author",
+      });
+      // Item state now names a holder that no history entry recorded.
+      const settings = await readSettings(context.pmPath);
+      const located = await locateItem(context.pmPath, id, settings.id_prefix, settings.item_format);
+      const itemPath = located!.itemPath;
+      await writeFile(itemPath, (await readFile(itemPath, "utf8")).replace("other-author", "third-author"), "utf8");
+
+      await expect(
+        runClaim(id, false, { path: context.pmPath }),
+      ).rejects.toMatchObject<Partial<PmCliError>>({
+        exitCode: EXIT_CODE.CONFLICT,
+        context: expect.objectContaining({
+          claimed_by: "third-author",
           claim_source: "unknown",
           claimed_at: null,
         }) as unknown as PmCliError["context"],

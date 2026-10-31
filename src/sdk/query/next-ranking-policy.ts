@@ -11,7 +11,6 @@
 import type { ActionableEntry } from "../actionability.js";
 import {
   normalizeStatusForRegistry,
-  normalizeStatusInput,
   type RuntimeStatusRegistry,
 } from "../runtime-primitives.js";
 import type { ItemMetadata } from "../../types/index.js";
@@ -49,7 +48,8 @@ export function applyNextRankingPolicy<T extends { id: string; rank: number; ite
   if (policy !== "priority_floor" || model !== DEFAULT_WEIGHTED_RELEVANCE_MODEL) {
     return relevanceRank;
   }
-  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
+  // A custom workflow names its own in-progress status; never assume the literal.
+  const inProgressStatus = statusRegistry.in_progress_status;
   const tier = (entry: T): number =>
     normalizeStatusForRegistry(entry.item.status, statusRegistry) === inProgressStatus
       ? -1
@@ -75,7 +75,7 @@ export function describeRankingPolicyReason(
     const rank = relevanceRank.get(leader.item.id);
     return rank !== undefined && rank !== 1 ? `priority floor (relevance rank ${rank})` : undefined;
   }
-  const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
+  const inProgressStatus = statusRegistry.in_progress_status;
   const higherPriority = projectedReady
     .slice(1)
     .filter(

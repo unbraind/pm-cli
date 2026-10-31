@@ -733,11 +733,19 @@ export interface RenderGuidanceOptions {
   lean?: boolean;
 }
 
+/** Longest holder name the one-line text rendering prints; JSON keeps the full `claimed_by`. */
+const CLAIM_HOLDER_TEXT_MAX_CODE_POINTS = 120;
+
 /** Render the typed holder evidence of an already_claimed_by refusal on one line. */
 function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
   if (message.claimedBy === undefined) return undefined;
   const since = message.claimedAt ? ` since ${message.claimedAt}` : "";
-  return `Held by: ${message.claimedBy} (${message.claimSource ?? "claim"}${since})`;
+  const holder = Array.from(message.claimedBy);
+  const name =
+    holder.length > CLAIM_HOLDER_TEXT_MAX_CODE_POINTS
+      ? `${holder.slice(0, CLAIM_HOLDER_TEXT_MAX_CODE_POINTS).join("")}...`
+      : message.claimedBy;
+  return `Held by: ${name} (${message.claimSource ?? "unknown"}${since})`;
 }
 
 /** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */
@@ -884,7 +892,8 @@ function attachItemDiagnostics(
   if (message.claimedBy !== undefined) {
     payload.claimed_by = message.claimedBy;
     payload.claimed_at = message.claimedAt ?? null;
-    payload.claim_source = message.claimSource ?? "claim";
+    // An origin the producer did not prove is never reported as an explicit claim.
+    payload.claim_source = message.claimSource ?? "unknown";
     payload.item_id = message.itemId;
   }
 }
@@ -2418,10 +2427,27 @@ export function formatPmCliErrorForDisplay(
       "Use --json for full recovery details.",
     ].join("\n");
   }
-  return projectPmDiagnosticText(
-    renderBoundedGuidanceMessage(guidance, options),
-    guidance.required,
-  ).output;
+  return renderBoundedGuidanceText(guidance, options);
+}
+
+/**
+ * Render bounded refusal text. A default rendering that overflowed already
+ * dropped its rationale, so it can be shorter than a lean one that kept a
+ * code-specific why: lean output never prints more than the default.
+ */
+function renderBoundedGuidanceText(
+  guidance: GuidanceMessage,
+  options: RenderGuidanceOptions,
+): string {
+  const render = (renderOptions: RenderGuidanceOptions): string =>
+    projectPmDiagnosticText(
+      renderBoundedGuidanceMessage(guidance, renderOptions),
+      guidance.required,
+    ).output;
+  const output = render(options);
+  if (options.lean !== true) return output;
+  const fallback = render({});
+  return Buffer.byteLength(fallback, "utf8") < Buffer.byteLength(output, "utf8") ? fallback : output;
 }
 
 /** Implements classify pm cli error for the public runtime surface of this module. */
@@ -2450,6 +2476,7 @@ export function formatCommanderErrorForDisplay(
   commandName: string | undefined,
   allowedTypes: string,
   context?: CommanderGuidanceContext,
+  options: RenderGuidanceOptions = {},
 ): string {
   const guidance = buildCommanderErrorGuidance(
     rawMessage,
@@ -2457,10 +2484,7 @@ export function formatCommanderErrorForDisplay(
     allowedTypes,
     context,
   );
-  return projectPmDiagnosticText(
-    renderBoundedGuidanceMessage(guidance),
-    guidance.required,
-  ).output;
+  return renderBoundedGuidanceText(guidance, options);
 }
 
 /** Implements classify commander error for the public runtime surface of this module. */

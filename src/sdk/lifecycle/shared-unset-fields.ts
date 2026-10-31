@@ -23,6 +23,9 @@ export interface CommandUnsetFieldDefinition {
   metadataKey: string;
 }
 
+/** `--unset` spellings that clear `close_reason`, shared by the update parser and the routed-close governance guard. */
+export const CLOSE_REASON_UNSET_ALIASES: readonly string[] = ["close_reason", "close-reason"];
+
 /** Public contract for common unset field definitions before close reason, shared by SDK and presentation-layer consumers. */
 export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON: readonly CommandUnsetFieldDefinition[] =
   [

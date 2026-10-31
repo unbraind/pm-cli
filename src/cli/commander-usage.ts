@@ -1120,11 +1120,14 @@ export async function formatCommanderUsageMessage(
     invocationArgs,
   );
   const { message, commandName, allowedTypes, ...guidance } = usageContext;
+  // Usage refusals honour --lean like every other text refusal (GH-1610).
+  const lean = parseBootstrapGlobalOptions(usageContext.normalizedInvocationArgs).lean;
   const formatted = formatCommanderErrorForDisplay(
     message,
     commandName,
     allowedTypes,
     guidance,
+    { lean },
   );
   const serviceOverride = await runActiveServiceOverride("help_format", {
     message: formatted,

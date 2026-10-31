@@ -681,9 +681,11 @@ so a lean refusal is never larger than its default rendering (GH-1610). Text
 refusals print a single-line message once, as the headline, and repeat it
 under `What happened` only when the headline is a classification.
 An `already_claimed_by` refusal carries the holder as typed fields in every
-mode: `claimed_by`, `claim_source` (`claim` or `assignment`) and
-`claimed_at` (the latest assignee change, or `null` when history is silent);
-text output renders them as `Held by: <holder> (<source> since <time>)`.
+mode: `claimed_by`, `claim_source` (`claim`, `assignment`, or `unknown`
+when history is unreadable, silent, or names a different holder) and
+`claimed_at` (the latest assignee change, or `null` when the origin is
+unknown); text output renders them as `Held by: <holder> (<source> since
+<time>)` and caps a very long holder name, which JSON keeps whole.
 
 ```bash
 pm --json --lean get pm-a1b2

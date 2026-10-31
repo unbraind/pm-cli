@@ -68,7 +68,7 @@ When an agenda event belongs to an item already emitted in `high_level`, `low_le
 
 Claim conflicts distinguish stored assignment from an explicit claim:
 
-- `assigned to <identity>` means assignment metadata owns the current value.
+- `assigned to <identity>` means assignment metadata owns the current value. The same phrase is used when history cannot establish the origin (unreadable history, no assignee change recorded, or a newest change that set a different holder); then `claim_source` is `unknown` and `claimed_at` is `null`, so read `claim_source` rather than the phrase when the origin matters.
 - `claimed by <identity>` means the latest ownership mutation was `pm claim`.
 
 The structured conflict code remains `already_claimed_by` for compatibility with atomic claim retry loops.

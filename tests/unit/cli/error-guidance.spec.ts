@@ -12,6 +12,7 @@ import {
   formatUnknownErrorForJson,
   projectLeanErrorEnvelope,
 } from "../../../src/cli/error-guidance.js";
+import { projectLeanRecoveryPayload } from "../../../src/sdk/cli-contracts/agent-output-contracts.js";
 
 describe("pm cli error guidance context plumbing", () => {
   it("preserves verified no-change evidence without inferring it for execution failures", () => {
@@ -312,14 +313,41 @@ describe("pm cli error guidance context plumbing", () => {
       expect(formatPmCliErrorForDisplay("Bad value", context)).toContain("pm --help");
     });
 
-    it("renders a holder without a recorded time or origin as a bare claim", () => {
+    it("reports a holder without a recorded time or origin as unknown, never as an explicit claim", () => {
       const context = { code: "already_claimed_by", item_id: "pm-held", claimed_by: "agent-a" };
-      expect(formatPmCliErrorForDisplay(claimMessage, context)).toContain("Held by: agent-a (claim)");
+      expect(formatPmCliErrorForDisplay(claimMessage, context)).toContain("Held by: agent-a (unknown)");
       expect(formatPmCliErrorForJson(claimMessage, 4, context)).toMatchObject({
         claimed_by: "agent-a",
         claimed_at: null,
-        claim_source: "claim",
+        claim_source: "unknown",
       });
+    });
+
+    it("omits a lean recovery remainder whose specific fields are all undefined", () => {
+      expect(projectLeanRecoveryPayload({ attempted_command: "pm x", suggested_retry: undefined })).toBeUndefined();
+      expect(projectLeanRecoveryPayload({ attempted_command: "pm x", suggested_retry: "pm y" })).toEqual({ suggested_retry: "pm y" });
+    });
+
+    it("caps a long holder name in text while JSON keeps it whole", () => {
+      const holder = "agent-".repeat(60);
+      const context = { code: "already_claimed_by", item_id: "pm-held", claimed_by: holder, claim_source: "claim" as const };
+      const text = formatPmCliErrorForDisplay(claimMessage, context, { lean: true });
+      expect(text).toContain(`Held by: ${holder.slice(0, 120)}... (claim)`);
+      expect(formatPmCliErrorForJson(claimMessage, 4, context).claimed_by).toBe(holder);
+    });
+
+    it("never prints a lean refusal larger than the default bounded rendering", () => {
+      // A code-specific why plus an argv echo long enough to overflow the default text ceiling.
+      // The default overflows on the echo and drops its why; lean has no echo and keeps the long why.
+      const context = {
+        code: "invalid_argument_value",
+        why: `Specific rationale for this refused value: ${"z".repeat(1500)}`,
+        recovery: { attempted_command: `pm update pm-1 --title ${"x".repeat(6000)}`, suggested_retry: "pm update pm-1 --title short" },
+      };
+      const message = "Bad value for --title";
+      const full = formatPmCliErrorForDisplay(message, context);
+      const lean = formatPmCliErrorForDisplay(message, context, { lean: true });
+      expect(Buffer.byteLength(lean, "utf8")).toBeLessThanOrEqual(Buffer.byteLength(full, "utf8"));
     });
 
     it("never renders a lean refusal larger than its default and shares no constant line across codes", () => {

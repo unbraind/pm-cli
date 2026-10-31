@@ -12,7 +12,7 @@ import {
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
 import type { ActionableEntry } from "../../../../src/core/item/actionability.js";
-import { describeRankingPolicyReason } from "../../../../src/sdk/query/next-ranking-policy.js";
+import { applyNextRankingPolicy, describeRankingPolicyReason } from "../../../../src/sdk/query/next-ranking-policy.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { formatBuiltInOutput } from "../../../../src/core/output/output.js";
 import {
@@ -267,6 +267,21 @@ describe("runNext", () => {
         expect(weighted.recommended?.id).toBe(log);
         expect(weighted.recommended?.reasons).toContain("relevance over p0 ready work");
       });
+    });
+
+    it("resumes a workflow's own in-progress status first, not only the literal in_progress", () => {
+      const statusRegistry = { ...resolveRuntimeStatusRegistry(), in_progress_status: "doing" };
+      const ranked = [
+        { id: "pm-p0", rank: 1, item: { id: "pm-p0", priority: 0, status: "open" } },
+        { id: "pm-wip", rank: 2, item: { id: "pm-wip", priority: 3, status: "doing" } },
+      ] as unknown as Parameters<typeof applyNextRankingPolicy>[0];
+      applyNextRankingPolicy(ranked, statusRegistry, "priority_floor", "default-weighted-v1");
+      expect(ranked.map((entry) => entry.id)).toEqual(["pm-wip", "pm-p0"]);
+      const entry = (id: string, priority: number, status: string) =>
+        ({ item: { id, priority, status } }) as unknown as ActionableEntry;
+      expect(
+        describeRankingPolicyReason([entry("pm-log", 2, "open"), entry("pm-wip", 0, "doing")], new Map(), statusRegistry, "weighted"),
+      ).toBeUndefined();
     });
 
     it("names the policy disagreement only when the leader differs from the relevance or priority order", () => {

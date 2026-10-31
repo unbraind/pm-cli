@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: ci,dependencies,security
 created_at: "2026-10-31T00:55:40.330Z"
-updated_at: "2026-10-31T13:05:38.192Z"
+updated_at: "2026-10-31T14:06:45.939Z"
 closed_at: "2026-10-31T00:56:39.587Z"
 completed_at: "2026-10-31T00:56:39.587Z"
 author: "harness:claude-code"
@@ -32,7 +32,7 @@ gate_evidence:
   disposition: gate_strengthened
   owner: pm-irviv0
   gate_id: development-dependency-security
-  negative_control: "git worktree add ../pm-irviv0-control 1a72d089d && (cd ../pm-irviv0-control && pnpm install --frozen-lockfile && ! pnpm quality:dependencies && node -e 'const s=require(\"node:fs\").readFileSync(\".cache/dependency-security/receipt.json\",\"utf8\");for(const id of [\"GHSA-mrwp-f3q8-3g9p\",\"GHSA-g3hv-75wg-m249\"])if(!s.includes(id)){console.error(\"missing \"+id);process.exit(1)}'); status=$?; git worktree remove --force ../pm-irviv0-control; exit $status"
+  negative_control: "git worktree add ../pm-irviv0-control 1a72d089d && (cd ../pm-irviv0-control && pnpm install --frozen-lockfile && ! pnpm quality:dependencies && node -e 'const s=require(\"node:fs\").readFileSync(\".cache/dependency-security/receipt.json\",\"utf8\");for(const [ghsa,registry] of [[\"GHSA-mrwp-f3q8-3g9p\",\"1244003\"],[\"GHSA-g3hv-75wg-m249\",\"1244012\"]])if(!s.includes(ghsa)&&!s.includes(registry)){console.error(\"missing \"+ghsa+\" / registry \"+registry);process.exit(1)}'); status=$?; git worktree remove --force ../pm-irviv0-control; exit $status"
   local_checks[4]: pnpm install --frozen-lockfile,node scripts/release/dependency-advisories/gate.mjs,"pnpm lint:eslint","node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const eslint = createRequire(import.meta.resolve(\"eslint\")); const mm = eslint(\"minimatch/package.json\").version; assert.match(mm, /^11\\.(0\\.[1-9]\\d*|[1-9]\\d*\\.\\d+)$/u, mm); const plugin = createRequire(import.meta.resolve(\"@codspeed/vitest-plugin\")); const core = createRequire(plugin.resolve(\"@codspeed/core/package.json\")); const axios = createRequire(core.resolve(\"axios/package.json\")); const fr = axios(\"follow-redirects/package.json\").version; assert.ok(fr.localeCompare(\"1.16.2\", undefined, { numeric: true }) >= 0, fr);'"
   hosted_checks[3]: CI / Gates (static),Security and Script Quality / Trivy,CI / Gates (coverage)
 body: ""
