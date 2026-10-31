@@ -4040,7 +4040,7 @@
         },
         {
           "flag": "--unset",
-          "list": true
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"
@@ -11229,7 +11229,7 @@
         },
         {
           "flag": "--unset",
-          "list": true
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"
@@ -11699,7 +11699,7 @@
         },
         {
           "flag": "--unset",
-          "list": true
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"
@@ -12175,7 +12175,7 @@
         },
         {
           "flag": "--unset",
-          "list": true
+          "repeatable": true
         },
         {
           "flag": "--clear-deps"

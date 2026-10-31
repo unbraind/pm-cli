@@ -37,6 +37,8 @@ describe("restore command scope", () => {
       expect(resolveLinkedTestRestoreScope({}, "/srv/root").trackerPath).toBeUndefined();
       process.env.PM_PATH = "relative/pm";
       expect(resolveLinkedTestRestoreScope({}, "/srv/root").trackerPath).toBe("/srv/root");
+      // A blank --path falls through to PM_PATH, exactly as resolvePmRoot does.
+      expect(resolveLinkedTestRestoreScope({ path: "  " }, "/srv/root").trackerPath).toBe("/srv/root");
     } finally {
       if (previous === undefined) delete process.env.PM_PATH;
       else process.env.PM_PATH = previous;

@@ -142,12 +142,14 @@ amplification). Both were published on October 30 and the registry feed
 reported them from the next run on `main` while OSV was still clean, so the
 advisory gate refused every PR and the scheduled release path until the lock
 changed. `follow-redirects` is reached only through the CodSpeed benchmark
-plugin's Axios client and `minimatch` only through ESLint and its config
-array; both are development dependencies and neither establishes a CLI or
-SDK route. The pnpm overrides require `follow-redirects` 1.16.2 or a newer
+plugin's Axios client, and `minimatch` through ESLint and its config array
+and as a direct dependency of `@stryker-mutator/core` (mutation testing); all
+of these are development dependencies and none establishes a CLI or SDK
+route. The pnpm overrides require `follow-redirects` 1.16.2 or a newer
 1.x release and `minimatch` 11.0.1 or a newer 11.x release. `minimatch` 11
 keeps dual CommonJS and ES module exports, so ESLint's `require` path is
-unchanged and the full lint run passes. Both releases satisfy pnpm's one-day
+unchanged and the full lint run passes; the override applies to the Stryker
+path as well. Both releases satisfy pnpm's one-day
 minimum release age without an exclusion; the seven-day Dependabot cooldown
 is unchanged. The gate's catch-all refusal said that no feed success could be
 inferred, which hid the real cause (a non-empty registry id list); read

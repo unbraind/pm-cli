@@ -103,8 +103,9 @@ export function resolveLinkedTestRestoreScope(
   global: { path?: string; noExtensions?: boolean },
   pmRoot: string,
 ): LinkedTestRestoreScope {
+  // Same precedence as resolvePmRoot: a blank --path falls through to PM_PATH.
   const trackerPath =
-    global.path ?? (process.env.PM_PATH?.trim() ? pmRoot : undefined);
+    global.path?.trim() || (process.env.PM_PATH?.trim() ? pmRoot : undefined);
   return { trackerPath, noExtensions: global.noExtensions };
 }
 
