@@ -130,6 +130,30 @@ patterns, absolute paths and invocation-relative anchoring remain supported.
 The regression uses a real temporary directory and the same deeply nested input
 that failed before the replacement. Audit errors remain mandatory failures.
 
+## Redirect credential and glob amplification advisories
+
+[pm-irviv0](../.agents/pm/issues/pm-irviv0.toon) tracks
+[GHSA-mrwp-f3q8-3g9p](https://github.com/advisories/GHSA-mrwp-f3q8-3g9p)
+(`follow-redirects` 1.16.0 through 1.16.1: cross-realm `sensitiveHeaders`
+arrays are discarded, so custom credentials can follow redirects) and
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)
+(`minimatch` before 11.0.1: denial of service through glob-part
+amplification). Both were published on October 30 and the registry feed
+reported them from the next run on `main` while OSV was still clean, so the
+advisory gate refused every PR and the scheduled release path until the lock
+changed. `follow-redirects` is reached only through the CodSpeed benchmark
+plugin's Axios client and `minimatch` only through ESLint and its config
+array; both are development dependencies and neither establishes a CLI or
+SDK route. The pnpm overrides require `follow-redirects` 1.16.2 or a newer
+1.x release and `minimatch` 11.0.1 or a newer 11.x release. `minimatch` 11
+keeps dual CommonJS and ES module exports, so ESLint's `require` path is
+unchanged and the full lint run passes. Both releases satisfy pnpm's one-day
+minimum release age without an exclusion; the seven-day Dependabot cooldown
+is unchanged. The gate's catch-all refusal said that no feed success could be
+inferred, which hid the real cause (a non-empty registry id list); read
+`.cache/dependency-security/receipt.json` before treating that message as a
+feed outage.
+
 ## CodSpeed 5.7.1 patch
 
 CodSpeed's declared dependency previously resolved Axios 1.19.0, and both

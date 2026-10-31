@@ -23,6 +23,10 @@
 - Text refusals drop the specific What happened detail when an echoed argv overflows the diagnostic ceiling ([pm-4oc353](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4oc353.toon))
 - GH-1622: investigate pm-presets SDK-loading fault blocking daily release ([pm-gh1622](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1622.toon))
 
+### Security
+
+- Registry advisories GHSA-mrwp-f3q8-3g9p (follow-redirects 1.16.1, high) and GHSA-g3hv-75wg-m249 (minimatch 10.2.6, moderate) block the static gate on main and every PR ([pm-irviv0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-irviv0.toon))
+
 ## 2026.10.30 - 2026-10-30
 
 ### Added
