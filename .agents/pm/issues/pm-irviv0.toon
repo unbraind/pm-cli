@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: ci,dependencies,security
 created_at: "2026-10-31T00:55:40.330Z"
-updated_at: "2026-10-31T00:56:40.350Z"
+updated_at: "2026-10-31T01:18:56.991Z"
 closed_at: "2026-10-31T00:56:39.587Z"
 completed_at: "2026-10-31T00:56:39.587Z"
 author: "harness:claude-code"
@@ -24,4 +24,12 @@ tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
 docs[1]{path,scope}:
   docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
 close_reason: Registry advisories repaired via pnpm overrides
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-irviv0
+  gate_id: development-dependency-security
+  negative_control: "node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const eslint = createRequire(import.meta.resolve(\"eslint\")); const mm = eslint(\"minimatch/package.json\").version; assert.match(mm, /^11\\.(0\\.[1-9]\\d*|[1-9]\\d*\\.\\d+)$/u, mm); const plugin = createRequire(import.meta.resolve(\"@codspeed/vitest-plugin\")); const core = createRequire(plugin.resolve(\"@codspeed/core/package.json\")); const axios = createRequire(core.resolve(\"axios/package.json\")); const fr = axios(\"follow-redirects/package.json\").version; assert.ok(fr.localeCompare(\"1.16.2\", undefined, { numeric: true }) >= 0, fr);'"
+  local_checks[4]: pnpm install --frozen-lockfile,node scripts/release/dependency-advisories/gate.mjs,"pnpm lint:eslint","node --input-type=module -e 'import assert from \"node:assert/strict\"; import { createRequire } from \"node:module\"; const eslint = createRequire(import.meta.resolve(\"eslint\")); const mm = eslint(\"minimatch/package.json\").version; assert.match(mm, /^11\\.(0\\.[1-9]\\d*|[1-9]\\d*\\.\\d+)$/u, mm); const plugin = createRequire(import.meta.resolve(\"@codspeed/vitest-plugin\")); const core = createRequire(plugin.resolve(\"@codspeed/core/package.json\")); const axios = createRequire(core.resolve(\"axios/package.json\")); const fr = axios(\"follow-redirects/package.json\").version; assert.ok(fr.localeCompare(\"1.16.2\", undefined, { numeric: true }) >= 0, fr);'"
+  hosted_checks[3]: CI / Gates (static),Security and Script Quality / Trivy,CI / Gates (coverage)
 body: ""
