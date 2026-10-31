@@ -30217,6 +30217,22 @@
         "target": "package"
       },
       {
+        "command": "changelog corrections",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
+        "command": "changelog drift",
+        "disposition": "package_owned",
+        "noun": "package",
+        "owner": "package:pm-changelog",
+        "reason": "",
+        "target": "package"
+      },
+      {
         "command": "changelog export",
         "disposition": "package_owned",
         "noun": "package",
@@ -32469,6 +32485,22 @@
       },
       {
         "command": "changelog contracts",
+        "slots": []
+      },
+      {
+        "command": "changelog corrections",
+        "slots": [
+          {
+            "name": "action",
+            "polymorphic": false,
+            "required": true,
+            "value_kind": "string",
+            "variadic": false
+          }
+        ]
+      },
+      {
+        "command": "changelog drift",
         "slots": []
       },
       {

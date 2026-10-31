@@ -1,0 +1,19 @@
+id: pm-j5za12
+title: "A pm-changelog release that adds commands turns every open pm-cli PR red: CI installs the newest package while the grammar census is hand-listed"
+description: "CI runs `pnpm changelog:pm:install` (`package install npm:pm-changelog --project`), which always resolves the newest published pm-changelog. pm-changelog 2026.10.31, published at 17:01 UTC on 2026-10-31, added the commands `changelog corrections` and `changelog drift`. From then on, Gates (static) failed on every pm-cli PR at the command-grammar gate (`missing_destination` and `stale_observed_signature`) until the hand-maintained census in `src/sdk/cli-contracts/grammar-contracts.ts` (package destination rows plus positional declarations) and the contract snapshot were updated, on PR #1638. A sibling package release therefore turns unrelated PRs red, and nothing in the package's release path warns pm-cli first.\n\nThe census for a package-owned command could be derived from the installed package's own command contract (`registerCommand` metadata), not hand-listed. The installed version could also be pinned in `.agents/pm/extensions/.managed-extensions.json` and advanced deliberately, for example by Dependabot or the hosted auto-update job."
+type: Issue
+status: open
+priority: 2
+tags[4]: ci,extensions,grammar,pm-changelog
+created_at: "2026-10-31T18:35:23.883Z"
+updated_at: "2026-10-31T18:35:23.883Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A package-owned command added by a newly published managed extension no longer fails pm-cli CI by itself: either the grammar census and positional declarations for package_owned commands derive from the installed package's command contract, or CI installs the version recorded in .managed-extensions.json and a dedicated update path advances it with the census in the same change; a regression test registers an extra package command and shows the gate verdict"
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: Publishing a sibling package never fails unrelated pm-cli PRs; any census change arrives in the same change that adopts the new package version.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ugqx,related,"2026-10-31T18:35:23.883Z","harness:claude-code","cli:create:dep",detected
+body: ""
