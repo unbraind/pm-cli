@@ -81,3 +81,10 @@ export function findLinkedTestExecutionReceipt(
   }
   return undefined;
 }
+
+/** Render the `--pm-path` suffix that keeps a restore command on the invocation's tracker. */
+export function renderTrackerPathFlag(trackerPath: string | undefined): string {
+  const trimmed = trackerPath?.trim();
+  if (!trimmed) return "";
+  return /[\s"'\\]/u.test(trimmed) ? ` --pm-path ${JSON.stringify(trimmed)}` : ` --pm-path ${trimmed}`;
+}

@@ -497,6 +497,42 @@ describe("pm cli error guidance context plumbing", () => {
     expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
   });
 
+  it("keeps next_best_command in the compact recovery stage and drops an echo-only bundle entirely", () => {
+    const attempted = `pm install --project "${"segment ".repeat(1_200)}"`;
+    const withNextBest = formatPmCliErrorForDisplay('npm package "pm-brief" was not found in the registry.', {
+      code: "npm_package_not_found",
+      recovery: {
+        attempted_command: attempted,
+        next_best_command: "pm install --project github.com/unbraind/pm-brief",
+      },
+    });
+    expect(withNextBest).toContain("next_best_command: pm install --project github.com/unbraind/pm-brief");
+    expect(withNextBest).not.toContain("attempted_command:");
+    expect(withNextBest).toContain("rerun with --json for the full recovery envelope");
+
+    const echoOnly = formatPmCliErrorForDisplay("Value rejected for --description", {
+      code: "invalid_argument_value",
+      recovery: { attempted_command: attempted, provided_fields: ["--project"] },
+    });
+    expect(echoOnly).toContain("Value rejected for --description");
+    expect(echoOnly).not.toContain("Recovery bundle:");
+    expect(echoOnly).toContain("rerun with --json for the full recovery envelope");
+  });
+
+  it("advertises no dash-leading value retry when a positional follows the value", () => {
+    const envelope = formatCommanderErrorForJson(
+      "unknown option '--not an option'",
+      "comment",
+      "Task|Issue",
+      2,
+      {
+        normalizedInvocationArgs: ["comment", "pm-a1b2", "--not an option", "trailing"],
+      },
+    );
+    expect(envelope.recovery?.suggested_retry).toBeUndefined();
+    expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+  });
+
   it("falls back to the full rendering when no ladder stage can fit the text ceiling", () => {
     const detail = "Value rejected";
     const oversizedStep = `Run pm contracts --command update ${"and inspect every declared option ".repeat(400)}`;

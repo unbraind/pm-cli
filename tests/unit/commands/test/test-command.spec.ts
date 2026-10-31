@@ -2258,7 +2258,9 @@ describe("runTest", () => {
       expect(matched.tests.map((test) => test.command)).toEqual([
         "node -e \"process.stdout.write('beta')\"",
       ]);
-      expect(matched.tests_omitted).toEqual({ count: 2, restore_with: `pm test ${id} --list` });
+      // The restore command targets the invocation's own tracker when --pm-path was explicit.
+      const trackerFlag = /[\s"'\\]/u.test(context.pmPath) ? JSON.stringify(context.pmPath) : context.pmPath;
+      expect(matched.tests_omitted).toEqual({ count: 2, restore_with: `pm test ${id} --list --pm-path ${trackerFlag}` });
       expect(matched.warnings).toBeUndefined();
 
       const indexed = await runTest(

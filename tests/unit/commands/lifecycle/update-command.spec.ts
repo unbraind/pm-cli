@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyUpdateCommand, runUpdate, type UpdateCommandOptions } from "../../../../src/cli/commands/lifecycle/update.js";
 import { runCreate } from "../../../../src/cli/commands/lifecycle/create.js";
+import { parseCommandUnsetTargets } from "../../../../src/sdk/lifecycle/shared-unset-fields.js";
 import { runGet } from "../../../../src/cli/commands/query/get.js";
 import { runDeps } from "../../../../src/cli/commands/query/deps.js";
 import { preserveMutationStdinTokenLiterals } from "../../../../src/sdk/runtime-primitives.js";
@@ -752,6 +753,26 @@ describe("runUpdate", () => {
         },
       });
     });
+  });
+
+  it("keeps a legacy comma-bearing --unset entry whole when it resolves, and splits only unresolved entries", () => {
+    const resolveDefinition = (token: string) =>
+      token === "foo,bar" || token === "parent" || token === "release"
+        ? { optionKey: token, metadataKey: token }
+        : undefined;
+    const legacy = parseCommandUnsetTargets({
+      raw: ["foo,bar", "parent,release"],
+      resolveDefinition,
+      supportedFields: "foo,bar, parent, release",
+    });
+    expect([...legacy.metadataKeys]).toEqual(["foo,bar", "parent", "release"]);
+    expect(() =>
+      parseCommandUnsetTargets({
+        raw: ["foo,baz"],
+        resolveDefinition,
+        supportedFields: "foo,bar, parent, release",
+      }),
+    ).toThrow(/Unsupported --unset field "foo"/u);
   });
 
   it("auto-routes pm update --status closed --close-reason to pm close (pm-12ib)", async () => {

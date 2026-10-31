@@ -270,9 +270,19 @@ export type CommandUnsetTargetResolver = (
   trimmedToken: string,
 ) => RuntimeUnsetFieldDefinition | undefined;
 
-/** Expand repeated and comma-separated `--unset` values into one token per field; field keys cannot contain commas. */
-export function expandUnsetFieldTokens(raw: readonly string[] | undefined): string[] {
-  return (raw ?? []).flatMap((entry) => entry.split(","));
+/**
+ * Expand repeated and comma-separated `--unset` values into one token per
+ * field. An entry that resolves as a whole is kept intact first, so a legacy
+ * field key registered with a comma (before schema add-field refused them)
+ * stays clearable; only unresolved entries split on commas.
+ */
+export function expandUnsetFieldTokens(
+  raw: readonly string[] | undefined,
+  resolvesWhole: (entry: string) => boolean = () => false,
+): string[] {
+  return (raw ?? []).flatMap((entry) =>
+    entry.includes(",") && resolvesWhole(entry) ? [entry] : entry.split(","),
+  );
 }
 
 /** Parse and validate common command `--unset` tokens while preserving command-specific field resolution. */
@@ -287,7 +297,11 @@ export function parseCommandUnsetTargets(options: {
     return { metadataKeys, optionKeys };
   }
 
-  for (const entry of expandUnsetFieldTokens(options.raw)) {
+  const tokens = expandUnsetFieldTokens(
+    options.raw,
+    (entry) => options.resolveDefinition(entry.trim().toLowerCase()) !== undefined,
+  );
+  for (const entry of tokens) {
     const trimmed = entry.trim().toLowerCase();
     if (!trimmed) {
       throw new PmCliError(

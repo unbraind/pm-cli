@@ -684,7 +684,11 @@ const appendUnsetMutationPlans = (
   row: Record<string, unknown>,
   unset: string[] | undefined,
 ): void => {
-  for (const rawUnsetField of expandUnsetFieldTokens(unset)) {
+  const tokens = expandUnsetFieldTokens(
+    unset,
+    (entry) => row[normalizeUnsetField(entry)] !== undefined,
+  );
+  for (const rawUnsetField of tokens) {
     const field = normalizeUnsetField(rawUnsetField);
     const before = row[field];
     if (before !== undefined) {

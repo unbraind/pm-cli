@@ -7,6 +7,7 @@ import { readJsonPathValue, splitJsonPathSegments } from "./json-path.js";
 import {
   detectEmptyLinkedTestRun,
   findLinkedTestExecutionReceipt,
+  renderTrackerPathFlag,
 } from "./execution-receipts.js";
 import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { detectLinkedTestCommandNotFound } from "./command-resolution.js";
@@ -3501,6 +3502,8 @@ function projectTestResult(input: {
   warnings: string[];
   recording: Awaited<ReturnType<typeof recordTestRunSummary>>;
   measurementProjection: ReturnType<typeof buildTestMeasurementProjection>;
+  /** Explicit tracker root of the invocation, so the restore command targets the same tracker. */
+  trackerPath?: string;
 }): TestResult {
   const {
     item,
@@ -3511,15 +3514,17 @@ function projectTestResult(input: {
     warnings,
     recording,
     measurementProjection,
+    trackerPath,
   } = input;
   const narrowed = runSelection !== undefined && runSelection.selector !== null && runSelection.skipped_count > 0;
+  const restoreWith = `pm test ${item.itemId} --list${renderTrackerPathFlag(trackerPath)}`;
   return {
     ok:
       runResults.every((entry) => entry.status !== "failed" && entry.status !== "refused") &&
       failOnSkippedTriggered !== true,
     id: item.itemId,
     tests: narrowed ? runSelection.selected : item.tests,
-    ...(narrowed ? { tests_omitted: { count: item.tests.length - runSelection.selected.length, restore_with: `pm test ${item.itemId} --list` } } : {}),
+    ...(narrowed ? { tests_omitted: { count: item.tests.length - runSelection.selected.length, restore_with: restoreWith } } : {}),
     run_results: runResults,
     failure_categories: failureCategories,
     selection: runSelection
@@ -3651,6 +3656,7 @@ export async function runTest(
     warnings,
     recording,
     measurementProjection,
+    trackerPath: global.path,
   });
 }
 /* c8 ignore stop */
