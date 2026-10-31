@@ -490,6 +490,54 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
     });
   });
 
+  it("retries an identical closed update in a mixed batch without touching its closure clocks (GH-1628)", async () => {
+    await withTempPmPath(async (context) => {
+      const closedTarget = createSeedItem(context, "bulk-identical-closed");
+      const preClose = context.runCli(
+        ["close", closedTarget, "Closed before the batch", "--author", "bulk-seed", "--json"],
+        { expectJson: true },
+      );
+      expect(preClose.code).toBe(0);
+      const openTarget = createSeedItem(context, "bulk-identical-open");
+      const before = await readItem(context.pmPath, closedTarget);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+
+      const mutations = [
+        {
+          op: "update" as const,
+          id: closedTarget,
+          options: {
+            title: before.title,
+            status: "closed",
+            closeReason: before.close_reason,
+            force: true,
+          },
+        },
+        { op: "update" as const, id: openTarget, options: { title: "Renamed in the batch" } },
+      ];
+      const first = await commitItemMutations({
+        pmRoot: context.pmPath,
+        transactionId: "bulk-batch-identical-closed",
+        author: "bulk-agent",
+        mutations,
+      });
+      expect(first.status).toBe("committed");
+      const retried = await commitItemMutations({
+        pmRoot: context.pmPath,
+        transactionId: "bulk-batch-identical-closed-retry",
+        author: "bulk-agent",
+        mutations,
+      });
+      expect(retried.status).toBe("committed");
+
+      const after = await readItem(context.pmPath, closedTarget);
+      expect(after.closed_at).toBe(before.closed_at);
+      expect(after.updated_at).toBe(before.updated_at);
+      expect(after.close_reason).toBe("Closed before the batch");
+      expect((await readItem(context.pmPath, openTarget)).title).toBe("Renamed in the batch");
+    });
+  });
+
   it("records evidence, closes, and releases one claimed item atomically", async () => {
     await withTempPmPath(async (context) => {
       const target = createSeedItem(context, "atomic-completion");

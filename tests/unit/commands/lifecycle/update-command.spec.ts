@@ -810,6 +810,131 @@ describe("runUpdate", () => {
     });
   });
 
+  describe("repeated terminal state updates (GH-1628)", () => {
+    async function readTerminalSnapshot(context: TempPmContext, id: string) {
+      const settings = await readSettings(context.pmPath);
+      const located = await locateItem(
+        context.pmPath,
+        id,
+        settings.id_prefix,
+        settings.item_format,
+      );
+      if (!located) {
+        throw new Error(`item ${id} not located`);
+      }
+      const bytes = await readFile(located.itemPath, "utf8");
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      expect(history.code).toBe(0);
+      const persisted = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(persisted.code).toBe(0);
+      const item = (persisted.json as { item: Record<string, unknown> }).item;
+      return {
+        bytes,
+        historyLength: (history.json as { history: unknown[] }).history.length,
+        closed_at: item.closed_at as string,
+        updated_at: item.updated_at as string,
+        close_reason: item.close_reason as string,
+        title: item.title as string,
+      };
+    }
+
+    async function createClosedTask(context: TempPmContext, title: string): Promise<string> {
+      const id = createTask(context, title);
+      const closed = await runUpdate(
+        id,
+        { status: "closed", closeReason: "done the first time" },
+        { path: context.pmPath },
+      );
+      expect(closed.warnings).toContain("auto_routed_from_update_to_close");
+      // Make a re-stamped clock observable.
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      return id;
+    }
+
+    it("keeps closure and mutation clocks when a forced update repeats the current terminal state", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "forced-repeat-closed");
+        const before = await readTerminalSnapshot(context, id);
+        const result = await runUpdate(
+          id,
+          {
+            title: before.title,
+            status: "closed",
+            closeReason: before.close_reason,
+            force: true,
+          },
+          { path: context.pmPath },
+        );
+        expect(result.changed_fields).toEqual([]);
+        expect(result.warnings).toContain("terminal_state_unchanged");
+        expect(result.warnings).not.toContain("auto_routed_from_update_to_close");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.closed_at).toBe(before.closed_at);
+        expect(after.updated_at).toBe(before.updated_at);
+        expect(after.historyLength).toBe(before.historyLength);
+        expect(after.bytes).toBe(before.bytes);
+      });
+    });
+
+    it("treats an identical terminal update without --force as a no-op instead of a refused re-closure", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "unforced-repeat-closed");
+        const before = await readTerminalSnapshot(context, id);
+        const result = await runUpdate(
+          id,
+          { status: "closed", closeReason: `  ${before.close_reason}  ` },
+          { path: context.pmPath },
+        );
+        expect(result.changed_fields).toEqual([]);
+        expect(result.warnings).toContain("terminal_state_unchanged");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.closed_at).toBe(before.closed_at);
+        expect(after.updated_at).toBe(before.updated_at);
+        expect(after.historyLength).toBe(before.historyLength);
+      });
+    });
+
+    it("applies the other fields of a repeated terminal update without re-stamping closed_at", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "repeat-closed-with-title");
+        const before = await readTerminalSnapshot(context, id);
+        const result = await runUpdate(
+          id,
+          { status: "closed", closeReason: before.close_reason, title: "renamed after closure", force: true },
+          { path: context.pmPath },
+        );
+        expect(result.changed_fields).toEqual(["title"]);
+        expect(result.warnings).toContain("terminal_state_unchanged");
+        expect(result.warnings).not.toContain("auto_routed_from_update_to_close");
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.title).toBe("renamed after closure");
+        expect(after.closed_at).toBe(before.closed_at);
+        expect(after.updated_at).not.toBe(before.updated_at);
+        expect(after.historyLength).toBe(before.historyLength + 1);
+      });
+    });
+
+    it("still routes a repeat closure with a different reason through the closure writer", async () => {
+      await withTempPmPath(async (context) => {
+        const id = await createClosedTask(context, "repeat-closed-new-reason");
+        const before = await readTerminalSnapshot(context, id);
+        await expect(
+          runUpdate(id, { status: "closed", closeReason: "a different reason" }, { path: context.pmPath }),
+        ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.CONFLICT });
+        const forced = await runUpdate(
+          id,
+          { status: "closed", closeReason: "a different reason", force: true },
+          { path: context.pmPath },
+        );
+        expect(forced.warnings).toContain("auto_routed_from_update_to_close");
+        expect(forced.changed_fields).toEqual(expect.arrayContaining(["close_reason"]));
+        const after = await readTerminalSnapshot(context, id);
+        expect(after.close_reason).toBe("a different reason");
+        expect(after.historyLength).toBe(before.historyLength + 1);
+      });
+    });
+  });
+
   it("refuses a reasonless auto-routed terminal transition under required-reason governance", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "auto-route-close-no-reason");

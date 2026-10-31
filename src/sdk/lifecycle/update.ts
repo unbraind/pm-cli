@@ -3,6 +3,11 @@
  *
  * Implements the pm update command surface and its agent-facing runtime behavior.
  */
+import {
+  applyRepeatedTerminalStateUpdate,
+  describesCurrentTerminalState,
+  readRoutedItemMetadata,
+} from "./repeated-terminal-state.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
 import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
@@ -1333,13 +1338,26 @@ interface UpdateMutationContext {
   pmRoot: string;
 }
 
-interface CloseRouteContext {
+/** Inputs shared by the close-status routing of an update and its repeated-terminal-state check. */
+export interface CloseRouteContext {
+  /** Normalized update options of the invocation. */
   options: UpdateCommandOptions;
+  /** Which update fields the invocation set, keyed by option name. */
   fieldFlags: Record<string, boolean>;
+  /** Runtime status registry that names the configured close status. */
   statusRegistry: RuntimeStatusRegistry;
+  /** Workflow transition warnings collected before routing. */
   workflowTransitionWarnings: readonly string[];
+  /** Global CLI options forwarded to nested commands. */
   global: GlobalOptions;
+  /** Target item id. */
   id: string;
+  /** Resolved tracker root. */
+  pmRoot: string;
+  /** Tracker settings in effect. */
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  /** Item type registry used to locate the item document. */
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>;
 }
 
 // `rank` is a legacy alias for `order`; keep it out of the scalar loop if the
@@ -2081,6 +2099,21 @@ async function routeCloseStatusUpdate(
         key !== "completedAt",
     )
     .map(([key]) => key);
+  const currentMetadata = await readRoutedItemMetadata(context);
+  if (
+    describesCurrentTerminalState(
+      currentMetadata,
+      context.options,
+      context.statusRegistry,
+    )
+  ) {
+    return applyRepeatedTerminalStateUpdate(
+      context,
+      currentMetadata,
+      otherFieldKeys,
+      runUpdate,
+    );
+  }
   const routeWarnings: string[] = [];
   let preChangedFields: string[] = [];
   if (otherFieldKeys.length > 0) {
@@ -3343,6 +3376,9 @@ async function runUpdateWithContext(
     workflowTransitionWarnings,
     global,
     id,
+    pmRoot,
+    settings,
+    typeRegistry,
   });
   if (routedClose) {
     return routedClose;
