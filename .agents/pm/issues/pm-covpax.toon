@@ -6,18 +6,18 @@ status: closed
 priority: 3
 tags[3]: agent-ux,linked-tests,token-efficiency
 created_at: "2026-10-30T13:12:13.481Z"
-updated_at: "2026-10-31T09:50:30.025Z"
+updated_at: "2026-10-31T11:55:22.742Z"
 closed_at: "2026-10-30T14:06:27.219Z"
 completed_at: "2026-10-30T14:06:27.219Z"
 author: "harness:claude-code"
 estimated_minutes: 120
-acceptance_criteria: "Measure the default, lean and JSON receipts for passing and failing runs, with and without a context mismatch; Define which execution_context fields are actionable on success and project the rest behind an explicit restore path, keeping full provenance on failure, refusal or mismatch; Render failure_categories compactly when every count is zero, without losing the counts on failure; Keep CLI, SDK and MCP shapes consistent and record the measured byte reduction"
+acceptance_criteria: "Measure the default, lean and JSON receipts for passing and failing runs, with and without a context mismatch; Define which execution_context fields are actionable on success and omit the rest with an explicit, non-rerun disclosure that they are not retained (a run without --lean reports the full context), keeping full provenance on failure, refusal or mismatch; Render failure_categories compactly when every count is zero, without losing the counts on failure; Keep CLI, SDK and MCP shapes consistent and record the measured byte reduction"
 parent: pm-5t33or
 risk: low
 confidence: high
 severity: low
-resolution: "Lean CLI output for a passing, mismatch-free, all-zero-category run projects execution_context to its modes, trust reason and restore_with, and omits zero failure categories. Failures, skips, mismatches and default output keep full provenance."
-expected_result: "A passing, mismatch-free linked-test receipt omits non-actionable sandbox plumbing and zero-count categories by default or under --lean, with a documented way to restore them; failures keep full diagnostic provenance."
+resolution: "Lean CLI output for a passing, mismatch-free, all-zero-category run projects execution_context to its modes, mismatch_detected false, the trusted boolean, the trust reason and restore_with: not retained; a run without --lean reports the full context. It omits zero failure categories. The hint never tells the caller to rerun, because a rerun repeats mutating flags. Failures, skips, mismatches and default output keep full provenance."
+expected_result: "A passing, mismatch-free linked-test receipt under --lean omits non-actionable sandbox plumbing and zero-count categories, keeps the decision-relevant mismatch and trust booleans, and states that the omitted context is not retained and that a separate run without --lean reports it; failures keep full diagnostic provenance."
 actual_result: "58-test --only-last passing run: lean TOON 2178 to 865 bytes, lean JSON 2645 to 1166. The failing lean run keeps 21 context fields and non-zero categories. Default output is unchanged. Unit coverage spans success, trust reason, failure, non-zero category, mismatch and skip variants."
 component: cli
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
@@ -53,7 +53,7 @@ test_runs[1]:
       node scripts/run-tests.mjs test tests/unit/core/output/output.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
-close_reason: "Lean receipts for passing, mismatch-free linked-test runs omit non-actionable sandbox plumbing with a restore path."
+close_reason: "Lean receipts for passing, mismatch-free linked-test runs omit non-actionable sandbox plumbing, keep the mismatch and trust booleans, and disclose that the omitted context is not retained."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
