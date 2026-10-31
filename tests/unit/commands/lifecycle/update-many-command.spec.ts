@@ -513,6 +513,45 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("unsets a runtime field declared only for update_many through the bulk scope and refuses it on plain update", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        {
+          key: "batchLabel",
+          metadata_key: "batch_label",
+          type: "string",
+          cli_flag: "batch-label",
+          commands: ["update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings);
+      const id = createTask(context, "update-many-only-unset", { tags: "bulk-only-unset" });
+      const seeded = await runUpdateMany(
+        { list: { ids: id }, update: { batchLabel: "wave-1" } as UpdateCommandOptions },
+        { path: context.pmPath },
+      );
+      expect(seeded.updated_count).toBe(1);
+
+      const preview = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["batch-label"] }, dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(preview.item_plans?.[0]?.changes).toEqual([{ field: "batch_label", before: "wave-1", after: null }]);
+      const applied = await runUpdateMany(
+        { list: { ids: id }, update: { unset: ["batch-label"] } },
+        { path: context.pmPath },
+      );
+      expect(applied.updated_count).toBe(1);
+      const persisted = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((persisted.json as { item: Record<string, unknown> }).item.batch_label).toBeUndefined();
+      await expect(runUpdate(id, { unset: ["batch-label"] }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining('Unsupported --unset field "batch-label"'),
+      });
+    });
+  });
+
   it("produces dry-run plans without mutating matched items", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "bulk-dry-run-a", {

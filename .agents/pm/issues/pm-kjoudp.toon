@@ -1,0 +1,19 @@
+id: pm-kjoudp
+title: "Recovery commands rendered on Windows are not paste-safe in PowerShell: $(...) and backticks expand inside CommandLineToArgvW double quotes"
+description: "Recovery commands (`restore_with`, `suggested_retry`, next-step hints) are rendered by `quoteCommandArg` / `renderPmCommand` in `src/core/shared/command-line.ts`, used across 41 source files. On `win32` the helper follows CommandLineToArgvW quoting, which is correct for cmd.exe and CreateProcess, as settled in pm-b24b. PowerShell, however, expands `$var`, `$(...)` and backticks inside double quotes. An argument such as a tracker path `C:\\trackers\\$(Start-Process calc)` therefore expands when a user pastes the command into PowerShell. The argument comes from the user's own `--pm-path` or `PM_PATH`, so this is low risk, but recovery text should be paste-safe in the shell the agent actually uses.\n\nCodeRabbit raised it on PR #1635 for `tests_omitted.restore_with`. It applies to every rendered recovery command, so it needs one shell-dialect decision instead of a per-call-site patch."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,recovery,security,windows
+created_at: "2026-10-31T09:47:32.983Z"
+updated_at: "2026-10-31T09:49:23.919Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Decide the recovery-command shell dialect on win32 (cmd/CreateProcess, PowerShell, or a declared dialect field); quoteCommandArg renders arguments containing $, backtick, ( or ) so that pasting into the declared shell never expands them; unit tests cover win32 cmd and PowerShell rendering of a tracker path containing $(...) and a backtick; existing cmd/CreateProcess round-trip tests stay green"
+parent: pm-mpbb
+risk: low
+confidence: medium
+expected_result: "A recovery command rendered on Windows can be pasted into the declared shell without expanding $, $(...) or backticks in any argument."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-b24b,related,"2026-10-31T09:47:32.983Z","harness:claude-code","cli:create:dep",detected
+body: ""

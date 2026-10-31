@@ -616,9 +616,10 @@ const appendRuntimeFieldMutationPlans = (
 
 /**
  * Adds present fields requested through unset options to a planned item diff.
- * Tokens resolve through the same validated update resolver, independent of
- * the row's current values, so an alias such as `gh-url` targets its stored
- * `github_url` key even when the row has no value under the alias spelling.
+ * Tokens resolve through the same validated update resolver under the
+ * `update_many` runtime scope, independent of the row's current values, so an
+ * alias such as `gh-url` targets its stored `github_url` key even when the row
+ * has no value under the alias spelling.
  */
 const appendUnsetMutationPlans = (
   changes: PlannedChange[],
@@ -633,6 +634,7 @@ const appendUnsetMutationPlans = (
     unset,
     runtimeFieldRegistry,
     collectRegisteredItemFieldNames(getActiveExtensionRegistrations()),
+    ["update_many"],
   );
   for (const field of fields) {
     const before = row[field];
@@ -728,6 +730,7 @@ const PLANNED_UPDATE_VALIDATORS: PlannedUpdateValidator[] = [
         update.unset,
         resolveRuntimeFieldRegistry(settings.schema),
         collectRegisteredItemFieldNames(getActiveExtensionRegistrations()),
+        ["update_many"],
       );
     }
   },

@@ -248,6 +248,23 @@ describe("runClose", () => {
     });
   });
 
+  it("clears the claim principal with the assignee so a closed claimed item keeps no owner", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-claimed-item", { status: "open" });
+      const claimed = context.runCli(["claim", id, "--json"], { expectJson: true });
+      expect(claimed.code, claimed.stderr).toBe(0);
+      const before = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((before.json as { item: Record<string, unknown> }).item.claim_principal).toEqual(expect.any(String));
+
+      const result = await runClose(id, "Claimed work finished", {}, { path: context.pmPath });
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["assignee", "claim_principal"]));
+      const after = context.runCli(["get", id, "--json"], { expectJson: true });
+      const item = (after.json as { item: Record<string, unknown> }).item;
+      expect(item.assignee).toBeUndefined();
+      expect(item.claim_principal).toBeUndefined();
+    });
+  });
+
   it("tracks actual completion separately from close time and clears both when reopened", async () => {
     await withTempPmPath(async (context) => {
       const closedViaClose = createTask(context, "close-at-via-close");

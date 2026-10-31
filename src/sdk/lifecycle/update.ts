@@ -379,17 +379,20 @@ export function assertUpdateUnsetFieldsSupported(
   raw: readonly string[],
   runtimeFieldRegistry: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[],
+  commands: UpdateCommandOptions["runtimeFieldCommands"] = ["update"],
 ): string[] {
   return [
-    ...parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames)
+    ...parseUpdateUnsetTargets([...raw], runtimeFieldRegistry, extensionFieldNames, commands)
       .metadataKeys,
   ];
 }
 
+/** Resolve `--unset` tokens; runtime fields resolve under the invoking command scope (`update` or `update_many`). */
 function parseUpdateUnsetTargets(
   raw: string[] | undefined,
   runtimeFieldRegistry?: RuntimeFieldRegistry,
   extensionFieldNames: readonly string[] = [],
+  commands: UpdateCommandOptions["runtimeFieldCommands"] = ["update"],
 ): { metadataKeys: Set<string>; optionKeys: Set<string> } {
   return parseCommandUnsetTargets({
     raw,
@@ -405,11 +408,9 @@ function parseUpdateUnsetTargets(
       });
       const definition =
         UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
-        resolveRuntimeUnsetFieldDefinition(
-          trimmed,
-          "update",
-          runtimeFieldRegistry,
-        ) ??
+        commands
+          .map((command) => resolveRuntimeUnsetFieldDefinition(trimmed, command, runtimeFieldRegistry))
+          .find((resolved) => resolved !== undefined) ??
         (extensionFieldName
           ? { optionKey: "field", metadataKey: extensionFieldName }
           : undefined);
@@ -1245,6 +1246,7 @@ function collectProvidedUpdatePolicyOptions(
       options.unset,
       runtimeFieldRegistry,
       extensionFieldNames,
+      options.runtimeFieldCommands,
     );
     for (const optionKey of unsetTargets.optionKeys) {
       mark(optionKey, true);
@@ -3258,6 +3260,7 @@ async function runUpdateWithContext(
     options.unset,
     runtimeFieldRegistry,
     extensionFieldNames,
+    options.runtimeFieldCommands,
   );
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
   const clearItemMetadataKeys = new Set<string>(unsetTargets.metadataKeys);

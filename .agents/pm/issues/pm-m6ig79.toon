@@ -6,10 +6,9 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,performance,runner-queue
 created_at: "2026-10-30T15:20:03.397Z"
-updated_at: "2026-10-31T01:49:00.322Z"
+updated_at: "2026-10-31T09:35:35.464Z"
 closed_at: "2026-10-30T23:45:27.683Z"
 completed_at: "2026-10-30T23:45:27.683Z"
-claim_principal: "harness:claude-code#7b0e58428f53e3aaeaafb372"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "build-test runs one job per OS that performs the Node 22.18.0 and Node 24 packed first runs, the dist version smoke, the Node 22 telemetry and snapshot regressions (ubuntu), the native macOS checks and the full Windows npx/bunx acceptance; first-run and node22-telemetry jobs are gone; gates matrix is static+smokes: typecheck runs in static, both compatibility gates run in smokes, and the duplicated contracts:check/sdk:surface:check invocations are removed (quality:static still runs both checks); windows-regression-cohorts has no max-parallel cap; ci-workflow-contract, packed-first-run, node22-telemetry-workflow tests, gate-registry.json and defect-recurrence-policy.json reference the new job layout and pass; gate-registry passes; main branch protection requires Packed runtime (ubuntu-latest|macos-latest|windows-latest) instead of the ten removed names, and no required check is left that no workflow emits; the PR introducing the change records its uncontended wall clock and per-job durations"
