@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: ci,github-actions,performance,runner-queue
 created_at: "2026-10-30T15:20:03.397Z"
-updated_at: "2026-10-30T23:45:27.708Z"
+updated_at: "2026-10-31T01:49:00.322Z"
 closed_at: "2026-10-30T23:45:27.683Z"
 completed_at: "2026-10-30T23:45:27.683Z"
 claim_principal: "harness:claude-code#7b0e58428f53e3aaeaafb372"
@@ -22,8 +22,9 @@ resolution: "#1634 (merge 20e91f2f9) folds the packed first runs, version smoke,
 expected_result: "A pm-cli PR push requests at most 15 CI jobs (23 across all PR workflows) while every proof that ran before still runs, the Windows cohorts run concurrently, and the uncontended CI wall clock stays under 20 minutes."
 actual_result: "PR #1634 head ba4e7a853, CI run 41136001358: 15 CI jobs ran (23 across CI, CodSpeed, CodeQL, Docs and the 5 security jobs), all green. Longest jobs: Gates (static) 13.1 min, Packed runtime (windows-latest) 12.8 min, Windows native cohort 7.6 min, slowest coverage shard 7.2 min; the three Windows cohorts ran concurrently. Uncontended critical path is about 15 min (build 1.6 min + static 13.1 min). Contended wall clock was 36 min because coverage and Linux jobs queued behind other repositories for up to 25 minutes on the shared 20-job account cap (owner pm-gzr4j6)."
 component: ci
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-29bwud,related,"2026-10-30T15:20:03.397Z","harness:claude-code","cli:create:dep",detected
+  pm-gzr4j6,related,"2026-10-31T01:48:59.928Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-10-30T15:31:16.878Z","harness:claude-code","Implementation on branch ci/bounded-pr-runner-demand. ci.yml: build-test is now 'Packed runtime (<os>)' x3 (ubuntu/macos/windows). Each runs packed first run on Node 22.18.0 then 24 in separate prefix/cache/home roots (pm-first-run-node<version>) before any dependency install, the dist version smoke on 24, then platform proofs: ubuntu = Node 22 telemetry + linked snapshot regressions (Node 22 setup, pnpm install under 22), macOS = registry/completion/merge settlement/portability, Windows = full npm npx + Bun bunx acceptance (timeout 25). Jobs first-run and node22-telemetry removed. gates matrix static+smokes: typecheck step moved to static, compatibility-check and workspace-compatibility moved to smokes; static no longer runs pnpm contracts:check / pnpm sdk:surface:check directly because pnpm lint (quality:static) runs contracts-snapshot, capability surfaces, error catalog and sdk-surface-snapshot checks. windows-regression-cohorts lost max-parallel 2. Per-push CI jobs 25 -> 15 (all PR workflows 33 -> 23; macOS jobs 3 -> 1, Windows 5 -> 4). gate-registry.json drops ci.yml#first-run and ci.yml#node22-telemetry (both gates already list ci.yml#build-test); defect-recurrence-policy renames CI / Runtime smoke (macos-latest, Node 24) to CI / Packed runtime (macos-latest). Docs: TESTING.md gains 'CI Job Layout and Runner Budget', PACKED_FIRST_RUN.md names the per-OS job."
   "2026-10-30T15:31:17.592Z","harness:claude-code","Local evidence: actionlint 1.7.12 clean on ci.yml; ci-workflow-contract (24), node22-telemetry-workflow (1), packed-first-run (5), gate-registry (9), workflow-inventory (3), release-automation-contract (25), codecov-verified-upload (3) all pass; node scripts/release/gate-registry.mjs exit 0; docs-skills-gate, check-workflow-permissions, lint:duplicates (0 clones), eslint on changed specs, pnpm typecheck, security:scan, changelog:pm:check pass; tracker assurance gates pass. Negative control: the updated contract tests run against origin/main's ci.yml fail 4 tests (Windows max-parallel cap, gate matrix/runtime layout, Node 22 telemetry ownership, per-OS packed first runs)."

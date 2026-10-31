@@ -531,6 +531,11 @@ describe("pm cli error guidance context plumbing", () => {
     );
     expect(envelope.recovery?.suggested_retry).toBeUndefined();
     expect(envelope.recovery?.suggested_retry_args).toBeUndefined();
+    // Without the invocation argv, or when the value is not in it, there is nothing to replay.
+    for (const context of [{}, { normalizedInvocationArgs: ["comment", "pm-a1b2"] }]) {
+      const silent = formatCommanderErrorForJson("unknown option '--not an option'", "comment", "Task|Issue", 2, context);
+      expect(silent.recovery?.suggested_retry_args).toBeUndefined();
+    }
   });
 
   it("falls back to the full rendering when no ladder stage can fit the text ceiling", () => {

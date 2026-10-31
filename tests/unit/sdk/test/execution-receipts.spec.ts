@@ -2,7 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   detectEmptyLinkedTestRun,
   findLinkedTestExecutionReceipt,
+  renderTrackerPathFlag,
 } from "../../../../src/sdk/test/execution-receipts.js";
+
+describe("restore command tracker path", () => {
+  it("renders --pm-path only for an explicit tracker root and quotes unsafe paths", () => {
+    expect(renderTrackerPathFlag(undefined)).toBe("");
+    expect(renderTrackerPathFlag("   ")).toBe("");
+    expect(renderTrackerPathFlag("/srv/repo/.agents/pm")).toBe(" --pm-path /srv/repo/.agents/pm");
+    expect(renderTrackerPathFlag("/srv/my repo/.agents/pm")).toBe(' --pm-path "/srv/my repo/.agents/pm"');
+  });
+});
 
 describe("linked-test runner receipts", () => {
   it.each([

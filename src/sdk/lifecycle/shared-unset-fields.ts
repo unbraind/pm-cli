@@ -278,10 +278,10 @@ export type CommandUnsetTargetResolver = (
  */
 export function expandUnsetFieldTokens(
   raw: readonly string[] | undefined,
-  resolvesWhole: (entry: string) => boolean = () => false,
+  resolvesWhole?: (entry: string) => boolean,
 ): string[] {
   return (raw ?? []).flatMap((entry) =>
-    entry.includes(",") && resolvesWhole(entry) ? [entry] : entry.split(","),
+    entry.includes(",") && resolvesWhole?.(entry) === true ? [entry] : entry.split(","),
   );
 }
 

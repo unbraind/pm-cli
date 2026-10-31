@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,github,sdk
 created_at: "2026-10-30T12:44:36.870Z"
-updated_at: "2026-10-30T13:53:30.658Z"
+updated_at: "2026-10-31T01:48:58.712Z"
 closed_at: "2026-10-30T13:53:30.046Z"
 completed_at: "2026-10-30T13:53:30.046Z"
 author: "harness:claude-code"
@@ -22,9 +22,16 @@ expected_result: "pm create/update --unset parent,release clears both fields exa
 actual_result: "create --unset parent,release succeeds where base refused 'parent,release'. update --unset deadline,assignee --unset release equals three repeated flags. update many dry run and apply clear comma lists. 'parnt' and empty parts are refused by name with no write. add-field 'foo,bar' is refused where base registered it. Linked tests, flag-lexicon gate 8/8 and the full suite pass."
 affected_version: 2026.10.28
 component: cli
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[9]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1626,related,"2026-10-30T12:44:36.870Z","harness:claude-code","cli:create:dep",detected
   pm-gknu,discovered_from,"2026-10-30T12:44:36.870Z","harness:claude-code","cli:create:dep",detected
+  pm-cf1u,related,"2026-10-31T01:48:58.493Z","harness:claude-code","cli:update:dep",detected
+  pm-evav,related,"2026-10-31T01:48:58.493Z","harness:claude-code","cli:update:dep",detected
+  pm-hu92i3,related,"2026-10-31T01:48:58.493Z","harness:claude-code","cli:update:dep",detected
+  pm-kfq5,related,"2026-10-31T01:48:58.493Z","harness:claude-code","cli:update:dep",detected
+  pm-klqo,related,"2026-10-31T01:48:58.493Z","harness:claude-code","cli:update:dep",detected
+  pm-ltbr,related,"2026-10-31T01:48:58.493Z","harness:claude-code","cli:update:dep",detected
+  pm-nc94mk,related,"2026-10-31T01:48:58.493Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
   "2026-10-30T12:44:36.870Z","harness:claude-code","Duplicate check: semantic search for --unset comma lists (top hits pm-evav, pm-ltbr, pm-hu92i3, pm-cf1u, pm-klqo, pm-kfq5, pm-nc94mk, pm-gknu, all closed), a keyword search for --unset replay corrections, and the 28 open agent-ux items. None of them owns --unset comma handling. The nearest owners are pm-gknu (closed, multi-value filter grammar) and pm-gh1626 (open, sibling same-command correction). Source report: https://github.com/unbraind/pm-cli/issues/1633"
   "2026-10-30T13:03:38.409Z","harness:claude-code","Implementation evidence: option 1 was adopted after proving its precondition. Pre-fix, pm schema add-field \"foo,bar\" registered a comma key and advertised an unusable --foo,bar flag (reproduced on d9c4a0bca), so field keys could contain commas. normalizeAddFieldInput now refuses comma keys and comma flags, which makes the split unambiguous. --unset is declared list: true on create, update and update-many, so argv normalisation coalesces repeats and the shared parser expands comma lists (expandUnsetFieldTokens). Each part is validated and refused by name: an unknown part gives 'Unsupported --unset field \"parnt\"', an empty part gives 'must not be empty'. Separate pre-existing defect fixed in the same seam: update many --unset <unknown> exited 0 with outcome no_effect in both dry run and apply, on both pre-fix and current builds, while update refused it. The bulk preview skipped absent fields and never called the validator. A planned-update validator now refuses it before planning. The legacy dry-run test that encoded the silent acceptance of missing-field was updated. Help, zsh/fish completion, the MCP unset parameter description, COMMANDS.md and SDK.md say 'repeatable or comma-separated'. Negative control: pre-fix create --unset parent,release refused 'Unsupported --unset field \"parent,release\"'; this build creates the item."

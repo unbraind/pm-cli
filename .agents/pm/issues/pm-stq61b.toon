@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,recovery,sdk
 created_at: "2026-10-30T13:54:31.173Z"
-updated_at: "2026-10-30T13:59:12.537Z"
+updated_at: "2026-10-31T01:49:01.211Z"
 closed_at: "2026-10-30T13:59:11.659Z"
 completed_at: "2026-10-30T13:59:11.659Z"
 author: "harness:claude-code"
@@ -20,10 +20,12 @@ resolution: "A whitespace-bearing unknown option is classified as a value. Its r
 expected_result: "A dash-leading prose value is never dropped by an advertised replay; when safe, the replay passes it after a -- separator, otherwise the refusal explains how to pass it."
 actual_result: "close and comments replays preserve and store the text. create with a following --type value advertises no lossy retry. 5 new unit cases fail on the pre-fix source and pass with the fix. The CLI integration replay test, CLI unit suite 843/843 and the refusal-closure gate pass."
 component: cli
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-fo8g7j,related,"2026-10-30T13:54:31.173Z","harness:claude-code","cli:create:dep",detected
   pm-gh1633,discovered_from,"2026-10-30T13:54:31.173Z","harness:claude-code","cli:create:dep",detected
   pm-p316vn,related,"2026-10-30T13:54:31.173Z","harness:claude-code","cli:create:dep",detected
+  pm-8nyc,related,"2026-10-31T01:49:01.005Z","harness:claude-code","cli:update:dep",detected
+  pm-in23qu,related,"2026-10-31T01:49:01.005Z","harness:claude-code","cli:update:dep",detected
 comments[2]{created_at,author,text}:
   "2026-10-30T13:54:31.173Z","harness:claude-code","Duplicate check: a semantic search for an unknown-option fallback dropping positional dash-leading text, and a keyword search for 'suggested_retry drops'. The nearest closed owners are pm-p316vn (close retry preserves named options), pm-fo8g7j (refusal identifies the actual rejected flag) and pm-8nyc/pm-in23qu (suggestion quality). None covers a whitespace-bearing token being parsed as an option and then deleted from the replay, so this is a distinct boundary."
   "2026-10-30T13:59:10.876Z","harness:claude-code","Implementation evidence: resolveUnknownOptionRetry now treats a rejected option containing whitespace as a dash-leading value, never an option spelling. It skips the lexical drop fallback and offers a retry only when every later token is itself an option. That retry moves the value behind a -- separator and strips global bootstrap tokens from the part before it, because stripGlobalBootstrapTokens stops at --. Otherwise no retry is advertised. The refusal replaces the declared-nowhere option advice with an explanation of how to pass the value. Verified in an isolated tracker: pm close <id> \"--unset is now a list\" advertises pm close <id> -- \"--unset is now a list\", and replaying it stores that close_reason. pm comments <id> \"--flag style comment text\" replays as pm item comments <id> -- \"...\" and stores the comment. pm create \"--weird title\" --type Task gets the explanation and no lossy retry. Negative control: with only error-guidance.ts reverted, the 5 new unit cases fail (5 failed, 9 passed). With the fix, tests/unit/cli 843/843 pass, the refusal-closure gate has no findings, and ESLint passes. escape_class review_caught_late: the defect was found by this session while closing pm-gh1633, not by a user report."
