@@ -984,16 +984,17 @@ function parseBackgroundWorkerStdout(stdoutBuffer: string): unknown | null {
 }
 
 function resolveBackgroundWorkerFinalStatus(
-  record: BackgroundTestRunRecord,
+  exitCode: number | undefined,
+  summary: BackgroundRunSummary,
   stopRequested: boolean,
 ): BackgroundTestRunStatus {
   if (stopRequested) {
     return "stopped";
   }
   const passed =
-    record.exit_code === 0 &&
-    (record.summary?.failed ?? 0) === 0 &&
-    record.summary?.fail_on_skipped_triggered !== true;
+    exitCode === 0 &&
+    summary.failed === 0 &&
+    summary.fail_on_skipped_triggered !== true;
   return passed ? "passed" : "failed";
 }
 
@@ -1195,7 +1196,8 @@ export async function runBackgroundTestRunWorker(
   record.signal = signal ?? undefined;
   record.finished_at = nowIso();
   record.status = resolveBackgroundWorkerFinalStatus(
-    record,
+    record.exit_code,
+    evaluated.summary,
     stopState.stopRequested,
   );
   record.progress = buildFinishedBackgroundProgress(

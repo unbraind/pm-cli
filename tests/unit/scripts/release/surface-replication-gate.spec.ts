@@ -1026,6 +1026,21 @@ describe("surface replication gate", () => {
     });
   });
 
+  it("rejects an otherwise valid replication set that declares no owner", async () => {
+    const root = await fixtureRoot();
+    await writeFile(path.join(root, "src/sdk/a.ts"), "sharedContract\n", "utf8");
+    await writeFile(path.join(root, "src/cli/b.ts"), "sharedContract\n", "utf8");
+    const options = { repoRoot: root, changedFiles: ["src/sdk/a.ts", "src/cli/b.ts"], today: "2026-08-07" };
+    const owned = await validateSurfaceReplication(declaration(), options);
+    expect(owned.ok).toBe(true);
+    expect(owned.violations).not.toContain("set:invalid");
+    const unowned = declaration();
+    Reflect.deleteProperty(unowned.sets[0], "owner");
+    const report = await validateSurfaceReplication(unowned, options);
+    expect(report.ok).toBe(false);
+    expect(report.violations).toContain("set:invalid");
+  });
+
   it("rejects invalid and expired waiver candidates before accepting a valid owner", async () => {
     const root = await fixtureRoot();
     await writeFile(
@@ -1062,6 +1077,12 @@ describe("surface replication gate", () => {
         member_path: "src/cli/b.ts",
         pm_item: "owner",
         reason: "Invalid PM owner waiver candidate.",
+        expires_on: "2026-08-08",
+      },
+      {
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        reason: "Missing PM owner waiver candidate.",
         expires_on: "2026-08-08",
       },
       {

@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { test } from "vitest";
 
 import {
   DEFAULT_BM25_B,
@@ -69,25 +69,27 @@ const largeCorpus = buildCorpus(2000, 80);
 const largeIndex = buildBm25Index(largeCorpus);
 const queryTokens = tokenizeBm25("release sprint dependency regression benchmark latency");
 
-describe("BM25 index construction", () => {
-  bench("build index (200 docs x 40 words)", () => {
-    buildBm25Index(smallCorpus);
-  });
-
-  bench("build index (2000 docs x 80 words)", () => {
-    buildBm25Index(largeCorpus);
-  });
+test("BM25 index construction", async ({ bench }) => {
+  await bench.compare(
+    bench("build index (200 docs x 40 words)", () => {
+      buildBm25Index(smallCorpus);
+    }),
+    bench("build index (2000 docs x 80 words)", () => {
+      buildBm25Index(largeCorpus);
+    }),
+  );
 });
 
-describe("BM25 query scoring", () => {
-  bench("score query over 2000 docs", () => {
-    scoreBm25Query(largeIndex, queryTokens, BM25_PARAMS);
-  });
-
-  bench("tokenize + score query over 2000 docs", () => {
-    const tokens = tokenizeBm25(
-      "release sprint dependency regression benchmark latency governance audit",
-    );
-    scoreBm25Query(largeIndex, tokens, BM25_PARAMS);
-  });
+test("BM25 query scoring", async ({ bench }) => {
+  await bench.compare(
+    bench("score query over 2000 docs", () => {
+      scoreBm25Query(largeIndex, queryTokens, BM25_PARAMS);
+    }),
+    bench("tokenize + score query over 2000 docs", () => {
+      const tokens = tokenizeBm25(
+        "release sprint dependency regression benchmark latency governance audit",
+      );
+      scoreBm25Query(largeIndex, tokens, BM25_PARAMS);
+    }),
+  );
 });

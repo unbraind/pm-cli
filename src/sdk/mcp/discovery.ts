@@ -489,17 +489,19 @@ function decodeDiscoveryCursor(
     const decoded = JSON.parse(
       Buffer.from(value, "base64url").toString("utf8"),
     ) as Partial<PmToolDiscoveryCursor>;
+    const offset = decoded.offset;
     if (
       decoded.version !== 1 ||
-      !Number.isInteger(decoded.offset) ||
-      (decoded.offset ?? -1) < 0 ||
-      Number(decoded.offset) > total ||
+      typeof offset !== "number" ||
+      !Number.isInteger(offset) ||
+      offset < 0 ||
+      offset > total ||
       typeof decoded.signature !== "string"
     ) {
       throw new Error("cursor fields do not match the request");
     }
     const expectedSignature = Buffer.from(
-      cursorSignature(fingerprint, decoded.offset as number, integrityKey),
+      cursorSignature(fingerprint, offset, integrityKey),
       "base64url",
     );
     const suppliedSignature = Buffer.from(decoded.signature, "base64url");
@@ -509,7 +511,7 @@ function decodeDiscoveryCursor(
     ) {
       throw new Error("cursor signature does not match the request");
     }
-    return decoded.offset as number;
+    return offset;
   } catch (error: unknown) {
     throw new PmCliError(
       "Invalid or stale pm tool discovery cursor; restart discovery without cursor.",

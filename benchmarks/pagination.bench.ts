@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { test } from "vitest";
 
 import { stableStringify } from "../src/core/shared/serialization.js";
 import {
@@ -36,20 +36,19 @@ const CONTRACT = {
 const fingerprint = createQueryFingerprint("list", CONTRACT);
 const cursor = encodeQueryCursor(fingerprint, "pm-abcd", 49, "snap-token");
 
-describe("query pagination primitives", () => {
-  bench("stableStringify (nested contract)", () => {
-    stableStringify(CONTRACT);
-  });
-
-  bench("createQueryFingerprint", () => {
-    createQueryFingerprint("list", CONTRACT);
-  });
-
-  bench("encodeQueryCursor", () => {
-    encodeQueryCursor(fingerprint, "pm-abcd", 49, "snap-token");
-  });
-
-  bench("decodeQueryCursor", () => {
-    decodeQueryCursor(cursor, fingerprint);
-  });
+test("query pagination primitives", async ({ bench }) => {
+  await bench.compare(
+    bench("stableStringify (nested contract)", () => {
+      stableStringify(CONTRACT);
+    }),
+    bench("createQueryFingerprint", () => {
+      createQueryFingerprint("list", CONTRACT);
+    }),
+    bench("encodeQueryCursor", () => {
+      encodeQueryCursor(fingerprint, "pm-abcd", 49, "snap-token");
+    }),
+    bench("decodeQueryCursor", () => {
+      decodeQueryCursor(cursor, fingerprint);
+    }),
+  );
 });

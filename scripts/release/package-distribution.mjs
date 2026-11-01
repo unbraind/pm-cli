@@ -74,6 +74,20 @@ function materializeRuntimePeerBindings(target, metadata, expected) {
     writeFileSync(path.join(target, "package.json"), `${JSON.stringify(metadata, null, 2)}\n`);
 }
 
+/** Pin each required peer that the tested closure installs at the root to its tested version (pm-2csj4k). Bun resolves a package's dependencies from the registry instead of its bundleDependencies, so an unpinned peer resolves to its newest release even when the bundled packages declare a narrower range. A peer resolved only in a nested node_modules is not pinned: the root manifest may only name packages the ledger places at the root, which the installed-runtime verifier enforces. */
+export function pinRuntimePeers(manifest, ledger) {
+  const declared = { ...manifest.dependencies, ...manifest.optionalDependencies };
+  const peers = new Map();
+  for (const entry of Object.values(ledger.packages)) {
+    for (const name of Object.keys(entry.peerDependencies ?? {})) {
+      const tested = ledger.packages[`node_modules/${name}`];
+      if (tested && entry.peerDependenciesMeta?.[name]?.optional !== true && !Object.hasOwn(declared, name))
+        peers.set(name, tested.version);
+    }
+  }
+  return { ...manifest.dependencies, ...Object.fromEntries([...peers].sort(([left], [right]) => left.localeCompare(right))) };
+}
+
 /** Copy exactly the installed production closure and reject version or dependency drift. */
 function stageRuntime(root, stage, manifest, ledger) {
   const queue = Object.keys({
@@ -234,8 +248,9 @@ function packLeasedDistribution(root, options) {
     const published = structuredClone(manifest);
     delete published.devDependencies;
     delete published.scripts;
+    published.dependencies = pinRuntimePeers(manifest, ledger);
     published.bundleDependencies = Object.keys({
-      ...manifest.dependencies,
+      ...published.dependencies,
       ...manifest.optionalDependencies,
     });
     writeFileSync(

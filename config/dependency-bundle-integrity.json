@@ -1,19 +1,19 @@
 {
   "owner": "pm-r61juc",
   "name": "@codspeed/core",
-  "version": "5.7.1",
+  "version": "6.1.0",
   "sha256": {
-    "dist/index.cjs.js": "91da84dd7deb81cbdc25d0f4e772ff2c6e380ccb01429f8c03ea7b2b1e8f51ea",
-    "dist/index.cjs.js.map": "fce07e1edb4aa0c0435713c80b3d29843ac5871ee4461ef81a8c05b3b22c9121",
-    "dist/index.d.ts": "6f39cae6882794dadc42f474201138eef3fab49d539a1254a36edbcf380bc490",
+    "dist/index.cjs.js": "300124d5837ce5e92472057a0a3c66e3ad065b45d559cc95ea3a04263c96ac48",
+    "dist/index.cjs.js.map": "d00c2ab46ca5728fa2e709a5c014bb50c41a2b2376d0847bb003cf986a09ead1",
+    "dist/index.d.ts": "8af3943468d11690f9aa451f9970e02f64577b638ee166b7e4d539999ea7265e",
     "dist/index.d.ts.map": "cfb0347b806271f97316faef7e0dd47ed3bf877a4cfc2945117d2557d5e4c3a1",
-    "dist/index.es5.js": "8579eedd71a1ace91b917a727e3fac18b4441cd3ffe88d55bf4e5a7084d349cf",
-    "dist/index.es5.js.map": "92bce3d7ad4ac411467ae661810fd65b535bc12c4de21d7f253d8b5d8a4e4053",
+    "dist/index.es5.js": "42b3a86a1946f79db4e46d0d4cdd8441e8fb670f83edd888f7778656a94fab53",
+    "dist/index.es5.js.map": "132c6048fa85e826ababd4c73a7feec5c2c41e6278e1ce679ee06ae2422900f6",
     "LICENSE": "97882764198c718e6bcccf6a776e8c4db5af31782d6f0b409803c737d5e92a46",
-    "package.json": "7851ab8ea4f1dbe11dc4861fe8c5129341dd59ef401cba7e9c48877dff95e9a6",
-    "prebuilds/darwin-arm64/node.napi.node": "e1cdd31964603f11b9324398917284155370577d76c38d1ace41de44a5cf1171",
-    "prebuilds/linux-arm64/node.napi.node": "3b4f6c49b131ea9d4cc21ec431796ad74e7de4847b38233da38d2e378a2305e5",
-    "prebuilds/linux-x64/node.napi.node": "9e520dbfa548fa8556b707c133f94e5dd9f305f224dbfd87ef7efef27a3837ed",
+    "package.json": "8bd81ee6d3b198b8001c9f7506d132cfdbaec5f50c9fdc1696e35cdf19f829b3",
+    "prebuilds/darwin-arm64/node.napi.node": "2d77a3d3bad9b85f80eef3cde69a27c41b3b61bae2cec20f5ac2464c602d7016",
+    "prebuilds/linux-arm64/node.napi.node": "252f653c384bef788faf0a4675ed0c67b45b3cd453102da353838accbca47226",
+    "prebuilds/linux-x64/node.napi.node": "f03c1faedf175156ed651a079d8c4c4110a64fb007072d48d285fb9eed6ab213",
     "README.md": "f9ef2c1cbf536cbf84a488fa6a27500738f4c71b353d9eb0fe3e43bb23bddab9"
   }
 }

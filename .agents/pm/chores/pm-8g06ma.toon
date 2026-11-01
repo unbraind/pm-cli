@@ -1,0 +1,43 @@
+id: pm-8g06ma
+title: "Refresh aged Unicorn 79, Stryker 10.1.1 and knip 6.43.0 without changing strict lint policy"
+description: "Routine tooling refresh for versions that have passed the seven-day adoption window, measured on 2026-11-01: eslint-plugin-unicorn 79.0.0 (published 2026-10-23), @stryker-mutator/core and vitest-runner 10.1.1 (2026-10-23) and knip 6.43.0 (2026-10-24). knip 6.44.0, ESLint 10.14, typescript-eslint 8.72.1, marked 18.1.2, greptile 3.8, @types/node 26.6.6 and MCP ext-apps 2.0.4 are still inside the window and stay for Dependabot's next eligible run. Stryker 10.1.1 also accepts Vitest 5, which the paired migration on pm-fokyhh needs."
+type: Chore
+status: closed
+priority: 2
+tags[2]: dependencies,toolchain
+created_at: "2026-11-01T05:33:29.663Z"
+updated_at: "2026-11-01T06:35:51.833Z"
+closed_at: "2026-11-01T06:35:51.811Z"
+completed_at: "2026-11-01T06:35:51.811Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "Only versions at least seven days old are adopted, with their publication timestamps recorded; Strict ESLint with zero warnings, static quality, knip dead-export and dependency advisory gates pass without new suppressions; Younger releases are left for Dependabot's cooldown rather than pulled forward"
+parent: pm-92if
+risk: low
+confidence: high
+resolution: "Adopted eslint-plugin-unicorn 79.0.0, @stryker-mutator/core and vitest-runner 10.1.1 and knip 6.43.0, each at least seven days old (published 2026-10-23, 2026-10-23 and 2026-10-24). knip was locked to 6.43.0 because the caret range resolved to the three-day-old 6.44.0. No lint rule, suppression or mutation policy changed. ESLint 10.14, typescript-eslint 8.72.1, marked 18.1.2, greptile 3.8, @types/node 26.6.6, MCP ext-apps 2.0.4 and knip 6.44 remain inside the cooldown for Dependabot."
+expected_result: "The eligible tooling versions are adopted with the strict ESLint, static-quality, knip and mutation configuration unchanged and every gate green."
+actual_result: "Strict ESLint with zero warnings, static quality, knip dead-export check and dependency advisory gate pass; SDK mutation gate passes at 98.01 with Stryker 10.1.1 under Vitest 5."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-92if,implements,"2026-11-01T05:33:29.663Z","harness:claude-code","cli:create:dep",detected
+  pm-afshwe,discovered_from,"2026-11-01T05:33:29.663Z","harness:claude-code","cli:create:dep",detected
+  pm-fokyhh,related,"2026-11-01T05:33:29.663Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope}:
+  package.json,project
+  pnpm-lock.yaml,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs mutation,project,"harness:claude-code","2026-11-01T06:24:03.205Z",local_mutation,chore/eligible-toolchain-and-bun-peers
+test_runs[1]:
+  - run_id: test-local-mvxggq1j-2iv7up
+    kind: test
+    status: passed
+    started_at: "2026-11-01T06:34:22.354Z"
+    finished_at: "2026-11-01T06:35:00.439Z"
+    recorded_at: "2026-11-01T06:35:00.439Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs mutation,schema,schema,source,local_source_ref
+close_reason: "Eligible Unicorn 79, Stryker 10.1.1 and knip 6.43.0 adopted without policy changes"
+body: ""

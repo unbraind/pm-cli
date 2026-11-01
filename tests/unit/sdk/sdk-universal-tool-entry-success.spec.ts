@@ -14,10 +14,15 @@ const state = vi.hoisted(() => {
   process.argv = ["node", "entry.ts", workspace];
   process.exitCode = undefined;
   process.env.PM_AUTHOR = "sdk-entry-test";
+  // The entry writes while it is imported; Vitest 5 clears mock calls before each test, so keep the writes in a plain array.
+  const writes: string[] = [];
   const stdout = vi
     .spyOn(process.stdout, "write")
-    .mockImplementation(() => true);
-  return { workspace, argv, exitCode, author, stdout };
+    .mockImplementation((value) => {
+      writes.push(String(value));
+      return true;
+    });
+  return { workspace, argv, exitCode, author, stdout, writes };
 });
 
 import "../../../docs/examples/sdk-custom-tool/src/entry.js";
@@ -35,7 +40,7 @@ afterAll(() => {
 
 it("runs the SDK exemplar executable success path", () => {
   expect(process.exitCode).toBe(0);
-  expect(JSON.parse(String(state.stdout.mock.calls[0]?.[0]))).toMatchObject({
+  expect(JSON.parse(String(state.writes[0]))).toMatchObject({
     customType: "Deliverable",
     customStatus: "reviewing",
     projectStatus: "closed",

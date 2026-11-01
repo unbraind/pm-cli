@@ -332,7 +332,7 @@ original assertions, deadlines and retry policy. This allocation is tracked by
 (tracker records are excluded from npm); it does not classify or erase
 historical failed attempts.
 
-The complete nightly suites use two Vitest shards on Linux Node 22/25 and
+The complete nightly suites use two Vitest shards on Linux Node 22/26 and
 macOS Node 24, and four shards on Windows Node 24 and Linux Node 24 coverage.
 Every partition must pass within the existing 20-minute job limit. Sharding
 retains the complete file population, serial phase, assertions, per-test
@@ -368,6 +368,7 @@ Coverage gating now targets literal all-source coverage across runtime code fami
 - Avoid reintroducing curated coverage allowlists; keep the full all-source corpus measurable and gated.
 - Prefer extending existing test files and shared helpers so new coverage remains fast and non-duplicative.
 - Prefer extracting deterministic pure helpers (and unit-testing them) when an orchestration-heavy file is difficult to cover directly.
+- Vitest 5 clears every mock's recorded calls before each test (`clearMocks` defaults to `true`; [pm-fokyhh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fokyhh.toon), a repository-only tracker record excluded from npm). A spy created in `vi.hoisted` that observes work done while the module under test is imported must record into its own array, as the SDK exemplar entry specs do; `mock.calls` is empty by the time the test body runs.
 
 Static quality also enforces source documentation coverage through `pnpm
 quality:static`: every `src/**/*.ts` source file needs a module TSDoc block,

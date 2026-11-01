@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { packDistribution } from "../../../scripts/release/package-distribution.mjs";
+import { packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -144,6 +144,10 @@ it.each([true, false])("retains the complete optional-peer subtree without chang
   const installed = path.join(extracted, "package");
   expect(verifyRuntimeInstallation(installed)).toMatchObject({ ok: true, runtime_packages: 6 });
   expect(execFileSync(process.execPath, ["-p", 'require("./")'], { cwd: installed, encoding: "utf8" }).trim()).toBe("17");
+  // The required peer `shared` is pinned at its tested version for Bun; the optional-only peer stays unbundled at the root (pm-2csj4k).
+  const rootManifest = JSON.parse(await readFile(path.join(installed, "package.json"), "utf8"));
+  expect(rootManifest.dependencies).toEqual({ first: "^1.0.0", second: "^1.0.0", shared: "1.0.0" });
+  expect(rootManifest.bundleDependencies).toEqual(["first", "second", "shared"]);
   const published = JSON.parse(await readFile(path.join(installed, "node_modules/first/package.json"), "utf8"));
   expect(published).toMatchObject({ dependencies: { shared: "^1.0.0" }, peerDependenciesMeta: { peer: { optional: true } }, optionalDependencies: { peer: "1.0.0" } });
   expect(published.peerDependencies).toEqual(JSON.parse(before).peerDependencies);
@@ -151,6 +155,26 @@ it.each([true, false])("retains the complete optional-peer subtree without chang
   await rm(path.join(installed, "node_modules/leaf"), { recursive: true });
   expect(() => verifyRuntimeInstallation(installed)).toThrow("ENOENT");
 }, 60_000);
+
+it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {
+  const ledger = {
+    packages: {
+      "": { name: "fixture", version: "1.0.0", peerDependencies: { "@types/node": "^24" }, peerDependenciesMeta: { "@types/node": { optional: true } } },
+      "node_modules/sdk": { version: "2.0.0", peerDependencies: { zeta: "^1", alpha: "<2", direct: "^3", missing: "^1", optional: "^1" }, peerDependenciesMeta: { optional: { optional: true } } },
+      "node_modules/other": { version: "1.0.0", peerDependencies: { alpha: "^1" } },
+      "node_modules/zeta": { version: "1.4.0" },
+      "node_modules/alpha": { version: "1.9.1" },
+      "node_modules/direct": { version: "3.2.0" },
+      "node_modules/optional": { version: "1.0.0" },
+      "node_modules/sdk/node_modules/missing": { version: "1.0.0" },
+    },
+  };
+  // `missing` resolves only under node_modules/sdk/node_modules, so the root manifest cannot name it without failing runtime verification.
+  const pinned = pinRuntimePeers({ dependencies: { sdk: "^2.0.0", direct: "^3.0.0" } }, ledger);
+  expect(pinned).toEqual({ sdk: "^2.0.0", direct: "^3.0.0", alpha: "1.9.1", zeta: "1.4.0" });
+  expect(Object.keys(pinned)).toEqual(["sdk", "direct", "alpha", "zeta"]);
+  expect(pinRuntimePeers({ optionalDependencies: { zeta: "1.4.0" } }, ledger)).toEqual({ alpha: "1.9.1", direct: "3.2.0" });
+});
 
 it("packs exact physical runtime packages without development dependencies or maps and refuses installed drift", async () => {
   const { root, packages, ledger } = await createBundleFixture();

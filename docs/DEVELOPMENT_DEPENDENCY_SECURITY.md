@@ -73,8 +73,10 @@ route.
 
 The retained hosted OSV receipt identified both advisories while the registry
 audit returned zero. Keep full-lock admission mandatory and verify the patched
-graph against both feeds. This patch keeps Vitest 4, the CodSpeed peer contract
-and the Vite 7 override; the broader Vitest 5 migration remains separate. The
+graph against both feeds. That patch kept Vitest 4 because CodSpeed 5.7.1 did not
+accept Vitest 5. [pm-fokyhh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fokyhh.toon) (repository-only tracker record excluded from npm) later adopted
+the Vitest 5.0.5 pair with CodSpeed 6.1.0; `@vitest/mocker` 5.0.3 and later carry
+both fixes, and the Vite 7 override is unchanged. The
 installed-handler regressions run in coverage and the required native Windows
 cohort, whose aggregate refuses failed, canceled or skipped partitions. The
 October 15 patch releases meet pnpm's one-day minimum age on October 21 without
@@ -156,14 +158,14 @@ inferred, which hid the real cause (a non-empty registry id list); read
 `.cache/dependency-security/receipt.json` before treating that message as a
 feed outage.
 
-## CodSpeed 5.7.1 patch
+## CodSpeed 6.1.0 patch
 
 CodSpeed's declared dependency previously resolved Axios 1.19.0, and both
 `@codspeed/core` bundles embedded Axios 1.4.0. Updating the declared dependency
 alone leaves those embedded implementations and their source-map contents
 intact. The pnpm override selects Axios 1.20.0 or a newer compatible 1.x
 release that satisfies the normal dependency cooldown. The exact-version
-patch in [the patch file](../patches/@codspeed__core@5.7.1.patch) replaces the
+patch in [the patch file](../patches/@codspeed__core@6.1.0.patch) replaces the
 embedded dependency section in both CJS and ESM entries with imports of the
 declared `axios` and `form-data` packages. Each entry creates its own Axios
 client and retains the cancellation constructor, preserving isolation from
@@ -174,8 +176,9 @@ immediately before `var __defProp$3 = Object.defineProperty`. Only `axios` and
 `FormData$2` from that section are referenced by the retained code. The patch
 preserves the preceding and following benchmark code, declarations, export
 surface and native binaries. Each entry removes 19,201 embedded lines. Its map
-retains 5,375 mappings, removes 39,536 obsolete mappings, and reduces its source
-inventory from 131 to 21. Remaining generated positions are shifted by the
+retains 5,293 mappings, removes 39,536 obsolete mappings, and reduces its source
+inventory from 131 to 21. The 6.1.0 port keeps the same boundary; upstream added
+four Node-version warning exports, so the runtime suite pins 30 exports. Remaining generated positions are shifted by the
 replacement's line delta; their original source, line, column and names are
 preserved. Removed Axios, redirects, proxy and form-data sources are absent.
 Both maps end with a newline; the integrity policy records the installed bytes.

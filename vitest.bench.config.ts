@@ -14,6 +14,10 @@ import { defineConfig } from "vitest/config";
  * instrumentation environment, so `vitest bench --config vitest.bench.config.ts`
  * works locally exactly like a normal Vitest bench run and only switches to
  * instrumented measurement when executed under `codspeed run`.
+ *
+ * Benchmarks use Vitest 5's `bench` test fixture: each group is one `test`
+ * that passes its registrations to `bench.compare`. Keep group and benchmark
+ * names stable, because CodSpeed keys history by `<file>::<group>::<bench>`.
  */
 export default defineConfig({
   plugins: [codspeedPlugin()],

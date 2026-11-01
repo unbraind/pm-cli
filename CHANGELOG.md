@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Pin tested runtime peers in the published manifest so Bun installs resolve them without peer-range warnings ([pm-2csj4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2csj4k.toon))
+
+### Other
+
+- Refresh aged Unicorn 79, Stryker 10.1.1 and knip 6.43.0 without changing strict lint policy ([pm-8g06ma](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8g06ma.toon))
+- Adopt Vitest 5 with CodSpeed 6.1, keeping exact coverage, benchmark history and the CodSpeed Axios patch ([pm-fokyhh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fokyhh.toon))
+
 ## 2026.11.1 - 2026-11-01
 
 ### Fixed

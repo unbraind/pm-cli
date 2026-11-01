@@ -933,7 +933,7 @@ describe("GitHub workflow contract", () => {
     const matrix = declared.strategy.matrix.include as Array<{ os: string; node: number; shard: number; shards: number; label: string; coverage?: boolean }>;
     expect(matrix).toHaveLength(14);
     for (const [os, node, count] of [
-      ["ubuntu-latest", 22, 2], ["ubuntu-latest", 24, 4], ["ubuntu-latest", 25, 2],
+      ["ubuntu-latest", 22, 2], ["ubuntu-latest", 24, 4], ["ubuntu-latest", 26, 2],
       ["macos-latest", 24, 2], ["windows-latest", 24, 4],
     ] as const) {
       const partitions = matrix.filter((row) => row.os === os && row.node === node);
