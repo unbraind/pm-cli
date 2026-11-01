@@ -6,12 +6,12 @@ status: closed
 priority: 1
 tags[4]: agent-ux,context,github,token-efficiency
 created_at: "2026-10-31T21:13:36.728Z"
-updated_at: "2026-11-01T02:19:44.315Z"
+updated_at: "2026-11-01T02:39:18.932Z"
 closed_at: "2026-10-31T22:31:33.693Z"
 completed_at: "2026-10-31T22:31:33.693Z"
 author: "harness:claude-code"
 estimated_minutes: 150
-acceptance_criteria: "An explicit row limit above the intent's budget-derived ceiling yields a typed limit_overridden_by_intent warning naming --limit, the requested and effective values, and a --token-budget that would carry the request; filters reports requested_limit beside the effective limit whenever they differ; the context_intent receipt records requested_limit; the same behaviour holds for context, list --for triage and search --for discover; generated agent guidance, AGENTS.md, README and docs recommend the measured canonical pm context --for orient; a regression test covers every row-bounded intent with an explicit over-ceiling limit"
+acceptance_criteria: "When a context, list or search --for intent reduces an explicit --limit, the result carries the warning limit_overridden_by_intent:--limit <requested>-><effective>, filters.requested_limit beside the effective filters.limit, and context_intent.limit_override with flag --limit, requested and effective; limit_override.token_budget_for_requested and restore_with (the flag fragment --token-budget <n> to add to the original command) are present when a safe-integer budget can carry the request and omitted otherwise; generated agent guidance, AGENTS.md, README and docs recommend the measured canonical pm context --for orient; a regression test covers context, list and search overrides, raw host options and the unsafe-budget case"
 parent: pm-5t33or
 risk: medium
 confidence: high
@@ -22,10 +22,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-3crymx,related,"2026-10-31T21:13:36.728Z","harness:claude-code","cli:create:dep",detected
   pm-gy885b,related,"2026-10-31T21:13:36.728Z","harness:claude-code","cli:create:dep",detected
   pm-ka6d,related,"2026-10-31T21:13:36.728Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-31T21:46:59.575Z","harness:claude-code","Implementation: the three row-bounded intent appliers share applyIntentRowLimit, which keeps the existing min(requested, budget-derived) clamp but stashes a reduced request as intentRequestedLimit. attachContextIntentReceipt calls discloseIntentLimitOverride, which reads that key or the raw host --limit and writes context_intent.limit_override {flag, requested, effective, token_budget_for_requested, restore_with}, filters.requested_limit, and the warning 'limit_overridden_by_intent:--limit N->M'. token_budget_for_requested = max(current budget, overhead + rowCost*requested) from the shared resolveIntentRowCost table. Measured on this tracker: pm context --for orient --limit 10 now prints the override with restore_with 'pm context --for orient --limit 10 --token-budget 7200'. That retry returns 10 rows at an estimated 4,637 tokens within budget. list --for triage --limit 150 → effective 100, retry with --token-budget 3200 honours 150. The quickstart (init-agent-guidance, AGENTS.md, README, AGENT_GUIDE, COMMAND_NAMESPACES, pm-user ECOSYSTEM_PLANNING) and the replayed agent-task transcript now use the measured canonical pm context --for orient."
   "2026-10-31T23:02:09.739Z","harness:claude-code","CodeRabbit review round 1 on PR #1645: limit_override.restore_with is now the flag fragment '--token-budget N' to add to (or replace in) the original command, following the omission-receipt convention (restore_with '--full'). The full rebuilt command had dropped named options (--status, --sort) and inline search field:value filters. token_budget_for_requested and restore_with are omitted when the sufficient budget is not a safe integer (spec covers Number.MAX_SAFE_INTEGER)."
   "2026-11-01T02:03:52.127Z","harness:claude-code","cubic review on PR #1645: the intentRequestedLimit marker option is removed. Every host attaches the receipt with the caller's own options (CLI output context and SDK runtime both pass unprojected options), so the requested limit is read from options.limit and no undeclared option leaks into list/search options or can be spoofed. The conformance doc names limit_override.flag."
+  "2026-11-01T02:39:18.932Z","harness:claude-code","CodeRabbit review round 3 on PR #1645: the acceptance criterion now describes the shipped contract, so consumers are not sent to fields that do not exist. The warning has no budget, the requested value lives in limit_override.requested, and the restore fields are omitted for unsafe budgets. The guidance tests now also assert the old pm context --limit 10 command is absent."
 files[10]{path,scope}:
   docs/agent-task-token-baseline.json,project
   docs/agent-task-transcripts.json,project

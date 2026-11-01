@@ -36,9 +36,11 @@ Plain `claim`, `release`, `update`, and `close` keep their original semantics.
 `claim <id> --start` rejects `--if-available` before mutation. It claims
 ownership, then moves the item to the configured in-progress status.
 `claim --next --start` selects the next caller-available item with the same
-filters, `--if-available` behavior, and race-loss walk as `claim --next`. It then
-claims the item and moves it to the configured in-progress status in one
-locked mutation and one `claim` history event, so no other agent can observe
+filters, `--if-available` behavior, and race-loss walk as `claim --next`.
+Ranking happens before any lock, so a candidate can change before it is
+claimed. Each attempt re-reads the candidate under its item lock and then
+claims it and moves it to the configured in-progress status in one locked
+mutation and one `claim` history event. No other agent can therefore observe
 the claimed item before it starts. Configured type workflows are enforced, a
 terminal candidate is refused (`terminal_state_conflict`), and the receipt
 carries `start: { from_status, to_status }`. A claim without an id or `--next`
@@ -78,7 +80,7 @@ import { PmClient } from "@unbrained/pm-cli/sdk";
 
 const pm = new PmClient({ pmRoot: "/project/.agents/pm" });
 const started = await pm.claim("pm-example", { start: true });
-const nextStarted = await pm.claimNext({ start: true }); // one locked select-claim-start write
+const nextStarted = await pm.claimNext({ start: true }); // ranked selection, then one locked claim-and-start write
 const paused = await pm.release("pm-example", { pause: true });
 const closed = await pm.close("pm-example", "Acceptance verified", {
   releaseAssignment: true,
@@ -97,7 +99,7 @@ Literal `true` options return typed `StartTaskResult`, `PauseTaskResult`, or
 
 MCP actions remain `claim`, `release`, and `close`, using `start`, `pause`, and
 `releaseAssignment`. MCP `claim` with `next: true` and `start: true` uses the
-same single locked write as `claim --next --start`. Action-specific discovery types claim's `start` as boolean;
+same ranked selection and single locked claim-and-start write as `claim --next --start`. Action-specific discovery types claim's `start` as boolean;
 scheduling actions retain string timestamps. For the broad provider tool schema,
 pass the claim boolean through `options: { start: true }` because its shared flat
 `start` property retains the scheduling string contract. Bulk action names remain

@@ -919,7 +919,7 @@ Lifecycle composition flags combine claim, status, and close operations:
 
 ```bash
 pm claim <id> --start                       # claim + move to the configured in-progress status
-pm claim --next --start                     # select, claim and start the next available item in one locked write
+pm claim --next --start                     # select the next available item, then claim and start it in one locked write
 pm release <id> --pause                     # move to the configured open status + release claim
 pm close <id> "<reason>" --release-assignment # close with evidence + release assignment
 ```
