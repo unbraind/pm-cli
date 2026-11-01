@@ -91,6 +91,7 @@ export function isConfigurationOnlySettingsRead(pmRoot: string): boolean {
 const SETTINGS_WRITE_OP = "settings:write";
 const SETTINGS_PERSIST_SOURCE_SYMBOL = Symbol("pm.settings.persist_source");
 const SETTINGS_FALLBACK_ORIGIN_SYMBOL = Symbol("pm.settings.fallback_origin");
+const SETTINGS_FALLBACK_BASELINE_SYMBOL = Symbol("pm.settings.fallback_baseline");
 const MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH = 128;
 const DUPLICATE_DETECTION_MODES = new Set(["off", "advisory", "strict"]);
 
@@ -742,6 +743,30 @@ function getSettingsFallbackOrigin(settings: PmSettings): string | undefined {
     SETTINGS_FALLBACK_ORIGIN_SYMBOL
   ];
   return typeof candidate === "string" ? candidate : undefined;
+}
+
+/**
+ * The canonical document a fallback object last wrote. Its next write measures
+ * the caller's change from here instead of from the defaults, so a peer's
+ * later edit is not overwritten by values this object already wrote.
+ */
+function getSettingsFallbackBaseline(
+  settings: PmSettings,
+): Record<string, unknown> | undefined {
+  return (settings as unknown as Record<PropertyKey, unknown>)[
+    SETTINGS_FALLBACK_BASELINE_SYMBOL
+  ] as Record<string, unknown> | undefined;
+}
+
+function setSettingsFallbackBaseline(
+  settings: PmSettings,
+  baseline: Record<string, unknown>,
+): void {
+  Object.defineProperty(
+    settings as unknown as Record<PropertyKey, unknown>,
+    SETTINGS_FALLBACK_BASELINE_SYMBOL,
+    { value: baseline, writable: true, configurable: true, enumerable: false },
+  );
 }
 
 function buildFallbackSettingsReadResult(warning?: string): SettingsReadResult {
@@ -2138,7 +2163,9 @@ export interface WriteSettingsOptions {
    * for an unreadable document these paths are applied even when their value
    * equals the default; that is how an explicit repair to the default value
    * takes effect. A path the proposed settings do not carry is left to the
-   * delta. Readable documents ignore the option (pm-4zpq71).
+   * delta, and a record key that itself contains a dot cannot be addressed;
+   * repair such an entry in settings.json. Readable documents ignore the
+   * option (pm-4zpq71).
    */
   assignedPaths?: readonly string[];
 }
@@ -2229,7 +2256,8 @@ function applyAssignedSettingsPaths(
 
 /**
  * Apply only the caller's change, measured from the defaults fallback it was
- * handed, plus every path it assigned explicitly, onto the stored document
+ * handed (or from what this object last wrote), plus every path it assigned
+ * explicitly, onto the stored document
  * that could not be read. Every unrelated stored key survives; a result that
  * still fails schema validation is refused with the first invalid setting
  * named and nothing is written (pm-4zpq71).
@@ -2239,12 +2267,13 @@ function applyFallbackChangeToStoredSettings(
   proposedCanonical: Record<string, unknown>,
   fallbackOrigin: string,
   assignedPaths: readonly string[],
+  baseline: Record<string, unknown> | undefined,
 ): string {
-  const defaultsCanonical = JSON.parse(
-    serializeSettings(cloneDefaults()),
-  ) as Record<string, unknown>;
+  const baselineCanonical =
+    baseline ??
+    (JSON.parse(serializeSettings(cloneDefaults())) as Record<string, unknown>);
   const candidate: Record<string, unknown> = structuredClone(asPlainRecord(current) ?? {});
-  applySettingsDelta(candidate, defaultsCanonical, proposedCanonical);
+  applySettingsDelta(candidate, baselineCanonical, proposedCanonical);
   applyAssignedSettingsPaths(candidate, proposedCanonical, assignedPaths);
   const validated = validateSettings(candidate);
   if (!validated.success) {
@@ -2259,7 +2288,8 @@ function applyFallbackChangeToStoredSettings(
         original_code: fallbackOrigin,
         why: "The stored settings could not be read, so writing would either keep an invalid document or replace intended project configuration with defaults.",
         nextSteps: [
-          `Assign ${field} a valid value explicitly (pm config <scope> set ${field} <value>, or writeSettings with assignedPaths), or fix or remove it in settings.json, then retry the original command.`,
+          `Fix or remove ${field} in settings.json, then retry the original command.`,
+          "A configurable setting can also be repaired explicitly, even to its default value, with pm config <scope> set <dotted.key> <value>.",
           "Run pm health to confirm the settings warning has cleared.",
         ],
       },
@@ -2329,6 +2359,7 @@ export async function writeSettings(
               proposed as Record<string, unknown>,
               fallbackOrigin,
               assignedPaths,
+              getSettingsFallbackBaseline(settings),
             ),
             result: undefined,
           };
@@ -2355,6 +2386,11 @@ export async function writeSettings(
         ...source,
         persisted_settings: structuredClone(proposed),
       });
+    } else if (fallbackOrigin !== undefined) {
+      setSettingsFallbackBaseline(
+        settings,
+        structuredClone(proposed) as Record<string, unknown>,
+      );
     }
     await runActiveOnWriteHooks({
       path: settingsPath,

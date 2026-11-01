@@ -305,8 +305,6 @@ export interface PmCliErrorContext {
   } | null;
   /** Tracker-relative lock path component that a refused `lock_path_unsafe` acquisition could not prove confined. */
   lock_component?: string;
-  /** Whether a lock created outside the confined directory was located and removed; absent when none was created. */
-  stray_lock_removed?: boolean;
   /** Revision a refused compare-and-set write expected, or null when it required absence. */
   expected_revision?: string | null;
   /** Revision found at a refused compare-and-set write, or null when the target was absent. */

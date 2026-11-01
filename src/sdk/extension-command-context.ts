@@ -97,7 +97,8 @@ export function createExtensionCommandSdk(
       isPmCliExpectedError(error) && error.exitCode === EXIT_CODE.NOT_FOUND,
     getItemAt: (id, target) => getItemAt(id, target, { pmRoot }),
     readSettingsSection: (section, options) => readSettingsSection(pmRoot, section, options),
-    writeSettingsSection: (section, value, options) => writeSettingsSection(pmRoot, section, value, options),
+    writeSettingsSection: (section, value, options) =>
+      writeSettingsSection(pmRoot, section, value, { author: invocationAuthor, ...options }),
     openRelationshipEventStore: (options) => {
       return RelationshipEventStore.open({
         pmRoot,

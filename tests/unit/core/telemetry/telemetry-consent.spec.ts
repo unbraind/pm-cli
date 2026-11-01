@@ -283,12 +283,15 @@ describe("core/telemetry/consent", () => {
       const unreadable = `${JSON.stringify({ version: 1, custom: { kept: true } })}\n`;
       await fs.mkdir(globalRoot, { recursive: true });
       await fs.writeFile(settingsPath, unreadable, "utf8");
+      let prompts = 0;
       promptState.questionImpl = async () => {
+        prompts += 1;
         throw new Error("prompt must not run for unreadable settings");
       };
       await withInteractiveEnv(async () => {
         await maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions);
       });
+      expect(prompts).toBe(0);
       expect(await fs.readFile(settingsPath, "utf8")).toBe(unreadable);
     });
   });

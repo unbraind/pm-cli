@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: configuration,extensions,"gh:1580",sdk
 created_at: "2026-10-25T00:09:23.381Z"
-updated_at: "2026-11-01T13:54:50.138Z"
+updated_at: "2026-11-01T15:40:54.738Z"
 closed_at: "2026-11-01T12:21:41.909Z"
 completed_at: "2026-11-01T12:21:41.909Z"
 author: "harness:codex"
@@ -20,9 +20,10 @@ expected_result: "Extensions read and validate their own settings through host-b
 actual_result: "16 section specs pass at 100% module coverage: stored/default reads with revisions, validator refusals, malformed documents, reserved and invalid names, add/replace/remove with history, unchanged no-op, stale compare-and-set refusal, non-JSON values, uninitialized tracker, public export identity and context.sdk binding."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1399,related,"2026-10-25T00:52:37.751Z","harness:codex","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-25T00:09:23.381Z","harness:codex","Intake source: 1580. Duplicate check: complete strict 3101-item all-status corpus with no omissions, request-specific searches and current open/in_progress lists; related delivered lineage retained. Report recorded for independent verification. No implementation or completion claimed by intake."
   "2026-11-01T11:09:04.697Z","harness:claude-code","Implementation: new src/core/store/settings-sections.ts. readSettingsSection(pmRoot, section, { validate, defaultValue }) returns { section, source: \"stored\" | \"default\", value, revision }. The revision is \"sha256:<hex>\" of the stable-stringified stored value, or null when the section is absent. writeSettingsSection(pmRoot, section, value | undefined, { expectedRevision, validate }) replaces or removes the section under the workspace-history lock, appends one settings:section:write event, keeps every other key, writes nothing for an unchanged value, and makes the write compare-and-set when expectedRevision is given (null requires absence). Typed refusals: settings_section_name_invalid and settings_section_reserved (the core keys come from the new CORE_SETTINGS_SECTION_KEYS, derived from the validator shape so they cannot drift), settings_section_document_malformed (reason settings_json_malformed or settings_json_not_object, instead of a thrown JSON.parse error), settings_section_invalid (validator throw, bounded message; also values JSON cannot represent), settings_section_revision_conflict (exit 4, with expected_revision and current_revision added to PmCliErrorContext), and settings_section_document_missing (exit 3). Both functions and settingsSectionRevision are public SDK exports through runtime-primitives. ExtensionCommandSdk gains readSettingsSection and writeSettingsSection bound to the invocation tracker, so a package using context.sdk inherits any future settings backend; the backend abstraction itself stays with pm-gh1399. Docs: new section in docs/SDK_CONFIGURATION_SAFETY.md. Tests: tests/unit/core/store/settings-sections.spec.ts, 16 cases, 100% branch coverage of the module.\n"
+  "2026-11-01T15:40:54.738Z","harness:claude-code","PR 1648 review follow-up (CodeRabbit). writeSettingsSection gains an optional author, and the host-bound context.sdk.writeSettingsSection passes the invocation author, so a command run with an explicit author records it on the settings:section:write history event (it used to fall back to the workspace default and detected identity). Values JSON would store differently from what was validated now refuse with settings_section_invalid naming the first drifting path: non-finite numbers (Infinity or NaN become null), undefined array elements, function or symbol values, symbol keys and non-plain objects such as Date. Null-prototype plain objects still store exactly. Ordering note: gate_evidence was recorded after close and release because the defect-evidence gate first failed on the hosted run; it is a follow-up record, the append-only history is unchanged."
 files[7]{path,scope}:
   src/core/extensions/extension-types.ts,project
   src/core/shared/errors.ts,project

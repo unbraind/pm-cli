@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -1850,6 +1851,7 @@ describe("core/telemetry/runtime", () => {
       await fs.writeFile(settingsPath, unreadable, "utf8");
       const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
       globalThis.fetch = fetchMock as unknown as typeof fetch;
+      const randomUUID = vi.spyOn(crypto, "randomUUID");
 
       const active = await startTelemetryCommand({
         command: "list-open",
@@ -1863,6 +1865,8 @@ describe("core/telemetry/runtime", () => {
       expect(active).toBeNull();
       expect(await fs.readFile(settingsPath, "utf8")).toBe(unreadable);
       expect(fetchMock).not.toHaveBeenCalled();
+      // No installation identity is even generated for an unreadable document.
+      expect(randomUUID).not.toHaveBeenCalled();
     });
   });
 

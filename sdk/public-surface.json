@@ -2993,7 +2993,7 @@
         "signature ./sdk/authoring:ExtensionCommandSdk"
       ],
       "package_version": "2026.11.1",
-      "reason": "Additive only for consumers: PmCliErrorContext gains optional lock_component, stray_lock_removed, expected_revision and current_revision (pm-gh1647, pm-gh1580); ExtensionCommandSdk gains readSettingsSection and writeSettingsSection, which only the host implements and injects (pm-gh1580)"
+      "reason": "Additive only for consumers: PmCliErrorContext gains optional lock_component, expected_revision and current_revision (pm-gh1647, pm-gh1580); ExtensionCommandSdk gains readSettingsSection and writeSettingsSection, which only the host implements and injects (pm-gh1580)"
     },
     {
       "changes": [
@@ -3001,6 +3001,14 @@
       ],
       "package_version": "2026.11.1",
       "reason": "Additive only for consumers: writeSettings gains an optional trailing options parameter (assignedPaths) so an explicit repair to a default value over an unreadable settings document takes effect; every existing call compiles and behaves unchanged (pm-4zpq71)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk:WriteSettingsSectionOptions"
+      ],
+      "package_version": "2026.11.1",
+      "reason": "Refines surface first added in this unreleased change set: PmCliErrorContext drops the never-released stray_lock_removed field because pm no longer deletes a stray lock outside the tracker (pm-gh1647), and WriteSettingsSectionOptions gains an optional author so host-bound section writes record the invocation author (pm-gh1580)"
     }
   ],
   "entrypoints": {
@@ -14219,7 +14227,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; stray_lock_removed?: boolean; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -22493,7 +22501,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WriteSettingsSectionOptions",
-          "signature": "export interface WriteSettingsSectionOptions<T> { expectedRevision?: string | null; validate?: SettingsSectionValidator<T>; }"
+          "signature": "export interface WriteSettingsSectionOptions<T> { expectedRevision?: string | null; validate?: SettingsSectionValidator<T>; author?: string; }"
         },
         {
           "classification": "advanced_export",

@@ -34,6 +34,19 @@ function toPortableRelative(pmRoot: string, target: string): string {
   return path.relative(pmRoot, target).split(path.sep).join("/");
 }
 
+function describeLockPathRecovery(
+  reason: LockPathUnsafeReason,
+  relativeComponent: string,
+): string {
+  if (reason === "lock_entry_symlink") {
+    return `Remove the symlinked lock entry ${relativeComponent} (pm neither follows nor deletes it), then retry the same operation.`;
+  }
+  if (reason === "lock_directory_replaced") {
+    return `Restore ${relativeComponent} as a real directory inside the tracker, then retry the same operation. The lock file created while it was replaced stays where the replacement pointed, because pm never deletes outside the tracker; remove it there if it is not wanted.`;
+  }
+  return "Replace the symlinked or replaced lock directory with a real directory inside the tracker (for example: remove the link, then let pm recreate locks/), then retry the same operation.";
+}
+
 /** Build the typed refusal for a lock path that cannot be proven confined. */
 export function buildLockPathUnsafeError(params: {
   pmRoot: string;
@@ -41,7 +54,6 @@ export function buildLockPathUnsafeError(params: {
   id: string;
   reason: LockPathUnsafeReason;
   component?: string;
-  strayLockRemoved?: boolean;
 }): PmCliError {
   const component = params.component ?? path.dirname(params.lockPath);
   const relativeComponent = toPortableRelative(params.pmRoot, component);
@@ -54,11 +66,7 @@ export function buildLockPathUnsafeError(params: {
       item_id: params.id,
       reason: params.reason,
       lock_component: relativeComponent,
-      ...(params.strayLockRemoved === undefined
-        ? {}
-        : { stray_lock_removed: params.strayLockRemoved }),
-      required:
-        "Replace the symlinked or replaced lock directory with a real directory inside the tracker (for example: remove the link, then let pm recreate locks/), then retry the same operation.",
+      required: describeLockPathRecovery(params.reason, relativeComponent),
     },
   );
 }
@@ -169,44 +177,14 @@ export async function assertLockEntryNotSymlink(
   }
 }
 
-/** Locate the file an open handle refers to, where the platform exposes it. */
-async function resolveHandlePath(
-  handle: FileHandle,
-  platform: NodeJS.Platform,
-): Promise<string | null> {
-  if (platform !== "linux") return null;
-  try {
-    return await fs.readlink(`/proc/self/fd/${handle.fd}`);
-  } catch {
-    return null;
-  }
-}
-
-/** Remove a lock this process created outside the confined directory, when it can be located. */
-async function removeStrayLock(
-  handle: FileHandle,
-  created: LockEntryIdentity,
-  platform: NodeJS.Platform,
-): Promise<boolean> {
-  const strayPath = await resolveHandlePath(handle, platform);
-  if (strayPath === null) return false;
-  try {
-    const stats = await fs.lstat(strayPath);
-    if (!sameIdentity(created, stats)) return false;
-    await fs.unlink(strayPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Prove that the lock just created through `handle` is the entry at `lockPath`
  * inside the same confined directory observed before creation. A directory
- * swapped between the check and the create means the lock landed elsewhere:
- * the stray lock is removed where the platform can locate it, and the
- * acquisition refuses with lock_path_unsafe instead of returning a lease that
- * excludes no one.
+ * swapped between the check and the create means the lock landed elsewhere, so
+ * the acquisition refuses with lock_path_unsafe instead of returning a lease
+ * that excludes no one. The stray entry is left in place: Node has no
+ * descriptor-relative unlink, and a path-based unlink after the identity check
+ * could delete a same-name replacement outside the tracker.
  */
 export async function verifyConfinedLockCreation(params: {
   pmRoot: string;
@@ -214,9 +192,7 @@ export async function verifyConfinedLockCreation(params: {
   id: string;
   handle: FileHandle;
   directory: LockEntryIdentity;
-  platform?: NodeJS.Platform;
 }): Promise<void> {
-  const platform = params.platform ?? process.platform;
   const createdStats = await params.handle.stat();
   const created: LockEntryIdentity = {
     dev: createdStats.dev,
@@ -238,22 +214,10 @@ export async function verifyConfinedLockCreation(params: {
     confined = false;
   }
   if (confined) return;
-  const strayLockRemoved = await removeStrayLock(
-    params.handle,
-    created,
-    platform,
-  );
   throw buildLockPathUnsafeError({
     pmRoot: params.pmRoot,
     lockPath: params.lockPath,
     id: params.id,
     reason: "lock_directory_replaced",
-    strayLockRemoved,
   });
 }
-
-/** Public contract for test only, shared by SDK and presentation-layer consumers. */
-export const _testOnly = {
-  resolveHandlePath,
-  removeStrayLock,
-};

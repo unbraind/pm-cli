@@ -186,6 +186,39 @@ describe("writeSettingsSection", () => {
     });
   });
 
+  it.each([
+    ["a non-finite number", { limit: Infinity }, "limit is a non-finite number"],
+    ["a nested NaN", { thresholds: [1, Number.NaN] }, "thresholds.1 is a non-finite number"],
+    ["an undefined array element", [1, undefined], "1 is undefined"],
+    ["a function-valued key", { strict: true, hook: () => true }, "hook is function"],
+    ["a non-plain object", { since: new Date(0) }, "since is not a plain JSON object"],
+    ["a symbol key", { strict: true, [Symbol("hidden")]: 1 }, "the value is not a plain JSON object"],
+  ])("refuses %s instead of storing a different value than it validated", async (_label, value, detail) => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settingsPath = path.join(pmPath, "settings.json");
+      const before = await readFile(settingsPath, "utf8");
+      await expect(writeSettingsSection(pmPath, "lint", value)).rejects.toMatchObject({
+        context: { code: "settings_section_invalid", field: "lint" },
+        message: `Settings section "lint" is invalid: the value would change when stored as JSON: ${detail}`,
+      });
+      expect(await readFile(settingsPath, "utf8")).toBe(before);
+    });
+  });
+
+  it("stores a null-prototype object and nested plain JSON exactly", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const value = Object.assign(Object.create(null) as Record<string, unknown>, {
+        strict: true,
+        rules: [{ id: "a", weight: 0.5 }, null, "b"],
+      });
+      await writeSettingsSection(pmPath, "lint", value);
+      expect((await readSettingsSection(pmPath, "lint")).value).toEqual({
+        strict: true,
+        rules: [{ id: "a", weight: 0.5 }, null, "b"],
+      });
+    });
+  });
+
   it("refuses to create settings.json for an uninitialized tracker", async () => {
     await withTempRoot("pm-settings-section-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
@@ -204,7 +237,11 @@ describe("settings sections on the public and host-bound SDK", () => {
     expect(sdk.writeSettingsSection).toBe(writeSettingsSection);
     expect(sdk.settingsSectionRevision).toBe(settingsSectionRevision);
     await withTempPmPath(async ({ pmPath }) => {
-      const bound = createExtensionCommandSdk(pmPath, new PmClient({ pmRoot: pmPath, noExtensions: true }));
+      const bound = createExtensionCommandSdk(
+        pmPath,
+        new PmClient({ pmRoot: pmPath, noExtensions: true }),
+        "invocation-author",
+      );
       const written = await bound.writeSettingsSection("jev", { calibration: 0.5 });
       await expect(bound.readSettingsSection("jev")).resolves.toEqual({
         section: "jev",
@@ -212,6 +249,11 @@ describe("settings sections on the public and host-bound SDK", () => {
         value: { calibration: 0.5 },
         revision: written.revision,
       });
+      await writeSettingsSection(pmPath, "jev", { calibration: 0.7 }, { author: "explicit-author" });
+      const authors = (await readHistoryEntries(getWorkspaceHistoryPath(pmPath)))
+        .filter((entry) => entry.op === "settings:section:write")
+        .map((entry) => entry.author);
+      expect(authors).toEqual(["invocation-author", "explicit-author"]);
     });
   });
 });

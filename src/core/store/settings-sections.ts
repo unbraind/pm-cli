@@ -52,6 +52,12 @@ export interface WriteSettingsSectionOptions<T> {
   expectedRevision?: string | null;
   /** Validate and normalize the value before it is stored. */
   validate?: SettingsSectionValidator<T>;
+  /**
+   * Mutation author for the history event; omitted, the workspace default and
+   * detected identity apply. The host-bound `context.sdk` writer passes the
+   * invocation author.
+   */
+  author?: string;
 }
 
 /** Receipt of a settings-section write. */
@@ -143,7 +149,52 @@ function validateSectionValue<T>(
   return value;
 }
 
-/** Snapshot a validated value as the JSON that will be stored, refusing values JSON cannot represent. */
+function describeJsonPath(segments: readonly string[]): string {
+  return segments.length === 0 ? "the value" : segments.join(".");
+}
+
+/**
+ * Name the first part of an acyclic value that JSON would silently change: a
+ * non-finite number (stored as null), an undefined, function or symbol (dropped
+ * or nulled), a symbol key (dropped), or a non-plain object (reshaped through
+ * its prototype or toJSON). Returns null when the JSON round trip is exact.
+ */
+function findJsonDrift(value: unknown, segments: readonly string[] = []): string | null {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? null : `${describeJsonPath(segments)} is a non-finite number`;
+  }
+  if (typeof value !== "object") return `${describeJsonPath(segments)} is ${typeof value}`;
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index += 1) {
+      const drift = findJsonDrift(value[index], [...segments, String(index)]);
+      if (drift !== null) return drift;
+    }
+    return null;
+  }
+  const prototype = Object.getPrototypeOf(value) as unknown;
+  if ((prototype !== Object.prototype && prototype !== null) || Object.getOwnPropertySymbols(value).length > 0) {
+    return `${describeJsonPath(segments)} is not a plain JSON object`;
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    const drift = findJsonDrift(entry, [...segments, key]);
+    if (drift !== null) return drift;
+  }
+  return null;
+}
+
+/** Raise the typed settings_section_invalid refusal for a value the store cannot hold exactly. */
+function refuseSectionValue(section: string, value: unknown, reason: string): unknown {
+  return validateSectionValue(section, value, () => {
+    throw new Error(reason);
+  });
+}
+
+/**
+ * Snapshot a validated value as the JSON that will be stored. Values JSON
+ * cannot represent, or would store differently from what was validated (for
+ * example Infinity becoming null), refuse instead of being changed silently.
+ */
 function toStoredSectionValue(section: string, value: unknown): unknown {
   let serialized: string | undefined;
   try {
@@ -152,9 +203,11 @@ function toStoredSectionValue(section: string, value: unknown): unknown {
     serialized = undefined;
   }
   if (serialized === undefined) {
-    return validateSectionValue(section, value, () => {
-      throw new Error("the value is not representable as JSON");
-    });
+    return refuseSectionValue(section, value, "the value is not representable as JSON");
+  }
+  const drift = findJsonDrift(value);
+  if (drift !== null) {
+    return refuseSectionValue(section, value, `the value would change when stored as JSON: ${drift}`);
   }
   return JSON.parse(serialized) as unknown;
 }
@@ -215,7 +268,7 @@ export async function writeSettingsSection<T>(
       pmRoot,
       filePath: settingsPath,
       op: SETTINGS_SECTION_WRITE_OP,
-      author: resolveAuthor(undefined, settings.author_default),
+      author: resolveAuthor(options.author, settings.author_default),
       lockTtlSeconds: settings.locks.ttl_seconds,
       lockWaitMs: settings.locks.wait_ms,
       recordCreation: false,

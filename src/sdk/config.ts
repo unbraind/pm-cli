@@ -1046,6 +1046,9 @@ async function applyContextConfig(
 ): Promise<ConfigResult> {
   let changed = false;
   const ctx = settings.context;
+  // Every provided option is an explicit assignment, even when it keeps the
+  // current value, so it can repair an unreadable stored field (pm-4zpq71).
+  const assignedPaths: string[] = [];
 
   if (options.defaultDepth !== undefined) {
     const normalized = options.defaultDepth.trim().toLowerCase();
@@ -1055,6 +1058,7 @@ async function applyContextConfig(
         EXIT_CODE.USAGE,
       );
     }
+    assignedPaths.push("context.default_depth");
     if (ctx.default_depth !== normalized) {
       ctx.default_depth = normalized as ContextDepth;
       changed = true;
@@ -1066,6 +1070,7 @@ async function applyContextConfig(
       options.activityLimit,
       "--activity-limit",
     );
+    assignedPaths.push("context.activity_limit");
     if (ctx.activity_limit !== parsed) {
       ctx.activity_limit = parsed;
       changed = true;
@@ -1077,6 +1082,7 @@ async function applyContextConfig(
       options.staleThresholdDays,
       "--stale-threshold-days",
     );
+    assignedPaths.push("context.stale_threshold_days");
     if (ctx.stale_threshold_days !== parsed) {
       ctx.stale_threshold_days = parsed;
       changed = true;
@@ -1098,6 +1104,7 @@ async function applyContextConfig(
     const toggle = parseSectionToggle(rawValue);
     if (toggle !== undefined) {
       const key = sectionName as keyof typeof ctx.sections;
+      assignedPaths.push(`context.sections.${sectionName}`);
       if (ctx.sections[key] !== toggle) {
         ctx.sections[key] = toggle;
         changed = true;
@@ -1106,7 +1113,9 @@ async function applyContextConfig(
   }
 
   if (changed || isSettingsReadFallback(settings)) {
-    await writeSettings(target.pmRoot, settings, "config:set:context");
+    await writeSettings(target.pmRoot, settings, "config:set:context", {
+      assignedPaths,
+    });
   }
 
   return withWarnings(
@@ -1408,11 +1417,15 @@ async function writeConfigSettingsIfChanged(
   context: ConfigExecutionContext,
   changed: boolean,
   reason: string,
+  assignedPaths: readonly string[] = [],
 ): Promise<void> {
-  // An unchanged value over an unreadable document still writes, so the caller
-  // gets the typed existing-schema refusal instead of a silent no-op.
+  // Over an unreadable document the setter's paths are assigned explicitly, so
+  // setting a default value repairs the stored field; a write that would still
+  // be invalid returns the typed existing-schema refusal, never a silent no-op.
   if (changed || isSettingsReadFallback(context.settings)) {
-    await writeSettings(context.target.pmRoot, context.settings, reason);
+    await writeSettings(context.target.pmRoot, context.settings, reason, {
+      assignedPaths,
+    });
   }
 }
 
@@ -1491,6 +1504,7 @@ async function setItemFormatConfig(
       context.target.pmRoot,
       context.settings,
       "config:set:item_format",
+      { assignedPaths: ["item_format"] },
     );
   }
   return withWarnings(
@@ -1520,6 +1534,7 @@ async function setValidationConfig(
       context,
       changed,
       "config:set:history_missing_stream_policy",
+      ["history.missing_stream"],
     );
     return buildPolicyResult(
       context,
@@ -1537,6 +1552,7 @@ async function setValidationConfig(
       context,
       changed,
       "config:set:sprint_release_format_policy",
+      ["validation.sprint_release_format"],
     );
     return buildPolicyResult(
       context,
@@ -1558,6 +1574,7 @@ async function setValidationConfig(
       context,
       changed,
       "config:set:parent_reference_policy",
+      ["validation.parent_reference", "governance.preset", "governance.parent_reference"],
     );
     return buildPolicyResult(
       context,
@@ -1578,6 +1595,7 @@ async function setValidationConfig(
     context,
     changed,
     "config:set:metadata_validation_profile",
+    ["validation.metadata_profile", "governance.preset", "governance.metadata_profile"],
   );
   return buildPolicyResult(
     context,
@@ -1609,6 +1627,7 @@ async function setCriteriaConfig(
       context,
       changed,
       "config:set:metadata_required_fields",
+      ["validation.metadata_required_fields"],
     );
     return buildCriteriaResult(
       context,
@@ -1640,7 +1659,9 @@ async function setCriteriaConfig(
     nextCriteria.length !== currentCriteria.length ||
     nextCriteria.some((value, index) => value !== currentCriteria[index]);
   currentCriteria.splice(0, currentCriteria.length, ...nextCriteria);
-  await writeConfigSettingsIfChanged(context, changed, `config:set:${key}`);
+  await writeConfigSettingsIfChanged(context, changed, `config:set:${key}`, [
+    `validation.${key}`,
+  ]);
   return buildCriteriaResult(context, key, [...currentCriteria], changed);
 }
 
@@ -1657,6 +1678,7 @@ async function setGovernancePresetOrTypeConfig(
       context,
       changed,
       "config:set:governance_preset",
+      ["governance.preset"],
     );
     return buildPolicyResult(
       context,
@@ -1715,6 +1737,7 @@ async function setGovernancePresetOrTypeConfig(
     context,
     changed,
     "config:set:governance_create_default_type",
+    ["governance.create_default_type"],
   );
   return buildPolicyResult(
     context,
@@ -1740,6 +1763,7 @@ async function setGovernancePolicyConfig(
       context,
       changed,
       "config:set:governance_ownership_enforcement",
+      ["governance.preset", "governance.ownership_enforcement"],
     );
     return buildPolicyResult(
       context,
@@ -1759,6 +1783,7 @@ async function setGovernancePolicyConfig(
       context,
       changed,
       "config:set:governance_create_mode_default",
+      ["governance.preset", "governance.create_mode_default"],
     );
     return buildPolicyResult(
       context,
@@ -1777,6 +1802,7 @@ async function setGovernancePolicyConfig(
     context,
     changed,
     "config:set:governance_close_validation_default",
+    ["governance.preset", "governance.close_validation_default"],
   );
   return buildPolicyResult(
     context,
@@ -1807,6 +1833,7 @@ async function setGovernanceValidationConfig(
       context,
       changed,
       "config:set:governance_parent_reference_policy",
+      ["governance.preset", "governance.parent_reference", "validation.parent_reference"],
     );
     return buildPolicyResult(
       context,
@@ -1831,6 +1858,7 @@ async function setGovernanceValidationConfig(
       context,
       changed,
       "config:set:governance_metadata_validation_profile",
+      ["governance.preset", "governance.metadata_profile", "validation.metadata_profile"],
     );
     return buildPolicyResult(
       context,
@@ -1847,6 +1875,7 @@ async function setGovernanceValidationConfig(
     context,
     changed,
     "config:set:governance_workflow_enforcement",
+    ["governance.workflow_enforcement"],
   );
   return buildPolicyResult(
     context,
@@ -1873,6 +1902,7 @@ async function setGovernanceBooleanConfig(
       context,
       changed,
       "config:set:governance_require_close_reason",
+      ["governance.require_close_reason"],
     );
     return buildPolicyResult(
       context,
@@ -1894,6 +1924,7 @@ async function setGovernanceBooleanConfig(
     context,
     changed,
     "config:set:governance_force_required_for_stale_lock",
+    ["governance.preset", "governance.force_required_for_stale_lock"],
   );
   return buildPolicyResult(
     context,
@@ -1920,6 +1951,7 @@ async function setTrackingConfig(
       context,
       changed,
       "config:set:test_result_tracking",
+      ["testing.record_results_to_items"],
     );
     return buildPolicyResult(
       context,
@@ -1941,6 +1973,7 @@ async function setTrackingConfig(
       context,
       changed,
       "config:set:untrusted_linked_test_execution",
+      ["testing.allow_untrusted_linked_tests"],
     );
     return buildPolicyResult(
       context,
@@ -1962,6 +1995,7 @@ async function setTrackingConfig(
     context,
     changed,
     "config:set:telemetry_tracking",
+    ["telemetry.enabled", "telemetry.first_run_prompt_completed"],
   );
   return buildPolicyResult(
     context,
@@ -1992,6 +2026,7 @@ async function setDefinitionOfDoneConfig(
     context,
     changed,
     "config:set:definition_of_done",
+    ["workflow.definition_of_done"],
   );
   return buildCriteriaResult(
     context,
@@ -2087,6 +2122,7 @@ async function setAgentIdentityVocabularyConfig(
       context,
       true,
       `config:set:agent_identity.identity_vocabulary:${operation}:v${planned.preview.version_after}`,
+      ["agent_identity"],
     );
   }
   return withWarnings(

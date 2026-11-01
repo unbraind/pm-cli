@@ -477,6 +477,16 @@ contents, comments, JSDoc, symbols and module boundaries retain their original
 tokens. Source declarations remain readable, and packed TypeScript consumers
 verify the emitted surface before publication. Artifact ceilings remain unchanged.
 
+The generated error-code catalog ships as compact rows
+([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon), a repository-only tracker record excluded from npm).
+`scripts/generate-error-code-catalog.mjs` omits every derivable field: the
+meaning sentence, the class implied by the exit code, the shared recovery
+guidance, provisional stability, every-command emitters, a self canonical code
+and empty aliases. `expandPmErrorCodeCatalogRows` restores them at load time,
+so `PM_ERROR_CODE_CATALOG` and every serialized projection stay byte-identical.
+The catalog appears once in the tsc emit and once in each CLI bundle, and the
+compact rows removed about 320 KB from the packed distribution.
+
 5. Land the implementation through a reviewed pull request, then use hosted
    preparation for publication.
 

@@ -3,7 +3,6 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   LOCK_PATH_UNSAFE_CODE,
-  _testOnly as confinementTestOnly,
   assertLockEntryNotSymlink,
   inspectConfinedLockDirectory,
   verifyConfinedLockCreation,
@@ -39,6 +38,20 @@ async function captureRefusal(run: () => Promise<unknown>): Promise<PmCliError> 
   throw new Error("expected a lock_path_unsafe refusal");
 }
 
+// The regular-file case needs no symlink, so it runs on every platform.
+describe("tracker lock directory type (pm-gh1647)", () => {
+  it("refuses when the lock directory is a regular file instead of waiting or wrapping the error", async () => {
+    await withTempDir("pm-lock-confine-", async (tempDir) => {
+      const { pmRoot } = await makeTracker(tempDir);
+      await fs.writeFile(path.join(pmRoot, "locks"), "not a directory");
+
+      const error = await captureRefusal(() => acquireLock(pmRoot, "probe", 30, "repro", false, true, 0));
+
+      expect(error.context).toMatchObject({ code: LOCK_PATH_UNSAFE_CODE, reason: "lock_directory_not_directory" });
+    });
+  });
+});
+
 describe.skipIf(!symlinkSupported)("tracker lock confinement (pm-gh1647)", () => {
   it.each([
     ["acquireLock", (pmRoot: string) => acquireLock(pmRoot, "probe", 30, "repro")],
@@ -62,17 +75,6 @@ describe.skipIf(!symlinkSupported)("tracker lock confinement (pm-gh1647)", () =>
     });
   });
 
-  it("refuses when the lock directory is a regular file instead of waiting or wrapping the error", async () => {
-    await withTempDir("pm-lock-confine-", async (tempDir) => {
-      const { pmRoot } = await makeTracker(tempDir);
-      await fs.writeFile(path.join(pmRoot, "locks"), "not a directory");
-
-      const error = await captureRefusal(() => acquireLock(pmRoot, "probe", 30, "repro", false, true, 0));
-
-      expect(error.context).toMatchObject({ code: LOCK_PATH_UNSAFE_CODE, reason: "lock_directory_not_directory" });
-    });
-  });
-
   it("refuses a symlinked lock entry instead of treating it as a peer's lock", async () => {
     await withTempDir("pm-lock-confine-", async (tempDir) => {
       const { pmRoot, outside } = await makeTracker(tempDir);
@@ -87,12 +89,13 @@ describe.skipIf(!symlinkSupported)("tracker lock confinement (pm-gh1647)", () =>
         code: LOCK_PATH_UNSAFE_CODE,
         reason: "lock_entry_symlink",
         lock_component: "locks/probe.lock",
+        required: expect.stringContaining("Remove the symlinked lock entry locks/probe.lock") as unknown as string,
       });
       expect(await fs.readFile(target, "utf8")).toBe("{}\n");
     });
   });
 
-  it("detects a locks directory swapped for a symlink during acquisition and removes the stray lock", async () => {
+  it("detects a locks directory swapped for a symlink during acquisition and never deletes outside the tracker", async () => {
     await withTempDir("pm-lock-confine-", async (tempDir) => {
       const { pmRoot, outside } = await makeTracker(tempDir);
       const locksDir = path.join(pmRoot, "locks");
@@ -113,9 +116,11 @@ describe.skipIf(!symlinkSupported)("tracker lock confinement (pm-gh1647)", () =>
         code: LOCK_PATH_UNSAFE_CODE,
         reason: "lock_directory_replaced",
         lock_component: "locks",
-        stray_lock_removed: process.platform === "linux",
+        required: expect.stringContaining("pm never deletes outside the tracker") as unknown as string,
       });
-      expect(await fs.readdir(outside)).toEqual(process.platform === "linux" ? [] : ["probe.lock"]);
+      expect(error.context).not.toHaveProperty("stray_lock_removed");
+      // The stray lock this acquisition created stays where the swap pointed.
+      expect(await fs.readdir(outside)).toEqual(["probe.lock"]);
       // The swapped-away real directory holds no lock; only the acquisition's
       // own cleanup gate remains, and dead-owner recovery retires it.
       const confinedEntries = await fs.readdir(path.join(pmRoot, "locks.orig"));
@@ -123,7 +128,7 @@ describe.skipIf(!symlinkSupported)("tracker lock confinement (pm-gh1647)", () =>
     });
   });
 
-  it.skipIf(process.platform !== "linux")(
+  it(
     "never unlinks a peer's lock at the confined path when a swapped-back acquisition refuses",
     async () => {
       await withTempDir("pm-lock-confine-", async (tempDir) => {
@@ -146,9 +151,9 @@ describe.skipIf(!symlinkSupported)("tracker lock confinement (pm-gh1647)", () =>
 
         const error = await captureRefusal(() => acquireLock(pmRoot, "probe", 30, "repro"));
 
-        expect(error.context).toMatchObject({ reason: "lock_directory_replaced", stray_lock_removed: true });
+        expect(error.context).toMatchObject({ reason: "lock_directory_replaced" });
         expect(await fs.readFile(lockPath, "utf8")).toBe(peerLock);
-        expect(await fs.readdir(outside)).toEqual([]);
+        expect(await fs.readdir(outside)).toEqual(["probe.lock"]);
       });
     },
   );
@@ -236,7 +241,7 @@ describe("lock confinement primitives", () => {
     });
   });
 
-  it("reports an unremovable stray lock where the platform cannot locate the handle", async () => {
+  it("refuses a creation whose directory identity no longer matches and leaves the created entry in place", async () => {
     await withTempDir("pm-lock-confine-", async (tempDir) => {
       const { pmRoot } = await makeTracker(tempDir);
       await fs.mkdir(path.join(pmRoot, "locks"));
@@ -250,10 +255,9 @@ describe("lock confinement primitives", () => {
             id: "x",
             handle,
             directory: { dev: -1, ino: -1 },
-            platform: "darwin",
           }),
         );
-        expect(error.context).toMatchObject({ reason: "lock_directory_replaced", stray_lock_removed: false });
+        expect(error.context).toMatchObject({ reason: "lock_directory_replaced", lock_component: "locks" });
       } finally {
         await handle.close();
       }
@@ -272,42 +276,9 @@ describe("lock confinement primitives", () => {
       try {
         vi.spyOn(fs, "lstat").mockRejectedValueOnce(Object.assign(new Error("gone"), { code: "ENOENT" }));
         const error = await captureRefusal(() =>
-          verifyConfinedLockCreation({ pmRoot, lockPath, id: "x", handle, directory, platform: "darwin" }),
+          verifyConfinedLockCreation({ pmRoot, lockPath, id: "x", handle, directory }),
         );
-        expect(error.context).toMatchObject({ reason: "lock_directory_replaced", stray_lock_removed: false });
-      } finally {
-        await handle.close();
-      }
-    });
-  });
-
-  it("locates handles only through Linux procfs and tolerates an unreadable descriptor link", async () => {
-    await withTempDir("pm-lock-confine-", async (tempDir) => {
-      const file = path.join(tempDir, "probe");
-      const handle = await fs.open(file, "w");
-      try {
-        await expect(confinementTestOnly.resolveHandlePath(handle, "darwin")).resolves.toBeNull();
-        vi.spyOn(fs, "readlink").mockRejectedValueOnce(new Error("no procfs"));
-        await expect(confinementTestOnly.resolveHandlePath(handle, "linux")).resolves.toBeNull();
-      } finally {
-        await handle.close();
-      }
-    });
-  });
-
-  it("never removes a located file whose identity differs from the created lock, and tolerates unlink failure", async () => {
-    await withTempDir("pm-lock-confine-", async (tempDir) => {
-      const file = path.join(tempDir, "probe");
-      const handle = await fs.open(file, "w");
-      try {
-        vi.spyOn(fs, "readlink").mockResolvedValue(file as never);
-        await expect(confinementTestOnly.removeStrayLock(handle, { dev: -1, ino: -1 }, "linux")).resolves.toBe(false);
-        const stats = await handle.stat();
-        vi.spyOn(fs, "unlink").mockRejectedValueOnce(new Error("busy"));
-        await expect(
-          confinementTestOnly.removeStrayLock(handle, { dev: stats.dev, ino: stats.ino }, "linux"),
-        ).resolves.toBe(false);
-        await expect(fs.readFile(file, "utf8")).resolves.toBe("");
+        expect(error.context).toMatchObject({ reason: "lock_directory_replaced" });
       } finally {
         await handle.close();
       }

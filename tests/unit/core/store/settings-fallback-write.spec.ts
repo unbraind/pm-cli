@@ -177,7 +177,7 @@ describe("explicit repairs to the default value", () => {
     });
   });
 
-  it("creates missing parents for an assigned path and still validates the result", async () => {
+  it("still refuses an assigned repair when the document stays invalid elsewhere", async () => {
     await withTempRoot("pm-settings-fallback-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const settingsPath = getSettingsPath(pmRoot);
@@ -188,6 +188,46 @@ describe("explicit repairs to the default value", () => {
         writeSettings(pmRoot, settings, undefined, { assignedPaths: ["context.next_ranking_policy"] }),
       ).rejects.toMatchObject({ code: "settings_write_invalid_existing_schema", context: { field: "version" } });
       expect(await fs.readFile(settingsPath, "utf8")).toBe("[]\n");
+    });
+  });
+
+  it("replaces a scalar parent with an object to apply an assigned path", async () => {
+    await withTempRoot("pm-settings-fallback-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settingsPath = getSettingsPath(pmRoot);
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      const stored = { ...JSON.parse(JSON.stringify(SETTINGS_DEFAULTS)), id_prefix: "acme-", context: "bogus" };
+      await fs.writeFile(settingsPath, `${JSON.stringify(stored, null, 2)}\n`, "utf8");
+      const settings = await readSettings(pmRoot);
+      expect(isSettingsReadFallback(settings)).toBe(true);
+      await writeSettings(pmRoot, settings, undefined, {
+        assignedPaths: Object.keys(SETTINGS_DEFAULTS.context).map((key) => `context.${key}`),
+      });
+      const written = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      expect(written).toMatchObject({ id_prefix: "acme-", context: { next_ranking_policy: "priority_floor" } });
+      expect((await readSettingsWithMetadata(pmRoot)).warnings).toEqual([]);
+    });
+  });
+
+  it("measures a second write from the same fallback object from what it last wrote, keeping a peer's edit", async () => {
+    await withSchemaInvalidSettings(async ({ pmRoot, settingsPath }) => {
+      const settings = await readSettings(pmRoot);
+      settings.context.next_ranking_policy = "weighted";
+      await writeSettings(pmRoot, settings);
+
+      const peer = await readSettings(pmRoot);
+      expect(isSettingsReadFallback(peer)).toBe(false);
+      peer.context.next_ranking_policy = "priority_floor";
+      await writeSettings(pmRoot, peer);
+
+      settings.locks.ttl_seconds = 93;
+      await writeSettings(pmRoot, settings);
+      const written = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      expect(written).toMatchObject({
+        id_prefix: "acme-",
+        locks: { ttl_seconds: 93 },
+        context: { next_ranking_policy: "priority_floor" },
+      });
     });
   });
 
@@ -301,9 +341,28 @@ describe("pm config over a schema-invalid settings.json", () => {
   });
 
   it.each([
+    ["a policy setter", ["sprint_release_format_policy", "warn"], "validation", "sprint_release_format", "warn"],
+    ["the context setter", ["context", "--stale-threshold-days", "7"], "context", "stale_threshold_days", 7],
+  ])("repairs its own field to the default through %s", async (_label, args, section, key, expected) => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const stored = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, Record<string, unknown>>;
+      stored.id_prefix = "acme-" as never;
+      stored[section] = { ...stored[section], [key]: "bogus" };
+      await fs.writeFile(settingsPath, `${JSON.stringify(stored, null, 2)}\n`, "utf8");
+
+      const result = context.runCli(["config", "project", "set", ...args, "--json"]);
+      expect(result.code, `${result.stdout}${result.stderr}`).toBe(0);
+      const written = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, Record<string, unknown>>;
+      expect(written.id_prefix).toBe("acme-");
+      expect(written[section][key]).toBe(expected);
+    });
+  });
+
+  it.each([
     ["a policy setter", ["sprint_release_format_policy", "warn"]],
     ["the context setter", ["context", "--stale-threshold-days", "7"]],
-  ])("refuses instead of a silent no-op when %s keeps the default", async (_label, args) => {
+  ])("refuses instead of a silent no-op when %s keeps the default of a different field", async (_label, args) => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const stored = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
