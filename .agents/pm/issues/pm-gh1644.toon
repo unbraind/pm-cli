@@ -6,12 +6,12 @@ status: closed
 priority: 1
 tags[4]: agent-ux,context,github,token-efficiency
 created_at: "2026-10-31T21:13:36.728Z"
-updated_at: "2026-11-01T02:39:18.932Z"
+updated_at: "2026-11-01T02:58:11.285Z"
 closed_at: "2026-10-31T22:31:33.693Z"
 completed_at: "2026-10-31T22:31:33.693Z"
 author: "harness:claude-code"
 estimated_minutes: 150
-acceptance_criteria: "When a context, list or search --for intent reduces an explicit --limit, the result carries the warning limit_overridden_by_intent:--limit <requested>-><effective>, filters.requested_limit beside the effective filters.limit, and context_intent.limit_override with flag --limit, requested and effective; limit_override.token_budget_for_requested and restore_with (the flag fragment --token-budget <n> to add to the original command) are present when a safe-integer budget can carry the request and omitted otherwise; generated agent guidance, AGENTS.md, README and docs recommend the measured canonical pm context --for orient; a regression test covers context, list and search overrides, raw host options and the unsafe-budget case"
+acceptance_criteria: "When a context, list or search --for intent reduces an explicit --limit, the result carries the warning limit_overridden_by_intent:--limit <requested>-><effective>, filters.requested_limit beside the effective filters.limit, and context_intent.limit_override with flag --limit, requested and effective; limit_override.token_budget_for_requested and restore_with (the flag fragment --token-budget <n> to add to the original command) are present when a safe-integer budget can carry the request and omitted otherwise; every guidance surface that recommended the self-contradicting pm context --limit 10 --for orient (generated agent guidance, AGENTS.md, README, AGENT_GUIDE, COMMAND_NAMESPACES, the pm-user skill reference and the replayed agent-task transcripts) recommends the measured canonical pm context --for orient, while plain pm context --limit N without an intent is honoured and stays documented; a regression test covers context, list and search overrides, raw host options and the unsafe-budget case"
 parent: pm-5t33or
 risk: medium
 confidence: high
