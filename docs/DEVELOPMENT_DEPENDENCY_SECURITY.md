@@ -74,7 +74,7 @@ route.
 The retained hosted OSV receipt identified both advisories while the registry
 audit returned zero. Keep full-lock admission mandatory and verify the patched
 graph against both feeds. That patch kept Vitest 4 because CodSpeed 5.7.1 did not
-accept Vitest 5. [pm-fokyhh](../.agents/pm/chores/pm-fokyhh.toon) later adopted
+accept Vitest 5. [pm-fokyhh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fokyhh.toon) (repository-only tracker record excluded from npm) later adopted
 the Vitest 5.0.5 pair with CodSpeed 6.1.0; `@vitest/mocker` 5.0.3 and later carry
 both fixes, and the Vite 7 override is unchanged. The
 installed-handler regressions run in coverage and the required native Windows

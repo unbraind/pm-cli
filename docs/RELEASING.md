@@ -318,7 +318,7 @@ keeps selected optional-peer subtrees complete: npm deliberately skips peer edge
 when gathering bundled files, so staged runtime manifests record the exact tested
 peer bindings as ordinary or optional dependency entries. Package code, source
 and installed manifests, and peer declarations remain intact.
-[pm-2csj4k](../.agents/pm/issues/pm-2csj4k.toon) adds one root entry per required
+[pm-2csj4k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2csj4k.toon) (repository-only tracker record excluded from npm) adds one root entry per required
 peer: Bun installs resolve a package's dependencies from the registry instead of
 its `bundleDependencies`, so the published root manifest pins every non-optional
 peer target that the ledger installs at the root to its tested version and
