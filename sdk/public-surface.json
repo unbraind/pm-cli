@@ -2994,6 +2994,13 @@
       ],
       "package_version": "2026.11.1",
       "reason": "Additive only for consumers: PmCliErrorContext gains optional lock_component, stray_lock_removed, expected_revision and current_revision (pm-gh1647, pm-gh1580); ExtensionCommandSdk gains readSettingsSection and writeSettingsSection, which only the host implements and injects (pm-gh1580)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:writeSettings"
+      ],
+      "package_version": "2026.11.1",
+      "reason": "Additive only for consumers: writeSettings gains an optional trailing options parameter (assignedPaths) so an explicit repair to a default value over an unreadable settings document takes effect; every existing call compiles and behaves unchanged (pm-4zpq71)"
     }
   ],
   "entrypoints": {
@@ -22468,7 +22475,13 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "writeSettings",
-          "signature": "(pmRoot: string, settings: PmSettings, op?: string) => Promise<void> | calls: (pmRoot: string, settings: PmSettings, op?: string) => Promise<void>"
+          "signature": "(pmRoot: string, settings: PmSettings, op?: string, options?: WriteSettingsOptions) => Promise<void> | calls: (pmRoot: string, settings: PmSettings, op?: string, options?: WriteSettingsOptions) => Promise<void>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WriteSettingsOptions",
+          "signature": "export interface WriteSettingsOptions { assignedPaths?: readonly string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -37769,6 +37782,7 @@
     "settings_section_reserved",
     "settings_section_revision_conflict",
     "settings_unreadable",
+    "settings_write_assigned_path_invalid",
     "settings_write_invalid_existing_json",
     "settings_write_invalid_existing_schema",
     "stale_budget",

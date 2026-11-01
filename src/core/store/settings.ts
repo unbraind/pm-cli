@@ -2129,25 +2129,123 @@ export async function readSettingsWithMetadata(
   }
 }
 
+/** Options for {@link writeSettings}. */
+export interface WriteSettingsOptions {
+  /**
+   * Dotted settings paths (for example `context.next_ranking_policy`) the
+   * caller assigned explicitly. A snapshot cannot tell an assignment equal to
+   * the default from an untouched field, so over a defaults fallback returned
+   * for an unreadable document these paths are applied even when their value
+   * equals the default; that is how an explicit repair to the default value
+   * takes effect. A path the proposed settings do not carry is left to the
+   * delta. Readable documents ignore the option (pm-4zpq71).
+   */
+  assignedPaths?: readonly string[];
+}
+
+const ASSIGNED_SETTINGS_PATH_SEGMENT = /^[A-Za-z0-9_-]+$/u;
+const RESERVED_SETTINGS_PATH_SEGMENTS = new Set(["__proto__", "constructor", "prototype"]);
+
+function asPlainRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function assertAssignedSettingsPaths(assignedPaths: readonly string[]): void {
+  for (const assignedPath of assignedPaths) {
+    const segments = assignedPath.split(".");
+    const invalid = segments.find(
+      (segment) =>
+        !ASSIGNED_SETTINGS_PATH_SEGMENT.test(segment) ||
+        RESERVED_SETTINGS_PATH_SEGMENTS.has(segment),
+    );
+    if (invalid !== undefined) {
+      throw new PmCliError(
+        `Settings write assignedPaths entry "${assignedPath}" is not a dotted settings path.`,
+        EXIT_CODE.USAGE,
+        {
+          code: "settings_write_assigned_path_invalid",
+          reason: "assigned_path_segment_invalid",
+          field: assignedPath,
+          why: "Assigned paths name settings keys; an empty, reserved or non-identifier segment cannot address one safely.",
+          nextSteps: [
+            "Pass dotted settings keys such as context.next_ranking_policy in assignedPaths.",
+          ],
+        },
+      );
+    }
+  }
+}
+
+function ownRecordAt(
+  record: Record<string, unknown>,
+  segment: string,
+): Record<string, unknown> | undefined {
+  return asPlainRecord(Object.hasOwn(record, segment) ? record[segment] : undefined);
+}
+
+function findAssignedSource(
+  proposed: Record<string, unknown>,
+  parents: readonly string[],
+): Record<string, unknown> | undefined {
+  let source: Record<string, unknown> | undefined = proposed;
+  for (const segment of parents) {
+    source = ownRecordAt(source, segment);
+    if (source === undefined) return undefined;
+  }
+  return source;
+}
+
+function ensureAssignedParent(
+  target: Record<string, unknown>,
+  parents: readonly string[],
+): Record<string, unknown> {
+  let cursor = target;
+  for (const segment of parents) {
+    let next = ownRecordAt(cursor, segment);
+    if (next === undefined) {
+      next = {};
+      cursor[segment] = next;
+    }
+    cursor = next;
+  }
+  return cursor;
+}
+
+function applyAssignedSettingsPaths(
+  target: Record<string, unknown>,
+  proposed: Record<string, unknown>,
+  assignedPaths: readonly string[],
+): void {
+  for (const assignedPath of assignedPaths) {
+    const parents = assignedPath.split(".");
+    const leaf = parents.pop() as string;
+    const source = findAssignedSource(proposed, parents);
+    if (source === undefined || !Object.hasOwn(source, leaf)) continue;
+    ensureAssignedParent(target, parents)[leaf] = structuredClone(source[leaf]);
+  }
+}
+
 /**
  * Apply only the caller's change, measured from the defaults fallback it was
- * handed, onto the stored document that could not be read. Every unrelated
- * stored key survives; a result that still fails schema validation is refused
- * with the first invalid setting named and nothing is written (pm-4zpq71).
+ * handed, plus every path it assigned explicitly, onto the stored document
+ * that could not be read. Every unrelated stored key survives; a result that
+ * still fails schema validation is refused with the first invalid setting
+ * named and nothing is written (pm-4zpq71).
  */
 function applyFallbackChangeToStoredSettings(
   current: unknown,
   proposedCanonical: Record<string, unknown>,
   fallbackOrigin: string,
+  assignedPaths: readonly string[],
 ): string {
   const defaultsCanonical = JSON.parse(
     serializeSettings(cloneDefaults()),
   ) as Record<string, unknown>;
-  const candidate: Record<string, unknown> =
-    typeof current === "object" && current !== null && !Array.isArray(current)
-      ? structuredClone(current as Record<string, unknown>)
-      : {};
+  const candidate: Record<string, unknown> = structuredClone(asPlainRecord(current) ?? {});
   applySettingsDelta(candidate, defaultsCanonical, proposedCanonical);
+  applyAssignedSettingsPaths(candidate, proposedCanonical, assignedPaths);
   const validated = validateSettings(candidate);
   if (!validated.success) {
     const field = validated.path;
@@ -2161,7 +2259,7 @@ function applyFallbackChangeToStoredSettings(
         original_code: fallbackOrigin,
         why: "The stored settings could not be read, so writing would either keep an invalid document or replace intended project configuration with defaults.",
         nextSteps: [
-          `Fix or remove ${field} in .agents/pm/settings.json (or set it to a valid value with pm config), then retry the original command.`,
+          `Assign ${field} a valid value explicitly (pm config <scope> set ${field} <value>, or writeSettings with assignedPaths), or fix or remove it in settings.json, then retry the original command.`,
           "Run pm health to confirm the settings warning has cleared.",
         ],
       },
@@ -2180,14 +2278,18 @@ export async function readSettings(pmRoot: string): Promise<PmSettings> {
  * Disjoint concurrent edits survive; overlapping stale edits fail before any
  * write. Caller-constructed settings without a read snapshot replace the whole
  * document. A default fallback returned for an unreadable document applies only
- * its own change to the stored document and refuses when the result is still
- * schema-invalid. History append failures compensate the document before unlocking.
+ * its own change, plus `options.assignedPaths`, to the stored document and
+ * refuses when the result is still schema-invalid. History append failures
+ * compensate the document before unlocking.
  */
 export async function writeSettings(
   pmRoot: string,
   settings: PmSettings,
   op = SETTINGS_WRITE_OP,
+  options: WriteSettingsOptions = {},
 ): Promise<void> {
+  const assignedPaths = options.assignedPaths ?? [];
+  assertAssignedSettingsPaths(assignedPaths);
   const settingsPath = getSettingsPath(pmRoot);
   const source = getSettingsPersistSourceSnapshot(settings);
   const fallbackOrigin = source ? undefined : getSettingsFallbackOrigin(settings);
@@ -2226,6 +2328,7 @@ export async function writeSettings(
               current,
               proposed as Record<string, unknown>,
               fallbackOrigin,
+              assignedPaths,
             ),
             result: undefined,
           };

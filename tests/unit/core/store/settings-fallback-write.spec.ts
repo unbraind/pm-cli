@@ -129,6 +129,93 @@ describe("settings writes over a schema-invalid document", () => {
   });
 });
 
+describe("explicit repairs to the default value", () => {
+  it("refuses a snapshot-only repair to the default and applies it once the path is assigned", async () => {
+    await withSchemaInvalidSettings(async ({ pmRoot, settingsPath, original }) => {
+      const settings = await readSettings(pmRoot);
+      settings.context.next_ranking_policy = SETTINGS_DEFAULTS.context.next_ranking_policy;
+      await expect(writeSettings(pmRoot, settings)).rejects.toMatchObject({
+        code: "settings_write_invalid_existing_schema",
+        context: { field: "context.next_ranking_policy" },
+      });
+      expect(await fs.readFile(settingsPath, "utf8")).toBe(original);
+      await expect(fs.stat(getWorkspaceHistoryPath(pmRoot))).rejects.toMatchObject({ code: "ENOENT" });
+
+      await writeSettings(pmRoot, settings, undefined, {
+        assignedPaths: ["context.next_ranking_policy", "lint.strict", "context.not_a_setting"],
+      });
+      const written = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      expect(written).toMatchObject({
+        id_prefix: "acme-",
+        author_default: "stored-author",
+        context: { next_ranking_policy: SETTINGS_DEFAULTS.context.next_ranking_policy },
+        lint: { strict: true, rules: ["no-orphans"] },
+      });
+      expect((written.context as Record<string, unknown>).not_a_setting).toBeUndefined();
+      expect((await readSettingsWithMetadata(pmRoot)).warnings).toEqual([]);
+    });
+  });
+
+  it("applies an assigned default through a cached read", async () => {
+    await withSchemaInvalidSettings(async ({ pmRoot, settingsPath }) => {
+      await readSettings(pmRoot);
+      const cached = await readSettings(pmRoot);
+      await writeSettings(pmRoot, cached, undefined, { assignedPaths: ["context.next_ranking_policy"] });
+      const written = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      expect(written).toMatchObject({ id_prefix: "acme-", context: { next_ranking_policy: "priority_floor" } });
+    });
+  });
+
+  it("still refuses an unrelated write whose assigned path leaves the invalid field alone", async () => {
+    await withSchemaInvalidSettings(async ({ pmRoot, settingsPath, original }) => {
+      const settings = await readSettings(pmRoot);
+      settings.locks.ttl_seconds = 61;
+      await expect(
+        writeSettings(pmRoot, settings, undefined, { assignedPaths: ["locks.ttl_seconds"] }),
+      ).rejects.toMatchObject({ code: "settings_write_invalid_existing_schema" });
+      expect(await fs.readFile(settingsPath, "utf8")).toBe(original);
+    });
+  });
+
+  it("creates missing parents for an assigned path and still validates the result", async () => {
+    await withTempRoot("pm-settings-fallback-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settingsPath = getSettingsPath(pmRoot);
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      await fs.writeFile(settingsPath, "[]\n", "utf8");
+      const settings = await readSettings(pmRoot);
+      await expect(
+        writeSettings(pmRoot, settings, undefined, { assignedPaths: ["context.next_ranking_policy"] }),
+      ).rejects.toMatchObject({ code: "settings_write_invalid_existing_schema", context: { field: "version" } });
+      expect(await fs.readFile(settingsPath, "utf8")).toBe("[]\n");
+    });
+  });
+
+  it.each(["", "context..next_ranking_policy", "__proto__.polluted", "context.next ranking"])(
+    "refuses the assigned path %j before reading or writing",
+    async (assignedPath) => {
+      await withSchemaInvalidSettings(async ({ pmRoot, settingsPath, original }) => {
+        const settings = await readSettings(pmRoot);
+        await expect(writeSettings(pmRoot, settings, undefined, { assignedPaths: [assignedPath] })).rejects.toMatchObject({
+          code: "settings_write_assigned_path_invalid",
+          exitCode: 2,
+          context: { field: assignedPath, reason: "assigned_path_segment_invalid" },
+        });
+        expect(await fs.readFile(settingsPath, "utf8")).toBe(original);
+      });
+    },
+  );
+
+  it("ignores assigned paths on a readable document", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const settings = await readSettings(pmPath);
+      settings.author_default = "assigned";
+      await writeSettings(pmPath, settings, undefined, { assignedPaths: ["author_default"] });
+      expect((await readSettings(pmPath)).author_default).toBe("assigned");
+    });
+  });
+});
+
 describe("fallback identification", () => {
   it("marks only defaults returned for an unreadable document", async () => {
     await withSchemaInvalidSettings(async ({ pmRoot }) => {
@@ -186,6 +273,48 @@ describe("pm config over a schema-invalid settings.json", () => {
         lint: { strict: true },
         context: { next_ranking_policy: "weighted" },
       });
+    });
+  });
+
+  it("repairs to the default value with changed: true and keeps unrelated keys", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const stored = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      stored.id_prefix = "acme-";
+      stored.lint = { strict: true };
+      stored.context = { ...(stored.context as Record<string, unknown>), next_ranking_policy: "bogus" };
+      await fs.writeFile(settingsPath, `${JSON.stringify(stored, null, 2)}\n`, "utf8");
+
+      const repaired = context.runCli(
+        ["config", "project", "set", "context.next_ranking_policy", "priority_floor", "--json"],
+        { expectJson: true },
+      );
+      expect(repaired.code, repaired.stderr).toBe(0);
+      expect(repaired.json).toMatchObject({ changed: true, nested_setting: { path: "context.next_ranking_policy", value: "priority_floor" } });
+      const written = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      expect(written).toMatchObject({
+        id_prefix: "acme-",
+        lint: { strict: true },
+        context: { next_ranking_policy: "priority_floor" },
+      });
+    });
+  });
+
+  it.each([
+    ["a policy setter", ["sprint_release_format_policy", "warn"]],
+    ["the context setter", ["context", "--stale-threshold-days", "7"]],
+  ])("refuses instead of a silent no-op when %s keeps the default", async (_label, args) => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const stored = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      stored.context = { ...(stored.context as Record<string, unknown>), next_ranking_policy: "bogus" };
+      const original = `${JSON.stringify(stored, null, 2)}\n`;
+      await fs.writeFile(settingsPath, original, "utf8");
+
+      const result = context.runCli(["config", "project", "set", ...args, "--json"]);
+      expect(result.code).toBe(2);
+      expect(`${result.stdout}${result.stderr}`).toContain("settings_write_invalid_existing_schema");
+      expect(await fs.readFile(settingsPath, "utf8")).toBe(original);
     });
   });
 });

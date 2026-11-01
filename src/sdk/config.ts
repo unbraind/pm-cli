@@ -42,6 +42,7 @@ import {
   resolvePmRoot,
 } from "../core/store/paths.js";
 import {
+  isSettingsReadFallback,
   readSettingsWithMetadata,
   writeSettings,
 } from "../core/store/settings.js";
@@ -1104,7 +1105,7 @@ async function applyContextConfig(
     }
   }
 
-  if (changed) {
+  if (changed || isSettingsReadFallback(settings)) {
     await writeSettings(target.pmRoot, settings, "config:set:context");
   }
 
@@ -1370,16 +1371,20 @@ async function buildNestedSettingResult(
   if (!parsed.ok) {
     throw new PmCliError(parsed.error.message, EXIT_CODE.USAGE);
   }
-  const changed = writeNestedSettingValue(
-    context.settings as unknown as Record<string, unknown>,
-    nestedSetting,
-    parsed.parsed.value,
-  );
+  // Over an unreadable document the fallback already holds the default, so an
+  // explicit repair to the default is not a no-op: assign the path (pm-4zpq71).
+  const changed =
+    writeNestedSettingValue(
+      context.settings as unknown as Record<string, unknown>,
+      nestedSetting,
+      parsed.parsed.value,
+    ) || isSettingsReadFallback(context.settings);
   if (changed) {
     await writeSettings(
       context.target.pmRoot,
       context.settings,
       `config:set:${nestedSetting.path}`,
+      { assignedPaths: [nestedSetting.path] },
     );
   }
   return withWarnings(
@@ -1404,7 +1409,9 @@ async function writeConfigSettingsIfChanged(
   changed: boolean,
   reason: string,
 ): Promise<void> {
-  if (changed) {
+  // An unchanged value over an unreadable document still writes, so the caller
+  // gets the typed existing-schema refusal instead of a silent no-op.
+  if (changed || isSettingsReadFallback(context.settings)) {
     await writeSettings(context.target.pmRoot, context.settings, reason);
   }
 }

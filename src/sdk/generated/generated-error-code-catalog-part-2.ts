@@ -8,19 +8,6 @@ import type { PmErrorCodeContract } from "../error-code-catalog.js";
 /** Generated partition 2 of the exhaustive error-code catalog. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
   {
-    code: "missing_budget",
-    meaning: "Missing budget condition.",
-    stability: "provisional",
-    exit_code: 1,
-    class: "generic_failure",
-    recovery:
-      "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
-    emitting_commands: ["*"],
-    canonical_code: "missing_budget",
-    aliases: [],
-  },
-  {
     code: "missing_cli_flag",
     meaning: "Missing cli flag condition.",
     stability: "provisional",
@@ -1116,6 +1103,19 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeContract[] = [
     sources: ["sdk/extension/static-inventory.ts"],
     emitting_commands: ["*"],
     canonical_code: "settings_unreadable",
+    aliases: [],
+  },
+  {
+    code: "settings_write_assigned_path_invalid",
+    meaning: "Settings write assigned path invalid condition.",
+    stability: "provisional",
+    exit_code: 2,
+    class: "usage",
+    recovery:
+      "Inspect the structured error guidance and retry the suggested command.",
+    sources: ["core/store/settings.ts"],
+    emitting_commands: ["*"],
+    canonical_code: "settings_write_assigned_path_invalid",
     aliases: [],
   },
   {

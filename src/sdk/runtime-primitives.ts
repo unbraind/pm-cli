@@ -435,6 +435,7 @@ export {
   readSettingsWithMetadata,
   runWithConfigurationOnlySettings,
   writeSettings,
+  type WriteSettingsOptions,
 } from "../core/store/settings.js";
 export {
   readSettingsSection,
