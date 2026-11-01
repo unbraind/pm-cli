@@ -404,6 +404,21 @@ function buildRecoveryPayload(params: {
   };
 }
 
+/**
+ * Attach recovery to a copy of a typed context that keeps every property
+ * descriptor: a separately bundled error's `details` getter is never run here
+ * and still reaches the renderer, which reports it instead of executing it.
+ */
+function withContextRecovery(context: PmCliErrorContext | undefined, recovery: PmCliErrorRecoveryPayload | undefined): PmCliErrorContext {
+  const descriptors: PropertyDescriptorMap = {};
+  for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(context ?? {}))) {
+    // A frozen context still yields a writable copy, exactly as the former spread did.
+    descriptors[key] = "value" in descriptor ? { ...descriptor, writable: true, configurable: true } : { ...descriptor, configurable: true };
+  }
+  descriptors.recovery = { value: recovery, enumerable: true, configurable: true, writable: true };
+  return Object.defineProperties({}, descriptors) as PmCliErrorContext;
+}
+
 /** Rewrite producer recovery as minimal edits of the caller's own invocation where the refusal code allows it. */
 function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
@@ -429,11 +444,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
         }
       : rawExistingRecovery;
   if (existingRecovery?.recovery_mode === "compact" && !explainRequested) {
-    return {
-      /* c8 ignore next */
-      ...context,
-      recovery: existingRecovery,
-    };
+    return withContextRecovery(context, existingRecovery);
   }
   const attemptedCommand = renderAttemptedCommand(safeInvocationArgv);
   const providedFields = extractProvidedOptionFlags(safeInvocationArgv);
@@ -447,10 +458,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
     suggestedRetry,
     existingRecovery,
   });
-  return {
-    ...context,
-    recovery,
-  };
+  return withContextRecovery(context, recovery);
 }
 
 async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): Promise<void> {

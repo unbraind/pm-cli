@@ -91,6 +91,11 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(isPmCliErrorDetails(hostile)).toBe(false);
     expect(projectPmCliErrorDetails(hostile)).toEqual({ details_omitted: receipt });
     expect(calls).toBe(0);
+    const rootTrap = new Proxy({}, { getPrototypeOf: () => { throw new Error("root trap fault"); } });
+    expect(isPmCliErrorDetails(rootTrap)).toBe(false);
+    expect(projectPmCliErrorDetails(rootTrap)).toEqual({
+      details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
+    });
     const trapped = new Proxy({}, { ownKeys: () => { throw new Error("trap fault"); } });
     expect(projectPmCliErrorDetails(trapped)).toEqual({
       details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },

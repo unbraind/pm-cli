@@ -165,11 +165,10 @@ function copyDetailObject(value: Record<string, unknown>, path: string, depth: n
  */
 export function admitPmCliErrorDetails(value: unknown): PmCliErrorDetailsAdmission {
   const byteLimit = PM_CLI_ERROR_DETAILS_LIMITS.max_bytes;
-  if (!isPlainObject(value)) {
-    return { ok: false, omission: { reason: "not_plain_object", path: "details", byte_limit: byteLimit } };
-  }
   const budget: ByteBudget = { bytes: 0 };
   try {
+    // Inside the guard: a proxy's getPrototypeOf trap can throw on the root too.
+    if (!isPlainObject(value)) throw new DetailsShapeError("not_plain_object", "details");
     const details = copyDetailObject(value, "details", 0, budget) as PmCliErrorDetails;
     return { ok: true, details, byte_length: budget.bytes };
   } catch (error) {

@@ -50,7 +50,10 @@ key, `scope: null` or an invalid value refuses instead of being silently dropped
 When the replacement would have the same identity (command, path, scope and
 context modes) as another entry, the add would be deduplicated away, so no retry
 is offered; the refusal names that entry's `--update-index` and the selected
-entry's `--remove-index` instead.
+entry's `--remove-index` instead. Conflicting `command` and `cmd` values, and a
+replacement that would invoke `pm test-all`, refuse without a retry. Explicit
+`--author`, `--message` and `--force` on the refused edit are carried into the
+retry, so ownership and history attribution match the original request.
 
 Exactly one selector must match the current collection under the item lock.
 Absent selectors and ambiguous command/path matches refuse the whole edit and

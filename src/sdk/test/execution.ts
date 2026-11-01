@@ -655,11 +655,7 @@ import {
   SCRIPT_RUN_FLAGS_WITH_VALUE,
   SCRIPT_RUN_SUBCOMMANDS,
   YARN_GLOBAL_FLAGS_WITH_VALUE,
-  firstPmSubcommand,
   extractPmInvocationArgsFromSegment,
-  isPmCliPackageToken,
-  isPmCliScriptToken,
-  isPmExecutableToken,
   parseLauncherSubcommand,
   parseNpmExecCommand,
   parseNpxCommand,
@@ -667,6 +663,11 @@ import {
   resolvePmSubcommandContext,
   splitNormalizedCommandSegments,
   stripLeadingEnvAssignments,
+  SHELL_COMMAND_FLAG_PATTERNS,
+  assertNoRecursiveTestAllCommand,
+  invokesRecursiveTestAllCommand,
+  normalizeCommandForValidation,
+  segmentInvokesRecursiveTestAll,
 } from "./linked-command-detection.js";
 
 export { extractReferencedPmItemIdsFromCommand } from "./linked-command-detection.js";
@@ -741,99 +742,6 @@ function isDirectTestRunnerSubcommand(token: string | undefined): boolean {
     return false;
   }
   return token === "vitest" || token === "test" || token.startsWith("test:");
-}
-
-function parsedLauncherInvokesRecursiveTestAll(
-  parsed: { command: string; args: string[] } | null,
-): boolean {
-  if (!parsed) {
-    return false;
-  }
-  if (
-    !isPmExecutableToken(parsed.command) &&
-    !isPmCliPackageToken(parsed.command)
-  ) {
-    return false;
-  }
-  return firstPmSubcommand(parsed.args) === "test-all";
-}
-
-const SHELL_COMMAND_FLAG_PATTERNS = new Map<string, RegExp>([
-  ...["sh", "bash", "dash", "zsh"].map(
-    (executable) => [executable, /^(?:-c|-[a-z]*c[a-z]*)$/u] as const,
-  ),
-  ...["cmd", "cmd.exe"].map((executable) => [executable, /^\/[ck]$/u] as const),
-  ...["powershell", "powershell.exe", "pwsh", "pwsh.exe"].map(
-    (executable) => [executable, /^-(?:c|command)$/u] as const,
-  ),
-]);
-const PACKAGE_EXEC_EXECUTABLES = new Set(["npx", "bunx"]);
-
-function segmentInvokesRecursiveTestAll(segment: string): boolean {
-  const rawTokens = segment.split(" ").filter((token) => token.length > 0);
-  const tokens = stripLeadingEnvAssignments(rawTokens);
-  if (tokens.length === 0) {
-    return false;
-  }
-
-  const [executable, ...args] = tokens;
-  const shellCommandFlagPattern = SHELL_COMMAND_FLAG_PATTERNS.get(executable);
-  if (shellCommandFlagPattern) {
-    const commandFlagIndex = args.findIndex((arg) =>
-      shellCommandFlagPattern.test(arg),
-    );
-    return commandFlagIndex >= 0
-      ? segmentInvokesRecursiveTestAll(
-          args.slice(commandFlagIndex + 1).join(" "),
-        )
-      : false;
-  }
-  if (isPmExecutableToken(executable) || isPmCliScriptToken(executable)) {
-    return firstPmSubcommand(args) === "test-all";
-  }
-
-  if (executable === "node" && args.length > 0 && isPmCliScriptToken(args[0])) {
-    return firstPmSubcommand(args.slice(1)) === "test-all";
-  }
-
-  if (PACKAGE_EXEC_EXECUTABLES.has(executable)) {
-    return parsedLauncherInvokesRecursiveTestAll(parseNpxCommand(args));
-  }
-
-  if (executable === "pnpm") {
-    return parsedLauncherInvokesRecursiveTestAll(parsePnpmDlxCommand(args));
-  }
-
-  if (executable === "npm") {
-    return parsedLauncherInvokesRecursiveTestAll(parseNpmExecCommand(args));
-  }
-
-  return false;
-}
-
-function invokesRecursiveTestAllCommand(command: string): boolean {
-  const normalized = normalizeCommandForValidation(command);
-  return splitNormalizedCommandSegments(normalized).some((segment) =>
-    segmentInvokesRecursiveTestAll(segment),
-  );
-}
-
-function assertNoRecursiveTestAllCommand(command: string): void {
-  if (!invokesRecursiveTestAllCommand(command)) return;
-  throw new PmCliError(
-    'Linked test commands must not invoke "pm test-all"; this creates recursive orchestration.',
-    EXIT_CODE.USAGE,
-  );
-}
-
-function normalizeCommandForValidation(command: string): string {
-  return command
-    .trim()
-    .replaceAll("\\", "/")
-    .replaceAll('"', "")
-    .replaceAll("'", "")
-    .replaceAll(/\s+/g, " ")
-    .toLowerCase();
 }
 
 function commandUsesSandboxRunner(normalizedCommand: string): boolean {

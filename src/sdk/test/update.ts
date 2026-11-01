@@ -11,7 +11,7 @@ import { parseOnlyIndexValue } from "../../core/test/run-selectors.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
-import { PmCliError } from "../../core/shared/errors.js";
+import { PmCliError, type PmCliErrorContext } from "../../core/shared/errors.js";
 import { stableValueEquals } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
@@ -22,6 +22,7 @@ import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { assertLinkedTestContext, linkedTestsHaveSameIdentity, STRUCTURED_LINKED_TEST_KEYS } from "./entry.js";
 import { parseLinkedTestJsonEntries } from "./parsers.js";
+import { assertNoRecursiveTestAllCommand } from "./linked-command-detection.js";
 import type { TestCommandOptions } from "./execution.js";
 
 /** Patch keys naming the immutable command identity of an entry. */
@@ -149,6 +150,89 @@ function buildReplacementEntry(test: LinkedTest, patch: Record<string, unknown>,
   return { command, ...entry };
 }
 
+/** Shared typed context of every command-edit refusal. */
+function commandImmutableContext(identityKey: string): PmCliErrorContext {
+  return {
+    code: "linked_test_command_immutable",
+    field: identityKey,
+    changed: false,
+    required: "Replace the entry instead: remove the selected linked test and add the new command in one pm test invocation, which records fresh provenance.",
+  };
+}
+
+/**
+ * The single replacement command a patch asks for, refusing conflicting
+ * aliases (which the add parser also refuses), an empty command and a repeat
+ * of the current command.
+ */
+function resolveRequestedCommand(record: Record<string, unknown>, identityKey: string, current: LinkedTest): string {
+  const spellings = COMMAND_IDENTITY_KEYS.filter((key) => Object.hasOwn(record, key)).map((key) => record[key]);
+  const requested = typeof record[identityKey] === "string" ? (record[identityKey] as string).trim() : "";
+  if (spellings.length > 1 && spellings.some((spelling) => typeof spelling !== "string" || spelling.trim() !== requested)) {
+    throw new PmCliError("--set-json sets command and cmd to different values; send one command", EXIT_CODE.USAGE, {
+      ...commandImmutableContext(identityKey),
+      nextSteps: ["Send the replacement command once, as command."],
+    });
+  }
+  if (requested.length === 0 || requested === current.command) {
+    throw new PmCliError(
+      requested.length === 0
+        ? `--set-json cannot set ${identityKey}: a linked test's command is its immutable identity`
+        : `--set-json ${identityKey} repeats the selected entry's command; omit it to edit only metadata`,
+      EXIT_CODE.USAGE,
+      { ...commandImmutableContext(identityKey), nextSteps: [`Patch only editable fields: ${EDITABLE_LINKED_TEST_KEYS.join(", ")}.`] },
+    );
+  }
+  // The add path refuses recursive orchestration, so a retry would fail; refuse with that reason now.
+  assertNoRecursiveTestAllCommand(requested);
+  return requested;
+}
+
+/**
+ * The replacement entry, validated exactly as the add path will validate it,
+ * and refused when the add path would deduplicate it into another entry.
+ */
+function admitReplacementEntry(params: {
+  id: string;
+  tests: LinkedTest[];
+  index: number;
+  identityKey: string;
+  otherFields: Record<string, unknown>;
+  requested: string;
+}): Record<string, unknown> {
+  const { id, tests, index, identityKey, otherFields, requested } = params;
+  // The retry must apply every requested field: refuse what the edit would refuse instead of dropping it.
+  assertEditablePatchFields(otherFields, true);
+  const entry = buildReplacementEntry(tests[index], otherFields, requested);
+  const candidate = parseLinkedTestJsonEntries(JSON.stringify(entry), "--add-json")[0];
+  assertLinkedTestContext(candidate);
+  const collision = tests.findIndex((test, position) => position !== index && linkedTestsHaveSameIdentity(test, candidate));
+  if (collision >= 0) {
+    // The add path deduplicates an identical registration, so the retry would delete the selected entry and add nothing.
+    throw new PmCliError(
+      `--set-json cannot change ${identityKey}: linked test ${collision + 1} already has the requested identity, so a replacement would merge into it`,
+      EXIT_CODE.USAGE,
+      {
+        ...commandImmutableContext(identityKey),
+        nextSteps: [
+          `Edit linked test ${collision + 1} instead: pm test ${id} --update-index ${collision + 1} --set-json '<editable fields>'.`,
+          `Or drop the selected entry: pm test ${id} --remove-index ${index + 1}.`,
+        ],
+      },
+    );
+  }
+  return entry;
+}
+
+/** Explicit identity, history and ownership controls of the refused edit, applied to its replacement too. */
+function replacementControlArgs(controls: Pick<UpdateLinkedTestOptions, "author" | "message" | "force">): string[] {
+  return [
+    ...(controls.author !== undefined ? ["--author", controls.author] : []),
+    ...(controls.message !== undefined ? ["--message", controls.message] : []),
+    ...(controls.force === true ? ["--force"] : []),
+  ];
+}
+
 /**
  * Refuse a command edit with the supported replacement route (pm-1rfy0y): a
  * single `pm test` invocation that removes the selected entry and adds the
@@ -160,61 +244,28 @@ function assertCommandIdentityUnchanged(params: {
   index: number;
   patch: unknown;
   global: GlobalOptions;
+  /** Explicit mutation controls of the refused edit, carried into the retry. */
+  controls: Pick<UpdateLinkedTestOptions, "author" | "message" | "force">;
 }): void {
-  const { id, tests, index, patch, global } = params;
+  const { id, tests, index, patch, global, controls } = params;
   if (typeof patch !== "object" || patch === null || Array.isArray(patch)) return;
   const record = patch as Record<string, unknown>;
   const identityKey = COMMAND_IDENTITY_KEYS.find((key) => Object.hasOwn(record, key));
   if (identityKey === undefined) return;
   const current = tests[index];
-  const requested = typeof record[identityKey] === "string" ? (record[identityKey] as string).trim() : "";
-  const context = {
-    code: "linked_test_command_immutable",
-    field: identityKey,
-    changed: false as const,
-    required: "Replace the entry instead: remove the selected linked test and add the new command in one pm test invocation, which records fresh provenance.",
-  };
-  if (requested.length === 0 || requested === current.command) {
-    throw new PmCliError(
-      requested.length === 0
-        ? `--set-json cannot set ${identityKey}: a linked test's command is its immutable identity`
-        : `--set-json ${identityKey} repeats the selected entry's command; omit it to edit only metadata`,
-      EXIT_CODE.USAGE,
-      { ...context, nextSteps: [`Patch only editable fields: ${EDITABLE_LINKED_TEST_KEYS.join(", ")}.`] },
-    );
-  }
+  const requested = resolveRequestedCommand(record, identityKey, current);
   const otherFields = Object.fromEntries(Object.entries(record).filter(([key]) => !COMMAND_IDENTITY_KEYS.includes(key as typeof COMMAND_IDENTITY_KEYS[number])));
-  // The retry must apply every requested field: refuse what the edit would refuse instead of dropping it.
-  assertEditablePatchFields(otherFields, true);
-  const entry = buildReplacementEntry(current, otherFields, requested);
-  // Parse exactly as the add path will, so invalid values refuse now rather than in the retry.
-  const candidate = parseLinkedTestJsonEntries(JSON.stringify(entry), "--add-json")[0];
-  assertLinkedTestContext(candidate);
-  const collision = tests.findIndex((test, position) => position !== index && linkedTestsHaveSameIdentity(test, candidate));
-  if (collision >= 0) {
-    // The add path deduplicates an identical registration, so the retry would delete the selected entry and add nothing.
-    throw new PmCliError(
-      `--set-json cannot change ${identityKey}: linked test ${collision + 1} already has the requested identity, so a replacement would merge into it`,
-      EXIT_CODE.USAGE,
-      {
-        ...context,
-        nextSteps: [
-          `Edit linked test ${collision + 1} instead: pm test ${id} --update-index ${collision + 1} --set-json '<editable fields>'.`,
-          `Or drop the selected entry: pm test ${id} --remove-index ${index + 1}.`,
-        ],
-      },
-    );
-  }
+  const entry = admitReplacementEntry({ id, tests, index, identityKey, otherFields, requested });
   // Exact command removal survives reordering; a shared or absent command falls back to the locked position.
   const removal = current.command !== undefined && tests.filter((test) => test.command === current.command).length === 1
     ? ["--remove", `command=${current.command}`]
     : ["--remove-index", String(index + 1)];
-  const retryArgs = [...resolvePmCommandScopeArgs(global), "test", id, ...removal, "--add-json", JSON.stringify(entry)];
+  const retryArgs = [...resolvePmCommandScopeArgs(global), "test", id, ...removal, "--add-json", JSON.stringify(entry), ...replacementControlArgs(controls)];
   throw new PmCliError(
     `--set-json cannot change ${identityKey}: a linked test's command is its immutable identity; replace the entry instead`,
     EXIT_CODE.USAGE,
     {
-      ...context,
+      ...commandImmutableContext(identityKey),
       recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs },
       nextSteps: [
         "Run the suggested retry: it removes the selected entry and adds the new command in one atomic, history-recorded mutation.",
@@ -265,7 +316,7 @@ export async function updateLinkedTest(id: string, options: UpdateLinkedTestOpti
     mutate(document) {
       const tests = document.metadata.tests ?? [];
       const index = selectIndex(tests, options.selector);
-      assertCommandIdentityUnchanged({ id: document.metadata.id, tests, index, patch: options.patch, global });
+      assertCommandIdentityUnchanged({ id: document.metadata.id, tests, index, patch: options.patch, global, controls: options });
       const patch = applyPatch(tests[index], options.patch);
       updatedIndex = index + 1;
       updatedFields = patch.fields;

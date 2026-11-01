@@ -31,14 +31,23 @@ function toCamelToken(value: string): string {
 }
 
 /**
- * The option name an SDK caller passes for a runtime field: the camelCase of
- * its declared CLI flag, normalized exactly as {@link readRuntimeFieldOptionValue}
- * reads it (and as Commander derives the attribute for a hyphenated flag).
+ * The option name an SDK caller passes to set exactly this runtime field: the
+ * first name {@link readRuntimeFieldOptionValue} reads for it (preferring the
+ * camelCase of its CLI flag, as Commander derives it) that no other declared
+ * field also reads. Undefined when every name is shared, because following
+ * such a hint would also set the other field.
  */
 export function runtimeFieldSdkOptionName(
   definition: RuntimeFieldDefinitionResolved,
-): string {
-  return toCamelToken(definition.cli_flag);
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+): string | undefined {
+  const shared = new Set(
+    registry.definitions
+      .filter((candidate) => candidate.metadata_key !== definition.metadata_key)
+      .flatMap((candidate) => resolveCandidateOptionKeys(candidate)),
+  );
+  const preferred = toCamelToken(definition.cli_flag);
+  return [preferred, ...resolveCandidateOptionKeys(definition)].find((name) => !shared.has(name));
 }
 
 function resolveCandidateOptionKeys(

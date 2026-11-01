@@ -35,6 +35,13 @@ export function resolveCoreFieldRecovery(field: string): Pick<PmCliErrorContext,
   };
 }
 
+/** Name the SDK option only when it selects this field alone. */
+function sdkOptionHint(option: string | undefined, command: "create" | "update"): string {
+  return option === undefined
+    ? `SDK: every option name for this field is shared with another declared field; set it through the CLI flag above.`
+    : `SDK: pass ${option} in the ${command} options.`;
+}
+
 /**
  * Route a `--field` key that the project schema declares (pm-wftvem): such
  * keys are set through their declared CLI flag or SDK option, never through
@@ -67,7 +74,7 @@ export function createSchemaFieldRecoveryResolver(
       recovery: { provided_fields: [field], suggested_flags: [flag] },
       nextSteps: [
         `Use the declared project-schema flag: pm ${command}${command === "update" ? " <id>" : ""} ${flag} <value>`,
-        `SDK: pass ${runtimeFieldSdkOptionName(definition)} in the ${command} options.`,
+        sdkOptionHint(runtimeFieldSdkOptionName(definition, registry), command),
         inspect,
       ],
     };

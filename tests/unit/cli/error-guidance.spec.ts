@@ -466,6 +466,10 @@ describe("pm cli error guidance context plumbing", () => {
       title: "Depth must be one of brief|full",
       recovery: { allowed_values: ["brief", "full"] },
     });
+    // The fallback headline cuts by code points, never splitting a surrogate pair.
+    const astral = formatPmCliErrorForJson(`Invalid ${"x".repeat(108)}\u{1F600} remaining input that is long enough to be cut`, 2, { code: "probe_invalid" });
+    expect(astral.title).toBe(`Invalid ${"x".repeat(108)}\u{1F600}...`);
+    expect(astral.title).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/u);
     // A generic-coded refusal keeps the generic class title.
     expect(formatPmCliErrorForJson("Status requires a value", 2, { code: "invalid_argument_value" }).title).toBe("Invalid argument value");
   });

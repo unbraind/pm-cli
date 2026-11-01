@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-29T22:37:34.363Z"
-updated_at: "2026-11-01T21:46:36.035Z"
+updated_at: "2026-11-01T22:58:45.406Z"
 closed_at: "2026-11-01T21:06:47.660Z"
 completed_at: "2026-11-01T21:06:47.660Z"
 author: "harness:codex"
@@ -18,14 +18,16 @@ confidence: medium
 resolution: "PmCliErrorContext.details with SDK admission (TypeError on malformed shapes), whole-or-receipt rendering within PM_CLI_ERROR_DETAILS_LIMITS in JSON, text and MCP, and exclusion from telemetry classification and Sentry payloads."
 expected_result: "Extensions return structured refusal facts through a documented SDK field, bounded deterministically and never sent to telemetry or Sentry."
 actual_result: "A separately bundled refusal's details reach JSON and text output whole under Node and Bun, oversized payloads become details_omitted receipts, and real local OTLP and Sentry collectors never receive the payload."
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-5t33or,related,"2026-10-29T22:37:34.363Z","harness:codex","cli:create:dep",detected
   pm-gh1625,related,"2026-10-29T22:37:34.363Z","harness:codex","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+  pm-btv6x7,related,"2026-11-01T22:58:45.189Z","harness:claude-code","cli:update:dep",detected
+comments[4]{created_at,author,text}:
   "2026-10-29T22:37:34.363Z","harness:codex","Duplicate check: hybrid expected-error diagnostics search plus complete PmCliErrorContext keyword search found existing host-specific contracts but no open extension-owned payload slot; checked live open and in-progress lists; related active provenance work retains its current scope."
   "2026-11-01T21:06:26.813Z","harness:claude-code","Implementation (branch fix/refusal-contract-precision):\n\n- Contract: PmCliErrorContext gains an optional details slot typed PmCliErrorDetails (plain JSON: null, booleans, finite numbers, well-formed strings, arrays, plain objects). New core module src/core/shared/error-details.ts admits a value, returns a detached copy, and renders it whole within PM_CLI_ERROR_DETAILS_LIMITS (max_bytes 4096 of compact UTF-8 JSON, max_depth 8). Anything larger or malformed is replaced by a details_omitted receipt { reason, path?, byte_length?, byte_limit }. Partial structures are never emitted.\n- SDK: createPmCliExpectedError validates details at construction and throws a TypeError naming the reason and path (unsupported_value, non_finite_number, malformed_unicode, reserved_key for __proto__, depth_limit, not_plain_object). Size is data-dependent, so it is bounded at render time, not refused. Exports from sdk and sdk/runtime: PM_CLI_ERROR_DETAILS_LIMITS, isPmCliErrorDetails, PmCliErrorDetails, PmCliErrorDetailValue, PmCliErrorDetailsOmission, PmCliErrorDetailsRejection.\n- CLI: --json errors carry details or details_omitted (kept by --lean). Text output renders an indented TOON \"Details:\" block, which is the first collection the bounded text ladder drops. The telemetry classification is built without details.\n- MCP: errorContent and writeError now recognize separately bundled expected errors by shape (they previously forwarded context only for instanceof PmCliError) and bound details the same way.\n- Sentry: captured faults strip details from error_context, and beforeSend scrubs details from error-data contexts and extras.\n\nProof: tests/unit/core/shared/error-details.spec.ts (17 cases), error-guidance, MCP, Sentry helper/instrument and SDK index specs. tests/integration/telemetry/extension-error-provenance.spec.ts runs the built CLI under Node and Bun against real local OTLP and Sentry collectors: the probe extension's separately bundled refusal carries a marked details payload, the JSON refusal returns it whole, the text refusal renders the Details block, and the marker never appears in collected events, logs or telemetry.\n\nProducer adoption (pm-changelog selection_report) belongs in the pm-changelog repository once a pm-cli release ships this slot. Filed there as the follow-up after merge.\n"
   "2026-11-01T21:46:36.034Z","harness:claude-code","Codex review round 1 on PR #1649 (gpt-6.1-sol, xhigh). Five findings on this item, all verified and fixed:\n- Nested Sentry payloads: console capture stores the error under extra.arguments and breadcrumbs, which the shallow scrub missed. omitEmbeddedPmCliErrorDetails now scrubs every embedded context/error_context in event extras, contexts and breadcrumbs (depth-bounded, cycle-safe, no getters run), in both beforeSend and beforeSendTransaction.\n- Fault message leaking producer keys: createPmCliExpectedError's TypeError now names only the reason; the path sits on a non-enumerable path property.\n- Amplification: shared array references could expand 10^8 leaves before the byte check. The walk now counts compact-JSON bytes as it goes and stops at the ceiling, so its cost is bounded by max_bytes (the test finishes in milliseconds). The receipt therefore no longer carries byte_length.\n- Unbounded omission paths: capped at 160 UTF-8 bytes without splitting a character.\n- Throwing details getters: accessors are refused without being run, at both the slot (CLI, MCP, telemetry omission) and inside values. Oversized well-formed details are kept as given and render as a byte_limit receipt.\nNew regression cases are in error-details, sdk-index, error-guidance, MCP and Sentry instrument specs.\n"
-files[17]{path,scope}:
+  "2026-11-01T22:35:04.360Z","harness:claude-code","Codex review round 2 on PR #1649: three findings on this item, all verified and fixed.\n- CLI enrichment ran a separately bundled error's details getter: buildPmCliRecoveryContext spread the raw context. It now attaches recovery to a descriptor-preserving copy (frozen contexts included), so the renderer reports the getter as unsupported_value without running it. Covered in-process in error-handler-projection.spec.ts with a frozen, getter-carrying context.\n- A root proxy whose getPrototypeOf trap throws escaped admission. The root shape check now runs inside the guarded walk.\n- The typed-refusal fallback headline (pm-btv6x7 path) cut by UTF-16 units and could split an emoji. buildFallbackTitleFromMessage now cuts by code points.\n"
+files[18]{path,scope}:
   sdk/public-surface.json,project
   src/cli/error-guidance.ts,project
   src/core/sentry/helpers.ts,project
@@ -38,6 +40,7 @@ files[17]{path,scope}:
   src/sdk/runtime.ts,project
   tests/integration/telemetry/extension-error-provenance.spec.ts,project
   tests/unit/cli/error-guidance.spec.ts,project
+  tests/unit/cli/error-handler-projection.spec.ts,project
   tests/unit/core/sentry/instrument.spec.ts,project
   tests/unit/core/sentry/sentry-helpers.spec.ts,project
   tests/unit/core/shared/error-details.spec.ts,project

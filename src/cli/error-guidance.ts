@@ -1210,10 +1210,12 @@ function buildFallbackTitleFromMessage(message: string): string | undefined {
   if (firstLine.length === 0) {
     return undefined;
   }
-  if (firstLine.length <= 120) {
+  // Count code points so a cut never leaves half of a surrogate pair.
+  const codePoints = Array.from(firstLine);
+  if (codePoints.length <= 120) {
     return firstLine;
   }
-  return `${firstLine.slice(0, 117)}...`;
+  return `${codePoints.slice(0, 117).join("")}...`;
 }
 
 function normalizeContextValue<Fallback extends string | undefined>(

@@ -303,6 +303,18 @@ describe("linked-test editing and configuration admission", () => {
       expect((collision as { context: { recovery?: unknown } }).context.recovery).toBeUndefined();
       expect(await capture(context, id)).toEqual(beforeCollision);
 
+      // Conflicting aliases and recursive orchestration refuse without a retry.
+      const aliases = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node -e 7", cmd: "node -e 8" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(aliases).toMatchObject({ code: "linked_test_command_immutable", message: expect.stringContaining("different values") });
+      const sameAliases = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node -e 7", cmd: "node -e 7" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect((sameAliases as { context: { recovery: { suggested_retry_args: string[] } } }).context.recovery.suggested_retry_args).toContain("--add-json");
+      const recursive = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "pm test-all --status open" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(recursive).toMatchObject({ message: expect.stringContaining("test-all") });
+      expect((recursive as { context?: { recovery?: unknown } }).context?.recovery).toBeUndefined();
+      // Explicit author, message and ownership override of the refused edit are carried into the retry.
+      const controlled = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node -e 7" } as unknown as LinkedTestMetadataPatch, author: "alice", message: "swap runner", force: true }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect((controlled as { context: { recovery: { suggested_retry_args: string[] } } }).context.recovery.suggested_retry_args.slice(-5)).toEqual(["--author", "alice", "--message", "swap runner", "--force"]);
+
       // Unsupported metadata names the editable domain.
       const forged = await updateLinkedTest(id, { selector: { index: 2 }, patch: { provenance: {} } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
       expect(forged).toMatchObject({ code: "linked_test_patch_fields_unsupported", context: { field: "provenance", recovery: { allowed_values: expect.arrayContaining(["note", "timeout_seconds", "scope"]) } } });

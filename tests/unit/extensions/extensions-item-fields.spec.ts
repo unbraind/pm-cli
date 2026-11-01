@@ -7,6 +7,7 @@ import {
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { createSchemaFieldRecoveryResolver, resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
 import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
+import { collectRuntimeUpdateFieldValues } from "../../../src/core/schema/runtime-field-values.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../../../src/sdk/cli-contracts/commander-mutation-options.js";
 import {
   createEmptyExtensionRegistrationRegistry,
@@ -78,9 +79,21 @@ describe("extensions item field runtime wiring", () => {
     for (const key of ["review_link", "reviewUrl"]) {
       expect(refusal(`${key}=https://example.test`).context.recovery?.suggested_flags).toEqual(["--review-url"]);
     }
-    expect(refusal("review_link=x").context.nextSteps?.[1]).toBe("SDK: pass reviewUrl in the update options.");
-    // A dotted flag advertises the option name the SDK actually reads, not the dotted spelling.
-    expect(refusal("review_link_alt=x").context.nextSteps?.[1]).toBe("SDK: pass reviewUrl in the update options.");
+    // review-url and review.url both normalize to reviewUrl, so each hint names an option only its own field reads.
+    expect(refusal("review_link=x").context.nextSteps?.[1]).toBe("SDK: pass reviewurl in the update options.");
+    expect(refusal("review_link_alt=x").context.nextSteps?.[1]).toBe("SDK: pass reviewLinkAlt in the update options.");
+    for (const [field, option] of [["review_link", "reviewurl"], ["review_link_alt", "reviewLinkAlt"], ["gate_evidence", "gateEvidence"]] as const) {
+      const value = field === "gate_evidence" ? { disposition: "gate_added" } : "https://example.test";
+      expect(Object.keys(collectRuntimeUpdateFieldValues({ [option]: value }, registry))).toEqual([field]);
+    }
+    // When every name a field answers to is shared, no SDK option is advertised.
+    const sharedOnly = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "x_y", type: "string", commands: ["update"] },
+        { key: "xy", type: "string", cli_flag: "x.y", commands: ["update"] },
+      ],
+    } as never);
+    expect(refusal("x_y=1", createSchemaFieldRecoveryResolver(sharedOnly, "update")).context.nextSteps?.[1]).toContain("every option name for this field is shared");
     const createOnly = refusal("intake_note=hello");
     expect(createOnly.message).toBe("--field intake_note is a project-schema field, not an extension field");
     expect(createOnly.context.recovery).toEqual({ provided_fields: ["intake_note"] });
