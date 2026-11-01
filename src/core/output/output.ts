@@ -22,7 +22,10 @@ import {
 } from "../../sdk/read-output-contracts.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 import { encodePmTableRows } from "../../sdk/output/table-rows.js";
-import { projectPmBriefListEnvelope } from "../../sdk/output/list-envelope.js";
+import {
+  projectPmBriefListEnvelope,
+  projectPmBriefSearchEnvelope,
+} from "../../sdk/output/list-envelope.js";
 import { prepareWellFormedOutputText } from "../shared/output-unicode.js";
 
 const DECLARED_PROCESS_EXIT_CODES = new Set<number>(Object.values(EXIT_CODE));
@@ -600,7 +603,9 @@ export function formatBuiltInOutput(
     return `${JSON.stringify(value, null, briefList ? undefined : 2)}\n`;
   }
   const compactedToon = compactToonValue(
-    projectEmptyCheckDetails(projectPmBriefListEnvelope(result)),
+    projectEmptyCheckDetails(
+      projectPmBriefSearchEnvelope(projectPmBriefListEnvelope(result)),
+    ),
     { omitDuplicateCountAliases: true, preserveRowFacts: true },
   );
   return compactedToon === undefined

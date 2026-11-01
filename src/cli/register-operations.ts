@@ -26,7 +26,7 @@ import {
   WORKSPACE_SNAPSHOT_ACTIONS,
 } from "../sdk/workspace-snapshot.js";
 import { readWorkspacePosition } from "../sdk/governance/workspace-position.js";
-import { runClaim, runClaimNext, runRelease } from "./commands/lifecycle/claim.js";
+import { requireClaimTarget, runClaim, runClaimNext, runRelease } from "./commands/lifecycle/claim.js";
 import { runContracts } from "./commands/workspace/contracts.js";
 import { runDuplicates } from "./commands/query/duplicates.js";
 import { runGc } from "./commands/governance/gc.js";
@@ -707,63 +707,41 @@ async function runContractsAction(
   }
 }
 
-/** Route explicit start composition or ordinary and ranked claims through SDK operations. */
+/** Route explicit start composition or ordinary, ranked and ranked-start claims through SDK operations. */
 async function runClaimAction(
   id: string | undefined,
   options: Record<string, unknown>,
   command: Command,
 ): Promise<void> {
-  if (options.start === true) {
-    requireClaimTarget(id, false);
-    await runStartTaskAction(id as string, options, command);
+  const next = options.next === true;
+  const start = options.start === true;
+  if (start && id) {
+    // The explicit-item composition refuses --next/--if-available with its own typed recovery.
+    await runStartTaskAction(id, options, command);
     return;
   }
+  requireClaimTarget(id, next, start);
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const lifecycleOptions = {
     ...buildLifecycleMutationOptions(options),
     ifAvailable: options.ifAvailable === true,
     maxAttempts: options.maxAttempts as string | number | undefined,
+    ...(start ? { start: true } : {}),
   };
-  requireClaimTarget(id, options.next === true);
-  const result =
-    options.next === true
-      ? await runClaimNext(
-          Boolean(options.force),
-          globalOptions,
-          lifecycleOptions,
-          {
-            type: typeof options.type === "string" ? options.type : undefined,
-            tag: typeof options.tag === "string" ? options.tag : undefined,
-            priority: options.priority as string | number | undefined,
-            assigneeFilter:
-              typeof options.assigneeFilter === "string"
-                ? options.assigneeFilter
-                : undefined,
-            parent:
-              typeof options.parent === "string" ? options.parent : undefined,
-            sprint:
-              typeof options.sprint === "string" ? options.sprint : undefined,
-            release:
-              typeof options.release === "string" ? options.release : undefined,
-            includeDecisions: options.includeDecisions === true,
-            includeGates: options.includeGates === true,
-            includeContainers: options.includeContainers === true,
-            tokenBudget: (options.tokenBudget ?? options.token_budget) as
-              | string
-              | number
-              | undefined,
-            explainRanking:
-              options.explainRanking === true ||
-              options.explain_ranking === true,
-          },
-        )
-      : await runClaim(
-          id as string,
-          Boolean(options.force),
-          globalOptions,
-          lifecycleOptions,
-        );
+  const result = next
+    ? await runClaimNext(
+        Boolean(options.force),
+        globalOptions,
+        lifecycleOptions,
+        readClaimNextSelection(options),
+      )
+    : await runClaim(
+        id as string,
+        Boolean(options.force),
+        globalOptions,
+        lifecycleOptions,
+      );
   await invalidateSearchCachesForMutation(globalOptions, result);
   printResult(result, globalOptions);
   if (globalOptions.profile) {
@@ -771,19 +749,32 @@ async function runClaimAction(
   }
 }
 
-/** Enforces the claim target XOR selection contract before dispatch. */
-export function requireClaimTarget(
-  id: string | undefined,
-  next: boolean,
-): void {
-  if (!next && !id)
-    throw new PmCliError("Specify an item id or pass --next", EXIT_CODE.USAGE);
-  if (next && id)
-    throw new PmCliError(
-      "Specify either an item id or --next, not both",
-      EXIT_CODE.USAGE,
-    );
+/** Read the ranked-selection filters shared by claim --next and claim --next --start. */
+function readClaimNextSelection(
+  options: Record<string, unknown>,
+): Parameters<typeof runClaimNext>[3] {
+  return {
+    type: readOptionString(options, "type"),
+    tag: readOptionString(options, "tag"),
+    priority: options.priority as string | number | undefined,
+    assigneeFilter: readOptionString(options, "assigneeFilter"),
+    parent: readOptionString(options, "parent"),
+    sprint: readOptionString(options, "sprint"),
+    release: readOptionString(options, "release"),
+    includeDecisions: options.includeDecisions === true,
+    includeGates: options.includeGates === true,
+    includeContainers: options.includeContainers === true,
+    tokenBudget: (options.tokenBudget ?? options.token_budget) as
+      | string
+      | number
+      | undefined,
+    explainRanking:
+      options.explainRanking === true || options.explain_ranking === true,
+  };
 }
+
+/** Re-exported so registration callers keep one claim-target contract with the SDK. */
+export { requireClaimTarget };
 
 /** Route pause composition or ordinary release and invalidate affected search caches. */
 async function runReleaseAction(
@@ -1325,7 +1316,7 @@ export function registerOperationCommands(program: Command): void {
 
   const claimCommand = program
     .command("claim")
-    .option("--start", "Claim and start an explicit item")
+    .option("--start", "Claim and start (id or --next)")
     .argument("[id]", "Item id (omit with --next)")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")

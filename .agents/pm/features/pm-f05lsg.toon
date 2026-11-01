@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ergonomics,ci-gates,discoverability,long-horizon
 created_at: "2026-08-01T13:09:26.104Z"
-updated_at: "2026-10-23T10:17:53.217Z"
+updated_at: "2026-10-31T21:50:08.744Z"
 author: "harness:claude-code"
 estimated_minutes: 720
 acceptance_criteria: "A replay corpus of wrong invocations is generated from the contract tables and covers every flag with a closed domain, every subcommand family, every required-argument omission and every mutually exclusive flag pair; Every declared error code is reachable from at least one corpus input, and a code with no reachable input is reported as such; A scorer reports the recovery-closure fraction and the list of unrecoverable refusals, scoring a lone nearest-match suggestion as not recoverable; The closure fraction is a ratchet in the gate registry that may not fall, with a negative control proving the gate can fail; The refusal envelope has a declared shape carrying the failing surface, the rejected value, the legal domain when known, and the exit code; Non-interactive init guidance warnings expose bounded executable inspection and explicit add commands while preserving skip/decline intent and user-authored documentation, with real isolated recovery and byte-preservation evidence"
@@ -47,7 +47,7 @@ dependencies[28]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1363,related,"2026-10-10T05:34:42.387Z","harness:codex","cli:update:dep",detected
   pm-998juj,discovered_from,"2026-10-10T11:46:33.219Z","harness:codex","cli:update:dep",detected
   pm-83cz0o,discovered_from,"2026-10-10T12:22:11.123Z","harness:codex","cli:update:dep",detected
-comments[86]:
+comments[87]:
   - created_at: "2026-08-18T19:18:11.981Z"
     author: "harness:codex"
     text: "Implementation start 2026-08-18: active in one coupled SDK-first command-contract tranche spanning canonical flag concepts and budgets, truthful invocation arity, complete closed-domain recovery, refusal-closure scoring, source-derived executable recovery obligations, and shared CLI/MCP/completion/docs discovery metadata. This item is claimed because its acceptance surface will be edited and verified in this branch; unrelated parents and backlog items remain open and unclaimed."
@@ -308,6 +308,9 @@ comments[86]:
   - created_at: "2026-10-23T10:17:53.217Z"
     author: "harness:codex"
     text: "Additional recovery corpus candidate discovered during pm-t2dqzijokl31: src/core/test/run-selectors.ts still advises adding a first test with --command, but the current test command contract refuses --command as unknown_option. Existing --add and --add-json alternatives are valid. Preserve this in the canonical recovery-closure programme rather than create a duplicate general UX item; current implementation remains scoped to linked-resource positional recovery and assignment-only evidence."
+  - created_at: "2026-10-31T21:50:08.744Z"
+    author: "harness:claude-code"
+    text: "Scope note from pm-gh1643 (GH-1643): a second refusal shape belongs in this closure gate. 'pm claim --next --start' told the caller to 'pass --next' while --next was in recovery.provided_fields (the same defect shape GH-1352 had on --if-available). pm-gh1643 fixes the claim-target refusals and adds a targeted spec. The class-wide invariant is still unenforced: no refusal's message, required text, next_steps or suggested_retry may instruct passing a flag already present in provided_fields. PmRefusalClosureObservation does not carry next_steps or provided_fields today, so the census cannot observe this; extend the observation and add a redundant_flag_advice finding, then run it over every grammar-derived probe."
 notes[3]:
   - created_at: "2026-10-04T16:59:01.232Z"
     author: "harness:codex"

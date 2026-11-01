@@ -6,16 +6,16 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-30T17:18:07.453Z"
+updated_at: "2026-11-01T01:17:28.301Z"
 reminders[1]{at,text}:
-  "2026-10-31T06:00:00.000Z",Verify the next daily release and npm/npx/Bun/bunx consumers; retain pm-gh1622 until installed-producer remediation and publication are verified
+  "2026-11-02T06:00:00.000Z","Verify the 2026-11-01 daily cut (the first after PR #1645) against npm latest, GitHub Release, npm/npx/Bun/bunx consumers and fresh Sentry/telemetry; record any scheduled failure stage"
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "At October 31 06:00 UTC verify the next eligible daily cut against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
+expected_result: "At November 2 06:00 UTC verify the November 1 daily cut against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
 actual_result: "October28 morning Auto Release40628452727 and Release40631211289 succeed. Exactly v2026.10.28 is published; independent registry integrity, actual npx/bunx, all bins, MCP Skills/Apps and HTTP acceptance pass. This immutable release precedes PR1616 SDK changes. Fresh real read spans are accepted/indexed in Sentry; required observability gate passes with zero unresolved issues, zero missing error codes and5.91percent finish-error rate. Recent installation-scoped telemetry has28 matched starts/finishes, zero settled mismatches and empty broker queue. Historical reliability remains separate."
 dependencies[14]:
   - id: pm-7n5a
@@ -90,7 +90,7 @@ dependencies[14]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[258]:
+comments[259]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -868,6 +868,9 @@ comments[258]:
   - created_at: "2026-10-30T13:14:20.173Z"
     author: "harness:claude-code"
     text: "October 30 follow-up at 13:15 UTC: scheduled Auto Release run 41029596560 (08:54 UTC) ended cancelled after 15m13s, mid-pipeline. The workflow uses cancel-in-progress: false with a 180-minute job timeout, so this was an external cancellation, not a concurrency or timeout cut. It made no publication. Automation opened blocker issue #1632 for the earlier dispatcher failure 40999107873; it is now linked to the owner pm-gh1622, with no duplicate item. Live state: npm @unbrained/pm-cli is 2026.10.28, latest GitHub release is v2026.10.28, and there is no 2026.10.29 or 2026.10.30 cut, so no duplicate automatic cut can exist. Sentry has exactly one unresolved issue in 14 days: PM-CLI-3Q, 2 events, last seen 2026-10-29 03:11:51 UTC. Under the release gate's 14-day window it blocks every cut until it is resolved with verified pm-presets remediation; upstream PR170 is still open at 97d5d1bf4. Telemetry stack check at 13:13 UTC: all containers healthy, API synced at 13:09, queue drained, 74,676 events in 24h, newest event under one minute old. The last hour split 3,432 automation and 352 test source contexts, so test-run tagging from GH-1625 is visible in production rows."
+  - created_at: "2026-10-31T22:12:47.451Z"
+    author: "harness:claude-code"
+    text: "October 31 checkpoint (verified live 22:10 UTC): the 03:45 UTC manual run 41165698315 and the 08:47 UTC scheduled run 41185994587 both stopped at static-quality-gate on 1a72d089d, before publication. The causes were two registry advisories published that morning (follow-redirects GHSA-mrwp-f3q8-3g9p, minimatch GHSA-g3hv-75wg-m249) and the pm-changelog 2026.10.31 grammar census drift. PR #1638 (3ff44fb6a) fixed both. Closing blocker #1639 at 19:16 UTC fired Auto Release (blocker_retry) 41233462967 → Release 41236628626 → v2026.10.31: npm latest 2026.10.31, GitHub Release published 20:51 UTC. Today has exactly one cut and no duplicate automatic release, and the nine other blocker_retry runs were skipped. The nightly quality alert #1641 had the same root cause and is closed."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

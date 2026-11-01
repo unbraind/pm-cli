@@ -21372,6 +21372,7 @@
       "class": "usage",
       "code": "ambiguous_option_combination",
       "emitting_commands": [
+        "claim",
         "plan"
       ],
       "exit_code": 2,
@@ -21379,6 +21380,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
+        "sdk/lifecycle/claim.ts",
         "sdk/lifecycle/plan.ts"
       ],
       "stability": "stable"
@@ -25278,7 +25280,8 @@
       "class": "usage",
       "code": "missing_required_argument",
       "emitting_commands": [
-        "*"
+        "*",
+        "claim"
       ],
       "exit_code": 2,
       "meaning": "Missing required argument condition.",
@@ -25292,7 +25295,8 @@
         "core/telemetry/observability.ts",
         "sdk/governance/assurance-action.ts",
         "sdk/history-redact.ts",
-        "sdk/invocation-author.ts"
+        "sdk/invocation-author.ts",
+        "sdk/lifecycle/claim.ts"
       ],
       "stability": "stable"
     },
@@ -26906,14 +26910,16 @@
       "class": "conflict",
       "code": "terminal_state_conflict",
       "emitting_commands": [
-        "*"
+        "*",
+        "claim"
       ],
       "exit_code": 4,
       "meaning": "Terminal state conflict condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "core/telemetry/observability.ts"
+        "core/telemetry/observability.ts",
+        "sdk/lifecycle/claim.ts"
       ],
       "stability": "stable"
     },
@@ -33695,38 +33701,22 @@
                 },
                 {
                   "properties": {
-                    "next": {
-                      "const": true
-                    }
-                  },
-                  "required": [
-                    "next"
-                  ]
-                }
-              ]
-            }
-          },
-          {
-            "not": {
-              "allOf": [
-                {
-                  "properties": {
-                    "start": {
-                      "const": true
-                    }
-                  },
-                  "required": [
-                    "start"
-                  ]
-                },
-                {
-                  "properties": {
                     "ifAvailable": {
                       "const": true
                     }
                   },
                   "required": [
                     "ifAvailable"
+                  ]
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
                   ]
                 }
               ]
@@ -33955,7 +33945,7 @@
             "type": "string"
           },
           "start": {
-            "description": "Claim an explicit item and move it to its configured in-progress status.",
+            "description": "Move the claimed item to its configured in-progress status; with next, the selected item is claimed and started in one locked write.",
             "type": "boolean"
           },
           "tag": {
@@ -64965,38 +64955,22 @@
                 },
                 {
                   "properties": {
-                    "next": {
-                      "const": true
-                    }
-                  },
-                  "required": [
-                    "next"
-                  ]
-                }
-              ]
-            }
-          },
-          {
-            "not": {
-              "allOf": [
-                {
-                  "properties": {
-                    "start": {
-                      "const": true
-                    }
-                  },
-                  "required": [
-                    "start"
-                  ]
-                },
-                {
-                  "properties": {
                     "ifAvailable": {
                       "const": true
                     }
                   },
                   "required": [
                     "ifAvailable"
+                  ]
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
                   ]
                 }
               ]
@@ -65229,7 +65203,7 @@
             "type": "string"
           },
           "start": {
-            "description": "Claim an explicit item and move it to its configured in-progress status.",
+            "description": "Move the claimed item to its configured in-progress status; with next, the selected item is claimed and started in one locked write.",
             "type": "boolean"
           },
           "tag": {

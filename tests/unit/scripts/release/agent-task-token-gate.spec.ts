@@ -1096,7 +1096,7 @@ describe("agent-task transcript token gate", () => {
     vi.spyOn(childProcess, "spawnSync").mockImplementation((...args) => {
       const argv = Array.isArray(args[1]) ? args[1] : [];
       if (argv.includes("--token-accounting")) accountedInvocations += 1;
-      const baselineArgs = [path.resolve("dist/cli.js"), "--json", "context", "--for", "orient", "--limit", "10"];
+      const baselineArgs = [path.resolve("dist/cli.js"), "--json", "context", "--for", "orient"];
       if (args[0] === process.execPath && JSON.stringify(argv) === JSON.stringify(baselineArgs)) {
         refusedBaselines += 1;
         return { status: 7, stdout: "", stderr: "", pid: 0, signal: null } as ReturnType<typeof original>;

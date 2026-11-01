@@ -33,9 +33,22 @@ stdin selection, dry runs, rollback behavior, and evidence flags. Put bulk flags
 after `many`. Deletion recovery remains `pm history restore <id> <version>`.
 
 Plain `claim`, `release`, `update`, and `close` keep their original semantics.
-`claim --start` requires an explicit item and rejects `--next` and
-`--if-available` before mutation. It claims ownership, then moves the item to the
-configured in-progress status. `release --pause` moves work to the configured
+`claim <id> --start` rejects `--if-available` before mutation. It claims
+ownership, then moves the item to the configured in-progress status.
+`claim --next --start` selects the next caller-available item with the same
+filters, `--if-available` behavior, and race-loss walk as `claim --next`.
+Ranking happens before any lock, so a candidate can change before it is
+claimed. Each attempt re-reads the candidate under its item lock and then
+claims it and moves it to the configured in-progress status in one locked
+mutation and one `claim` history event. No other agent can therefore observe
+the claimed item before it starts. Configured type workflows are enforced, a
+terminal candidate is refused (`terminal_state_conflict`), and the receipt
+carries `start: { from_status, to_status }`. A claim without an id or `--next`
+is refused with `missing_required_argument`, and `claim <id> --next` with
+`ambiguous_option_combination`; their next steps never tell the caller to pass
+a flag that is already present. `claim <id> --start --next` (or
+`--if-available`) is refused by the explicit-start composition with
+`invalid_argument_value`, whose recovery names the flags to remove. `release --pause` moves work to the configured
 open status, then releases ownership. `close --release-assignment` records the
 close and its inline evidence, then releases ownership.
 
@@ -67,6 +80,7 @@ import { PmClient } from "@unbrained/pm-cli/sdk";
 
 const pm = new PmClient({ pmRoot: "/project/.agents/pm" });
 const started = await pm.claim("pm-example", { start: true });
+const nextStarted = await pm.claimNext({ start: true }); // ranked selection, then one locked claim-and-start write
 const paused = await pm.release("pm-example", { pause: true });
 const closed = await pm.close("pm-example", "Acceptance verified", {
   releaseAssignment: true,
@@ -84,7 +98,8 @@ Literal `true` options return typed `StartTaskResult`, `PauseTaskResult`, or
 `runCloseTask` primitives expose the same SDK-owned compositions.
 
 MCP actions remain `claim`, `release`, and `close`, using `start`, `pause`, and
-`releaseAssignment`. Action-specific discovery types claim's `start` as boolean;
+`releaseAssignment`. MCP `claim` with `next: true` and `start: true` uses the
+same ranked selection and single locked claim-and-start write as `claim --next --start`. Action-specific discovery types claim's `start` as boolean;
 scheduling actions retain string timestamps. For the broad provider tool schema,
 pass the claim boolean through `options: { start: true }` because its shared flat
 `start` property retains the scheduling string contract. Bulk action names remain

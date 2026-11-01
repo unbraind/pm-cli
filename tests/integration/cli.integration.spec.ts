@@ -3504,7 +3504,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const guidancePath = path.join(context.tempRoot, "AGENTS.md");
       const guidanceBody = await readFile(guidancePath, "utf8");
       expect(guidanceBody).toContain("<!-- pm-cli:agent-guidance:start:v1 -->");
-      expect(guidanceBody).toContain("pm context --limit 10");
+      expect(guidanceBody).toContain("`pm context --for orient`");
+      expect(guidanceBody).not.toContain("pm context --limit 10");
       expect(guidanceBody).toContain("pm close <id>");
 
       const guidanceStatusAfter = context.runCli(["init", "--agent-guidance", "status", "--json"], { expectJson: true });

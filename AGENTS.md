@@ -60,8 +60,8 @@ For real repository tracking, do not override `PM_PATH`. If a script must target
 <!-- pm-cli:agent-guidance:start:v1 -->
 ## pm Workflow (Agent Quickstart)
 
-- Cold start with the measured canonical orientation: `pm context --limit 10 --for orient`; before item mutation, also run `pm search "<keywords>" --limit 10`, `pm list --status open --limit 20`, and `pm list --status in_progress --limit 20`.
-- Claim and start atomically: `pm claim <id> --start`.
+- Cold start with the measured canonical orientation: `pm context --for orient`; before item mutation, also run `pm search "<keywords>" --limit 10`, `pm list --status open --limit 20`, and `pm list --status in_progress --limit 20`.
+- Claim and start: `pm claim <id> --start`, or `pm claim --next --start` to take the next available item in one write.
 - Link evidence while coding: `pm files <id> --add ...`, `pm docs <id> --add ...`, `pm test <id> --add command="node scripts/run-tests.mjs test"`.
 - Verify and close: `pm test <id> --run --progress`, then atomically record closure evidence with `pm close <id> "<reason>" --resolution "<what changed>" --expected "<expected outcome>" --actual "<observed outcome>" --validate-close warn`, then `pm release <id>`.
 - Author identity is automatic for supported agent harnesses; use `--author` only for an explicit override.
@@ -70,7 +70,7 @@ For real repository tracking, do not override `PM_PATH`. If a script must target
 
 ## Working Rules
 
-- **Orient:** start with the measured canonical cold-start, `pm context --limit 10 --for orient`. Before `pm create`, also run request-specific `pm search`, `pm list --status open`, and `pm list --status in_progress` so duplicate and ownership checks use live state. If net-new work is required, create or reuse the parent lineage first and record duplicate-check evidence in a create-time comment.
+- **Orient:** start with the measured canonical cold-start, `pm context --for orient`. Before `pm create`, also run request-specific `pm search`, `pm list --status open`, and `pm list --status in_progress` so duplicate and ownership checks use live state. If net-new work is required, create or reuse the parent lineage first and record duplicate-check evidence in a create-time comment.
 - **Verify before you claim:** the verification recipe for the Non-Negotiable above. A `closed` item whose `resolution`/`close_reason` describes the fix represents completed, shipped work — never describe it as outstanding. Confirm release/CI/infra status against the live system, e.g. `pm get pm-9gxi`, `npm view @unbrained/pm-cli version`, `gh release list`, `gh run list --workflow=auto-release.yml`.
 - **Implement:** keep edits scoped to the claimed item. Link changed files with `pm files`, docs with `pm docs`, and runnable verification with `pm test`.
 - **Record:** use `pm comments`, `pm notes`, and `pm learnings` for progress, rationale, and durable lessons. Prefer append-style updates over rewriting item content.

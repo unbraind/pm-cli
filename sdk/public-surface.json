@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2035,
+    "covered_symbols": 2038,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2036
+    "required_symbols": 2039
   },
   "breaking_acknowledgements": [
     {
@@ -2971,6 +2971,20 @@
       ],
       "package_version": "2026.10.30",
       "reason": "isGenericRefusalExamples was introduced unreleased on this stack (absent from main and v2026.10.30) and is superseded by withoutGenericRefusalExamples"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ClaimNextOptions",
+        "signature ./sdk:ClaimResult",
+        "signature ./sdk:PmContextIntentReceipt",
+        "signature ./sdk/contracts:PmContextIntentReceipt",
+        "signature ./sdk/core:ClaimNextOptions",
+        "signature ./sdk/core:ClaimResult",
+        "signature ./sdk/runtime:ClaimNextOptions",
+        "signature ./sdk/runtime:ClaimResult"
+      ],
+      "package_version": "2026.10.31",
+      "reason": "Optional additions only: ClaimResult.start (claim --next --start receipt), ClaimNextOptions.start, and PmContextIntentReceipt.limit_override (GH-1643/GH-1644); no existing field changed type or became required."
     }
   ],
   "entrypoints": {
@@ -5171,13 +5185,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimNextOptions",
-          "signature": "export interface ClaimNextOptions extends PmClientFullMutationOptions { maxAttempts?: number | string; }"
+          "signature": "export interface ClaimNextOptions extends PmClientFullMutationOptions { maxAttempts?: number | string; start?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ClaimStartReceipt",
+          "signature": "export interface ClaimStartReceipt { from_status: string; to_status: string; }"
         },
         {
           "classification": "supported",
@@ -5880,6 +5900,12 @@
           "kind": "value",
           "name": "CONTEXT_FLAG_CONTRACTS",
           "signature": "CliFlagContract[]"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "CONTEXT_INTENT_LIMIT_OVERRIDE_WARNING",
+          "signature": "\"limit_overridden_by_intent\""
         },
         {
           "classification": "supported",
@@ -14438,6 +14464,12 @@
           "signature": "export interface PmContextIntentDiscoveryOptions { pmRoot: string; packages?: readonly PmContextIntentPackageModule[]; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmContextIntentLimitOverride",
+          "signature": "export interface PmContextIntentLimitOverride { flag: \"--limit\"; requested: number; effective: number; token_budget_for_requested?: number; restore_with?: string; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmContextIntentPackageModule",
@@ -14447,7 +14479,7 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; declared_token_budget: number; token_budget_override: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; declared_token_budget: number; token_budget_override: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; limit_override?: PmContextIntentLimitOverride; }"
         },
         {
           "classification": "contract_data",
@@ -15899,6 +15931,12 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "projectPmBriefListEnvelope",
+          "signature": "(value: unknown) => unknown | calls: (value: unknown) => unknown"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "projectPmBriefSearchEnvelope",
           "signature": "(value: unknown) => unknown | calls: (value: unknown) => unknown"
         },
         {
@@ -24057,6 +24095,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "value",
+          "name": "CONTEXT_INTENT_LIMIT_OVERRIDE_WARNING",
+          "signature": "\"limit_overridden_by_intent\""
+        },
+        {
+          "classification": "contract_data",
           "kind": "function",
           "name": "contextIntentRowId",
           "signature": "(row: unknown) => string | undefined | calls: (row: unknown) => string | undefined"
@@ -25330,8 +25374,14 @@
         {
           "classification": "contract_data",
           "kind": "interface",
+          "name": "PmContextIntentLimitOverride",
+          "signature": "export interface PmContextIntentLimitOverride { flag: \"--limit\"; requested: number; effective: number; token_budget_for_requested?: number; restore_with?: string; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "interface",
           "name": "PmContextIntentReceipt",
-          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; declared_token_budget: number; token_budget_override: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; }"
+          "signature": "export interface PmContextIntentReceipt { command: string; intent: string; source: PmContextIntentSource; included_field_groups: string[]; token_budget: number; declared_token_budget: number; token_budget_override: number; estimated_tokens: number; within_budget: boolean; degradation: \"bounded_fields_and_rows\" | \"bounded_ranked_rows\" | \"bounded_sections\" | \"budget_row_compaction\" | \"recursive_budget_compaction\" | \"budget_receipt_only\" | \"standard_item\" | \"none\"; declaration_feasible: boolean; result_omitted: boolean; budget_derived_limit?: number; binding_constraint?: \"explicit_limit\" | \"token_budget\"; limit_reason?: string; limit_override?: PmContextIntentLimitOverride; }"
         },
         {
           "classification": "contract_data",
@@ -26627,13 +26677,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimNextOptions",
-          "signature": "export interface ClaimNextOptions extends PmClientFullMutationOptions { maxAttempts?: number | string; }"
+          "signature": "export interface ClaimNextOptions extends PmClientFullMutationOptions { maxAttempts?: number | string; start?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ClaimStartReceipt",
+          "signature": "export interface ClaimStartReceipt { from_status: string; to_status: string; }"
         },
         {
           "classification": "supported",
@@ -33719,13 +33775,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimNextOptions",
-          "signature": "export interface ClaimNextOptions extends PmClientFullMutationOptions { maxAttempts?: number | string; }"
+          "signature": "export interface ClaimNextOptions extends PmClientFullMutationOptions { maxAttempts?: number | string; start?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "ClaimStartReceipt",
+          "signature": "export interface ClaimStartReceipt { from_status: string; to_status: string; }"
         },
         {
           "classification": "advanced_export",

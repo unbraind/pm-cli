@@ -1,0 +1,20 @@
+id: pm-urzubi
+title: "Starting work ignores open blockers: claim <id> --start and update --status in_progress move a blocked item into progress without a refusal or warning"
+description: "Raised by CodeRabbit on PR #1645 and verified on 2026.10.31 source in a fresh sandbox. An item created with --blocked-by <open item> is stored as status blocked, and pm update <id> --status in_progress then succeeds with no refusal or warning. pm claim <id> --start runs the same claim-then-update composition, so it behaves the same. pm validate later reports non_blocked_status_has_blocked_by for the in-progress item whose blocker is still open. pm next and claim --next --start are unaffected because ready selection already excludes items with open blockers. Starting an explicitly blocked item is a governance decision, not a claim defect, so changing only --start would make start and update disagree.\n\nDuplicate search: 'start blocked item open blocker in_progress refuse', 'non_blocked_status_has_blocked_by' — no open item. Nearest is the dependency-aware actionability decision (closed)."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,dependencies,governance,lifecycle
+created_at: "2026-10-31T23:01:47.892Z"
+updated_at: "2026-10-31T23:01:47.892Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "Moving an item with an open blocked_by target into the in-progress status, through update, claim --start or start-task, either refuses with a typed code naming the open blocker and the unblock or --force recovery, or warns, as governed by a declared setting; the CLI, MCP and SDK paths share one check that runs before any write, so a refused start never leaves a claim; a terminal blocker does not block; tests cover refuse, warn and terminal-blocker cases"
+parent: pm-33cw
+risk: medium
+confidence: medium
+expected_result: No transport can silently move an item with an open blocker into progress; the behaviour is declared by governance settings and consistent across update and start.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9x6k,related,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1643,discovered_from,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
+body: ""

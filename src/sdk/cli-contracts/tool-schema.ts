@@ -1437,8 +1437,11 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
       ],
       oneOfRequired: [["id"], ["next"]],
       mutuallyExclusiveWhen: [
-        [{ property: "start", schema: { const: true } }, { property: "next", schema: { const: true } }],
-        [{ property: "start", schema: { const: true } }, { property: "ifAvailable", schema: { const: true } }],
+        [
+          { property: "start", schema: { const: true } },
+          { property: "ifAvailable", schema: { const: true } },
+          { property: "id", schema: { type: "string" } },
+        ],
       ],
     },
     release: {
@@ -1517,7 +1520,7 @@ function actionScopedToolParameterMetadata(
 ): { description: string; examples?: unknown[] } | undefined {
   if (action === "history-attest" && key === "verify") return { description: "Compare all retained history streams with a detached JSON proof object. Server-local proof paths are not accepted over MCP." };
   if (action === "history-attest" && key === "output") return { description: "Local CLI/SDK only. MCP rejects this field; save the returned JSON bundle on the client." };
-  if (action === "claim" && key === "start") return { description: "Claim an explicit item and move it to its configured in-progress status." };
+  if (action === "claim" && key === "start") return { description: "Move the claimed item to its configured in-progress status; with next, the selected item is claimed and started in one locked write." };
   if ((action === "list" || action.startsWith("list-")) && key === "all") {
     return {
       description:

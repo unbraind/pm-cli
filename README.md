@@ -102,7 +102,7 @@ pm release <item-id>
 Use the measured one-call context intent for cold-start orientation. Use `pm next` as an alternative when you only need the single highest-priority ready item, then search all statuses before creating anything. Measurement methodology and ratcheted evidence live in the [Agent Guide](docs/AGENT_GUIDE.md#agent-quick-context).
 
 ```bash
-pm context --limit 10 --for orient              # canonical cold start: state, ownership, actionable work
+pm context --for orient                         # canonical cold start: state, ownership, actionable work
 # Alternative: pm next                          # one actionable item + rationale, ready/blocked queues
 pm search "keywords for the requested work" --limit 10
 pm list --status open --limit 20

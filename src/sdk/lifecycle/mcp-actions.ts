@@ -9,7 +9,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { runClose } from "./close.js";
 import { runReopen } from "./reopen.js";
-import { runClaim, runClaimNext, runRelease } from "./claim.js";
+import { requireClaimTarget, runClaim, runClaimNext, runRelease } from "./claim.js";
 import { runStartTask, runPauseTask, runCloseTask } from "./task-composition.js";
 import { readRuntimeString, withMutationCompaction, mutationOptionsWithOverrides } from "../runtime-input.js";
 
@@ -27,15 +27,19 @@ export interface LifecycleMutationActionContext {
   global: GlobalOptions;
 }
 
-/** Dispatch explicit and ranked claims through the same compact receipt contract. */
+/** Dispatch explicit, ranked and ranked-start claims through the same compact receipt contract. */
 export async function runMcpClaimAction(context: LifecycleMutationActionContext): Promise<unknown> {
   const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
   const force = context.force === true || runnerOptions.force === true;
   const selectionOptions = { ...context.args, ...runnerOptions };
+  // runnerOptions already applies nested-over-flat precedence, so dispatch and target checks share one value.
+  const next = runnerOptions.next === true;
+  const id = context.id ?? readRuntimeString(runnerOptions, "id");
   if (selectionOptions.start === true) {
-    return runMcpTaskCompositionAction(context, "start_task");
+    if (id) return runMcpTaskCompositionAction(context, "start_task");
+    requireClaimTarget(id, next, true);
   }
-  const result = context.args.next === true || runnerOptions.next === true
+  const result = next
     ? await runClaimNext(force, context.global, selectionOptions, selectionOptions)
     : await runClaim(requireLifecycleItemId(context, runnerOptions), force, context.global, selectionOptions);
   return projectMutationResult(result, {

@@ -86,7 +86,26 @@ export interface PmContextIntentReceipt {
   binding_constraint?: "explicit_limit" | "token_budget";
   /** Machine-readable explanation for the selected row ceiling. */
   limit_reason?: string;
+  /** Present only when the intent's budget reduced a larger caller-supplied row limit. */
+  limit_override?: PmContextIntentLimitOverride;
 }
+
+/** Evidence that a declared intent budget reduced an explicit row limit, with the retry that keeps it. */
+export interface PmContextIntentLimitOverride {
+  /** Flag whose explicit value the intent budget reduced. */
+  flag: "--limit";
+  /** Row limit the caller supplied. */
+  requested: number;
+  /** Row limit the intent budget applied. */
+  effective: number;
+  /** Smallest token budget, never below the current one, whose derived ceiling carries the requested rows; absent when no safe integer budget can. */
+  token_budget_for_requested?: number;
+  /** Flag to add to (or replace in) the original command so it keeps the requested limit, like an omission receipt's `restore_with`. */
+  restore_with?: string;
+}
+
+/** Stable warning code emitted when an intent budget reduces an explicit row limit. */
+export const CONTEXT_INTENT_LIMIT_OVERRIDE_WARNING = "limit_overridden_by_intent";
 
 /** Built-in intent projections shared by CLI, SDK, MCP, and package authors. */
 export const PM_CONTEXT_INTENT_CONTRACTS: readonly PmContextIntentContract[] =
@@ -385,6 +404,23 @@ type BuiltInContextIntentCommand =
   | "next"
   | "search";
 
+/** Bound an explicit or absent row limit by the intent's budget-derived ceiling. */
+function applyIntentRowLimit(
+  projected: Record<string, unknown>,
+  budgetDerivedLimit: number,
+): string {
+  const requestedLimit = parsePositiveIntentTokenBudget(projected.limit);
+  const effectiveLimit = String(
+    requestedLimit === undefined
+      ? budgetDerivedLimit
+      : Math.min(requestedLimit, budgetDerivedLimit),
+  );
+  if (projected.limit === undefined || requestedLimit !== undefined) {
+    projected.limit = effectiveLimit;
+  }
+  return effectiveLimit;
+}
+
 const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
   Record<
     BuiltInContextIntentCommand,
@@ -416,15 +452,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       tokenBudget,
       explicitTokenBudget,
     )!;
-    const requestedLimit = parsePositiveIntentTokenBudget(projected.limit);
-    const derivedLimit = String(
-      requestedLimit === undefined
-        ? budgetDerivedLimit
-        : Math.min(requestedLimit, budgetDerivedLimit),
-    );
-    if (projected.limit === undefined || requestedLimit !== undefined) {
-      projected.limit = derivedLimit;
-    }
+    const derivedLimit = applyIntentRowLimit(projected, budgetDerivedLimit);
     if (projected.activityLimit === undefined) {
       projected.activityLimit = derivedLimit;
     }
@@ -454,14 +482,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       tokenBudget,
       explicitTokenBudget,
     )!;
-    const requestedLimit = parsePositiveIntentTokenBudget(projected.limit);
-    if (projected.limit === undefined || requestedLimit !== undefined) {
-      projected.limit = String(
-        requestedLimit === undefined
-          ? budgetDerivedLimit
-          : Math.min(requestedLimit, budgetDerivedLimit),
-      );
-    }
+    applyIntentRowLimit(projected, budgetDerivedLimit);
   },
   next: (projected) => {
     if (projected.readyOnly === undefined) projected.readyOnly = true;
@@ -484,14 +505,7 @@ const CONTEXT_INTENT_DEFAULT_APPLIERS: Readonly<
       tokenBudget,
       explicitTokenBudget,
     )!;
-    const requestedLimit = parsePositiveIntentTokenBudget(projected.limit);
-    if (projected.limit === undefined || requestedLimit !== undefined) {
-      projected.limit = String(
-        requestedLimit === undefined
-          ? budgetDerivedLimit
-          : Math.min(requestedLimit, budgetDerivedLimit),
-      );
-    }
+    applyIntentRowLimit(projected, budgetDerivedLimit);
   },
 };
 
@@ -623,6 +637,20 @@ function resolveIntentTokenBudget(
   return parsed;
 }
 
+/** Fixed overhead and per-row token cost each row-bounded intent reserves when deriving its page size. */
+function resolveIntentRowCost(
+  command: BuiltInContextIntentCommand,
+  intent: string,
+): { overhead: number; rowCost: number } {
+  const contextOrient = command === "context" && intent === "orient";
+  if (command === "context") {
+    return contextOrient
+      ? { overhead: 1200, rowCost: 600 }
+      : { overhead: 800, rowCost: 500 };
+  }
+  return { overhead: command === "list" ? 520 : 480, rowCost: 16 };
+}
+
 function resolveIntentRowBudget(
   command: BuiltInContextIntentCommand,
   intent: string,
@@ -630,16 +658,7 @@ function resolveIntentRowBudget(
   explicitTokenBudget: boolean,
 ): number | undefined {
   if (command === "get" || command === "next") return undefined;
-  const contextOrient = command === "context" && intent === "orient";
-  const overhead =
-    command === "context"
-      ? contextOrient
-        ? 1200
-        : 800
-      : command === "list"
-        ? 520
-        : 480;
-  const rowCost = command === "context" ? (contextOrient ? 600 : 500) : 16;
+  const { overhead, rowCost } = resolveIntentRowCost(command, intent);
   const calculatedLimit = Math.max(
     command === "context" ? 1 : 2,
     Math.floor((tokenBudget - overhead) / rowCost),
@@ -906,6 +925,12 @@ export function attachContextIntentReceipt<
       ? "The caller supplied a smaller row limit than the budget-derived ceiling."
       : "The selected intent token budget constrains the effective row ceiling.";
     resultWithDiagnostics.budget_derived_limit = budgetDerivedLimit;
+    discloseIntentLimitOverride(
+      { builtInCommand, intent: contract.intent },
+      receipt,
+      resultWithDiagnostics,
+      options,
+    );
   }
   let projected: Record<string, unknown> = {
     ...resultWithDiagnostics,
@@ -1006,12 +1031,9 @@ function isOutputRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** Build a shell-safe bounded retry while retaining required read positionals. */
-function buildContextIntentRecoveryCommand(
-  command: string,
+/** Return the shell-quoted read positional (item id or search query) a retry must repeat. */
+function contextIntentRecoveryPositional(
   builtInCommand: BuiltInContextIntentCommand,
-  intent: string,
-  receipt: PmContextIntentReceipt,
   result: Record<string, unknown>,
 ): string {
   const recoveryTarget =
@@ -1022,10 +1044,67 @@ function buildContextIntentRecoveryCommand(
       : builtInCommand === "search" && typeof result.query === "string"
         ? result.query
         : undefined;
-  const recoveryPositional =
-    recoveryTarget === undefined
-      ? ""
-      : ` '${recoveryTarget.replaceAll("'", `'"'"'`)}'`;
+  return recoveryTarget === undefined
+    ? ""
+    : ` '${recoveryTarget.replaceAll("'", `'"'"'`)}'`;
+}
+
+/** Record a reduced explicit row limit in the receipt, warnings and filters, with the budget that keeps it. */
+function discloseIntentLimitOverride(
+  identity: {
+    builtInCommand: BuiltInContextIntentCommand;
+    intent: string;
+  },
+  receipt: PmContextIntentReceipt,
+  result: Record<string, unknown>,
+  options: Record<string, unknown>,
+): void {
+  // Hosts attach receipts with the caller's own options, which still carry the requested limit.
+  const requested = parsePositiveIntentTokenBudget(options.limit);
+  const effective = receipt.budget_derived_limit!;
+  if (requested === undefined || requested <= effective) return;
+  const { overhead, rowCost } = resolveIntentRowCost(
+    identity.builtInCommand,
+    identity.intent,
+  );
+  const sufficientBudget = Math.max(
+    receipt.token_budget,
+    overhead + rowCost * requested,
+  );
+  receipt.limit_reason = `The ${receipt.token_budget}-token ${identity.intent} budget carries ${effective} rows, so it reduced the caller's --limit ${requested}.`;
+  // A flag fragment keeps every original positional, inline filter and option; an unparseable budget is not offered.
+  receipt.limit_override = {
+    flag: "--limit",
+    requested,
+    effective,
+    ...(Number.isSafeInteger(sufficientBudget)
+      ? {
+          token_budget_for_requested: sufficientBudget,
+          restore_with: `--token-budget ${sufficientBudget}`,
+        }
+      : {}),
+  };
+  const warning = `${CONTEXT_INTENT_LIMIT_OVERRIDE_WARNING}:--limit ${requested}->${effective}`;
+  result.warnings = Array.isArray(result.warnings)
+    ? [...(result.warnings as unknown[]), warning]
+    : [warning];
+  if (isOutputRecord(result.filters)) {
+    result.filters = { ...result.filters, requested_limit: String(requested) };
+  }
+}
+
+/** Build a shell-safe bounded retry while retaining required read positionals. */
+function buildContextIntentRecoveryCommand(
+  command: string,
+  builtInCommand: BuiltInContextIntentCommand,
+  intent: string,
+  receipt: PmContextIntentReceipt,
+  result: Record<string, unknown>,
+): string {
+  const recoveryPositional = contextIntentRecoveryPositional(
+    builtInCommand,
+    result,
+  );
   const boundedRowLimit =
     builtInCommand === "get"
       ? ""

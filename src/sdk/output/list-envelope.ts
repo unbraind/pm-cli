@@ -56,8 +56,11 @@ function hasCompactibleSource(
   );
 }
 
-/** Only the default full-item omission has a shorter equivalent restoration pointer. */
-function hasDefaultOmissions(value: unknown): boolean {
+/** Only a single default omission group has a shorter equivalent restoration pointer. */
+function hasDefaultOmissions(
+  value: unknown,
+  groupName = "full_item_fields",
+): boolean {
   if (!isRecord(value) || !Array.isArray(value.omitted_field_groups))
     return false;
   const groups = value.omitted_field_groups;
@@ -69,7 +72,7 @@ function hasDefaultOmissions(value: unknown): boolean {
     groups.length === 1 &&
     isRecord(group) &&
     Object.keys(group).length === 2 &&
-    group.name === "full_item_fields" &&
+    group.name === groupName &&
     group.restore_with === "--full"
   );
 }
@@ -101,6 +104,7 @@ export function projectPmBriefListEnvelope(value: unknown): unknown {
     now: _now,
     omission_receipt: _omissions,
     sorting,
+    filters,
     ...rest
   } = value;
   const completed =
@@ -116,12 +120,110 @@ export function projectPmBriefListEnvelope(value: unknown): unknown {
     ...rest,
     ...(!completed ? { total, has_more: hasMore, completeness: source } : {}),
     ...(hasMore ? { next_cursor: nextCursor } : {}),
-    ...(isRecord(sorting) &&
-    sorting.sort === "default" &&
-    sorting.order === "asc" &&
-    Object.keys(sorting).length === 2
-      ? {}
-      : { sorting }),
+    ...projectDefaultSorting(sorting),
+    ...compactEchoedFilters(filters, rest.applied_limit),
+    details: "--full",
+  };
+}
+
+/** Recognize the default ascending sort, with or without its derived comparator list. */
+function isDefaultSorting(value: unknown): value is Record<string, unknown> {
+  return (
+    isRecord(value) &&
+    value.sort === "default" &&
+    value.order === "asc" &&
+    Object.keys(value).every(
+      (key) => key === "sort" || key === "order" || key === "effective_keys",
+    )
+  );
+}
+
+/** Recognize one `[key, order]` comparator stage. */
+function isSortKeyPair(value: unknown): value is [string, string] {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    typeof value[0] === "string" &&
+    (value[1] === "asc" || value[1] === "desc")
+  );
+}
+
+/**
+ * Drop the legacy default sort/order echo; keep the effective default order
+ * visible (GH-1507) as one comparator line. Other sorts pass through unchanged.
+ */
+function projectDefaultSorting(value: unknown): { sorting?: unknown } {
+  if (!isDefaultSorting(value)) return { sorting: value };
+  const keys = value.effective_keys;
+  if (keys === undefined) return {};
+  if (!Array.isArray(keys) || !keys.every(isSortKeyPair)) return { sorting: value };
+  return {
+    sorting: {
+      effective_keys: keys.map(([key, order]) => `${key} ${order}`).join(", "),
+    },
+  };
+}
+
+/** Drop a filters.limit echo that applied_limit already states, and the filters block once nothing else remains. */
+function compactEchoedFilters(
+  filters: unknown,
+  appliedLimit: unknown,
+): { filters?: unknown } {
+  if (!isRecord(filters)) return filters === undefined ? {} : { filters };
+  const remaining = Object.fromEntries(
+    Object.entries(filters).filter(
+      ([key, value]) =>
+        !(key === "limit" && String(value) === String(appliedLimit)) &&
+        !(key === "runtime_filters" && isRecord(value) && Object.keys(value).length === 0),
+    ),
+  );
+  return Object.keys(remaining).length === 0 ? {} : { filters: remaining };
+}
+
+/** A final search page omits the continuation fields entirely; accept it only when nothing suggests more rows. */
+function hasTerminalSearchPagination(
+  value: Record<string, unknown>,
+  count: number,
+): boolean {
+  return (
+    value.count === count &&
+    !Object.hasOwn(value, "has_more") &&
+    !Object.hasOwn(value, "truncated") &&
+    value.next_cursor == null &&
+    (value.total === undefined || value.total === count)
+  );
+}
+
+/**
+ * Compact a standard search page without mutating its typed SDK result:
+ * drops `truncated` when it repeats `has_more`, a `filters.limit` echo of
+ * `applied_limit`, and the single default `projection_metadata` omission
+ * receipt in favour of `details: "--full"`. Custom, partial and inconsistent
+ * receipts pass through unchanged; JSON hosts should keep the original result.
+ */
+export function projectPmBriefSearchEnvelope(value: unknown): unknown {
+  if (
+    !isRecord(value) ||
+    typeof value.query !== "string" ||
+    !Array.isArray(value.items) ||
+    Object.hasOwn(value, "details") ||
+    Object.hasOwn(value, "projection") ||
+    !(
+      hasStandardPagination(value, value.items.length) ||
+      hasTerminalSearchPagination(value, value.items.length)
+    ) ||
+    !hasDefaultOmissions(value.omission_receipt, "projection_metadata")
+  )
+    return value;
+  const {
+    truncated: _truncated,
+    omission_receipt: _omissions,
+    filters,
+    ...rest
+  } = value;
+  return {
+    ...rest,
+    ...compactEchoedFilters(filters, rest.applied_limit),
     details: "--full",
   };
 }

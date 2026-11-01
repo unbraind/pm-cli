@@ -106,8 +106,8 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeContract[] = [
     class: "usage",
     recovery:
       "Inspect the structured error guidance and retry the suggested command.",
-    sources: ["sdk/lifecycle/plan.ts"],
-    emitting_commands: ["plan"],
+    sources: ["sdk/lifecycle/claim.ts", "sdk/lifecycle/plan.ts"],
+    emitting_commands: ["claim", "plan"],
     canonical_code: "ambiguous_option_combination",
     aliases: [],
   },

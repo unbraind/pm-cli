@@ -171,7 +171,11 @@ async function runMcpListAction(
 async function runMcpSearchAction(
   ctx: McpActionDispatchContext,
 ): Promise<unknown> {
-  const query = readRequiredString(ctx.args, "query");
+  // keywords is the declared alias of the query operand.
+  const query =
+    readString(ctx.args, "query") ??
+    readString(ctx.args, "keywords") ??
+    readRequiredString(ctx.args, "query");
   const searchOptions = applyContextIntentProjection(
     "search",
     ctx.options,

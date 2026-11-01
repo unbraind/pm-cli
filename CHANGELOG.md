@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- MCP read tools read every declared flat parameter, pm_search honours its keywords alias, and filtered pm context keeps dependency edges ([pm-hke9z7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hke9z7.toon))
+- GH-1642: compact brief pm list and pm search TOON envelopes while keeping the effective default sort visible ([pm-gh1642](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1642.toon))
+- GH-1644: disclose when a --for intent reduces an explicit --limit and recommend the measured canonical pm context --for orient ([pm-gh1644](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1644.toon))
+- GH-1643: make pm claim --next --start one atomic select-claim-start write and type the claim-target refusals ([pm-gh1643](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1643.toon))
+
 ## 2026.10.31 - 2026-10-31
 
 ### Changed

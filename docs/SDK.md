@@ -2140,7 +2140,15 @@ Custom agent hosts can import `projectPmBriefListEnvelope` from
 `@unbrained/pm-cli/sdk` to apply the same brief-list presentation without
 mutating the original result. It retains unchecked source status and actionable
 continuation, and leaves partial, custom, or inconsistent envelopes intact.
-The CLI applies this projection only to TOON; ordinary JSON and SDK query
+`projectPmBriefSearchEnvelope` does the same for search pages. It drops
+`truncated` when it repeats `has_more` and a `filters.limit` echo of
+`applied_limit`, and it replaces the single default `projection_metadata`
+omission receipt with `details: "--full"`. For flat default lists, the list
+projection replaces the default ascending sort's legacy `sort`/`order` echo with
+one `effective_keys` comparator line, so the effective default order stays
+visible. Tree-mode lists carry no `effective_keys`, because hierarchy traversal
+overrides flat ordering; there the default sort echo is simply omitted.
+The CLI applies these projections only to TOON; ordinary JSON and SDK query
 results retain their complete contracts. The public `encodePmTableRows` and
 `decodePmTableRows` primitives distinguish explicit null and empty cells from
 missing keys. TOON rendering preserves those row facts before selecting the

@@ -19,7 +19,10 @@ export {
   type PmEncodedTableRows,
 } from "./output/table-rows.js";
 
-export { projectPmBriefListEnvelope } from "./output/list-envelope.js";
+export {
+  projectPmBriefListEnvelope,
+  projectPmBriefSearchEnvelope,
+} from "./output/list-envelope.js";
 
 export { assertWellFormedOutputText, toWellFormedText } from "../core/shared/output-unicode.js";
 

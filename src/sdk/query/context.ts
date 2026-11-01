@@ -2065,7 +2065,43 @@ interface ContextCorpus {
   listedItemMetadata: ItemMetadata[];
   allItems: ItemMetadata[];
   fullCorpus: ItemMetadata[];
+  /** Unfiltered corpus for blocker, container and subtree resolution, so edges outside a filter still resolve. */
+  edgeCorpus: ItemMetadata[];
   subtreeIds: Set<string> | undefined;
+}
+
+/** Filter echo keys a context list reports even when no selection filter applied. */
+const CONTEXT_UNFILTERED_LIST_ECHO_KEYS: ReadonlySet<string> = new Set([
+  "status",
+  "no_truncate",
+  "limit",
+  "sort",
+  "order",
+]);
+
+/** Whether the list echo shows a selection filter that removed items from the corpus. */
+function contextListWasFiltered(filters: Record<string, unknown>): boolean {
+  const { runtime_filters: runtimeFilters, ...selection } = filters;
+  return (
+    Object.keys(selection).some((key) => !CONTEXT_UNFILTERED_LIST_ECHO_KEYS.has(key)) ||
+    Object.keys(Object(runtimeFilters)).length > 0
+  );
+}
+
+/** Reuse the listed corpus when unfiltered; otherwise scan once without filters so reverse `blocks` edges and parents outside the filter resolve. */
+async function loadContextEdgeCorpus(
+  global: GlobalOptions,
+  listed: Awaited<ReturnType<typeof runList>>,
+): Promise<ItemMetadata[]> {
+  if (!contextListWasFiltered(listed.filters)) {
+    return listed.items as ItemMetadata[];
+  }
+  const unfiltered = await runList(
+    undefined,
+    buildUnpaginatedContextListOptions({}, { excludeTerminal: false }),
+    global,
+  );
+  return unfiltered.items as ItemMetadata[];
 }
 
 interface ContextFocusGroups {
@@ -2176,11 +2212,12 @@ async function loadContextCorpus(
     global,
   );
   const fullCorpus = listed.items as ItemMetadata[];
+  const edgeCorpus = await loadContextEdgeCorpus(global, listed);
   let listedItemMetadata = fullCorpus.filter(
     (item) => !isTerminalStatus(item.status, runtime.statusRegistry),
   );
   let allItems: ItemMetadata[] = fullCorpus;
-  const subtreeIds = resolveContextSubtreeIds(runtime.parentScope, fullCorpus);
+  const subtreeIds = resolveContextSubtreeIds(runtime.parentScope, edgeCorpus);
   if (subtreeIds) {
     listedItemMetadata = listedItemMetadata.filter((item) =>
       subtreeIds.has(item.id.trim().toLowerCase()),
@@ -2189,7 +2226,7 @@ async function loadContextCorpus(
       subtreeIds.has(item.id.trim().toLowerCase()),
     );
   }
-  return { listed, listedItemMetadata, allItems, fullCorpus, subtreeIds };
+  return { listed, listedItemMetadata, allItems, fullCorpus, edgeCorpus, subtreeIds };
 }
 
 function resolveContextSubtreeIds(
@@ -2822,13 +2859,13 @@ export async function runContext(
   // Single shared edge-aware blocked classification (GH-578): resolved against
   // the full corpus so terminal blocker targets count as satisfied at every depth.
   const blockedIds = collectDependencyBlockedIds(
-    corpus.fullCorpus,
+    corpus.edgeCorpus,
     runtime.statusRegistry,
   );
   const focusGroups = await resolveContextFocusGroups(
     corpus.listedItemMetadata,
     corpus.allItems,
-    corpus.fullCorpus,
+    corpus.edgeCorpus,
     blockedIds,
     runtime.statusRegistry,
     runtime.sectionsIncluded,
@@ -2876,7 +2913,7 @@ export async function runContext(
   const sections = await buildOptionalContextSections({
     runtime,
     allItems: corpus.allItems,
-    fullCorpus: corpus.fullCorpus,
+    fullCorpus: corpus.edgeCorpus,
     blockedIds,
     focusGroups,
     now: agendaContext.agenda.now,
