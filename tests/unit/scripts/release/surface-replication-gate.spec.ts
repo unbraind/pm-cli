@@ -896,6 +896,7 @@ describe("surface replication gate", () => {
           null,
           { id: 1, owner: "pm-fixture", triggers: [], members: [] },
           { id: "bad-owner", owner: "owner", triggers: [], members: [] },
+          { id: "missing-owner", triggers: [], members: [] },
           {
             id: "bad-triggers",
             owner: "pm-fixture",
@@ -1062,6 +1063,12 @@ describe("surface replication gate", () => {
         member_path: "src/cli/b.ts",
         pm_item: "owner",
         reason: "Invalid PM owner waiver candidate.",
+        expires_on: "2026-08-08",
+      },
+      {
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        reason: "Missing PM owner waiver candidate.",
         expires_on: "2026-08-08",
       },
       {

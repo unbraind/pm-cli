@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[1]: security
 created_at: "2026-10-02T06:33:46.098Z"
-updated_at: "2026-10-03T04:08:21.750Z"
+updated_at: "2026-11-01T06:31:41.742Z"
 closed_at: "2026-10-03T04:08:20.640Z"
 completed_at: "2026-10-03T04:08:20.640Z"
 author: "harness:codex"
@@ -15,10 +15,11 @@ acceptance_criteria: "Patch external Axios to a cooldown-eligible supported rele
 parent: pm-qwoy
 risk: high
 confidence: high
+release: v2026.10.3
 resolution: "Removed embedded vulnerable HTTP clients and obsolete map sources while preserving native bytes and dedicated-client isolation. Required gates audit all dependencies and admit only exact owned hashes plus complete regular-file shell/CMD/PowerShell programs, accepting actual PATHEXT suffix spelling and refusing unsafe paths."
 expected_result: "Preserved CodSpeed runtime contracts, no dependency advisories, exact artifacts and complete launchers, real negative controls, and unchanged source/quality/graph thresholds."
 actual_result: "Real pre-fix missing-launcher and unsafe-root controls fail before correction and pass afterward; 45 focused security/workflow cases pass as test-local-muru05yu-1rmg6a. Typed verification cites the renewed complete canonical execution test-local-murutkzl-pv12k5 under the glob owner; direct exact-count receipt test-local-muruupmh-3atz3n records statements 66498/66498, branches 50861/50861, functions 13743/13743 and lines 63411/63411. Full/prod audits, all static components, mutation, secrets and renewed temporary Node/Bun/packed acceptance pass. Exact-head native Windows/review and merged-main Scorecard retirement remain the landing gate; immutable next-eligible daily registry publication is separately tracked."
-dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-7wmq,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-cbzvgn,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
   pm-gh1364,discovered_from,"2026-10-02T06:35:13.717Z","harness:codex","cli:update:dep",detected
@@ -26,7 +27,8 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-5iwfkj,verifies,"2026-10-02T19:08:09.966Z","harness:codex","cli:update:dep",detected
   pm-iktual,verifies,"2026-10-02T20:57:56.198Z","harness:codex","cli:update:dep",detected
   pm-fnx3np,verifies,"2026-10-03T03:51:30.144Z","harness:codex","evidence:complete-source-test-local-murutkzl-pv12k5",detected
-comments[39]:
+  pm-fokyhh,related,"2026-11-01T06:31:36.090Z","harness:claude-code","cli:update:dep",detected
+comments[40]:
   - created_at: "2026-10-02T06:33:46.098Z"
     author: "harness:codex"
     text: "Duplicate check: complete all-status corpus 2850/2850 with no unreadable records; live exact keyword Axios finds only the discovery comment on pm-gh1364, include-dev-deps and GHSA-c29m-xwm3-cm6r find no canonical work. All twelve GHSA identifiers were checked in the initial all-status intake. Full live pm-qwoy, pm-cbzvgn and pm-7wmq metadata were read; parent history verifies. Closed pm-cbzvgn fixed distinct brace-expansion advisories and is preserved as completed historical work. This new Axios/CodSpeed report is recorded before PR1372 merge to keep discovery evidence reviewed. Remediation is open and unclaimed; it is not included in PR1372 source-fix closure or represented as security clearance."
@@ -145,6 +147,9 @@ comments[39]:
   - created_at: "2026-10-03T04:08:17.488Z"
     author: "harness:codex"
     text: "Renewed temporary Node/Bun CLI and public SDK matching and monorepo snapshot acceptance pass, preserving real independently installed root/nested versions and original source bytes. Packed npm/npx/bunx and SDK consumers pass for nine packages; the package-first journey passes 89 commands. Full and production dependency audits, secrets and docs-link checks pass. All static components, graph and tracker checks plus the unchanged bounded mutation gate pass; the initial tracker gate correctly refused missing active expectations after reopening, then passed after CLI restoration. Exact hosted Windows/review, merged-main scanning and immutable scheduled publication remain distinct landing evidence."
+  - created_at: "2026-11-01T06:31:41.742Z"
+    author: "harness:claude-code"
+    text: "2026-11-01: the reviewed Axios removal was ported to @codspeed/core 6.1.0 by pm-fokyhh (same replacement boundary, map sources 131->21, integrity policy refreshed), so the linked patch file is now patches/@codspeed__core@6.1.0.patch; the 5.7.1 patch no longer exists. The release field records v2026.10.3, the release whose changelog lists this fix."
 notes[3]{created_at,author,text}:
   "2026-10-02T06:37:50.731Z","harness:codex","Scope and evidence boundary: this intake documents an unresolved development-tool dependency report before merging PR1372. It is not a regression introduced by the scoped recovery, continuation or semantic-preview fixes. Production-only audit is clean. Full audit and native Scorecard remain open; embedded Axios requires separate inspection beyond pnpm lock resolution. Do not dismiss the scanner alert or report security clearance until remediation and native merged-main scans are verified."
   "2026-10-02T19:24:09.415Z","harness:codex","Large-patch review rationale: GitHub treats a new patch artifact as 38,448 added lines although the upstream diff removes 38,404 lines and adds ten. Only two bundles and their two maps change; three native payloads remain byte-identical. Replacing the patch with an upstream supported fixed release is preferable once one is available and passes the same inventory, runtime, map and native gates. The exact-version pnpm patch remains reproducible across frozen installs and does not introduce an install-time transformation or weaken dependency admission."
@@ -166,7 +171,7 @@ files[23]{path,scope}:
   config/codspeed-shims/sh.txt,project
   config/dependency-bundle-integrity.json,project
   package.json,project
-  patches/@codspeed__core@5.7.1.patch,project
+  patches/@codspeed__core@6.1.0.patch,project
   pnpm-lock.yaml,project
   pnpm-workspace.yaml,project
   scripts/check-development-dependencies.mjs,project

@@ -756,6 +756,41 @@ describe("assurance SDK", () => {
         context,
       ),
     ).resolves.toMatchObject({ value: 2, population_size: 2 });
+    // A field state treats null, empty strings and empty lists as missing; any other value is present.
+    const stateContext = {
+      ...context,
+      items: [null, "", [], "agent"].map((assignee, index) => ({
+        ...context.items[0],
+        id: `pm-state-${index}`,
+        assignee,
+      })),
+    } as never;
+    await expect(
+      evaluateMeasurement(
+        {
+          id: "missing-assignee",
+          source: { kind: "items", field: "assignee", state: "missing" },
+        },
+        stateContext,
+      ),
+    ).resolves.toMatchObject({
+      value: 3,
+      population_size: 4,
+      contributors: ["pm-state-0", "pm-state-1", "pm-state-2"],
+    });
+    await expect(
+      evaluateMeasurement(
+        {
+          id: "present-assignee",
+          source: { kind: "items", field: "assignee", state: "present" },
+        },
+        stateContext,
+      ),
+    ).resolves.toMatchObject({
+      value: 1,
+      population_size: 4,
+      contributors: ["pm-state-3"],
+    });
     await expect(
       evaluateMeasurement(
         {

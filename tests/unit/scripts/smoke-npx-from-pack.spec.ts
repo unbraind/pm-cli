@@ -297,6 +297,41 @@ describe("smoke-npx-from-pack", () => {
     expect(bunxArgs?.slice(4)).toEqual(["pm", "--version"]);
   });
 
+  it.each([
+    ["accepts a Bun install without peer warnings", "", undefined],
+    [
+      "refuses a Bun install that resolves peers outside the tested closure",
+      'warn: incorrect peer dependency "@opentelemetry/api@1.10.0"\nwarn: incorrect peer dependency "@opentelemetry/api@1.10.0"\n',
+      'Bun install of the packed artifact resolved peers outside the tested closure:\nwarn: incorrect peer dependency "@opentelemetry/api@1.10.0"',
+    ],
+  ])("%s (pm-2csj4k)", async (_name, bunStderr, refusal) => {
+    vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({ cleanupTempRoot: vi.fn() }));
+    mockFs();
+    const execFileSync = buildExecFileSync({});
+    vi.doMock("node:child_process", () => ({ execFileSync }));
+    vi.doMock("cross-spawn", () => ({
+      default: {
+        sync: (command: string, args: string[], options: object) => ({
+          status: 0,
+          stdout: execFileSync(command, args, options),
+          stderr: baseCommand(command) === "bun" && args[0] === "add" ? bunStderr : "",
+        }),
+      },
+    }));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    process.argv = ["node", SCRIPT_ABS];
+    const run = harness.importModule(SCRIPT);
+    if (refusal) {
+      await expect(run).rejects.toThrow(refusal);
+      return;
+    }
+    await run;
+    const install = execFileSync.mock.calls.find(([command, args]) => baseCommand(command) === "bun" && args[0] === "add");
+    expect(install?.[1].slice(0, 2)).toEqual(["add", "--ignore-scripts"]);
+    expect(path.basename(install?.[1][2] ?? "")).toBe("pm-cli-2026.6.14.tgz");
+    expect(install?.[2]).toMatchObject({ cwd: path.join("/tmp/pm-pack-smoke", "bun-peer-consumer") });
+  });
+
   it("throws when npm pack produces no tarball name", async () => {
     vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({
       cleanupTempRoot: vi.fn(),

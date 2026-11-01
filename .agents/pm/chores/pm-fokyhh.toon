@@ -1,24 +1,30 @@
 id: pm-fokyhh
-title: Adopt Vitest 5 after CodSpeed supports its peer contract
+title: "Adopt Vitest 5 with CodSpeed 6.1, keeping exact coverage, benchmark history and the CodSpeed Axios patch"
 description: "Own the Vitest 5.0.0 and @vitest/coverage-v8 5.0.0 major pair separately from routine dependency refreshes. The repository's mandatory @codspeed/vitest-plugin 5.7.1 currently declares vitest ^3.2 || ^4, so adopting Vitest 5 would violate the installed performance-gate peer contract."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: codspeed,dependencies,peer-contract,testing
 created_at: "2026-09-04T16:26:03.878Z"
-updated_at: "2026-10-24T12:19:08.879Z"
+updated_at: "2026-11-01T06:35:46.663Z"
+closed_at: "2026-11-01T06:35:46.630Z"
+completed_at: "2026-11-01T06:35:46.630Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: "A current @codspeed/vitest-plugin release accepts Vitest 5; Vitest and coverage-v8 are upgraded as an exact compatible pair; CodSpeed, full exact coverage, cross-platform CI, typecheck, static quality, packed consumers, and vulnerability gates pass."
 parent: pm-92if
 risk: medium
 confidence: high
+resolution: "Upgraded vitest and @vitest/coverage-v8 to 5.0.5 with @codspeed/vitest-plugin 6.1.0 and Stryker 10.1.1. Ported the reviewed CodSpeed Axios removal to @codspeed/core 6.1.0 and refreshed its integrity policy; the runtime suite pins 30 exports. Migrated the three benchmark files to the bench fixture without changing CodSpeed URIs. Adapted the two SDK exemplar entry specs to the clearMocks default. coverage-v8 5 counts 93 more branches: two unreachable fallbacks were restructured so TypeScript narrows, and seven real gaps got tests."
 expected_result: "Vitest 5 and coverage-v8 5 are adopted as a pair once CodSpeed accepts them, with every coverage, platform and packed-consumer gate green."
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Full fast suite 11,757 passed; exact coverage 100/100/100/100 with 55,557 of 55,557 branches; CodSpeed patch checker, runtime HTTP suite and walltime bench run pass; SDK mutation score 98.01 (345 killed, 7 equivalent); typecheck, ESLint, knip, docs/skills, tracker assurances and dependency advisories pass."
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-n5ysuk,recurs_from,"2026-09-04T16:26:03.878Z","harness:codex","cli:create:dep",detected
   pm-yh6t,discovered_from,"2026-09-04T16:26:03.878Z","harness:codex","cli:create:dep",detected
   pm-iktual,related,"2026-10-02T21:10:05.907Z","harness:codex","cli:update:dep",detected
   pm-u9d0,related,"2026-10-04T07:27:09.282Z","harness:codex","cli:update:dep",detected
+  pm-8g06ma,related,"2026-11-01T05:47:05.036Z","harness:claude-code","cli:update:dep",detected
+  pm-r61juc,related,"2026-11-01T05:47:05.036Z","harness:claude-code","cli:update:dep",detected
 comments[25]{created_at,author,text}:
   "2026-09-04T16:26:03.878Z","harness:codex","Duplicate-check evidence: complete all-status PM searches for Vitest 5, Vitest major, and CodSpeed peer compatibility found the closed compatible Vitest 4.1.11 refresh pm-n5ysuk and CodSpeed adoption pm-yh6t, but no owner for the 5.0.0 major. Live registry evidence on 2026-09-04: vitest 5.0.0 supports Node ^22.12 || ^24 || >=26, but mandatory @codspeed/vitest-plugin 5.7.1 declares peer vitest ^3.2 || ^4. This item remains open and unclaimed until that external peer contract is compatible."
   "2026-09-05T03:52:26.679Z","harness:codex","Live 2026-09-05 registry verification: latest CodSpeed plugin still accepts Vitest ^3.2 || ^4, excluding available Vitest and coverage-v8 5.0.0. No compatible wanted update exists. Keep the canonical migration open and unclaimed; do not bypass the mandatory performance gate peer contract."
@@ -45,4 +51,46 @@ comments[25]{created_at,author,text}:
   "2026-10-18T04:14:41.149Z","harness:codex","Fresh npm metadata at 2026-10-18 confirms @codspeed/vitest-plugin6.0.0 declares Vitest5 support, but publication is2026-10-13T15:46:05.308Z, and6.1.0 is2026-10-16T14:50:11.013Z. Both remain inside the unchanged seven-day cooldown; the previous peer-support gap is now a release-age boundary. Keep this canonical migration open and unclaimed until eligible, then verify actual instrument/native patch and runner compatibility before adoption."
   "2026-10-22T07:39:49.928Z","harness:codex","October22 refreshed registry evidence: latest Vitest and coverage-v8 5.0.5 were published October15 around14:28UTC, and CodSpeed6.1.0 on October16 at14:50UTC. Latest versions remain below seven full days at this intake. Keep the current patched4.1.12 pair and5.7.1 plugin while retaining this canonical migration open/unclaimed; adoption still requires actual runner/native-instrumentation and installed-consumer proof."
   "2026-10-24T12:19:08.879Z","harness:codex","October24 live registry update: Vitest/coverage-v8 5.0.5 (October15) and CodSpeed6.1.0 (October16) now exceed seven days. Latest CodSpeed declares Vitest5 peer support; Vitest5 engine range is ^22.12.0 || ^24.0.0 || >=26.0.0, so Node22.18 itself is admitted. Vite8.3.5 declares ^20.19.0 || >=22.12.0. Release age and these direct engine/peer declarations alone do not prove the repository runner, native instrumentation, coverage and installed-consumer acceptance. Preserve this canonical major migration open/unclaimed; the active SDK continuation delivery makes no toolchain migration claim."
+notes[2]{created_at,author,text}:
+  "2026-11-01T05:46:55.162Z","harness:claude-code","2026-11-01 adoption on branch chore/eligible-toolchain-and-bun-peers: vitest and @vitest/coverage-v8 5.0.5 (published 2026-10-15), @codspeed/vitest-plugin 6.1.0 (2026-10-16, peer vitest ^3.2 || ^4 || ^5), Stryker 10.1.1 (peer vitest >=2). @codspeed/core 6.1.0 still embeds Axios 1.4.0, so the pm-r61juc patch was ported: same replacement boundary (function bind$2 through the axios destructuring), 19,201 lines removed per entry, maps keep 5,293 mappings and drop 39,536, sources 131->21, maps newline-terminated; ESLint no-undef with inline config disabled finds no dangling identifier in either patched entry. Upstream 6.1.0 adds four Node-version warning exports, so the runtime suite now pins 30 exports. Transitive dev-only additions younger than seven days: magic-string 1.4.5 (via @vitest/mocker 5) and unbash 6.0.2 (via knip); both pass pnpm's supply-chain age policy."
+  "2026-11-01T06:22:53.674Z","harness:claude-code","Vitest 5 removes the top-level bench() export (all three benchmark files failed with 'bench is not a function', which the CodSpeed workflow would have hit). Benchmarks now use the bench test fixture: each former describe group is a test of the same name that passes its registrations to bench.compare. CodSpeed 6.1.0's Vitest 5 provider keys results as <git-relative file>::<full test name>::<bench name>, and its legacy runner used <git-relative file>::<describe>::<bench>, so every benchmark URI and its history is unchanged. Verified locally: vitest bench --config vitest.bench.config.ts passes plain and with CODSPEED_ENV set in walltime mode."
+learnings[2]{created_at,author,text}:
+  "2026-11-01T05:46:56.471Z","harness:claude-code","Vitest 5 changes the clearMocks default to true: calls a spy records while the module under test is imported (vi.hoisted spy + top-level import) are cleared before the test body runs. Under Vitest 4 the full fast suite relied on this in exactly two specs (the SDK exemplar entry success/usage specs); record import-time effects into a plain array instead of reading mock.calls."
+  "2026-11-01T06:05:34.322Z","harness:claude-code","@vitest/coverage-v8 5 counts 93 more branches than 4.1.12 on the same tree (55,560 vs 55,467 on main's merged coverage summary), mostly short-circuit operands of ||/&&/?? chains. Nine were unexercised: two were unreachable defensive fallbacks (the discovery cursor offset after Number.isInteger, and the background worker summary that evaluateWorkerResult always sets), restructured so TypeScript narrows instead of carrying a dead '??' branch; seven were real test gaps (field-state assurance filters for null, empty-string, empty-list and present values; replication sets and waivers without an owner; non-number and absent cursor offsets), now tested. Expect the next major coverage provider to surface similar residue: compare totals against the last main summary before writing tests."
+files[17]{path,scope}:
+  benchmarks/bm25.bench.ts,project
+  benchmarks/pagination.bench.ts,project
+  benchmarks/text-normalization.bench.ts,project
+  config/dependency-bundle-integrity.json,project
+  package.json,project
+  patches/@codspeed__core@6.1.0.patch,project
+  pnpm-lock.yaml,project
+  pnpm-workspace.yaml,project
+  src/core/test/background-runs.ts,project
+  src/sdk/mcp/discovery.ts,project
+  tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts,project
+  tests/unit/scripts/release/surface-replication-gate.spec.ts,project
+  tests/unit/sdk/assurance.spec.ts,project
+  tests/unit/sdk/mcp/discovery.spec.ts,project
+  tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts,project
+  tests/unit/sdk/sdk-universal-tool-entry-usage.spec.ts,project
+  vitest.bench.config.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/sdk-universal-tool-entry-usage.spec.ts tests/unit/sdk/assurance.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/test/test-runs-command.spec.ts,project,"harness:claude-code","2026-11-01T06:24:02.414Z",local_mutation,chore/eligible-toolchain-and-bun-peers
+test_runs[1]:
+  - run_id: test-local-mvxgfw75-limxkn
+    kind: test
+    status: passed
+    started_at: "2026-11-01T06:33:58.282Z"
+    finished_at: "2026-11-01T06:34:21.761Z"
+    recorded_at: "2026-11-01T06:34:21.761Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/development-dependencies.spec.ts tests/integration/dependencies/codspeed-dependency-runtime.integration.spec.ts tests/unit/sdk/sdk-universal-tool-entry-success.spec.ts tests/unit/sdk/sdk-universal-tool-entry-usage.spec.ts tests/unit/sdk/assurance.spec.ts tests/unit/sdk/mcp/discovery.spec.ts tests/unit/scripts/release/surface-replication-gate.spec.ts tests/unit/commands/test/test-runs-command.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project
+  docs/TESTING.md,project
+close_reason: "Vitest 5.0.5 pair adopted with CodSpeed 6.1.0; exact coverage, benchmarks, mutation and CodSpeed patch gates pass locally"
 body: ""

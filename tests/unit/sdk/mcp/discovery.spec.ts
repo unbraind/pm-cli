@@ -179,6 +179,13 @@ describe("progressive MCP tool discovery", () => {
       Buffer.from(JSON.stringify({ ...decoded, offset: -1 }), "utf8").toString(
         "base64url",
       ),
+      Buffer.from(JSON.stringify({ ...decoded, offset: "0" }), "utf8").toString(
+        "base64url",
+      ),
+      Buffer.from(
+        JSON.stringify({ version: 1, signature: decoded.signature }),
+        "utf8",
+      ).toString("base64url"),
       Buffer.from(
         JSON.stringify({ version: 1, offset: decoded.offset }),
         "utf8",

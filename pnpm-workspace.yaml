@@ -35,4 +35,4 @@ overrides:
   zod: '>=4.6.6 <5.0.0'
 
 patchedDependencies:
-  '@codspeed/core@5.7.1': patches/@codspeed__core@5.7.1.patch
+  '@codspeed/core@6.1.0': patches/@codspeed__core@6.1.0.patch

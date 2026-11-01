@@ -37,6 +37,11 @@ function readCommandError(error) {
 
 /** Execute one smoke command with the shared hosted-runner timeout contract. */
 function runSmokeCommand(command, args, options = {}) {
+  return spawnSmokeCommand(command, args, options).stdout.trim();
+}
+
+/** Spawn one smoke command and return both output streams, refusing spawn errors and nonzero exits. */
+function spawnSmokeCommand(command, args, options = {}) {
   const result = crossSpawn.sync(command, args, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
@@ -52,7 +57,25 @@ function runSmokeCommand(command, args, options = {}) {
       },
     );
   }
-  return result.stdout.trim();
+  return result;
+}
+
+/** Install the packed artifact with a plain Bun install, which resolves dependencies from the registry instead of bundleDependencies, and refuse peer-range warnings (pm-2csj4k). */
+function assertBunPeerResolution(tarballPath, tempRoot) {
+  const project = path.join(tempRoot, "bun-peer-consumer");
+  mkdirSync(project, { recursive: true });
+  writeFileSync(path.join(project, "package.json"), JSON.stringify({ private: true }));
+  const { stdout, stderr } = spawnSmokeCommand(
+    resolveCommand("bun"),
+    ["add", "--ignore-scripts", tarballPath],
+    { cwd: project, env: { ...process.env, TMPDIR: tempRoot } },
+  );
+  const warnings = `${stdout}\n${stderr}`.split(/\r?\n/u).filter((line) => /incorrect peer dependency/iu.test(line));
+  if (warnings.length > 0) {
+    throw new Error(
+      `Bun install of the packed artifact resolved peers outside the tested closure:\n${[...new Set(warnings)].join("\n")}`,
+    );
+  }
 }
 
 /** Build the current package and return the absolute packed artifact path. */
@@ -356,6 +379,7 @@ function run() {
       version,
       "version output",
     );
+    assertBunPeerResolution(tarballPath, tempRoot);
     assertPackedBinarySmoke(npx, tarballPath, tarballSpec, version);
     const { commandOptions } = createPackedSmokeProject(tempRoot);
     assertPackedMcpProbes(npx, bunx, consumerRoot, version, commandOptions);

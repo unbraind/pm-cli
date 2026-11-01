@@ -317,8 +317,15 @@ installed-version verification. [pm-iceees](../.agents/pm/issues/pm-iceees.toon)
 keeps selected optional-peer subtrees complete: npm deliberately skips peer edges
 when gathering bundled files, so staged runtime manifests record the exact tested
 peer bindings as ordinary or optional dependency entries. Package code, source
-and installed manifests, peer declarations, and the root public dependency
-inventory remain intact. A real archive regression resolves the peer's descendant
+and installed manifests, and peer declarations remain intact.
+[pm-2csj4k](../.agents/pm/issues/pm-2csj4k.toon) adds one root entry per required
+peer: Bun installs resolve a package's dependencies from the registry instead of
+its `bundleDependencies`, so the published root manifest pins every non-optional
+peer target in the ledger to its tested version and bundles it. Without the pin,
+`@sentry/node`'s `@opentelemetry/api ^1.9.1` resolved to 1.10.0 and Bun warned
+against the bundled OpenTelemetry packages' `<1.10.0` peer ranges. Optional-only
+peers and direct dependencies are unchanged, and the packed smoke fails on any
+Bun peer-range warning. A real archive regression resolves the peer's descendant
 from an extracted package and the installed-runtime verifier still refuses any
 missing locked package. npm 12 ignores published shrinkwraps; shipping
 a shrinkwrap alone therefore cannot enforce this contract. SDK consumers

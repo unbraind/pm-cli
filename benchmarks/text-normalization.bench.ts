@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { test } from "vitest";
 
 import {
   jaccardSimilarity,
@@ -27,16 +27,16 @@ const rightTokens = tokenizeAlphaNumeric(
   SAMPLE_TEXT.replace(/retrieval/g, "search").replace(/scorer/g, "ranker"),
 );
 
-describe("text normalization", () => {
-  bench("normalizeLowercaseWhitespace", () => {
-    normalizeLowercaseWhitespace(SAMPLE_TEXT);
-  });
-
-  bench("tokenizeAlphaNumeric", () => {
-    tokenizeAlphaNumeric(SAMPLE_TEXT);
-  });
-
-  bench("jaccardSimilarity", () => {
-    jaccardSimilarity(leftTokens, rightTokens);
-  });
+test("text normalization", async ({ bench }) => {
+  await bench.compare(
+    bench("normalizeLowercaseWhitespace", () => {
+      normalizeLowercaseWhitespace(SAMPLE_TEXT);
+    }),
+    bench("tokenizeAlphaNumeric", () => {
+      tokenizeAlphaNumeric(SAMPLE_TEXT);
+    }),
+    bench("jaccardSimilarity", () => {
+      jaccardSimilarity(leftTokens, rightTokens);
+    }),
+  );
 });
