@@ -208,7 +208,7 @@ describe("lock confinement primitives", () => {
       expect(parentError.context).toMatchObject({ reason: "lock_path_outside_tracker", lock_component: ".." });
       const dotted = path.join(pmRoot, "..cache");
       await fs.mkdir(dotted);
-      const stats = await fs.stat(dotted);
+      const stats = await fs.stat(dotted, { bigint: true });
       await expect(inspectConfinedLockDirectory(pmRoot, path.join(dotted, "x.lock"), "x")).resolves.toEqual({
         dev: stats.dev,
         ino: stats.ino,
@@ -219,7 +219,7 @@ describe("lock confinement primitives", () => {
   it("returns the tracker root identity for a lock placed directly in the root", async () => {
     await withTempDir("pm-lock-confine-", async (tempDir) => {
       const { pmRoot } = await makeTracker(tempDir);
-      const rootStats = await fs.stat(pmRoot);
+      const rootStats = await fs.stat(pmRoot, { bigint: true });
       await expect(inspectConfinedLockDirectory(pmRoot, path.join(pmRoot, "x.lock"), "x")).resolves.toEqual({
         dev: rootStats.dev,
         ino: rootStats.ino,
@@ -269,7 +269,7 @@ describe("lock confinement primitives", () => {
             lockPath,
             id: "x",
             handle,
-            directory: { dev: -1, ino: -1 },
+            directory: { dev: -1n, ino: -1n },
           }),
         );
         expect(error.context).toMatchObject({ reason: "lock_directory_replaced", lock_component: "locks" });
@@ -277,6 +277,34 @@ describe("lock confinement primitives", () => {
         await handle.close();
       }
       expect(await fs.readdir(path.join(pmRoot, "locks"))).toEqual(["x.lock"]);
+    });
+  });
+
+  it("compares directory identities exactly beyond Number precision", async () => {
+    await withTempDir("pm-lock-confine-", async (tempDir) => {
+      const { pmRoot } = await makeTracker(tempDir);
+      const locksDir = path.join(pmRoot, "locks");
+      await fs.mkdir(locksDir);
+      const lockPath = getLockPath(pmRoot, "x");
+      const realDirectory = await fs.stat(locksDir, { bigint: true });
+      const observedIno = 2n ** 53n;
+      const expectedIno = 2n ** 53n + 1n;
+      // As numbers these two inodes collide; a numeric comparison would accept the swap.
+      expect(Number(observedIno)).toBe(Number(expectedIno));
+      const realLstat = fs.lstat.bind(fs) as (target: string, options?: { bigint: true }) => Promise<unknown>;
+      vi.spyOn(fs, "lstat").mockImplementation((async (target: string, options?: { bigint: true }) => {
+        const stats = await realLstat(target, options);
+        return target === locksDir && options?.bigint === true ? Object.assign(stats as object, { ino: observedIno }) : stats;
+      }) as unknown as typeof fs.lstat);
+      const handle = await fs.open(lockPath, "wx");
+      try {
+        const error = await captureRefusal(() =>
+          verifyConfinedLockCreation({ pmRoot, lockPath, id: "x", handle, directory: { dev: realDirectory.dev, ino: expectedIno } }),
+        );
+        expect(error.context).toMatchObject({ reason: "lock_directory_replaced" });
+      } finally {
+        await handle.close();
+      }
     });
   });
 

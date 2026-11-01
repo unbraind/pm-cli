@@ -5,6 +5,7 @@
  * directory under the tracker root, never through a symlinked or swapped
  * component (pm-gh1647).
  */
+import type { BigIntStats } from "node:fs";
 import fs, { type FileHandle } from "node:fs/promises";
 import path from "node:path";
 import { isFileMissingError } from "../fs/fs-utils.js";
@@ -14,12 +15,17 @@ import { PmCliError } from "../shared/errors.js";
 /** Typed refusal code for a lock path that leaves, or could leave, the tracker. */
 export const LOCK_PATH_UNSAFE_CODE = "lock_path_unsafe";
 
-/** Device and inode identity of a confined lock directory or lock entry. */
+/**
+ * Device and inode identity of a confined lock directory or lock entry, as
+ * exact bigints: numeric stats lose precision above Number.MAX_SAFE_INTEGER
+ * (64-bit file ids on NTFS, ReFS and some network filesystems), where two
+ * distinct entries could compare equal.
+ */
 export interface LockEntryIdentity {
   /** Device that holds the entry. */
-  readonly dev: number;
+  readonly dev: bigint;
   /** Inode of the entry on that device. */
-  readonly ino: number;
+  readonly ino: bigint;
 }
 
 /** Stable failure classes reported in the `reason` of a lock_path_unsafe refusal. */
@@ -73,7 +79,7 @@ export function buildLockPathUnsafeError(params: {
 
 function sameIdentity(
   left: LockEntryIdentity,
-  right: { dev: number; ino: number },
+  right: { dev: bigint; ino: bigint },
 ): boolean {
   return left.dev === right.dev && left.ino === right.ino;
 }
@@ -126,9 +132,9 @@ export async function inspectConfinedLockDirectory(
   let identity: LockEntryIdentity | null = null;
   for (const segment of relative === "" ? [] : relative.split(path.sep)) {
     current = path.join(current, segment);
-    let stats: Awaited<ReturnType<typeof fs.lstat>>;
+    let stats: BigIntStats;
     try {
-      stats = await fs.lstat(current);
+      stats = await fs.lstat(current, { bigint: true });
     } catch (error: unknown) {
       if (allowMissing && isFileMissingError(error)) return null;
       throw error;
@@ -154,7 +160,7 @@ export async function inspectConfinedLockDirectory(
     identity = { dev: stats.dev, ino: stats.ino };
   }
   if (identity !== null) return identity;
-  const rootStats = await fs.stat(root);
+  const rootStats = await fs.stat(root, { bigint: true });
   return { dev: rootStats.dev, ino: rootStats.ino };
 }
 
@@ -197,7 +203,7 @@ export async function verifyConfinedLockCreation(params: {
   handle: FileHandle;
   directory: LockEntryIdentity;
 }): Promise<void> {
-  const createdStats = await params.handle.stat();
+  const createdStats = await params.handle.stat({ bigint: true });
   const created: LockEntryIdentity = {
     dev: createdStats.dev,
     ino: createdStats.ino,
@@ -211,7 +217,7 @@ export async function verifyConfinedLockCreation(params: {
       false,
     );
     if (sameIdentity(params.directory, directory)) {
-      const entry = await fs.lstat(params.lockPath);
+      const entry = await fs.lstat(params.lockPath, { bigint: true });
       confined = !entry.isSymbolicLink() && sameIdentity(created, entry);
     }
   } catch {

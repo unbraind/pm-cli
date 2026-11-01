@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { getWorkspaceHistoryPath } from "../../../../src/core/history/workspace-history.js";
+import { getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../../../../src/core/history/workspace-history.js";
 import { readHistoryEntries } from "../../../../src/core/history/read.js";
 import {
   readSettingsSection,
@@ -146,7 +146,7 @@ describe("writeSettingsSection", () => {
       expect(removed).toMatchObject({ changed: true, revision: null });
       expect(JSON.parse(await readFile(settingsPath, "utf8"))).toEqual(before);
 
-      const history = await readHistoryEntries(getWorkspaceHistoryPath(pmPath));
+      const history = await readHistoryEntries(getWorkspaceHistoryPath(pmPath), WORKSPACE_HISTORY_ID);
       expect(history.filter((entry) => entry.op === "settings:section:write")).toHaveLength(3);
     });
   });
@@ -381,7 +381,7 @@ describe("settings sections on the public and host-bound SDK", () => {
         revision: written.revision,
       });
       await writeSettingsSection(pmPath, "jev", { calibration: 0.7 }, { author: "explicit-author" });
-      const authors = (await readHistoryEntries(getWorkspaceHistoryPath(pmPath)))
+      const authors = (await readHistoryEntries(getWorkspaceHistoryPath(pmPath), WORKSPACE_HISTORY_ID))
         .filter((entry) => entry.op === "settings:section:write")
         .map((entry) => entry.author);
       expect(authors).toEqual(["invocation-author", "explicit-author"]);
