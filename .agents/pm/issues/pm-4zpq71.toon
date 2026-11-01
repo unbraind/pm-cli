@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: config,data-integrity,review,settings
 created_at: "2026-10-31T16:19:52.261Z"
-updated_at: "2026-11-01T12:21:41.034Z"
+updated_at: "2026-11-01T13:54:49.432Z"
 closed_at: "2026-11-01T12:21:40.348Z"
 completed_at: "2026-11-01T12:21:40.348Z"
 author: "harness:claude-code"
@@ -51,4 +51,12 @@ test_runs[1]:
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
 close_reason: Settings writes never replace an unreadable settings.json with defaults
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-4zpq71
+  gate_id: "tests/unit/core/store/settings-fallback-write.spec.ts schema-invalid write refusal, repair-preserves-keys and pm config CLI regression, plus tests/unit/cli/cli-main-errors.spec.ts unreadable-settings bytes-unchanged assertion"
+  negative_control: "Drop the fallbackOrigin branch from writeSettings in src/core/store/settings.ts and run node scripts/run-tests.mjs test -- tests/unit/core/store/settings-fallback-write.spec.ts: the refusal and key-preservation cases fail because the defaults fallback overwrites id_prefix, author_default and lint"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-fallback-write.spec.ts tests/unit/cli/cli-main-errors.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: bug,concurrency,"gh:1647",locks,sdk,security
 created_at: "2026-11-01T10:48:40.483Z"
-updated_at: "2026-11-01T12:21:26.245Z"
+updated_at: "2026-11-01T13:54:38.490Z"
 closed_at: "2026-11-01T12:21:25.492Z"
 completed_at: "2026-11-01T12:21:25.492Z"
 author: "harness:claude-code"
@@ -53,4 +53,11 @@ docs[1]{path,scope}:
   docs/SDK.md,project
 close_reason: "Locks are confined to the tracker: symlinked or swapped lock directories refuse with lock_path_unsafe"
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1647
+  gate_id: "tests/unit/core/lock/lock-confinement.spec.ts symlinked-locks, lock-entry symlink, gc sweep and post-create directory-swap refusal cases"
+  negative_control: "Remove the inspectConfinedLockDirectory and verifyConfinedLockCreation calls from createLockFile in src/core/lock/lock.ts and run node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-confinement.spec.ts: the symlinked locks/ cases create the lock outside the tracker and the swap-back case unlinks the peer lock"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/lock/lock-confinement.spec.ts tests/unit/core/lock,node scripts/run-tests.mjs coverage
+  hosted_checks[3]: CI / Gates (static),CI / Coverage shard 1/4,CI / Windows regression (Node 24)
 body: ""

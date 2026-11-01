@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,annotations,cli,data-integrity,parsing
 created_at: "2026-11-01T10:57:52.974Z"
-updated_at: "2026-11-01T12:21:44.277Z"
+updated_at: "2026-11-01T13:55:15.295Z"
 closed_at: "2026-11-01T12:21:43.403Z"
 completed_at: "2026-11-01T12:21:43.403Z"
 author: "harness:claude-code"
@@ -46,4 +46,11 @@ docs[1]{path,scope}:
   docs/AGENT_EVIDENCE_CONSISTENCY.md,project
 close_reason: Prose continuations containing a colon after a comma round-trip through key=value seeds
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-fr10t8
+  gate_id: tests/unit/core/item/parse-utils.spec.ts parseCsvKv prose continuation case and tests/unit/regressions/context-integrity-recovery.spec.ts log-seed continuation case
+  negative_control: "Remove the CSV_KEY_PATTERN continuation branch from parseCsvKv in src/core/item/parse.ts and run node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts: the text=(a, b) c. Related: d case splits the prose into a bogus key"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts tests/unit/commands/lifecycle/create-command.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""
