@@ -9,7 +9,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
-import { isPmCliExpectedError, projectPmCliErrorContextDetails } from "../sdk/errors.js";
+import { isPmCliExpectedError, projectPmCliErrorContextDetails, snapshotPmCliErrorContext } from "../sdk/errors.js";
 import {
   resolvePmCliVersion,
   EXIT_CODE,
@@ -580,7 +580,17 @@ function resultContent(
  */
 function expectedErrorTransportContext(error: unknown): { exitCode: number; context: unknown } | undefined {
   if (!(error instanceof PmCliError) && !isPmCliExpectedError(error)) return undefined;
-  return { exitCode: error.exitCode, context: projectPmCliErrorContextDetails(error.context) };
+  const context = projectPmCliErrorContextDetails(snapshotPmCliErrorContext(error.context)) as Record<string, unknown>;
+  try {
+    // A foreign context may hold values JSON cannot encode (bigint, cycles); the response must still be written.
+    JSON.stringify(context);
+    return { exitCode: error.exitCode, context };
+  } catch {
+    return {
+      exitCode: error.exitCode,
+      context: { ...(typeof context.code === "string" ? { code: context.code } : {}), context_unserializable: true },
+    };
+  }
 }
 
 function errorContent(

@@ -751,6 +751,24 @@ describe("mcp server branch residual coverage", () => {
       details_omitted: { reason: "byte_limit", byte_limit: 4096 },
     });
     expect(oversized.context.details.text).toHaveLength(5000);
+    // A context JSON cannot encode still yields a written response.
+    const unserializable = Object.assign(new Error("bigint refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: { code: "probe_expected", debug: 1n },
+    });
+    expect(server._testOnly.errorContent(unserializable)).toMatchObject({
+      structuredContent: { code: 2, details: { code: "probe_expected", context_unserializable: true } },
+    });
+    const unnamed = Object.assign(new Error("bigint refusal"), { name: "PmCliError", exitCode: 2, context: { debug: 1n } });
+    expect((server._testOnly.errorContent(unnamed) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({ context_unserializable: true });
+    // An uninspectable context is forwarded as an empty one instead of breaking the response.
+    const hostile = Object.assign(new Error("proxy refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: new Proxy({}, { ownKeys: () => { throw new Error("trap fault"); } }),
+    });
+    expect(server._testOnly.errorContent(hostile)).toMatchObject({ structuredContent: { code: 2, details: {} } });
 
     const writeSpy = vi
       .spyOn(process.stdout, "write")

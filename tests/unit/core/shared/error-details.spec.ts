@@ -8,6 +8,7 @@ import {
   projectPmCliErrorContextDetails,
   projectPmCliErrorContextDetailsSlot,
   projectPmCliErrorDetails,
+  snapshotPmCliErrorContext,
 } from "../../../../src/core/shared/error-details.js";
 
 /** An array whose second slot is a hole rather than an undefined value. */
@@ -178,6 +179,47 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(projectPmCliErrorContextDetailsSlot({ code: "probe" })).toBeUndefined();
     expect(projectPmCliErrorContextDetailsSlot(null)).toBeUndefined();
     expect(projectPmCliErrorContextDetailsSlot({ details: { ok: 1 } })).toEqual({ details: { ok: 1 } });
+  });
+
+  it("snapshots a foreign context as plain data and honours only valid host receipts", () => {
+    let calls = 0;
+    const foreign = Object.defineProperties({ code: "probe", details: { ok: 1 } }, {
+      hidden: { value: "non-enumerable", enumerable: false },
+      lazy: { enumerable: true, get() { calls += 1; return "ran"; } },
+    });
+    expect(snapshotPmCliErrorContext(foreign)).toEqual({ code: "probe", details: { ok: 1 } });
+    const getterDetails = Object.defineProperty({ code: "probe" }, "details", { enumerable: true, get() { calls += 1; return {}; } });
+    expect(snapshotPmCliErrorContext(getterDetails)).toEqual({
+      code: "probe",
+      details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
+    });
+    expect(calls).toBe(0);
+    const prototypeKey = JSON.parse('{"__proto__":{"polluted":true},"code":"probe"}') as object;
+    const snapshot = snapshotPmCliErrorContext(prototypeKey);
+    expect(Object.getPrototypeOf(snapshot)).toBe(Object.prototype);
+    expect(Object.hasOwn(snapshot, "__proto__")).toBe(true);
+    for (const value of [undefined, null, "text", [1]]) expect(snapshotPmCliErrorContext(value)).toEqual({});
+    const hostile = new Proxy({}, { ownKeys: () => { throw new Error("trap fault"); }, getOwnPropertyDescriptor: () => { throw new Error("trap fault"); } });
+    expect(snapshotPmCliErrorContext(hostile)).toEqual({});
+    const receipt = { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes };
+    expect(projectPmCliErrorContextDetailsSlot(hostile)).toEqual({ details_omitted: receipt });
+    expect(projectPmCliErrorContextDetails(hostile)).toEqual({ details_omitted: receipt });
+    expect(omitPmCliErrorDetails(hostile)).toEqual({});
+    // A recorded host receipt is re-validated and re-bounded; anything else is ignored.
+    const recorded = { code: "probe", details_omitted: { reason: "byte_limit", byte_limit: 1, path: "x".repeat(500) } };
+    const projected = projectPmCliErrorContextDetailsSlot(recorded) as { details_omitted: { path: string; byte_limit: number } };
+    expect(projected.details_omitted.byte_limit).toBe(PM_CLI_ERROR_DETAILS_LIMITS.max_bytes);
+    expect(Buffer.byteLength(projected.details_omitted.path, "utf8")).toBeLessThanOrEqual(160);
+    expect(projectPmCliErrorContextDetailsSlot({ details_omitted: { reason: "byte_limit", byte_limit: 4096 } })).toEqual({
+      details_omitted: { reason: "byte_limit", byte_limit: 4096 },
+    });
+    for (const invalid of [{ reason: "made_up" }, "byte_limit", null, { reason: 7 }]) {
+      expect(projectPmCliErrorContextDetailsSlot({ details_omitted: invalid })).toBeUndefined();
+    }
+    expect(projectPmCliErrorContextDetailsSlot({ details: undefined })).toBeUndefined();
+    expect(projectPmCliErrorContextDetails(recorded)).toEqual({ code: "probe", ...projected });
+    // Telemetry omission removes the receipt too: its path can echo producer keys.
+    expect(omitPmCliErrorDetails(recorded)).toEqual({ code: "probe" });
   });
 
   it("strips diagnostics from every embedded error context in a serialized payload", () => {

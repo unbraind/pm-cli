@@ -112,6 +112,26 @@ export type PmCliErrorDetailValue =
  */
 export type PmCliErrorDetails = { [key: string]: PmCliErrorDetailValue };
 
+/** Why a producer's diagnostics could not be rendered. */
+export type PmCliErrorDetailsRejection =
+  | "not_plain_object"
+  | "unsupported_value"
+  | "non_finite_number"
+  | "malformed_unicode"
+  | "reserved_key"
+  | "depth_limit"
+  | "byte_limit";
+
+/** Host-set receipt that replaces diagnostics the host could not render. */
+export interface PmCliErrorDetailsOmission {
+  /** Stable reason the diagnostics were withheld. */
+  reason: PmCliErrorDetailsRejection;
+  /** Bounded JSON path of the first offending value, when the shape was refused. */
+  path?: string;
+  /** Byte ceiling that applied. */
+  byte_limit: number;
+}
+
 /** Documents the pm cli error context payload exchanged by command, SDK, and package integrations. */
 export interface PmCliErrorContext {
   /** Durable writes completed before refusal; paths are relative to the selected tracker. */
@@ -335,6 +355,12 @@ export interface PmCliErrorContext {
    * telemetry or crash reporting.
    */
   details?: PmCliErrorDetails;
+  /**
+   * Host-set receipt recorded instead of `details` when they could not be
+   * admitted (for example oversized at construction). Producers set `details`;
+   * the host owns this field and never sends it to telemetry or crash reporting.
+   */
+  details_omitted?: PmCliErrorDetailsOmission;
 }
 
 /** Implements the exported pm cli error runtime abstraction for core/shared/errors.ts. */

@@ -4,7 +4,7 @@
  * Defines public SDK APIs and package-author helpers for Index.
  */
 export type { CompletionRuntimeConfig } from "./completion.js";
-export { isItemAlreadyExistsError, type PmItemAlreadyExistsError, isPmTokenBudgetRecovery, type PmTokenBudgetRecovery, PM_CLI_ERROR_DETAILS_LIMITS, isPmCliErrorDetails, projectPmCliErrorDetails, projectPmCliErrorContextDetails, type PmCliErrorDetails, type PmCliErrorDetailValue, type PmCliErrorDetailsOmission, type PmCliErrorDetailsRejection } from "./errors.js";
+export { isItemAlreadyExistsError, type PmItemAlreadyExistsError, isPmTokenBudgetRecovery, type PmTokenBudgetRecovery, PM_CLI_ERROR_DETAILS_LIMITS, isPmCliErrorDetails, projectPmCliErrorDetails, projectPmCliErrorContextDetails, snapshotPmCliErrorContext, type PmCliErrorDetails, type PmCliErrorDetailValue, type PmCliErrorDetailsOmission, type PmCliErrorDetailsRejection } from "./errors.js";
 export {
   PM_COMMAND_CAPABILITY_CONTRACTS,
   PM_COMMAND_VISIBILITY_CONTRACTS,

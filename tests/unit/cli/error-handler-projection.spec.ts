@@ -92,9 +92,10 @@ describe("CLI known error projection", () => {
       stderrSpy.mockRestore();
       process.exitCode = previousExitCode;
     }
-    // Enrichment keeps every descriptor and still adds recovery to a frozen context.
+    // Enrichment reads the frozen context once as plain data and still adds recovery.
     const enriched = _testOnly.buildPmCliRecoveryContext(context, ["probe", "run"], "bundled refusal");
-    expect(Object.getOwnPropertyDescriptor(enriched, "details")?.get).toBeTypeOf("function");
+    expect(Object.getOwnPropertyDescriptor(enriched, "details")).toBeUndefined();
+    expect(enriched.details_omitted).toEqual({ reason: "unsupported_value", path: "details", byte_limit: 4096 });
     expect(enriched.recovery).toMatchObject({ suggested_flags: ["--x"] });
     expect(calls).toBe(0);
   });

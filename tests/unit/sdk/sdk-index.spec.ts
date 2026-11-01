@@ -528,11 +528,13 @@ describe("public sdk entrypoint", () => {
     ).toThrow("(not_plain_object)");
     const accessorContext = Object.defineProperty({ code: "probe" }, "details", { enumerable: true, get: () => ({}) });
     expect(() => createPmCliExpectedError("accessor", { context: accessorContext })).toThrow("(unsupported_value)");
-    // Size is data-dependent: an oversized but well-formed payload is kept as
-    // given and renders as a byte_limit receipt.
+    // Size is data-dependent: an oversized but well-formed payload becomes a
+    // host-set receipt at construction, so later mutation cannot change it.
     const largeDetails = { text: "x".repeat(10_000) };
-    const large = createPmCliExpectedError("large", { context: { details: largeDetails } });
-    expect(large.context.details).toBe(largeDetails);
+    const large = createPmCliExpectedError("large", { context: { code: "probe", details: largeDetails } });
+    expect(large.context).toEqual({ code: "probe", details_omitted: { reason: "byte_limit", byte_limit: 4096 } });
+    largeDetails.text = "small";
+    expect(large.context.details).toBeUndefined();
     const withoutDetails = { code: "plain" };
     expect(createPmCliExpectedError("plain", { context: withoutDetails }).context).toBe(withoutDetails);
     const undefinedDetails = { code: "plain", details: undefined };

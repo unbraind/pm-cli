@@ -9,7 +9,7 @@ import { createPmCliProgram } from "../sdk/cli-program.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
 import { createExtensionCommandError,describeUnknownError,isCommanderError,normalizeThrownExitCode,readThrownExitCode,wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
 import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
-import { isPmCliExpectedError } from "../sdk/errors.js";
+import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.js";
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
@@ -404,19 +404,9 @@ function buildRecoveryPayload(params: {
   };
 }
 
-/**
- * Attach recovery to a copy of a typed context that keeps every property
- * descriptor: a separately bundled error's `details` getter is never run here
- * and still reaches the renderer, which reports it instead of executing it.
- */
+/** Attach recovery to the already-snapshotted plain context. */
 function withContextRecovery(context: PmCliErrorContext | undefined, recovery: PmCliErrorRecoveryPayload | undefined): PmCliErrorContext {
-  const descriptors: PropertyDescriptorMap = {};
-  for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(context ?? {}))) {
-    // A frozen context still yields a writable copy, exactly as the former spread did.
-    descriptors[key] = "value" in descriptor ? { ...descriptor, writable: true, configurable: true } : { ...descriptor, configurable: true };
-  }
-  descriptors.recovery = { value: recovery, enumerable: true, configurable: true, writable: true };
-  return Object.defineProperties({}, descriptors) as PmCliErrorContext;
+  return { ...context, recovery };
 }
 
 /** Rewrite producer recovery as minimal edits of the caller's own invocation where the refusal code allows it. */
@@ -432,6 +422,8 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   const commandIndex = findBootstrapCommandTokenIndex(commandArgs);
   const [rootCommand, subcommand] = commandIndex === undefined ? [] : commandArgs.slice(commandIndex, commandIndex + 2);
   const explainRequested = safeInvocationArgv.includes("--explain");
+  // A foreign error's context is read once, as plain data: no getter on it is ever run.
+  context = context === undefined ? undefined : (snapshotPmCliErrorContext(context) as PmCliErrorContext);
   const rawExistingRecovery = repairInvocationRecovery(safeInvocationArgv, context);
   const existingRecovery =
     rawExistingRecovery && (rootCommand === "history-redact" || (rootCommand === "history" && subcommand === "redact"))

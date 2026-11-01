@@ -144,7 +144,8 @@ function assertEditablePatchFields(patch: Record<string, unknown>, allowEmpty: b
 function buildReplacementEntry(test: LinkedTest, patch: Record<string, unknown>, command: string): Record<string, unknown> {
   const entry: Record<string, unknown> = {};
   for (const key of EDITABLE_LINKED_TEST_KEYS) {
-    const value = Object.hasOwn(patch, key) ? patch[key] : test[key as keyof LinkedTest];
+    // An undefined value is "not supplied" (JSON cannot carry it); only null clears a field.
+    const value = patch[key] !== undefined ? patch[key] : test[key as keyof LinkedTest];
     if (value !== undefined && value !== null) entry[key] = value;
   }
   return { command, ...entry };
@@ -269,7 +270,7 @@ function assertCommandIdentityUnchanged(params: {
       recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs },
       nextSteps: [
         "Run the suggested retry: it removes the selected entry and adds the new command in one atomic, history-recorded mutation.",
-        `SDK: runTest(${JSON.stringify(id)}, { ${removal[0] === "--remove" ? "remove" : "removeIndex"}: [...], addJson: [...] }) with the same values.`,
+        `SDK: runTest(${JSON.stringify(id)}, { ${removal[0] === "--remove" ? "remove" : "removeIndex"}: [...], addJson: [...] }, { path: <the same tracker root> }) with the same values.`,
       ],
     },
   );

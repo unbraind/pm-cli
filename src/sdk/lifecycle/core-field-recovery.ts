@@ -55,9 +55,11 @@ export function createSchemaFieldRecoveryResolver(
   return (field) => {
     // Declared keys are stored normalized, so compare through the same normalizer.
     const token = normalizeStatusToken(field);
-    const definition = registry.definitions.find(
+    const matches = registry.definitions.filter(
       (candidate) => candidate.metadata_key === token || candidate.key === token,
     );
+    // Several declarations can share a storage key; route through one this command may set.
+    const definition = matches.find((candidate) => candidate.commands.includes(command)) ?? matches[0];
     if (definition === undefined) return undefined;
     const flag = `--${definition.cli_flag}`;
     const inspect = `Inspect the value contract with: pm schema show-field ${definition.key}`;

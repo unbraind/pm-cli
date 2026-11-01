@@ -3109,8 +3109,10 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   offending path is on its non-enumerable `path` property, so crash reporting
   of that fault never carries your keys. A well-formed value is kept as a
   detached copy, so later changes to your object do not alter a raised
-  refusal; an oversized one is kept as given and renders as a `byte_limit`
-  receipt. `isPmCliErrorDetails(value)` performs the same check.
+  refusal; an oversized one is replaced at construction by the host-set
+  receipt `context.details_omitted: { reason: "byte_limit", byte_limit }`, so a
+  later change cannot alter the refusal either. `isPmCliErrorDetails(value)`
+  performs the same check.
 - **Rendering.** `--json` errors carry the object as `details`, text output
   renders it as an indented JSON `Details:` block, and MCP tool errors carry it
   inside the forwarded context. Diagnostics are rendered whole or not at all:
@@ -3119,7 +3121,11 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   envelope carries `details_omitted: { reason, path?, byte_limit }` instead.
   The size is counted while walking and the walk stops at the ceiling, so
   shared or repeated structures cannot amplify the work; `path` is capped at
-  160 bytes. The text renderer drops the block first when the whole diagnostic
+  160 bytes. The CLI and MCP read a separately bundled error's context once as
+  plain data (`snapshotPmCliErrorContext`): getters are never run, and a
+  context that cannot be inspected becomes empty. An MCP context that JSON
+  cannot encode (for example a bigint member) is forwarded as
+  `{ code, context_unserializable: true }` so the response is still written. The text renderer drops the block first when the whole diagnostic
   exceeds its token ceiling; `--json` keeps it. Custom SDK hosts apply the
   same bound with `projectPmCliErrorDetails(value)` (returns `{ details }`,
   `{ details_omitted }` or `undefined`) or, for a context forwarded as-is,

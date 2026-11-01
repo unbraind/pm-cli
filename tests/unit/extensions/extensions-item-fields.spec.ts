@@ -86,6 +86,14 @@ describe("extensions item field runtime wiring", () => {
       const value = field === "gate_evidence" ? { disposition: "gate_added" } : "https://example.test";
       expect(Object.keys(collectRuntimeUpdateFieldValues({ [option]: value }, registry))).toEqual([field]);
     }
+    // When declarations share a storage key, the route goes through one the command may set.
+    const sharedKey = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "triage_a", metadata_key: "triage", type: "string", commands: ["create"] },
+        { key: "triage_b", metadata_key: "triage", type: "string", commands: ["update"] },
+      ],
+    } as never);
+    expect(refusal("triage=x", createSchemaFieldRecoveryResolver(sharedKey, "update")).context.recovery?.suggested_flags).toEqual(["--triage-b"]);
     // When every name a field answers to is shared, no SDK option is advertised.
     const sharedOnly = resolveRuntimeFieldRegistry({
       fields: [

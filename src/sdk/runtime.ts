@@ -358,6 +358,7 @@ export {
   isPmCliExpectedError,
   projectPmCliErrorContextDetails,
   projectPmCliErrorDetails,
+  snapshotPmCliErrorContext,
   type CreatePmCliExpectedErrorOptions,
   type PmCliErrorDetailValue,
   type PmCliErrorDetails,

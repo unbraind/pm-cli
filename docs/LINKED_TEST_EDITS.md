@@ -54,6 +54,11 @@ entry's `--remove-index` instead. Conflicting `command` and `cmd` values, and a
 replacement that would invoke `pm test-all`, refuse without a retry. Explicit
 `--author`, `--message` and `--force` on the refused edit are carried into the
 retry, so ownership and history attribution match the original request.
+The retry is a separate mutation: if other writers may change the item's tests
+in between, list them again before running it. An atomic replacement under one
+item lock is tracked by
+[pm-5igljl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5igljl.toon)
+(tracker record excluded from npm).
 
 Exactly one selector must match the current collection under the item lock.
 Absent selectors and ambiguous command/path matches refuse the whole edit and

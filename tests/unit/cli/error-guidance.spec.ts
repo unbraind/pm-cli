@@ -497,6 +497,8 @@ describe("pm cli error guidance context plumbing", () => {
     expect(formatPmCliErrorForDisplay("Too much", { code: "probe", details: { text: "x".repeat(5000) } })).toContain(
       "Details omitted: byte_limit (over 4096 bytes)",
     );
+    // A host-recorded receipt (for example oversized at construction) renders as such.
+    expect(formatPmCliErrorForJson("Recorded", 1, { code: "probe", details_omitted: { reason: "byte_limit", byte_limit: 4096 } }).details_omitted).toEqual({ reason: "byte_limit", byte_limit: 4096 });
     // A getter on the slot is reported, never run.
     const accessor = Object.defineProperty({ code: "probe" }, "details", { enumerable: true, get: () => { throw new Error("slot getter fault"); } });
     expect(formatPmCliErrorForJson("Accessor", 1, accessor).details_omitted).toEqual({ reason: "unsupported_value", path: "details", byte_limit: 4096 });

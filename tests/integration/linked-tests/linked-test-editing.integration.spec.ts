@@ -315,6 +315,11 @@ describe("linked-test editing and configuration admission", () => {
       const controlled = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node -e 7" } as unknown as LinkedTestMetadataPatch, author: "alice", message: "swap runner", force: true }, { path: context.pmPath }).catch((error: unknown) => error);
       expect((controlled as { context: { recovery: { suggested_retry_args: string[] } } }).context.recovery.suggested_retry_args.slice(-5)).toEqual(["--author", "alice", "--message", "swap runner", "--force"]);
 
+      // An undefined field value is "not supplied": the selected entry's value is kept.
+      const undefinedScope = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node -e 7", scope: undefined } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      const undefinedScopeArgs = (undefinedScope as { context: { recovery: { suggested_retry_args: string[] } } }).context.recovery.suggested_retry_args;
+      expect(JSON.parse(undefinedScopeArgs[undefinedScopeArgs.indexOf("--add-json") + 1]!)).toMatchObject({ scope: listed.tests[0]!.scope });
+
       // Unsupported metadata names the editable domain.
       const forged = await updateLinkedTest(id, { selector: { index: 2 }, patch: { provenance: {} } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
       expect(forged).toMatchObject({ code: "linked_test_patch_fields_unsupported", context: { field: "provenance", recovery: { allowed_values: expect.arrayContaining(["note", "timeout_seconds", "scope"]) } } });

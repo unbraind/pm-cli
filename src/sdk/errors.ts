@@ -21,6 +21,7 @@ export {
   projectPmCliErrorContextDetails,
   projectPmCliErrorContextDetailsSlot,
   projectPmCliErrorDetails,
+  snapshotPmCliErrorContext,
   type PmCliErrorDetailsOmission,
   type PmCliErrorDetailsRejection,
 } from "../core/shared/error-details.js";
@@ -176,7 +177,7 @@ function normalizeExpectedErrorExitCode(value: number): number {
  * message names only the reason: the producer-derived path, which can echo
  * producer keys, is a non-enumerable `path` property so crash reporting of
  * the fault never serializes it. Size is data-dependent, so oversized
- * diagnostics are kept as given and render as a `byte_limit` receipt.
+ * diagnostics are replaced by a host-set `details_omitted` receipt.
  */
 function admitExpectedErrorContext(
   context: PmCliErrorContext | undefined,
@@ -188,7 +189,11 @@ function admitExpectedErrorContext(
   if (descriptor.value === undefined) return context;
   const admission = admitPmCliErrorDetails(descriptor.value);
   if (admission.ok) return { ...context, details: admission.details };
-  if (admission.omission.reason === "byte_limit") return context;
+  if (admission.omission.reason === "byte_limit") {
+    // Record the outcome now, so later mutation of the producer's object cannot change the refusal.
+    const { details: _oversized, ...rest } = context;
+    return { ...rest, details_omitted: admission.omission };
+  }
   throw detailsShapeTypeError(admission.omission.reason, admission.omission.path);
 }
 

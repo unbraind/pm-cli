@@ -13,7 +13,13 @@
  * deeply repeated structure is abandoned as soon as it crosses the ceiling
  * instead of being expanded first.
  */
-import type { PmCliErrorDetails } from "./errors.js";
+import type {
+  PmCliErrorDetails,
+  PmCliErrorDetailsOmission,
+  PmCliErrorDetailsRejection,
+} from "./errors.js";
+
+export type { PmCliErrorDetailsOmission, PmCliErrorDetailsRejection } from "./errors.js";
 
 /** Declared ceilings for producer-owned error diagnostics. */
 export const PM_CLI_ERROR_DETAILS_LIMITS = Object.freeze({
@@ -26,25 +32,15 @@ export const PM_CLI_ERROR_DETAILS_LIMITS = Object.freeze({
 /** Largest UTF-8 size of a producer-derived path echoed in an omission receipt. */
 const MAX_OMISSION_PATH_BYTES = 160;
 
-/** Why a producer's diagnostics could not be rendered. */
-export type PmCliErrorDetailsRejection =
-  | "not_plain_object"
-  | "unsupported_value"
-  | "non_finite_number"
-  | "malformed_unicode"
-  | "reserved_key"
-  | "depth_limit"
-  | "byte_limit";
-
-/** Receipt that replaces diagnostics the host could not render. */
-export interface PmCliErrorDetailsOmission {
-  /** Stable reason the diagnostics were withheld. */
-  reason: PmCliErrorDetailsRejection;
-  /** Bounded JSON path of the first offending value, when the shape was refused. */
-  path?: string;
-  /** Byte ceiling that applied. */
-  byte_limit: number;
-}
+const DETAILS_REJECTIONS: ReadonlySet<string> = new Set<PmCliErrorDetailsRejection>([
+  "not_plain_object",
+  "unsupported_value",
+  "non_finite_number",
+  "malformed_unicode",
+  "reserved_key",
+  "depth_limit",
+  "byte_limit",
+]);
 
 /** Outcome of admitting one diagnostics value. */
 export type PmCliErrorDetailsAdmission =
@@ -201,49 +197,111 @@ export function projectPmCliErrorDetails(
   return admission.ok ? { details: admission.details } : { details_omitted: admission.omission };
 }
 
+/** Receipt for a value the host could not even inspect. */
+function unsupportedDetailsReceipt(): PmCliErrorDetailsOmission {
+  return { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes };
+}
+
+/** Re-validate a host receipt recorded on a context; anything else is not a receipt. */
+function readRecordedOmission(value: unknown): PmCliErrorDetailsOmission | undefined {
+  if (!isPlainObject(value)) return undefined;
+  const reason = value.reason;
+  if (typeof reason !== "string" || !DETAILS_REJECTIONS.has(reason)) return undefined;
+  const path = typeof value.path === "string" ? boundPath(value.path) : undefined;
+  return {
+    reason: reason as PmCliErrorDetailsRejection,
+    ...(path === undefined ? {} : { path }),
+    byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes,
+  };
+}
+
 /**
- * Project the `details` slot of an error context without invoking an accessor
- * on it: a getter is reported as `unsupported_value` instead of being run.
+ * Plain snapshot of a foreign error context, taken once at a host boundary:
+ * own enumerable data properties are copied, accessors are never run, a
+ * `details` accessor becomes an `unsupported_value` receipt, and a context the
+ * host cannot inspect at all (a hostile proxy) becomes an empty object.
+ */
+export function snapshotPmCliErrorContext(context: unknown): Record<string, unknown> {
+  const snapshot: Record<string, unknown> = {};
+  try {
+    if (typeof context !== "object" || context === null || Array.isArray(context)) return snapshot;
+    for (const [key, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(context))) {
+      if (!descriptor.enumerable) continue;
+      if ("value" in descriptor) {
+        Object.defineProperty(snapshot, key, { value: descriptor.value, enumerable: true, writable: true, configurable: true });
+      } else if (key === "details") {
+        snapshot.details_omitted = unsupportedDetailsReceipt();
+      }
+    }
+    return snapshot;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Project the diagnostics of an error context: `details` rendered through
+ * {@link projectPmCliErrorDetails}, otherwise a valid host-recorded
+ * `details_omitted` receipt. Accessors are reported, never run, and an
+ * uninspectable context yields an `unsupported_value` receipt.
  */
 export function projectPmCliErrorContextDetailsSlot(
   context: unknown,
 ): ReturnType<typeof projectPmCliErrorDetails> {
   if (typeof context !== "object" || context === null) return undefined;
-  const descriptor = Object.getOwnPropertyDescriptor(context, "details");
-  if (descriptor === undefined) return undefined;
-  if (!("value" in descriptor)) {
-    return {
-      details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
-    };
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(context, "details");
+    if (descriptor !== undefined && !("value" in descriptor)) return { details_omitted: unsupportedDetailsReceipt() };
+    if (descriptor !== undefined && descriptor.value !== undefined) return projectPmCliErrorDetails(descriptor.value);
+    const recorded = Object.getOwnPropertyDescriptor(context, "details_omitted");
+    const omission = recorded !== undefined && "value" in recorded ? readRecordedOmission(recorded.value) : undefined;
+    return omission === undefined ? undefined : { details_omitted: omission };
+  } catch {
+    return { details_omitted: unsupportedDetailsReceipt() };
   }
-  return projectPmCliErrorDetails(descriptor.value);
 }
 
-/** Own enumerable properties other than `details`, without touching the `details` slot. */
-function contextWithoutDetails(context: object): Record<string, unknown> {
+/** Keys that carry producer diagnostics or a receipt describing them. */
+const DIAGNOSTIC_KEYS = new Set(["details", "details_omitted"]);
+
+/** Own enumerable properties other than the diagnostics keys, without touching those slots. */
+function contextWithoutDiagnostics(context: object): Record<string, unknown> {
   const rest: Record<string, unknown> = {};
   for (const key of Object.keys(context)) {
-    if (key !== "details") rest[key] = (context as Record<string, unknown>)[key];
+    if (!DIAGNOSTIC_KEYS.has(key)) {
+      Object.defineProperty(rest, key, { value: (context as Record<string, unknown>)[key], enumerable: true, writable: true, configurable: true });
+    }
   }
   return rest;
 }
 
 /**
  * Bound an error context for a transport that forwards the context as-is
- * (MCP): diagnostics are rendered through {@link projectPmCliErrorDetails},
+ * (MCP): diagnostics are rendered through {@link projectPmCliErrorContextDetailsSlot},
  * every other host field is left untouched.
  */
 export function projectPmCliErrorContextDetails(context: unknown): unknown {
   if (typeof context !== "object" || context === null || Array.isArray(context)) return context;
-  if (!Object.hasOwn(context, "details")) return context;
-  return { ...contextWithoutDetails(context), ...projectPmCliErrorContextDetailsSlot(context) };
+  try {
+    if (!Object.hasOwn(context, "details") && !Object.hasOwn(context, "details_omitted")) return context;
+    return { ...contextWithoutDiagnostics(context), ...projectPmCliErrorContextDetailsSlot(context) };
+  } catch {
+    return { details_omitted: unsupportedDetailsReceipt() };
+  }
 }
 
-/** Remove producer diagnostics from a context bound for telemetry or crash reporting. */
+/**
+ * Remove producer diagnostics, and the receipt describing them (its path can
+ * echo producer keys), from a context bound for telemetry or crash reporting.
+ */
 export function omitPmCliErrorDetails(context: unknown): unknown {
   if (typeof context !== "object" || context === null || Array.isArray(context)) return context;
-  if (!Object.hasOwn(context, "details")) return context;
-  return contextWithoutDetails(context);
+  try {
+    if (!Object.hasOwn(context, "details") && !Object.hasOwn(context, "details_omitted")) return context;
+    return contextWithoutDiagnostics(context);
+  } catch {
+    return {};
+  }
 }
 
 /** Deepest event nesting scanned for embedded error contexts. */
