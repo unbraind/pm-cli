@@ -109,7 +109,11 @@ export async function inspectConfinedLockDirectory(
   const root = path.resolve(pmRoot);
   const directory = path.dirname(path.resolve(lockPath));
   const relative = path.relative(root, directory);
-  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+  if (
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  ) {
     throw buildLockPathUnsafeError({
       pmRoot: root,
       lockPath,

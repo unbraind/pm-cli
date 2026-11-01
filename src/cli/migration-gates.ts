@@ -423,12 +423,16 @@ export async function enforceItemFormatWriteGateAndPreflightMigration(
   for (const warning of warnings) {
     emitPreflightWarning(warning);
   }
-  // An unreadable stored document is never rewritten by an automatic pin;
-  // the command runs on the defaults fallback and the warning stands.
+  // An unreadable stored document is never acted on automatically: neither
+  // the item_format pin nor the pre-mutation format migration runs on the
+  // defaults fallback, whose format and schema can differ from the stored
+  // ones. The command runs on the fallback and the warning stands.
+  if (isSettingsReadFallback(settings)) {
+    return;
+  }
   if (
     decision.enforce_item_format_gate &&
-    !metadata.has_explicit_item_format &&
-    !isSettingsReadFallback(settings)
+    !metadata.has_explicit_item_format
   ) {
     persistSelectedItemFormat(settings);
     await writeSettings(pmRoot, settings, "item_format:auto_select_default");

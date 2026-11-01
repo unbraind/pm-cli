@@ -43,6 +43,7 @@ import {
 } from "../core/store/paths.js";
 import {
   isSettingsReadFallback,
+  readSettings,
   readSettingsWithMetadata,
   writeSettings,
 } from "../core/store/settings.js";
@@ -1116,6 +1117,9 @@ async function applyContextConfig(
     await writeSettings(target.pmRoot, settings, "config:set:context", {
       assignedPaths,
     });
+    // A write over an unreadable document repaired it, even when every value
+    // equalled the fallback defaults it was compared against.
+    changed = true;
   }
 
   return withWarnings(
@@ -1219,6 +1223,8 @@ interface ConfigExecutionContext {
   settings: PmSettings;
   metadata: { has_explicit_item_format: boolean };
   warnings: string[];
+  /** Set when a write repaired an unreadable stored document (pm-4zpq71). */
+  fallbackRepairWritten?: boolean;
 }
 
 function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
@@ -1426,6 +1432,9 @@ async function writeConfigSettingsIfChanged(
     await writeSettings(context.target.pmRoot, context.settings, reason, {
       assignedPaths,
     });
+    if (isSettingsReadFallback(context.settings)) {
+      context.fallbackRepairWritten = true;
+    }
   }
 }
 
@@ -1471,6 +1480,31 @@ function buildCriteriaResult(
   );
 }
 
+async function migrateItemsForFormatChange(
+  pmRoot: string,
+  settings: PmSettings,
+  nextFormat: ItemFormat,
+): Promise<NonNullable<ConfigResult["migration"]>> {
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
+  const migrated = await migrateItemFilesToFormat(
+    pmRoot,
+    nextFormat,
+    "config:set:item_format:migrate",
+    typeRegistry.type_to_folder,
+    settings.schema,
+  );
+  return {
+    target_format: migrated.target_format,
+    scanned: migrated.scanned,
+    migrated: migrated.migrated,
+    removed: migrated.removed,
+    warnings: migrated.warnings,
+  };
+}
+
 async function setItemFormatConfig(
   context: ConfigExecutionContext,
   options: ConfigCommandOptions,
@@ -1481,31 +1515,39 @@ async function setItemFormatConfig(
     !context.metadata.has_explicit_item_format;
   let migration: ConfigResult["migration"] = undefined;
   if (changed) {
-    const typeRegistry = resolveItemTypeRegistry(
-      context.settings,
-      getActiveExtensionRegistrations(),
-    );
-    const migrated = await migrateItemFilesToFormat(
-      context.target.pmRoot,
-      nextFormat,
-      "config:set:item_format:migrate",
-      typeRegistry.type_to_folder,
-      context.settings.schema,
-    );
-    migration = {
-      target_format: migrated.target_format,
-      scanned: migrated.scanned,
-      migrated: migrated.migrated,
-      removed: migrated.removed,
-      warnings: migrated.warnings,
-    };
     context.settings.item_format = nextFormat;
-    await writeSettings(
-      context.target.pmRoot,
-      context.settings,
-      "config:set:item_format",
-      { assignedPaths: ["item_format"] },
-    );
+    const writeOptions = { assignedPaths: ["item_format"] };
+    if (isSettingsReadFallback(context.settings)) {
+      // Over an unreadable document, repair settings first: a write that would
+      // still be invalid refuses before any item file is touched, and the
+      // migration then runs with the repaired document's own schema and type
+      // folders instead of the fallback defaults. An interrupted migration is
+      // converged by the next mutation's preflight sync (pm-4zpq71).
+      await writeSettings(
+        context.target.pmRoot,
+        context.settings,
+        "config:set:item_format",
+        writeOptions,
+      );
+      context.fallbackRepairWritten = true;
+      migration = await migrateItemsForFormatChange(
+        context.target.pmRoot,
+        await readSettings(context.target.pmRoot),
+        nextFormat,
+      );
+    } else {
+      migration = await migrateItemsForFormatChange(
+        context.target.pmRoot,
+        context.settings,
+        nextFormat,
+      );
+      await writeSettings(
+        context.target.pmRoot,
+        context.settings,
+        "config:set:item_format",
+        writeOptions,
+      );
+    }
   }
   return withWarnings(
     {
@@ -1698,6 +1740,7 @@ async function setGovernancePresetOrTypeConfig(
       context,
       changed,
       "config:set:governance_create_default_type",
+      ["governance.create_default_type"],
     );
     return buildPolicyResult(
       context,
@@ -2143,6 +2186,19 @@ async function setAgentIdentityVocabularyConfig(
 }
 
 async function setConfigValue(
+  context: ConfigExecutionContext,
+  key: ConfigKey,
+  options: ConfigCommandOptions,
+): Promise<ConfigResult> {
+  const result = await dispatchConfigSetValue(context, key, options);
+  // Setters compare against the defaults fallback of an unreadable document,
+  // so a repair write they made must still report the change (pm-4zpq71).
+  return context.fallbackRepairWritten === true
+    ? { ...result, changed: true }
+    : result;
+}
+
+async function dispatchConfigSetValue(
   context: ConfigExecutionContext,
   key: ConfigKey,
   options: ConfigCommandOptions,

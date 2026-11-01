@@ -201,6 +201,21 @@ describe("lock confinement primitives", () => {
     });
   });
 
+  it("refuses the parent directory itself but confines a first segment that merely starts with two dots", async () => {
+    await withTempDir("pm-lock-confine-", async (tempDir) => {
+      const { pmRoot } = await makeTracker(tempDir);
+      const parentError = await captureRefusal(() => inspectConfinedLockDirectory(pmRoot, path.join(tempDir, "x.lock"), "x"));
+      expect(parentError.context).toMatchObject({ reason: "lock_path_outside_tracker", lock_component: ".." });
+      const dotted = path.join(pmRoot, "..cache");
+      await fs.mkdir(dotted);
+      const stats = await fs.stat(dotted);
+      await expect(inspectConfinedLockDirectory(pmRoot, path.join(dotted, "x.lock"), "x")).resolves.toEqual({
+        dev: stats.dev,
+        ino: stats.ino,
+      });
+    });
+  });
+
   it("returns the tracker root identity for a lock placed directly in the root", async () => {
     await withTempDir("pm-lock-confine-", async (tempDir) => {
       const { pmRoot } = await makeTracker(tempDir);

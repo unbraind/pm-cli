@@ -3959,17 +3959,23 @@ describe("CLI migration gate helpers", () => {
 
       const settingsPath = path.join(context.pmPath, "settings.json");
       await writeFile(settingsPath, `${JSON.stringify({ version: 1 })}\n`, "utf8");
+      const typeRegistryModule = await import("../../../src/core/item/type-registry.js");
+      const migrationRegistrySpy = vi.spyOn(typeRegistryModule, "resolveItemTypeRegistry");
       const fallbackStderr = await captureStderrAsync(async () => {
         await enforceItemFormatWriteGateAndPreflightMigration("create", {}, context.pmPath, {
           enforce_item_format_gate: true,
-          run_preflight_item_format_sync: false,
+          run_preflight_item_format_sync: true,
           run_extension_migrations: true,
           enforce_mandatory_migration_gate: true,
         });
       });
       expect(fallbackStderr).toContain("warning:settings_read_invalid_schema");
-      // pm-4zpq71: an unreadable document is never rewritten by the automatic format pin.
+      // pm-4zpq71: an unreadable document is never rewritten by the automatic
+      // format pin, and the pre-mutation format migration never runs on the
+      // fallback's format and schema.
       expect(await readFile(settingsPath, "utf8")).toBe(`${JSON.stringify({ version: 1 })}\n`);
+      expect(migrationRegistrySpy).not.toHaveBeenCalled();
+      migrationRegistrySpy.mockRestore();
 
       // A readable document without an explicit item_format is still pinned.
       await writeFile(settingsPath, `${JSON.stringify({ ...SETTINGS_DEFAULTS, item_format: undefined }, null, 2)}\n`, "utf8");

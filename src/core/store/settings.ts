@@ -7,7 +7,11 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import type { Stats } from "node:fs";
 import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
-import { validateSettings, type ParsedSettings } from "./settings-validator.js";
+import {
+  CORE_SETTINGS_SECTION_KEYS,
+  validateSettings,
+  type ParsedSettings,
+} from "./settings-validator.js";
 import {
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
@@ -2162,8 +2166,11 @@ export interface WriteSettingsOptions {
    * the default from an untouched field, so over a defaults fallback returned
    * for an unreadable document these paths are applied even when their value
    * equals the default; that is how an explicit repair to the default value
-   * takes effect. A path the proposed settings do not carry is left to the
-   * delta, and a record key that itself contains a dot cannot be addressed;
+   * takes effect. A core-section path whose parent the proposed settings carry
+   * but whose value they omit (a default-valued optional key or a cleared key)
+   * is removed from the stored document; any other path the proposed settings
+   * do not carry is left to the delta. A record key that itself contains a dot
+   * cannot be addressed;
    * repair such an entry in settings.json. Readable documents ignore the
    * option (pm-4zpq71).
    */
@@ -2249,8 +2256,17 @@ function applyAssignedSettingsPaths(
     const parents = assignedPath.split(".");
     const leaf = parents.pop() as string;
     const source = findAssignedSource(proposed, parents);
-    if (source === undefined || !Object.hasOwn(source, leaf)) continue;
-    ensureAssignedParent(target, parents)[leaf] = structuredClone(source[leaf]);
+    if (source === undefined) continue;
+    if (Object.hasOwn(source, leaf)) {
+      ensureAssignedParent(target, parents)[leaf] = structuredClone(source[leaf]);
+      continue;
+    }
+    // Serialization omits default-valued optional keys and cleared keys, so an
+    // explicit assignment the proposed core settings omit removes the stored
+    // value. Extension-owned sections are never cleared implicitly.
+    if (!CORE_SETTINGS_SECTION_KEYS.includes(parents[0] ?? leaf)) continue;
+    const storedParent = findAssignedSource(target, parents);
+    if (storedParent !== undefined) delete storedParent[leaf];
   }
 }
 
@@ -2298,6 +2314,27 @@ function applyFallbackChangeToStoredSettings(
   return `${JSON.stringify(orderObject(candidate, SETTINGS_TOP_LEVEL_KEY_ORDER), null, 2)}\n`;
 }
 
+/** Parse the stored document a settings write builds on, refusing malformed JSON. */
+function parseExistingSettingsForWrite(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    throw new PmCliError(
+      "Existing settings.json is malformed; the settings write was refused.",
+      EXIT_CODE.USAGE,
+      {
+        code: "settings_write_invalid_existing_json",
+        reason: "existing_settings_json_malformed",
+        why: "Writing defaults over malformed settings could destroy intended project configuration.",
+        nextSteps: [
+          "Repair the syntax in .agents/pm/settings.json, then retry the original command.",
+          "Run pm health to confirm the settings warning has cleared.",
+        ],
+      },
+    );
+  }
+}
+
 /** Implements read settings for the public runtime surface of this module. */
 export async function readSettings(pmRoot: string): Promise<PmSettings> {
   return (await readSettingsWithMetadata(pmRoot)).settings;
@@ -2332,26 +2369,8 @@ export async function writeSettings(
       pmRoot,
       filePath: settingsPath,
       mutate: (beforeRaw) => {
-        let current: unknown = null;
-        if (beforeRaw !== null) {
-          try {
-            current = JSON.parse(beforeRaw) as unknown;
-          } catch {
-            throw new PmCliError(
-              "Existing settings.json is malformed; the settings write was refused.",
-              EXIT_CODE.USAGE,
-              {
-                code: "settings_write_invalid_existing_json",
-                reason: "existing_settings_json_malformed",
-                why: "Writing defaults over malformed settings could destroy intended project configuration.",
-                nextSteps: [
-                  "Repair the syntax in .agents/pm/settings.json, then retry the original command.",
-                  "Run pm health to confirm the settings warning has cleared.",
-                ],
-              },
-            );
-          }
-        }
+        const current: unknown =
+          beforeRaw === null ? null : parseExistingSettingsForWrite(beforeRaw);
         if (fallbackOrigin !== undefined && beforeRaw !== null) {
           return {
             raw: applyFallbackChangeToStoredSettings(

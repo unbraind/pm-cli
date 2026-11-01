@@ -12,7 +12,7 @@ import { resolveAuthor } from "../shared/author.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { toErrorMessage } from "../shared/primitives.js";
-import { stableStringify, stableValueEquals } from "../shared/serialization.js";
+import { stableValueEquals } from "../shared/serialization.js";
 import { getSettingsPath } from "./paths.js";
 import { readSettings } from "./settings.js";
 import { clearSettingsReadCache } from "./settings-read-cache.js";
@@ -74,7 +74,30 @@ export interface SettingsSectionWriteResult {
 
 /** Content revision of a stored section value. */
 export function settingsSectionRevision(value: unknown): string {
-  return `sha256:${createHash("sha256").update(stableStringify(value)).digest("hex")}`;
+  return `sha256:${createHash("sha256").update(canonicalSectionJson(value)).digest("hex")}`;
+}
+
+/**
+ * Canonical JSON with sorted keys that keeps every own key, including a
+ * JSON-parsed `__proto__` entry that an ordinary object accumulator would turn
+ * into a prototype assignment, so two different values never share a revision.
+ */
+function canonicalSectionJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => canonicalSectionJson(entry)).join(",")}]`;
+  }
+  if (typeof value === "object" && value !== null) {
+    const entries = Object.keys(value)
+      .sort()
+      .map(
+        (key) =>
+          `${JSON.stringify(key)}:${canonicalSectionJson(Object.getOwnPropertyDescriptor(value, key)?.value)}`,
+      );
+    return `{${entries.join(",")}}`;
+  }
+  // Stored sections are JSON data; String() keeps a non-JSON caller value
+  // (undefined) deterministic instead of adding an unreachable fallback.
+  return String(JSON.stringify(value));
 }
 
 function assertSettingsSectionName(section: string): void {
@@ -149,36 +172,123 @@ function validateSectionValue<T>(
   return value;
 }
 
+/** JSON.stringify calls a function-valued toJSON, own or inherited, enumerable or not. */
+function hasJsonHook(value: object): boolean {
+  return typeof Reflect.get(value, "toJSON") === "function";
+}
+
 function describeJsonPath(segments: readonly string[]): string {
   return segments.length === 0 ? "the value" : segments.join(".");
 }
 
 /**
- * Name the first part of an acyclic value that JSON would silently change: a
- * non-finite number (stored as null), an undefined, function or symbol (dropped
- * or nulled), a symbol key (dropped), or a non-plain object (reshaped through
- * its prototype or toJSON). Returns null when the JSON round trip is exact.
+ * Every own property is a data property, so reading it runs no getter, and
+ * for objects every one is enumerable, so JSON keeps it. An array's `length`
+ * is legitimately non-enumerable; its indices are checked separately.
  */
-function findJsonDrift(value: unknown, segments: readonly string[] = []): string | null {
-  if (value === null || typeof value === "string" || typeof value === "boolean") return null;
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? null : `${describeJsonPath(segments)} is a non-finite number`;
+function hasOnlyDataProperties(value: object, requireEnumerable: boolean): boolean {
+  return Object.values(Object.getOwnPropertyDescriptors(value)).every(
+    (descriptor) => "value" in descriptor && (!requireEnumerable || descriptor.enumerable === true),
+  );
+}
+
+/**
+ * JSON keeps only an array's dense indices: a hole, an extra or symbol key, a
+ * subclass, an accessor or a toJSON hook would store something other than the
+ * array.
+ */
+function isPlainJsonArray(value: unknown[]): boolean {
+  // Descriptors before the hook lookup: Reflect.get would run a toJSON getter.
+  if (Object.getPrototypeOf(value) !== Array.prototype || !hasOnlyDataProperties(value, false)) {
+    return false;
   }
-  if (typeof value !== "object") return `${describeJsonPath(segments)} is ${typeof value}`;
-  if (Array.isArray(value)) {
-    for (let index = 0; index < value.length; index += 1) {
-      const drift = findJsonDrift(value[index], [...segments, String(index)]);
-      if (drift !== null) return drift;
-    }
-    return null;
-  }
+  // Enumerable own keys are exactly the dense indices, and the only other own
+  // name is `length`, so no hidden property is dropped by JSON either.
+  const keys = Object.keys(value);
+  return (
+    keys.length === value.length &&
+    keys.every((key, index) => key === String(index)) &&
+    Object.getOwnPropertyNames(value).length === value.length + 1 &&
+    Object.getOwnPropertySymbols(value).length === 0 &&
+    !hasJsonHook(value)
+  );
+}
+
+/** A plain object JSON stores key for key: no prototype, symbol key, accessor, non-enumerable property or toJSON hook. */
+function isPlainJsonObject(value: object): boolean {
   const prototype = Object.getPrototypeOf(value) as unknown;
-  if ((prototype !== Object.prototype && prototype !== null) || Object.getOwnPropertySymbols(value).length > 0) {
-    return `${describeJsonPath(segments)} is not a plain JSON object`;
+  // Descriptors before the hook lookup: Reflect.get would run a toJSON getter.
+  return (
+    (prototype === Object.prototype || prototype === null) &&
+    hasOnlyDataProperties(value, true) &&
+    Object.getOwnPropertySymbols(value).length === 0 &&
+    !hasJsonHook(value)
+  );
+}
+
+/** Why a section value cannot be stored exactly; `representable` is false when JSON cannot hold it at all. */
+interface JsonDrift {
+  detail: string;
+  representable: boolean;
+}
+
+function findScalarDrift(value: unknown, segments: readonly string[]): JsonDrift | null {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return null;
+  const where = describeJsonPath(segments);
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? null : { detail: `${where} is a non-finite number`, representable: true };
   }
+  // bigint throws, and a top-level function, symbol or undefined serializes to
+  // nothing; nested ones are dropped or nulled.
+  return {
+    detail: `${where} is ${typeof value}`,
+    representable: typeof value !== "bigint" && segments.length > 0,
+  };
+}
+
+/**
+ * Name the first part of a value that JSON would not store exactly: a
+ * non-finite number (stored as null), an undefined, function, symbol or bigint,
+ * a symbol key, an accessor, a circular reference, or a non-plain array or
+ * object (reshaped through holes, extra keys, its prototype or toJSON). It
+ * inspects without serializing, so no hook or getter runs before the value is
+ * proven to be plain data. Returns null when the JSON round trip is exact.
+ */
+function findJsonDrift(
+  value: unknown,
+  segments: readonly string[] = [],
+  ancestors: Set<object> = new Set(),
+): JsonDrift | null {
+  if (typeof value !== "object" || value === null) return findScalarDrift(value, segments);
+  const where = describeJsonPath(segments);
+  if (ancestors.has(value)) return { detail: `${where} is a circular reference`, representable: false };
+  const plain = Array.isArray(value) ? isPlainJsonArray(value) : isPlainJsonObject(value);
+  if (!plain) {
+    return { detail: `${where} is not a plain JSON ${Array.isArray(value) ? "array" : "object"}`, representable: true };
+  }
+  ancestors.add(value);
   for (const [key, entry] of Object.entries(value)) {
-    const drift = findJsonDrift(entry, [...segments, key]);
+    const drift = findJsonDrift(entry, [...segments, key], ancestors);
     if (drift !== null) return drift;
+  }
+  ancestors.delete(value);
+  return null;
+}
+
+/**
+ * Name the first key path the audited settings history cannot record: an own
+ * `__proto__` key, or `prototype` directly beneath `constructor`. The history
+ * patcher refuses both, so the write would otherwise fail untyped.
+ */
+function findReservedJsonKey(value: unknown, segments: readonly string[] = []): string | null {
+  if (typeof value !== "object" || value === null) return null;
+  for (const [key, entry] of Object.entries(value)) {
+    const keyPath = [...segments, key];
+    if (key === "__proto__" || (key === "prototype" && segments.at(-1) === "constructor")) {
+      return describeJsonPath(keyPath);
+    }
+    const nested = findReservedJsonKey(entry, keyPath);
+    if (nested !== null) return nested;
   }
   return null;
 }
@@ -196,20 +306,19 @@ function refuseSectionValue(section: string, value: unknown, reason: string): un
  * example Infinity becoming null), refuse instead of being changed silently.
  */
 function toStoredSectionValue(section: string, value: unknown): unknown {
-  let serialized: string | undefined;
-  try {
-    serialized = JSON.stringify(value);
-  } catch {
-    serialized = undefined;
-  }
-  if (serialized === undefined) {
-    return refuseSectionValue(section, value, "the value is not representable as JSON");
-  }
   const drift = findJsonDrift(value);
   if (drift !== null) {
-    return refuseSectionValue(section, value, `the value would change when stored as JSON: ${drift}`);
+    const reason = drift.representable
+      ? `the value would change when stored as JSON: ${drift.detail}`
+      : `the value is not representable as JSON: ${drift.detail}`;
+    return refuseSectionValue(section, value, reason);
   }
-  return JSON.parse(serialized) as unknown;
+  const reserved = findReservedJsonKey(value);
+  if (reserved !== null) {
+    return refuseSectionValue(section, value, `${reserved} is a reserved key that settings history cannot record`);
+  }
+  // Proven plain data: serialization runs no hook or getter and cannot throw.
+  return JSON.parse(JSON.stringify(value)) as unknown;
 }
 
 function readSectionEntry(document: Record<string, unknown>, section: string): unknown {
@@ -235,11 +344,15 @@ export async function readSettingsSection<T = unknown>(
   if (stored === undefined) {
     return { section, source: "default", value: options.defaultValue, revision: null };
   }
+  // Hash the stored value before validation and give the validator a detached
+  // copy, so an in-place normalizer cannot change the revision a later
+  // compare-and-set write must present.
+  const revision = settingsSectionRevision(stored);
   return {
     section,
     source: "stored",
-    value: validateSectionValue(section, stored, options.validate),
-    revision: settingsSectionRevision(stored),
+    value: validateSectionValue(section, structuredClone(stored), options.validate),
+    revision,
   };
 }
 

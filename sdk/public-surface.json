@@ -3000,7 +3000,7 @@
         "signature ./sdk:writeSettings"
       ],
       "package_version": "2026.11.1",
-      "reason": "Additive only for consumers: writeSettings gains an optional trailing options parameter (assignedPaths) so an explicit repair to a default value over an unreadable settings document takes effect; every existing call compiles and behaves unchanged (pm-4zpq71)"
+      "reason": "writeSettings gains an optional trailing options parameter (assignedPaths) so an explicit repair to a default value over an unreadable settings document takes effect; existing calls compile unchanged. Behavior change in the same release: a write from the defaults fallback for a schema-invalid settings.json now applies only the caller's change to the stored document and refuses with settings_write_invalid_existing_schema when the result is still invalid, instead of replacing the document with defaults (pm-4zpq71)"
     },
     {
       "changes": [

@@ -84,7 +84,13 @@ options)`, `writeSettingsSection(pmRoot, section, value, options)` and
 - If the validator throws, the call refuses with `settings_section_invalid`.
   `context.field` names the section, and the message carries the validator's
   bounded message. Reads validate the stored value; writes validate the value
-  before storing it.
+  before storing it. A write also refuses with `settings_section_invalid` when
+  the value would change if stored as JSON: a non-finite number, an
+  `undefined`, function or symbol value, a symbol key, or a non-plain object
+  such as `Date`, including an array with holes, extra keys or a `toJSON`
+  hook. A key named `__proto__`, or `prototype` beneath `constructor`, also
+  refuses because the settings history cannot record it. The message names the
+  first such path, and nothing is written.
 - A write runs under the settings lock and appends one `settings:section:write`
   workspace history event. Every other key is kept. Pass `undefined` to remove
   the section. An unchanged value writes nothing and returns `changed: false`.

@@ -342,9 +342,11 @@ entry is a peer's lock, not a refusal. The refusal carries `context.reason`
 For these four reasons nothing is created outside the tracker and no cleanup
 gate remains. After creating the lock file, the provider checks that the new
 file is the confined entry in the directory it inspected. A directory swapped
-during acquisition refuses with `lock_directory_replaced`, and the lease is
-never returned. The lock file created through the swapped directory stays
-where the swap pointed, which can be outside the tracker, and a cleanup gate
+during acquisition refuses with the same `lock_path_unsafe` code and the
+fifth reason, `lock_directory_replaced`, with `context.lock_component` naming
+the replaced tracker-relative directory, and the lease is never returned.
+The lock file created through the swapped directory stays where the swap
+pointed, which can be outside the tracker, and a cleanup gate
 created before the swap can stay in the displaced directory. pm never deletes
 outside the tracker: Node has no descriptor-relative unlink, so a path-based
 delete could remove a same-name replacement. `pm gc --scope locks`
