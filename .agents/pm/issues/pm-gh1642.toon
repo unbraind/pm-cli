@@ -1,12 +1,12 @@
 id: pm-gh1642
-title: "GH-1642: brief pm list and pm search pages print an envelope as large as their rows; the default sort and search's default omission receipt are no longer compacted"
+title: "GH-1642: compact brief pm list and pm search TOON envelopes while keeping the effective default sort visible"
 description: "https://github.com/unbraind/pm-cli/issues/1642\n\nReproduced on the current source build (2026.10.31). pm list: projectPmBriefListEnvelope (src/sdk/output/list-envelope.ts, pm-6pycus) only drops the default sorting block when it has exactly the keys sort and order. Sorting later gained effective_keys, so the 7-line default sort is printed on every brief list page — the compaction silently stopped matching its own default. filters echoes limit, which applied_limit already states. pm search has no brief projection at all: it prints truncated (equal to has_more), filters {limit} (equal to applied_limit) and a 4-line omission_receipt whose only group is projection_metadata restorable with --full.\n\nDeliberate exclusions, with reasons: completeness unchecked stays visible (pm-6pycus AC: unchecked and partial source evidence cannot become complete or disappear); the items_encoding block stays because it is the lossless decode contract for the matched_fields list column, and the formatter round-trip tests require json_columns and absent to restore rows; JSON, --full and SDK result types keep the full receipts.\n\nDuplicate search: 'brief envelope list', GH-1501, GH-1642; nearest is pm-6pycus (GH-1501 brief list envelope, closed) which this extends."
 type: Issue
 status: closed
 priority: 2
 tags[4]: agent-ux,github,output,token-efficiency
 created_at: "2026-10-31T21:14:02.437Z"
-updated_at: "2026-11-01T01:17:44.606Z"
+updated_at: "2026-11-01T02:19:51.917Z"
 closed_at: "2026-10-31T22:31:34.335Z"
 completed_at: "2026-10-31T22:31:34.335Z"
 author: "harness:claude-code"
@@ -22,11 +22,12 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6pycus,related,"2026-10-31T21:14:02.437Z","harness:claude-code","cli:create:dep",detected
   pm-gh1627,related,"2026-10-31T21:14:02.437Z","harness:claude-code","cli:create:dep",detected
   pm-zd46m7,related,"2026-10-31T21:49:42.569Z","harness:claude-code","cli:update:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-10-31T21:47:00.908Z","harness:claude-code","Implementation and measurement: projectPmBriefListEnvelope now drops the default ascending sort when it carries effective_keys (the regression), and drops a filters.limit equal to applied_limit and empty runtime_filters. New public projectPmBriefSearchEnvelope (sdk/output) drops truncated when it equals has_more and limit-only filters, and replaces the single default projection_metadata omission receipt with details --full. It is chained after the list projection in formatBuiltInOutput (TOON only). Measured with the published 2026.10.31 package against this branch on this tracker: pm search 'release workflow' --limit 3 drops from 1,033 to 863 B (-16%) and pm list --status open --limit 3 from 988 to 782 B (-21%). completeness unchecked and items_encoding remain by design (see description)."
   "2026-10-31T21:49:41.855Z","harness:claude-code","Design correction while testing: the 7-line default sort block is not only redundant metadata. GH-1507's accepted contract (pm-zd46m7, integration spec default-list-order) requires brief TOON to disclose the effective default comparator order so an agent knows why rows arrive in that order. Dropping it would undo that decision. The projection therefore drops only the legacy sort/order echo and renders the effective keys on one line, for example sorting.effective_keys 'status_registry:nonterminal_before_terminal asc, priority asc, updated_at desc, id asc'. Seven lines become two, and JSON keeps the full pair array. A malformed or extended sorting block passes through unchanged."
   "2026-10-31T23:02:11.868Z","harness:claude-code","CodeRabbit review round 1 on PR #1645: the list projection left the raw filters key in place when the compacted filters became empty, so a limit-only or empty-runtime filters block still printed. filters is now destructured out of the envelope before compaction, and specs cover {limit}, {runtime_filters:{}} and a non-echo limit."
   "2026-11-01T01:17:44.606Z","harness:claude-code","CodeRabbit review round 2 on PR #1645: a final search page omits has_more, truncated, next_cursor and total, so the projection skipped it. projectPmBriefSearchEnvelope now also accepts that terminal shape when count matches the rows, there is no cursor, and any total equals count; inconsistent shapes still pass through. The acceptance criterion now states that the effective default sort order stays visible on one line, matching the resolution."
+  "2026-11-01T02:03:53.192Z","harness:claude-code","cubic review on PR #1645: the search projection now refuses envelopes that carry a projection block, and the effective_keys line is rendered only for asc/desc comparator pairs (malformed receipts pass through). The SDK doc qualifies the effective-order line as a flat-default-list behaviour, since tree-mode lists carry no effective_keys. The item title now describes the fix, so the generated changelog no longer reads backwards."
 files[5]{path,scope}:
   sdk/public-surface.json,project
   src/core/output/output.ts,project
@@ -35,13 +36,24 @@ files[5]{path,scope}:
   tests/unit/cli/compact-agent-output.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts,project,"harness:claude-code","2026-10-31T21:46:35.370Z",local_mutation,fix/agent-ux-orient-claim-envelopes
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvwz55qw-51axji
     kind: test
     status: passed
     started_at: "2026-10-31T22:29:59.138Z"
     finished_at: "2026-10-31T22:30:07.448Z"
     recorded_at: "2026-10-31T22:30:07.448Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvx7clwi-d2xpmi
+    kind: test
+    status: passed
+    started_at: "2026-11-01T02:19:44.817Z"
+    finished_at: "2026-11-01T02:19:51.906Z"
+    recorded_at: "2026-11-01T02:19:51.906Z"
     passed: 1
     failed: 0
     skipped: 0

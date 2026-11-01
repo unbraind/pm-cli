@@ -36,7 +36,7 @@ export async function runMcpClaimAction(context: LifecycleMutationActionContext)
   const next = runnerOptions.next === true;
   const id = context.id ?? readRuntimeString(runnerOptions, "id");
   if (selectionOptions.start === true) {
-    if (id !== undefined) return runMcpTaskCompositionAction(context, "start_task");
+    if (id) return runMcpTaskCompositionAction(context, "start_task");
     requireClaimTarget(id, next, true);
   }
   const result = next

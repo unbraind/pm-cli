@@ -92,8 +92,9 @@ ceiling. For row-oriented `list` and `search` intents, pm reports:
 
 When the intent budget reduces an explicit `--limit`, as with
 `pm context --for orient --limit 10` (the 3000-token orient budget carries 3
-rows), the reduction is never silent. `context_intent.limit_override` records
-`requested`, `effective`, the `token_budget_for_requested` that would carry the
+rows), the reduction is never silent. `context_intent.limit_override` records the
+reduced `flag` (`"--limit"`), `requested`, `effective`, the
+`token_budget_for_requested` that would carry the
 request, and `restore_with`: the flag to add to (or replace in) the original
 command, so every original positional, inline filter, and option is kept. Both
 fields are omitted when no safe-integer budget can carry the request. `filters.requested_limit` sits beside the

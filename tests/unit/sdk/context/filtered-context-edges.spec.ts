@@ -14,8 +14,10 @@ describe("filtered context keeps dependency edges outside the filter", () => {
       await runUpdate(blocker, { dep: [`id=${task},kind=blocks`] }, global);
       for (const options of [{}, { type: "Task" }]) {
         const result = await runContext(options, global);
-        const row = [...result.high_level, ...result.low_level].find((item) => item.id === task);
-        expect(row, JSON.stringify(options)).toMatchObject({ blocked: true, blocker_ids: [blocker] });
+        const rows = [...result.high_level, ...result.low_level];
+        expect(rows.find((item) => item.id === task), JSON.stringify(options)).toMatchObject({ blocked: true, blocker_ids: [blocker] });
+        // The filter still excludes the blocker's own row; only its edge is resolved.
+        expect(rows.some((item) => item.id === blocker)).toBe(Object.keys(options).length === 0);
       }
       const scoped = await runContext({ type: "Task", parent: epic }, global);
       expect([...scoped.high_level, ...scoped.low_level].map((item) => item.id)).toEqual([task]);

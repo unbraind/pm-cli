@@ -42,9 +42,11 @@ locked mutation and one `claim` history event, so no other agent can observe
 the claimed item before it starts. Configured type workflows are enforced, a
 terminal candidate is refused (`terminal_state_conflict`), and the receipt
 carries `start: { from_status, to_status }`. A claim without an id or `--next`
-is refused with `missing_required_argument`, and an id combined with `--next`
-with `ambiguous_option_combination`; neither refusal names a flag the caller
-already passed. `release --pause` moves work to the configured
+is refused with `missing_required_argument`, and `claim <id> --next` with
+`ambiguous_option_combination`; their next steps never tell the caller to pass
+a flag that is already present. `claim <id> --start --next` (or
+`--if-available`) is refused by the explicit-start composition with
+`invalid_argument_value`, whose recovery names the flags to remove. `release --pause` moves work to the configured
 open status, then releases ownership. `close --release-assignment` records the
 close and its inline evidence, then releases ownership.
 

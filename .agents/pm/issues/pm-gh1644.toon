@@ -1,12 +1,12 @@
 id: pm-gh1644
-title: "GH-1644: context --for orient silently reduces an explicit --limit to the intent's budget-derived row ceiling, and pm's own quickstart recommends that command"
+title: "GH-1644: disclose when a --for intent reduces an explicit --limit and recommend the measured canonical pm context --for orient"
 description: "https://github.com/unbraind/pm-cli/issues/1644\n\nReproduced on the current source build (2026.10.31) in a fresh 6-task sandbox and on the real tracker: `pm context --limit 10 --for orient` returns filters.limit \"3\" in either flag order, while `pm context --limit 10` returns 10. The intent applier (CONTEXT_INTENT_DEFAULT_APPLIERS in src/sdk/context-intent-contracts.ts) computes a budget-derived ceiling ((3000 - 1200) / 600 = 3 rows) and replaces the caller's --limit with min(requested, derived). The context_intent receipt reports binding_constraint token_budget but neither the requested value nor a warning; filters.limit shows only the effective 3. list --for triage and search --for discover use the same clamp.\n\nMeasured on the real tracker (3173 items): 3 orient rows serialize to ~1,680 JSON tokens, 5 rows ~2,724, 10 rows ~5,937. The 3000-token preset therefore genuinely cannot carry 10 rows, so the preset ceiling is correct; the defects are (1) the silent override, (2) filters reporting only the effective value, and (3) pm's own agent quickstart (init-agent-guidance, AGENTS.md, README, AGENT_GUIDE) recommending `pm context --limit 10 --for orient`, a self-contradicting command. The measured canonical in token-budget-gate is `context --for orient` without --limit.\n\nDuplicate search: 'context orient preset limit', 'for orient intent preset', GH-1644; nearest are pm-gy885b (intent discoverability, closed), pm-3crymx (intent returned no context, closed) and pm-ka6d (canonical cold-start docs, closed)."
 type: Issue
 status: closed
 priority: 1
 tags[4]: agent-ux,context,github,token-efficiency
 created_at: "2026-10-31T21:13:36.728Z"
-updated_at: "2026-10-31T23:02:09.740Z"
+updated_at: "2026-11-01T02:19:44.315Z"
 closed_at: "2026-10-31T22:31:33.693Z"
 completed_at: "2026-10-31T22:31:33.693Z"
 author: "harness:claude-code"
@@ -17,14 +17,15 @@ risk: medium
 confidence: high
 resolution: "The three row-bounded intent appliers share applyIntentRowLimit, which keeps the budget-derived ceiling and records a reduced request. attachContextIntentReceipt writes context_intent.limit_override {flag, requested, effective, token_budget_for_requested, restore_with}, filters.requested_limit, and the warning limit_overridden_by_intent:--limit N->M for context, list and search intents, reading either projected or raw host options. The quickstart generator, AGENTS.md, README, AGENT_GUIDE, COMMAND_NAMESPACES, the pm-user skill reference and both replayed agent-task transcripts use pm context --for orient. The quickstart no longer calls explicit --start atomic."
 expected_result: Every row-bounded --for intent either honours an explicit --limit or reports a typed override with the requested and effective values and a retry that keeps the limit; pm's quickstart recommends no silently overridden flag.
-actual_result: "Real tracker: pm context --for orient --limit 10 prints filters.requested_limit 10 beside limit 3, the warning, and restore_with pm context --for orient --limit 10 --token-budget 7200. That retry returns 10 rows at 4,637 estimated tokens within budget. list --for triage --limit 150 discloses 150->100. The agent-task token baseline changed only its transcript digest (identical output). intent-limit-override spec 3/3 passes; 3/3 fail with the fix stashed."
+actual_result: "Real tracker: pm context --for orient --limit 10 prints filters.requested_limit 10 beside limit 3, the warning limit_overridden_by_intent:--limit 10->3, and limit_override.restore_with '--token-budget 7200' (a flag fragment added to the original command, so every original option and inline filter is kept). Adding that flag returns 10 rows at 4,637 estimated tokens within budget. list --for triage --limit 150 discloses 150->100 with restore_with '--token-budget 3200'. Both restore fields are omitted when no safe-integer budget can carry the request. The agent-task token baseline changed only its transcript digest (identical output). The intent-limit-override spec passes and fails with the fix stashed."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-3crymx,related,"2026-10-31T21:13:36.728Z","harness:claude-code","cli:create:dep",detected
   pm-gy885b,related,"2026-10-31T21:13:36.728Z","harness:claude-code","cli:create:dep",detected
   pm-ka6d,related,"2026-10-31T21:13:36.728Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-31T21:46:59.575Z","harness:claude-code","Implementation: the three row-bounded intent appliers share applyIntentRowLimit, which keeps the existing min(requested, budget-derived) clamp but stashes a reduced request as intentRequestedLimit. attachContextIntentReceipt calls discloseIntentLimitOverride, which reads that key or the raw host --limit and writes context_intent.limit_override {flag, requested, effective, token_budget_for_requested, restore_with}, filters.requested_limit, and the warning 'limit_overridden_by_intent:--limit N->M'. token_budget_for_requested = max(current budget, overhead + rowCost*requested) from the shared resolveIntentRowCost table. Measured on this tracker: pm context --for orient --limit 10 now prints the override with restore_with 'pm context --for orient --limit 10 --token-budget 7200'. That retry returns 10 rows at an estimated 4,637 tokens within budget. list --for triage --limit 150 → effective 100, retry with --token-budget 3200 honours 150. The quickstart (init-agent-guidance, AGENTS.md, README, AGENT_GUIDE, COMMAND_NAMESPACES, pm-user ECOSYSTEM_PLANNING) and the replayed agent-task transcript now use the measured canonical pm context --for orient."
   "2026-10-31T23:02:09.739Z","harness:claude-code","CodeRabbit review round 1 on PR #1645: limit_override.restore_with is now the flag fragment '--token-budget N' to add to (or replace in) the original command, following the omission-receipt convention (restore_with '--full'). The full rebuilt command had dropped named options (--status, --sort) and inline search field:value filters. token_budget_for_requested and restore_with are omitted when the sufficient budget is not a safe integer (spec covers Number.MAX_SAFE_INTEGER)."
+  "2026-11-01T02:03:52.127Z","harness:claude-code","cubic review on PR #1645: the intentRequestedLimit marker option is removed. Every host attaches the receipt with the caller's own options (CLI output context and SDK runtime both pass unprojected options), so the requested limit is read from options.limit and no undeclared option leaks into list/search options or can be spoofed. The conformance doc names limit_override.flag."
 files[10]{path,scope}:
   docs/agent-task-token-baseline.json,project
   docs/agent-task-transcripts.json,project
@@ -38,13 +39,24 @@ files[10]{path,scope}:
   tests/unit/sdk/recovery/recovery-guidance.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/context/intent-limit-override.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,project,"harness:claude-code","2026-10-31T21:46:34.470Z",local_mutation,fix/agent-ux-orient-claim-envelopes
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvwz4yu4-gbikjl
     kind: test
     status: passed
     started_at: "2026-10-31T22:29:49.127Z"
     finished_at: "2026-10-31T22:29:58.492Z"
     recorded_at: "2026-10-31T22:29:58.492Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/context/intent-limit-override.spec.ts tests/unit/sdk/context-intent-contracts.spec.ts tests/unit/sdk/recovery/recovery-guidance.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvx7cg1g-jj5ioa
+    kind: test
+    status: passed
+    started_at: "2026-11-01T02:19:34.855Z"
+    finished_at: "2026-11-01T02:19:44.307Z"
+    recorded_at: "2026-11-01T02:19:44.307Z"
     passed: 1
     failed: 0
     skipped: 0

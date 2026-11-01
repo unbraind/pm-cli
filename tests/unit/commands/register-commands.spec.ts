@@ -959,6 +959,7 @@ describe("operation command actions", () => {
       expect.objectContaining({ type: "Task" }),
     );
     await expect(runCli("claim", "--start")).rejects.toThrow("pm claim --start needs an item id");
+    await expect(runCli("claim", "", "--start")).rejects.toThrow("pm claim --start needs an item id");
   });
 
   it("routes claim --next through ranked atomic selection", async () => {
@@ -1470,6 +1471,13 @@ describe("operation command actions", () => {
     } as never);
     expect(aliased.in_progress_status).toBe("queued");
     expect(resolveStartTaskInProgressStatus(aliased)).toBe("building");
+    // A workflow still naming a removed status never starts into it.
+    const dangling = resolveRuntimeStatusRegistry({
+      statuses: [{ id: "todo", roles: ["active", "default_open"] }, ...terminal],
+      workflow: { open_status: "todo", in_progress_status: "working", close_status: "done", canceled_status: "dropped" },
+    } as never);
+    expect(dangling.in_progress_status).toBe("working");
+    expect(resolveStartTaskInProgressStatus(dangling)).toBe("todo");
   });
 
   it("maps stats, gc, and contracts options", async () => {

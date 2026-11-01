@@ -162,7 +162,12 @@ export interface ClaimMutationOptions {
   ifAvailable?: boolean;
   /** Maximum ranked candidates attempted by `claim --next`. */
   maxAttempts?: string | number;
-  /** Move the claimed item to the configured in-progress status in the same locked mutation. */
+  /**
+   * Move the claimed item to the configured in-progress status in the same locked
+   * mutation and history event. `runClaimNext` uses this for `claim --next --start`.
+   * The explicit-item `claim <id> --start` and `runStartTask` keep their documented
+   * claim-then-update composition and do not pass it.
+   */
   start?: boolean;
 }
 

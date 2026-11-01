@@ -404,10 +404,7 @@ type BuiltInContextIntentCommand =
   | "next"
   | "search";
 
-/** Option key carrying an explicit row limit that the intent budget reduced, for receipt disclosure. */
-const INTENT_REQUESTED_LIMIT_OPTION = "intentRequestedLimit";
-
-/** Bound an explicit or absent row limit by the intent's budget-derived ceiling, remembering a reduced request. */
+/** Bound an explicit or absent row limit by the intent's budget-derived ceiling. */
 function applyIntentRowLimit(
   projected: Record<string, unknown>,
   budgetDerivedLimit: number,
@@ -420,9 +417,6 @@ function applyIntentRowLimit(
   );
   if (projected.limit === undefined || requestedLimit !== undefined) {
     projected.limit = effectiveLimit;
-  }
-  if (requestedLimit !== undefined && requestedLimit > budgetDerivedLimit) {
-    projected[INTENT_REQUESTED_LIMIT_OPTION] = String(requestedLimit);
   }
   return effectiveLimit;
 }
@@ -1065,10 +1059,8 @@ function discloseIntentLimitOverride(
   result: Record<string, unknown>,
   options: Record<string, unknown>,
 ): void {
-  // Projected options carry the reduced request; raw host options still carry the caller's limit.
-  const requested = parsePositiveIntentTokenBudget(
-    options[INTENT_REQUESTED_LIMIT_OPTION] ?? options.limit,
-  );
+  // Hosts attach receipts with the caller's own options, which still carry the requested limit.
+  const requested = parsePositiveIntentTokenBudget(options.limit);
   const effective = receipt.budget_derived_limit!;
   if (requested === undefined || requested <= effective) return;
   const { overhead, rowCost } = resolveIntentRowCost(

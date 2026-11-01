@@ -144,7 +144,7 @@ function isSortKeyPair(value: unknown): value is [string, string] {
     Array.isArray(value) &&
     value.length === 2 &&
     typeof value[0] === "string" &&
-    typeof value[1] === "string"
+    (value[1] === "asc" || value[1] === "desc")
   );
 }
 
@@ -207,6 +207,7 @@ export function projectPmBriefSearchEnvelope(value: unknown): unknown {
     typeof value.query !== "string" ||
     !Array.isArray(value.items) ||
     Object.hasOwn(value, "details") ||
+    Object.hasOwn(value, "projection") ||
     !(
       hasStandardPagination(value, value.items.length) ||
       hasTerminalSearchPagination(value, value.items.length)

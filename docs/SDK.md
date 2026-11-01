@@ -2143,9 +2143,11 @@ continuation, and leaves partial, custom, or inconsistent envelopes intact.
 `projectPmBriefSearchEnvelope` does the same for search pages. It drops
 `truncated` when it repeats `has_more` and a `filters.limit` echo of
 `applied_limit`, and it replaces the single default `projection_metadata`
-omission receipt with `details: "--full"`. The list projection replaces the
-default ascending sort's legacy `sort`/`order` echo with one
-`effective_keys` comparator line, so the effective default order stays visible.
+omission receipt with `details: "--full"`. For flat default lists, the list
+projection replaces the default ascending sort's legacy `sort`/`order` echo with
+one `effective_keys` comparator line, so the effective default order stays
+visible. Tree-mode lists carry no `effective_keys`, because hierarchy traversal
+overrides flat ordering; there the default sort echo is simply omitted.
 The CLI applies these projections only to TOON; ordinary JSON and SDK query
 results retain their complete contracts. The public `encodePmTableRows` and
 `decodePmTableRows` primitives distinguish explicit null and empty cells from

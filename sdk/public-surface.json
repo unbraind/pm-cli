@@ -2985,14 +2985,6 @@
       ],
       "package_version": "2026.10.31",
       "reason": "Optional additions only: ClaimResult.start (claim --next --start receipt), ClaimNextOptions.start, and PmContextIntentReceipt.limit_override (GH-1643/GH-1644); no existing field changed type or became required."
-    },
-    {
-      "changes": [
-        "signature ./sdk:PmContextIntentLimitOverride",
-        "signature ./sdk/contracts:PmContextIntentLimitOverride"
-      ],
-      "package_version": "2026.10.31",
-      "reason": "PmContextIntentLimitOverride is new in this PR: token_budget_for_requested and restore_with become optional because they are omitted when no safe-integer budget can carry the request, and restore_with is now a flag fragment (review feedback)."
     }
   ],
   "entrypoints": {

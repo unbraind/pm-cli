@@ -715,7 +715,7 @@ async function runClaimAction(
 ): Promise<void> {
   const next = options.next === true;
   const start = options.start === true;
-  if (start && id !== undefined) {
+  if (start && id) {
     // The explicit-item composition refuses --next/--if-available with its own typed recovery.
     await runStartTaskAction(id, options, command);
     return;

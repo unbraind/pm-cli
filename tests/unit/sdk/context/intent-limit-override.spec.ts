@@ -6,21 +6,18 @@ import {
 } from "../../../../src/sdk/context-intent-contracts.js";
 
 describe("GH-1644 intent budgets never silently reduce an explicit --limit", () => {
-  it("remembers a reduced explicit limit only when the budget actually reduced it", () => {
-    expect(applyContextIntentProjection("context", { for: "orient", limit: "10" })).toMatchObject({
-      limit: "3",
-      activityLimit: "3",
-      intentRequestedLimit: "10",
-    });
-    expect(applyContextIntentProjection("context", { for: "orient", limit: "2" })).not.toHaveProperty("intentRequestedLimit");
-    expect(applyContextIntentProjection("context", { for: "orient" })).not.toHaveProperty("intentRequestedLimit");
-    expect(applyContextIntentProjection("list", { for: "triage", limit: "150" })).toMatchObject({ limit: "100", intentRequestedLimit: "150" });
-    expect(applyContextIntentProjection("search", { for: "discover", limit: "200" }, ["q"])).toMatchObject({ limit: "82", intentRequestedLimit: "200" });
+  it("bounds an explicit limit by the budget without adding undeclared options", () => {
+    const projected = applyContextIntentProjection("context", { for: "orient", limit: "10" });
+    expect(projected).toMatchObject({ limit: "3", activityLimit: "3" });
+    expect(Object.keys(projected).sort()).toEqual(["activityLimit", "depth", "for", "limit", "section", "tokenBudget"]);
+    expect(applyContextIntentProjection("context", { for: "orient", limit: "2" })).toMatchObject({ limit: "2" });
+    expect(applyContextIntentProjection("list", { for: "triage", limit: "150" })).toMatchObject({ limit: "100" });
+    expect(applyContextIntentProjection("search", { for: "discover", limit: "200" }, ["q"])).toMatchObject({ limit: "82" });
   });
 
   it("discloses the reduction in the receipt, warnings and filters with a retry that keeps the limit", () => {
-    const options = applyContextIntentProjection("context", { for: "orient", limit: "10" });
-    const result = attachContextIntentReceipt("context", options, {
+    // Hosts attach the receipt with the caller's own options, as the CLI output path and SDK runtime do.
+    const result = attachContextIntentReceipt("context", { for: "orient", limit: "10" }, {
       filters: { limit: "3" },
       high_level: [],
       low_level: [],
@@ -44,7 +41,6 @@ describe("GH-1644 intent budgets never silently reduce an explicit --limit", () 
     });
     const retry = applyContextIntentProjection("context", { for: "orient", limit: "10", tokenBudget: "7200" });
     expect(retry).toMatchObject({ limit: "10" });
-    expect(retry).not.toHaveProperty("intentRequestedLimit");
   });
 
   it("reads the caller's limit from raw host options and restores it with a flag the original command keeps", () => {

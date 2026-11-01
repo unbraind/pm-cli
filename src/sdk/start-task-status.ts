@@ -12,7 +12,11 @@ import {
 export function resolveStartTaskInProgressStatus(
   statusRegistry: RuntimeStatusRegistry,
 ): string {
-  if (statusRegistry.in_progress_status !== statusRegistry.open_status) {
+  // A workflow may still name a status that `pm schema remove-status` deleted; never start into an unregistered status.
+  if (
+    statusRegistry.in_progress_status !== statusRegistry.open_status &&
+    statusRegistry.by_id.has(statusRegistry.in_progress_status)
+  ) {
     return statusRegistry.in_progress_status;
   }
   return (

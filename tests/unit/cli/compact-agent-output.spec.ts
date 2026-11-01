@@ -418,7 +418,7 @@ describe("GH-1642 brief search and list envelopes", () => {
   });
 
   it("keeps filters that carry information and drops only limit echoes and empty runtime filters", () => {
-    expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { type: "Task", limit: "2" } })).toMatchObject({ filters: { type: "Task" } });
+    expect((projectPmBriefSearchEnvelope({ ...searchPage, filters: { type: "Task", limit: "2" } }) as Record<string, unknown>).filters).toEqual({ type: "Task" });
     expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { limit: "5" } })).toMatchObject({ filters: { limit: "5" } });
     expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: null })).toMatchObject({ filters: null });
     expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: undefined })).not.toHaveProperty("filters");
@@ -450,6 +450,7 @@ describe("GH-1642 brief search and list envelopes", () => {
     { ...searchPage, query: 1 },
     { ...searchPage, items: null },
     { ...searchPage, details: "producer" },
+    { ...searchPage, projection: { mode: "full", fields: null } },
     { ...searchPage, truncated: false },
     { ...searchPage, omission_receipt: { ...searchPage.omission_receipt, omitted_field_groups: [{ name: "full_item_fields", restore_with: "--full" }] } },
     { ...searchPage, omission_receipt: { ...searchPage.omission_receipt, omitted_field_group_count: 2 } },
@@ -475,6 +476,7 @@ describe("GH-1642 brief search and list envelopes", () => {
       { ...value.sorting, provider: "keep" },
       { ...value.sorting, effective_keys: "priority" },
       { ...value.sorting, effective_keys: [["priority"]] },
+      { ...value.sorting, effective_keys: [["priority", "sideways"]] },
     ]) {
       expect(projectPmBriefListEnvelope({ ...value, sorting })).toMatchObject({ sorting });
     }
