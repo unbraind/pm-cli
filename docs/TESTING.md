@@ -332,7 +332,7 @@ original assertions, deadlines and retry policy. This allocation is tracked by
 (tracker records are excluded from npm); it does not classify or erase
 historical failed attempts.
 
-The complete nightly suites use two Vitest shards on Linux Node 22/25 and
+The complete nightly suites use two Vitest shards on Linux Node 22/26 and
 macOS Node 24, and four shards on Windows Node 24 and Linux Node 24 coverage.
 Every partition must pass within the existing 20-minute job limit. Sharding
 retains the complete file population, serial phase, assertions, per-test

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-10-30T08:20:14.604Z"
+updated_at: "2026-11-01T08:44:16.662Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -15,14 +15,15 @@ risk: medium
 confidence: medium
 expected_result: "A qualified runner passes unchanged supported-runtime startup budgets, and genuine command regressions remain fail-closed with attributable evidence."
 actual_result: Two transport-floor runs failed fixed latency ceilings across changing commands; independent SDK import rerun passed. The broad static invocation therefore cannot be reported all green.
-dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-yse5dt,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-jm7m3o,related,"2026-10-19T13:23:49.412Z","harness:codex","cli:update:dep",detected
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
-comments[127]:
+  pm-euqm7x,related,"2026-11-01T08:44:16.451Z","harness:claude-code","cli:update:dep",detected
+comments[128]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -406,6 +407,9 @@ comments[127]:
   - created_at: "2026-10-30T08:20:14.604Z"
     author: "harness:codex"
     text: "The documented Homebrew npm/package.json discovery limitation recurred during final Unicode source validation:11605 passed,2 failed,3 skipped; no coverage receipt. Exposing the installed npm root through NODE_PATH makes both the packed-continuation and deps-query suites pass unchanged. Preserve the failed full-run receipt and require final exact-head hosted100% coverage; no deadline, assertion, source denominator or threshold changed."
+  - created_at: "2026-11-01T08:44:15.897Z"
+    author: "harness:claude-code"
+    text: "Runner-qualification evidence, 2026-11-01, PR 1646 head b5dace523 (no change to the verifier or its test): Windows scripts cohort 2/2 failed tests/unit/scripts/release/verify-published-release.spec.ts 'kills a nested server after invalid discovery within the production readiness budget (native)' on Node 24.22.1 after one retry (about 30.6 s): the nested published HTTP bin did not become reachable within the production readiness budget, so the invalid-discovery branch was never reached. Re-running the failed jobs on the identical head passed, and the two earlier heads of the same PR passed this cohort. Same family as the readiness-ordering flake fixed in pm-euqm7x, but now the startup itself overran on a loaded runner rather than the outer timeout preempting cleanup; no timeout was relaxed."
 files[12]:
   - path: .github/workflows/ci.yml
     scope: project
