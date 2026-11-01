@@ -1,0 +1,22 @@
+id: pm-btv6x7
+title: "Typed refusals render the generic headline 'Invalid argument value' in human output: a likely_duplicate create refusal reads as a bad flag value"
+description: "On pm 2026.11.1, a strict duplicate-guard refusal from pm create returns code likely_duplicate in JSON, but the human (TOON/text) output opens with 'Error: Invalid argument value'. The headline comes from the generic usage-class title in src/cli/error-guidance.ts (code invalid_argument_value) and is shown even when a more specific code is attached. An agent that reads only the first lines (for example through head) sees a flag-validation failure and starts bisecting flags. That happened while filing pm-8s53lj: several sandbox retries were spent before the full body showed 'Likely duplicate item(s) found: pm-gh1605'. The specific code and its 'What happened' text are correct. Only the headline is generic."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,cli,error-guidance,refusals
+created_at: "2026-11-01T11:19:53.418Z"
+updated_at: "2026-11-01T12:19:05.617Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "When a refusal carries a specific code (for example likely_duplicate), the human output headline names that condition (for example 'Likely duplicate item') instead of the generic exit-class title; Regression test covers the likely_duplicate create refusal headline in human output; JSON code and title fields agree"
+parent: pm-f05lsg
+risk: low
+confidence: high
+expected_result: The first line of a typed refusal identifies the refusal condition.
+actual_result: "pm create ... (duplicate) prints 'Error: Invalid argument value' as its first line while --json reports code likely_duplicate."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8s53lj,discovered_from,"2026-11-01T11:19:53.418Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1605,related,"2026-11-01T12:19:05.401Z","harness:claude-code","cli:update:dep",detected
+escape_class: production_defect
+body: ""

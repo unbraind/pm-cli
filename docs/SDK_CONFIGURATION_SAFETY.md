@@ -46,6 +46,61 @@ and reconstructed in the preview. File-backed schema overlays and unknown raw
 keys are outside this normalized preview. Inspect the persisted document when
 raw-source information is needed.
 
+## Extension-owned Settings Sections
+
+Tracked by [pm-gh1580](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1580.toon)
+(a repository-only tracker record excluded from npm).
+
+Core settings readers validate the core tree and strip keys they do not own.
+That includes a package's own top-level section, such as `"lint": {...}`.
+Read and write that section through the host instead of re-reading
+`settings.json` by path:
+
+```ts
+const lint = await context.sdk!.readSettingsSection("lint", {
+  validate: (raw) => lintSettingsSchema.parse(raw),
+  defaultValue: { strict: false },
+});
+// lint.source: "stored" | "default"; lint.value; lint.revision ("sha256:<hex>" or null)
+
+await context.sdk!.writeSettingsSection("lint", { ...lint.value, strict: true }, {
+  expectedRevision: lint.revision,
+  validate: (raw) => lintSettingsSchema.parse(raw),
+});
+```
+
+The same functions are public SDK exports (`readSettingsSection(pmRoot, section,
+options)`, `writeSettingsSection(pmRoot, section, value, options)` and
+`settingsSectionRevision(value)` from `@unbrained/pm-cli/sdk`). The
+`context.sdk` variants are bound to the invocation's tracker.
+
+- A section name is 1-64 lowercase letters, digits, underscores or hyphens,
+  starting with a letter. Any other name refuses with
+  `settings_section_name_invalid`. Core keys such as `locks` or `context`
+  refuse with `settings_section_reserved`; use `writeSettings`, `pm config` or
+  `mutateWorkspaceSettings` for those.
+- If settings.json is not a JSON object, the call refuses with
+  `settings_section_document_malformed` instead of throwing a parse error.
+- If the validator throws, the call refuses with `settings_section_invalid`.
+  `context.field` names the section, and the message carries the validator's
+  bounded message. Reads validate the stored value; writes validate the value
+  before storing it. A write also refuses with `settings_section_invalid` when
+  the value would change if stored as JSON: a non-finite number, an
+  `undefined`, function or symbol value, a symbol key, or a non-plain object
+  such as `Date`, including an array with holes, extra keys or a `toJSON`
+  hook. A key named `__proto__`, or `prototype` beneath `constructor`, also
+  refuses because the settings history cannot record it. The message names the
+  first such path, and nothing is written.
+- A write runs under the settings lock and appends one `settings:section:write`
+  workspace history event. Every other key is kept. Pass `undefined` to remove
+  the section. An unchanged value writes nothing and returns `changed: false`.
+- `expectedRevision` makes the write compare-and-set. `null` requires the section
+  to be absent. If the section changed since it was read, the write refuses with
+  `settings_section_revision_conflict` (exit 4) and records
+  `context.expected_revision` and `context.current_revision`. If settings.json
+  does not exist, the write refuses with `settings_section_document_missing`
+  (exit 3); initialize the tracker first.
+
 ## Read-only Package Freshness
 
 `pm package explore`, `doctor`, and `manage` preserve managed installation state.

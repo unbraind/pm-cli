@@ -303,6 +303,12 @@ export interface PmCliErrorContext {
     /** Stale-lock lifetime of the current lock generation. */
     ttl_seconds: number;
   } | null;
+  /** Tracker-relative lock path component that a refused `lock_path_unsafe` acquisition could not prove confined. */
+  lock_component?: string;
+  /** Revision a refused compare-and-set write expected, or null when it required absence. */
+  expected_revision?: string | null;
+  /** Revision found at a refused compare-and-set write, or null when the target was absent. */
+  current_revision?: string | null;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
 }

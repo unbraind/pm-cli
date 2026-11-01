@@ -7,7 +7,7 @@ import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import { readSettings, writeSettings } from "../store/settings.js";
+import { isSettingsReadFallback, readSettings, writeSettings } from "../store/settings.js";
 import { resolveTelemetryEnvironmentPolicy } from "./policy.js";
 
 const TELEMETRY_PROMPT_DISABLE_ENV = "PM_TELEMETRY_PROMPT";
@@ -107,7 +107,8 @@ export async function maybeRunFirstUseTelemetryPrompt(
   try {
     const globalPmRoot = resolveGlobalPmRoot(process.cwd());
     const settings = await readSettings(globalPmRoot);
-    if (settings.telemetry.first_run_prompt_completed) {
+    // An unreadable global settings file cannot record the answer, so do not ask.
+    if (settings.telemetry.first_run_prompt_completed || isSettingsReadFallback(settings)) {
       return;
     }
     const enabled = await promptTelemetryConsent(settings.telemetry.enabled);

@@ -8,6 +8,8 @@ import { EXIT_CODE } from "../shared/constants.js";
 import { isCliMutationInput, preserveLiteralMutationInput, transferLiteralMutationInput } from "./literal-mutation-input.js";
 
 const STDIN_TOKEN = "-";
+/** Token shape that may open a key inside a comma-separated key=value entry. */
+const CSV_KEY_PATTERN = /^[A-Za-z0-9_.-]+$/u;
 const CONTINUABLE_VALUE_KEYS = new Set([
   "actual_result",
   "body",
@@ -396,6 +398,19 @@ export function parseCsvKv(
 
   for (const segment of segments) {
     const delimiterIndex = findKeyValueDelimiter(segment);
+    // Prose such as "a, b) c. Related: d" is a continuation, not a new key:
+    // only an identifier-shaped token can open a key inside a continuable value.
+    // An empty key stays a usage error.
+    const candidateKey = segment.slice(0, Math.max(delimiterIndex, 0)).trim();
+    if (
+      candidateKey !== "" &&
+      activeKey !== undefined &&
+      CONTINUABLE_VALUE_KEYS.has(activeKey.toLowerCase()) &&
+      !CSV_KEY_PATTERN.test(candidateKey)
+    ) {
+      result[activeKey] = `${result[activeKey]},${segment}`;
+      continue;
+    }
     if (delimiterIndex >= 0) {
       const key = segment.slice(0, delimiterIndex).trim();
       if (!key) {

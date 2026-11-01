@@ -4,6 +4,8 @@ import {
   resolveCanonicalPmErrorCodeContract,
   resolvePmErrorCodeContract,
 } from "../../../src/sdk/error-code-catalog.js";
+import { expandPmErrorCodeCatalogRows } from "../../../src/sdk/generated/error-code-catalog-rows.js";
+import { PM_ERROR_CODE_CATALOG } from "../../../src/sdk/generated-error-code-catalog.js";
 
 describe("error code catalog", () => {
   const catalog = definePmErrorCodeCatalog([
@@ -187,5 +189,72 @@ describe("error code catalog", () => {
         },
       ]),
     ).toThrow("Alias transport mismatch");
+  });
+});
+
+// pm-998juj: the generated catalog ships compact rows; expansion must restore
+// the exact contracts, field values and key order the full rows carried.
+
+const CONTRACT_KEY_ORDER = [
+  "code",
+  "meaning",
+  "stability",
+  "exit_code",
+  "class",
+  "recovery",
+  "sources",
+  "emitting_commands",
+  "canonical_code",
+  "aliases",
+  "owned_states",
+];
+
+describe("expandPmErrorCodeCatalogRows", () => {
+  it("restores every derivable field from a minimal row", () => {
+    expect(
+      expandPmErrorCodeCatalogRows([{ code: "lock_path_unsafe", exit_code: 4, sources: ["core/lock/lock-confinement.ts"] }]),
+    ).toEqual([
+      {
+        code: "lock_path_unsafe",
+        meaning: "Lock path unsafe condition.",
+        stability: "provisional",
+        exit_code: 4,
+        class: "conflict",
+        recovery: "Inspect the structured error guidance and retry the suggested command.",
+        sources: ["core/lock/lock-confinement.ts"],
+        emitting_commands: ["*"],
+        canonical_code: "lock_path_unsafe",
+        aliases: [],
+      },
+    ]);
+  });
+
+  it("keeps explicit fields and the canonical key order through catalog definition", () => {
+    const catalog = definePmErrorCodeCatalog(
+      expandPmErrorCodeCatalogRows([
+        {
+          code: "unknown_command",
+          exit_code: 2,
+          stable: true,
+          sources: ["cli/main.ts"],
+          emitting_commands: ["config", "list"],
+          aliases: ["unknown_subcommand"],
+          owned_states: [
+            { state: "unknown_command_token", probe_id: "unknown-command", entrypoints: ["pm"], expected_exit_class: "usage" },
+          ],
+        },
+        { code: "unknown_subcommand", exit_code: 2, stable: true, sources: ["cli/main.ts"], canonical_code: "unknown_command" },
+      ]),
+    );
+    expect(catalog.map((entry) => Object.keys(entry))).toEqual([CONTRACT_KEY_ORDER, CONTRACT_KEY_ORDER]);
+    expect(catalog[0]).toMatchObject({ stability: "stable", class: "usage", emitting_commands: ["config", "list"] });
+    expect(catalog[1]).toMatchObject({ canonical_code: "unknown_command", aliases: [], owned_states: [] });
+  });
+
+  it("serializes every generated catalog entry in the canonical key order", () => {
+    expect(PM_ERROR_CODE_CATALOG.length).toBeGreaterThan(400);
+    for (const entry of PM_ERROR_CODE_CATALOG) {
+      expect(Object.keys(entry)).toEqual(CONTRACT_KEY_ORDER);
+    }
   });
 });

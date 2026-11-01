@@ -276,6 +276,26 @@ describe("core/telemetry/consent", () => {
     });
   });
 
+  it("does not prompt or write over a global settings file that could not be read (pm-4zpq71)", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-consent-test-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const settingsPath = path.join(globalRoot, "settings.json");
+      const unreadable = `${JSON.stringify({ version: 1, custom: { kept: true } })}\n`;
+      await fs.mkdir(globalRoot, { recursive: true });
+      await fs.writeFile(settingsPath, unreadable, "utf8");
+      let prompts = 0;
+      promptState.questionImpl = async () => {
+        prompts += 1;
+        throw new Error("prompt must not run for unreadable settings");
+      };
+      await withInteractiveEnv(async () => {
+        await maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions);
+      });
+      expect(prompts).toBe(0);
+      expect(await fs.readFile(settingsPath, "utf8")).toBe(unreadable);
+    });
+  });
+
   it("never blocks command execution when the prompt itself fails", async () => {
     await withTempGlobalRoot("pm-cli-telemetry-consent-test-", async (globalRoot) => {
       process.env.PM_GLOBAL_PATH = globalRoot;

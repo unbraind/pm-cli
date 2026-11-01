@@ -22,6 +22,11 @@ async function readGeneratedCatalog(root: string): Promise<string> {
   ).join("\n");
 }
 
+/** One rendered compact row, bounded to its own braces. */
+function catalogRecord(output: string, code: string): string | undefined {
+  return output.match(new RegExp(` {2}\\{\\n {4}code: "${code}",[\\s\\S]*?\\n {2}\\},`, "u"))?.[0];
+}
+
 describe("generate error code catalog", () => {
   it("discovers, classifies, sorts, writes, and verifies literal codes", async () => {
     const root = await harness.createTempRoot("pm-error-catalog-");
@@ -114,14 +119,13 @@ describe("generate error code catalog", () => {
     expect(output).toContain("exit_code: 5");
     expect(output).toContain("exit_code: 2");
     expect(output).toContain("exit_code: 1");
-    expect(output).toContain('class: "usage"');
-    expect(output).toMatch(
-      /code: "unknown_error",[\s\S]*?exit_code: 1,[\s\S]*?class: "generic_failure"/u,
-    );
-    expect(output).toMatch(
-      /code: "history_author_acknowledge_selector_conflict",[\s\S]*?exit_code: 2,[\s\S]*?class: "usage"/u,
-    );
-    expect(output).toContain('emitting_commands: ["*"]');
+    // pm-998juj: compact rows omit every derivable field; expandPmErrorCodeCatalogRows restores them.
+    for (const derived of ["meaning:", "class:", "recovery:", "stability:", 'emitting_commands: ["*"]', "aliases: []"]) {
+      expect(output.split("\n").filter((line) => line.startsWith(`    ${derived}`))).toEqual([]);
+    }
+    expect(output).toMatch(/code: "unknown_error",\n {4}exit_code: 1,/u);
+    expect(output).toMatch(/code: "history_author_acknowledge_selector_conflict",\n {4}exit_code: 2,/u);
+    expect(catalogRecord(output, "item_not_found")).toContain("stable: true");
     const projectionRecord = output.match(
       / {2}\{\n {4}code: "projection_options_mutually_exclusive",[\s\S]*?\n {2}\},/u,
     )?.[0];
@@ -133,10 +137,10 @@ describe("generate error code catalog", () => {
     const windowRecord = output.match(
       / {2}\{\n {4}code: "invalid_query_cursor",[\s\S]*?\n {2}\},/u,
     )?.[0];
-    expect(windowRecord).toContain('emitting_commands: ["*"]');
+    expect(windowRecord).toBeDefined();
+    expect(windowRecord).not.toContain("emitting_commands");
     expect(output).not.toContain('emitting_commands: ["window-pagination"]');
-    expect(output).toContain('canonical_code: "item_not_found"');
-    expect(output).toContain("aliases: []");
+    expect(catalogRecord(output, "item_not_found")).not.toContain("canonical_code");
     expect(output).toContain(
       '    sources: ["cli/errors.ts", "cli/nested/extremely-long-generated-runtime-error-declarations.ts"],',
     );
@@ -160,7 +164,7 @@ describe("generate error code catalog", () => {
     await main(root, []);
     const expanded = await readGeneratedCatalog(root);
     expect(expanded).toContain('code: "new_create_failure"');
-    expect(expanded).toContain('stability: "provisional"');
+    expect(catalogRecord(expanded, "new_create_failure")).not.toContain("stable: true");
     expect(expanded).toContain('emitting_commands: ["create"]');
     await writeFile(
       path.join(root, "src", "cli", "error-guidance.ts"),
@@ -318,12 +322,12 @@ describe("generate error code catalog", () => {
     );
     await main(root, []);
     const output = await readGeneratedCatalog(root);
-    expect(output).toMatch(
-      /code: "unknown_command",[\s\S]*?canonical_code: "unknown_command",[\s\S]*?aliases: \["unknown_subcommand"\]/u,
-    );
-    expect(output).toMatch(
-      /code: "unknown_subcommand",[\s\S]*?canonical_code: "unknown_command",[\s\S]*?aliases: \[\]/u,
-    );
+    const canonicalRecord = catalogRecord(output, "unknown_command");
+    expect(canonicalRecord).toContain('aliases: ["unknown_subcommand"]');
+    expect(canonicalRecord).not.toContain("canonical_code");
+    const aliasRecord = catalogRecord(output, "unknown_subcommand");
+    expect(aliasRecord).toContain('canonical_code: "unknown_command"');
+    expect(aliasRecord).not.toContain("aliases");
 
     await writeFile(
       ledgerPath,

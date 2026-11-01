@@ -23,6 +23,12 @@ import type {
   RelationshipQueryOptions,
 } from "../../sdk/relationships.js";
 import type { RelationshipImpactAnalysis } from "../../sdk/relationship-analytics.js";
+import type {
+  ReadSettingsSectionOptions,
+  SettingsSectionReadResult,
+  SettingsSectionWriteResult,
+  WriteSettingsSectionOptions,
+} from "../store/settings-sections.js";
 import type { PmClient } from "../../sdk/runtime.js";
 import type { GetItemAtResult } from "../../sdk/history-read.js";
 import type { fitOutputEnvelope } from "../../sdk/output/fit-envelope.js";
@@ -735,6 +741,17 @@ export interface ExtensionCommandSdk {
   isItemNotFoundError(error: unknown): boolean;
   /** Reconstruct one item at a history version or timestamp. */
   getItemAt(id: string, target: string): Promise<GetItemAtResult>;
+  /** Read an extension-owned top-level settings section of this tracker through the host, never by settings.json path. */
+  readSettingsSection<T = unknown>(
+    section: string,
+    options?: ReadSettingsSectionOptions<T>,
+  ): Promise<SettingsSectionReadResult<T>>;
+  /** Replace or remove (with `undefined`) an extension-owned settings section, optionally compare-and-set on its revision. */
+  writeSettingsSection<T>(
+    section: string,
+    value: T | undefined,
+    options?: WriteSettingsSectionOptions<T>,
+  ): Promise<SettingsSectionWriteResult>;
   /** Open a durable event store with package-contributed relationship semantics. */
   openRelationshipEventStore(options: {
     nodes: Iterable<string>;

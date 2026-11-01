@@ -38,7 +38,7 @@ import {
   readAuthorEnvironment,
 } from "../shared/author.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
-import { isConfigurationOnlySettingsRead, readSettings, runWithConfigurationOnlySettings, writeSettings } from "../store/settings.js";
+import { isConfigurationOnlySettingsRead, isSettingsReadFallback, readSettings, runWithConfigurationOnlySettings, writeSettings } from "../store/settings.js";
 import { clearSettingsReadCache } from "../store/settings-read-cache.js";
 import {
   deriveTelemetryCommandResolution,
@@ -1523,7 +1523,8 @@ async function ensureInstallationId(globalPmRoot: string): Promise<{
   const settings = await readSettings(globalPmRoot);
   if (!settings.telemetry.enabled || resolveTelemetryEnvironmentPolicy().telemetry_disabled) return null;
   if (settings.telemetry.installation_id.trim().length === 0) {
-    if (isConfigurationOnlySettingsRead(globalPmRoot)) return null;
+    // Never persist an identity over a global settings file that could not be read.
+    if (isConfigurationOnlySettingsRead(globalPmRoot) || isSettingsReadFallback(settings)) return null;
     settings.telemetry.installation_id = crypto.randomUUID();
     await writeSettings(globalPmRoot, settings, "telemetry:install_id");
   }

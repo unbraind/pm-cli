@@ -328,6 +328,32 @@ try {
 }
 ```
 
+Locks are confined to the tracker
+([pm-gh1647](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1647.toon),
+a repository-only tracker record excluded from npm). The built-in provider
+never follows a symlink below the tracker root. If `locks/` or any other
+component between the tracker root and the lock entry is a symlink or not a
+directory, or the lock entry itself is a symlink, `acquireLock` and
+`acquireLockLease` refuse with `lock_path_unsafe` (exit 4). A regular-file lock
+entry is a peer's lock, not a refusal. The refusal carries `context.reason`
+(`lock_directory_symlink`, `lock_directory_not_directory`,
+`lock_entry_symlink` or `lock_path_outside_tracker`), the tracker-relative
+`context.lock_component`, and `context.required` recovery text for that reason.
+For these four reasons nothing is created outside the tracker and no cleanup
+gate remains. After creating the lock file, the provider checks that the new
+file is the confined entry in the directory it inspected. A directory swapped
+during acquisition refuses with the same `lock_path_unsafe` code and the
+fifth reason, `lock_directory_replaced`, with `context.lock_component` naming
+the replaced tracker-relative directory, and the lease is never returned.
+The lock file created through the swapped directory stays where the swap
+pointed, which can be outside the tracker, and a cleanup gate
+created before the swap can stay in the displaced directory. pm never deletes
+outside the tracker: Node has no descriptor-relative unlink, so a path-based
+delete could remove a same-name replacement. `pm gc --scope locks`
+applies the same check and refuses to sweep through a symlinked `locks/`
+directory. The tracker root itself may be a symlink: confinement is relative to
+the root you pass.
+
 See
 [Configuration](CONFIGURATION.md#common-settings) for host identity, local
 recovery audit receipts and `PM_LOCK_WAIT_MS` precedence. Extension lock
@@ -657,7 +683,8 @@ for policies, work ceilings and refusal contracts, tracked by
 Session receipts now advertise `pm get <item-id> --depth brief`; the
 `restore_reference_with` literal type changes accordingly. Hosts constructing
 `ExtensionCommandSdk` implementations must supply `fitOutputEnvelope` from the
-public SDK; host-created command contexts already provide it.
+public SDK, plus `readSettingsSection` and `writeSettingsSection` bound to the
+invocation tracker; host-created command contexts already provide all three.
 
 Tracked by [pm-5t33or](../.agents/pm/features/pm-5t33or.toon),
 [pm-gmdzaa](../.agents/pm/issues/pm-gmdzaa.toon), and

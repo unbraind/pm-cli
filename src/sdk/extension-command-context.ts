@@ -17,6 +17,7 @@ import { stableValueEquals } from "../core/shared/serialization.js";
 import { getSettingsPath } from "../core/store/paths.js";
 import { mergeSettings, readSettings, runWithConfigurationOnlySettings, serializeSettings } from "../core/store/settings.js";
 import { clearSettingsReadCache } from "../core/store/settings-read-cache.js";
+import { readSettingsSection, writeSettingsSection } from "../core/store/settings-sections.js";
 import { validateSettings } from "../core/store/settings-validator.js";
 import { isPmCliExpectedError } from "./errors.js";
 import { getItemAt } from "./history-read.js";
@@ -95,6 +96,9 @@ export function createExtensionCommandSdk(
     isItemNotFoundError: (error) =>
       isPmCliExpectedError(error) && error.exitCode === EXIT_CODE.NOT_FOUND,
     getItemAt: (id, target) => getItemAt(id, target, { pmRoot }),
+    readSettingsSection: (section, options) => readSettingsSection(pmRoot, section, options),
+    writeSettingsSection: (section, value, options) =>
+      writeSettingsSection(pmRoot, section, value, { author: invocationAuthor, ...options }),
     openRelationshipEventStore: (options) => {
       return RelationshipEventStore.open({
         pmRoot,

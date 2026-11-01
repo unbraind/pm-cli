@@ -7,7 +7,11 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import type { Stats } from "node:fs";
 import { lstat, realpath } from "node:fs/promises";
 import path from "node:path";
-import { validateSettings, type ParsedSettings } from "./settings-validator.js";
+import {
+  CORE_SETTINGS_SECTION_KEYS,
+  validateSettings,
+  type ParsedSettings,
+} from "./settings-validator.js";
 import {
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
@@ -90,6 +94,8 @@ export function isConfigurationOnlySettingsRead(pmRoot: string): boolean {
 
 const SETTINGS_WRITE_OP = "settings:write";
 const SETTINGS_PERSIST_SOURCE_SYMBOL = Symbol("pm.settings.persist_source");
+const SETTINGS_FALLBACK_ORIGIN_SYMBOL = Symbol("pm.settings.fallback_origin");
+const SETTINGS_FALLBACK_BASELINE_SYMBOL = Symbol("pm.settings.fallback_baseline");
 const MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH = 128;
 const DUPLICATE_DETECTION_MODES = new Set(["off", "advisory", "strict"]);
 
@@ -521,6 +527,10 @@ function cloneSettingsReadResult(
   if (persistSource) {
     attachSettingsPersistSourceSnapshot(clonedSettings, persistSource);
   }
+  const fallbackOrigin = getSettingsFallbackOrigin(result.settings);
+  if (fallbackOrigin !== undefined) {
+    markSettingsFallbackOrigin(clonedSettings, fallbackOrigin);
+  }
   return {
     settings: clonedSettings,
     metadata: {
@@ -710,9 +720,64 @@ function resolvePersistedFileBackedSchemaSections(
   };
 }
 
+/**
+ * Record that a settings object is the default fallback for a stored document
+ * that could not be read, so a later write applies only the caller's change to
+ * that document instead of replacing it with defaults (pm-4zpq71).
+ */
+function markSettingsFallbackOrigin(settings: PmSettings, warning: string): void {
+  Object.defineProperty(
+    settings as unknown as Record<PropertyKey, unknown>,
+    SETTINGS_FALLBACK_ORIGIN_SYMBOL,
+    { value: warning, writable: true, configurable: true, enumerable: false },
+  );
+}
+
+/**
+ * Whether these settings are the defaults fallback for a stored document that
+ * could not be read. Automatic writers (format pinning, telemetry identity,
+ * consent) must skip their write instead of acting on the fallback.
+ */
+export function isSettingsReadFallback(settings: PmSettings): boolean {
+  return getSettingsFallbackOrigin(settings) !== undefined;
+}
+
+function getSettingsFallbackOrigin(settings: PmSettings): string | undefined {
+  const candidate = (settings as unknown as Record<PropertyKey, unknown>)[
+    SETTINGS_FALLBACK_ORIGIN_SYMBOL
+  ];
+  return typeof candidate === "string" ? candidate : undefined;
+}
+
+/**
+ * The canonical document a fallback object last wrote. Its next write measures
+ * the caller's change from here instead of from the defaults, so a peer's
+ * later edit is not overwritten by values this object already wrote.
+ */
+function getSettingsFallbackBaseline(
+  settings: PmSettings,
+): Record<string, unknown> | undefined {
+  return (settings as unknown as Record<PropertyKey, unknown>)[
+    SETTINGS_FALLBACK_BASELINE_SYMBOL
+  ] as Record<string, unknown> | undefined;
+}
+
+function setSettingsFallbackBaseline(
+  settings: PmSettings,
+  baseline: Record<string, unknown>,
+): void {
+  Object.defineProperty(
+    settings as unknown as Record<PropertyKey, unknown>,
+    SETTINGS_FALLBACK_BASELINE_SYMBOL,
+    { value: baseline, writable: true, configurable: true, enumerable: false },
+  );
+}
+
 function buildFallbackSettingsReadResult(warning?: string): SettingsReadResult {
+  const settings = cloneDefaults();
+  if (warning !== undefined) markSettingsFallbackOrigin(settings, warning);
   return {
-    settings: cloneDefaults(),
+    settings,
     metadata: {
       has_explicit_item_format: false,
     },
@@ -2093,6 +2158,183 @@ export async function readSettingsWithMetadata(
   }
 }
 
+/** Options for {@link writeSettings}. */
+export interface WriteSettingsOptions {
+  /**
+   * Dotted settings paths (for example `context.next_ranking_policy`) the
+   * caller assigned explicitly. A snapshot cannot tell an assignment equal to
+   * the default from an untouched field, so over a defaults fallback returned
+   * for an unreadable document these paths are applied even when their value
+   * equals the default; that is how an explicit repair to the default value
+   * takes effect. A core-section path whose parent the proposed settings carry
+   * but whose value they omit (a default-valued optional key or a cleared key)
+   * is removed from the stored document; any other path the proposed settings
+   * do not carry is left to the delta. A record key that itself contains a dot
+   * cannot be addressed;
+   * repair such an entry in settings.json. Readable documents ignore the
+   * option (pm-4zpq71).
+   */
+  assignedPaths?: readonly string[];
+}
+
+const ASSIGNED_SETTINGS_PATH_SEGMENT = /^[A-Za-z0-9_-]+$/u;
+const RESERVED_SETTINGS_PATH_SEGMENTS = new Set(["__proto__", "constructor", "prototype"]);
+
+function asPlainRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function assertAssignedSettingsPaths(assignedPaths: readonly string[]): void {
+  for (const assignedPath of assignedPaths) {
+    const segments = assignedPath.split(".");
+    const invalid = segments.find(
+      (segment) =>
+        !ASSIGNED_SETTINGS_PATH_SEGMENT.test(segment) ||
+        RESERVED_SETTINGS_PATH_SEGMENTS.has(segment),
+    );
+    if (invalid !== undefined) {
+      throw new PmCliError(
+        `Settings write assignedPaths entry "${assignedPath}" is not a dotted settings path.`,
+        EXIT_CODE.USAGE,
+        {
+          code: "settings_write_assigned_path_invalid",
+          reason: "assigned_path_segment_invalid",
+          field: assignedPath,
+          why: "Assigned paths name settings keys; an empty, reserved or non-identifier segment cannot address one safely.",
+          nextSteps: [
+            "Pass dotted settings keys such as context.next_ranking_policy in assignedPaths.",
+          ],
+        },
+      );
+    }
+  }
+}
+
+function ownRecordAt(
+  record: Record<string, unknown>,
+  segment: string,
+): Record<string, unknown> | undefined {
+  return asPlainRecord(Object.hasOwn(record, segment) ? record[segment] : undefined);
+}
+
+function findAssignedSource(
+  proposed: Record<string, unknown>,
+  parents: readonly string[],
+): Record<string, unknown> | undefined {
+  let source: Record<string, unknown> | undefined = proposed;
+  for (const segment of parents) {
+    source = ownRecordAt(source, segment);
+    if (source === undefined) return undefined;
+  }
+  return source;
+}
+
+function ensureAssignedParent(
+  target: Record<string, unknown>,
+  parents: readonly string[],
+): Record<string, unknown> {
+  let cursor = target;
+  for (const segment of parents) {
+    let next = ownRecordAt(cursor, segment);
+    if (next === undefined) {
+      next = {};
+      cursor[segment] = next;
+    }
+    cursor = next;
+  }
+  return cursor;
+}
+
+function applyAssignedSettingsPaths(
+  target: Record<string, unknown>,
+  proposed: Record<string, unknown>,
+  assignedPaths: readonly string[],
+): void {
+  for (const assignedPath of assignedPaths) {
+    const parents = assignedPath.split(".");
+    const leaf = parents.pop() as string;
+    const source = findAssignedSource(proposed, parents);
+    if (source === undefined) continue;
+    if (Object.hasOwn(source, leaf)) {
+      ensureAssignedParent(target, parents)[leaf] = structuredClone(source[leaf]);
+      continue;
+    }
+    // Serialization omits default-valued optional keys and cleared keys, so an
+    // explicit assignment the proposed core settings omit removes the stored
+    // value. Extension-owned sections are never cleared implicitly.
+    if (!CORE_SETTINGS_SECTION_KEYS.includes(parents[0] ?? leaf)) continue;
+    const storedParent = findAssignedSource(target, parents);
+    if (storedParent !== undefined) delete storedParent[leaf];
+  }
+}
+
+/**
+ * Apply only the caller's change, measured from the defaults fallback it was
+ * handed (or from what this object last wrote), plus every path it assigned
+ * explicitly, onto the stored document
+ * that could not be read. Every unrelated stored key survives; a result that
+ * still fails schema validation is refused with the first invalid setting
+ * named and nothing is written (pm-4zpq71).
+ */
+function applyFallbackChangeToStoredSettings(
+  current: unknown,
+  proposedCanonical: Record<string, unknown>,
+  fallbackOrigin: string,
+  assignedPaths: readonly string[],
+  baseline: Record<string, unknown> | undefined,
+): string {
+  const baselineCanonical =
+    baseline ??
+    (JSON.parse(serializeSettings(cloneDefaults())) as Record<string, unknown>);
+  const candidate: Record<string, unknown> = structuredClone(asPlainRecord(current) ?? {});
+  applySettingsDelta(candidate, baselineCanonical, proposedCanonical);
+  applyAssignedSettingsPaths(candidate, proposedCanonical, assignedPaths);
+  const validated = validateSettings(candidate);
+  if (!validated.success) {
+    const field = validated.path;
+    throw new PmCliError(
+      `Existing settings.json fails validation at ${field}; the settings write was refused and nothing was changed.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "settings_write_invalid_existing_schema",
+        reason: "existing_settings_schema_invalid",
+        field,
+        original_code: fallbackOrigin,
+        why: "The stored settings could not be read, so writing would either keep an invalid document or replace intended project configuration with defaults.",
+        nextSteps: [
+          `Fix or remove ${field} in settings.json, then retry the original command.`,
+          "A configurable setting can also be repaired explicitly, even to its default value, with pm config <scope> set <dotted.key> <value>.",
+          "Run pm health to confirm the settings warning has cleared.",
+        ],
+      },
+    );
+  }
+  return `${JSON.stringify(orderObject(candidate, SETTINGS_TOP_LEVEL_KEY_ORDER), null, 2)}\n`;
+}
+
+/** Parse the stored document a settings write builds on, refusing malformed JSON. */
+function parseExistingSettingsForWrite(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    throw new PmCliError(
+      "Existing settings.json is malformed; the settings write was refused.",
+      EXIT_CODE.USAGE,
+      {
+        code: "settings_write_invalid_existing_json",
+        reason: "existing_settings_json_malformed",
+        why: "Writing defaults over malformed settings could destroy intended project configuration.",
+        nextSteps: [
+          "Repair the syntax in .agents/pm/settings.json, then retry the original command.",
+          "Run pm health to confirm the settings warning has cleared.",
+        ],
+      },
+    );
+  }
+}
+
 /** Implements read settings for the public runtime surface of this module. */
 export async function readSettings(pmRoot: string): Promise<PmSettings> {
   return (await readSettingsWithMetadata(pmRoot)).settings;
@@ -2102,15 +2344,22 @@ export async function readSettings(pmRoot: string): Promise<PmSettings> {
  * Persist edits to a readSettings snapshot under the workspace-history lock.
  * Disjoint concurrent edits survive; overlapping stale edits fail before any
  * write. Caller-constructed settings without a read snapshot replace the whole
- * document. History append failures compensate the document before unlocking.
+ * document. A default fallback returned for an unreadable document applies only
+ * its own change, plus `options.assignedPaths`, to the stored document and
+ * refuses when the result is still schema-invalid. History append failures
+ * compensate the document before unlocking.
  */
 export async function writeSettings(
   pmRoot: string,
   settings: PmSettings,
   op = SETTINGS_WRITE_OP,
+  options: WriteSettingsOptions = {},
 ): Promise<void> {
+  const assignedPaths = options.assignedPaths ?? [];
+  assertAssignedSettingsPaths(assignedPaths);
   const settingsPath = getSettingsPath(pmRoot);
   const source = getSettingsPersistSourceSnapshot(settings);
+  const fallbackOrigin = source ? undefined : getSettingsFallbackOrigin(settings);
   const afterRaw = serializeSettings(settings, {
     persist_source: source,
   });
@@ -2120,25 +2369,19 @@ export async function writeSettings(
       pmRoot,
       filePath: settingsPath,
       mutate: (beforeRaw) => {
-        let current: unknown = null;
-        if (beforeRaw !== null) {
-          try {
-            current = JSON.parse(beforeRaw) as unknown;
-          } catch {
-            throw new PmCliError(
-              "Existing settings.json is malformed; the settings write was refused.",
-              EXIT_CODE.USAGE,
-              {
-                code: "settings_write_invalid_existing_json",
-                reason: "existing_settings_json_malformed",
-                why: "Writing defaults over malformed settings could destroy intended project configuration.",
-                nextSteps: [
-                  "Repair the syntax in .agents/pm/settings.json, then retry the original command.",
-                  "Run pm health to confirm the settings warning has cleared.",
-                ],
-              },
-            );
-          }
+        const current: unknown =
+          beforeRaw === null ? null : parseExistingSettingsForWrite(beforeRaw);
+        if (fallbackOrigin !== undefined && beforeRaw !== null) {
+          return {
+            raw: applyFallbackChangeToStoredSettings(
+              current,
+              proposed as Record<string, unknown>,
+              fallbackOrigin,
+              assignedPaths,
+              getSettingsFallbackBaseline(settings),
+            ),
+            result: undefined,
+          };
         }
         return {
           raw: source
@@ -2162,6 +2405,11 @@ export async function writeSettings(
         ...source,
         persisted_settings: structuredClone(proposed),
       });
+    } else if (fallbackOrigin !== undefined) {
+      setSettingsFallbackBaseline(
+        settings,
+        structuredClone(proposed) as Record<string, unknown>,
+      );
     }
     await runActiveOnWriteHooks({
       path: settingsPath,

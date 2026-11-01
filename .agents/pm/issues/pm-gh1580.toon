@@ -2,21 +2,63 @@ id: pm-gh1580
 title: "GH-1580: Host-bound extension settings sections"
 description: "SDK: no supported reader for an extension's own settings section, so packages re-read settings.json by path and lose their configuration on non-filesystem backends"
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: configuration,extensions,"gh:1580",sdk
 created_at: "2026-10-25T00:09:23.381Z"
-updated_at: "2026-10-25T00:52:37.967Z"
+updated_at: "2026-11-01T18:26:58.428Z"
+closed_at: "2026-11-01T12:21:41.909Z"
+completed_at: "2026-11-01T12:21:41.909Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: SDK-owned settings-section read and revision-safe write primitives on host-bound extension contexts; backend-neutral capability/refusal contracts; avoid direct settings.json reads.
 parent: pm-9rgaal
 risk: medium
 confidence: medium
-expected_result: "Extensions read and validate their own settings through host-bound SDK services on filesystem and non-filesystem backends, with typed capability/refusal and revision evidence."
+resolution: "New public readSettingsSection, writeSettingsSection and settingsSectionRevision (core/store/settings-sections.ts) plus host-bound context.sdk.readSettingsSection and writeSettingsSection; revision-safe compare-and-set via expectedRevision; typed refusals settings_section_name_invalid, settings_section_reserved (core keys derived from the validator shape), settings_section_document_malformed, settings_section_invalid, settings_section_revision_conflict and settings_section_document_missing; writes keep every other key and record one settings:section:write history event. Documented in docs/SDK_CONFIGURATION_SAFETY.md."
+expected_result: "Extensions read and validate their own settings through host-bound SDK services with typed capability/refusal and revision evidence, without reading settings.json by path."
+actual_result: "16 section specs pass at 100% module coverage: stored/default reads with revisions, validator refusals, malformed documents, reserved and invalid names, add/replace/remove with history, unchanged no-op, stale compare-and-set refusal, non-JSON values, uninitialized tracker, public export identity and context.sdk binding."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1399,related,"2026-10-25T00:52:37.751Z","harness:codex","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-10-25T00:09:23.381Z","harness:codex","Intake source: 1580. Duplicate check: complete strict 3101-item all-status corpus with no omissions, request-specific searches and current open/in_progress lists; related delivered lineage retained. Report recorded for independent verification. No implementation or completion claimed by intake."
+  "2026-11-01T11:09:04.697Z","harness:claude-code","Implementation: new src/core/store/settings-sections.ts. readSettingsSection(pmRoot, section, { validate, defaultValue }) returns { section, source: \"stored\" | \"default\", value, revision }. The revision is \"sha256:<hex>\" of the stable-stringified stored value, or null when the section is absent. writeSettingsSection(pmRoot, section, value | undefined, { expectedRevision, validate }) replaces or removes the section under the workspace-history lock, appends one settings:section:write event, keeps every other key, writes nothing for an unchanged value, and makes the write compare-and-set when expectedRevision is given (null requires absence). Typed refusals: settings_section_name_invalid and settings_section_reserved (the core keys come from the new CORE_SETTINGS_SECTION_KEYS, derived from the validator shape so they cannot drift), settings_section_document_malformed (reason settings_json_malformed or settings_json_not_object, instead of a thrown JSON.parse error), settings_section_invalid (validator throw, bounded message; also values JSON cannot represent), settings_section_revision_conflict (exit 4, with expected_revision and current_revision added to PmCliErrorContext), and settings_section_document_missing (exit 3). Both functions and settingsSectionRevision are public SDK exports through runtime-primitives. ExtensionCommandSdk gains readSettingsSection and writeSettingsSection bound to the invocation tracker, so a package using context.sdk inherits any future settings backend; the backend abstraction itself stays with pm-gh1399. Docs: new section in docs/SDK_CONFIGURATION_SAFETY.md. Tests: tests/unit/core/store/settings-sections.spec.ts, 16 cases, 100% branch coverage of the module.\n"
+  "2026-11-01T15:40:54.738Z","harness:claude-code","PR 1648 review follow-up (CodeRabbit). writeSettingsSection gains an optional author, and the host-bound context.sdk.writeSettingsSection passes the invocation author, so a command run with an explicit author records it on the settings:section:write history event (it used to fall back to the workspace default and detected identity). Values JSON would store differently from what was validated now refuse with settings_section_invalid naming the first drifting path: non-finite numbers (Infinity or NaN become null), undefined array elements, function or symbol values, symbol keys and non-plain objects such as Date. Null-prototype plain objects still store exactly. Ordering note: gate_evidence was recorded after close and release because the defect-evidence gate first failed on the hosted run; it is a follow-up record, the append-only history is unchanged."
+  "2026-11-01T17:31:23.661Z","harness:claude-code","PR 1648 Codex review (gpt-6.1-sol, xhigh). settingsSectionRevision used stableStringify, whose object accumulator drops an own __proto__ key, so two values differing only beneath such a key shared a revision and a stale compare-and-set write could pass; revisions now hash a prototype-safe canonical JSON (ordinary values keep the same revision string). readSettingsSection hashed the stored value after running the validator on it, so an in-place normalizer changed the revision a later write had to present; the revision is now computed first and the validator receives a detached clone. The JSON-drift check now rejects arrays with holes, extra or symbol keys, a subclass or a toJSON hook, and objects with a function-valued toJSON (a data key named toJSON is still stored). Writing a value with an own __proto__ key, or prototype beneath constructor, used to fail untyped in the history patcher; it now refuses with settings_section_invalid naming the key path. Specs cover each case."
+  "2026-11-01T18:08:31.174Z","harness:claude-code","PR 1648 Codex review, second pass: the JSON-drift check ran after JSON.stringify, so a toJSON hook that deleted itself still stored an object instead of the validated array. The check now inspects without serializing (cycle-safe, rejecting accessor-backed values, toJSON hooks, holes and extra keys) before any hook or getter can run, then serializes proven plain data. Circular values and bigints refuse as not representable. Specs cover a self-removing hook, a getter and a circular value."
+  "2026-11-01T18:18:54.138Z","harness:claude-code","PR 1648 Codex review, third pass: the drift check read toJSON through Reflect.get before inspecting descriptors, so a self-removing toJSON getter could rewrite a validated field (strict true to false) and then pass; and a non-enumerable own data property passed although JSON drops it. Descriptors are now checked first (data properties only, enumerable for objects, an array's length excepted) before any hook lookup, so no getter runs before the value is proven plain. Specs cover the self-removing getter, a non-enumerable property and a getter-backed array element."
+  "2026-11-01T18:26:58.428Z","harness:claude-code","PR 1648 Codex review, fourth pass: a non-enumerable extra property on an array (for example Object.defineProperty(['a'], 'strict', { value: true })) passed the drift check because Object.keys misses it, and JSON dropped it silently. Arrays now also require that their only own property names are the dense indices plus length; a spec covers the hidden array property."
+files[7]{path,scope}:
+  src/core/extensions/extension-types.ts,project
+  src/core/shared/errors.ts,project
+  src/core/store/settings-sections.ts,project
+  src/core/store/settings-validator.ts,project
+  src/sdk/extension-command-context.ts,project
+  src/sdk/runtime-primitives.ts,project
+  tests/unit/core/store/settings-sections.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/store/settings-sections.spec.ts,project,"harness:claude-code","2026-11-01T11:08:41.542Z",local_mutation,fix/sdk-lock-confinement-and-settings-sections
+test_runs[1]:
+  - run_id: test-local-mvxstrys-fabemy
+    kind: test
+    status: passed
+    started_at: "2026-11-01T12:20:55.836Z"
+    finished_at: "2026-11-01T12:21:04.852Z"
+    recorded_at: "2026-11-01T12:21:04.852Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/core/store/settings-sections.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK_CONFIGURATION_SAFETY.md,project
+close_reason: Extensions read and write their own settings section through host-bound SDK primitives
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1580
+  gate_id: "tests/unit/core/store/settings-sections.spec.ts section read/write, compare-and-set conflict, reserved-name and public plus host-bound SDK export cases"
+  negative_control: "Remove the expectedRevision comparison from writeSettingsSection in src/core/store/settings-sections.ts and run node scripts/run-tests.mjs test -- tests/unit/core/store/settings-sections.spec.ts: the stale compare-and-set case writes instead of refusing with settings_section_revision_conflict"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/store/settings-sections.spec.ts,node scripts/sdk-surface-snapshot.mjs
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: "## Observed\n\nExtensions keep their configuration in their own section of `.agents/pm/settings.json` (for example `\"lint\": {...}`, `\"jev\": {...}`). The public SDK has `readSettings` / `readSettingsWithMetadata`, which validate and return the normalized core `PmSettings` tree and strip extension-owned keys. There is no supported way to read an extension's own section: `readSettingsSection` / `readWorkspaceSettingsSection` (or an equivalent) do not exist in 2026.10.24's exports (checked: every export matching /setting|config/ is `CONFIG_FLAG_CONTRACTS SETTINGS_DEFAULTS config getSettingsPath readSettings readSettingsWithMetadata resolveConfiguredPmPackageRoot resolveSettingsWithSemanticRuntimeDefaults runConfig runWithConfigurationOnlySettings writeSettings`).\n\nSo packages call `readSettings()` only to validate, then re-read and `JSON.parse` the file themselves via `getSettingsPath()`:\n\n- pm-lint `src/settings.ts`: `await readSettings(pmRoot); // SDK readSettings validates core settings but strips extension-owned keys.` followed by a raw file read and its own \"settings disappeared during read\" race handling.\n- pm-jev `index.ts` and `decision-calibration.ts` do the same.\n\nThat bypasses the host's backend abstraction: on a non-filesystem backend (hosted Postgres, remote MCP) there is no settings file path, so the extension's configuration silently disappears. It also duplicates parsing, error handling and race handling in every package.\n\n## Expected\n\nA host-bound reader for an extension's own section, for example:\n\n```ts\nconst section = await readSettingsSection(pmRoot, 'lint', { validate: lintSettingsSchema.parse });\n// -> { value, source: 'file' | 'default' | 'backend', revision } or a typed refusal (missing / malformed / backend-unsupported)\n```\n\nThe same reader should be available on the extension command context. Malformed sections should produce a typed refusal with a remedy rather than a thrown `JSON.parse` error, and it should work through whatever backend the host is bound to. A matching `writeSettingsSection` with an expected revision would complete it.\n\n## Why it matters for agents\n\nAgents configure extensions per tracker. Today an extension's settings work only when the tracker is a local directory, and every package re-implements a fragile raw read. Reading through the SDK would make extension configuration backend-neutral and remove the duplicated code.\n\nVersion: `@unbrained/pm-cli` 2026.10.24."
