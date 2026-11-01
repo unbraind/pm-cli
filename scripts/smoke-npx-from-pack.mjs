@@ -60,14 +60,14 @@ function spawnSmokeCommand(command, args, options = {}) {
   return result;
 }
 
-/** Install the packed artifact with a plain Bun install, which resolves dependencies from the registry instead of bundleDependencies, and refuse peer-range warnings (pm-2csj4k). */
+/** Install the packed artifact with Bun, which resolves dependencies from the registry instead of bundleDependencies, and refuse peer-range warnings (pm-2csj4k). Verbose output keeps those warnings visible on Bun releases that print them only with --verbose. */
 function assertBunPeerResolution(tarballPath, tempRoot) {
   const project = path.join(tempRoot, "bun-peer-consumer");
   mkdirSync(project, { recursive: true });
   writeFileSync(path.join(project, "package.json"), JSON.stringify({ private: true }));
   const { stdout, stderr } = spawnSmokeCommand(
     resolveCommand("bun"),
-    ["add", "--ignore-scripts", tarballPath],
+    ["add", "--ignore-scripts", "--verbose", tarballPath],
     { cwd: project, env: { ...process.env, TMPDIR: tempRoot } },
   );
   const warnings = `${stdout}\n${stderr}`.split(/\r?\n/u).filter((line) => /incorrect peer dependency/iu.test(line));

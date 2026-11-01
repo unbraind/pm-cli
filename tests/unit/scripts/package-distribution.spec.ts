@@ -156,7 +156,7 @@ it.each([true, false])("retains the complete optional-peer subtree without chang
   expect(() => verifyRuntimeInstallation(installed)).toThrow("ENOENT");
 }, 60_000);
 
-it("pins only required, installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {
+it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {
   const ledger = {
     packages: {
       "": { name: "fixture", version: "1.0.0", peerDependencies: { "@types/node": "^24" }, peerDependenciesMeta: { "@types/node": { optional: true } } },
@@ -169,6 +169,7 @@ it("pins only required, installed, undeclared peers of the tested closure in sor
       "node_modules/sdk/node_modules/missing": { version: "1.0.0" },
     },
   };
+  // `missing` resolves only under node_modules/sdk/node_modules, so the root manifest cannot name it without failing runtime verification.
   const pinned = pinRuntimePeers({ dependencies: { sdk: "^2.0.0", direct: "^3.0.0" } }, ledger);
   expect(pinned).toEqual({ sdk: "^2.0.0", direct: "^3.0.0", alpha: "1.9.1", zeta: "1.4.0" });
   expect(Object.keys(pinned)).toEqual(["sdk", "direct", "alpha", "zeta"]);

@@ -74,7 +74,7 @@ function materializeRuntimePeerBindings(target, metadata, expected) {
     writeFileSync(path.join(target, "package.json"), `${JSON.stringify(metadata, null, 2)}\n`);
 }
 
-/** Pin each required peer of the tested closure to its tested version (pm-2csj4k). Bun resolves a package's dependencies from the registry instead of its bundleDependencies, so an unpinned peer resolves to its newest release even when the bundled packages declare a narrower range. */
+/** Pin each required peer that the tested closure installs at the root to its tested version (pm-2csj4k). Bun resolves a package's dependencies from the registry instead of its bundleDependencies, so an unpinned peer resolves to its newest release even when the bundled packages declare a narrower range. A peer resolved only in a nested node_modules is not pinned: the root manifest may only name packages the ledger places at the root, which the installed-runtime verifier enforces. */
 export function pinRuntimePeers(manifest, ledger) {
   const declared = { ...manifest.dependencies, ...manifest.optionalDependencies };
   const peers = new Map();

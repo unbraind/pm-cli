@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[4]: agent-ux,bun,dependencies,packaging
 created_at: "2026-11-01T05:33:19.084Z"
-updated_at: "2026-11-01T06:37:17.027Z"
+updated_at: "2026-11-01T07:03:28.979Z"
 closed_at: "2026-11-01T06:37:17.004Z"
 completed_at: "2026-11-01T06:37:17.004Z"
 author: "harness:claude-code"
 estimated_minutes: 90
-acceptance_criteria: The published manifest pins every non-optional peer target of the runtime ledger to its ledger version and bundles it; Optional-only peers and peers already declared as direct dependencies are left unchanged; The packed-artifact smoke installs the tarball with a plain bun add and fails on any peer-range warning; npm/npx runtime verification and the bundled closure are unchanged
+acceptance_criteria: "The published manifest pins every non-optional peer target that the runtime ledger installs at the root to its ledger version and bundles it; Optional-only peers, peers already declared as direct dependencies and peers resolved only in nested node_modules are left unchanged; The packed-artifact smoke installs the tarball with a verbose bun add and fails on any peer-range warning; npm/npx runtime verification and the bundled closure are unchanged"
 parent: pm-u9d0
 risk: low
 confidence: high
 severity: low
 repro_steps: In an empty project with a fresh BUN_INSTALL_CACHE_DIR run bun add @unbrained/pm-cli@2026.11.1 and read stderr.
-resolution: "pinRuntimePeers adds every non-optional peer target of the runtime ledger to the published root manifest at its tested version and bundles it (here @opentelemetry/api 1.9.1, @opentelemetry/core 2.12.0, @opentelemetry/sdk-trace-base 2.12.0); optional-only peers and direct dependencies are unchanged. The packed smoke now runs a plain bun add of the tarball and refuses any peer-range warning, since the existing Bun steps use --silent. RELEASING.md documents the rule."
+resolution: "pinRuntimePeers adds every non-optional peer target that the runtime ledger installs at the root to the published root manifest at its tested version and bundles it (here @opentelemetry/api 1.9.1, @opentelemetry/core 2.12.0, @opentelemetry/sdk-trace-base 2.12.0); optional-only peers, direct dependencies and nested-only peers are unchanged. The packed smoke now runs a verbose bun add of the tarball and refuses any peer-range warning, since the existing Bun steps use --silent. RELEASING.md documents the rule."
 expected_result: Bun installs of the published package resolve every required peer of the tested closure to its tested version and print no peer-range warnings.
 actual_result: "Fresh-cache bun add of the pinned repack prints no peer warnings while the unmodified 2026.11.1 repack prints four; verify-runtime-installation passes for 42 bundled packages; pnpm smoke:npx passes; package-distribution, smoke and artifact-gate specs pass with the pin and the packed-fixture cases fail without it."
 affected_version: 2026.11.1
@@ -26,6 +26,8 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-7zs0,discovered_from,"2026-11-01T05:33:19.084Z","harness:claude-code","cli:create:dep",detected
   pm-gh1417,related,"2026-11-01T05:33:19.084Z","harness:claude-code","cli:create:dep",detected
   pm-t3jxjj,related,"2026-11-01T05:33:19.084Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-01T07:03:01.131Z","harness:claude-code","Review round 1 (CodeRabbit): the smoke now passes --verbose to bun add, because Bun documents out-of-range peer warnings as verbose output; Bun 1.4.3 prints them either way (unpinned control: 4 warning lines with --verbose, pinned: 0). The contract is narrowed in wording, not behaviour, to root-installed peer targets: a peer resolved only under a nested node_modules cannot be named by the root manifest, since verify-runtime-installation refuses a root dependency that the ledger does not place at the root, and hoisting it would install a version the tested tree never placed there."
 files[4]{path,scope}:
   scripts/release/package-distribution.mjs,project
   scripts/smoke-npx-from-pack.mjs,project
@@ -33,13 +35,24 @@ files[4]{path,scope}:
   tests/unit/scripts/smoke-npx-from-pack.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts,project,"harness:claude-code","2026-11-01T06:24:01.658Z",local_mutation,chore/eligible-toolchain-and-bun-peers
-test_runs[1]:
+test_runs[2]:
   - run_id: test-local-mvxgfdmk-fjmyqf
     kind: test
     status: passed
     started_at: "2026-11-01T06:33:40.386Z"
     finished_at: "2026-11-01T06:33:57.692Z"
     recorded_at: "2026-11-01T06:33:57.692Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts tests/unit/scripts/smoke-npx-from-pack.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvxhhccq-hu6lmu
+    kind: test
+    status: passed
+    started_at: "2026-11-01T07:03:11.721Z"
+    finished_at: "2026-11-01T07:03:28.970Z"
+    recorded_at: "2026-11-01T07:03:28.970Z"
     passed: 1
     failed: 0
     skipped: 0

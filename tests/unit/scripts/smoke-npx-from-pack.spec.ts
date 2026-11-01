@@ -327,8 +327,8 @@ describe("smoke-npx-from-pack", () => {
     }
     await run;
     const install = execFileSync.mock.calls.find(([command, args]) => baseCommand(command) === "bun" && args[0] === "add");
-    expect(install?.[1].slice(0, 2)).toEqual(["add", "--ignore-scripts"]);
-    expect(path.basename(install?.[1][2] ?? "")).toBe("pm-cli-2026.6.14.tgz");
+    expect(install?.[1].slice(0, 3)).toEqual(["add", "--ignore-scripts", "--verbose"]);
+    expect(path.basename(install?.[1][3] ?? "")).toBe("pm-cli-2026.6.14.tgz");
     expect(install?.[2]).toMatchObject({ cwd: path.join("/tmp/pm-pack-smoke", "bun-peer-consumer") });
   });
 
