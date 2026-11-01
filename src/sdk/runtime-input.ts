@@ -370,6 +370,15 @@ function declaredReadActionOptionKeys(action: string): readonly string[] {
     : [];
 }
 
+/** Whether nested options already carry a key under its camelCase or snake_case spelling. */
+function nestedOptionPresent(
+  nested: Record<string, unknown>,
+  key: string,
+): boolean {
+  const snakeKey = key.replace(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`);
+  return nested[key] !== undefined || nested[snakeKey] !== undefined;
+}
+
 /** Every top-level argument an action reads from options: its hand-listed keys, declared read parameters, and universal read-output controls. */
 function hoistedActionOptionKeys(action: string): readonly string[] {
   return [
@@ -562,7 +571,8 @@ export function optionsWithAuthor(
   const baseOptions = asRecordClone(args.options);
   const hoistedTopLevel: Record<string, unknown> = {};
   const hoistKey = (key: string): void => {
-    if (baseOptions[key] !== undefined || args[key] === undefined) {
+    // A nested value under either spelling (tokenBudget or token_budget) wins over the flat argument.
+    if (nestedOptionPresent(baseOptions, key) || args[key] === undefined) {
       return;
     }
     hoistedTopLevel[key] = args[key];

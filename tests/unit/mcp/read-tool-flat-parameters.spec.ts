@@ -21,6 +21,10 @@ describe("MCP read tools read every declared flat parameter (pm-hke9z7)", () => 
 
   it("lets nested options win over the same flat argument", () => {
     expect(optionsWithAuthor({ limit: 5, options: { limit: 2 } }, "context")).toMatchObject({ limit: 2 });
+    // A nested snake_case spelling also wins over the flat camelCase argument.
+    const budgeted = optionsWithAuthor({ for: "orient", tokenBudget: 2000, options: { token_budget: 400 } }, "context");
+    expect(budgeted).toMatchObject({ for: "orient", token_budget: 400 });
+    expect(budgeted).not.toHaveProperty("tokenBudget");
     expect(optionsWithAuthor({ for: "orient" }, "update")).not.toHaveProperty("for");
   });
 

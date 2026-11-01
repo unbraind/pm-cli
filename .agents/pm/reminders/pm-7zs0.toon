@@ -6,16 +6,16 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-10-31T22:12:47.452Z"
+updated_at: "2026-11-01T01:17:28.301Z"
 reminders[1]{at,text}:
-  "2026-10-31T06:00:00.000Z",Verify the next daily release and npm/npx/Bun/bunx consumers; retain pm-gh1622 until installed-producer remediation and publication are verified
+  "2026-11-02T06:00:00.000Z","Verify the 2026-11-01 daily cut (the first after PR #1645) against npm latest, GitHub Release, npm/npx/Bun/bunx consumers and fresh Sentry/telemetry; record any scheduled failure stage"
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "At October 31 06:00 UTC verify the next eligible daily cut against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
+expected_result: "At November 2 06:00 UTC verify the November 1 daily cut against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
 actual_result: "October28 morning Auto Release40628452727 and Release40631211289 succeed. Exactly v2026.10.28 is published; independent registry integrity, actual npx/bunx, all bins, MCP Skills/Apps and HTTP acceptance pass. This immutable release precedes PR1616 SDK changes. Fresh real read spans are accepted/indexed in Sentry; required observability gate passes with zero unresolved issues, zero missing error codes and5.91percent finish-error rate. Recent installation-scoped telemetry has28 matched starts/finishes, zero settled mismatches and empty broker queue. Historical reliability remains separate."
 dependencies[14]:
   - id: pm-7n5a

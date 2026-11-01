@@ -32,7 +32,8 @@ export async function runMcpClaimAction(context: LifecycleMutationActionContext)
   const { changedFields, idOnly, runnerOptions } = withMutationCompaction(context.args, context.options);
   const force = context.force === true || runnerOptions.force === true;
   const selectionOptions = { ...context.args, ...runnerOptions };
-  const next = context.args.next === true || runnerOptions.next === true;
+  // runnerOptions already applies nested-over-flat precedence, so dispatch and target checks share one value.
+  const next = runnerOptions.next === true;
   const id = context.id ?? readRuntimeString(runnerOptions, "id");
   if (selectionOptions.start === true) {
     if (id !== undefined) return runMcpTaskCompositionAction(context, "start_task");

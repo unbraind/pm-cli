@@ -6,12 +6,12 @@ status: closed
 priority: 2
 tags[4]: agent-ux,github,output,token-efficiency
 created_at: "2026-10-31T21:14:02.437Z"
-updated_at: "2026-10-31T23:02:11.868Z"
+updated_at: "2026-11-01T01:17:44.606Z"
 closed_at: "2026-10-31T22:31:34.335Z"
 completed_at: "2026-10-31T22:31:34.335Z"
 author: "harness:claude-code"
 estimated_minutes: 120
-acceptance_criteria: "A default brief pm list page omits the default sorting block including effective_keys and a filters.limit equal to applied_limit; a default pm search page omits truncated when equal to has_more, a filters block that only echoes applied_limit, and replaces the single default projection_metadata omission receipt with details --full; unchecked or partial completeness, non-default sorting, non-limit filters, custom omission receipts, JSON, --full and SDK results are unchanged; the search projection is a reusable SDK export that leaves its input unchanged; measured envelope bytes drop on a small page"
+acceptance_criteria: "A default brief pm list page drops the legacy default sort/order echo but keeps the effective default comparator order visible on one effective_keys line (the GH-1507 disclosure), and omits a filters.limit equal to applied_limit and empty runtime_filters; a default pm search page, including a terminal page without continuation fields, omits truncated when equal to has_more and a filters block that only echoes applied_limit, and replaces the single default projection_metadata omission receipt with details --full; unchecked or partial completeness, non-default sorting, non-limit filters, custom omission receipts, JSON, --full and SDK results are unchanged; the search projection is a reusable SDK export that leaves its input unchanged; measured envelope bytes drop on a small page"
 parent: pm-5t33or
 risk: low
 confidence: high
@@ -22,10 +22,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-6pycus,related,"2026-10-31T21:14:02.437Z","harness:claude-code","cli:create:dep",detected
   pm-gh1627,related,"2026-10-31T21:14:02.437Z","harness:claude-code","cli:create:dep",detected
   pm-zd46m7,related,"2026-10-31T21:49:42.569Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-10-31T21:47:00.908Z","harness:claude-code","Implementation and measurement: projectPmBriefListEnvelope now drops the default ascending sort when it carries effective_keys (the regression), and drops a filters.limit equal to applied_limit and empty runtime_filters. New public projectPmBriefSearchEnvelope (sdk/output) drops truncated when it equals has_more and limit-only filters, and replaces the single default projection_metadata omission receipt with details --full. It is chained after the list projection in formatBuiltInOutput (TOON only). Measured with the published 2026.10.31 package against this branch on this tracker: pm search 'release workflow' --limit 3 drops from 1,033 to 863 B (-16%) and pm list --status open --limit 3 from 988 to 782 B (-21%). completeness unchecked and items_encoding remain by design (see description)."
   "2026-10-31T21:49:41.855Z","harness:claude-code","Design correction while testing: the 7-line default sort block is not only redundant metadata. GH-1507's accepted contract (pm-zd46m7, integration spec default-list-order) requires brief TOON to disclose the effective default comparator order so an agent knows why rows arrive in that order. Dropping it would undo that decision. The projection therefore drops only the legacy sort/order echo and renders the effective keys on one line, for example sorting.effective_keys 'status_registry:nonterminal_before_terminal asc, priority asc, updated_at desc, id asc'. Seven lines become two, and JSON keeps the full pair array. A malformed or extended sorting block passes through unchanged."
   "2026-10-31T23:02:11.868Z","harness:claude-code","CodeRabbit review round 1 on PR #1645: the list projection left the raw filters key in place when the compacted filters became empty, so a limit-only or empty-runtime filters block still printed. filters is now destructured out of the envelope before compaction, and specs cover {limit}, {runtime_filters:{}} and a non-echo limit."
+  "2026-11-01T01:17:44.606Z","harness:claude-code","CodeRabbit review round 2 on PR #1645: a final search page omits has_more, truncated, next_cursor and total, so the projection skipped it. projectPmBriefSearchEnvelope now also accepts that terminal shape when count matches the rows, there is no cursor, and any total equals count; inconsistent shapes still pass through. The acceptance criterion now states that the effective default sort order stays visible on one line, matching the resolution."
 files[5]{path,scope}:
   sdk/public-surface.json,project
   src/core/output/output.ts,project

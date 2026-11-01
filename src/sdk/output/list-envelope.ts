@@ -180,6 +180,20 @@ function compactEchoedFilters(
   return Object.keys(remaining).length === 0 ? {} : { filters: remaining };
 }
 
+/** A final search page omits the continuation fields entirely; accept it only when nothing suggests more rows. */
+function hasTerminalSearchPagination(
+  value: Record<string, unknown>,
+  count: number,
+): boolean {
+  return (
+    value.count === count &&
+    !Object.hasOwn(value, "has_more") &&
+    !Object.hasOwn(value, "truncated") &&
+    value.next_cursor == null &&
+    (value.total === undefined || value.total === count)
+  );
+}
+
 /**
  * Compact a standard search page without mutating its typed SDK result:
  * drops `truncated` when it repeats `has_more`, a `filters.limit` echo of
@@ -193,7 +207,10 @@ export function projectPmBriefSearchEnvelope(value: unknown): unknown {
     typeof value.query !== "string" ||
     !Array.isArray(value.items) ||
     Object.hasOwn(value, "details") ||
-    !hasStandardPagination(value, value.items.length) ||
+    !(
+      hasStandardPagination(value, value.items.length) ||
+      hasTerminalSearchPagination(value, value.items.length)
+    ) ||
     !hasDefaultOmissions(value.omission_receipt, "projection_metadata")
   )
     return value;

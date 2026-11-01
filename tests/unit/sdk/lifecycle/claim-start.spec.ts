@@ -134,6 +134,10 @@ describe("GH-1643 claim --next --start", () => {
       expect(refused.stderr).toContain("missing_required_argument");
       expect(refused.stderr).toContain("pm claim --next --start");
       await expect(runAction({ ...common, action: "claim", start: true })).rejects.toMatchObject({ context: { code: "missing_required_argument" } });
+      // Nested options win over flat arguments for both dispatch and the target check.
+      await expect(runAction({ ...common, action: "claim", next: true, options: { next: false, start: true } })).rejects.toMatchObject({
+        context: { code: "missing_required_argument" },
+      });
       // An explicit id with next and start is refused by the explicit-start composition before any write.
       await expect(runAction({ ...common, action: "claim", id: third, next: true, start: true })).rejects.toMatchObject({
         context: { code: "invalid_argument_value" },

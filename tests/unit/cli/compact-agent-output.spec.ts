@@ -427,6 +427,23 @@ describe("GH-1642 brief search and list envelopes", () => {
     expect(projectPmBriefSearchEnvelope({ ...searchPage, filters: { runtime_filters: null } })).toMatchObject({ filters: { runtime_filters: null } });
   });
 
+  it("compacts a terminal search page that omits every continuation field", () => {
+    const { has_more: _more, truncated: _truncated, next_cursor: _cursor, total: _total, ...rest } = searchPage;
+    const terminal = { ...rest, count: 2, applied_limit: 10, filters: { limit: "10" } };
+    expect(projectPmBriefSearchEnvelope(terminal)).toEqual({
+      query: "release workflow",
+      mode: "hybrid",
+      items: searchPage.items,
+      count: 2,
+      applied_limit: 10,
+      details: "--full",
+    });
+    expect(projectPmBriefSearchEnvelope({ ...terminal, total: 2 })).toMatchObject({ total: 2, details: "--full" });
+    for (const inconsistent of [{ ...terminal, total: 5 }, { ...terminal, next_cursor: "more" }, { ...terminal, truncated: false }, { ...terminal, count: 3 }]) {
+      expect(projectPmBriefSearchEnvelope(inconsistent)).toBe(inconsistent);
+    }
+  });
+
   it.each([
     null,
     [],

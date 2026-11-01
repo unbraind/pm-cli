@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,context,contracts,mcp
 created_at: "2026-10-31T21:27:47.547Z"
-updated_at: "2026-10-31T23:02:13.787Z"
+updated_at: "2026-11-01T01:17:43.180Z"
 closed_at: "2026-10-31T22:31:35.081Z"
 completed_at: "2026-10-31T22:31:35.081Z"
 author: "harness:claude-code"
@@ -22,15 +22,19 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1644,discovered_from,"2026-10-31T21:27:47.547Z","harness:claude-code","cli:create:dep",detected
   pm-hno5,related,"2026-10-31T21:27:47.547Z","harness:claude-code","cli:create:dep",detected
   pm-wcaa,related,"2026-10-31T21:27:47.547Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-31T21:47:01.751Z","harness:claude-code","Implementation: runtime-input.ts derives hoisting for context, get, list, next and search from PM_TOOL_ACTION_PARAMETER_CONTRACTS[action].optional (declaredReadActionOptionKeys), after the hand table, so nested options still win. Verified through the MCP tools/call handler: flat and nested calls now agree for pm_context depth/for/limit, pm_list/pm_search/pm_next/pm_get for, pm_get depth and pm_next limit. The regression spec iterates every declared optional key of the five actions, so a new declared parameter can no longer be silently dropped."
   "2026-10-31T23:02:13.786Z","harness:claude-code","CodeRabbit review round 1 on PR #1645: the docs now state that search's query operand (and its keywords alias) stays top-level like pm_get's id, while every other declared optional parameter is accepted flat or under options."
-files[3]{path,scope}:
+  "2026-11-01T01:17:43.180Z","harness:claude-code","CodeRabbit review round 2 on PR #1645. (1) Major, predates this PR (published 2026.10.31 reproduces via pm context --type Task): when a context filter removed a blocker that declares a reverse blocks edge, the blocked item was reported as not blocked, because the dependency corpus was the filtered list. pm_context now hoists flat filters, which made this reachable from MCP too. runContext keeps the filtered list for displayed rows, scale and workspace memory, but resolves blocker ids, containers, blocker sections and the --parent subtree from an edge corpus. That corpus is the same list when no filter applied, or one unfiltered scan when the list echo shows a selection filter. A side effect fixed: --parent <epic> combined with --type Task no longer reports the epic as not found. The filtered-context-edges spec fails with the fix stashed. (2) Hoisting treats a nested snake_case spelling (options.token_budget) as already present, so it wins over a flat tokenBudget."
+files[5]{path,scope}:
+  src/sdk/query/context.ts,project
   src/sdk/runtime-input.ts,project
   src/sdk/runtime/actions.ts,project
   tests/unit/mcp/read-tool-flat-parameters.spec.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  tests/unit/sdk/context/filtered-context-edges.spec.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/mcp/read-tool-flat-parameters.spec.ts,project,"harness:claude-code","2026-10-31T21:46:36.177Z",local_mutation,fix/agent-ux-orient-claim-envelopes
+  node scripts/run-tests.mjs test -- tests/unit/sdk/context/filtered-context-edges.spec.ts,project,"harness:claude-code","2026-11-01T01:17:42.357Z",local_mutation,fix/agent-ux-orient-claim-envelopes
 test_runs[1]:
   - run_id: test-local-mvwz5gjx-0ayygj
     kind: test
