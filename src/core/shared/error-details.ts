@@ -7,6 +7,11 @@
  * renders them whole within a declared byte ceiling, and otherwise replaces
  * them with an omission receipt. Telemetry and crash reporting never read
  * them.
+ *
+ * Every traversal reads own data properties only (accessors are refused, never
+ * invoked) and counts the compact JSON encoding as it walks, so a shared or
+ * deeply repeated structure is abandoned as soon as it crosses the ceiling
+ * instead of being expanded first.
  */
 import type { PmCliErrorDetails } from "./errors.js";
 
@@ -17,6 +22,9 @@ export const PM_CLI_ERROR_DETAILS_LIMITS = Object.freeze({
   /** Deepest container nesting accepted below the `details` object itself. */
   max_depth: 8,
 });
+
+/** Largest UTF-8 size of a producer-derived path echoed in an omission receipt. */
+const MAX_OMISSION_PATH_BYTES = 160;
 
 /** Why a producer's diagnostics could not be rendered. */
 export type PmCliErrorDetailsRejection =
@@ -32,10 +40,8 @@ export type PmCliErrorDetailsRejection =
 export interface PmCliErrorDetailsOmission {
   /** Stable reason the diagnostics were withheld. */
   reason: PmCliErrorDetailsRejection;
-  /** JSON path of the first offending value, when the shape was refused. */
+  /** Bounded JSON path of the first offending value, when the shape was refused. */
   path?: string;
-  /** Compact UTF-8 JSON size of oversized diagnostics. */
-  byte_length?: number;
   /** Byte ceiling that applied. */
   byte_limit: number;
 }
@@ -51,16 +57,21 @@ const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[
 const RESERVED_KEYS = new Set(["__proto__"]);
 
 class DetailsShapeError extends Error {
-  /** Stable shape rejection. */
-  readonly reason: Exclude<PmCliErrorDetailsRejection, "byte_limit">;
+  /** Stable rejection. */
+  readonly reason: PmCliErrorDetailsRejection;
   /** JSON path of the offending value. */
   readonly path: string;
 
-  constructor(reason: Exclude<PmCliErrorDetailsRejection, "byte_limit">, path: string) {
+  constructor(reason: PmCliErrorDetailsRejection, path: string) {
     super(reason);
     this.reason = reason;
     this.path = path;
   }
+}
+
+/** Running compact-JSON size of the value being copied. */
+interface ByteBudget {
+  bytes: number;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -73,38 +84,72 @@ function childPath(path: string, key: string): string {
   return /^[A-Za-z_$][\w$]*$/u.test(key) ? `${path}.${key}` : `${path}[${JSON.stringify(key)}]`;
 }
 
+/** Keep a producer-derived path within a fixed UTF-8 size without splitting a character. */
+function boundPath(path: string): string {
+  if (Buffer.byteLength(path, "utf8") <= MAX_OMISSION_PATH_BYTES) return path;
+  let bounded = "";
+  let bytes = Buffer.byteLength("…", "utf8");
+  for (const character of path) {
+    bytes += Buffer.byteLength(character, "utf8");
+    if (bytes > MAX_OMISSION_PATH_BYTES) break;
+    bounded += character;
+  }
+  return `${bounded}…`;
+}
+
+/** Charge encoded bytes, abandoning the walk once the ceiling is crossed. */
+function charge(budget: ByteBudget, bytes: number, path: string): void {
+  budget.bytes += bytes;
+  if (budget.bytes > PM_CLI_ERROR_DETAILS_LIMITS.max_bytes) throw new DetailsShapeError("byte_limit", path);
+}
+
+/** Read one own data property; accessors and absent slots are refused without invoking anything. */
+function readOwnDataValue(container: object, key: string, path: string): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(container, key);
+  if (descriptor === undefined || !("value" in descriptor)) throw new DetailsShapeError("unsupported_value", path);
+  return descriptor.value;
+}
+
+function copyDetailLeaf(value: unknown, path: string, budget: ByteBudget): unknown {
+  if (typeof value === "number" && !Number.isFinite(value)) throw new DetailsShapeError("non_finite_number", path);
+  if (typeof value === "string" && LONE_SURROGATE.test(value)) throw new DetailsShapeError("malformed_unicode", path);
+  if (value !== null && !["boolean", "number", "string"].includes(typeof value)) {
+    throw new DetailsShapeError("unsupported_value", path);
+  }
+  charge(budget, Buffer.byteLength(JSON.stringify(value), "utf8"), path);
+  return value;
+}
+
 /** Copy one JSON value, refusing anything a JSON round trip would change or drop. */
-function copyDetailValue(value: unknown, path: string, depth: number): unknown {
-  if (value === null || typeof value === "boolean") return value;
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) throw new DetailsShapeError("non_finite_number", path);
-    return value;
-  }
-  if (typeof value === "string") {
-    if (LONE_SURROGATE.test(value)) throw new DetailsShapeError("malformed_unicode", path);
-    return value;
-  }
-  if (typeof value !== "object") throw new DetailsShapeError("unsupported_value", path);
+function copyDetailValue(value: unknown, path: string, depth: number, budget: ByteBudget): unknown {
+  if (typeof value !== "object" || value === null) return copyDetailLeaf(value, path, budget);
   if (depth >= PM_CLI_ERROR_DETAILS_LIMITS.max_depth) throw new DetailsShapeError("depth_limit", path);
   if (Array.isArray(value)) {
+    // Brackets plus separating commas.
+    charge(budget, value.length > 0 ? value.length + 1 : 2, path);
     const copy: unknown[] = [];
     for (let index = 0; index < value.length; index += 1) {
-      // A hole reads as undefined and is refused like any other undefined value.
-      copy.push(copyDetailValue(value[index], `${path}[${index}]`, depth + 1));
+      const entryPath = `${path}[${index}]`;
+      copy.push(copyDetailValue(readOwnDataValue(value, String(index), entryPath), entryPath, depth + 1, budget));
     }
     return copy;
   }
   if (!isPlainObject(value)) throw new DetailsShapeError("unsupported_value", path);
-  return copyDetailObject(value, path, depth + 1);
+  return copyDetailObject(value, path, depth + 1, budget);
 }
 
-function copyDetailObject(value: Record<string, unknown>, path: string, depth: number): Record<string, unknown> {
+function copyDetailObject(value: Record<string, unknown>, path: string, depth: number, budget: ByteBudget): Record<string, unknown> {
+  const keys = Object.keys(value);
+  // Braces plus separating commas.
+  charge(budget, keys.length > 0 ? keys.length + 1 : 2, path);
   const copy: Record<string, unknown> = {};
-  for (const key of Object.keys(value)) {
+  for (const key of keys) {
     const keyPath = childPath(path, key);
     if (RESERVED_KEYS.has(key)) throw new DetailsShapeError("reserved_key", keyPath);
     if (LONE_SURROGATE.test(key)) throw new DetailsShapeError("malformed_unicode", keyPath);
-    copy[key] = copyDetailValue(value[key], keyPath, depth);
+    // Quoted key plus its colon.
+    charge(budget, Buffer.byteLength(JSON.stringify(key), "utf8") + 1, keyPath);
+    copy[key] = copyDetailValue(readOwnDataValue(value, key, keyPath), keyPath, depth, budget);
   }
   return copy;
 }
@@ -112,33 +157,36 @@ function copyDetailObject(value: Record<string, unknown>, path: string, depth: n
 /**
  * Admit a diagnostics value: a plain object whose leaves are null, booleans,
  * finite numbers and well-formed strings, nested at most
- * {@link PM_CLI_ERROR_DETAILS_LIMITS}.max_depth containers deep. Returns a
- * detached copy so later mutation of the producer's object cannot change a
- * refusal that was already raised.
+ * {@link PM_CLI_ERROR_DETAILS_LIMITS}.max_depth containers deep and encoding
+ * to at most `max_bytes` of compact UTF-8 JSON. Returns a detached copy so
+ * later mutation of the producer's object cannot change a raised refusal.
+ * Accessor properties are refused without being invoked, and the walk stops
+ * at the byte ceiling, so admission cost is bounded by the ceiling.
  */
 export function admitPmCliErrorDetails(value: unknown): PmCliErrorDetailsAdmission {
   const byteLimit = PM_CLI_ERROR_DETAILS_LIMITS.max_bytes;
   if (!isPlainObject(value)) {
     return { ok: false, omission: { reason: "not_plain_object", path: "details", byte_limit: byteLimit } };
   }
-  let details: PmCliErrorDetails;
+  const budget: ByteBudget = { bytes: 0 };
   try {
-    details = copyDetailObject(value, "details", 0) as PmCliErrorDetails;
+    const details = copyDetailObject(value, "details", 0, budget) as PmCliErrorDetails;
+    return { ok: true, details, byte_length: budget.bytes };
   } catch (error) {
-    // Only shape refusals are expected; accessor faults stay visible as faults.
-    if (!(error instanceof DetailsShapeError)) throw error;
-    return { ok: false, omission: { reason: error.reason, path: error.path, byte_limit: byteLimit } };
+    // Proxy traps are the only other source of faults; they are refused like any non-plain value.
+    const refusal = error instanceof DetailsShapeError ? error : new DetailsShapeError("unsupported_value", "details");
+    return {
+      ok: false,
+      omission: refusal.reason === "byte_limit"
+        ? { reason: "byte_limit", byte_limit: byteLimit }
+        : { reason: refusal.reason, path: boundPath(refusal.path), byte_limit: byteLimit },
+    };
   }
-  return { ok: true, details, byte_length: Buffer.byteLength(JSON.stringify(details), "utf8") };
 }
 
-/** Check the diagnostics shape without applying the rendering byte ceiling. */
+/** Check the diagnostics shape and byte ceiling. */
 export function isPmCliErrorDetails(value: unknown): value is PmCliErrorDetails {
-  try {
-    return admitPmCliErrorDetails(value).ok;
-  } catch {
-    return false;
-  }
+  return admitPmCliErrorDetails(value).ok;
 }
 
 /**
@@ -150,23 +198,35 @@ export function projectPmCliErrorDetails(
   value: unknown,
 ): { details: PmCliErrorDetails } | { details_omitted: PmCliErrorDetailsOmission } | undefined {
   if (value === undefined) return undefined;
-  let admission: PmCliErrorDetailsAdmission;
-  try {
-    admission = admitPmCliErrorDetails(value);
-  } catch {
-    return { details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } };
-  }
-  if (!admission.ok) return { details_omitted: admission.omission };
-  if (admission.byte_length > PM_CLI_ERROR_DETAILS_LIMITS.max_bytes) {
+  const admission = admitPmCliErrorDetails(value);
+  return admission.ok ? { details: admission.details } : { details_omitted: admission.omission };
+}
+
+/**
+ * Project the `details` slot of an error context without invoking an accessor
+ * on it: a getter is reported as `unsupported_value` instead of being run.
+ */
+export function projectPmCliErrorContextDetailsSlot(
+  context: unknown,
+): ReturnType<typeof projectPmCliErrorDetails> {
+  if (typeof context !== "object" || context === null) return undefined;
+  const descriptor = Object.getOwnPropertyDescriptor(context, "details");
+  if (descriptor === undefined) return undefined;
+  if (!("value" in descriptor)) {
     return {
-      details_omitted: {
-        reason: "byte_limit",
-        byte_length: admission.byte_length,
-        byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes,
-      },
+      details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
     };
   }
-  return { details: admission.details };
+  return projectPmCliErrorDetails(descriptor.value);
+}
+
+/** Own enumerable properties other than `details`, without touching the `details` slot. */
+function contextWithoutDetails(context: object): Record<string, unknown> {
+  const rest: Record<string, unknown> = {};
+  for (const key of Object.keys(context)) {
+    if (key !== "details") rest[key] = (context as Record<string, unknown>)[key];
+  }
+  return rest;
 }
 
 /**
@@ -177,14 +237,42 @@ export function projectPmCliErrorDetails(
 export function projectPmCliErrorContextDetails(context: unknown): unknown {
   if (typeof context !== "object" || context === null || Array.isArray(context)) return context;
   if (!Object.hasOwn(context, "details")) return context;
-  const { details, ...rest } = context as Record<string, unknown>;
-  return { ...rest, ...projectPmCliErrorDetails(details) };
+  return { ...contextWithoutDetails(context), ...projectPmCliErrorContextDetailsSlot(context) };
 }
 
 /** Remove producer diagnostics from a context bound for telemetry or crash reporting. */
 export function omitPmCliErrorDetails(context: unknown): unknown {
   if (typeof context !== "object" || context === null || Array.isArray(context)) return context;
   if (!Object.hasOwn(context, "details")) return context;
-  const { details: _details, ...rest } = context as Record<string, unknown>;
-  return rest;
+  return contextWithoutDetails(context);
+}
+
+/** Deepest event nesting scanned for embedded error contexts. */
+const MAX_EMBEDDED_CONTEXT_DEPTH = 12;
+
+/** Embedded keys that carry a serialized error context. */
+const EMBEDDED_CONTEXT_KEYS = new Set(["context", "error_context"]);
+
+/**
+ * Remove producer diagnostics from every embedded error context (`*.context`
+ * and `*.error_context` objects) inside a serialized crash-report payload, in
+ * place. Console captures and breadcrumbs carry an error's own properties at
+ * arbitrary positions, so a shallow scrub is not enough.
+ */
+export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
+  const seen = new WeakSet<object>();
+  const visit = (value: unknown, depth: number): void => {
+    if (typeof value !== "object" || value === null || depth > MAX_EMBEDDED_CONTEXT_DEPTH || seen.has(value)) return;
+    seen.add(value);
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      const descriptor = Object.getOwnPropertyDescriptor(record, key);
+      if (descriptor === undefined || !("value" in descriptor)) continue;
+      const entry: unknown = descriptor.value;
+      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) ? omitPmCliErrorDetails(entry) : entry;
+      if (scrubbed !== entry) record[key] = scrubbed;
+      visit(scrubbed, depth + 1);
+    }
+  };
+  visit(payload, 0);
 }

@@ -489,10 +489,13 @@ describe("pm cli error guidance context plumbing", () => {
 
     const oversized = formatPmCliErrorForJson("Too much", 1, { code: "probe", details: { text: "x".repeat(5000) } });
     expect(oversized).not.toHaveProperty("details");
-    expect(oversized.details_omitted).toEqual({ reason: "byte_limit", byte_length: 5011, byte_limit: 4096 });
+    expect(oversized.details_omitted).toEqual({ reason: "byte_limit", byte_limit: 4096 });
     expect(formatPmCliErrorForDisplay("Too much", { code: "probe", details: { text: "x".repeat(5000) } })).toContain(
-      "Details omitted: byte_limit (5011 of 4096 bytes)",
+      "Details omitted: byte_limit (over 4096 bytes)",
     );
+    // A getter on the slot is reported, never run.
+    const accessor = Object.defineProperty({ code: "probe" }, "details", { enumerable: true, get: () => { throw new Error("slot getter fault"); } });
+    expect(formatPmCliErrorForJson("Accessor", 1, accessor).details_omitted).toEqual({ reason: "unsupported_value", path: "details", byte_limit: 4096 });
     const malformed = formatPmCliErrorForJson("Bad shape", 1, { code: "probe", details: { at: new Date(0) } as never });
     expect(malformed.details_omitted).toEqual({ reason: "unsupported_value", path: "details.at", byte_limit: 4096 });
     expect(formatPmCliErrorForDisplay("Bad shape", { code: "probe", details: { at: new Date(0) } as never })).toContain(

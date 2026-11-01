@@ -3102,27 +3102,33 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
 
 - **Shape.** Values are `null`, booleans, finite numbers, well-formed strings,
   arrays and plain objects, nested at most `PM_CLI_ERROR_DETAILS_LIMITS.max_depth`
-  (8) containers deep. `__proto__` keys are refused. `createPmCliExpectedError`
-  throws a `TypeError` that names the path and reason (`unsupported_value`,
-  `non_finite_number`, `malformed_unicode`, `reserved_key`, `depth_limit`,
-  `not_plain_object`) so a package test catches the defect. The error keeps a
-  detached copy, so later changes to your object do not alter a raised refusal.
-  `isPmCliErrorDetails(value)` performs the same shape check.
+  (8) containers deep. `__proto__` keys and accessor properties are refused;
+  getters are never run. `createPmCliExpectedError` throws a `TypeError` whose
+  message names only the reason (`unsupported_value`, `non_finite_number`,
+  `malformed_unicode`, `reserved_key`, `depth_limit`, `not_plain_object`); the
+  offending path is on its non-enumerable `path` property, so crash reporting
+  of that fault never carries your keys. A well-formed value is kept as a
+  detached copy, so later changes to your object do not alter a raised
+  refusal; an oversized one is kept as given and renders as a `byte_limit`
+  receipt. `isPmCliErrorDetails(value)` performs the same check.
 - **Rendering.** `--json` errors carry the object as `details`, text output
   renders it as an indented JSON `Details:` block, and MCP tool errors carry it
   inside the forwarded context. Diagnostics are rendered whole or not at all:
   above `PM_CLI_ERROR_DETAILS_LIMITS.max_bytes` (4,096 bytes of compact UTF-8
   JSON), or when a separately bundled error carries a malformed shape, the
-  envelope carries `details_omitted: { reason, path?, byte_length?, byte_limit }`
-  instead. The text renderer drops the block first when the whole diagnostic
+  envelope carries `details_omitted: { reason, path?, byte_limit }` instead.
+  The size is counted while walking and the walk stops at the ceiling, so
+  shared or repeated structures cannot amplify the work; `path` is capped at
+  160 bytes. The text renderer drops the block first when the whole diagnostic
   exceeds its token ceiling; `--json` keeps it. Custom SDK hosts apply the
   same bound with `projectPmCliErrorDetails(value)` (returns `{ details }`,
   `{ details_omitted }` or `undefined`) or, for a context forwarded as-is,
   `projectPmCliErrorContextDetails(context)`.
 - **Privacy.** Telemetry and Sentry never receive `details`. The telemetry
   classification is built without it, captured faults strip it from
-  `error_context`, and Sentry's error-data contexts are scrubbed before an
-  event leaves the process.
+  `error_context`, and every embedded error context in an outgoing Sentry
+  event or transaction (error-data contexts, console-capture arguments,
+  breadcrumbs) is scrubbed before it leaves the process.
 
 For example, the SDK command layer settles relationship token counts after alias
 counts, read disclosure, encoding and optional lean/token-accounting policies.

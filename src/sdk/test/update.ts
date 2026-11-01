@@ -20,7 +20,7 @@ import { readSettings } from "../../core/store/settings.js";
 import type { LinkedTest } from "../../types/index.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
-import { assertLinkedTestContext, STRUCTURED_LINKED_TEST_KEYS } from "./entry.js";
+import { assertLinkedTestContext, linkedTestsHaveSameIdentity, STRUCTURED_LINKED_TEST_KEYS } from "./entry.js";
 import { parseLinkedTestJsonEntries } from "./parsers.js";
 import type { TestCommandOptions } from "./execution.js";
 
@@ -122,6 +122,23 @@ function selectIndex(tests: LinkedTest[], selector: LinkedTestUpdateSelector): n
   throw new PmCliError("No linked test matched the update selector", EXIT_CODE.NOT_FOUND, { code: "linked_test_update_no_match", required: "List linked tests and select a current command, path, or --update-index." });
 }
 
+/** Refuse fields an in-place edit cannot change; an empty patch is refused unless the caller allows it. */
+function assertEditablePatchFields(patch: Record<string, unknown>, allowEmpty: boolean): void {
+  const keys = Object.keys(patch);
+  const unsupported = keys.filter((key) => !EDITABLE_LINKED_TEST_KEYS.includes(key));
+  if ((keys.length === 0 && !allowEmpty) || unsupported.length > 0) {
+    throw new PmCliError("Patch explicit linked-test metadata fields; command, aliases and provenance cannot be edited", EXIT_CODE.USAGE, {
+      code: "linked_test_patch_fields_unsupported",
+      changed: false,
+      ...(unsupported.length > 0 ? { field: unsupported[0] } : {}),
+      required: `Patch at least one editable field: ${EDITABLE_LINKED_TEST_KEYS.join(", ")}.`,
+      recovery: { allowed_values: [...EDITABLE_LINKED_TEST_KEYS] },
+      ...(unsupported.length > 0 ? { nextSteps: [`Remove unsupported field(s) from --set-json: ${unsupported.join(", ")}.`] } : {}),
+    });
+  }
+  if (patch.scope === null) throw new PmCliError("scope is required and cannot be cleared", EXIT_CODE.USAGE);
+}
+
 /** The selected entry's retained metadata with the patch's other editable fields and the replacement command. */
 function buildReplacementEntry(test: LinkedTest, patch: Record<string, unknown>, command: string): Record<string, unknown> {
   const entry: Record<string, unknown> = {};
@@ -167,11 +184,32 @@ function assertCommandIdentityUnchanged(params: {
     );
   }
   const otherFields = Object.fromEntries(Object.entries(record).filter(([key]) => !COMMAND_IDENTITY_KEYS.includes(key as typeof COMMAND_IDENTITY_KEYS[number])));
+  // The retry must apply every requested field: refuse what the edit would refuse instead of dropping it.
+  assertEditablePatchFields(otherFields, true);
+  const entry = buildReplacementEntry(current, otherFields, requested);
+  // Parse exactly as the add path will, so invalid values refuse now rather than in the retry.
+  const candidate = parseLinkedTestJsonEntries(JSON.stringify(entry), "--add-json")[0];
+  assertLinkedTestContext(candidate);
+  const collision = tests.findIndex((test, position) => position !== index && linkedTestsHaveSameIdentity(test, candidate));
+  if (collision >= 0) {
+    // The add path deduplicates an identical registration, so the retry would delete the selected entry and add nothing.
+    throw new PmCliError(
+      `--set-json cannot change ${identityKey}: linked test ${collision + 1} already has the requested identity, so a replacement would merge into it`,
+      EXIT_CODE.USAGE,
+      {
+        ...context,
+        nextSteps: [
+          `Edit linked test ${collision + 1} instead: pm test ${id} --update-index ${collision + 1} --set-json '<editable fields>'.`,
+          `Or drop the selected entry: pm test ${id} --remove-index ${index + 1}.`,
+        ],
+      },
+    );
+  }
   // Exact command removal survives reordering; a shared or absent command falls back to the locked position.
   const removal = current.command !== undefined && tests.filter((test) => test.command === current.command).length === 1
     ? ["--remove", `command=${current.command}`]
     : ["--remove-index", String(index + 1)];
-  const retryArgs = [...resolvePmCommandScopeArgs(global), "test", id, ...removal, "--add-json", JSON.stringify(buildReplacementEntry(current, otherFields, requested))];
+  const retryArgs = [...resolvePmCommandScopeArgs(global), "test", id, ...removal, "--add-json", JSON.stringify(entry)];
   throw new PmCliError(
     `--set-json cannot change ${identityKey}: a linked test's command is its immutable identity; replace the entry instead`,
     EXIT_CODE.USAGE,
@@ -192,18 +230,7 @@ function applyPatch(test: LinkedTest, patch: LinkedTestMetadataPatch): { test: L
     throw new PmCliError("Linked-test metadata patch must be a JSON object", EXIT_CODE.USAGE);
   }
   const keys = Object.keys(patch);
-  const unsupported = keys.filter((key) => !EDITABLE_LINKED_TEST_KEYS.includes(key));
-  if (keys.length === 0 || unsupported.length > 0) {
-    throw new PmCliError("Patch explicit linked-test metadata fields; command, aliases and provenance cannot be edited", EXIT_CODE.USAGE, {
-      code: "linked_test_patch_fields_unsupported",
-      changed: false,
-      ...(unsupported.length > 0 ? { field: unsupported[0] } : {}),
-      required: `Patch at least one editable field: ${EDITABLE_LINKED_TEST_KEYS.join(", ")}.`,
-      recovery: { allowed_values: [...EDITABLE_LINKED_TEST_KEYS] },
-      ...(unsupported.length > 0 ? { nextSteps: [`Remove unsupported field(s) from --set-json: ${unsupported.join(", ")}.`] } : {}),
-    });
-  }
-  if (patch.scope === null) throw new PmCliError("scope is required and cannot be cleared", EXIT_CODE.USAGE);
+  assertEditablePatchFields(patch as Record<string, unknown>, false);
   const metadata = Object.fromEntries(Object.entries(test).filter(([key]) => (STRUCTURED_LINKED_TEST_KEYS as readonly string[]).includes(key)));
   // A path-only legacy entry needs no new command or fabricated provenance.
   const parsed = normalizeLinkedTest(parseLinkedTestJsonEntries(JSON.stringify({ ...metadata, command: test.command ?? "legacy-path-only", ...Object.fromEntries(Object.entries(patch).map(([key, value]) => [key, value === null ? undefined : value])) }), "--set-json")[0]);

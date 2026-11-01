@@ -112,6 +112,7 @@ describe("instrument residual branches", () => {
     await ensureSentryInit();
     const options = requireSentryInitOptions<{
       beforeSend: (event: Record<string, unknown>, hint: Record<string, unknown>) => Record<string, unknown> | null;
+      beforeSendTransaction: (event: Record<string, unknown>) => Record<string, unknown>;
     }>();
     const marker = "producer-diagnostic-payload";
     const event = {
@@ -121,7 +122,13 @@ describe("instrument residual branches", () => {
         runtime: { name: "node" },
         bare: null,
       },
-      extra: { error_context: { code: "probe", details: { marker } }, wrapped: { context: { details: { marker } } } },
+      extra: {
+        error_context: { code: "probe", details: { marker } },
+        wrapped: { context: { details: { marker } } },
+        // Console capture stores the error itself among the call arguments.
+        arguments: [{ name: "Error", message: "unexpected fault", context: { code: "probe", details: { marker } } }],
+      },
+      breadcrumbs: [{ category: "console", data: { arguments: [{ context: { details: { marker } } }] } }],
     };
     const sent = options.beforeSend(event, { originalException: new Error("unexpected fault") });
     expect(sent).not.toBeNull();
@@ -132,6 +139,11 @@ describe("instrument residual branches", () => {
     });
     // Events without contexts or extras pass unchanged.
     expect(options.beforeSend({ message: "plain" }, {})).toMatchObject({ message: "plain" });
+    const transaction = {
+      contexts: { trace: { data: { context: { details: { marker } } } } },
+      breadcrumbs: [{ category: "console", message: "safe", data: { arguments: [{ context: { details: { marker } } }] } }],
+    };
+    expect(JSON.stringify(options.beforeSendTransaction(transaction))).not.toContain(marker);
   });
 
   afterEach(() => {

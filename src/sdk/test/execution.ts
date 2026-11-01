@@ -14,7 +14,7 @@ import {
 import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { detectLinkedTestCommandNotFound } from "./command-resolution.js";
 import { updateLinkedTest, parseLinkedTestUpdateOptions, assertLinkedTestEditUsage } from "./update.js";
-import { admitLinkedTestRequest, assertLinkedTestCommand } from "./entry.js";
+import { admitLinkedTestRequest, assertLinkedTestCommand, linkedTestsHaveSameIdentity } from "./entry.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -3038,19 +3038,6 @@ async function readLinkedTestItem(params: {
     changed: false,
     removed: 0,
   };
-}
-
-function linkedTestsHaveSameIdentity(
-  left: LinkedTest,
-  right: LinkedTest,
-): boolean {
-  return (
-    left.command === right.command &&
-    left.path === right.path &&
-    left.scope === right.scope &&
-    left.pm_context_mode === right.pm_context_mode &&
-    left.workspace_context_mode === right.workspace_context_mode
-  );
 }
 
 function appendMissingLinkedTests(

@@ -284,6 +284,25 @@ describe("linked-test editing and configuration admission", () => {
       const nonString = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: 7 } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
       expect(nonString).toMatchObject({ code: "linked_test_command_immutable", message: expect.stringContaining("cannot set command") });
 
+      // The retry must apply every requested field: invalid companions refuse instead of being dropped.
+      for (const patch of [{ command: "node -e 9", assert_stdout_contans: ["PASS"] }, { command: "node -e 9", scope: null }, { command: "node -e 9", timeout_seconds: -1 }]) {
+        const before = await capture(context, id);
+        const refusal = await updateLinkedTest(id, { selector: { index: 2 }, patch: patch as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+        expect(refusal).toBeInstanceOf(Error);
+        expect((refusal as { context?: { recovery?: { suggested_retry_args?: unknown } } }).context?.recovery?.suggested_retry_args).toBeUndefined();
+        expect(await capture(context, id)).toEqual(before);
+      }
+      // A replacement whose identity matches another entry would be deduplicated away, so no retry is offered.
+      const beforeCollision = await capture(context, id);
+      const collision = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node --version", path: null, note: "merged?" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(collision).toMatchObject({
+        code: "linked_test_command_immutable",
+        message: expect.stringContaining("linked test 1 already has the requested identity"),
+        context: { nextSteps: [expect.stringContaining("--update-index 1"), expect.stringContaining("--remove-index 2")] },
+      });
+      expect((collision as { context: { recovery?: unknown } }).context.recovery).toBeUndefined();
+      expect(await capture(context, id)).toEqual(beforeCollision);
+
       // Unsupported metadata names the editable domain.
       const forged = await updateLinkedTest(id, { selector: { index: 2 }, patch: { provenance: {} } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
       expect(forged).toMatchObject({ code: "linked_test_patch_fields_unsupported", context: { field: "provenance", recovery: { allowed_values: expect.arrayContaining(["note", "timeout_seconds", "scope"]) } } });

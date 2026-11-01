@@ -5,6 +5,7 @@
 import type { PmCliErrorContext } from "../../core/shared/errors.js";
 import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 import { normalizeStatusToken } from "../../core/schema/status-token.js";
+import { runtimeFieldSdkOptionName } from "../../core/schema/runtime-field-values.js";
 import { ITEM_MUTATION_FACET_OPTION_MAPPINGS } from "./mutation-facet-contracts.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -66,8 +67,7 @@ export function createSchemaFieldRecoveryResolver(
       recovery: { provided_fields: [field], suggested_flags: [flag] },
       nextSteps: [
         `Use the declared project-schema flag: pm ${command}${command === "update" ? " <id>" : ""} ${flag} <value>`,
-        // The option name Commander derives from the flag, which the SDK reads too.
-        `SDK: pass ${definition.cli_flag.replaceAll(/-([a-z0-9])/gu, (_match, letter: string) => letter.toUpperCase())} in the ${command} options.`,
+        `SDK: pass ${runtimeFieldSdkOptionName(definition)} in the ${command} options.`,
         inspect,
       ],
     };

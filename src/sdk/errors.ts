@@ -19,6 +19,7 @@ export {
   PM_CLI_ERROR_DETAILS_LIMITS,
   isPmCliErrorDetails,
   projectPmCliErrorContextDetails,
+  projectPmCliErrorContextDetailsSlot,
   projectPmCliErrorDetails,
   type PmCliErrorDetailsOmission,
   type PmCliErrorDetailsRejection,
@@ -171,20 +172,33 @@ function normalizeExpectedErrorExitCode(value: number): number {
 /**
  * Snapshot producer diagnostics at construction. A malformed shape is a
  * package-author defect, so it throws here (where a package test sees it)
- * instead of silently disappearing from the refusal at render time. Size is
- * data-dependent and is bounded when the refusal is rendered.
+ * instead of silently disappearing from the refusal at render time. The
+ * message names only the reason: the producer-derived path, which can echo
+ * producer keys, is a non-enumerable `path` property so crash reporting of
+ * the fault never serializes it. Size is data-dependent, so oversized
+ * diagnostics are kept as given and render as a `byte_limit` receipt.
  */
 function admitExpectedErrorContext(
   context: PmCliErrorContext | undefined,
 ): PmCliErrorContext {
-  if (context === undefined || context.details === undefined) return context ?? {};
-  const admission = admitPmCliErrorDetails(context.details);
-  if (!admission.ok) {
-    throw new TypeError(
-      `createPmCliExpectedError options.context.details must be plain JSON (${admission.omission.reason} at ${admission.omission.path})`,
-    );
-  }
-  return { ...context, details: admission.details };
+  if (context === undefined || !Object.hasOwn(context, "details")) return context ?? {};
+  const descriptor = Object.getOwnPropertyDescriptor(context, "details")!;
+  // An accessor is refused without being run, like any other non-JSON value.
+  if (!("value" in descriptor)) throw detailsShapeTypeError("unsupported_value", "details");
+  if (descriptor.value === undefined) return context;
+  const admission = admitPmCliErrorDetails(descriptor.value);
+  if (admission.ok) return { ...context, details: admission.details };
+  if (admission.omission.reason === "byte_limit") return context;
+  throw detailsShapeTypeError(admission.omission.reason, admission.omission.path);
+}
+
+/** Package-author fault whose message carries no producer-derived text. */
+function detailsShapeTypeError(reason: string, path: string | undefined): TypeError {
+  const error = new TypeError(
+    `createPmCliExpectedError options.context.details must be plain JSON (${reason})`,
+  );
+  Object.defineProperty(error, "path", { value: path, enumerable: false });
+  return error;
 }
 
 /**

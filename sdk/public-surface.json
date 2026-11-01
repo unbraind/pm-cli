@@ -3017,6 +3017,14 @@
       ],
       "package_version": "2026.11.1",
       "reason": "Additive only: PmCliErrorContext gains the optional producer-owned details slot (GH-1631) and parseRegisteredItemFieldAssignments gains an optional project-schema recovery resolver (pm-wftvem); no existing member, parameter or runtime behavior is removed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCliErrorDetailsOmission",
+        "signature ./sdk/runtime:PmCliErrorDetailsOmission"
+      ],
+      "package_version": "2026.11.1",
+      "reason": "PmCliErrorDetailsOmission drops byte_length before its first release: the walk now stops at the byte ceiling (amplification bound), so an exact oversize length is never measured. The type was introduced in this unreleased change."
     }
   ],
   "entrypoints": {
@@ -14259,7 +14267,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorDetailsOmission",
-          "signature": "export interface PmCliErrorDetailsOmission { reason: PmCliErrorDetailsRejection; path?: string; byte_length?: number; byte_limit: number; }"
+          "signature": "export interface PmCliErrorDetailsOmission { reason: PmCliErrorDetailsRejection; path?: string; byte_limit: number; }"
         },
         {
           "classification": "advanced_export",
@@ -35349,7 +35357,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorDetailsOmission",
-          "signature": "export interface PmCliErrorDetailsOmission { reason: PmCliErrorDetailsRejection; path?: string; byte_length?: number; byte_limit: number; }"
+          "signature": "export interface PmCliErrorDetailsOmission { reason: PmCliErrorDetailsRejection; path?: string; byte_limit: number; }"
         },
         {
           "classification": "advanced_export",

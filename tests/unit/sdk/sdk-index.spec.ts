@@ -511,20 +511,32 @@ describe("public sdk entrypoint", () => {
     expect(isPmCliErrorDetails({ when: new Date(0) })).toBe(false);
     expect(PM_CLI_ERROR_DETAILS_LIMITS).toEqual({ max_bytes: 4096, max_depth: 8 });
     expect(Object.isFrozen(PM_CLI_ERROR_DETAILS_LIMITS)).toBe(true);
-    expect(() =>
-      createPmCliExpectedError("bad details", {
-        context: { details: { run: (() => 1) as never } },
-      }),
-    ).toThrow("createPmCliExpectedError options.context.details must be plain JSON (unsupported_value at details.run)");
+    // The fault message carries only the reason: producer keys stay in a
+    // non-enumerable path that crash reporting never serializes.
+    let shapeFault: (TypeError & { path?: string }) | undefined;
+    try {
+      createPmCliExpectedError("bad details", { context: { details: { PRODUCER_ONLY_KEY: (() => 1) as never } } });
+    } catch (error) {
+      shapeFault = error as TypeError & { path?: string };
+    }
+    expect(shapeFault?.message).toBe("createPmCliExpectedError options.context.details must be plain JSON (unsupported_value)");
+    expect(shapeFault?.message).not.toContain("PRODUCER_ONLY_KEY");
+    expect(shapeFault?.path).toBe("details.PRODUCER_ONLY_KEY");
+    expect(Object.keys(shapeFault!)).not.toContain("path");
     expect(() =>
       createPmCliExpectedError("bad details", { context: { details: [1] as never } }),
-    ).toThrow("(not_plain_object at details)");
-    // Size is data-dependent: an oversized but well-formed payload is accepted
-    // here and bounded when the refusal is rendered.
-    const large = createPmCliExpectedError("large", { context: { details: { text: "x".repeat(10_000) } } });
-    expect((large.context.details as { text: string }).text).toHaveLength(10_000);
+    ).toThrow("(not_plain_object)");
+    const accessorContext = Object.defineProperty({ code: "probe" }, "details", { enumerable: true, get: () => ({}) });
+    expect(() => createPmCliExpectedError("accessor", { context: accessorContext })).toThrow("(unsupported_value)");
+    // Size is data-dependent: an oversized but well-formed payload is kept as
+    // given and renders as a byte_limit receipt.
+    const largeDetails = { text: "x".repeat(10_000) };
+    const large = createPmCliExpectedError("large", { context: { details: largeDetails } });
+    expect(large.context.details).toBe(largeDetails);
     const withoutDetails = { code: "plain" };
     expect(createPmCliExpectedError("plain", { context: withoutDetails }).context).toBe(withoutDetails);
+    const undefinedDetails = { code: "plain", details: undefined };
+    expect(createPmCliExpectedError("plain", { context: undefinedDetails }).context).toBe(undefinedDetails);
   });
 
   it("exposes package resource kind contracts", () => {

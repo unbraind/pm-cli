@@ -748,7 +748,7 @@ describe("mcp server branch residual coverage", () => {
     const bounded = server._testOnly.errorContent(oversized) as { structuredContent: { details: Record<string, unknown> } };
     expect(bounded.structuredContent.details).toEqual({
       code: "probe_expected",
-      details_omitted: { reason: "byte_limit", byte_length: 5011, byte_limit: 4096 },
+      details_omitted: { reason: "byte_limit", byte_limit: 4096 },
     });
     expect(oversized.context.details.text).toHaveLength(5000);
 

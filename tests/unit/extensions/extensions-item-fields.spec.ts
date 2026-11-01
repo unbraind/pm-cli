@@ -49,6 +49,7 @@ describe("extensions item field runtime wiring", () => {
         { key: "gate_evidence", type: "object", commands: ["create", "update"] },
         { key: "reviewUrl", metadata_key: "review_link", type: "string", cli_flag: "review-url", commands: ["update"] },
         { key: "intake_note", type: "string", commands: ["create"] },
+        { key: "review_link_alt", type: "string", cli_flag: "review.url", commands: ["update"] },
       ],
     } as never);
     const resolveForUpdate = createSchemaFieldRecoveryResolver(registry, "update");
@@ -78,6 +79,8 @@ describe("extensions item field runtime wiring", () => {
       expect(refusal(`${key}=https://example.test`).context.recovery?.suggested_flags).toEqual(["--review-url"]);
     }
     expect(refusal("review_link=x").context.nextSteps?.[1]).toBe("SDK: pass reviewUrl in the update options.");
+    // A dotted flag advertises the option name the SDK actually reads, not the dotted spelling.
+    expect(refusal("review_link_alt=x").context.nextSteps?.[1]).toBe("SDK: pass reviewUrl in the update options.");
     const createOnly = refusal("intake_note=hello");
     expect(createOnly.message).toBe("--field intake_note is a project-schema field, not an extension field");
     expect(createOnly.context.recovery).toEqual({ provided_fields: ["intake_note"] });

@@ -3,8 +3,10 @@ import {
   PM_CLI_ERROR_DETAILS_LIMITS,
   admitPmCliErrorDetails,
   isPmCliErrorDetails,
+  omitEmbeddedPmCliErrorDetails,
   omitPmCliErrorDetails,
   projectPmCliErrorContextDetails,
+  projectPmCliErrorContextDetailsSlot,
   projectPmCliErrorDetails,
 } from "../../../../src/core/shared/error-details.js";
 
@@ -75,18 +77,46 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(admitPmCliErrorDetails(cycle)).toMatchObject({ ok: false, omission: { reason: "depth_limit" } });
   });
 
-  it("surfaces accessor faults from admission but never from rendering", () => {
+  it("refuses accessors without invoking them, and proxy faults as unsupported values", () => {
+    let calls = 0;
     const hostile = Object.defineProperty({}, "boom", {
       enumerable: true,
       get() {
+        calls += 1;
         throw new Error("getter fault");
       },
     });
-    expect(() => admitPmCliErrorDetails(hostile)).toThrow("getter fault");
+    const receipt = { reason: "unsupported_value", path: "details.boom", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes };
+    expect(admitPmCliErrorDetails(hostile)).toEqual({ ok: false, omission: receipt });
     expect(isPmCliErrorDetails(hostile)).toBe(false);
-    expect(projectPmCliErrorDetails(hostile)).toEqual({
+    expect(projectPmCliErrorDetails(hostile)).toEqual({ details_omitted: receipt });
+    expect(calls).toBe(0);
+    const trapped = new Proxy({}, { ownKeys: () => { throw new Error("trap fault"); } });
+    expect(projectPmCliErrorDetails(trapped)).toEqual({
       details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
     });
+  });
+
+  it("stops at the byte ceiling while walking, so shared references cannot amplify the work", () => {
+    let amplified: unknown = "leaf";
+    for (let level = 0; level < PM_CLI_ERROR_DETAILS_LIMITS.max_depth; level += 1) amplified = new Array(10).fill(amplified);
+    const started = performance.now();
+    expect(admitPmCliErrorDetails({ amplified })).toEqual({
+      ok: false,
+      omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
+    });
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
+  it("bounds producer-derived omission paths to a fixed UTF-8 size", () => {
+    // Key shape is checked before any bytes are charged, so a huge malformed key reaches the receipt.
+    const longKey = `${"\u{1F600}".repeat(5000)}\uD800`;
+    const admission = admitPmCliErrorDetails({ [longKey]: 1 });
+    if (admission.ok) throw new Error("unreachable");
+    expect(admission.omission.reason).toBe("malformed_unicode");
+    expect(Buffer.byteLength(admission.omission.path!, "utf8")).toBeLessThanOrEqual(160);
+    expect(admission.omission.path!.endsWith("…")).toBe(true);
+    expect(admission.omission.path).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/u);
   });
 
   it("renders diagnostics whole within the byte ceiling and replaces larger ones with a receipt", () => {
@@ -96,12 +126,13 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(projectPmCliErrorDetails(fits)).toEqual({ details: fits });
     const over = { text: "x".repeat(PM_CLI_ERROR_DETAILS_LIMITS.max_bytes - 10) };
     expect(projectPmCliErrorDetails(over)).toEqual({
-      details_omitted: {
-        reason: "byte_limit",
-        byte_length: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes + 1,
-        byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes,
-      },
+      details_omitted: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
     });
+    // The running count is the exact compact JSON size for every container shape.
+    for (const sample of [{}, { a: [] }, { a: [1, "é", null, true, { b: -0.5 }], "key \u{1F600}": { c: [[]] } }]) {
+      const admitted = admitPmCliErrorDetails(sample);
+      expect(admitted).toMatchObject({ ok: true, byte_length: Buffer.byteLength(JSON.stringify(sample), "utf8") });
+    }
     expect(projectPmCliErrorDetails({ bad: Number.POSITIVE_INFINITY })).toEqual({
       details_omitted: { reason: "non_finite_number", path: "details.bad", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
     });
@@ -123,5 +154,47 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(omitPmCliErrorDetails(context)).toEqual({ code: "probe" });
     expect(context.details).toEqual({ report: { excluded: 1 } });
     expect(omitPmCliErrorDetails(withoutDetails)).toBe(withoutDetails);
+  });
+
+  it("never runs a getter on the details slot itself", () => {
+    let calls = 0;
+    const context = Object.defineProperty({ code: "probe" }, "details", {
+      enumerable: true,
+      get() {
+        calls += 1;
+        throw new Error("slot getter fault");
+      },
+    });
+    const receipt = { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes };
+    expect(projectPmCliErrorContextDetailsSlot(context)).toEqual({ details_omitted: receipt });
+    expect(projectPmCliErrorContextDetails(context)).toEqual({ code: "probe", details_omitted: receipt });
+    expect(omitPmCliErrorDetails(context)).toEqual({ code: "probe" });
+    expect(calls).toBe(0);
+    expect(projectPmCliErrorContextDetailsSlot({ code: "probe" })).toBeUndefined();
+    expect(projectPmCliErrorContextDetailsSlot(null)).toBeUndefined();
+    expect(projectPmCliErrorContextDetailsSlot({ details: { ok: 1 } })).toEqual({ details: { ok: 1 } });
+  });
+
+  it("strips diagnostics from every embedded error context in a serialized payload", () => {
+    const marker = "producer-diagnostic-payload";
+    let calls = 0;
+    const payload: Record<string, unknown> = {
+      extra: { arguments: [{ name: "Error", context: { code: "probe", details: { marker } } }], error_context: { details: { marker } } },
+      breadcrumbs: [{ data: { arguments: [{ context: { details: { marker } } }] } }],
+      contexts: { Error: { context: { code: "probe", details: { marker } } }, plain: { context: "not an object" } },
+    };
+    payload.self = payload;
+    Object.defineProperty(payload, "lazy", { enumerable: true, get() { calls += 1; return { context: { details: { marker } } }; } });
+    let deep: Record<string, unknown> = { context: { details: { marker: "beyond-depth" } } };
+    for (let level = 0; level < 20; level += 1) deep = { next: deep };
+    payload.deep = deep;
+    omitEmbeddedPmCliErrorDetails(payload);
+    expect(calls).toBe(0);
+    expect(JSON.stringify([payload.extra, payload.breadcrumbs, payload.contexts])).not.toContain(marker);
+    expect(payload.extra).toEqual({ arguments: [{ name: "Error", context: { code: "probe" } }], error_context: {} });
+    expect(calls).toBe(0);
+    // The walk is bounded: a context nested beyond the scan depth is left as-is.
+    expect(JSON.stringify(payload.deep)).toContain("beyond-depth");
+    omitEmbeddedPmCliErrorDetails(null);
   });
 });

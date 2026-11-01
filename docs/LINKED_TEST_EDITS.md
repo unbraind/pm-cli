@@ -44,7 +44,13 @@ pm test <item-id> --remove 'command=node scripts/check.mjs' --add-json '{"comman
 ```
 
 Repeating the current command, or sending an empty one, is refused with the same
-code and a pointer to the editable fields instead of a replacement.
+code and a pointer to the editable fields instead of a replacement. Other fields
+in the same patch are validated before the retry is offered, so an unsupported
+key, `scope: null` or an invalid value refuses instead of being silently dropped.
+When the replacement would have the same identity (command, path, scope and
+context modes) as another entry, the add would be deduplicated away, so no retry
+is offered; the refusal names that entry's `--update-index` and the selected
+entry's `--remove-index` instead.
 
 Exactly one selector must match the current collection under the item lock.
 Absent selectors and ambiguous command/path matches refuse the whole edit and

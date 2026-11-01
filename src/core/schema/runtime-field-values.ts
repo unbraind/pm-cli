@@ -30,6 +30,17 @@ function toCamelToken(value: string): string {
   return `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`;
 }
 
+/**
+ * The option name an SDK caller passes for a runtime field: the camelCase of
+ * its declared CLI flag, normalized exactly as {@link readRuntimeFieldOptionValue}
+ * reads it (and as Commander derives the attribute for a hyphenated flag).
+ */
+export function runtimeFieldSdkOptionName(
+  definition: RuntimeFieldDefinitionResolved,
+): string {
+  return toCamelToken(definition.cli_flag);
+}
+
 function resolveCandidateOptionKeys(
   definition: RuntimeFieldDefinitionResolved,
 ): string[] {

@@ -6,7 +6,7 @@
 import { describeReadCompletenessControls, isReadProjectionRecoveryFlag, resolveReadCompletenessControls, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
 import {
   isPmTokenBudgetRecovery,
-  projectPmCliErrorDetails,
+  projectPmCliErrorContextDetailsSlot,
   type PmCliErrorDetails,
   type PmCliErrorDetailsOmission,
 } from "../sdk/errors.js";
@@ -816,9 +816,8 @@ function renderGuidanceDetails(message: GuidanceMessage): string[] {
   }
   const omitted = message.detailsOmitted;
   if (omitted === undefined) return [];
-  const where = omitted.path === undefined ? "" : ` at ${omitted.path}`;
-  const size = omitted.byte_length === undefined ? "" : ` (${omitted.byte_length} of ${omitted.byte_limit} bytes)`;
-  return ["", `Details omitted: ${omitted.reason}${where}${size}`];
+  const where = omitted.path === undefined ? ` (over ${omitted.byte_limit} bytes)` : ` at ${omitted.path}`;
+  return ["", `Details omitted: ${omitted.reason}${where}`];
 }
 
 /** Implements render guidance message for the public runtime surface of this module. */
@@ -1255,9 +1254,9 @@ function resolveTypedRefusalTitle(
   return fallbackTitle ?? guidance.title;
 }
 
-/** Producer diagnostics admitted whole, or the receipt that replaced them. */
-function resolveGuidanceDetails(details: unknown): Pick<GuidanceMessage, "details" | "detailsOmitted"> {
-  const projected = projectPmCliErrorDetails(details);
+/** Producer diagnostics admitted whole, or the receipt that replaced them; a getter on the slot is never run. */
+function resolveGuidanceDetails(context: PmCliErrorContext): Pick<GuidanceMessage, "details" | "detailsOmitted"> {
+  const projected = projectPmCliErrorContextDetailsSlot(context);
   if (projected === undefined) return {};
   return "details" in projected ? { details: projected.details } : { detailsOmitted: projected.details_omitted };
 }
@@ -1318,7 +1317,7 @@ function applyPmCliErrorContext(
     claimSource: context.claim_source,
     availableDependencies: context.available_dependencies,
     recovery,
-    ...resolveGuidanceDetails(context.details),
+    ...resolveGuidanceDetails(context),
   };
 }
 
