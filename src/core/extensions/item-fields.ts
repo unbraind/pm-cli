@@ -227,6 +227,7 @@ export function parseRegisteredItemFieldAssignments(
   rawFields: string[] | undefined,
   registrations: ExtensionRegistrationRegistry | null,
   resolveCoreFieldRecovery?: (field: string) => Pick<PmCliErrorContext, "recovery" | "nextSteps">,
+  resolveSchemaFieldRecovery?: (field: string) => Pick<PmCliErrorContext, "recovery" | "nextSteps"> | undefined,
 ): Record<string, unknown> {
   if (!rawFields || rawFields.length === 0) {
     return {};
@@ -237,39 +238,7 @@ export function parseRegisteredItemFieldAssignments(
     const { key, value } = parseFieldAssignment(raw);
     const definition = definitions.get(key);
     if (!definition) {
-      if (RESERVED_ITEM_FIELD_NAMES.has(key)) {
-        const guidance = resolveCoreFieldRecovery?.(key) ?? {
-          recovery: { provided_fields: [key] },
-          nextSteps: ["Core metadata has no generic --field mutation path. Use the owning lifecycle, evidence, or importer API; inspect pm update <id> --help for declared mutation flags."],
-        };
-        throw new PmCliError(
-          `--field ${key} is a core item field, not an extension field`,
-          EXIT_CODE.USAGE,
-          {
-            code: "core_item_field_requires_dedicated_flag",
-            field: key,
-            ...guidance,
-          },
-        );
-      }
-      const known = [...definitions.keys()].sort((left, right) =>
-        left.localeCompare(right),
-      );
-      throw new PmCliError(
-        `--field ${key} is not declared by an active extension item-field registration`,
-        EXIT_CODE.USAGE,
-        {
-          code: "extension_item_field_unknown",
-          field: key,
-          recovery: { provided_fields: [key] },
-          nextSteps:
-            known.length > 0
-              ? [`Use one of the declared fields: ${known.join(", ")}`]
-              : [
-                  "Activate an extension that calls registerItemFields before setting extension fields.",
-                ],
-        },
-      );
+      throw unregisteredFieldRefusal(key, definitions, resolveCoreFieldRecovery, resolveSchemaFieldRecovery);
     }
     assertNotReservedItemFieldName(definition.name);
     values[definition.name] = coerceRegisteredFieldValue(
@@ -279,6 +248,67 @@ export function parseRegisteredItemFieldAssignments(
     );
   }
   return values;
+}
+
+/**
+ * Typed refusal for a `--field` key no active extension declares: reserved
+ * core keys, project-schema keys and unknown keys each name their own route.
+ */
+function unregisteredFieldRefusal(
+  key: string,
+  definitions: Map<string, unknown>,
+  resolveCoreFieldRecovery?: (field: string) => Pick<PmCliErrorContext, "recovery" | "nextSteps">,
+  resolveSchemaFieldRecovery?: (field: string) => Pick<PmCliErrorContext, "recovery" | "nextSteps"> | undefined,
+): PmCliError {
+  if (RESERVED_ITEM_FIELD_NAMES.has(key)) {
+    const guidance = resolveCoreFieldRecovery?.(key) ?? {
+      recovery: { provided_fields: [key] },
+      nextSteps: ["Core metadata has no generic --field mutation path. Use the owning lifecycle, evidence, or importer API; inspect pm update <id> --help for declared mutation flags."],
+    };
+    return new PmCliError(
+      `--field ${key} is a core item field, not an extension field`,
+      EXIT_CODE.USAGE,
+      {
+        code: "core_item_field_requires_dedicated_flag",
+        field: key,
+        ...guidance,
+      },
+    );
+  }
+  const schemaGuidance = resolveSchemaFieldRecovery?.(key);
+  if (schemaGuidance !== undefined) {
+    const flag = schemaGuidance.recovery?.suggested_flags?.[0];
+    return new PmCliError(
+      flag === undefined
+        ? `--field ${key} is a project-schema field, not an extension field`
+        : `--field ${key} is a project-schema field; set it with its declared flag ${flag}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "project_schema_field_requires_declared_flag",
+        field: key,
+        changed: false,
+        ...schemaGuidance,
+      },
+    );
+  }
+  const known = [...definitions.keys()].sort((left, right) =>
+    left.localeCompare(right),
+  );
+  return new PmCliError(
+    `--field ${key} is not declared by an active extension item-field registration`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_item_field_unknown",
+      field: key,
+      recovery: { provided_fields: [key] },
+      nextSteps:
+        known.length > 0
+          ? [`Use one of the declared fields: ${known.join(", ")}`]
+          : [
+              "Activate an extension that calls registerItemFields before setting extension fields.",
+            ],
+    },
+  );
 }
 
 function isValidFieldType(

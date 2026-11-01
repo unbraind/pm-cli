@@ -1,0 +1,22 @@
+id: pm-93hfja
+title: "author-attribution spec passes only where a harness is detectable: in-process runInit records an unknown-author settings:write that CI attributes to harness:ci"
+description: "Measured on main a6c651101 (2026-11-01). tests/unit/sdk/author-attribution.spec.ts fails 5 of 14 cases in a plain developer shell, with every harness variable unset and no CI variables. It passes in hosted CI on the same commit (main CI run 41344332764 green) and under Claude Code with CLAUDECODE set.\n\nCause: the in-process SDK runInit(undefined, { path }, { defaults: true, agentGuidance: \"skip\" }) records a settings:write event in history/_workspace.jsonl. writeSettings attributes it with resolveAuthor(undefined, settings.author_default). With no harness detected and an empty author_default, that resolves to \"unknown\". The event postdates the attribution baseline, so health and validate count it as actionable: storage warns with history_unknown_author_events, and every assertion that expects the planted legacy event to be the only unknown one fails. Under GITHUB_ACTIONS/CI, resolveAuthor detects harness:ci, so CI never sees it. The spec's verdict depends on ambient host state, the same family as pm-631t9p (closed), in the opposite direction.\n\nThe CLI does not reproduce it. pm init --defaults (cwd and --pm-path) in the same plain shell writes no _workspace.jsonl and health reports ok with no warnings. So the open question is why the in-process runInit path records a settings write that the CLI init path does not. Either the SDK init path should match the CLI (no unattributed settings:write on creation), or the spec must pin an explicit author for its setup writes."
+type: Issue
+status: open
+priority: 2
+tags[5]: author-attribution,harness-detection,hermeticity,local-hosted-parity,testing
+created_at: "2026-11-01T20:50:13.756Z"
+updated_at: "2026-11-01T21:21:24.610Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "The spec passes in a plain shell with no harness or CI variables, under Claude Code, and in hosted CI; In-process runInit and CLI init record the same workspace history for a fresh tracker, or the difference is documented and intentional; A negative-control run with harness variables removed is part of the evidence"
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: "tests/unit/sdk/author-attribution.spec.ts passes identically in a plain shell, under any agent harness and in hosted CI, because its setup writes carry an explicit or equivalent author"
+actual_result: "5 of 14 cases fail in a plain shell with harness variables unset (health storage warns history_unknown_author_events from runInit's settings:write); the same commit passes in CI where resolveAuthor detects harness:ci"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-631t9p,related,"2026-11-01T20:50:13.756Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1631,discovered_from,"2026-11-01T20:50:13.756Z","harness:claude-code","cli:create:dep",detected
+escape_class: review_caught_late
+body: ""

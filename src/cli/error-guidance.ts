@@ -4,7 +4,12 @@
  * Provides CLI runtime support for Error Guidance.
  */
 import { describeReadCompletenessControls, isReadProjectionRecoveryFlag, resolveReadCompletenessControls, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
-import { isPmTokenBudgetRecovery } from "../sdk/errors.js";
+import {
+  isPmTokenBudgetRecovery,
+  projectPmCliErrorDetails,
+  type PmCliErrorDetails,
+  type PmCliErrorDetailsOmission,
+} from "../sdk/errors.js";
 import {
   type PmCliErrorContext,
   type PmCliErrorRecoveryPayload,
@@ -66,6 +71,10 @@ interface GuidanceMessage {
     PmCliErrorContext["available_dependencies"]
   >;
   recovery?: PmCliErrorRecoveryPayload;
+  /** Producer-owned diagnostics admitted within the declared ceiling. */
+  details?: PmCliErrorDetails;
+  /** Receipt replacing producer diagnostics that could not be rendered. */
+  detailsOmitted?: PmCliErrorDetailsOmission;
 }
 
 /** Compact refusal identity embedded in every structured error envelope. */
@@ -155,6 +164,10 @@ export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
   >;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
+  /** Producer-owned structured diagnostics, rendered whole within their byte ceiling (GH-1631). */
+  details?: PmCliErrorDetails;
+  /** Receipt that replaces producer diagnostics the host could not render. */
+  details_omitted?: PmCliErrorDetailsOmission;
   /** Stable compact identity of the failing surface and legal recovery domain. */
   refusal: PmRefusalEnvelope;
   /** Binding output-budget receipt for this diagnostic. */
@@ -784,7 +797,28 @@ function renderGuidanceExplanation(message: GuidanceMessage, lean: boolean): str
   if (verificationErrors.length > 0) {
     lines.push("", ...renderList("Verification errors:", verificationErrors));
   }
+  lines.push(...renderGuidanceDetails(message));
   return lines;
+}
+
+/**
+ * Producer diagnostics as indented JSON, or the receipt that replaced them.
+ * JSON keeps the text rendering exact and dependency-free: this module is on
+ * the runtime-compatibility boundary that must work without installed
+ * runtime dependencies.
+ */
+function renderGuidanceDetails(message: GuidanceMessage): string[] {
+  if (message.details !== undefined && Object.keys(message.details).length > 0) {
+    const encoded = JSON.stringify(message.details, null, 2)
+      .split("\n")
+      .map((line) => `  ${line}`);
+    return ["", "Details:", ...encoded];
+  }
+  const omitted = message.detailsOmitted;
+  if (omitted === undefined) return [];
+  const where = omitted.path === undefined ? "" : ` at ${omitted.path}`;
+  const size = omitted.byte_length === undefined ? "" : ` (${omitted.byte_length} of ${omitted.byte_limit} bytes)`;
+  return ["", `Details omitted: ${omitted.reason}${where}${size}`];
 }
 
 /** Implements render guidance message for the public runtime surface of this module. */
@@ -851,6 +885,7 @@ function renderBoundedGuidanceMessage(
   const withoutExplanation: GuidanceMessage = { ...message, why: undefined };
   const limitedCollections: GuidanceMessage = {
     ...withoutExplanation,
+    details: undefined,
     examples: message.examples?.slice(0, 1),
     nextSteps: message.nextSteps?.slice(0, 1),
     verificationErrors: message.verificationErrors?.slice(0, 3),
@@ -1037,7 +1072,7 @@ function guidanceToJsonEnvelope(
   message: GuidanceMessage,
   exitCode: number,
 ): JsonErrorEnvelope {
-  return attachStructuredGuidanceDetails(
+  const envelope: JsonErrorEnvelope = attachStructuredGuidanceDetails(
     {
       type: message.type,
       code: message.code,
@@ -1050,6 +1085,11 @@ function guidanceToJsonEnvelope(
     },
     message,
   );
+  // Producer diagnostics belong to the rendered refusal only; the telemetry
+  // classification built from the same guidance never carries them.
+  if (message.details !== undefined) envelope.details = message.details;
+  if (message.detailsOmitted !== undefined) envelope.details_omitted = message.detailsOmitted;
+  return envelope;
 }
 
 function projectJsonErrorGuidance(
@@ -1198,6 +1238,30 @@ function resolveErrorContextFlag(context: PmCliErrorContext, recovery: PmCliErro
   return recovery?.normalized_args?.some(/** Match only the supplied canonical spelling or its attached value; another valid flag cannot own this refusal. */ (argument) => argument === flag || argument.startsWith(`${flag}=`)) ? flag : undefined;
 }
 
+/**
+ * A generic classification title describes the message-text heuristic, not
+ * the producer's typed condition; the message's first line names the latter.
+ */
+function resolveTypedRefusalTitle(
+  guidance: GuidanceMessage,
+  code: string,
+  context: PmCliErrorContext,
+  normalizedRawMessage: string,
+): string {
+  const generic =
+    guidance.code === "command_failed" ||
+    (guidance.code === "invalid_argument_value" && code !== guidance.code);
+  const fallbackTitle = context.code && generic ? buildFallbackTitleFromMessage(normalizedRawMessage) : undefined;
+  return fallbackTitle ?? guidance.title;
+}
+
+/** Producer diagnostics admitted whole, or the receipt that replaced them. */
+function resolveGuidanceDetails(details: unknown): Pick<GuidanceMessage, "details" | "detailsOmitted"> {
+  const projected = projectPmCliErrorDetails(details);
+  if (projected === undefined) return {};
+  return "details" in projected ? { details: projected.details } : { detailsOmitted: projected.details_omitted };
+}
+
 /** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
 /** Merge typed SDK context into guidance without inferring mutation outcomes. */
 function applyPmCliErrorContext(
@@ -1217,10 +1281,6 @@ function applyPmCliErrorContext(
   const verificationErrors =
     normalizeContextList(context.verification_errors) ??
     guidance.verificationErrors;
-  const fallbackTitle =
-    guidance.code === "command_failed" && context.code
-      ? buildFallbackTitleFromMessage(normalizedRawMessage)
-      : undefined;
   const contextRecovery = normalizeRecoveryPayload(context.recovery);
   const recovery =
     contextRecovery && guidance.recovery
@@ -1232,7 +1292,7 @@ function applyPmCliErrorContext(
     changed: context.changed,
     sideEffects: context.side_effects,
     type,
-    title: fallbackTitle ?? guidance.title,
+    title: resolveTypedRefusalTitle(guidance, code, context, normalizedRawMessage),
     happened:
       normalizedRawMessage.length > 0
         ? normalizedRawMessage
@@ -1258,6 +1318,7 @@ function applyPmCliErrorContext(
     claimSource: context.claim_source,
     availableDependencies: context.available_dependencies,
     recovery,
+    ...resolveGuidanceDetails(context.details),
   };
 }
 
@@ -1488,16 +1549,29 @@ function buildNoUpdateFieldsGuidance(
   );
 }
 
+/**
+ * Classify a message as an invalid argument value. Substring heuristics only
+ * classify untyped text: a typed refusal can interpolate data (for example
+ * candidate item titles) that happens to contain " must be " or " requires ".
+ */
+function isInvalidArgumentMessage(
+  message: string,
+  context: PmCliErrorContext | undefined,
+): boolean {
+  if (message.startsWith("Invalid ")) return true;
+  if (!message.includes(" must be ") && !message.includes(" requires ")) {
+    return false;
+  }
+  const code = normalizeContextValue(context?.code, undefined);
+  return code === undefined || code === "invalid_argument_value" || context?.allowed !== undefined;
+}
+
 function buildInvalidArgumentGuidance(
   rawMessage: string,
   message: string,
   context: PmCliErrorContext | undefined,
 ): GuidanceMessage | null {
-  if (
-    !message.startsWith("Invalid ") &&
-    !message.includes(" must be ") &&
-    !message.includes(" requires ")
-  ) {
+  if (!isInvalidArgumentMessage(message, context)) {
     return null;
   }
   const recovery = normalizeRecoveryPayload(context?.recovery);

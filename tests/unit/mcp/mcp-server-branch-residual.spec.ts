@@ -730,12 +730,36 @@ describe("mcp server branch residual coverage", () => {
     expect(server._testOnly.errorContent("primitive-error")).toMatchObject({
       isError: true,
     });
+    // GH-1631: a separately bundled expected error keeps its typed context,
+    // and producer diagnostics are bounded the same way the CLI bounds them.
+    const bundled = Object.assign(new Error("bundled refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: { code: "probe_expected", details: { report: { excluded: 1 } } },
+    });
+    expect(server._testOnly.errorContent(bundled)).toMatchObject({
+      structuredContent: { error: "bundled refusal", code: 2, details: { code: "probe_expected", details: { report: { excluded: 1 } } } },
+    });
+    const oversized = Object.assign(new Error("oversized refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: { code: "probe_expected", details: { text: "x".repeat(5000) } },
+    });
+    const bounded = server._testOnly.errorContent(oversized) as { structuredContent: { details: Record<string, unknown> } };
+    expect(bounded.structuredContent.details).toEqual({
+      code: "probe_expected",
+      details_omitted: { reason: "byte_limit", byte_length: 5011, byte_limit: 4096 },
+    });
+    expect(oversized.context.details.text).toHaveLength(5000);
 
     const writeSpy = vi
       .spyOn(process.stdout, "write")
       .mockImplementation(() => true);
     server._testOnly.writeError(1, "primitive-write-error");
     expect(writeSpy).toHaveBeenCalled();
+    server._testOnly.writeError(2, oversized);
+    const written = JSON.parse(String(writeSpy.mock.calls.at(-1)?.[0])) as { error: { code: number; data: Record<string, unknown> } };
+    expect(written.error).toMatchObject({ code: 2, data: { code: "probe_expected", details_omitted: { reason: "byte_limit" } } });
 
     const parseSpy = vi.spyOn(JSON, "parse").mockImplementation(() => {
       throw "bad-json";

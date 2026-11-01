@@ -9,7 +9,20 @@ import {
   type PmCliErrorContext,
   type PmTokenBudgetRecovery,
 } from "../core/shared/errors.js";
-export type { PmTokenBudgetRecovery } from "../core/shared/errors.js";
+import { admitPmCliErrorDetails } from "../core/shared/error-details.js";
+export type {
+  PmCliErrorDetailValue,
+  PmCliErrorDetails,
+  PmTokenBudgetRecovery,
+} from "../core/shared/errors.js";
+export {
+  PM_CLI_ERROR_DETAILS_LIMITS,
+  isPmCliErrorDetails,
+  projectPmCliErrorContextDetails,
+  projectPmCliErrorDetails,
+  type PmCliErrorDetailsOmission,
+  type PmCliErrorDetailsRejection,
+} from "../core/shared/error-details.js";
 
 /** Accept only positive integer token counts that JSON can preserve exactly. */
 function isPositiveSafeTokenCount(value: unknown): value is number {
@@ -156,11 +169,33 @@ function normalizeExpectedErrorExitCode(value: number): number {
 }
 
 /**
+ * Snapshot producer diagnostics at construction. A malformed shape is a
+ * package-author defect, so it throws here (where a package test sees it)
+ * instead of silently disappearing from the refusal at render time. Size is
+ * data-dependent and is bounded when the refusal is rendered.
+ */
+function admitExpectedErrorContext(
+  context: PmCliErrorContext | undefined,
+): PmCliErrorContext {
+  if (context === undefined || context.details === undefined) return context ?? {};
+  const admission = admitPmCliErrorDetails(context.details);
+  if (!admission.ok) {
+    throw new TypeError(
+      `createPmCliExpectedError options.context.details must be plain JSON (${admission.omission.reason} at ${admission.omission.path})`,
+    );
+  }
+  return { ...context, details: admission.details };
+}
+
+/**
  * Create a package-safe expected CLI error.
  *
  * The CLI and Sentry filtering rely on the public error shape rather than a
  * shared class identity, so package authors can throw this from bundled,
- * linked, or separately installed extension code.
+ * linked, or separately installed extension code. Structured, producer-owned
+ * facts belong in `context.details`: the host renders them in `--json`, text
+ * and MCP refusals within `PM_CLI_ERROR_DETAILS_LIMITS` and never sends them
+ * to telemetry or crash reporting.
  */
 export function createPmCliExpectedError(
   message: string,
@@ -174,7 +209,7 @@ export function createPmCliExpectedError(
   const error = new PmCliError(
     message,
     normalizeExpectedErrorExitCode(options.exitCode ?? EXIT_CODE.USAGE),
-    options.context ?? {},
+    admitExpectedErrorContext(options.context),
   ) as PmCliExpectedError;
   if ("cause" in options) {
     Object.defineProperty(error, "cause", {

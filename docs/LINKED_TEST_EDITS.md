@@ -21,11 +21,30 @@ index and metadata field names in `context.linked_test_update`.
 Use `null` to clear an optional field, such as a note, path or timeout. Scope is
 required and cannot be cleared. Every entry must retain a nonblank command or path:
 replace a path-only entry's path rather than clearing its last identity.
-Unknown fields, command changes, provenance
-changes and editor-stamp overrides are refused. To change the command, remove
-and add it through the ordinary provenance-recording workflow. Editing context
-or environment controls changes the clone-local trust fingerprint, so any prior
-acknowledgment must be reviewed again.
+Unknown fields, provenance changes and editor-stamp overrides are refused with
+`linked_test_patch_fields_unsupported`, which lists the editable fields in
+`recovery.allowed_values`. Editing context or environment controls changes the
+clone-local trust fingerprint, so any prior acknowledgment must be reviewed again.
+
+A command is the entry's immutable identity, so a `command` or `cmd` key is
+refused with `linked_test_command_immutable` before anything is written. The
+refusal's `recovery.suggested_retry_args` is the supported replacement
+([pm-1rfy0y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1rfy0y.toon);
+tracker record excluded from npm): one `pm test` invocation
+that removes the selected entry (by its exact command, or by its locked position
+when the entry has no unique command) and adds the new command with the entry's
+other metadata and any other fields from your patch. The replacement records
+fresh provenance in a single `tests_add` history event, leaves every other entry
+untouched, and is appended at the end of the list:
+
+```bash
+pm test <item-id> --update-index 1 --set-json '{"command":"node scripts/check-v2.mjs"}' --json
+# refused: linked_test_command_immutable; run the advertised retry, for example
+pm test <item-id> --remove 'command=node scripts/check.mjs' --add-json '{"command":"node scripts/check-v2.mjs","scope":"project","note":"Verified coverage gate"}'
+```
+
+Repeating the current command, or sending an empty one, is refused with the same
+code and a pointer to the editable fields instead of a replacement.
 
 Exactly one selector must match the current collection under the item lock.
 Absent selectors and ambiguous command/path matches refuse the whole edit and

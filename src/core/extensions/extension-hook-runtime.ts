@@ -3,6 +3,7 @@
  *
  * Implements extension runtime contracts and governance for Extension Hook Runtime.
  */
+import { unicodeSafePrefix } from "../shared/text-normalization.js";
 import {
   cloneCommandOptionsSnapshot,
   cloneContextSnapshot,
@@ -249,8 +250,10 @@ function describeHandlerError(error: unknown): string {
     return "";
   }
   const maxLength = 300;
+  // Bound by UTF-16 units like the original contract, but never split a
+  // surrogate pair: a lone high surrogate makes structured output refuse.
   return normalized.length > maxLength
-    ? `${normalized.slice(0, maxLength - 1)}…`
+    ? `${unicodeSafePrefix(normalized, maxLength - 1)}…`
     : normalized;
 }
 
@@ -269,7 +272,7 @@ function readHandlerStringField(
   const normalized = String((value as Record<string, unknown>)[field])
     .replace(/\s+/gu, " ")
     .trim();
-  return normalized.length > 0 ? normalized.slice(0, 300) : undefined;
+  return normalized.length > 0 ? unicodeSafePrefix(normalized, 300) : undefined;
 }
 
 /** Validate an optional structured extension result exit code. */

@@ -78,7 +78,7 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { resolveCoreFieldRecovery } from "./core-field-recovery.js";
+import { createSchemaFieldRecoveryResolver, resolveCoreFieldRecovery } from "./core-field-recovery.js";
 import {
   applyLegacyNoneCollectionNormalizers,
   createLegacyNoneCollectionNormalizers,
@@ -3044,6 +3044,7 @@ function applyRuntimeAndRegisteredFieldMutations(
     context.options.field,
     context.extensionRegistrations,
     resolveCoreFieldRecovery,
+    createSchemaFieldRecoveryResolver(context.runtimeFieldRegistry, "update"),
   );
   for (const fieldKey of Object.keys(registeredItemFieldUpdates)) {
     if (context.clearItemMetadataKeys.has(fieldKey)) {

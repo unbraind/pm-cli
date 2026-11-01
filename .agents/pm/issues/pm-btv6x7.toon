@@ -2,21 +2,39 @@ id: pm-btv6x7
 title: "Typed refusals render the generic headline 'Invalid argument value' in human output: a likely_duplicate create refusal reads as a bad flag value"
 description: "On pm 2026.11.1, a strict duplicate-guard refusal from pm create returns code likely_duplicate in JSON, but the human (TOON/text) output opens with 'Error: Invalid argument value'. The headline comes from the generic usage-class title in src/cli/error-guidance.ts (code invalid_argument_value) and is shown even when a more specific code is attached. An agent that reads only the first lines (for example through head) sees a flag-validation failure and starts bisecting flags. That happened while filing pm-8s53lj: several sandbox retries were spent before the full body showed 'Likely duplicate item(s) found: pm-gh1605'. The specific code and its 'What happened' text are correct. Only the headline is generic."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,cli,error-guidance,refusals
 created_at: "2026-11-01T11:19:53.418Z"
-updated_at: "2026-11-01T12:19:05.617Z"
+updated_at: "2026-11-01T21:06:43.696Z"
+closed_at: "2026-11-01T21:06:42.932Z"
+completed_at: "2026-11-01T21:06:42.932Z"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "When a refusal carries a specific code (for example likely_duplicate), the human output headline names that condition (for example 'Likely duplicate item') instead of the generic exit-class title; Regression test covers the likely_duplicate create refusal headline in human output; JSON code and title fields agree"
 parent: pm-f05lsg
 risk: low
 confidence: high
-expected_result: The first line of a typed refusal identifies the refusal condition.
-actual_result: "pm create ... (duplicate) prints 'Error: Invalid argument value' as its first line while --json reports code likely_duplicate."
+resolution: "Substring heuristics classify only untyped messages; a typed code overriding a generic class takes the message first line as its title in JSON, classification and human output."
+expected_result: A likely_duplicate refusal opens with its own condition and no flag-value next step.
+actual_result: "The headline reads 'Likely duplicate item(s) found: ...' and JSON title and code agree; published 2026.11.1 printed 'Invalid argument value' for the same input."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8s53lj,discovered_from,"2026-11-01T11:19:53.418Z","harness:claude-code","cli:create:dep",detected
   pm-gh1605,related,"2026-11-01T12:19:05.401Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-01T21:06:24.581Z","harness:claude-code","Root cause: buildInvalidArgumentGuidance classified any message containing \" must be \" or \" requires \" as invalid_argument_value, and applyPmCliErrorContext only replaced the generic title for command_failed. The likely_duplicate refusal interpolates candidate item titles into its message, so a duplicate whose title contains either phrase was classified as a bad flag value. It got the \"Invalid argument value\" headline and the misleading \"Check allowed values in command help\" next step.\n\nFix (src/cli/error-guidance.ts): substring heuristics now classify only untyped text. A typed code keeps the invalid-argument route only when its message starts with \"Invalid \" or it declares an allowed domain. Whenever a typed code overrides a generic class (command_failed or invalid_argument_value), the headline is the message's first line. JSON title and code agree, and generic-coded refusals keep the class title.\n\nNegative control: the published 2026.11.1 tarball's dist/cli/error-guidance.js returns title \"Invalid argument value\" plus the \"Check allowed values\" step for the same input. The new case in tests/unit/cli/error-guidance.spec.ts asserts the typed first-line headline in JSON, in classification and on the first line of the human output.\n"
+files[2]{path,scope}:
+  src/cli/error-guidance.ts,project
+  tests/unit/cli/error-guidance.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,project,600,"harness:claude-code","2026-11-01T20:27:10.287Z",local_mutation,fix/refusal-contract-precision
+close_reason: Typed refusals keep their own headline when interpolated data resembles a validation message
 escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-btv6x7
+  gate_id: tests/unit/cli/error-guidance.spec.ts typed-refusal headline case (likely_duplicate message whose interpolated candidate title contains ' requires ')
+  negative_control: "Run the same formatPmCliErrorForJson input against the published 2026.11.1 dist/cli/error-guidance.js: title is 'Invalid argument value' with the misleading 'Check allowed values' next step; the new spec asserts the typed first-line headline"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""

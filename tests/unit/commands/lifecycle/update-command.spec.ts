@@ -4007,6 +4007,47 @@ describe("runUpdate", () => {
     });
   });
 
+  it("routes a --field project-schema key to its declared flag without writing, and the advertised SDK route succeeds (pm-wftvem)", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...settings.schema,
+        fields: [{ key: "reviewUrl", metadata_key: "review_link", type: "string", cli_flag: "review-url", commands: ["update"] }],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      const id = createTask(context, "update-schema-field-route");
+      const located = await locateItem(context.pmPath, id);
+      if (!located) throw new Error("created item not found");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const before = [await readFile(located.itemPath, "utf8"), await readFile(historyPath, "utf8")];
+
+      let refusal: PmCliError | undefined;
+      try {
+        await runUpdate(id, { field: ["review_link=https://example.test/r/1"], message: "wrong channel" }, { path: context.pmPath });
+      } catch (error) {
+        refusal = error as PmCliError;
+      }
+      expect(refusal).toBeInstanceOf(PmCliError);
+      expect(refusal?.exitCode).toBe(EXIT_CODE.USAGE);
+      expect(refusal?.context).toMatchObject({
+        code: "project_schema_field_requires_declared_flag",
+        field: "review_link",
+        changed: false,
+        recovery: { suggested_flags: ["--review-url"] },
+      });
+      expect(refusal?.context.nextSteps).toContain("SDK: pass reviewUrl in the update options.");
+      expect([await readFile(located.itemPath, "utf8"), await readFile(historyPath, "utf8")]).toEqual(before);
+
+      // Execute exactly the advertised SDK route.
+      const updated = await runUpdate(id, { reviewUrl: "https://example.test/r/1", message: "declared channel" }, { path: context.pmPath });
+      expect(updated.changed_fields).toContain("review_link");
+      expect((updated.item as { review_link?: string }).review_link).toBe("https://example.test/r/1");
+    });
+  });
+
   it("accepts stdin token for update repeatable entries", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-repeatable-stdin");

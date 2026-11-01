@@ -2,22 +2,53 @@ id: pm-wftvem
 title: Route project-schema keys to their declared flags in field refusals
 description: "Observed during SDK delivery: update with --field gate_evidence=<JSON> refuses that key as absent from active extension registrations and lists only unrelated extension fields. The same workspace declares gate_evidence as an object field with cli_flag --gate-evidence; schema show-field and update contracts expose it, and the dedicated flag succeeds. Extend field recovery to distinguish configured project-schema fields from extension item fields and provide the executable declared CLI/SDK route. Preserve extension-field admission and no-write refusals. This is a recovery/discovery gap, not a request to bypass schema validation or reinterpret arbitrary extension fields."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-27T22:32:59.271Z"
-updated_at: "2026-10-27T22:32:59.271Z"
+updated_at: "2026-11-01T21:06:45.381Z"
+closed_at: "2026-11-01T21:06:44.522Z"
+completed_at: "2026-11-01T21:06:44.522Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: A rejected configured schema key names its declared CLI flag and supported SDK route; Unknown extension and reserved core keys retain distinct typed recovery; Native refused-call tests prove unchanged documents/history and execute the advertised correction
 parent: pm-f05lsg
 risk: low
 confidence: high
-expected_result: An agent can repair the rejected schema-field call using only its refusal and the actual declared field contract.
-actual_result: "The gate_evidence refusal names only unrelated active extension fields, while contracts and schema show-field reveal the successful --gate-evidence route."
+resolution: "parseRegisteredItemFieldAssignments takes a project-schema resolver used by create and update; the refusal project_schema_field_requires_declared_flag names the flag, SDK option and schema show-field; the CLI rewrites the one matching --field token into an executable retry."
+expected_result: "An agent repairs a --field gate_evidence call from the refusal alone, without a write."
+actual_result: The SDK refusal leaves item and history bytes unchanged and the advertised SDK route succeeds; unknown and core keys keep their own codes.
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2jtbl8,related,"2026-10-27T22:32:59.271Z","harness:codex","cli:create:dep",detected
   pm-field-key-recovery,related,"2026-10-27T22:32:59.271Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-27T22:32:59.271Z","harness:codex","Duplicate check: complete strict3143-item corpus, refreshed open/in-progress lists, field schema extension recovery search, and full live closed pm-2jtbl8/pm-field-key-recovery metadata and comments. Those delivered owners cover built-in reserved keys and rejected-key identity, not configured project-schema flag routing. Intake only, left open and unclaimed."
+  "2026-11-01T21:06:25.272Z","harness:claude-code","Implementation: parseRegisteredItemFieldAssignments takes an optional project-schema resolver (createSchemaFieldRecoveryResolver in src/sdk/lifecycle/core-field-recovery.ts, wired by both create and update). A --field key the project schema declares (by key or metadata_key, through the registry's own normalizer) is refused with project_schema_field_requires_declared_flag and changed:false. The refusal carries recovery.suggested_flags with the declared flag, next steps naming the CLI flag, the SDK option (the camelCase name Commander derives from that flag, which the SDK also reads) and pm schema show-field. A key declared for other commands only says so. Unknown keys keep extension_item_field_unknown and reserved core keys keep core_item_field_requires_dedicated_flag.\n\nCLI executability: src/cli/runtime/field-route-retry.ts rewrites exactly one matching --field key=value (or --field=key=value) token in the caller's own invocation into --<flag> value and attaches suggested_retry and suggested_retry_args. Duplicate assignments, assignments after --, a dangling --field and bare keys keep the producer recovery rather than guess.\n\nProof: the update-command spec refuses through the SDK with byte-identical item and history files, then executes the advertised SDK route (reviewUrl) successfully. Resolver/parser and retry-repair specs cover every branch.\n"
+files[13]{path,scope}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  src/cli/main.ts,project
+  src/cli/runtime/field-route-retry.ts,project
+  src/core/extensions/item-fields.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/lifecycle/core-field-recovery.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/update.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/cli/runtime/projection-retry.spec.ts,project
+  tests/unit/commands/lifecycle/update-command.spec.ts,project
+  tests/unit/extensions/extensions-item-fields.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts,project,900,"harness:claude-code","2026-11-01T20:27:11.043Z",local_mutation,fix/refusal-contract-precision
+docs[1]{path,scope}:
+  docs/EXTENSIONS.md,project
+close_reason: Project-schema --field keys route to their declared flag
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-wftvem
+  gate_id: "tests/unit/extensions/extensions-item-fields.spec.ts project-schema routing case, tests/unit/commands/lifecycle/update-command.spec.ts no-write refusal plus executed SDK route, tests/unit/cli/runtime/projection-retry.spec.ts executable --field retry repair"
+  negative_control: "Drop the createSchemaFieldRecoveryResolver argument from parseRegisteredItemFieldAssignments in src/sdk/lifecycle/update.ts: the refusal reverts to extension_item_field_unknown listing unrelated extension fields and the update-command spec fails"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-item-fields.spec.ts tests/unit/cli/runtime/projection-retry.spec.ts tests/unit/commands/lifecycle/update-command.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""

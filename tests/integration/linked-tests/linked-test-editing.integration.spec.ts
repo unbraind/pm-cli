@@ -234,6 +234,73 @@ describe("linked-test editing and configuration admission", () => {
     });
   });
 
+  it("refuses command edits with an executable atomic replacement that keeps other entries and records fresh provenance (pm-1rfy0y)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "command replacement", createMode: "progressive" });
+      await runTest(id, { addJson: [JSON.stringify([
+        { command: "node -e 1", path: "first.mjs", timeout_seconds: 60, note: "old" },
+        { command: "node --version", note: "untouched" },
+      ])] }, { path: context.pmPath });
+      const listed = await runTest(id, { list: true }, { path: context.pmPath });
+      const before = await capture(context, id);
+
+      let sdkRefusal: { code?: string; context?: Record<string, unknown> } | undefined;
+      try {
+        await updateLinkedTest(id, { selector: { index: 1 }, patch: { command: "node -e 2", note: "new" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath });
+      } catch (error) {
+        sdkRefusal = error as typeof sdkRefusal;
+      }
+      expect(sdkRefusal).toMatchObject({ code: "linked_test_command_immutable", context: { field: "command", changed: false } });
+      const sdkArgs = (sdkRefusal?.context?.recovery as { suggested_retry_args: string[] }).suggested_retry_args;
+      expect(sdkArgs.slice(0, 6)).toEqual(["--pm-path", context.pmPath, "test", id, "--remove", "command=node -e 1"]);
+      expect(sdkArgs[6]).toBe("--add-json");
+      expect(JSON.parse(sdkArgs[7]!)).toEqual({ command: "node -e 2", path: "first.mjs", scope: listed.tests[0]!.scope, timeout_seconds: 60, note: "new" });
+      expect(await capture(context, id)).toEqual(before);
+
+      // The CLI carries the same typed refusal; executing its advertised retry replaces only the selected entry.
+      const refused = context.runCli(["test", id, "--update-index", "1", "--set-json", '{"command":"node -e 2"}', "--json"], { expectJson: true });
+      expect(refused.code).toBe(2);
+      const envelope = JSON.parse(refused.stderr) as { code: string; title: string; recovery: { suggested_retry_args: string[] } };
+      expect(envelope.code).toBe("linked_test_command_immutable");
+      expect(envelope.title).toContain("cannot change command");
+      expect(await capture(context, id)).toEqual(before);
+      const replaced = context.runCli([...envelope.recovery.suggested_retry_args, "--json"], { expectJson: true });
+      expect(replaced.code).toBe(0);
+      const current = await runTest(id, { list: true }, { path: context.pmPath });
+      expect(current.tests).toHaveLength(2);
+      expect(current.tests[0]).toEqual(listed.tests[1]);
+      expect(current.tests[1]).toMatchObject({ command: "node -e 2", path: "first.mjs", timeout_seconds: 60, note: "old", provenance: expect.any(Object) });
+      const after = await capture(context, id);
+      const events = after.history.slice(before.history.length).trim().split("\n").map((line) => JSON.parse(line) as { op: string });
+      expect(events.map((event) => event.op)).toEqual(["tests_add"]);
+      expect(context.runCli(["history", id, "--verify", "--strict-exit", "--json"]).code).toBe(0);
+
+      // Repeating the current command or clearing it names the edit route instead of a replacement.
+      const same = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node -e 2" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(same).toMatchObject({ code: "linked_test_command_immutable", message: expect.stringContaining("repeats the selected entry's command") });
+      expect((same as { context: { recovery?: unknown } }).context.recovery).toBeUndefined();
+      const blank = await updateLinkedTest(id, { selector: { index: 2 }, patch: { cmd: " " } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(blank).toMatchObject({ code: "linked_test_command_immutable", message: expect.stringContaining("cannot set cmd") });
+      const nonString = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: 7 } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(nonString).toMatchObject({ code: "linked_test_command_immutable", message: expect.stringContaining("cannot set command") });
+
+      // Unsupported metadata names the editable domain.
+      const forged = await updateLinkedTest(id, { selector: { index: 2 }, patch: { provenance: {} } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(forged).toMatchObject({ code: "linked_test_patch_fields_unsupported", context: { field: "provenance", recovery: { allowed_values: expect.arrayContaining(["note", "timeout_seconds", "scope"]) } } });
+      const empty = await updateLinkedTest(id, { selector: { index: 2 }, patch: {} }, { path: context.pmPath }).catch((error: unknown) => error);
+      expect(empty).toMatchObject({ code: "linked_test_patch_fields_unsupported" });
+      expect((empty as { context: { field?: string } }).context.field).toBeUndefined();
+
+      // A path-only legacy entry has no command identity to remove by, so the locked position is used.
+      const legacyId = createTestItemId(context, { title: "legacy command replacement", createMode: "progressive" });
+      await overwriteTaskTests(context, legacyId, [{ path: "legacy.mjs", scope: "project" }]);
+      const legacy = await updateLinkedTest(legacyId, { selector: { path: "legacy.mjs" }, patch: { command: "node -e 3" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      const legacyArgs = (legacy as { context: { recovery: { suggested_retry_args: string[] } } }).context.recovery.suggested_retry_args;
+      expect(legacyArgs).toContain("--remove-index");
+      expect(legacyArgs[legacyArgs.indexOf("--remove-index") + 1]).toBe("1");
+    });
+  });
+
   it("reports legacy refusals without a subprocess exit and keeps real failures distinct", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "refusal semantics", createMode: "progressive" });

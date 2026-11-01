@@ -19,9 +19,18 @@ import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { LinkedTest } from "../../types/index.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { assertLinkedTestContext, STRUCTURED_LINKED_TEST_KEYS } from "./entry.js";
 import { parseLinkedTestJsonEntries } from "./parsers.js";
 import type { TestCommandOptions } from "./execution.js";
+
+/** Patch keys naming the immutable command identity of an entry. */
+const COMMAND_IDENTITY_KEYS = ["command", "cmd"] as const;
+
+/** Metadata keys an in-place edit may change: command identity, its aliases and provenance are excluded. */
+export const EDITABLE_LINKED_TEST_KEYS: readonly string[] = Object.freeze(
+  STRUCTURED_LINKED_TEST_KEYS.filter((key) => !["command", "cmd", "timeout"].includes(key)),
+);
 
 /** Unambiguous selector evaluated against the current locked collection. */
 export type LinkedTestUpdateSelector = { index: number } | { command: string } | { path: string };
@@ -113,14 +122,86 @@ function selectIndex(tests: LinkedTest[], selector: LinkedTestUpdateSelector): n
   throw new PmCliError("No linked test matched the update selector", EXIT_CODE.NOT_FOUND, { code: "linked_test_update_no_match", required: "List linked tests and select a current command, path, or --update-index." });
 }
 
+/** The selected entry's retained metadata with the patch's other editable fields and the replacement command. */
+function buildReplacementEntry(test: LinkedTest, patch: Record<string, unknown>, command: string): Record<string, unknown> {
+  const entry: Record<string, unknown> = {};
+  for (const key of EDITABLE_LINKED_TEST_KEYS) {
+    const value = Object.hasOwn(patch, key) ? patch[key] : test[key as keyof LinkedTest];
+    if (value !== undefined && value !== null) entry[key] = value;
+  }
+  return { command, ...entry };
+}
+
+/**
+ * Refuse a command edit with the supported replacement route (pm-1rfy0y): a
+ * single `pm test` invocation that removes the selected entry and adds the
+ * new command with the entry's other metadata, recording fresh provenance.
+ */
+function assertCommandIdentityUnchanged(params: {
+  id: string;
+  tests: LinkedTest[];
+  index: number;
+  patch: unknown;
+  global: GlobalOptions;
+}): void {
+  const { id, tests, index, patch, global } = params;
+  if (typeof patch !== "object" || patch === null || Array.isArray(patch)) return;
+  const record = patch as Record<string, unknown>;
+  const identityKey = COMMAND_IDENTITY_KEYS.find((key) => Object.hasOwn(record, key));
+  if (identityKey === undefined) return;
+  const current = tests[index];
+  const requested = typeof record[identityKey] === "string" ? (record[identityKey] as string).trim() : "";
+  const context = {
+    code: "linked_test_command_immutable",
+    field: identityKey,
+    changed: false as const,
+    required: "Replace the entry instead: remove the selected linked test and add the new command in one pm test invocation, which records fresh provenance.",
+  };
+  if (requested.length === 0 || requested === current.command) {
+    throw new PmCliError(
+      requested.length === 0
+        ? `--set-json cannot set ${identityKey}: a linked test's command is its immutable identity`
+        : `--set-json ${identityKey} repeats the selected entry's command; omit it to edit only metadata`,
+      EXIT_CODE.USAGE,
+      { ...context, nextSteps: [`Patch only editable fields: ${EDITABLE_LINKED_TEST_KEYS.join(", ")}.`] },
+    );
+  }
+  const otherFields = Object.fromEntries(Object.entries(record).filter(([key]) => !COMMAND_IDENTITY_KEYS.includes(key as typeof COMMAND_IDENTITY_KEYS[number])));
+  // Exact command removal survives reordering; a shared or absent command falls back to the locked position.
+  const removal = current.command !== undefined && tests.filter((test) => test.command === current.command).length === 1
+    ? ["--remove", `command=${current.command}`]
+    : ["--remove-index", String(index + 1)];
+  const retryArgs = [...resolvePmCommandScopeArgs(global), "test", id, ...removal, "--add-json", JSON.stringify(buildReplacementEntry(current, otherFields, requested))];
+  throw new PmCliError(
+    `--set-json cannot change ${identityKey}: a linked test's command is its immutable identity; replace the entry instead`,
+    EXIT_CODE.USAGE,
+    {
+      ...context,
+      recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs },
+      nextSteps: [
+        "Run the suggested retry: it removes the selected entry and adds the new command in one atomic, history-recorded mutation.",
+        `SDK: runTest(${JSON.stringify(id)}, { ${removal[0] === "--remove" ? "remove" : "removeIndex"}: [...], addJson: [...] }) with the same values.`,
+      ],
+    },
+  );
+}
+
 /** Validate and normalize explicit metadata fields before deriving a patch that retains creation provenance. */
 function applyPatch(test: LinkedTest, patch: LinkedTestMetadataPatch): { test: LinkedTest; fields: string[] } {
   if (typeof patch !== "object" || patch === null || Array.isArray(patch)) {
     throw new PmCliError("Linked-test metadata patch must be a JSON object", EXIT_CODE.USAGE);
   }
   const keys = Object.keys(patch);
-  if (keys.length === 0 || keys.some((key) => !STRUCTURED_LINKED_TEST_KEYS.includes(key as typeof STRUCTURED_LINKED_TEST_KEYS[number]) || ["command", "cmd", "timeout"].includes(key))) {
-    throw new PmCliError("Patch explicit linked-test metadata fields; command, aliases and provenance cannot be edited", EXIT_CODE.USAGE);
+  const unsupported = keys.filter((key) => !EDITABLE_LINKED_TEST_KEYS.includes(key));
+  if (keys.length === 0 || unsupported.length > 0) {
+    throw new PmCliError("Patch explicit linked-test metadata fields; command, aliases and provenance cannot be edited", EXIT_CODE.USAGE, {
+      code: "linked_test_patch_fields_unsupported",
+      changed: false,
+      ...(unsupported.length > 0 ? { field: unsupported[0] } : {}),
+      required: `Patch at least one editable field: ${EDITABLE_LINKED_TEST_KEYS.join(", ")}.`,
+      recovery: { allowed_values: [...EDITABLE_LINKED_TEST_KEYS] },
+      ...(unsupported.length > 0 ? { nextSteps: [`Remove unsupported field(s) from --set-json: ${unsupported.join(", ")}.`] } : {}),
+    });
   }
   if (patch.scope === null) throw new PmCliError("scope is required and cannot be cleared", EXIT_CODE.USAGE);
   const metadata = Object.fromEntries(Object.entries(test).filter(([key]) => (STRUCTURED_LINKED_TEST_KEYS as readonly string[]).includes(key)));
@@ -157,6 +238,7 @@ export async function updateLinkedTest(id: string, options: UpdateLinkedTestOpti
     mutate(document) {
       const tests = document.metadata.tests ?? [];
       const index = selectIndex(tests, options.selector);
+      assertCommandIdentityUnchanged({ id: document.metadata.id, tests, index, patch: options.patch, global });
       const patch = applyPatch(tests[index], options.patch);
       updatedIndex = index + 1;
       updatedFields = patch.fields;

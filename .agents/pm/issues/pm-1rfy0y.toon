@@ -2,22 +2,45 @@ id: pm-1rfy0y
 title: Advertise safe linked-test command replacement after an immutable-command edit refusal
 description: "During evidence maintenance, test --update-index --set-json with a command field correctly refused rewriting immutable command/provenance identity, but returned generic Command failed guidance without an executable replacement route. The successful current route is an exact command removal followed by adding the replacement with fresh provenance. Preserve the completed metadata-editing and deterministic replacement implementations and improve this distinct refusal UX."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,linked-tests,recovery
 created_at: "2026-10-26T00:21:26.298Z"
-updated_at: "2026-10-26T00:21:26.298Z"
+updated_at: "2026-11-01T21:06:46.878Z"
+closed_at: "2026-11-01T21:06:46.090Z"
+completed_at: "2026-11-01T21:06:46.090Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: Refusal exposes a stable code and selector-aware supported replacement recovery; SDK CLI and MCP agree on immutable command/provenance semantics; Executed recovery replaces only the selected command and preserves unrelated tests plus append-only history; Metadata-only edits remain supported and preserve provenance
 parent: pm-f05lsg
 risk: low
 confidence: 90
-expected_result: An agent receiving this refusal can discover and execute a safe command replacement without guessing flags or mutating provenance.
-actual_result: "Command changes are correctly refused, but generic recovery omits the supported remove/add route."
+resolution: linked_test_command_immutable carries a scope-preserving remove plus add-json retry built from the selected entry; other unsupported keys refuse with linked_test_patch_fields_unsupported and the editable domain.
+expected_result: A command edit is refused without a write and the advertised retry replaces only the selected entry with fresh provenance.
+actual_result: "Executing the CLI retry replaced only the selected entry in one tests_add event, the other entry is unchanged and history verifies."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-9djr6d,discovered_from,"2026-10-26T00:21:26.298Z","harness:codex","cli:create:dep",detected
   pm-bjpo,related,"2026-10-26T00:21:26.298Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-26T00:21:26.298Z","harness:codex","Duplicate check: complete all-status3118-item corpus plus fresh keyword AND and hybrid linked-test command/replacement/recovery searches and open/in_progress inventories; full live pm-9djr6d and pm-bjpo lineage retained. This is distinct refusal recovery UX. Intake only: open and unclaimed."
+  "2026-11-01T21:06:25.972Z","harness:claude-code","Implementation (src/sdk/test/update.ts): a command or cmd key in --set-json or in the SDK patch is refused with linked_test_command_immutable and changed:false, under the item lock and before any write. When the patch names a new non-empty command, recovery.suggested_retry_args is one scope-preserving invocation: pm --pm-path <tracker> test <id> --remove command=<exact current command> --add-json <entry>. The removal falls back to --remove-index <locked position> when the entry has no unique command. The entry keeps the selected test's editable metadata, overlaid with the patch's other fields, and gets the new command. That is the existing atomic remove+add path: one tests_add history event, fresh provenance, other entries untouched, replacement appended at the end. Repeating the current command or sending an empty one gets the same code with a pointer to the editable fields instead. Other unsupported keys (provenance, editor stamps, unknown keys, the timeout alias) now refuse with linked_test_patch_fields_unsupported, with recovery.allowed_values listing the editable fields and field naming the first offender. The message text is unchanged.\n\nProof (tests/integration/linked-tests/linked-test-editing.integration.spec.ts): the SDK and CLI refusals leave bytes unchanged. Executing the CLI's advertised retry replaces only the selected entry (the untouched entry deep-equals its prior state), adds exactly one tests_add event, and history --verify --strict-exit passes. The same-command, empty-command, unsupported-field, empty-patch and legacy path-only (index fallback) cases are covered too. MCP and PmClient share the same SDK function.\n"
+files[5]{path,scope}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/test/update.ts,project
+  tests/integration/linked-tests/linked-test-editing.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts,project,900,"harness:claude-code","2026-11-01T20:27:11.927Z",local_mutation,fix/refusal-contract-precision
+docs[1]{path,scope}:
+  docs/LINKED_TEST_EDITS.md,project
+close_reason: Linked-test command edits refuse with an executable atomic replacement
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-1rfy0y
+  gate_id: "tests/integration/linked-tests/linked-test-editing.integration.spec.ts command-replacement case: typed SDK and CLI refusal with unchanged bytes, executed suggested_retry_args, single tests_add event, verified history"
+  negative_control: "Remove the assertCommandIdentityUnchanged call from updateLinkedTest in src/sdk/test/update.ts: the patch reaches the generic unsupported-field refusal without suggested_retry_args and the integration case fails"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-editing.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""

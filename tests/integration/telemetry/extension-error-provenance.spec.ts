@@ -35,6 +35,18 @@ async function assertAdapterCommandSources(runtime: string, cwd: string, env: No
   }) })));
 }
 
+const PRODUCER_DIAGNOSTIC_MARKER = "synthetic-extension-diagnostic-payload";
+
+/** GH-1631: a separately bundled refusal's producer diagnostics reach the agent whole in JSON and text. */
+async function assertRenderedProducerDiagnostics(runtime: string, cwd: string, env: NodeJS.ProcessEnv, jsonStderr: string): Promise<void> {
+  expect(JSON.parse(jsonStderr).details).toEqual({ selection_report: { stage_counts: { excluded_status: 1 }, marker: PRODUCER_DIAGNOSTIC_MARKER } });
+  const text = await execute(runtime === "node" ? process.execPath : "bun", [path.resolve("dist/cli.js"), "error", "probe", "expected"], {
+    cwd, env: { ...env, PM_TELEMETRY_SOURCE_CONTEXT: "test" }, timeout: 15_000,
+  }).catch((error) => error);
+  expect(text.stderr).toContain("Details:");
+  expect(text.stderr).toContain('"excluded_status": 1');
+}
+
 async function assertSequentialSdkSources(runtime: string, cwd: string, env: NodeJS.ProcessEnv,
   logs: CollectedLog[], events: Array<Record<string, unknown>>): Promise<void> {
   const sdkUrl = pathToFileURL(path.resolve("dist/cli-bundle/sdk.js")).href;
@@ -93,10 +105,10 @@ it.each(runtimes)("keeps declared refusals separate from unexpected extension fa
         root: context.pmPath, placement: "projectRoot", directory: "error-probe", entryFilename: "index.mjs",
         manifest: { name: "error-probe", version: "1.2.3", capabilities: ["commands", "importers"] },
         entrySource: `export function activate(api) { api.registerCommand({ name: "error probe", arguments: [{ name: "mode", required: true }], run: ({ args }) => {
-          if (args[0] === "untyped") throw Object.assign(new Error("unexpected untyped handler fault"), { privateDocument: "synthetic-private-cause-payload" });
+          if (args[0] === "untyped") throw Object.assign(new Error("unexpected untyped handler fault"), { privateDocument: "synthetic-private-cause-payload", context: { details: { marker: "synthetic-extension-diagnostic-payload" } } });
           if (args[0] === "misnamed") throw Object.assign(new Error("invalid refusal shape"), { name: "PmCliError", code: "not_a_contract" });
           throw Object.assign(new Error("producer refusal"), args[0] === "expected"
-            ? { name: "PmCliError", exitCode: 1, code: "probe_expected", context: { code: "probe_expected", nextSteps: ["Use a supported input."] } }
+            ? { name: "PmCliError", exitCode: 1, code: "probe_expected", context: { code: "probe_expected", nextSteps: ["Use a supported input."], details: { selection_report: { stage_counts: { excluded_status: 1 }, marker: "synthetic-extension-diagnostic-payload" } } } }
             : { name: "SimulationRefusal", exitCode: 1, code: "sdk_unavailable", remediation: "Install the SDK." });
         } });
           api.registerImporter("error-data", () => { throw new Error("unexpected importer fault"); });
@@ -138,10 +150,12 @@ it.each(runtimes)("keeps declared refusals separate from unexpected extension fa
       expect(expected.code).toBe(1);
       expect(JSON.parse(expected.stderr).code).toBe("probe_expected");
       expect(JSON.parse(expected.stderr).next_steps).toContain("Use a supported input.");
+      await assertRenderedProducerDiagnostics(runtime, context.tempRoot, env, expected.stderr);
       expect(events.slice(before).filter((event) => event.exception)).toEqual([]);
       expect(JSON.stringify(events)).not.toContain(context.tempRoot);
       expect(JSON.stringify(events)).not.toContain("synthetic-private-cause-payload");
       expect(JSON.stringify(logs)).not.toContain("synthetic-private-cause-payload");
+      expect(JSON.stringify([events, logs, telemetry])).not.toContain(PRODUCER_DIAGNOSTIC_MARKER);
       expect(telemetry.length).toBeGreaterThan(0);
       await writeSettings(globalPath, { ...settings, telemetry: { ...settings.telemetry, enabled: false } });
       const beforeDisabled = events.length;

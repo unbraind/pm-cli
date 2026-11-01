@@ -8,6 +8,11 @@ import type { PmErrorCodeCatalogRow } from "./error-code-catalog-rows.js";
 /** Generated partition 2 of the exhaustive error-code catalog, as compact rows. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
+    code: "missing_budget",
+    exit_code: 1,
+    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
+  },
+  {
     code: "missing_cli_flag",
     exit_code: 1,
     sources: ["sdk/cli-contracts/tool-option-contracts.ts"],
@@ -282,6 +287,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     code: "project_runtime_stale_read",
     exit_code: 1,
     sources: ["sdk/environment/project-runtime-compatibility.ts"],
+  },
+  {
+    code: "project_schema_field_requires_declared_flag",
+    exit_code: 2,
+    sources: ["core/extensions/item-fields.ts"],
   },
   {
     code: "projection_options_mutually_exclusive",

@@ -105,7 +105,7 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { resolveCoreFieldRecovery } from "./core-field-recovery.js";
+import { createSchemaFieldRecoveryResolver, resolveCoreFieldRecovery } from "./core-field-recovery.js";
 import {
   applyLegacyNoneCollectionNormalizers,
   createLegacyNoneCollectionNormalizers,
@@ -2828,6 +2828,7 @@ export async function runCreate(
     resolvedOptions.field,
     extensionRegistrations,
     resolveCoreFieldRecovery,
+    createSchemaFieldRecoveryResolver(runtimeFieldRegistry, "create"),
   );
   const runtimeCreateFieldValues = collectRuntimeCreateFieldValues(
     resolvedOptions as Record<string, unknown>,

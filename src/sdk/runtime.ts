@@ -351,10 +351,17 @@ export {
 } from "./package-runtime-options.js";
 
 export {
+  PM_CLI_ERROR_DETAILS_LIMITS,
   PM_CLI_EXPECTED_ERROR_NAME,
   createPmCliExpectedError,
+  isPmCliErrorDetails,
   isPmCliExpectedError,
+  projectPmCliErrorContextDetails,
+  projectPmCliErrorDetails,
   type CreatePmCliExpectedErrorOptions,
+  type PmCliErrorDetailValue,
+  type PmCliErrorDetails,
+  type PmCliErrorDetailsOmission,
   type PmCliExpectedError
 } from "./errors.js";
 

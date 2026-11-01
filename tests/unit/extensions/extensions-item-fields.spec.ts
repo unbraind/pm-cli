@@ -5,7 +5,8 @@ import {
   RESERVED_ITEM_FIELD_NAMES,
 } from "../../../src/core/extensions/item-fields.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
+import { createSchemaFieldRecoveryResolver, resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
+import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../../../src/sdk/cli-contracts/commander-mutation-options.js";
 import {
   createEmptyExtensionRegistrationRegistry,
@@ -40,6 +41,55 @@ describe("extensions item field runtime wiring", () => {
     for (const flag of context.recovery?.suggested_flags ?? []) expect(declared).toContain(flag);
     if (!context.recovery?.suggested_flags) expect(context.nextSteps?.[0]).toContain("No dedicated create/update CLI mutation flag");
     if (field === "external_ref") expect(context.recovery?.suggested_flags).toBeUndefined();
+  });
+
+  it("routes configured project-schema keys to their declared flag and SDK option, keeping extension and core refusals distinct (pm-wftvem)", () => {
+    const registry = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "gate_evidence", type: "object", commands: ["create", "update"] },
+        { key: "reviewUrl", metadata_key: "review_link", type: "string", cli_flag: "review-url", commands: ["update"] },
+        { key: "intake_note", type: "string", commands: ["create"] },
+      ],
+    } as never);
+    const resolveForUpdate = createSchemaFieldRecoveryResolver(registry, "update");
+    const refusal = (raw: string, resolver = resolveForUpdate, registrations: ExtensionRegistrationRegistry | null = withFields([{ name: "team", type: "string" }])): PmCliError => {
+      try {
+        parseRegisteredItemFieldAssignments([raw], registrations, resolveCoreFieldRecovery, resolver);
+      } catch (error) {
+        return error as PmCliError;
+      }
+      throw new Error("expected a refusal");
+    };
+    const gate = refusal('gate_evidence={"disposition":"gate_added"}');
+    expect(gate.message).toBe("--field gate_evidence is a project-schema field; set it with its declared flag --gate-evidence");
+    expect(gate.context).toEqual({
+      code: "project_schema_field_requires_declared_flag",
+      field: "gate_evidence",
+      changed: false,
+      recovery: { provided_fields: ["gate_evidence"], suggested_flags: ["--gate-evidence"] },
+      nextSteps: [
+        "Use the declared project-schema flag: pm update <id> --gate-evidence <value>",
+        "SDK: pass gateEvidence in the update options.",
+        "Inspect the value contract with: pm schema show-field gate_evidence",
+      ],
+    });
+    // Storage key and declared key both route; the flag is the declared one, not the key spelling.
+    for (const key of ["review_link", "reviewUrl"]) {
+      expect(refusal(`${key}=https://example.test`).context.recovery?.suggested_flags).toEqual(["--review-url"]);
+    }
+    expect(refusal("review_link=x").context.nextSteps?.[1]).toBe("SDK: pass reviewUrl in the update options.");
+    const createOnly = refusal("intake_note=hello");
+    expect(createOnly.message).toBe("--field intake_note is a project-schema field, not an extension field");
+    expect(createOnly.context.recovery).toEqual({ provided_fields: ["intake_note"] });
+    expect(createOnly.context.nextSteps?.[0]).toBe('The project schema declares "intake_note" for create only; update cannot set it.');
+    expect(refusal("intake_note=hello", createSchemaFieldRecoveryResolver(registry, "create")).context.nextSteps?.[0]).toBe(
+      "Use the declared project-schema flag: pm create --intake-note <value>",
+    );
+    // Undeclared keys keep the extension refusal; reserved core keys keep theirs.
+    expect(refusal("unknown_key=1").context.code).toBe("extension_item_field_unknown");
+    expect(refusal("status=closed").context.code).toBe("core_item_field_requires_dedicated_flag");
+    // A declared extension field still admits normally.
+    expect(parseRegisteredItemFieldAssignments(["team=platform"], withFields([{ name: "team", type: "string" }]), resolveCoreFieldRecovery, resolveForUpdate)).toEqual({ team: "platform" });
   });
 
   it("keeps the standalone core parser truthful without host command contracts", () => {

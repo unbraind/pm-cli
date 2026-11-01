@@ -95,6 +95,23 @@ export interface PmCliErrorRecoveryPayload {
   next_best_command?: string;
 }
 
+/** One JSON value inside producer-owned error diagnostics. */
+export type PmCliErrorDetailValue =
+  | null
+  | boolean
+  | number
+  | string
+  | PmCliErrorDetailValue[]
+  | { [key: string]: PmCliErrorDetailValue };
+
+/**
+ * Producer-owned structured diagnostics for an expected error (GH-1631). The
+ * host renders them as-is in structured error output, bounded by
+ * `PM_CLI_ERROR_DETAILS_LIMITS`, and never sends them to telemetry or crash
+ * reporting.
+ */
+export type PmCliErrorDetails = { [key: string]: PmCliErrorDetailValue };
+
 /** Documents the pm cli error context payload exchanged by command, SDK, and package integrations. */
 export interface PmCliErrorContext {
   /** Durable writes completed before refusal; paths are relative to the selected tracker. */
@@ -311,6 +328,13 @@ export interface PmCliErrorContext {
   current_revision?: string | null;
   /** Value that configures or reports recovery for this contract. */
   recovery?: PmCliErrorRecoveryPayload;
+  /**
+   * Producer-owned structured diagnostics: plain JSON the host renders whole
+   * in `--json`, text and MCP error output when it fits the declared ceiling,
+   * and otherwise replaces with a `details_omitted` receipt. Never sent to
+   * telemetry or crash reporting.
+   */
+  details?: PmCliErrorDetails;
 }
 
 /** Implements the exported pm cli error runtime abstraction for core/shared/errors.ts. */

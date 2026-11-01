@@ -108,6 +108,32 @@ describe("instrument residual branches", () => {
     expect(options.beforeSend(event, { originalException: Object.assign(new Error("expected"), { name: "PmCliError", exitCode: 2, context: { code: "invalid_argument_value" } }) })).toBeNull();
   });
 
+  it("strips producer diagnostics from error-data contexts and extras before an event leaves", async () => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      beforeSend: (event: Record<string, unknown>, hint: Record<string, unknown>) => Record<string, unknown> | null;
+    }>();
+    const marker = "producer-diagnostic-payload";
+    const event = {
+      exception: { values: [{ type: "Error", value: "unexpected fault" }] },
+      contexts: {
+        Error: { context: { code: "probe", details: { marker } } },
+        runtime: { name: "node" },
+        bare: null,
+      },
+      extra: { error_context: { code: "probe", details: { marker } }, wrapped: { context: { details: { marker } } } },
+    };
+    const sent = options.beforeSend(event, { originalException: new Error("unexpected fault") });
+    expect(sent).not.toBeNull();
+    expect(JSON.stringify(sent)).not.toContain(marker);
+    expect(sent).toMatchObject({
+      contexts: { Error: { context: { code: "probe" } }, runtime: { name: "node" } },
+      extra: { error_context: { code: "probe" } },
+    });
+    // Events without contexts or extras pass unchanged.
+    expect(options.beforeSend({ message: "plain" }, {})).toMatchObject({ message: "plain" });
+  });
+
   afterEach(() => {
     process.env = { ...originalEnv };
     resetSentryStateForTests();

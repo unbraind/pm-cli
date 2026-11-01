@@ -8,6 +8,7 @@ import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
 import { resolveTelemetryEnvironmentPolicy, resolveTelemetrySourceAttribution } from "../telemetry/policy.js";
 import { isPmCliExpectedError } from "../../sdk/errors.js";
+import { omitPmCliErrorDetails } from "../shared/error-details.js";
 import { scrubInlineSensitiveAssignments, SENSITIVE_KEY_PATTERN } from "./sensitive-assignments.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -389,8 +390,25 @@ function applySourceContextEnvironment(event: { environment?: string; tags?: Rec
   if (environment) event.environment = environment;
 }
 
+/**
+ * Error-data contexts serialize an error's own properties, including a typed
+ * `context`; producer-owned diagnostics never leave the process (GH-1631).
+ */
+function omitProducerDiagnostics(event: { contexts?: Record<string, unknown>; extra?: Record<string, unknown> }): void {
+  for (const container of [event.contexts, event.extra]) {
+    if (!container) continue;
+    for (const entry of Object.values(container)) {
+      if (entry && typeof entry === "object" && "context" in entry) {
+        (entry as Record<string, unknown>).context = omitPmCliErrorDetails((entry as Record<string, unknown>).context);
+      }
+    }
+  }
+  if (event.extra && "error_context" in event.extra) event.extra.error_context = omitPmCliErrorDetails(event.extra.error_context);
+}
+
 const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event, hint) => {
   if (isExpectedCliErrorEvent(event, hint?.originalException) || isKnownNoisyConsoleEvent(event)) return null;
+  omitProducerDiagnostics(event);
   applySourceContextEnvironment(event);
   if (isNodeRuntimeWarningEvent(event)) {
     event.level = "warning";

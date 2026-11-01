@@ -118,6 +118,8 @@ import {
   isPmToolAction,
   isPmCliExpectedError,
   isPmTokenBudgetRecovery,
+  isPmCliErrorDetails,
+  PM_CLI_ERROR_DETAILS_LIMITS,
   toCompletionFlagString,
   withFlagAliasMetadata,
   writeFileAtomic,
@@ -492,6 +494,37 @@ describe("public sdk entrypoint", () => {
     const defaultError = createPmCliExpectedError("default usage error");
     expect(defaultError.exitCode).toBe(EXIT_CODE.USAGE);
     expect(defaultError.context).toEqual({});
+  });
+
+  it("snapshots producer-owned diagnostics on expected errors and refuses non-JSON shapes (GH-1631)", () => {
+    const report = { filters: { version: "2026.11.1" }, stage_counts: { excluded_status: 1 } };
+    const error = createPmCliExpectedError("No changelog section for 2026.11.1", {
+      context: { code: "release_notes_missing", details: { selection_report: report } },
+    });
+    expect(error.context.details).toEqual({ selection_report: report });
+    report.stage_counts.excluded_status = 7;
+    expect(error.context.details).toEqual({
+      selection_report: { filters: { version: "2026.11.1" }, stage_counts: { excluded_status: 1 } },
+    });
+    expect(isPmCliExpectedError(error)).toBe(true);
+    expect(isPmCliErrorDetails(error.context.details)).toBe(true);
+    expect(isPmCliErrorDetails({ when: new Date(0) })).toBe(false);
+    expect(PM_CLI_ERROR_DETAILS_LIMITS).toEqual({ max_bytes: 4096, max_depth: 8 });
+    expect(Object.isFrozen(PM_CLI_ERROR_DETAILS_LIMITS)).toBe(true);
+    expect(() =>
+      createPmCliExpectedError("bad details", {
+        context: { details: { run: (() => 1) as never } },
+      }),
+    ).toThrow("createPmCliExpectedError options.context.details must be plain JSON (unsupported_value at details.run)");
+    expect(() =>
+      createPmCliExpectedError("bad details", { context: { details: [1] as never } }),
+    ).toThrow("(not_plain_object at details)");
+    // Size is data-dependent: an oversized but well-formed payload is accepted
+    // here and bounded when the refusal is rendered.
+    const large = createPmCliExpectedError("large", { context: { details: { text: "x".repeat(10_000) } } });
+    expect((large.context.details as { text: string }).text).toHaveLength(10_000);
+    const withoutDetails = { code: "plain" };
+    expect(createPmCliExpectedError("plain", { context: withoutDetails }).context).toBe(withoutDetails);
   });
 
   it("exposes package resource kind contracts", () => {

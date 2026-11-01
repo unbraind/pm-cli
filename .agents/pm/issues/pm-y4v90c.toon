@@ -2,21 +2,42 @@ id: pm-y4v90c
 title: Preserve surrogate pairs in bounded extension error diagnostics
 description: "describeHandlerError and readHandlerStringField in src/core/extensions/extension-hook-runtime.ts currently bound normalized message/code/remediation with UTF-16 slice. A valid emoji starting at the cutoff becomes a lone high surrogate (298 ASCII characters plus an emoji for the 299-unit message prefix, or 299 ASCII characters plus an emoji for 300-unit metadata). Reuse the shared Unicode-safe prefix primitive without changing field length budgets or mutating the original error. This is a separate diagnostic truncation boundary from pm-gh1624 raw output admission."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags: []
 created_at: "2026-10-29T19:42:21.007Z"
-updated_at: "2026-10-29T19:50:14.882Z"
+updated_at: "2026-11-01T21:06:42.169Z"
+closed_at: "2026-11-01T21:06:41.469Z"
+completed_at: "2026-11-01T21:06:41.469Z"
 author: "harness:codex"
 estimated_minutes: 60
 acceptance_criteria: Prove valid astral characters survive cutoff boundaries through the public extension test harness; Preserve 300-unit diagnostic bounds and the original error; Retain no-handler and typed refusal contracts
 parent: pm-5t33or
 risk: medium
 confidence: high
-expected_result: "Bounded extension diagnostics retain valid surrogate pairs, preserve existing unit limits, and leave the original thrown error unchanged."
+resolution: describeHandlerError and readHandlerStringField cut with unicodeSafePrefix at the unchanged 300-unit budgets; public-harness regression with a fitting-pair control and a proven negative control.
+expected_result: Astral characters at the 299/300-unit cutoff never become lone surrogates and the thrown error is untouched.
+actual_result: "298-char message plus emoji yields 298 chars and an ellipsis, 299-char code/remediation plus emoji yield 299 chars, all fields well-formed; the spec fails with the fix stashed."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1478,related,"2026-10-29T19:42:21.007Z","harness:codex","cli:create:dep",detected
   pm-gh1624,related,"2026-10-29T19:42:21.007Z","harness:codex","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-10-29T19:42:21.007Z","harness:codex","Duplicate check: live all-state corpus3155 records plus request-specific searches for extension diagnostic Unicode truncation and surrogate truncation, current open/in_progress inventories, and full pm-gh1478 data/comments/history. Closed pm-gh1478 implements bounded output prefixes; active pm-gh1624 owns raw output admission. Neither owns these two extension-hook diagnostic slices. Static boundary reproduction produces a lone surrogate from valid emoji text; no source change or claim is included in this follow-up."
+  "2026-11-01T20:09:26.184Z","harness:claude-code","Implementation: describeHandlerError and readHandlerStringField (src/core/extensions/extension-hook-runtime.ts) now cut with the shared unicodeSafePrefix primitive. The 300-unit budgets are unchanged (message: 299 units plus the ellipsis; code/remediation: 300 units), and the thrown error object is never rewritten.\n\nRegression (tests/unit/extensions/extensions-runtime.spec.ts, through createExtensionTestHarness): 298 ASCII + emoji message now yields 298 chars + ellipsis (was a lone high surrogate); 299 ASCII + emoji code/remediation yield 299 chars; every field isWellFormed(); a pair that fits inside the bound survives intact. Negative control: with the source change stashed the new test fails (1 failed), restored it passes.\n"
+files[2]{path,scope,note}:
+  src/core/extensions/extension-hook-runtime.ts,project,describeHandlerError/readHandlerStringField bound via unicodeSafePrefix
+  tests/unit/extensions/extensions-runtime.spec.ts,project,public harness astral cutoff regression + fitting-pair control
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-runtime.spec.ts,project,600,"harness:claude-code","2026-11-01T20:09:25.582Z",local_mutation,fix/refusal-contract-precision
+docs[1]{path,scope}:
+  docs/EXTENSIONS.md,project
+close_reason: Bounded extension handler diagnostics keep surrogate pairs whole
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-y4v90c
+  gate_id: "tests/unit/extensions/extensions-runtime.spec.ts astral-cutoff case through createExtensionTestHarness (message 298+emoji, code/remediation 299+emoji, fitting-pair control)"
+  negative_control: "Stash the unicodeSafePrefix change in src/core/extensions/extension-hook-runtime.ts and run node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-runtime.spec.ts: the astral-cutoff case fails on a lone high surrogate"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/extensions/extensions-runtime.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""

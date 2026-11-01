@@ -12,6 +12,7 @@ import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
 import { isPmCliExpectedError } from "../sdk/errors.js";
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
+import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
@@ -403,6 +404,12 @@ function buildRecoveryPayload(params: {
   };
 }
 
+/** Rewrite producer recovery as minimal edits of the caller's own invocation where the refusal code allows it. */
+function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
+  if (context === undefined) return undefined;
+  return repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
+}
+
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */
 function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string): PmCliErrorContext {
   const safeInvocationArgv = redactSensitiveCommandArgs(invocationArgv);
@@ -410,7 +417,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   const commandIndex = findBootstrapCommandTokenIndex(commandArgs);
   const [rootCommand, subcommand] = commandIndex === undefined ? [] : commandArgs.slice(commandIndex, commandIndex + 2);
   const explainRequested = safeInvocationArgv.includes("--explain");
-  const rawExistingRecovery = repairProjectionRecovery(safeInvocationArgv, context?.code, context?.recovery);
+  const rawExistingRecovery = repairInvocationRecovery(safeInvocationArgv, context);
   const existingRecovery =
     rawExistingRecovery && (rootCommand === "history-redact" || (rootCommand === "history" && subcommand === "redact"))
       ? {

@@ -783,6 +783,18 @@ describe("sentry command runtime helpers", () => {
       tags: { "pm.error_code": "unclassified_runtime_error", "pm.exit_code": "70" },
     });
 
+    // Producer-owned diagnostics never travel with a captured fault (GH-1631).
+    const withDiagnostics = Object.assign(new Error("boom with diagnostics"), {
+      exitCode: 70,
+      context: { code: "probe", details: { marker: "producer-diagnostic-payload" } },
+    });
+    sentryCaptureCliError(withDiagnostics);
+    expect(sentry.captureException).toHaveBeenLastCalledWith(withDiagnostics, {
+      extra: { exit_code: 70, error_context: { code: "probe" } },
+      tags: { "pm.error_code": "unclassified_runtime_error", "pm.exit_code": "70" },
+    });
+    expect(withDiagnostics.context.details).toEqual({ marker: "producer-diagnostic-payload" });
+
     // A plain Error without exitCode/context properties → empty extras object.
     const bareError = new Error("bare");
     sentryCaptureCliError(bareError);

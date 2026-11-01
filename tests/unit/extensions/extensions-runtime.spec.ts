@@ -40,6 +40,7 @@ import {
   runServiceOverrideSync,
   runRendererOverride,
 } from "../../../src/core/extensions/extension-hook-runtime.js";
+import { createExtensionTestHarness } from "../../../src/sdk/testing.js";
 
 describe("core/extensions runtime wrappers", () => {
   afterEach(() => {
@@ -1496,6 +1497,49 @@ describe("core/extensions runtime wrappers", () => {
     expect(result.handled).toBe(false);
     expect(result.errorMessage).toHaveLength(300);
     expect(result.errorMessage?.endsWith("…")).toBe(true);
+  });
+
+  it("keeps astral characters whole at every bounded handler diagnostic cutoff through the public test harness", async () => {
+    const emoji = "\u{1F600}";
+    const thrown = Object.assign(new Error(`${"m".repeat(298)}${emoji}tail`), {
+      code: `${"c".repeat(299)}${emoji}`,
+      remediation: `${"r".repeat(299)}${emoji}`,
+    });
+    const originalMessage = thrown.message;
+    const harness = await createExtensionTestHarness(
+      {
+        activate(api: { registerCommand: (definition: unknown) => void }) {
+          api.registerCommand({ name: "astral boom", action: "astral-boom", run: () => { throw thrown; } });
+        },
+      },
+      { name: "astral-ext", capabilities: ["commands"] },
+    );
+    const result = await harness.runCommand({ command: "astral boom" });
+    expect(result.handled).toBe(false);
+    // 298 units + a whole emoji would be 300 units before the ellipsis, so the
+    // cutoff at 299 units drops the pair instead of keeping a lone high surrogate.
+    expect(result.errorMessage).toBe(`${"m".repeat(298)}…`);
+    expect(result.errorCode).toBe("c".repeat(299));
+    expect(result.remediation).toBe("r".repeat(299));
+    for (const field of [result.errorMessage, result.errorCode, result.remediation]) {
+      expect(field).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/u);
+      expect(field!.length).toBeLessThanOrEqual(300);
+    }
+    // A pair that fits wholly inside the bound survives intact.
+    const fitting = Object.assign(new Error(`${"m".repeat(297)}${emoji}tail`), { code: `${"c".repeat(298)}${emoji}` });
+    const fittingHarness = await createExtensionTestHarness(
+      {
+        activate(api: { registerCommand: (definition: unknown) => void }) {
+          api.registerCommand({ name: "astral fit", action: "astral-fit", run: () => { throw fitting; } });
+        },
+      },
+      { name: "astral-fit-ext", capabilities: ["commands"] },
+    );
+    const fit = await fittingHarness.runCommand({ command: "astral fit" });
+    expect(fit.errorMessage).toBe(`${"m".repeat(297)}${emoji}…`);
+    expect(fit.errorCode).toBe(`${"c".repeat(298)}${emoji}`);
+    // The diagnostic projection never rewrites the thrown error itself.
+    expect(thrown.message).toBe(originalMessage);
   });
 
   it("falls back to the original context when a parser override returns a nullish delta", async () => {

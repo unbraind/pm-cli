@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { repairProjectionRecovery } from "../../../../src/cli/runtime/projection-retry.js";
+import { repairSchemaFieldRecovery } from "../../../../src/cli/runtime/field-route-retry.js";
 
 describe("minimal projection retry edits", () => {
   it("preserves scope, encoding, filters, literal operands and shell quoting", () => {
@@ -65,5 +66,35 @@ describe("minimal projection retry edits", () => {
     const result = repairProjectionRecovery(argv, code, recovery);
     expect(result?.suggested_retry_args).toBeUndefined();
     expect(result?.suggested_retry).toBeUndefined();
+  });
+});
+
+describe("project-schema field route retry (pm-wftvem)", () => {
+  const recovery = { provided_fields: ["gate_evidence"], suggested_flags: ["--gate-evidence"] };
+
+  it.each([
+    [["--pm-path", "/t", "update", "pm-1", "--field", 'gate_evidence={"a":1}', "--json"], ["--pm-path", "/t", "update", "pm-1", "--gate-evidence", '{"a":1}', "--json"]],
+    [["update", "pm-1", "--field=gate_evidence=a=b", "--field", "team=x"], ["update", "pm-1", "--gate-evidence", "a=b", "--field", "team=x"]],
+  ])("rewrites only the refused assignment in %j", (argv, expected) => {
+    const repaired = repairSchemaFieldRecovery(argv, "project_schema_field_requires_declared_flag", "gate_evidence", recovery);
+    expect(repaired?.suggested_retry_args).toEqual(expected);
+    expect(repaired?.suggested_retry).toContain("--gate-evidence");
+    expect(repaired?.provided_fields).toEqual(["gate_evidence"]);
+  });
+
+  it("keeps the producer recovery when the retry would be a guess", () => {
+    const twice = ["update", "pm-1", "--field", "gate_evidence=1", "--field", "gate_evidence=2"];
+    expect(repairSchemaFieldRecovery(twice, "project_schema_field_requires_declared_flag", "gate_evidence", recovery)).toBe(recovery);
+    const afterTerminator = ["update", "pm-1", "--", "--field", "gate_evidence=1"];
+    expect(repairSchemaFieldRecovery(afterTerminator, "project_schema_field_requires_declared_flag", "gate_evidence", recovery)).toBe(recovery);
+    const dangling = ["update", "pm-1", "--field"];
+    expect(repairSchemaFieldRecovery(dangling, "project_schema_field_requires_declared_flag", "gate_evidence", recovery)).toBe(recovery);
+    const bareKey = ["update", "pm-1", "--field", "gate_evidence"];
+    expect(repairSchemaFieldRecovery(bareKey, "project_schema_field_requires_declared_flag", "gate_evidence", recovery)).toBe(recovery);
+    const argv = ["update", "pm-1", "--field", "gate_evidence=1"];
+    expect(repairSchemaFieldRecovery(argv, "extension_item_field_unknown", "gate_evidence", recovery)).toBe(recovery);
+    expect(repairSchemaFieldRecovery(argv, "project_schema_field_requires_declared_flag", undefined, recovery)).toBe(recovery);
+    expect(repairSchemaFieldRecovery(argv, "project_schema_field_requires_declared_flag", "gate_evidence", { provided_fields: ["gate_evidence"] })).toEqual({ provided_fields: ["gate_evidence"] });
+    expect(repairSchemaFieldRecovery(argv, "project_schema_field_requires_declared_flag", "gate_evidence", undefined)).toBeUndefined();
   });
 });

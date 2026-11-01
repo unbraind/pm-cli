@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- GH-1631: expose bounded extension-owned diagnostics on expected SDK errors ([pm-gh1631](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1631.toon))
+- Advertise safe linked-test command replacement after an immutable-command edit refusal ([pm-1rfy0y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1rfy0y.toon))
+- Route project-schema keys to their declared flags in field refusals ([pm-wftvem](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wftvem.toon))
+- Typed refusals render the generic headline 'Invalid argument value' in human output: a likely_duplicate create refusal reads as a bad flag value ([pm-btv6x7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-btv6x7.toon))
+- Preserve surrogate pairs in bounded extension error diagnostics ([pm-y4v90c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4v90c.toon))
 - A continuable key=value prose segment containing a colon is misread as a new key, so --comment/--note/--learning seeds store the raw entry with its text= prefix ([pm-fr10t8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr10t8.toon))
 - GH-1580: Host-bound extension settings sections ([pm-gh1580](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1580.toon))
 - pm config set on a schema-invalid settings.json writes the fallback defaults as the whole file, deleting unrelated settings ([pm-4zpq71](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4zpq71.toon))

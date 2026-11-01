@@ -429,6 +429,86 @@ describe("pm cli error guidance context plumbing", () => {
     expect(envelope.required).toContain("documented command constraints");
   });
 
+  it("names a typed refusal's own condition in the headline even when interpolated data looks like a validation message", () => {
+    // Candidate titles are data: a duplicate whose title contains " requires "
+    // or " must be " must not be classified as a bad flag value (pm-btv6x7).
+    const message =
+      "Likely duplicate item(s) found: pm-gh1605 (closed): History requires the newest page. Reuse the canonical item or pass --allow-duplicate with explicit intent.";
+    const context = {
+      code: "likely_duplicate",
+      required: "Reuse the canonical item, or explicitly acknowledge the duplicate with --allow-duplicate.",
+      recovery: { suggested_flags: ["--allow-duplicate"] },
+    };
+    const envelope = formatPmCliErrorForJson(message, 3, context);
+    expect(envelope.code).toBe("likely_duplicate");
+    expect(envelope.title).toBe(message.slice(0, 117) + "...");
+    expect(envelope.title.startsWith("Likely duplicate item(s) found: pm-gh1605")).toBe(true);
+    expect(envelope.next_steps ?? []).not.toContain("Check allowed values in command help, then rerun with corrected input.");
+    expect(classifyPmCliError(message, context).title).toBe(envelope.title);
+    const display = formatPmCliErrorForDisplay(message, context);
+    expect(display.split("\n")[0]).toBe(`Error: ${envelope.title}`);
+    expect(display).not.toContain("Invalid argument value");
+
+    // A producer-authored "Invalid ..." refusal with its own code keeps the
+    // value-validation recovery but names its specific condition.
+    const typed = formatPmCliErrorForJson("Invalid relationship kind refines; must be one of: related, blocks", 2, {
+      code: "dependency_kind_invalid",
+      allowed: ["related", "blocks"],
+    });
+    expect(typed).toMatchObject({
+      code: "dependency_kind_invalid",
+      title: "Invalid relationship kind refines; must be one of: related, blocks",
+      recovery: { allowed_values: ["related", "blocks"] },
+    });
+    // An explicit allowed domain still classifies a typed " must be " message as a value refusal.
+    expect(formatPmCliErrorForJson("Depth must be one of brief|full", 2, { code: "depth_invalid", allowed: ["brief", "full"] })).toMatchObject({
+      code: "depth_invalid",
+      title: "Depth must be one of brief|full",
+      recovery: { allowed_values: ["brief", "full"] },
+    });
+    // A generic-coded refusal keeps the generic class title.
+    expect(formatPmCliErrorForJson("Status requires a value", 2, { code: "invalid_argument_value" }).title).toBe("Invalid argument value");
+  });
+
+  it("renders producer-owned diagnostics whole in JSON and text, bounded and outside the telemetry classification (GH-1631)", () => {
+    const details = {
+      selection_report: {
+        filters: { version: "2026.11.1", statuses: ["closed"] },
+        stage_counts: [{ stage: "excluded_status", count: 1 }],
+      },
+    };
+    const context = { code: "release_notes_missing", details };
+    const envelope = formatPmCliErrorForJson("No changelog section for 2026.11.1", 1, context);
+    expect(envelope).toMatchObject({ code: "release_notes_missing", details });
+    expect(envelope).not.toHaveProperty("details_omitted");
+    expect(projectLeanErrorEnvelope(envelope)).toMatchObject({ details });
+    expect(classifyPmCliError("No changelog section for 2026.11.1", context)).not.toHaveProperty("details");
+    const text = formatPmCliErrorForDisplay("No changelog section for 2026.11.1", context);
+    expect(text).toContain('Details:\n  {\n    "selection_report": {\n      "filters": {\n        "version": "2026.11.1"');
+    expect(text).toContain('"stage": "excluded_status"');
+
+    const oversized = formatPmCliErrorForJson("Too much", 1, { code: "probe", details: { text: "x".repeat(5000) } });
+    expect(oversized).not.toHaveProperty("details");
+    expect(oversized.details_omitted).toEqual({ reason: "byte_limit", byte_length: 5011, byte_limit: 4096 });
+    expect(formatPmCliErrorForDisplay("Too much", { code: "probe", details: { text: "x".repeat(5000) } })).toContain(
+      "Details omitted: byte_limit (5011 of 4096 bytes)",
+    );
+    const malformed = formatPmCliErrorForJson("Bad shape", 1, { code: "probe", details: { at: new Date(0) } as never });
+    expect(malformed.details_omitted).toEqual({ reason: "unsupported_value", path: "details.at", byte_limit: 4096 });
+    expect(formatPmCliErrorForDisplay("Bad shape", { code: "probe", details: { at: new Date(0) } as never })).toContain(
+      "Details omitted: unsupported_value at details.at",
+    );
+    // An empty diagnostics object renders nothing in text.
+    expect(formatPmCliErrorForDisplay("Empty", { code: "probe", details: {} })).not.toContain("Details");
+
+    // When the whole text diagnostic exceeds its ceiling, the details block
+    // is the first collection the ladder drops.
+    const noisy = { code: "probe", details: { rows: Array.from({ length: 60 }, (_, index) => ({ index, label: `row-${index}-label` })) }, nextSteps: Array.from({ length: 30 }, (_, index) => `Step ${index}: ${"y".repeat(60)}`) };
+    const bounded = formatPmCliErrorForDisplay("Noisy refusal", noisy);
+    expect(bounded).not.toContain("Details:");
+    expect(bounded).toContain("rerun with --json for the full recovery envelope");
+  });
+
   it("uses attempted command context for allowed-value retry guidance", () => {
     const envelope = formatPmCliErrorForJson(
       "Get --depth must be one of brief|standard|deep|full",
