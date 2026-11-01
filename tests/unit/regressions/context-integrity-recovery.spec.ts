@@ -107,6 +107,22 @@ describe("context integrity recovery", () => {
     });
   });
 
+  it("records prose continuations as text and keeps identifier-keyed seeds lossless (pm-fr10t8)", () => {
+    const parsed = parseLogSeed(
+      "--comment",
+      ["text=(a, b) c. Related: d", "text=see x, the fix (y): z", "text=hello, world: big", "Plain: prose, kept: whole"],
+      "2026-11-01T00:00:00.000Z",
+      "fallback",
+    );
+    expect(parsed.values?.map((value) => value.text)).toEqual([
+      "(a, b) c. Related: d",
+      "see x, the fix (y): z",
+      // An identifier-shaped token opens a key; the unsupported-key fallback keeps the raw entry.
+      "text=hello, world: big",
+      "Plain: prose, kept: whole",
+    ]);
+  });
+
   it("selects npm 12 keyed receipts by requested package and rejects ambiguity", () => {
     const packRoot = path.resolve("tmp", "pack");
     const receipt = JSON.stringify({

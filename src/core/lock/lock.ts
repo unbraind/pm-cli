@@ -20,6 +20,12 @@ import { getLockPath } from "../store/paths.js";
 import { nowIso } from "../shared/time.js";
 
 import {
+  LOCK_PATH_UNSAFE_CODE,
+  assertLockEntryNotSymlink,
+  inspectConfinedLockDirectory,
+  verifyConfinedLockCreation,
+} from "./lock-confinement.js";
+import {
   captureProcessIdentity,
   captureLockOwnerIdentity,
   inspectLockOwner,
@@ -229,6 +235,7 @@ async function buildLockPayload(
  * Failed initialization closes and removes only the file this call created.
  */
 async function createLockFile(
+  pmRoot: string,
   lockPath: string,
   id: string,
   owner: string,
@@ -236,7 +243,14 @@ async function createLockFile(
   token: string,
   createParentDirectories: boolean,
 ): Promise<string> {
-  if (createParentDirectories)
+  // Refuse a symlinked lock directory before mkdir or the cleanup gate can
+  // follow it out of the tracker (pm-gh1647).
+  const existingDirectory = await inspectConfinedLockDirectory(
+    pmRoot,
+    lockPath,
+    id,
+  );
+  if (createParentDirectories && existingDirectory === null)
     await fs.mkdir(path.dirname(lockPath), { recursive: true });
   // Publication of an empty file precedes its owner JSON. Fence both steps
   // against stale cleanup so no peer can reclaim a live initializing owner.
@@ -251,7 +265,27 @@ async function createLockFile(
   }
   let createdAt: string;
   try {
+    const directory = await inspectConfinedLockDirectory(
+      pmRoot,
+      lockPath,
+      id,
+      false,
+    );
     const handle = await fs.open(lockPath, "wx");
+    try {
+      await verifyConfinedLockCreation({
+        pmRoot,
+        lockPath,
+        id,
+        handle,
+        directory,
+      });
+    } catch (error) {
+      // The created lock is not the confined entry; lockPath may name a
+      // peer's lock, so it is never unlinked on this path.
+      await handle.close();
+      throw error;
+    }
     try {
       try {
         const payload = await buildLockPayload(id, owner, ttlSeconds, token);
@@ -977,6 +1011,28 @@ async function removeConfirmedStaleLock(params: {
   }
 }
 
+/**
+ * Let only genuine contention reach the wait loop: confinement refusals pass
+ * through unchanged, other failures become a generic acquisition error, and a
+ * symlinked lock entry refuses instead of being waited on as a peer's lock.
+ */
+async function assertLockCreateContention(
+  error: unknown,
+  pmRoot: string,
+  lockPath: string,
+  id: string,
+): Promise<void> {
+  if (error instanceof PmCliError && error.code === LOCK_PATH_UNSAFE_CODE)
+    throw error;
+  if (!(await isLockCreateContention(error, lockPath))) {
+    throw new PmCliError(
+      `Failed to acquire lock for ${id}: ${toErrorMessage(error)}`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+  await assertLockEntryNotSymlink(pmRoot, lockPath, id);
+}
+
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
   parseLockInfo,
@@ -1115,6 +1171,7 @@ export async function acquireLockLease(
   for (;;) {
     try {
       const acquiredAt = await createLockFile(
+        pmRoot,
         lockPath,
         id,
         owner,
@@ -1135,12 +1192,7 @@ export async function acquireLockLease(
         fence: (commit) => fenceOwnedLock(lockPath, id, lease, commit),
       };
     } catch (error: unknown) {
-      if (!(await isLockCreateContention(error, lockPath))) {
-        throw new PmCliError(
-          `Failed to acquire lock for ${id}: ${toErrorMessage(error)}`,
-          EXIT_CODE.GENERIC_FAILURE,
-        );
-      }
+      await assertLockCreateContention(error, pmRoot, lockPath, id);
       let lockInfo = await readLockInfo(lockPath);
       if (await isReclaimableLock(lockInfo.info, ttlSeconds)) {
         const staleRemoval = await removeConfirmedStaleLock({

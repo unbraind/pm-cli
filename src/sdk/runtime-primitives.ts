@@ -429,12 +429,23 @@ export {
   resolveWorkspaceRoot,
 } from "../core/store/paths.js";
 export {
+  isSettingsReadFallback,
   persistSelectedItemFormat,
   readSettings,
   readSettingsWithMetadata,
   runWithConfigurationOnlySettings,
   writeSettings,
 } from "../core/store/settings.js";
+export {
+  readSettingsSection,
+  settingsSectionRevision,
+  writeSettingsSection,
+  type ReadSettingsSectionOptions,
+  type SettingsSectionReadResult,
+  type SettingsSectionValidator,
+  type SettingsSectionWriteResult,
+  type WriteSettingsSectionOptions,
+} from "../core/store/settings-sections.js";
 export { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
 export {
   type TelemetryCommandResolution,

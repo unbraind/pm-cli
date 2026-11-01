@@ -10,6 +10,7 @@
  * Zero ttl means any lock older than 0 ms is stale. Negative ttl means always stale.
  */
 
+import { inspectConfinedLockDirectory } from "./lock-confinement.js";
 import { inspectLockOwner, type LockOwnerIdentity } from "./lock-owner.js";
 import { acquireStaleCleanupGate, recordDeadLockRecovery } from "./lock.js";
 import { isFileMissingError } from "../fs/fs-utils.js";
@@ -369,6 +370,13 @@ export async function runLockGc(
     entries: [],
   };
 
+  // Never sweep through a symlinked locks directory: removals would land
+  // outside the tracker (pm-gh1647).
+  await inspectConfinedLockDirectory(
+    pmRoot,
+    path.join(locksDir, "gc.lock"),
+    "gc",
+  );
   let dirEntries: string[];
   try {
     const raw = await fs.readdir(locksDir);

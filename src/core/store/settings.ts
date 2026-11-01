@@ -90,6 +90,7 @@ export function isConfigurationOnlySettingsRead(pmRoot: string): boolean {
 
 const SETTINGS_WRITE_OP = "settings:write";
 const SETTINGS_PERSIST_SOURCE_SYMBOL = Symbol("pm.settings.persist_source");
+const SETTINGS_FALLBACK_ORIGIN_SYMBOL = Symbol("pm.settings.fallback_origin");
 const MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH = 128;
 const DUPLICATE_DETECTION_MODES = new Set(["off", "advisory", "strict"]);
 
@@ -521,6 +522,10 @@ function cloneSettingsReadResult(
   if (persistSource) {
     attachSettingsPersistSourceSnapshot(clonedSettings, persistSource);
   }
+  const fallbackOrigin = getSettingsFallbackOrigin(result.settings);
+  if (fallbackOrigin !== undefined) {
+    markSettingsFallbackOrigin(clonedSettings, fallbackOrigin);
+  }
   return {
     settings: clonedSettings,
     metadata: {
@@ -710,9 +715,40 @@ function resolvePersistedFileBackedSchemaSections(
   };
 }
 
+/**
+ * Record that a settings object is the default fallback for a stored document
+ * that could not be read, so a later write applies only the caller's change to
+ * that document instead of replacing it with defaults (pm-4zpq71).
+ */
+function markSettingsFallbackOrigin(settings: PmSettings, warning: string): void {
+  Object.defineProperty(
+    settings as unknown as Record<PropertyKey, unknown>,
+    SETTINGS_FALLBACK_ORIGIN_SYMBOL,
+    { value: warning, writable: true, configurable: true, enumerable: false },
+  );
+}
+
+/**
+ * Whether these settings are the defaults fallback for a stored document that
+ * could not be read. Automatic writers (format pinning, telemetry identity,
+ * consent) must skip their write instead of acting on the fallback.
+ */
+export function isSettingsReadFallback(settings: PmSettings): boolean {
+  return getSettingsFallbackOrigin(settings) !== undefined;
+}
+
+function getSettingsFallbackOrigin(settings: PmSettings): string | undefined {
+  const candidate = (settings as unknown as Record<PropertyKey, unknown>)[
+    SETTINGS_FALLBACK_ORIGIN_SYMBOL
+  ];
+  return typeof candidate === "string" ? candidate : undefined;
+}
+
 function buildFallbackSettingsReadResult(warning?: string): SettingsReadResult {
+  const settings = cloneDefaults();
+  if (warning !== undefined) markSettingsFallbackOrigin(settings, warning);
   return {
-    settings: cloneDefaults(),
+    settings,
     metadata: {
       has_explicit_item_format: false,
     },
@@ -2093,6 +2129,47 @@ export async function readSettingsWithMetadata(
   }
 }
 
+/**
+ * Apply only the caller's change, measured from the defaults fallback it was
+ * handed, onto the stored document that could not be read. Every unrelated
+ * stored key survives; a result that still fails schema validation is refused
+ * with the first invalid setting named and nothing is written (pm-4zpq71).
+ */
+function applyFallbackChangeToStoredSettings(
+  current: unknown,
+  proposedCanonical: Record<string, unknown>,
+  fallbackOrigin: string,
+): string {
+  const defaultsCanonical = JSON.parse(
+    serializeSettings(cloneDefaults()),
+  ) as Record<string, unknown>;
+  const candidate: Record<string, unknown> =
+    typeof current === "object" && current !== null && !Array.isArray(current)
+      ? structuredClone(current as Record<string, unknown>)
+      : {};
+  applySettingsDelta(candidate, defaultsCanonical, proposedCanonical);
+  const validated = validateSettings(candidate);
+  if (!validated.success) {
+    const field = validated.path;
+    throw new PmCliError(
+      `Existing settings.json fails validation at ${field}; the settings write was refused and nothing was changed.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "settings_write_invalid_existing_schema",
+        reason: "existing_settings_schema_invalid",
+        field,
+        original_code: fallbackOrigin,
+        why: "The stored settings could not be read, so writing would either keep an invalid document or replace intended project configuration with defaults.",
+        nextSteps: [
+          `Fix or remove ${field} in .agents/pm/settings.json (or set it to a valid value with pm config), then retry the original command.`,
+          "Run pm health to confirm the settings warning has cleared.",
+        ],
+      },
+    );
+  }
+  return `${JSON.stringify(orderObject(candidate, SETTINGS_TOP_LEVEL_KEY_ORDER), null, 2)}\n`;
+}
+
 /** Implements read settings for the public runtime surface of this module. */
 export async function readSettings(pmRoot: string): Promise<PmSettings> {
   return (await readSettingsWithMetadata(pmRoot)).settings;
@@ -2102,7 +2179,9 @@ export async function readSettings(pmRoot: string): Promise<PmSettings> {
  * Persist edits to a readSettings snapshot under the workspace-history lock.
  * Disjoint concurrent edits survive; overlapping stale edits fail before any
  * write. Caller-constructed settings without a read snapshot replace the whole
- * document. History append failures compensate the document before unlocking.
+ * document. A default fallback returned for an unreadable document applies only
+ * its own change to the stored document and refuses when the result is still
+ * schema-invalid. History append failures compensate the document before unlocking.
  */
 export async function writeSettings(
   pmRoot: string,
@@ -2111,6 +2190,7 @@ export async function writeSettings(
 ): Promise<void> {
   const settingsPath = getSettingsPath(pmRoot);
   const source = getSettingsPersistSourceSnapshot(settings);
+  const fallbackOrigin = source ? undefined : getSettingsFallbackOrigin(settings);
   const afterRaw = serializeSettings(settings, {
     persist_source: source,
   });
@@ -2139,6 +2219,16 @@ export async function writeSettings(
               },
             );
           }
+        }
+        if (fallbackOrigin !== undefined && beforeRaw !== null) {
+          return {
+            raw: applyFallbackChangeToStoredSettings(
+              current,
+              proposed as Record<string, unknown>,
+              fallbackOrigin,
+            ),
+            result: undefined,
+          };
         }
         return {
           raw: source

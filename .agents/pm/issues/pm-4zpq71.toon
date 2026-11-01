@@ -2,18 +2,53 @@ id: pm-4zpq71
 title: "pm config set on a schema-invalid settings.json writes the fallback defaults as the whole file, deleting unrelated settings"
 description: "When `settings.json` is valid JSON but fails schema validation (for example an unknown value in a validated enum such as `context.next_ranking_policy`, `validation.parent_reference` or `item_format`), `readSettingsWithMetadata` returns `buildFallbackSettingsReadResult(\"settings_read_invalid_schema\")`. That result is the full default settings with no persistence snapshot. A following `pm config project set <key> <value>` then writes those defaults as the complete document, silently removing every unrelated stored setting. The existing write guard refuses only malformed JSON (`settings_read_invalid_json`), not schema-invalid JSON.\n\npm-x2aplf fixed the same overwrite for valid sparse files (persist only the changed key). Its acceptance criteria do not cover the invalid-schema read path. CodeRabbit found this on PR #1638: the new `context.next_ranking_policy` enum adds one more way to reach it, but the behaviour predates that change and applies to every validated setting."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: config,data-integrity,review,settings
 created_at: "2026-10-31T16:19:52.261Z"
-updated_at: "2026-10-31T16:19:52.261Z"
+updated_at: "2026-11-01T12:21:41.034Z"
+closed_at: "2026-11-01T12:21:40.348Z"
+completed_at: "2026-11-01T12:21:40.348Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "A config write against a settings.json that fails schema validation is refused with a code naming the invalid field (no write), or preserves the original document and changes only the requested key; a regression test seeds a schema-invalid settings.json with unrelated keys, runs pm config project set, and asserts the unrelated keys survive or the write is refused; the same holds for SDK config writers"
 parent: pm-o2kc
 risk: high
 confidence: high
-expected_result: No configuration write ever replaces a stored settings.json with fallback defaults; schema-invalid settings are refused with a field-naming error or preserved byte-for-byte outside the written key.
+resolution: "Fallback settings carry a non-enumerable origin marker (kept across cached reads); writeSettings applies only the defaults-to-proposal delta onto the locked stored document and refuses settings_write_invalid_existing_schema with context.field naming the first invalid dotted path when the result is still invalid; validateSettings now reports that path; automatic writers (mutation preflight item_format pin, telemetry installation id, first-run consent) skip via the new public isSettingsReadFallback helper. Documented in docs/CONFIGURATION.md."
+expected_result: A config or SDK write against a schema-invalid settings.json is refused with a field-naming code or changes only the requested key; unrelated keys always survive.
+actual_result: pm config project set locks.ttl_seconds on a schema-invalid file refuses with settings_write_invalid_existing_schema naming context.next_ranking_policy and leaves bytes and history untouched; setting context.next_ranking_policy weighted repairs the file and keeps id_prefix and extension sections; automatic writers leave the bytes unchanged; full suite and coverage pass.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-x2aplf,related,"2026-10-31T16:19:52.261Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-01T11:02:51.594Z","harness:claude-code","Implementation: a default fallback returned for an unreadable settings.json (warnings settings_read_invalid_schema, settings_read_fs_error, settings_read_merge_failed) now carries a non-enumerable fallback-origin marker. cloneSettingsReadResult copies it, so cached reads keep it. writeSettings without a persist snapshot checks the marker. Under the workspace-history lock it applies only the delta from the canonical defaults to the caller's proposal onto the stored document it re-reads. The result is validated. If it is still invalid, the write refuses with settings_write_invalid_existing_schema (exit 2): context.field names the first invalid dotted path, original_code is the read warning, and nothing is written and no history is appended. If it validates, it is written with every unrelated stored key kept, including extension-owned sections. The settings validator now reports the failing path: Failure carries path segments through vObject, vArray and vRecordOf, and validateSettings returns { success: false, path }. Chosen behaviour: AC option 2 (preserve and change only the requested key) combined with option 1's refusal when the result would stay invalid. pm config project set context.next_ranking_policy weighted can therefore repair the file, while an unrelated set refuses with the field to fix. Tests: tests/unit/core/store/settings-fallback-write.spec.ts, 10 cases including the CLI regression. All 195 store tests pass.\n"
+  "2026-11-01T11:26:14.659Z","harness:claude-code","Follow-up from the full suite: three AUTOMATIC writers also acted on the defaults fallback. They are the mutation preflight item_format pin (src/cli/migration-gates.ts), the telemetry installation-id write (src/core/telemetry/runtime.ts ensureInstallationId) and the first-run consent prompt (src/core/telemetry/consent.ts). Before this change, each of them silently replaced an unreadable settings.json with defaults. cli-main-errors.spec even asserted that a {version:1} document was rewritten with item_format toon. With the new refusal, the pin would have blocked every mutation command on a tracker with schema-invalid settings. New public helper isSettingsReadFallback(settings), exported from the SDK runtime primitives: the three automatic writers now skip their write when settings are a fallback. The command runs on the defaults with the existing warning, telemetry captures nothing until the global settings are readable, and the consent prompt is not shown because its answer could not be recorded. User-requested writes (config, schema, package install, init on an existing tracker) keep the field-naming refusal. Tests: the cli-main-errors expectation now asserts the document is byte-identical, and telemetry-consent.spec and telemetry-runtime.spec each gained an unreadable-global-settings case.\n"
+files[10]{path,scope}:
+  src/cli/migration-gates.ts,project
+  src/core/store/settings-validator.ts,project
+  src/core/store/settings.ts,project
+  src/core/telemetry/consent.ts,project
+  src/core/telemetry/runtime.ts,project
+  src/sdk/runtime-primitives.ts,project
+  tests/unit/cli/cli-main-errors.spec.ts,project
+  tests/unit/core/store/settings-fallback-write.spec.ts,project
+  tests/unit/core/telemetry/telemetry-consent.spec.ts,project
+  tests/unit/core/telemetry/telemetry-runtime.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/store/settings-fallback-write.spec.ts,project,"harness:claude-code","2026-11-01T11:02:40.653Z",local_mutation,fix/sdk-lock-confinement-and-settings-sections
+test_runs[1]:
+  - run_id: test-local-mvxstkjd-41vl8q
+    kind: test
+    status: passed
+    started_at: "2026-11-01T12:20:47.226Z"
+    finished_at: "2026-11-01T12:20:55.225Z"
+    recorded_at: "2026-11-01T12:20:55.225Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/core/store/settings-fallback-write.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
+close_reason: Settings writes never replace an unreadable settings.json with defaults
 body: ""

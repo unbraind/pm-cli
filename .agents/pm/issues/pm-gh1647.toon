@@ -1,0 +1,56 @@
+id: pm-gh1647
+title: "GH-1647: acquireLock / acquireLockLease follow a symlinked locks directory and create the lock outside the tracker"
+description: "GitHub report https://github.com/unbraind/pm-cli/issues/1647 (found by pm-rl's state-confinement guarantee, unbraind/pm-rl#107): when the tracker's locks directory (or a lock entry's parent) is a symlink, acquireLock and acquireLockLease follow it and create the lock outside the tracker, so two writers resolving the path differently share no exclusion point and an extension cannot close the check/use window with its own pathname check. The SDK must refuse a symlinked or swapped lock directory with a typed lock_path_unsafe error and never create a lock outside the tracker."
+type: Issue
+status: closed
+priority: 1
+tags[6]: bug,concurrency,"gh:1647",locks,sdk,security
+created_at: "2026-11-01T10:48:40.483Z"
+updated_at: "2026-11-01T12:21:26.245Z"
+closed_at: "2026-11-01T12:21:25.492Z"
+completed_at: "2026-11-01T12:21:25.492Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "acquireLock and acquireLockLease refuse with code lock_path_unsafe when the tracker's locks directory, or any component between the tracker root and the lock entry, is a symlink or not a directory, and no file is created outside the tracker; a swap of the locks directory between the confinement check and lock creation is detected by comparing the created lock's identity with the confined directory entry, the stray lock is removed, and the acquisition refuses with lock_path_unsafe; regression tests cover a pre-existing symlinked locks directory and a swap during acquisition for both acquireLock and acquireLockLease; the refusal is documented in docs/SDK.md"
+parent: pm-dj98
+risk: high
+confidence: high
+resolution: "New core/lock/lock-confinement.ts: lstat-walk of every component between tracker root and lock parent before mkdir or the cleanup gate (refuses lock_directory_symlink, lock_directory_not_directory, lock_path_outside_tracker); a symlinked lock entry refuses lock_entry_symlink; after open(wx) the handle dev/ino must equal lstat(lockPath) inside the same directory identity, else lock_directory_replaced with Linux procfs stray removal and no unlink of lockPath; pm gc --scope locks refuses a symlinked locks dir. Documented in docs/SDK.md."
+expected_result: acquireLock and acquireLockLease never create a lock outside the tracker; symlinked or swapped lock directories refuse with a typed lock_path_unsafe error.
+actual_result: "17 confinement specs pass (pre-existing symlink for both entrypoints, non-directory, symlinked entry, swap during acquisition, swap-back with a peer lock preserved, symlinked tracker root works, gc refusal); 101 lock unit tests, full suite and 100% coverage pass."
+dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1576,related,"2026-11-01T10:48:40.483Z","harness:claude-code","cli:create:dep",detected
+  pm-zwib,related,"2026-11-01T10:48:40.483Z","harness:claude-code","cli:create:dep",detected
+  pm-d70h,related,"2026-11-01T12:19:03.681Z","harness:claude-code","cli:update:dep",detected
+  pm-fsyv,related,"2026-11-01T12:19:03.681Z","harness:claude-code","cli:update:dep",detected
+  pm-gh1609,related,"2026-11-01T12:19:03.681Z","harness:claude-code","cli:update:dep",detected
+  pm-lxa0,related,"2026-11-01T12:19:03.681Z","harness:claude-code","cli:update:dep",detected
+  pm-nkx,related,"2026-11-01T12:19:03.681Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-01T10:48:40.483Z","harness:claude-code","text=Intake for GH-1647. Duplicate check: pm search 'symlink lock confinement' (pm-d70h, pm-nkx, pm-zwib, pm-fsyv, pm-lxa0, pm-gh1609 are all closed and cover TTL, stale takeover, extension-entry symlinks and include-linked containment, not the locks directory itself); pm list --status open/in_progress shows no lock-confinement item. Related: pm-gh1576 closes a different check/use window (expected item revisions)."
+  "2026-11-01T10:55:55.720Z","harness:claude-code","Implementation: new src/core/lock/lock-confinement.ts. inspectConfinedLockDirectory lstat-walks every component between the tracker root and the lock's parent and refuses lock_path_unsafe (exit 4) on a symlink or non-directory BEFORE mkdir or the stale-cleanup gate can follow it; it runs again after the gate, and verifyConfinedLockCreation compares handle.stat() dev/ino with lstat(lockPath) plus the re-inspected directory identity, so a swap during acquisition refuses with lock_directory_replaced instead of returning a lease that excludes no one. On Linux the stray lock is located via /proc/self/fd/<fd> and removed only when its identity matches; other platforms report stray_lock_removed=false. A symlinked lock entry now refuses (lock_entry_symlink) instead of being waited on as a peer's lock, and runLockGc refuses to sweep through a symlinked locks dir (it would delete files outside the tracker). Design note: Node has no openat, so descriptor-relative creation is approximated by identity verification; the residual is a stray cleanup-gate directory inside the swapped-away real directory, which dead-owner recovery retires. Tests: 16 cases in tests/unit/core/lock/lock-confinement.spec.ts; tests/unit/core/lock + core/item lock specs + integration/locking all pass (166)."
+files[5]{path,scope}:
+  src/core/lock/lock-confinement.ts,project
+  src/core/lock/lock-gc.ts,project
+  src/core/lock/lock.ts,project
+  src/core/shared/errors.ts,project
+  tests/unit/core/lock/lock-confinement.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/lock/,project,"harness:claude-code","2026-11-01T10:55:55.072Z",local_mutation,fix/sdk-lock-confinement-and-settings-sections
+test_runs[1]:
+  - run_id: test-local-mvxstdvf-tx5fag
+    kind: test
+    status: passed
+    started_at: "2026-11-01T12:20:27.685Z"
+    finished_at: "2026-11-01T12:20:46.587Z"
+    recorded_at: "2026-11-01T12:20:46.587Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/core/lock/,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: "Locks are confined to the tracker: symlinked or swapped lock directories refuse with lock_path_unsafe"
+escape_class: production_defect
+body: ""

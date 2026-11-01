@@ -24565,6 +24565,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "lock_path_unsafe",
+      "class": "conflict",
+      "code": "lock_path_unsafe",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Lock path unsafe condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/lock/lock-confinement.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "locks_stale_count",
       "class": "generic_failure",
       "code": "locks_stale_count",
@@ -26430,6 +26447,108 @@
     },
     {
       "aliases": [],
+      "canonical_code": "settings_section_document_malformed",
+      "class": "usage",
+      "code": "settings_section_document_malformed",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Settings section document malformed condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings-sections.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "settings_section_document_missing",
+      "class": "not_found",
+      "code": "settings_section_document_missing",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 3,
+      "meaning": "Settings section document missing condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings-sections.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "settings_section_invalid",
+      "class": "usage",
+      "code": "settings_section_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Settings section invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings-sections.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "settings_section_name_invalid",
+      "class": "usage",
+      "code": "settings_section_name_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Settings section name invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings-sections.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "settings_section_reserved",
+      "class": "usage",
+      "code": "settings_section_reserved",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Settings section reserved condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings-sections.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "settings_section_revision_conflict",
+      "class": "conflict",
+      "code": "settings_section_revision_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Settings section revision conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings-sections.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "settings_unreadable",
       "class": "generic_failure",
       "code": "settings_unreadable",
@@ -26455,6 +26574,23 @@
       ],
       "exit_code": 2,
       "meaning": "Settings write invalid existing json condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/settings.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "settings_write_invalid_existing_schema",
+      "class": "usage",
+      "code": "settings_write_invalid_existing_schema",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Settings write invalid existing schema condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [

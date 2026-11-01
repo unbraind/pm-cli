@@ -255,6 +255,19 @@ describe("core/item/parse", () => {
     });
   });
 
+  it("continues prose whose post-comma segment holds a non-identifier key token (pm-fr10t8)", () => {
+    expect(parseCsvKv("text=(a, b) c. Related: d", "--comment")).toEqual({
+      text: "(a, b) c. Related: d",
+    });
+    expect(parseCsvKv("note=see x, the fix (y): z,path=a.ts", "--add")).toEqual({
+      note: "see x, the fix (y): z",
+      path: "a.ts",
+    });
+    // An identifier-shaped token still opens a key, so typos stay detectable.
+    expect(parseCsvKv("path=a.ts,lable=main", "--add")).toEqual({ path: "a.ts", lable: "main" });
+    expect(parseCsvKv("path=a.ts, b) c: d", "--add").path).toBe("a.ts");
+  });
+
   it("assertNoUnknownCsvKeys accepts known keys and is case-insensitive (GH-258)", () => {
     expect(() =>
       assertNoUnknownCsvKeys({ path: "a", scope: "project" }, "--add", [

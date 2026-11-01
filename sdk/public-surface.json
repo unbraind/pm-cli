@@ -2985,6 +2985,15 @@
       ],
       "package_version": "2026.10.31",
       "reason": "Optional additions only: ClaimResult.start (claim --next --start receipt), ClaimNextOptions.start, and PmContextIntentReceipt.limit_override (GH-1643/GH-1644); no existing field changed type or became required."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ExtensionCommandSdk",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk/authoring:ExtensionCommandSdk"
+      ],
+      "package_version": "2026.11.1",
+      "reason": "Additive only for consumers: PmCliErrorContext gains optional lock_component, stray_lock_removed, expected_revision and current_revision (pm-gh1647, pm-gh1580); ExtensionCommandSdk gains readSettingsSection and writeSettingsSection, which only the host implements and injects (pm-gh1580)"
     }
   ],
   "entrypoints": {
@@ -8371,7 +8380,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { fitOutputEnvelope: typeof fitOutputEnvelope; client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
+          "signature": "export interface ExtensionCommandSdk { fitOutputEnvelope: typeof fitOutputEnvelope; client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; readSettingsSection<T = unknown>(section: string, options?: ReadSettingsSectionOptions<T>): Promise<SettingsSectionReadResult<T>>; writeSettingsSection<T>(section: string, value: T | undefined, options?: WriteSettingsSectionOptions<T>): Promise<SettingsSectionWriteResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",
@@ -10808,6 +10817,12 @@
           "kind": "function",
           "name": "isRuntimeRecord",
           "signature": "(value: unknown) => value is Record<string, unknown> | calls: (value: unknown) => value is Record<string, unknown>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "isSettingsReadFallback",
+          "signature": "(settings: PmSettings) => boolean | calls: (settings: PmSettings) => boolean"
         },
         {
           "classification": "supported",
@@ -14197,7 +14212,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; recovery?: PmCliErrorRecoveryPayload; }"
+          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; stray_lock_removed?: boolean; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; }"
         },
         {
           "classification": "advanced_export",
@@ -16364,6 +16379,18 @@
           "kind": "function",
           "name": "readSettings",
           "signature": "(pmRoot: string) => Promise<PmSettings> | calls: (pmRoot: string) => Promise<PmSettings>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "readSettingsSection",
+          "signature": "<T = unknown>(pmRoot: string, section: string, options?: ReadSettingsSectionOptions<T>) => Promise<SettingsSectionReadResult<T>> | calls: <T = unknown>(pmRoot: string, section: string, options?: ReadSettingsSectionOptions<T>) => Promise<SettingsSectionReadResult<T>>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ReadSettingsSectionOptions",
+          "signature": "export interface ReadSettingsSectionOptions<T> { validate?: SettingsSectionValidator<T>; defaultValue?: T; }"
         },
         {
           "classification": "advanced_export",
@@ -20308,6 +20335,30 @@
           "signature": "PmSettings"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "SettingsSectionReadResult",
+          "signature": "export interface SettingsSectionReadResult<T> { section: string; source: \"stored\" | \"default\"; value: T | undefined; revision: string | null; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "settingsSectionRevision",
+          "signature": "(value: unknown) => string | calls: (value: unknown) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "SettingsSectionValidator",
+          "signature": "export type SettingsSectionValidator<T> = (raw: unknown) => T;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "SettingsSectionWriteResult",
+          "signature": "export interface SettingsSectionWriteResult { section: string; changed: boolean; previous_revision: string | null; revision: string | null; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "SharedContentFieldFilterOptions",
@@ -22422,6 +22473,18 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "writeSettingsSection",
+          "signature": "<T>(pmRoot: string, section: string, value: T | undefined, options?: WriteSettingsSectionOptions<T>) => Promise<SettingsSectionWriteResult> | calls: <T>(pmRoot: string, section: string, value: T | undefined, options?: WriteSettingsSectionOptions<T>) => Promise<SettingsSectionWriteResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "WriteSettingsSectionOptions",
+          "signature": "export interface WriteSettingsSectionOptions<T> { expectedRevision?: string | null; validate?: SettingsSectionValidator<T>; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "writeStderr",
           "signature": "(text: string) => boolean | calls: (text: string) => boolean"
         },
@@ -22921,7 +22984,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionCommandSdk",
-          "signature": "export interface ExtensionCommandSdk { fitOutputEnvelope: typeof fitOutputEnvelope; client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
+          "signature": "export interface ExtensionCommandSdk { fitOutputEnvelope: typeof fitOutputEnvelope; client: PmClient; isItemNotFoundError(error: unknown): boolean; getItemAt(id: string, target: string): Promise<GetItemAtResult>; readSettingsSection<T = unknown>(section: string, options?: ReadSettingsSectionOptions<T>): Promise<SettingsSectionReadResult<T>>; writeSettingsSection<T>(section: string, value: T | undefined, options?: WriteSettingsSectionOptions<T>): Promise<SettingsSectionWriteResult>; openRelationshipEventStore(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; relativePath?: string; }): Promise<RelationshipEventStore>; createRelationshipGraph(options: { nodes: Iterable<string>; edges: Iterable<RelationshipEdge>; definitions: readonly RelationshipKindDefinition[]; }): RelationshipGraph; analyzeRelationshipImpact(graph: RelationshipGraph, root: string, options?: RelationshipQueryOptions): RelationshipImpactAnalysis; validateRelationshipEvents(options: { nodes: Iterable<string>; definitions: readonly RelationshipKindDefinition[]; events: readonly RelationshipEventInput[]; }): RelationshipEvent[]; commitWorkspaceTransaction(options: Omit<CommitWorkspaceTransactionOptions, \"pmRoot\">): Promise<WorkspaceTransactionCommitResult>; mutateWorkspaceSettings(options: { operationId: string; dryRun?: boolean; includePreview?: boolean; replaceSubtrees?: readonly string[]; mutate: (current: PmSettings) => PmSettings | Promise<PmSettings>; }): Promise<{ changed: boolean; dry_run: boolean; replayed: boolean; preview?: PmSettings; }>; }"
         },
         {
           "classification": "supported",
@@ -37591,6 +37654,7 @@
     "local_source_not_found_bare_name",
     "lock_conflict",
     "lock_lost",
+    "lock_path_unsafe",
     "locks_stale_count",
     "locks_unreadable",
     "malformed_plan_step_evidence",
@@ -37698,8 +37762,15 @@
     "settings_read_invalid_json",
     "settings_read_invalid_schema",
     "settings_read_merge_failed",
+    "settings_section_document_malformed",
+    "settings_section_document_missing",
+    "settings_section_invalid",
+    "settings_section_name_invalid",
+    "settings_section_reserved",
+    "settings_section_revision_conflict",
     "settings_unreadable",
     "settings_write_invalid_existing_json",
+    "settings_write_invalid_existing_schema",
     "stale_budget",
     "stale_destination",
     "stale_observed_signature",

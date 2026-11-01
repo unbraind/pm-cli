@@ -174,13 +174,23 @@ export interface ParsedSettings {
 /** Restricts settings validation result values accepted by command, SDK, and storage contracts. */
 export type SettingsValidationResult =
   | { success: true; data: ParsedSettings }
-  | { success: false };
+  | {
+      success: false;
+      /** Dotted path of the first invalid setting; empty when the document root is not an object. */
+      path: string;
+    };
 
-type Outcome<T> = { ok: true; value: T } | { ok: false };
+type Failure = { ok: false; path: readonly string[] };
+type Outcome<T> = { ok: true; value: T } | Failure;
 type Check<T> = (input: unknown) => Outcome<T>;
 
 // Generic over `never` so it is assignable to every `Outcome<T>`.
-const FAIL: Outcome<never> = { ok: false };
+const FAIL: Outcome<never> = { ok: false, path: [] };
+
+/** Prefix a nested failure with the key or index that contained it. */
+function failAt(segment: string, failure: Failure): Failure {
+  return { ok: false, path: [segment, ...failure.path] };
+}
 
 const vString: Check<string> = (input) =>
   typeof input === "string" ? { ok: true, value: input } : FAIL;
@@ -235,10 +245,10 @@ function vArray<T>(item: Check<T>, maxLength?: number): Check<T[]> {
       return FAIL;
     }
     const value: T[] = [];
-    for (const element of input) {
+    for (const [index, element] of input.entries()) {
       const result = item(element);
       if (!result.ok) {
-        return FAIL;
+        return failAt(String(index), result);
       }
       value.push(result.value);
     }
@@ -281,7 +291,7 @@ function vRecordOf<T>(valueCheck: Check<T>): Check<Record<string, T>> {
     for (const [key, raw] of Object.entries(input as Record<string, unknown>)) {
       const result = valueCheck(raw);
       if (!result.ok) {
-        return FAIL;
+        return failAt(key, result);
       }
       value[key] = result.value;
     }
@@ -301,7 +311,7 @@ function vObject(
     for (const [key, check] of Object.entries(shape)) {
       const result = check(record[key]);
       if (!result.ok) {
-        return FAIL;
+        return failAt(key, result);
       }
       // Mirror zod: absent optional keys are omitted; unknown keys are dropped.
       if (result.value !== undefined) {
@@ -507,7 +517,7 @@ const harnessSignalDescriptor = vObject({
   client_names: vOptional(vArray(harnessSignalLiteral, 64)),
 });
 
-const settingsCheck = vObject({
+const SETTINGS_SHAPE: Record<string, Check<unknown>> = {
   version: vNumber({ int: true }),
   id_prefix: vString,
   ids: vOptional(
@@ -686,13 +696,20 @@ const settingsCheck = vObject({
     qdrant: vObject({ url: vString, api_key: vString }),
     lancedb: vObject({ path: vString }),
   }),
-});
+};
+
+const settingsCheck = vObject(SETTINGS_SHAPE);
+
+/** Top-level settings keys owned and validated by core; extension sections must use other names. */
+export const CORE_SETTINGS_SECTION_KEYS: readonly string[] = Object.freeze(
+  Object.keys(SETTINGS_SHAPE),
+);
 
 /** Validate raw settings, returning stripped, type-checked data or failure (matching the legacy zod safeParse). */
 export function validateSettings(raw: unknown): SettingsValidationResult {
   const result = settingsCheck(raw);
   if (!result.ok) {
-    return { success: false };
+    return { success: false, path: result.path.join(".") };
   }
   return { success: true, data: result.value as unknown as ParsedSettings };
 }

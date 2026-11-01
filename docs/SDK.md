@@ -328,6 +328,26 @@ try {
 }
 ```
 
+Locks are confined to the tracker
+([pm-gh1647](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1647.toon),
+a repository-only tracker record excluded from npm). The built-in provider
+never follows a symlink below the tracker root. If `locks/`, any component
+between the tracker root and the lock entry, or the lock entry itself is a
+symlink or not a directory, `acquireLock` and `acquireLockLease` refuse with
+`lock_path_unsafe` (exit 4). The refusal carries `context.reason`
+(`lock_directory_symlink`, `lock_directory_not_directory`,
+`lock_entry_symlink` or `lock_path_outside_tracker`) and the tracker-relative
+`context.lock_component`. Nothing is created outside the tracker, and the
+cleanup gate is not created either. After creating the lock file, the provider
+checks that the new file is the confined entry in the directory it inspected.
+A directory swapped during acquisition refuses with `lock_directory_replaced`,
+and the lease is never returned. On Linux the stray lock is located through its
+descriptor and removed (`context.stray_lock_removed: true`). Other platforms
+report `false`, because they cannot locate the stray file. `pm gc --scope locks`
+applies the same check and refuses to sweep through a symlinked `locks/`
+directory. The tracker root itself may be a symlink: confinement is relative to
+the root you pass.
+
 See
 [Configuration](CONFIGURATION.md#common-settings) for host identity, local
 recovery audit receipts and `PM_LOCK_WAIT_MS` precedence. Extension lock

@@ -1842,6 +1842,30 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("never persists an installation identity over an unreadable global settings file (pm-4zpq71)", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settingsPath = getSettingsPath(globalRoot);
+      const unreadable = `${JSON.stringify({ version: 1, custom: { kept: true } })}\n`;
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      await fs.writeFile(settingsPath, unreadable, "utf8");
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: { json: true, quiet: false, noExtensions: false, noPager: false, profile: false },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+
+      expect(active).toBeNull();
+      expect(await fs.readFile(settingsPath, "utf8")).toBe(unreadable);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
   it("preserves consented settings and missing schema during a scoped flush, then restores ordinary identity initialization", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const settings = await readSettings(globalRoot);

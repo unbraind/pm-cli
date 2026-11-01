@@ -1,0 +1,49 @@
+id: pm-fr10t8
+title: "A continuable key=value prose segment containing a colon is misread as a new key, so --comment/--note/--learning seeds store the raw entry with its text= prefix"
+description: "The shared key=value grammar (parseCsvKv in src/core/item/parse.ts) splits a continuable prose value on commas and then treats any later segment containing a colon or equals sign as a NEW key, even when the candidate key is not an identifier. For --comment, --note and --learning seeds, parseLogSeed then sees an \"unsupported key\" and falls back to storing the whole raw entry, so the immutable comment keeps the literal text= prefix the agent wrote as syntax.\n\nReproduced on pm 2026.11.1 in a sandbox: pm create --title t --type Task --comment \"text=(a, b) c. Related: d\" stores \"text=(a, b) c. Related: d\". The segment \" b) c. Related: d\" is parsed as key \"b) c. Related\" with value \"d\". \"text=a. Related: b\" (no comma) and \"text=a (b, c); d\" (no colon after the comma) both round-trip correctly, which is why the defect only shows up in longer prose. Observed in practice on pm-gh1647: its create-time intake comment is stored with a text= prefix.\n\npm-hu92i3 fixed the three comma behaviours (whitespace, escapes, quotes) but not this delimiter-in-continuation case. The markdown-line parser already requires keys to match [A-Za-z0-9_.-]+; the CSV path does not."
+type: Issue
+status: closed
+priority: 2
+tags[5]: agent-ux,annotations,cli,data-integrity,parsing
+created_at: "2026-11-01T10:57:52.974Z"
+updated_at: "2026-11-01T12:21:44.277Z"
+closed_at: "2026-11-01T12:21:43.403Z"
+completed_at: "2026-11-01T12:21:43.403Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "parseCsvKv treats a segment whose candidate key is not an identifier ([A-Za-z0-9_.-]+) as a continuation of the active continuable key instead of a new key; pm create --comment/--note/--learning with text=(a, b) c. Related: d stores exactly (a, b) c. Related: d; GH-258 strict unknown-key rejection still refuses an identifier-shaped typo key such as lable=main; a seed with an identifier-shaped unknown key (for example source=dogfood) keeps the lossless raw-entry fallback"
+parent: pm-yql1
+risk: medium
+confidence: high
+resolution: "parseCsvKv treats a post-comma segment as a continuation of the active continuable value when its candidate key is non-empty and not identifier-shaped ([A-Za-z0-9_.-]+); empty keys still refuse, typo keys still open keys for strict unknown-key rejection, and identifier-keyed seeds keep the lossless raw-entry fallback. Rule documented in docs/AGENT_EVIDENCE_CONSISTENCY.md."
+expected_result: "text=(a, b) c. Related: d is recorded as (a, b) c. Related: d."
+actual_result: "parse-utils and context-integrity-recovery specs pass, including continuation, typo, empty-key and identifier-keyed raw fallback cases; create-command lossless-seed spec still passes."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1647,discovered_from,"2026-11-01T10:57:52.974Z","harness:claude-code","cli:create:dep",detected
+  pm-hu92i3,related,"2026-11-01T10:57:52.974Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-01T11:09:06.308Z","harness:claude-code","Implementation: parseCsvKv (src/core/item/parse.ts) now treats a segment as a continuation of the active continuable value (text, note, body, ...) when the token before its first = or : does not match the new CSV_KEY_PATTERN [A-Za-z0-9_.-]+, which is the same key shape the markdown-line parser already requires. \"text=(a, b) c. Related: d\" now parses to one text value. An identifier-shaped token still opens a key, so the GH-258 typo detection (lable=main) is unchanged. In parseLogSeed (src/sdk/lifecycle/create.ts), the unsupported-key fallback still records the whole entry, but it strips a leading text= or text: opener, so a seed such as \"text=hello, world: big\", whose post-comma token is a valid identifier, no longer stores the syntax as prose. Tests: parse-utils.spec.ts (continuation and typo cases) and context-integrity-recovery.spec.ts (three log-seed shapes).\n"
+  "2026-11-01T11:26:15.978Z","harness:claude-code","Scope correction after the full suite: the log-seed text= stripping was reverted. create-command.spec (\"accepts intuitive rich agent seed inputs without dropping metadata\", GH-1149 lineage) deliberately records the raw entry losslessly when a seed carries an identifier-shaped unknown key such as source=dogfood. Removing the opener would change what the agent wrote in exactly the ambiguous case. The parser continuation fix alone resolves the reproduced defect: \"text=(a, b) c. Related: d\" now parses as pure text. An empty key (note=alpha,=beta) still refuses as before. The documented rule is now: inside a prose value, only an identifier-shaped token followed by = or : opens a new key. Quote the value (text=\"hello, world: big\") to embed such a token. src/sdk/lifecycle/create.ts was unlinked from this item.\n"
+files[3]{path,scope}:
+  src/core/item/parse.ts,project
+  tests/unit/core/item/parse-utils.spec.ts,project
+  tests/unit/regressions/context-integrity-recovery.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/item/parse-utils.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,project,"harness:claude-code","2026-11-01T11:08:45.668Z",local_mutation,fix/sdk-lock-confinement-and-settings-sections
+test_runs[1]:
+  - run_id: test-local-mvxstzm7-xg76ym
+    kind: test
+    status: passed
+    started_at: "2026-11-01T12:21:05.413Z"
+    finished_at: "2026-11-01T12:21:14.767Z"
+    recorded_at: "2026-11-01T12:21:14.767Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/core/item/parse-utils.spec.ts tests/unit/regressions/context-integrity-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/AGENT_EVIDENCE_CONSISTENCY.md,project
+close_reason: Prose continuations containing a colon after a comma round-trip through key=value seeds
+escape_class: production_defect
+body: ""

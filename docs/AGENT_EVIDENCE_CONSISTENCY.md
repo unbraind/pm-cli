@@ -29,6 +29,16 @@ The annotation SDK still supports its explicit `text:` and `text=` structured
 input syntax. Files and standard input remain literal text sources. Other
 commands retain their supported bare-key option normalization.
 
+Inside a prose value such as `text=`, `note=` or `body=`, a comma followed by
+another `=` or `:` opens a new key only when the token before it is
+identifier-shaped (`[A-Za-z0-9_.-]+`). So `text=(a, b) c. Related: d` is
+recorded as `(a, b) c. Related: d`
+([pm-fr10t8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr10t8.toon),
+a repository-only tracker record excluded from npm). Quote the value
+(`text="hello, world: big"`) to embed an identifier-shaped `key:` token. A seed
+that carries an unsupported identifier-shaped key keeps its raw entry
+losslessly.
+
 ## Consistent history validation
 
 Validation first scans the captured corpus. An ordinary writer can advance an
