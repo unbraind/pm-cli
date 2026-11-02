@@ -3185,10 +3185,13 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   `{ details_omitted }` or `undefined`) or, for a context forwarded as-is,
   `projectPmCliErrorContextDetails(context)`.
 - **Privacy.** Telemetry and Sentry never receive `details`. The telemetry
-  classification is built without it, captured faults strip it from
-  `error_context`, and every embedded error context in an outgoing Sentry
-  event or transaction (error-data contexts, console-capture arguments,
-  breadcrumbs) is scrubbed before it leaves the process.
+  classification is built without it. A crash report carries an error
+  context only as its top-level primitive fields, read without running
+  getters or `toJSON`, so diagnostics cannot reach it under another key: this
+  applies to `error_context`, to the error-data context (rebuilt from the
+  original exception, because the integration serializes it before
+  `beforeSend`), and to every embedded context in console-capture arguments,
+  breadcrumbs and transactions.
 
 ## Package Runtime Imports
 

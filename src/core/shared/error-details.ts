@@ -99,6 +99,15 @@ function charge(budget: ByteBudget, bytes: number, path: string): void {
   if (budget.bytes > PM_CLI_ERROR_DETAILS_LIMITS.max_bytes) throw new DetailsShapeError("byte_limit", path);
 }
 
+/**
+ * Refuse before doing work whose result cannot fit: compact UTF-8 JSON spends
+ * at least one byte per UTF-16 unit, so `minimumBytes` is a constant-time
+ * lower bound checked before any scan or encoding of a large string.
+ */
+function assertCanFit(budget: ByteBudget, minimumBytes: number, path: string): void {
+  if (budget.bytes + minimumBytes > PM_CLI_ERROR_DETAILS_LIMITS.max_bytes) throw new DetailsShapeError("byte_limit", path);
+}
+
 /** Read one own data property; accessors and absent slots are refused without invoking anything. */
 function readOwnDataValue(container: object, key: string, path: string): unknown {
   const descriptor = Object.getOwnPropertyDescriptor(container, key);
@@ -108,7 +117,11 @@ function readOwnDataValue(container: object, key: string, path: string): unknown
 
 function copyDetailLeaf(value: unknown, path: string, budget: ByteBudget): unknown {
   if (typeof value === "number" && !Number.isFinite(value)) throw new DetailsShapeError("non_finite_number", path);
-  if (typeof value === "string" && LONE_SURROGATE.test(value)) throw new DetailsShapeError("malformed_unicode", path);
+  if (typeof value === "string") {
+    // Quotes plus at least one byte per unit, before the linear scan and encoding.
+    assertCanFit(budget, value.length + 2, path);
+    if (LONE_SURROGATE.test(value)) throw new DetailsShapeError("malformed_unicode", path);
+  }
   if (value !== null && !["boolean", "number", "string"].includes(typeof value)) {
     throw new DetailsShapeError("unsupported_value", path);
   }
@@ -140,6 +153,8 @@ function copyDetailObject(value: Record<string, unknown>, path: string, depth: n
   charge(budget, keys.length > 0 ? keys.length + 1 : 2, path);
   const copy: Record<string, unknown> = {};
   for (const key of keys) {
+    // Quotes, colon and at least one byte per unit, before building a path from the key.
+    assertCanFit(budget, key.length + 3, path);
     const keyPath = childPath(path, key);
     if (RESERVED_KEYS.has(key)) throw new DetailsShapeError("reserved_key", keyPath);
     if (LONE_SURROGATE.test(key)) throw new DetailsShapeError("malformed_unicode", keyPath);
@@ -315,6 +330,24 @@ export function omitPmCliErrorDetails(context: unknown): unknown {
   }
 }
 
+/**
+ * The only form of an error context a crash report may carry: a getter-free
+ * snapshot reduced to its top-level primitive fields, without producer
+ * diagnostics, their receipt or a serializer. Nested values are dropped,
+ * because a custom toJSON or a shared reference could carry diagnostics
+ * under any other key.
+ */
+export function crashReportErrorContext(context: unknown): Record<string, unknown> {
+  const safe: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(snapshotPmCliErrorContext(context))) {
+    if (DIAGNOSTIC_KEYS.has(key) || key === "toJSON") continue;
+    if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      Object.defineProperty(safe, key, { value, enumerable: true, writable: true, configurable: true });
+    }
+  }
+  return safe;
+}
+
 /** Deepest event nesting scanned for embedded error contexts. */
 const MAX_EMBEDDED_CONTEXT_DEPTH = 12;
 
@@ -322,10 +355,11 @@ const MAX_EMBEDDED_CONTEXT_DEPTH = 12;
 const EMBEDDED_CONTEXT_KEYS = new Set(["context", "error_context"]);
 
 /**
- * Remove producer diagnostics from every embedded error context (`*.context`
- * and `*.error_context` objects) inside a serialized crash-report payload, in
- * place. Console captures and breadcrumbs carry an error's own properties at
- * arbitrary positions, so a shallow scrub is not enough.
+ * Reduce every embedded error context (`*.context` and `*.error_context`
+ * objects) inside a serialized crash-report payload to
+ * {@link crashReportErrorContext}, in place. Console captures and breadcrumbs
+ * carry an error's own properties at arbitrary positions, so a shallow scrub
+ * is not enough.
  */
 export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
   const seen = new WeakSet<object>();
@@ -344,7 +378,7 @@ export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
       const descriptor = Object.getOwnPropertyDescriptor(record, key);
       if (descriptor === undefined || !("value" in descriptor)) continue;
       const entry: unknown = descriptor.value;
-      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) ? omitPmCliErrorDetails(entry) : entry;
+      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) && typeof entry === "object" && entry !== null ? crashReportErrorContext(entry) : entry;
       if (scrubbed !== entry) record[key] = scrubbed;
       visit(scrubbed, depth + 1);
     }

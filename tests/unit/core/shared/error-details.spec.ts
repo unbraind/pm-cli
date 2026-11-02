@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   PM_CLI_ERROR_DETAILS_LIMITS,
   admitPmCliErrorDetails,
+  crashReportErrorContext,
   isPmCliErrorDetails,
   omitEmbeddedPmCliErrorDetails,
   omitPmCliErrorDetails,
@@ -114,9 +115,43 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(performance.now() - started).toBeLessThan(1000);
   });
 
+  it("refuses oversized strings and keys in constant time, before scanning or encoding them", () => {
+    const started = performance.now();
+    const hugeValue = "\u0000".repeat(20_000_000);
+    expect(admitPmCliErrorDetails({ text: hugeValue })).toEqual({ ok: false, omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } });
+    expect(admitPmCliErrorDetails({ [hugeValue]: 1 })).toEqual({ ok: false, omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } });
+    expect(performance.now() - started).toBeLessThan(1000);
+    // Non-string content crosses the ceiling through the running count: a long array, or many small numbers.
+    for (const list of [new Array(5000).fill(1), new Array(1000).fill(123456)]) {
+      expect(admitPmCliErrorDetails({ list })).toEqual({ ok: false, omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } });
+    }
+    // The bound is a lower bound only: a string that fits by length is still measured exactly.
+    expect(admitPmCliErrorDetails({ text: "x".repeat(PM_CLI_ERROR_DETAILS_LIMITS.max_bytes - 11) })).toMatchObject({ ok: true });
+  });
+
+  it("projects crash-report contexts to top-level primitives only, never running getters or serializers", () => {
+    let calls = 0;
+    const context = Object.defineProperties({
+      code: "probe",
+      exit: 2,
+      flag: true,
+      empty: null,
+      details: { marker: "private" },
+      details_omitted: { reason: "byte_limit", byte_limit: 4096, path: "details.private_key" },
+      nested: { report: "private" },
+      toJSON() { calls += 1; return { report: "private" }; },
+    }, { lazy: { enumerable: true, get() { calls += 1; return "private"; } } });
+    expect(crashReportErrorContext(context)).toEqual({ code: "probe", exit: 2, flag: true, empty: null });
+    expect(calls).toBe(0);
+    expect(crashReportErrorContext(undefined)).toEqual({});
+    const prototypeKey = crashReportErrorContext(JSON.parse('{"__proto__":"x","code":"probe"}') as object);
+    expect(Object.getPrototypeOf(prototypeKey)).toBe(Object.prototype);
+    expect(prototypeKey).toMatchObject({ code: "probe" });
+  });
+
   it("bounds producer-derived omission paths to a fixed UTF-8 size", () => {
-    // Key shape is checked before any bytes are charged, so a huge malformed key reaches the receipt.
-    const longKey = `${"\u{1F600}".repeat(5000)}\uD800`;
+    // A long (but not oversized) malformed key reaches the receipt; its path is bounded.
+    const longKey = `${"\u{1F600}".repeat(400)}\uD800`;
     const admission = admitPmCliErrorDetails({ [longKey]: 1 });
     if (admission.ok) throw new Error("unreachable");
     expect(admission.omission.reason).toBe("malformed_unicode");

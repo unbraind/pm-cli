@@ -8,7 +8,7 @@ import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
 import { resolveTelemetryEnvironmentPolicy, resolveTelemetrySourceAttribution } from "../telemetry/policy.js";
 import { isPmCliExpectedError } from "../../sdk/errors.js";
-import { omitEmbeddedPmCliErrorDetails } from "../shared/error-details.js";
+import { crashReportErrorContext, omitEmbeddedPmCliErrorDetails } from "../shared/error-details.js";
 import { scrubInlineSensitiveAssignments, SENSITIVE_KEY_PATTERN } from "./sensitive-assignments.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -395,13 +395,36 @@ function applySourceContextEnvironment(event: { environment?: string; tags?: Rec
  * error's own properties, including a typed `context`; producer-owned
  * diagnostics never leave the process (GH-1631).
  */
-function omitProducerDiagnostics(event: { contexts?: unknown; extra?: unknown; breadcrumbs?: unknown }): void {
+function omitProducerDiagnostics(event: { contexts?: unknown; extra?: unknown; breadcrumbs?: unknown }, originalException?: unknown): void {
+  rebuildErrorDataContexts(event.contexts, originalException);
   omitEmbeddedPmCliErrorDetails([event.contexts, event.extra, event.breadcrumbs]);
+}
+
+/**
+ * The error-data integration serializes an error's own `context` before this
+ * hook runs, so a context-level toJSON could already have copied diagnostics
+ * under another key. Rebuild that entry from the original exception's own
+ * data property instead of trusting the serialized copy.
+ */
+function rebuildErrorDataContexts(contexts: unknown, originalException: unknown): void {
+  if (typeof contexts !== "object" || contexts === null || typeof originalException !== "object" || originalException === null) return;
+  let original: PropertyDescriptor | undefined;
+  try {
+    original = Object.getOwnPropertyDescriptor(originalException, "context");
+  } catch {
+    return;
+  }
+  if (original === undefined || !("value" in original)) return;
+  for (const entry of Object.values(contexts as Record<string, unknown>)) {
+    if (typeof entry === "object" && entry !== null && Object.hasOwn(entry, "context")) {
+      (entry as Record<string, unknown>).context = crashReportErrorContext(original.value);
+    }
+  }
 }
 
 const beforeSend: NonNullable<NodeOptions["beforeSend"]> = (event, hint) => {
   if (isExpectedCliErrorEvent(event, hint?.originalException) || isKnownNoisyConsoleEvent(event)) return null;
-  omitProducerDiagnostics(event);
+  omitProducerDiagnostics(event, hint?.originalException);
   applySourceContextEnvironment(event);
   if (isNodeRuntimeWarningEvent(event)) {
     event.level = "warning";

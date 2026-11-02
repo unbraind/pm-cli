@@ -139,6 +139,28 @@ describe("instrument residual branches", () => {
     });
     // Events without contexts or extras pass unchanged.
     expect(options.beforeSend({ message: "plain" }, {})).toMatchObject({ message: "plain" });
+    // A context-level toJSON already ran inside the error-data integration and copied diagnostics under
+    // another key; the entry is rebuilt from the original exception instead of trusting that copy.
+    const original = Object.assign(new Error("serializer fault"), {
+      context: { code: "probe", details: { marker }, toJSON() { return { report: { marker } }; } },
+    });
+    const serialized = {
+      exception: { values: [{ type: "Error", value: "serializer fault" }] },
+      contexts: { Error: { context: { report: { marker } } }, runtime: { name: "node" }, os: "linux", bare: null },
+    };
+    const rebuilt = options.beforeSend(serialized, { originalException: original });
+    expect(JSON.stringify(rebuilt)).not.toContain(marker);
+    expect(rebuilt).toMatchObject({ contexts: { Error: { context: { code: "probe" } }, runtime: { name: "node" }, os: "linux", bare: null } });
+    // Without a usable original, the serialized copy is still reduced to top-level primitives.
+    const flattened = { exception: { values: [{ type: "Error", value: "serializer fault" }] }, contexts: { Error: { context: { report: { marker }, code: "probe" } } } };
+    expect(JSON.stringify(options.beforeSend(flattened, { originalException: "not an object" }))).not.toContain(marker);
+    // An original without its own context leaves the entry to the generic scrub.
+    expect(JSON.stringify(options.beforeSend({ ...flattened }, { originalException: new Error("no context") }))).not.toContain(marker);
+    // An original whose own properties cannot even be described is left to the generic scrub.
+    const opaqueOriginal = new Proxy(new Error("opaque fault"), { getOwnPropertyDescriptor: () => { throw new Error("descriptor trap"); } });
+    expect(JSON.stringify(options.beforeSend({ ...flattened }, { originalException: opaqueOriginal }))).not.toContain(marker);
+    const accessorOriginal = Object.defineProperty(new Error("accessor fault"), "context", { get: () => ({ details: { marker } }) });
+    expect(JSON.stringify(options.beforeSend({ ...flattened }, { originalException: accessorOriginal }))).not.toContain(marker);
     const transaction = {
       contexts: { trace: { data: { context: { details: { marker } } } } },
       breadcrumbs: [{ category: "console", message: "safe", data: { arguments: [{ context: { details: { marker } } }] } }],

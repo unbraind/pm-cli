@@ -5,7 +5,7 @@
  */
 import { getSentry } from "./instrument.js";
 import { PmCliError } from "../shared/errors.js";
-import { omitPmCliErrorDetails } from "../shared/error-details.js";
+import { crashReportErrorContext } from "../shared/error-details.js";
 import { isPmCliExpectedError } from "../../sdk/errors.js";
 import { ExtensionCommandError } from "../../sdk/error-runtime.js";
 import { EXIT_CODE, type TelemetryErrorCategory } from "../shared/constants.js";
@@ -288,7 +288,7 @@ export function sentryCaptureCliError(error: unknown): void {
       typeof (error as { context: unknown }).context === "object"
     ) {
       // Producer-owned diagnostics stay on the rendered refusal (GH-1631).
-      extras.error_context = omitPmCliErrorDetails((error as { context: unknown }).context);
+      extras.error_context = crashReportErrorContext((error as { context: unknown }).context);
     }
     Sentry.captureException(error, { extra: extras, tags });
   } else {
