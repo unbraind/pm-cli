@@ -63,7 +63,19 @@ describe("pm-urzubi explicit start race", () => {
   it("returns the original refusal when its claim can no longer be released", async () => {
     await withTempPmPath(async (context) => {
       const refusal = new PmCliError("blocked", EXIT_CODE.CONFLICT, { code: START_BLOCKED_REFUSAL_CODE });
-      expect(await releaseRefusedStartClaim(refusal, { item: { id: "pm-gone" }, previous_assignee: null }, { path: context.pmPath }, undefined)).toBe(refusal);
+      expect(await releaseRefusedStartClaim(refusal, { item: { id: "pm-gone" }, previous_assignee: null, claimed_by: "test-author" }, { path: context.pmPath }, undefined)).toBe(refusal);
+    });
+  });
+
+  it("never releases a peer's takeover of the claim it compensates", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createTestItemId(context, { title: "Taken over" });
+      const global = { path: context.pmPath };
+      const claim = await runClaim(target, false, global, {});
+      await runClaim(target, true, global, { author: "peer-agent" });
+      const refusal = new PmCliError("blocked", EXIT_CODE.CONFLICT, { code: START_BLOCKED_REFUSAL_CODE });
+      expect(await releaseRefusedStartClaim(refusal, claim, global, undefined)).toBe(refusal);
+      expect((await new PmClient({ pmRoot: context.pmPath, noExtensions: true }).get(target)).item.assignee).toBe("peer-agent");
     });
   });
 });

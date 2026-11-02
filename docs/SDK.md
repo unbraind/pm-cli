@@ -1427,7 +1427,8 @@ Transports use the same grammar. The CLI's global `--expect-hash <item_hash>`
 binds to the command's `<id>`; `--expect-hash <id>=<item_hash>` (repeatable or
 comma-separated) names targets explicitly and is required for bulk commands.
 MCP tools and `PmClient.run` accept `expectHash` (string or string array) on
-every item-writing action. A native read action refuses the flag with
+every item-writing action, at the top level or inside `options`; either
+placement is enforced. A native read action refuses the flag with
 `expect_hash_requires_mutation`, and a malformed, supplied-but-empty or `null`
 value (for example an unset shell variable) refuses with `expect_hash_invalid`
 rather than silently dropping the guard. An expectation no write reached is reported as the

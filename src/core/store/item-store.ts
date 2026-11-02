@@ -776,7 +776,7 @@ async function mutateItemWithDeferredHistoryContext(
     const historyContext = {
       ...params.resolveHistoryContext?.(),
       ...checkpointMutationHistoryContext(params.pmRoot, located.id),
-      ...itemMutationPreconditionHistoryContext(params.pmRoot, document),
+      ...itemMutationPreconditionHistoryContext(params.pmRoot, located.id),
     };
     const requiredFormat = Math.max(requiredItemFormatVersion(beforeDocument.metadata), requiredItemFormatVersion(mutableDocument.metadata));
     assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(params.pmRoot), requiredFormat);

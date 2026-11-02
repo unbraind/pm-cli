@@ -20,6 +20,8 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import type { GovernanceStartBlockerEnforcement, ItemMetadata, PmSettings } from "../../types/index.js";
 import { resolveDeclaredBlockers } from "../query/declared-blockers.js";
+import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
+import { normalizeItemReference } from "../dependency-provenance.js";
 
 /** Enforcement applied when `governance.start_blocker_enforcement` is unset. */
 export const START_BLOCKER_ENFORCEMENT_DEFAULT: GovernanceStartBlockerEnforcement = "strict";
@@ -27,10 +29,14 @@ export const START_BLOCKER_ENFORCEMENT_DEFAULT: GovernanceStartBlockerEnforcemen
 /** Typed refusal for starting an item whose declared blocker is still open. */
 export const START_BLOCKED_REFUSAL_CODE = "start_blocked_by_open_dependency";
 
-/** Whether a status change moves an item into the in-progress status from another status. */
+/**
+ * Whether a status change moves an item into the effective start status from
+ * another status. The effective status is the one start-task writes, including
+ * its registered fallback when the workflow names `open` or a removed status.
+ */
 export function isStartTransition(fromStatus: string | undefined, toStatus: string | undefined, registry: RuntimeStatusRegistry): boolean {
   if (toStatus === undefined) return false;
-  const inProgress = normalizeStatusForRegistry(registry.in_progress_status, registry);
+  const inProgress = normalizeStatusForRegistry(resolveStartTaskInProgressStatus(registry), registry);
   return normalizeStatusForRegistry(toStatus, registry) === inProgress
     && normalizeStatusForRegistry(fromStatus ?? "", registry) !== inProgress;
 }
@@ -50,9 +56,13 @@ function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: str
   const edges = (metadata.dependencies ?? []).filter((dependency) => dependency.kind === "blocked_by");
   const scalar = typeof metadata.blocked_by === "string" && sameBlocker(metadata.blocked_by, blockerId, idPrefix);
   if (!scalar) {
-    // Cite the edge as stored (a short alias stays short), so the removal selector matches it exactly.
-    const [stored] = [...edges.filter((dependency) => sameBlocker(dependency.id, blockerId, idPrefix)).map((dependency) => dependency.id), blockerId];
-    return renderPmCommand(["update", metadata.id, "--dep-remove", `id=${stored},kind=blocked_by`]);
+    // --dep-remove normalizes its selector id (normalizeItemReference) and compares kinds literally, so a
+    // row is removable by command only when it is a literal blocked_by row whose stored id survives that
+    // normalization unchanged; legacy short ids and alias kinds get an inspection step instead.
+    const [removable] = edges.filter((dependency) => dependency.id === normalizeItemReference(dependency.id, idPrefix, undefined) && sameBlocker(dependency.id, blockerId, idPrefix));
+    return removable === undefined
+      ? renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"])
+      : renderPmCommand(["update", metadata.id, "--dep-remove", `id=${removable.id},kind=blocked_by`]);
   }
   return edges.every((dependency) => sameBlocker(dependency.id, blockerId, idPrefix))
     ? renderPmCommand(["update", metadata.id, "--unset", "blocked_by"])
@@ -81,7 +91,7 @@ export async function admitStartWithOpenBlockers(params: {
   if (enforcement === "warn") return [`start_with_open_blockers:${id}:${ids}`];
   if (params.force === true) return [`start_blocker_override:${id}:${ids}`];
   throw new PmCliError(
-    `Cannot start ${id}: ${open.length === 1 ? "its blocker" : `${open.length} of its blockers`} ${ids} ${open.length === 1 ? "is" : "are"} still open. Nothing was written.`,
+    `Cannot start ${id}: ${open.length === 1 ? "its blocker" : `${open.length} of its blockers`} ${ids} ${open.length === 1 ? "is" : "are"} still open.`,
     EXIT_CODE.CONFLICT,
     {
       code: START_BLOCKED_REFUSAL_CODE,
@@ -124,12 +134,13 @@ export async function admitStartTransition(params: {
   if (params.requested === false || !isStartTransition(params.fromStatus, params.metadata.status, params.registry)) return [];
   // Always re-judged under this write's own lock: a blocker opened after an explicit start's claim still refuses.
   const warnings = await admitStartWithOpenBlockers(params);
-  // The explicit start's claim already recorded the same warn/override decision.
-  return explicitStarts.getStore()?.admitted === true ? [] : warnings;
+  // Drop only the exact warnings the explicit start's claim already recorded; a newly found blocker still warns.
+  const recorded = explicitStarts.getStore()?.warnings ?? new Set<string>();
+  return warnings.filter((warning) => !recorded.has(warning));
 }
 
-/** Pending explicit `claim <id> --start` composition: admitted once its claim judged the start under the item lock. */
-const explicitStarts = new AsyncLocalStorage<{ admitted: boolean }>();
+/** Pending explicit `claim <id> --start` composition: the warnings its claim already recorded under the item lock. */
+const explicitStarts = new AsyncLocalStorage<{ warnings: Set<string> }>();
 
 /**
  * Run an explicit claim-then-update start composition. Its claim judges the
@@ -138,7 +149,7 @@ const explicitStarts = new AsyncLocalStorage<{ admitted: boolean }>();
  * refuses (the composition then releases the claim it took).
  */
 export function runAsExplicitStart<T>(operation: () => Promise<T>): Promise<T> {
-  return explicitStarts.run({ admitted: false }, operation);
+  return explicitStarts.run({ warnings: new Set() }, operation);
 }
 
 /** Judge the start an enclosing explicit start composition will make, inside the claim's locked mutation. */
@@ -151,9 +162,9 @@ export async function admitExplicitStartClaim(params: {
 }): Promise<string[]> {
   const pending = explicitStarts.getStore();
   if (pending === undefined) return [];
-  const warnings = isStartTransition(params.metadata.status, params.registry.in_progress_status, params.registry)
+  const warnings = isStartTransition(params.metadata.status, resolveStartTaskInProgressStatus(params.registry), params.registry)
     ? await admitStartWithOpenBlockers(params)
     : [];
-  pending.admitted = true;
+  for (const warning of warnings) pending.warnings.add(warning);
   return warnings;
 }

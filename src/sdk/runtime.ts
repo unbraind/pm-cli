@@ -65,6 +65,7 @@ import {
   runWithDiscoveredContextIntentContracts
 } from "./context-intent-runtime.js";
 import { finalizeContextUsageEgress } from "./context/usage-egress.js";
+import { splitExpectHashInput } from "./runtime/expect-hash-input.js";
 import type { ExpectedItemRevision, ExpectedItemRevisionsOutcome, ItemRevision } from "./lifecycle/item-revision.js";
 import type { DepsCommandOptions,DepsResult } from "./dependencies.js";
 import type { DocsCommandOptions,DocsResult } from "./docs.js";
@@ -2958,9 +2959,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   }
   // pm-gh1576: an expected revision binds inside the activation cycle so
   // extension item types resolve, and scopes every locked write the action makes.
-  const { expectHash: expectHashParameter, expect_hash: expectHashAlias, ...dispatchArgs } = resolved.args;
-  // A supplied null is validated (and refused), never treated as an omitted guard.
-  const expectHash = expectHashParameter !== undefined ? expectHashParameter : expectHashAlias;
+  // Top-level and nested placements are both enforced; a supplied null is validated (and refused).
+  const { expectHash, dispatchArgs } = splitExpectHashInput(resolved.args);
   const dispatch = async (activeExtensions: ActiveExtensionRuntime | null): Promise<unknown> => {
     if (expectHash === undefined) return dispatchAction(resolved.action, resolved.args, global, activeExtensions);
     const { dispatchWithExpectedItemRevisions } = await import("./lifecycle/item-revision.js");

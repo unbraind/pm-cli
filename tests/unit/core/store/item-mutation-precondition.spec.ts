@@ -21,7 +21,7 @@ describe("locked item mutation precondition scope", () => {
         await resume.promise;
         assertItemMutationPreconditions("/tracker/a", document);
         advanceItemMutationPreconditions("/tracker/a", document);
-        expect(itemMutationPreconditionHistoryContext("/tracker/a", document)).toEqual({});
+        expect(itemMutationPreconditionHistoryContext("/tracker/a", document.metadata.id)).toEqual({});
       });
       assertItemMutationPreconditions("/tracker/a", document);
     });
@@ -39,11 +39,11 @@ describe("locked item mutation precondition scope", () => {
     document.metadata.id = "pm-target";
     document.metadata.title = "Initial";
     let expected = document.metadata.title;
-    expect(itemMutationPreconditionHistoryContext("/tracker", document)).toEqual({});
+    expect(itemMutationPreconditionHistoryContext("/tracker", document.metadata.id)).toEqual({});
     await runWithItemMutationPrecondition({ pmRoot: "/tracker", id: "pm-target", historyContext: { step: "owned" }, validate: (current) => { expect(current.metadata.title).toBe(expected); }, committed: (current) => { expected = current.metadata.title; } }, async () => {
-      expect(itemMutationPreconditionHistoryContext("/tracker", document)).toEqual({ step: "owned" });
-      expect(itemMutationPreconditionHistoryContext("/other", document)).toEqual({});
-      expect(itemMutationPreconditionHistoryContext("/tracker", { ...document, metadata: { ...document.metadata, id: "pm-other" } })).toEqual({});
+      expect(itemMutationPreconditionHistoryContext("/tracker", document.metadata.id)).toEqual({ step: "owned" });
+      expect(itemMutationPreconditionHistoryContext("/other", document.metadata.id)).toEqual({});
+      expect(itemMutationPreconditionHistoryContext("/tracker", "pm-other")).toEqual({});
       assertItemMutationPreconditions("/tracker", document);
       document.metadata.title = "Own write";
       advanceItemMutationPreconditions("/other", document);

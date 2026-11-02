@@ -35,6 +35,15 @@ function blockedPair(context: TempPmContext, title: string): { blocker: string; 
 }
 
 describe("pm-urzubi start transitions", () => {
+  it("judges the effective start status when the workflow names open as in-progress", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const registry = resolveRuntimeStatusRegistry({ ...settings.schema, workflow: { ...settings.schema.workflow, in_progress_status: "open" } });
+      expect(isStartTransition("open", "in_progress", registry)).toBe(true);
+      expect(isStartTransition("in_progress", "in_progress", registry)).toBe(false);
+    });
+  });
+
   it("recognizes only moves into the in-progress status", async () => {
     await withTempPmPath(async (context) => {
       const registry = resolveRuntimeStatusRegistry((await readSettings(context.pmPath)).schema);
@@ -93,8 +102,9 @@ describe("pm-urzubi admission policy", () => {
           expect.objectContaining({ external: true }),
         ]),
       });
-      // External blockers have no local read; the first open blocker's edge is dropped with --dep-remove.
-      expect((several as PmCliError).context.nextSteps).toEqual(["pm get pm-missing", 'pm update pm-x --dep-remove "id=gh:org/repo#12,kind=blocked_by"', "pm next"]);
+      // External blockers have no local read. A selector without source_kind would normalize the locator
+      // (pm-gh:...) and miss the stored row, so the step is an inspection rather than a no-op removal.
+      expect((several as PmCliError).context.nextSteps).toEqual(["pm get pm-missing", 'pm get pm-x --fields "blocked_by,dependencies"', "pm next"]);
       const scalarOnly = await admit({ ...base, blocked_by: "pm-missing" } as ItemMetadata).catch((error: PmCliError) => error);
       expect((scalarOnly as PmCliError).context.nextSteps).toEqual(["pm get pm-missing", "pm update pm-x --unset blocked_by", "pm next"]);
     });
@@ -167,6 +177,12 @@ describe("pm-urzubi explicit start composition", () => {
         // A blocker opened after the claim still refuses the status write.
         await expect(admitStartTransition(transition)).rejects.toMatchObject({ context: { code: START_BLOCKED_REFUSAL_CODE } });
         settings.governance.start_blocker_enforcement = "warn";
+        // The claim recorded no warning, so the newly found blocker still warns.
+        expect(await admitStartTransition(transition)).toEqual(["start_with_open_blockers:pm-x:pm-missing"]);
+      });
+      await runAsExplicitStart(async () => {
+        // The claim already recorded this exact warning, so the status write does not repeat it.
+        expect(await admitExplicitStartClaim({ pmRoot: context.pmPath, settings, metadata: { ...blocked, status: "open" } as ItemMetadata, registry })).toEqual(["start_with_open_blockers:pm-x:pm-missing"]);
         expect(await admitStartTransition(transition)).toEqual([]);
       });
       expect(await admitStartTransition(transition)).toEqual(["start_with_open_blockers:pm-x:pm-missing"]);
@@ -219,9 +235,13 @@ describe("pm-urzubi explicit start composition", () => {
       // A short scalar names the same blocker as its canonical edge, so the scalar clear is safe.
       expect(await nextSteps({ ...base, blocked_by: "missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
         .toContain("pm update pm-x --unset blocked_by");
-      // An edge stored as a short alias is cited as stored, so the removal selector matches it.
+      // Removal selectors normalize ids and compare kinds literally: legacy rows get an inspection step.
       expect(await nextSteps({ ...base, dependencies: [{ id: "missing", kind: "blocked_by" }] } as ItemMetadata))
-        .toContain('pm update pm-x --dep-remove "id=missing,kind=blocked_by"');
+        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
+      expect(await nextSteps({ ...base, dependencies: [{ id: "pm-missing", kind: "depends_on" }] } as ItemMetadata))
+        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
+      expect(await nextSteps({ ...base, dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
+        .toContain('pm update pm-x --dep-remove "id=pm-missing,kind=blocked_by"');
       // Clearing the scalar would also drop the independent edge, so only an inspection step is offered.
       expect(await nextSteps({ ...base, blocked_by: "pm-missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "pm-other", kind: "blocked_by" }] } as ItemMetadata))
         .toContain('pm get pm-x --fields "blocked_by,dependencies"');

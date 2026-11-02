@@ -30,6 +30,7 @@ import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 import { commitWorkspaceTransaction } from "../../../../src/sdk/workspace-transaction.js";
 import type { ItemDocument } from "../../../../src/types/index.js";
 import { pmToolActionParameterKeys } from "../../../../src/sdk/cli-contracts/tool-schema.js";
+import { splitExpectHashInput } from "../../../../src/sdk/runtime/expect-hash-input.js";
 import { verifyHistoryRewriteNoDrift } from "../../../../src/core/history/history-rewrite.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
@@ -489,6 +490,33 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       // A deleted subject is judged as its tombstone.
       await pm.run("delete", { id, force: true });
       await expect(guarded(current, { historyRawBeforeLock: historyNow })).rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
+    });
+  });
+
+  it("enforces a guard supplied inside nested options", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Nested guard" });
+      const common = { path: context.pmPath, noExtensions: true, author: "nested-agent" };
+      const stale = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      await runAction({ ...common, action: "update", id, options: { title: "Peer retitle" } });
+      await expect(runAction({ ...common, action: "update", id, options: { priority: "3", expectHash: stale } })).rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
+      await expect(runAction({ ...common, action: "update", id, options: { priority: "3", expect_hash: null } })).rejects.toMatchObject({ context: { code: "expect_hash_invalid" } });
+      expect(splitExpectHashInput({ id, options: "raw" })).toEqual({ expectHash: undefined, dispatchArgs: { id, options: "raw" } });
+      expect(splitExpectHashInput({ id })).toEqual({ expectHash: undefined, dispatchArgs: { id } });
+    });
+  });
+
+  it("advances past a history rewrite that moves the item to another folder", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Moving redact" });
+      const pm = client(context);
+      const fresh = (await pm.readItemRevision(id)).item_hash;
+      const moved = await withExpectedItemRevisions([{ id, itemHash: fresh }], async () => {
+        await pm.run("history-redact", { id, options: { literal: ["Task"], replacement: "Issue" } });
+        return pm.update(id, { priority: "3" });
+      }, { pmRoot: context.pmPath });
+      expect(moved.checked).toEqual([id]);
+      expect((await pm.get(id)).item).toMatchObject({ type: "Issue", priority: 3 });
     });
   });
 

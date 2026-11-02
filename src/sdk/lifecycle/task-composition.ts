@@ -17,6 +17,7 @@ import { runClose, type CloseCommandOptions } from "./close.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
 import { runAsExplicitStart, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
+import { runWithItemMutationPrecondition } from "../../core/store/item-mutation-precondition.js";
 import { mutationOptionsWithOverrides } from "../runtime-input.js";
 import type { StartTaskResult, PauseTaskResult, CloseTaskResult } from "../runtime-public-contracts.js";
 
@@ -81,14 +82,21 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
  */
 export async function releaseRefusedStartClaim(
   error: unknown,
-  claim: { item: Record<string, unknown>; previous_assignee: string | null },
+  claim: { item: Record<string, unknown>; previous_assignee: string | null; claimed_by: string },
   global: GlobalOptions,
   author: string | undefined,
 ): Promise<unknown> {
   if (!(error instanceof PmCliError) || error.code !== START_BLOCKED_REFUSAL_CODE || claim.previous_assignee !== null) return error;
   const id = String(claim.item.id);
   try {
-    await runRelease(id, false, global, { author, message: "Release the claim: a blocker opened before its start could be recorded" });
+    // Fence under the item lock: release only while the claim is still this start's own, never a peer's takeover.
+    await runWithItemMutationPrecondition({
+      pmRoot: resolvePmRoot(process.cwd(), global.path),
+      id,
+      validate: (document) => {
+        if (document.metadata.assignee !== claim.claimed_by) throw new PmCliError("The claim this start took is no longer its own.", EXIT_CODE.CONFLICT);
+      },
+    }, () => runRelease(id, false, global, { author, message: "Release the claim: a blocker opened before its start could be recorded" }));
   } catch {
     // Never mask the refusal: the partial-state error already reports the durable claim.
     return error;

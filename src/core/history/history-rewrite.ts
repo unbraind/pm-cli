@@ -250,9 +250,11 @@ export async function executeHistoryRewrite(
     await params.applyRewrite(verified);
     // Re-read only for a declared revision: a recovered (unparseable) item stays rewritable without one.
     if (hasItemRevisionExpectation(params.pmRoot, params.subject.id)) {
-      const rewritten = verified.locatedUnderLock === null
+      // Re-locate: a rewrite may move the item (legacy Markdown to TOON, or a type folder change).
+      const relocated = await locateItem(params.pmRoot, params.subject.id, params.settings.id_prefix, params.settings.item_format, params.typeRegistry.type_to_folder);
+      const rewritten = relocated === null
         ? tombstone
-        : (await readLocatedItem(verified.locatedUnderLock, { schema: params.settings.schema })).document;
+        : (await readLocatedItem(relocated, { schema: params.settings.schema })).document;
       advanceItemMutationPreconditions(params.pmRoot, rewritten, params.subject.id);
     }
     if (params.applyPostRewrite) {

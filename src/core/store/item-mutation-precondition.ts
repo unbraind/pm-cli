@@ -175,9 +175,9 @@ export function advanceItemMutationPreconditions(pmRoot: string, document: ItemD
   }
 }
 
-/** Collect target-scoped immutable attribution without attributing another caller's writes. */
-export function itemMutationPreconditionHistoryContext(pmRoot: string, document: ItemDocument): Record<string, unknown> {
+/** Collect target-scoped immutable attribution (keyed by the locked target id) without attributing another caller's writes. */
+export function itemMutationPreconditionHistoryContext(pmRoot: string, targetId: string): Record<string, unknown> {
   return Object.assign({}, ...(preconditions.getStore() ?? [])
-    .filter((condition) => condition.pmRoot === path.resolve(pmRoot) && condition.id === document.metadata.id)
+    .filter((condition) => condition.pmRoot === path.resolve(pmRoot) && condition.id === targetId)
     .map((condition) => condition.historyContext));
 }

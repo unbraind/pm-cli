@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,"area:dependencies",blocked-by,data-loss,graph-integrity
 created_at: "2026-11-02T15:39:10.262Z"
-updated_at: "2026-11-02T15:39:10.262Z"
+updated_at: "2026-11-02T18:07:32.596Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Clearing the blocked_by scalar removes at most the edge(s) that point at the scalar's own target, never an independent blocked_by edge; Removing every blocked_by edge requires an explicit, separately named operation (or --clear-deps-like flag) whose receipt lists the removed edges; Regression test: scalar A with edges A and B, unset scalar, B remains and the item stays blocked; The start_blocked_by_open_dependency recovery may then advertise the scalar clear again for multi-edge items"
@@ -20,5 +20,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-q6gx,related,"2026-11-02T15:39:10.262Z","harness:claude-code","cli:create:dep",detected
   pm-scbr0s,related,"2026-11-02T15:39:10.262Z","harness:claude-code","cli:create:dep",detected
   pm-urzubi,discovered_from,"2026-11-02T15:39:10.262Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-02T18:07:32.596Z","harness:claude-code","Scope evidence from the Codex review round 3 of PR 1654: dependency removal cannot address legacy blocker rows either. --dep-remove normalizes its selector id through normalizeItemReference and compares kinds literally. So a row stored with a short id (missing, normalized to pm-missing), an alias kind (depends_on, which canonicalizes to blocked_by everywhere else) or an external locator without source_kind in the selector (gh:org/repo#12, normalized to pm-gh:org/repo#12) fails with dependency_remove_no_match. Combined with this item's --unset blocked_by data loss, some blockers have no safe single-command removal. pm-urzubi's refusal therefore offers 'pm get <id> --fields blocked_by,dependencies' for them. Fixing this item should make removal selectors canonical (id normalization plus resolveCanonicalRelationshipKind) so recovery can advertise an executable removal again."
 escape_class: production_defect
 body: ""
