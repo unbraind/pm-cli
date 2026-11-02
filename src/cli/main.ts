@@ -1540,7 +1540,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       await startActiveSentryCommandTracing(commandPath, commandArgs, commandOptions);
       await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, fallbackPmRoot, defaultPreflightDecision());
       await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, fallbackPmRoot);
-      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, expectHash: globalOptions.expectHash, pmRoot: fallbackPmRoot });
+      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: fallbackPmRoot });
       return;
     }
 
@@ -1593,7 +1593,8 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
 
     await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, runtimeExtensions.pmRoot, preflightDecision);
     await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, runtimeExtensions.pmRoot);
-    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, expectHash: globalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot });
+    // Bind the user-supplied guard: an extension parser/preflight override cannot drop it from global options.
+    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot });
 
     /* c8 ignore next */
     const migrationWarnings = preflightDecision.run_extension_migrations

@@ -235,6 +235,11 @@ describe("pm-urzubi explicit start composition", () => {
       // A scalar-only short alias is cleared by the scalar clear alone.
       expect(await nextSteps({ ...base, blocked_by: "missing" } as ItemMetadata))
         .toContain("pm update pm-x --unset blocked_by");
+      // An alias-kind edge naming the same blocker survives both the scalar clear and a literal removal.
+      expect(await nextSteps({ ...base, blocked_by: "pm-missing", dependencies: [{ id: "pm-missing", kind: "depends_on" }] } as ItemMetadata))
+        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
+      expect(await nextSteps({ ...base, dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "pm-missing", kind: "depends_on" }] } as ItemMetadata))
+        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
       // The scalar and an edge with the same stored text are one declaration.
       expect(await nextSteps({ ...base, blocked_by: "PM-Missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
         .toContain("pm update pm-x --unset blocked_by");

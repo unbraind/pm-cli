@@ -22,6 +22,7 @@ import type { GovernanceStartBlockerEnforcement, ItemMetadata, PmSettings } from
 import { resolveDeclaredBlockers } from "../query/declared-blockers.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
 import { normalizeItemReference } from "../dependency-provenance.js";
+import { resolveCanonicalRelationshipKind } from "../relationships.js";
 
 /** Enforcement applied when `governance.start_blocker_enforcement` is unset. */
 export const START_BLOCKER_ENFORCEMENT_DEFAULT: GovernanceStartBlockerEnforcement = "strict";
@@ -55,7 +56,12 @@ function sameBlocker(reference: string, blockerId: string, idPrefix: string): bo
  * because a tracker may hold both.
  */
 function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: string): string {
-  const edges = (metadata.dependencies ?? []).filter((dependency) => dependency.kind === "blocked_by");
+  const dependencies = metadata.dependencies ?? [];
+  const edges = dependencies.filter((dependency) => dependency.kind === "blocked_by");
+  // An alias-kind edge (depends_on) naming this blocker survives both removals below, so only inspection is honest.
+  if (dependencies.some((dependency) => dependency.kind !== "blocked_by" && resolveCanonicalRelationshipKind(dependency.kind) === "blocked_by" && sameBlocker(dependency.id, blockerId, idPrefix))) {
+    return renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"]);
+  }
   const scalar = typeof metadata.blocked_by === "string" && sameBlocker(metadata.blocked_by, blockerId, idPrefix);
   if (!scalar) {
     // --dep-remove normalizes its selector id (normalizeItemReference) and compares kinds literally, so a

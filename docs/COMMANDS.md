@@ -1000,6 +1000,8 @@ locked write the command makes to that item refuse with `item_revision_conflict`
 ```bash
 H=$(pm get pm-a1b2 --json | jq -r .item_hash)
 pm close pm-a1b2 "Delivered by PR 1" --expect-hash "$H"
+H1=$(pm get pm-a1b2 --json | jq -r .item_hash)
+H2=$(pm get pm-c3d4 --json | jq -r .item_hash)
 pm update-many --ids pm-a1b2,pm-c3d4 --priority 1 \
   --expect-hash "pm-a1b2=$H1" --expect-hash "pm-c3d4=$H2"
 ```
