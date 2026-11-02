@@ -9,7 +9,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
-import { isPmCliExpectedError, projectPmCliErrorContextDetails, snapshotPmCliErrorContext } from "../sdk/errors.js";
+import { isPmCliExpectedError, projectPmCliErrorContextDetailsSlot, snapshotPmCliErrorContext } from "../sdk/errors.js";
 import {
   resolvePmCliVersion,
   EXIT_CODE,
@@ -573,6 +573,9 @@ function resultContent(
   };
 }
 
+/** Context keys an MCP envelope never serializes as given: diagnostics are re-admitted, and a context-level toJSON could replace them. */
+const TRANSPORT_EXCLUDED_CONTEXT_KEYS = new Set(["details", "details_omitted", "toJSON"]);
+
 /**
  * Typed refusal context for an MCP error envelope. Separately bundled expected
  * errors are recognized by shape, and producer diagnostics are bounded the
@@ -581,23 +584,24 @@ function resultContent(
 function expectedErrorTransportContext(error: unknown): { exitCode: number; context: unknown } | undefined {
   if (!(error instanceof PmCliError) && !isPmCliExpectedError(error)) return undefined;
   const snapshot = snapshotPmCliErrorContext(error.context);
+  // Diagnostics are admitted first, by the bounded walk that never runs a
+  // getter, so serialization below can neither expand nor replace them.
+  const diagnostics = projectPmCliErrorContextDetailsSlot(snapshot);
+  const rest = Object.fromEntries(
+    Object.entries(snapshot).filter(([key]) => !TRANSPORT_EXCLUDED_CONTEXT_KEYS.has(key)),
+  );
   let normalized: unknown;
   try {
-    // Serialize exactly once: custom toJSON hooks run here, and everything
-    // after this point is plain JSON that no serializer can replace.
-    normalized = JSON.parse(JSON.stringify(snapshot)) as unknown;
+    // Serialize the remaining host fields exactly once; the result is plain JSON.
+    normalized = JSON.parse(JSON.stringify(rest)) as unknown;
   } catch {
-    normalized = undefined;
-  }
-  if (typeof normalized !== "object" || normalized === null || Array.isArray(normalized)) {
-    // Values JSON cannot encode (bigint, cycles) or a non-object toJSON: the response must still be written.
+    // Values JSON cannot encode (bigint, cycles): the response must still be written.
     return {
       exitCode: error.exitCode,
       context: { ...(typeof snapshot.code === "string" ? { code: snapshot.code } : {}), context_unserializable: true },
     };
   }
-  // Diagnostics are bounded after normalization, so no later serializer can swap them back in.
-  return { exitCode: error.exitCode, context: projectPmCliErrorContextDetails(normalized) };
+  return { exitCode: error.exitCode, context: { ...(normalized as Record<string, unknown>), ...diagnostics } };
 }
 
 function errorContent(

@@ -762,7 +762,7 @@ describe("mcp server branch residual coverage", () => {
     });
     const unnamed = Object.assign(new Error("bigint refusal"), { name: "PmCliError", exitCode: 2, context: { debug: 1n } });
     expect((server._testOnly.errorContent(unnamed) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({ context_unserializable: true });
-    // A custom serializer runs once, before bounding: it cannot swap unbounded diagnostics back in.
+    // A context-level serializer never runs: diagnostics are admitted from the context itself.
     let serializations = 0;
     const swapping = Object.assign(new Error("toJSON refusal"), {
       name: "PmCliError",
@@ -777,11 +777,32 @@ describe("mcp server branch residual coverage", () => {
       },
     });
     const swapped = server._testOnly.errorContent(swapping) as { structuredContent: { details: Record<string, unknown> }; content: Array<{ text: string }> };
-    expect(swapped.structuredContent.details).toEqual({ code: "probe_expected", details_omitted: { reason: "byte_limit", byte_limit: 4096 } });
-    expect(serializations).toBe(1);
-    expect(JSON.parse(swapped.content[0]!.text)).toMatchObject({ details: { details_omitted: { reason: "byte_limit" } } });
-    const scalarJson = Object.assign(new Error("scalar refusal"), { name: "PmCliError", exitCode: 2, context: { code: "probe_expected", toJSON: () => "flat" } });
-    expect((server._testOnly.errorContent(scalarJson) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({ code: "probe_expected", context_unserializable: true });
+    expect(swapped.structuredContent.details).toEqual({ code: "probe_expected" });
+    expect(serializations).toBe(0);
+    // Diagnostics with a nested getter or shared amplifying references are admitted without running or expanding them.
+    let getterCalls = 0;
+    let shared: unknown = "leaf";
+    for (let level = 0; level < 8; level += 1) shared = new Array(10).fill(shared);
+    const guarded = Object.assign(new Error("guarded refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: {
+        code: "probe_expected",
+        details: Object.defineProperty({ ok: 1 }, "lazy", { enumerable: true, get() { getterCalls += 1; return "ran"; } }),
+        hint: { nested: true },
+      },
+    });
+    expect((server._testOnly.errorContent(guarded) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({
+      code: "probe_expected",
+      hint: { nested: true },
+      details_omitted: { reason: "unsupported_value", path: "details.lazy", byte_limit: 4096 },
+    });
+    expect(getterCalls).toBe(0);
+    const amplified = Object.assign(new Error("amplified refusal"), { name: "PmCliError", exitCode: 2, context: { code: "probe_expected", details: { shared } } });
+    expect((server._testOnly.errorContent(amplified) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({
+      code: "probe_expected",
+      details_omitted: { reason: "byte_limit", byte_limit: 4096 },
+    });
     // An uninspectable context is forwarded as an empty one instead of breaking the response.
     const hostile = Object.assign(new Error("proxy refusal"), {
       name: "PmCliError",

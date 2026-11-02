@@ -5,8 +5,15 @@
 import type { PmCliErrorContext } from "../../core/shared/errors.js";
 import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 import { normalizeStatusToken } from "../../core/schema/status-token.js";
-import { runtimeFieldCliFlagRoute, runtimeFieldSdkOptionName } from "../../core/schema/runtime-field-values.js";
-import { GLOBAL_FLAG_CONTRACTS } from "../cli-contracts/flag-contracts.js";
+import { commanderOptionAttribute, runtimeFieldCliFlagRoute, runtimeFieldSdkOptionName } from "../../core/schema/runtime-field-values.js";
+import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
+import type { UpdateCommandOptions } from "./update.js";
+
+/** SDK-only update options with no CLI flag: a routing hint must never name them. */
+const UPDATE_SDK_ONLY_OPTION_KEYS = [
+  "documentAnnotationSnapshot",
+  "runtimeFieldCommands",
+] as const satisfies ReadonlyArray<keyof UpdateCommandOptions>;
 import { ITEM_MUTATION_FACET_OPTION_MAPPINGS } from "./mutation-facet-contracts.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -36,16 +43,22 @@ export function resolveCoreFieldRecovery(field: string): Pick<PmCliErrorContext,
   };
 }
 
-/** Option names and long flags the host itself owns for a mutation command. */
+/**
+ * Option names and long flags the host itself owns for a mutation command:
+ * every flag the command's contract declares (including directly registered
+ * controls such as --force and --clear-tests), global flags, the option
+ * registration targets, and SDK-only option keys.
+ */
 function hostOwnedOptions(command: "create" | "update"): { options: ReadonlySet<string>; flags: ReadonlySet<string> } {
   const contracts = command === "update" ? UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS : CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS;
   const flags = [
-    ...contracts.flatMap((contract) => [...contract.option.matchAll(/--[a-z][a-z0-9-]*/gu)].map((match) => match[0])),
-    ...GLOBAL_FLAG_CONTRACTS.flatMap((contract) => [contract.flag, ...(contract.aliases ?? [])]),
-  ];
+    ...resolveSubcommandFlagContractsForCommand(command),
+    ...GLOBAL_FLAG_CONTRACTS,
+  ].flatMap((contract) => [contract.flag, ...(contract.aliases ?? [])]).filter((flag) => flag.startsWith("--"));
   const options = [
     ...contracts.flatMap((contract) => [contract.target, ...contract.keys]),
-    ...flags.map((flag) => flag.replace(/^--/u, "").replaceAll(/-([a-z0-9])/gu, (_match, letter: string) => letter.toUpperCase())),
+    ...flags.map((flag) => commanderOptionAttribute(flag.slice(2))),
+    ...(command === "update" ? UPDATE_SDK_ONLY_OPTION_KEYS : []),
   ];
   return { options: new Set(options), flags: new Set(flags) };
 }
@@ -89,13 +102,13 @@ export function createSchemaFieldRecoveryResolver(
     // Advertise only routes that set this field alone: no other declared field
     // and no host option may read the same parsed option name.
     const host = hostOwnedOptions(command);
-    const route = runtimeFieldCliFlagRoute(definition, registry, host);
+    const route = runtimeFieldCliFlagRoute(definition, registry, host, command);
     const cliStep = route === undefined
       ? `Every CLI spelling of "${definition.key}" is shared with another declared field or an option of pm ${command}; give it a distinct cli_flag in the project schema.`
       : `Use the declared project-schema flag: pm ${command}${command === "update" ? " <id>" : ""} --${route} <value>`;
     return {
       recovery: { provided_fields: [field], ...(route === undefined ? {} : { suggested_flags: [`--${route}`] }) },
-      nextSteps: [cliStep, sdkOptionHint(runtimeFieldSdkOptionName(definition, registry, host.options), command), inspect],
+      nextSteps: [cliStep, sdkOptionHint(runtimeFieldSdkOptionName(definition, registry, host.options, command), command), inspect],
     };
   };
 }

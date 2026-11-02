@@ -136,6 +136,32 @@ describe("extensions item field runtime wiring", () => {
     expect(heading.context.recovery?.suggested_flags).toEqual(["--review-heading"]);
     expect(heading.context.nextSteps?.[1]).toBe("SDK: pass reviewHeading in the update options.");
     expect(Object.keys(collectRuntimeUpdateFieldValues({ reviewHeading: "x" }, coreNamed))).toEqual(["review_heading"]);
+    // A negating spelling files its value under the un-negated name (--no-title sets title), a directly
+    // registered control (--clear-tests / clearTests) belongs to the host, and neither is ever advertised.
+    const hostNamed = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "no_title", type: "string", commands: ["update"] },
+        { key: "clear_tests", type: "boolean", commands: ["update"] },
+      ],
+    } as never);
+    const hostResolver = createSchemaFieldRecoveryResolver(hostNamed, "update");
+    for (const key of ["no_title", "clear_tests"]) {
+      const hostRefusal = refusal(`${key}=x`, hostResolver);
+      expect(hostRefusal.context.recovery).toEqual({ provided_fields: [key] });
+      expect(hostRefusal.context.nextSteps?.[1]).not.toMatch(/pass (title|clearTests) /u);
+    }
+    expect(Object.keys(collectRuntimeUpdateFieldValues({ title: "core title" }, hostNamed))).toEqual([]);
+    // Fields the command never reads cannot collide: create-only xy does not shadow update-only x_y.
+    const scoped = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "x_y", type: "string", commands: ["update"] },
+        { key: "xy", type: "string", cli_flag: "x-y", commands: ["create"] },
+      ],
+    } as never);
+    const scopedRefusal = refusal("x_y=v", createSchemaFieldRecoveryResolver(scoped, "update"));
+    expect(scopedRefusal.context.recovery?.suggested_flags).toEqual(["--x-y"]);
+    expect(scopedRefusal.context.nextSteps?.[1]).toBe("SDK: pass xY in the update options.");
+    expect(collectRuntimeUpdateFieldValues({ xY: "v" }, scoped)).toEqual({ x_y: "v" });
     // When declarations share a storage key, the route goes through one the command may set.
     const sharedKey = resolveRuntimeFieldRegistry({
       fields: [

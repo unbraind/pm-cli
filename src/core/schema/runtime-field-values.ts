@@ -12,7 +12,7 @@ import {
   type RuntimeFieldDefinitionResolved,
   type RuntimeFieldRegistry,
 } from "./runtime-schema.js";
-import type { RuntimeFieldValueSchema } from "../../types/index.js";
+import type { RuntimeFieldCommand, RuntimeFieldValueSchema } from "../../types/index.js";
 
 const MAX_VALUE_SCHEMA_DEPTH = 16;
 
@@ -41,23 +41,28 @@ export function runtimeFieldSdkOptionName(
   definition: RuntimeFieldDefinitionResolved,
   registry: Pick<RuntimeFieldRegistry, "definitions">,
   reservedOptions: ReadonlySet<string> = new Set(),
+  command?: RuntimeFieldCommand,
 ): string | undefined {
-  const taken = foreignRuntimeFieldOptionNames(definition, registry, reservedOptions);
+  const taken = foreignRuntimeFieldOptionNames(definition, registry, reservedOptions, command);
   const preferred = toCamelToken(definition.cli_flag);
   return [preferred, ...resolveCandidateOptionKeys(definition)].find((name) => !taken.has(name));
 }
 
-/** Option names another declared field reads, plus names the host command itself owns. */
+/**
+ * Option names another field active for the command reads, plus names the
+ * host command itself owns. Fields the command never reads cannot collide.
+ */
 function foreignRuntimeFieldOptionNames(
   definition: RuntimeFieldDefinitionResolved,
   registry: Pick<RuntimeFieldRegistry, "definitions">,
   reservedOptions: ReadonlySet<string>,
+  command: RuntimeFieldCommand | undefined,
 ): Set<string> {
   return new Set([
     ...reservedOptions,
     // Identity, not storage key: two declarations sharing a metadata_key still read their own options.
     ...registry.definitions
-      .filter((candidate) => candidate !== definition)
+      .filter((candidate) => candidate !== definition && (command === undefined || candidate.commands.includes(command)))
       .flatMap((candidate) => resolveCandidateOptionKeys(candidate)),
   ]);
 }
@@ -72,20 +77,23 @@ export function runtimeFieldCliFlagRoute(
   definition: RuntimeFieldDefinitionResolved,
   registry: Pick<RuntimeFieldRegistry, "definitions">,
   reserved: { options: ReadonlySet<string>; flags: ReadonlySet<string> },
+  command?: RuntimeFieldCommand,
 ): string | undefined {
-  const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options);
+  const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options, command);
   return [definition.cli_flag, ...definition.cli_aliases].find(
     (flag) => !reserved.flags.has(`--${flag}`) && !taken.has(commanderOptionAttribute(flag)),
   );
 }
 
 /**
- * The option key Commander stores for a long flag: it camel-cases across
- * hyphens only, so `--review-url` parses to `reviewUrl` while `--review.url`
- * keeps the literal key `review.url`.
+ * The option key Commander stores for a long flag (without dashes): it strips
+ * a negating `no-` prefix and camel-cases across hyphens only, so
+ * `--review-url` parses to `reviewUrl`, `--no-title` to `title`, and
+ * `--review.url` keeps the literal key `review.url`.
  */
-function commanderOptionAttribute(flag: string): string {
+export function commanderOptionAttribute(flag: string): string {
   return flag
+    .replace(/^no-/u, "")
     .split("-")
     .reduce((name, word) => `${name}${word.charAt(0).toUpperCase()}${word.slice(1)}`);
 }
@@ -99,9 +107,12 @@ function resolveCandidateOptionKeys(
       toCamelToken(definition.key),
       toCamelToken(definition.cli_flag),
       ...definition.cli_aliases.map((alias) => toCamelToken(alias)),
-      // What the CLI actually produces for each registered flag.
-      commanderOptionAttribute(definition.cli_flag),
-      ...definition.cli_aliases.map((alias) => commanderOptionAttribute(alias)),
+      // What the CLI actually produces for each registered flag. A negating
+      // "no-" flag is not read here: Commander files its value under the
+      // un-negated name, which belongs to a different option.
+      ...[definition.cli_flag, ...definition.cli_aliases]
+        .filter((flag) => !flag.startsWith("no-"))
+        .map((flag) => commanderOptionAttribute(flag)),
     ]),
   ];
 }
