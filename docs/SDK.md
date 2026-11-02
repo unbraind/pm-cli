@@ -3078,6 +3078,57 @@ throw createPmCliExpectedError("hello requires --name", {
 
 The helper returns an `Error` whose public name is `PmCliError` and whose `exitCode` is structural. That makes it safe for bundled, linked, and separately installed package code even when class identity is not shared with the running CLI.
 
+For example, the SDK command layer settles relationship token counts after alias
+counts, read disclosure, encoding and optional lean/token-accounting policies.
+It converts an impossible rendered context budget into an expected
+`invalid_argument_value` usage error. The public `PmTokenBudgetRecovery` type and
+`isPmTokenBudgetRecovery` guard describe `context.recovery.token_budget`: requested
+tokens, a verified feasible retry value, and an exact minimum only when every
+smaller positive budget has been checked. Larger searches report `feasible_only`;
+query cost limits, exhausted searches or independent output constraints can report
+`unavailable`. Both states leave the unproved minimum `null`. The bounded search
+uses the real packer and output policy, including alias disclosure.
+The public type is a discriminated union: checking `minimum_status` narrows the
+verified budgets and requires a reason for `unavailable`. Package authors cannot
+declare unavailable advice with a numeric budget or omit its cause. The runtime
+guard additionally checks positive safe integers and equal budgets for `exact`;
+those numeric invariants cannot be expressed by the declaration alone.
+`suggested_retry_args` preserves the selected tracker, query and output options
+with the verified feasible budget so it works from another workspace.
+Retry probes consume canonical summary/full include modes before packing and
+retain only residual field selectors, matching the emitted CLI command. Recovery
+work estimates include repeated dangling-reference renders; summary probes count
+only their single rendering pass. Expensive queries return explicit unavailable
+budget advice and retain the compact inspection fallback.
+`next_best_command` retains a separate compact tree-summary inspection, which
+also supplies the fallback when no working context budget is established.
+CLI JSON and MCP preserve that recovery. The lower-level
+`buildRelationshipContext` primitive retains its `TypeError` validation contract;
+unrelated runtime errors still propagate.
+(Repository tracker: [pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon),
+[pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon),
+[pm-k6uglj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k6uglj.toon),
+[pm-8jzcwv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8jzcwv.toon);
+tracker records are excluded from npm.)
+
+For policy, lint, or verification commands that should render their full result
+and report failure without throwing, return a structured object instead:
+
+```ts
+return {
+  ok: false,
+  findings,
+  exit_code: EXIT_CODE.CONFLICT,
+  code: "policy_findings",
+  remediation: "Resolve the reported findings and rerun the command.",
+};
+```
+
+The CLI renders this payload unchanged, sets the process exit status, and
+propagates `code` and `remediation` through the command-handler result contract.
+Invalid `exit_code` values are rejected rather than truncated or silently
+treated as success.
+
 ### Producer-owned diagnostics (`context.details`)
 
 Tracked by [pm-gh1631](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1631.toon)
@@ -3138,57 +3189,6 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   `error_context`, and every embedded error context in an outgoing Sentry
   event or transaction (error-data contexts, console-capture arguments,
   breadcrumbs) is scrubbed before it leaves the process.
-
-For example, the SDK command layer settles relationship token counts after alias
-counts, read disclosure, encoding and optional lean/token-accounting policies.
-It converts an impossible rendered context budget into an expected
-`invalid_argument_value` usage error. The public `PmTokenBudgetRecovery` type and
-`isPmTokenBudgetRecovery` guard describe `context.recovery.token_budget`: requested
-tokens, a verified feasible retry value, and an exact minimum only when every
-smaller positive budget has been checked. Larger searches report `feasible_only`;
-query cost limits, exhausted searches or independent output constraints can report
-`unavailable`. Both states leave the unproved minimum `null`. The bounded search
-uses the real packer and output policy, including alias disclosure.
-The public type is a discriminated union: checking `minimum_status` narrows the
-verified budgets and requires a reason for `unavailable`. Package authors cannot
-declare unavailable advice with a numeric budget or omit its cause. The runtime
-guard additionally checks positive safe integers and equal budgets for `exact`;
-those numeric invariants cannot be expressed by the declaration alone.
-`suggested_retry_args` preserves the selected tracker, query and output options
-with the verified feasible budget so it works from another workspace.
-Retry probes consume canonical summary/full include modes before packing and
-retain only residual field selectors, matching the emitted CLI command. Recovery
-work estimates include repeated dangling-reference renders; summary probes count
-only their single rendering pass. Expensive queries return explicit unavailable
-budget advice and retain the compact inspection fallback.
-`next_best_command` retains a separate compact tree-summary inspection, which
-also supplies the fallback when no working context budget is established.
-CLI JSON and MCP preserve that recovery. The lower-level
-`buildRelationshipContext` primitive retains its `TypeError` validation contract;
-unrelated runtime errors still propagate.
-(Repository tracker: [pm-odw3j8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-odw3j8.toon),
-[pm-0bbc53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0bbc53.toon),
-[pm-k6uglj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-k6uglj.toon),
-[pm-8jzcwv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-8jzcwv.toon);
-tracker records are excluded from npm.)
-
-For policy, lint, or verification commands that should render their full result
-and report failure without throwing, return a structured object instead:
-
-```ts
-return {
-  ok: false,
-  findings,
-  exit_code: EXIT_CODE.CONFLICT,
-  code: "policy_findings",
-  remediation: "Resolve the reported findings and rerun the command.",
-};
-```
-
-The CLI renders this payload unchanged, sets the process exit status, and
-propagates `code` and `remediation` through the command-handler result contract.
-Invalid `exit_code` values are rejected rather than truncated or silently
-treated as success.
 
 ## Package Runtime Imports
 

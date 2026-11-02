@@ -5,7 +5,7 @@
 import type { PmCliErrorContext } from "../../core/shared/errors.js";
 import type { RuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 import { normalizeStatusToken } from "../../core/schema/status-token.js";
-import { commanderOptionAttribute, runtimeFieldCliFlagRoute, runtimeFieldSdkOptionName } from "../../core/schema/runtime-field-values.js";
+import { commanderOptionAttribute, runtimeFieldCliFlagRoute, runtimeFieldFlagToken, runtimeFieldSdkOptionName } from "../../core/schema/runtime-field-values.js";
 import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
 import type { UpdateCommandOptions } from "./update.js";
 
@@ -54,10 +54,10 @@ function hostOwnedOptions(command: "create" | "update"): { options: ReadonlySet<
   const flags = [
     ...resolveSubcommandFlagContractsForCommand(command),
     ...GLOBAL_FLAG_CONTRACTS,
-  ].flatMap((contract) => [contract.flag, ...(contract.aliases ?? [])]).filter((flag) => flag.startsWith("--"));
+  ].flatMap((contract) => [contract.flag, ...(contract.aliases ?? [])]);
   const options = [
     ...contracts.flatMap((contract) => [contract.target, ...contract.keys]),
-    ...flags.map((flag) => commanderOptionAttribute(flag.slice(2))),
+    ...flags.map((flag) => commanderOptionAttribute(flag)),
     ...(command === "update" ? UPDATE_SDK_ONLY_OPTION_KEYS : []),
   ];
   return { options: new Set(options), flags: new Set(flags) };
@@ -105,9 +105,9 @@ export function createSchemaFieldRecoveryResolver(
     const route = runtimeFieldCliFlagRoute(definition, registry, host, command);
     const cliStep = route === undefined
       ? `Every CLI spelling of "${definition.key}" is shared with another declared field or an option of pm ${command}; give it a distinct cli_flag in the project schema.`
-      : `Use the declared project-schema flag: pm ${command}${command === "update" ? " <id>" : ""} --${route} <value>`;
+      : `Use the declared project-schema flag: pm ${command}${command === "update" ? " <id>" : ""} ${runtimeFieldFlagToken(route)} <value>`;
     return {
-      recovery: { provided_fields: [field], ...(route === undefined ? {} : { suggested_flags: [`--${route}`] }) },
+      recovery: { provided_fields: [field], ...(route === undefined ? {} : { suggested_flags: [runtimeFieldFlagToken(route)] }) },
       nextSteps: [cliStep, sdkOptionHint(runtimeFieldSdkOptionName(definition, registry, host.options, command), command), inspect],
     };
   };

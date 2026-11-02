@@ -136,32 +136,6 @@ describe("extensions item field runtime wiring", () => {
     expect(heading.context.recovery?.suggested_flags).toEqual(["--review-heading"]);
     expect(heading.context.nextSteps?.[1]).toBe("SDK: pass reviewHeading in the update options.");
     expect(Object.keys(collectRuntimeUpdateFieldValues({ reviewHeading: "x" }, coreNamed))).toEqual(["review_heading"]);
-    // A negating spelling files its value under the un-negated name (--no-title sets title), a directly
-    // registered control (--clear-tests / clearTests) belongs to the host, and neither is ever advertised.
-    const hostNamed = resolveRuntimeFieldRegistry({
-      fields: [
-        { key: "no_title", type: "string", commands: ["update"] },
-        { key: "clear_tests", type: "boolean", commands: ["update"] },
-      ],
-    } as never);
-    const hostResolver = createSchemaFieldRecoveryResolver(hostNamed, "update");
-    for (const key of ["no_title", "clear_tests"]) {
-      const hostRefusal = refusal(`${key}=x`, hostResolver);
-      expect(hostRefusal.context.recovery).toEqual({ provided_fields: [key] });
-      expect(hostRefusal.context.nextSteps?.[1]).not.toMatch(/pass (title|clearTests) /u);
-    }
-    expect(Object.keys(collectRuntimeUpdateFieldValues({ title: "core title" }, hostNamed))).toEqual([]);
-    // Fields the command never reads cannot collide: create-only xy does not shadow update-only x_y.
-    const scoped = resolveRuntimeFieldRegistry({
-      fields: [
-        { key: "x_y", type: "string", commands: ["update"] },
-        { key: "xy", type: "string", cli_flag: "x-y", commands: ["create"] },
-      ],
-    } as never);
-    const scopedRefusal = refusal("x_y=v", createSchemaFieldRecoveryResolver(scoped, "update"));
-    expect(scopedRefusal.context.recovery?.suggested_flags).toEqual(["--x-y"]);
-    expect(scopedRefusal.context.nextSteps?.[1]).toBe("SDK: pass xY in the update options.");
-    expect(collectRuntimeUpdateFieldValues({ xY: "v" }, scoped)).toEqual({ x_y: "v" });
     // When declarations share a storage key, the route goes through one the command may set.
     const sharedKey = resolveRuntimeFieldRegistry({
       fields: [
@@ -188,6 +162,45 @@ describe("extensions item field runtime wiring", () => {
     const allShared = refusal("x_y=1", createSchemaFieldRecoveryResolver(sharedOnly, "update"));
     expect(allShared.context.recovery).toEqual({ provided_fields: ["x_y"] });
     expect(allShared.context.nextSteps?.[1]).toContain("every option name for this field is shared");
+  });
+
+  it("never advertises host-owned, negated or inactive-collision routes, and renders short aliases (pm-wftvem)", () => {
+    const refusal = (raw: string, resolver: ReturnType<typeof createSchemaFieldRecoveryResolver>): PmCliError => refuseFieldAssignment(raw, resolver);
+    // A negating spelling files its value under the un-negated name (--no-title sets title), a directly
+    // registered control (--clear-tests / clearTests) belongs to the host, and neither is ever advertised.
+    const hostNamed = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "no_title", type: "string", commands: ["update"] },
+        { key: "clear_tests", type: "boolean", commands: ["update"] },
+      ],
+    } as never);
+    const hostResolver = createSchemaFieldRecoveryResolver(hostNamed, "update");
+    for (const key of ["no_title", "clear_tests"]) {
+      const hostRefusal = refusal(`${key}=x`, hostResolver);
+      expect(hostRefusal.context.recovery).toEqual({ provided_fields: [key] });
+      expect(hostRefusal.context.nextSteps?.[1]).not.toMatch(/pass (title|clearTests) /u);
+    }
+    expect(Object.keys(collectRuntimeUpdateFieldValues({ title: "core title" }, hostNamed))).toEqual([]);
+    // A negated spelling is never a route: its value lands under the un-negated key, which this field never reads.
+    const negated = resolveRuntimeFieldRegistry({ fields: [{ key: "no_review", type: "string", commands: ["update"] }] } as never);
+    expect(refusal("no_review=approved", createSchemaFieldRecoveryResolver(negated, "update")).context.recovery).toEqual({ provided_fields: ["no_review"] });
+    // A short alias is rendered with its single dash when the primary flag belongs to the host.
+    const shortAlias = resolveRuntimeFieldRegistry({ fields: [{ key: "review_heading", type: "string", cli_flag: "title", cli_aliases: ["-r"], commands: ["update"] }] } as never);
+    const short = refusal("review_heading=approved", createSchemaFieldRecoveryResolver(shortAlias, "update"));
+    expect(short.context.recovery?.suggested_flags).toEqual(["-r"]);
+    expect(short.context.nextSteps?.[0]).toBe("Use the declared project-schema flag: pm update <id> -r <value>");
+    expect(collectRuntimeUpdateFieldValues({ r: "approved" }, shortAlias)).toEqual({ review_heading: "approved" });
+    // Fields the command never reads cannot collide: create-only xy does not shadow update-only x_y.
+    const scoped = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "x_y", type: "string", commands: ["update"] },
+        { key: "xy", type: "string", cli_flag: "x-y", commands: ["create"] },
+      ],
+    } as never);
+    const scopedRefusal = refusal("x_y=v", createSchemaFieldRecoveryResolver(scoped, "update"));
+    expect(scopedRefusal.context.recovery?.suggested_flags).toEqual(["--x-y"]);
+    expect(scopedRefusal.context.nextSteps?.[1]).toBe("SDK: pass xY in the update options.");
+    expect(collectRuntimeUpdateFieldValues({ xY: "v" }, scoped)).toEqual({ x_y: "v" });
   });
 
   it("keeps the standalone core parser truthful without host command contracts", () => {

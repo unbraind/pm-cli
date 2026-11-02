@@ -252,12 +252,17 @@ export function isPmCliExpectedError(
   }
   const candidate = error as Partial<PmCliExpectedError>;
   // A refusal declares its context; a bare name plus exit code is a fault that
-  // must stay visible to crash reporting.
-  return (
-    typeof candidate.exitCode === "number" &&
-    Number.isFinite(candidate.exitCode) &&
-    typeof candidate.context === "object" &&
-    candidate.context !== null &&
-    !Array.isArray(candidate.context)
-  );
+  // must stay visible to crash reporting. Inspection itself can throw (a
+  // revoked proxy fails Array.isArray); such a value is not a usable refusal.
+  try {
+    return (
+      typeof candidate.exitCode === "number" &&
+      Number.isFinite(candidate.exitCode) &&
+      typeof candidate.context === "object" &&
+      candidate.context !== null &&
+      !Array.isArray(candidate.context)
+    );
+  } catch {
+    return false;
+  }
 }

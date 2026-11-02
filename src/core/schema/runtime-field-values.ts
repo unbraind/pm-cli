@@ -67,11 +67,22 @@ function foreignRuntimeFieldOptionNames(
   ]);
 }
 
+/** Whether a declared spelling is a Commander negation (`no-x`), whose value lands under `x`. */
+function isNegatingFlag(flag: string): boolean {
+  return flag.replace(/^-+/u, "").startsWith("no-");
+}
+
+/** The command-line token for a declared spelling: a short alias keeps its single dash. */
+export function runtimeFieldFlagToken(flag: string): string {
+  return flag.startsWith("-") ? flag : `--${flag}`;
+}
+
 /**
- * A CLI flag (without dashes) that sets exactly this runtime field: the
- * declared flag or an alias that is not a host flag and whose parsed option
- * name no other declared field and no host option reads. Undefined when every
- * spelling is shared, because that flag would also set the other field.
+ * A declared spelling that sets exactly this runtime field: the declared flag
+ * or an alias that is not a host flag, is not a negation (its value would
+ * land under another key that this field never reads), and whose parsed
+ * option name no other active field and no host option reads. Undefined when
+ * no spelling qualifies. Render it with {@link runtimeFieldFlagToken}.
  */
 export function runtimeFieldCliFlagRoute(
   definition: RuntimeFieldDefinitionResolved,
@@ -81,7 +92,10 @@ export function runtimeFieldCliFlagRoute(
 ): string | undefined {
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options, command);
   return [definition.cli_flag, ...definition.cli_aliases].find(
-    (flag) => !reserved.flags.has(`--${flag}`) && !taken.has(commanderOptionAttribute(flag)),
+    (flag) =>
+      !isNegatingFlag(flag) &&
+      !reserved.flags.has(runtimeFieldFlagToken(flag)) &&
+      !taken.has(commanderOptionAttribute(flag)),
   );
 }
 
@@ -93,6 +107,7 @@ export function runtimeFieldCliFlagRoute(
  */
 export function commanderOptionAttribute(flag: string): string {
   return flag
+    .replace(/^-+/u, "")
     .replace(/^no-/u, "")
     .split("-")
     .reduce((name, word) => `${name}${word.charAt(0).toUpperCase()}${word.slice(1)}`);
@@ -111,7 +126,7 @@ function resolveCandidateOptionKeys(
       // "no-" flag is not read here: Commander files its value under the
       // un-negated name, which belongs to a different option.
       ...[definition.cli_flag, ...definition.cli_aliases]
-        .filter((flag) => !flag.startsWith("no-"))
+        .filter((flag) => !isNegatingFlag(flag))
         .map((flag) => commanderOptionAttribute(flag)),
     ]),
   ];

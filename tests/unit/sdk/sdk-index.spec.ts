@@ -538,6 +538,10 @@ describe("public sdk entrypoint", () => {
     const withoutDetails = { code: "plain" };
     expect(createPmCliExpectedError("plain", { context: withoutDetails }).context).toBe(withoutDetails);
     expect(createPmCliExpectedError("null context", { context: null as never }).context).toEqual({});
+    // Recognition is total: a context that cannot even be inspected is not a usable refusal.
+    const revocable = Proxy.revocable({}, {});
+    revocable.revoke();
+    expect(isPmCliExpectedError(Object.assign(new Error("revoked"), { name: "PmCliError", exitCode: 2, context: revocable.proxy }))).toBe(false);
     const undefinedDetails = { code: "plain", details: undefined };
     expect(createPmCliExpectedError("plain", { context: undefinedDetails }).context).toBe(undefinedDetails);
   });

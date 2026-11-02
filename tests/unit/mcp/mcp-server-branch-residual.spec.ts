@@ -803,6 +803,13 @@ describe("mcp server branch residual coverage", () => {
       code: "probe_expected",
       details_omitted: { reason: "byte_limit", byte_limit: 4096 },
     });
+    // A revoked-proxy context cannot be recognized, so the generic error envelope is written instead of throwing.
+    const revoked = Proxy.revocable({}, {});
+    revoked.revoke();
+    expect(server._testOnly.errorContent(Object.assign(new Error("revoked refusal"), { name: "PmCliError", exitCode: 2, context: revoked.proxy }))).toMatchObject({
+      isError: true,
+      structuredContent: { error: "revoked refusal", code: 1 },
+    });
     // An uninspectable context is forwarded as an empty one instead of breaking the response.
     const hostile = Object.assign(new Error("proxy refusal"), {
       name: "PmCliError",
