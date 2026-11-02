@@ -156,6 +156,12 @@ describe("config command helper coverage", () => {
     ).toBe("warn");
     expect(
       _testOnlyConfigCommand.normalizePolicyForConflict(
+        "governance_start_blocker_enforcement",
+        "disabled",
+      ),
+    ).toBe("off");
+    expect(
+      _testOnlyConfigCommand.normalizePolicyForConflict(
         "governance_ownership_enforcement",
         "strict",
       ),
@@ -438,7 +444,7 @@ describe("runConfig", () => {
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(26);
+      expect(result.count).toBe(27);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -458,6 +464,7 @@ describe("runConfig", () => {
         "governance_require_close_reason",
         "governance_create_default_type",
         "governance_workflow_enforcement",
+        "governance_start_blocker_enforcement",
         "governance_parent_reference_policy",
         "governance_metadata_validation_profile",
         "governance_force_required_for_stale_lock",
@@ -555,6 +562,7 @@ describe("runConfig", () => {
         governance_create_default_type: "",
         governance_require_close_reason: "enabled",
         governance_workflow_enforcement: "off",
+        governance_start_blocker_enforcement: "strict",
         governance_parent_reference_policy: "strict_error",
         governance_metadata_validation_profile: "strict",
         governance_force_required_for_stale_lock: "enabled",

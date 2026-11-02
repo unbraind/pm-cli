@@ -175,6 +175,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
   },
   idOnly: { type: "boolean" },
+  expectHash: {
+    anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
+  },
   allowMissingParent: { type: "boolean" },
   allowUnresolvedDeps: { type: "boolean" },
   allowDuplicate: { type: "boolean" },
@@ -1381,6 +1384,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   author: {
     description:
       "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
+  },
+  expectHash: {
+    description:
+      "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items.",
   },
   attributedAuthor: {
     description:

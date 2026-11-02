@@ -163,7 +163,7 @@
     },
     {
       "id": "context-bootstrap",
-      "max_estimated_tokens": 2005,
+      "max_estimated_tokens": 2025,
       "steps": [
         {
           "id": "triage",
@@ -177,14 +177,14 @@
         },
         {
           "id": "inspect",
-          "max_estimated_tokens": 371,
+          "max_estimated_tokens": 391,
           "accounting_mode": "self_reported"
         }
       ]
     },
     {
       "id": "closed-domain-recovery",
-      "max_estimated_tokens": 630,
+      "max_estimated_tokens": 650,
       "steps": [
         {
           "id": "refuse-intent",
@@ -193,7 +193,7 @@
         },
         {
           "id": "retry-intent",
-          "max_estimated_tokens": 371,
+          "max_estimated_tokens": 391,
           "accounting_mode": "self_reported"
         }
       ]
@@ -216,7 +216,7 @@
     },
     {
       "id": "lifecycle-mutation",
-      "max_estimated_tokens": 873,
+      "max_estimated_tokens": 915,
       "steps": [
         {
           "id": "create",
@@ -225,7 +225,7 @@
         },
         {
           "id": "inspect-open",
-          "max_estimated_tokens": 363,
+          "max_estimated_tokens": 384,
           "accounting_mode": "self_reported"
         },
         {
@@ -235,7 +235,7 @@
         },
         {
           "id": "inspect-closed",
-          "max_estimated_tokens": 398,
+          "max_estimated_tokens": 419,
           "accounting_mode": "self_reported"
         }
       ]
@@ -288,5 +288,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 13633
+  "composite_max_estimated_tokens": 13715
 }

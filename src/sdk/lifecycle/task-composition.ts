@@ -16,6 +16,10 @@ import { resolveReleaseHandoff } from "./release-handoff.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
+import { admitStartWithOpenBlockers, isStartTransition } from "./start-blockers.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { mutationOptionsWithOverrides } from "../runtime-input.js";
 import type { StartTaskResult, PauseTaskResult, CloseTaskResult } from "../runtime-public-contracts.js";
 
@@ -57,13 +61,34 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
       nextSteps: ["Remove --next and --if-available, keep the explicit item ID and other supplied arguments, then retry."],
     });
   }
-  const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
-  const status = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  const settings = await readSettings(pmRoot);
+  const registry = resolveRuntimeStatusRegistry(settings.schema);
+  const status = resolveStartTaskInProgressStatus(registry);
+  // pm-urzubi: refuse before the claim write, so a refused start never leaves a claim behind.
+  // The status update re-checks under its own item lock.
+  await precheckStartBlockers(pmRoot, settings, id, registry, options.force === true);
   // The explicit composition keeps claim and status as separate audited steps; only claim --next --start shares one write.
   const claim = await runClaim(id, options.force === true, global, mutationOptionsWithOverrides(options, {}, ["start"]));
   const canonicalId = claim.item.id as string;
   const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global));
   return { id: canonicalId, action: "start_task", claim, update };
+}
+
+/** Read the item without locking and refuse a start its open blockers would make the update refuse. */
+async function precheckStartBlockers(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  id: string,
+  registry: ReturnType<typeof resolveRuntimeStatusRegistry>,
+  force: boolean,
+): Promise<void> {
+  const typeToFolder = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder;
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  if (!located) return;
+  const { document } = await readLocatedItem(located, { schema: settings.schema });
+  if (!isStartTransition(document.metadata.status, registry.in_progress_status, registry)) return;
+  await admitStartWithOpenBlockers({ pmRoot, settings, metadata: document.metadata, force });
 }
 
 /** Return work to its configured open status, then release ownership. */

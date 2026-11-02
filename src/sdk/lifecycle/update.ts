@@ -72,6 +72,7 @@ import {
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 import { runClose } from "./close.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
+import { admitStartTransition } from "./start-blockers.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -3448,7 +3449,8 @@ async function runUpdateWithContext(
         options.ownershipDependencyBypass === true,
       extensionFieldNames,
       skipNoop: true,
-      mutate(document) {
+      async mutate(document) {
+        const fromStatus = document.metadata.status;
         lifecycleTransition = prepareRecurrenceTransition({
           document,
           recurrenceReason: execution.recurrenceReason,
@@ -3493,7 +3495,9 @@ async function runUpdateWithContext(
           document,
           statusRegistry,
         });
-        return mutation;
+        // pm-urzubi: judged on the updated metadata, so a start that also drops its blocker is admitted.
+        const startWarnings = await admitStartTransition({ pmRoot, settings, metadata: document.metadata, fromStatus, registry: statusRegistry, force: options.force === true });
+        return { ...mutation, warnings: [...mutation.warnings, ...startWarnings] };
       },
     });
     await releaseHierarchyMutationLock();

@@ -4,8 +4,6 @@
  * Implements the SDK-owned item query shared by every surface.
  */
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
-import { readdir } from "node:fs/promises";
-import path from "node:path";
 import type { PmReadOutputMetadata } from "../read-output-contracts.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import {
@@ -28,18 +26,11 @@ import {
   resolveAuthor,
 } from "../runtime-primitives.js";
 import { readHistoryEntries } from "../history-read.js";
+import { hashDocument } from "../../core/history/history.js";
 import { renderPmCommand } from "../command-line.js";
 import { recordContextUsageTouches } from "../context-usage.js";
-import { createPmCliExpectedError } from "../errors.js";
-import {
-  collectBlockedByIds,
-  resolveItemBlockers,
-  type ResolvedBlocker,
-} from "../actionability.js";
-import {
-  isExternalDependencyReference,
-  isExternalDependencySourceKind,
-} from "../../core/item/dependency-reference.js";
+import { collectBlockedByIds, type ResolvedBlocker } from "../actionability.js";
+import { resolveDeclaredBlockers } from "./declared-blockers.js";
 import {
   buildItemChildrenRollup,
   type ChildRollupContext,
@@ -128,6 +119,13 @@ export interface GetResult extends Partial<PmReadOutputMetadata> {
   // `.item.body` in JSON output instead of a top-level sibling.
   /** Selected metadata and body; requested empty collections are represented explicitly. */
   item: GetItemProjection;
+  /**
+   * Current revision: SHA-256 of the canonical item document, equal to its
+   * latest history `after_hash`. Pass it to `--expect-hash` (SDK/MCP
+   * `expectHash`) so a later write refuses if the item changed in between.
+   * Omitted for historical `--at` reads.
+   */
+  item_hash?: string;
   /** Requested artifact groups; narrower selectors leave unrequested groups empty. */
   linked?: {
     files: LinkedFile[];
@@ -453,6 +451,15 @@ function projectedMetadataValue(
   return EMPTY_PROJECTED_COLLECTION_FIELDS.has(field) ? [] : undefined;
 }
 
+const GET_FACET_ROOTS: ReadonlySet<string> = new Set(["body", "item_hash", "linked", "claim_state", "children", "schedule", "blockers"]);
+const GET_NESTED_FACET_ROOTS: ReadonlySet<string> = new Set(["linked", "claim_state", "children", "schedule"]);
+
+/** Whether a selector names a derived facet whose owner attaches it, rather than a metadata field. */
+function isGetFacetSelector(normalized: string): boolean {
+  const dot = normalized.indexOf(".");
+  return dot === -1 ? GET_FACET_ROOTS.has(normalized) : GET_NESTED_FACET_ROOTS.has(normalized.slice(0, dot));
+}
+
 /** Select metadata and empty requested collections, retaining identity and deferring derived facets to their owners. */
 function projectItemForFields(
   item: ItemMetadata,
@@ -467,18 +474,7 @@ function projectItemForFields(
   const projected: Record<string, unknown> = { id: item.id };
   for (const field of fields) {
     const normalized = normalizeGetField(field);
-    if (
-      normalized === "body" ||
-      normalized === "linked" ||
-      normalized.startsWith("linked.") ||
-      normalized === "claim_state" ||
-      normalized.startsWith("claim_state.") ||
-      normalized === "children" ||
-      normalized.startsWith("children.") ||
-      normalized === "schedule" ||
-      normalized.startsWith("schedule.") ||
-      normalized === "blockers"
-    ) {
+    if (isGetFacetSelector(normalized)) {
       continue;
     }
     projected[normalized] = projectedMetadataValue(
@@ -680,6 +676,13 @@ async function resolveGetClaimState(
   );
 }
 
+/** Attach the current revision (pm-gh1576) to current reads, and to field projections only when selected. */
+function attachGetItemHash(result: GetResult, context: GetItemContext, projection: ResolvedGetProjection): void {
+  if (context.historical !== undefined) return;
+  if (projection.fieldProjection && !fieldsIncludeRoot(projection.fields as string[], "item_hash")) return;
+  result.item_hash = hashDocument({ metadata: context.metadata, body: context.body });
+}
+
 /** Attach only requested artifact groups while preserving the linked envelope's stable three-group shape. */
 function attachGetLinked(
   result: GetResult,
@@ -731,42 +734,6 @@ async function buildGetChildrenRollup(
   );
 }
 
-/** Collapse local short/full aliases onto verified physical identities while preserving exact external locator identity and unresolved references. */
-function canonicalizeDeclaredBlockers(
-  blockers: readonly ResolvedBlocker[],
-  targets: ReadonlyMap<string, ItemMetadata>,
-): ResolvedBlocker[] {
-  const canonical = new Map<string, ResolvedBlocker>();
-  for (const blocker of blockers) {
-    const id = blocker.external ? blocker.id : (targets.get(blocker.id.toLowerCase())?.id ?? blocker.id);
-    canonical.set(blocker.external ? `external:${id}` : `local:${id.toLowerCase()}`, { ...blocker, id });
-  }
-  return [...canonical.values()];
-}
-
-/** Verify physical leaf spelling even when probe and embedded IDs match; retain exact-leaf precedence, stable ties and typed directory failures with their original cause. */
-async function resolvePhysicalBlockerId(itemPath: string, probedId: string): Promise<string> {
-  const filename = path.basename(itemPath);
-  const physicalIds = (await readdir(path.dirname(itemPath)).catch((error: unknown) => {
-    throw createPmCliExpectedError("Cannot verify the blocker's physical file identity", {
-      exitCode: EXIT_CODE.GENERIC_FAILURE,
-      context: { code: "blocker_identity_read_failed", required: "Restore access to the blocker item directory, then retry the item read." },
-      cause: error,
-    });
-  }))
-    .filter((name) => name.toLowerCase() === filename.toLowerCase())
-    .sort((left, right) => Number(right === filename) - Number(left === filename) || left.localeCompare(right))
-    .map((name) => path.parse(name).name);
-  const physicalId = physicalIds[0];
-  if (physicalId === undefined) {
-    throw new PmCliError(`Blocker canonical file disappeared during identity verification: ${probedId}`, EXIT_CODE.CONFLICT, {
-      code: "item_identity_conflict",
-      required: "Restore the canonical blocker file and validate storage integrity before retrying the item read.",
-    });
-  }
-  return physicalId;
-}
-
 /** Attach current forward-declared targets only when requested, retaining unsafe/unknown/external references as unresolved and avoiding unrelated item scans or historical status claims. */
 async function attachGetBlockers(
   result: GetResult,
@@ -777,57 +744,13 @@ async function attachGetBlockers(
   if (!(projection.fieldProjection
     ? fieldsIncludeRoot(projection.fields as string[], "blockers")
     : projection.depth !== "brief")) return;
-  const ids = collectBlockedByIds(context.metadata);
-  if (ids.length === 0) return;
-  // Comparison keys deduplicate references; filesystem probes retain source spelling.
-  const declaredIds = new Map<string, string>(
-    [
-      context.metadata.blocked_by,
-      ...(context.metadata.dependencies ?? [])
-        .filter((dependency) => dependency.kind === "blocked_by")
-        .map((dependency) => dependency.id),
-    ]
-      .filter((id): id is string => typeof id === "string")
-      .map((id) => [id.trim().toLowerCase(), id.trim()]),
-  );
-  const targets = new Map<string, ItemMetadata>();
-  for (const id of ids) {
-    if (
-      isExternalDependencyReference(id) ||
-      !/^(?!\.{1,2}$)[^/\\:\0]+$/u.test(id) ||
-      context.metadata.dependencies?.some((dependency) =>
-        dependency.id.trim() === id &&
-        dependency.kind === "blocked_by" &&
-        isExternalDependencySourceKind(dependency.source_kind),
-      )
-    ) continue;
-    const located = await locateItem(
-      context.pmRoot,
-      declaredIds.get(id)!,
-      context.settings.id_prefix,
-      context.settings.item_format,
-      context.typeToFolder,
-    );
-    if (located === null) continue;
-    const loaded = await readLocatedItem(located, { schema: context.settings.schema });
-    located.id = await resolvePhysicalBlockerId(located.itemPath, located.id);
-    if (loaded.document.metadata.id !== located.id) {
-      throw new PmCliError(`Blocker identity differs from its canonical file: ${located.id}`, EXIT_CODE.CONFLICT, {
-        code: "item_identity_conflict",
-        required: "Restore the canonical blocker identity and validate storage integrity before retrying the item read.",
-      });
-    }
-    targets.set(id.toLowerCase(), loaded.document.metadata);
-  }
-  const resolved = canonicalizeDeclaredBlockers(resolveItemBlockers(
-    {
-      blocked_by: context.metadata.blocked_by,
-      dependencies: context.metadata.dependencies,
-      updated_at: context.metadata.updated_at,
-    },
-    targets,
-    resolveRuntimeStatusRegistry(context.settings.schema),
-  ), targets);
+  if (collectBlockedByIds(context.metadata).length === 0) return;
+  const resolved = await resolveDeclaredBlockers({
+    pmRoot: context.pmRoot,
+    settings: context.settings,
+    typeToFolder: context.typeToFolder,
+    metadata: context.metadata,
+  });
   result.blockers = {
     scope: "declared",
     open: resolved.filter((blocker) => !blocker.resolved).map(({ resolved: _resolved, ...blocker }) => blocker),
@@ -932,6 +855,7 @@ export async function runGet(
   if (includeBody) {
     result.item.body = context.body;
   }
+  attachGetItemHash(result, context, projection);
   attachGetLinked(result, context, projection.fields, includeLinked);
   if (claimState) {
     result.claim_state = claimState;

@@ -21527,14 +21527,14 @@
       "class": "generic_failure",
       "code": "blocker_identity_read_failed",
       "emitting_commands": [
-        "get"
+        "declared-blockers"
       ],
       "exit_code": 1,
       "meaning": "Blocker identity read failed condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "sdk/query/get.ts"
+        "sdk/query/declared-blockers.ts"
       ],
       "stability": "provisional"
     },
@@ -22502,6 +22502,91 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/agent/tracker-preflight-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "expect_hash_invalid",
+      "class": "usage",
+      "code": "expect_hash_invalid",
+      "emitting_commands": [
+        "item-revision"
+      ],
+      "exit_code": 2,
+      "meaning": "Expect hash invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/item-revision.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "expect_hash_requires_mutation",
+      "class": "usage",
+      "code": "expect_hash_requires_mutation",
+      "emitting_commands": [
+        "item-revision"
+      ],
+      "exit_code": 2,
+      "meaning": "Expect hash requires mutation condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/item-revision.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "expect_hash_target_required",
+      "class": "usage",
+      "code": "expect_hash_target_required",
+      "emitting_commands": [
+        "item-revision"
+      ],
+      "exit_code": 2,
+      "meaning": "Expect hash target required condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/item-revision.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "expected_revision_duplicate",
+      "class": "usage",
+      "code": "expected_revision_duplicate",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Expected revision duplicate condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-mutation-precondition.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "expected_revision_scope_conflict",
+      "class": "usage",
+      "code": "expected_revision_scope_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Expected revision scope conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-mutation-precondition.ts"
       ],
       "stability": "provisional"
     },
@@ -24273,7 +24358,7 @@
       "code": "item_identity_conflict",
       "emitting_commands": [
         "*",
-        "get"
+        "declared-blockers"
       ],
       "exit_code": 4,
       "meaning": "Item identity conflict condition.",
@@ -24282,7 +24367,7 @@
       "sources": [
         "sdk/governance/validate-history-drift.ts",
         "sdk/merge/three-way.ts",
-        "sdk/query/get.ts"
+        "sdk/query/declared-blockers.ts"
       ],
       "stability": "provisional"
     },
@@ -24322,6 +24407,23 @@
         "sdk/governance/validate-history-drift.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "item_revision_conflict",
+      "class": "conflict",
+      "code": "item_revision_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Item revision conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/store/item-mutation-precondition.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -33810,6 +33912,20 @@
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -34000,6 +34116,20 @@
           "cwd": {
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "explainRanking": {
             "description": "Explain Ranking.",
@@ -34236,6 +34366,20 @@
             "description": "Expected Result.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -34391,6 +34535,20 @@
             "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
@@ -36633,6 +36791,20 @@
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -37250,6 +37422,20 @@
               "discovered from item text"
             ],
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "explain": {
             "description": "Include ranked linked-file, rationale, and governing-decision evidence for a files lookup.",
@@ -38590,6 +38776,20 @@
             "minimum": 1,
             "type": "integer"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -39847,6 +40047,20 @@
             "description": "For notes action, return structured context events whose top-level type matches this value.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -41023,6 +41237,20 @@
           "cwd": {
             "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "force": {
             "type": "boolean"
@@ -42628,6 +42856,20 @@
             },
             "type": "array"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "failOnContextMismatch": {
             "description": "Fail linked PM command runs when source and sandbox tracker item counts differ.",
             "type": "boolean"
@@ -43145,6 +43387,20 @@
           "expectedResult": {
             "description": "Expected Result.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "field": {
             "description": "Field.",
@@ -50174,6 +50430,20 @@
             "description": "Expected Result.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -56641,6 +56911,20 @@
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -56977,6 +57261,20 @@
           "expectedResult": {
             "description": "Expected Result.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "field": {
             "description": "Field.",
@@ -57571,6 +57869,20 @@
           "expectedResult": {
             "description": "Expected Result.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "field": {
             "description": "Field.",
@@ -58184,6 +58496,20 @@
             "description": "Expected Result.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -58319,6 +58645,20 @@
           "expectedResult": {
             "description": "Expected Result.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "filterAcMissing": {
             "description": "Filter Ac Missing.",
@@ -58665,6 +59005,20 @@
             "description": "Preview command effects without mutating storage artifacts.",
             "type": "boolean"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -58749,6 +59103,20 @@
           "body": {
             "description": "Body.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
@@ -58870,6 +59238,20 @@
             "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
@@ -59198,6 +59580,20 @@
             "description": "For notes action, return structured context events whose top-level type matches this value.",
             "type": "string"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -59474,6 +59870,20 @@
             "minimum": 1,
             "type": "integer"
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
             "type": "boolean"
@@ -59669,6 +60079,20 @@
               "discovered from item text"
             ],
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "explain": {
             "description": "Include ranked linked-file, rationale, and governing-decision evidence for a files lookup.",
@@ -60014,6 +60438,20 @@
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
@@ -61443,6 +61881,20 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "failOnContextMismatch": {
             "description": "Fail linked PM command runs when source and sandbox tracker item counts differ.",
@@ -65255,6 +65707,20 @@
               "3"
             ]
           },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
+          },
           "explainRanking": {
             "description": "Explain Ranking.",
             "type": "boolean"
@@ -65518,6 +65984,20 @@
           "author": {
             "description": "Intentional mutation-author override. Agent harness identity is automatic when omitted.",
             "type": "string"
+          },
+          "expectHash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Expected item revision: the item_hash from get. Each locked write refuses with item_revision_conflict when the item changed since; a bare hash binds to id, <id>=<item_hash> names other items."
           },
           "force": {
             "description": "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",

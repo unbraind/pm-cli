@@ -2,19 +2,87 @@ id: pm-urzubi
 title: "Starting work ignores open blockers: claim <id> --start and update --status in_progress move a blocked item into progress without a refusal or warning"
 description: "Raised by CodeRabbit on PR #1645 and verified on 2026.10.31 source in a fresh sandbox. An item created with --blocked-by <open item> is stored as status blocked, and pm update <id> --status in_progress then succeeds with no refusal or warning. pm claim <id> --start runs the same claim-then-update composition, so it behaves the same. pm validate later reports non_blocked_status_has_blocked_by for the in-progress item whose blocker is still open. pm next and claim --next --start are unaffected because ready selection already excludes items with open blockers. Starting an explicitly blocked item is a governance decision, not a claim defect, so changing only --start would make start and update disagree.\n\nDuplicate search: 'start blocked item open blocker in_progress refuse', 'non_blocked_status_has_blocked_by' — no open item. Nearest is the dependency-aware actionability decision (closed)."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,dependencies,governance,lifecycle
 created_at: "2026-10-31T23:01:47.892Z"
-updated_at: "2026-10-31T23:01:47.892Z"
+updated_at: "2026-11-02T14:29:15.542Z"
+closed_at: "2026-11-02T14:26:36.511Z"
+completed_at: "2026-11-02T14:26:36.511Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "Moving an item with an open blocked_by target into the in-progress status, through update, claim --start or start-task, either refuses with a typed code naming the open blocker and the unblock or --force recovery, or warns, as governed by a declared setting; the CLI, MCP and SDK paths share one check that runs before any write, so a refused start never leaves a claim; a terminal blocker does not block; tests cover refuse, warn and terminal-blocker cases"
 parent: pm-33cw
 risk: medium
 confidence: medium
+resolution: "sdk/lifecycle/start-blockers.ts admits or refuses a move into progress against currently open declared blockers, resolved through sdk/query/declared-blockers.ts (shared with the pm get blockers facet). update --status, claim --start, claim --next --start and start-task share it. Update and claim run it under the item lock; the explicit start composition pre-checks before the claim write. strict (default) refuses start_blocked_by_open_dependency with open_blockers details and an executable unblock command; --force overrides; warn and off are declared modes."
 expected_result: No transport can silently move an item with an open blocker into progress; the behaviour is declared by governance settings and consistent across update and start.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Verified in specs and against the built CLI: update/claim --start/start-task refuse with exit 4 and leave no claim. The same-call unblock+start, terminal blockers and already-in-progress items are admitted. --force records start_blocker_override, warn records start_with_open_blockers, off is silent. The published 2026.11.2 negative control starts the blocked item silently."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-9x6k,related,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
   pm-gh1643,discovered_from,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1576,related,"2026-11-02T13:29:29.434Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-02T13:29:12.559Z","harness:claude-code","Implementation evidence (feat/write-time-preconditions): sdk/lifecycle/start-blockers.ts owns one admission check, admitStartWithOpenBlockers, governed by the new governance.start_blocker_enforcement (strict default, warn, off; pm config key governance-start-blocker-enforcement). It resolves blockers through sdk/query/declared-blockers.ts, the resolution pm get's blockers facet already used, extracted so the two cannot disagree. Terminal targets resolve; missing, unsafe and external references stay open. Hooks: runUpdate checks inside its locked mutate callback on the UPDATED metadata, so an update that removes the edge and starts in one call is admitted. runClaim(start) checks under the claim lock (claim --next --start). runStartTask pre-checks before the claim write, so a refused claim <id> --start leaves no claim, and the update re-checks under its own lock. Refusal start_blocked_by_open_dependency (exit 4) lists details.open_blockers and an executable unblock command (--unset blocked_by and/or --dep-remove id=<b>,kind=blocked_by, chosen from where the blocker is declared). Verified the advertised command then lets the start succeed. --force admits with start_blocker_override:<id>:<blockers>, and warn mode records start_with_open_blockers:<id>:<blockers>."
+files[12]{path,scope}:
+  scripts/release/agent-evidence-consistency-control.mjs,project
+  src/core/store/settings-validator.ts,project
+  src/core/store/settings.ts,project
+  src/sdk/config.ts,project
+  src/sdk/lifecycle/claim.ts,project
+  src/sdk/lifecycle/start-blockers.ts,project
+  src/sdk/lifecycle/task-composition.ts,project
+  src/sdk/lifecycle/update.ts,project
+  src/sdk/query/declared-blockers.ts,project
+  src/sdk/query/get.ts,project
+  src/types.ts,project
+  tests/unit/sdk/lifecycle/start-blockers.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,project,600,"harness:claude-code","2026-11-02T13:09:54.501Z",local_mutation,feat/write-time-preconditions
+test_runs[3]:
+  - run_id: test-local-mvzcoa9s-iuicwh
+    kind: test
+    status: passed
+    started_at: "2026-11-02T14:24:16.504Z"
+    finished_at: "2026-11-02T14:24:27.136Z"
+    recorded_at: "2026-11-02T14:24:27.136Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvzcouot-0f5bqf
+    kind: test
+    status: passed
+    started_at: "2026-11-02T14:24:43.646Z"
+    finished_at: "2026-11-02T14:24:53.597Z"
+    recorded_at: "2026-11-02T14:24:53.597Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvzcp89l-y379bx
+    kind: test
+    status: passed
+    started_at: "2026-11-02T14:25:01.314Z"
+    finished_at: "2026-11-02T14:25:11.193Z"
+    recorded_at: "2026-11-02T14:25:11.193Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/CONFIGURATION.md,project
+close_reason: Starting work now respects open declared blockers through one shared admission check governed by governance.start_blocker_enforcement
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-urzubi
+  gate_id: "tests/unit/sdk/lifecycle/start-blockers.spec.ts (update --status in_progress, claim --start, claim --next --start and start-task refuse start_blocked_by_open_dependency before any write)"
+  negative_control: "Run pm update <id> --status in_progress on an item whose blocked_by target is open against the published 2026.11.2 CLI: it succeeds silently and validate later reports non_blocked_status_has_blocked_by; the new spec asserts the typed refusal and that a refused claim --start leaves no assignee"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""

@@ -963,6 +963,45 @@ pm release <id>
 `--author` on claim/release flows, not a metadata update. Use `--force` only when
 explicitly overriding terminal-state or lock conflicts.
 
+Starting work respects declared blockers
+([pm-urzubi](../.agents/pm/issues/pm-urzubi.toon)). `pm update <id> --status
+in_progress`, `pm claim <id> --start`, `pm claim --next --start` and the
+`start-task` action refuse with `start_blocked_by_open_dependency` (exit 4)
+while a `blocked_by` target is still open. The check runs before any write, so
+a refused `claim --start` leaves no claim. The refusal lists the open blockers in
+`details.open_blockers` and suggests the exact `pm update` that drops the edge.
+A terminal blocker never blocks, and an update that removes the blocker in the
+same call is admitted. `--force` starts anyway and records
+`start_blocker_override:<id>:<blockers>`. `governance.start_blocker_enforcement`
+selects `strict` (default), `warn` (start and record
+`start_with_open_blockers:<id>:<blockers>`), or `off`.
+
+### Expected revisions (`--expect-hash`)
+
+Read-decide-write agents guard a write with the revision they decided on
+([pm-gh1576](../.agents/pm/features/pm-gh1576.toon)). `pm get <id> --json`
+reports `item_hash`. The global `--expect-hash <item_hash>` flag makes every
+locked write the command makes to that item refuse with `item_revision_conflict`
+(exit 4) if the item changed since:
+
+```bash
+H=$(pm get pm-a1b2 --json | jq -r .item_hash)
+pm close pm-a1b2 "Delivered by PR 1" --expect-hash "$H"
+pm update-many --ids pm-a1b2,pm-c3d4 --priority 1 \
+  --expect-hash "pm-a1b2=$H1" --expect-hash "pm-c3d4=$H2"
+```
+
+A bare hash binds to the command's `<id>` argument. `<id>=<item_hash>`
+(repeatable or comma-separated) names targets explicitly and is required for
+commands without one item argument. The refusal reports `expected_revision`,
+`current_revision`, and `details.changes_since` (the newest 10 history entries
+since the declared revision, with their top-level `fields`). Nothing is written
+to the refused item. Read commands refuse the flag with
+`expect_hash_requires_mutation`. An item the command never wrote produces the
+warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. MCP
+tools accept the same tokens as `expectHash`; the SDK exposes
+`withExpectedItemRevisions` (see [SDK](SDK.md#expected-item-revisions)).
+
 ## Logs
 
 ```bash

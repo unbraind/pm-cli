@@ -43,6 +43,8 @@ export interface GlobalOptions {
   profile?: boolean;
   /** Invocation-wide mutation author override. */
   author?: string;
+  /** Expected item revisions (`<item_hash>` or `<id>=<item_hash>`) every locked item write must still match. */
+  expectHash?: string[];
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
 }

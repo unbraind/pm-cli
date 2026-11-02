@@ -3,6 +3,7 @@
  * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
 import { attachPreflightWarnings, attachSerializedPreflightWarnings, emitPreflightWarning, runWithPreflightWarnings } from "./preflight-warnings.js";
+import { bindInvocationExpectedRevisions, parseWithInvocationRevisionScope } from "./expected-revisions.js";
 import { Command,CommanderError } from "commander";
 import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
@@ -1539,6 +1540,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       await startActiveSentryCommandTracing(commandPath, commandArgs, commandOptions);
       await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, fallbackPmRoot, defaultPreflightDecision());
       await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, fallbackPmRoot);
+      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, expectHash: globalOptions.expectHash, pmRoot: fallbackPmRoot });
       return;
     }
 
@@ -1591,6 +1593,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
 
     await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, runtimeExtensions.pmRoot, preflightDecision);
     await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, runtimeExtensions.pmRoot);
+    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, expectHash: globalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot });
 
     /* c8 ignore next */
     const migrationWarnings = preflightDecision.run_extension_migrations
@@ -2211,18 +2214,20 @@ async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: 
       bootstrapGlobal.noExtensions,
       loadRuntimeExtensionSnapshot,
     );
-    await runWithDiscoveredContextIntentContracts(
-      {
-        pmRoot: invocationPmRoot,
-        packages: intentSnapshot?.contextIntentPackages,
-      },
-      () =>
-        runWithHarnessDetectionSignals(
-          { env: { ...process.env, PM_PATH: invocationPmRoot }, argv: invocationProcessArgv, cwd: process.cwd() },
-          () => runWithWorkspaceHarnessSignalDescriptors(invocationSettings.agent_identity!.harness_signals, () => program.parseAsync(invocationProcessArgv), {
-            probesEnabled: invocationSettings.agent_identity?.probes_enabled,
-          }),
-        ),
+    await parseWithInvocationRevisionScope((parse) =>
+      runWithDiscoveredContextIntentContracts(
+        {
+          pmRoot: invocationPmRoot,
+          packages: intentSnapshot?.contextIntentPackages,
+        },
+        () =>
+          runWithHarnessDetectionSignals(
+            { env: { ...process.env, PM_PATH: invocationPmRoot }, argv: invocationProcessArgv, cwd: process.cwd() },
+            () => runWithWorkspaceHarnessSignalDescriptors(invocationSettings.agent_identity!.harness_signals, () => parse(() => program.parseAsync(invocationProcessArgv)), {
+              probesEnabled: invocationSettings.agent_identity?.probes_enabled,
+            }),
+          ),
+      ),
     );
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });

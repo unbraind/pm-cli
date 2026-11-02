@@ -1307,8 +1307,16 @@ atomic evidence-backed completion tracked by
 commands that must coordinate several SDK mutations. A plan supplies a stable
 transaction id plus ordered steps. Each step can inspect its durable state,
 apply an idempotent forward mutation, and append an idempotent compensation.
-The coordinator serializes transaction writers with one workspace lock and
+The coordinator serializes transaction coordinators with one workspace lock and
 persists `.agents/pm/transactions/sdk/<transaction-id>.json` after every step.
+That lock does not exclude ordinary writers ([GH-1620](https://github.com/unbraind/pm-cli/issues/1620)):
+`update`, `close`, `pm comments --add` and every other SDK, CLI or MCP mutation
+take per-item locks, so a peer can commit between a step's `inspect()` and
+`apply()`. A step that decides from what it read guards its write with an
+[expected item revision](#expected-item-revisions): capture `readItemRevision()`
+in `inspect()` and run the write inside `withExpectedItemRevisions()`. The
+write then refuses with `item_revision_conflict` instead of overwriting the
+peer's change, and the transaction compensates.
 Before invoking a pending step, it also persists that step's durable ownership
 marker. Recovery and compensation therefore distinguish mutations begun by
 this transaction from matching domain state that existed before the attempt.
@@ -1347,6 +1355,63 @@ or a peer write before the restore lock refuse with
 failures and the journal keeps recovery data. Repeated compensation recognizes
 its durable marker even when a peer adds context afterward. Legacy timestamp
 receipts remain supported, with ambiguous partial effects refused.
+
+### Expected item revisions
+
+Expected-revision preconditions are tracked by
+[pm-gh1576](../.agents/pm/features/pm-gh1576.toon).
+
+Read-decide-write agents and packages guard a write with the revision their
+decision was based on. Every current `pm get` / `PmClient.get` read reports
+`item_hash`, the SHA-256 of the canonical item document and the same value as
+the item's latest history `after_hash`; `readItemRevision(id)` returns it
+without the rest of the read. Run the write inside `withExpectedItemRevisions`:
+
+```ts
+import { PmClient, isItemRevisionConflict } from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({ pmRoot });
+const { item_hash } = await pm.readItemRevision(id);
+// ...decide from what was read...
+try {
+  const { result, unchecked } = await pm.withExpectedItemRevisions(
+    [{ id, itemHash: item_hash }],
+    () => pm.close(id, "Delivered by PR 1"),
+  );
+} catch (error) {
+  if (!isItemRevisionConflict(error)) throw error;
+  // error.context.current_revision and error.context.details.changes_since
+  // describe what changed; re-read, decide again, retry with the new hash.
+}
+```
+
+The check runs inside the locked item store, after the item lock is held and
+before anything is written. It therefore covers every item write the wrapped
+operation makes: lifecycle commands, annotations, linked files/docs/tests,
+dependency edits, `restore`, `delete`, bulk transactions and extension commands
+that mutate through the SDK. A mismatch refuses with `item_revision_conflict`
+(exit 4). The refusal carries `item_id`, `expected_revision`,
+`current_revision` and `details` with `changes_since`, the newest
+10 history entries after the declared revision
+(`op`, `author`, `ts`, top-level `fields`), plus `changes_since_omitted`.
+`expected_revision_recorded: false` means no history entry ever had that hash.
+After one of the operation's own writes commits, the expectation advances to
+that revision, so a multi-write composition such as `claim --start` does not
+refuse itself; an interleaved peer write still refuses the next step. The
+result lists `checked` ids and `unchecked` ids that the operation never wrote:
+an unchecked expectation proved nothing.
+
+Transports use the same grammar. The CLI's global `--expect-hash <item_hash>`
+binds to the command's `<id>`; `--expect-hash <id>=<item_hash>` (repeatable or
+comma-separated) names targets explicitly and is required for bulk commands.
+MCP tools and `PmClient.run` accept `expectHash` (string or string array) on
+every item-writing action. A native read action refuses the flag with
+`expect_hash_requires_mutation`, a malformed hash refuses with
+`expect_hash_invalid`, and an expectation no write reached is reported as the
+warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. This
+precondition guards the gap between an agent's read and its write; lease
+fencing ([pm-gh1549](../.agents/pm/issues/pm-gh1549.toon)) still guards the
+write itself against lock takeover, and the two compose.
 
 ### Schema evolution and workspace history
 

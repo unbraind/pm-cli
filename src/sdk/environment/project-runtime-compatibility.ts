@@ -72,6 +72,7 @@ const MUTATING_COMMANDS = new Set([
 ]);
 const GLOBAL_VALUE_FLAGS = new Set([
   "--author",
+  "--expect-hash",
   "--output-budget",
   "--output-format",
   "--output-include",

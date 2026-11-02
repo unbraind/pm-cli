@@ -37,6 +37,7 @@ export const PM_GLOBAL_FLAGS_WITH_VALUE = new Set([
   "--pm-path",
   "--path",
   "--author",
+  "--expect-hash",
 ]);
 /** Value-bearing flags accepted before item positionals by item-referencing commands. */
 export const PM_ITEM_REFERENCE_FLAGS_WITH_VALUE: Readonly<

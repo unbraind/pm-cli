@@ -84,5 +84,10 @@ export function createPmCliProgram(version: string): Command {
     .option("--all", "Reveal every public command and compatibility alias")
     .option("--profile", "Print deterministic timing diagnostics")
     .option("--author <id>", "Override mutation author for this invocation")
+    .option(
+      "--expect-hash <revision>",
+      "Refuse each item write unless the item is still at this item_hash from pm get; repeat or use <id>=<item_hash> for several items",
+      (value: string, previous: string[] | undefined) => [...(previous ?? []), value],
+    )
     .exitOverride();
 }

@@ -72,6 +72,7 @@ export const PLAN_SHOW_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
 
 const GET_ROOT_PROJECTION_FIELDS = [
   "body",
+  "item_hash",
   "linked",
   "claim_state",
   "children",

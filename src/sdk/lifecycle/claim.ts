@@ -22,6 +22,7 @@ import { wrapOwnershipConflict } from "../annotations.js";
 import { resolveItemOwnershipConflict } from "../ownership-source.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
+import { admitStartTransition } from "./start-blockers.js";
 import { resolveTypeWorkflows } from "../../core/schema/type-workflows.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
 import type { ItemMetadata, PmSettings } from "../../types/index.js";
@@ -261,8 +262,12 @@ export async function runClaim(
         (field) => document.metadata[field] !== ownership[field],
       );
       Object.assign(document.metadata, ownership);
+      const fromStatus = document.metadata.status;
       const { changedFields: startedFields, warnings: startWarnings, ...started } =
         applyClaimStart(document.metadata, options.start === true, settings, statusRegistry);
+      startWarnings.push(...await admitStartTransition({
+        pmRoot, settings, metadata: document.metadata, fromStatus, registry: statusRegistry, force, requested: options.start === true,
+      }));
       startEvidence = started;
       mutationWarnings.push(...startWarnings);
       return {

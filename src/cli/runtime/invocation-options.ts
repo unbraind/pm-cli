@@ -165,6 +165,8 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[], ex
   delete scoped.outputBudget;
   delete scoped.outputFormat;
   delete scoped.outputSession;
+  // pm-gh1576: expected revisions bind through the invocation scope, never as a command field.
+  delete scoped.expectHash;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   for (const [key, value] of Object.entries(looseOptions)) {

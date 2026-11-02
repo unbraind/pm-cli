@@ -80,7 +80,7 @@ export interface WorkspaceTransactionTransitionContext {
 
 /** Options accepted by the public workspace transaction coordinator. */
 export interface CommitWorkspaceTransactionOptions {
-  /** Tracker root that owns the journal and workspace-wide writer lock. */
+  /** Tracker root that owns the journal and the lock that serializes transaction coordinators. */
   pmRoot: string;
   /** Stable idempotency key reused to recover an interrupted transaction. */
   transactionId: string;
@@ -92,7 +92,7 @@ export interface CommitWorkspaceTransactionOptions {
   recoveryData?: WorkspaceTransactionJsonValue;
   /** Lock lifetime in seconds; size this above the longest expected attempt. */
   lockTtlSeconds?: number;
-  /** Maximum time to wait for the workspace writer lock. */
+  /** Maximum time to wait for the transaction coordinator lock. */
   lockWaitMs?: number;
   /** Optional transition observer used by telemetry and deterministic crash tests. */
   onTransition?(
@@ -643,10 +643,17 @@ async function compensateAppliedSteps(
 }
 
 /**
- * Commit an ordered set of idempotent SDK mutations under one workspace writer
- * lock. The durable journal resumes interrupted forward work, while ordinary
- * failures append reverse-order compensations. This provides atomic logical
- * replay without deleting or rewriting immutable domain histories.
+ * Commit an ordered set of idempotent SDK mutations under one workspace
+ * transaction lock. The durable journal resumes interrupted forward work, while
+ * ordinary failures append reverse-order compensations. This provides atomic
+ * logical replay without deleting or rewriting immutable domain histories.
+ *
+ * Isolation (GH-1620): the lock serializes transaction coordinators only.
+ * Ordinary SDK, CLI and MCP writers take per-item locks and do not wait for it,
+ * so a peer can commit between a step's `inspect()` and `apply()`. A step that
+ * decides from what it read must guard its write, for example by capturing
+ * `readItemRevision()` in `inspect()` and running `apply()` inside
+ * `withExpectedItemRevisions()`, which refuses with `item_revision_conflict`.
  */
 export async function commitWorkspaceTransaction(
   options: CommitWorkspaceTransactionOptions,

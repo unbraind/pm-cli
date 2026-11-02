@@ -10,7 +10,7 @@ import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { readLocatedItemSnapshot } from "../../core/store/item-store.js";
-import { assertItemMutationPreconditions } from "../../core/store/item-mutation-precondition.js";
+import { advanceItemMutationPreconditions, assertItemMutationPreconditions } from "../../core/store/item-mutation-precondition.js";
 import { readHistorySnapshot } from "../../core/history/read.js";
 import { verifyHistoryRewriteNoDrift } from "../../core/history/history-rewrite.js";
 import { resolveHistorySubject } from "../history/subject.js";
@@ -463,6 +463,7 @@ export async function runRestore(
       }
       return derivedIndexWarnings;
     });
+    advanceItemMutationPreconditions(pmRoot, restoredDocument);
     const hookWarnings = await runRestoreWriteHooks({
       restoredItemPath,
       historyPath: subject.historyPath,

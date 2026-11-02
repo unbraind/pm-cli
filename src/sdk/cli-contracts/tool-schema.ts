@@ -166,6 +166,33 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
   assurance: ["fullChangedFields", "idOnly"],
 };
 
+/**
+ * Actions whose locked item writes honour the `expectHash` precondition
+ * (pm-gh1576). Every listed action writes an existing item; `create` and
+ * `copy` only create new ones, so a revision has nothing to guard there.
+ */
+const PM_TOOL_EXPECT_HASH_ACTIONS: ReadonlySet<string> = new Set([
+  "update",
+  "item-reopen",
+  "close",
+  "claim",
+  "release",
+  "start-task",
+  "pause-task",
+  "close-task",
+  "restore",
+  "append",
+  "update-many",
+  "close-many",
+  "delete",
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "docs",
+  "test",
+]);
+
 /** Create-compatible metadata parameters reused by Plan materialization and CLI registration. */
 export const PLAN_CREATE_METADATA_PARAMETER_KEYS = [
   "createMode",
@@ -1738,6 +1765,7 @@ export function pmToolActionParameterKeys(
       ? PM_TOOL_READ_OUTPUT_PARAMETER_KEYS
       : []),
     ...mutationParameterKeys,
+    ...(PM_TOOL_EXPECT_HASH_ACTIONS.has(action) ? ["expectHash"] : []),
     ...(contract.required ?? []),
     ...(contract.optional ?? []),
   ]);

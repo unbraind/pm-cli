@@ -60,6 +60,8 @@ const flagToOptionKey = (flag: string): string =>
     );
 const ITEM_ENVELOPE_KEYS = [
   "item",
+  // pm-gh1576: the revision a pm get read reported; read-only, so piping get output back stays valid.
+  "item_hash",
   "linked",
   "schedule",
   "claim_state",

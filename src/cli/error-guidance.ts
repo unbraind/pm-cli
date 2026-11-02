@@ -56,6 +56,10 @@ interface GuidanceMessage {
   claimedAt?: string | null;
   /** Whether the holder arrived through a claim or an assignment. */
   claimSource?: PmCliErrorContext["claim_source"];
+  /** Revision a refused compare-and-set write expected. */
+  expectedRevision?: PmCliErrorContext["expected_revision"];
+  /** Revision a refused compare-and-set write found. */
+  currentRevision?: PmCliErrorContext["current_revision"];
   code: string;
   type: string;
   title: string;
@@ -109,8 +113,8 @@ export interface PreflightWarningDiagnostics {
   }>;
 }
 
-/** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
-export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
+/** Structured refusal fields shared by the JSON envelope and the error classification. */
+export interface StructuredRefusalDiagnostics {
   /** Completed durable writes, with paths relative to the selected tracker. */
   side_effects?: PmCliErrorContext["side_effects"];
   /** Verified admission refusal before any mutation. */
@@ -133,6 +137,10 @@ export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
   claimed_at?: string | null;
   /** Whether the holder arrived through an explicit claim or a metadata assignment. */
   claim_source?: PmCliErrorContext["claim_source"];
+  /** Revision a refused compare-and-set write expected, or null when it required absence. */
+  expected_revision?: PmCliErrorContext["expected_revision"];
+  /** Revision a refused compare-and-set write found, or null when the target was absent. */
+  current_revision?: PmCliErrorContext["current_revision"];
   /** Schema type that determines the shape and validation rules for this value. */
   type: string;
   /** Value that configures or reports code for this contract. */
@@ -143,6 +151,10 @@ export interface JsonErrorEnvelope extends PreflightWarningDiagnostics {
   detail: string;
   /** Value that configures or reports required for this contract. */
   required: string;
+}
+
+/** Documents the json error envelope payload exchanged by command, SDK, and package integrations. */
+export interface JsonErrorEnvelope extends PreflightWarningDiagnostics, StructuredRefusalDiagnostics {
   /** Value that configures or reports exit code for this contract. */
   exit_code: number;
   /** Value that configures or reports why for this contract. */
@@ -203,39 +215,7 @@ export function projectLeanErrorEnvelope(
 }
 
 /** Documents the error classification payload exchanged by command, SDK, and package integrations. */
-export interface ErrorClassification {
-  /** Completed durable writes, with paths relative to the selected tracker. */
-  side_effects?: PmCliErrorContext["side_effects"];
-  /** Verified admission refusal before any mutation. */
-  changed?: false;
-  /** Ordered mutation that failed semantic preview validation. */
-  transaction_operation?: PmCliErrorContext["transaction_operation"];
-  /** Bounded tracker-relative preview refusal coordinate. */
-  preview_storage?: PmCliErrorContext["preview_storage"];
-  /** Exact item identity attached to a storage diagnostic. */
-  item_id?: string;
-  /** Verified retained deletion and its recoverable version. */
-  tombstone?: PmCliErrorContext["tombstone"];
-  /** Lease a refused lock_lost commit held. */
-  lease?: PmCliErrorContext["lease"];
-  /** Lock generation observed at a refused lock_lost commit, or null when none exists. */
-  current_owner?: PmCliErrorContext["current_owner"];
-  /** Principal holding the item behind an already_claimed_by refusal. */
-  claimed_by?: string;
-  /** When that holder took the item, or null when history was silent. */
-  claimed_at?: string | null;
-  /** Whether the holder arrived through an explicit claim or a metadata assignment. */
-  claim_source?: PmCliErrorContext["claim_source"];
-  /** Schema type that determines the shape and validation rules for this value. */
-  type: string;
-  /** Value that configures or reports code for this contract. */
-  code: string;
-  /** Value that configures or reports title for this contract. */
-  title: string;
-  /** Value that configures or reports detail for this contract. */
-  detail: string;
-  /** Value that configures or reports required for this contract. */
-  required: string;
+export interface ErrorClassification extends StructuredRefusalDiagnostics {
   /** Value that configures or reports why for this contract. */
   why?: string;
   /** Value that configures or reports examples for this contract. */
@@ -931,6 +911,13 @@ function attachItemDiagnostics(
     payload.claim_source = message.claimSource ?? "unknown";
     payload.item_id = message.itemId;
   }
+  // Compare-and-set refusals (item revisions, settings sections) return both
+  // revisions so the caller can re-decide without another read.
+  if (message.currentRevision !== undefined) {
+    payload.expected_revision = message.expectedRevision ?? null;
+    payload.current_revision = message.currentRevision;
+    if (message.itemId !== undefined) payload.item_id = message.itemId;
+  }
 }
 
 /** Attach optional actionable fields shared by JSON and classification envelopes. */
@@ -1340,6 +1327,8 @@ function applyPmCliErrorContext(
     claimedBy: context.claimed_by,
     claimedAt: context.claimed_at,
     claimSource: context.claim_source,
+    expectedRevision: context.expected_revision,
+    currentRevision: context.current_revision,
     availableDependencies: context.available_dependencies,
     recovery,
     ...resolveGuidanceDetails(context),

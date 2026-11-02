@@ -10,6 +10,7 @@ export const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>([
   "--pm-path",
   "--path",
   "--author",
+  "--expect-hash",
   "--output-include",
   "--output-limit",
   "--output-budget",

@@ -37,6 +37,7 @@ export const RESERVED_EXTENSION_HOST_FLAGS: readonly ReservedExtensionHostFlag[]
     { flag: "--profile" },
     { flag: "--help" },
     { flag: "--author", value_name: "id" },
+    { flag: "--expect-hash", value_name: "revision" },
   ]);
 
 /** Every canonical and aliased host flag spelling reserved from extensions. */
