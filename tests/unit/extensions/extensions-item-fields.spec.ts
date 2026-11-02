@@ -104,6 +104,58 @@ describe("extensions item field runtime wiring", () => {
     expect(parseRegisteredItemFieldAssignments(["team=platform"], withFields([{ name: "team", type: "string" }]), resolveCoreFieldRecovery, resolveForUpdate)).toEqual({ team: "platform" });
   });
 
+  it("routes bulk refusals under update-many's own scope and never advertises a route the invocation already used (pm-wftvem)", () => {
+    const registry = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "bulk_note", type: "string", commands: ["update_many"] },
+        { key: "row_note", type: "string", commands: ["update"] },
+        { key: "gate_evidence", type: "string", cli_aliases: ["ge"], commands: ["create", "update", "update_many"] },
+        { key: "gate_twin", metadata_key: "gate_evidence", type: "string", cli_flag: "gate-twin", commands: ["create"] },
+      ],
+    } as never);
+    const refusal = (raw: string, resolver: ReturnType<typeof createSchemaFieldRecoveryResolver>): PmCliError => refuseFieldAssignment(raw, resolver);
+    const bulk = refusal("bulk_note=x", createSchemaFieldRecoveryResolver(registry, "update_many"));
+    expect(bulk.message).toBe("--field bulk_note is a project-schema field; set it with its declared flag --bulk-note");
+    expect(bulk.context.nextSteps).toEqual([
+      "Use the declared project-schema flag: pm update-many <selection flags> --bulk-note <value>",
+      "SDK: pass bulkNote in the update options of the update-many request.",
+      "Inspect the value contract with: pm schema show-field bulk_note",
+    ]);
+    // The single-item scope cannot set a bulk-only field, and the bulk scope cannot set a single-item one.
+    expect(refusal("bulk_note=x", createSchemaFieldRecoveryResolver(registry, "update")).context.nextSteps?.[0]).toBe(
+      'The project schema declares "bulk_note" for update_many only; update cannot set it.',
+    );
+    expect(refusal("row_note=x", createSchemaFieldRecoveryResolver(registry, "update_many")).context.nextSteps?.[0]).toBe(
+      'The project schema declares "row_note" for update only; update-many cannot set it.',
+    );
+    // update-many reserves the row surface plus its own selection flags.
+    const bulkHost = hostOwnedOptions("update_many");
+    for (const option of hostOwnedOptions("update").options) expect(bulkHost.options.has(option)).toBe(true);
+    expect([bulkHost.flags.has("--filter-status"), bulkHost.options.has("filterStatus")]).toEqual([true, true]);
+    // An invocation that already sets the key through any declared spelling gets no executable route:
+    // a retry would carry two values for one field.
+    for (const [command, options] of [["update", { ge: "old" }], ["update_many", { gateEvidence: "old" }], ["create", { ge: "old" }]] as const) {
+      const conflicted = refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, command, options));
+      expect(conflicted.message).toBe("--field gate_evidence is a project-schema field, not an extension field");
+      expect(conflicted.context.recovery).toEqual({ provided_fields: ["gate_evidence"] });
+      expect(conflicted.context.nextSteps?.[0]).toBe(
+        'This invocation already sets "gate_evidence" through a declared flag or option; drop the --field gate_evidence assignment so the field receives one value.',
+      );
+    }
+    // A storage twin's spelling counts only in the scope that applies it; absent values leave the route.
+    expect(refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, "update", { gateTwin: "old" })).context.recovery?.suggested_flags).toEqual(["--gate-evidence"]);
+    expect(refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, "create", { gateTwin: "old" })).context.nextSteps?.[0]).toContain("already sets");
+    expect(refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, "update", { title: "unrelated" })).context.recovery?.suggested_flags).toEqual(["--gate-evidence"]);
+    // The refused --field input itself never counts, even when a declaration reads the `field` option.
+    const fieldAlias = resolveRuntimeFieldRegistry({
+      fields: [{ key: "routing_note", type: "string", cli_aliases: ["field"], commands: ["create", "update", "update_many"] }],
+    } as never);
+    for (const command of ["create", "update", "update_many"] as const) {
+      const routed = refusal("routing_note=new", createSchemaFieldRecoveryResolver(fieldAlias, command, { field: ["routing_note=new"] }));
+      expect(routed.context.recovery).toEqual({ provided_fields: ["routing_note"], suggested_flags: ["--routing-note"] });
+    }
+  });
+
   it("advertises only CLI flags and SDK options that set the refused schema field alone (pm-wftvem)", () => {
     const registry = resolveRuntimeFieldRegistry({
       fields: [

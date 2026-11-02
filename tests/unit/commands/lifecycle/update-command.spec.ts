@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlyUpdateCommand, runUpdate, type UpdateCommandOptions } from "../../../../src/cli/commands/lifecycle/update.js";
 import { runCreate } from "../../../../src/cli/commands/lifecycle/create.js";
+import { runUpdateMany } from "../../../../src/cli/commands/lifecycle/update-many.js";
 import { parseCommandUnsetTargets } from "../../../../src/sdk/lifecycle/shared-unset-fields.js";
 import { applyRepeatedTerminalStateUpdate } from "../../../../src/sdk/lifecycle/repeated-terminal-state.js";
 import type { CloseRouteContext } from "../../../../src/sdk/lifecycle/update.js";
@@ -4045,6 +4046,53 @@ describe("runUpdate", () => {
       const updated = await runUpdate(id, { reviewUrl: "https://example.test/r/1", message: "declared channel" }, { path: context.pmPath });
       expect(updated.changed_fields).toContain("review_link");
       expect((updated.item as { review_link?: string }).review_link).toBe("https://example.test/r/1");
+    });
+  });
+
+  it("reports a bulk row's schema-field refusal under update-many and withholds a route the invocation already used (pm-wftvem)", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...settings.schema,
+        fields: [
+          { key: "bulk_note", type: "string", commands: ["update_many"] },
+          { key: "reviewUrl", metadata_key: "review_link", type: "string", cli_flag: "review-url", cli_aliases: ["rv"], commands: ["update"] },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      const id = createTask(context, "update-many-schema-field-route");
+      const located = await locateItem(context.pmPath, id);
+      if (!located) throw new Error("created item not found");
+      const before = await readFile(located.itemPath, "utf8");
+
+      const bulk = await runUpdateMany(
+        { list: { ids: id }, update: { field: ["bulk_note=x"], priority: "3" }, checkpoint: false },
+        { path: context.pmPath },
+      );
+      expect(bulk.rows).toEqual([{
+        id,
+        status: "failed",
+        error: "--field bulk_note is a project-schema field; set it with its declared flag --bulk-note",
+      }]);
+
+      // The same invocation also sets review_link through its alias: no retry may carry a second value.
+      await expect(
+        runUpdate(id, { field: ["review_link=https://example.test/new"], rv: "https://example.test/old" } as UpdateCommandOptions, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "project_schema_field_requires_declared_flag",
+          recovery: { provided_fields: ["review_link"] },
+          nextSteps: [
+            'This invocation already sets "reviewurl" through a declared flag or option; drop the --field review_link assignment so the field receives one value.',
+            "Inspect the value contract with: pm schema show-field reviewurl",
+          ],
+        },
+      });
+      expect(await readFile(located.itemPath, "utf8")).toBe(before);
     });
   });
 

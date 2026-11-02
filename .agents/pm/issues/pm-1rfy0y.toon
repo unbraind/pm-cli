@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,linked-tests,recovery
 created_at: "2026-10-26T00:21:26.298Z"
-updated_at: "2026-11-02T06:47:49.868Z"
+updated_at: "2026-11-02T07:24:23.554Z"
 closed_at: "2026-11-01T21:06:46.090Z"
 completed_at: "2026-11-01T21:06:46.090Z"
 author: "harness:codex"
@@ -29,6 +29,8 @@ comments[6]{created_at,author,text}:
   "2026-11-01T22:35:05.014Z","harness:claude-code","Codex review round 2 on PR #1649: three findings on this item, all verified and fixed.\n- Conflicting command/cmd values collapsed silently: they now refuse, matching the add parser. Equal aliases are still accepted.\n- A replacement invoking pm test-all got a retry the add path would refuse. The recursion guard (assertNoRecursiveTestAllCommand and its helpers) moved from execution.ts to linked-command-detection.ts so update.ts can share it without an import cycle; the refusal now carries that reason and no retry.\n- The retry dropped explicit controls. --author, --message and --force from the refused edit are now appended to the retry, so ownership and provenance match the request.\nThe command-edit refusal is split into resolveRequestedCommand, admitReplacementEntry and replacementControlArgs to stay under the complexity cap.\n"
   "2026-11-01T23:05:40.754Z","harness:claude-code","CodeRabbit full review on PR #1649 (head f7e12f69b): fixed an own scope: undefined in the patch overriding the selected scope (undefined now means not supplied; only null clears), and the SDK retry hint now names the global/tracker argument. The alias-conflict and author/force findings were already fixed in round 2. Two concurrency findings, removal binding and identity re-check between refusal and retry, need an atomic replacement primitive under one item lock and are filed as pm-5igljl. LINKED_TEST_EDITS.md notes the separate-mutation race.\n"
   "2026-11-02T06:47:49.868Z","harness:claude-code","DeepScan (a required merge check) reported 1 new issue on every head of PR #1649: defect 239491346, NULL_POINTER (high), in tests/integration/linked-tests/linked-test-editing.integration.spec.ts. The command-replacement case read .suggested_retry_args off sdkRefusal?.context?.recovery, which may be undefined. Fixed with an explicit undefined guard that fails the test with a clear message. Found through DeepScan's unauthenticated dashboard API (pulls/<prid> lists newDefectIds; projects/32092/defects/<did> gives the rule, message and path), because the Chrome extension was not connected.\n"
+notes[1]{created_at,author,text}:
+  "2026-11-02T07:24:23.554Z","harness:claude-code","PR #1649 CodeRabbit round on 3b61b351a: the refusal nextSteps called the remove-plus-add retry atomic. Only the retry's own write is atomic, and it selects the entry by current command or list position, so a concurrent writer can change the target. The text now names a history-recorded write and tells agents to re-list first if another writer may have changed the tests. The race itself stays owned by pm-5igljl."
 files[8]{path,scope}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project

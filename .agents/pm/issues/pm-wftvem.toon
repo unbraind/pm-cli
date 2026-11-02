@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-27T22:32:59.271Z"
-updated_at: "2026-11-02T06:09:24.014Z"
+updated_at: "2026-11-02T07:39:24.293Z"
 closed_at: "2026-11-01T21:06:44.522Z"
 completed_at: "2026-11-01T21:06:44.522Z"
 author: "harness:codex"
@@ -35,6 +35,9 @@ comments[13]{created_at,author,text}:
   "2026-11-02T04:54:38.474Z","harness:claude-code","Codex review round 11 on PR #1649: collectRuntimeUpdateFieldValues keeps the first value per metadata_key, so a later declaration sharing a storage key with an earlier active one is shadowed whenever both are supplied. Routes and SDK hints for such a later declaration are now withheld (hasEarlierStorageTwin); the earlier declaration keeps its own.\n"
   "2026-11-02T05:32:52.379Z","harness:claude-code","Codex review round 12 on PR #1649: the storage-twin rule assumed first-write-wins, but the collectors differ (update keeps the first value per metadata_key, create the last), so on create the earlier declaration's route could be silently overridden. Rather than model per-command precedence, routes and SDK hints are now withheld for every declaration that shares its storage key with another declaration active for the same command (hasStorageTwin). That is safe in both directions, and covered for create and update.\n"
   "2026-11-02T06:09:24.014Z","harness:claude-code","Codex review round 13 on PR #1649: the host reservation missed ownershipMetadataBypass and ownershipDependencyBypass, internal update keys that no flag declares. normalizeUpdateOptions clobbers a CLI value for them, and an SDK true activates an ownership bypass. Both are now reserved. hostOwnedOptions is exported, and a spec pins the reservation to every key that normalizeUpdateOptions and normalizeCreateOptions write, so a future internal key cannot be missed silently.\n"
+notes[2]{created_at,author,text}:
+  "2026-11-02T07:24:20.440Z","harness:claude-code","PR #1649 CodeRabbit round on 3b61b351a, two findings. (1) Bulk scope: update-many rows ran the schema-field resolver under the update scope, so an update_many-only field was told update cannot set it. The resolver now takes the invoking scope (from runtimeFieldCommands) and reserves update-many's host options as the union of the update row surface and the update-many flag contracts. Text names pm update-many and the update options of the update-many request. (2) Conflicting retry: pm update --field gate_evidence=new --gate-evidence old rewrote into two values for one flag, and the later one wins. Fixed producer-side, not by scanning argv in the CLI: the resolver reads the invocation options with readRuntimeFieldOptionValue, the reader the mutation itself uses. So any declared flag, alias or SDK option (including a storage twin in scope) withholds suggested_flags. The CLI then builds no retry, and the refusal says the invocation already sets the field. Specs: extensions-item-fields (bulk scope, twins, create/update/update_many) and update-command (runUpdateMany row message, alias conflict leaves the item unchanged)."
+  "2026-11-02T07:39:24.292Z","harness:claude-code","Codex pass 16: the conflict check excludes the refused --field input itself. A declaration aliased to 'field' reads options.field, would find the very assignment being refused, and wrongly report 'already sets'. The resolver now checks the invocation options minus the 'field' key (create, update and update_many covered in extensions-item-fields)."
 files[14]{path,scope}:
   docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
   src/cli/main.ts,project

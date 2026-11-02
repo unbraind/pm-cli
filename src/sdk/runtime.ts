@@ -2702,6 +2702,23 @@ export async function runWithActiveExtensions<T>(
 }
 
 /**
+ * Describe an activation failure for stderr as a primitive string. Console
+ * capture serializes an error's own properties, which could carry
+ * producer-owned diagnostics, so only a string is ever logged; the stack keeps
+ * the failing import or activate() frame diagnosable. The stack is read once
+ * under a guard: a hostile getter must never break the no-extension fallback.
+ */
+function describeActivationFailure(error: unknown): string {
+  try {
+    const stack: unknown = error instanceof Error ? error.stack : undefined;
+    const description: unknown = typeof stack === "string" ? stack : describeUnknownError(error);
+    return typeof description === "string" ? description : "Unknown failure";
+  } catch {
+    return "Unknown failure";
+  }
+}
+
+/**
  * Body of one activation cycle. {@link withActiveExtensions} supplies an
  * async-local registry context; explicit-cwd callers additionally hold the
  * process-wide cwd queue. Returns early with `run(null)` when extensions are
@@ -2769,11 +2786,9 @@ async function withActiveExtensionsExclusively<T>(
     // break a built-in action — fall back to running with no active extensions. Surface
     // the cause on stderr so a broken extension is diagnosable instead of being silently
     // indistinguishable from a workspace that simply has no extensions.
-    // Log the message only: console capture serializes an error's own
-    // properties, which could carry producer-owned diagnostics.
     console.error(
       "[pm-sdk] extension activation failed; continuing without active extensions:",
-      describeUnknownError(error),
+      describeActivationFailure(error),
     );
   }
   try {

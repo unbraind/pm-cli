@@ -1159,9 +1159,20 @@ describe("mcp server branch residual coverage", () => {
         return {
           ...actual,
           loadExtensions: vi.fn(async () => ({ loaded: [] })),
-          activateExtensions: vi.fn(async () => {
-            throw new Error("activation failed");
-          }),
+          // Activation fails with an Error (its stack is logged), a bare value, an Error whose
+          // stack getter throws, and an Error whose message is not a string: only primitives log.
+          activateExtensions: vi.fn()
+            .mockRejectedValueOnce(new Error("activation failed"))
+            .mockRejectedValueOnce("bare activation failure")
+            .mockRejectedValueOnce(Object.defineProperty(new Error("hostile"), "stack", {
+              get: () => {
+                throw new Error("stack getter");
+              },
+            }))
+            .mockRejectedValue(Object.defineProperties(new Error("opaque"), {
+              stack: { value: undefined },
+              message: { get: () => ({ details: { producer: "owned" } }) },
+            })),
           deactivateExtensions: vi.fn(async () => undefined),
         };
       });
@@ -1211,11 +1222,23 @@ describe("mcp server branch residual coverage", () => {
           ),
         });
       });
-      // The swallowed activation failure is surfaced on stderr for diagnosability.
+      // The swallowed activation failure is surfaced on stderr for diagnosability: an
+      // Error as its stack (a primitive string that still names the failing frame).
       expect(errorSpy).toHaveBeenCalledWith(
         "[pm-sdk] extension activation failed; continuing without active extensions:",
-        expect.any(String),
+        expect.stringMatching(/^Error: activation failed\n\s+at /u),
       );
+      // A hostile stack getter and a non-string message still leave the fallback running.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await withTempPmPath(async (context) => {
+          expect(await server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} })).toEqual({ action: "stats" });
+        });
+      }
+      const activationLogs = errorSpy.mock.calls.filter(
+        ([label]) => label === "[pm-sdk] extension activation failed; continuing without active extensions:",
+      );
+      expect(activationLogs.map(([, description]) => typeof description)).toEqual(["string", "string", "string", "string"]);
+      expect(activationLogs.slice(1).map(([, description]) => description)).toEqual(["Unknown failure", "Unknown failure", "Unknown failure"]);
     } finally {
       errorSpy.mockRestore();
     }

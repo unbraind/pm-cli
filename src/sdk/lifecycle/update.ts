@@ -3044,7 +3044,12 @@ function applyRuntimeAndRegisteredFieldMutations(
     context.options.field,
     context.extensionRegistrations,
     resolveCoreFieldRecovery,
-    createSchemaFieldRecoveryResolver(context.runtimeFieldRegistry, "update"),
+    createSchemaFieldRecoveryResolver(
+      context.runtimeFieldRegistry,
+      // A bulk row reports its refusal under update-many's own scope and surface.
+      (context.options.runtimeFieldCommands ?? []).includes("update_many") ? "update_many" : "update",
+      context.options as Record<string, unknown>,
+    ),
   );
   for (const fieldKey of Object.keys(registeredItemFieldUpdates)) {
     if (context.clearItemMetadataKeys.has(fieldKey)) {

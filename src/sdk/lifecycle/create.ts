@@ -2828,7 +2828,7 @@ export async function runCreate(
     resolvedOptions.field,
     extensionRegistrations,
     resolveCoreFieldRecovery,
-    createSchemaFieldRecoveryResolver(runtimeFieldRegistry, "create"),
+    createSchemaFieldRecoveryResolver(runtimeFieldRegistry, "create", resolvedOptions as Record<string, unknown>),
   );
   const runtimeCreateFieldValues = collectRuntimeCreateFieldValues(
     resolvedOptions as Record<string, unknown>,

@@ -269,7 +269,7 @@ function assertCommandIdentityUnchanged(params: {
       code: "linked_test_command_immutable", ...commandImmutableContext(identityKey),
       recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs },
       nextSteps: [
-        "Run the suggested retry: it removes the selected entry and adds the new command in one atomic, history-recorded mutation.",
+        "Run the suggested retry: it removes the selected entry and adds the new command in one history-recorded write. It selects the entry by its current command or list position, so list the linked tests again first if another writer may have changed them.",
         `SDK: runTest(${JSON.stringify(id)}, { ${removal[0] === "--remove" ? "remove" : "removeIndex"}: [...], addJson: [...] }, { path: <the same tracker root> }) with the same values.`,
       ],
     },
