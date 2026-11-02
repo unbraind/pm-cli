@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:ci",dependencies,supply-chain
 created_at: "2026-11-02T09:29:42.682Z"
-updated_at: "2026-11-02T09:40:16.876Z"
+updated_at: "2026-11-02T10:30:25.507Z"
 closed_at: "2026-11-02T09:33:53.521Z"
 completed_at: "2026-11-02T09:33:53.521Z"
 author: "harness:claude-code"
@@ -16,7 +16,7 @@ parent: pm-ogzvx6
 risk: low
 confidence: high
 resolution: "Pinned github/codeql-action init/analyze/upload-sarif to v4.39.1 (9b3254085494), CodSpeedHQ/action to v5.6.0 (78102a468f96) and trufflesecurity/trufflehog to v3.99.7 (31ce31ee1abb) with version input 3.99.7. Every SHA was checked against its dereferenced release tag. All three releases are older than seven days. tests/integration/ci-workflow-contract.spec.ts moved its exact CodSpeed and TruffleHog pins and the TruffleHog version (24 passed). Its CodeQL checks accept any 40-character SHA pin and scorecard.yml is not inspected, so the CodeQL refresh rests on the tag check and actionlint. The cooldown, workflow-permissions and actionlint gates pass. Dependabot GH PR #1651 is closed with a comment linking this item and PR #1653."
-expected_result: "Workflows run the eligible CodeQL, CodSpeed and TruffleHog releases under exact SHA pins, and the contract spec enforces exactly those pins"
+expected_result: "Workflows run the eligible CodeQL, CodSpeed and TruffleHog releases under exact SHA pins verified against their release tags, and the workflow contract spec enforces the exact CodSpeed and TruffleHog pins and the TruffleHog version (its CodeQL checks require only some SHA pin)"
 actual_result: "Workflows pin the eligible CodeQL, CodSpeed and TruffleHog releases by verified SHA. The workflow contract spec enforces the exact CodSpeed and TruffleHog pins and the TruffleHog version, and requires only some SHA pin for CodeQL"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-8skz5z,related,"2026-11-02T09:31:47.070Z","harness:claude-code","cli:update:dep",detected
