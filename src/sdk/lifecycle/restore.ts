@@ -11,6 +11,7 @@ import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { readLocatedItemSnapshot } from "../../core/store/item-store.js";
 import { advanceItemMutationPreconditions, assertItemMutationPreconditions } from "../../core/store/item-mutation-precondition.js";
+import { EMPTY_CANONICAL_DOCUMENT } from "../../core/shared/constants.js";
 import { readHistorySnapshot } from "../../core/history/read.js";
 import { verifyHistoryRewriteNoDrift } from "../../core/history/history-rewrite.js";
 import { resolveHistorySubject } from "../history/subject.js";
@@ -374,8 +375,9 @@ export async function runRestore(
       loadedItemUnderLock,
       history,
     );
-    // A deleted item's current state is an empty tombstone: judge it under its own id.
-    assertItemMutationPreconditions(pmRoot, currentState.document, resolvedId);
+    // With no live file (deleted, or a vanished file) the revision readItemRevision reports is the
+    // empty tombstone, so judge that, not the reconstructed document restore writes from.
+    assertItemMutationPreconditions(pmRoot, loadedItemUnderLock?.document ?? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument), resolvedId);
     restoredDocument.metadata.pm_format_version = normalizeItemFormatVersion(Math.max(requiredItemFormatVersion(restoredDocument.metadata), requiredItemFormatVersion(currentState.document.metadata)));
     assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(pmRoot), requiredItemFormatVersion(restoredDocument.metadata));
     const ownershipWarnings = collectRestoreOwnershipWarnings({

@@ -971,8 +971,10 @@ while a `blocked_by` target is still open. The check runs before any write: the
 explicit `claim <id> --start` judges it under the claim's item lock, and its
 status update judges again under its own lock. When the first check refuses,
 nothing is written. When a blocker opens between the two writes, the start
-refuses and, if it took the item from no owner, releases that claim (fenced, so
-a peer's takeover is never cleared). If the item already had an owner, or that
+refuses and, if it took the item from no owner, releases that claim. The release
+is fenced by assignee and claim principal, so another principal's takeover is
+never cleared; principal is pm's unit of ownership, so a concurrent reclaim by
+the same principal is indistinguishable from the original claim. If the item already had an owner, or that
 release cannot run, the claim stays and the refusal's `why` reports the partial
 completion. The
 refusal lists the open blockers in `details.open_blockers` and suggests the

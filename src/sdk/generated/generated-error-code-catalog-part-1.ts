@@ -102,7 +102,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "blocker_identity_read_failed",
     exit_code: 1,
     sources: ["sdk/query/declared-blockers.ts"],
-    emitting_commands: ["declared-blockers"],
   },
   {
     code: "body_file_conflicts_with_body",
@@ -432,19 +431,16 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "expect_hash_invalid",
     exit_code: 2,
     sources: ["sdk/lifecycle/item-revision.ts"],
-    emitting_commands: ["item-revision"],
   },
   {
     code: "expect_hash_requires_mutation",
     exit_code: 2,
     sources: ["sdk/lifecycle/item-revision.ts"],
-    emitting_commands: ["item-revision"],
   },
   {
     code: "expect_hash_target_required",
     exit_code: 2,
     sources: ["sdk/lifecycle/item-revision.ts"],
-    emitting_commands: ["item-revision"],
   },
   {
     code: "expected_revision_duplicate",
@@ -1056,7 +1052,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
       "sdk/merge/three-way.ts",
       "sdk/query/declared-blockers.ts",
     ],
-    emitting_commands: ["*", "declared-blockers"],
   },
   {
     code: "item_identity_reserved",
@@ -1317,5 +1312,10 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 3,
     stable: true,
     sources: ["sdk/merge/install.ts"],
+  },
+  {
+    code: "merge_settlement_hook_conflict",
+    exit_code: 4,
+    sources: ["sdk/merge/settlement-hook.ts"],
   },
 ];

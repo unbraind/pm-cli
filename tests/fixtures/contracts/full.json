@@ -21527,7 +21527,7 @@
       "class": "generic_failure",
       "code": "blocker_identity_read_failed",
       "emitting_commands": [
-        "declared-blockers"
+        "*"
       ],
       "exit_code": 1,
       "meaning": "Blocker identity read failed condition.",
@@ -22511,7 +22511,7 @@
       "class": "usage",
       "code": "expect_hash_invalid",
       "emitting_commands": [
-        "item-revision"
+        "*"
       ],
       "exit_code": 2,
       "meaning": "Expect hash invalid condition.",
@@ -22528,7 +22528,7 @@
       "class": "usage",
       "code": "expect_hash_requires_mutation",
       "emitting_commands": [
-        "item-revision"
+        "*"
       ],
       "exit_code": 2,
       "meaning": "Expect hash requires mutation condition.",
@@ -22545,7 +22545,7 @@
       "class": "usage",
       "code": "expect_hash_target_required",
       "emitting_commands": [
-        "item-revision"
+        "*"
       ],
       "exit_code": 2,
       "meaning": "Expect hash target required condition.",
@@ -24357,8 +24357,7 @@
       "class": "conflict",
       "code": "item_identity_conflict",
       "emitting_commands": [
-        "*",
-        "declared-blockers"
+        "*"
       ],
       "exit_code": 4,
       "meaning": "Item identity conflict condition.",
@@ -26833,6 +26832,25 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "core/store/item-store.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "start_blocked_by_open_dependency",
+      "class": "conflict",
+      "code": "start_blocked_by_open_dependency",
+      "emitting_commands": [
+        "claim",
+        "start-task",
+        "update"
+      ],
+      "exit_code": 4,
+      "meaning": "Start blocked by open dependency condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/start-blockers.ts"
       ],
       "stability": "provisional"
     },

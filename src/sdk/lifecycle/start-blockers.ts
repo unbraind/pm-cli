@@ -103,7 +103,8 @@ export async function admitStartWithOpenBlockers(params: {
     `Cannot start ${id}: ${open.length === 1 ? "its blocker" : `${open.length} of its blockers`} ${ids} ${open.length === 1 ? "is" : "are"} still open.`,
     EXIT_CODE.CONFLICT,
     {
-      code: START_BLOCKED_REFUSAL_CODE,
+      // A string literal, so the error-code catalog generator discovers it (it equals START_BLOCKED_REFUSAL_CODE).
+      code: "start_blocked_by_open_dependency",
       item_id: id,
       required: `Finish or close the open blocker${open.length === 1 ? "" : "s"} first, remove the blocked_by edge if it no longer applies, or start anyway with --force.`,
       why: "Starting work that a declared blocker still gates would leave an in-progress item that validate reports as non_blocked_status_has_blocked_by. governance.start_blocker_enforcement (strict by default) governs this check.",

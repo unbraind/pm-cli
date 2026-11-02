@@ -479,6 +479,16 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
+  it("guards restoring an item whose file vanished with the tombstone revision it reports", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Vanished file" });
+      await rm(path.join(context.pmPath, "tasks", `${id}.toon`));
+      const vanished = await readItemRevision(id, { pmRoot: context.pmPath });
+      const restored = await withExpectedItemRevisions([{ id, itemHash: vanished.item_hash }], () => client(context).run("restore", { id, target: "1", force: true }), { pmRoot: context.pmPath });
+      expect(restored.checked).toEqual([id]);
+    });
+  });
+
   it("admits the native reopen action and refuses a supplied null", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Reopen guard", status: "closed" });
