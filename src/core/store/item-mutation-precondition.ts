@@ -5,6 +5,7 @@
  * same locked document that will be mutated.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
+import { realpathSync } from "node:fs";
 import path from "node:path";
 import { hashDocument } from "../history/history.js";
 import { EXIT_CODE } from "../shared/constants.js";
@@ -65,6 +66,20 @@ const REVISION_SCOPES_KEY = Symbol.for("@unbrained/pm-cli/item-revision-scopes")
 const revisionScopeRegistry = globalThis as typeof globalThis & { [REVISION_SCOPES_KEY]?: AsyncLocalStorage<readonly ItemRevisionScope[]> };
 const revisionScopes = (revisionScopeRegistry[REVISION_SCOPES_KEY] ??= new AsyncLocalStorage<readonly ItemRevisionScope[]>());
 
+/**
+ * Physical tracker identity for revision scopes: a symlinked or relative spelling
+ * of the same tracker must meet the same expectations. A path that does not exist
+ * keeps its resolved spelling.
+ */
+function canonicalTrackerRoot(pmRoot: string): string {
+  const resolved = path.resolve(pmRoot);
+  try {
+    return realpathSync.native(resolved);
+  } catch {
+    return resolved;
+  }
+}
+
 /** Create an empty, unbound expected-revision scope. */
 export function createItemRevisionScope(): ItemRevisionScope {
   return { entries: new Map() };
@@ -84,7 +99,7 @@ export function bindItemRevisionScope(
   pmRoot: string,
   expectations: readonly { id: string; itemHash: string }[],
 ): void {
-  const resolvedRoot = path.resolve(pmRoot);
+  const resolvedRoot = canonicalTrackerRoot(pmRoot);
   if (scope.pmRoot !== undefined && scope.pmRoot !== resolvedRoot) {
     throw new PmCliError("An expected-revision scope is already bound to another tracker.", EXIT_CODE.USAGE, {
       code: "expected_revision_scope_conflict",
@@ -122,9 +137,12 @@ export function itemRevisionScopeReceipt(scope: ItemRevisionScope): { checked: s
  * its name still matches by filename.
  */
 function matchingRevisionEntries(pmRoot: string, ids: readonly unknown[]): ItemRevisionScopeEntry[] {
-  const resolvedRoot = path.resolve(pmRoot);
+  const scopes = revisionScopes.getStore() ?? [];
+  // Canonicalize only when a scope is active, so ordinary writes pay nothing.
+  if (scopes.length === 0) return [];
+  const resolvedRoot = canonicalTrackerRoot(pmRoot);
   const keys = new Set(ids.filter((id): id is string => typeof id === "string"));
-  return [...new Set((revisionScopes.getStore() ?? []).flatMap((scope) =>
+  return [...new Set(scopes.flatMap((scope) =>
     scope.pmRoot === resolvedRoot ? [...keys].flatMap((key) => scope.entries.get(key) ?? []) : []))];
 }
 
@@ -133,7 +151,7 @@ function matchingRevisionEntries(pmRoot: string, ids: readonly unknown[]): ItemR
  * must read a document to learn its embedded id can skip that read otherwise.
  */
 export function hasActiveItemRevisionScope(pmRoot: string): boolean {
-  const resolvedRoot = path.resolve(pmRoot);
+  const resolvedRoot = canonicalTrackerRoot(pmRoot);
   return (revisionScopes.getStore() ?? []).some((scope) => scope.pmRoot === resolvedRoot && scope.entries.size > 0);
 }
 
@@ -171,11 +189,13 @@ function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, 
  */
 export function assertItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id): void {
   assertItemRevisionExpectations(pmRoot, document, targetId);
-  for (const condition of preconditions.getStore() ?? []) {
-    if (condition.pmRoot === path.resolve(pmRoot) && condition.id === targetId) {
-      condition.validate(document);
-    }
-  }
+  for (const condition of conditionsFor(pmRoot, [targetId, document.metadata.id])) condition.validate(document);
+}
+
+/** Scoped transaction guards bound to either identity of the locked item (probe spelling or embedded id). */
+function conditionsFor(pmRoot: string, ids: readonly unknown[]): ItemMutationPrecondition[] {
+  const resolvedRoot = path.resolve(pmRoot);
+  return (preconditions.getStore() ?? []).filter((condition) => condition.pmRoot === resolvedRoot && ids.includes(condition.id));
 }
 
 /**
@@ -189,16 +209,10 @@ export function advanceItemMutationPreconditions(pmRoot: string, document: ItemD
     const committed = hashDocument(document);
     for (const entry of entries) entry.expected = committed;
   }
-  for (const condition of preconditions.getStore() ?? []) {
-    if (condition.pmRoot === path.resolve(pmRoot) && condition.id === targetId) {
-      condition.committed?.(document);
-    }
-  }
+  for (const condition of conditionsFor(pmRoot, [targetId, document.metadata.id, ...aliasIds])) condition.committed?.(document);
 }
 
-/** Collect target-scoped immutable attribution (keyed by the locked target id) without attributing another caller's writes. */
-export function itemMutationPreconditionHistoryContext(pmRoot: string, targetId: string): Record<string, unknown> {
-  return Object.assign({}, ...(preconditions.getStore() ?? [])
-    .filter((condition) => condition.pmRoot === path.resolve(pmRoot) && condition.id === targetId)
-    .map((condition) => condition.historyContext));
+/** Collect target-scoped immutable attribution (keyed by either identity of the locked item) without attributing another caller's writes. */
+export function itemMutationPreconditionHistoryContext(pmRoot: string, ids: readonly unknown[]): Record<string, unknown> {
+  return Object.assign({}, ...conditionsFor(pmRoot, ids).map((condition) => condition.historyContext));
 }

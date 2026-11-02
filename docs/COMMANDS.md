@@ -1004,7 +1004,8 @@ pm update-many --ids pm-a1b2,pm-c3d4 --priority 1 \
   --expect-hash "pm-a1b2=$H1" --expect-hash "pm-c3d4=$H2"
 ```
 
-A bare hash binds to the command's `<id>` argument. `<id>=<item_hash>`
+A bare hash binds to the command's `<id>` argument (for `plan`, the id after
+the subcommand; `plan create` has none). `<id>=<item_hash>`
 (repeatable or comma-separated) names targets explicitly and is required for
 commands without one item argument. The refusal reports `expected_revision`,
 `current_revision`, and `details.changes_since` (the newest 10 history entries

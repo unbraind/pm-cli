@@ -1408,7 +1408,8 @@ spelling that locates the item (a short id, or a case variant on a
 case-insensitive filesystem) is guarded. The scope is shared process-wide across the
 published SDK entrypoints (`/sdk`, `/sdk/core`, ...), and
 `isItemRevisionConflict` checks the refusal structurally, so mixing entrypoints
-neither drops a guard nor hides its conflict. `PmClient.readItemRevision` and
+neither drops a guard nor hides its conflict. Trackers are compared by physical
+path (`realpath`), so a symlinked spelling of the same tracker is guarded too. `PmClient.readItemRevision` and
 `PmClient.withExpectedItemRevisions` resolve targets inside the client's
 extension context, so extension item types bind exactly as `get` reads them,
 then run the operation outside it, so its own actions (extension commands

@@ -26,9 +26,15 @@ import { emitPreflightWarning } from "./preflight-warnings.js";
 
 const invocationScopes = new AsyncLocalStorage<ItemRevisionScope>();
 
-/** The first declared positional names the item a bare revision binds to. */
+/**
+ * The registered `id` positional names the item a bare revision binds to, at its
+ * actual index (`plan` registers `[subcommand] [id]`). `plan create` takes its
+ * title at that position, so it has no item to bind.
+ */
 function itemArgumentOf(command: Command, commandArgs: readonly string[]): string | undefined {
-  return command.registeredArguments[0]?.name() === "id" ? commandArgs[0] : undefined;
+  const index = command.registeredArguments.findIndex((argument) => argument.name() === "id");
+  if (index === -1 || (command.name() === "plan" && commandArgs[0] === "create")) return undefined;
+  return commandArgs[index];
 }
 
 /**

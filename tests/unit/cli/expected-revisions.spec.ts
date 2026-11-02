@@ -53,6 +53,21 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
     });
   });
 
+  it("binds a bare hash to the registered id argument at its actual index", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Plan-shaped target" });
+      const plan = new Command("plan").argument("[subcommand]").argument("[id]").argument("[step]");
+      const bind = (commandArgs: string[]) =>
+        bindInvocationExpectedRevisions({ command: plan, commandPath: "plan", commandArgs, expectHash: [HASH], pmRoot: context.pmPath });
+      const warnings = await inInvocation(async () => {
+        await bind(["add-step", id]);
+        // plan create takes its title at the id position, so it has no item to bind.
+        await expect(bind(["create", "A new plan title"])).rejects.toMatchObject({ context: { code: "expect_hash_target_required" } });
+      });
+      expect(warnings).toContain(`expect_hash_unchecked:${id}:no_locked_write_reached_this_item`);
+    });
+  });
+
   it("is inert without tokens and leaves unrelated failures untouched", async () => {
     expect(await inInvocation(() => bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [], expectHash: undefined, pmRoot: "/tracker" }))).toBe("");
     const plain = new Error("plain");
