@@ -30,6 +30,10 @@ import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 import { commitWorkspaceTransaction } from "../../../../src/sdk/workspace-transaction.js";
 import type { ItemDocument } from "../../../../src/types/index.js";
 import { pmToolActionParameterKeys } from "../../../../src/sdk/cli-contracts/tool-schema.js";
+import { verifyHistoryRewriteNoDrift } from "../../../../src/core/history/history-rewrite.js";
+import { readSettings } from "../../../../src/core/store/settings.js";
+import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
+import { readFile, writeFile } from "node:fs/promises";
 import { writeTestExtension } from "../../../helpers/extensions.js";
 import { createTestItemId } from "../../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
@@ -374,7 +378,10 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       const current = (await pm.readItemRevision(id)).item_hash;
       const common = { path: context.pmPath, noExtensions: true, author: "bulk-agent", expectHash: `${id}=${stale}` };
       const updated = await runAction({ ...common, action: "update-many", options: { ids: id, priority: "3" } }) as { rows: Array<Record<string, unknown>> };
-      expect(updated.rows).toEqual([expect.objectContaining({ id, status: "failed", error_code: "item_revision_conflict", expected_revision: stale, current_revision: current })]);
+      expect(updated.rows).toEqual([expect.objectContaining({
+        id, status: "failed", error_code: "item_revision_conflict", expected_revision: stale, current_revision: current,
+        details: expect.objectContaining({ expected_revision_recorded: true, changes_since: [expect.objectContaining({ op: "update" })] }),
+      })]);
       const closed = await runAction({ ...common, action: "close-many", options: { ids: id, reason: "bulk" } }) as { rows: Array<Record<string, unknown>> };
       expect(closed.rows).toEqual([expect.objectContaining({ id, status: "failed", error_code: "item_revision_conflict", current_revision: current })]);
     });
@@ -446,6 +453,52 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       await expect(runAction({ ...common, action: "update", id, options: { priority: "3" }, expectHash: null })).rejects.toMatchObject({
         context: { code: "expect_hash_invalid", value: "null" },
       });
+    });
+  });
+
+  it("reports the typed conflict, not generic drift, when a peer wrote during the lock wait", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Drift guard" });
+      const pm = client(context);
+      const settings = await readSettings(context.pmPath);
+      const typeRegistry = resolveItemTypeRegistry(settings);
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const decided = (await pm.readItemRevision(id)).item_hash;
+      const historyBefore = await readFile(historyPath, "utf8");
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const itemBefore = await readFile(itemPath, "utf8");
+      await pm.update(id, { title: "Drift guard, edited by a peer" });
+      const verify = (overrides: Partial<Parameters<typeof verifyHistoryRewriteNoDrift>[0]> = {}) => verifyHistoryRewriteNoDrift({
+        pmRoot: context.pmPath, subject: { id, historyPath }, settings, typeRegistry,
+        historyRawBeforeLock: historyBefore, currentItemRawBeforeLock: itemBefore, operation: "history-redact", ...overrides,
+      });
+      const guarded = (expected: string, overrides?: Partial<Parameters<typeof verifyHistoryRewriteNoDrift>[0]>) =>
+        withExpectedItemRevisions([{ id, itemHash: expected }], () => verify(overrides), { pmRoot: context.pmPath });
+      // History drift and item drift both surface the declared revision's typed conflict.
+      await expect(guarded(decided)).rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: id } });
+      const historyNow = await readFile(historyPath, "utf8");
+      await expect(guarded(decided, { historyRawBeforeLock: historyNow })).rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
+      // A matching revision, or no expectation, keeps the generic drift refusal.
+      const current = (await pm.readItemRevision(id)).item_hash;
+      await expect(guarded(current)).rejects.toThrow("changed while waiting for lock");
+      await expect(verify()).rejects.toThrow("changed while waiting for lock");
+      // An unreadable item cannot be judged, so the history drift refusal stands.
+      await writeFile(itemPath, "not a pm item\n");
+      await expect(guarded(decided)).rejects.toThrow(`History for ${id} changed while waiting for lock`);
+      await writeFile(itemPath, itemBefore);
+      // A deleted subject is judged as its tombstone.
+      await pm.run("delete", { id, force: true });
+      await expect(guarded(current, { historyRawBeforeLock: historyNow })).rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
+    });
+  });
+
+  it("never mutates the action result it decorates with unchecked warnings", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Frozen result" });
+      const frozen = Object.freeze({ warnings: Object.freeze(["kept"]) });
+      const decorated = await dispatchWithExpectedItemRevisions({ action: "comments", expectHash: HASH_A, defaultId: id, pmRoot: context.pmPath, run: async () => frozen });
+      expect(decorated).toEqual({ warnings: ["kept", `expect_hash_unchecked:${id}:no_locked_write_reached_this_item`] });
+      expect(frozen.warnings).toEqual(["kept"]);
     });
   });
 

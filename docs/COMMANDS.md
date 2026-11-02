@@ -1006,7 +1006,7 @@ to the refused item. Read commands refuse the flag with
 `expect_hash_requires_mutation`, and an empty value (such as an unset `$H`)
 refuses with `expect_hash_invalid` instead of running unguarded. Bulk
 `update-many`/`close-many` fail only stale rows, each carrying `error_code`,
-`expected_revision` and `current_revision`. History maintenance
+`expected_revision`, `current_revision` and `details.changes_since`. History maintenance
 (`history-redact`, `history-repair`, `history-compact`) is checked under the
 stream lock. An item the command never wrote produces the
 warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. MCP

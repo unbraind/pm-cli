@@ -1414,8 +1414,14 @@ revision is the empty tombstone its `delete` recorded (the delete entry's
 `after_hash`), so a guarded `restore` or history maintenance of a deleted item
 can declare it. Bulk `update-many`
 and `close-many` keep their partial-success semantics: a stale row fails with
-`error_code: "item_revision_conflict"` plus its `expected_revision` and
-`current_revision`, while fresh rows proceed.
+`error_code: "item_revision_conflict"` plus its `expected_revision`,
+`current_revision` and the same `details` (`changes_since`,
+`changes_since_omitted`) a single-item refusal carries, while fresh rows
+proceed. When a peer writes while `restore` or history maintenance waits for
+its lock, a declared revision turns the generic drift refusal into this typed
+conflict. Only the CLI invocation scope reads `GlobalOptions.expectHash`;
+direct `run*` SDK calls ignore it, so guard SDK writes with the functions above
+or `runAction`/MCP `expectHash`.
 
 Transports use the same grammar. The CLI's global `--expect-hash <item_hash>`
 binds to the command's `<id>`; `--expect-hash <id>=<item_hash>` (repeatable or

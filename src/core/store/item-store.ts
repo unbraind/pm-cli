@@ -754,7 +754,8 @@ async function mutateItemWithDeferredHistoryContext(
   } = prepared;
 
   try {
-    assertItemMutationPreconditions(params.pmRoot, document);
+    // Expectations bind to the locked (filename) identity, even if embedded metadata disagrees.
+    assertItemMutationPreconditions(params.pmRoot, document, located.id);
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
@@ -914,7 +915,7 @@ async function mutateItemWithDeferredHistoryContext(
       },
     );
     const { derivedIndexWarnings, effectiveTargetItemPath } = committed;
-    advanceItemMutationPreconditions(params.pmRoot, afterDocument);
+    advanceItemMutationPreconditions(params.pmRoot, afterDocument, located.id);
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,
@@ -1091,7 +1092,7 @@ export async function deleteItem(params: {
   } = prepared;
 
   try {
-    assertItemMutationPreconditions(params.pmRoot, document);
+    assertItemMutationPreconditions(params.pmRoot, document, located.id);
     const extensionFieldNames = resolveActiveExtensionFieldNames(undefined);
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,

@@ -1125,7 +1125,7 @@ const applyUpdateManyRows = async (params: {
         id: item.id,
         status: "failed",
         error: toErrorMessage(error),
-        ...itemRevisionConflictRowFields(error),
+        ...(await itemRevisionConflictRowFields(error, params.pmRoot)),
       });
     }
   }

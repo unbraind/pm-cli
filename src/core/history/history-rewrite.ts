@@ -96,6 +96,22 @@ export interface VerifiedHistoryRewriteState {
   loadedItemUnderLock: LoadedItem | null;
 }
 
+/**
+ * When a peer changed the subject while this operation waited for its lock and
+ * the caller declared an expected revision, refuse with the typed
+ * item_revision_conflict (both revisions plus change evidence) instead of the
+ * generic drift conflict. A matching revision, or an unreadable item, leaves the
+ * drift refusal to the caller.
+ */
+async function assertDeclaredRevisionOnDrift(params: VerifyHistoryRewriteDriftParams): Promise<void> {
+  if (!hasItemRevisionExpectation(params.pmRoot, params.subject.id)) return;
+  const located = await locateItem(params.pmRoot, params.subject.id, params.settings.id_prefix, params.settings.item_format, params.typeRegistry.type_to_folder);
+  const document = located === null
+    ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
+    : (await readLocatedItem(located, { schema: params.settings.schema }).catch(() => null))?.document;
+  if (document !== undefined) assertItemMutationPreconditions(params.pmRoot, document, params.subject.id);
+}
+
 /** Re-read the history stream and the located item document under the acquired lock and compare both with the pre-lock raw snapshots. Throws PmCliError(CONFLICT) if either diverged while waiting for the lock so the caller surfaces an actionable retry. */
 export async function verifyHistoryRewriteNoDrift(
   params: VerifyHistoryRewriteDriftParams,
@@ -104,6 +120,7 @@ export async function verifyHistoryRewriteNoDrift(
     params.subject.historyPath,
   );
   if (historyRawUnderLock !== params.historyRawBeforeLock) {
+    await assertDeclaredRevisionOnDrift(params);
     throw new PmCliError(
       `History for ${params.subject.id} changed while waiting for lock; retry ${params.operation}.`,
       EXIT_CODE.CONFLICT,
@@ -127,6 +144,7 @@ export async function verifyHistoryRewriteNoDrift(
     (loadedItemUnderLock?.raw ?? null) !==
     (params.currentItemRawBeforeLock ?? null)
   ) {
+    await assertDeclaredRevisionOnDrift(params);
     throw new PmCliError(
       `Item ${params.subject.id} changed while waiting for lock; retry ${params.operation}.`,
       EXIT_CODE.CONFLICT,

@@ -192,6 +192,25 @@ describe("pm-urzubi explicit start composition", () => {
     });
   });
 
+  it("quotes stored references in every suggested step and resolves aliased edge kinds", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const open = createTestItemId(context, { title: "Aliased blocker" });
+      const base = { id: "pm-x", type: "Task", status: "open", title: "x" } as ItemMetadata;
+      const refuse = async (metadata: ItemMetadata) => (await admitStartWithOpenBlockers({ pmRoot: context.pmPath, settings, metadata }).catch((error: PmCliError) => error)) as PmCliError;
+      const hostile = await refuse({ ...base, dependencies: [{ id: "pm-$(touch owned)", kind: "blocked_by" }] } as ItemMetadata);
+      expect(hostile.context.nextSteps?.slice(0, 2)).toEqual([
+        process.platform === "win32" ? 'pm get "pm-$(touch owned)"' : 'pm get "pm-\\$(touch owned)"',
+        process.platform === "win32"
+          ? 'pm update pm-x --dep-remove "id=pm-$(touch owned),kind=blocked_by"'
+          : 'pm update pm-x --dep-remove "id=pm-\\$(touch owned),kind=blocked_by"',
+      ]);
+      // A depends_on edge canonicalizes to blocked_by and resolves to its live target instead of throwing.
+      const aliased = await refuse({ ...base, dependencies: [{ id: open, kind: "depends_on" }] } as ItemMetadata);
+      expect(aliased.context.details).toMatchObject({ open_blockers: [{ id: open, status: "open" }] });
+    });
+  });
+
   it("advertises a targeted unblock step that never drops another prerequisite", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);
@@ -205,7 +224,7 @@ describe("pm-urzubi explicit start composition", () => {
         .toContain('pm update pm-x --dep-remove "id=missing,kind=blocked_by"');
       // Clearing the scalar would also drop the independent edge, so only an inspection step is offered.
       expect(await nextSteps({ ...base, blocked_by: "pm-missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "pm-other", kind: "blocked_by" }] } as ItemMetadata))
-        .toContain("pm get pm-x --fields blocked_by,dependencies");
+        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
     });
   });
 });

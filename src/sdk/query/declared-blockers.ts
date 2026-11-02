@@ -13,6 +13,7 @@ import {
   isExternalDependencySourceKind,
 } from "../../core/item/dependency-reference.js";
 import { collectBlockedByIds, resolveItemBlockers, type ResolvedBlocker } from "../actionability.js";
+import { resolveCanonicalRelationshipKind } from "../relationships.js";
 import { createPmCliExpectedError } from "../errors.js";
 import {
   EXIT_CODE,
@@ -78,7 +79,7 @@ export async function resolveDeclaredBlockers(params: {
     [
       params.metadata.blocked_by,
       ...(params.metadata.dependencies ?? [])
-        .filter((dependency) => dependency.kind === "blocked_by")
+        .filter((dependency) => resolveCanonicalRelationshipKind(dependency.kind) === "blocked_by")
         .map((dependency) => dependency.id),
     ]
       .filter((id): id is string => typeof id === "string")
@@ -91,12 +92,13 @@ export async function resolveDeclaredBlockers(params: {
       !/^(?!\.{1,2}$)[^/\\:\0]+$/u.test(id) ||
       params.metadata.dependencies?.some((dependency) =>
         dependency.id.trim() === id &&
-        dependency.kind === "blocked_by" &&
+        resolveCanonicalRelationshipKind(dependency.kind) === "blocked_by" &&
         isExternalDependencySourceKind(dependency.source_kind),
       )
     ) continue;
     const located = await locateItem(
       params.pmRoot,
+      // Both sides key by trim().toLowerCase() and canonical blocked_by kinds, so every local id is declared.
       declaredIds.get(id)!,
       params.settings.id_prefix,
       params.settings.item_format,

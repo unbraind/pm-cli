@@ -238,18 +238,23 @@ export interface ItemRevisionConflictRowFields {
   expected_revision?: string;
   /** Revision the row's locked write found. */
   current_revision?: string;
+  /** Bounded history evidence of what changed since the expected revision, as single-item refusals report it. */
+  details?: PmCliErrorDetails;
 }
 
 /**
  * Keep the typed refusal on a bulk row: partial-success commands report a
- * stale row's code and both revisions, not only its message.
+ * stale row's code, both revisions and the same bounded change evidence a
+ * single-item refusal carries, not only its message.
  */
-export function itemRevisionConflictRowFields(error: unknown): ItemRevisionConflictRowFields {
+export async function itemRevisionConflictRowFields(error: unknown, pmRoot: string): Promise<ItemRevisionConflictRowFields> {
   if (!isItemRevisionConflict(error)) return {};
+  const enriched = await enrichItemRevisionConflict(error, pmRoot) as PmCliError;
   return {
     error_code: ITEM_REVISION_CONFLICT_CODE,
-    expected_revision: String(error.context.expected_revision),
-    current_revision: String(error.context.current_revision),
+    expected_revision: String(enriched.context.expected_revision),
+    current_revision: String(enriched.context.current_revision),
+    details: enriched.context.details,
   };
 }
 
@@ -359,10 +364,10 @@ function expectHashRequiresMutation(action: string): PmCliError {
 /** Append unchecked-expectation warnings to an action result without changing its shape otherwise. */
 function withUncheckedRevisionWarnings<T>(result: T, unchecked: readonly string[]): T {
   if (unchecked.length === 0 || typeof result !== "object" || result === null || Array.isArray(result)) return result;
+  // A shallow copy: a frozen or reused action result is never mutated after its write committed.
   const record = result as Record<string, unknown>;
   const warnings = Array.isArray(record.warnings) ? record.warnings : [];
-  record.warnings = [...warnings, ...unchecked.map(itemRevisionUncheckedWarning)];
-  return result;
+  return { ...record, warnings: [...warnings, ...unchecked.map(itemRevisionUncheckedWarning)] } as T;
 }
 
 /**

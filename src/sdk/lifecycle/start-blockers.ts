@@ -12,6 +12,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeItemId } from "../../core/item/id.js";
+import { renderPmCommand } from "../../core/shared/command-line.js";
 import { normalizeStatusForRegistry } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
@@ -51,11 +52,11 @@ function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: str
   if (!scalar) {
     // Cite the edge as stored (a short alias stays short), so the removal selector matches it exactly.
     const [stored] = [...edges.filter((dependency) => sameBlocker(dependency.id, blockerId, idPrefix)).map((dependency) => dependency.id), blockerId];
-    return `pm update ${metadata.id} --dep-remove "id=${stored},kind=blocked_by"`;
+    return renderPmCommand(["update", metadata.id, "--dep-remove", `id=${stored},kind=blocked_by`]);
   }
   return edges.every((dependency) => sameBlocker(dependency.id, blockerId, idPrefix))
-    ? `pm update ${metadata.id} --unset blocked_by`
-    : `pm get ${metadata.id} --fields blocked_by,dependencies`;
+    ? renderPmCommand(["update", metadata.id, "--unset", "blocked_by"])
+    : renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"]);
 }
 
 /**
@@ -88,7 +89,8 @@ export async function admitStartWithOpenBlockers(params: {
       required: `Finish or close the open blocker${open.length === 1 ? "" : "s"} first, remove the blocked_by edge if it no longer applies, or start anyway with --force.`,
       why: "Starting work that a declared blocker still gates would leave an in-progress item that validate reports as non_blocked_status_has_blocked_by. governance.start_blocker_enforcement (strict by default) governs this check.",
       nextSteps: [
-        ...open.filter((blocker) => blocker.external !== true).slice(0, 3).map((blocker) => `pm get ${blocker.id}`),
+        // Stored blocker references are unvalidated text: quote them so a pasted step cannot run shell syntax.
+        ...open.filter((blocker) => blocker.external !== true).slice(0, 3).map((blocker) => renderPmCommand(["get", blocker.id])),
         unblockCommand(params.metadata, open[0]!.id, params.settings.id_prefix),
         "pm next",
       ],
