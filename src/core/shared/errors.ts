@@ -120,7 +120,8 @@ export type PmCliErrorDetailsRejection =
   | "malformed_unicode"
   | "reserved_key"
   | "depth_limit"
-  | "byte_limit";
+  | "byte_limit"
+  | "diagnostic_budget";
 
 /** Host-set receipt that replaces diagnostics the host could not render. */
 export interface PmCliErrorDetailsOmission {

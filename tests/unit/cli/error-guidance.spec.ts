@@ -497,6 +497,13 @@ describe("pm cli error guidance context plumbing", () => {
     expect(formatPmCliErrorForDisplay("Too much", { code: "probe", details: { text: "x".repeat(5000) } })).toContain(
       "Details omitted: byte_limit (over 4096 bytes)",
     );
+    // Details within their compact ceiling can still outgrow the pretty-printed JSON diagnostic budget:
+    // they are replaced by an explicit receipt instead of being dropped silently by the generic ladder.
+    const wide = { rows: Array.from({ length: 1000 }, () => []) };
+    const wideEnvelope = formatPmCliErrorForJson("Wide diagnostics", 1, { code: "probe", details: wide });
+    expect(wideEnvelope).not.toHaveProperty("details");
+    expect(wideEnvelope.details_omitted).toEqual({ reason: "diagnostic_budget", byte_limit: 4096 });
+    expect(formatPmCliErrorForJson("Recorded budget", 1, { code: "probe", details_omitted: { reason: "diagnostic_budget", byte_limit: 4096 } }).details_omitted).toEqual({ reason: "diagnostic_budget", byte_limit: 4096 });
     // A host-recorded receipt (for example oversized at construction) renders as such.
     expect(formatPmCliErrorForJson("Recorded", 1, { code: "probe", details_omitted: { reason: "byte_limit", byte_limit: 4096 } }).details_omitted).toEqual({ reason: "byte_limit", byte_limit: 4096 });
     // A getter on the slot is reported, never run.

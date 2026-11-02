@@ -40,6 +40,7 @@ const DETAILS_REJECTIONS: ReadonlySet<string> = new Set<PmCliErrorDetailsRejecti
   "reserved_key",
   "depth_limit",
   "byte_limit",
+  "diagnostic_budget",
 ]);
 
 /** Outcome of admitting one diagnostics value. */
@@ -384,7 +385,8 @@ export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
       const descriptor = Object.getOwnPropertyDescriptor(record, key);
       if (descriptor === undefined || !("value" in descriptor)) continue;
       const entry: unknown = descriptor.value;
-      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) && typeof entry === "object" && entry !== null ? {} : entry;
+      // Whatever its serialized type: a toJSON can turn a context into a string that still carries diagnostics.
+      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) ? {} : entry;
       if (scrubbed !== entry) record[key] = scrubbed;
       visit(scrubbed, depth + 1);
     }

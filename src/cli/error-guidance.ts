@@ -5,6 +5,7 @@
  */
 import { describeReadCompletenessControls, isReadProjectionRecoveryFlag, resolveReadCompletenessControls, resolveReadOptionRetryArgs, resolveLinkedResourcePositionalRecovery } from "../sdk/agent/command-recovery.js";
 import {
+  PM_CLI_ERROR_DETAILS_LIMITS,
   isPmTokenBudgetRecovery,
   projectPmCliErrorContextDetailsSlot,
   type PmCliErrorDetails,
@@ -1102,9 +1103,31 @@ function projectJsonErrorGuidance(
     Boolean(recovery?.allowed_values?.length) ||
     Boolean(recovery?.candidate_commands?.length) ||
     Boolean(guidance.nextSteps?.length);
-  return projectPmDiagnosticOutput(guidanceToJsonEnvelope(guidance, exitCode), {
-    diagnosticClass: hasActionableRecovery ? "recovery_bundle" : "error",
-  });
+  const diagnosticClass = hasActionableRecovery ? "recovery_bundle" : "error";
+  return projectPmDiagnosticOutput(
+    withinDiagnosticBudget(guidanceToJsonEnvelope(guidance, exitCode), diagnosticClass),
+    { diagnosticClass },
+  );
+}
+
+/**
+ * Admitted details fit their own compact ceiling, but the rendered envelope
+ * is pretty-printed and bound by the whole diagnostic budget. When the
+ * details are what would push it over, replace them up front with an
+ * explicit receipt instead of letting the generic ladder drop them silently.
+ */
+function withinDiagnosticBudget(
+  envelope: JsonErrorEnvelope,
+  diagnosticClass: "error" | "recovery_bundle",
+): JsonErrorEnvelope {
+  if (envelope.details === undefined) return envelope;
+  const budget = resolvePmDiagnosticOutputBudget(diagnosticClass).default_max_estimated_tokens_by_format.json;
+  if (estimatePmOutputTokens(Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8")) <= budget) return envelope;
+  const { details: _dropped, ...rest } = envelope;
+  return {
+    ...rest,
+    details_omitted: { reason: "diagnostic_budget", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
+  };
 }
 
 /** Classify guidance with the same optional refusal evidence as the JSON envelope. */

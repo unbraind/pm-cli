@@ -3170,6 +3170,9 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   above `PM_CLI_ERROR_DETAILS_LIMITS.max_bytes` (4,096 bytes of compact UTF-8
   JSON), or when a separately bundled error carries a malformed shape, the
   envelope carries `details_omitted: { reason, path?, byte_limit }` instead.
+  Admitted details that would push the pretty-printed `--json` envelope past
+  the error diagnostic budget are replaced the same way, with reason
+  `diagnostic_budget`.
   The size is counted while walking and the walk stops at the ceiling, so
   shared or repeated structures cannot amplify the work; `path` is capped at
   160 bytes. The CLI and MCP read a separately bundled error's context once as

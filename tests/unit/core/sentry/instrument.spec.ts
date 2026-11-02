@@ -145,6 +145,10 @@ describe("instrument residual branches", () => {
       breadcrumbs: [{ category: "console", data: { arguments: [{ context: { report: marker } }] } }],
     };
     expect(JSON.stringify(options.beforeSend(consoleCopy, { originalException: "console" }))).not.toContain(marker);
+    // A toJSON can turn a whole context into a string: the slot is discarded whatever its serialized type.
+    const stringCopy = { extra: { arguments: [{ name: "Error", context: marker }] }, breadcrumbs: [{ data: { arguments: [{ context: marker }] } }] };
+    expect(JSON.stringify(options.beforeSend(stringCopy, { originalException: "console" }))).not.toContain(marker);
+    expect(JSON.stringify(options.beforeSendTransaction({ contexts: { trace: { data: { context: marker } } } }))).not.toContain(marker);
     // Events without contexts or extras pass unchanged.
     expect(options.beforeSend({ message: "plain" }, {})).toMatchObject({ message: "plain" });
     // A context-level toJSON already ran inside the error-data integration and copied diagnostics under
@@ -160,15 +164,17 @@ describe("instrument residual branches", () => {
     expect(JSON.stringify(rebuilt)).not.toContain(marker);
     expect(rebuilt).toMatchObject({ contexts: { Error: { context: { code: "probe" } }, runtime: { name: "node" }, os: "linux", bare: null } });
     // Without a usable original, the serialized copy is still reduced to top-level primitives.
-    const flattened = { exception: { values: [{ type: "Error", value: "serializer fault" }] }, contexts: { Error: { context: { report: { marker }, code: "probe" } } } };
-    expect(JSON.stringify(options.beforeSend(flattened, { originalException: "not an object" }))).not.toContain(marker);
+    // Each case gets a fresh event: the hook scrubs in place, so a reused event would already be clean.
+    const flattened = () => ({ exception: { values: [{ type: "Error", value: "serializer fault" }] }, contexts: { Error: { context: { report: { marker }, code: "probe" } } } });
+    expect(JSON.stringify(flattened())).toContain(marker);
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: "not an object" }))).not.toContain(marker);
     // An original without its own context leaves the entry to the generic scrub.
-    expect(JSON.stringify(options.beforeSend({ ...flattened }, { originalException: new Error("no context") }))).not.toContain(marker);
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: new Error("no context") }))).not.toContain(marker);
     // An original whose own properties cannot even be described is left to the generic scrub.
     const opaqueOriginal = new Proxy(new Error("opaque fault"), { getOwnPropertyDescriptor: () => { throw new Error("descriptor trap"); } });
-    expect(JSON.stringify(options.beforeSend({ ...flattened }, { originalException: opaqueOriginal }))).not.toContain(marker);
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: opaqueOriginal }))).not.toContain(marker);
     const accessorOriginal = Object.defineProperty(new Error("accessor fault"), "context", { get: () => ({ details: { marker } }) });
-    expect(JSON.stringify(options.beforeSend({ ...flattened }, { originalException: accessorOriginal }))).not.toContain(marker);
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: accessorOriginal }))).not.toContain(marker);
     const transaction = {
       contexts: { trace: { data: { context: { details: { marker } } } } },
       breadcrumbs: [{ category: "console", message: "safe", data: { arguments: [{ context: { details: { marker } } }] } }],
