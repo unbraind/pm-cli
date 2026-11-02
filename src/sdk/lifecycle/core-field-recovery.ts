@@ -54,7 +54,7 @@ function hostOwnedOptions(command: "create" | "update"): { options: ReadonlySet<
   const flags = [
     ...resolveSubcommandFlagContractsForCommand(command),
     ...GLOBAL_FLAG_CONTRACTS,
-  ].flatMap((contract) => [contract.flag, ...(contract.aliases ?? [])]);
+  ].flatMap((contract) => [contract.flag, ...(contract.short === undefined ? [] : [contract.short]), ...(contract.aliases ?? [])]);
   const options = [
     ...contracts.flatMap((contract) => [contract.target, ...contract.keys]),
     ...flags.map((flag) => commanderOptionAttribute(flag)),

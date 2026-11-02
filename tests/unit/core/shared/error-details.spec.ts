@@ -249,5 +249,13 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     // The walk is bounded: a context nested beyond the scan depth is left as-is.
     expect(JSON.stringify(payload.deep)).toContain("beyond-depth");
     omitEmbeddedPmCliErrorDetails(null);
+    // Revoked proxies are uninspectable everywhere: nothing throws.
+    const revoked = Proxy.revocable({}, {});
+    revoked.revoke();
+    expect(omitPmCliErrorDetails(revoked.proxy)).toEqual({});
+    expect(projectPmCliErrorContextDetails(revoked.proxy)).toEqual({
+      details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
+    });
+    expect(() => omitEmbeddedPmCliErrorDetails({ extra: { arguments: [revoked.proxy] } })).not.toThrow();
   });
 });

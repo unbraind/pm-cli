@@ -120,8 +120,11 @@ describe("extensions item field runtime wiring", () => {
     expect(ambiguous.context.recovery).toEqual({ provided_fields: ["review_link"] });
     expect(ambiguous.message).toBe("--field review_link is a project-schema field, not an extension field");
     expect(ambiguous.context.nextSteps?.[0]).toContain("is shared with another declared field or an option of pm update");
-    expect(refusal("review_link_alt=x").context.recovery?.suggested_flags).toEqual(["--review.url"]);
+    // --review.url sets only review_link_alt on its own, but the reader checks reviewUrl first, which
+    // --review-url sets: in an invocation carrying both, the field would read the other value. Withheld.
     expect(Object.keys(collectRuntimeUpdateFieldValues({ "review.url": "x" }, registry))).toEqual(["review_link_alt"]);
+    expect(collectRuntimeUpdateFieldValues({ reviewUrl: "a", "review.url": "b" }, registry)).toMatchObject({ review_link_alt: "a" });
+    expect(refusal("review_link_alt=x").context.recovery).toEqual({ provided_fields: ["review_link_alt"] });
     expect(refusal("review_link=x").context.nextSteps?.[1]).toBe("SDK: pass reviewurl in the update options.");
     expect(refusal("review_link_alt=x").context.nextSteps?.[1]).toBe("SDK: pass reviewLinkAlt in the update options.");
     for (const [field, option] of [["review_link", "reviewurl"], ["review_link_alt", "reviewLinkAlt"], ["gate_evidence", "gateEvidence"]] as const) {
@@ -184,12 +187,21 @@ describe("extensions item field runtime wiring", () => {
     // A negated spelling is never a route: its value lands under the un-negated key, which this field never reads.
     const negated = resolveRuntimeFieldRegistry({ fields: [{ key: "no_review", type: "string", commands: ["update"] }] } as never);
     expect(refusal("no_review=approved", createSchemaFieldRecoveryResolver(negated, "update")).context.recovery).toEqual({ provided_fields: ["no_review"] });
-    // A short alias is rendered with its single dash when the primary flag belongs to the host.
-    const shortAlias = resolveRuntimeFieldRegistry({ fields: [{ key: "review_heading", type: "string", cli_flag: "title", cli_aliases: ["-r"], commands: ["update"] }] } as never);
+    // A short alias is rendered with its single dash when the primary spelling cannot be a route.
+    const shortAlias = resolveRuntimeFieldRegistry({ fields: [{ key: "review_heading", type: "string", cli_flag: "no-review", cli_aliases: ["-r"], commands: ["update"] }] } as never);
     const short = refusal("review_heading=approved", createSchemaFieldRecoveryResolver(shortAlias, "update"));
     expect(short.context.recovery?.suggested_flags).toEqual(["-r"]);
     expect(short.context.nextSteps?.[0]).toBe("Use the declared project-schema flag: pm update <id> -r <value>");
     expect(collectRuntimeUpdateFieldValues({ r: "approved" }, shortAlias)).toEqual({ review_heading: "approved" });
+    // A host short flag (-t is --title) is never advertised, and an alias the reader would read only after a
+    // host-settable key (title) is shadowed by --title in the same invocation, so it is withheld too.
+    for (const fields of [
+      [{ key: "review_heading", type: "string", cli_flag: "no-review", cli_aliases: ["-t"], commands: ["update"] }],
+      [{ key: "review_heading", type: "string", cli_flag: "title", cli_aliases: ["heading"], commands: ["update"] }],
+    ]) {
+      const withheld = refusal("review_heading=x", createSchemaFieldRecoveryResolver(resolveRuntimeFieldRegistry({ fields } as never), "update"));
+      expect(withheld.context.recovery).toEqual({ provided_fields: ["review_heading"] });
+    }
     // Fields the command never reads cannot collide: create-only xy does not shadow update-only x_y.
     const scoped = resolveRuntimeFieldRegistry({
       fields: [

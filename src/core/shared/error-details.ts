@@ -288,8 +288,10 @@ function contextWithoutDiagnostics(context: object): Record<string, unknown> {
  * every other host field is left untouched.
  */
 export function projectPmCliErrorContextDetails(context: unknown): unknown {
-  if (typeof context !== "object" || context === null || Array.isArray(context)) return context;
+  if (typeof context !== "object" || context === null) return context;
   try {
+    // Inside the guard: Array.isArray throws on a revoked proxy.
+    if (Array.isArray(context)) return context;
     if (!Object.hasOwn(context, "details") && !Object.hasOwn(context, "details_omitted")) return context;
     return { ...contextWithoutDiagnostics(context), ...projectPmCliErrorContextDetailsSlot(context) };
   } catch {
@@ -302,8 +304,10 @@ export function projectPmCliErrorContextDetails(context: unknown): unknown {
  * echo producer keys), from a context bound for telemetry or crash reporting.
  */
 export function omitPmCliErrorDetails(context: unknown): unknown {
-  if (typeof context !== "object" || context === null || Array.isArray(context)) return context;
+  if (typeof context !== "object" || context === null) return context;
   try {
+    // Inside the guard: Array.isArray throws on a revoked proxy.
+    if (Array.isArray(context)) return context;
     if (!Object.hasOwn(context, "details") && !Object.hasOwn(context, "details_omitted")) return context;
     return contextWithoutDiagnostics(context);
   } catch {
@@ -329,7 +333,14 @@ export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
     if (typeof value !== "object" || value === null || depth > MAX_EMBEDDED_CONTEXT_DEPTH || seen.has(value)) return;
     seen.add(value);
     const record = value as Record<string, unknown>;
-    for (const key of Object.keys(record)) {
+    let keys: string[];
+    try {
+      keys = Object.keys(record);
+    } catch {
+      // A revoked proxy cannot be listed; it carries nothing to scrub.
+      return;
+    }
+    for (const key of keys) {
       const descriptor = Object.getOwnPropertyDescriptor(record, key);
       if (descriptor === undefined || !("value" in descriptor)) continue;
       const entry: unknown = descriptor.value;

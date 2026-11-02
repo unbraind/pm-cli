@@ -795,6 +795,16 @@ describe("sentry command runtime helpers", () => {
     });
     expect(withDiagnostics.context.details).toEqual({ marker: "producer-diagnostic-payload" });
 
+    // An uninspectable (revoked proxy) context still reaches captureException, as an empty context.
+    const revoked = Proxy.revocable({}, {});
+    revoked.revoke();
+    const revokedFault = Object.assign(new Error("revoked context fault"), { exitCode: 70, context: revoked.proxy });
+    sentryCaptureCliError(revokedFault);
+    expect(sentry.captureException).toHaveBeenLastCalledWith(revokedFault, {
+      extra: { exit_code: 70, error_context: {} },
+      tags: { "pm.error_code": "unclassified_runtime_error", "pm.exit_code": "70" },
+    });
+
     // A plain Error without exitCode/context properties → empty extras object.
     const bareError = new Error("bare");
     sentryCaptureCliError(bareError);

@@ -44,8 +44,23 @@ export function runtimeFieldSdkOptionName(
   command?: RuntimeFieldCommand,
 ): string | undefined {
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reservedOptions, command);
+  const readOrder = resolveCandidateOptionKeys(definition);
   const preferred = toCamelToken(definition.cli_flag);
-  return [preferred, ...resolveCandidateOptionKeys(definition)].find((name) => !taken.has(name));
+  return [preferred, ...readOrder].find((name) => !taken.has(name) && isUnshadowedOptionKey(name, readOrder, taken));
+}
+
+/**
+ * The reader stops at the first candidate key present, so a key is safe to
+ * advertise only when no earlier-read key of the same field can be set by a
+ * host option or another field. Callers pass keys the reader reads (the
+ * flag-derived names are always in the read order).
+ */
+function isUnshadowedOptionKey(key: string, readOrder: readonly string[], taken: ReadonlySet<string>): boolean {
+  for (const earlier of readOrder) {
+    if (earlier === key) break;
+    if (taken.has(earlier)) return false;
+  }
+  return true;
 }
 
 /**
@@ -80,9 +95,10 @@ export function runtimeFieldFlagToken(flag: string): string {
 /**
  * A declared spelling that sets exactly this runtime field: the declared flag
  * or an alias that is not a host flag, is not a negation (its value would
- * land under another key that this field never reads), and whose parsed
- * option name no other active field and no host option reads. Undefined when
- * no spelling qualifies. Render it with {@link runtimeFieldFlagToken}.
+ * land under another key that this field never reads), whose parsed option
+ * name no other active field and no host option reads, and which no
+ * earlier-read key of this field can shadow. Undefined when no spelling
+ * qualifies. Render it with {@link runtimeFieldFlagToken}.
  */
 export function runtimeFieldCliFlagRoute(
   definition: RuntimeFieldDefinitionResolved,
@@ -91,12 +107,12 @@ export function runtimeFieldCliFlagRoute(
   command?: RuntimeFieldCommand,
 ): string | undefined {
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options, command);
-  return [definition.cli_flag, ...definition.cli_aliases].find(
-    (flag) =>
-      !isNegatingFlag(flag) &&
-      !reserved.flags.has(runtimeFieldFlagToken(flag)) &&
-      !taken.has(commanderOptionAttribute(flag)),
-  );
+  const readOrder = resolveCandidateOptionKeys(definition);
+  return [definition.cli_flag, ...definition.cli_aliases].find((flag) => {
+    const key = commanderOptionAttribute(flag);
+    if (isNegatingFlag(flag) || reserved.flags.has(runtimeFieldFlagToken(flag)) || taken.has(key)) return false;
+    return isUnshadowedOptionKey(key, readOrder, taken);
+  });
 }
 
 /**
