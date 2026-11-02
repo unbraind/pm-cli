@@ -96,7 +96,8 @@ function boundPath(path: string): string {
 /** Charge encoded bytes, abandoning the walk once the ceiling is crossed. */
 function charge(budget: ByteBudget, bytes: number, path: string): void {
   budget.bytes += bytes;
-  if (budget.bytes > PM_CLI_ERROR_DETAILS_LIMITS.max_bytes) throw new DetailsShapeError("byte_limit", path);
+  // A non-finite count can never be trusted to stay under the ceiling.
+  if (!(budget.bytes <= PM_CLI_ERROR_DETAILS_LIMITS.max_bytes)) throw new DetailsShapeError("byte_limit", path);
 }
 
 /**
@@ -134,10 +135,13 @@ function copyDetailValue(value: unknown, path: string, depth: number, budget: By
   if (typeof value !== "object" || value === null) return copyDetailLeaf(value, path, budget);
   if (depth >= PM_CLI_ERROR_DETAILS_LIMITS.max_depth) throw new DetailsShapeError("depth_limit", path);
   if (Array.isArray(value)) {
+    // Read the length once from its own descriptor: a proxy may answer each read differently.
+    const length = readOwnDataValue(value, "length", path);
+    if (typeof length !== "number" || !Number.isSafeInteger(length) || length < 0) throw new DetailsShapeError("unsupported_value", path);
     // Brackets plus separating commas.
-    charge(budget, value.length > 0 ? value.length + 1 : 2, path);
+    charge(budget, length > 0 ? length + 1 : 2, path);
     const copy: unknown[] = [];
-    for (let index = 0; index < value.length; index += 1) {
+    for (let index = 0; index < length; index += 1) {
       const entryPath = `${path}[${index}]`;
       copy.push(copyDetailValue(readOwnDataValue(value, String(index), entryPath), entryPath, depth + 1, budget));
     }
@@ -355,11 +359,13 @@ const MAX_EMBEDDED_CONTEXT_DEPTH = 12;
 const EMBEDDED_CONTEXT_KEYS = new Set(["context", "error_context"]);
 
 /**
- * Reduce every embedded error context (`*.context` and `*.error_context`
- * objects) inside a serialized crash-report payload to
- * {@link crashReportErrorContext}, in place. Console captures and breadcrumbs
- * carry an error's own properties at arbitrary positions, so a shallow scrub
- * is not enough.
+ * Discard every embedded error context (`*.context` and `*.error_context`
+ * objects) inside a serialized crash-report payload, in place, replacing each
+ * with an empty object. These copies were produced by the reporter's own
+ * serializer (which runs custom toJSON hooks) and their originals cannot be
+ * recovered, so no projection of them can be proven free of diagnostics.
+ * Console captures and breadcrumbs carry them at arbitrary positions, so a
+ * shallow scrub is not enough.
  */
 export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
   const seen = new WeakSet<object>();
@@ -378,7 +384,7 @@ export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
       const descriptor = Object.getOwnPropertyDescriptor(record, key);
       if (descriptor === undefined || !("value" in descriptor)) continue;
       const entry: unknown = descriptor.value;
-      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) && typeof entry === "object" && entry !== null ? crashReportErrorContext(entry) : entry;
+      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) && typeof entry === "object" && entry !== null ? {} : entry;
       if (scrubbed !== entry) record[key] = scrubbed;
       visit(scrubbed, depth + 1);
     }

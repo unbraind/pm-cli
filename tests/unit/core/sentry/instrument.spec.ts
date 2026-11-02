@@ -133,10 +133,18 @@ describe("instrument residual branches", () => {
     const sent = options.beforeSend(event, { originalException: new Error("unexpected fault") });
     expect(sent).not.toBeNull();
     expect(JSON.stringify(sent)).not.toContain(marker);
+    // Serialized copies whose original is unavailable are discarded; our own error_context projection is kept.
     expect(sent).toMatchObject({
-      contexts: { Error: { context: { code: "probe" } }, runtime: { name: "node" } },
-      extra: { error_context: { code: "probe" } },
+      contexts: { Error: { context: {} }, runtime: { name: "node" } },
+      extra: { error_context: { code: "probe" }, wrapped: { context: {} }, arguments: [{ name: "Error", context: {} }] },
+      breadcrumbs: [{ data: { arguments: [{ context: {} }] } }],
     });
+    // A console-captured error whose toJSON already flattened a diagnostic into a top-level primitive is discarded too.
+    const consoleCopy = {
+      extra: { arguments: [{ name: "Error", context: { report: marker } }] },
+      breadcrumbs: [{ category: "console", data: { arguments: [{ context: { report: marker } }] } }],
+    };
+    expect(JSON.stringify(options.beforeSend(consoleCopy, { originalException: "console" }))).not.toContain(marker);
     // Events without contexts or extras pass unchanged.
     expect(options.beforeSend({ message: "plain" }, {})).toMatchObject({ message: "plain" });
     // A context-level toJSON already ran inside the error-data integration and copied diagnostics under

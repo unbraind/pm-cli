@@ -121,6 +121,23 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(admitPmCliErrorDetails({ text: hugeValue })).toEqual({ ok: false, omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } });
     expect(admitPmCliErrorDetails({ [hugeValue]: 1 })).toEqual({ ok: false, omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } });
     expect(performance.now() - started).toBeLessThan(1000);
+    // A proxied array's length is read once and validated; a length that changes per read cannot reach the count.
+    let lengthReads = 0;
+    const shifty = new Proxy(["x".repeat(5000)], {
+      getOwnPropertyDescriptor(target, key) {
+        if (key === "length") {
+          lengthReads += 1;
+          return { value: lengthReads === 1 ? 1 : Number.NaN, writable: true, enumerable: false, configurable: false };
+        }
+        return Reflect.getOwnPropertyDescriptor(target, key);
+      },
+    });
+    expect(admitPmCliErrorDetails({ list: shifty })).toEqual({ ok: false, omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } });
+    expect(lengthReads).toBe(1);
+    for (const reported of [-1, "1", 1.5]) {
+      const badLength = new Proxy([], { getOwnPropertyDescriptor: (target, key) => (key === "length" ? { value: reported, writable: true, enumerable: false, configurable: false } : Reflect.getOwnPropertyDescriptor(target, key)) });
+      expect(admitPmCliErrorDetails({ list: badLength })).toMatchObject({ ok: false, omission: { reason: "unsupported_value", path: "details.list" } });
+    }
     // Non-string content crosses the ceiling through the running count: a long array, or many small numbers.
     for (const list of [new Array(5000).fill(1), new Array(1000).fill(123456)]) {
       expect(admitPmCliErrorDetails({ list })).toEqual({ ok: false, omission: { reason: "byte_limit", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes } });
@@ -279,7 +296,7 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     omitEmbeddedPmCliErrorDetails(payload);
     expect(calls).toBe(0);
     expect(JSON.stringify([payload.extra, payload.breadcrumbs, payload.contexts])).not.toContain(marker);
-    expect(payload.extra).toEqual({ arguments: [{ name: "Error", context: { code: "probe" } }], error_context: {} });
+    expect(payload.extra).toEqual({ arguments: [{ name: "Error", context: {} }], error_context: {} });
     expect(calls).toBe(0);
     // The walk is bounded: a context nested beyond the scan depth is left as-is.
     expect(JSON.stringify(payload.deep)).toContain("beyond-depth");

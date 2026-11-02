@@ -3188,10 +3188,11 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   classification is built without it. A crash report carries an error
   context only as its top-level primitive fields, read without running
   getters or `toJSON`, so diagnostics cannot reach it under another key: this
-  applies to `error_context`, to the error-data context (rebuilt from the
+  applies to `error_context` and to the error-data context (rebuilt from the
   original exception, because the integration serializes it before
-  `beforeSend`), and to every embedded context in console-capture arguments,
-  breadcrumbs and transactions.
+  `beforeSend`). Serialized copies whose original cannot be recovered
+  (console-capture arguments, breadcrumbs, transactions) are discarded and
+  sent as empty objects.
 
 ## Package Runtime Imports
 

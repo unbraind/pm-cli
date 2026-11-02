@@ -1064,7 +1064,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   },
   {
     code: "linked_test_command_immutable",
-    exit_code: 1,
+    exit_code: 2,
     sources: ["sdk/test/update.ts"],
   },
   {

@@ -396,8 +396,18 @@ function applySourceContextEnvironment(event: { environment?: string; tags?: Rec
  * diagnostics never leave the process (GH-1631).
  */
 function omitProducerDiagnostics(event: { contexts?: unknown; extra?: unknown; breadcrumbs?: unknown }, originalException?: unknown): void {
-  rebuildErrorDataContexts(event.contexts, originalException);
+  // Our own capture already reduced error_context to safe primitives; keep that projection.
+  const ownErrorContext = readOwnErrorContextExtra(event.extra);
+  // Every serialized copy is discarded first: its serializer may have moved diagnostics under any key.
   omitEmbeddedPmCliErrorDetails([event.contexts, event.extra, event.breadcrumbs]);
+  rebuildErrorDataContexts(event.contexts, originalException);
+  if (ownErrorContext !== undefined) (event.extra as Record<string, unknown>).error_context = crashReportErrorContext(ownErrorContext);
+}
+
+/** The error_context extra that sentryCaptureCliError attached, if any. */
+function readOwnErrorContextExtra(extra: unknown): unknown {
+  if (typeof extra !== "object" || extra === null || !Object.hasOwn(extra, "error_context")) return undefined;
+  return (extra as Record<string, unknown>).error_context;
 }
 
 /**

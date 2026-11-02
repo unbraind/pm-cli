@@ -24377,12 +24377,12 @@
     {
       "aliases": [],
       "canonical_code": "linked_test_command_immutable",
-      "class": "generic_failure",
+      "class": "usage",
       "code": "linked_test_command_immutable",
       "emitting_commands": [
         "*"
       ],
-      "exit_code": 1,
+      "exit_code": 2,
       "meaning": "Linked test command immutable condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
