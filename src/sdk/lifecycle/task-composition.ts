@@ -16,7 +16,7 @@ import { resolveReleaseHandoff } from "./release-handoff.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
-import { runAsExplicitStart } from "./start-blockers.js";
+import { runAsExplicitStart, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
 import { mutationOptionsWithOverrides } from "../runtime-input.js";
 import type { StartTaskResult, PauseTaskResult, CloseTaskResult } from "../runtime-public-contracts.js";
 
@@ -65,8 +65,38 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
   return runAsExplicitStart(async () => {
     const claim = await runClaim(id, options.force === true, global, mutationOptionsWithOverrides(options, {}, ["start"]));
     const canonicalId = claim.item.id as string;
-    const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global));
+    const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global))
+      .catch(async (error: unknown) => {
+        throw await releaseRefusedStartClaim(error, claim, global, options.author);
+      });
     return { id: canonicalId, action: "start_task", claim, update };
+  });
+}
+
+/**
+ * Compensate the one refusal a start's own claim cannot have judged: a blocker
+ * opened after the claim committed. When this start took the item from no
+ * owner, release that claim before refusing, so the start leaves no ownership;
+ * every other failure keeps the partial-state error unchanged.
+ */
+export async function releaseRefusedStartClaim(
+  error: unknown,
+  claim: { item: Record<string, unknown>; previous_assignee: string | null },
+  global: GlobalOptions,
+  author: string | undefined,
+): Promise<unknown> {
+  if (!(error instanceof PmCliError) || error.code !== START_BLOCKED_REFUSAL_CODE || claim.previous_assignee !== null) return error;
+  const id = String(claim.item.id);
+  try {
+    await runRelease(id, false, global, { author, message: "Release the claim: a blocker opened before its start could be recorded" });
+  } catch {
+    // Never mask the refusal: the partial-state error already reports the durable claim.
+    return error;
+  }
+  const refusal = error.cause instanceof PmCliError ? error.cause : error;
+  return new PmCliError(refusal.message, refusal.exitCode, {
+    ...refusal.context,
+    why: `${refusal.context.why ?? ""} A blocker opened after this start's claim, so the claim was released and no ownership remains.`.trim(),
   });
 }
 

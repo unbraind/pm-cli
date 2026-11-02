@@ -11,6 +11,7 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { normalizeItemId } from "../../core/item/id.js";
 import { normalizeStatusForRegistry } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
@@ -33,16 +34,28 @@ export function isStartTransition(fromStatus: string | undefined, toStatus: stri
     && normalizeStatusForRegistry(fromStatus ?? "", registry) !== inProgress;
 }
 
-/** The exact command that drops one declared blocker from every place the item declares it. */
-function unblockCommand(metadata: ItemMetadata, blockerId: string): string {
-  const key = blockerId.toLowerCase();
-  const scalar = typeof metadata.blocked_by === "string" && metadata.blocked_by.trim().toLowerCase() === key;
-  const edge = (metadata.dependencies ?? []).some((dependency) => dependency.kind === "blocked_by" && dependency.id.trim().toLowerCase() === key);
-  return [
-    `pm update ${metadata.id}`,
-    ...(scalar ? ["--unset blocked_by"] : []),
-    ...(edge || !scalar ? [`--dep-remove "id=${blockerId},kind=blocked_by"`] : []),
-  ].join(" ");
+/** Compare blocker references canonically: a short scalar `a` names the same item as `pm-a`. */
+function sameBlocker(reference: string, blockerId: string, idPrefix: string): boolean {
+  const canonical = (value: string) => normalizeItemId(value.trim(), idPrefix).toLowerCase();
+  return canonical(reference) === canonical(blockerId);
+}
+
+/**
+ * The exact command that drops one declared blocker, or an inspection step when
+ * no single command can. `--unset blocked_by` clears every blocked_by edge, so
+ * it is advertised only when the scalar's blocker is the item's only one.
+ */
+function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: string): string {
+  const edges = (metadata.dependencies ?? []).filter((dependency) => dependency.kind === "blocked_by");
+  const scalar = typeof metadata.blocked_by === "string" && sameBlocker(metadata.blocked_by, blockerId, idPrefix);
+  if (!scalar) {
+    // Cite the edge as stored (a short alias stays short), so the removal selector matches it exactly.
+    const [stored] = [...edges.filter((dependency) => sameBlocker(dependency.id, blockerId, idPrefix)).map((dependency) => dependency.id), blockerId];
+    return `pm update ${metadata.id} --dep-remove "id=${stored},kind=blocked_by"`;
+  }
+  return edges.every((dependency) => sameBlocker(dependency.id, blockerId, idPrefix))
+    ? `pm update ${metadata.id} --unset blocked_by`
+    : `pm get ${metadata.id} --fields blocked_by,dependencies`;
 }
 
 /**
@@ -76,7 +89,7 @@ export async function admitStartWithOpenBlockers(params: {
       why: "Starting work that a declared blocker still gates would leave an in-progress item that validate reports as non_blocked_status_has_blocked_by. governance.start_blocker_enforcement (strict by default) governs this check.",
       nextSteps: [
         ...open.filter((blocker) => blocker.external !== true).slice(0, 3).map((blocker) => `pm get ${blocker.id}`),
-        unblockCommand(params.metadata, open[0]!.id),
+        unblockCommand(params.metadata, open[0]!.id, params.settings.id_prefix),
         "pm next",
       ],
       details: {
@@ -106,9 +119,11 @@ export async function admitStartTransition(params: {
   force?: boolean;
   requested?: boolean;
 }): Promise<string[]> {
-  if (params.requested === false || explicitStarts.getStore()?.admitted === true) return [];
-  if (!isStartTransition(params.fromStatus, params.metadata.status, params.registry)) return [];
-  return admitStartWithOpenBlockers(params);
+  if (params.requested === false || !isStartTransition(params.fromStatus, params.metadata.status, params.registry)) return [];
+  // Always re-judged under this write's own lock: a blocker opened after an explicit start's claim still refuses.
+  const warnings = await admitStartWithOpenBlockers(params);
+  // The explicit start's claim already recorded the same warn/override decision.
+  return explicitStarts.getStore()?.admitted === true ? [] : warnings;
 }
 
 /** Pending explicit `claim <id> --start` composition: admitted once its claim judged the start under the item lock. */
@@ -116,9 +131,9 @@ const explicitStarts = new AsyncLocalStorage<{ admitted: boolean }>();
 
 /**
  * Run an explicit claim-then-update start composition. Its claim judges the
- * start under the claim's own item lock, before writing ownership, and the
- * composition's status update reuses that decision, so a refused start never
- * leaves a claim behind and the two steps cannot disagree.
+ * start under the claim's own item lock, before writing ownership; the status
+ * update judges again under its own lock, so a blocker opened in between still
+ * refuses (the composition then releases the claim it took).
  */
 export function runAsExplicitStart<T>(operation: () => Promise<T>): Promise<T> {
   return explicitStarts.run({ admitted: false }, operation);

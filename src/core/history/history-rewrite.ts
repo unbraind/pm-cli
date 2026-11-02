@@ -7,7 +7,7 @@ import fs from "node:fs/promises";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import type { ItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
-import { EXIT_CODE } from "../shared/constants.js";
+import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { advanceItemMutationPreconditions, assertItemMutationPreconditions, hasItemRevisionExpectation } from "../store/item-mutation-precondition.js";
@@ -226,14 +226,16 @@ export async function executeHistoryRewrite(
       currentItemRawBeforeLock: params.currentItemRawBeforeLock,
       operation: params.operation,
     });
-    // pm-gh1576: history maintenance that rewrites an item honours its declared revision.
-    const lockedItem = verified.loadedItemUnderLock;
-    if (lockedItem) assertItemMutationPreconditions(params.pmRoot, lockedItem.document, params.subject.id);
+    // pm-gh1576: history maintenance honours a declared revision; a deleted item is judged as its tombstone.
+    const tombstone = EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument;
+    assertItemMutationPreconditions(params.pmRoot, verified.loadedItemUnderLock?.document ?? tombstone, params.subject.id);
     await params.applyRewrite(verified);
     // Re-read only for a declared revision: a recovered (unparseable) item stays rewritable without one.
-    if (verified.locatedUnderLock && hasItemRevisionExpectation(params.pmRoot, params.subject.id)) {
-      const rewritten = await readLocatedItem(verified.locatedUnderLock, { schema: params.settings.schema });
-      advanceItemMutationPreconditions(params.pmRoot, rewritten.document, params.subject.id);
+    if (hasItemRevisionExpectation(params.pmRoot, params.subject.id)) {
+      const rewritten = verified.locatedUnderLock === null
+        ? tombstone
+        : (await readLocatedItem(verified.locatedUnderLock, { schema: params.settings.schema })).document;
+      advanceItemMutationPreconditions(params.pmRoot, rewritten, params.subject.id);
     }
     if (params.applyPostRewrite) {
       warnings.push(...(await params.applyPostRewrite(verified)));

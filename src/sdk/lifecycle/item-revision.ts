@@ -25,8 +25,11 @@ import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError, type PmCliErrorDetails } from "../../core/shared/errors.js";
-import type { HistoryEntry } from "../../types/index.js";
+import type { HistoryEntry, ItemDocument } from "../../types/index.js";
 import { PM_TOOL_ACTIONS } from "../cli-contracts/enum-contracts.js";
+import { PM_EXPECT_HASH_ACTIONS } from "../cli-contracts/expect-hash-actions.js";
+import { resolveHistorySubject } from "../history/subject.js";
+import { EMPTY_CANONICAL_DOCUMENT } from "../../core/shared/constants.js";
 import { isMutationAction } from "../mutation-guard.js";
 
 export type { ItemRevisionScope } from "../../core/store/item-mutation-precondition.js";
@@ -132,24 +135,35 @@ export function parseExpectHashSpecs(values: string | readonly string[] | undefi
   });
 }
 
+/**
+ * Resolve a revision target. A live item resolves to its file; a deleted item
+ * with retained history resolves to its canonical id with no file, whose
+ * revision is the empty tombstone its delete recorded.
+ */
 async function locateRevisionTarget(pmRoot: string, id: string) {
   const settings = await readSettings(pmRoot);
   const typeToFolder = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder;
   const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
-  if (!located) throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeToFolder);
-  return { located, settings };
+  if (located) return { id: located.id, located, settings };
+  try {
+    return { id: (await resolveHistorySubject(pmRoot, id, settings, typeToFolder)).id, located: null, settings };
+  } catch {
+    throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeToFolder);
+  }
 }
 
 function resolveRevisionRoot(context: ItemRevisionContext): string {
   return resolvePmRoot(context.cwd ?? process.cwd(), context.pmRoot);
 }
 
-/** Read the current revision of one item without writing anything. */
+/** Read the current revision of one item (the tombstone revision for a deleted item) without writing anything. */
 export async function readItemRevision(id: string, context: ItemRevisionContext = {}): Promise<ItemRevision> {
   const pmRoot = resolveRevisionRoot(context);
-  const { located, settings } = await locateRevisionTarget(pmRoot, id);
-  const { document } = await readLocatedItem(located, { schema: settings.schema });
-  return { id: located.id, item_hash: hashDocument(document) };
+  const target = await locateRevisionTarget(pmRoot, id);
+  const document = target.located === null
+    ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
+    : (await readLocatedItem(target.located, { schema: target.settings.schema })).document;
+  return { id: target.id, item_hash: hashDocument(document) };
 }
 
 /**
@@ -171,8 +185,7 @@ export async function resolveExpectedItemRevisions(
         examples: ["--expect-hash pm-a1b2=<item_hash>"],
       });
     }
-    const { located } = await locateRevisionTarget(pmRoot, target);
-    resolved.push({ id: located.id, itemHash: spec.itemHash });
+    resolved.push({ id: (await locateRevisionTarget(pmRoot, target)).id, itemHash: spec.itemHash });
   }
   return resolved;
 }
@@ -296,11 +309,24 @@ export async function withExpectedItemRevisions<T>(
   operation: () => Promise<T>,
   context: ItemRevisionContext = {},
 ): Promise<ExpectedItemRevisionsOutcome<T>> {
+  return runWithBoundItemRevisionScope(await bindExpectedItemRevisions(expectations, context), operation);
+}
+
+/**
+ * Resolve expectations to canonical ids and bind them to a fresh scope, without
+ * running anything. Hosts that must resolve targets inside one extension
+ * context but run the guarded operation outside it bind first, then call
+ * {@link runWithBoundItemRevisionScope}.
+ */
+export async function bindExpectedItemRevisions(
+  expectations: readonly ExpectedItemRevision[],
+  context: ItemRevisionContext = {},
+): Promise<ItemRevisionScope> {
   const pmRoot = resolveRevisionRoot(context);
   const specs = expectations.map(({ id, itemHash }) => ({ id, itemHash: normalizeExpectedItemHash(itemHash) }));
   const scope = createItemRevisionScope();
   bindItemRevisionScope(scope, pmRoot, await resolveExpectedItemRevisions(pmRoot, specs));
-  return runWithBoundItemRevisionScope(scope, operation);
+  return scope;
 }
 
 export { bindItemRevisionScope, createItemRevisionScope, itemRevisionScopeReceipt, runWithItemRevisionScope };
@@ -318,7 +344,9 @@ const NATIVE_ACTIONS: ReadonlySet<string> = new Set(PM_TOOL_ACTIONS);
  * know whether they write; the receipt reports any expectation they never reach.
  */
 export function assertExpectHashAdmissible(action: string): void {
-  if (NATIVE_ACTIONS.has(action) && !isMutationAction(action)) throw expectHashRequiresMutation(action);
+  if (NATIVE_ACTIONS.has(action) && !isMutationAction(action) && !PM_EXPECT_HASH_ACTIONS.has(action)) {
+    throw expectHashRequiresMutation(action);
+  }
 }
 
 function expectHashRequiresMutation(action: string): PmCliError {

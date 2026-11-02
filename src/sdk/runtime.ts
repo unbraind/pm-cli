@@ -806,11 +806,15 @@ export class PmClient {
    * Targets resolve inside this client's extension context, so extension item
    * types and fields bind exactly as `get` reads them.
    */
-  withExpectedItemRevisions<T>(
+  async withExpectedItemRevisions<T>(
     expectations: readonly ExpectedItemRevision[],
     operation: () => Promise<T>,
   ): Promise<ExpectedItemRevisionsOutcome<T>> {
-    return this.withItemTransactionContext(async ({ pmRoot }) => (await import("./lifecycle/item-revision.js")).withExpectedItemRevisions(expectations, operation, { pmRoot }));
+    const revisions = await import("./lifecycle/item-revision.js");
+    // Bind inside the extension context, but run the operation outside it so its own
+    // actions (including extension commands) activate and dispatch normally.
+    const scope = await this.withItemTransactionContext(({ pmRoot }) => revisions.bindExpectedItemRevisions(expectations, { pmRoot }), true);
+    return revisions.runWithBoundItemRevisionScope(scope, operation);
   }
 
   /** Return the same context snapshot produced by `pm context`. */
@@ -2955,7 +2959,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   // pm-gh1576: an expected revision binds inside the activation cycle so
   // extension item types resolve, and scopes every locked write the action makes.
   const { expectHash: expectHashParameter, expect_hash: expectHashAlias, ...dispatchArgs } = resolved.args;
-  const expectHash = expectHashParameter ?? expectHashAlias;
+  // A supplied null is validated (and refused), never treated as an omitted guard.
+  const expectHash = expectHashParameter !== undefined ? expectHashParameter : expectHashAlias;
   const dispatch = async (activeExtensions: ActiveExtensionRuntime | null): Promise<unknown> => {
     if (expectHash === undefined) return dispatchAction(resolved.action, resolved.args, global, activeExtensions);
     const { dispatchWithExpectedItemRevisions } = await import("./lifecycle/item-revision.js");

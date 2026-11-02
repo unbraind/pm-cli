@@ -1405,9 +1405,14 @@ refuse itself; an interleaved peer write still refuses the next step. The
 result lists `checked` ids and `unchecked` ids that the operation never wrote:
 an unchecked expectation proved nothing. `PmClient.readItemRevision` and
 `PmClient.withExpectedItemRevisions` resolve targets inside the client's
-extension context, so extension item types bind exactly as `get` reads them;
-the standalone `readItemRevision` / `withExpectedItemRevisions` functions use
-the registrations already active in the calling context. Bulk `update-many`
+extension context, so extension item types bind exactly as `get` reads them,
+then run the operation outside it, so its own actions (extension commands
+included) activate and dispatch normally. The standalone `readItemRevision` /
+`withExpectedItemRevisions` functions use the registrations already active in
+the calling context. A deleted item with retained history binds too: its
+revision is the empty tombstone its `delete` recorded (the delete entry's
+`after_hash`), so a guarded `restore` or history maintenance of a deleted item
+can declare it. Bulk `update-many`
 and `close-many` keep their partial-success semantics: a stale row fails with
 `error_code: "item_revision_conflict"` plus its `expected_revision` and
 `current_revision`, while fresh rows proceed.
@@ -1417,9 +1422,9 @@ binds to the command's `<id>`; `--expect-hash <id>=<item_hash>` (repeatable or
 comma-separated) names targets explicitly and is required for bulk commands.
 MCP tools and `PmClient.run` accept `expectHash` (string or string array) on
 every item-writing action. A native read action refuses the flag with
-`expect_hash_requires_mutation`, and a malformed or supplied-but-empty value
-(for example an unset shell variable) refuses with `expect_hash_invalid` rather
-than silently dropping the guard. An expectation no write reached is reported as the
+`expect_hash_requires_mutation`, and a malformed, supplied-but-empty or `null`
+value (for example an unset shell variable) refuses with `expect_hash_invalid`
+rather than silently dropping the guard. An expectation no write reached is reported as the
 warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. This
 precondition guards the gap between an agent's read and its write; lease
 fencing ([pm-gh1549](../.agents/pm/issues/pm-gh1549.toon)) still guards the

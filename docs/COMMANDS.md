@@ -968,9 +968,14 @@ Starting work respects declared blockers
 in_progress`, `pm claim <id> --start`, `pm claim --next --start` and the
 `start-task` action refuse with `start_blocked_by_open_dependency` (exit 4)
 while a `blocked_by` target is still open. The check runs before any write: the
-explicit `claim <id> --start` judges it once under the claim's item lock and
-its status update reuses that decision, so a refused start leaves no claim. The refusal lists the open blockers in
-`details.open_blockers` and suggests the exact `pm update` that drops the edge.
+explicit `claim <id> --start` judges it under the claim's item lock, and its
+status update judges again under its own lock. If a blocker opened in between,
+the start refuses and releases the claim it took, so a refused start leaves no
+claim. The refusal lists the open blockers in `details.open_blockers` and
+suggests the exact `pm update` that drops the edge. When clearing the
+`blocked_by` scalar would also drop an independent `blocked_by` edge
+([pm-4yxzvd](../.agents/pm/issues/pm-4yxzvd.toon)), it suggests inspecting
+the item instead.
 A terminal blocker never blocks, and an update that removes the blocker in the
 same call is admitted. `--force` starts anyway and records
 `start_blocker_override:<id>:<blockers>`. `governance.start_blocker_enforcement`

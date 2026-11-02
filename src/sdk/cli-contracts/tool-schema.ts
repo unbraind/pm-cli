@@ -6,6 +6,7 @@
  * JSON Schemas served to MCP clients, the `pm contracts` command, and SDK
  * consumers from a single source of truth.
  */
+import { PM_EXPECT_HASH_ACTIONS } from "./expect-hash-actions.js";
 import { normalizeUniqueStringList } from "./string-lists.js";
 import { PM_TOOL_ACTIONS, type PmToolAction } from "./enum-contracts.js";
 import {
@@ -165,39 +166,6 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
   "close-many": ["fullChangedFields"],
   assurance: ["fullChangedFields", "idOnly"],
 };
-
-/**
- * Actions whose locked item writes honour the `expectHash` precondition
- * (pm-gh1576): lifecycle, annotation, linked-artifact, plan, linked-test
- * persistence and history-maintenance writers of existing items. `create` and
- * `copy` only create new items, so a revision has nothing to guard there.
- */
-const PM_TOOL_EXPECT_HASH_ACTIONS: ReadonlySet<string> = new Set([
-  "update",
-  "item-reopen",
-  "close",
-  "claim",
-  "release",
-  "start-task",
-  "pause-task",
-  "close-task",
-  "restore",
-  "append",
-  "update-many",
-  "close-many",
-  "delete",
-  "comments",
-  "notes",
-  "learnings",
-  "files",
-  "docs",
-  "test",
-  "test-all",
-  "plan",
-  "history-redact",
-  "history-repair",
-  "history-compact",
-]);
 
 /** Create-compatible metadata parameters reused by Plan materialization and CLI registration. */
 export const PLAN_CREATE_METADATA_PARAMETER_KEYS = [
@@ -1771,7 +1739,7 @@ export function pmToolActionParameterKeys(
       ? PM_TOOL_READ_OUTPUT_PARAMETER_KEYS
       : []),
     ...mutationParameterKeys,
-    ...(PM_TOOL_EXPECT_HASH_ACTIONS.has(action) ? ["expectHash"] : []),
+    ...(PM_EXPECT_HASH_ACTIONS.has(action) ? ["expectHash"] : []),
     ...(contract.required ?? []),
     ...(contract.optional ?? []),
   ]);

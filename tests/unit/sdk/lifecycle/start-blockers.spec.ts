@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
-import type { PmCliError } from "../../../../src/core/shared/errors.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import { runConfig } from "../../../../src/sdk/config.js";
 import { runClaim } from "../../../../src/sdk/lifecycle/claim.js";
 import {
+  admitExplicitStartClaim,
+  admitStartTransition,
   admitStartWithOpenBlockers,
+  runAsExplicitStart,
   isStartTransition,
   START_BLOCKED_REFUSAL_CODE,
   START_BLOCKER_ENFORCEMENT_DEFAULT,
 } from "../../../../src/sdk/lifecycle/start-blockers.js";
-import { runStartTask } from "../../../../src/sdk/lifecycle/task-composition.js";
+import { releaseRefusedStartClaim, runStartTask } from "../../../../src/sdk/lifecycle/task-composition.js";
+import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import { PmClient } from "../../../../src/sdk/runtime.js";
 import type { ItemMetadata } from "../../../../src/types/index.js";
@@ -146,6 +149,63 @@ describe("pm-urzubi transports share one check before any write", () => {
       expect(cli.stderr).toContain(START_BLOCKED_REFUSAL_CODE);
       const pm = new PmClient({ pmRoot: context.pmPath, noExtensions: true, author: "mcp-agent" });
       await expect(pm.run("start-task", { id: blocked })).rejects.toMatchObject({ context: { code: START_BLOCKED_REFUSAL_CODE } });
+    });
+  });
+});
+
+describe("pm-urzubi explicit start composition", () => {
+  it("re-judges the status write after its claim and de-duplicates admitted warnings", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const registry = resolveRuntimeStatusRegistry(settings.schema);
+      const open = { id: "pm-x", type: "Task", status: "open", title: "x" } as ItemMetadata;
+      const blocked = { ...open, status: "in_progress", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata;
+      const transition = { pmRoot: context.pmPath, settings, metadata: blocked, fromStatus: "open", registry };
+      expect(await admitExplicitStartClaim({ pmRoot: context.pmPath, settings, metadata: open, registry })).toEqual([]);
+      await runAsExplicitStart(async () => {
+        expect(await admitExplicitStartClaim({ pmRoot: context.pmPath, settings, metadata: { ...open, status: "in_progress" } as ItemMetadata, registry })).toEqual([]);
+        // A blocker opened after the claim still refuses the status write.
+        await expect(admitStartTransition(transition)).rejects.toMatchObject({ context: { code: START_BLOCKED_REFUSAL_CODE } });
+        settings.governance.start_blocker_enforcement = "warn";
+        expect(await admitStartTransition(transition)).toEqual([]);
+      });
+      expect(await admitStartTransition(transition)).toEqual(["start_with_open_blockers:pm-x:pm-missing"]);
+    });
+  });
+
+  it("releases only the claim a refused start took, and passes every other failure through", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Compensated start" });
+      const global = { path: context.pmPath };
+      const claim = await runClaim(id, false, global, {});
+      const refusal = new PmCliError("blocked", EXIT_CODE.CONFLICT, { code: START_BLOCKED_REFUSAL_CODE, item_id: id, why: "open blocker" });
+      const wrapped = Object.assign(new PmCliError("blocked", EXIT_CODE.CONFLICT, { code: START_BLOCKED_REFUSAL_CODE, why: "wrapped" }), { cause: refusal });
+      const other = new PmCliError("other", EXIT_CODE.CONFLICT, { code: "stale_revision" });
+      expect(await releaseRefusedStartClaim(other, claim, global, undefined)).toBe(other);
+      expect(await releaseRefusedStartClaim(refusal, { ...claim, previous_assignee: "someone" }, global, undefined)).toBe(refusal);
+      const released = await releaseRefusedStartClaim(wrapped, claim, global, "test-author") as PmCliError;
+      expect(released.context.why).toBe("open blocker A blocker opened after this start's claim, so the claim was released and no ownership remains.");
+      expect((await new PmClient({ pmRoot: context.pmPath, noExtensions: true }).get(id)).item.assignee ?? null).toBeNull();
+      const again = await runClaim(id, false, global, {});
+      const bare = await releaseRefusedStartClaim(new PmCliError("blocked", EXIT_CODE.CONFLICT, { code: START_BLOCKED_REFUSAL_CODE }), again, global, undefined) as PmCliError;
+      expect(bare.context.why).toBe("A blocker opened after this start's claim, so the claim was released and no ownership remains.");
+    });
+  });
+
+  it("advertises a targeted unblock step that never drops another prerequisite", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const base = { id: "pm-x", type: "Task", status: "open", title: "x" } as ItemMetadata;
+      const nextSteps = async (metadata: ItemMetadata) => ((await admitStartWithOpenBlockers({ pmRoot: context.pmPath, settings, metadata }).catch((error: PmCliError) => error)) as PmCliError).context.nextSteps;
+      // A short scalar names the same blocker as its canonical edge, so the scalar clear is safe.
+      expect(await nextSteps({ ...base, blocked_by: "missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
+        .toContain("pm update pm-x --unset blocked_by");
+      // An edge stored as a short alias is cited as stored, so the removal selector matches it.
+      expect(await nextSteps({ ...base, dependencies: [{ id: "missing", kind: "blocked_by" }] } as ItemMetadata))
+        .toContain('pm update pm-x --dep-remove "id=missing,kind=blocked_by"');
+      // Clearing the scalar would also drop the independent edge, so only an inspection step is offered.
+      expect(await nextSteps({ ...base, blocked_by: "pm-missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "pm-other", kind: "blocked_by" }] } as ItemMetadata))
+        .toContain("pm get pm-x --fields blocked_by,dependencies");
     });
   });
 });

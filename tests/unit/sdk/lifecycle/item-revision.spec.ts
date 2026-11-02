@@ -396,6 +396,59 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
+  it("dispatches extension commands inside a client revision scope", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTestExtension({
+        root: path.join(pmPath, "extensions", "greet"),
+        name: "greet",
+        manifestOverrides: { capabilities: ["commands"] },
+        entrySource: "export default { activate(api) { api.registerCommand({ name: 'greet hello', action: 'greet-hello', run: async () => ({ greeting: 'hi' }) }); } };\n",
+      });
+      const pm = new PmClient({ pmRoot: pmPath });
+      const id = (await pm.create({ title: "Scoped extension", type: "Task", description: "d" })).item.id;
+      const { item_hash } = await pm.readItemRevision(id);
+      await expect(pm.withExpectedItemRevisions([{ id, itemHash: item_hash }], () => pm.run("greet-hello", {}))).resolves.toEqual({
+        result: { greeting: "hi" },
+        checked: [],
+        unchecked: [id],
+      });
+    });
+  });
+
+  it("binds deleted items through retained history and judges history maintenance as their tombstone", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Deleted subject", description: "contains token-xyz" });
+      const pm = client(context);
+      const peer = new PmClient({ pmRoot: context.pmPath, noExtensions: true, author: "peer-agent" });
+      const live = (await pm.readItemRevision(id)).item_hash;
+      const peerDelete = AsyncResource.bind(() => peer.run("delete", { id, force: true }));
+      await expect(withExpectedItemRevisions([{ id, itemHash: live }], async () => {
+        await peerDelete();
+        return pm.run("history-redact", { id, options: { literal: ["token-xyz"] } });
+      }, { pmRoot: context.pmPath })).rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: id } });
+      const tombstone = await readItemRevision(id, { pmRoot: context.pmPath });
+      expect(tombstone).toMatchObject({ id });
+      const history = context.runCli(["history", id, "--full", "--json"], { expectJson: true }).json as { history: Array<{ op: string; after_hash: string }> };
+      expect(history.history.at(-1)).toMatchObject({ op: "delete", after_hash: tombstone.item_hash });
+      const redacted = await withExpectedItemRevisions([{ id, itemHash: tombstone.item_hash }], () => pm.run("history-redact", { id, options: { literal: ["token-xyz"] } }), { pmRoot: context.pmPath });
+      expect(redacted.checked).toEqual([id]);
+      const restored = await withExpectedItemRevisions([{ id, itemHash: tombstone.item_hash }], () => pm.run("restore", { id, target: "1", force: true }), { pmRoot: context.pmPath });
+      expect(restored.checked).toEqual([id]);
+    });
+  });
+
+  it("admits the native reopen action and refuses a supplied null", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Reopen guard", status: "closed" });
+      const common = { path: context.pmPath, noExtensions: true, author: "reopen-agent" };
+      const fresh = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      await expect(runAction({ ...common, action: "item-reopen", id, reason: "Recurred", expectHash: fresh })).resolves.toBeDefined();
+      await expect(runAction({ ...common, action: "update", id, options: { priority: "3" }, expectHash: null })).rejects.toMatchObject({
+        context: { code: "expect_hash_invalid", value: "null" },
+      });
+    });
+  });
+
   it("declares expectHash on plan, linked-test persistence and history maintenance contracts", () => {
     for (const action of ["plan", "test-all", "history-redact", "history-repair", "history-compact", "update", "comments"]) {
       expect(pmToolActionParameterKeys(action)).toContain("expectHash");
