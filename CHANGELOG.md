@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026.11.2 - 2026-11-02
+## Unreleased
 
 ### Fixed
 
@@ -9,6 +9,11 @@
 - Route project-schema keys to their declared flags in field refusals ([pm-wftvem](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wftvem.toon))
 - Typed refusals render the generic headline 'Invalid argument value' in human output: a likely_duplicate create refusal reads as a bad flag value ([pm-btv6x7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-btv6x7.toon))
 - Preserve surrogate pairs in bounded extension error diagnostics ([pm-y4v90c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4v90c.toon))
+
+## 2026.11.2 - 2026-11-02
+
+### Fixed
+
 - A continuable key=value prose segment containing a colon is misread as a new key, so --comment/--note/--learning seeds store the raw entry with its text= prefix ([pm-fr10t8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fr10t8.toon))
 - GH-1580: Host-bound extension settings sections ([pm-gh1580](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1580.toon))
 - pm config set on a schema-invalid settings.json writes the fallback defaults as the whole file, deleting unrelated settings ([pm-4zpq71](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4zpq71.toon))
