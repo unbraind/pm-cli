@@ -514,6 +514,17 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       await expect(runAction({ ...common, action: "update", id, options: { priority: "3", expectHash: stale } })).rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
       await expect(runAction({ ...common, action: "update", id, options: { priority: "3", expect_hash: null } })).rejects.toMatchObject({ context: { code: "expect_hash_invalid" } });
       expect(splitExpectHashInput({ id, options: "raw" })).toEqual({ expectHash: undefined, dispatchArgs: { id, options: "raw" } });
+      // Every placement is merged, so a guard in a second placement is never dropped.
+      expect(splitExpectHashInput({ id, expectHash: HASH_A, options: { expectHash: [`pm-b=${HASH_B}`], expect_hash: `pm-c=${HASH_B}` } })).toEqual({
+        expectHash: [HASH_A, `pm-b=${HASH_B}`, `pm-c=${HASH_B}`],
+        dispatchArgs: { id, options: {} },
+      });
+      const other = createTestItemId(context, { title: "Second placement" });
+      const otherStale = (await readItemRevision(other, { pmRoot: context.pmPath })).item_hash;
+      const fresh = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      await runAction({ ...common, action: "update", id: other, options: { title: "Peer retitle of the other item" } });
+      await expect(runAction({ ...common, action: "update", id: other, expectHash: `${id}=${fresh}`, options: { priority: "3", expectHash: otherStale } }))
+        .rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: other } });
       expect(splitExpectHashInput({ id })).toEqual({ expectHash: undefined, dispatchArgs: { id } });
     });
   });
