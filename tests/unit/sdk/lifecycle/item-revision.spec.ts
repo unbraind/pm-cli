@@ -245,6 +245,14 @@ describe("pm-gh1576 read-decide-write through the SDK", () => {
     });
   });
 
+  it("recognizes a revision conflict raised through another SDK bundle's error class", () => {
+    const foreign = Object.assign(new Error("stale"), { name: "PmCliError", exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict" } });
+    expect(foreign).not.toBeInstanceOf(PmCliError);
+    expect(isItemRevisionConflict(foreign)).toBe(true);
+    expect(isItemRevisionConflict(Object.assign(new Error("other"), { name: "PmCliError", exitCode: 4, context: { code: "stale_revision" } }))).toBe(false);
+    expect(isItemRevisionConflict(new Error("plain"))).toBe(false);
+  });
+
   it("leaves non-conflict, already-enriched and incomplete refusals untouched", async () => {
     const plain = new Error("plain");
     expect(await enrichItemRevisionConflict(plain, "/tracker")).toBe(plain);

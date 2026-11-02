@@ -31,6 +31,7 @@ import { PM_EXPECT_HASH_ACTIONS } from "../cli-contracts/expect-hash-actions.js"
 import { resolveHistorySubject } from "../history/subject.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../core/shared/constants.js";
 import { isMutationAction } from "../mutation-guard.js";
+import { isPmCliExpectedError } from "../errors.js";
 
 export type { ItemRevisionScope } from "../../core/store/item-mutation-precondition.js";
 
@@ -259,9 +260,13 @@ export async function itemRevisionConflictRowFields(error: unknown, pmRoot: stri
   };
 }
 
-/** Whether an error is the locked-write expected-revision refusal. */
+/**
+ * Whether an error is the locked-write expected-revision refusal. Structural, not
+ * `instanceof`: a refusal raised through another published SDK entrypoint's bundle
+ * is a different PmCliError class with the same shape.
+ */
 export function isItemRevisionConflict(error: unknown): error is PmCliError {
-  return error instanceof PmCliError && error.code === ITEM_REVISION_CONFLICT_CODE;
+  return isPmCliExpectedError(error) && error.context.code === ITEM_REVISION_CONFLICT_CODE;
 }
 
 /**

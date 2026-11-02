@@ -1205,7 +1205,8 @@ export async function deleteItem(params: {
     );
     const { derivedIndexWarnings, effectiveItemPath } = committed;
     // The item is now absent; a later restore in the same scope must find that tombstone revision.
-    advanceItemMutationPreconditions(params.pmRoot, tombstoneDocument, located.id);
+    // The tombstone has no embedded id: carry the pre-delete one so a case-variant spelling still advances.
+    advanceItemMutationPreconditions(params.pmRoot, tombstoneDocument, located.id, [document.metadata.id]);
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({

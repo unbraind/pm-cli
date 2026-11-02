@@ -1405,7 +1405,10 @@ refuse itself; an interleaved peer write still refuses the next step. The
 result lists `checked` ids and `unchecked` ids that the operation never wrote:
 an unchecked expectation proved nothing. Expectations bind to the item's embedded id, so every
 spelling that locates the item (a short id, or a case variant on a
-case-insensitive filesystem) is guarded. `PmClient.readItemRevision` and
+case-insensitive filesystem) is guarded. The scope is shared process-wide across the
+published SDK entrypoints (`/sdk`, `/sdk/core`, ...), and
+`isItemRevisionConflict` checks the refusal structurally, so mixing entrypoints
+neither drops a guard nor hides its conflict. `PmClient.readItemRevision` and
 `PmClient.withExpectedItemRevisions` resolve targets inside the client's
 extension context, so extension item types bind exactly as `get` reads them,
 then run the operation outside it, so its own actions (extension commands

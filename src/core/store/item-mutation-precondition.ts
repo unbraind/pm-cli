@@ -56,7 +56,14 @@ export interface ItemRevisionScope {
   entries: Map<string, ItemRevisionScopeEntry>;
 }
 
-const revisionScopes = new AsyncLocalStorage<readonly ItemRevisionScope[]>();
+/**
+ * One revision-scope store per process, shared through a registered symbol: the
+ * published SDK entrypoints (`/sdk`, `/sdk/core`, ...) are separate bundle graphs,
+ * and a guard opened through one must constrain writes made through another.
+ */
+const REVISION_SCOPES_KEY = Symbol.for("@unbrained/pm-cli/item-revision-scopes");
+const revisionScopeRegistry = globalThis as typeof globalThis & { [REVISION_SCOPES_KEY]?: AsyncLocalStorage<readonly ItemRevisionScope[]> };
+const revisionScopes = (revisionScopeRegistry[REVISION_SCOPES_KEY] ??= new AsyncLocalStorage<readonly ItemRevisionScope[]>());
 
 /** Create an empty, unbound expected-revision scope. */
 export function createItemRevisionScope(): ItemRevisionScope {
@@ -171,9 +178,13 @@ export function assertItemMutationPreconditions(pmRoot: string, document: ItemDo
   }
 }
 
-/** Notify matching scoped guards of their own committed document (a tombstone after delete) before releasing the item lock. */
-export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id): void {
-  const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id]);
+/**
+ * Notify matching scoped guards of their own committed document (a tombstone
+ * after delete) before releasing the item lock. `aliasIds` carries identities
+ * the committed document no longer has, such as a deleted item's embedded id.
+ */
+export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id, aliasIds: readonly string[] = []): void {
+  const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id, ...aliasIds]);
   if (entries.length > 0) {
     const committed = hashDocument(document);
     for (const entry of entries) entry.expected = committed;
