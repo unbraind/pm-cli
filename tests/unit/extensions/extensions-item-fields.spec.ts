@@ -5,7 +5,8 @@ import {
   RESERVED_ITEM_FIELD_NAMES,
 } from "../../../src/core/extensions/item-fields.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { createSchemaFieldRecoveryResolver, resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
+import { createSchemaFieldRecoveryResolver, hostOwnedOptions, resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
+import { normalizeCreateOptions, normalizeUpdateOptions } from "../../../src/sdk/cli-contracts/registration-helpers.js";
 import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { collectRuntimeUpdateFieldValues, runtimeFieldSdkOptionName } from "../../../src/core/schema/runtime-field-values.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../../../src/sdk/cli-contracts/commander-mutation-options.js";
@@ -231,6 +232,22 @@ describe("extensions item field runtime wiring", () => {
     expect(scopedRefusal.context.recovery?.suggested_flags).toEqual(["--x-y"]);
     expect(scopedRefusal.context.nextSteps?.[1]).toBe("SDK: pass xY in the update options.");
     expect(collectRuntimeUpdateFieldValues({ xY: "v" }, scoped)).toEqual({ x_y: "v" });
+  });
+
+  it("reserves every option key the mutation normalizers write, so no routing hint can name a host option", () => {
+    // ownershipMetadataBypass / ownershipDependencyBypass are internal keys no flag declares: naming one in an SDK
+    // hint would activate an ownership bypass. This pins the reservation to what the normalizers actually write.
+    for (const [command, keys] of [
+      ["update", Object.keys(normalizeUpdateOptions({}))],
+      ["create", Object.keys(normalizeCreateOptions({ type: "Task" }))],
+    ] as const) {
+      const reserved = hostOwnedOptions(command).options;
+      expect(keys.filter((key) => !reserved.has(key))).toEqual([]);
+    }
+    const bypass = resolveRuntimeFieldRegistry({ fields: [{ key: "ownership_metadata_bypass", type: "boolean", commands: ["update"] }] } as never);
+    const refusal = refuseFieldAssignment("ownership_metadata_bypass=true", createSchemaFieldRecoveryResolver(bypass, "update"));
+    expect(refusal.context.recovery).toEqual({ provided_fields: ["ownership_metadata_bypass"] });
+    expect(refusal.context.nextSteps?.[1]).toContain("no SDK option sets it alone");
   });
 
   it("keeps the standalone core parser truthful without host command contracts", () => {

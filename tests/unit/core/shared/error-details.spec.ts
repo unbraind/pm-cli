@@ -212,14 +212,26 @@ describe("producer error diagnostics admission (GH-1631)", () => {
       details_omitted: { reason: "not_plain_object", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
     });
     const withoutDetails = { code: "probe" };
-    expect(projectPmCliErrorContextDetails(withoutDetails)).toBe(withoutDetails);
+    // Always a plain copy, never the original object (whose serializer could be inherited).
+    expect(projectPmCliErrorContextDetails(withoutDetails)).toEqual(withoutDetails);
+    expect(projectPmCliErrorContextDetails(withoutDetails)).not.toBe(withoutDetails);
     for (const passthrough of [undefined, null, "text", [1]]) {
       expect(projectPmCliErrorContextDetails(passthrough)).toBe(passthrough);
       expect(omitPmCliErrorDetails(passthrough)).toBe(passthrough);
     }
     expect(omitPmCliErrorDetails(context)).toEqual({ code: "probe" });
     expect(context.details).toEqual({ report: { excluded: 1 } });
-    expect(omitPmCliErrorDetails(withoutDetails)).toBe(withoutDetails);
+    expect(omitPmCliErrorDetails(withoutDetails)).toEqual(withoutDetails);
+    expect(omitPmCliErrorDetails(withoutDetails)).not.toBe(withoutDetails);
+    // An inherited serializer is not carried either: the copy has a plain prototype.
+    class SerializingContext {
+      code = "probe";
+      toJSON(): unknown {
+        return { details: { text: "x".repeat(5000) } };
+      }
+    }
+    expect(JSON.stringify(projectPmCliErrorContextDetails(new SerializingContext()))).toBe('{"code":"probe"}');
+    expect(JSON.stringify(omitPmCliErrorDetails(new SerializingContext()))).toBe('{"code":"probe"}');
     // A serializer alone is enough to need projecting: it could emit diagnostics the context does not hold.
     const serializerOnly = { code: "probe", toJSON: () => ({ details: { text: "x".repeat(5000) } }) };
     expect(JSON.stringify(projectPmCliErrorContextDetails(serializerOnly))).toBe('{"code":"probe"}');

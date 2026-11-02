@@ -9,10 +9,16 @@ import { commanderOptionAttribute, runtimeFieldCliFlagRoute, runtimeFieldFlagTok
 import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
 import type { UpdateCommandOptions } from "./update.js";
 
-/** SDK-only update options with no CLI flag: a routing hint must never name them. */
+/**
+ * Update options the host reads that no CLI flag declares: a routing hint
+ * must never name them. A spec pins this set against the keys
+ * normalizeUpdateOptions writes, so a new internal key cannot be missed.
+ */
 const UPDATE_SDK_ONLY_OPTION_KEYS = [
   "documentAnnotationSnapshot",
   "runtimeFieldCommands",
+  "ownershipMetadataBypass",
+  "ownershipDependencyBypass",
 ] as const satisfies ReadonlyArray<keyof UpdateCommandOptions>;
 import { ITEM_MUTATION_FACET_OPTION_MAPPINGS } from "./mutation-facet-contracts.js";
 import {
@@ -49,7 +55,7 @@ export function resolveCoreFieldRecovery(field: string): Pick<PmCliErrorContext,
  * controls such as --force and --clear-tests), global flags, the option
  * registration targets, and SDK-only option keys.
  */
-function hostOwnedOptions(command: "create" | "update"): { options: ReadonlySet<string>; flags: ReadonlySet<string> } {
+export function hostOwnedOptions(command: "create" | "update"): { options: ReadonlySet<string>; flags: ReadonlySet<string> } {
   const contracts = command === "update" ? UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS : CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS;
   const flags = [
     ...resolveSubcommandFlagContractsForCommand(command),
