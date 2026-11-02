@@ -251,7 +251,9 @@ describe("linked-test editing and configuration admission", () => {
         sdkRefusal = error as typeof sdkRefusal;
       }
       expect(sdkRefusal).toMatchObject({ code: "linked_test_command_immutable", context: { field: "command", changed: false } });
-      const sdkArgs = (sdkRefusal?.context?.recovery as { suggested_retry_args: string[] }).suggested_retry_args;
+      const sdkRecovery = sdkRefusal?.context?.recovery as { suggested_retry_args: string[] } | undefined;
+      if (sdkRecovery === undefined) throw new Error("expected the refusal to carry recovery");
+      const sdkArgs = sdkRecovery.suggested_retry_args;
       expect(sdkArgs.slice(0, 6)).toEqual(["--pm-path", context.pmPath, "test", id, "--remove", "command=node -e 1"]);
       expect(sdkArgs[6]).toBe("--add-json");
       expect(JSON.parse(sdkArgs[7]!)).toEqual({ command: "node -e 2", path: "first.mjs", scope: listed.tests[0]!.scope, timeout_seconds: 60, note: "new" });
