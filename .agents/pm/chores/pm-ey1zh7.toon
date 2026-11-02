@@ -1,0 +1,26 @@
+id: pm-ey1zh7
+title: "Refresh mature GitHub Action pins: CodeQL 4.39.1, CodSpeed action 5.6.0 and TruffleHog 3.99.7"
+description: "Adopt the five github-actions updates Dependabot proposed in GH PR #1651 once each upstream release cleared the seven-day age floor, and move the exact-pin workflow contracts with them."
+type: Chore
+status: in_progress
+priority: 2
+tags[3]: "area:ci",dependencies,supply-chain
+created_at: "2026-11-02T09:29:42.682Z"
+updated_at: "2026-11-02T09:31:47.279Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "Every workflow pins github/codeql-action init, analyze and upload-sarif to 9b3254085494b55a0f7c4c2b3d2d52cc712ce370 (v4.39.1), CodSpeedHQ/action to 78102a468f96d8e0ccb92d0ec49425753fc42062 (v5.6.0) and trufflesecurity/trufflehog to 31ce31ee1abbcc7dc8eee5764c17121c3044c8b2 (v3.99.7), each SHA verified against its dereferenced release tag; The executed TruffleHog version input matches the action pin (3.99.7); tests/integration/ci-workflow-contract.spec.ts pins the new SHAs and version and passes, and the dependency-cooldown, workflow-permissions and actionlint gates pass; GH PR #1651 is closed with a comment that links this item and the implementing PR"
+parent: pm-ogzvx6
+risk: low
+confidence: high
+expected_result: "Workflows run the eligible CodeQL, CodSpeed and TruffleHog releases under exact SHA pins, and the contract spec enforces exactly those pins"
+actual_result: "Dependabot PR #1651 failed coverage shard 1/4 because the workflow contract spec still pinned CodSpeed 5.5.0 and TruffleHog 3.99.3; all three upstream releases (2026-10-21, 2026-10-22, 2026-10-24) are older than seven days"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8skz5z,related,"2026-11-02T09:31:47.070Z","harness:claude-code","cli:update:dep",detected
+files[5]{path,scope}:
+  .github/workflows/codeql.yml,project
+  .github/workflows/codspeed.yml,project
+  .github/workflows/scorecard.yml,project
+  .github/workflows/security.yml,project
+  tests/integration/ci-workflow-contract.spec.ts,project
+body: "Release ages verified on 2026-11-02 via the GitHub releases API: codeql-action v4.39.1 2026-10-21T15:48Z, CodSpeedHQ/action v5.6.0 2026-10-22T13:18Z, trufflehog v3.99.7 2026-10-24T06:04Z. Each proposed SHA equals the commit its tag dereferences to. Dependabot's own branch cannot pass because tests/integration/ci-workflow-contract.spec.ts pins the exact CodSpeed and TruffleHog SHAs and the TruffleHog version input, so the refresh lands with the contract update in a maintainer PR, as for pm-8skz5z."
