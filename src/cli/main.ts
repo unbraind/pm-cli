@@ -9,9 +9,10 @@ import { createPmCliProgram } from "../sdk/cli-program.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
 import { createExtensionCommandError,describeUnknownError,isCommanderError,normalizeThrownExitCode,readThrownExitCode,wrapThrownErrorForSentry } from "../sdk/error-runtime.js";
 import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
-import { isPmCliExpectedError } from "../sdk/errors.js";
+import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.js";
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
+import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
@@ -403,6 +404,17 @@ function buildRecoveryPayload(params: {
   };
 }
 
+/** Attach recovery to the already-snapshotted plain context. */
+function withContextRecovery(context: PmCliErrorContext | undefined, recovery: PmCliErrorRecoveryPayload | undefined): PmCliErrorContext {
+  return { ...context, recovery };
+}
+
+/** Rewrite producer recovery as minimal edits of the caller's own invocation where the refusal code allows it. */
+function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
+  if (context === undefined) return undefined;
+  return repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
+}
+
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */
 function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string): PmCliErrorContext {
   const safeInvocationArgv = redactSensitiveCommandArgs(invocationArgv);
@@ -410,7 +422,9 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   const commandIndex = findBootstrapCommandTokenIndex(commandArgs);
   const [rootCommand, subcommand] = commandIndex === undefined ? [] : commandArgs.slice(commandIndex, commandIndex + 2);
   const explainRequested = safeInvocationArgv.includes("--explain");
-  const rawExistingRecovery = repairProjectionRecovery(safeInvocationArgv, context?.code, context?.recovery);
+  // A foreign error's context is read once, as plain data: no getter on it is ever run.
+  context = context === undefined ? undefined : (snapshotPmCliErrorContext(context) as PmCliErrorContext);
+  const rawExistingRecovery = repairInvocationRecovery(safeInvocationArgv, context);
   const existingRecovery =
     rawExistingRecovery && (rootCommand === "history-redact" || (rootCommand === "history" && subcommand === "redact"))
       ? {
@@ -422,11 +436,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
         }
       : rawExistingRecovery;
   if (existingRecovery?.recovery_mode === "compact" && !explainRequested) {
-    return {
-      /* c8 ignore next */
-      ...context,
-      recovery: existingRecovery,
-    };
+    return withContextRecovery(context, existingRecovery);
   }
   const attemptedCommand = renderAttemptedCommand(safeInvocationArgv);
   const providedFields = extractProvidedOptionFlags(safeInvocationArgv);
@@ -440,10 +450,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
     suggestedRetry,
     existingRecovery,
   });
-  return {
-    ...context,
-    recovery,
-  };
+  return withContextRecovery(context, recovery);
 }
 
 async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): Promise<void> {

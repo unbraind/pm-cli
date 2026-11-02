@@ -5,7 +5,10 @@ import {
   RESERVED_ITEM_FIELD_NAMES,
 } from "../../../src/core/extensions/item-fields.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
+import { createSchemaFieldRecoveryResolver, hostOwnedOptions, resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
+import { normalizeCreateOptions, normalizeUpdateOptions } from "../../../src/sdk/cli-contracts/registration-helpers.js";
+import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
+import { collectRuntimeUpdateFieldValues, runtimeFieldSdkOptionName } from "../../../src/core/schema/runtime-field-values.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../../../src/sdk/cli-contracts/commander-mutation-options.js";
 import {
   createEmptyExtensionRegistrationRegistry,
@@ -24,6 +27,19 @@ function withFields(
   return registrations;
 }
 
+/** Parse one assignment through the host resolvers and return the refusal it must raise. */
+function refuseFieldAssignment(
+  raw: string,
+  resolveSchemaField: (field: string) => Pick<PmCliError["context"], "recovery" | "nextSteps"> | undefined,
+): PmCliError {
+  try {
+    parseRegisteredItemFieldAssignments([raw], withFields([{ name: "team", type: "string" }]), resolveCoreFieldRecovery, resolveSchemaField);
+  } catch (error) {
+    return error as PmCliError;
+  }
+  throw new Error("expected a refusal");
+}
+
 describe("extensions item field runtime wiring", () => {
   it.each([["comments", "--comment"], ["type_options", "--type-option"], ["dependencies", "--dep"]] as const)("resolves the actual collection mutation route for %s", (field, flag) => {
     expect(resolveCoreFieldRecovery(field).recovery?.suggested_flags).toContain(flag);
@@ -40,6 +56,250 @@ describe("extensions item field runtime wiring", () => {
     for (const flag of context.recovery?.suggested_flags ?? []) expect(declared).toContain(flag);
     if (!context.recovery?.suggested_flags) expect(context.nextSteps?.[0]).toContain("No dedicated create/update CLI mutation flag");
     if (field === "external_ref") expect(context.recovery?.suggested_flags).toBeUndefined();
+  });
+
+  it("routes configured project-schema keys to their declared flag and SDK option, keeping extension and core refusals distinct (pm-wftvem)", () => {
+    const registry = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "gate_evidence", type: "object", commands: ["create", "update"] },
+        { key: "reviewUrl", metadata_key: "review_link", type: "string", cli_flag: "review-url", commands: ["update"] },
+        { key: "intake_note", type: "string", commands: ["create"] },
+        { key: "review_link_alt", type: "string", cli_flag: "review.url", commands: ["update"] },
+      ],
+    } as never);
+    const resolveForUpdate = createSchemaFieldRecoveryResolver(registry, "update");
+    const refusal = (raw: string, resolver = resolveForUpdate): PmCliError => refuseFieldAssignment(raw, resolver);
+    const gate = refusal('gate_evidence={"disposition":"gate_added"}');
+    expect(gate.message).toBe("--field gate_evidence is a project-schema field; set it with its declared flag --gate-evidence");
+    expect(gate.context).toEqual({
+      code: "project_schema_field_requires_declared_flag",
+      field: "gate_evidence",
+      changed: false,
+      recovery: { provided_fields: ["gate_evidence"], suggested_flags: ["--gate-evidence"] },
+      nextSteps: [
+        "Use the declared project-schema flag: pm update <id> --gate-evidence <value>",
+        "SDK: pass gateEvidence in the update options.",
+        "Inspect the value contract with: pm schema show-field gate_evidence",
+      ],
+    });
+    // Storage key and declared key both route; the flag is the declared one, not the key spelling.
+    const single = createSchemaFieldRecoveryResolver(resolveRuntimeFieldRegistry({
+      fields: [{ key: "reviewUrl", metadata_key: "review_link", type: "string", cli_flag: "review-url", commands: ["update"] }],
+    } as never), "update");
+    for (const key of ["review_link", "reviewUrl"]) {
+      expect(refusal(`${key}=https://example.test`, single).context.recovery?.suggested_flags).toEqual(["--review-url"]);
+    }
+    expect(refusal("review_link=x", single).context.nextSteps?.[1]).toBe("SDK: pass reviewUrl in the update options.");
+    const createOnly = refusal("intake_note=hello");
+    expect(createOnly.message).toBe("--field intake_note is a project-schema field, not an extension field");
+    expect(createOnly.context.recovery).toEqual({ provided_fields: ["intake_note"] });
+    expect(createOnly.context.nextSteps?.[0]).toBe('The project schema declares "intake_note" for create only; update cannot set it.');
+    expect(refusal("intake_note=hello", createSchemaFieldRecoveryResolver(registry, "create")).context.nextSteps?.[0]).toBe(
+      "Use the declared project-schema flag: pm create --intake-note <value>",
+    );
+    // Undeclared keys keep the extension refusal; reserved core keys keep theirs.
+    expect(refusal("unknown_key=1").context.code).toBe("extension_item_field_unknown");
+    expect(refusal("status=closed").context.code).toBe("core_item_field_requires_dedicated_flag");
+    // A declared extension field still admits normally.
+    expect(parseRegisteredItemFieldAssignments(["team=platform"], withFields([{ name: "team", type: "string" }]), resolveCoreFieldRecovery, resolveForUpdate)).toEqual({ team: "platform" });
+  });
+
+  it("routes bulk refusals under update-many's own scope and never advertises a route the invocation already used (pm-wftvem)", () => {
+    const registry = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "bulk_note", type: "string", commands: ["update_many"] },
+        { key: "row_note", type: "string", commands: ["update"] },
+        { key: "gate_evidence", type: "string", cli_aliases: ["ge"], commands: ["create", "update", "update_many"] },
+        { key: "gate_twin", metadata_key: "gate_evidence", type: "string", cli_flag: "gate-twin", commands: ["create"] },
+      ],
+    } as never);
+    const refusal = (raw: string, resolver: ReturnType<typeof createSchemaFieldRecoveryResolver>): PmCliError => refuseFieldAssignment(raw, resolver);
+    const bulk = refusal("bulk_note=x", createSchemaFieldRecoveryResolver(registry, "update_many"));
+    expect(bulk.message).toBe("--field bulk_note is a project-schema field; set it with its declared flag --bulk-note");
+    expect(bulk.context.nextSteps).toEqual([
+      "Use the declared project-schema flag: pm update-many <selection flags> --bulk-note <value>",
+      "SDK: pass bulkNote in the update options of the update-many request.",
+      "Inspect the value contract with: pm schema show-field bulk_note",
+    ]);
+    // The single-item scope cannot set a bulk-only field, and the bulk scope cannot set a single-item one.
+    expect(refusal("bulk_note=x", createSchemaFieldRecoveryResolver(registry, "update")).context.nextSteps?.[0]).toBe(
+      'The project schema declares "bulk_note" for update_many only; update cannot set it.',
+    );
+    expect(refusal("row_note=x", createSchemaFieldRecoveryResolver(registry, "update_many")).context.nextSteps?.[0]).toBe(
+      'The project schema declares "row_note" for update only; update-many cannot set it.',
+    );
+    // update-many reserves the row surface plus its own selection flags.
+    const bulkHost = hostOwnedOptions("update_many");
+    for (const option of hostOwnedOptions("update").options) expect(bulkHost.options.has(option)).toBe(true);
+    expect([bulkHost.flags.has("--filter-status"), bulkHost.options.has("filterStatus")]).toEqual([true, true]);
+    // An invocation that already sets the key through any declared spelling gets no executable route:
+    // a retry would carry two values for one field.
+    for (const [command, options] of [["update", { ge: "old" }], ["update_many", { gateEvidence: "old" }], ["create", { ge: "old" }]] as const) {
+      const conflicted = refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, command, options));
+      expect(conflicted.message).toBe("--field gate_evidence is a project-schema field, not an extension field");
+      expect(conflicted.context.recovery).toEqual({ provided_fields: ["gate_evidence"] });
+      expect(conflicted.context.nextSteps?.[0]).toBe(
+        'This invocation already sets "gate_evidence" through a declared flag or option; drop the --field gate_evidence assignment so the field receives one value.',
+      );
+    }
+    // A storage twin's spelling counts only in the scope that applies it; absent values leave the route.
+    expect(refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, "update", { gateTwin: "old" })).context.recovery?.suggested_flags).toEqual(["--gate-evidence"]);
+    expect(refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, "create", { gateTwin: "old" })).context.nextSteps?.[0]).toContain("already sets");
+    expect(refusal("gate_evidence=new", createSchemaFieldRecoveryResolver(registry, "update", { title: "unrelated" })).context.recovery?.suggested_flags).toEqual(["--gate-evidence"]);
+    // The refused --field input itself never counts, even when a declaration reads the `field` option.
+    const fieldAlias = resolveRuntimeFieldRegistry({
+      fields: [{ key: "routing_note", type: "string", cli_aliases: ["field"], commands: ["create", "update", "update_many"] }],
+    } as never);
+    for (const command of ["create", "update", "update_many"] as const) {
+      const routed = refusal("routing_note=new", createSchemaFieldRecoveryResolver(fieldAlias, command, { field: ["routing_note=new"] }));
+      expect(routed.context.recovery).toEqual({ provided_fields: ["routing_note"], suggested_flags: ["--routing-note"] });
+    }
+  });
+
+  it("advertises only CLI flags and SDK options that set the refused schema field alone (pm-wftvem)", () => {
+    const registry = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "gate_evidence", type: "object", commands: ["create", "update"] },
+        { key: "reviewUrl", metadata_key: "review_link", type: "string", cli_flag: "review-url", commands: ["update"] },
+        { key: "review_link_alt", type: "string", cli_flag: "review.url", commands: ["update"] },
+      ],
+    } as never);
+    const resolveForUpdate = createSchemaFieldRecoveryResolver(registry, "update");
+    const refusal = (raw: string, resolver = resolveForUpdate): PmCliError => refuseFieldAssignment(raw, resolver);
+    // --review-url parses to reviewUrl, which review_link_alt also reads (review.url normalizes to it), so that
+    // flag is never advertised; Commander keeps --review.url as the literal key "review.url", which only
+    // review_link_alt reads, so its flag is.
+    const ambiguous = refusal("review_link=x");
+    expect(ambiguous.context.recovery).toEqual({ provided_fields: ["review_link"] });
+    expect(ambiguous.message).toBe("--field review_link is a project-schema field, not an extension field");
+    expect(ambiguous.context.nextSteps?.[0]).toContain("is shared with another declared field or an option of pm update");
+    // --review.url sets only review_link_alt on its own, but the reader checks reviewUrl first, which
+    // --review-url sets: in an invocation carrying both, the field would read the other value. Withheld.
+    expect(Object.keys(collectRuntimeUpdateFieldValues({ "review.url": "x" }, registry))).toEqual(["review_link_alt"]);
+    expect(collectRuntimeUpdateFieldValues({ reviewUrl: "a", "review.url": "b" }, registry)).toMatchObject({ review_link_alt: "a" });
+    expect(refusal("review_link_alt=x").context.recovery).toEqual({ provided_fields: ["review_link_alt"] });
+    expect(refusal("review_link=x").context.nextSteps?.[1]).toBe("SDK: pass reviewurl in the update options.");
+    expect(refusal("review_link_alt=x").context.nextSteps?.[1]).toBe("SDK: pass reviewLinkAlt in the update options.");
+    for (const [field, option] of [["review_link", "reviewurl"], ["review_link_alt", "reviewLinkAlt"], ["gate_evidence", "gateEvidence"]] as const) {
+      const value = field === "gate_evidence" ? { disposition: "gate_added" } : "https://example.test";
+      expect(Object.keys(collectRuntimeUpdateFieldValues({ [option]: value }, registry))).toEqual([field]);
+    }
+    // A flag that a core option owns (--title) is never advertised; an alias or the key-derived SDK option is.
+    const coreNamed = resolveRuntimeFieldRegistry({
+      fields: [{ key: "review_heading", type: "string", cli_flag: "title", cli_aliases: ["review-heading"], commands: ["update"] }],
+    } as never);
+    const heading = refusal("review_heading=x", createSchemaFieldRecoveryResolver(coreNamed, "update"));
+    expect(heading.context.recovery?.suggested_flags).toEqual(["--review-heading"]);
+    expect(heading.context.nextSteps?.[1]).toBe("SDK: pass reviewHeading in the update options.");
+    expect(Object.keys(collectRuntimeUpdateFieldValues({ reviewHeading: "x" }, coreNamed))).toEqual(["review_heading"]);
+    // When declarations share a storage key, the route goes through one the command may set.
+    const sharedKey = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "triage_a", metadata_key: "triage", type: "string", commands: ["create"] },
+        { key: "triage_b", metadata_key: "triage", type: "string", commands: ["update"] },
+      ],
+    } as never);
+    expect(refusal("triage=x", createSchemaFieldRecoveryResolver(sharedKey, "update")).context.recovery?.suggested_flags).toEqual(["--triage-b"]);
+    // Declarations sharing a storage key are still distinct readers: identical flag spellings are ambiguous.
+    const twins = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "triage_c", metadata_key: "triage2", type: "string", cli_flag: "triage-two", commands: ["update"] },
+        { key: "triage_d", metadata_key: "triage2", type: "number", cli_flag: "triage.two", commands: ["update"] },
+      ],
+    } as never);
+    expect(refusal("triage2=1", createSchemaFieldRecoveryResolver(twins, "update")).context.nextSteps?.[1]).toContain("no SDK option sets it alone");
+    // When every name a field answers to is shared, no SDK option is advertised.
+    const sharedOnly = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "x_y", type: "string", commands: ["update"] },
+        { key: "xy", type: "string", cli_flag: "x.y", commands: ["update"] },
+      ],
+    } as never);
+    const allShared = refusal("x_y=1", createSchemaFieldRecoveryResolver(sharedOnly, "update"));
+    expect(allShared.context.recovery).toEqual({ provided_fields: ["x_y"] });
+    expect(allShared.context.nextSteps?.[1]).toContain("every option name for this field is shared");
+  });
+
+  it("never advertises host-owned, negated or inactive-collision routes, and renders short aliases (pm-wftvem)", () => {
+    const refusal = (raw: string, resolver: ReturnType<typeof createSchemaFieldRecoveryResolver>): PmCliError => refuseFieldAssignment(raw, resolver);
+    // A negating spelling files its value under the un-negated name (--no-title sets title), a directly
+    // registered control (--clear-tests / clearTests) belongs to the host, and neither is ever advertised.
+    const hostNamed = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "no_title", type: "string", commands: ["update"] },
+        { key: "clear_tests", type: "boolean", commands: ["update"] },
+      ],
+    } as never);
+    const hostResolver = createSchemaFieldRecoveryResolver(hostNamed, "update");
+    for (const key of ["no_title", "clear_tests"]) {
+      const hostRefusal = refusal(`${key}=x`, hostResolver);
+      expect(hostRefusal.context.recovery).toEqual({ provided_fields: [key] });
+      expect(hostRefusal.context.nextSteps?.[1]).not.toMatch(/pass (title|clearTests) /u);
+    }
+    expect(Object.keys(collectRuntimeUpdateFieldValues({ title: "core title" }, hostNamed))).toEqual([]);
+    // A negated spelling is never a route: its value lands under the un-negated key, which this field never reads.
+    const negated = resolveRuntimeFieldRegistry({ fields: [{ key: "no_review", type: "string", commands: ["update"] }] } as never);
+    expect(refusal("no_review=approved", createSchemaFieldRecoveryResolver(negated, "update")).context.recovery).toEqual({ provided_fields: ["no_review"] });
+    // A short alias is rendered with its single dash when the primary spelling cannot be a route.
+    const shortAlias = resolveRuntimeFieldRegistry({ fields: [{ key: "review_heading", type: "string", cli_flag: "no-review", cli_aliases: ["-r"], commands: ["update"] }] } as never);
+    const short = refusal("review_heading=approved", createSchemaFieldRecoveryResolver(shortAlias, "update"));
+    expect(short.context.recovery?.suggested_flags).toEqual(["-r"]);
+    expect(short.context.nextSteps?.[0]).toBe("Use the declared project-schema flag: pm update <id> -r <value>");
+    expect(collectRuntimeUpdateFieldValues({ r: "approved" }, shortAlias)).toEqual({ review_heading: "approved" });
+    // A host short flag (-t is --title) is never advertised, and an alias the reader would read only after a
+    // host-settable key (title) is shadowed by --title in the same invocation, so it is withheld too.
+    for (const fields of [
+      [{ key: "review_heading", type: "string", cli_flag: "no-review", cli_aliases: ["-t"], commands: ["update"] }],
+      [{ key: "review_heading", type: "string", cli_flag: "title", cli_aliases: ["heading"], commands: ["update"] }],
+    ]) {
+      const withheld = refusal("review_heading=x", createSchemaFieldRecoveryResolver(resolveRuntimeFieldRegistry({ fields } as never), "update"));
+      expect(withheld.context.recovery).toEqual({ provided_fields: ["review_heading"] });
+    }
+    // Declarations sharing a storage key override each other in the same invocation (update keeps the first
+    // supplied value, create the last), so no route or SDK hint is offered for either, on either command.
+    const storageTwins = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "triage_left", metadata_key: "triage", type: "string", commands: ["create", "update"] },
+        { key: "triage_right", metadata_key: "triage", type: "string", commands: ["create", "update"] },
+      ],
+    } as never);
+    expect(collectRuntimeUpdateFieldValues({ triageLeft: "old", triageRight: "new" }, storageTwins)).toEqual({ triage: "old" });
+    for (const command of ["update", "create"] as const) {
+      const twinResolver = createSchemaFieldRecoveryResolver(storageTwins, command);
+      for (const key of ["triage_left", "triage_right"]) {
+        const twinRefusal = refusal(`${key}=new`, twinResolver);
+        expect(twinRefusal.context.recovery).toEqual({ provided_fields: [key] });
+        expect(twinRefusal.context.nextSteps?.[1]).toContain("no SDK option sets it alone");
+      }
+    }
+    expect(runtimeFieldSdkOptionName(storageTwins.definitions[0]!, storageTwins)).toBeUndefined();
+    // Fields the command never reads cannot collide: create-only xy does not shadow update-only x_y.
+    const scoped = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "x_y", type: "string", commands: ["update"] },
+        { key: "xy", type: "string", cli_flag: "x-y", commands: ["create"] },
+      ],
+    } as never);
+    const scopedRefusal = refusal("x_y=v", createSchemaFieldRecoveryResolver(scoped, "update"));
+    expect(scopedRefusal.context.recovery?.suggested_flags).toEqual(["--x-y"]);
+    expect(scopedRefusal.context.nextSteps?.[1]).toBe("SDK: pass xY in the update options.");
+    expect(collectRuntimeUpdateFieldValues({ xY: "v" }, scoped)).toEqual({ x_y: "v" });
+  });
+
+  it("reserves every option key the mutation normalizers write, so no routing hint can name a host option", () => {
+    // ownershipMetadataBypass / ownershipDependencyBypass are internal keys no flag declares: naming one in an SDK
+    // hint would activate an ownership bypass. This pins the reservation to what the normalizers actually write.
+    for (const [command, keys] of [
+      ["update", Object.keys(normalizeUpdateOptions({}))],
+      ["create", Object.keys(normalizeCreateOptions({ type: "Task" }))],
+    ] as const) {
+      const reserved = hostOwnedOptions(command).options;
+      expect(keys.filter((key) => !reserved.has(key))).toEqual([]);
+    }
+    const bypass = resolveRuntimeFieldRegistry({ fields: [{ key: "ownership_metadata_bypass", type: "boolean", commands: ["update"] }] } as never);
+    const refusal = refuseFieldAssignment("ownership_metadata_bypass=true", createSchemaFieldRecoveryResolver(bypass, "update"));
+    expect(refusal.context.recovery).toEqual({ provided_fields: ["ownership_metadata_bypass"] });
+    expect(refusal.context.nextSteps?.[1]).toContain("no SDK option sets it alone");
   });
 
   it("keeps the standalone core parser truthful without host command contracts", () => {

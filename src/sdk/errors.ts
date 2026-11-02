@@ -9,7 +9,22 @@ import {
   type PmCliErrorContext,
   type PmTokenBudgetRecovery,
 } from "../core/shared/errors.js";
-export type { PmTokenBudgetRecovery } from "../core/shared/errors.js";
+import { admitPmCliErrorDetails } from "../core/shared/error-details.js";
+export type {
+  PmCliErrorDetailValue,
+  PmCliErrorDetails,
+  PmTokenBudgetRecovery,
+} from "../core/shared/errors.js";
+export {
+  PM_CLI_ERROR_DETAILS_LIMITS,
+  isPmCliErrorDetails,
+  projectPmCliErrorContextDetails,
+  projectPmCliErrorContextDetailsSlot,
+  projectPmCliErrorDetails,
+  snapshotPmCliErrorContext,
+  type PmCliErrorDetailsOmission,
+  type PmCliErrorDetailsRejection,
+} from "../core/shared/error-details.js";
 
 /** Accept only positive integer token counts that JSON can preserve exactly. */
 function isPositiveSafeTokenCount(value: unknown): value is number {
@@ -156,11 +171,52 @@ function normalizeExpectedErrorExitCode(value: number): number {
 }
 
 /**
+ * Snapshot producer diagnostics at construction. A malformed shape is a
+ * package-author defect, so it throws here (where a package test sees it)
+ * instead of silently disappearing from the refusal at render time. The
+ * message names only the reason: the producer-derived path, which can echo
+ * producer keys, is a non-enumerable `path` property so crash reporting of
+ * the fault never serializes it. Size is data-dependent, so oversized
+ * diagnostics are replaced by a host-set `details_omitted` receipt.
+ */
+function admitExpectedErrorContext(
+  context: PmCliErrorContext | undefined,
+): PmCliErrorContext {
+  // A JavaScript caller may pass null; it has always meant "no context".
+  if (context === undefined || context === null) return {};
+  if (!Object.hasOwn(context, "details")) return context;
+  const descriptor = Object.getOwnPropertyDescriptor(context, "details")!;
+  // An accessor is refused without being run, like any other non-JSON value.
+  if (!("value" in descriptor)) throw detailsShapeTypeError("unsupported_value", "details");
+  if (descriptor.value === undefined) return context;
+  const admission = admitPmCliErrorDetails(descriptor.value);
+  if (admission.ok) return { ...context, details: admission.details };
+  if (admission.omission.reason === "byte_limit") {
+    // Record the outcome now, so later mutation of the producer's object cannot change the refusal.
+    const { details: _oversized, ...rest } = context;
+    return { ...rest, details_omitted: admission.omission };
+  }
+  throw detailsShapeTypeError(admission.omission.reason, admission.omission.path);
+}
+
+/** Package-author fault whose message carries no producer-derived text. */
+function detailsShapeTypeError(reason: string, path: string | undefined): TypeError {
+  const error = new TypeError(
+    `createPmCliExpectedError options.context.details must be plain JSON (${reason})`,
+  );
+  Object.defineProperty(error, "path", { value: path, enumerable: false });
+  return error;
+}
+
+/**
  * Create a package-safe expected CLI error.
  *
  * The CLI and Sentry filtering rely on the public error shape rather than a
  * shared class identity, so package authors can throw this from bundled,
- * linked, or separately installed extension code.
+ * linked, or separately installed extension code. Structured, producer-owned
+ * facts belong in `context.details`: the host renders them in `--json`, text
+ * and MCP refusals within `PM_CLI_ERROR_DETAILS_LIMITS` and never sends them
+ * to telemetry or crash reporting.
  */
 export function createPmCliExpectedError(
   message: string,
@@ -174,7 +230,7 @@ export function createPmCliExpectedError(
   const error = new PmCliError(
     message,
     normalizeExpectedErrorExitCode(options.exitCode ?? EXIT_CODE.USAGE),
-    options.context ?? {},
+    admitExpectedErrorContext(options.context),
   ) as PmCliExpectedError;
   if ("cause" in options) {
     Object.defineProperty(error, "cause", {
@@ -191,17 +247,23 @@ export function createPmCliExpectedError(
 export function isPmCliExpectedError(
   error: unknown,
 ): error is PmCliExpectedError {
-  if (!(error instanceof Error) || error.name !== PM_CLI_EXPECTED_ERROR_NAME) {
+  // A refusal declares its context; a bare name plus exit code is a fault that
+  // must stay visible to crash reporting. Inspection itself can throw (a
+  // throwing name getter, or a revoked proxy failing Array.isArray); such a
+  // value is not a usable refusal.
+  try {
+    if (!(error instanceof Error) || error.name !== PM_CLI_EXPECTED_ERROR_NAME) {
+      return false;
+    }
+    const candidate = error as Partial<PmCliExpectedError>;
+    return (
+      typeof candidate.exitCode === "number" &&
+      Number.isFinite(candidate.exitCode) &&
+      typeof candidate.context === "object" &&
+      candidate.context !== null &&
+      !Array.isArray(candidate.context)
+    );
+  } catch {
     return false;
   }
-  const candidate = error as Partial<PmCliExpectedError>;
-  // A refusal declares its context; a bare name plus exit code is a fault that
-  // must stay visible to crash reporting.
-  return (
-    typeof candidate.exitCode === "number" &&
-    Number.isFinite(candidate.exitCode) &&
-    typeof candidate.context === "object" &&
-    candidate.context !== null &&
-    !Array.isArray(candidate.context)
-  );
 }

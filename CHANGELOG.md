@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- GH-1631: expose bounded extension-owned diagnostics on expected SDK errors ([pm-gh1631](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1631.toon))
+- Advertise safe linked-test command replacement after an immutable-command edit refusal ([pm-1rfy0y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1rfy0y.toon))
+- Route project-schema keys to their declared flags in field refusals ([pm-wftvem](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wftvem.toon))
+- Typed refusals keep their own headline in human output: a likely_duplicate create refusal no longer reads as an invalid flag value ([pm-btv6x7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-btv6x7.toon))
+- Preserve surrogate pairs in bounded extension error diagnostics ([pm-y4v90c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4v90c.toon))
+
 ## 2026.11.2 - 2026-11-02
 
 ### Fixed

@@ -139,6 +139,23 @@ export function assertLinkedTestContext(test: LinkedTest): void {
   );
 }
 
+/**
+ * Whether two linked tests are the same registration: an addition with the
+ * same identity is deduplicated rather than appended.
+ */
+export function linkedTestsHaveSameIdentity(
+  left: LinkedTest,
+  right: LinkedTest,
+): boolean {
+  return (
+    left.command === right.command &&
+    left.path === right.path &&
+    left.scope === right.scope &&
+    left.pm_context_mode === right.pm_context_mode &&
+    left.workspace_context_mode === right.workspace_context_mode
+  );
+}
+
 // Keys accepted inside a structured linked-test entry. `cmd` is an alias for
 // `command`; everything else maps 1:1 to a LinkedTest field.
 /** Public contract for structured linked test keys, shared by SDK and presentation-layer consumers. */

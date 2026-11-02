@@ -50,4 +50,53 @@ describe("CLI known error projection", () => {
       process.exitCode = previousExitCode;
     }
   });
+
+  it("reports a separately bundled refusal's details getter without running it, even from a frozen context (GH-1631)", async () => {
+    const previousExitCode = process.exitCode;
+    let calls = 0;
+    const context = Object.freeze(Object.defineProperty({ code: "probe_expected", recovery: { suggested_flags: ["--x"] } }, "details", {
+      enumerable: true,
+      get() {
+        calls += 1;
+        throw new Error("details getter fault");
+      },
+    }));
+    const bundled = Object.assign(new Error("bundled refusal"), { name: "PmCliError", exitCode: EXIT_CODE.USAGE, context });
+    let stderr = "";
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+      stderr += String(chunk);
+      return true;
+    });
+    try {
+      await _testOnly.handleRunPmCliKnownError(
+        {
+          error: bundled,
+          invocationArgv: ["probe", "run", "--json"],
+          bootstrapGlobal: { json: true },
+          jsonErrors: true,
+          bootstrapPmRoot: "/tmp/pm-probe",
+          attemptedCommand: "probe run",
+          emitTelemetryCommandError: vi.fn(async () => ({
+            errorCategory: "usage" as const,
+            commandResolution: "runtime_failed" as const,
+          })),
+        },
+        EXIT_CODE.USAGE,
+      );
+      expect(JSON.parse(stderr)).toMatchObject({
+        code: "probe_expected",
+        details_omitted: { reason: "unsupported_value", path: "details", byte_limit: 4096 },
+      });
+      expect(calls).toBe(0);
+    } finally {
+      stderrSpy.mockRestore();
+      process.exitCode = previousExitCode;
+    }
+    // Enrichment reads the frozen context once as plain data and still adds recovery.
+    const enriched = _testOnly.buildPmCliRecoveryContext(context, ["probe", "run"], "bundled refusal");
+    expect(Object.getOwnPropertyDescriptor(enriched, "details")).toBeUndefined();
+    expect(enriched.details_omitted).toEqual({ reason: "unsupported_value", path: "details", byte_limit: 4096 });
+    expect(enriched.recovery).toMatchObject({ suggested_flags: ["--x"] });
+    expect(calls).toBe(0);
+  });
 });

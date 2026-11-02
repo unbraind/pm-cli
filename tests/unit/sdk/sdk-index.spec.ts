@@ -118,6 +118,8 @@ import {
   isPmToolAction,
   isPmCliExpectedError,
   isPmTokenBudgetRecovery,
+  isPmCliErrorDetails,
+  PM_CLI_ERROR_DETAILS_LIMITS,
   toCompletionFlagString,
   withFlagAliasMetadata,
   writeFileAtomic,
@@ -492,6 +494,56 @@ describe("public sdk entrypoint", () => {
     const defaultError = createPmCliExpectedError("default usage error");
     expect(defaultError.exitCode).toBe(EXIT_CODE.USAGE);
     expect(defaultError.context).toEqual({});
+  });
+
+  it("snapshots producer-owned diagnostics on expected errors and refuses non-JSON shapes (GH-1631)", () => {
+    const report = { filters: { version: "2026.11.1" }, stage_counts: { excluded_status: 1 } };
+    const error = createPmCliExpectedError("No changelog section for 2026.11.1", {
+      context: { code: "release_notes_missing", details: { selection_report: report } },
+    });
+    expect(error.context.details).toEqual({ selection_report: report });
+    report.stage_counts.excluded_status = 7;
+    expect(error.context.details).toEqual({
+      selection_report: { filters: { version: "2026.11.1" }, stage_counts: { excluded_status: 1 } },
+    });
+    expect(isPmCliExpectedError(error)).toBe(true);
+    expect(isPmCliErrorDetails(error.context.details)).toBe(true);
+    expect(isPmCliErrorDetails({ when: new Date(0) })).toBe(false);
+    expect(PM_CLI_ERROR_DETAILS_LIMITS).toEqual({ max_bytes: 4096, max_depth: 8 });
+    expect(Object.isFrozen(PM_CLI_ERROR_DETAILS_LIMITS)).toBe(true);
+    // The fault message carries only the reason: producer keys stay in a
+    // non-enumerable path that crash reporting never serializes.
+    let shapeFault: (TypeError & { path?: string }) | undefined;
+    try {
+      createPmCliExpectedError("bad details", { context: { details: { PRODUCER_ONLY_KEY: (() => 1) as never } } });
+    } catch (error) {
+      shapeFault = error as TypeError & { path?: string };
+    }
+    expect(shapeFault?.message).toBe("createPmCliExpectedError options.context.details must be plain JSON (unsupported_value)");
+    expect(shapeFault?.message).not.toContain("PRODUCER_ONLY_KEY");
+    expect(shapeFault?.path).toBe("details.PRODUCER_ONLY_KEY");
+    expect(Object.keys(shapeFault!)).not.toContain("path");
+    expect(() =>
+      createPmCliExpectedError("bad details", { context: { details: [1] as never } }),
+    ).toThrow("(not_plain_object)");
+    const accessorContext = Object.defineProperty({ code: "probe" }, "details", { enumerable: true, get: () => ({}) });
+    expect(() => createPmCliExpectedError("accessor", { context: accessorContext })).toThrow("(unsupported_value)");
+    // Size is data-dependent: an oversized but well-formed payload becomes a
+    // host-set receipt at construction, so later mutation cannot change it.
+    const largeDetails = { text: "x".repeat(10_000) };
+    const large = createPmCliExpectedError("large", { context: { code: "probe", details: largeDetails } });
+    expect(large.context).toEqual({ code: "probe", details_omitted: { reason: "byte_limit", byte_limit: 4096 } });
+    largeDetails.text = "small";
+    expect(large.context.details).toBeUndefined();
+    const withoutDetails = { code: "plain" };
+    expect(createPmCliExpectedError("plain", { context: withoutDetails }).context).toBe(withoutDetails);
+    expect(createPmCliExpectedError("null context", { context: null as never }).context).toEqual({});
+    // Recognition is total: a context that cannot even be inspected is not a usable refusal.
+    const revocable = Proxy.revocable({}, {});
+    revocable.revoke();
+    expect(isPmCliExpectedError(Object.assign(new Error("revoked"), { name: "PmCliError", exitCode: 2, context: revocable.proxy }))).toBe(false);
+    const undefinedDetails = { code: "plain", details: undefined };
+    expect(createPmCliExpectedError("plain", { context: undefinedDetails }).context).toBe(undefinedDetails);
   });
 
   it("exposes package resource kind contracts", () => {

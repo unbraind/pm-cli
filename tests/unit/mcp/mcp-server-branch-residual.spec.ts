@@ -730,12 +730,102 @@ describe("mcp server branch residual coverage", () => {
     expect(server._testOnly.errorContent("primitive-error")).toMatchObject({
       isError: true,
     });
+    // GH-1631: a separately bundled expected error keeps its typed context,
+    // and producer diagnostics are bounded the same way the CLI bounds them.
+    const bundled = Object.assign(new Error("bundled refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: { code: "probe_expected", details: { report: { excluded: 1 } } },
+    });
+    expect(server._testOnly.errorContent(bundled)).toMatchObject({
+      structuredContent: { error: "bundled refusal", code: 2, details: { code: "probe_expected", details: { report: { excluded: 1 } } } },
+    });
+    const oversized = Object.assign(new Error("oversized refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: { code: "probe_expected", details: { text: "x".repeat(5000) } },
+    });
+    const bounded = server._testOnly.errorContent(oversized) as { structuredContent: { details: Record<string, unknown> } };
+    expect(bounded.structuredContent.details).toEqual({
+      code: "probe_expected",
+      details_omitted: { reason: "byte_limit", byte_limit: 4096 },
+    });
+    expect(oversized.context.details.text).toHaveLength(5000);
+    // A context JSON cannot encode still yields a written response.
+    const unserializable = Object.assign(new Error("bigint refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: { code: "probe_expected", debug: 1n },
+    });
+    expect(server._testOnly.errorContent(unserializable)).toMatchObject({
+      structuredContent: { code: 2, details: { code: "probe_expected", context_unserializable: true } },
+    });
+    const unnamed = Object.assign(new Error("bigint refusal"), { name: "PmCliError", exitCode: 2, context: { debug: 1n } });
+    expect((server._testOnly.errorContent(unnamed) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({ context_unserializable: true });
+    // A context-level serializer never runs: diagnostics are admitted from the context itself.
+    let serializations = 0;
+    const swapping = Object.assign(new Error("toJSON refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: {
+        code: "probe_expected",
+        toJSON() {
+          serializations += 1;
+          if (serializations > 1) throw new Error("second serialization");
+          return { code: "probe_expected", details: { text: "x".repeat(5000) } };
+        },
+      },
+    });
+    const swapped = server._testOnly.errorContent(swapping) as { structuredContent: { details: Record<string, unknown> }; content: Array<{ text: string }> };
+    expect(swapped.structuredContent.details).toEqual({ code: "probe_expected" });
+    expect(serializations).toBe(0);
+    // Diagnostics with a nested getter or shared amplifying references are admitted without running or expanding them.
+    let getterCalls = 0;
+    let shared: unknown = "leaf";
+    for (let level = 0; level < 8; level += 1) shared = new Array(10).fill(shared);
+    const guarded = Object.assign(new Error("guarded refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: {
+        code: "probe_expected",
+        details: Object.defineProperty({ ok: 1 }, "lazy", { enumerable: true, get() { getterCalls += 1; return "ran"; } }),
+        hint: { nested: true },
+      },
+    });
+    expect((server._testOnly.errorContent(guarded) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({
+      code: "probe_expected",
+      hint: { nested: true },
+      details_omitted: { reason: "unsupported_value", path: "details.lazy", byte_limit: 4096 },
+    });
+    expect(getterCalls).toBe(0);
+    const amplified = Object.assign(new Error("amplified refusal"), { name: "PmCliError", exitCode: 2, context: { code: "probe_expected", details: { shared } } });
+    expect((server._testOnly.errorContent(amplified) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({
+      code: "probe_expected",
+      details_omitted: { reason: "byte_limit", byte_limit: 4096 },
+    });
+    // A revoked-proxy context cannot be recognized, so the generic error envelope is written instead of throwing.
+    const revoked = Proxy.revocable({}, {});
+    revoked.revoke();
+    expect(server._testOnly.errorContent(Object.assign(new Error("revoked refusal"), { name: "PmCliError", exitCode: 2, context: revoked.proxy }))).toMatchObject({
+      isError: true,
+      structuredContent: { error: "revoked refusal", code: 1 },
+    });
+    // An uninspectable context is forwarded as an empty one instead of breaking the response.
+    const hostile = Object.assign(new Error("proxy refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: new Proxy({}, { ownKeys: () => { throw new Error("trap fault"); } }),
+    });
+    expect(server._testOnly.errorContent(hostile)).toMatchObject({ structuredContent: { code: 2, details: {} } });
 
     const writeSpy = vi
       .spyOn(process.stdout, "write")
       .mockImplementation(() => true);
     server._testOnly.writeError(1, "primitive-write-error");
     expect(writeSpy).toHaveBeenCalled();
+    server._testOnly.writeError(2, oversized);
+    const written = JSON.parse(String(writeSpy.mock.calls.at(-1)?.[0])) as { error: { code: number; data: Record<string, unknown> } };
+    expect(written.error).toMatchObject({ code: 2, data: { code: "probe_expected", details_omitted: { reason: "byte_limit" } } });
 
     const parseSpy = vi.spyOn(JSON, "parse").mockImplementation(() => {
       throw "bad-json";
@@ -1069,9 +1159,20 @@ describe("mcp server branch residual coverage", () => {
         return {
           ...actual,
           loadExtensions: vi.fn(async () => ({ loaded: [] })),
-          activateExtensions: vi.fn(async () => {
-            throw new Error("activation failed");
-          }),
+          // Activation fails with an Error (its stack is logged), a bare value, an Error whose
+          // stack getter throws, and an Error whose message is not a string: only primitives log.
+          activateExtensions: vi.fn()
+            .mockRejectedValueOnce(new Error("activation failed"))
+            .mockRejectedValueOnce("bare activation failure")
+            .mockRejectedValueOnce(Object.defineProperty(new Error("hostile"), "stack", {
+              get: () => {
+                throw new Error("stack getter");
+              },
+            }))
+            .mockRejectedValue(Object.defineProperties(new Error("opaque"), {
+              stack: { value: undefined },
+              message: { get: () => ({ details: { producer: "owned" } }) },
+            })),
           deactivateExtensions: vi.fn(async () => undefined),
         };
       });
@@ -1121,11 +1222,23 @@ describe("mcp server branch residual coverage", () => {
           ),
         });
       });
-      // The swallowed activation failure is surfaced on stderr for diagnosability.
+      // The swallowed activation failure is surfaced on stderr for diagnosability: an
+      // Error as its stack (a primitive string that still names the failing frame).
       expect(errorSpy).toHaveBeenCalledWith(
         "[pm-sdk] extension activation failed; continuing without active extensions:",
-        expect.any(Error),
+        expect.stringMatching(/^Error: activation failed\n\s+at /u),
       );
+      // A hostile stack getter and a non-string message still leave the fallback running.
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        await withTempPmPath(async (context) => {
+          expect(await server._testOnly.runAction({ action: "stats", path: context.pmPath, options: {} })).toEqual({ action: "stats" });
+        });
+      }
+      const activationLogs = errorSpy.mock.calls.filter(
+        ([label]) => label === "[pm-sdk] extension activation failed; continuing without active extensions:",
+      );
+      expect(activationLogs.map(([, description]) => typeof description)).toEqual(["string", "string", "string", "string"]);
+      expect(activationLogs.slice(1).map(([, description]) => description)).toEqual(["Unknown failure", "Unknown failure", "Unknown failure"]);
     } finally {
       errorSpy.mockRestore();
     }

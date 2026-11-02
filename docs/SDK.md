@@ -3129,6 +3129,81 @@ propagates `code` and `remediation` through the command-handler result contract.
 Invalid `exit_code` values are rejected rather than truncated or silently
 treated as success.
 
+### Producer-owned diagnostics (`context.details`)
+
+Tracked by [pm-gh1631](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1631.toon)
+(tracker record excluded from npm). Host fields such as `code`, `required` and
+`recovery` describe the refusal in the host's own vocabulary. Facts that belong
+to the package go in `context.details`, a plain JSON object the host never
+interprets:
+
+```ts
+import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
+
+throw createPmCliExpectedError("No changelog section for 2026.11.1", {
+  exitCode: 1,
+  context: {
+    code: "release_notes_missing",
+    details: {
+      selection_report: { filters: { version: "2026.11.1" }, excluded: { status: 1 } },
+    },
+  },
+});
+```
+
+- **Shape.** Values are `null`, booleans, finite numbers, well-formed strings,
+  arrays and plain objects, nested at most `PM_CLI_ERROR_DETAILS_LIMITS.max_depth`
+  (8) containers deep. `__proto__` keys and accessor properties are refused;
+  getters are never run. `createPmCliExpectedError` throws a `TypeError` whose
+  message names only the reason (`unsupported_value`, `non_finite_number`,
+  `malformed_unicode`, `reserved_key`, `depth_limit`, `not_plain_object`); the
+  offending path is on its non-enumerable `path` property, so crash reporting
+  of that fault never carries your keys. A well-formed value is kept as a
+  detached copy, so later changes to your object do not alter a raised
+  refusal; an oversized one is replaced at construction by the host-set
+  receipt `context.details_omitted: { reason: "byte_limit", byte_limit }`, so a
+  later change cannot alter the refusal either. `isPmCliErrorDetails(value)`
+  performs the same check.
+- **Rendering.** `--json` errors carry the object as `details`, text output
+  renders it as an indented JSON `Details:` block, and MCP tool errors carry it
+  inside the forwarded context. Diagnostics are rendered whole or not at all:
+  above `PM_CLI_ERROR_DETAILS_LIMITS.max_bytes` (4,096 bytes of compact UTF-8
+  JSON), or when a separately bundled error carries a malformed shape, the
+  envelope carries `details_omitted: { reason, path?, byte_limit }` instead.
+  Admitted details that would push the pretty-printed `--json` envelope past
+  the error diagnostic budget are replaced the same way, with reason
+  `diagnostic_budget`.
+  The size is counted while walking and the walk stops at the ceiling, so
+  shared or repeated structures cannot amplify the work; `path` is capped at
+  160 bytes. The CLI and MCP read a separately bundled error's context once as
+  plain data (`snapshotPmCliErrorContext`): getters are never run, and a
+  context that cannot be inspected becomes empty. MCP admits `details` from that
+  snapshot with the same bounded walk before serializing anything, then
+  serializes the remaining host fields once (a context-level `toJSON` is
+  ignored), so no serializer can expand or replace the diagnostics; a context
+  JSON cannot encode (for example a bigint member) is forwarded as
+  `{ code, context_unserializable: true }` so the response is still written. When the text output exceeds its token ceiling, the
+  text renderer drops the explanation (`why`) first and then the `Details:`
+  block (together with the example and next-step limits). A block dropped this
+  way gets no `Details omitted:` line, only the generic notice that points to
+  `--json`, which keeps the details. Custom SDK hosts apply the
+  same bound with `projectPmCliErrorDetails(value)` (returns `{ details }`,
+  `{ details_omitted }` or `undefined`) or, for a context forwarded as-is,
+  `projectPmCliErrorContextDetails(context)`.
+- **Privacy.** Telemetry and Sentry never receive `details`. The telemetry
+  classification is built without it. A crash report carries an error
+  context only as its top-level primitive fields, read without running
+  getters or `toJSON`, so diagnostics cannot reach it under another key: this
+  applies to `error_context` and to the error-data entry, which is rebuilt
+  whole from the original exception (its own primitive fields plus the safe
+  context), because the integration serializes the error, including any
+  error-level `toJSON`, before `beforeSend`. Serialized copies whose original
+  cannot be recovered are discarded: embedded contexts in console-capture
+  data, breadcrumbs and transactions are sent as empty objects, and complete
+  serialized console `arguments` are sent as empty arrays, because an error's
+  own `toJSON` can move diagnostics out of any named slot. The custom-host
+  projections drop a context-level `toJSON` for the same reason.
+
 ## Package Runtime Imports
 
 Third-party packages should import from stable public SDK subpaths:

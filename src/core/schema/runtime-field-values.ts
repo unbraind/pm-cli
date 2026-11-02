@@ -12,7 +12,7 @@ import {
   type RuntimeFieldDefinitionResolved,
   type RuntimeFieldRegistry,
 } from "./runtime-schema.js";
-import type { RuntimeFieldValueSchema } from "../../types/index.js";
+import type { RuntimeFieldCommand, RuntimeFieldValueSchema } from "../../types/index.js";
 
 const MAX_VALUE_SCHEMA_DEPTH = 16;
 
@@ -30,6 +30,127 @@ function toCamelToken(value: string): string {
   return `${first}${rest.map((segment) => `${segment.slice(0, 1).toUpperCase()}${segment.slice(1)}`).join("")}`;
 }
 
+/**
+ * The option name an SDK caller passes to set exactly this runtime field: the
+ * first name {@link readRuntimeFieldOptionValue} reads for it (preferring the
+ * camelCase of its CLI flag, as Commander derives it) that no other declared
+ * field also reads. Undefined when every name is shared, because following
+ * such a hint would also set the other field.
+ */
+export function runtimeFieldSdkOptionName(
+  definition: RuntimeFieldDefinitionResolved,
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+  reservedOptions: ReadonlySet<string> = new Set(),
+  command?: RuntimeFieldCommand,
+): string | undefined {
+  if (hasStorageTwin(definition, registry, command)) return undefined;
+  const taken = foreignRuntimeFieldOptionNames(definition, registry, reservedOptions, command);
+  const readOrder = resolveCandidateOptionKeys(definition);
+  const preferred = toCamelToken(definition.cli_flag);
+  return [preferred, ...readOrder].find((name) => !taken.has(name) && isUnshadowedOptionKey(name, readOrder, taken));
+}
+
+/**
+ * The reader stops at the first candidate key present, so a key is safe to
+ * advertise only when no earlier-read key of the same field can be set by a
+ * host option or another field. Callers pass keys the reader reads (the
+ * flag-derived names are always in the read order).
+ */
+function isUnshadowedOptionKey(key: string, readOrder: readonly string[], taken: ReadonlySet<string>): boolean {
+  for (const earlier of readOrder) {
+    if (earlier === key) break;
+    if (taken.has(earlier)) return false;
+  }
+  return true;
+}
+
+/**
+ * Whether another declaration active for the command stores to the same
+ * metadata key. The collectors resolve such a collision differently (update
+ * keeps the first supplied value, create the last), so supplying the other
+ * declaration in the same invocation could silently override this one in
+ * either direction; no route for either is provably safe.
+ */
+function hasStorageTwin(
+  definition: RuntimeFieldDefinitionResolved,
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+  command: RuntimeFieldCommand | undefined,
+): boolean {
+  return registry.definitions.some(
+    (candidate) =>
+      candidate !== definition &&
+      candidate.metadata_key === definition.metadata_key &&
+      (command === undefined || candidate.commands.includes(command)),
+  );
+}
+
+/**
+ * Option names another field active for the command reads, plus names the
+ * host command itself owns. Fields the command never reads cannot collide.
+ */
+function foreignRuntimeFieldOptionNames(
+  definition: RuntimeFieldDefinitionResolved,
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+  reservedOptions: ReadonlySet<string>,
+  command: RuntimeFieldCommand | undefined,
+): Set<string> {
+  return new Set([
+    ...reservedOptions,
+    // Identity, not storage key: two declarations sharing a metadata_key still read their own options.
+    ...registry.definitions
+      .filter((candidate) => candidate !== definition && (command === undefined || candidate.commands.includes(command)))
+      .flatMap((candidate) => resolveCandidateOptionKeys(candidate)),
+  ]);
+}
+
+/** Whether a declared spelling is a Commander negation (`no-x`), whose value lands under `x`. */
+function isNegatingFlag(flag: string): boolean {
+  return flag.replace(/^-+/u, "").startsWith("no-");
+}
+
+/** The command-line token for a declared spelling: a short alias keeps its single dash. */
+export function runtimeFieldFlagToken(flag: string): string {
+  return flag.startsWith("-") ? flag : `--${flag}`;
+}
+
+/**
+ * A declared spelling that sets exactly this runtime field: the declared flag
+ * or an alias that is not a host flag, is not a negation (its value would
+ * land under another key that this field never reads), whose parsed option
+ * name no other active field and no host option reads, and which no
+ * earlier-read key of this field can shadow. Undefined when no spelling
+ * qualifies. Render it with {@link runtimeFieldFlagToken}.
+ */
+export function runtimeFieldCliFlagRoute(
+  definition: RuntimeFieldDefinitionResolved,
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+  reserved: { options: ReadonlySet<string>; flags: ReadonlySet<string> },
+  command?: RuntimeFieldCommand,
+): string | undefined {
+  if (hasStorageTwin(definition, registry, command)) return undefined;
+  const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options, command);
+  const readOrder = resolveCandidateOptionKeys(definition);
+  return [definition.cli_flag, ...definition.cli_aliases].find((flag) => {
+    const key = commanderOptionAttribute(flag);
+    if (isNegatingFlag(flag) || reserved.flags.has(runtimeFieldFlagToken(flag)) || taken.has(key)) return false;
+    return isUnshadowedOptionKey(key, readOrder, taken);
+  });
+}
+
+/**
+ * The option key Commander stores for a long flag (without dashes): it strips
+ * a negating `no-` prefix and camel-cases across hyphens only, so
+ * `--review-url` parses to `reviewUrl`, `--no-title` to `title`, and
+ * `--review.url` keeps the literal key `review.url`.
+ */
+export function commanderOptionAttribute(flag: string): string {
+  return flag
+    .replace(/^-+/u, "")
+    .replace(/^no-/u, "")
+    .split("-")
+    .reduce((name, word) => `${name}${word.charAt(0).toUpperCase()}${word.slice(1)}`);
+}
+
 function resolveCandidateOptionKeys(
   definition: RuntimeFieldDefinitionResolved,
 ): string[] {
@@ -39,6 +160,12 @@ function resolveCandidateOptionKeys(
       toCamelToken(definition.key),
       toCamelToken(definition.cli_flag),
       ...definition.cli_aliases.map((alias) => toCamelToken(alias)),
+      // What the CLI actually produces for each registered flag. A negating
+      // "no-" flag is not read here: Commander files its value under the
+      // un-negated name, which belongs to a different option.
+      ...[definition.cli_flag, ...definition.cli_aliases]
+        .filter((flag) => !isNegatingFlag(flag))
+        .map((flag) => commanderOptionAttribute(flag)),
     ]),
   ];
 }

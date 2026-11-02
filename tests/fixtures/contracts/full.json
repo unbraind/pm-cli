@@ -24376,6 +24376,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "linked_test_command_immutable",
+      "class": "usage",
+      "code": "linked_test_command_immutable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked test command immutable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/update.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "linked_test_command_not_executable",
       "class": "usage",
       "code": "linked_test_command_not_executable",
@@ -24405,6 +24422,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/test/entry.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "linked_test_patch_fields_unsupported",
+      "class": "usage",
+      "code": "linked_test_patch_fields_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Linked test patch fields unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/test/update.ts"
       ],
       "stability": "provisional"
     },
@@ -25927,6 +25961,23 @@
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
         "sdk/environment/project-runtime-compatibility.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "project_schema_field_requires_declared_flag",
+      "class": "usage",
+      "code": "project_schema_field_requires_declared_flag",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Project schema field requires declared flag condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "core/extensions/item-fields.ts"
       ],
       "stability": "provisional"
     },

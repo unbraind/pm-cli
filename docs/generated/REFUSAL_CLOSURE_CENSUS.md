@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 443
+- Catalog error codes: 446
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 424
-- Coverage fraction: 0.042889
+- Uncovered error codes: 427
+- Coverage fraction: 0.042601
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -194,8 +194,10 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `likely_duplicate` | `likely_duplicate` | uncovered | none | 0 |
 | `linked_artifact_mutation_conflict` | `linked_artifact_mutation_conflict` | uncovered | none | 0 |
 | `linked_resource_positional_value` | `linked_resource_positional_value` | uncovered | none | 0 |
+| `linked_test_command_immutable` | `linked_test_command_immutable` | uncovered | none | 0 |
 | `linked_test_command_not_executable` | `linked_test_command_not_executable` | uncovered | none | 0 |
 | `linked_test_context_invalid` | `linked_test_context_invalid` | uncovered | none | 0 |
+| `linked_test_patch_fields_unsupported` | `linked_test_patch_fields_unsupported` | uncovered | none | 0 |
 | `linked_test_remove_no_match` | `linked_test_remove_no_match` | uncovered | none | 0 |
 | `linked_test_update_ambiguous` | `linked_test_update_ambiguous` | uncovered | none | 0 |
 | `linked_test_update_no_match` | `linked_test_update_no_match` | uncovered | none | 0 |
@@ -283,6 +285,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `project_runtime_item_format_incompatible` | `project_runtime_item_format_incompatible` | uncovered | none | 0 |
 | `project_runtime_stale_mutation` | `project_runtime_stale_mutation` | uncovered | none | 0 |
 | `project_runtime_stale_read` | `project_runtime_stale_read` | uncovered | none | 0 |
+| `project_schema_field_requires_declared_flag` | `project_schema_field_requires_declared_flag` | uncovered | none | 0 |
 | `projection_options_mutually_exclusive` | `projection_options_mutually_exclusive` | executable | closed_domain | 3 |
 | `provenance_value_domain_invalid` | `provenance_value_domain_invalid` | uncovered | none | 0 |
 | `read_output_cursor_command_mismatch` | `read_output_cursor_command_mismatch` | uncovered | none | 0 |

@@ -1063,6 +1063,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["cli/error-guidance.ts"],
   },
   {
+    code: "linked_test_command_immutable",
+    exit_code: 2,
+    sources: ["sdk/test/update.ts"],
+  },
+  {
     code: "linked_test_command_not_executable",
     exit_code: 2,
     sources: ["sdk/test/entry.ts"],
@@ -1071,6 +1076,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "linked_test_context_invalid",
     exit_code: 2,
     sources: ["sdk/test/entry.ts"],
+  },
+  {
+    code: "linked_test_patch_fields_unsupported",
+    exit_code: 2,
+    sources: ["sdk/test/update.ts"],
   },
   {
     code: "linked_test_remove_no_match",
@@ -1289,10 +1299,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "missing_allowed_values",
     exit_code: 1,
     sources: ["sdk/agent/refusal-closure.ts"],
-  },
-  {
-    code: "missing_budget",
-    exit_code: 1,
-    sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
   },
 ];

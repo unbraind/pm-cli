@@ -9,6 +9,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
+import { isPmCliExpectedError, projectPmCliErrorContextDetailsSlot, snapshotPmCliErrorContext } from "../sdk/errors.js";
 import {
   resolvePmCliVersion,
   EXIT_CODE,
@@ -572,13 +573,45 @@ function resultContent(
   };
 }
 
+/** Context keys an MCP envelope never serializes as given: diagnostics are re-admitted, and a context-level toJSON could replace them. */
+const TRANSPORT_EXCLUDED_CONTEXT_KEYS = new Set(["details", "details_omitted", "toJSON"]);
+
+/**
+ * Typed refusal context for an MCP error envelope. Separately bundled expected
+ * errors are recognized by shape, and producer diagnostics are bounded the
+ * same way the CLI bounds them.
+ */
+function expectedErrorTransportContext(error: unknown): { exitCode: number; context: unknown } | undefined {
+  if (!(error instanceof PmCliError) && !isPmCliExpectedError(error)) return undefined;
+  const snapshot = snapshotPmCliErrorContext(error.context);
+  // Diagnostics are admitted first, by the bounded walk that never runs a
+  // getter, so serialization below can neither expand nor replace them.
+  const diagnostics = projectPmCliErrorContextDetailsSlot(snapshot);
+  const rest = Object.fromEntries(
+    Object.entries(snapshot).filter(([key]) => !TRANSPORT_EXCLUDED_CONTEXT_KEYS.has(key)),
+  );
+  let normalized: unknown;
+  try {
+    // Serialize the remaining host fields exactly once; the result is plain JSON.
+    normalized = JSON.parse(JSON.stringify(rest)) as unknown;
+  } catch {
+    // Values JSON cannot encode (bigint, cycles): the response must still be written.
+    return {
+      exitCode: error.exitCode,
+      context: { ...(typeof snapshot.code === "string" ? { code: snapshot.code } : {}), context_unserializable: true },
+    };
+  }
+  return { exitCode: error.exitCode, context: { ...(normalized as Record<string, unknown>), ...diagnostics } };
+}
+
 function errorContent(
   error: unknown,
   canonicalStructuredResult = false,
 ): Record<string, unknown> {
-  const code = error instanceof PmCliError ? error.exitCode : 1;
+  const expected = expectedErrorTransportContext(error);
+  const code = expected?.exitCode ?? 1;
   const message = error instanceof Error ? error.message : String(error);
-  const details = error instanceof PmCliError ? error.context : undefined;
+  const details = expected?.context;
   return {
     isError: true,
     content: [
@@ -1549,19 +1582,16 @@ function writeResponse(
 }
 
 function writeError(id: JsonRpcRequest["id"], error: unknown): void {
+  const expected = error instanceof PmMcpProtocolError ? undefined : expectedErrorTransportContext(error);
   const code =
     error instanceof PmMcpProtocolError
       ? error.code
-      : error instanceof PmCliError
-        ? error.exitCode
-        : -32603;
+      : (expected?.exitCode ?? -32603);
   const message = error instanceof Error ? error.message : String(error);
   const data =
     error instanceof PmMcpProtocolError
       ? error.data
-      : error instanceof PmCliError
-        ? error.context
-        : undefined;
+      : expected?.context;
   process.stdout.write(
     `${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message, data } })}\n`,
   );

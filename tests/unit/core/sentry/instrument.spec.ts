@@ -108,6 +108,103 @@ describe("instrument residual branches", () => {
     expect(options.beforeSend(event, { originalException: Object.assign(new Error("expected"), { name: "PmCliError", exitCode: 2, context: { code: "invalid_argument_value" } }) })).toBeNull();
   });
 
+  it("strips producer diagnostics from error-data contexts and extras before an event leaves", async () => {
+    await ensureSentryInit();
+    const options = requireSentryInitOptions<{
+      beforeSend: (event: Record<string, unknown>, hint: Record<string, unknown>) => Record<string, unknown> | null;
+      beforeSendTransaction: (event: Record<string, unknown>) => Record<string, unknown>;
+    }>();
+    const marker = "producer-diagnostic-payload";
+    const event = {
+      exception: { values: [{ type: "Error", value: "unexpected fault" }] },
+      contexts: {
+        Error: { context: { code: "probe", details: { marker } } },
+        runtime: { name: "node" },
+        bare: null,
+      },
+      extra: {
+        error_context: { code: "probe", details: { marker } },
+        wrapped: { context: { details: { marker } } },
+        // Console capture stores the error itself among the call arguments.
+        arguments: [{ name: "Error", message: "unexpected fault", context: { code: "probe", details: { marker } } }],
+      },
+      breadcrumbs: [{ category: "console", data: { arguments: [{ context: { details: { marker } } }] } }],
+    };
+    const sent = options.beforeSend(event, { originalException: new Error("unexpected fault") });
+    expect(sent).not.toBeNull();
+    expect(JSON.stringify(sent)).not.toContain(marker);
+    // Serialized copies whose original is unavailable are discarded; our own error_context projection is kept.
+    expect(sent).toMatchObject({
+      contexts: { Error: {}, runtime: { name: "node" } },
+      extra: { error_context: { code: "probe" }, wrapped: { context: {} }, arguments: [] },
+      breadcrumbs: [{ data: { arguments: [] } }],
+    });
+    // A console-captured error whose toJSON already flattened a diagnostic into a top-level primitive is discarded too.
+    const consoleCopy = {
+      extra: { arguments: [{ name: "Error", context: { report: marker } }] },
+      breadcrumbs: [{ category: "console", data: { arguments: [{ context: { report: marker } }] } }],
+    };
+    expect(JSON.stringify(options.beforeSend(consoleCopy, { originalException: "console" }))).not.toContain(marker);
+    // An error's own toJSON can move diagnostics out of every named context slot: complete serialized
+    // console arguments are discarded, in extras and in breadcrumbs.
+    const argumentCopy = {
+      extra: { arguments: [{ report: marker }, "plain text"] },
+      breadcrumbs: [{ category: "console", message: "logged", data: { arguments: [{ report: marker }] } }],
+    };
+    const argumentSent = options.beforeSend(argumentCopy, { originalException: "console" });
+    expect(JSON.stringify(argumentSent)).not.toContain(marker);
+    expect(argumentSent).toMatchObject({ extra: { arguments: [] }, breadcrumbs: [{ message: "logged", data: { arguments: [] } }] });
+    // A toJSON can turn a whole context into a string: the slot is discarded whatever its serialized type.
+    const stringCopy = { extra: { arguments: [{ name: "Error", context: marker }] }, breadcrumbs: [{ data: { arguments: [{ context: marker }] } }] };
+    expect(JSON.stringify(options.beforeSend(stringCopy, { originalException: "console" }))).not.toContain(marker);
+    expect(JSON.stringify(options.beforeSendTransaction({ contexts: { trace: { data: { context: marker } } } }))).not.toContain(marker);
+    // Events without contexts or extras pass unchanged.
+    expect(options.beforeSend({ message: "plain" }, {})).toMatchObject({ message: "plain" });
+    // A context-level toJSON already ran inside the error-data integration and copied diagnostics under
+    // another key; the entry is rebuilt from the original exception instead of trusting that copy.
+    const original = Object.assign(new Error("serializer fault"), {
+      context: { code: "probe", details: { marker }, toJSON() { return { report: { marker } }; } },
+    });
+    const serialized = {
+      exception: { values: [{ type: "Error", value: "serializer fault" }] },
+      contexts: { Error: { context: { report: { marker } } }, runtime: { name: "node" }, os: "linux", bare: null },
+    };
+    const rebuilt = options.beforeSend(serialized, { originalException: original });
+    expect(JSON.stringify(rebuilt)).not.toContain(marker);
+    expect(rebuilt).toMatchObject({ contexts: { Error: { context: { code: "probe" } }, runtime: { name: "node" }, os: "linux", bare: null } });
+    // An error-level toJSON makes the integration emit siblings of context (report): the whole entry is
+    // rebuilt from the original, keeping only its own primitive fields and a safe context.
+    const errorLevel = Object.assign(new Error("error-level serializer"), {
+      exitCode: 70,
+      context: { code: "probe", details: { marker } },
+      toJSON() { return { report: { marker } }; },
+    });
+    const sibling = { exception: { values: [{ type: "Error", value: "error-level serializer" }] }, contexts: { Error: { report: { marker } }, runtime: { name: "node" } } };
+    const siblingSent = options.beforeSend(sibling, { originalException: errorLevel });
+    expect(JSON.stringify(siblingSent)).not.toContain(marker);
+    expect(siblingSent).toMatchObject({ contexts: { Error: { exitCode: 70, context: { code: "probe" } }, runtime: { name: "node" } } });
+    // An original whose name cannot be read still has its context-carrying entries discarded.
+    const namelessOriginal = Object.defineProperty(new Error("nameless"), "name", { get() { throw new Error("name trap"); } });
+    expect(JSON.stringify(options.beforeSend({ contexts: { Error: { context: { marker } } } }, { originalException: namelessOriginal }))).not.toContain(marker);
+    // Without a usable original, the serialized copy is still reduced to top-level primitives.
+    // Each case gets a fresh event: the hook scrubs in place, so a reused event would already be clean.
+    const flattened = () => ({ exception: { values: [{ type: "Error", value: "serializer fault" }] }, contexts: { Error: { context: { report: { marker }, code: "probe" } } } });
+    expect(JSON.stringify(flattened())).toContain(marker);
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: "not an object" }))).not.toContain(marker);
+    // An original without its own context leaves the entry to the generic scrub.
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: new Error("no context") }))).not.toContain(marker);
+    // An original whose own properties cannot even be described is left to the generic scrub.
+    const opaqueOriginal = new Proxy(new Error("opaque fault"), { getOwnPropertyDescriptor: () => { throw new Error("descriptor trap"); } });
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: opaqueOriginal }))).not.toContain(marker);
+    const accessorOriginal = Object.defineProperty(new Error("accessor fault"), "context", { get: () => ({ details: { marker } }) });
+    expect(JSON.stringify(options.beforeSend(flattened(), { originalException: accessorOriginal }))).not.toContain(marker);
+    const transaction = {
+      contexts: { trace: { data: { context: { details: { marker } } } } },
+      breadcrumbs: [{ category: "console", message: "safe", data: { arguments: [{ context: { details: { marker } } }] } }],
+    };
+    expect(JSON.stringify(options.beforeSendTransaction(transaction))).not.toContain(marker);
+  });
+
   afterEach(() => {
     process.env = { ...originalEnv };
     resetSentryStateForTests();

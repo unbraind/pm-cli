@@ -3,7 +3,7 @@
  * Provides the public client and coordinates isolated extension lifecycles.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createExtensionCommandError } from "./error-runtime.js";
+import { describeUnknownError, createExtensionCommandError } from "./error-runtime.js";
 import { capturePmCommandScope } from "./command-line.js";
 import {
   createEmptyExtensionCommandRegistry,
@@ -351,10 +351,18 @@ export {
 } from "./package-runtime-options.js";
 
 export {
+  PM_CLI_ERROR_DETAILS_LIMITS,
   PM_CLI_EXPECTED_ERROR_NAME,
   createPmCliExpectedError,
+  isPmCliErrorDetails,
   isPmCliExpectedError,
+  projectPmCliErrorContextDetails,
+  projectPmCliErrorDetails,
+  snapshotPmCliErrorContext,
   type CreatePmCliExpectedErrorOptions,
+  type PmCliErrorDetailValue,
+  type PmCliErrorDetails,
+  type PmCliErrorDetailsOmission,
   type PmCliExpectedError
 } from "./errors.js";
 
@@ -2694,6 +2702,23 @@ export async function runWithActiveExtensions<T>(
 }
 
 /**
+ * Describe an activation failure for stderr as a primitive string. Console
+ * capture serializes an error's own properties, which could carry
+ * producer-owned diagnostics, so only a string is ever logged; the stack keeps
+ * the failing import or activate() frame diagnosable. The stack is read once
+ * under a guard: a hostile getter must never break the no-extension fallback.
+ */
+function describeActivationFailure(error: unknown): string {
+  try {
+    const stack: unknown = error instanceof Error ? error.stack : undefined;
+    const description: unknown = typeof stack === "string" ? stack : describeUnknownError(error);
+    return typeof description === "string" ? description : "Unknown failure";
+  } catch {
+    return "Unknown failure";
+  }
+}
+
+/**
  * Body of one activation cycle. {@link withActiveExtensions} supplies an
  * async-local registry context; explicit-cwd callers additionally hold the
  * process-wide cwd queue. Returns early with `run(null)` when extensions are
@@ -2763,7 +2788,7 @@ async function withActiveExtensionsExclusively<T>(
     // indistinguishable from a workspace that simply has no extensions.
     console.error(
       "[pm-sdk] extension activation failed; continuing without active extensions:",
-      error,
+      describeActivationFailure(error),
     );
   }
   try {

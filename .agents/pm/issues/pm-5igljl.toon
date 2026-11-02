@@ -1,0 +1,21 @@
+id: pm-5igljl
+title: "Atomic linked-test command replacement: the advertised remove-plus-add retry can remove the wrong entry when the list changes between refusal and retry"
+description: "The linked-test command-edit refusal (linked_test_command_immutable, pm-1rfy0y) advertises a replacement as a separate pm test invocation: remove the selected entry (by exact command, or by position when the command is not unique), then add the new entry with --add-json. The refusal validates the replacement under the item lock, but the retry runs later as its own mutation, so concurrent writers can change the list in between:\n\n- Index fallback: after another writer inserts or removes an earlier entry, --remove-index N names a different entry, and the retry removes that one.\n- Command selector: --remove command=X removes every entry with that command and does not check path or scope. An entry added concurrently with the same command but a different path is removed too.\n- Identity collision: if another writer adds an entry with the replacement's identity first, the add is deduplicated while the removal still runs, so the requested metadata is lost.\n\nEach case reports success, because the removal count is greater than zero.\n\nProposed primitive: an explicit, atomic replacement on the existing editor, for example pm test <id> --update-index N --set-json '{\"command\":\"...\"}' --replace-command, plus an SDK replaceCommand option on updateLinkedTest. One locked mutation selects the entry with the edit's own selector, refuses identity collisions and invalid companion fields, removes exactly that entry, appends the replacement with fresh provenance, and records one history event. The refusal would then advertise this flag instead of a two-step retry.\n\nRaised by CodeRabbit on PR #1649 (threads on src/sdk/test/update.ts), which marked these as poor-tradeoff fixes inside that PR."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,concurrency,linked-tests,recovery
+created_at: "2026-11-01T23:05:25.936Z"
+updated_at: "2026-11-01T23:05:25.936Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A replacement selected by index, command or path removes exactly the selected entry or refuses, under one item-lock mutation; Identity collisions and invalid companion fields refuse without writing; SDK, CLI and MCP expose the same opt-in replacement and the command-edit refusal advertises it; Concurrency tests cover an earlier insertion, a same-command entry with a different path and an identity collision"
+parent: pm-f05lsg
+risk: medium
+confidence: medium
+expected_result: "A command replacement either replaces exactly the entry the caller selected or refuses, regardless of concurrent writers"
+actual_result: "The advertised two-step retry can remove a different or additional entry, or drop requested metadata, when the list changes between refusal and retry"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1rfy0y,discovered_from,"2026-11-01T23:05:25.936Z","harness:claude-code","cli:create:dep",detected
+  pm-9djr6d,related,"2026-11-01T23:05:25.936Z","harness:claude-code","cli:create:dep",detected
+body: ""
