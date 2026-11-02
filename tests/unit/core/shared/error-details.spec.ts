@@ -220,6 +220,10 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(omitPmCliErrorDetails(context)).toEqual({ code: "probe" });
     expect(context.details).toEqual({ report: { excluded: 1 } });
     expect(omitPmCliErrorDetails(withoutDetails)).toBe(withoutDetails);
+    // A serializer alone is enough to need projecting: it could emit diagnostics the context does not hold.
+    const serializerOnly = { code: "probe", toJSON: () => ({ details: { text: "x".repeat(5000) } }) };
+    expect(JSON.stringify(projectPmCliErrorContextDetails(serializerOnly))).toBe('{"code":"probe"}');
+    expect(JSON.stringify(omitPmCliErrorDetails(serializerOnly))).toBe('{"code":"probe"}');
     // The public transport projection drops a context-level serializer, which could re-emit unbounded diagnostics.
     const serializing = { code: "probe", details: { small: true }, toJSON: () => ({ details: { text: "x".repeat(5000) } }) };
     const projectedSerializing = projectPmCliErrorContextDetails(serializing) as Record<string, unknown>;

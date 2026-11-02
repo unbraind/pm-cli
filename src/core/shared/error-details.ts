@@ -319,6 +319,11 @@ function contextWithoutDiagnostics(context: object): Record<string, unknown> {
   return rest;
 }
 
+/** Whether a context needs projecting at all: it carries diagnostics, their receipt, or its own serializer. */
+function hasDiagnosticOrSerializerKey(context: object): boolean {
+  return Object.hasOwn(context, "details") || Object.hasOwn(context, "details_omitted") || Object.hasOwn(context, "toJSON");
+}
+
 /**
  * Bound an error context for a transport that forwards the context as-is
  * (MCP): diagnostics are rendered through {@link projectPmCliErrorContextDetailsSlot},
@@ -329,7 +334,7 @@ export function projectPmCliErrorContextDetails(context: unknown): unknown {
   try {
     // Inside the guard: Array.isArray throws on a revoked proxy.
     if (Array.isArray(context)) return context;
-    if (!Object.hasOwn(context, "details") && !Object.hasOwn(context, "details_omitted")) return context;
+    if (!hasDiagnosticOrSerializerKey(context)) return context;
     return { ...contextWithoutDiagnostics(context), ...projectPmCliErrorContextDetailsSlot(context) };
   } catch {
     return { details_omitted: unsupportedDetailsReceipt() };
@@ -345,7 +350,7 @@ export function omitPmCliErrorDetails(context: unknown): unknown {
   try {
     // Inside the guard: Array.isArray throws on a revoked proxy.
     if (Array.isArray(context)) return context;
-    if (!Object.hasOwn(context, "details") && !Object.hasOwn(context, "details_omitted")) return context;
+    if (!hasDiagnosticOrSerializerKey(context)) return context;
     return contextWithoutDiagnostics(context);
   } catch {
     return {};

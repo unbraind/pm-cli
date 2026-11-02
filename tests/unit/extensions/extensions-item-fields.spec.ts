@@ -154,7 +154,7 @@ describe("extensions item field runtime wiring", () => {
         { key: "triage_d", metadata_key: "triage2", type: "number", cli_flag: "triage.two", commands: ["update"] },
       ],
     } as never);
-    expect(refusal("triage2=1", createSchemaFieldRecoveryResolver(twins, "update")).context.nextSteps?.[1]).toBe("SDK: pass triageC in the update options.");
+    expect(refusal("triage2=1", createSchemaFieldRecoveryResolver(twins, "update")).context.nextSteps?.[1]).toContain("no SDK option sets it alone");
     // When every name a field answers to is shared, no SDK option is advertised.
     const sharedOnly = resolveRuntimeFieldRegistry({
       fields: [
@@ -202,21 +202,24 @@ describe("extensions item field runtime wiring", () => {
       const withheld = refusal("review_heading=x", createSchemaFieldRecoveryResolver(resolveRuntimeFieldRegistry({ fields } as never), "update"));
       expect(withheld.context.recovery).toEqual({ provided_fields: ["review_heading"] });
     }
-    // Collection keeps the first value per storage key: a later declaration sharing it is shadowed by an
-    // earlier one, so its routes are withheld, while the earlier declaration keeps its own.
+    // Declarations sharing a storage key override each other in the same invocation (update keeps the first
+    // supplied value, create the last), so no route or SDK hint is offered for either, on either command.
     const storageTwins = resolveRuntimeFieldRegistry({
       fields: [
-        { key: "triage_left", metadata_key: "triage", type: "string", commands: ["update"] },
-        { key: "triage_right", metadata_key: "triage", type: "string", commands: ["update"] },
+        { key: "triage_left", metadata_key: "triage", type: "string", commands: ["create", "update"] },
+        { key: "triage_right", metadata_key: "triage", type: "string", commands: ["create", "update"] },
       ],
     } as never);
     expect(collectRuntimeUpdateFieldValues({ triageLeft: "old", triageRight: "new" }, storageTwins)).toEqual({ triage: "old" });
-    const twinResolver = createSchemaFieldRecoveryResolver(storageTwins, "update");
-    expect(refusal("triage_right=new", twinResolver).context.recovery).toEqual({ provided_fields: ["triage_right"] });
-    expect(refusal("triage_right=new", twinResolver).context.nextSteps?.[1]).toContain("no SDK option sets it alone");
-    expect(refusal("triage_left=old", twinResolver).context.recovery?.suggested_flags).toEqual(["--triage-left"]);
-    expect(runtimeFieldSdkOptionName(storageTwins.definitions[1]!, storageTwins)).toBeUndefined();
-    expect(runtimeFieldSdkOptionName(storageTwins.definitions[0]!, storageTwins)).toBe("triageLeft");
+    for (const command of ["update", "create"] as const) {
+      const twinResolver = createSchemaFieldRecoveryResolver(storageTwins, command);
+      for (const key of ["triage_left", "triage_right"]) {
+        const twinRefusal = refusal(`${key}=new`, twinResolver);
+        expect(twinRefusal.context.recovery).toEqual({ provided_fields: [key] });
+        expect(twinRefusal.context.nextSteps?.[1]).toContain("no SDK option sets it alone");
+      }
+    }
+    expect(runtimeFieldSdkOptionName(storageTwins.definitions[0]!, storageTwins)).toBeUndefined();
     // Fields the command never reads cannot collide: create-only xy does not shadow update-only x_y.
     const scoped = resolveRuntimeFieldRegistry({
       fields: [

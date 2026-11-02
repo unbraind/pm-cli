@@ -3,7 +3,7 @@
  * Provides the public client and coordinates isolated extension lifecycles.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createExtensionCommandError } from "./error-runtime.js";
+import { describeUnknownError, createExtensionCommandError } from "./error-runtime.js";
 import { capturePmCommandScope } from "./command-line.js";
 import {
   createEmptyExtensionCommandRegistry,
@@ -2773,7 +2773,7 @@ async function withActiveExtensionsExclusively<T>(
     // properties, which could carry producer-owned diagnostics.
     console.error(
       "[pm-sdk] extension activation failed; continuing without active extensions:",
-      error instanceof Error ? error.message : String(error),
+      describeUnknownError(error),
     );
   }
   try {

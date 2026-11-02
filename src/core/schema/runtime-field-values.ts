@@ -43,7 +43,7 @@ export function runtimeFieldSdkOptionName(
   reservedOptions: ReadonlySet<string> = new Set(),
   command?: RuntimeFieldCommand,
 ): string | undefined {
-  if (hasEarlierStorageTwin(definition, registry, command)) return undefined;
+  if (hasStorageTwin(definition, registry, command)) return undefined;
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reservedOptions, command);
   const readOrder = resolveCandidateOptionKeys(definition);
   const preferred = toCamelToken(definition.cli_flag);
@@ -66,20 +66,22 @@ function isUnshadowedOptionKey(key: string, readOrder: readonly string[], taken:
 
 /**
  * Whether another declaration active for the command stores to the same
- * metadata key and is collected first: collection keeps the first value per
- * storage key, so supplying that declaration would silently shadow this one.
+ * metadata key. The collectors resolve such a collision differently (update
+ * keeps the first supplied value, create the last), so supplying the other
+ * declaration in the same invocation could silently override this one in
+ * either direction; no route for either is provably safe.
  */
-function hasEarlierStorageTwin(
+function hasStorageTwin(
   definition: RuntimeFieldDefinitionResolved,
   registry: Pick<RuntimeFieldRegistry, "definitions">,
   command: RuntimeFieldCommand | undefined,
 ): boolean {
-  let twin = false;
-  for (const candidate of registry.definitions) {
-    if (candidate === definition) break;
-    twin ||= candidate.metadata_key === definition.metadata_key && (command === undefined || candidate.commands.includes(command));
-  }
-  return twin;
+  return registry.definitions.some(
+    (candidate) =>
+      candidate !== definition &&
+      candidate.metadata_key === definition.metadata_key &&
+      (command === undefined || candidate.commands.includes(command)),
+  );
 }
 
 /**
@@ -125,7 +127,7 @@ export function runtimeFieldCliFlagRoute(
   reserved: { options: ReadonlySet<string>; flags: ReadonlySet<string> },
   command?: RuntimeFieldCommand,
 ): string | undefined {
-  if (hasEarlierStorageTwin(definition, registry, command)) return undefined;
+  if (hasStorageTwin(definition, registry, command)) return undefined;
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options, command);
   const readOrder = resolveCandidateOptionKeys(definition);
   return [definition.cli_flag, ...definition.cli_aliases].find((flag) => {
