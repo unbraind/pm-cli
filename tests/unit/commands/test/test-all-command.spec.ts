@@ -1364,6 +1364,24 @@ describe("runTestAll", () => {
     });
   });
 
+  it("refuses typed when a declared expected revision is stale, instead of warning (pm-gh1576)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTaskWithTests(context, {
+        title: "Guarded Test-All Tracking",
+        status: "open",
+        testEntries: ["command=node --version,scope=project"],
+      });
+      await setTestResultTracking(context.pmPath, true);
+      const { readItemRevision, withExpectedItemRevisions } = await import("../../../../src/sdk/lifecycle/item-revision.js");
+      const stale = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      context.runCli(["update", "--json", id, "--title", "Guarded Test-All Tracking, edited by a peer"], { expectJson: true });
+      await expect(withExpectedItemRevisions([{ id, itemHash: stale }], () => runTestAll(
+        { status: "open", timeout: "20" },
+        { path: context.pmPath },
+      ), { pmRoot: context.pmPath })).rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: id } });
+    });
+  });
+
   it("stringifies non-Error tracking failures in warning output", async () => {
     await withTempPmPath(async (context) => {
       const id = createTaskWithTests(context, {

@@ -78,4 +78,16 @@ describe("pm-urzubi explicit start race", () => {
       expect((await new PmClient({ pmRoot: context.pmPath, noExtensions: true }).get(target)).item.assignee).toBe("peer-agent");
     });
   });
+
+  it("never releases a takeover that kept the display assignee but changed the claim principal", async () => {
+    await withTempPmPath(async (context) => {
+      const target = createTestItemId(context, { title: "Same assignee" });
+      const global = { path: context.pmPath };
+      const claim = await runClaim(target, false, global, {});
+      const refusal = new PmCliError("blocked", EXIT_CODE.CONFLICT, { code: START_BLOCKED_REFUSAL_CODE });
+      const otherSession = { ...claim, item: { ...claim.item, claim_principal: "another-session-principal" } };
+      expect(await releaseRefusedStartClaim(refusal, otherSession, global, undefined)).toBe(refusal);
+      expect((await new PmClient({ pmRoot: context.pmPath, noExtensions: true }).get(target)).item.assignee).toBe("test-author");
+    });
+  });
 });

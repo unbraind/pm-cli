@@ -798,7 +798,8 @@ export class PmClient {
 
   /** Read an item's current revision (`item_hash`) inside this client's extension context, without writing. */
   readItemRevision(id: string): Promise<ItemRevision> {
-    return this.withItemTransactionContext(async ({ pmRoot }) => (await import("./lifecycle/item-revision.js")).readItemRevision(id, { pmRoot }), true);
+    // A full settings read hydrates file-backed schema types, so custom-type folders are searched.
+    return this.withItemTransactionContext(async ({ pmRoot }) => (await import("./lifecycle/item-revision.js")).readItemRevision(id, { pmRoot }));
   }
 
   /**
@@ -814,7 +815,7 @@ export class PmClient {
     const revisions = await import("./lifecycle/item-revision.js");
     // Bind inside the extension context, but run the operation outside it so its own
     // actions (including extension commands) activate and dispatch normally.
-    const scope = await this.withItemTransactionContext(({ pmRoot }) => revisions.bindExpectedItemRevisions(expectations, { pmRoot }), true);
+    const scope = await this.withItemTransactionContext(({ pmRoot }) => revisions.bindExpectedItemRevisions(expectations, { pmRoot }));
     return revisions.runWithBoundItemRevisionScope(scope, operation);
   }
 

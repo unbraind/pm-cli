@@ -404,6 +404,18 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
+  it("hydrates file-backed schema types before reading a client revision", async () => {
+    await withTempPmPath(async (context) => {
+      const added = context.runCli(["schema", "add-type", "Run", "--folder", "runs", "--json"], { expectJson: true });
+      expect(added.code, added.stderr).toBe(0);
+      const pm = client(context);
+      const id = (await pm.create({ title: "File-backed run", type: "Run", description: "d" })).item.id;
+      const revision = await pm.readItemRevision(id);
+      expect(revision.item_hash).toBe((await pm.get(id)).item_hash);
+      expect(revision.item_hash).toBe((await readItemRevision(id, { pmRoot: context.pmPath })).item_hash);
+    });
+  });
+
   it("dispatches extension commands inside a client revision scope", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await writeTestExtension({

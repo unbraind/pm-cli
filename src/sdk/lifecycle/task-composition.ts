@@ -94,7 +94,10 @@ export async function releaseRefusedStartClaim(
       pmRoot: resolvePmRoot(process.cwd(), global.path),
       id,
       validate: (document) => {
-        if (document.metadata.assignee !== claim.claimed_by) throw new PmCliError("The claim this start took is no longer its own.", EXIT_CODE.CONFLICT);
+        // Compare the claim principal too: two sessions can share a display assignee.
+        if (document.metadata.assignee !== claim.claimed_by || document.metadata.claim_principal !== claim.item.claim_principal) {
+          throw new PmCliError("The claim this start took is no longer its own.", EXIT_CODE.CONFLICT);
+        }
       },
     }, () => runRelease(id, false, global, { author, message: "Release the claim: a blocker opened before its start could be recorded" }));
   } catch {

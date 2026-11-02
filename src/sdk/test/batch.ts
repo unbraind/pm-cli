@@ -5,6 +5,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { assertLinkedTestCommand } from "./entry.js";
+import { isItemRevisionConflict } from "../lifecycle/item-revision.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseOptionalNumber } from "../../core/item/parse.js";
@@ -637,6 +638,8 @@ const appendTestAllItemTracking = async (
       },
     });
   } catch (error: unknown) {
+    // Recording stays best-effort, except a declared expected revision (pm-gh1576) refuses typed.
+    if (isItemRevisionConflict(error)) throw error;
     return [
       `test_result_tracking_failed:${entry.item.id}:${formatTrackingError(error)}`,
     ];
