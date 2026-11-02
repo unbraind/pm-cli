@@ -967,8 +967,9 @@ Starting work respects declared blockers
 ([pm-urzubi](../.agents/pm/issues/pm-urzubi.toon)). `pm update <id> --status
 in_progress`, `pm claim <id> --start`, `pm claim --next --start` and the
 `start-task` action refuse with `start_blocked_by_open_dependency` (exit 4)
-while a `blocked_by` target is still open. The check runs before any write, so
-a refused `claim --start` leaves no claim. The refusal lists the open blockers in
+while a `blocked_by` target is still open. The check runs before any write: the
+explicit `claim <id> --start` judges it once under the claim's item lock and
+its status update reuses that decision, so a refused start leaves no claim. The refusal lists the open blockers in
 `details.open_blockers` and suggests the exact `pm update` that drops the edge.
 A terminal blocker never blocks, and an update that removes the blocker in the
 same call is admitted. `--force` starts anyway and records
@@ -997,7 +998,12 @@ commands without one item argument. The refusal reports `expected_revision`,
 `current_revision`, and `details.changes_since` (the newest 10 history entries
 since the declared revision, with their top-level `fields`). Nothing is written
 to the refused item. Read commands refuse the flag with
-`expect_hash_requires_mutation`. An item the command never wrote produces the
+`expect_hash_requires_mutation`, and an empty value (such as an unset `$H`)
+refuses with `expect_hash_invalid` instead of running unguarded. Bulk
+`update-many`/`close-many` fail only stale rows, each carrying `error_code`,
+`expected_revision` and `current_revision`. History maintenance
+(`history-redact`, `history-repair`, `history-compact`) is checked under the
+stream lock. An item the command never wrote produces the
 warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. MCP
 tools accept the same tokens as `expectHash`; the SDK exposes
 `withExpectedItemRevisions` (see [SDK](SDK.md#expected-item-revisions)).

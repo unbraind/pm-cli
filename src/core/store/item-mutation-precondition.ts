@@ -115,9 +115,14 @@ function matchingRevisionEntries(pmRoot: string, id: string): ItemRevisionScopeE
   });
 }
 
+/** Whether any active scope declared a revision for this item, so writers can skip extra reads otherwise. */
+export function hasItemRevisionExpectation(pmRoot: string, id: string): boolean {
+  return matchingRevisionEntries(pmRoot, id).length > 0;
+}
+
 /** Refuse a locked write whose stored revision is not the one its scope declared. */
-function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument): void {
-  const entries = matchingRevisionEntries(pmRoot, document.metadata.id);
+function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, targetId: string): void {
+  const entries = matchingRevisionEntries(pmRoot, targetId);
   if (entries.length === 0) return;
   const current = hashDocument(document);
   for (const entry of entries) {
@@ -125,41 +130,46 @@ function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument):
     if (entry.expected === current) continue;
     const advanced = entry.expected !== entry.declared;
     throw new PmCliError(
-      `Item ${document.metadata.id} is no longer at the expected revision ${entry.expected.slice(0, 12)}; refusing to write over a revision this decision did not see.${advanced ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
+      `Item ${targetId} is no longer at the expected revision ${entry.expected.slice(0, 12)}; refusing to write over a revision this decision did not see.${advanced ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
       EXIT_CODE.CONFLICT,
       {
         code: "item_revision_conflict",
-        item_id: document.metadata.id,
+        item_id: targetId,
         expected_revision: entry.expected,
         current_revision: current,
-        required: `Re-read ${document.metadata.id} (pm get ${document.metadata.id} --json reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
+        required: `Re-read ${targetId} (pm get ${targetId} --json reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
         why: "The caller declared the revision its decision was based on, and another write changed the item before this locked write.",
-        examples: [`pm get ${document.metadata.id} --fields item_hash --json`, `pm history ${document.metadata.id} --limit 5`],
-        nextSteps: [`pm get ${document.metadata.id} --json`, `pm history ${document.metadata.id} --limit 5`],
+        examples: [`pm get ${targetId} --fields item_hash --json`, `pm history ${targetId} --limit 5`],
+        nextSteps: [`pm get ${targetId} --json`, `pm history ${targetId} --limit 5`],
       },
     );
   }
 }
 
-/** Evaluate matching preconditions only after the item lock has been acquired and its document read. */
-export function assertItemMutationPreconditions(pmRoot: string, document: ItemDocument): void {
-  assertItemRevisionExpectations(pmRoot, document);
+/**
+ * Evaluate matching preconditions only after the item lock has been acquired
+ * and its document read. `targetId` names the locked item explicitly, so a
+ * deleted item's empty tombstone document is still judged against its own
+ * expectations instead of matching nothing.
+ */
+export function assertItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id): void {
+  assertItemRevisionExpectations(pmRoot, document, targetId);
   for (const condition of preconditions.getStore() ?? []) {
-    if (condition.pmRoot === path.resolve(pmRoot) && condition.id === document.metadata.id) {
+    if (condition.pmRoot === path.resolve(pmRoot) && condition.id === targetId) {
       condition.validate(document);
     }
   }
 }
 
-/** Notify matching scoped guards of their own committed document before releasing the item lock. */
-export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument): void {
-  const entries = matchingRevisionEntries(pmRoot, document.metadata.id);
+/** Notify matching scoped guards of their own committed document (a tombstone after delete) before releasing the item lock. */
+export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id): void {
+  const entries = matchingRevisionEntries(pmRoot, targetId);
   if (entries.length > 0) {
     const committed = hashDocument(document);
     for (const entry of entries) entry.expected = committed;
   }
   for (const condition of preconditions.getStore() ?? []) {
-    if (condition.pmRoot === path.resolve(pmRoot) && condition.id === document.metadata.id) {
+    if (condition.pmRoot === path.resolve(pmRoot) && condition.id === targetId) {
       condition.committed?.(document);
     }
   }

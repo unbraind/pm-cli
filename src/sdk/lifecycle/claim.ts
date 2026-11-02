@@ -22,7 +22,7 @@ import { wrapOwnershipConflict } from "../annotations.js";
 import { resolveItemOwnershipConflict } from "../ownership-source.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
-import { admitStartTransition } from "./start-blockers.js";
+import { admitExplicitStartClaim, admitStartTransition } from "./start-blockers.js";
 import { resolveTypeWorkflows } from "../../core/schema/type-workflows.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
 import type { ItemMetadata, PmSettings } from "../../types/index.js";
@@ -265,9 +265,7 @@ export async function runClaim(
       const fromStatus = document.metadata.status;
       const { changedFields: startedFields, warnings: startWarnings, ...started } =
         applyClaimStart(document.metadata, options.start === true, settings, statusRegistry);
-      startWarnings.push(...await admitStartTransition({
-        pmRoot, settings, metadata: document.metadata, fromStatus, registry: statusRegistry, force, requested: options.start === true,
-      }));
+      startWarnings.push(...await claimStartWarnings({ pmRoot, settings, metadata: document.metadata, fromStatus, registry: statusRegistry, force, start: options.start === true }));
       startEvidence = started;
       mutationWarnings.push(...startWarnings);
       return {
@@ -348,6 +346,11 @@ export function requireClaimTarget(
       },
     );
   }
+}
+
+/** Judge the start a claim makes itself (`--next --start`) or an enclosing explicit start composition will make. */
+async function claimStartWarnings(params: Parameters<typeof admitExplicitStartClaim>[0] & { fromStatus: string | undefined; start: boolean }): Promise<string[]> {
+  return params.start ? admitStartTransition(params) : admitExplicitStartClaim(params);
 }
 
 /** Advance a just-claimed item to the in-progress status under the claim's lock, enforcing configured type workflows. */

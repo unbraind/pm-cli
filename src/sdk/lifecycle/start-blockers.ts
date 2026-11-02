@@ -9,6 +9,7 @@
  * SDK/MCP `start-task` action share this one check, and each runs it before
  * the write that would start the item.
  */
+import { AsyncLocalStorage } from "node:async_hooks";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeStatusForRegistry } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -105,6 +106,37 @@ export async function admitStartTransition(params: {
   force?: boolean;
   requested?: boolean;
 }): Promise<string[]> {
-  if (params.requested === false || !isStartTransition(params.fromStatus, params.metadata.status, params.registry)) return [];
+  if (params.requested === false || explicitStarts.getStore()?.admitted === true) return [];
+  if (!isStartTransition(params.fromStatus, params.metadata.status, params.registry)) return [];
   return admitStartWithOpenBlockers(params);
+}
+
+/** Pending explicit `claim <id> --start` composition: admitted once its claim judged the start under the item lock. */
+const explicitStarts = new AsyncLocalStorage<{ admitted: boolean }>();
+
+/**
+ * Run an explicit claim-then-update start composition. Its claim judges the
+ * start under the claim's own item lock, before writing ownership, and the
+ * composition's status update reuses that decision, so a refused start never
+ * leaves a claim behind and the two steps cannot disagree.
+ */
+export function runAsExplicitStart<T>(operation: () => Promise<T>): Promise<T> {
+  return explicitStarts.run({ admitted: false }, operation);
+}
+
+/** Judge the start an enclosing explicit start composition will make, inside the claim's locked mutation. */
+export async function admitExplicitStartClaim(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  metadata: ItemMetadata;
+  registry: RuntimeStatusRegistry;
+  force?: boolean;
+}): Promise<string[]> {
+  const pending = explicitStarts.getStore();
+  if (pending === undefined) return [];
+  const warnings = isStartTransition(params.metadata.status, params.registry.in_progress_status, params.registry)
+    ? await admitStartWithOpenBlockers(params)
+    : [];
+  pending.admitted = true;
+  return warnings;
 }

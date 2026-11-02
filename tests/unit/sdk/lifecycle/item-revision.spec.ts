@@ -29,6 +29,8 @@ import {
 import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 import { commitWorkspaceTransaction } from "../../../../src/sdk/workspace-transaction.js";
 import type { ItemDocument } from "../../../../src/types/index.js";
+import { pmToolActionParameterKeys } from "../../../../src/sdk/cli-contracts/tool-schema.js";
+import { writeTestExtension } from "../../../helpers/extensions.js";
 import { createTestItemId } from "../../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
 
@@ -71,6 +73,14 @@ describe("pm-gh1576 expected-revision token grammar", () => {
       expect.objectContaining({ context: expect.objectContaining({ code: "expect_hash_invalid", value: "7" }) }),
     );
     expect(() => normalizeExpectedItemHash(undefined)).toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "expect_hash_invalid" }) }));
+  });
+
+  it("refuses a supplied but empty value instead of dropping the guard", () => {
+    for (const empty of ["", "   ", " , ,", [HASH_A, ""]]) {
+      expect(() => parseExpectHashSpecs(empty)).toThrow(
+        expect.objectContaining({ context: expect.objectContaining({ code: "expect_hash_invalid" }) }),
+      );
+    }
   });
 });
 
@@ -313,6 +323,86 @@ describe("pm-gh1576 generic dispatch (MCP and PmClient.run)", () => {
         warnings: [`expect_hash_unchecked:${id}:no_locked_write_reached_this_item`],
       });
     });
+  });
+});
+
+describe("pm-gh1576 guarded writes beyond the item store", () => {
+  it("guards history maintenance at its lock and advances past its own rewrite", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Redact guard", description: "contains token-abc" });
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(id)).item_hash;
+      await pm.update(id, { title: "Redact guard, edited by a peer" });
+      await expect(withExpectedItemRevisions([{ id, itemHash: stale }], () => pm.run("history-redact", { id, options: { literal: ["token-abc"] } }), { pmRoot: context.pmPath }))
+        .rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
+      const fresh = (await pm.readItemRevision(id)).item_hash;
+      const redacted = await withExpectedItemRevisions([{ id, itemHash: fresh }], async () => {
+        await pm.run("history-redact", { id, options: { literal: ["token-abc"] } });
+        return pm.update(id, { priority: "3" });
+      }, { pmRoot: context.pmPath });
+      expect(redacted).toMatchObject({ checked: [id], unchecked: [] });
+    });
+  });
+
+  it("judges restore of a deleted item under its own id and lets one scope delete then restore", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Tombstone guard" });
+      const pm = client(context);
+      const peer = new PmClient({ pmRoot: context.pmPath, noExtensions: true, author: "peer-agent" });
+      const decided = (await pm.readItemRevision(id)).item_hash;
+      const peerDelete = AsyncResource.bind(() => peer.run("delete", { id, force: true }));
+      await expect(withExpectedItemRevisions([{ id, itemHash: decided }], async () => {
+        await peerDelete();
+        return pm.run("restore", { id, target: "1", force: true });
+      }, { pmRoot: context.pmPath })).rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: id } });
+      await pm.run("restore", { id, target: "1", force: true });
+      const restored = (await pm.readItemRevision(id)).item_hash;
+      const cycle = await withExpectedItemRevisions([{ id, itemHash: restored }], async () => {
+        await pm.run("delete", { id, force: true });
+        return pm.run("restore", { id, target: "1", force: true });
+      }, { pmRoot: context.pmPath });
+      expect(cycle.checked).toEqual([id]);
+    });
+  });
+
+  it("keeps the typed conflict on stale bulk rows", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Bulk stale" });
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(id)).item_hash;
+      await pm.update(id, { title: "Bulk stale, edited by a peer" });
+      const current = (await pm.readItemRevision(id)).item_hash;
+      const common = { path: context.pmPath, noExtensions: true, author: "bulk-agent", expectHash: `${id}=${stale}` };
+      const updated = await runAction({ ...common, action: "update-many", options: { ids: id, priority: "3" } }) as { rows: Array<Record<string, unknown>> };
+      expect(updated.rows).toEqual([expect.objectContaining({ id, status: "failed", error_code: "item_revision_conflict", expected_revision: stale, current_revision: current })]);
+      const closed = await runAction({ ...common, action: "close-many", options: { ids: id, reason: "bulk" } }) as { rows: Array<Record<string, unknown>> };
+      expect(closed.rows).toEqual([expect.objectContaining({ id, status: "failed", error_code: "item_revision_conflict", current_revision: current })]);
+    });
+  });
+
+  it("resolves client revisions inside the workspace's extension context", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTestExtension({
+        root: path.join(pmPath, "extensions", "run-types"),
+        name: "run-types",
+        manifestOverrides: { capabilities: ["schema"] },
+        entrySource: "export default { activate(api) { api.registerItemTypes([{ name: 'Run', folder: 'runs' }]); } };\n",
+      });
+      const pm = new PmClient({ pmRoot: pmPath });
+      const id = (await pm.create({ id: "seed-run", title: "seed-run", type: "Run", status: "open" })).item.id;
+      const revision = await pm.readItemRevision(id);
+      expect(revision.item_hash).toBe((await pm.get(id)).item_hash);
+      await expect(pm.withExpectedItemRevisions([{ id, itemHash: revision.item_hash }], () => pm.update(id, { priority: "2" }))).resolves.toMatchObject({ checked: [id] });
+    });
+  });
+
+  it("declares expectHash on plan, linked-test persistence and history maintenance contracts", () => {
+    for (const action of ["plan", "test-all", "history-redact", "history-repair", "history-compact", "update", "comments"]) {
+      expect(pmToolActionParameterKeys(action)).toContain("expectHash");
+    }
+    for (const action of ["get", "create", "copy", "list"]) {
+      expect(pmToolActionParameterKeys(action)).not.toContain("expectHash");
+    }
   });
 });
 

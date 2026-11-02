@@ -1203,6 +1203,8 @@ export async function deleteItem(params: {
       },
     );
     const { derivedIndexWarnings, effectiveItemPath } = committed;
+    // The item is now absent; a later restore in the same scope must find that tombstone revision.
+    advanceItemMutationPreconditions(params.pmRoot, tombstoneDocument, located.id);
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({

@@ -374,7 +374,8 @@ export async function runRestore(
       loadedItemUnderLock,
       history,
     );
-    assertItemMutationPreconditions(pmRoot, currentState.document);
+    // A deleted item's current state is an empty tombstone: judge it under its own id.
+    assertItemMutationPreconditions(pmRoot, currentState.document, resolvedId);
     restoredDocument.metadata.pm_format_version = normalizeItemFormatVersion(Math.max(requiredItemFormatVersion(restoredDocument.metadata), requiredItemFormatVersion(currentState.document.metadata)));
     assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(pmRoot), requiredItemFormatVersion(restoredDocument.metadata));
     const ownershipWarnings = collectRestoreOwnershipWarnings({
@@ -463,7 +464,7 @@ export async function runRestore(
       }
       return derivedIndexWarnings;
     });
-    advanceItemMutationPreconditions(pmRoot, restoredDocument);
+    advanceItemMutationPreconditions(pmRoot, restoredDocument, resolvedId);
     const hookWarnings = await runRestoreWriteHooks({
       restoredItemPath,
       historyPath: subject.historyPath,

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: agent-ux,annotations,"area:mcp",schema-dispatch-parity,silent-no-op
 created_at: "2026-11-02T13:09:28.011Z"
-updated_at: "2026-11-02T13:09:28.011Z"
+updated_at: "2026-11-02T14:54:02.256Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Every top-level parameter the strict MCP/SDK action schema declares for comments, notes, learnings, files and docs is either hoisted into the command options or removed from the schema, proven by a parity test that iterates the schema-declared keys rather than a hand list; A pm_comments/pm_files call with top-level add writes the entry (or refuses), never returns a listing; Regression test drives the MCP handleRequest path for each annotation action"
@@ -20,4 +20,6 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-02T13:09:28.011Z","harness:claude-code","cli:create:dep",detected
   pm-upi0,related,"2026-11-02T13:09:28.011Z","harness:claude-code","cli:create:dep",detected
   pm-yp56,related,"2026-11-02T13:09:28.011Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-02T14:54:02.256Z","harness:claude-code","Scope evidence from the pm-gh1576 Codex fix round: the same declared-but-not-hoisted class also hits history-redact. pmToolActionParameterKeys(\"history-redact\") declares top-level literal, regex and replacement, but runAction only reads them from options, so {id, literal: [...]} refuses with 'history-redact requires at least one literal' (loud, not silent). The parity test this item's AC asks for should iterate every action's schema-declared keys, not only the annotation and linked-artifact actions."
 body: ""

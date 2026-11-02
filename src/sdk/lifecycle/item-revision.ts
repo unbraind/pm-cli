@@ -119,7 +119,10 @@ export function parseExpectHashSpecs(values: string | readonly string[] | undefi
   const tokens = values === undefined ? [] : typeof values === "string" ? [values] : values;
   return tokens.flatMap((raw) => {
     if (typeof raw !== "string") throw invalidExpectHash(String(raw), "expected a string");
-    return raw.split(",").map((token) => token.trim()).filter((token) => token.length > 0).map((token) => {
+    const parts = raw.split(",").map((token) => token.trim()).filter((token) => token.length > 0);
+    // A supplied but empty value (for example an unset shell variable) must not silently drop the guard.
+    if (parts.length === 0) throw invalidExpectHash(raw, "the value is empty");
+    return parts.map((token) => {
       const separator = token.lastIndexOf("=");
       const id = separator === -1 ? undefined : token.slice(0, separator).trim();
       if (id !== undefined && id.length === 0) throw invalidExpectHash(token, "the item id before = is empty");
@@ -211,6 +214,29 @@ export async function describeItemRevisionChanges(
     expected_revision_recorded: true,
     changes_since: shown.map((entry) => ({ ts: entry.ts, op: entry.op, author: entry.author, fields: changedTopLevelFields(entry) })),
     changes_since_omitted: later.length - shown.length,
+  };
+}
+
+/** Structured revision fields a bulk row keeps when its item refused an expected revision. */
+export interface ItemRevisionConflictRowFields {
+  /** Always `item_revision_conflict`. */
+  error_code?: typeof ITEM_REVISION_CONFLICT_CODE;
+  /** Revision the row's locked write expected. */
+  expected_revision?: string;
+  /** Revision the row's locked write found. */
+  current_revision?: string;
+}
+
+/**
+ * Keep the typed refusal on a bulk row: partial-success commands report a
+ * stale row's code and both revisions, not only its message.
+ */
+export function itemRevisionConflictRowFields(error: unknown): ItemRevisionConflictRowFields {
+  if (!isItemRevisionConflict(error)) return {};
+  return {
+    error_code: ITEM_REVISION_CONFLICT_CODE,
+    expected_revision: String(error.context.expected_revision),
+    current_revision: String(error.context.current_revision),
   };
 }
 

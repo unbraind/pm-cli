@@ -168,8 +168,9 @@ const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<
 
 /**
  * Actions whose locked item writes honour the `expectHash` precondition
- * (pm-gh1576). Every listed action writes an existing item; `create` and
- * `copy` only create new ones, so a revision has nothing to guard there.
+ * (pm-gh1576): lifecycle, annotation, linked-artifact, plan, linked-test
+ * persistence and history-maintenance writers of existing items. `create` and
+ * `copy` only create new items, so a revision has nothing to guard there.
  */
 const PM_TOOL_EXPECT_HASH_ACTIONS: ReadonlySet<string> = new Set([
   "update",
@@ -191,6 +192,11 @@ const PM_TOOL_EXPECT_HASH_ACTIONS: ReadonlySet<string> = new Set([
   "files",
   "docs",
   "test",
+  "test-all",
+  "plan",
+  "history-redact",
+  "history-repair",
+  "history-compact",
 ]);
 
 /** Create-compatible metadata parameters reused by Plan materialization and CLI registration. */

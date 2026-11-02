@@ -795,22 +795,22 @@ export class PmClient {
     };
   }
 
-  /** Read an item's current revision (`item_hash`) from this client's tracker without writing. */
-  async readItemRevision(id: string): Promise<ItemRevision> {
-    const { readItemRevision } = await import("./lifecycle/item-revision.js");
-    return readItemRevision(id, { pmRoot: this.defaults.path, cwd: this.defaults.cwd });
+  /** Read an item's current revision (`item_hash`) inside this client's extension context, without writing. */
+  readItemRevision(id: string): Promise<ItemRevision> {
+    return this.withItemTransactionContext(async ({ pmRoot }) => (await import("./lifecycle/item-revision.js")).readItemRevision(id, { pmRoot }), true);
   }
 
   /**
    * Run SDK calls so every locked write to an expected item refuses with
    * `item_revision_conflict` unless the item is still at the declared revision.
+   * Targets resolve inside this client's extension context, so extension item
+   * types and fields bind exactly as `get` reads them.
    */
-  async withExpectedItemRevisions<T>(
+  withExpectedItemRevisions<T>(
     expectations: readonly ExpectedItemRevision[],
     operation: () => Promise<T>,
   ): Promise<ExpectedItemRevisionsOutcome<T>> {
-    const { withExpectedItemRevisions } = await import("./lifecycle/item-revision.js");
-    return withExpectedItemRevisions(expectations, operation, { pmRoot: this.defaults.path, cwd: this.defaults.cwd });
+    return this.withItemTransactionContext(async ({ pmRoot }) => (await import("./lifecycle/item-revision.js")).withExpectedItemRevisions(expectations, operation, { pmRoot }));
   }
 
   /** Return the same context snapshot produced by `pm context`. */

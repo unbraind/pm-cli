@@ -6,13 +6,12 @@ import { getGlobalOptions } from "../../../src/sdk/cli-contracts/registration-he
 import {
   bindInvocationExpectedRevisions,
   enrichInvocationRevisionError,
-  openInvocationRevisionScope,
   parseWithInvocationRevisionScope,
   reportInvocationRevisionScope,
 } from "../../../src/cli/expected-revisions.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
-import { bindItemRevisionScope, itemRevisionScopeReceipt } from "../../../src/sdk/lifecycle/item-revision.js";
+import { bindItemRevisionScope, createItemRevisionScope } from "../../../src/sdk/lifecycle/item-revision.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -26,43 +25,49 @@ function commandWithArgument(name: string): Command {
   return new Command("update").argument(`<${name}>`);
 }
 
+/** Run `body` as the parse of one CLI invocation and return that invocation's stderr warnings. */
+async function inInvocation(body: () => Promise<void>): Promise<string> {
+  const writes: string[] = [];
+  const spy = vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array) => { writes.push(String(chunk)); return true; });
+  try {
+    await parseWithInvocationRevisionScope((parse) => parse(body));
+  } finally {
+    spy.mockRestore();
+  }
+  return writes.join("");
+}
+
 describe("pm-gh1576 --expect-hash invocation binding", () => {
   it("binds a bare hash to the command's <id> argument and requires a target otherwise", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Bind target" });
-      const scope = openInvocationRevisionScope();
-      await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [id], expectHash: [HASH], pmRoot: context.pmPath });
-      expect(itemRevisionScopeReceipt(scope)).toEqual({ checked: [], unchecked: [id] });
-      openInvocationRevisionScope();
-      await expect(bindInvocationExpectedRevisions({ command: commandWithArgument("query"), commandPath: "update", commandArgs: [id], expectHash: [HASH], pmRoot: context.pmPath }))
-        .rejects.toMatchObject({ context: { code: "expect_hash_target_required" } });
-      await expect(bindInvocationExpectedRevisions({ command: new Command("update"), commandPath: "update", commandArgs: [], expectHash: [HASH], pmRoot: context.pmPath }))
-        .rejects.toMatchObject({ context: { code: "expect_hash_target_required" } });
-      await expect(bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "Get", commandArgs: [id], expectHash: [HASH], pmRoot: context.pmPath }))
-        .rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, context: { code: "expect_hash_requires_mutation" } });
+      const bind = (command: Command, commandPath: string, commandArgs: string[]) =>
+        bindInvocationExpectedRevisions({ command, commandPath, commandArgs, expectHash: [HASH], pmRoot: context.pmPath });
+      const warnings = await inInvocation(async () => {
+        await bind(commandWithArgument("id"), "update", [id]);
+        await expect(bind(commandWithArgument("query"), "update", [id])).rejects.toMatchObject({ context: { code: "expect_hash_target_required" } });
+        await expect(bind(new Command("update"), "update", [])).rejects.toMatchObject({ context: { code: "expect_hash_target_required" } });
+        await expect(bind(commandWithArgument("id"), "Get", [id])).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, context: { code: "expect_hash_requires_mutation" } });
+      });
+      expect(warnings).toContain(`expect_hash_unchecked:${id}:no_locked_write_reached_this_item`);
     });
   });
 
-  it("is inert without tokens or an open scope, and closes only its own scope", async () => {
-    const scope = openInvocationRevisionScope();
-    await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [], expectHash: undefined, pmRoot: "/tracker" });
-    reportInvocationRevisionScope(scope);
-    // The scope is closed, so later tokens have nothing to bind into.
-    await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: ["pm-a"], expectHash: [HASH], pmRoot: "/tracker" });
-    const other = openInvocationRevisionScope();
-    reportInvocationRevisionScope(scope);
+  it("is inert without tokens and leaves unrelated failures untouched", async () => {
+    expect(await inInvocation(() => bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [], expectHash: undefined, pmRoot: "/tracker" }))).toBe("");
     const plain = new Error("plain");
-    expect(await enrichInvocationRevisionError(scope, plain)).toBe(plain);
-    expect(await enrichInvocationRevisionError(other, plain)).toBe(plain);
+    await expect(parseWithInvocationRevisionScope((parse) => parse(() => Promise.reject(plain)))).rejects.toBe(plain);
   });
 
   it("enriches a bound scope's conflict with change evidence", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Enrich" });
-      const scope = openInvocationRevisionScope();
-      await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "close", commandArgs: [id], expectHash: [itemHash(context, id)], pmRoot: context.pmPath });
+      const scope = createItemRevisionScope();
+      bindItemRevisionScope(scope, context.pmPath, [{ id, itemHash: itemHash(context, id) }]);
       const conflict = new PmCliError("stale", EXIT_CODE.CONFLICT, { code: "item_revision_conflict", item_id: id, expected_revision: HASH });
       expect(await enrichInvocationRevisionError(scope, conflict)).toMatchObject({ context: { details: { expected_revision_recorded: false } } });
+      const plain = new Error("plain");
+      expect(await enrichInvocationRevisionError(createItemRevisionScope(), plain)).toBe(plain);
     });
   });
 });
@@ -104,7 +109,7 @@ describe("pm-gh1576 --expect-hash host surfaces", () => {
       return true;
     });
     try {
-      const scope = openInvocationRevisionScope();
+      const scope = createItemRevisionScope();
       bindItemRevisionScope(scope, "/tracker", [{ id: "pm-a", itemHash: HASH }, { id: "pm-b", itemHash: HASH }]);
       reportInvocationRevisionScope(scope);
     } finally {
@@ -116,6 +121,36 @@ describe("pm-gh1576 --expect-hash host surfaces", () => {
 });
 
 describe("pm-gh1576 invocation parse scope", () => {
+  it("refuses tokens outside an invocation scope and isolates overlapping invocations", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createTestItemId(context, { title: "Overlap A" });
+      const second = createTestItemId(context, { title: "Overlap B" });
+      const bind = (id: string) => bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [id], expectHash: [HASH], pmRoot: context.pmPath });
+      await expect(bind(first)).rejects.toThrow("outside an invocation revision scope");
+      const receipts: string[][] = [];
+      let releaseFirst: () => void = () => {};
+      const firstHeld = new Promise<void>((resolve) => { releaseFirst = resolve; });
+      const runInvocation = (id: string, hold: Promise<void>) => parseWithInvocationRevisionScope((parse) => parse(async () => {
+        await hold;
+        await bind(id);
+      })).then(() => receipts.push([id]));
+      const writes: string[] = [];
+      const spy = vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array) => { writes.push(String(chunk)); return true; });
+      try {
+        const a = runInvocation(first, firstHeld);
+        await runInvocation(second, Promise.resolve());
+        releaseFirst();
+        await a;
+      } finally {
+        spy.mockRestore();
+      }
+      // Each invocation reports only its own unchecked expectation.
+      expect(writes.filter((line) => line.includes(`expect_hash_unchecked:${first}`))).toHaveLength(1);
+      expect(writes.filter((line) => line.includes(`expect_hash_unchecked:${second}`))).toHaveLength(1);
+      expect(receipts).toHaveLength(2);
+    });
+  });
+
   it("runs the parse inside a fresh scope and rethrows refusals with change evidence", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Parse scope" });

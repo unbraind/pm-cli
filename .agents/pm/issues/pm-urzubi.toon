@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,dependencies,governance,lifecycle
 created_at: "2026-10-31T23:01:47.892Z"
-updated_at: "2026-11-02T14:29:15.542Z"
+updated_at: "2026-11-02T15:18:39.843Z"
 closed_at: "2026-11-02T14:26:36.511Z"
 completed_at: "2026-11-02T14:26:36.511Z"
 author: "harness:claude-code"
@@ -22,8 +22,9 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-9x6k,related,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
   pm-gh1643,discovered_from,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
   pm-gh1576,related,"2026-11-02T13:29:29.434Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-02T13:29:12.559Z","harness:claude-code","Implementation evidence (feat/write-time-preconditions): sdk/lifecycle/start-blockers.ts owns one admission check, admitStartWithOpenBlockers, governed by the new governance.start_blocker_enforcement (strict default, warn, off; pm config key governance-start-blocker-enforcement). It resolves blockers through sdk/query/declared-blockers.ts, the resolution pm get's blockers facet already used, extracted so the two cannot disagree. Terminal targets resolve; missing, unsafe and external references stay open. Hooks: runUpdate checks inside its locked mutate callback on the UPDATED metadata, so an update that removes the edge and starts in one call is admitted. runClaim(start) checks under the claim lock (claim --next --start). runStartTask pre-checks before the claim write, so a refused claim <id> --start leaves no claim, and the update re-checks under its own lock. Refusal start_blocked_by_open_dependency (exit 4) lists details.open_blockers and an executable unblock command (--unset blocked_by and/or --dep-remove id=<b>,kind=blocked_by, chosen from where the blocker is declared). Verified the advertised command then lets the start succeed. --force admits with start_blocker_override:<id>:<blockers>, and warn mode records start_with_open_blockers:<id>:<blockers>."
+  "2026-11-02T15:18:39.843Z","harness:claude-code","Codex review round 1 on PR 1654: the unlocked pre-check in runStartTask let a blocker added between the pre-check and the update leave a claim behind. Fixed: runAsExplicitStart makes the claim judge the start under its own item lock before writing ownership (admitExplicitStartClaim), and the composition's status update reuses that decision instead of re-judging. claim --next --start keeps its single locked write."
 files[12]{path,scope}:
   scripts/release/agent-evidence-consistency-control.mjs,project
   src/core/store/settings-validator.ts,project

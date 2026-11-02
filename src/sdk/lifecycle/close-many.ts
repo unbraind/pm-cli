@@ -3,6 +3,7 @@
  *
  * Implements the pm close many command surface and its agent-facing runtime behavior.
  */
+import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
@@ -95,7 +96,7 @@ interface CloseManyPlanRow {
   active_child_ids?: string[];
 }
 
-interface CloseManyApplyRow {
+interface CloseManyApplyRow extends ItemRevisionConflictRowFields {
   /** Completion provenance for a successfully closed target. */
   completion?: CloseCompletionReceipt;
   id: string;
@@ -470,6 +471,7 @@ async function applyCloseManyRows(params: {
         id: item.id,
         status: "failed",
         error: toErrorMessage(error),
+        ...itemRevisionConflictRowFields(error),
       });
     }
   }

@@ -3,6 +3,7 @@
  *
  * Implements the pm update many command surface and its agent-facing runtime behavior.
  */
+import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
@@ -261,7 +262,7 @@ interface PlannedItemDiff {
   warnings?: string[];
 }
 
-interface UpdateManyApplyResultRow {
+interface UpdateManyApplyResultRow extends ItemRevisionConflictRowFields {
   id: string;
   status: "updated" | "failed" | "skipped";
   changed_fields?: string[];
@@ -1124,6 +1125,7 @@ const applyUpdateManyRows = async (params: {
         id: item.id,
         status: "failed",
         error: toErrorMessage(error),
+        ...itemRevisionConflictRowFields(error),
       });
     }
   }

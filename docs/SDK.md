@@ -1388,8 +1388,12 @@ try {
 The check runs inside the locked item store, after the item lock is held and
 before anything is written. It therefore covers every item write the wrapped
 operation makes: lifecycle commands, annotations, linked files/docs/tests,
-dependency edits, `restore`, `delete`, bulk transactions and extension commands
-that mutate through the SDK. A mismatch refuses with `item_revision_conflict`
+dependency edits, `restore`, `delete`, history maintenance (`history-redact`,
+`history-repair`, `history-compact`, checked under the stream lock), bulk
+transactions and extension commands that mutate through the SDK. A `delete`
+advances the expectation to the item's absent (tombstone) revision, and a
+`restore` of a deleted item is judged under its own id, so a peer deletion
+between the read and the restore refuses instead of being resurrected over. A mismatch refuses with `item_revision_conflict`
 (exit 4). The refusal carries `item_id`, `expected_revision`,
 `current_revision` and `details` with `changes_since`, the newest
 10 history entries after the declared revision
@@ -1399,15 +1403,23 @@ After one of the operation's own writes commits, the expectation advances to
 that revision, so a multi-write composition such as `claim --start` does not
 refuse itself; an interleaved peer write still refuses the next step. The
 result lists `checked` ids and `unchecked` ids that the operation never wrote:
-an unchecked expectation proved nothing.
+an unchecked expectation proved nothing. `PmClient.readItemRevision` and
+`PmClient.withExpectedItemRevisions` resolve targets inside the client's
+extension context, so extension item types bind exactly as `get` reads them;
+the standalone `readItemRevision` / `withExpectedItemRevisions` functions use
+the registrations already active in the calling context. Bulk `update-many`
+and `close-many` keep their partial-success semantics: a stale row fails with
+`error_code: "item_revision_conflict"` plus its `expected_revision` and
+`current_revision`, while fresh rows proceed.
 
 Transports use the same grammar. The CLI's global `--expect-hash <item_hash>`
 binds to the command's `<id>`; `--expect-hash <id>=<item_hash>` (repeatable or
 comma-separated) names targets explicitly and is required for bulk commands.
 MCP tools and `PmClient.run` accept `expectHash` (string or string array) on
 every item-writing action. A native read action refuses the flag with
-`expect_hash_requires_mutation`, a malformed hash refuses with
-`expect_hash_invalid`, and an expectation no write reached is reported as the
+`expect_hash_requires_mutation`, and a malformed or supplied-but-empty value
+(for example an unset shell variable) refuses with `expect_hash_invalid` rather
+than silently dropping the guard. An expectation no write reached is reported as the
 warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. This
 precondition guards the gap between an agent's read and its write; lease
 fencing ([pm-gh1549](../.agents/pm/issues/pm-gh1549.toon)) still guards the
