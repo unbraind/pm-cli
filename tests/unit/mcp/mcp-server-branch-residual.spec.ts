@@ -1214,7 +1214,7 @@ describe("mcp server branch residual coverage", () => {
       // The swallowed activation failure is surfaced on stderr for diagnosability.
       expect(errorSpy).toHaveBeenCalledWith(
         "[pm-sdk] extension activation failed; continuing without active extensions:",
-        expect.any(Error),
+        expect.any(String),
       );
     } finally {
       errorSpy.mockRestore();

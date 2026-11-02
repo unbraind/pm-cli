@@ -136,8 +136,8 @@ describe("instrument residual branches", () => {
     // Serialized copies whose original is unavailable are discarded; our own error_context projection is kept.
     expect(sent).toMatchObject({
       contexts: { Error: {}, runtime: { name: "node" } },
-      extra: { error_context: { code: "probe" }, wrapped: { context: {} }, arguments: [{ name: "Error", context: {} }] },
-      breadcrumbs: [{ data: { arguments: [{ context: {} }] } }],
+      extra: { error_context: { code: "probe" }, wrapped: { context: {} }, arguments: [] },
+      breadcrumbs: [{ data: { arguments: [] } }],
     });
     // A console-captured error whose toJSON already flattened a diagnostic into a top-level primitive is discarded too.
     const consoleCopy = {
@@ -145,6 +145,15 @@ describe("instrument residual branches", () => {
       breadcrumbs: [{ category: "console", data: { arguments: [{ context: { report: marker } }] } }],
     };
     expect(JSON.stringify(options.beforeSend(consoleCopy, { originalException: "console" }))).not.toContain(marker);
+    // An error's own toJSON can move diagnostics out of every named context slot: complete serialized
+    // console arguments are discarded, in extras and in breadcrumbs.
+    const argumentCopy = {
+      extra: { arguments: [{ report: marker }, "plain text"] },
+      breadcrumbs: [{ category: "console", message: "logged", data: { arguments: [{ report: marker }] } }],
+    };
+    const argumentSent = options.beforeSend(argumentCopy, { originalException: "console" });
+    expect(JSON.stringify(argumentSent)).not.toContain(marker);
+    expect(argumentSent).toMatchObject({ extra: { arguments: [] }, breadcrumbs: [{ message: "logged", data: { arguments: [] } }] });
     // A toJSON can turn a whole context into a string: the slot is discarded whatever its serialized type.
     const stringCopy = { extra: { arguments: [{ name: "Error", context: marker }] }, breadcrumbs: [{ data: { arguments: [{ context: marker }] } }] };
     expect(JSON.stringify(options.beforeSend(stringCopy, { originalException: "console" }))).not.toContain(marker);

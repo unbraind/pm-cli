@@ -2769,9 +2769,11 @@ async function withActiveExtensionsExclusively<T>(
     // break a built-in action — fall back to running with no active extensions. Surface
     // the cause on stderr so a broken extension is diagnosable instead of being silently
     // indistinguishable from a workspace that simply has no extensions.
+    // Log the message only: console capture serializes an error's own
+    // properties, which could carry producer-owned diagnostics.
     console.error(
       "[pm-sdk] extension activation failed; continuing without active extensions:",
-      error,
+      error instanceof Error ? error.message : String(error),
     );
   }
   try {

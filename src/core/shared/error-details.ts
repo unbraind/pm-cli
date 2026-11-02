@@ -301,12 +301,19 @@ export function projectPmCliErrorContextDetailsSlot(
 /** Keys that carry producer diagnostics or a receipt describing them. */
 const DIAGNOSTIC_KEYS = new Set(["details", "details_omitted"]);
 
-/** Own enumerable properties other than the diagnostics keys, without touching those slots. */
+/**
+ * Own enumerable properties other than the diagnostics keys and any
+ * context-level serializer (which could re-emit unbounded diagnostics when
+ * the projection is serialized), without touching those slots.
+ */
 function contextWithoutDiagnostics(context: object): Record<string, unknown> {
   const rest: Record<string, unknown> = {};
   for (const key of Object.keys(context)) {
-    if (!DIAGNOSTIC_KEYS.has(key)) {
-      Object.defineProperty(rest, key, { value: (context as Record<string, unknown>)[key], enumerable: true, writable: true, configurable: true });
+    if (DIAGNOSTIC_KEYS.has(key) || key === "toJSON") continue;
+    // Own data properties only: a getter on any other key is never run.
+    const descriptor = Object.getOwnPropertyDescriptor(context, key);
+    if (descriptor !== undefined && "value" in descriptor) {
+      Object.defineProperty(rest, key, { value: descriptor.value, enumerable: true, writable: true, configurable: true });
     }
   }
   return rest;
@@ -369,6 +376,9 @@ const MAX_EMBEDDED_CONTEXT_DEPTH = 12;
 /** Embedded keys that carry a serialized error context. */
 const EMBEDDED_CONTEXT_KEYS = new Set(["context", "error_context"]);
 
+/** Console-capture keys holding complete serialized call arguments, error objects included. */
+const SERIALIZED_ARGUMENT_KEYS = new Set(["arguments"]);
+
 /**
  * Discard every embedded error context (`*.context` and `*.error_context`
  * objects) inside a serialized crash-report payload, in place, replacing each
@@ -395,8 +405,9 @@ export function omitEmbeddedPmCliErrorDetails(payload: unknown): void {
       const descriptor = Object.getOwnPropertyDescriptor(record, key);
       if (descriptor === undefined || !("value" in descriptor)) continue;
       const entry: unknown = descriptor.value;
-      // Whatever its serialized type: a toJSON can turn a context into a string that still carries diagnostics.
-      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) ? {} : entry;
+      // Whatever its serialized type: a toJSON can turn a context into a string that still carries
+      // diagnostics, and an error's own toJSON can move them out of any named context slot entirely.
+      const scrubbed = EMBEDDED_CONTEXT_KEYS.has(key) ? {} : SERIALIZED_ARGUMENT_KEYS.has(key) ? [] : entry;
       if (scrubbed !== entry) record[key] = scrubbed;
       visit(scrubbed, depth + 1);
     }

@@ -75,6 +75,7 @@ describe("project-schema field route retry (pm-wftvem)", () => {
   it.each([
     [["--pm-path", "/t", "update", "pm-1", "--field", 'gate_evidence={"a":1}', "--json"], ["--pm-path", "/t", "update", "pm-1", "--gate-evidence", '{"a":1}', "--json"]],
     [["update", "pm-1", "--field=gate_evidence=a=b", "--field", "team=x"], ["update", "pm-1", "--gate-evidence", "a=b", "--field", "team=x"]],
+    [["update", "pm-1", "--field", " gate_evidence=ok "], ["update", "pm-1", "--gate-evidence", "ok"]],
   ])("rewrites only the refused assignment in %j", (argv, expected) => {
     const repaired = repairSchemaFieldRecovery(argv, "project_schema_field_requires_declared_flag", "gate_evidence", recovery);
     expect(repaired?.suggested_retry_args).toEqual(expected);

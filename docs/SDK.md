@@ -3138,7 +3138,7 @@ to the package go in `context.details`, a plain JSON object the host never
 interprets:
 
 ```ts
-import { createPmCliExpectedError, PM_CLI_ERROR_DETAILS_LIMITS } from "@unbrained/pm-cli/sdk/runtime";
+import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
 
 throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   exitCode: 1,
@@ -3194,9 +3194,12 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   applies to `error_context` and to the error-data entry, which is rebuilt
   whole from the original exception (its own primitive fields plus the safe
   context), because the integration serializes the error, including any
-  error-level `toJSON`, before `beforeSend`. Serialized copies whose original cannot be recovered
-  (console-capture arguments, breadcrumbs, transactions) are discarded and
-  sent as empty objects.
+  error-level `toJSON`, before `beforeSend`. Serialized copies whose original
+  cannot be recovered are discarded: embedded contexts in console-capture
+  data, breadcrumbs and transactions are sent as empty objects, and complete
+  serialized console `arguments` are sent as empty arrays, because an error's
+  own `toJSON` can move diagnostics out of any named slot. The custom-host
+  projections drop a context-level `toJSON` for the same reason.
 
 ## Package Runtime Imports
 

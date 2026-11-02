@@ -55,7 +55,9 @@ export function repairSchemaFieldRecovery(
   );
   if (matches.length !== 1) return recovery;
   const [match] = matches;
-  const value = match!.assignment.slice(match!.assignment.indexOf("=") + 1);
+  // Same rule as the --field parser: the whole assignment is trimmed, then split at the first "=".
+  const assignment = match!.assignment.trim();
+  const value = assignment.slice(assignment.indexOf("=") + 1);
   const corrected = [
     ...argv.slice(0, match!.index),
     flag,

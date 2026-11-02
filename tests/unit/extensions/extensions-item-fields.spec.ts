@@ -7,7 +7,7 @@ import {
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { createSchemaFieldRecoveryResolver, resolveCoreFieldRecovery } from "../../../src/sdk/lifecycle/core-field-recovery.js";
 import { resolveRuntimeFieldRegistry } from "../../../src/core/schema/runtime-schema.js";
-import { collectRuntimeUpdateFieldValues } from "../../../src/core/schema/runtime-field-values.js";
+import { collectRuntimeUpdateFieldValues, runtimeFieldSdkOptionName } from "../../../src/core/schema/runtime-field-values.js";
 import { CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS } from "../../../src/sdk/cli-contracts/commander-mutation-options.js";
 import {
   createEmptyExtensionRegistrationRegistry,
@@ -202,6 +202,21 @@ describe("extensions item field runtime wiring", () => {
       const withheld = refusal("review_heading=x", createSchemaFieldRecoveryResolver(resolveRuntimeFieldRegistry({ fields } as never), "update"));
       expect(withheld.context.recovery).toEqual({ provided_fields: ["review_heading"] });
     }
+    // Collection keeps the first value per storage key: a later declaration sharing it is shadowed by an
+    // earlier one, so its routes are withheld, while the earlier declaration keeps its own.
+    const storageTwins = resolveRuntimeFieldRegistry({
+      fields: [
+        { key: "triage_left", metadata_key: "triage", type: "string", commands: ["update"] },
+        { key: "triage_right", metadata_key: "triage", type: "string", commands: ["update"] },
+      ],
+    } as never);
+    expect(collectRuntimeUpdateFieldValues({ triageLeft: "old", triageRight: "new" }, storageTwins)).toEqual({ triage: "old" });
+    const twinResolver = createSchemaFieldRecoveryResolver(storageTwins, "update");
+    expect(refusal("triage_right=new", twinResolver).context.recovery).toEqual({ provided_fields: ["triage_right"] });
+    expect(refusal("triage_right=new", twinResolver).context.nextSteps?.[1]).toContain("no SDK option sets it alone");
+    expect(refusal("triage_left=old", twinResolver).context.recovery?.suggested_flags).toEqual(["--triage-left"]);
+    expect(runtimeFieldSdkOptionName(storageTwins.definitions[1]!, storageTwins)).toBeUndefined();
+    expect(runtimeFieldSdkOptionName(storageTwins.definitions[0]!, storageTwins)).toBe("triageLeft");
     // Fields the command never reads cannot collide: create-only xy does not shadow update-only x_y.
     const scoped = resolveRuntimeFieldRegistry({
       fields: [

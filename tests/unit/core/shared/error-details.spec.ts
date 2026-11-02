@@ -220,6 +220,11 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(omitPmCliErrorDetails(context)).toEqual({ code: "probe" });
     expect(context.details).toEqual({ report: { excluded: 1 } });
     expect(omitPmCliErrorDetails(withoutDetails)).toBe(withoutDetails);
+    // The public transport projection drops a context-level serializer, which could re-emit unbounded diagnostics.
+    const serializing = { code: "probe", details: { small: true }, toJSON: () => ({ details: { text: "x".repeat(5000) } }) };
+    const projectedSerializing = projectPmCliErrorContextDetails(serializing) as Record<string, unknown>;
+    expect(Object.hasOwn(projectedSerializing, "toJSON")).toBe(false);
+    expect(JSON.stringify(projectedSerializing)).toBe('{"code":"probe","details":{"small":true}}');
   });
 
   it("never runs a getter on the details slot itself", () => {
@@ -235,6 +240,11 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(projectPmCliErrorContextDetailsSlot(context)).toEqual({ details_omitted: receipt });
     expect(projectPmCliErrorContextDetails(context)).toEqual({ code: "probe", details_omitted: receipt });
     expect(omitPmCliErrorDetails(context)).toEqual({ code: "probe" });
+    expect(calls).toBe(0);
+    // A getter on any other key is never run either, and does not cost the valid details or other fields.
+    const lazyOther = Object.defineProperty({ code: "probe", details: { ok: 1 } }, "lazy", { enumerable: true, get() { calls += 1; throw new Error("other getter"); } });
+    expect(projectPmCliErrorContextDetails(lazyOther)).toEqual({ code: "probe", details: { ok: 1 } });
+    expect(omitPmCliErrorDetails(lazyOther)).toEqual({ code: "probe" });
     expect(calls).toBe(0);
     expect(projectPmCliErrorContextDetailsSlot({ code: "probe" })).toBeUndefined();
     expect(projectPmCliErrorContextDetailsSlot(null)).toBeUndefined();
@@ -304,7 +314,7 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     omitEmbeddedPmCliErrorDetails(payload);
     expect(calls).toBe(0);
     expect(JSON.stringify([payload.extra, payload.breadcrumbs, payload.contexts])).not.toContain(marker);
-    expect(payload.extra).toEqual({ arguments: [{ name: "Error", context: {} }], error_context: {} });
+    expect(payload.extra).toEqual({ arguments: [], error_context: {} });
     expect(calls).toBe(0);
     // The walk is bounded: a context nested beyond the scan depth is left as-is.
     expect(JSON.stringify(payload.deep)).toContain("beyond-depth");
@@ -316,6 +326,6 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(projectPmCliErrorContextDetails(revoked.proxy)).toEqual({
       details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
     });
-    expect(() => omitEmbeddedPmCliErrorDetails({ extra: { arguments: [revoked.proxy] } })).not.toThrow();
+    expect(() => omitEmbeddedPmCliErrorDetails({ extra: { wrapped: revoked.proxy } })).not.toThrow();
   });
 });

@@ -43,6 +43,7 @@ export function runtimeFieldSdkOptionName(
   reservedOptions: ReadonlySet<string> = new Set(),
   command?: RuntimeFieldCommand,
 ): string | undefined {
+  if (hasEarlierStorageTwin(definition, registry, command)) return undefined;
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reservedOptions, command);
   const readOrder = resolveCandidateOptionKeys(definition);
   const preferred = toCamelToken(definition.cli_flag);
@@ -61,6 +62,24 @@ function isUnshadowedOptionKey(key: string, readOrder: readonly string[], taken:
     if (taken.has(earlier)) return false;
   }
   return true;
+}
+
+/**
+ * Whether another declaration active for the command stores to the same
+ * metadata key and is collected first: collection keeps the first value per
+ * storage key, so supplying that declaration would silently shadow this one.
+ */
+function hasEarlierStorageTwin(
+  definition: RuntimeFieldDefinitionResolved,
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+  command: RuntimeFieldCommand | undefined,
+): boolean {
+  let twin = false;
+  for (const candidate of registry.definitions) {
+    if (candidate === definition) break;
+    twin ||= candidate.metadata_key === definition.metadata_key && (command === undefined || candidate.commands.includes(command));
+  }
+  return twin;
 }
 
 /**
@@ -106,6 +125,7 @@ export function runtimeFieldCliFlagRoute(
   reserved: { options: ReadonlySet<string>; flags: ReadonlySet<string> },
   command?: RuntimeFieldCommand,
 ): string | undefined {
+  if (hasEarlierStorageTwin(definition, registry, command)) return undefined;
   const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options, command);
   const readOrder = resolveCandidateOptionKeys(definition);
   return [definition.cli_flag, ...definition.cli_aliases].find((flag) => {
