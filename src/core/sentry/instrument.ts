@@ -411,24 +411,44 @@ function readOwnErrorContextExtra(extra: unknown): unknown {
 }
 
 /**
- * The error-data integration serializes an error's own `context` before this
- * hook runs, so a context-level toJSON could already have copied diagnostics
- * under another key. Rebuild that entry from the original exception's own
- * data property instead of trusting the serialized copy.
+ * The error-data integration serializes an error's own properties (through
+ * any error- or context-level toJSON) before this hook runs, so serialized
+ * siblings of `context` can carry diagnostics too. Every entry that the
+ * integration keyed by the exception's name, and every entry carrying a
+ * `context`, is replaced whole by a projection rebuilt from the original
+ * exception: its own top-level primitive fields plus a safe `context`.
  */
 function rebuildErrorDataContexts(contexts: unknown, originalException: unknown): void {
   if (typeof contexts !== "object" || contexts === null || typeof originalException !== "object" || originalException === null) return;
-  let original: PropertyDescriptor | undefined;
-  try {
-    original = Object.getOwnPropertyDescriptor(originalException, "context");
-  } catch {
-    return;
-  }
-  if (original === undefined || !("value" in original)) return;
-  for (const entry of Object.values(contexts as Record<string, unknown>)) {
-    if (typeof entry === "object" && entry !== null && Object.hasOwn(entry, "context")) {
-      (entry as Record<string, unknown>).context = crashReportErrorContext(original.value);
+  const record = contexts as Record<string, unknown>;
+  const keys = new Set(errorDataContextKeys(originalException));
+  const rebuilt = safeErrorDataEntry(originalException);
+  for (const [key, entry] of Object.entries(record)) {
+    if (keys.has(key) || (typeof entry === "object" && entry !== null && Object.hasOwn(entry, "context"))) {
+      record[key] = rebuilt ?? {};
     }
+  }
+}
+
+/** Keys the error-data integration may have used for this exception (its name and constructor name). */
+function errorDataContextKeys(error: object): string[] {
+  try {
+    const candidates = [(error as { name?: unknown }).name, (error as { constructor?: { name?: unknown } }).constructor?.name];
+    return candidates.filter((candidate): candidate is string => typeof candidate === "string" && candidate.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+/** The error's own primitive fields plus its own context, both reduced to the crash-report form; undefined when uninspectable. */
+function safeErrorDataEntry(error: object): Record<string, unknown> | undefined {
+  try {
+    const entry = crashReportErrorContext(error);
+    const context = Object.getOwnPropertyDescriptor(error, "context");
+    if (context !== undefined && "value" in context) entry.context = crashReportErrorContext(context.value);
+    return entry;
+  } catch {
+    return undefined;
   }
 }
 

@@ -98,6 +98,14 @@ describe("producer error diagnostics admission (GH-1631)", () => {
     expect(projectPmCliErrorDetails(rootTrap)).toEqual({
       details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
     });
+    // A trap may throw a revoked proxy, which even instanceof cannot inspect.
+    const revokedFault = Proxy.revocable({}, {});
+    revokedFault.revoke();
+    const throwsRevoked = new Proxy({}, { ownKeys: () => { throw revokedFault.proxy; } });
+    expect(isPmCliErrorDetails(throwsRevoked)).toBe(false);
+    expect(projectPmCliErrorDetails(throwsRevoked)).toEqual({
+      details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },
+    });
     const trapped = new Proxy({}, { ownKeys: () => { throw new Error("trap fault"); } });
     expect(projectPmCliErrorDetails(trapped)).toEqual({
       details_omitted: { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes },

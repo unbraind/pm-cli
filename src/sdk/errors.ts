@@ -247,14 +247,15 @@ export function createPmCliExpectedError(
 export function isPmCliExpectedError(
   error: unknown,
 ): error is PmCliExpectedError {
-  if (!(error instanceof Error) || error.name !== PM_CLI_EXPECTED_ERROR_NAME) {
-    return false;
-  }
-  const candidate = error as Partial<PmCliExpectedError>;
   // A refusal declares its context; a bare name plus exit code is a fault that
   // must stay visible to crash reporting. Inspection itself can throw (a
-  // revoked proxy fails Array.isArray); such a value is not a usable refusal.
+  // throwing name getter, or a revoked proxy failing Array.isArray); such a
+  // value is not a usable refusal.
   try {
+    if (!(error instanceof Error) || error.name !== PM_CLI_EXPECTED_ERROR_NAME) {
+      return false;
+    }
+    const candidate = error as Partial<PmCliExpectedError>;
     return (
       typeof candidate.exitCode === "number" &&
       Number.isFinite(candidate.exitCode) &&

@@ -135,7 +135,7 @@ describe("instrument residual branches", () => {
     expect(JSON.stringify(sent)).not.toContain(marker);
     // Serialized copies whose original is unavailable are discarded; our own error_context projection is kept.
     expect(sent).toMatchObject({
-      contexts: { Error: { context: {} }, runtime: { name: "node" } },
+      contexts: { Error: {}, runtime: { name: "node" } },
       extra: { error_context: { code: "probe" }, wrapped: { context: {} }, arguments: [{ name: "Error", context: {} }] },
       breadcrumbs: [{ data: { arguments: [{ context: {} }] } }],
     });
@@ -163,6 +163,20 @@ describe("instrument residual branches", () => {
     const rebuilt = options.beforeSend(serialized, { originalException: original });
     expect(JSON.stringify(rebuilt)).not.toContain(marker);
     expect(rebuilt).toMatchObject({ contexts: { Error: { context: { code: "probe" } }, runtime: { name: "node" }, os: "linux", bare: null } });
+    // An error-level toJSON makes the integration emit siblings of context (report): the whole entry is
+    // rebuilt from the original, keeping only its own primitive fields and a safe context.
+    const errorLevel = Object.assign(new Error("error-level serializer"), {
+      exitCode: 70,
+      context: { code: "probe", details: { marker } },
+      toJSON() { return { report: { marker } }; },
+    });
+    const sibling = { exception: { values: [{ type: "Error", value: "error-level serializer" }] }, contexts: { Error: { report: { marker } }, runtime: { name: "node" } } };
+    const siblingSent = options.beforeSend(sibling, { originalException: errorLevel });
+    expect(JSON.stringify(siblingSent)).not.toContain(marker);
+    expect(siblingSent).toMatchObject({ contexts: { Error: { exitCode: 70, context: { code: "probe" } }, runtime: { name: "node" } } });
+    // An original whose name cannot be read still has its context-carrying entries discarded.
+    const namelessOriginal = Object.defineProperty(new Error("nameless"), "name", { get() { throw new Error("name trap"); } });
+    expect(JSON.stringify(options.beforeSend({ contexts: { Error: { context: { marker } } } }, { originalException: namelessOriginal }))).not.toContain(marker);
     // Without a usable original, the serialized copy is still reduced to top-level primitives.
     // Each case gets a fresh event: the hook scrubs in place, so a reused event would already be clean.
     const flattened = () => ({ exception: { values: [{ type: "Error", value: "serializer fault" }] }, contexts: { Error: { context: { report: { marker }, code: "probe" } } } });

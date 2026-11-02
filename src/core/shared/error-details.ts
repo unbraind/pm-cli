@@ -170,6 +170,16 @@ function copyDetailObject(value: Record<string, unknown>, path: string, depth: n
   return copy;
 }
 
+/** Our own shape refusal, or an uninspectable fault (a proxy trap can throw anything, even a revoked proxy). */
+function classifyAdmissionFault(error: unknown): DetailsShapeError {
+  try {
+    if (error instanceof DetailsShapeError) return error;
+  } catch {
+    // instanceof itself throws on a revoked proxy.
+  }
+  return new DetailsShapeError("unsupported_value", "details");
+}
+
 /**
  * Admit a diagnostics value: a plain object whose leaves are null, booleans,
  * finite numbers and well-formed strings, nested at most
@@ -189,7 +199,7 @@ export function admitPmCliErrorDetails(value: unknown): PmCliErrorDetailsAdmissi
     return { ok: true, details, byte_length: budget.bytes };
   } catch (error) {
     // Proxy traps are the only other source of faults; they are refused like any non-plain value.
-    const refusal = error instanceof DetailsShapeError ? error : new DetailsShapeError("unsupported_value", "details");
+    const refusal = classifyAdmissionFault(error);
     return {
       ok: false,
       omission: refusal.reason === "byte_limit"
