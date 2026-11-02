@@ -10,6 +10,10 @@
 - Typed refusals keep their own headline in human output: a likely_duplicate create refusal no longer reads as an invalid flag value ([pm-btv6x7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-btv6x7.toon))
 - Preserve surrogate pairs in bounded extension error diagnostics ([pm-y4v90c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4v90c.toon))
 
+### Other
+
+- Refresh mature GitHub Action pins: CodeQL 4.39.1, CodSpeed action 5.6.0 and TruffleHog 3.99.7 ([pm-ey1zh7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ey1zh7.toon))
+
 ## 2026.11.2 - 2026-11-02
 
 ### Fixed
