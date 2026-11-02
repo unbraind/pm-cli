@@ -1386,15 +1386,15 @@ try {
 ```
 
 The check runs inside the locked item store, after the item lock is held and
-before anything is written. It therefore covers every item write the wrapped
+before that write. It therefore covers every item write the wrapped
 operation makes: lifecycle commands, annotations, linked files/docs/tests,
 dependency edits, `restore`, `delete`, history maintenance (`history-redact`,
 `history-repair`, `history-compact`, checked under the stream lock), bulk
 transactions and extension commands that mutate through the SDK. A `delete`
 advances the expectation to the item's absent (tombstone) revision, and a
 `restore` of a deleted item is judged under its own id, so a peer deletion
-between the read and the restore refuses instead of being resurrected over. A mismatch refuses with `item_revision_conflict`
-(exit 4). The refusal carries `item_id`, `expected_revision`,
+between the read and the restore refuses instead of being resurrected over. A mismatch refuses that write with `item_revision_conflict`
+(exit 4); writes the operation already committed stay durable. The refusal carries `item_id`, `expected_revision`,
 `current_revision` and `details` with `changes_since`, the newest
 10 history entries after the declared revision
 (`op`, `author`, `ts`, top-level `fields`), plus `changes_since_omitted`.

@@ -232,9 +232,15 @@ describe("pm-urzubi explicit start composition", () => {
       const settings = await readSettings(context.pmPath);
       const base = { id: "pm-x", type: "Task", status: "open", title: "x" } as ItemMetadata;
       const nextSteps = async (metadata: ItemMetadata) => ((await admitStartWithOpenBlockers({ pmRoot: context.pmPath, settings, metadata }).catch((error: PmCliError) => error)) as PmCliError).context.nextSteps;
-      // A short scalar names the same blocker as its canonical edge, so the scalar clear is safe.
-      expect(await nextSteps({ ...base, blocked_by: "missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
+      // A scalar-only short alias is cleared by the scalar clear alone.
+      expect(await nextSteps({ ...base, blocked_by: "missing" } as ItemMetadata))
         .toContain("pm update pm-x --unset blocked_by");
+      // The scalar and an edge with the same stored text are one declaration.
+      expect(await nextSteps({ ...base, blocked_by: "PM-Missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
+        .toContain("pm update pm-x --unset blocked_by");
+      // A short scalar beside a prefixed edge may name two distinct items (a and pm-a), so clearing is not offered.
+      expect(await nextSteps({ ...base, blocked_by: "missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
+        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
       // Removal selectors normalize ids and compare kinds literally: legacy rows get an inspection step.
       expect(await nextSteps({ ...base, dependencies: [{ id: "missing", kind: "blocked_by" }] } as ItemMetadata))
         .toContain('pm get pm-x --fields "blocked_by,dependencies"');

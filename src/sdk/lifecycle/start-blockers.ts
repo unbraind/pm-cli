@@ -49,8 +49,10 @@ function sameBlocker(reference: string, blockerId: string, idPrefix: string): bo
 
 /**
  * The exact command that drops one declared blocker, or an inspection step when
- * no single command can. `--unset blocked_by` clears every blocked_by edge, so
- * it is advertised only when the scalar's blocker is the item's only one.
+ * no single command can. `--unset blocked_by` clears every literal blocked_by
+ * edge, so it is advertised only when every such edge is textually the scalar
+ * itself: prefix canonicalization cannot prove `a` and `pm-a` are one item,
+ * because a tracker may hold both.
  */
 function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: string): string {
   const edges = (metadata.dependencies ?? []).filter((dependency) => dependency.kind === "blocked_by");
@@ -64,7 +66,8 @@ function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: str
       ? renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"])
       : renderPmCommand(["update", metadata.id, "--dep-remove", `id=${removable.id},kind=blocked_by`]);
   }
-  return edges.every((dependency) => sameBlocker(dependency.id, blockerId, idPrefix))
+  const literal = (value: string) => value.trim().toLowerCase();
+  return edges.every((dependency) => literal(dependency.id) === literal(String(metadata.blocked_by)))
     ? renderPmCommand(["update", metadata.id, "--unset", "blocked_by"])
     : renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"]);
 }

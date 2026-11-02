@@ -1008,8 +1008,10 @@ A bare hash binds to the command's `<id>` argument. `<id>=<item_hash>`
 (repeatable or comma-separated) names targets explicitly and is required for
 commands without one item argument. The refusal reports `expected_revision`,
 `current_revision`, and `details.changes_since` (the newest 10 history entries
-since the declared revision, with their top-level `fields`). Nothing is written
-to the refused item. Read commands refuse the flag with
+since the declared revision, with their top-level `fields`). The refused write
+is suppressed; writes the same command already committed (for example the
+claim of a composed `claim --start`) stay durable, and the message then says
+so ("Earlier writes by this same invocation already committed"). Read commands refuse the flag with
 `expect_hash_requires_mutation`, and an empty value (such as an unset `$H`)
 refuses with `expect_hash_invalid` instead of running unguarded. Bulk
 `update-many`/`close-many` fail only stale rows, each carrying `error_code`,
