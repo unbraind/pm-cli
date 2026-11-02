@@ -580,17 +580,24 @@ function resultContent(
  */
 function expectedErrorTransportContext(error: unknown): { exitCode: number; context: unknown } | undefined {
   if (!(error instanceof PmCliError) && !isPmCliExpectedError(error)) return undefined;
-  const context = projectPmCliErrorContextDetails(snapshotPmCliErrorContext(error.context)) as Record<string, unknown>;
+  const snapshot = snapshotPmCliErrorContext(error.context);
+  let normalized: unknown;
   try {
-    // A foreign context may hold values JSON cannot encode (bigint, cycles); the response must still be written.
-    JSON.stringify(context);
-    return { exitCode: error.exitCode, context };
+    // Serialize exactly once: custom toJSON hooks run here, and everything
+    // after this point is plain JSON that no serializer can replace.
+    normalized = JSON.parse(JSON.stringify(snapshot)) as unknown;
   } catch {
+    normalized = undefined;
+  }
+  if (typeof normalized !== "object" || normalized === null || Array.isArray(normalized)) {
+    // Values JSON cannot encode (bigint, cycles) or a non-object toJSON: the response must still be written.
     return {
       exitCode: error.exitCode,
-      context: { ...(typeof context.code === "string" ? { code: context.code } : {}), context_unserializable: true },
+      context: { ...(typeof snapshot.code === "string" ? { code: snapshot.code } : {}), context_unserializable: true },
     };
   }
+  // Diagnostics are bounded after normalization, so no later serializer can swap them back in.
+  return { exitCode: error.exitCode, context: projectPmCliErrorContextDetails(normalized) };
 }
 
 function errorContent(

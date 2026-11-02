@@ -217,6 +217,12 @@ describe("producer error diagnostics admission (GH-1631)", () => {
       expect(projectPmCliErrorContextDetailsSlot({ details_omitted: invalid })).toBeUndefined();
     }
     expect(projectPmCliErrorContextDetailsSlot({ details: undefined })).toBeUndefined();
+    let receiptCalls = 0;
+    const accessorReceipt = Object.defineProperty({ byte_limit: 4096 }, "reason", { enumerable: true, get() { receiptCalls += 1; return "byte_limit"; } });
+    expect(projectPmCliErrorContextDetailsSlot({ details_omitted: accessorReceipt })).toBeUndefined();
+    const accessorPath = Object.defineProperty({ reason: "reserved_key" }, "path", { enumerable: true, get() { receiptCalls += 1; return "details.x"; } });
+    expect(projectPmCliErrorContextDetailsSlot({ details_omitted: accessorPath })).toEqual({ details_omitted: { reason: "reserved_key", byte_limit: 4096 } });
+    expect(receiptCalls).toBe(0);
     expect(projectPmCliErrorContextDetails(recorded)).toEqual({ code: "probe", ...projected });
     // Telemetry omission removes the receipt too: its path can echo producer keys.
     expect(omitPmCliErrorDetails(recorded)).toEqual({ code: "probe" });

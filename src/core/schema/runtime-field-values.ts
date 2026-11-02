@@ -40,14 +40,54 @@ function toCamelToken(value: string): string {
 export function runtimeFieldSdkOptionName(
   definition: RuntimeFieldDefinitionResolved,
   registry: Pick<RuntimeFieldRegistry, "definitions">,
+  reservedOptions: ReadonlySet<string> = new Set(),
 ): string | undefined {
-  const shared = new Set(
-    registry.definitions
-      .filter((candidate) => candidate.metadata_key !== definition.metadata_key)
-      .flatMap((candidate) => resolveCandidateOptionKeys(candidate)),
-  );
+  const taken = foreignRuntimeFieldOptionNames(definition, registry, reservedOptions);
   const preferred = toCamelToken(definition.cli_flag);
-  return [preferred, ...resolveCandidateOptionKeys(definition)].find((name) => !shared.has(name));
+  return [preferred, ...resolveCandidateOptionKeys(definition)].find((name) => !taken.has(name));
+}
+
+/** Option names another declared field reads, plus names the host command itself owns. */
+function foreignRuntimeFieldOptionNames(
+  definition: RuntimeFieldDefinitionResolved,
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+  reservedOptions: ReadonlySet<string>,
+): Set<string> {
+  return new Set([
+    ...reservedOptions,
+    // Identity, not storage key: two declarations sharing a metadata_key still read their own options.
+    ...registry.definitions
+      .filter((candidate) => candidate !== definition)
+      .flatMap((candidate) => resolveCandidateOptionKeys(candidate)),
+  ]);
+}
+
+/**
+ * A CLI flag (without dashes) that sets exactly this runtime field: the
+ * declared flag or an alias that is not a host flag and whose parsed option
+ * name no other declared field and no host option reads. Undefined when every
+ * spelling is shared, because that flag would also set the other field.
+ */
+export function runtimeFieldCliFlagRoute(
+  definition: RuntimeFieldDefinitionResolved,
+  registry: Pick<RuntimeFieldRegistry, "definitions">,
+  reserved: { options: ReadonlySet<string>; flags: ReadonlySet<string> },
+): string | undefined {
+  const taken = foreignRuntimeFieldOptionNames(definition, registry, reserved.options);
+  return [definition.cli_flag, ...definition.cli_aliases].find(
+    (flag) => !reserved.flags.has(`--${flag}`) && !taken.has(commanderOptionAttribute(flag)),
+  );
+}
+
+/**
+ * The option key Commander stores for a long flag: it camel-cases across
+ * hyphens only, so `--review-url` parses to `reviewUrl` while `--review.url`
+ * keeps the literal key `review.url`.
+ */
+function commanderOptionAttribute(flag: string): string {
+  return flag
+    .split("-")
+    .reduce((name, word) => `${name}${word.charAt(0).toUpperCase()}${word.slice(1)}`);
 }
 
 function resolveCandidateOptionKeys(
@@ -59,6 +99,9 @@ function resolveCandidateOptionKeys(
       toCamelToken(definition.key),
       toCamelToken(definition.cli_flag),
       ...definition.cli_aliases.map((alias) => toCamelToken(alias)),
+      // What the CLI actually produces for each registered flag.
+      commanderOptionAttribute(definition.cli_flag),
+      ...definition.cli_aliases.map((alias) => commanderOptionAttribute(alias)),
     ]),
   ];
 }

@@ -3123,9 +3123,11 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   shared or repeated structures cannot amplify the work; `path` is capped at
   160 bytes. The CLI and MCP read a separately bundled error's context once as
   plain data (`snapshotPmCliErrorContext`): getters are never run, and a
-  context that cannot be inspected becomes empty. An MCP context that JSON
-  cannot encode (for example a bigint member) is forwarded as
-  `{ code, context_unserializable: true }` so the response is still written. The text renderer drops the block first when the whole diagnostic
+  context that cannot be inspected becomes empty. MCP serializes that snapshot
+  exactly once (custom `toJSON` hooks run there) and bounds `details` on the
+  result, so no serializer can swap unbounded diagnostics back in; a context
+  JSON cannot encode as an object (for example a bigint member) is forwarded
+  as `{ code, context_unserializable: true }` so the response is still written. The text renderer drops the block first when the whole diagnostic
   exceeds its token ceiling; `--json` keeps it. Custom SDK hosts apply the
   same bound with `projectPmCliErrorDetails(value)` (returns `{ details }`,
   `{ details_omitted }` or `undefined`) or, for a context forwarded as-is,

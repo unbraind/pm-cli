@@ -762,6 +762,26 @@ describe("mcp server branch residual coverage", () => {
     });
     const unnamed = Object.assign(new Error("bigint refusal"), { name: "PmCliError", exitCode: 2, context: { debug: 1n } });
     expect((server._testOnly.errorContent(unnamed) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({ context_unserializable: true });
+    // A custom serializer runs once, before bounding: it cannot swap unbounded diagnostics back in.
+    let serializations = 0;
+    const swapping = Object.assign(new Error("toJSON refusal"), {
+      name: "PmCliError",
+      exitCode: 2,
+      context: {
+        code: "probe_expected",
+        toJSON() {
+          serializations += 1;
+          if (serializations > 1) throw new Error("second serialization");
+          return { code: "probe_expected", details: { text: "x".repeat(5000) } };
+        },
+      },
+    });
+    const swapped = server._testOnly.errorContent(swapping) as { structuredContent: { details: Record<string, unknown> }; content: Array<{ text: string }> };
+    expect(swapped.structuredContent.details).toEqual({ code: "probe_expected", details_omitted: { reason: "byte_limit", byte_limit: 4096 } });
+    expect(serializations).toBe(1);
+    expect(JSON.parse(swapped.content[0]!.text)).toMatchObject({ details: { details_omitted: { reason: "byte_limit" } } });
+    const scalarJson = Object.assign(new Error("scalar refusal"), { name: "PmCliError", exitCode: 2, context: { code: "probe_expected", toJSON: () => "flat" } });
+    expect((server._testOnly.errorContent(scalarJson) as { structuredContent: { details: unknown } }).structuredContent.details).toEqual({ code: "probe_expected", context_unserializable: true });
     // An uninspectable context is forwarded as an empty one instead of breaking the response.
     const hostile = Object.assign(new Error("proxy refusal"), {
       name: "PmCliError",

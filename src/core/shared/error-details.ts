@@ -202,12 +202,19 @@ function unsupportedDetailsReceipt(): PmCliErrorDetailsOmission {
   return { reason: "unsupported_value", path: "details", byte_limit: PM_CLI_ERROR_DETAILS_LIMITS.max_bytes };
 }
 
-/** Re-validate a host receipt recorded on a context; anything else is not a receipt. */
+/** An own data property's value; an accessor or an absent key reads as undefined without running anything. */
+function ownDataValue(container: object, key: string): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(container, key);
+  return descriptor !== undefined && "value" in descriptor ? descriptor.value : undefined;
+}
+
+/** Re-validate a host receipt recorded on a context; anything else, including accessor-backed fields, is not a receipt. */
 function readRecordedOmission(value: unknown): PmCliErrorDetailsOmission | undefined {
   if (!isPlainObject(value)) return undefined;
-  const reason = value.reason;
+  const reason = ownDataValue(value, "reason");
   if (typeof reason !== "string" || !DETAILS_REJECTIONS.has(reason)) return undefined;
-  const path = typeof value.path === "string" ? boundPath(value.path) : undefined;
+  const recordedPath = ownDataValue(value, "path");
+  const path = typeof recordedPath === "string" ? boundPath(recordedPath) : undefined;
   return {
     reason: reason as PmCliErrorDetailsRejection,
     ...(path === undefined ? {} : { path }),

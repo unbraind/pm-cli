@@ -182,7 +182,9 @@ function normalizeExpectedErrorExitCode(value: number): number {
 function admitExpectedErrorContext(
   context: PmCliErrorContext | undefined,
 ): PmCliErrorContext {
-  if (context === undefined || !Object.hasOwn(context, "details")) return context ?? {};
+  // A JavaScript caller may pass null; it has always meant "no context".
+  if (context === undefined || context === null) return {};
+  if (!Object.hasOwn(context, "details")) return context;
   const descriptor = Object.getOwnPropertyDescriptor(context, "details")!;
   // An accessor is refused without being run, like any other non-JSON value.
   if (!("value" in descriptor)) throw detailsShapeTypeError("unsupported_value", "details");

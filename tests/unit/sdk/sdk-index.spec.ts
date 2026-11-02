@@ -537,6 +537,7 @@ describe("public sdk entrypoint", () => {
     expect(large.context.details).toBeUndefined();
     const withoutDetails = { code: "plain" };
     expect(createPmCliExpectedError("plain", { context: withoutDetails }).context).toBe(withoutDetails);
+    expect(createPmCliExpectedError("null context", { context: null as never }).context).toEqual({});
     const undefinedDetails = { code: "plain", details: undefined };
     expect(createPmCliExpectedError("plain", { context: undefinedDetails }).context).toBe(undefinedDetails);
   });
