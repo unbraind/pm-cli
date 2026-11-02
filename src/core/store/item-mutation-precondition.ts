@@ -107,22 +107,32 @@ export function itemRevisionScopeReceipt(scope: ItemRevisionScope): { checked: s
   };
 }
 
-function matchingRevisionEntries(pmRoot: string, id: string): ItemRevisionScopeEntry[] {
+/**
+ * Entries bound to any spelling of the locked item: its locked (filename-probe)
+ * id and its embedded metadata id. Bindings store the embedded id, so a write
+ * reached through another spelling on a case-insensitive filesystem (`PM-A` for
+ * `pm-a`) still meets its expectation, and a file whose embedded id differs from
+ * its name still matches by filename.
+ */
+function matchingRevisionEntries(pmRoot: string, ids: readonly unknown[]): ItemRevisionScopeEntry[] {
   const resolvedRoot = path.resolve(pmRoot);
-  return (revisionScopes.getStore() ?? []).flatMap((scope) => {
-    const entry = scope.pmRoot === resolvedRoot ? scope.entries.get(id) : undefined;
-    return entry === undefined ? [] : [entry];
-  });
+  const keys = new Set(ids.filter((id): id is string => typeof id === "string"));
+  return [...new Set((revisionScopes.getStore() ?? []).flatMap((scope) =>
+    scope.pmRoot === resolvedRoot ? [...keys].flatMap((key) => scope.entries.get(key) ?? []) : []))];
 }
 
-/** Whether any active scope declared a revision for this item, so writers can skip extra reads otherwise. */
-export function hasItemRevisionExpectation(pmRoot: string, id: string): boolean {
-  return matchingRevisionEntries(pmRoot, id).length > 0;
+/**
+ * Whether any active scope declared a revision on this tracker, so writers that
+ * must read a document to learn its embedded id can skip that read otherwise.
+ */
+export function hasActiveItemRevisionScope(pmRoot: string): boolean {
+  const resolvedRoot = path.resolve(pmRoot);
+  return (revisionScopes.getStore() ?? []).some((scope) => scope.pmRoot === resolvedRoot && scope.entries.size > 0);
 }
 
 /** Refuse a locked write whose stored revision is not the one its scope declared. */
 function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, targetId: string): void {
-  const entries = matchingRevisionEntries(pmRoot, targetId);
+  const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id]);
   if (entries.length === 0) return;
   const current = hashDocument(document);
   for (const entry of entries) {
@@ -163,7 +173,7 @@ export function assertItemMutationPreconditions(pmRoot: string, document: ItemDo
 
 /** Notify matching scoped guards of their own committed document (a tombstone after delete) before releasing the item lock. */
 export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id): void {
-  const entries = matchingRevisionEntries(pmRoot, targetId);
+  const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id]);
   if (entries.length > 0) {
     const committed = hashDocument(document);
     for (const entry of entries) entry.expected = committed;

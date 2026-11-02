@@ -1403,7 +1403,9 @@ After one of the operation's own writes commits, the expectation advances to
 that revision, so a multi-write composition such as `claim --start` does not
 refuse itself; an interleaved peer write still refuses the next step. The
 result lists `checked` ids and `unchecked` ids that the operation never wrote:
-an unchecked expectation proved nothing. `PmClient.readItemRevision` and
+an unchecked expectation proved nothing. Expectations bind to the item's embedded id, so every
+spelling that locates the item (a short id, or a case variant on a
+case-insensitive filesystem) is guarded. `PmClient.readItemRevision` and
 `PmClient.withExpectedItemRevisions` resolve targets inside the client's
 extension context, so extension item types bind exactly as `get` reads them,
 then run the operation outside it, so its own actions (extension commands

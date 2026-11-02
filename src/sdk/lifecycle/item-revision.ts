@@ -144,9 +144,14 @@ async function locateRevisionTarget(pmRoot: string, id: string) {
   const settings = await readSettings(pmRoot);
   const typeToFolder = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder;
   const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
-  if (located) return { id: located.id, located, settings };
+  if (located) {
+    // Bind to the embedded identity, not the probe spelling: on a case-insensitive filesystem
+    // `pm-a` and `PM-A` locate one file, and the locked write matches the embedded id too.
+    const { document } = await readLocatedItem(located, { schema: settings.schema });
+    return { id: document.metadata.id, document };
+  }
   try {
-    return { id: (await resolveHistorySubject(pmRoot, id, settings, typeToFolder)).id, located: null, settings };
+    return { id: (await resolveHistorySubject(pmRoot, id, settings, typeToFolder)).id, document: EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument };
   } catch {
     throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeToFolder);
   }
@@ -158,12 +163,8 @@ function resolveRevisionRoot(context: ItemRevisionContext): string {
 
 /** Read the current revision of one item (the tombstone revision for a deleted item) without writing anything. */
 export async function readItemRevision(id: string, context: ItemRevisionContext = {}): Promise<ItemRevision> {
-  const pmRoot = resolveRevisionRoot(context);
-  const target = await locateRevisionTarget(pmRoot, id);
-  const document = target.located === null
-    ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
-    : (await readLocatedItem(target.located, { schema: target.settings.schema })).document;
-  return { id: target.id, item_hash: hashDocument(document) };
+  const target = await locateRevisionTarget(resolveRevisionRoot(context), id);
+  return { id: target.id, item_hash: hashDocument(target.document) };
 }
 
 /**

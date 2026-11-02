@@ -11,6 +11,11 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** Whether a record carries an expected-revision key, even one set to undefined. */
+function hasExpectHashKey(record: Record<string, unknown>): boolean {
+  return "expectHash" in record || "expect_hash" in record;
+}
+
 /**
  * Return every supplied guard and the arguments with all placements removed.
  * One placement passes through unchanged (so its validation message names it
@@ -20,6 +25,8 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
  * validation can refuse it.
  */
 export function splitExpectHashInput(args: Record<string, unknown>): { expectHash: unknown; dispatchArgs: Record<string, unknown> } {
+  // Arguments with no placement at all pass through untouched (identity and markers preserved).
+  if (!hasExpectHashKey(args) && !(isPlainRecord(args.options) && hasExpectHashKey(args.options))) return { expectHash: undefined, dispatchArgs: args };
   const { expectHash, expect_hash: alias, ...rest } = args;
   const options = isPlainRecord(rest.options) ? rest.options : {};
   const { expectHash: nested, expect_hash: nestedAlias, ...nestedRest } = options;

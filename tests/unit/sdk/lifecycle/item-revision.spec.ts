@@ -10,6 +10,7 @@ import {
   assertItemMutationPreconditions,
 } from "../../../../src/core/store/item-mutation-precondition.js";
 import {
+  bindExpectedItemRevisions,
   bindItemRevisionScope,
   createItemRevisionScope,
   describeItemRevisionChanges,
@@ -122,6 +123,17 @@ describe("pm-gh1576 revision scope", () => {
     // Outside any scope, writes advance nothing and assert nothing.
     advanceItemMutationPreconditions("/tracker", document);
     assertItemMutationPreconditions("/tracker", document);
+  });
+
+  it("matches a write reached through another spelling of the same item", async () => {
+    const document = { metadata: { id: "pm-a", title: "A" }, body: "" } as unknown as ItemDocument;
+    const scope = createItemRevisionScope();
+    bindItemRevisionScope(scope, "/tracker", [{ id: "pm-a", itemHash: HASH_A }]);
+    await runWithItemRevisionScope(scope, async () => {
+      // A case-insensitive filesystem locks the probe spelling PM-A; the embedded id still matches.
+      expect(() => assertItemMutationPreconditions("/tracker", document, "PM-A")).toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "item_revision_conflict" }) }));
+    });
+    expect(itemRevisionScopeReceipt(scope).checked).toEqual(["pm-a"]);
   });
 
   it("passes non-revision failures through an unbound scope unchanged", async () => {
@@ -281,6 +293,8 @@ describe("pm-gh1576 read-decide-write through the SDK", () => {
         context: { code: "expect_hash_target_required" },
       });
       expect(await resolveExpectedItemRevisions(context.pmPath, [{ itemHash: HASH_A }], id.replace(/^pm-/u, ""))).toEqual([{ id, itemHash: HASH_A }]);
+      // Bindings use the embedded identity, whatever spelling located the file.
+      expect(await resolveExpectedItemRevisions(context.pmPath, [{ itemHash: HASH_A }], id.toUpperCase())).toEqual([{ id, itemHash: HASH_A }]);
     });
   });
 });
@@ -495,9 +509,12 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       const current = (await pm.readItemRevision(id)).item_hash;
       await expect(guarded(current)).rejects.toThrow("changed while waiting for lock");
       await expect(verify()).rejects.toThrow("changed while waiting for lock");
-      // An unreadable item cannot be judged, so the history drift refusal stands.
+      // An item that became unreadable after binding cannot be judged, so the history drift refusal stands.
+      const bound = await bindExpectedItemRevisions([{ id, itemHash: decided }], { pmRoot: context.pmPath });
       await writeFile(itemPath, "not a pm item\n");
-      await expect(guarded(decided)).rejects.toThrow(`History for ${id} changed while waiting for lock`);
+      await expect(runWithBoundItemRevisionScope(bound, () => verify())).rejects.toThrow(`History for ${id} changed while waiting for lock`);
+      // Binding refuses an item it cannot read, since its embedded identity is unknown.
+      await expect(bindExpectedItemRevisions([{ id, itemHash: decided }], { pmRoot: context.pmPath })).rejects.toThrow("Cannot read");
       await writeFile(itemPath, itemBefore);
       // A deleted subject is judged as its tombstone.
       await pm.run("delete", { id, force: true });
@@ -514,6 +531,7 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       await expect(runAction({ ...common, action: "update", id, options: { priority: "3", expectHash: stale } })).rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
       await expect(runAction({ ...common, action: "update", id, options: { priority: "3", expect_hash: null } })).rejects.toMatchObject({ context: { code: "expect_hash_invalid" } });
       expect(splitExpectHashInput({ id, options: "raw" })).toEqual({ expectHash: undefined, dispatchArgs: { id, options: "raw" } });
+      expect(splitExpectHashInput({ id, expectHash: HASH_A, options: "raw" })).toEqual({ expectHash: HASH_A, dispatchArgs: { id, options: "raw" } });
       // Every placement is merged, so a guard in a second placement is never dropped.
       expect(splitExpectHashInput({ id, expectHash: HASH_A, options: { expectHash: [`pm-b=${HASH_B}`], expect_hash: `pm-c=${HASH_B}` } })).toEqual({
         expectHash: [HASH_A, `pm-b=${HASH_B}`, `pm-c=${HASH_B}`],
@@ -525,7 +543,12 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       await runAction({ ...common, action: "update", id: other, options: { title: "Peer retitle of the other item" } });
       await expect(runAction({ ...common, action: "update", id: other, expectHash: `${id}=${fresh}`, options: { priority: "3", expectHash: otherStale } }))
         .rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: other } });
-      expect(splitExpectHashInput({ id })).toEqual({ expectHash: undefined, dispatchArgs: { id } });
+      const untouched = { id, options: { priority: "1" } };
+      expect(splitExpectHashInput(untouched).dispatchArgs).toBe(untouched);
+      expect(splitExpectHashInput({ id, options: { priority: "1", expectHash: undefined } })).toEqual({ expectHash: undefined, dispatchArgs: { id, options: { priority: "1" } } });
+      // An undefined optional guard behaves like an omitted one at both placements.
+      await expect(runAction({ ...common, action: "update", id, expectHash: undefined, options: { priority: "2" } })).resolves.toMatchObject({ id });
+      await expect(runAction({ ...common, action: "update", id, options: { priority: "3", expect_hash: undefined } })).resolves.toMatchObject({ id });
     });
   });
 

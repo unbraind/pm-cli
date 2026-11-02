@@ -10,7 +10,7 @@ import { acquireLock } from "../lock/lock.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
-import { advanceItemMutationPreconditions, assertItemMutationPreconditions, hasItemRevisionExpectation } from "../store/item-mutation-precondition.js";
+import { advanceItemMutationPreconditions, assertItemMutationPreconditions, hasActiveItemRevisionScope } from "../store/item-mutation-precondition.js";
 import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
@@ -104,7 +104,8 @@ export interface VerifiedHistoryRewriteState {
  * drift refusal to the caller.
  */
 async function assertDeclaredRevisionOnDrift(params: VerifyHistoryRewriteDriftParams): Promise<void> {
-  if (!hasItemRevisionExpectation(params.pmRoot, params.subject.id)) return;
+  // Bindings use the embedded id and the subject id is the probe spelling; the assertion matches either.
+  if (!hasActiveItemRevisionScope(params.pmRoot)) return;
   const located = await locateItem(params.pmRoot, params.subject.id, params.settings.id_prefix, params.settings.item_format, params.typeRegistry.type_to_folder);
   const document = located === null
     ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
@@ -249,7 +250,7 @@ export async function executeHistoryRewrite(
     assertItemMutationPreconditions(params.pmRoot, verified.loadedItemUnderLock?.document ?? tombstone, params.subject.id);
     await params.applyRewrite(verified);
     // Re-read only for a declared revision: a recovered (unparseable) item stays rewritable without one.
-    if (hasItemRevisionExpectation(params.pmRoot, params.subject.id)) {
+    if (hasActiveItemRevisionScope(params.pmRoot)) {
       // Re-locate: a rewrite may move the item (legacy Markdown to TOON, or a type folder change).
       const relocated = await locateItem(params.pmRoot, params.subject.id, params.settings.id_prefix, params.settings.item_format, params.typeRegistry.type_to_folder);
       const rewritten = relocated === null

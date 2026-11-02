@@ -2963,7 +2963,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   // Top-level and nested placements are both enforced; a supplied null is validated (and refused).
   const { expectHash, dispatchArgs } = splitExpectHashInput(resolved.args);
   const dispatch = async (activeExtensions: ActiveExtensionRuntime | null): Promise<unknown> => {
-    if (expectHash === undefined) return dispatchAction(resolved.action, resolved.args, global, activeExtensions);
+    // An undefined guard behaves like an omitted one: dispatch the stripped arguments either way.
+    if (expectHash === undefined) return dispatchAction(resolved.action, dispatchArgs, global, activeExtensions);
     const { dispatchWithExpectedItemRevisions } = await import("./lifecycle/item-revision.js");
     return dispatchWithExpectedItemRevisions({
       action: resolved.action,
