@@ -238,10 +238,12 @@ describe("linked-test editing and configuration admission", () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "command replacement", createMode: "progressive" });
       await runTest(id, { addJson: [JSON.stringify([
-        { command: "node -e 1", path: "first.mjs", timeout_seconds: 60, note: "old" },
+        // A non-default scope proves the replacement carries it rather than the parser's "project" default.
+        { command: "node -e 1", path: "first.mjs", scope: "global", timeout_seconds: 60, note: "old" },
         { command: "node --version", note: "untouched" },
       ])] }, { path: context.pmPath });
       const listed = await runTest(id, { list: true }, { path: context.pmPath });
+      expect(listed.tests[0]!.scope).toBe("global");
       const before = await capture(context, id);
 
       let sdkRefusal: { code?: string; context?: Record<string, unknown> } | undefined;
@@ -271,7 +273,7 @@ describe("linked-test editing and configuration admission", () => {
       const current = await runTest(id, { list: true }, { path: context.pmPath });
       expect(current.tests).toHaveLength(2);
       expect(current.tests[0]).toEqual(listed.tests[1]);
-      expect(current.tests[1]).toMatchObject({ command: "node -e 2", path: "first.mjs", timeout_seconds: 60, note: "old", provenance: expect.any(Object) });
+      expect(current.tests[1]).toMatchObject({ command: "node -e 2", path: "first.mjs", scope: "global", timeout_seconds: 60, note: "old", provenance: expect.any(Object) });
       const after = await capture(context, id);
       const events = after.history.slice(before.history.length).trim().split("\n").map((line) => JSON.parse(line) as { op: string });
       expect(events.map((event) => event.op)).toEqual(["tests_add"]);
@@ -294,9 +296,10 @@ describe("linked-test editing and configuration admission", () => {
         expect((refusal as { context?: { recovery?: { suggested_retry_args?: unknown } } }).context?.recovery?.suggested_retry_args).toBeUndefined();
         expect(await capture(context, id)).toEqual(before);
       }
-      // A replacement whose identity matches another entry would be deduplicated away, so no retry is offered.
+      // A replacement whose identity (command, path, scope and context modes) matches another entry would be
+      // deduplicated away, so no retry is offered.
       const beforeCollision = await capture(context, id);
-      const collision = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node --version", path: null, note: "merged?" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
+      const collision = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node --version", path: null, scope: "project", note: "merged?" } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
       expect(collision).toMatchObject({
         code: "linked_test_command_immutable",
         message: expect.stringContaining("linked test 1 already has the requested identity"),
@@ -320,7 +323,7 @@ describe("linked-test editing and configuration admission", () => {
       // An undefined field value is "not supplied": the selected entry's value is kept.
       const undefinedScope = await updateLinkedTest(id, { selector: { index: 2 }, patch: { command: "node -e 7", scope: undefined } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);
       const undefinedScopeArgs = (undefinedScope as { context: { recovery: { suggested_retry_args: string[] } } }).context.recovery.suggested_retry_args;
-      expect(JSON.parse(undefinedScopeArgs[undefinedScopeArgs.indexOf("--add-json") + 1]!)).toMatchObject({ scope: listed.tests[0]!.scope });
+      expect(JSON.parse(undefinedScopeArgs[undefinedScopeArgs.indexOf("--add-json") + 1]!)).toMatchObject({ scope: "global" });
 
       // Unsupported metadata names the editable domain.
       const forged = await updateLinkedTest(id, { selector: { index: 2 }, patch: { provenance: {} } as unknown as LinkedTestMetadataPatch }, { path: context.pmPath }).catch((error: unknown) => error);

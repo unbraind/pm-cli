@@ -3182,8 +3182,11 @@ throw createPmCliExpectedError("No changelog section for 2026.11.1", {
   serializes the remaining host fields once (a context-level `toJSON` is
   ignored), so no serializer can expand or replace the diagnostics; a context
   JSON cannot encode (for example a bigint member) is forwarded as
-  `{ code, context_unserializable: true }` so the response is still written. The text renderer drops the block first when the whole diagnostic
-  exceeds its token ceiling; `--json` keeps it. Custom SDK hosts apply the
+  `{ code, context_unserializable: true }` so the response is still written. When the text output exceeds its token ceiling, the
+  text renderer drops the explanation (`why`) first and then the `Details:`
+  block (together with the example and next-step limits). A block dropped this
+  way gets no `Details omitted:` line, only the generic notice that points to
+  `--json`, which keeps the details. Custom SDK hosts apply the
   same bound with `projectPmCliErrorDetails(value)` (returns `{ details }`,
   `{ details_omitted }` or `undefined`) or, for a context forwarded as-is,
   `projectPmCliErrorContextDetails(context)`.
