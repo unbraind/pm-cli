@@ -148,6 +148,15 @@ async function locateRevisionTarget(pmRoot: string, id: string) {
     // Bind to the embedded identity, not the probe spelling: on a case-insensitive filesystem
     // `pm-a` and `PM-A` locate one file, and the locked write matches the embedded id too.
     const { document } = await readLocatedItem(located, { schema: settings.schema });
+    // A file whose embedded id names another item has two identities; a later identity repair would
+    // detach a guard bound to either one, so no revision is bound to it.
+    if (document.metadata.id.toLowerCase() !== located.id.toLowerCase()) {
+      throw new PmCliError(`Item file ${located.id} embeds the id ${document.metadata.id}; no revision can be bound to an item whose identity is in conflict.`, EXIT_CODE.CONFLICT, {
+        code: "item_identity_conflict",
+        item_id: located.id,
+        required: `Repair ${located.id}'s identity first (pm validate reports it; pm restore ${located.id} <version> recovers a recorded state), then read its item_hash again.`,
+      });
+    }
     return { id: document.metadata.id, document };
   }
   try {

@@ -401,15 +401,10 @@ async function autoUnblockResolvedDependents(
       warnings.push(
         `auto_unblocked:${unblocked.item.id}:resolved_blockers=${candidate.blocker_ids.join(",")}`,
       );
-      /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
+      /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. The revision specs exercise the kept conflict through the typed refusal below. */
     } catch (error) {
-      /* c8 ignore stop */
       // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
-      if (isItemRevisionConflict(error)) {
-        conflict ??= error;
-        continue;
-      }
-      /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
+      if (conflict === undefined && isItemRevisionConflict(error)) conflict = error;
       const reason =
         error instanceof Error
           ? error.message.replace(/\s+/g, " ").trim()

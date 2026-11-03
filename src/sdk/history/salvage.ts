@@ -314,6 +314,8 @@ export async function salvageHistoryTail(params: {
         ? await readFileIfExists(located.itemPath)
         : null;
       if (currentRaw !== raw || currentItem !== ownership.itemRaw) {
+        // A peer moved the item while this salvage waited: a stale declared revision refuses typed first.
+        assertSalvageRevision(params.pmRoot, subject.id, await readSalvageOwnership(subject, settings, document));
         throw new PmCliError(
           "History or item changed while waiting for salvage lock; retry.",
           EXIT_CODE.CONFLICT,

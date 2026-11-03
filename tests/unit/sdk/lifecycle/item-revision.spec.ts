@@ -1,7 +1,8 @@
 import { AsyncResource } from "node:async_hooks";
 import { appendFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import * as lockModule from "../../../../src/core/lock/lock.js";
 import { hashDocument } from "../../../../src/core/history/history.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
@@ -568,6 +569,46 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       await pm.run("delete", { id: deleted, force: true });
       await damageTail(deleted);
       await expect(salvage(deleted, (await readItemRevision(deleted, { pmRoot: context.pmPath })).item_hash)).resolves.toMatchObject({ checked: [deleted] });
+    });
+  });
+
+  it("judges the live revision when the item moved while tail salvage waited for its lock", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const id = createTestItemId(context, { title: "Salvage lock window" });
+      await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), "\0\0\0");
+      const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const acquireLock = lockModule.acquireLock;
+      let peerEdits = 0;
+      const spy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (args[1] === id) {
+          peerEdits += 1;
+          await writeFile(itemFile, (await readFile(itemFile, "utf8")).replace("title: Salvage lock window", `title: Salvage lock window, peer edit ${peerEdits}`));
+        }
+        return acquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+      try {
+        await expect(pm.run("history-repair", { id, options: { salvageTail: true } })).rejects.toThrow(/changed while waiting for salvage lock/u);
+        const decided = (await pm.readItemRevision(id)).item_hash;
+        await expect(withExpectedItemRevisions([{ id, itemHash: decided }], () => pm.run("history-repair", { id, options: { salvageTail: true } }), { pmRoot: context.pmPath }))
+          .rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: id, expected_revision: decided } });
+      } finally {
+        spy.mockRestore();
+      }
+      expect(peerEdits).toBe(2);
+    });
+  });
+
+  it("binds no revision to an item file whose embedded id names another item", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Identity conflict" });
+      const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const raw = await readFile(itemFile, "utf8");
+      expect(raw).toContain(`id: ${id}`);
+      await writeFile(itemFile, raw.replace(`id: ${id}`, "id: pm-zzzz"));
+      await expect(readItemRevision(id, { pmRoot: context.pmPath })).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_identity_conflict", item_id: id } });
+      await expect(withExpectedItemRevisions([{ id, itemHash: HASH_A }], () => Promise.resolve(undefined), { pmRoot: context.pmPath }))
+        .rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
     });
   });
 

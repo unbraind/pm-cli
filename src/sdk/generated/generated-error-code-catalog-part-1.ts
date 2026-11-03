@@ -1059,6 +1059,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 4,
     sources: [
       "sdk/governance/validate-history-drift.ts",
+      "sdk/lifecycle/item-revision.ts",
       "sdk/merge/three-way.ts",
       "sdk/query/declared-blockers.ts",
     ],
