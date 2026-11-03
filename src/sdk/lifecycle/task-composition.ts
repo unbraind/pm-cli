@@ -62,7 +62,8 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
   const status = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
   // The explicit composition keeps claim and status as separate audited steps; only claim --next --start shares one write.
-  // pm-urzubi: the claim judges open blockers under its item lock before writing ownership, and the update reuses that decision.
+  // pm-urzubi: the claim judges open blockers under its item lock before writing ownership. The update judges again under its own
+  // lock (the claim only de-duplicates warnings), and when that refuses, the claim this start took is released.
   return runAsExplicitStart(async () => {
     const claim = await runClaim(id, options.force === true, global, mutationOptionsWithOverrides(options, {}, ["start"]));
     const canonicalId = claim.item.id as string;

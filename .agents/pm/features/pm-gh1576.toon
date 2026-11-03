@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: concurrency,"gh:1576",sdk
 created_at: "2026-10-24T16:12:40.963Z"
-updated_at: "2026-11-03T09:22:35.496Z"
+updated_at: "2026-11-03T09:57:20.036Z"
 closed_at: "2026-11-02T14:26:27.656Z"
 completed_at: "2026-11-02T14:26:27.656Z"
 author: "harness:codex"
@@ -15,7 +15,7 @@ acceptance_criteria: "Define a public optional expected revision/hash contract a
 parent: pm-9rgaal
 risk: medium
 confidence: medium
-resolution: "A revision scope (AsyncLocalStorage) is evaluated in the locked item store after the item lock is taken and before any write, and advances past the scope's own commits. It covers every mutateItem caller, delete, restore, bulk rows and extension SDK writes. Public SDK readItemRevision/withExpectedItemRevisions with a checked/unchecked receipt. Global --expect-hash (bare hash binds <id>, <id>=<hash> names targets). expectHash on 19 MCP/runAction item-writing actions. The refusal carries expected/current revision plus details.changes_since (10 newest history entries with fields). stdin-json accepts item_hash. GH-1620: transaction docs state the lock serializes coordinators only, and a negative-control spec proves the guard turns the lost update into a refusal."
+resolution: "A revision scope (AsyncLocalStorage) is evaluated in the locked item store after the item lock is taken and before any write, and advances past the scope's own commits. It covers every mutateItem caller, delete, restore, history rewrites including tail salvage, bulk and rollback rows, and extension SDK writes. Public SDK readItemRevision/withExpectedItemRevisions with a checked/unchecked receipt. Global --expect-hash (bare hash binds <id>, <id>=<hash> names targets). expectHash on 25 MCP/runAction item-writing actions (PM_EXPECT_HASH_ACTIONS). The refusal carries expected/current revision plus details.changes_since (10 newest history entries with fields). stdin-json accepts item_hash. GH-1620: transaction docs state the lock serializes coordinators only, and a negative-control spec proves the guard turns the lost update into a refusal."
 expected_result: A write based on a stale observed revision refuses atomically and supplies bounded recovery evidence
 actual_result: "Verified: a stale close/update/comment/files/restore/delete refuses with exit 4 and writes nothing. The fresh revision is admitted, and a multi-write claim+update advances. An interleaved unscoped peer write refuses the next step. update-many fails only the stale row. MCP handleRequest refuses a stale pm_update. 100/100/100/100 coverage and the full quality:static chain pass."
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:

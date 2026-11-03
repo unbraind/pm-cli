@@ -1317,7 +1317,11 @@ take per-item locks, so a peer can commit between a step's `inspect()` and
 the decision data and `item_hash` from one `get()`, then run the write inside
 `withExpectedItemRevisions()`. The
 write then refuses with `item_revision_conflict` instead of overwriting the
-peer's change, and the transaction compensates.
+peer's change, and the transaction compensates. The coordinator invokes
+`compensate()`, including during recovery, without an expected revision.
+Built-in item compensations detect intervening writes. A custom adapter must
+fence or reconcile its own compensation, or it can restore a stale value over a
+peer's write.
 Before invoking a pending step, it also persists that step's durable ownership
 marker. Recovery and compensation therefore distinguish mutations begun by
 this transaction from matching domain state that existed before the attempt.

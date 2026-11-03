@@ -967,7 +967,9 @@ Starting work respects declared blockers
 ([pm-urzubi](../.agents/pm/issues/pm-urzubi.toon)). `pm update <id> --status
 in_progress`, `pm claim <id> --start`, `pm claim --next --start` and the
 `start-task` action refuse with `start_blocked_by_open_dependency` (exit 4)
-while a `blocked_by` target is still open. The check runs before any write: the
+when the item moves into the start status while a `blocked_by` target is still
+open. An item already in that status is not rechecked, so `claim --start` on it
+succeeds. The check runs before any write: the
 explicit `claim <id> --start` judges it under the claim's item lock, and its
 status update judges again under its own lock. When the first check refuses,
 nothing is written. When a blocker opens between the two writes, the start

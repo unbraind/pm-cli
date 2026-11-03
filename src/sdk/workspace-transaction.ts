@@ -654,6 +654,10 @@ async function compensateAppliedSteps(
  * decides from what it read must guard its write: take the decision data and
  * `item_hash` from one `get()` in `inspect()`, then run `apply()` inside
  * `withExpectedItemRevisions()`, which refuses with `item_revision_conflict`.
+ * The coordinator invokes `compensate()` (including during recovery) without an
+ * expected revision. Built-in item compensations detect intervening writes, but a
+ * custom adapter must fence or reconcile its own compensation, or it can restore
+ * a stale value over a peer's write.
  */
 export async function commitWorkspaceTransaction(
   options: CommitWorkspaceTransactionOptions,
