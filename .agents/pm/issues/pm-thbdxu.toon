@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[4]: expected-revision,extensions,pm-gh1576,storage-override
 created_at: "2026-11-03T09:22:22.425Z"
-updated_at: "2026-11-03T21:43:08.814Z"
+updated_at: "2026-11-03T22:55:03.569Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#436e44ca2d204a1ee603915a"
 author: "harness:claude-code"
@@ -20,8 +20,9 @@ expected_result: "Under a contents-transforming item_store_write override, a gua
 actual_result: "The scope advances to the pre-override document hash, so its own next guarded write refuses with item_revision_conflict."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-03T09:22:22.425Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-03T21:28:17.876Z","harness:claude-code","Implemented: when an item_store_write override transforms contents, redirects the path or skips the write (or an item_store_delete override skips or redirects the removal), mutateItem/deleteItem re-locate and parse the stored item under the still-held lock and advance the revision scope to that hash (readOverriddenCommitRevision in core/store/item-store.ts). A missing item advances to the empty tombstone; an unlocatable or unparseable one advances to an unmatchable revision (fail closed). Unoverridden writes keep the in-memory afterDocument, so ordinary writes pay no extra IO. advanceItemMutationPreconditions takes an optional revision. Negative control: the five new specs in tests/unit/core/store/item-store.spec.ts all fail against the pre-fix item-store.ts and pass with it."
+  "2026-11-03T22:55:03.569Z","harness:claude-code","Codex review round 1 (gpt-6.1-sol, xhigh) P1, fixed: the stored-revision read-back ran after commitLockedItemWrite returned, i.e. outside lease.fence, so after a lease takeover a competing writer's revision could be adopted as the scope's expected revision and the scope's next guarded write would overwrite it unrefused. The read-back now runs inside the fence callback on both the write and the delete path, and only the in-memory advance happens after it."
 files[3]{path,scope}:
   src/core/store/item-mutation-precondition.ts,project
   src/core/store/item-store.ts,project

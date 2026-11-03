@@ -16,6 +16,7 @@ import type { CreateCommandOptions } from "../lifecycle/create.js";
 import type { UpdateCommandOptions } from "../lifecycle/update.js";
 import type { UpdateManyCommandOptions } from "../lifecycle/update-many.js";
 import type { TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE } from "./tool-option-contracts.js";
+import type { CREATE_UNSET_FIELD_DEFINITIONS, UPDATE_UNSET_FIELD_DEFINITIONS } from "../lifecycle/shared-unset-fields.js";
 
 /** JSON-compatible scalar the SDK option-normalization layer accepts for one flag value (CLI flags arrive as strings; MCP and SDK callers may pass native numbers and booleans). */
 export type PmOptionScalar = string | number | boolean;
@@ -56,15 +57,33 @@ export type PmMutationAttributionOptions = {
   force?: boolean;
 };
 
-/** Typed input for the SDK `create` action, derived from the executable create-command option contract with its custom-field index signature removed. */
-export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;
+/**
+ * Option keys a typed caller may clear with `null` (GH-1655): every option the
+ * command's `unset` table covers, derived from that table, except the `author`
+ * attribution, which names who performs the write.
+ */
+type NullClearableOptionKey<Table extends readonly { optionKey: string }[]> = Exclude<Table[number]["optionKey"], "author">;
 
-/** Typed input for the SDK `update` action, derived from the executable update-command option contract while hiding internal policy-evaluation controls. */
-export type PmUpdateActionOptions = Omit<
-  DeclaredProperties<UpdateCommandOptions>,
-  | "runtimeFieldCommands"
-  | "ownershipMetadataBypass"
-  | "ownershipDependencyBypass"
+/** Let the listed keys also take `null`, the typed clear, while every other key keeps its exact value type and optionality. */
+type WithNullClears<Shape, Keys extends PropertyKey> = {
+  [Key in keyof Shape]: Key extends Keys ? Shape[Key] | null : Shape[Key];
+};
+
+/** Typed input for the SDK `create` action, derived from the executable create-command option contract with its custom-field index signature removed; clearable fields also accept `null`. */
+export type PmCreateActionOptions = WithNullClears<
+  DeclaredProperties<CreateCommandOptions>,
+  NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>
+>;
+
+/** Typed input for the SDK `update` action, derived from the executable update-command option contract while hiding internal policy-evaluation controls; clearable fields also accept `null`. */
+export type PmUpdateActionOptions = WithNullClears<
+  Omit<
+    DeclaredProperties<UpdateCommandOptions>,
+    | "runtimeFieldCommands"
+    | "ownershipMetadataBypass"
+    | "ownershipDependencyBypass"
+  >,
+  NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>
 >;
 
 /** Typed input for the SDK `close` action, derived from the executable close-command option contract plus the positional reason aliases used by generic action dispatch. */

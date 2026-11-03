@@ -146,3 +146,23 @@ const projectedPriority: number | undefined = projectedRow.priority;
 void projectedId;
 void projectedTitle;
 void projectedPriority;
+
+// --- GH-1655: typed null clears every option the command's unset table covers ---
+const createNullClears: PmCreateActionOptions = { title: "Null clears", parent: null, assignee: null, sprint: null, estimatedMinutes: null, tags: null };
+void createNullClears;
+const updateNullClears: PmUpdateActionOptions = { parent: null, assignee: null, closeReason: null, blockedBy: null };
+void updateNullClears;
+void typedClient.create({ type: "Task", title: "Typed null", parent: null });
+void typedClient.update("pm-a", { assignee: null, release: null });
+
+// @ts-expect-error create: title cannot be cleared, so null stays a type error
+const createNullTitle: PmCreateActionOptions = { title: null };
+void createNullTitle;
+
+// @ts-expect-error create: author is attribution, not a clearable field
+const createNullAuthor: PmCreateActionOptions = { title: "x", author: null };
+void createNullAuthor;
+
+// @ts-expect-error update: closeReason clears only on update; create has no close-reason unset
+const createNullCloseReason: PmCreateActionOptions = { title: "x", closeReason: null };
+void createNullCloseReason;

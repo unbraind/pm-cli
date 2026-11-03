@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import * as lockModule from "../../../../src/core/lock/lock.js";
 import { hashDocument } from "../../../../src/core/history/history.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {
   advanceItemMutationPreconditions,
@@ -493,10 +494,16 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: dependents[0] } });
       expect(refusal.message).toContain(`${blocker} was closed, but auto-unblocking ${dependents[0]} was refused.`);
       expect(refusal.context.side_effects).toEqual([{ path: `history/${blocker}.jsonl`, op: "close" }]);
-      // pm-mrvq8u: the close is complete, so the remedy names only the dependent unblock, never a close retry.
+      // pm-mrvq8u: the close is complete, so the remedy names only the unblock of every dependent the
+      // fan-out left blocked, in the caller's tracker scope, never a close retry.
       const guidance = [refusal.context.required, ...(refusal.context.nextSteps ?? [])].join("\n");
-      expect(refusal.context.required).toContain(`The close of ${blocker} is complete; do not retry it. Only the unblock of ${dependents[0]} remains`);
-      expect(refusal.context.nextSteps).toContain(`pm update ${dependents[0]} --status open --unset blocked_by --unset blocked_reason --expect-hash "${dependents[0]}=<item_hash>"`);
+      expect(refusal.context.required).toContain(`The close of ${blocker} is complete; do not retry it. Only unblocking the dependents it left blocked (${dependents.join(", ")}) remains`);
+      const scope = ["--pm-path", context.pmPath, "--no-extensions"];
+      for (const id of dependents) {
+        expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", id, "--json"]));
+        expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "update", id, "--status", "open", "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]));
+      }
+      expect(refusal.context.details).toMatchObject({ pending_unblock: dependents, changes_since: [expect.objectContaining({ op: "update" })] });
       expect(guidance).not.toContain("retry with --expect-hash");
       expect(guidance).not.toMatch(/pm close/u);
       expect((await pm.get(blocker)).item.status).toBe("closed");

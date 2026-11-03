@@ -269,11 +269,11 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
     await withTempPmPath(async ({ pmPath }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
       const { item: parent } = await client.create({ type: "Task", title: "Parent" });
-      const created = await client.create({ type: "Task", title: "Null clears", parent: null, assignee: null, unset: ["goal"] } as never);
+      const created = await client.create({ type: "Task", title: "Null clears", parent: null, assignee: null, unset: ["goal"] });
       expect(created.item.parent).toBeUndefined();
       expect(created.item.assignee).toBeUndefined();
       const { item } = await client.create({ type: "Task", title: "Child", parent: parent.id, assignee: "owner", sprint: "s1" });
-      await client.update(item.id, { parent: null, assignee: null } as never);
+      await client.update(item.id, { parent: null, assignee: null });
       expect((await client.get(item.id)).item).not.toHaveProperty("parent");
       expect((await client.get(item.id)).item).not.toHaveProperty("assignee");
       await client.run("update", { id: item.id, options: { sprint: null, unset: "reviewer" } });
@@ -298,6 +298,10 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
       expect(created.warnings?.some((warning) => warning.includes(":goal:"))).toBe(false);
       const updated = await client.update(created.item.id, { reviewer: " NULL ", sprint: "-" });
       expect(updated.warnings).toEqual(expect.arrayContaining(["literal_sentinel_stored:reviewer:NULL", "literal_sentinel_stored:sprint:-"]));
+      // A routed close returns its own warnings and still advises.
+      const { item: routed } = await client.create({ type: "Task", title: "Routed close" });
+      const closed = await client.update(routed.id, { status: "closed", closeReason: "none" });
+      expect(closed.warnings).toEqual(expect.arrayContaining(["literal_sentinel_stored:close-reason:none", "auto_routed_from_update_to_close"]));
       const viaCli = await client.update(created.item.id, withCliMutationInput({ assignee: "none" }));
       expect(viaCli.warnings?.some((warning) => warning.startsWith("literal_sentinel_stored:")) ?? false).toBe(false);
       expect((await client.get(created.item.id)).item.assignee).toBeUndefined();

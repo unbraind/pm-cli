@@ -944,18 +944,19 @@ async function mutateItemWithDeferredHistoryContext(
         } finally {
           await releaseDerivedIndexLock();
         }
+        // Read back inside the fence, so a lease takeover cannot land between the commit and the revision it advances to.
+        const overridden = skipItemWrite || effectiveTargetItemPath !== targetItemPath || effectiveSerializedAfter !== serializedAfter;
         return {
           derivedIndexWarnings,
           effectiveTargetItemPath,
           overrideWarnings: serviceWriteOverride.warnings,
-          overridden: skipItemWrite || effectiveTargetItemPath !== targetItemPath || effectiveSerializedAfter !== serializedAfter,
+          stored: overridden
+            ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder, extensionFieldNames: params.extensionFieldNames, fallback: afterDocument })
+            : { document: afterDocument },
         };
       },
     );
-    const { derivedIndexWarnings, effectiveTargetItemPath } = committed;
-    const stored = committed.overridden
-      ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder, extensionFieldNames: params.extensionFieldNames, fallback: afterDocument })
-      : { document: afterDocument };
+    const { derivedIndexWarnings, effectiveTargetItemPath, stored } = committed;
     advanceItemMutationPreconditions(params.pmRoot, stored.document, located.id, [], stored.revision);
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
@@ -1237,21 +1238,21 @@ export async function deleteItem(params: {
         } finally {
           await releaseDerivedIndexLock();
         }
+        // A delete override that skipped or redirected the removal leaves the stored item it actually kept;
+        // read it back inside the fence, like the write path.
         return {
           derivedIndexWarnings,
           effectiveItemPath,
           overrideWarnings: warnings,
-          overridden: skipDelete || effectiveItemPath !== located.itemPath,
+          stored: skipDelete || effectiveItemPath !== located.itemPath
+            ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder: prepared.typeToFolder, fallback: tombstoneDocument })
+            : { document: tombstoneDocument },
         };
       },
     );
-    const { derivedIndexWarnings, effectiveItemPath } = committed;
+    const { derivedIndexWarnings, effectiveItemPath, stored } = committed;
     // The item is now absent; a later restore in the same scope must find that tombstone revision.
     // The tombstone has no embedded id: carry the pre-delete one so a case-variant spelling still advances.
-    // A delete override that skipped or redirected the removal leaves the stored item it actually kept.
-    const stored = committed.overridden
-      ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder: prepared.typeToFolder, fallback: tombstoneDocument })
-      : { document: tombstoneDocument };
     advanceItemMutationPreconditions(params.pmRoot, stored.document, located.id, [document.metadata.id], stored.revision);
 
     const hookWarnings = [

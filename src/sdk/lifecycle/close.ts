@@ -4,7 +4,7 @@
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { isItemRevisionConflict, itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
+import { enrichItemRevisionConflict, isItemRevisionConflict, itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 import { toErrorMessage } from "../runtime-primitives.js";
 import {
   toItemRecord,
@@ -351,10 +351,13 @@ async function autoUnblockResolvedDependents(
   closedId: string,
   author: string,
   statusRegistry: RuntimeStatusRegistry,
+  commandScope: readonly string[],
 ): Promise<string[]> {
   const candidates = findAutoUnblockCandidates(items, closedId, statusRegistry);
   const warnings: string[] = [];
   const unblockedIds: string[] = [];
+  // Every dependent the fan-out could not unblock; only another close would have retried them.
+  const pendingIds: string[] = [];
   let conflict: PmCliError | undefined;
   for (const candidate of candidates) {
     try {
@@ -407,6 +410,7 @@ async function autoUnblockResolvedDependents(
     } catch (error) {
       // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
       if (conflict === undefined && isItemRevisionConflict(error)) conflict = error;
+      pendingIds.push(candidate.id);
       const reason =
         error instanceof Error
           ? error.message.replace(/\s+/g, " ").trim()
@@ -415,24 +419,39 @@ async function autoUnblockResolvedDependents(
     }
     /* c8 ignore stop */
   }
-  if (conflict !== undefined) throw postCloseDependentConflict(conflict, closedId, unblockedIds);
+  if (conflict !== undefined) {
+    // Attach the dependent's change evidence first, so the pending list joins it instead of displacing it.
+    const enriched = await enrichItemRevisionConflict(conflict, pmRoot) as PmCliError;
+    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, pendingIds, openStatus: statusRegistry.open_status, commandScope });
+  }
   return warnings;
 }
 
 /**
  * The refusal for a guarded dependent whose auto-unblock refused after the close
  * committed. The dependent's own guidance says to retry with --expect-hash, but
- * a repeated close is refused as terminal, so the remedy names only the unblock.
+ * a repeated close is refused as terminal, so the remedy names only the unblock
+ * of every dependent the fan-out left blocked, in the caller's tracker scope and
+ * with the configured open status the automatic unblock would have written.
  */
-function postCloseDependentConflict(conflict: PmCliError, closedId: string, unblockedIds: readonly string[]): PmCliError {
+function postCloseDependentConflict(conflict: PmCliError, fanOut: {
+  closedId: string;
+  unblockedIds: readonly string[];
+  pendingIds: readonly string[];
+  openStatus: string;
+  commandScope: readonly string[];
+}): PmCliError {
+  const { closedId, pendingIds, commandScope } = fanOut;
   const dependent = String(conflict.context.item_id);
-  const unblock = renderPmCommand(["update", dependent, "--status", "open", "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${dependent}=<item_hash>`]);
+  const unblock = (id: string) => renderPmCommand([...commandScope, "update", id, "--status", fanOut.openStatus, "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]);
+  const named = pendingIds.join(", ");
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
-    required: `The close of ${closedId} is complete; do not retry it. Only the unblock of ${dependent} remains: re-read ${dependent} (pm get ${dependent} --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock}.`,
-    nextSteps: [renderPmCommand(["get", dependent, "--json"]), renderPmCommand(["history", dependent, "--limit", "5"]), unblock],
+    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${pendingIds.length === 1 ? dependent : `the dependents it left blocked (${named})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${pendingIds.length === 1 ? "" : " for each id"}.`,
+    nextSteps: pendingIds.flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
+    details: { ...conflict.context.details, pending_unblock: [...pendingIds] },
     // Every committed write before the refusal: the close and each dependent already unblocked.
-    side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
+    side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...fanOut.unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
   });
 }
 
@@ -826,6 +845,7 @@ export async function closeItem(
         located.id,
         author,
         statusRegistry,
+        commandScope,
       )),
     ],
     completion,

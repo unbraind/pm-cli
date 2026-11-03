@@ -27,7 +27,7 @@ export interface CommandUnsetFieldDefinition {
 export const CLOSE_REASON_UNSET_ALIASES: readonly string[] = ["close_reason", "close-reason"];
 
 /** Public contract for common unset field definitions before close reason, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON =
   [
     {
       canonical: "tags",
@@ -35,10 +35,10 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON: readonly Comman
       optionKey: "tags",
       metadataKey: "tags",
     },
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Public contract for common unset field definitions after close reason before author, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR =
   [
     {
       canonical: "deadline",
@@ -106,17 +106,17 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR: re
       optionKey: "whyNow",
       metadataKey: "why_now",
     },
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Public contract for common unset field definitions before author, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR =
   [
     ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
     ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Public contract for common unset field definitions after author, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR =
   [
     {
       canonical: "assignee",
@@ -250,10 +250,10 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetF
       optionKey: "customerImpact",
       metadataKey: "customer_impact",
     },
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Every field `pm create --unset` (and the SDK `unset` option on create) can clear. */
-export const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
+export const CREATE_UNSET_FIELD_DEFINITIONS = [
   ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
   {
     canonical: "author",
@@ -262,10 +262,10 @@ export const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinitio
     metadataKey: "author",
   },
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-];
+] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Every field `pm update --unset` (and the SDK `unset` option on update) can clear. */
-export const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
+export const UPDATE_UNSET_FIELD_DEFINITIONS = [
   ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
   {
     canonical: "close-reason",
@@ -275,7 +275,7 @@ export const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinitio
   },
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-];
+] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Spellings that once cleared a field on every surface and now persist literally from typed callers. */
 const FORMER_CLEAR_SENTINELS = new Set(["none", "null", "-"]);

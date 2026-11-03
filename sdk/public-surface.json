@@ -3072,6 +3072,16 @@
       ],
       "package_version": "2026.11.3",
       "reason": "pm-gh1655: assertParentReferenceIsNotSelf, normalizeParentReferenceValue, validateMissingParentReference and validateSprintOrReleaseValue gain only an optional trailing audience parameter (default cli), so every existing caller keeps the same wording and type-compatibility; pm-mrvq8u exports ItemRevisionConflictRowFields"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCreateActionOptions",
+        "signature ./sdk:PmUpdateActionOptions",
+        "signature ./sdk/contracts:PmCreateActionOptions",
+        "signature ./sdk/contracts:PmUpdateActionOptions"
+      ],
+      "package_version": "2026.11.3",
+      "reason": "pm-gh1655: PmCreateActionOptions and PmUpdateActionOptions widen only the fields the command's unset table covers to also accept null (the typed clear); every value that compiled before still compiles, and author and non-clearable fields stay non-nullable"
     }
   ],
   "entrypoints": {
@@ -14722,7 +14732,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
-          "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
+          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>>;"
         },
         {
           "classification": "contract_data",
@@ -15754,7 +15764,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateActionOptions",
-          "signature": "export type PmUpdateActionOptions = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
+          "signature": "export type PmUpdateActionOptions = WithNullClears<Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">, NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>>;"
         },
         {
           "classification": "contract_data",
@@ -25720,7 +25730,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
-          "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
+          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>>;"
         },
         {
           "classification": "contract_data",
@@ -26146,7 +26156,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateActionOptions",
-          "signature": "export type PmUpdateActionOptions = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
+          "signature": "export type PmUpdateActionOptions = WithNullClears<Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">, NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>>;"
         },
         {
           "classification": "contract_data",

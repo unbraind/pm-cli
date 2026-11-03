@@ -2135,7 +2135,10 @@ async function closeRoutedItem(
     context.global,
   );
 
+  // The routed close skips the main update's warning assembly; advise here without repeating the pre-update's own advisories.
+  const advisories = literalSentinelAdvisories("update", context.options as Record<string, unknown>, mutationInputAudience(context.options) === "sdk").filter((warning) => !(preUpdate?.warnings ?? []).includes(warning));
   const warnings = [
+    ...advisories,
     ...context.workflowTransitionWarnings,
     ...(preUpdate?.warnings ?? []),
     ...closeResult.warnings,
