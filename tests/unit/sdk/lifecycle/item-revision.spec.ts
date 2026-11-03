@@ -33,7 +33,7 @@ import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 import { commitWorkspaceTransaction } from "../../../../src/sdk/workspace-transaction.js";
 import type { ItemDocument } from "../../../../src/types/index.js";
 import { pmToolActionParameterKeys, resolvePmToolCustomFieldCollision } from "../../../../src/sdk/cli-contracts/tool-schema.js";
-import { splitExpectHashInput } from "../../../../src/sdk/runtime/expect-hash-input.js";
+import { splitExpectHashInput } from "../../../../src/sdk/runtime-input.js";
 import { verifyHistoryRewriteNoDrift } from "../../../../src/core/history/history-rewrite.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";

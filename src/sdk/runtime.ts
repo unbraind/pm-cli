@@ -65,7 +65,6 @@ import {
   runWithDiscoveredContextIntentContracts
 } from "./context-intent-runtime.js";
 import { finalizeContextUsageEgress } from "./context/usage-egress.js";
-import { splitExpectHashInput } from "./runtime/expect-hash-input.js";
 import type { ExpectedItemRevision, ExpectedItemRevisionsOutcome, ItemRevision } from "./lifecycle/item-revision.js";
 import type { DepsCommandOptions,DepsResult } from "./dependencies.js";
 import type { DocsCommandOptions,DocsResult } from "./docs.js";
@@ -200,6 +199,7 @@ import {
   readRuntimeString as readString,
   readRuntimeStringArray as readStringArray,
   shouldInvalidateWorkspaceContractsCacheAfterAction,
+  splitExpectHashInput,
   updateManyOptionsFromFlat,
   withAddNoteOption,
   withFilesDiscoveryOptions,

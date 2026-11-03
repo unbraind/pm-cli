@@ -6,9 +6,8 @@
  * JSON Schemas served to MCP clients, the `pm contracts` command, and SDK
  * consumers from a single source of truth.
  */
-import { PM_EXPECT_HASH_ACTIONS } from "./expect-hash-actions.js";
 import { normalizeUniqueStringList } from "./string-lists.js";
-import { PM_TOOL_ACTIONS, type PmToolAction } from "./enum-contracts.js";
+import { PM_EXPECT_HASH_ACTIONS, PM_TOOL_ACTIONS, type PmToolAction } from "./enum-contracts.js";
 import {
   TOOL_CREATE_OPTION_CONTRACTS,
   TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
