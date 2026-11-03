@@ -142,7 +142,9 @@ export function resolvePmToolCustomFieldCollision(
         field,
         property,
         owner: "mcp_tool_input",
-        nested_path: `options.${property}`,
+        // The expected-revision guard is read at both placements (pm-gh1576), so its
+        // custom-field namesake writes through the repeatable `field` option instead.
+        nested_path: property === "expectHash" ? `options.field (${field}=<value>)` : `options.${property}`,
       }
     : undefined;
 }

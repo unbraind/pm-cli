@@ -2969,7 +2969,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
     return dispatchWithExpectedItemRevisions({
       action: resolved.action,
       expectHash,
-      defaultId: readString(dispatchArgs, "id"),
+      // Same precedence as lifecycle dispatch: a top-level id, else the nested options.id.
+      defaultId: readString(dispatchArgs, "id") ?? readString(asRecordClone(dispatchArgs.options), "id"),
       options: asRecordClone(dispatchArgs.options),
       background: dispatchArgs.background,
       pmRoot: resolvePmRoot(resolutionCwd, global.path),

@@ -30,7 +30,7 @@ import {
 import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
 import { commitWorkspaceTransaction } from "../../../../src/sdk/workspace-transaction.js";
 import type { ItemDocument } from "../../../../src/types/index.js";
-import { pmToolActionParameterKeys } from "../../../../src/sdk/cli-contracts/tool-schema.js";
+import { pmToolActionParameterKeys, resolvePmToolCustomFieldCollision } from "../../../../src/sdk/cli-contracts/tool-schema.js";
 import { splitExpectHashInput } from "../../../../src/sdk/runtime/expect-hash-input.js";
 import { verifyHistoryRewriteNoDrift } from "../../../../src/core/history/history-rewrite.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
@@ -632,6 +632,23 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       const decorated = await dispatchWithExpectedItemRevisions({ action: "comments", expectHash: HASH_A, defaultId: id, pmRoot: context.pmPath, run: async () => frozen });
       expect(decorated).toEqual({ warnings: ["kept", `expect_hash_unchecked:${id}:no_locked_write_reached_this_item`] });
       expect(frozen.warnings).toEqual(["kept"]);
+    });
+  });
+
+  it("routes an expect_hash custom field through the field option, since options.expectHash is a guard", () => {
+    expect(resolvePmToolCustomFieldCollision("expect_hash")).toMatchObject({ property: "expectHash", nested_path: "options.field (expect_hash=<value>)" });
+    expect(resolvePmToolCustomFieldCollision("author")).toMatchObject({ property: "author", nested_path: "options.author" });
+  });
+
+  it("binds a bare guard to the nested options.id that lifecycle dispatch accepts", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Nested id guard" });
+      const common = { path: context.pmPath, noExtensions: true, author: "nested-id-agent" };
+      const stale = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      await runAction({ ...common, action: "update", id, options: { title: "Peer retitle" } });
+      await expect(runAction({ ...common, action: "claim", options: { id, expectHash: stale } })).rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: id } });
+      const fresh = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      await expect(runAction({ ...common, action: "claim", options: { id, expectHash: fresh } })).resolves.toBeDefined();
     });
   });
 

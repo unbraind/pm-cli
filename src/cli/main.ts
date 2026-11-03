@@ -1594,7 +1594,8 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, runtimeExtensions.pmRoot, preflightDecision);
     await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, runtimeExtensions.pmRoot);
     // Bind the user-supplied guard: an extension parser/preflight override cannot drop it from global options.
-    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot });
+    // Bind to the tracker the command will write: a parser/preflight override may redirect global.path.
+    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: resolvePmRoot(process.cwd(), globalOptions.path) });
 
     /* c8 ignore next */
     const migrationWarnings = preflightDecision.run_extension_migrations
