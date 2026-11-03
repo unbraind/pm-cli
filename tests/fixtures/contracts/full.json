@@ -22507,6 +22507,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "expect_hash_background_unsupported",
+      "class": "usage",
+      "code": "expect_hash_background_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Expect hash background unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/item-revision.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "expect_hash_invalid",
       "class": "usage",
       "code": "expect_hash_invalid",

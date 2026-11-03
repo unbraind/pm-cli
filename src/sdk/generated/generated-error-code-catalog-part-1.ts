@@ -428,6 +428,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/agent/tracker-preflight-contracts.ts"],
   },
   {
+    code: "expect_hash_background_unsupported",
+    exit_code: 2,
+    sources: ["sdk/lifecycle/item-revision.ts"],
+  },
+  {
     code: "expect_hash_invalid",
     exit_code: 2,
     sources: ["sdk/lifecycle/item-revision.ts"],
@@ -1312,10 +1317,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 3,
     stable: true,
     sources: ["sdk/merge/install.ts"],
-  },
-  {
-    code: "merge_settlement_hook_conflict",
-    exit_code: 4,
-    sources: ["sdk/merge/settlement-hook.ts"],
   },
 ];

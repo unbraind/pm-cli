@@ -214,15 +214,22 @@ export async function describeItemRevisionChanges(
   } catch {
     return undefined;
   }
-  let anchor = -1;
+  // The latest entry that ends at the expected revision, or (when that entry used another digest,
+  // such as a SHA-512 anchor) starts from it: canonical SHA-256 item_hash then matches its before_hash.
+  let start = -1;
   for (let index = history.length - 1; index >= 0; index -= 1) {
-    if (history[index]!.after_hash === expectedHash) {
-      anchor = index;
+    const entry = history[index]!;
+    if (entry.after_hash === expectedHash) {
+      start = index + 1;
+      break;
+    }
+    if (entry.before_hash === expectedHash) {
+      start = index;
       break;
     }
   }
-  if (anchor === -1) return { expected_revision_recorded: false, changes_since: [], changes_since_omitted: 0 };
-  const later = history.slice(anchor + 1);
+  if (start === -1) return { expected_revision_recorded: false, changes_since: [], changes_since_omitted: 0 };
+  const later = history.slice(start);
   const shown = later.slice(-ITEM_REVISION_CONFLICT_CHANGE_LIMIT);
   return {
     expected_revision_recorded: true,
@@ -353,9 +360,17 @@ const NATIVE_ACTIONS: ReadonlySet<string> = new Set(PM_TOOL_ACTIONS);
  * Extension and package actions stay admitted because only their handlers
  * know whether they write; the receipt reports any expectation they never reach.
  */
-export function assertExpectHashAdmissible(action: string): void {
+export function assertExpectHashAdmissible(action: string, options: Record<string, unknown> = {}): void {
   if (NATIVE_ACTIONS.has(action) && !isMutationAction(action) && !PM_EXPECT_HASH_ACTIONS.has(action)) {
     throw expectHashRequiresMutation(action);
+  }
+  // A background worker is a separate process the in-process scope cannot reach, so refuse instead of
+  // reporting a guard its result recording would never evaluate.
+  if ((action === "test" || action === "test-all") && options.background === true) {
+    throw new PmCliError(`--expect-hash cannot guard ${action} --background: the worker runs in another process.`, EXIT_CODE.USAGE, {
+      code: "expect_hash_background_unsupported",
+      required: `Run ${action} in the foreground to guard its result recording, or drop --expect-hash for a background run.`,
+    });
   }
 }
 
@@ -386,6 +401,10 @@ export async function dispatchWithExpectedItemRevisions<T>(params: {
   defaultId?: string;
   pmRoot: string;
   run: () => Promise<T>;
+  /** Nested action options, consulted for modes the guard cannot cover (background test workers). */
+  options?: Record<string, unknown>;
+  /** Top-level background flag, consulted like `options.background`. */
+  background?: unknown;
 }): Promise<T> {
   const raw = params.expectHash;
   if (raw !== undefined && typeof raw !== "string" && !(Array.isArray(raw) && raw.every((entry) => typeof entry === "string"))) {
@@ -393,7 +412,7 @@ export async function dispatchWithExpectedItemRevisions<T>(params: {
   }
   const specs = parseExpectHashSpecs(raw as string | string[] | undefined);
   if (specs.length === 0) return params.run();
-  assertExpectHashAdmissible(params.action);
+  assertExpectHashAdmissible(params.action, { background: params.background === true || params.options?.background === true });
   const scope = createItemRevisionScope();
   bindItemRevisionScope(scope, params.pmRoot, await resolveExpectedItemRevisions(params.pmRoot, specs, params.defaultId));
   const outcome = await runWithBoundItemRevisionScope(scope, params.run);

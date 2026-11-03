@@ -1432,7 +1432,9 @@ proceed. When a peer writes while `restore` or history maintenance waits for
 its lock, a declared revision turns the generic drift refusal into this typed
 conflict. Linked-test result recording (`test --run`, `test-all` with
 `test_result_tracking` enabled) stays best-effort, except that a stale declared
-revision refuses with `item_revision_conflict` instead of a warning. Only the CLI invocation scope reads `GlobalOptions.expectHash`;
+revision refuses with `item_revision_conflict` instead of a warning. A guard cannot reach a `--background` test worker,
+which runs in another process, so `test`/`test-all --background` with an
+expected revision refuses with `expect_hash_background_unsupported`. Only the CLI invocation scope reads `GlobalOptions.expectHash`;
 direct `run*` SDK calls ignore it, so guard SDK writes with the functions above
 or `runAction`/MCP `expectHash`.
 

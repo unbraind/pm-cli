@@ -2970,6 +2970,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       action: resolved.action,
       expectHash,
       defaultId: readString(dispatchArgs, "id"),
+      options: asRecordClone(dispatchArgs.options),
+      background: dispatchArgs.background,
       pmRoot: resolvePmRoot(resolutionCwd, global.path),
       run: () => dispatchAction(resolved.action, dispatchArgs, global, activeExtensions),
     });

@@ -8,6 +8,11 @@ import type { PmErrorCodeCatalogRow } from "./error-code-catalog-rows.js";
 /** Generated partition 2 of the exhaustive error-code catalog, as compact rows. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
+    code: "merge_settlement_hook_conflict",
+    exit_code: 4,
+    sources: ["sdk/merge/settlement-hook.ts"],
+  },
+  {
     code: "merge_settlement_review_required",
     exit_code: 4,
     sources: ["sdk/merge/ignored-artifacts.ts", "sdk/merge/reconcile.ts", "sdk/merge/stage.ts"],

@@ -6,6 +6,7 @@
  * nested `options` object, so dispatch reads every placement: a guard supplied
  * in either place is enforced, never silently dropped.
  */
+import { transferMutationStdinTokenPolicy } from "../../core/item/parse.js";
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -32,5 +33,9 @@ export function splitExpectHashInput(args: Record<string, unknown>): { expectHas
   const { expectHash: nested, expect_hash: nestedAlias, ...nestedRest } = options;
   const supplied = [expectHash, alias, nested, nestedAlias].filter((candidate) => candidate !== undefined);
   const merged = supplied.length > 1 ? supplied.flatMap((candidate) => (Array.isArray(candidate) ? candidate : [candidate])) : supplied[0];
-  return { expectHash: merged, dispatchArgs: "options" in rest ? { ...rest, options: isPlainRecord(rest.options) ? nestedRest : rest.options } : rest };
+  // Clones keep the CLI/literal mutation-input markers and stdin policy of the objects they replace.
+  const dispatchArgs = transferMutationStdinTokenPolicy(args, "options" in rest
+    ? { ...rest, options: isPlainRecord(rest.options) ? transferMutationStdinTokenPolicy(rest.options, nestedRest) : rest.options }
+    : rest);
+  return { expectHash: merged, dispatchArgs };
 }

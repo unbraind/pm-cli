@@ -48,10 +48,12 @@ export async function bindInvocationExpectedRevisions(params: {
   commandArgs: readonly string[];
   expectHash: readonly string[] | undefined;
   pmRoot: string;
+  /** Parsed command options, consulted for modes the guard cannot cover. */
+  commandOptions?: Record<string, unknown>;
 }): Promise<void> {
   if (params.expectHash === undefined) return;
   const specs = parseExpectHashSpecs(params.expectHash);
-  assertExpectHashAdmissible(params.commandPath.trim().toLowerCase());
+  assertExpectHashAdmissible(params.commandPath.trim().toLowerCase(), params.commandOptions);
   const scope = invocationScopes.getStore();
   if (scope === undefined) throw new TypeError("--expect-hash was parsed outside an invocation revision scope");
   const expectations = await resolveExpectedItemRevisions(params.pmRoot, specs, itemArgumentOf(params.command, params.commandArgs));

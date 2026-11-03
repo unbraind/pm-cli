@@ -584,6 +584,47 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
+  it("refuses a guard on background test workers, which run in another process", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Background guard" });
+      const run = async () => "ran";
+      for (const params of [
+        { action: "test", background: true },
+        { action: "test-all", options: { background: true } },
+      ]) {
+        await expect(dispatchWithExpectedItemRevisions({ ...params, expectHash: HASH_A, defaultId: id, pmRoot: context.pmPath, run })).rejects.toMatchObject({
+          context: { code: "expect_hash_background_unsupported" },
+        });
+      }
+      expect(await dispatchWithExpectedItemRevisions({ action: "test", options: { background: false }, expectHash: HASH_A, defaultId: id, pmRoot: context.pmPath, run })).toBe("ran");
+    });
+  });
+
+  it("keeps the CLI mutation-input marker when stripping a nested guard", async () => {
+    const { isCliMutationInput, markCliMutationInput } = await import("../../../../src/core/item/literal-mutation-input.js");
+    const options = { assignee: "none", expectHash: HASH_A };
+    markCliMutationInput(options);
+    const { dispatchArgs } = splitExpectHashInput({ id: "pm-a", options });
+    expect(dispatchArgs.options).toEqual({ assignee: "none" });
+    expect(isCliMutationInput(dispatchArgs.options as object)).toBe(true);
+  });
+
+  it("anchors change evidence on a before_hash when the matching state used another digest", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Digest anchor" });
+      const pm = client(context);
+      const decided = (await pm.readItemRevision(id)).item_hash;
+      await pm.update(id, { title: "Digest anchor, edited by a peer" });
+      // Simulate a SHA-512 create anchor: its after_hash no longer equals the SHA-256 item_hash.
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const lines = (await readFile(historyPath, "utf8")).trim().split("\n").map((line) => JSON.parse(line) as Record<string, unknown>);
+      lines[0] = { ...lines[0], after_hash: "f".repeat(128) };
+      await writeFile(historyPath, `${lines.map((line) => JSON.stringify(line)).join("\n")}\n`);
+      const changes = await describeItemRevisionChanges(context.pmPath, id, decided);
+      expect(changes).toMatchObject({ expected_revision_recorded: true, changes_since: [expect.objectContaining({ op: "update", fields: expect.arrayContaining(["title"]) })] });
+    });
+  });
+
   it("never mutates the action result it decorates with unchecked warnings", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Frozen result" });
