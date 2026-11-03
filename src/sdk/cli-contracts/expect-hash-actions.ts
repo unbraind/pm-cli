@@ -37,4 +37,6 @@ export const PM_EXPECT_HASH_ACTIONS: ReadonlySet<string> = new Set([
   "history-redact",
   "history-repair",
   "history-compact",
+  // validate --auto-fix and --prune-missing write existing items through audited mutation paths.
+  "validate",
 ]);

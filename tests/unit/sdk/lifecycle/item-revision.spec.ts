@@ -653,7 +653,7 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
   });
 
   it("declares expectHash on plan, linked-test persistence and history maintenance contracts", () => {
-    for (const action of ["plan", "test-all", "history-redact", "history-repair", "history-compact", "update", "comments"]) {
+    for (const action of ["plan", "test-all", "history-redact", "history-repair", "history-compact", "validate", "update", "comments"]) {
       expect(pmToolActionParameterKeys(action)).toContain("expectHash");
     }
     for (const action of ["get", "create", "copy", "list"]) {

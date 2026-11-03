@@ -1570,6 +1570,9 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     commandOptions = parserOverride.context.options;
     copyReadOutputInvocationProvenance(actionCommand, commandOptions);
     globalOptions = parserOverride.context.global;
+    // Final dispatch rebuilds globals from Commander and reruns only parser overrides,
+    // so the writer's tracker is the post-parser path (a preflight path change never reaches it).
+    const dispatchTrackerPath = globalOptions.path;
     syncCommanderActionOptions(actionCommand, commandOptions);
 
     const preflightOverride = await runActivePreflightOverride({
@@ -1594,8 +1597,8 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, runtimeExtensions.pmRoot, preflightDecision);
     await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, runtimeExtensions.pmRoot);
     // Bind the user-supplied guard: an extension parser/preflight override cannot drop it from global options.
-    // Bind to the tracker the command will write: a parser/preflight override may redirect global.path.
-    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: resolvePmRoot(process.cwd(), globalOptions.path) });
+    // Bind to the tracker the command will write: a parser override may redirect global.path.
+    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: resolvePmRoot(process.cwd(), dispatchTrackerPath) });
 
     /* c8 ignore next */
     const migrationWarnings = preflightDecision.run_extension_migrations
