@@ -354,6 +354,7 @@ async function autoUnblockResolvedDependents(
 ): Promise<string[]> {
   const candidates = findAutoUnblockCandidates(items, closedId, statusRegistry);
   const warnings: string[] = [];
+  const unblockedIds: string[] = [];
   let conflict: PmCliError | undefined;
   for (const candidate of candidates) {
     try {
@@ -401,6 +402,7 @@ async function autoUnblockResolvedDependents(
       warnings.push(
         `auto_unblocked:${unblocked.item.id}:resolved_blockers=${candidate.blocker_ids.join(",")}`,
       );
+      unblockedIds.push(unblocked.item.id);
       /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. The revision specs exercise the kept conflict through the typed refusal below. */
     } catch (error) {
       // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
@@ -416,7 +418,8 @@ async function autoUnblockResolvedDependents(
   if (conflict !== undefined) {
     throw new PmCliError(`${closedId} was closed, but auto-unblocking ${String(conflict.context.item_id)} was refused. ${conflict.message}`, conflict.exitCode, {
       ...conflict.context,
-      side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }],
+      // Every committed write before the refusal: the close and each dependent already unblocked.
+      side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
     });
   }
   return warnings;
@@ -437,8 +440,9 @@ export async function committedCloseDependentConflict(
 ): Promise<{ warnings: string[]; dependent_revision_conflict: DependentRevisionConflict } | undefined> {
   if (!isItemRevisionConflict(error) || !error.context.side_effects?.some((effect) => `${effect.op}:${effect.path}` === `close:history/${id}.jsonl`)) return undefined;
   const dependent = String(error.context.item_id);
+  const unblocked = error.context.side_effects!.filter((effect) => effect.op === "update").map((effect) => effect.path.slice("history/".length, -".jsonl".length));
   return {
-    warnings: [`auto_unblock_refused:${dependent}:item_revision_conflict`],
+    warnings: [...unblocked.map((unblockedId) => `auto_unblocked:${unblockedId}`), `auto_unblock_refused:${dependent}:item_revision_conflict`],
     dependent_revision_conflict: { item_id: dependent, error: toErrorMessage(error), ...(await itemRevisionConflictRowFields(error, pmRoot)) },
   };
 }

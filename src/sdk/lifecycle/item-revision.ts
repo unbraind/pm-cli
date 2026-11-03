@@ -314,7 +314,13 @@ export async function enrichItemRevisionConflict(error: unknown, pmRoot: string)
   const id = error.context.item_id;
   const expected = error.context.expected_revision;
   if (typeof id !== "string" || typeof expected !== "string") return error;
-  const changes = await describeItemRevisionChanges(pmRoot, id, expected);
+  let changes: Awaited<ReturnType<typeof describeItemRevisionChanges>>;
+  try {
+    changes = await describeItemRevisionChanges(pmRoot, id, expected);
+  } catch {
+    // Evidence is best-effort: malformed history must never replace the typed refusal.
+    return error;
+  }
   if (changes === undefined) return error;
   const details: PmCliErrorDetails = {
     expected_revision_recorded: changes.expected_revision_recorded,
@@ -389,7 +395,10 @@ const NATIVE_ACTIONS: ReadonlySet<string> = new Set(PM_TOOL_ACTIONS);
  * Extension and package actions stay admitted because only their handlers
  * know whether they write; the receipt reports any expectation they never reach.
  */
-export function assertExpectHashAdmissible(action: string, options: Record<string, unknown> = {}): void {
+export function assertExpectHashAdmissible(path: string, options: Record<string, unknown> = {}): void {
+  // CLI subcommand paths (`package catalog`) classify as their native action (`package-catalog`).
+  const hyphenated = path.trim().replace(/\s+/gu, "-");
+  const action = NATIVE_ACTIONS.has(hyphenated) ? hyphenated : path;
   // `deps` is a conditional mutation in the history-scope inventory, but it only reads.
   if (NATIVE_ACTIONS.has(action) && (!isMutationAction(action) || action === "deps") && !PM_EXPECT_HASH_ACTIONS.has(action)) {
     throw expectHashRequiresMutationError(action);

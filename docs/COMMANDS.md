@@ -1028,8 +1028,8 @@ refuses with `expect_hash_invalid` instead of running unguarded. Bulk
 carrying `error_code`, `expected_revision`, `current_revision` and
 `details.changes_since`. When `close` auto-unblocks a guarded dependent whose revision
 moved, the close stays committed and the command refuses with that dependent's
-`item_revision_conflict` once the fan-out finishes. `side_effects` names the
-committed close. `close-many` reports such a row as `closed` (`update-many` closing
+`item_revision_conflict` once the fan-out finishes. `side_effects` names every
+write that committed first: the close and each dependent already unblocked. `close-many` reports such a row as `closed` (`update-many` closing
 through `--status`, as `updated`), with the dependent's conflict under
 `dependent_revision_conflict`. A guarded `restore` refuses to recover
 over a live file that cannot be read as a document; an unguarded restore still

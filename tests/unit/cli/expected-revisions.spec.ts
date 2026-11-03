@@ -53,6 +53,8 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
         await expect(bind(commandWithArgument("query"), "update", [id])).rejects.toMatchObject({ context: { code: "expect_hash_target_required" } });
         await expect(bind(new Command("update"), "update", [])).rejects.toMatchObject({ context: { code: "expect_hash_target_required" } });
         await expect(bind(commandWithArgument("id"), "Get", [id])).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, context: { code: "expect_hash_requires_mutation" } });
+        // Space-separated CLI subcommand paths classify as their native action.
+        await expect(bind(commandWithArgument("id"), "package catalog", [id])).rejects.toMatchObject({ context: { code: "expect_hash_requires_mutation" } });
         // deps is a conditional mutation in the history-scope inventory, but it only reads.
         await expect(bind(commandWithArgument("id"), "deps", [id])).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, context: { code: "expect_hash_requires_mutation" } });
       });

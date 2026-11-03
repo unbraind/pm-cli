@@ -498,6 +498,37 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
+  it("keeps the typed refusal when malformed history defeats its change evidence", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Malformed history" });
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(id)).item_hash;
+      await pm.update(id, { title: "Malformed history, edited by a peer" });
+      await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), "null\n");
+      const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id, itemHash: stale }], () => pm.update(id, { priority: "1" })));
+      expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: id, expected_revision: stale } });
+      expect(refusal.context.details).toBeUndefined();
+    });
+  });
+
+  it("discloses dependents the fan-out already unblocked before a guarded one refused", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = createTestItemId(context, { title: "Mixed fan-out blocker" });
+      const [fresh, guarded] = [createTestItemId(context, { title: "Fresh dependent" }), createTestItemId(context, { title: "Guarded dependent" })];
+      for (const id of [fresh, guarded]) {
+        const blocked = context.runCli(["update", id, "--status", "blocked", "--blocked-by", blocker, "--blocked-reason", "waiting", "--json"], { expectJson: true });
+        expect(blocked.code, blocked.stderr).toBe(0);
+      }
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(guarded)).item_hash;
+      await pm.update(guarded, { title: "Guarded dependent, edited by a peer" });
+      const closed = await runAction({ path: context.pmPath, noExtensions: true, author: "bulk-agent", expectHash: `${guarded}=${stale}`, action: "close-many", options: { ids: blocker, reason: "bulk" } }) as { rows: Array<Record<string, unknown>> };
+      expect(closed.rows).toEqual([expect.objectContaining({ id: blocker, status: "closed", warnings: [`auto_unblocked:${fresh}`, `auto_unblock_refused:${guarded}:item_revision_conflict`] })]);
+      expect((await pm.get(fresh)).item.status).toBe("open");
+      expect((await pm.get(guarded)).item.status).toBe("blocked");
+    });
+  });
+
   it("reports close-many's committed close and the refused dependent apart", async () => {
     await withTempPmPath(async (context) => {
       const blocker = createTestItemId(context, { title: "Bulk fan-out blocker" });
