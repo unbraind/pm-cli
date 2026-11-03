@@ -1,10 +1,16 @@
 # Changelog
 
-## 2026.11.3 - 2026-11-03
+## Unreleased
 
 ### Added
 
 - GH-1576: guard SDK and CLI mutations with expected item revisions ([pm-gh1576](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1576.toon))
+
+### Fixed
+
+- Starting work ignores open blockers: claim <id\> --start and update --status in_progress move a blocked item into progress without a refusal or warning ([pm-urzubi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-urzubi.toon))
+
+## 2026.11.3 - 2026-11-03
 
 ### Fixed
 
@@ -13,7 +19,6 @@
 - Route project-schema keys to their declared flags in field refusals ([pm-wftvem](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wftvem.toon))
 - Typed refusals keep their own headline in human output: a likely_duplicate create refusal no longer reads as an invalid flag value ([pm-btv6x7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-btv6x7.toon))
 - Preserve surrogate pairs in bounded extension error diagnostics ([pm-y4v90c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y4v90c.toon))
-- Starting work ignores open blockers: claim <id\> --start and update --status in_progress move a blocked item into progress without a refusal or warning ([pm-urzubi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-urzubi.toon))
 
 ### Other
 
