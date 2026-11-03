@@ -17,6 +17,7 @@ import type {
   PmUpdateActionOptions,
   PmUpdateManyActionOptions,
 } from "../../src/sdk/index.js";
+import { runCreate, runUpdate } from "../../src/sdk/index.js";
 
 declare const typedClient: PmClient;
 void typedClient.historyCompactBulk({ ids: 123, dryRun: true });
@@ -166,3 +167,15 @@ void createNullAuthor;
 // @ts-expect-error update: closeReason clears only on update; create has no close-reason unset
 const createNullCloseReason: PmCreateActionOptions = { title: "x", closeReason: null };
 void createNullCloseReason;
+
+// GH-1655: the direct lifecycle entrypoints accept the same nullable input as the client.
+declare const sdkGlobal: Parameters<typeof runCreate>[1];
+const createWrapper = (options: PmCreateActionOptions) => runCreate(options, sdkGlobal);
+const updateWrapper = (id: string, options: PmUpdateActionOptions) => runUpdate(id, options, sdkGlobal);
+void createWrapper({ title: "Wrapped", parent: null });
+void updateWrapper("pm-a", { assignee: null });
+
+// @ts-expect-error update-many keeps the unset form only; its flat transport has no null clear
+const updateManyNull: PmUpdateManyActionOptions = { ids: ["pm-a"], assignee: null };
+void updateManyNull;
+

@@ -25,15 +25,15 @@ describe("mutation input audience wording (pm-gh1655)", () => {
   it("names options and clear remedies in the caller's vocabulary", () => {
     expect(mutationOptionLabel("cli", "close-reason")).toBe("--close-reason");
     expect(mutationOptionLabel("sdk", "close-reason")).toBe("closeReason");
-    expect(sdkClearRemedy("parent")).toBe('Pass unset: ["parent"] or null to clear it');
+    expect(sdkClearRemedy("parent")).toBe('Pass unset: ["parent"] to clear it');
     expect(emptyMutationOptionMessage("cli", "close-reason")).toBe("--close-reason must not be empty");
     expect(emptyMutationOptionMessage("cli", "assignee", ". Use --unset assignee to clear it.")).toBe("--assignee must not be empty. Use --unset assignee to clear it.");
-    expect(emptyMutationOptionMessage("sdk", "blocked-by", ". ignored")).toBe('blockedBy must not be empty. Pass unset: ["blocked-by"] or null to clear it, or omit blockedBy.');
+    expect(emptyMutationOptionMessage("sdk", "blocked-by", ". ignored")).toBe('blockedBy must not be empty. Pass unset: ["blocked-by"] to clear it, or omit blockedBy.');
   });
 
   it("keeps CLI wording by default on the public validators and SDK wording on request", () => {
     expect(() => normalizeParentReferenceValue(42)).toThrow("--parent must be a string. Use --unset parent to clear this field.");
-    expect(() => normalizeParentReferenceValue(42, "sdk")).toThrow('parent must be a string. Pass unset: ["parent"] or null to clear it.');
+    expect(() => normalizeParentReferenceValue(42, "sdk")).toThrow('parent must be a string. Pass unset: ["parent"] to clear it.');
     expect(() => normalizeParentReferenceValue("none")).toThrow('--parent must not use placeholder token "none". Use --unset parent to clear this field.');
     expect(() => validateMissingParentReference("pm-x", "strict_error")).toThrow("Create it first or use --parent none.");
     expect(() => assertParentReferenceIsNotSelf("pm-a", "pm-a", "pm")).toThrow("Use --unset parent to clear this field.");
@@ -62,9 +62,11 @@ describe("typed null clears (pm-gh1655)", () => {
     expect(malformed).toEqual({ parent: null, unset: 5 });
   });
 
-  it("advises only literal input that stored a former sentinel in a clearable string field", () => {
-    expect(literalSentinelAdvisories("create", { assignee: "none" }, false)).toEqual([]);
-    expect(literalSentinelAdvisories("create", { assignee: " None ", goal: "ship", tags: ["none"], order: 3 }, true)).toEqual(["literal_sentinel_stored:assignee:None"]);
-    expect(literalSentinelAdvisories("update", { closeReason: "-" }, true)).toEqual(["literal_sentinel_stored:close-reason:-"]);
+  it("advises only literal input whose stored item still holds a former sentinel in a clearable string field", () => {
+    expect(literalSentinelAdvisories("create", { assignee: "none" }, false, { assignee: "none" })).toEqual([]);
+    expect(literalSentinelAdvisories("create", { assignee: " None ", goal: "ship", tags: ["none"], order: 3 }, true, { assignee: "None", goal: "ship" })).toEqual(["literal_sentinel_stored:assignee:None"]);
+    expect(literalSentinelAdvisories("update", { closeReason: "-" }, true, { close_reason: "-" })).toEqual(["literal_sentinel_stored:close-reason:-"]);
+    // A lifecycle transition that removed the value leaves nothing to advise.
+    expect(literalSentinelAdvisories("update", { assignee: "none" }, true, {})).toEqual([]);
   });
 });

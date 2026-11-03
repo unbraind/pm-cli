@@ -244,16 +244,16 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
       const { item } = await client.create({ type: "Task", title: "Refusal target" });
       const cases: Array<[() => Promise<unknown>, string]> = [
-        [() => client.create({ type: "Task", title: "a", parent: "none" }), 'parent must not be the placeholder "none". Pass unset: ["parent"] or null to clear it, or omit parent.'],
-        [() => client.update(item.id, { parent: "NULL" }), 'parent must not be the placeholder "NULL". Pass unset: ["parent"] or null to clear it, or omit parent.'],
-        [() => client.create({ type: "Task", title: "b", parent: " " }), 'parent must not be empty. Pass unset: ["parent"] or null to clear it, or omit parent.'],
-        [() => client.update(item.id, { parent: item.id }), `cannot be the same as item "${item.id}". Pass unset: ["parent"] or null to clear it.`],
+        [() => client.create({ type: "Task", title: "a", parent: "none" }), 'parent must not be the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.'],
+        [() => client.update(item.id, { parent: "NULL" }), 'parent must not be the placeholder "NULL". Pass unset: ["parent"] to clear it, or omit parent.'],
+        [() => client.create({ type: "Task", title: "b", parent: " " }), 'parent must not be empty. Pass unset: ["parent"] to clear it, or omit parent.'],
+        [() => client.update(item.id, { parent: item.id }), `cannot be the same as item "${item.id}". Pass unset: ["parent"] to clear it.`],
         [() => client.create({ type: "Task", title: "c", parent: "pm-zzzz" }), 'Parent item "pm-zzzz" was not found. Create it first or omit parent.'],
         [() => client.update(item.id, { parent: "pm-zzzz" }), 'Parent item "pm-zzzz" was not found. Create it first or omit parent.'],
-        [() => client.create({ type: "Task", title: "d", sprint: "" }), 'sprint must not be empty. Pass unset: ["sprint"] or null to clear it, or omit sprint.'],
-        [() => client.update(item.id, { release: "" }), 'release must not be empty. Pass unset: ["release"] or null to clear it, or omit release.'],
-        [() => client.update(item.id, { assignee: " " }), 'assignee must not be empty. Pass unset: ["assignee"] or null to clear it, or omit assignee.'],
-        [() => client.update(item.id, { closeReason: "" }), 'closeReason must not be empty. Pass unset: ["close-reason"] or null to clear it, or omit closeReason.'],
+        [() => client.create({ type: "Task", title: "d", sprint: "" }), 'sprint must not be empty. Pass unset: ["sprint"] to clear it, or omit sprint.'],
+        [() => client.update(item.id, { release: "" }), 'release must not be empty. Pass unset: ["release"] to clear it, or omit release.'],
+        [() => client.update(item.id, { assignee: " " }), 'assignee must not be empty. Pass unset: ["assignee"] to clear it, or omit assignee.'],
+        [() => client.update(item.id, { closeReason: "" }), 'closeReason must not be empty. Pass unset: ["close-reason"] to clear it, or omit closeReason.'],
       ];
       for (const [run, expected] of cases) {
         const text = await refusalText(run);
@@ -298,6 +298,11 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
       expect(created.warnings?.some((warning) => warning.includes(":goal:"))).toBe(false);
       const updated = await client.update(created.item.id, { reviewer: " NULL ", sprint: "-" });
       expect(updated.warnings).toEqual(expect.arrayContaining(["literal_sentinel_stored:reviewer:NULL", "literal_sentinel_stored:sprint:-"]));
+      // A value a lifecycle transition removed before persistence is never reported as stored.
+      const { item: canceled } = await client.create({ type: "Task", title: "Canceled" });
+      const cleaned = await client.update(canceled.id, { status: "canceled", assignee: "none" });
+      expect((await client.get(canceled.id)).item.assignee).toBeUndefined();
+      expect(cleaned.warnings?.some((warning) => warning.startsWith("literal_sentinel_stored:assignee")) ?? false).toBe(false);
       // A routed close returns its own warnings and still advises.
       const { item: routed } = await client.create({ type: "Task", title: "Routed close" });
       const closed = await client.update(routed.id, { status: "closed", closeReason: "none" });

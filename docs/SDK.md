@@ -1230,10 +1230,16 @@ by name; clear collections with the declared `clear*` options. When typed input
 stores a former clear sentinel (`"none"`, `"null"` or `"-"`) in a clearable
 string field, the result carries the advisory warning
 `literal_sentinel_stored:<field>:<value>`. The value is now data (an assignee
-called `none`), not a clear. Refusals for typed SDK and MCP input name the
-option key and the SDK remedy, for example `parent must not be the placeholder
-"none". Pass unset: ["parent"] or null to clear it, or omit parent.` CLI
-refusals keep their flag wording.
+called `none`), not a clear, and the advisory appears only while the stored
+item still holds it. Refusals for typed SDK and MCP input name the option key
+and the `unset` remedy both transports accept, for example `parent must not be
+the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.` CLI
+refusals keep their flag wording. `PmCreateActionOptions`,
+`PmUpdateActionOptions`, `CreateOperationOptions` and `UpdateOperationOptions`
+type the clearable fields as nullable, so `runCreate` and `runUpdate` accept
+the same input as `PmClient.create` and `PmClient.update`. `null` clears are a
+create/update contract: `update-many` (`PmUpdateManyActionOptions`) and MCP
+tools take `unset` only.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
 literal data, including `"none"` and `"null"`. Explicit CLI flags override

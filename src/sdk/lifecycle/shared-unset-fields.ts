@@ -277,6 +277,24 @@ export const UPDATE_UNSET_FIELD_DEFINITIONS = [
   ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
 ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
+/**
+ * Option keys a typed caller may clear with `null` (GH-1655): every option the
+ * command's `unset` table covers, derived from that table, except the `author`
+ * attribution, which names who performs the write.
+ */
+export type NullClearableOptionKey<Table extends readonly { optionKey: string }[]> = Exclude<Table[number]["optionKey"], "author">;
+
+/** Let the listed keys also take `null`, the typed clear, while every other key keeps its exact value type and optionality. */
+export type WithNullClears<Shape, Keys extends PropertyKey> = {
+  [Key in keyof Shape]: Key extends Keys ? Shape[Key] | null : Shape[Key];
+};
+
+/** Create option keys that accept the typed `null` clear. */
+export type CreateNullClearableOptionKey = NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>;
+
+/** Update option keys that accept the typed `null` clear. */
+export type UpdateNullClearableOptionKey = NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>;
+
 /** Spellings that once cleared a field on every surface and now persist literally from typed callers. */
 const FORMER_CLEAR_SENTINELS = new Set(["none", "null", "-"]);
 
@@ -305,18 +323,24 @@ export function foldNullClearsIntoUnset(action: "create" | "update", options: Re
   options.unset = [...(current === undefined ? [] : typeof current === "string" ? [current] : current), ...tokens];
 }
 
+function isFormerClearSentinel(value: unknown): value is string {
+  return typeof value === "string" && FORMER_CLEAR_SENTINELS.has(value.trim().toLowerCase());
+}
+
 /**
  * Advisory warnings for typed input that stored a former clear sentinel
  * literally (GH-1614 keeps `assignee: "none"` as a person called none). Each
  * names the field and the clear form: `literal_sentinel_stored:<field>:<value>`,
- * cleared with `unset: ["<field>"]` or `null`. CLI input is never advised: its
- * adapter still maps the sentinels to clears.
+ * cleared with `unset: ["<field>"]` or `null`. A field is advised only when the
+ * resulting `stored` item still holds that sentinel, so a value a lifecycle
+ * transition removed is never reported as stored. CLI input is never advised:
+ * its adapter still maps the sentinels to clears.
  */
-export function literalSentinelAdvisories(action: "create" | "update", options: Record<string, unknown>, literal: boolean): string[] {
+export function literalSentinelAdvisories(action: "create" | "update", options: Record<string, unknown>, literal: boolean, stored: Record<string, unknown>): string[] {
   if (!literal) return [];
   return unsetDefinitionsFor(action).flatMap((definition) => {
     const value = options[definition.optionKey];
-    return typeof value === "string" && FORMER_CLEAR_SENTINELS.has(value.trim().toLowerCase())
+    return isFormerClearSentinel(value) && isFormerClearSentinel(stored[definition.metadataKey])
       ? [`literal_sentinel_stored:${definition.canonical}:${value.trim()}`]
       : [];
   });

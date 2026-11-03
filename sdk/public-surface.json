@@ -3082,6 +3082,23 @@
       ],
       "package_version": "2026.11.3",
       "reason": "pm-gh1655: PmCreateActionOptions and PmUpdateActionOptions widen only the fields the command's unset table covers to also accept null (the typed clear); every value that compiled before still compiles, and author and non-clearable fields stay non-nullable"
+    },
+    {
+      "changes": [
+        "signature ./sdk:CreateOperationOptions",
+        "signature ./sdk:PmCreateActionOptions",
+        "signature ./sdk:PmUpdateActionOptions",
+        "signature ./sdk:PmUpdateManyActionOptions",
+        "signature ./sdk:runCreate",
+        "signature ./sdk:runUpdate",
+        "signature ./sdk:UpdateOperationOptions",
+        "signature ./sdk/contracts:PmCreateActionOptions",
+        "signature ./sdk/contracts:PmUpdateActionOptions",
+        "signature ./sdk/contracts:PmUpdateManyActionOptions",
+        "signature ./sdk/runtime:runUpdate"
+      ],
+      "package_version": "2026.11.3",
+      "reason": "pm-gh1655: CreateOperationOptions, UpdateOperationOptions, PmCreateActionOptions and PmUpdateActionOptions widen only the fields the command's unset table covers to also accept null, and runCreate/runUpdate take those widened inputs, so every value and wrapper that compiled before still compiles; PmUpdateManyActionOptions keeps its previous non-nullable shape through the shared PmUpdateActionFields alias"
     }
   ],
   "entrypoints": {
@@ -6608,7 +6625,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "CreateOperationOptions",
-          "signature": "export type CreateOperationOptions = CreateCommandOptions;"
+          "signature": "export type CreateOperationOptions = WithNullClears<CreateCommandOptions, CreateNullClearableOptionKey>;"
         },
         {
           "classification": "advanced_export",
@@ -14732,7 +14749,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
-          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>>;"
+          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, CreateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
@@ -15764,13 +15781,13 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateActionOptions",
-          "signature": "export type PmUpdateActionOptions = WithNullClears<Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">, NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>>;"
+          "signature": "export type PmUpdateActionOptions = WithNullClears<PmUpdateActionFields, UpdateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionOptions, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -18992,7 +19009,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runCreate",
-          "signature": "(options: CreateCommandOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (options: CreateCommandOptions, global: GlobalOptions) => Promise<CreateResult>"
+          "signature": "(input: CreateOperationOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (input: CreateOperationOptions, global: GlobalOptions) => Promise<CreateResult>"
         },
         {
           "classification": "advanced_export",
@@ -19610,7 +19627,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runUpdate",
-          "signature": "(id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult>"
+          "signature": "(id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult>"
         },
         {
           "classification": "advanced_export",
@@ -21800,7 +21817,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "UpdateOperationOptions",
-          "signature": "export type UpdateOperationOptions = UpdateCommandOptions;"
+          "signature": "export type UpdateOperationOptions = WithNullClears<UpdateCommandOptions, UpdateNullClearableOptionKey>;"
         },
         {
           "classification": "supported",
@@ -25730,7 +25747,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
-          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>>;"
+          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, CreateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
@@ -26156,13 +26173,13 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateActionOptions",
-          "signature": "export type PmUpdateActionOptions = WithNullClears<Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">, NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>>;"
+          "signature": "export type PmUpdateActionOptions = WithNullClears<PmUpdateActionFields, UpdateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionOptions, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -36290,7 +36307,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runUpdate",
-          "signature": "(id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult>"
+          "signature": "(id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult>"
         },
         {
           "classification": "advanced_export",

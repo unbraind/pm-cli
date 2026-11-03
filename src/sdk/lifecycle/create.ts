@@ -138,6 +138,8 @@ import {
   CREATE_UNSET_FIELD_DEFINITIONS,
   literalSentinelAdvisories,
   parseCommandUnsetTargets,
+  type CreateNullClearableOptionKey,
+  type WithNullClears,
   resolveRuntimeUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 import type {
@@ -230,8 +232,8 @@ export interface CreateCommandOptions
   [key: string]: unknown;
 }
 
-/** Presentation-neutral input accepted by the SDK-owned create operation. */
-export type CreateOperationOptions = CreateCommandOptions;
+/** Presentation-neutral input accepted by the SDK-owned create operation; clearable fields also accept `null`. */
+export type CreateOperationOptions = WithNullClears<CreateCommandOptions, CreateNullClearableOptionKey>;
 
 /** Documents the create result payload exchanged by command, SDK, and package integrations. */
 export interface CreateResult {
@@ -2727,10 +2729,11 @@ async function writeCreatedItem(params: {
 
 /** Implements run create for the public runtime surface of this module. */
 export async function runCreate(
-  options: CreateCommandOptions,
+  input: CreateOperationOptions,
   global: GlobalOptions,
 ): Promise<CreateResult> {
-  options = prepareNativeMutationOptions("create", options);
+  // Typed nulls on clearable fields fold into unset here, and value validation refuses any other null (GH-1655).
+  const options = prepareNativeMutationOptions("create", input) as CreateCommandOptions;
   // Refusals speak the caller's vocabulary: CLI flags, or SDK option keys (GH-1655).
   const audience = mutationInputAudience(options);
   let resolvedOptions = normalizeLegacyNoneCreateOptions(
@@ -2991,7 +2994,6 @@ export async function runCreate(
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const validationWarnings: string[] = [
     ...typeSelection.warnings,
-    ...literalSentinelAdvisories("create", resolvedOptions as Record<string, unknown>, audience === "sdk"),
     ...collectCreateScheduleWarnings(
       type,
       id,
@@ -3326,7 +3328,11 @@ export async function runCreate(
   return {
     item: outputItem,
     changed_fields: changedFields,
-    warnings: [...validationWarnings, ...hookWarnings],
+    warnings: [
+      ...literalSentinelAdvisories("create", resolvedOptions as Record<string, unknown>, audience === "sdk", outputItem as Record<string, unknown>),
+      ...validationWarnings,
+      ...hookWarnings,
+    ],
     ...Object.fromEntries(
       [
         ["parent_source", parentSource],

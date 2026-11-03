@@ -1,0 +1,21 @@
+id: pm-w7clh6
+title: update-many silently drops a null update field in the flat transport instead of clearing it or refusing
+description: "Found by Codex review of the GH-1655 change (pm-gh1655). updateManyOptionsFromFlat in src/sdk/runtime-input.ts normalizes a flat update field whose value is null to undefined, so runAction('update-many', { ids: [id], assignee: null, description: 'changed' }) changes the description and silently keeps the assignee. The nested form ({ update: { assignee: null } }) reaches resolveUpdateTransportOptions and is folded into unset by pm-gh1655, so the two spellings of one request disagree. The flat form mixes selection filters and update fields in one record, which is why pm-gh1655 kept update-many out of the null-clear contract (PmUpdateManyActionOptions stays non-nullable)."
+type: Issue
+status: open
+priority: 3
+tags[4]: bulk,pm-gh1655,sdk,update-many
+created_at: "2026-11-03T23:06:21.402Z"
+updated_at: "2026-11-03T23:06:21.402Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A flat update-many payload with a null update field either clears it like the nested form or refuses naming the field and the unset form; it never silently drops it; Flat and nested update-many spellings of the same request produce the same rows, with a spec for each"
+parent: pm-9rgaal
+risk: low
+confidence: high
+severity: low
+expected_result: A null update field in a flat update-many payload clears or refuses
+actual_result: The flat payload drops the null field silently while the rest of the update applies
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1655,discovered_from,"2026-11-03T23:06:21.402Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -70,11 +70,12 @@ export function mutationOptionLabel(audience: MutationInputAudience, flag: strin
 }
 
 /**
- * The SDK remedy that clears one scalar field, named by its `unset` token. The
- * CLI keeps its own wording at each call site, which varies by field.
+ * The remedy that clears one scalar field for typed SDK and MCP callers, named
+ * by its `unset` token: the one clear form both transports accept (MCP has no
+ * typed null). The CLI keeps its own wording at each call site.
  */
 export function sdkClearRemedy(unsetToken: string): string {
-  return `Pass unset: ["${unsetToken}"] or null to clear it`;
+  return `Pass unset: ["${unsetToken}"] to clear it`;
 }
 
 /** Refusal text for an empty scalar option: the CLI wording unchanged, or the SDK option key and its clear remedy. */

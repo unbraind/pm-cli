@@ -140,6 +140,8 @@ import {
   parseCommandUnsetTargets,
   resolveRuntimeUnsetFieldDefinition,
   UPDATE_UNSET_FIELD_DEFINITIONS,
+  type UpdateNullClearableOptionKey,
+  type WithNullClears,
 } from "./shared-unset-fields.js";
 import type {
   MutationMetadataCommandOptions,
@@ -203,7 +205,7 @@ export interface UpdateCommandOptions
 }
 
 /** Presentation-neutral input accepted by the SDK-owned update operation. */
-export type UpdateOperationOptions = UpdateCommandOptions;
+export type UpdateOperationOptions = WithNullClears<UpdateCommandOptions, UpdateNullClearableOptionKey>;
 
 /** Documents the update result payload exchanged by command, SDK, and package integrations. */
 export interface UpdateResult {
@@ -1529,9 +1531,10 @@ async function resolveStdinUpdateOptions(
 
 /** Resolve update stdin tokens once while preserving transport-marked literals. */
 export async function resolveUpdateTransportOptions(
-  options: UpdateCommandOptions,
+  input: UpdateOperationOptions,
 ): Promise<UpdateCommandOptions> {
-  options = prepareNativeMutationOptions("update", options);
+  // Typed nulls on clearable fields fold into unset here, and value validation refuses any other null (GH-1655).
+  const options = prepareNativeMutationOptions("update", input) as UpdateCommandOptions;
   return shouldResolveMutationStdinTokens(options)
     ? await resolveStdinUpdateOptions(options)
     : normalizeLegacyNoneUpdateOptions(options);
@@ -2136,7 +2139,7 @@ async function closeRoutedItem(
   );
 
   // The routed close skips the main update's warning assembly; advise here without repeating the pre-update's own advisories.
-  const advisories = literalSentinelAdvisories("update", context.options as Record<string, unknown>, mutationInputAudience(context.options) === "sdk").filter((warning) => !(preUpdate?.warnings ?? []).includes(warning));
+  const advisories = literalSentinelAdvisories("update", context.options as Record<string, unknown>, mutationInputAudience(context.options) === "sdk", closeResult.item).filter((warning) => !(preUpdate?.warnings ?? []).includes(warning));
   const warnings = [
     ...advisories,
     ...context.workflowTransitionWarnings,
@@ -3205,12 +3208,12 @@ function mutateUpdateDocument(
 /** Implements run update for the public runtime surface of this module. */
 async function runUpdateWithContext(
   id: string,
-  options: UpdateCommandOptions,
+  input: UpdateOperationOptions,
   global: GlobalOptions,
   execution: UpdateExecutionContext = {},
 ): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
   assertMutationStringOperand(id, "update", "id");
-  options = await resolveUpdateTransportOptions(options);
+  const options = await resolveUpdateTransportOptions(input);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
@@ -3495,7 +3498,7 @@ async function runUpdateWithContext(
       item: toItemRecord(result.item),
       changed_fields: result.changedFields,
       warnings: [
-        ...literalSentinelAdvisories("update", options as Record<string, unknown>, mutationInputAudience(options) === "sdk"),
+        ...literalSentinelAdvisories("update", options as Record<string, unknown>, mutationInputAudience(options) === "sdk", result.item as Record<string, unknown>),
         ...workflowTransitionWarnings,
         ...parentReferenceWarnings,
         ...dependencyTargetWarnings,
@@ -3590,7 +3593,7 @@ function prepareRecurrenceTransition(params: {
 /** Implements run update for the public runtime surface of this module. */
 export async function runUpdate(
   id: string,
-  options: UpdateCommandOptions,
+  options: UpdateOperationOptions,
   global: GlobalOptions,
 ): Promise<UpdateResult> {
   return runUpdateWithContext(id, options, global);
@@ -3599,7 +3602,7 @@ export async function runUpdate(
 /** Execute a recurrence transition through the exact atomic update pipeline. */
 export async function runReopenUpdate(
   id: string,
-  options: UpdateCommandOptions,
+  options: UpdateOperationOptions,
   global: GlobalOptions,
   recurrenceReason: string,
 ): Promise<ReopenUpdateResult> {
