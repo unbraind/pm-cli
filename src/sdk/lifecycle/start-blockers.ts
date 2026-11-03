@@ -67,10 +67,11 @@ function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: str
     // --dep-remove normalizes its selector id (normalizeItemReference) and compares kinds literally, so a
     // row is removable by command only when it is a literal blocked_by row whose stored id survives that
     // normalization unchanged; legacy short ids and alias kinds get an inspection step instead.
-    const [removable] = edges.filter((dependency) => dependency.id === normalizeItemReference(dependency.id, idPrefix, undefined) && sameBlocker(dependency.id, blockerId, idPrefix));
-    return removable === undefined
-      ? renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"])
-      : renderPmCommand(["update", metadata.id, "--dep-remove", `id=${removable.id},kind=blocked_by`]);
+    // One selector removes one row, so every row naming this blocker must be that single removable row.
+    const matching = edges.filter((dependency) => sameBlocker(dependency.id, blockerId, idPrefix));
+    return matching.length === 1 && matching.every((dependency) => dependency.id === normalizeItemReference(dependency.id, idPrefix, undefined))
+      ? renderPmCommand(["update", metadata.id, "--dep-remove", `id=${matching[0]!.id},kind=blocked_by`])
+      : renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"]);
   }
   const literal = (value: string) => value.trim().toLowerCase();
   return edges.every((dependency) => literal(dependency.id) === literal(String(metadata.blocked_by)))

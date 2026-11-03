@@ -253,6 +253,9 @@ describe("pm-urzubi explicit start composition", () => {
         .toContain('pm get pm-x --fields "blocked_by,dependencies"');
       expect(await nextSteps({ ...base, dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
         .toContain('pm update pm-x --dep-remove "id=pm-missing,kind=blocked_by"');
+      // Two rows naming one blocker (pm-missing and a legacy short missing) cannot both go with one selector.
+      expect(await nextSteps({ ...base, dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "missing", kind: "blocked_by" }] } as ItemMetadata))
+        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
       // Clearing the scalar would also drop the independent edge, so only an inspection step is offered.
       expect(await nextSteps({ ...base, blocked_by: "pm-missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "pm-other", kind: "blocked_by" }] } as ItemMetadata))
         .toContain('pm get pm-x --fields "blocked_by,dependencies"');
