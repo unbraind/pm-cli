@@ -3054,6 +3054,14 @@
       ],
       "package_version": "2026.11.2",
       "reason": "pm-gh1576: additive optional GetResult.item_hash, GlobalOptions.expectHash and PmClient revision helpers; no existing member changed shape"
+    },
+    {
+      "changes": [
+        "signature ./sdk:HistoryCompactBulkItemResult",
+        "signature ./sdk:HistoryRepairAllStreamResult"
+      ],
+      "package_version": "2026.11.3",
+      "reason": "pm-gh1576: HistoryCompactBulkItemResult and HistoryRepairAllStreamResult gain only optional ItemRevisionConflictRowFields (error_code, expected_revision, current_revision, details) on refused rows; every existing producer and reader stays type-compatible"
     }
   ],
   "entrypoints": {
@@ -10144,7 +10152,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryCompactBulkItemResult",
-          "signature": "export interface HistoryCompactBulkItemResult { id: string; outcome: \"compacted\" | \"skipped\" | \"errored\"; entries_before: number; entries_after: number | null; skip_reason: HistoryCompactBulkSkipReason | null; changed: boolean; error: string | null; }"
+          "signature": "export interface HistoryCompactBulkItemResult extends ItemRevisionConflictRowFields { id: string; outcome: \"compacted\" | \"skipped\" | \"errored\"; entries_before: number; entries_after: number | null; skip_reason: HistoryCompactBulkSkipReason | null; changed: boolean; error: string | null; }"
         },
         {
           "classification": "advanced_export",
@@ -10348,7 +10356,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "HistoryRepairAllStreamResult",
-          "signature": "export interface HistoryRepairAllStreamResult { id: string; outcome: \"repaired\" | \"skipped_clean\" | \"failed\"; entries_rehashed?: number; entries_patch_repaired?: number; reconciled_with_item?: boolean; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings?: string[]; error?: string; }"
+          "signature": "export interface HistoryRepairAllStreamResult extends ItemRevisionConflictRowFields { id: string; outcome: \"repaired\" | \"skipped_clean\" | \"failed\"; entries_rehashed?: number; entries_patch_repaired?: number; reconciled_with_item?: boolean; reconciliation?: HistoryRepairReconciliationReport; merge_receipt_proof?: MergeReceiptProofResult; warnings?: string[]; error?: string; }"
         },
         {
           "classification": "advanced_export",

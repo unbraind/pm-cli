@@ -541,6 +541,55 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
+  it("guards tail salvage against the live item, an unreadable live file and the tombstone", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const damageTail = (id: string) => appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), "\0\0\0");
+      const salvage = (id: string, itemHash: string, before?: () => Promise<void>) => withExpectedItemRevisions([{ id, itemHash }], async () => {
+        await before?.();
+        return pm.run("history-repair", { id, options: { salvageTail: true } });
+      }, { pmRoot: context.pmPath });
+      const live = createTestItemId(context, { title: "Salvage live" });
+      const stale = (await pm.readItemRevision(live)).item_hash;
+      await pm.update(live, { title: "Salvage live, edited by a peer" });
+      await damageTail(live);
+      const historyPath = path.join(context.pmPath, "history", `${live}.jsonl`);
+      const damaged = await readFile(historyPath, "utf8");
+      await expect(salvage(live, stale)).rejects.toMatchObject({ context: { code: "item_revision_conflict", item_id: live, expected_revision: stale } });
+      expect(await readFile(historyPath, "utf8")).toBe(damaged);
+      await expect(salvage(live, (await pm.readItemRevision(live)).item_hash)).resolves.toMatchObject({ checked: [live] });
+      const unreadable = createTestItemId(context, { title: "Salvage unreadable" });
+      const decided = (await pm.readItemRevision(unreadable)).item_hash;
+      await damageTail(unreadable);
+      const refusal = await captureError(() => salvage(unreadable, decided, () => writeFile(path.join(context.pmPath, "tasks", `${unreadable}.toon`), "not a toon document: [\n")));
+      expect(refusal).toMatchObject({ context: { code: "item_revision_conflict", item_id: unreadable } });
+      expect(refusal.message).toContain("its live document cannot be read");
+      const deleted = createTestItemId(context, { title: "Salvage deleted" });
+      await pm.run("delete", { id: deleted, force: true });
+      await damageTail(deleted);
+      await expect(salvage(deleted, (await readItemRevision(deleted, { pmRoot: context.pmPath })).item_hash)).resolves.toMatchObject({ checked: [deleted] });
+    });
+  });
+
+  it("keeps the typed conflict on bulk history-compact and history-repair rows", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const common = { path: context.pmPath, noExtensions: true, author: "history-agent" };
+      const compacted = createTestItemId(context, { title: "Compact stale" });
+      for (const priority of ["1", "2", "3"]) await pm.update(compacted, { priority });
+      const staleCompact = (await pm.readItemRevision(compacted)).item_hash;
+      await pm.update(compacted, { title: "Compact stale, edited by a peer" });
+      const compact = await runAction({ ...common, expectHash: `${compacted}=${staleCompact}`, action: "history-compact", options: { ids: compacted } }) as { results: Array<Record<string, unknown>> };
+      expect(compact.results).toEqual([expect.objectContaining({ id: compacted, outcome: "errored", error_code: "item_revision_conflict", expected_revision: staleCompact })]);
+      const drifted = createTestItemId(context, { title: "Repair stale" });
+      const staleRepair = (await pm.readItemRevision(drifted)).item_hash;
+      const itemPath = path.join(context.pmPath, "tasks", `${drifted}.toon`);
+      await writeFile(itemPath, (await readFile(itemPath, "utf8")).replace("title: Repair stale", "title: Repair stale, hand-edited"));
+      const repair = await runAction({ ...common, expectHash: `${drifted}=${staleRepair}`, action: "history-repair", options: { all: true } }) as { streams: Array<Record<string, unknown>> };
+      expect(repair.streams).toEqual(expect.arrayContaining([expect.objectContaining({ id: drifted, outcome: "failed", error_code: "item_revision_conflict", expected_revision: staleRepair })]));
+    });
+  });
+
   it("refuses a guarded restore over an unreadable live item, while an unguarded restore still recovers it", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Corrupted live item" });

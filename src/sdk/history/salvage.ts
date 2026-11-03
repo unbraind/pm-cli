@@ -25,7 +25,12 @@ import {
   verifyHistoryChainWithVersion,
 } from "../../core/history/replay.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
+import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../../core/shared/constants.js";
+import {
+  advanceItemMutationPreconditions,
+  assertItemMutationPreconditions,
+  assertItemRevisionExpectationsOnUnreadable,
+} from "../../core/store/item-mutation-precondition.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { sha256Hex } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
@@ -189,11 +194,22 @@ async function readSalvageOwnership(
   settings: PmSettings,
   fallback: ItemDocument,
 ) {
-  if (!subject.located) return { itemRaw: null, document: fallback };
+  if (!subject.located) return { itemRaw: null, document: fallback, live: null };
   const snapshot = await readLocatedItemSnapshot(subject.located, {
     schema: settings.schema,
   });
-  return { itemRaw: snapshot.raw, document: snapshot.document ?? fallback };
+  return { itemRaw: snapshot.raw, document: snapshot.document ?? fallback, live: snapshot.document };
+}
+
+/**
+ * Judge declared revisions against the live item (pm-gh1576): an unreadable live
+ * file matches none, and with no live file the tombstone is the revision reads report.
+ */
+function assertSalvageRevision(pmRoot: string, id: string, ownership: Awaited<ReturnType<typeof readSalvageOwnership>>): ItemDocument {
+  if (ownership.itemRaw !== null && ownership.live === null) assertItemRevisionExpectationsOnUnreadable(pmRoot, id, ownership.itemRaw);
+  const live = ownership.live ?? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument);
+  assertItemMutationPreconditions(pmRoot, live, id);
+  return live;
 }
 
 /** Refuse lossy decoding so suffix receipts and rollback always describe original bytes. */
@@ -303,6 +319,7 @@ export async function salvageHistoryTail(params: {
           EXIT_CODE.CONFLICT,
         );
       }
+      const live = assertSalvageRevision(params.pmRoot, subject.id, ownership);
       const audit = sealHistoryRecord({
         ...createHistoryEntry({
           hashAlgorithm: resolveHistoryHashAlgorithm(selected.entries.at(-1)!.hash_algorithm),
@@ -323,6 +340,8 @@ export async function salvageHistoryTail(params: {
         historyRawUnderLock: raw,
         nextHistoryRaw: `${selected.prefix}${JSON.stringify(audit)}\n`,
       });
+      // The item document is unchanged; advancing records this scope's committed write.
+      advanceItemMutationPreconditions(params.pmRoot, live, subject.id);
       warnings.push(
         ...(await runActiveOnWriteHooks({
           path: subject.historyPath,

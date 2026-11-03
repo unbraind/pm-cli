@@ -3,6 +3,7 @@
  *
  * Implements the pm history compact command surface and its agent-facing runtime behavior.
  */
+import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./lifecycle/item-revision.js";
 import fs from "node:fs/promises";
 import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
 import path from "node:path";
@@ -550,7 +551,7 @@ function normalizeHistoryCompactBulkOptions(
 }
 
 /** Per-item outcome row in a bulk compaction pass. */
-export interface HistoryCompactBulkItemResult {
+export interface HistoryCompactBulkItemResult extends ItemRevisionConflictRowFields {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports outcome for this contract. */
@@ -700,6 +701,7 @@ async function collectHistoryCompactBulkCandidates(params: {
 
 /** Apply a selected stream independently while retaining skips and failures in the bulk receipt. */
 async function runHistoryCompactBulkRow(params: {
+  pmRoot: string;
   row: ReturnType<typeof selectHistoryCompactBulkTargets>[number];
   options: HistoryCompactBulkCommandOptions;
   dryRun: boolean;
@@ -765,6 +767,7 @@ async function runHistoryCompactBulkRow(params: {
         changed: false,
         /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
         error: error instanceof Error ? error.message : String(error),
+        ...(await itemRevisionConflictRowFields(error, params.pmRoot)),
       },
     };
   }
@@ -828,6 +831,7 @@ export async function runHistoryCompactBulk(
   };
   for (const row of selection) {
     const outcome = await runHistoryCompactBulkRow({
+      pmRoot,
       row,
       options: normalizedOptions,
       dryRun,
