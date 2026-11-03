@@ -16,6 +16,7 @@ import {
   createItemRevisionScope,
   enrichItemRevisionConflict,
   expectHashInvocationRewrittenError,
+  expectHashRequiresMutationError,
   itemRevisionScopeReceipt,
   itemRevisionUncheckedWarning,
   parseExpectHashSpecs,
@@ -26,6 +27,8 @@ import {
 import { emitPreflightWarning } from "./preflight-warnings.js";
 
 const invocationScopes = new AsyncLocalStorage<ItemRevisionScope>();
+/** Invocation scopes whose guard preAction bound; final dispatch must not rewrite them. */
+const guardedInvocations = new WeakSet<ItemRevisionScope>();
 
 /**
  * The registered `id` positional names the item a bare revision binds to, at its
@@ -80,6 +83,27 @@ export async function bindInvocationExpectedRevisions(params: {
   if (scope === undefined) throw new TypeError("--expect-hash was parsed outside an invocation revision scope");
   const expectations = await resolveExpectedItemRevisions(params.pmRoot, specs, itemArgumentOf(params.command, params.commandArgs));
   bindItemRevisionScope(scope, params.pmRoot, expectations);
+  guardedInvocations.add(scope);
+}
+
+/**
+ * Refuse when a final-dispatch parser pass rewrites a guarded invocation. Commander
+ * dispatch reruns extension parsers after preAction bound the guard to the typed
+ * view, so each pass must keep that view's tracker and arguments.
+ */
+export function assertGuardedDispatchUnchanged(input: InvocationStage, output: InvocationStage): void {
+  const scope = invocationScopes.getStore();
+  if (scope !== undefined && guardedInvocations.has(scope) && invocationRewritten(input, [output])) throw expectHashInvocationRewrittenError();
+}
+
+/**
+ * Inventory commands dispatch without lifecycle hooks and never write items, so a
+ * guard on them is validated and refused instead of silently dropped.
+ */
+export function refuseInventoryExpectHash(commandPath: string, expectHash: readonly string[] | undefined): void {
+  if (expectHash === undefined) return;
+  parseExpectHashSpecs(expectHash);
+  throw expectHashRequiresMutationError(commandPath);
 }
 
 /** Warn about each expectation whose item no locked write reached. */

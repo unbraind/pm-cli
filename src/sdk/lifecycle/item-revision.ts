@@ -380,7 +380,7 @@ const NATIVE_ACTIONS: ReadonlySet<string> = new Set(PM_TOOL_ACTIONS);
  */
 export function assertExpectHashAdmissible(action: string, options: Record<string, unknown> = {}): void {
   if (NATIVE_ACTIONS.has(action) && !isMutationAction(action) && !PM_EXPECT_HASH_ACTIONS.has(action)) {
-    throw expectHashRequiresMutation(action);
+    throw expectHashRequiresMutationError(action);
   }
   // A background worker is a separate process the in-process scope cannot reach, so refuse instead of
   // reporting a guard its result recording would never evaluate.
@@ -392,7 +392,8 @@ export function assertExpectHashAdmissible(action: string, options: Record<strin
   }
 }
 
-function expectHashRequiresMutation(action: string): PmCliError {
+/** Refusal for a revision guard on a command or action that writes no items. */
+export function expectHashRequiresMutationError(action: string): PmCliError {
   return new PmCliError(`--expect-hash guards item writes, and ${action} is not a mutation.`, EXIT_CODE.USAGE, {
     code: "expect_hash_requires_mutation",
     required: "Use --expect-hash (MCP/SDK expectHash) only on a command or action that writes items.",

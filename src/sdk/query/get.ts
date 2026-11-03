@@ -454,8 +454,13 @@ function projectedMetadataValue(
 const GET_FACET_ROOTS: ReadonlySet<string> = new Set(["body", "item_hash", "linked", "claim_state", "children", "schedule", "blockers"]);
 const GET_NESTED_FACET_ROOTS: ReadonlySet<string> = new Set(["linked", "claim_state", "children", "schedule"]);
 
-/** Whether a selector names a derived facet whose owner attaches it, rather than a metadata field. */
-function isGetFacetSelector(normalized: string): boolean {
+/**
+ * Whether a selector names a derived facet whose owner attaches it, rather than a
+ * metadata field. The revision facet is the bare `item_hash`: its item-qualified
+ * spelling still projects a custom metadata field of that name.
+ */
+function isGetFacetSelector(field: string, normalized: string): boolean {
+  if (field === "item.item_hash") return false;
   const dot = normalized.indexOf(".");
   return dot === -1 ? GET_FACET_ROOTS.has(normalized) : GET_NESTED_FACET_ROOTS.has(normalized.slice(0, dot));
 }
@@ -474,7 +479,7 @@ function projectItemForFields(
   const projected: Record<string, unknown> = { id: item.id };
   for (const field of fields) {
     const normalized = normalizeGetField(field);
-    if (isGetFacetSelector(normalized)) {
+    if (isGetFacetSelector(field, normalized)) {
       continue;
     }
     projected[normalized] = projectedMetadataValue(
@@ -679,7 +684,7 @@ async function resolveGetClaimState(
 /** Attach the current revision (pm-gh1576) to current reads, and to field projections only when selected. */
 function attachGetItemHash(result: GetResult, context: GetItemContext, projection: ResolvedGetProjection): void {
   if (context.historical !== undefined) return;
-  if (projection.fieldProjection && !fieldsIncludeRoot(projection.fields as string[], "item_hash")) return;
+  if (projection.fieldProjection && !(projection.fields as string[]).includes("item_hash")) return;
   result.item_hash = hashDocument({ metadata: context.metadata, body: context.body });
 }
 

@@ -1025,7 +1025,10 @@ refuses with `expect_hash_invalid` instead of running unguarded. Bulk
 stream lock. `validate --auto-fix`/`--prune-missing` refuses typed once every fix
 was attempted. When an extension parser or preflight override rewrites the
 invocation's tracker or arguments, a guarded invocation refuses with
-`expect_hash_invocation_rewritten`, since which item it writes cannot be proved. An item the command never wrote produces the
+`expect_hash_invocation_rewritten`, since which item it writes cannot be proved.
+The same refusal covers a parser pass during final dispatch. Inventory commands
+(`package inventory`, `extension inventory`) never write items, so they validate
+the flag and then refuse with `expect_hash_requires_mutation`. An item the command never wrote produces the
 warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. MCP
 tools accept the same tokens as `expectHash`; the SDK exposes
 `withExpectedItemRevisions` (see [SDK](SDK.md#expected-item-revisions)).

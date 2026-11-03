@@ -163,6 +163,24 @@ describe("pm-gh1576 read-decide-write through the SDK", () => {
     });
   });
 
+  it("keeps item.item_hash projecting a custom metadata field of that name while bare item_hash selects the revision", async () => {
+    await withTempPmPath(async (context) => {
+      const added = context.runCli(["schema", "add-field", "item_hash", "--type", "string", "--commands", "create,update", "--cli-flag", "--business-hash", "--json"], { expectJson: true });
+      expect(added.code, added.stderr).toBe(0);
+      const created = context.runCli(["create", "--title", "Custom hash field", "--type", "Task", "--description", "d", "--business-hash", "business-value", "--json"], { expectJson: true });
+      expect(created.code, created.stderr).toBe(0);
+      const id = String((created.json as { item: { id: string } }).item.id);
+      const pm = client(context);
+      const revision = (await pm.readItemRevision(id)).item_hash;
+      const qualified = await pm.get(id, { fields: ["id", "item.item_hash"] });
+      expect(qualified.item).toMatchObject({ id, item_hash: "business-value" });
+      expect(qualified.item_hash).toBeUndefined();
+      const bare = await pm.get(id, { fields: ["id", "item_hash"] });
+      expect(bare.item_hash).toBe(revision);
+      expect(bare.item).not.toHaveProperty("item_hash");
+    });
+  });
+
   it("refuses a stale close with bounded change evidence and admits the fresh revision", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Close guard" });

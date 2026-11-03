@@ -1366,7 +1366,8 @@ Read-decide-write agents and packages guard a write with the revision their
 decision was based on. Every current `pm get` / `PmClient.get` read reports
 `item_hash`, the SHA-256 of the canonical item document and the same value as
 the item's latest history `after_hash` (a field-projected read includes it only
-when the selection names `item_hash`, for example `--fields title,tags,item_hash`).
+when the selection names the bare `item_hash`, for example `--fields title,tags,item_hash`;
+the item-qualified `item.item_hash` still projects a custom metadata field of that name).
 `readItemRevision(id)` returns it alone. Take the hash from the same read your
 decision uses: a separate read could observe a newer revision than the data you
 decided on. Run the write inside `withExpectedItemRevisions`:

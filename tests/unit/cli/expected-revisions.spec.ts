@@ -1,18 +1,22 @@
+import path from "node:path";
 import { Command } from "commander";
 import { describe, expect, it, vi } from "vitest";
 import { formatPmCliErrorForJson } from "../../../src/cli/error-guidance.js";
 import { createPmCliProgram } from "../../../src/sdk/cli-program.js";
 import { getGlobalOptions } from "../../../src/sdk/cli-contracts/registration-helpers.js";
 import {
+  assertGuardedDispatchUnchanged,
   bindInvocationExpectedRevisions,
   enrichInvocationRevisionError,
   invocationRewritten,
   parseWithInvocationRevisionScope,
+  refuseInventoryExpectHash,
   reportInvocationRevisionScope,
 } from "../../../src/cli/expected-revisions.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { bindItemRevisionScope, createItemRevisionScope } from "../../../src/sdk/lifecycle/item-revision.js";
+import { writeTestExtension } from "../../helpers/extensions.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -64,6 +68,50 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
       await expect(bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: ["pm-a"], expectHash: [HASH], pmRoot: "/tracker", rewritten: true }))
         .rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, context: { code: "expect_hash_invocation_rewritten" } });
       await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: ["pm-a"], expectHash: undefined, pmRoot: "/tracker", rewritten: true });
+    });
+  });
+
+  it("refuses a final-dispatch parser pass that rewrites a guarded invocation, and only a guarded one", async () => {
+    const typed = { args: ["pm-a"], path: undefined };
+    assertGuardedDispatchUnchanged(typed, { args: ["pm-b"], path: undefined });
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Dispatch target" });
+      await inInvocation(async () => {
+        assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: ["pm-b"], path: undefined });
+        await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [id], expectHash: [itemHash(context, id)], pmRoot: context.pmPath });
+        assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: [id], path: undefined });
+        expect(() => assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: ["pm-b"], path: undefined }))
+          .toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE, context: expect.objectContaining({ code: "expect_hash_invocation_rewritten" }) }));
+      });
+    });
+  });
+
+  it("refuses a guarded update an extension parser redirects only on its final-dispatch pass", async () => {
+    await withTempPmPath(async (context) => {
+      const guarded = createTestItemId(context, { title: "Guarded target" });
+      const other = createTestItemId(context, { title: "Redirect target" });
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions", "late-redirect"),
+        name: "late-redirect",
+        manifestOverrides: { capabilities: ["parser"] },
+        entrySource: `let calls = 0;\nexport default { activate(api) { api.registerParser("update", (context) => { calls += 1; return calls === 1 ? {} : { args: [${JSON.stringify(other)}] }; }); } };\n`,
+      });
+      const before = itemHash(context, other);
+      const result = await context.runCliInProcess(["update", guarded, "--priority", "1", "--expect-hash", itemHash(context, guarded), "--json"]);
+      expect(result.code, result.stdout).toBe(EXIT_CODE.USAGE);
+      expect(result.stderr).toContain("expect_hash_invocation_rewritten");
+      expect(itemHash(context, other)).toBe(before);
+    });
+  });
+
+  it("validates and refuses a guard on inventory commands, which never write items", async () => {
+    expect(() => refuseInventoryExpectHash("package inventory", undefined)).not.toThrow();
+    expect(() => refuseInventoryExpectHash("package inventory", ["invalid"])).toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "expect_hash_invalid" }) }));
+    expect(() => refuseInventoryExpectHash("package inventory", [HASH])).toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "expect_hash_requires_mutation" }) }));
+    await withTempPmPath(async (context) => {
+      const result = await context.runCliInProcess(["package", "inventory", "--no-extensions", "--expect-hash", "invalid", "--json"]);
+      expect(result.code, result.stdout).toBe(EXIT_CODE.USAGE);
+      expect(result.stderr).toContain("expect_hash_invalid");
     });
   });
 

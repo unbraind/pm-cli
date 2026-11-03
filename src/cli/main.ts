@@ -3,7 +3,7 @@
  * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
 import { attachPreflightWarnings, attachSerializedPreflightWarnings, emitPreflightWarning, runWithPreflightWarnings } from "./preflight-warnings.js";
-import { bindInvocationExpectedRevisions, invocationRewritten, parseWithInvocationRevisionScope } from "./expected-revisions.js";
+import { assertGuardedDispatchUnchanged, bindInvocationExpectedRevisions, invocationRewritten, parseWithInvocationRevisionScope, refuseInventoryExpectHash } from "./expected-revisions.js";
 import { Command,CommanderError } from "commander";
 import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
@@ -1068,6 +1068,7 @@ async function runRequiredExtensionCommand(
   delete commandOptions.author;
   let resolvedGlobalOptions = { ...globalOptions };
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const dispatchInput = { args: [...commandArgs], path: globalOptions.path };
   const parserOverride = await runActiveParserOverride({
     command: commandPath,
     args: commandArgs,
@@ -1081,6 +1082,7 @@ async function runRequiredExtensionCommand(
   commandArgs = parserOverride.context.args;
   commandOptions = parserOverride.context.options;
   resolvedGlobalOptions = parserOverride.context.global;
+  assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: resolvedGlobalOptions.path });
   validateDynamicExtensionCommandInvocation(
     activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath)),
     commandArgs,
@@ -1182,6 +1184,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         let globalOptions = getGlobalOptions(actionCommand);
         const commandPath = resolvePmCommandOperation(getCommandPath(actionCommand));
         if (["package inventory", "packages inventory", "extension inventory"].includes(commandPath)) {
+          refuseInventoryExpectHash(commandPath, globalOptions.expectHash);
           return await originalAction.apply(this, actionArgs);
         }
         const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
@@ -1193,6 +1196,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         if (activeRuntimeExtensionCommandDescriptors.has(normalizeExtensionCommandPath(commandPath))) {
           delete commandOptions.author;
         }
+        const dispatchInput = { args: [...commandArgs], path: globalOptions.path };
         const parserOverride = await runActiveParserOverride({
           command: commandPath,
           args: commandArgs,
@@ -1205,6 +1209,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         commandOptions = parserOverride.context.options;
         copyReadOutputInvocationProvenance(actionCommand, commandOptions);
         globalOptions = parserOverride.context.global;
+        assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: globalOptions.path });
         // Validate importer/exporter positionals on the real dispatch path:
         // these short-circuit before the dynamic action that previously held the
         // only arity validation, so excess positionals could reach handlers.
