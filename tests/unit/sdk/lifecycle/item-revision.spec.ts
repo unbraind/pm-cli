@@ -609,6 +609,29 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       await expect(readItemRevision(id, { pmRoot: context.pmPath })).rejects.toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_identity_conflict", item_id: id } });
       await expect(withExpectedItemRevisions([{ id, itemHash: HASH_A }], () => Promise.resolve(undefined), { pmRoot: context.pmPath }))
         .rejects.toMatchObject({ context: { code: "item_identity_conflict" } });
+      // On a case-sensitive filesystem a case-only difference from the physical file name is a conflict too.
+      const cased = createTestItemId(context, { title: "Case conflict" });
+      const casedFile = path.join(context.pmPath, "tasks", `${cased}.toon`);
+      await writeFile(casedFile, (await readFile(casedFile, "utf8")).replace(`id: ${cased}`, `id: ${cased.toUpperCase()}`));
+      await expect(readItemRevision(cased, { pmRoot: context.pmPath })).rejects.toMatchObject({ context: { code: "item_identity_conflict", item_id: cased } });
+    });
+  });
+
+  it("reads salvage drift from where the item is now, so a peer delete during the wait refuses as drift", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const id = createTestItemId(context, { title: "Salvage moved away" });
+      await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), "\0\0\0");
+      const acquireLock = lockModule.acquireLock;
+      const spy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (args[1] === id) await rm(path.join(context.pmPath, "tasks", `${id}.toon`), { force: true });
+        return acquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+      try {
+        await expect(pm.run("history-repair", { id, options: { salvageTail: true } })).rejects.toThrow(/changed while waiting for salvage lock/u);
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 

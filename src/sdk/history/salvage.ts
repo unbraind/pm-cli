@@ -190,12 +190,12 @@ export function inspectHistoryTail(raw: string): {
 
 /** Prefer the live item's owner; history supplies ownership only when its file is unreadable. */
 async function readSalvageOwnership(
-  subject: HistorySubject,
+  located: HistorySubject["located"],
   settings: PmSettings,
   fallback: ItemDocument,
 ) {
-  if (!subject.located) return { itemRaw: null, document: fallback, live: null };
-  const snapshot = await readLocatedItemSnapshot(subject.located, {
+  if (!located) return { itemRaw: null, document: fallback, live: null };
+  const snapshot = await readLocatedItemSnapshot(located, {
     schema: settings.schema,
   });
   return { itemRaw: snapshot.raw, document: snapshot.document ?? fallback, live: snapshot.document };
@@ -280,7 +280,7 @@ export async function salvageHistoryTail(params: {
       { code: "history_salvage_refused" },
     );
   }
-  const ownership = await readSalvageOwnership(subject, settings, document);
+  const ownership = await readSalvageOwnership(subject.located, settings, document);
   const warnings = checkHistoryRewriteOwnership({
     itemDocument: ownership.document,
     subjectId: subject.id,
@@ -315,7 +315,8 @@ export async function salvageHistoryTail(params: {
         : null;
       if (currentRaw !== raw || currentItem !== ownership.itemRaw) {
         // A peer moved the item while this salvage waited: a stale declared revision refuses typed first.
-        assertSalvageRevision(params.pmRoot, subject.id, await readSalvageOwnership(subject, settings, document));
+        // Read the item where it is now: a peer may have moved, deleted or restored it during the wait.
+        assertSalvageRevision(params.pmRoot, subject.id, await readSalvageOwnership(located, settings, document));
         throw new PmCliError(
           "History or item changed while waiting for salvage lock; retry.",
           EXIT_CODE.CONFLICT,

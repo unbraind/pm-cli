@@ -39,7 +39,7 @@ function canonicalizeDeclaredBlockers(
 }
 
 /** Verify physical leaf spelling even when probe and embedded IDs match; retain exact-leaf precedence, stable ties and typed directory failures with their original cause. */
-async function resolvePhysicalBlockerId(itemPath: string, probedId: string): Promise<string> {
+export async function resolvePhysicalItemId(itemPath: string, probedId: string): Promise<string> {
   const filename = path.basename(itemPath);
   const physicalIds = (await readdir(path.dirname(itemPath)).catch((error: unknown) => {
     throw createPmCliExpectedError("Cannot verify the blocker's physical file identity", {
@@ -106,7 +106,7 @@ export async function resolveDeclaredBlockers(params: {
     );
     if (located === null) continue;
     const loaded = await readLocatedItem(located, { schema: params.settings.schema });
-    located.id = await resolvePhysicalBlockerId(located.itemPath, located.id);
+    located.id = await resolvePhysicalItemId(located.itemPath, located.id);
     if (loaded.document.metadata.id !== located.id) {
       throw new PmCliError(`Blocker identity differs from its canonical file: ${located.id}`, EXIT_CODE.CONFLICT, {
         code: "item_identity_conflict",

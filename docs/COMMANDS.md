@@ -1037,8 +1037,9 @@ recovers it. `deps` only reads, so it refuses the flag. History maintenance
 (`history-redact`, `history-repair` including `--salvage-tail`, `history-compact`)
 is checked under the stream lock. Its bulk forms (`history-compact --ids`,
 `history-repair --all`) carry the same typed conflict fields on refused rows. An
-item file whose embedded id names another item binds no revision: reading or
-declaring one refuses with `item_identity_conflict` until the identity is repaired. `validate --auto-fix`/`--prune-missing` refuses typed once every fix
+item file whose embedded id differs from its physical file name (even by case on a
+case-sensitive filesystem) binds no revision: reading or declaring one refuses with
+`item_identity_conflict` until the identity is repaired. `validate --auto-fix`/`--prune-missing` refuses typed once every fix
 was attempted. When an extension parser or preflight override rewrites the
 invocation's tracker or arguments, a guarded invocation refuses with
 `expect_hash_invocation_rewritten`, since which item it writes cannot be proved.

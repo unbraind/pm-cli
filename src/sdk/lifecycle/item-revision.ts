@@ -28,6 +28,7 @@ import type { HistoryEntry, ItemDocument } from "../../types/index.js";
 import { PM_TOOL_ACTIONS } from "../cli-contracts/enum-contracts.js";
 import { PM_EXPECT_HASH_ACTIONS } from "../cli-contracts/expect-hash-actions.js";
 import { resolveHistorySubject } from "../history/subject.js";
+import { resolvePhysicalItemId } from "../query/declared-blockers.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../core/shared/constants.js";
 import { isMutationAction } from "../mutation-guard.js";
 import { isPmCliExpectedError } from "../errors.js";
@@ -148,9 +149,10 @@ async function locateRevisionTarget(pmRoot: string, id: string) {
     // Bind to the embedded identity, not the probe spelling: on a case-insensitive filesystem
     // `pm-a` and `PM-A` locate one file, and the locked write matches the embedded id too.
     const { document } = await readLocatedItem(located, { schema: settings.schema });
-    // A file whose embedded id names another item has two identities; a later identity repair would
-    // detach a guard bound to either one, so no revision is bound to it.
-    if (document.metadata.id.toLowerCase() !== located.id.toLowerCase()) {
+    // A file whose embedded id differs from its physical filename spelling (even by case on a
+    // case-sensitive filesystem) has two identities; a later identity repair would detach a guard
+    // bound to either one, so no revision is bound to it. Case-insensitive probe aliases still bind.
+    if (document.metadata.id !== await resolvePhysicalItemId(located.itemPath, located.id)) {
       throw new PmCliError(`Item file ${located.id} embeds the id ${document.metadata.id}; no revision can be bound to an item whose identity is in conflict.`, EXIT_CODE.CONFLICT, {
         code: "item_identity_conflict",
         item_id: located.id,
