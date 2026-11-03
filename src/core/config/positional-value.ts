@@ -68,6 +68,7 @@ export type ConfigKey =
   | "governance_require_close_reason"
   | "governance_create_default_type"
   | "governance_workflow_enforcement"
+  | "governance_start_blocker_enforcement"
   | "governance_parent_reference_policy"
   | "governance_metadata_validation_profile"
   | "governance_force_required_for_stale_lock"
@@ -100,6 +101,7 @@ const POLICY_KEYS: ReadonlySet<ConfigKey> = new Set<ConfigKey>([
   "governance_require_close_reason",
   "governance_create_default_type",
   "governance_workflow_enforcement",
+  "governance_start_blocker_enforcement",
   "governance_parent_reference_policy",
   "governance_metadata_validation_profile",
   "governance_force_required_for_stale_lock",

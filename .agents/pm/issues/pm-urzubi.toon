@@ -2,19 +2,96 @@ id: pm-urzubi
 title: "Starting work ignores open blockers: claim <id> --start and update --status in_progress move a blocked item into progress without a refusal or warning"
 description: "Raised by CodeRabbit on PR #1645 and verified on 2026.10.31 source in a fresh sandbox. An item created with --blocked-by <open item> is stored as status blocked, and pm update <id> --status in_progress then succeeds with no refusal or warning. pm claim <id> --start runs the same claim-then-update composition, so it behaves the same. pm validate later reports non_blocked_status_has_blocked_by for the in-progress item whose blocker is still open. pm next and claim --next --start are unaffected because ready selection already excludes items with open blockers. Starting an explicitly blocked item is a governance decision, not a claim defect, so changing only --start would make start and update disagree.\n\nDuplicate search: 'start blocked item open blocker in_progress refuse', 'non_blocked_status_has_blocked_by' — no open item. Nearest is the dependency-aware actionability decision (closed)."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,dependencies,governance,lifecycle
 created_at: "2026-10-31T23:01:47.892Z"
-updated_at: "2026-10-31T23:01:47.892Z"
+updated_at: "2026-11-03T05:01:20.086Z"
+closed_at: "2026-11-02T14:26:36.511Z"
+completed_at: "2026-11-02T14:26:36.511Z"
 author: "harness:claude-code"
 estimated_minutes: 150
-acceptance_criteria: "Moving an item with an open blocked_by target into the in-progress status, through update, claim --start or start-task, either refuses with a typed code naming the open blocker and the unblock or --force recovery, or warns, as governed by a declared setting; the CLI, MCP and SDK paths share one check that runs before any write, so a refused start never leaves a claim; a terminal blocker does not block; tests cover refuse, warn and terminal-blocker cases"
+acceptance_criteria: "Moving an item with an open blocked_by target into the in-progress status, through update, claim --start or start-task, either refuses with a typed code naming the open blocker and the unblock or --force recovery, or warns, as governed by a declared setting; the CLI, MCP and SDK paths share one check that runs under the lock of each write that would start the item, so the explicit claim --start judges it before writing ownership and again before its status update; a refusal at the second check releases a claim the start took from no owner and otherwise discloses the partial completion; a terminal blocker does not block; tests cover refuse, warn, terminal-blocker and blocker-opened-between-writes cases"
 parent: pm-33cw
 risk: medium
 confidence: medium
+resolution: "sdk/lifecycle/start-blockers.ts owns one admission check, resolved through sdk/query/declared-blockers.ts (shared with the pm get blockers facet) and governed by governance.start_blocker_enforcement (strict default, warn, off). update --status, claim --next --start and start-task run it under the item lock of each write that would start the item. The explicit claim --start judges it before writing ownership and again at its status update. When a blocker opens between the two writes, the start releases a claim it took from no owner (fenced against a peer takeover); otherwise the refusal's why reports the partial completion. Recovery steps are shell-quoted and offered only where a single command is safe."
 expected_result: No transport can silently move an item with an open blocker into progress; the behaviour is declared by governance settings and consistent across update and start.
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "Verified in specs and against the built CLI. update/claim --start/start-task refuse with exit 4 when the claim-time check fails, writing nothing. A deterministic race spec shows a blocker opened between claim and update refuses, releases the claim from no owner (history: create, claim, update, release), keeps an earlier owner's claim with a partial-completion why, and never releases a takeover by another principal (a concurrent release-and-reclaim by the same principal is indistinguishable, which is documented). Same-call unblock+start, terminal blockers and already-in-progress items are admitted; --force and warn record their warnings. The published 2026.11.2 negative control starts the blocked item silently."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-9x6k,related,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
   pm-gh1643,discovered_from,"2026-10-31T23:01:47.892Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1576,related,"2026-11-02T13:29:29.434Z","harness:claude-code","cli:update:dep",detected
+  pm-gh1359,related,"2026-11-02T23:09:40.090Z","harness:claude-code","cli:update:dep",detected
+comments[7]{created_at,author,text}:
+  "2026-11-02T13:29:12.559Z","harness:claude-code","Implementation evidence (feat/write-time-preconditions): sdk/lifecycle/start-blockers.ts owns one admission check, admitStartWithOpenBlockers, governed by the new governance.start_blocker_enforcement (strict default, warn, off; pm config key governance-start-blocker-enforcement). It resolves blockers through sdk/query/declared-blockers.ts, the resolution pm get's blockers facet already used, extracted so the two cannot disagree. Terminal targets resolve; missing, unsafe and external references stay open. Hooks: runUpdate checks inside its locked mutate callback on the UPDATED metadata, so an update that removes the edge and starts in one call is admitted. runClaim(start) checks under the claim lock (claim --next --start). runStartTask pre-checks before the claim write, so a refused claim <id> --start leaves no claim, and the update re-checks under its own lock. Refusal start_blocked_by_open_dependency (exit 4) lists details.open_blockers and an executable unblock command (--unset blocked_by and/or --dep-remove id=<b>,kind=blocked_by, chosen from where the blocker is declared). Verified the advertised command then lets the start succeed. --force admits with start_blocker_override:<id>:<blockers>, and warn mode records start_with_open_blockers:<id>:<blockers>."
+  "2026-11-02T15:18:39.843Z","harness:claude-code","Codex review round 1 on PR 1654: the unlocked pre-check in runStartTask let a blocker added between the pre-check and the update leave a claim behind. Fixed: runAsExplicitStart makes the claim judge the start under its own item lock before writing ownership (admitExplicitStartClaim), and the composition's status update reuses that decision instead of re-judging. claim --next --start keeps its single locked write."
+  "2026-11-02T17:47:13.105Z","harness:claude-code","Review round 2+3 on PR 1654. The composed status update always re-judges under its own lock. When a blocker opens after the claim, the start releases the claim it took from no owner, and keeps the original refusal if that release fails. A deterministic race spec (start-race.spec.ts) covers it. Suggested commands render through renderPmCommand (CodeRabbit Major: stored blocker ids are now shell-quoted). Blocker kinds canonicalize (depends_on resolves instead of throwing), short aliases compare canonically and edges are cited as stored. --unset blocked_by is advertised only when no other blocked_by edge would be lost; that data-loss defect is filed as pm-4yxzvd."
+  "2026-11-02T19:58:19.090Z","harness:claude-code","Review round 4 on PR 1654. The claim compensation is fenced under the item lock, so it never releases a peer's takeover (under warn ownership enforcement a plain release would have). Start detection uses the effective start status (resolveStartTaskInProgressStatus), including the registered in_progress fallback when the workflow names open. Warning dedupe now drops only the exact warnings the claim recorded, so a blocker found only at the status write still warns. --dep-remove is advertised only for literal blocked_by rows whose stored id survives selector normalization; legacy short-id, alias-kind and external rows get an inspection step (gap recorded on pm-4yxzvd). The refusal message no longer claims 'Nothing was written'. The acceptance criteria, resolution and actual result were corrected to the two-check composition semantics."
+  "2026-11-02T20:42:54.485Z","harness:claude-code","Codex review round 4 on PR 1654: the start-compensation fence compares the locked claim_principal as well as the display assignee, so a takeover by another session with the same assignee is never released. Spec added in start-race.spec.ts."
+  "2026-11-02T23:09:39.363Z","harness:claude-code","Codex review round 9 on PR 1654. The start-compensation fence compares assignee and claim_principal. A concurrent release-and-reclaim by the SAME principal between the refused status write and the compensation is indistinguishable from the original claim, because principal is pm's unit of ownership and claims carry no generation token. That case is documented in docs/COMMANDS.md rather than fenced. A claim-generation token belongs with the fenced-claim-generation work in pm-gh1359. Also fixed: start_blocked_by_open_dependency is declared as a literal, so the error-code catalog lists it (emitters claim, start-task, update)."
+  "2026-11-03T05:01:20.085Z","harness:claude-code","CodeRabbit review (PR #1654) fixed: admitStartWithOpenBlockers resolved the declared blockers before it consulted warn or --force. A blocker whose record could not be judged (invalid or non-UTF-8 document, unsupported item format, ambiguous or conflicting identity) threw, so neither escape hatch could start the item. Strict without --force still fails closed with that typed error. warn and --force now admit and record start_blocker_unverifiable:<id>:<code>. Filesystem failures (for example EISDIR) and merge-conflict markers still propagate unchanged. The original error is rethrown, never re-read. Spec: tests/unit/sdk/lifecycle/start-blockers.spec.ts, the unverifiable-blocker case."
+files[13]{path,scope}:
+  scripts/release/agent-evidence-consistency-control.mjs,project
+  src/core/store/settings-validator.ts,project
+  src/core/store/settings.ts,project
+  src/sdk/config.ts,project
+  src/sdk/lifecycle/claim.ts,project
+  src/sdk/lifecycle/start-blockers.ts,project
+  src/sdk/lifecycle/task-composition.ts,project
+  src/sdk/lifecycle/update.ts,project
+  src/sdk/query/declared-blockers.ts,project
+  src/sdk/query/get.ts,project
+  src/types.ts,project
+  tests/unit/sdk/lifecycle/start-blockers.spec.ts,project
+  tests/unit/sdk/lifecycle/start-race.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,project,600,"harness:claude-code","2026-11-02T13:09:54.501Z",local_mutation,feat/write-time-preconditions
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-race.spec.ts,project,600,"harness:claude-code","2026-11-02T16:35:50.190Z",local_mutation,feat/write-time-preconditions
+test_runs[3]:
+  - run_id: test-local-mvzcoa9s-iuicwh
+    kind: test
+    status: passed
+    started_at: "2026-11-02T14:24:16.504Z"
+    finished_at: "2026-11-02T14:24:27.136Z"
+    recorded_at: "2026-11-02T14:24:27.136Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvzcouot-0f5bqf
+    kind: test
+    status: passed
+    started_at: "2026-11-02T14:24:43.646Z"
+    finished_at: "2026-11-02T14:24:53.597Z"
+    recorded_at: "2026-11-02T14:24:53.597Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mvzcp89l-y379bx
+    kind: test
+    status: passed
+    started_at: "2026-11-02T14:25:01.314Z"
+    finished_at: "2026-11-02T14:25:11.193Z"
+    recorded_at: "2026-11-02T14:25:11.193Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/CONFIGURATION.md,project
+close_reason: Starting work now respects open declared blockers through one shared admission check governed by governance.start_blocker_enforcement
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-urzubi
+  gate_id: "tests/unit/sdk/lifecycle/start-blockers.spec.ts (update --status in_progress, claim --start, claim --next --start and start-task refuse start_blocked_by_open_dependency before any write)"
+  negative_control: "Run pm update <id> --status in_progress on an item whose blocked_by target is open against the published 2026.11.2 CLI: it succeeds silently and validate later reports non_blocked_status_has_blocked_by; the new spec asserts the typed refusal and that a refused claim --start leaves no assignee"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-blockers.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Coverage shard 1/4
 body: ""

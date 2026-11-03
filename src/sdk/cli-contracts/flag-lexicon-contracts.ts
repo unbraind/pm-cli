@@ -218,7 +218,8 @@ export function listPmFlagSpellingInventory(): readonly PmFlagSpellingInventoryE
 // the test help-token ceiling stays unchanged and no spare flag allowance is added.
 const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   init: 30,
-  // pm-yql1: the item namespace exposes only the twenty shared global flags.
+  // pm-yql1: the item namespace exposes only the twenty shared global flags
+  // (twenty-one with SHARED_HOST_FLAG_GROWTH below).
   item: 20,
   config: 36,
   extension: 55,
@@ -309,14 +310,25 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   "test-runs-worker": 20,
 } satisfies Readonly<Record<string, number>>);
 
+/**
+ * Inherited host flags added to the shared global surface after the per-command
+ * ratchets above were recorded. pm-gh1576 adds exactly one, the `--expect-hash`
+ * write precondition, which every command inherits (read commands refuse it).
+ * Each budget grows by exactly that inherited flag, with no spare allowance, so
+ * any further command-specific or global growth still fails closed.
+ */
+const SHARED_HOST_FLAG_GROWTH = 1;
+
 /** Native paths inherit the identical flag ceiling of their compatibility operation. */
-const PM_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
-  ...LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS,
-  ...Object.fromEntries(PM_NAMESPACED_COMMAND_ALIASES.flatMap(({ alias, canonical }) => {
-    const maximum = (LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS as Readonly<Record<string, number>>)[alias];
-    return maximum === undefined ? [] : [[canonical, maximum]];
-  })),
-});
+const PM_COMMAND_FLAG_BUDGET_MAXIMUMS: Readonly<Record<string, number>> = Object.freeze(Object.fromEntries(
+  Object.entries({
+    ...LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS,
+    ...Object.fromEntries(PM_NAMESPACED_COMMAND_ALIASES.flatMap(({ alias, canonical }) => {
+      const maximum = (LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS as Readonly<Record<string, number>>)[alias];
+      return maximum === undefined ? [] : [[canonical, maximum]];
+    })),
+  }).map(([command, maximum]) => [command, maximum + SHARED_HOST_FLAG_GROWTH]),
+));
 
 /** Return persisted no-growth ratchets with current counts derived from the canonical vocabulary. */
 export function listPmCommandFlagBudgets(): readonly PmCommandFlagBudget[] {

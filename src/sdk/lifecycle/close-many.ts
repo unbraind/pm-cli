@@ -3,6 +3,7 @@
  *
  * Implements the pm close many command surface and its agent-facing runtime behavior.
  */
+import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
@@ -26,7 +27,7 @@ import {
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
-import { runClose, type CloseCommandOptions } from "./close.js";
+import { committedCloseDependentConflict, runClose, type CloseCommandOptions, type DependentRevisionConflict } from "./close.js";
 import type { CloseCompletionReceipt } from "../lifecycle-policy.js";
 import { hasListFilters } from "../query/list-filter-shared.js";
 import { runList, type ListOptions, type ListedItem } from "../query/list.js";
@@ -95,7 +96,7 @@ interface CloseManyPlanRow {
   active_child_ids?: string[];
 }
 
-interface CloseManyApplyRow {
+interface CloseManyApplyRow extends ItemRevisionConflictRowFields {
   /** Completion provenance for a successfully closed target. */
   completion?: CloseCompletionReceipt;
   id: string;
@@ -104,6 +105,8 @@ interface CloseManyApplyRow {
   changed_fields?: string[];
   warnings?: string[];
   error?: string;
+  /** A guarded dependent whose auto-unblock refused after this row's close committed. */
+  dependent_revision_conflict?: DependentRevisionConflict;
 }
 
 interface CloseManyPlanContext {
@@ -155,7 +158,7 @@ export interface CloseManyResult extends PmCommandEffectReceipt {
   /** Value that configures or reports rows for this contract. */
   rows?:
     | CloseManyApplyRow[]
-    | Array<{
+    | Array<ItemRevisionConflictRowFields & {
         id: string;
         status: "restored" | "failed" | "skipped";
         changed_fields?: string[];
@@ -466,10 +469,18 @@ async function applyCloseManyRows(params: {
       });
       closedIds.push(item.id);
     } catch (error: unknown) {
+      // The close committed; only a guarded dependent's auto-unblock refused (pm-gh1576).
+      const committed = await committedCloseDependentConflict(error, item.id, params.pmRoot);
+      if (committed !== undefined) {
+        rows.push({ id: item.id, status: "closed", ...committed });
+        closedIds.push(item.id);
+        continue;
+      }
       rows.push({
         id: item.id,
         status: "failed",
         error: toErrorMessage(error),
+        ...(await itemRevisionConflictRowFields(error, params.pmRoot)),
       });
     }
   }

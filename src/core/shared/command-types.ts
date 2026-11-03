@@ -43,6 +43,13 @@ export interface GlobalOptions {
   profile?: boolean;
   /** Invocation-wide mutation author override. */
   author?: string;
+  /**
+   * CLI-parsed `--expect-hash` tokens (`<item_hash>` or `<id>=<item_hash>`).
+   * Only the CLI invocation scope enforces them; direct `run*` SDK calls do not
+   * read this field. SDK callers guard writes with `withExpectedItemRevisions`,
+   * `PmClient.withExpectedItemRevisions`, or `runAction`/MCP `expectHash`.
+   */
+  expectHash?: string[];
   /** Fallback output format used when callers do not provide an override. */
   defaultOutputFormat?: "toon" | "json";
 }

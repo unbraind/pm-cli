@@ -754,7 +754,8 @@ async function mutateItemWithDeferredHistoryContext(
   } = prepared;
 
   try {
-    assertItemMutationPreconditions(params.pmRoot, document);
+    // Expectations bind to the locked (filename) identity, even if embedded metadata disagrees.
+    assertItemMutationPreconditions(params.pmRoot, document, located.id);
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
@@ -775,7 +776,7 @@ async function mutateItemWithDeferredHistoryContext(
     const historyContext = {
       ...params.resolveHistoryContext?.(),
       ...checkpointMutationHistoryContext(params.pmRoot, located.id),
-      ...itemMutationPreconditionHistoryContext(params.pmRoot, document),
+      ...itemMutationPreconditionHistoryContext(params.pmRoot, [located.id, document.metadata.id]),
     };
     const requiredFormat = Math.max(requiredItemFormatVersion(beforeDocument.metadata), requiredItemFormatVersion(mutableDocument.metadata));
     assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(params.pmRoot), requiredFormat);
@@ -914,7 +915,7 @@ async function mutateItemWithDeferredHistoryContext(
       },
     );
     const { derivedIndexWarnings, effectiveTargetItemPath } = committed;
-    advanceItemMutationPreconditions(params.pmRoot, afterDocument);
+    advanceItemMutationPreconditions(params.pmRoot, afterDocument, located.id);
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,
@@ -1091,7 +1092,7 @@ export async function deleteItem(params: {
   } = prepared;
 
   try {
-    assertItemMutationPreconditions(params.pmRoot, document);
+    assertItemMutationPreconditions(params.pmRoot, document, located.id);
     const extensionFieldNames = resolveActiveExtensionFieldNames(undefined);
     const beforeDocument = canonicalDocument(document, {
       schema: params.settings.schema,
@@ -1203,6 +1204,9 @@ export async function deleteItem(params: {
       },
     );
     const { derivedIndexWarnings, effectiveItemPath } = committed;
+    // The item is now absent; a later restore in the same scope must find that tombstone revision.
+    // The tombstone has no embedded id: carry the pre-delete one so a case-variant spelling still advances.
+    advanceItemMutationPreconditions(params.pmRoot, tombstoneDocument, located.id, [document.metadata.id]);
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({

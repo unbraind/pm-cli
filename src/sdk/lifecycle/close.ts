@@ -4,6 +4,8 @@
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { isItemRevisionConflict, itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
+import { toErrorMessage } from "../runtime-primitives.js";
 import {
   toItemRecord,
   isTerminalStatus,
@@ -352,6 +354,8 @@ async function autoUnblockResolvedDependents(
 ): Promise<string[]> {
   const candidates = findAutoUnblockCandidates(items, closedId, statusRegistry);
   const warnings: string[] = [];
+  const unblockedIds: string[] = [];
+  let conflict: PmCliError | undefined;
   for (const candidate of candidates) {
     try {
       const unblocked = await mutateItem({
@@ -398,8 +402,11 @@ async function autoUnblockResolvedDependents(
       warnings.push(
         `auto_unblocked:${unblocked.item.id}:resolved_blockers=${candidate.blocker_ids.join(",")}`,
       );
-      /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
+      unblockedIds.push(unblocked.item.id);
+      /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. The revision specs exercise the kept conflict through the typed refusal below. */
     } catch (error) {
+      // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
+      if (conflict === undefined && isItemRevisionConflict(error)) conflict = error;
       const reason =
         error instanceof Error
           ? error.message.replace(/\s+/g, " ").trim()
@@ -408,7 +415,36 @@ async function autoUnblockResolvedDependents(
     }
     /* c8 ignore stop */
   }
+  if (conflict !== undefined) {
+    throw new PmCliError(`${closedId} was closed, but auto-unblocking ${String(conflict.context.item_id)} was refused. ${conflict.message}`, conflict.exitCode, {
+      ...conflict.context,
+      // Every committed write before the refusal: the close and each dependent already unblocked.
+      side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
+    });
+  }
   return warnings;
+}
+
+/** A guarded dependent whose auto-unblock refused after a bulk row's close committed. */
+export type DependentRevisionConflict = ItemRevisionConflictRowFields & { item_id: string; error: string };
+
+/**
+ * Bulk-row fields for a row whose close committed before a guarded dependent's
+ * auto-unblock refused (the refusal discloses the close in `side_effects`), or
+ * undefined for any other failure (pm-gh1576).
+ */
+export async function committedCloseDependentConflict(
+  error: unknown,
+  id: string,
+  pmRoot: string,
+): Promise<{ warnings: string[]; dependent_revision_conflict: DependentRevisionConflict } | undefined> {
+  if (!isItemRevisionConflict(error) || !error.context.side_effects?.some((effect) => `${effect.op}:${effect.path}` === `close:history/${id}.jsonl`)) return undefined;
+  const dependent = String(error.context.item_id);
+  const unblocked = error.context.side_effects!.filter((effect) => effect.op === "update").map((effect) => effect.path.slice("history/".length, -".jsonl".length));
+  return {
+    warnings: [...unblocked.map((unblockedId) => `auto_unblocked:${unblockedId}`), `auto_unblock_refused:${dependent}:item_revision_conflict`],
+    dependent_revision_conflict: { item_id: dependent, error: toErrorMessage(error), ...(await itemRevisionConflictRowFields(error, pmRoot)) },
+  };
 }
 
 function applyInlineCloseFields(

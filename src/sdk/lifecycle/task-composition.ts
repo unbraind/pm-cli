@@ -16,6 +16,8 @@ import { resolveReleaseHandoff } from "./release-handoff.js";
 import { runClose, type CloseCommandOptions } from "./close.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
+import { runAsExplicitStart, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
+import { runWithItemMutationPrecondition } from "../../core/store/item-mutation-precondition.js";
 import { mutationOptionsWithOverrides } from "../runtime-input.js";
 import type { StartTaskResult, PauseTaskResult, CloseTaskResult } from "../runtime-public-contracts.js";
 
@@ -60,10 +62,54 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
   const settings = await readSettings(resolvePmRoot(process.cwd(), global.path));
   const status = resolveStartTaskInProgressStatus(resolveRuntimeStatusRegistry(settings.schema));
   // The explicit composition keeps claim and status as separate audited steps; only claim --next --start shares one write.
-  const claim = await runClaim(id, options.force === true, global, mutationOptionsWithOverrides(options, {}, ["start"]));
-  const canonicalId = claim.item.id as string;
-  const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global));
-  return { id: canonicalId, action: "start_task", claim, update };
+  // pm-urzubi: the claim judges open blockers under its item lock before writing ownership. The update judges again under its own
+  // lock (the claim only de-duplicates warnings), and when that refuses, the claim this start took is released.
+  return runAsExplicitStart(async () => {
+    const claim = await runClaim(id, options.force === true, global, mutationOptionsWithOverrides(options, {}, ["start"]));
+    const canonicalId = claim.item.id as string;
+    const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global))
+      .catch(async (error: unknown) => {
+        throw await releaseRefusedStartClaim(error, claim, global, options.author);
+      });
+    return { id: canonicalId, action: "start_task", claim, update };
+  });
+}
+
+/**
+ * Compensate the one refusal a start's own claim cannot have judged: a blocker
+ * opened after the claim committed. When this start took the item from no
+ * owner, release that claim before refusing, so the start leaves no ownership;
+ * every other failure keeps the partial-state error unchanged.
+ */
+export async function releaseRefusedStartClaim(
+  error: unknown,
+  claim: { item: Record<string, unknown>; previous_assignee: string | null; claimed_by: string },
+  global: GlobalOptions,
+  author: string | undefined,
+): Promise<unknown> {
+  if (!(error instanceof PmCliError) || error.code !== START_BLOCKED_REFUSAL_CODE || claim.previous_assignee !== null) return error;
+  const id = String(claim.item.id);
+  try {
+    // Fence under the item lock: release only while the claim is still this start's own, never a peer's takeover.
+    await runWithItemMutationPrecondition({
+      pmRoot: resolvePmRoot(process.cwd(), global.path),
+      id,
+      validate: (document) => {
+        // Compare the claim principal too: two sessions can share a display assignee.
+        if (document.metadata.assignee !== claim.claimed_by || document.metadata.claim_principal !== claim.item.claim_principal) {
+          throw new PmCliError("The claim this start took is no longer its own.", EXIT_CODE.CONFLICT);
+        }
+      },
+    }, () => runRelease(id, false, global, { author, message: "Release the claim: a blocker opened before its start could be recorded" }));
+  } catch {
+    // Never mask the refusal: the partial-state error already reports the durable claim.
+    return error;
+  }
+  const refusal = error.cause instanceof PmCliError ? error.cause : error;
+  return new PmCliError(refusal.message, refusal.exitCode, {
+    ...refusal.context,
+    why: `${refusal.context.why ?? ""} A blocker opened after this start's claim, so the claim was released and no ownership remains.`.trim(),
+  });
 }
 
 /** Return work to its configured open status, then release ownership. */

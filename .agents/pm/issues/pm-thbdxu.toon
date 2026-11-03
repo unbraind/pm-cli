@@ -1,0 +1,21 @@
+id: pm-thbdxu
+title: Expected revisions advance from the pre-override document when an item_store_write override transforms contents
+description: "Found in Codex review round 22 of PR #1654 (pm-gh1576). When a supported item_store_write extension override changes the persisted contents (for example a description-only transform), mutateItem advances the revision scope with its pre-override afterDocument. That hash does not describe the stored item, so a second guarded write in the same withExpectedItemRevisions scope (or a multi-write CLI command such as claim --start) refuses with item_revision_conflict although no other writer ran. It fails closed: a false refusal, never a lost update. advanceItemMutationPreconditions in core/store/item-mutation-precondition.ts receives the document from the item-store write path before the override result is known. Fix direction: advance from the persisted snapshot under the item lock (re-read or the override's returned contents), accounting for overrides that skip the write or delete, or refuse an incompatible override for a guarded write before committing."
+type: Issue
+status: open
+priority: 2
+tags[4]: expected-revision,extensions,pm-gh1576,storage-override
+created_at: "2026-11-03T09:22:22.425Z"
+updated_at: "2026-11-03T09:26:40.321Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A guarded scope that writes the same item twice under a contents-transforming item_store_write override admits both writes; A skipped or delete-converted override write advances the scope to the stored state (or refuses before commit), with a spec for each; A competing peer write between the two guarded writes still refuses with item_revision_conflict"
+parent: pm-doxj
+risk: medium
+confidence: high
+severity: medium
+expected_result: "Under a contents-transforming item_store_write override, a guarded scope advances to the revision actually persisted, so its own next write is admitted and only a competing write refuses."
+actual_result: "The scope advances to the pre-override document hash, so its own next guarded write refuses with item_revision_conflict."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1576,discovered_from,"2026-11-03T09:22:22.425Z","harness:claude-code","cli:create:dep",detected
+body: ""

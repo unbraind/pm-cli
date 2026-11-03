@@ -4,6 +4,7 @@
  * Implements the pm test command surface and its agent-facing runtime behavior.
  */
 import { readJsonPathValue, splitJsonPathSegments } from "./json-path.js";
+import { isItemRevisionConflict } from "../lifecycle/item-revision.js";
 import {
   detectEmptyLinkedTestRun,
   findLinkedTestExecutionReceipt,
@@ -3331,6 +3332,8 @@ async function recordTestRunSummary(params: {
       receipt: { recorded: true, reason: "recorded", run_id: entry.run_id },
     };
   } catch (error: unknown) {
+    // Recording stays best-effort, except a declared expected revision (pm-gh1576) refuses typed.
+    if (isItemRevisionConflict(error)) throw error;
     warnings.push(
       `test_result_tracking_failed:${itemId}:${error instanceof Error ? error.message : String(error)}`,
     );

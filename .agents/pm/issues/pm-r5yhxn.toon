@@ -1,0 +1,22 @@
+id: pm-r5yhxn
+title: "History maintenance rewrites hold a plain lock, not a fenced lease, so a rewrite can commit after its lock expired and another writer took it over"
+description: "Found by CodeRabbit on PR 1654. executeHistoryRewrite in src/core/history/history-rewrite.ts acquires the item lock with acquireLock and calls applyRewrite directly. Ordinary item commits use acquireLockLease and lease.fence (pm-gh1549), which refuses a commit whose lock generation was taken over after a TTL expiry. history-redact, history-repair and history-compact therefore lack that fence. A rewrite that stalls past the lock TTL can still write the item document and history stream after another writer acquired the lock, and the drift and expected-revision checks it ran earlier then no longer describe what it overwrites. This predates PR 1654. The expected-revision check added there runs under this same lock, so it inherits the gap."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:history",concurrency,lease-fencing,locks
+created_at: "2026-11-03T01:13:17.150Z"
+updated_at: "2026-11-03T01:13:17.150Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "executeHistoryRewrite acquires a LockLease and runs every persisted rewrite step through lease.fence, releasing it in finally; A rewrite whose lease generation was taken over refuses with lock_lost and writes neither the item nor the history stream; Regression test forces a takeover between the drift check and applyRewrite for history-redact"
+parent: pm-dj98
+risk: medium
+confidence: high
+severity: medium
+expected_result: "History maintenance commits only while its lock generation is still its own, like item commits"
+actual_result: history-redact/repair/compact hold a plain acquireLock lock and commit without a lease fence
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1549,related,"2026-11-03T01:13:17.150Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1576,discovered_from,"2026-11-03T01:13:17.150Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -3,6 +3,7 @@
  *
  * Implements the pm history repair command surface and its agent-facing runtime behavior.
  */
+import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./lifecycle/item-revision.js";
 import {
   salvageHistoryTail,
   type HistorySalvageReceipt,
@@ -1050,7 +1051,7 @@ async function buildHistoryRepairPlan(
 }
 
 /** Documents the history repair all stream result payload exchanged by command, SDK, and package integrations. */
-export interface HistoryRepairAllStreamResult {
+export interface HistoryRepairAllStreamResult extends ItemRevisionConflictRowFields {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports outcome for this contract. */
@@ -1191,6 +1192,7 @@ export async function runHistoryRepairAll(
         outcome: "failed",
         /* c8 ignore next -- non-Error throws are normalized in defensive fallback. */
         error: error instanceof Error ? error.message : String(error),
+        ...(await itemRevisionConflictRowFields(error, pmRoot)),
       });
     }
   }

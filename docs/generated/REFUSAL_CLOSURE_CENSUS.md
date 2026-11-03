@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 446
+- Catalog error codes: 455
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 427
-- Coverage fraction: 0.042601
+- Uncovered error codes: 436
+- Coverage fraction: 0.041758
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -87,6 +87,13 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `event_history_integrity_failed` | `event_history_integrity_failed` | uncovered | none | 0 |
 | `event_index_unavailable` | `event_index_unavailable` | uncovered | none | 0 |
 | `exit_code_mismatch` | `exit_code_mismatch` | uncovered | none | 0 |
+| `expect_hash_background_unsupported` | `expect_hash_background_unsupported` | uncovered | none | 0 |
+| `expect_hash_invalid` | `expect_hash_invalid` | uncovered | none | 0 |
+| `expect_hash_invocation_rewritten` | `expect_hash_invocation_rewritten` | uncovered | none | 0 |
+| `expect_hash_requires_mutation` | `expect_hash_requires_mutation` | uncovered | none | 0 |
+| `expect_hash_target_required` | `expect_hash_target_required` | uncovered | none | 0 |
+| `expected_revision_duplicate` | `expected_revision_duplicate` | uncovered | none | 0 |
+| `expected_revision_scope_conflict` | `expected_revision_scope_conflict` | uncovered | none | 0 |
 | `extension_command_activation_failed` | `extension_command_activation_failed` | uncovered | none | 0 |
 | `extension_dependency_name_unsafe` | `extension_dependency_name_unsafe` | uncovered | none | 0 |
 | `extension_dependency_spec_invalid` | `extension_dependency_spec_invalid` | uncovered | none | 0 |
@@ -191,6 +198,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `item_identity_conflict` | `item_identity_conflict` | uncovered | none | 0 |
 | `item_identity_reserved` | `item_identity_reserved` | uncovered | none | 0 |
 | `item_not_found` | `item_not_found` | uncovered | none | 0 |
+| `item_revision_conflict` | `item_revision_conflict` | uncovered | none | 0 |
 | `likely_duplicate` | `likely_duplicate` | uncovered | none | 0 |
 | `linked_artifact_mutation_conflict` | `linked_artifact_mutation_conflict` | uncovered | none | 0 |
 | `linked_resource_positional_value` | `linked_resource_positional_value` | uncovered | none | 0 |
@@ -330,6 +338,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `stale_destination` | `stale_destination` | uncovered | none | 0 |
 | `stale_observed_signature` | `stale_observed_signature` | uncovered | none | 0 |
 | `stale_revision` | `stale_revision` | uncovered | none | 0 |
+| `start_blocked_by_open_dependency` | `start_blocked_by_open_dependency` | uncovered | none | 0 |
 | `status_duplicate` | `status_duplicate` | uncovered | none | 0 |
 | `status_invalid` | `status_invalid` | uncovered | none | 0 |
 | `status_lifecycle_role_required` | `status_lifecycle_role_required` | uncovered | none | 0 |

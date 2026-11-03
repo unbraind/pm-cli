@@ -7,9 +7,10 @@ import fs from "node:fs/promises";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import type { ItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
-import { EXIT_CODE } from "../shared/constants.js";
+import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { locateItem, readLocatedItem } from "../store/item-store.js";
+import { advanceItemMutationPreconditions, assertItemMutationPreconditions, hasActiveItemRevisionScope } from "../store/item-mutation-precondition.js";
 import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
@@ -95,6 +96,23 @@ export interface VerifiedHistoryRewriteState {
   loadedItemUnderLock: LoadedItem | null;
 }
 
+/**
+ * When a peer changed the subject while this operation waited for its lock and
+ * the caller declared an expected revision, refuse with the typed
+ * item_revision_conflict (both revisions plus change evidence) instead of the
+ * generic drift conflict. A matching revision, or an unreadable item, leaves the
+ * drift refusal to the caller.
+ */
+async function assertDeclaredRevisionOnDrift(params: VerifyHistoryRewriteDriftParams): Promise<void> {
+  // Bindings use the embedded id and the subject id is the probe spelling; the assertion matches either.
+  if (!hasActiveItemRevisionScope(params.pmRoot)) return;
+  const located = await locateItem(params.pmRoot, params.subject.id, params.settings.id_prefix, params.settings.item_format, params.typeRegistry.type_to_folder);
+  const document = located === null
+    ? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument)
+    : (await readLocatedItem(located, { schema: params.settings.schema }).catch(() => null))?.document;
+  if (document !== undefined) assertItemMutationPreconditions(params.pmRoot, document, params.subject.id);
+}
+
 /** Re-read the history stream and the located item document under the acquired lock and compare both with the pre-lock raw snapshots. Throws PmCliError(CONFLICT) if either diverged while waiting for the lock so the caller surfaces an actionable retry. */
 export async function verifyHistoryRewriteNoDrift(
   params: VerifyHistoryRewriteDriftParams,
@@ -103,6 +121,7 @@ export async function verifyHistoryRewriteNoDrift(
     params.subject.historyPath,
   );
   if (historyRawUnderLock !== params.historyRawBeforeLock) {
+    await assertDeclaredRevisionOnDrift(params);
     throw new PmCliError(
       `History for ${params.subject.id} changed while waiting for lock; retry ${params.operation}.`,
       EXIT_CODE.CONFLICT,
@@ -126,6 +145,7 @@ export async function verifyHistoryRewriteNoDrift(
     (loadedItemUnderLock?.raw ?? null) !==
     (params.currentItemRawBeforeLock ?? null)
   ) {
+    await assertDeclaredRevisionOnDrift(params);
     throw new PmCliError(
       `Item ${params.subject.id} changed while waiting for lock; retry ${params.operation}.`,
       EXIT_CODE.CONFLICT,
@@ -225,7 +245,19 @@ export async function executeHistoryRewrite(
       currentItemRawBeforeLock: params.currentItemRawBeforeLock,
       operation: params.operation,
     });
+    // pm-gh1576: history maintenance honours a declared revision; a deleted item is judged as its tombstone.
+    const tombstone = EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument;
+    assertItemMutationPreconditions(params.pmRoot, verified.loadedItemUnderLock?.document ?? tombstone, params.subject.id);
     await params.applyRewrite(verified);
+    // Re-read only for a declared revision: a recovered (unparseable) item stays rewritable without one.
+    if (hasActiveItemRevisionScope(params.pmRoot)) {
+      // Re-locate: a rewrite may move the item (legacy Markdown to TOON, or a type folder change).
+      const relocated = await locateItem(params.pmRoot, params.subject.id, params.settings.id_prefix, params.settings.item_format, params.typeRegistry.type_to_folder);
+      const rewritten = relocated === null
+        ? tombstone
+        : (await readLocatedItem(relocated, { schema: params.settings.schema })).document;
+      advanceItemMutationPreconditions(params.pmRoot, rewritten, params.subject.id);
+    }
     if (params.applyPostRewrite) {
       warnings.push(...(await params.applyPostRewrite(verified)));
     }

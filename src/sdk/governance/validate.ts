@@ -3,6 +3,7 @@
  *
  * Implements the pm validate command surface and its agent-facing runtime behavior.
  */
+import { throwFirstItemRevisionConflict } from "../lifecycle/item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { applyClosureTimestampFix, scanClosureTimestamps } from "./closure-timestamps.js";
 import { readWorkflowCompletenessCheck } from "./workflow-completeness.js";
@@ -3111,10 +3112,8 @@ async function applyValidateFixes(
 
   for (const batch of pruneBatches.values()) {
     const first = batch[0];
-    /* c8 ignore next 2 -- pruneBatches values are only created with at least one fix */
-    if (!first) {
-      continue;
-    }
+    /* c8 ignore next -- pruneBatches values are only created with at least one fix */
+    if (!first) continue;
     const remove = batch
       .map((fix) => fix.path)
       .filter(
@@ -3141,6 +3140,7 @@ async function applyValidateFixes(
     }
   }
 
+  throwFirstItemRevisionConflict(failed.map((entry) => entry.error));
   return { applied, failed };
 }
 /* c8 ignore stop */

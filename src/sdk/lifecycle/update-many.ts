@@ -3,10 +3,12 @@
  *
  * Implements the pm update many command surface and its agent-facing runtime behavior.
  */
+import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
 import { rollbackMutationCheckpoint } from "./checkpoint-rollback.js";
+import { committedCloseDependentConflict, type DependentRevisionConflict } from "./close.js";
 import {
   createCheckpointId,
   loadMutationCheckpoint,
@@ -261,15 +263,17 @@ interface PlannedItemDiff {
   warnings?: string[];
 }
 
-interface UpdateManyApplyResultRow {
+interface UpdateManyApplyResultRow extends ItemRevisionConflictRowFields {
   id: string;
   status: "updated" | "failed" | "skipped";
   changed_fields?: string[];
   warnings?: string[];
   error?: string;
+  /** A guarded dependent whose auto-unblock refused after this row's close committed. */
+  dependent_revision_conflict?: DependentRevisionConflict;
 }
 
-interface UpdateManyRollbackResultRow {
+interface UpdateManyRollbackResultRow extends ItemRevisionConflictRowFields {
   id: string;
   status: "restored" | "failed" | "skipped";
   changed_fields?: string[];
@@ -1120,10 +1124,18 @@ const applyUpdateManyRows = async (params: {
       });
       updatedIds.push(item.id);
     } catch (error: unknown) {
+      // A status update that closed the row committed; only a guarded dependent's auto-unblock refused (pm-gh1576).
+      const committed = await committedCloseDependentConflict(error, item.id, params.pmRoot);
+      if (committed !== undefined) {
+        rows.push({ id: item.id, status: "updated", ...committed });
+        updatedIds.push(item.id);
+        continue;
+      }
       rows.push({
         id: item.id,
         status: "failed",
         error: toErrorMessage(error),
+        ...(await itemRevisionConflictRowFields(error, params.pmRoot)),
       });
     }
   }

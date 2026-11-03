@@ -963,6 +963,97 @@ pm release <id>
 `--author` on claim/release flows, not a metadata update. Use `--force` only when
 explicitly overriding terminal-state or lock conflicts.
 
+Starting work respects declared blockers
+([pm-urzubi](../.agents/pm/issues/pm-urzubi.toon)). `pm update <id> --status
+in_progress`, `pm claim <id> --start`, `pm claim --next --start` and the
+`start-task` action refuse with `start_blocked_by_open_dependency` (exit 4)
+when the item moves into the start status while a `blocked_by` target is still
+open. An item already in that status is not rechecked, so `claim --start` on it
+succeeds. The check runs before any write: the
+explicit `claim <id> --start` judges it under the claim's item lock, and its
+status update judges again under its own lock. When the first check refuses,
+nothing is written. When a blocker opens between the two writes, the start
+refuses and, if it took the item from no owner, releases that claim. The release
+is fenced by assignee and claim principal, so another principal's takeover is
+never cleared; principal is pm's unit of ownership, so a concurrent reclaim by
+the same principal is indistinguishable from the original claim. If the item already had an owner, or that
+release cannot run, the claim stays and the refusal's `why` reports the partial
+completion. The
+refusal lists the open blockers in `details.open_blockers` and suggests the
+exact `pm update` that drops the edge. When no single command can do that
+safely (clearing the `blocked_by` scalar would also drop an independent
+`blocked_by` edge, or a legacy row's short id, alias kind or external locator
+would not match a removal selector; see
+[pm-4yxzvd](../.agents/pm/issues/pm-4yxzvd.toon)), it suggests inspecting the
+item instead. The check uses the effective start status, including the
+registered `in_progress` fallback when the workflow names `open`.
+A terminal blocker never blocks, and an update that removes the blocker in the
+same call is admitted. `--force` starts anyway and records
+`start_blocker_override:<id>:<blockers>`. `governance.start_blocker_enforcement`
+selects `strict` (default), `warn` (start and record
+`start_with_open_blockers:<id>:<blockers>`), or `off`. A blocker whose record
+cannot be judged (an invalid or non-UTF-8 document, an unsupported item format,
+or an ambiguous or conflicting identity) refuses under `strict` with that typed
+error. `warn` and `--force` still admit the start and record
+`start_blocker_unverifiable:<id>:<code>`. Filesystem failures and merge-conflict
+markers always propagate.
+
+### Expected revisions (`--expect-hash`)
+
+Read-decide-write agents guard a write with the revision they decided on
+([pm-gh1576](../.agents/pm/features/pm-gh1576.toon)). `pm get <id> --json`
+reports `item_hash`. The global `--expect-hash <item_hash>` flag makes every
+locked write the command makes to that item refuse with `item_revision_conflict`
+(exit 4) if the item changed since:
+
+```bash
+H=$(pm get pm-a1b2 --json | jq -r .item_hash)
+pm close pm-a1b2 "Delivered by PR 1" --expect-hash "$H"
+H1=$(pm get pm-a1b2 --json | jq -r .item_hash)
+H2=$(pm get pm-c3d4 --json | jq -r .item_hash)
+pm update-many --ids pm-a1b2,pm-c3d4 --priority 1 \
+  --expect-hash "pm-a1b2=$H1" --expect-hash "pm-c3d4=$H2"
+```
+
+A bare hash binds to the command's `<id>` argument (for `plan`, the id after
+the subcommand; `plan create` has none). `<id>=<item_hash>`
+(repeatable or comma-separated) names targets explicitly and is required for
+commands without one item argument. The refusal reports `expected_revision`,
+`current_revision`, and `details.changes_since` (the newest 10 history entries
+since the declared revision, with their top-level `fields`). The refused write
+is suppressed; writes the same command already committed (for example the
+claim of a composed `claim --start`) stay durable, and the message then says
+so ("Earlier writes by this same invocation already committed"). Read commands refuse the flag with
+`expect_hash_requires_mutation`, and an empty value (such as an unset `$H`)
+refuses with `expect_hash_invalid` instead of running unguarded. Bulk
+`update-many`/`close-many` fail only stale rows, forward and `--rollback` alike, each
+carrying `error_code`, `expected_revision`, `current_revision` and
+`details.changes_since`. When `close` auto-unblocks a guarded dependent whose revision
+moved, the close stays committed and the command refuses with that dependent's
+`item_revision_conflict` once the fan-out finishes. `side_effects` names every
+write that committed first: the close and each dependent already unblocked. `close-many` reports such a row as `closed` (`update-many` closing
+through `--status`, as `updated`), with the dependent's conflict under
+`dependent_revision_conflict`. A guarded `restore` refuses to recover
+over a live file that cannot be read as a document; an unguarded restore still
+recovers it. `deps` only reads, so it refuses the flag. History maintenance
+(`history-redact`, `history-repair` including `--salvage-tail`, `history-compact`)
+is checked under the stream lock. Its bulk forms (`history-compact --ids`,
+`history-repair --all`) carry the same typed conflict fields on refused rows. An
+item file whose embedded id differs from its physical file name (even by case on a
+case-sensitive filesystem) binds no revision: reading or declaring one refuses with
+`item_identity_conflict` until the identity is repaired. `validate --auto-fix`/`--prune-missing` refuses typed once every fix
+was attempted. When an extension parser or preflight override rewrites the
+invocation's tracker or arguments, a guarded invocation refuses with
+`expect_hash_invocation_rewritten`, since which item it writes cannot be proved.
+The same refusal covers a parser pass during final dispatch, which must also keep
+the guard admissible (adding `--background` late refuses with
+`expect_hash_background_unsupported`). Inventory commands
+(`package inventory`, `extension inventory`) never write items, so they validate
+the flag and then refuse with `expect_hash_requires_mutation`. An item the command never wrote produces the
+warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. MCP
+tools accept the same tokens as `expectHash`; the SDK exposes
+`withExpectedItemRevisions` (see [SDK](SDK.md#expected-item-revisions)).
+
 ## Logs
 
 ```bash

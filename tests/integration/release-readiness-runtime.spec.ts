@@ -1927,6 +1927,7 @@ describe("release readiness runtime coverage", () => {
       expect(getResult.code).toBe(0);
       expectTopLevelKeyOrder(getResult.json, [
         "item",
+        "item_hash",
         "linked",
         "claim_state",
         "omission_receipt",

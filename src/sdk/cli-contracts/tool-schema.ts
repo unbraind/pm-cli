@@ -7,7 +7,7 @@
  * consumers from a single source of truth.
  */
 import { normalizeUniqueStringList } from "./string-lists.js";
-import { PM_TOOL_ACTIONS, type PmToolAction } from "./enum-contracts.js";
+import { PM_EXPECT_HASH_ACTIONS, PM_TOOL_ACTIONS, type PmToolAction } from "./enum-contracts.js";
 import {
   TOOL_CREATE_OPTION_CONTRACTS,
   TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS,
@@ -141,7 +141,9 @@ export function resolvePmToolCustomFieldCollision(
         field,
         property,
         owner: "mcp_tool_input",
-        nested_path: `options.${property}`,
+        // The expected-revision guard is read at both placements (pm-gh1576), so its
+        // custom-field namesake writes through the repeatable `field` option instead.
+        nested_path: property === "expectHash" ? `options.field (${field}=<value>)` : `options.${property}`,
       }
     : undefined;
 }
@@ -1738,6 +1740,7 @@ export function pmToolActionParameterKeys(
       ? PM_TOOL_READ_OUTPUT_PARAMETER_KEYS
       : []),
     ...mutationParameterKeys,
+    ...(PM_EXPECT_HASH_ACTIONS.has(action) ? ["expectHash"] : []),
     ...(contract.required ?? []),
     ...(contract.optional ?? []),
   ]);

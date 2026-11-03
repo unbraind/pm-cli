@@ -214,6 +214,9 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     profile: Boolean(opts.profile),
     ...(commandPath.length > 0 ? { command: commandPath } : {}),
     ...(typeof opts.author === "string" ? { author: opts.author } : {}),
+    ...(Array.isArray(opts.expectHash)
+      ? { expectHash: opts.expectHash.map(String) }
+      : {}),
   };
   return normalized;
 }

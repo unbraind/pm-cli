@@ -15,10 +15,10 @@
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 1331,
+          "delivered_bytes": 1410,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 333,
+          "measured_tokens": 353,
           "degradation": "standard_item"
         },
         "list": {
@@ -29,10 +29,10 @@
           "degradation": "bounded_fields_and_rows"
         },
         "next": {
-          "delivered_bytes": 1369,
+          "delivered_bytes": 1403,
           "delivered_rows": 0,
           "declared_tokens": 1200,
-          "measured_tokens": 343,
+          "measured_tokens": 351,
           "degradation": "bounded_ranked_rows"
         },
         "search": {
@@ -46,11 +46,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 3479,
-        "remaining_tokens": 16521,
+        "spent_tokens": 3495,
+        "remaining_tokens": 16505,
         "seen_item_count": 2,
         "suppressed_repeat_count": 4,
-        "delivered_bytes": 13914
+        "delivered_bytes": 13977
       }
     },
     {
@@ -64,10 +64,10 @@
           "degradation": "bounded_sections"
         },
         "get": {
-          "delivered_bytes": 1331,
+          "delivered_bytes": 1410,
           "delivered_rows": 0,
           "declared_tokens": 3200,
-          "measured_tokens": 333,
+          "measured_tokens": 353,
           "degradation": "standard_item"
         },
         "list": {
@@ -78,10 +78,10 @@
           "degradation": "budget_row_compaction"
         },
         "next": {
-          "delivered_bytes": 4176,
+          "delivered_bytes": 4210,
           "delivered_rows": 8,
           "declared_tokens": 1200,
-          "measured_tokens": 1044,
+          "measured_tokens": 1053,
           "degradation": "budget_row_compaction"
         },
         "search": {
@@ -95,11 +95,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 9671,
-        "remaining_tokens": 10329,
+        "spent_tokens": 9687,
+        "remaining_tokens": 10313,
         "seen_item_count": 107,
         "suppressed_repeat_count": 8,
-        "delivered_bytes": 38680
+        "delivered_bytes": 38743
       },
       "cursor_walks": {
         "list": {

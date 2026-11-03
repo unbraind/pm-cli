@@ -71,6 +71,7 @@ export interface SdkCliCompletenessContractSource {
 
 const CLI_TRANSPORT_FLAGS = new Set([
   "--author",
+  "--expect-hash",
   "--follow",
   "--help",
   "--lean",

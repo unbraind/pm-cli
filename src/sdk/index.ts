@@ -288,6 +288,29 @@ export {
 } from "./runtime.js";
 export { applyInvocationAuthorOverride } from "./invocation-author.js";
 export {
+  describeItemRevisionChanges,
+  isItemRevisionConflict,
+  ITEM_REVISION_CONFLICT_CHANGE_LIMIT,
+  ITEM_REVISION_CONFLICT_CODE,
+  normalizeExpectedItemHash,
+  parseExpectHashSpecs,
+  readItemRevision,
+  withExpectedItemRevisions,
+  type ExpectedItemRevision,
+  type ExpectedItemRevisionsOutcome,
+  type ExpectHashSpec,
+  type ItemRevision,
+  type ItemRevisionChange,
+  type ItemRevisionContext,
+} from "./lifecycle/item-revision.js";
+export {
+  admitStartWithOpenBlockers,
+  isStartTransition,
+  START_BLOCKED_REFUSAL_CODE,
+  START_BLOCKER_ENFORCEMENT_DEFAULT,
+} from "./lifecycle/start-blockers.js";
+export { resolveDeclaredBlockers } from "./query/declared-blockers.js";
+export {
   evaluateMutationGuard,
   getMutationActionContract,
   isMutationAction,

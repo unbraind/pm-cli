@@ -57,10 +57,12 @@ import type {
   ItemTypeDefinition,
   PmSettings,
   GovernancePreset,
+  GovernanceStartBlockerEnforcement,
   SearchDefaultMode,
   SearchMutationRefreshPolicy,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
+import { GOVERNANCE_START_BLOCKER_ENFORCEMENT_VALUES } from "../../types/index.js";
 
 /** One composable source-read policy owned by the async host invocation. */
 type ConfigurationOnlySettingsLayer = readonly [roots: ReadonlySet<string>, isEnabled: () => boolean];
@@ -173,6 +175,13 @@ function normalizeGovernancePreset(
 // governance preset (they tune create/update behavior, not the preset knobs),
 // so they must survive a write regardless of preset — otherwise a project on a
 // non-custom preset would silently drop them on every settings write.
+const START_BLOCKER_ENFORCEMENT_VALUES: ReadonlySet<unknown> = new Set(GOVERNANCE_START_BLOCKER_ENFORCEMENT_VALUES);
+
+/** Whether a raw settings value is a declared start-blocker enforcement mode (pm-urzubi). */
+function isStartBlockerEnforcement(value: unknown): value is GovernanceStartBlockerEnforcement {
+  return START_BLOCKER_ENFORCEMENT_VALUES.has(value);
+}
+
 function withGovernanceExtras(
   base: Partial<GovernanceSettings> & { preset: GovernancePreset },
   governance: GovernanceSettings,
@@ -190,6 +199,9 @@ function withGovernanceExtras(
     governance.workflow_enforcement === "strict"
   ) {
     base.workflow_enforcement = governance.workflow_enforcement;
+  }
+  if (isStartBlockerEnforcement(governance.start_blocker_enforcement)) {
+    base.start_blocker_enforcement = governance.start_blocker_enforcement;
   }
   if (governance.require_close_reason === false) {
     base.require_close_reason = false;
@@ -234,6 +246,7 @@ function resolveGovernanceExtras(
     GovernanceSettings,
     | "create_default_type"
     | "workflow_enforcement"
+    | "start_blocker_enforcement"
     | "require_close_reason"
     | "duplicate_detection_mode"
     | "duplicate_detection_threshold"
@@ -249,6 +262,7 @@ function resolveGovernanceExtras(
       GovernanceSettings,
       | "create_default_type"
       | "workflow_enforcement"
+      | "start_blocker_enforcement"
       | "require_close_reason"
       | "duplicate_detection_mode"
       | "duplicate_detection_threshold"
@@ -264,6 +278,9 @@ function resolveGovernanceExtras(
     rawGovernance.workflow_enforcement === "strict"
   ) {
     extras.workflow_enforcement = rawGovernance.workflow_enforcement;
+  }
+  if (isStartBlockerEnforcement(rawGovernance.start_blocker_enforcement)) {
+    extras.start_blocker_enforcement = rawGovernance.start_blocker_enforcement;
   }
   if (typeof rawGovernance.require_close_reason === "boolean") {
     extras.require_close_reason = rawGovernance.require_close_reason;

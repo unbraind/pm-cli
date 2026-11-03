@@ -65,6 +65,7 @@ import {
   runWithDiscoveredContextIntentContracts
 } from "./context-intent-runtime.js";
 import { finalizeContextUsageEgress } from "./context/usage-egress.js";
+import type { ExpectedItemRevision, ExpectedItemRevisionsOutcome, ItemRevision } from "./lifecycle/item-revision.js";
 import type { DepsCommandOptions,DepsResult } from "./dependencies.js";
 import type { DocsCommandOptions,DocsResult } from "./docs.js";
 import {
@@ -198,6 +199,7 @@ import {
   readRuntimeString as readString,
   readRuntimeStringArray as readStringArray,
   shouldInvalidateWorkspaceContractsCacheAfterAction,
+  splitExpectHashInput,
   updateManyOptionsFromFlat,
   withAddNoteOption,
   withFilesDiscoveryOptions,
@@ -792,6 +794,29 @@ export class PmClient {
       abandon,
       supersede: (transactionId, newId, options) => abandon(transactionId, { ...options, supersededBy: newId }),
     };
+  }
+
+  /** Read an item's current revision (`item_hash`) inside this client's extension context, without writing. */
+  readItemRevision(id: string): Promise<ItemRevision> {
+    // A full settings read hydrates file-backed schema types, so custom-type folders are searched.
+    return this.withItemTransactionContext(async ({ pmRoot }) => (await import("./lifecycle/item-revision.js")).readItemRevision(id, { pmRoot }));
+  }
+
+  /**
+   * Run SDK calls so every locked write to an expected item refuses with
+   * `item_revision_conflict` unless the item is still at the declared revision.
+   * Targets resolve inside this client's extension context, so extension item
+   * types and fields bind exactly as `get` reads them.
+   */
+  async withExpectedItemRevisions<T>(
+    expectations: readonly ExpectedItemRevision[],
+    operation: () => Promise<T>,
+  ): Promise<ExpectedItemRevisionsOutcome<T>> {
+    const revisions = await import("./lifecycle/item-revision.js");
+    // Bind inside the extension context, but run the operation outside it so its own
+    // actions (including extension commands) activate and dispatch normally.
+    const scope = await this.withItemTransactionContext(({ pmRoot }) => revisions.bindExpectedItemRevisions(expectations, { pmRoot }));
+    return revisions.runWithBoundItemRevisionScope(scope, operation);
   }
 
   /** Return the same context snapshot produced by `pm context`. */
@@ -2933,9 +2958,28 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
   ) {
     global.path = resolvePmRoot(resolutionCwd, global.path);
   }
+  // pm-gh1576: an expected revision binds inside the activation cycle so
+  // extension item types resolve, and scopes every locked write the action makes.
+  // Top-level and nested placements are both enforced; a supplied null is validated (and refused).
+  const { expectHash, dispatchArgs } = splitExpectHashInput(resolved.args);
+  const dispatch = async (activeExtensions: ActiveExtensionRuntime | null): Promise<unknown> => {
+    // An undefined guard behaves like an omitted one: dispatch the stripped arguments either way.
+    if (expectHash === undefined) return dispatchAction(resolved.action, dispatchArgs, global, activeExtensions);
+    const { dispatchWithExpectedItemRevisions } = await import("./lifecycle/item-revision.js");
+    return dispatchWithExpectedItemRevisions({
+      action: resolved.action,
+      expectHash,
+      // Same precedence as lifecycle dispatch: a top-level id, else the nested options.id.
+      defaultId: readString(dispatchArgs, "id") ?? readString(asRecordClone(dispatchArgs.options), "id"),
+      options: asRecordClone(dispatchArgs.options),
+      background: dispatchArgs.background,
+      pmRoot: resolvePmRoot(resolutionCwd, global.path),
+      run: () => dispatchAction(resolved.action, dispatchArgs, global, activeExtensions),
+    });
+  };
   try {
     if (resolved.action === "history-attest") {
-      return await dispatchAction(resolved.action, resolved.args, global, null);
+      return await dispatch(null);
     }
     if (
       (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[
@@ -2943,19 +2987,13 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       ] === true ||
       activeExtensionScope.getStore() === true
     ) {
-      return await dispatchAction(resolved.action, resolved.args, global, null);
+      return await dispatch(null);
     }
     return await withActiveExtensions(
       global,
       explicitCwd,
       resolutionCwd,
-      (activeExtensions) =>
-        dispatchAction(
-          resolved.action,
-          resolved.args,
-          global,
-          activeExtensions,
-        ),
+      (activeExtensions) => dispatch(activeExtensions),
     );
   } finally {
     if (invalidateWorkspaceContractsCache) {

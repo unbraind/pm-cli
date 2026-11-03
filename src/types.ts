@@ -206,6 +206,15 @@ export const GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES = [
 /** Restricts governance workflow enforcement values accepted by command, SDK, and storage contracts. */
 export type GovernanceWorkflowEnforcement =
   (typeof GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES)[number];
+/** Supported values for starting an item whose declared blocker is still open. */
+export const GOVERNANCE_START_BLOCKER_ENFORCEMENT_VALUES = [
+  "off",
+  "warn",
+  "strict",
+] as const;
+/** Start-with-open-blockers admission mode: refuse (`strict`, default), warn, or ignore. */
+export type GovernanceStartBlockerEnforcement =
+  (typeof GOVERNANCE_START_BLOCKER_ENFORCEMENT_VALUES)[number];
 /** Supported create/copy near-duplicate governance modes. */
 export const GOVERNANCE_DUPLICATE_DETECTION_MODE_VALUES = [
   "off",
@@ -1221,6 +1230,8 @@ export interface GovernanceSettings {
   create_default_type?: string;
   /** Per-type allowed-transition enforcement mode for `pm update --status`. Read raw from settings (not preset-derived) so existing projects are unaffected when unset; defaults to "off". */
   workflow_enforcement?: GovernanceWorkflowEnforcement;
+  /** Admission for moving an item with an open declared blocker into progress. Read raw (not preset-derived); unset means "strict". */
+  start_blocker_enforcement?: GovernanceStartBlockerEnforcement;
   /** Create/copy near-duplicate enforcement mode. */
   duplicate_detection_mode: GovernanceDuplicateDetectionMode;
   /** Inclusive similarity floor on the zero-to-one scale. */

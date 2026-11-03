@@ -3,6 +3,7 @@
  * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
 import { attachPreflightWarnings, attachSerializedPreflightWarnings, emitPreflightWarning, runWithPreflightWarnings } from "./preflight-warnings.js";
+import { assertGuardedDispatchUnchanged, bindInvocationExpectedRevisions, invocationRewritten, parseWithInvocationRevisionScope, refuseInventoryExpectHash } from "./expected-revisions.js";
 import { Command,CommanderError } from "commander";
 import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
@@ -1067,6 +1068,7 @@ async function runRequiredExtensionCommand(
   delete commandOptions.author;
   let resolvedGlobalOptions = { ...globalOptions };
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const dispatchInput = { args: [...commandArgs], path: globalOptions.path };
   const parserOverride = await runActiveParserOverride({
     command: commandPath,
     args: commandArgs,
@@ -1080,6 +1082,7 @@ async function runRequiredExtensionCommand(
   commandArgs = parserOverride.context.args;
   commandOptions = parserOverride.context.options;
   resolvedGlobalOptions = parserOverride.context.global;
+  assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: resolvedGlobalOptions.path }, commandOptions);
   validateDynamicExtensionCommandInvocation(
     activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath)),
     commandArgs,
@@ -1181,6 +1184,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         let globalOptions = getGlobalOptions(actionCommand);
         const commandPath = resolvePmCommandOperation(getCommandPath(actionCommand));
         if (["package inventory", "packages inventory", "extension inventory"].includes(commandPath)) {
+          refuseInventoryExpectHash(commandPath, globalOptions.expectHash);
           return await originalAction.apply(this, actionArgs);
         }
         const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
@@ -1192,6 +1196,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         if (activeRuntimeExtensionCommandDescriptors.has(normalizeExtensionCommandPath(commandPath))) {
           delete commandOptions.author;
         }
+        const dispatchInput = { args: [...commandArgs], path: globalOptions.path };
         const parserOverride = await runActiveParserOverride({
           command: commandPath,
           args: commandArgs,
@@ -1204,6 +1209,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         commandOptions = parserOverride.context.options;
         copyReadOutputInvocationProvenance(actionCommand, commandOptions);
         globalOptions = parserOverride.context.global;
+        assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: globalOptions.path }, commandOptions);
         // Validate importer/exporter positionals on the real dispatch path:
         // these short-circuit before the dynamic action that previously held the
         // only arity validation, so excess positionals could reach handlers.
@@ -1504,6 +1510,8 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
     const commandPath = resolvePmCommandOperation(getCommandPath(actionCommand));
     let commandArgs = actionCommand.args.map(String);
+    // The invocation as the user typed it, before any extension override rewrites it (pm-gh1576).
+    const invocationStage = { args: [...commandArgs], path: bootstrapGlobalOptions.path };
     let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
     let globalOptions = { ...bootstrapGlobalOptions };
     const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
@@ -1539,6 +1547,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       await startActiveSentryCommandTracing(commandPath, commandArgs, commandOptions);
       await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, fallbackPmRoot, defaultPreflightDecision());
       await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, fallbackPmRoot);
+      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: fallbackPmRoot });
       return;
     }
 
@@ -1568,6 +1577,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     commandOptions = parserOverride.context.options;
     copyReadOutputInvocationProvenance(actionCommand, commandOptions);
     globalOptions = parserOverride.context.global;
+    const parserStage = { args: [...commandArgs], path: globalOptions.path };
     syncCommanderActionOptions(actionCommand, commandOptions);
 
     const preflightOverride = await runActivePreflightOverride({
@@ -1591,6 +1601,12 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
 
     await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, runtimeExtensions.pmRoot, preflightDecision);
     await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, runtimeExtensions.pmRoot);
+    // Bind the user-supplied guard: an extension parser/preflight override cannot drop it from global options.
+    // Overrides that rewrote the tracker or arguments refuse a guard; otherwise every view is the typed one.
+    await bindInvocationExpectedRevisions({
+      command: actionCommand, commandPath, commandArgs: invocationStage.args, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot,
+      rewritten: invocationRewritten(invocationStage, [parserStage, { args: commandArgs, path: globalOptions.path }]),
+    });
 
     /* c8 ignore next */
     const migrationWarnings = preflightDecision.run_extension_migrations
@@ -2211,18 +2227,20 @@ async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: 
       bootstrapGlobal.noExtensions,
       loadRuntimeExtensionSnapshot,
     );
-    await runWithDiscoveredContextIntentContracts(
-      {
-        pmRoot: invocationPmRoot,
-        packages: intentSnapshot?.contextIntentPackages,
-      },
-      () =>
-        runWithHarnessDetectionSignals(
-          { env: { ...process.env, PM_PATH: invocationPmRoot }, argv: invocationProcessArgv, cwd: process.cwd() },
-          () => runWithWorkspaceHarnessSignalDescriptors(invocationSettings.agent_identity!.harness_signals, () => program.parseAsync(invocationProcessArgv), {
-            probesEnabled: invocationSettings.agent_identity?.probes_enabled,
-          }),
-        ),
+    await parseWithInvocationRevisionScope((parse) =>
+      runWithDiscoveredContextIntentContracts(
+        {
+          pmRoot: invocationPmRoot,
+          packages: intentSnapshot?.contextIntentPackages,
+        },
+        () =>
+          runWithHarnessDetectionSignals(
+            { env: { ...process.env, PM_PATH: invocationPmRoot }, argv: invocationProcessArgv, cwd: process.cwd() },
+            () => runWithWorkspaceHarnessSignalDescriptors(invocationSettings.agent_identity!.harness_signals, () => parse(() => program.parseAsync(invocationProcessArgv)), {
+              probesEnabled: invocationSettings.agent_identity?.probes_enabled,
+            }),
+          ),
+      ),
     );
   } catch (error: unknown) {
     await handleRunPmCliError({ error, invocationArgv });

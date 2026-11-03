@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: agent-ux,concurrency,linked-tests,recovery
 created_at: "2026-11-01T23:05:25.936Z"
-updated_at: "2026-11-01T23:05:25.936Z"
+updated_at: "2026-11-02T13:30:38.199Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A replacement selected by index, command or path removes exactly the selected entry or refuses, under one item-lock mutation; Identity collisions and invalid companion fields refuse without writing; SDK, CLI and MCP expose the same opt-in replacement and the command-edit refusal advertises it; Concurrency tests cover an earlier insertion, a same-command entry with a different path and an identity collision"
@@ -15,7 +15,10 @@ risk: medium
 confidence: medium
 expected_result: "A command replacement either replaces exactly the entry the caller selected or refuses, regardless of concurrent writers"
 actual_result: "The advertised two-step retry can remove a different or additional entry, or drop requested metadata, when the list changes between refusal and retry"
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1rfy0y,discovered_from,"2026-11-01T23:05:25.936Z","harness:claude-code","cli:create:dep",detected
   pm-9djr6d,related,"2026-11-01T23:05:25.936Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1576,related,"2026-11-02T13:30:37.501Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-02T13:30:35.914Z","harness:claude-code","Context from pm-gh1576 (expected item revisions, same PR family): the global --expect-hash precondition is now available on pm test. The advertised two-step retry could carry --expect-hash <item_hash> on its removal step, so a list changed between the refusal and the retry refuses with item_revision_conflict instead of removing a different entry. That only narrows the race: the add step still runs as a separate mutation, so this item's atomic single-mutation replacement (one locked write, identity-collision refusal) remains the open acceptance. The refusal would also need to report the current item_hash for the retry to cite it."
 body: ""

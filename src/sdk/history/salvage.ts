@@ -25,7 +25,12 @@ import {
   verifyHistoryChainWithVersion,
 } from "../../core/history/replay.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
+import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE } from "../../core/shared/constants.js";
+import {
+  advanceItemMutationPreconditions,
+  assertItemMutationPreconditions,
+  assertItemRevisionExpectationsOnUnreadable,
+} from "../../core/store/item-mutation-precondition.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { sha256Hex } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
@@ -185,15 +190,26 @@ export function inspectHistoryTail(raw: string): {
 
 /** Prefer the live item's owner; history supplies ownership only when its file is unreadable. */
 async function readSalvageOwnership(
-  subject: HistorySubject,
+  located: HistorySubject["located"],
   settings: PmSettings,
   fallback: ItemDocument,
 ) {
-  if (!subject.located) return { itemRaw: null, document: fallback };
-  const snapshot = await readLocatedItemSnapshot(subject.located, {
+  if (!located) return { itemRaw: null, document: fallback, live: null };
+  const snapshot = await readLocatedItemSnapshot(located, {
     schema: settings.schema,
   });
-  return { itemRaw: snapshot.raw, document: snapshot.document ?? fallback };
+  return { itemRaw: snapshot.raw, document: snapshot.document ?? fallback, live: snapshot.document };
+}
+
+/**
+ * Judge declared revisions against the live item (pm-gh1576): an unreadable live
+ * file matches none, and with no live file the tombstone is the revision reads report.
+ */
+function assertSalvageRevision(pmRoot: string, id: string, ownership: Awaited<ReturnType<typeof readSalvageOwnership>>): ItemDocument {
+  if (ownership.itemRaw !== null && ownership.live === null) assertItemRevisionExpectationsOnUnreadable(pmRoot, id, ownership.itemRaw);
+  const live = ownership.live ?? (EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument);
+  assertItemMutationPreconditions(pmRoot, live, id);
+  return live;
 }
 
 /** Refuse lossy decoding so suffix receipts and rollback always describe original bytes. */
@@ -264,7 +280,7 @@ export async function salvageHistoryTail(params: {
       { code: "history_salvage_refused" },
     );
   }
-  const ownership = await readSalvageOwnership(subject, settings, document);
+  const ownership = await readSalvageOwnership(subject.located, settings, document);
   const warnings = checkHistoryRewriteOwnership({
     itemDocument: ownership.document,
     subjectId: subject.id,
@@ -298,11 +314,15 @@ export async function salvageHistoryTail(params: {
         ? await readFileIfExists(located.itemPath)
         : null;
       if (currentRaw !== raw || currentItem !== ownership.itemRaw) {
+        // A peer moved the item while this salvage waited: a stale declared revision refuses typed first.
+        // Read the item where it is now: a peer may have moved, deleted or restored it during the wait.
+        assertSalvageRevision(params.pmRoot, subject.id, await readSalvageOwnership(located, settings, document));
         throw new PmCliError(
           "History or item changed while waiting for salvage lock; retry.",
           EXIT_CODE.CONFLICT,
         );
       }
+      const live = assertSalvageRevision(params.pmRoot, subject.id, ownership);
       const audit = sealHistoryRecord({
         ...createHistoryEntry({
           hashAlgorithm: resolveHistoryHashAlgorithm(selected.entries.at(-1)!.hash_algorithm),
@@ -323,6 +343,8 @@ export async function salvageHistoryTail(params: {
         historyRawUnderLock: raw,
         nextHistoryRaw: `${selected.prefix}${JSON.stringify(audit)}\n`,
       });
+      // The item document is unchanged; advancing records this scope's committed write.
+      advanceItemMutationPreconditions(params.pmRoot, live, subject.id);
       warnings.push(
         ...(await runActiveOnWriteHooks({
           path: subject.historyPath,

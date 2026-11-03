@@ -291,6 +291,10 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
     "governance-workflow-enforcement",
     "governance_workflow_enforcement",
   ],
+  governance_start_blocker_enforcement: [
+    "governance-start-blocker-enforcement",
+    "governance_start_blocker_enforcement",
+  ],
   governance_parent_reference_policy: [
     "governance-parent-reference-policy",
     "governance_parent_reference_policy",
@@ -360,6 +364,8 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
     "Governance default item type for `pm create` when --type is omitted.",
   governance_workflow_enforcement:
     "Governance per-type transition enforcement mode (off|warn|strict).",
+  governance_start_blocker_enforcement:
+    "Governance admission for starting an item whose declared blocker is still open (off|warn|strict; strict by default).",
   governance_parent_reference_policy:
     "Governance parent reference policy (warn|strict_error).",
   governance_metadata_validation_profile:
@@ -395,7 +401,8 @@ type GovernancePolicyConfigKey =
 type GovernanceValidationConfigKey =
   | "governance_parent_reference_policy"
   | "governance_metadata_validation_profile"
-  | "governance_workflow_enforcement";
+  | "governance_workflow_enforcement"
+  | "governance_start_blocker_enforcement";
 type GovernancePresetOrTypeConfigKey =
   | "governance_preset"
   | "governance_create_default_type";
@@ -425,6 +432,7 @@ const GOVERNANCE_VALIDATION_CONFIG_KEYS: ReadonlySet<ConfigKey> =
     "governance_parent_reference_policy",
     "governance_metadata_validation_profile",
     "governance_workflow_enforcement",
+    "governance_start_blocker_enforcement",
   ]);
 const GOVERNANCE_PRESET_OR_TYPE_CONFIG_KEYS: ReadonlySet<ConfigKey> =
   new Set<ConfigKey>(["governance_preset", "governance_create_default_type"]);
@@ -667,6 +675,7 @@ function normalizeGovernanceCloseValidationDefault(
 
 function normalizeGovernanceWorkflowEnforcement(
   value: unknown,
+  key = "governance-workflow-enforcement",
 ): GovernanceWorkflowEnforcement {
   const normalized =
     typeof value === "string"
@@ -683,7 +692,7 @@ function normalizeGovernanceWorkflowEnforcement(
     return "off";
   }
   throw new PmCliError(
-    "Config set governance-workflow-enforcement requires one of: off, warn, strict",
+    `Config set ${key} requires one of: off, warn, strict`,
     EXIT_CODE.USAGE,
   );
 }
@@ -721,6 +730,14 @@ const ENABLED_DISABLED_CONFLICT_POLICY_KEYS: Partial<
   untrusted_linked_test_execution: "untrusted-linked-test-execution",
 };
 
+/** Off/warn/strict enforcement keys and the spelling their refusal names. */
+const ENFORCEMENT_MODE_CONFLICT_POLICY_KEYS: Partial<
+  Record<ConfigKey, string>
+> = {
+  governance_workflow_enforcement: "governance-workflow-enforcement",
+  governance_start_blocker_enforcement: "governance-start-blocker-enforcement",
+};
+
 function normalizePolicyForConflict(
   key: ConfigKey | undefined,
   value: string,
@@ -728,6 +745,10 @@ function normalizePolicyForConflict(
   const enabledDisabledKey = ENABLED_DISABLED_CONFLICT_POLICY_KEYS[key!];
   if (enabledDisabledKey) {
     return normalizeEnabledDisabledPolicy(value, enabledDisabledKey);
+  }
+  const enforcementKey = ENFORCEMENT_MODE_CONFLICT_POLICY_KEYS[key!];
+  if (enforcementKey) {
+    return normalizeGovernanceWorkflowEnforcement(value, enforcementKey);
   }
   switch (key) {
     case "history_missing_stream_policy":
@@ -750,8 +771,6 @@ function normalizePolicyForConflict(
       return normalizeGovernanceCloseValidationDefault(value);
     case "governance_require_close_reason":
       return normalizeGovernanceRequireCloseReasonPolicy(value);
-    case "governance_workflow_enforcement":
-      return normalizeGovernanceWorkflowEnforcement(value);
     case "governance_force_required_for_stale_lock":
       return normalizeGovernanceForceRequiredForStaleLockPolicy(value);
     case "telemetry_tracking":
@@ -947,6 +966,8 @@ const CONFIG_VALUE_READERS: Readonly<
     settings.governance.create_default_type ?? "",
   governance_workflow_enforcement: (settings) =>
     settings.governance.workflow_enforcement ?? "off",
+  governance_start_blocker_enforcement: (settings) =>
+    settings.governance.start_blocker_enforcement ?? "strict",
   governance_parent_reference_policy: (settings) =>
     settings.governance.parent_reference,
   governance_metadata_validation_profile: (settings) =>
@@ -1909,6 +1930,19 @@ async function setGovernanceValidationConfig(
       context.settings.governance.metadata_profile,
       changed,
     );
+  }
+  if (key === "governance_start_blocker_enforcement") {
+    const nextStartPolicy = normalizeGovernanceWorkflowEnforcement(options.policy, "governance-start-blocker-enforcement");
+    const changed =
+      (context.settings.governance.start_blocker_enforcement ?? "strict") !== nextStartPolicy;
+    context.settings.governance.start_blocker_enforcement = nextStartPolicy;
+    await writeConfigSettingsIfChanged(
+      context,
+      changed,
+      "config:set:governance_start_blocker_enforcement",
+      ["governance.start_blocker_enforcement"],
+    );
+    return buildPolicyResult(context, key, nextStartPolicy, changed);
   }
   const nextPolicy = normalizeGovernanceWorkflowEnforcement(options.policy);
   const changed =

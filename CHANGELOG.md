@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- GH-1576: guard SDK and CLI mutations with expected item revisions ([pm-gh1576](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1576.toon))
+
+### Fixed
+
+- Starting work ignores open blockers: claim <id\> --start and update --status in_progress move a blocked item into progress without a refusal or warning ([pm-urzubi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-urzubi.toon))
+
 ## 2026.11.3 - 2026-11-03
 
 ### Fixed

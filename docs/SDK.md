@@ -1307,8 +1307,21 @@ atomic evidence-backed completion tracked by
 commands that must coordinate several SDK mutations. A plan supplies a stable
 transaction id plus ordered steps. Each step can inspect its durable state,
 apply an idempotent forward mutation, and append an idempotent compensation.
-The coordinator serializes transaction writers with one workspace lock and
+The coordinator serializes transaction coordinators with one workspace lock and
 persists `.agents/pm/transactions/sdk/<transaction-id>.json` after every step.
+That lock does not exclude ordinary writers ([GH-1620](https://github.com/unbraind/pm-cli/issues/1620)):
+`update`, `close`, `pm comments --add` and every other SDK, CLI or MCP mutation
+take per-item locks, so a peer can commit between a step's `inspect()` and
+`apply()`. A step that decides from what it read guards its write with an
+[expected item revision](#expected-item-revisions): in `inspect()`, take both
+the decision data and `item_hash` from one `get()`, then run the write inside
+`withExpectedItemRevisions()`. The
+write then refuses with `item_revision_conflict` instead of overwriting the
+peer's change, and the transaction compensates. The coordinator invokes
+`compensate()`, including during recovery, without an expected revision.
+Built-in item compensations detect intervening writes. A custom adapter must
+fence or reconcile its own compensation, or it can restore a stale value over a
+peer's write.
 Before invoking a pending step, it also persists that step's durable ownership
 marker. Recovery and compensation therefore distinguish mutations begun by
 this transaction from matching domain state that existed before the attempt.
@@ -1347,6 +1360,102 @@ or a peer write before the restore lock refuse with
 failures and the journal keeps recovery data. Repeated compensation recognizes
 its durable marker even when a peer adds context afterward. Legacy timestamp
 receipts remain supported, with ambiguous partial effects refused.
+
+### Expected item revisions
+
+Expected-revision preconditions are tracked by
+[pm-gh1576](../.agents/pm/features/pm-gh1576.toon).
+
+Read-decide-write agents and packages guard a write with the revision their
+decision was based on. Every current `pm get` / `PmClient.get` read reports
+`item_hash`, the SHA-256 of the canonical item document and the same value as
+the item's latest history `after_hash` (a field-projected read includes it only
+when the selection names the bare `item_hash`, for example `--fields title,tags,item_hash`;
+the item-qualified `item.item_hash` still projects a custom metadata field of that name).
+`readItemRevision(id)` returns it alone. Take the hash from the same read your
+decision uses: a separate read could observe a newer revision than the data you
+decided on. Run the write inside `withExpectedItemRevisions`:
+
+```ts
+import { PmClient, isItemRevisionConflict } from "@unbrained/pm-cli/sdk";
+
+const pm = new PmClient({ pmRoot });
+// Decide from the same read that reports the revision, never from a separate one.
+const read = await pm.get(id);
+const reason = `Delivered by ${read.item.tags?.find((tag) => tag.startsWith("delivery-pr:"))}`;
+try {
+  const { result, unchecked } = await pm.withExpectedItemRevisions(
+    [{ id, itemHash: read.item_hash! }],
+    () => pm.close(id, reason),
+  );
+} catch (error) {
+  if (!isItemRevisionConflict(error)) throw error;
+  // error.context.current_revision and error.context.details.changes_since
+  // describe what changed; re-read, decide again, retry with the new hash.
+}
+```
+
+The check runs inside the locked item store, after the item lock is held and
+before that write. It therefore covers every item write the wrapped
+operation makes: lifecycle commands, annotations, linked files/docs/tests,
+dependency edits, `restore`, `delete`, history maintenance (`history-redact`,
+`history-repair`, `history-compact`, checked under the stream lock), bulk
+transactions and extension commands that mutate through the SDK. A `delete`
+advances the expectation to the item's absent (tombstone) revision, and a
+`restore` of a deleted item is judged under its own id, so a peer deletion
+between the read and the restore refuses instead of being resurrected over. A mismatch refuses that write with `item_revision_conflict`
+(exit 4); writes the operation already committed stay durable. The refusal carries `item_id`, `expected_revision`,
+`current_revision` and `details` with `changes_since`, the newest
+10 history entries after the declared revision
+(`op`, `author`, `ts`, top-level `fields`), plus `changes_since_omitted`.
+`expected_revision_recorded: false` means no history entry ever had that hash.
+After one of the operation's own writes commits, the expectation advances to
+that revision, so a multi-write composition such as `claim --start` does not
+refuse itself; an interleaved peer write still refuses the next step. The
+result lists `checked` ids and `unchecked` ids that the operation never wrote:
+an unchecked expectation proved nothing. Expectations bind to the item's embedded id, so every
+spelling that locates the item (a short id, or a case variant on a
+case-insensitive filesystem) is guarded. The scope is shared process-wide across the
+published SDK entrypoints (`/sdk`, `/sdk/core`, ...), and
+`isItemRevisionConflict` checks the refusal structurally, so mixing entrypoints
+neither drops a guard nor hides its conflict. Trackers are compared by physical
+path (`realpath`), so a symlinked spelling of the same tracker is guarded too. `PmClient.readItemRevision` and
+`PmClient.withExpectedItemRevisions` resolve targets inside the client's
+extension context, so extension item types bind exactly as `get` reads them,
+then run the operation outside it, so its own actions (extension commands
+included) activate and dispatch normally. The standalone `readItemRevision` /
+`withExpectedItemRevisions` functions use the registrations already active in
+the calling context. A deleted item with retained history binds too: its
+revision is the empty tombstone its `delete` recorded (the delete entry's
+`after_hash`), so a guarded `restore` or history maintenance of a deleted item
+can declare it. Bulk `update-many`
+and `close-many` keep their partial-success semantics: a stale row fails with
+`error_code: "item_revision_conflict"` plus its `expected_revision`,
+`current_revision` and the same `details` (`changes_since`,
+`changes_since_omitted`) a single-item refusal carries, while fresh rows
+proceed. When a peer writes while `restore` or history maintenance waits for
+its lock, a declared revision turns the generic drift refusal into this typed
+conflict. Linked-test result recording (`test --run`, `test-all` with
+`test_result_tracking` enabled) stays best-effort, except that a stale declared
+revision refuses with `item_revision_conflict` instead of a warning. A guard cannot reach a `--background` test worker,
+which runs in another process, so `test`/`test-all --background` with an
+expected revision refuses with `expect_hash_background_unsupported`. Only the CLI invocation scope reads `GlobalOptions.expectHash`;
+direct `run*` SDK calls ignore it, so guard SDK writes with the functions above
+or `runAction`/MCP `expectHash`.
+
+Transports use the same grammar. The CLI's global `--expect-hash <item_hash>`
+binds to the command's `<id>`; `--expect-hash <id>=<item_hash>` (repeatable or
+comma-separated) names targets explicitly and is required for bulk commands.
+MCP tools and `PmClient.run` accept `expectHash` (string or string array) on
+every item-writing action, at the top level or inside `options`; either
+placement is enforced. A native read action refuses the flag with
+`expect_hash_requires_mutation`, and a malformed, supplied-but-empty or `null`
+value (for example an unset shell variable) refuses with `expect_hash_invalid`
+rather than silently dropping the guard. An expectation no write reached is reported as the
+warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. This
+precondition guards the gap between an agent's read and its write; lease
+fencing ([pm-gh1549](../.agents/pm/issues/pm-gh1549.toon)) still guards the
+write itself against lock takeover, and the two compose.
 
 ### Schema evolution and workspace history
 

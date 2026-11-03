@@ -43,10 +43,13 @@ const FALLBACK_EXIT_CODES_BY_CODE = new Map([
 
 const ADDITIONAL_EMITTING_COMMANDS_BY_CODE = new Map([
   ["acceptance_criteria_mutation_conflict", ["update-many"]],
+  ["start_blocked_by_open_dependency", ["claim", "start-task"]],
 ]);
 
 const QUERY_EMITTING_COMMAND_BY_MODULE = new Map([
   ["search-contracts", "search"],
+  // Shared blocker resolution serves pm get's blockers facet and start admission.
+  ["declared-blockers", "*"],
   // Shared cursor validation is cross-cutting, not an executable command.
   ["window-pagination", "*"],
 ]);
@@ -54,6 +57,9 @@ const QUERY_EMITTING_COMMAND_BY_MODULE = new Map([
 const LIFECYCLE_EMITTING_COMMAND_BY_MODULE = new Map([
   ["reopen", "item reopen"],
   ["mutation-option-validation", "item mutate"],
+  // The --expect-hash host flag is global: any item-writing command can emit its refusals.
+  ["item-revision", "*"],
+  ["start-blockers", "update"],
 ]);
 
 const GENERATED_CATALOG_PART_COUNT = 2;
