@@ -3,7 +3,7 @@
  * Coordinates CLI invocation state, extension lifecycle and command dispatch.
  */
 import { attachPreflightWarnings, attachSerializedPreflightWarnings, emitPreflightWarning, runWithPreflightWarnings } from "./preflight-warnings.js";
-import { bindInvocationExpectedRevisions, parseWithInvocationRevisionScope } from "./expected-revisions.js";
+import { bindInvocationExpectedRevisions, invocationRewritten, parseWithInvocationRevisionScope } from "./expected-revisions.js";
 import { Command,CommanderError } from "commander";
 import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
@@ -1505,6 +1505,8 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     const bootstrapGlobalOptions = getGlobalOptions(actionCommand);
     const commandPath = resolvePmCommandOperation(getCommandPath(actionCommand));
     let commandArgs = actionCommand.args.map(String);
+    // The invocation as the user typed it, before any extension override rewrites it (pm-gh1576).
+    const invocationStage = { args: [...commandArgs], path: bootstrapGlobalOptions.path };
     let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs);
     let globalOptions = { ...bootstrapGlobalOptions };
     const fallbackPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
@@ -1570,9 +1572,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     commandOptions = parserOverride.context.options;
     copyReadOutputInvocationProvenance(actionCommand, commandOptions);
     globalOptions = parserOverride.context.global;
-    // Final dispatch rebuilds globals from Commander and reruns only parser overrides,
-    // so the writer's tracker is the post-parser path (a preflight path change never reaches it).
-    const dispatchTrackerPath = globalOptions.path;
+    const parserStage = { args: [...commandArgs], path: globalOptions.path };
     syncCommanderActionOptions(actionCommand, commandOptions);
 
     const preflightOverride = await runActivePreflightOverride({
@@ -1597,8 +1597,11 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, runtimeExtensions.pmRoot, preflightDecision);
     await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, runtimeExtensions.pmRoot);
     // Bind the user-supplied guard: an extension parser/preflight override cannot drop it from global options.
-    // Bind to the tracker the command will write: a parser override may redirect global.path.
-    await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: resolvePmRoot(process.cwd(), dispatchTrackerPath) });
+    // Overrides that rewrote the tracker or arguments refuse a guard; otherwise every view is the typed one.
+    await bindInvocationExpectedRevisions({
+      command: actionCommand, commandPath, commandArgs: invocationStage.args, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot,
+      rewritten: invocationRewritten(invocationStage, [parserStage, { args: commandArgs, path: globalOptions.path }]),
+    });
 
     /* c8 ignore next */
     const migrationWarnings = preflightDecision.run_extension_migrations

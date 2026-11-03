@@ -276,6 +276,24 @@ export function isItemRevisionConflict(error: unknown): error is PmCliError {
 }
 
 /**
+ * Raise the first expected-revision refusal among errors collected by a
+ * best-effort batch (validate auto-fix), once every member was attempted.
+ */
+export function throwFirstItemRevisionConflict(errors: readonly unknown[]): void {
+  const conflict = errors.find((error) => isItemRevisionConflict(error));
+  if (conflict !== undefined) throw conflict;
+}
+
+/** Refusal for a guard on an invocation an extension parser or preflight override rewrote. */
+export function expectHashInvocationRewrittenError(): PmCliError {
+  return new PmCliError("--expect-hash cannot guard an invocation an extension override rewrote: which item it writes is not provable.", EXIT_CODE.USAGE, {
+    code: "expect_hash_invocation_rewritten",
+    required: "Run the command without the rewriting extension (--no-extensions), or drop --expect-hash.",
+    why: "An extension parser or preflight override changed this invocation's tracker or arguments, and final dispatch, the extension SDK client and the guard do not share one rewritten view.",
+  });
+}
+
+/**
  * Attach bounded change evidence to a revision conflict. The evidence is read
  * after the lock is released, so it describes the record as it was then; the
  * refusal's `current_revision` remains the revision the locked write found.

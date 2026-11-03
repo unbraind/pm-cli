@@ -22541,6 +22541,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "expect_hash_invocation_rewritten",
+      "class": "usage",
+      "code": "expect_hash_invocation_rewritten",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Expect hash invocation rewritten condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/lifecycle/item-revision.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "expect_hash_requires_mutation",
       "class": "usage",
       "code": "expect_hash_requires_mutation",

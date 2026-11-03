@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 454
+- Catalog error codes: 455
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 435
-- Coverage fraction: 0.041850
+- Uncovered error codes: 436
+- Coverage fraction: 0.041758
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -89,6 +89,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `exit_code_mismatch` | `exit_code_mismatch` | uncovered | none | 0 |
 | `expect_hash_background_unsupported` | `expect_hash_background_unsupported` | uncovered | none | 0 |
 | `expect_hash_invalid` | `expect_hash_invalid` | uncovered | none | 0 |
+| `expect_hash_invocation_rewritten` | `expect_hash_invocation_rewritten` | uncovered | none | 0 |
 | `expect_hash_requires_mutation` | `expect_hash_requires_mutation` | uncovered | none | 0 |
 | `expect_hash_target_required` | `expect_hash_target_required` | uncovered | none | 0 |
 | `expected_revision_duplicate` | `expected_revision_duplicate` | uncovered | none | 0 |

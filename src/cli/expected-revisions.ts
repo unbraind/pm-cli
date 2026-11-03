@@ -15,6 +15,7 @@ import {
   bindItemRevisionScope,
   createItemRevisionScope,
   enrichItemRevisionConflict,
+  expectHashInvocationRewrittenError,
   itemRevisionScopeReceipt,
   itemRevisionUncheckedWarning,
   parseExpectHashSpecs,
@@ -37,6 +38,24 @@ function itemArgumentOf(command: Command, commandArgs: readonly string[]): strin
   return commandArgs[index];
 }
 
+/** One view of the invocation an extension parser or preflight override produced. */
+export interface InvocationStage {
+  /** Command positionals as this stage sees them. */
+  args: readonly string[];
+  /** Tracker path option as this stage sees it (undefined for the default tracker). */
+  path: string | undefined;
+}
+
+/**
+ * Whether extension overrides rewrote the invocation's tracker or arguments.
+ * Final dispatch, the injected extension SDK client and the preAction hook do
+ * not all see the same rewritten view, so a guard cannot prove which item a
+ * rewritten invocation writes.
+ */
+export function invocationRewritten(initial: InvocationStage, stages: readonly InvocationStage[]): boolean {
+  return stages.some((stage) => stage.path !== initial.path || stage.args.length !== initial.args.length || stage.args.some((arg, index) => arg !== initial.args[index]));
+}
+
 /**
  * Bind `--expect-hash` tokens to canonical item ids before the command runs.
  * Tokens without an enclosing invocation scope (a command dispatched outside
@@ -50,10 +69,13 @@ export async function bindInvocationExpectedRevisions(params: {
   pmRoot: string;
   /** Parsed command options, consulted for modes the guard cannot cover. */
   commandOptions?: Record<string, unknown>;
+  /** Whether an extension parser or preflight override rewrote the tracker or arguments. */
+  rewritten?: boolean;
 }): Promise<void> {
   if (params.expectHash === undefined) return;
   const specs = parseExpectHashSpecs(params.expectHash);
   assertExpectHashAdmissible(params.commandPath.trim().toLowerCase(), params.commandOptions);
+  if (params.rewritten === true) throw expectHashInvocationRewrittenError();
   const scope = invocationScopes.getStore();
   if (scope === undefined) throw new TypeError("--expect-hash was parsed outside an invocation revision scope");
   const expectations = await resolveExpectedItemRevisions(params.pmRoot, specs, itemArgumentOf(params.command, params.commandArgs));

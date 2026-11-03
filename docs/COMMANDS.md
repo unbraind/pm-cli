@@ -1022,7 +1022,10 @@ refuses with `expect_hash_invalid` instead of running unguarded. Bulk
 `update-many`/`close-many` fail only stale rows, each carrying `error_code`,
 `expected_revision`, `current_revision` and `details.changes_since`. History maintenance
 (`history-redact`, `history-repair`, `history-compact`) is checked under the
-stream lock. An item the command never wrote produces the
+stream lock. `validate --auto-fix`/`--prune-missing` refuses typed once every fix
+was attempted. When an extension parser or preflight override rewrites the
+invocation's tracker or arguments, a guarded invocation refuses with
+`expect_hash_invocation_rewritten`, since which item it writes cannot be proved. An item the command never wrote produces the
 warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. MCP
 tools accept the same tokens as `expectHash`; the SDK exposes
 `withExpectedItemRevisions` (see [SDK](SDK.md#expected-item-revisions)).

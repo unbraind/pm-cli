@@ -37820,6 +37820,7 @@
     "exit_code_mismatch",
     "expect_hash_background_unsupported",
     "expect_hash_invalid",
+    "expect_hash_invocation_rewritten",
     "expect_hash_requires_mutation",
     "expect_hash_target_required",
     "expected_revision_duplicate",

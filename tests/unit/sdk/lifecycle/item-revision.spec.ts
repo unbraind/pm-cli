@@ -25,6 +25,7 @@ import {
   resolveExpectedItemRevisions,
   runWithBoundItemRevisionScope,
   runWithItemRevisionScope,
+  throwFirstItemRevisionConflict,
   withExpectedItemRevisions,
 } from "../../../../src/sdk/lifecycle/item-revision.js";
 import { PmClient, runAction } from "../../../../src/sdk/runtime.js";
@@ -251,6 +252,14 @@ describe("pm-gh1576 read-decide-write through the SDK", () => {
     expect(isItemRevisionConflict(foreign)).toBe(true);
     expect(isItemRevisionConflict(Object.assign(new Error("other"), { name: "PmCliError", exitCode: 4, context: { code: "stale_revision" } }))).toBe(false);
     expect(isItemRevisionConflict(new Error("plain"))).toBe(false);
+  });
+
+  it("re-raises the first revision conflict a best-effort batch collected, and nothing otherwise", () => {
+    const first = Object.assign(new Error("stale a"), { name: "PmCliError", exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict" } });
+    const second = Object.assign(new Error("stale b"), { name: "PmCliError", exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict" } });
+    expect(() => throwFirstItemRevisionConflict([new Error("io"), first, second])).toThrow(first);
+    expect(() => throwFirstItemRevisionConflict([new Error("io"), "string failure"])).not.toThrow();
+    expect(() => throwFirstItemRevisionConflict([])).not.toThrow();
   });
 
   it("leaves non-conflict, already-enriched and incomplete refusals untouched", async () => {

@@ -6,6 +6,7 @@ import { getGlobalOptions } from "../../../src/sdk/cli-contracts/registration-he
 import {
   bindInvocationExpectedRevisions,
   enrichInvocationRevisionError,
+  invocationRewritten,
   parseWithInvocationRevisionScope,
   reportInvocationRevisionScope,
 } from "../../../src/cli/expected-revisions.js";
@@ -50,6 +51,31 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
         await expect(bind(commandWithArgument("id"), "Get", [id])).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, context: { code: "expect_hash_requires_mutation" } });
       });
       expect(warnings).toContain(`expect_hash_unchecked:${id}:no_locked_write_reached_this_item`);
+    });
+  });
+
+  it("detects extension overrides that rewrote the tracker or arguments, and refuses a guard on them", async () => {
+    const initial = { args: ["pm-a"], path: "/tracker" };
+    expect(invocationRewritten(initial, [{ args: ["pm-a"], path: "/tracker" }])).toBe(false);
+    expect(invocationRewritten(initial, [{ args: ["pm-a"], path: "/other" }])).toBe(true);
+    expect(invocationRewritten(initial, [{ args: ["pm-b"], path: "/tracker" }])).toBe(true);
+    expect(invocationRewritten(initial, [{ args: ["pm-a", "extra"], path: "/tracker" }])).toBe(true);
+    await inInvocation(async () => {
+      await expect(bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: ["pm-a"], expectHash: [HASH], pmRoot: "/tracker", rewritten: true }))
+        .rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, context: { code: "expect_hash_invocation_rewritten" } });
+      await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: ["pm-a"], expectHash: undefined, pmRoot: "/tracker", rewritten: true });
+    });
+  });
+
+  it("refuses a stale guard on validate auto-fix with the typed conflict instead of reporting success", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Missing estimate", "--type", "Task", "--description", "d", "--json"], { expectJson: true });
+      const id = String((created.json as { item: { id: string } }).item.id);
+      const stale = itemHash(context, id);
+      context.runCli(["update", "--json", id, "--title", "Missing estimate, edited by a peer"], { expectJson: true });
+      const fixed = await context.runCliInProcess(["validate", "--auto-fix", "--check-metadata", "--fix-scope", "estimates", "--expect-hash", `${id}=${stale}`, "--json"]);
+      expect(fixed.code, fixed.stdout).toBe(EXIT_CODE.CONFLICT);
+      expect(fixed.stderr).toContain("item_revision_conflict");
     });
   });
 

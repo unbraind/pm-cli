@@ -438,6 +438,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/lifecycle/item-revision.ts"],
   },
   {
+    code: "expect_hash_invocation_rewritten",
+    exit_code: 2,
+    sources: ["sdk/lifecycle/item-revision.ts"],
+  },
+  {
     code: "expect_hash_requires_mutation",
     exit_code: 2,
     sources: ["sdk/lifecycle/item-revision.ts"],
