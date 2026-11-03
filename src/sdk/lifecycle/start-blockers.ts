@@ -18,6 +18,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { isPmCliExpectedError } from "../errors.js";
 import type { GovernanceStartBlockerEnforcement, ItemMetadata, PmSettings } from "../../types/index.js";
 import { resolveDeclaredBlockers } from "../query/declared-blockers.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
@@ -80,6 +81,33 @@ function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: str
 }
 
 /**
+ * Typed integrity refusals a blocker read raises when its record cannot be
+ * judged. They fail closed under `strict`, but `warn` and `--force` still admit
+ * the start. Filesystem failures keep propagating with their cause.
+ */
+const UNVERIFIABLE_BLOCKER_CODES: ReadonlySet<string> = new Set([
+  "item_document_invalid",
+  "item_document_encoding_invalid",
+  "item_format_version_unsupported",
+  "item_identity_ambiguous",
+  "item_identity_conflict",
+]);
+
+/** Open declared blockers, or, when the caller admits it, the integrity code that left them unverifiable. */
+async function readOpenBlockers(
+  params: Parameters<typeof resolveDeclaredBlockers>[0],
+  admitUnverifiable: boolean,
+): Promise<Awaited<ReturnType<typeof resolveDeclaredBlockers>> | string> {
+  try {
+    return (await resolveDeclaredBlockers(params)).filter((blocker) => !blocker.resolved);
+  } catch (error: unknown) {
+    const code = isPmCliExpectedError(error) ? error.context.code : undefined;
+    if (!admitUnverifiable || typeof code !== "string" || !UNVERIFIABLE_BLOCKER_CODES.has(code)) throw error;
+    return code;
+  }
+}
+
+/**
  * Admit or refuse starting `metadata` against its currently open declared
  * blockers. Returns warnings for admitted starts; throws the typed refusal
  * under `strict` enforcement without `force`.
@@ -93,10 +121,10 @@ export async function admitStartWithOpenBlockers(params: {
   const enforcement = params.settings.governance.start_blocker_enforcement ?? START_BLOCKER_ENFORCEMENT_DEFAULT;
   if (enforcement === "off") return [];
   const typeToFolder = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
-  const open = (await resolveDeclaredBlockers({ pmRoot: params.pmRoot, settings: params.settings, typeToFolder, metadata: params.metadata }))
-    .filter((blocker) => !blocker.resolved);
-  if (open.length === 0) return [];
   const id = params.metadata.id;
+  const open = await readOpenBlockers({ pmRoot: params.pmRoot, settings: params.settings, typeToFolder, metadata: params.metadata }, enforcement === "warn" || params.force === true);
+  if (typeof open === "string") return [`start_blocker_unverifiable:${id}:${open}`];
+  if (open.length === 0) return [];
   const ids = open.map((blocker) => blocker.id).join(",");
   if (enforcement === "warn") return [`start_with_open_blockers:${id}:${ids}`];
   if (params.force === true) return [`start_blocker_override:${id}:${ids}`];

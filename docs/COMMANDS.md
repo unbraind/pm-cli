@@ -989,7 +989,12 @@ A terminal blocker never blocks, and an update that removes the blocker in the
 same call is admitted. `--force` starts anyway and records
 `start_blocker_override:<id>:<blockers>`. `governance.start_blocker_enforcement`
 selects `strict` (default), `warn` (start and record
-`start_with_open_blockers:<id>:<blockers>`), or `off`.
+`start_with_open_blockers:<id>:<blockers>`), or `off`. A blocker whose record
+cannot be judged (an invalid or non-UTF-8 document, an unsupported item format,
+or an ambiguous or conflicting identity) refuses under `strict` with that typed
+error. `warn` and `--force` still admit the start and record
+`start_blocker_unverifiable:<id>:<code>`. Filesystem failures and merge-conflict
+markers always propagate.
 
 ### Expected revisions (`--expect-hash`)
 

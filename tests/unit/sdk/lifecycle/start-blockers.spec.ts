@@ -1,3 +1,5 @@
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
@@ -83,6 +85,29 @@ describe("pm-urzubi admission policy", () => {
       expect(await admit()).toEqual([]);
       settings.governance.start_blocker_enforcement = "strict";
       expect(await admitStartWithOpenBlockers({ pmRoot: context.pmPath, settings, metadata: { ...metadata, dependencies: [] } })).toEqual([]);
+    });
+  });
+
+  it("fails closed on an unverifiable blocker under strict, yet warn and --force still admit the start", async () => {
+    await withTempPmPath(async (context) => {
+      const { blocker, blocked } = blockedPair(context, "Unverifiable target");
+      const settings = await readSettings(context.pmPath);
+      const metadata = (await new PmClient({ pmRoot: context.pmPath, noExtensions: true }).get(blocked, { full: true })).item as unknown as ItemMetadata;
+      const admit = (force?: boolean) => admitStartWithOpenBlockers({ pmRoot: context.pmPath, settings, metadata, force });
+      const blockerPath = path.join(context.pmPath, "tasks", `${blocker}.toon`);
+      await writeFile(blockerPath, Buffer.from([0xff, 0xfe, 0x00]));
+      await expect(admit()).rejects.toMatchObject({ context: { code: "item_document_encoding_invalid" } });
+      expect(await admit(true)).toEqual([`start_blocker_unverifiable:${blocked}:item_document_encoding_invalid`]);
+      settings.governance.start_blocker_enforcement = "warn";
+      expect(await admit()).toEqual([`start_blocker_unverifiable:${blocked}:item_document_encoding_invalid`]);
+      // Filesystem failures and refusals outside the integrity set keep propagating, even under --force.
+      await rm(blockerPath);
+      await mkdir(blockerPath);
+      await expect(admit(true)).rejects.toMatchObject({ code: "EISDIR" });
+      await rm(blockerPath, { recursive: true });
+      await writeFile(blockerPath, "<<<<<<< ours\nid: x\n=======\nid: y\n>>>>>>> theirs\n");
+      // A merge-conflicted working tree is the user's to resolve, as every item-store read already demands.
+      await expect(admit(true)).rejects.toMatchObject({ context: { code: "merge_conflict_markers_detected" } });
     });
   });
 
