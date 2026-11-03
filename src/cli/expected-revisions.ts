@@ -27,8 +27,8 @@ import {
 import { emitPreflightWarning } from "./preflight-warnings.js";
 
 const invocationScopes = new AsyncLocalStorage<ItemRevisionScope>();
-/** Invocation scopes whose guard preAction bound; final dispatch must not rewrite them. */
-const guardedInvocations = new WeakSet<ItemRevisionScope>();
+/** Invocation scopes whose guard preAction bound, with the command path admitted; final dispatch must not rewrite them. */
+const guardedInvocations = new WeakMap<ItemRevisionScope, string>();
 
 /**
  * The registered `id` positional names the item a bare revision binds to, at its
@@ -77,23 +77,28 @@ export async function bindInvocationExpectedRevisions(params: {
 }): Promise<void> {
   if (params.expectHash === undefined) return;
   const specs = parseExpectHashSpecs(params.expectHash);
-  assertExpectHashAdmissible(params.commandPath.trim().toLowerCase(), params.commandOptions);
+  const action = params.commandPath.trim().toLowerCase();
+  assertExpectHashAdmissible(action, params.commandOptions);
   if (params.rewritten === true) throw expectHashInvocationRewrittenError();
   const scope = invocationScopes.getStore();
   if (scope === undefined) throw new TypeError("--expect-hash was parsed outside an invocation revision scope");
   const expectations = await resolveExpectedItemRevisions(params.pmRoot, specs, itemArgumentOf(params.command, params.commandArgs));
   bindItemRevisionScope(scope, params.pmRoot, expectations);
-  guardedInvocations.add(scope);
+  guardedInvocations.set(scope, action);
 }
 
 /**
  * Refuse when a final-dispatch parser pass rewrites a guarded invocation. Commander
  * dispatch reruns extension parsers after preAction bound the guard to the typed
- * view, so each pass must keep that view's tracker and arguments.
+ * view, so each pass must keep that view's tracker and arguments, and the options
+ * it dispatches with must stay admissible (no `--background` added late).
  */
-export function assertGuardedDispatchUnchanged(input: InvocationStage, output: InvocationStage): void {
+export function assertGuardedDispatchUnchanged(input: InvocationStage, output: InvocationStage, options: Record<string, unknown>): void {
   const scope = invocationScopes.getStore();
-  if (scope !== undefined && guardedInvocations.has(scope) && invocationRewritten(input, [output])) throw expectHashInvocationRewrittenError();
+  const action = scope === undefined ? undefined : guardedInvocations.get(scope);
+  if (action === undefined) return;
+  if (invocationRewritten(input, [output])) throw expectHashInvocationRewrittenError();
+  assertExpectHashAdmissible(action, options);
 }
 
 /**

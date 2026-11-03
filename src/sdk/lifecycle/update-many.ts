@@ -8,6 +8,7 @@ import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
 import { rollbackMutationCheckpoint } from "./checkpoint-rollback.js";
+import { committedCloseDependentConflict, type DependentRevisionConflict } from "./close.js";
 import {
   createCheckpointId,
   loadMutationCheckpoint,
@@ -268,6 +269,8 @@ interface UpdateManyApplyResultRow extends ItemRevisionConflictRowFields {
   changed_fields?: string[];
   warnings?: string[];
   error?: string;
+  /** A guarded dependent whose auto-unblock refused after this row's close committed. */
+  dependent_revision_conflict?: DependentRevisionConflict;
 }
 
 interface UpdateManyRollbackResultRow extends ItemRevisionConflictRowFields {
@@ -1121,6 +1124,13 @@ const applyUpdateManyRows = async (params: {
       });
       updatedIds.push(item.id);
     } catch (error: unknown) {
+      // A status update that closed the row committed; only a guarded dependent's auto-unblock refused (pm-gh1576).
+      const committed = await committedCloseDependentConflict(error, item.id, params.pmRoot);
+      if (committed !== undefined) {
+        rows.push({ id: item.id, status: "updated", ...committed });
+        updatedIds.push(item.id);
+        continue;
+      }
       rows.push({
         id: item.id,
         status: "failed",

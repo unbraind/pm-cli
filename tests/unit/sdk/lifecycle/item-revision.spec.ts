@@ -520,6 +520,27 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
+  it("reports update-many's committed close and the refused dependent apart", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = createTestItemId(context, { title: "Status-close blocker" });
+      const dependent = createTestItemId(context, { title: "Status-close dependent" });
+      const blocked = context.runCli(["update", dependent, "--status", "blocked", "--blocked-by", blocker, "--blocked-reason", "waiting", "--json"], { expectJson: true });
+      expect(blocked.code, blocked.stderr).toBe(0);
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(dependent)).item_hash;
+      await pm.update(dependent, { title: "Status-close dependent, edited by a peer" });
+      const updated = await runAction({ path: context.pmPath, noExtensions: true, author: "bulk-agent", expectHash: `${dependent}=${stale}`, action: "update-many", options: { ids: blocker, status: "closed", closeReason: "done" } }) as {
+        rows: Array<Record<string, unknown>>; ids: string[];
+      };
+      expect(updated.ids).toEqual([blocker]);
+      expect(updated.rows).toEqual([expect.objectContaining({
+        id: blocker, status: "updated", warnings: [`auto_unblock_refused:${dependent}:item_revision_conflict`],
+        dependent_revision_conflict: expect.objectContaining({ item_id: dependent, error_code: "item_revision_conflict", expected_revision: stale }),
+      })]);
+      expect((await pm.get(blocker)).item.status).toBe("closed");
+    });
+  });
+
   it("refuses a guarded restore over an unreadable live item, while an unguarded restore still recovers it", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Corrupted live item" });

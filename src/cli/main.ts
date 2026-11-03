@@ -1082,7 +1082,7 @@ async function runRequiredExtensionCommand(
   commandArgs = parserOverride.context.args;
   commandOptions = parserOverride.context.options;
   resolvedGlobalOptions = parserOverride.context.global;
-  assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: resolvedGlobalOptions.path });
+  assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: resolvedGlobalOptions.path }, commandOptions);
   validateDynamicExtensionCommandInvocation(
     activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath)),
     commandArgs,
@@ -1209,7 +1209,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         commandOptions = parserOverride.context.options;
         copyReadOutputInvocationProvenance(actionCommand, commandOptions);
         globalOptions = parserOverride.context.global;
-        assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: globalOptions.path });
+        assertGuardedDispatchUnchanged(dispatchInput, { args: commandArgs, path: globalOptions.path }, commandOptions);
         // Validate importer/exporter positionals on the real dispatch path:
         // these short-circuit before the dynamic action that previously held the
         // only arity validation, so excess positionals could reach handlers.

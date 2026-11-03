@@ -75,15 +75,18 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
 
   it("refuses a final-dispatch parser pass that rewrites a guarded invocation, and only a guarded one", async () => {
     const typed = { args: ["pm-a"], path: undefined };
-    assertGuardedDispatchUnchanged(typed, { args: ["pm-b"], path: undefined });
+    assertGuardedDispatchUnchanged(typed, { args: ["pm-b"], path: undefined }, {});
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Dispatch target" });
       await inInvocation(async () => {
-        assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: ["pm-b"], path: undefined });
-        await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [id], expectHash: [itemHash(context, id)], pmRoot: context.pmPath });
-        assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: [id], path: undefined });
-        expect(() => assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: ["pm-b"], path: undefined }))
+        assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: ["pm-b"], path: undefined }, {});
+        await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "Test-All", commandArgs: [id], expectHash: [itemHash(context, id)], pmRoot: context.pmPath });
+        assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: [id], path: undefined }, {});
+        expect(() => assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: ["pm-b"], path: undefined }, {}))
           .toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE, context: expect.objectContaining({ code: "expect_hash_invocation_rewritten" }) }));
+        // A late --background would hand the run to a worker the guard cannot reach.
+        expect(() => assertGuardedDispatchUnchanged({ args: [id], path: undefined }, { args: [id], path: undefined }, { background: true }))
+          .toThrow(expect.objectContaining({ context: expect.objectContaining({ code: "expect_hash_background_unsupported" }) }));
       });
     });
   });
@@ -103,6 +106,21 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
       expect(result.code, result.stdout).toBe(EXIT_CODE.USAGE);
       expect(result.stderr).toContain("expect_hash_invocation_rewritten");
       expect(itemHash(context, other)).toBe(before);
+    });
+  });
+
+  it("refuses a guarded test-all an extension parser moves to the background on its final-dispatch pass", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Foreground guard" });
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions", "late-background"),
+        name: "late-background",
+        manifestOverrides: { capabilities: ["parser"] },
+        entrySource: "let calls = 0;\nexport default { activate(api) { api.registerParser(\"test-all\", (context) => { calls += 1; return calls === 1 ? {} : { options: { ...context.options, background: true } }; }); } };\n",
+      });
+      const result = await context.runCliInProcess(["test-all", "--expect-hash", `${id}=${itemHash(context, id)}`, "--json"]);
+      expect(result.code, result.stdout).toBe(EXIT_CODE.USAGE);
+      expect(result.stderr).toContain("expect_hash_background_unsupported");
     });
   });
 

@@ -4,7 +4,8 @@
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { isItemRevisionConflict } from "./item-revision.js";
+import { isItemRevisionConflict, itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
+import { toErrorMessage } from "../runtime-primitives.js";
 import {
   toItemRecord,
   isTerminalStatus,
@@ -424,6 +425,27 @@ async function autoUnblockResolvedDependents(
     });
   }
   return warnings;
+}
+
+/** A guarded dependent whose auto-unblock refused after a bulk row's close committed. */
+export type DependentRevisionConflict = ItemRevisionConflictRowFields & { item_id: string; error: string };
+
+/**
+ * Bulk-row fields for a row whose close committed before a guarded dependent's
+ * auto-unblock refused (the refusal discloses the close in `side_effects`), or
+ * undefined for any other failure (pm-gh1576).
+ */
+export async function committedCloseDependentConflict(
+  error: unknown,
+  id: string,
+  pmRoot: string,
+): Promise<{ warnings: string[]; dependent_revision_conflict: DependentRevisionConflict } | undefined> {
+  if (!isItemRevisionConflict(error) || !error.context.side_effects?.some((effect) => `${effect.op}:${effect.path}` === `close:history/${id}.jsonl`)) return undefined;
+  const dependent = String(error.context.item_id);
+  return {
+    warnings: [`auto_unblock_refused:${dependent}:item_revision_conflict`],
+    dependent_revision_conflict: { item_id: dependent, error: toErrorMessage(error), ...(await itemRevisionConflictRowFields(error, pmRoot)) },
+  };
 }
 
 function applyInlineCloseFields(

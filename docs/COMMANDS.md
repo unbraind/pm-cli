@@ -1029,8 +1029,9 @@ carrying `error_code`, `expected_revision`, `current_revision` and
 `details.changes_since`. When `close` auto-unblocks a guarded dependent whose revision
 moved, the close stays committed and the command refuses with that dependent's
 `item_revision_conflict` once the fan-out finishes. `side_effects` names the
-committed close. `close-many` reports such a row as `closed`, with the dependent's
-conflict under `dependent_revision_conflict`. A guarded `restore` refuses to recover
+committed close. `close-many` reports such a row as `closed` (`update-many` closing
+through `--status`, as `updated`), with the dependent's conflict under
+`dependent_revision_conflict`. A guarded `restore` refuses to recover
 over a live file that cannot be read as a document; an unguarded restore still
 recovers it. `deps` only reads, so it refuses the flag. History maintenance
 (`history-redact`, `history-repair`, `history-compact`) is checked under the
@@ -1038,7 +1039,9 @@ stream lock. `validate --auto-fix`/`--prune-missing` refuses typed once every fi
 was attempted. When an extension parser or preflight override rewrites the
 invocation's tracker or arguments, a guarded invocation refuses with
 `expect_hash_invocation_rewritten`, since which item it writes cannot be proved.
-The same refusal covers a parser pass during final dispatch. Inventory commands
+The same refusal covers a parser pass during final dispatch, which must also keep
+the guard admissible (adding `--background` late refuses with
+`expect_hash_background_unsupported`). Inventory commands
 (`package inventory`, `extension inventory`) never write items, so they validate
 the flag and then refuse with `expect_hash_requires_mutation`. An item the command never wrote produces the
 warning `expect_hash_unchecked:<id>:no_locked_write_reached_this_item`. MCP
