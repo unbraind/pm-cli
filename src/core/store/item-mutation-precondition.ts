@@ -8,6 +8,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { hashDocument } from "../history/history.js";
+import { sha256Hex } from "../shared/serialization.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import type { ItemDocument } from "../../types/index.js";
@@ -164,20 +165,36 @@ export function hasActiveItemRevisionScope(pmRoot: string): boolean {
 /** Refuse a locked write whose stored revision is not the one its scope declared. */
 function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, targetId: string): void {
   const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id]);
-  if (entries.length === 0) return;
-  const current = hashDocument(document);
+  if (entries.length > 0) assertRevisionEntries(entries, targetId, hashDocument(document), false);
+}
+
+/**
+ * Refuse a guarded write over a live item that cannot be read as a document
+ * (restore recovering corrupt bytes). No declared revision describes those bytes,
+ * so the guard refuses rather than judging the history reconstruction restore
+ * would write from. `current_revision` is the SHA-256 of the unreadable text.
+ */
+export function assertItemRevisionExpectationsOnUnreadable(pmRoot: string, targetId: string, raw: string): void {
+  const entries = matchingRevisionEntries(pmRoot, [targetId]);
+  if (entries.length > 0) assertRevisionEntries(entries, targetId, sha256Hex(raw), true);
+}
+
+/** Mark matching entries checked and refuse the first one the locked revision does not satisfy. */
+function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targetId: string, current: string, unreadable: boolean): void {
   for (const entry of entries) {
     entry.checked = true;
-    if (entry.expected === current) continue;
+    if (!unreadable && entry.expected === current) continue;
     throw new PmCliError(
-      `Item ${targetId} is no longer at the expected revision ${entry.expected.slice(0, 12)}; refusing to write over a revision this decision did not see.${entry.committed ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
+      `Item ${targetId} is no longer at the expected revision ${entry.expected.slice(0, 12)}${unreadable ? " (its live document cannot be read)" : ""}; refusing to write over a revision this decision did not see.${entry.committed ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
       EXIT_CODE.CONFLICT,
       {
         code: "item_revision_conflict",
         item_id: targetId,
         expected_revision: entry.expected,
         current_revision: current,
-        required: `Re-read ${targetId} (pm get ${targetId} --json reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
+        required: unreadable
+          ? `Recover ${targetId} without --expect-hash (pm restore ${targetId} <version>), since no declared revision describes an unreadable document.`
+          : `Re-read ${targetId} (pm get ${targetId} --json reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
         why: "The caller declared the revision its decision was based on, and another write changed the item before this locked write.",
         examples: [`pm get ${targetId} --fields item_hash --json`, `pm history ${targetId} --limit 5`],
         nextSteps: [`pm get ${targetId} --json`, `pm history ${targetId} --limit 5`],

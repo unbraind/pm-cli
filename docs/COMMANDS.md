@@ -1028,7 +1028,11 @@ refuses with `expect_hash_invalid` instead of running unguarded. Bulk
 carrying `error_code`, `expected_revision`, `current_revision` and
 `details.changes_since`. When `close` auto-unblocks a guarded dependent whose revision
 moved, the close stays committed and the command refuses with that dependent's
-`item_revision_conflict` once the fan-out finishes. History maintenance
+`item_revision_conflict` once the fan-out finishes. `side_effects` names the
+committed close. `close-many` reports such a row as `closed`, with the dependent's
+conflict under `dependent_revision_conflict`. A guarded `restore` refuses to recover
+over a live file that cannot be read as a document; an unguarded restore still
+recovers it. `deps` only reads, so it refuses the flag. History maintenance
 (`history-redact`, `history-repair`, `history-compact`) is checked under the
 stream lock. `validate --auto-fix`/`--prune-missing` refuses typed once every fix
 was attempted. When an extension parser or preflight override rewrites the

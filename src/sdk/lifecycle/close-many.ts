@@ -3,7 +3,7 @@
  *
  * Implements the pm close many command surface and its agent-facing runtime behavior.
  */
-import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
+import { isItemRevisionConflict, itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { withCheckpointMutation } from "../../core/checkpoint/mutation-context.js";
 import { resolveCheckpointRollbackId } from "../../core/checkpoint/mutation-checkpoint.js";
@@ -105,6 +105,8 @@ interface CloseManyApplyRow extends ItemRevisionConflictRowFields {
   changed_fields?: string[];
   warnings?: string[];
   error?: string;
+  /** A guarded dependent whose auto-unblock refused after this row's close committed. */
+  dependent_revision_conflict?: ItemRevisionConflictRowFields & { item_id: string; error: string };
 }
 
 interface CloseManyPlanContext {
@@ -467,6 +469,18 @@ async function applyCloseManyRows(params: {
       });
       closedIds.push(item.id);
     } catch (error: unknown) {
+      if (isItemRevisionConflict(error) && error.context.side_effects?.some((effect) => effect.op === "close" && effect.path === `history/${item.id}.jsonl`)) {
+        // The close committed; only a guarded dependent's auto-unblock refused (pm-gh1576).
+        const dependent = String(error.context.item_id);
+        rows.push({
+          id: item.id,
+          status: "closed",
+          warnings: [`auto_unblock_refused:${dependent}:item_revision_conflict`],
+          dependent_revision_conflict: { item_id: dependent, error: toErrorMessage(error), ...(await itemRevisionConflictRowFields(error, params.pmRoot)) },
+        });
+        closedIds.push(item.id);
+        continue;
+      }
       rows.push({
         id: item.id,
         status: "failed",

@@ -379,7 +379,8 @@ const NATIVE_ACTIONS: ReadonlySet<string> = new Set(PM_TOOL_ACTIONS);
  * know whether they write; the receipt reports any expectation they never reach.
  */
 export function assertExpectHashAdmissible(action: string, options: Record<string, unknown> = {}): void {
-  if (NATIVE_ACTIONS.has(action) && !isMutationAction(action) && !PM_EXPECT_HASH_ACTIONS.has(action)) {
+  // `deps` is a conditional mutation in the history-scope inventory, but it only reads.
+  if (NATIVE_ACTIONS.has(action) && (!isMutationAction(action) || action === "deps") && !PM_EXPECT_HASH_ACTIONS.has(action)) {
     throw expectHashRequiresMutationError(action);
   }
   // A background worker is a separate process the in-process scope cannot reach, so refuse instead of

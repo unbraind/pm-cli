@@ -418,7 +418,10 @@ async function autoUnblockResolvedDependents(
     /* c8 ignore stop */
   }
   if (conflict !== undefined) {
-    throw new PmCliError(`${closedId} was closed, but auto-unblocking ${String(conflict.context.item_id)} was refused. ${conflict.message}`, conflict.exitCode, { ...conflict.context });
+    throw new PmCliError(`${closedId} was closed, but auto-unblocking ${String(conflict.context.item_id)} was refused. ${conflict.message}`, conflict.exitCode, {
+      ...conflict.context,
+      side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }],
+    });
   }
   return warnings;
 }

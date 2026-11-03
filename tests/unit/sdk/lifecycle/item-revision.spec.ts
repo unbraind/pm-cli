@@ -491,8 +491,52 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       const refusal = await captureError(() => pm.withExpectedItemRevisions(stale, () => pm.close(blocker, "Delivered")));
       expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: dependents[0] } });
       expect(refusal.message).toContain(`${blocker} was closed, but auto-unblocking ${dependents[0]} was refused.`);
+      expect(refusal.context.side_effects).toEqual([{ path: `history/${blocker}.jsonl`, op: "close" }]);
       expect((await pm.get(blocker)).item.status).toBe("closed");
       for (const id of dependents) expect((await pm.get(id)).item.status).toBe("blocked");
+    });
+  });
+
+  it("reports close-many's committed close and the refused dependent apart", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = createTestItemId(context, { title: "Bulk fan-out blocker" });
+      const dependent = createTestItemId(context, { title: "Bulk dependent" });
+      const blocked = context.runCli(["update", dependent, "--status", "blocked", "--blocked-by", blocker, "--blocked-reason", "waiting", "--json"], { expectJson: true });
+      expect(blocked.code, blocked.stderr).toBe(0);
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(dependent)).item_hash;
+      await pm.update(dependent, { title: "Bulk dependent, edited by a peer" });
+      const current = (await pm.readItemRevision(dependent)).item_hash;
+      const closed = await runAction({ path: context.pmPath, noExtensions: true, author: "bulk-agent", expectHash: `${dependent}=${stale}`, action: "close-many", options: { ids: blocker, reason: "bulk" } }) as {
+        rows: Array<Record<string, unknown>>; ids: string[];
+      };
+      expect(closed.ids).toEqual([blocker]);
+      expect(closed.rows).toEqual([expect.objectContaining({
+        id: blocker, status: "closed", warnings: [`auto_unblock_refused:${dependent}:item_revision_conflict`],
+        dependent_revision_conflict: expect.objectContaining({ item_id: dependent, error_code: "item_revision_conflict", expected_revision: stale, current_revision: current }),
+      })]);
+      expect((await pm.get(blocker)).item.status).toBe("closed");
+      expect((await pm.get(dependent)).item.status).toBe("blocked");
+    });
+  });
+
+  it("refuses a guarded restore over an unreadable live item, while an unguarded restore still recovers it", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Corrupted live item" });
+      const pm = client(context);
+      const decided = (await pm.readItemRevision(id)).item_hash;
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      // A peer corrupts the item after the guard bound its revision.
+      const refusal = await captureError(() => withExpectedItemRevisions([{ id, itemHash: decided }], async () => {
+        await writeFile(itemPath, "this is not a toon document: [\n");
+        return pm.run("restore", { id, target: "1", force: true });
+      }, { pmRoot: context.pmPath }));
+      expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: id, expected_revision: decided } });
+      expect(refusal.message).toContain("its live document cannot be read");
+      expect(refusal.context.required).toContain(`pm restore ${id} <version>`);
+      expect(await readFile(itemPath, "utf8")).toBe("this is not a toon document: [\n");
+      await expect(pm.run("restore", { id, target: "1", force: true })).resolves.toBeDefined();
+      expect((await pm.get(id)).item.title).toBe("Corrupted live item");
     });
   });
 
