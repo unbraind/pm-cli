@@ -303,6 +303,11 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
       const cleaned = await client.update(canceled.id, { status: "canceled", assignee: "none" });
       expect((await client.get(canceled.id)).item.assignee).toBeUndefined();
       expect(cleaned.warnings?.some((warning) => warning.startsWith("literal_sentinel_stored:assignee")) ?? false).toBe(false);
+      // A routed close that removes the value its pre-update stored does not report it as stored.
+      const { item: releasedOnClose } = await client.create({ type: "Task", title: "Close releases" });
+      const closedReleased = await client.update(releasedOnClose.id, { status: "closed", assignee: "none", closeReason: "done", force: true });
+      expect((await client.get(releasedOnClose.id)).item.assignee).toBeUndefined();
+      expect(closedReleased.warnings).toEqual(["auto_routed_from_update_to_close"]);
       // A routed close returns its own warnings and still advises.
       const { item: routed } = await client.create({ type: "Task", title: "Routed close" });
       const closed = await client.update(routed.id, { status: "closed", closeReason: "none" });
