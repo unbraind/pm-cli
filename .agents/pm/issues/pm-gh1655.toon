@@ -2,13 +2,13 @@ id: pm-gh1655
 title: "GH-1655: SDK placeholder and type refusals name CLI flags, and parent: null is refused, so typed callers have no documented way to clear a field"
 description: "Since GH-1614 (pm-gh1614) typed PmClient fields keep CLI sentinels literal. Typed SDK callers now get refusals written for the CLI: create/update parent 'none' says 'Use --unset parent', an empty parent says 'Use --parent none to unset', a self-parent says 'Use --unset parent', a missing strict parent says 'use --parent none', and parent/assignee null fail a string type check (invalid_argument_value) instead of meaning 'no value'. assignee 'none' now stores a person called none with no advisory. Reproduced on 2026.11.3 dist in a sandbox tracker."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: agent-ux,"gh:1655",refusals,sdk,sentinels
 created_at: "2026-11-03T21:19:36.501Z"
-updated_at: "2026-11-03T23:15:41.001Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#436e44ca2d204a1ee603915a"
+updated_at: "2026-11-03T23:23:10.235Z"
+closed_at: "2026-11-03T23:23:09.219Z"
+completed_at: "2026-11-03T23:23:09.219Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Typed SDK create/update refusals for placeholder, empty and self parent name the SDK remedy (unset: ['parent'] or omit parent) and never a CLI flag, with a spec per refusal; A typed SDK null on a clearable scalar field (parent, assignee, and every field the unset list accepts) clears it exactly like unset: [field]; null on a field that cannot be cleared refuses naming the field, with specs; A typed SDK create/update whose clearable scalar equals a former clear sentinel (none, null, -) succeeds and returns a stable advisory warning naming the field and the unset form; CLI behaviour and wording are unchanged: --parent none still clears, and CLI refusals still name CLI flags, proven by the existing CLI specs; docs/SDK.md documents null-as-clear and the advisory, and the SDK surface snapshot records any type widening"
@@ -16,8 +16,9 @@ parent: pm-9rgaal
 risk: medium
 confidence: high
 severity: medium
+resolution: "Caller vocabulary is derived from the literal-input provenance (mutationInputAudience): parent placeholder/empty/self/strict-missing and sprint, release, assignee and closeReason refusals name the option key and unset: [\"<field>\"] for typed SDK and MCP callers, while CLI wording is unchanged and the public validators default to it. foldNullClearsIntoUnset turns a typed null on any option the command's unset table covers into its unset token in client dispatch and in runCreate/runUpdate; author and non-clearable fields keep their by-name refusal. PmCreateActionOptions, PmUpdateActionOptions, CreateOperationOptions and UpdateOperationOptions type those fields as nullable, derived from the const unset tables; update-many stays on unset (pm-w7clh6 tracks its flat-transport null drop). literal_sentinel_stored:<field>:<value> is returned when typed input stores none/null/- and the resulting item still holds it, including routed closes. Remaining collection and dependency wording is pm-7lv8yx."
 expected_result: "A typed SDK caller that hits a parent refusal is told the SDK form, and null clears a clearable field"
-actual_result: "create({parent:'none'}) refuses naming --unset parent; create({parent:null}) refuses 'create parent must be a string.'; create({assignee:'none'}) stores the literal silently"
+actual_result: "Verified on the rebuilt dist with a 44-option x 4-token PmClient probe: every scalar refusal is SDK-worded, null clears parent/assignee/sprint and the other unset-covered fields, the advisory appears only for stored sentinels, CLI wording is unchanged in a sandbox; specs in literal-input.spec.ts, literal-mutation-input.spec.ts, focus-command.spec.ts and the typed-action-inputs type test; 100% coverage"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1614,discovered_from,"2026-11-03T21:19:36.501Z","harness:claude-code","cli:create:dep",detected
 comments[4]{created_at,author,text}:
@@ -43,6 +44,27 @@ files[15]{path,scope}:
   tests/unit/sdk/lifecycle/literal-input.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/core/item/literal-mutation-input.spec.ts,project,"harness:claude-code","2026-11-03T21:39:50.416Z",local_mutation,feat/sdk-caller-contract
+test_runs[1]:
+  - run_id: test-local-mw1bbg5w-9rsb6g
+    kind: test
+    status: passed
+    started_at: "2026-11-03T23:21:42.041Z"
+    finished_at: "2026-11-03T23:22:00.980Z"
+    recorded_at: "2026-11-03T23:22:00.980Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/core/item/literal-mutation-input.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
+close_reason: "Fixed: typed SDK and MCP refusals name the SDK unset remedy instead of CLI flags, typed null clears every unset-covered create/update field, and literal sentinels stored from typed input are advised"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1655
+  gate_id: sdk-typed-refusal-vocabulary
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/core/item/literal-mutation-input.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/literal-input.spec.ts tests/unit/core/item/literal-mutation-input.spec.ts tests/unit/commands/lifecycle/focus-command.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

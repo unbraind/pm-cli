@@ -2,13 +2,13 @@ id: pm-mrvq8u
 title: Start-blocker and revision-conflict follow-ups from the PR 1654 CodeRabbit full review
 description: "Four Minor CodeRabbit findings from the PR 1654 full review (head 9e5407474), deferred under the bot-loop convergence rule: an incomplete start-path list in docs/CONFIGURATION.md, an unexported ItemRevisionConflictRowFields in the SDK surface snapshot, claim --next ending its walk on a start-blocked candidate, and a post-close dependent revision conflict that tells the caller to retry the already-committed close."
 type: Issue
-status: in_progress
+status: closed
 priority: 3
 tags[5]: docs,expected-revision,pm-gh1576,pm-urzubi,start-blockers
 created_at: "2026-11-03T20:02:26.463Z"
-updated_at: "2026-11-03T22:55:04.914Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#436e44ca2d204a1ee603915a"
+updated_at: "2026-11-03T23:23:26.727Z"
+closed_at: "2026-11-03T23:23:25.785Z"
+completed_at: "2026-11-03T23:23:25.785Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The CONFIGURATION.md row names all four start paths (update --status in_progress, claim --start, claim --next --start, start-task); ItemRevisionConflictRowFields is exported and the regenerated SDK surface snapshot records its fields; claim --next --start skips a candidate refused with start_blocked_by_open_dependency and claims the next eligible candidate, with a spec; the post-close dependent_revision_conflict refusal says the close is complete and names only the dependent unblock as the remaining step, with a spec"
@@ -16,8 +16,9 @@ parent: pm-doxj
 risk: low
 confidence: high
 severity: low
+resolution: "docs/CONFIGURATION.md and docs/COMMANDS.md name all four start paths and the skip; ItemRevisionConflictRowFields is exported and snapshotted; claimNextFromRecommendations skips a candidate refused with start_blocked_by_open_dependency (refused inside the claim's locked mutation, so nothing is written) and reports start_refused on the result and in the exhausted refusal's details; the post-close dependent revision conflict says the close is complete and names only the unblock of every dependent the fan-out left blocked (details.pending_unblock), using the caller's tracker scope and the configured open status, with the dependent's changes_since evidence kept."
 expected_result: "All four start paths are documented, the row fields type is exported and snapshotted, claim --next --start skips start-blocked candidates, and a post-close dependent conflict names only the unblock as the remaining step"
-actual_result: "Before this change: the doc row lists two of four paths, the type is missing from the snapshot, a start refusal ends the claim --next walk, and the post-close refusal tells the caller to retry the close with --expect-hash"
+actual_result: "Verified: start-race.spec.ts drives a real tracker where the blocker lands after ranking and the refused candidate's history is unchanged; claim-command.spec.ts covers the exhausted refusal; item-revision.spec.ts asserts the scoped per-dependent remedy; the suggested unblock command was run in a sandbox (status open, blocked_by edge removed); 100% coverage"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-03T20:02:26.463Z","harness:claude-code","cli:create:dep",detected
   pm-urzubi,discovered_from,"2026-11-03T20:02:26.463Z","harness:claude-code","cli:create:dep",detected
@@ -36,7 +37,28 @@ files[9]{path,scope}:
   tests/unit/sdk/lifecycle/start-race.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-race.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/lifecycle/item-revision.spec.ts,project,"harness:claude-code","2026-11-03T21:43:07.178Z",local_mutation,feat/sdk-caller-contract
+test_runs[1]:
+  - run_id: test-local-mw1bc1z5-7xpbde
+    kind: test
+    status: passed
+    started_at: "2026-11-03T23:22:13.344Z"
+    finished_at: "2026-11-03T23:22:29.249Z"
+    recorded_at: "2026-11-03T23:22:29.249Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-race.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/lifecycle/item-revision.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/COMMANDS.md,project
   docs/CONFIGURATION.md,project
+close_reason: "Fixed: the four PR 1654 review follow-ups (start-path docs, row-fields export, claim --next start skip, post-close remedy)"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-mrvq8u
+  gate_id: claim-next-start-and-post-close-remedy
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-race.spec.ts tests/unit/sdk/lifecycle/item-revision.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/start-race.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/lifecycle/item-revision.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: "The CodeRabbit full review of PR 1654 (10:24Z, head 9e5407474) left four Minor findings. They were deferred under the bot-loop convergence rule so the PR could merge on green CI. Each one was checked against the code.\n1. docs/CONFIGURATION.md: the governance.start_blocker_enforcement row lists only update --status in_progress and claim --start. It omits claim --next --start and start-task, which take the same admission check.\n2. sdk/public-surface.json: ItemRevisionConflictRowFields is not an exported snapshot symbol, so the snapshot cannot detect changes to the inherited conflict fields on bulk and history rows.\n3. src/sdk/lifecycle/claim.ts: in the claim --next candidate loop, any error other than already_claimed_by is rethrown. A candidate whose blocker opens between ranking and the locked start therefore ends the pass, and later healthy candidates are not attempted. The refused candidate is not written.\n4. src/sdk/lifecycle/close.ts: the post-close dependent revision conflict spreads the dependent conflict's required/nextSteps text. That text tells the caller to retry the close with --expect-hash, but the close has already committed, and a repeat close is refused as terminal without --force."
