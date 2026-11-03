@@ -4,6 +4,7 @@
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
+import { isItemRevisionConflict } from "./item-revision.js";
 import {
   toItemRecord,
   isTerminalStatus,
@@ -352,6 +353,7 @@ async function autoUnblockResolvedDependents(
 ): Promise<string[]> {
   const candidates = findAutoUnblockCandidates(items, closedId, statusRegistry);
   const warnings: string[] = [];
+  let conflict: PmCliError | undefined;
   for (const candidate of candidates) {
     try {
       const unblocked = await mutateItem({
@@ -400,6 +402,13 @@ async function autoUnblockResolvedDependents(
       );
       /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
     } catch (error) {
+      /* c8 ignore stop */
+      // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
+      if (isItemRevisionConflict(error)) {
+        conflict ??= error;
+        continue;
+      }
+      /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. */
       const reason =
         error instanceof Error
           ? error.message.replace(/\s+/g, " ").trim()
@@ -407,6 +416,9 @@ async function autoUnblockResolvedDependents(
       warnings.push(`auto_unblock_failed:${candidate.id}:${reason}`);
     }
     /* c8 ignore stop */
+  }
+  if (conflict !== undefined) {
+    throw new PmCliError(`${closedId} was closed, but auto-unblocking ${String(conflict.context.item_id)} was refused. ${conflict.message}`, conflict.exitCode, { ...conflict.context });
   }
   return warnings;
 }

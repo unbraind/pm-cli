@@ -126,6 +126,20 @@ describe("pm-gh1576 revision scope", () => {
     assertItemMutationPreconditions("/tracker", document);
   });
 
+  it("discloses earlier committed writes even when they returned the item to its declared revision", async () => {
+    const tombstone = { metadata: { id: "pm-a" }, body: "" } as unknown as ItemDocument;
+    const restored = { metadata: { id: "pm-a", title: "Restored" }, body: "" } as unknown as ItemDocument;
+    const scope = createItemRevisionScope();
+    bindItemRevisionScope(scope, "/tracker", [{ id: "pm-a", itemHash: hashDocument(tombstone) }]);
+    await runWithItemRevisionScope(scope, async () => {
+      expect(() => assertItemMutationPreconditions("/tracker", restored)).toThrow(/Nothing was written to this item/u);
+      // Restore, then delete: the expectation is back at the declared tombstone, yet two writes committed.
+      advanceItemMutationPreconditions("/tracker", restored);
+      advanceItemMutationPreconditions("/tracker", tombstone);
+      expect(() => assertItemMutationPreconditions("/tracker", restored)).toThrow(/Earlier writes by this same invocation already committed/u);
+    });
+  });
+
   it("matches a write reached through another spelling of the same item", async () => {
     const document = { metadata: { id: "pm-a", title: "A" }, body: "" } as unknown as ItemDocument;
     const scope = createItemRevisionScope();
@@ -434,6 +448,51 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       })]);
       const closed = await runAction({ ...common, action: "close-many", options: { ids: id, reason: "bulk" } }) as { rows: Array<Record<string, unknown>> };
       expect(closed.rows).toEqual([expect.objectContaining({ id, status: "failed", error_code: "item_revision_conflict", current_revision: current })]);
+    });
+  });
+
+  it("keeps the typed conflict on stale bulk rollback rows", async () => {
+    await withTempPmPath(async (context) => {
+      const [updatedId, closedId] = [createTestItemId(context, { title: "Rollback update" }), createTestItemId(context, { title: "Rollback close" })];
+      const pm = client(context);
+      const common = { path: context.pmPath, noExtensions: true, author: "bulk-agent" };
+      const updated = await runAction({ ...common, action: "update-many", options: { ids: updatedId, priority: "3" } }) as { checkpoint: { id: string } };
+      const closed = await runAction({ ...common, action: "close-many", options: { ids: closedId, reason: "bulk" } }) as { checkpoint: { id: string } };
+      const stale = new Map<string, string>();
+      for (const id of [updatedId, closedId]) {
+        stale.set(id, (await pm.readItemRevision(id)).item_hash);
+        await pm.update(id, { title: `${id}, edited by a peer` });
+      }
+      for (const [action, id, checkpoint] of [["update-many", updatedId, updated.checkpoint.id], ["close-many", closedId, closed.checkpoint.id]] as const) {
+        const current = (await pm.readItemRevision(id)).item_hash;
+        const rolled = await runAction({ ...common, expectHash: `${id}=${stale.get(id)!}`, action, options: { rollback: checkpoint } }) as { rows: Array<Record<string, unknown>> };
+        expect(rolled.rows).toEqual([expect.objectContaining({
+          id, status: "failed", error_code: "item_revision_conflict", expected_revision: stale.get(id), current_revision: current,
+          details: expect.objectContaining({ changes_since: [expect.objectContaining({ op: "update" })] }),
+        })]);
+      }
+    });
+  });
+
+  it("refuses typed after close's auto-unblock fan-out reaches stale guarded dependents, disclosing the committed close", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = createTestItemId(context, { title: "Fan-out blocker" });
+      const dependents = [createTestItemId(context, { title: "Dependent one" }), createTestItemId(context, { title: "Dependent two" })].sort((left, right) => left.localeCompare(right));
+      for (const id of dependents) {
+        const blocked = context.runCli(["update", id, "--status", "blocked", "--blocked-by", blocker, "--blocked-reason", "waiting", "--json"], { expectJson: true });
+        expect(blocked.code, blocked.stderr).toBe(0);
+      }
+      const pm = client(context);
+      const stale = [];
+      for (const id of dependents) {
+        stale.push({ id, itemHash: (await pm.readItemRevision(id)).item_hash });
+        await pm.update(id, { title: `${id}, edited by a peer` });
+      }
+      const refusal = await captureError(() => pm.withExpectedItemRevisions(stale, () => pm.close(blocker, "Delivered")));
+      expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: dependents[0] } });
+      expect(refusal.message).toContain(`${blocker} was closed, but auto-unblocking ${dependents[0]} was refused.`);
+      expect((await pm.get(blocker)).item.status).toBe("closed");
+      for (const id of dependents) expect((await pm.get(id)).item.status).toBe("blocked");
     });
   });
 

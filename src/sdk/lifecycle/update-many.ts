@@ -270,7 +270,7 @@ interface UpdateManyApplyResultRow extends ItemRevisionConflictRowFields {
   error?: string;
 }
 
-interface UpdateManyRollbackResultRow {
+interface UpdateManyRollbackResultRow extends ItemRevisionConflictRowFields {
   id: string;
   status: "restored" | "failed" | "skipped";
   changed_fields?: string[];

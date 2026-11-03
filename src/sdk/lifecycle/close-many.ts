@@ -156,7 +156,7 @@ export interface CloseManyResult extends PmCommandEffectReceipt {
   /** Value that configures or reports rows for this contract. */
   rows?:
     | CloseManyApplyRow[]
-    | Array<{
+    | Array<ItemRevisionConflictRowFields & {
         id: string;
         status: "restored" | "failed" | "skipped";
         changed_fields?: string[];

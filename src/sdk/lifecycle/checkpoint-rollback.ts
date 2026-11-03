@@ -17,6 +17,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { restoreCheckpointItems, type LoadedMutationCheckpoint } from "../../core/checkpoint/mutation-checkpoint.js";
 import type { HistoryEntry, ItemDocument } from "../../types/index.js";
 import { verifyHistoryEntries } from "../history-read.js";
+import { itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 
 interface InverseField {
   field: string;
@@ -68,25 +69,48 @@ function applyCheckpointInverse(document: ItemDocument, fields: InverseField[]):
   return fields.map((field) => field.field);
 }
 
-/** Undo only attributed committed item effects; legacy timestamp checkpoints cannot authorize a destructive restore. */
+/**
+ * Undo only attributed committed item effects; legacy timestamp checkpoints cannot authorize a destructive restore.
+ * A failed row refused by an expected revision carries the same structured conflict fields as a forward bulk row.
+ */
 export async function rollbackMutationCheckpoint(pmRoot: string, checkpoint: LoadedMutationCheckpoint, options: { author?: string; message: string; force?: boolean }) {
   if (checkpoint.record.rollback_strategy !== "guarded_inverse") {
     throw new PmCliError("This legacy checkpoint has no attributable inverse effects. Inspect pm history and use an explicit pm restore only after reviewing later edits.", EXIT_CODE.CONFLICT);
   }
   const settings = await readSettings(pmRoot);
-  return restoreCheckpointItems(checkpoint.items, async (id) => {
-    const result = await mutateItemWithHistoryContext({
-      pmRoot, settings, id, op: "restore", author: resolveAuthor(options.author, settings.author_default),
-      message: options.message,
-      force: options.force, skipNoop: true, historyContext: { bulk_rollback: checkpoint.id },
-      async mutate(document) {
-        const history = await readHistoryEntries(getHistoryPath(pmRoot, id), id);
-        const verification = verifyHistoryEntries(history, document);
-        if (!verification.ok) throw new PmCliError(`Cannot safely roll back ${id}: item/history verification failed. Inspect pm history --verify before recovery.`, EXIT_CODE.CONFLICT);
-        if (history.some((entry) => entry.context?.bulk_rollback === checkpoint.id)) return { changedFields: [] };
-        return { changedFields: applyCheckpointInverse(document, checkpointInverseFields(history, checkpoint.id, settings.schema)) };
-      },
-    });
-    return { changed_fields: result.changedFields, warnings: result.warnings, skipped: result.changedFields.length === 0 };
+  const failures = new Map<string, unknown>();
+  const rollback = await restoreCheckpointItems(checkpoint.items, async (id) => {
+    try {
+      return await rollbackCheckpointItem(pmRoot, settings, checkpoint, id, options);
+    } catch (error: unknown) {
+      failures.set(id, error);
+      throw error;
+    }
   });
+  const rows: Array<(typeof rollback.rows)[number] & ItemRevisionConflictRowFields> = [];
+  for (const row of rollback.rows) rows.push(row.status === "failed" ? { ...row, ...(await itemRevisionConflictRowFields(failures.get(row.id), pmRoot)) } : row);
+  return { ...rollback, rows };
+}
+
+/** Apply one item's guarded inverse under its item lock. */
+async function rollbackCheckpointItem(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  checkpoint: LoadedMutationCheckpoint,
+  id: string,
+  options: { author?: string; message: string; force?: boolean },
+) {
+  const result = await mutateItemWithHistoryContext({
+    pmRoot, settings, id, op: "restore", author: resolveAuthor(options.author, settings.author_default),
+    message: options.message,
+    force: options.force, skipNoop: true, historyContext: { bulk_rollback: checkpoint.id },
+    async mutate(document) {
+      const history = await readHistoryEntries(getHistoryPath(pmRoot, id), id);
+      const verification = verifyHistoryEntries(history, document);
+      if (!verification.ok) throw new PmCliError(`Cannot safely roll back ${id}: item/history verification failed. Inspect pm history --verify before recovery.`, EXIT_CODE.CONFLICT);
+      if (history.some((entry) => entry.context?.bulk_rollback === checkpoint.id)) return { changedFields: [] };
+      return { changedFields: applyCheckpointInverse(document, checkpointInverseFields(history, checkpoint.id, settings.schema)) };
+    },
+  });
+  return { changed_fields: result.changedFields, warnings: result.warnings, skipped: result.changedFields.length === 0 };
 }

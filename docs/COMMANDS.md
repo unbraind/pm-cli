@@ -1024,8 +1024,11 @@ claim of a composed `claim --start`) stay durable, and the message then says
 so ("Earlier writes by this same invocation already committed"). Read commands refuse the flag with
 `expect_hash_requires_mutation`, and an empty value (such as an unset `$H`)
 refuses with `expect_hash_invalid` instead of running unguarded. Bulk
-`update-many`/`close-many` fail only stale rows, each carrying `error_code`,
-`expected_revision`, `current_revision` and `details.changes_since`. History maintenance
+`update-many`/`close-many` fail only stale rows, forward and `--rollback` alike, each
+carrying `error_code`, `expected_revision`, `current_revision` and
+`details.changes_since`. When `close` auto-unblocks a guarded dependent whose revision
+moved, the close stays committed and the command refuses with that dependent's
+`item_revision_conflict` once the fan-out finishes. History maintenance
 (`history-redact`, `history-repair`, `history-compact`) is checked under the
 stream lock. `validate --auto-fix`/`--prune-missing` refuses typed once every fix
 was attempted. When an extension parser or preflight override rewrites the

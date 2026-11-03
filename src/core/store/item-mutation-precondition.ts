@@ -43,6 +43,12 @@ interface ItemRevisionScopeEntry {
   expected: string;
   /** Whether any locked write evaluated this expectation. */
   checked: boolean;
+  /**
+   * Whether this scope durably committed a write to the item. Tracked apart from
+   * `expected`, which can return to `declared` (a restore then delete reproduces
+   * the declared tombstone).
+   */
+  committed: boolean;
 }
 
 /**
@@ -116,7 +122,7 @@ export function bindItemRevisionScope(
         required: "Declare at most one expected revision per item.",
       });
     }
-    scope.entries.set(id, existing ?? { declared: itemHash, expected: itemHash, checked: false });
+    scope.entries.set(id, existing ?? { declared: itemHash, expected: itemHash, checked: false, committed: false });
   }
 }
 
@@ -163,9 +169,8 @@ function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, 
   for (const entry of entries) {
     entry.checked = true;
     if (entry.expected === current) continue;
-    const advanced = entry.expected !== entry.declared;
     throw new PmCliError(
-      `Item ${targetId} is no longer at the expected revision ${entry.expected.slice(0, 12)}; refusing to write over a revision this decision did not see.${advanced ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
+      `Item ${targetId} is no longer at the expected revision ${entry.expected.slice(0, 12)}; refusing to write over a revision this decision did not see.${entry.committed ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
       EXIT_CODE.CONFLICT,
       {
         code: "item_revision_conflict",
@@ -207,7 +212,10 @@ export function advanceItemMutationPreconditions(pmRoot: string, document: ItemD
   const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id, ...aliasIds]);
   if (entries.length > 0) {
     const committed = hashDocument(document);
-    for (const entry of entries) entry.expected = committed;
+    for (const entry of entries) {
+      entry.expected = committed;
+      entry.committed = true;
+    }
   }
   for (const condition of conditionsFor(pmRoot, [targetId, document.metadata.id, ...aliasIds])) condition.committed?.(document);
 }
