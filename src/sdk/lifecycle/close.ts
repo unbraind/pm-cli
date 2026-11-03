@@ -415,14 +415,25 @@ async function autoUnblockResolvedDependents(
     }
     /* c8 ignore stop */
   }
-  if (conflict !== undefined) {
-    throw new PmCliError(`${closedId} was closed, but auto-unblocking ${String(conflict.context.item_id)} was refused. ${conflict.message}`, conflict.exitCode, {
-      ...conflict.context,
-      // Every committed write before the refusal: the close and each dependent already unblocked.
-      side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
-    });
-  }
+  if (conflict !== undefined) throw postCloseDependentConflict(conflict, closedId, unblockedIds);
   return warnings;
+}
+
+/**
+ * The refusal for a guarded dependent whose auto-unblock refused after the close
+ * committed. The dependent's own guidance says to retry with --expect-hash, but
+ * a repeated close is refused as terminal, so the remedy names only the unblock.
+ */
+function postCloseDependentConflict(conflict: PmCliError, closedId: string, unblockedIds: readonly string[]): PmCliError {
+  const dependent = String(conflict.context.item_id);
+  const unblock = renderPmCommand(["update", dependent, "--status", "open", "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${dependent}=<item_hash>`]);
+  return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
+    ...conflict.context,
+    required: `The close of ${closedId} is complete; do not retry it. Only the unblock of ${dependent} remains: re-read ${dependent} (pm get ${dependent} --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock}.`,
+    nextSteps: [renderPmCommand(["get", dependent, "--json"]), renderPmCommand(["history", dependent, "--limit", "5"]), unblock],
+    // Every committed write before the refusal: the close and each dependent already unblocked.
+    side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
+  });
 }
 
 /** A guarded dependent whose auto-unblock refused after a bulk row's close committed. */

@@ -5,7 +5,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { createExtensionCommandError } from "../error-runtime.js";
-import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
+import { isLiteralMutationInput, mutationInputAudience, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import {
@@ -135,11 +135,10 @@ import {
 } from "../test/entry.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
-  COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-  COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
+  CREATE_UNSET_FIELD_DEFINITIONS,
+  literalSentinelAdvisories,
   parseCommandUnsetTargets,
   resolveRuntimeUnsetFieldDefinition,
-  type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 import type {
   MutationMetadataCommandOptions,
@@ -265,17 +264,6 @@ interface CreateUnsetFieldDefinition {
   optionKey: string;
   metadataKey: string;
 }
-
-const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
-  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
-  {
-    canonical: "author",
-    aliases: ["author"],
-    optionKey: "author",
-    metadataKey: "author",
-  },
-  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-];
 
 const CREATE_UNSET_ALIAS_MAP: Map<string, CreateUnsetFieldDefinition> = (() => {
   const map = new Map<string, CreateUnsetFieldDefinition>();
@@ -1634,15 +1622,16 @@ async function validateCreateParentReference(
   itemId: string,
   parent: string,
   policy: Parameters<typeof validateMissingParentReference>[1],
+  audience: MutationInputAudience,
 ): Promise<{ parent: string; warnings: string[] }> {
   const normalized = normalizeItemReference(
-    normalizeParentReferenceValue(parent),
+    normalizeParentReferenceValue(parent, audience),
     settings.id_prefix,
   );
   if (isExternalDependencyReference(normalized)) {
     return { parent: normalized, warnings: [] };
   }
-  assertParentReferenceIsNotSelf(itemId, normalized, settings.id_prefix);
+  assertParentReferenceIsNotSelf(itemId, normalized, settings.id_prefix, audience);
   const parentLocated = await locateItem(
     pmRoot,
     normalized,
@@ -1656,7 +1645,7 @@ async function validateCreateParentReference(
   const normalizedParentId = normalizeItemId(normalized, settings.id_prefix);
   return {
     parent: normalized,
-    warnings: validateMissingParentReference(normalizedParentId, policy)
+    warnings: validateMissingParentReference(normalizedParentId, policy, audience)
       .warnings,
   };
 }
@@ -1668,6 +1657,7 @@ async function resolveCreateParentWithWarnings(params: {
   settings: PmSettings;
   typeRegistry: ItemTypeRegistry;
   policy: Parameters<typeof validateMissingParentReference>[1];
+  audience: MutationInputAudience;
 }): Promise<{ parent: string | undefined; warnings: string[] }> {
   if (params.parent === undefined) {
     return { parent: undefined, warnings: [] };
@@ -1679,6 +1669,7 @@ async function resolveCreateParentWithWarnings(params: {
     params.itemId,
     params.parent,
     params.policy,
+    params.audience,
   );
   return parentValidation;
 }
@@ -1721,12 +1712,13 @@ function resolveCreateSprintOrRelease(
   raw: string | undefined,
   field: Parameters<typeof validateSprintOrReleaseValue>[0],
   policy: Parameters<typeof validateSprintOrReleaseValue>[2],
+  audience: MutationInputAudience,
 ): { value: string | undefined; warnings: string[] } {
   const resolved = resolveUnsettableOptionalString(unsetKeys, metadataKey, raw);
   if (resolved === undefined) {
     return { value: undefined, warnings: [] };
   }
-  const validation = validateSprintOrReleaseValue(field, resolved, policy);
+  const validation = validateSprintOrReleaseValue(field, resolved, policy, audience);
   return { value: validation.value, warnings: validation.warnings };
 }
 
@@ -2739,6 +2731,8 @@ export async function runCreate(
   global: GlobalOptions,
 ): Promise<CreateResult> {
   options = prepareNativeMutationOptions("create", options);
+  // Refusals speak the caller's vocabulary: CLI flags, or SDK option keys (GH-1655).
+  const audience = mutationInputAudience(options);
   let resolvedOptions = normalizeLegacyNoneCreateOptions(
     await resolveCreateTransportInputs(options),
   );
@@ -2997,6 +2991,7 @@ export async function runCreate(
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const validationWarnings: string[] = [
     ...typeSelection.warnings,
+    ...literalSentinelAdvisories("create", resolvedOptions as Record<string, unknown>, audience === "sdk"),
     ...collectCreateScheduleWarnings(
       type,
       id,
@@ -3012,6 +3007,7 @@ export async function runCreate(
     settings,
     typeRegistry,
     policy: parentReferencePolicy,
+    audience,
   });
   parent = parentValidation.parent;
   validationWarnings.push(...parentValidation.warnings);
@@ -3021,6 +3017,7 @@ export async function runCreate(
     resolvedOptions.sprint,
     "sprint",
     sprintReleasePolicy,
+    audience,
   );
   const sprint = sprintResolved.value;
   validationWarnings.push(...sprintResolved.warnings);
@@ -3030,6 +3027,7 @@ export async function runCreate(
     resolvedOptions.release,
     "release",
     sprintReleasePolicy,
+    audience,
   );
   const release = releaseResolved.value;
   validationWarnings.push(...releaseResolved.warnings);

@@ -2,11 +2,13 @@ id: pm-thbdxu
 title: Expected revisions advance from the pre-override document when an item_store_write override transforms contents
 description: "Found in Codex review round 22 of PR #1654 (pm-gh1576). When a supported item_store_write extension override changes the persisted contents (for example a description-only transform), mutateItem advances the revision scope with its pre-override afterDocument. That hash does not describe the stored item, so a second guarded write in the same withExpectedItemRevisions scope (or a multi-write CLI command such as claim --start) refuses with item_revision_conflict although no other writer ran. It fails closed: a false refusal, never a lost update. advanceItemMutationPreconditions in core/store/item-mutation-precondition.ts receives the document from the item-store write path before the override result is known. Fix direction: advance from the persisted snapshot under the item lock (re-read or the override's returned contents), accounting for overrides that skip the write or delete, or refuse an incompatible override for a guarded write before committing."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[4]: expected-revision,extensions,pm-gh1576,storage-override
 created_at: "2026-11-03T09:22:22.425Z"
-updated_at: "2026-11-03T09:26:40.321Z"
+updated_at: "2026-11-03T21:43:08.814Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#436e44ca2d204a1ee603915a"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A guarded scope that writes the same item twice under a contents-transforming item_store_write override admits both writes; A skipped or delete-converted override write advances the scope to the stored state (or refuses before commit), with a spec for each; A competing peer write between the two guarded writes still refuses with item_revision_conflict"
@@ -18,4 +20,15 @@ expected_result: "Under a contents-transforming item_store_write override, a gua
 actual_result: "The scope advances to the pre-override document hash, so its own next guarded write refuses with item_revision_conflict."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-03T09:22:22.425Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-03T21:28:17.876Z","harness:claude-code","Implemented: when an item_store_write override transforms contents, redirects the path or skips the write (or an item_store_delete override skips or redirects the removal), mutateItem/deleteItem re-locate and parse the stored item under the still-held lock and advance the revision scope to that hash (readOverriddenCommitRevision in core/store/item-store.ts). A missing item advances to the empty tombstone; an unlocatable or unparseable one advances to an unmatchable revision (fail closed). Unoverridden writes keep the in-memory afterDocument, so ordinary writes pay no extra IO. advanceItemMutationPreconditions takes an optional revision. Negative control: the five new specs in tests/unit/core/store/item-store.spec.ts all fail against the pre-fix item-store.ts and pass with it."
+files[3]{path,scope}:
+  src/core/store/item-mutation-precondition.ts,project
+  src/core/store/item-store.ts,project
+  tests/unit/core/store/item-store.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/item-store.spec.ts,project,"harness:claude-code","2026-11-03T21:28:19.282Z",local_mutation,feat/sdk-caller-contract
+docs[2]{path,scope}:
+  docs/EXTENSION_AUTHOR_CONTRACTS.md,project
+  docs/SDK.md,project
 body: ""

@@ -3062,6 +3062,16 @@
       ],
       "package_version": "2026.11.3",
       "reason": "pm-gh1576: HistoryCompactBulkItemResult and HistoryRepairAllStreamResult gain only optional ItemRevisionConflictRowFields (error_code, expected_revision, current_revision, details) on refused rows; every existing producer and reader stays type-compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:assertParentReferenceIsNotSelf",
+        "signature ./sdk:normalizeParentReferenceValue",
+        "signature ./sdk:validateMissingParentReference",
+        "signature ./sdk:validateSprintOrReleaseValue"
+      ],
+      "package_version": "2026.11.3",
+      "reason": "pm-gh1655: assertParentReferenceIsNotSelf, normalizeParentReferenceValue, validateMissingParentReference and validateSprintOrReleaseValue gain only an optional trailing audience parameter (default cli), so every existing caller keeps the same wording and type-compatibility; pm-mrvq8u exports ItemRevisionConflictRowFields"
     }
   ],
   "entrypoints": {
@@ -4002,7 +4012,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "assertParentReferenceIsNotSelf",
-          "signature": "(itemId: string, parentId: string, prefix: string) => void | calls: (itemId: string, parentId: string, prefix: string) => void"
+          "signature": "(itemId: string, parentId: string, prefix: string, audience?: MutationInputAudience) => void | calls: (itemId: string, parentId: string, prefix: string, audience?: MutationInputAudience) => void"
         },
         {
           "classification": "advanced_export",
@@ -11171,6 +11181,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "ItemRevisionConflictRowFields",
+          "signature": "export interface ItemRevisionConflictRowFields { error_code?: typeof ITEM_REVISION_CONFLICT_CODE; expected_revision?: string; current_revision?: string; details?: PmCliErrorDetails; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "ItemRevisionContext",
           "signature": "export interface ItemRevisionContext { pmRoot?: string; cwd?: string; }"
         },
@@ -12432,7 +12448,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "normalizeParentReferenceValue",
-          "signature": "(rawValue: unknown) => string | calls: (rawValue: unknown) => string"
+          "signature": "(rawValue: unknown, audience?: MutationInputAudience) => string | calls: (rawValue: unknown, audience?: MutationInputAudience) => string"
         },
         {
           "classification": "supported",
@@ -21942,7 +21958,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validateMissingParentReference",
-          "signature": "(parentId: string, policy: ParentReferencePolicy) => { warnings: string[]; } | calls: (parentId: string, policy: ParentReferencePolicy) => { warnings: string[]; }"
+          "signature": "(parentId: string, policy: ParentReferencePolicy, audience?: MutationInputAudience) => { warnings: string[]; } | calls: (parentId: string, policy: ParentReferencePolicy, audience?: MutationInputAudience) => { warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -21966,7 +21982,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validateSprintOrReleaseValue",
-          "signature": "(field: \"release\" | \"sprint\", rawValue: string, policy: SprintReleaseFormatPolicy) => { value: string; warnings: string[]; } | calls: (field: \"sprint\" | \"release\", rawValue: string, policy: SprintReleaseFormatPolicy) => { value: string; warnings: string[]; }"
+          "signature": "(field: \"release\" | \"sprint\", rawValue: string, policy: SprintReleaseFormatPolicy, audience?: MutationInputAudience) => { value: string; warnings: string[]; } | calls: (field: \"sprint\" | \"release\", rawValue: string, policy: SprintReleaseFormatPolicy, audience?: MutationInputAudience) => { value: string; warnings: string[]; }"
         },
         {
           "classification": "advanced_export",

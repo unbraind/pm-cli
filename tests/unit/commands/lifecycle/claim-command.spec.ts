@@ -149,6 +149,27 @@ describe("runClaim/runRelease", () => {
     ).rejects.toThrow("storage unavailable");
   });
 
+  it("names candidates refused for an open blocker when the walk is exhausted", async () => {
+    const blocked = new PmCliError("blocked", EXIT_CODE.CONFLICT, { code: "start_blocked_by_open_dependency" });
+    const held = new PmCliError("held", EXIT_CODE.CONFLICT, { code: "already_claimed_by" });
+    const runner = async (id: string) => {
+      throw id === "pm-held" ? held : blocked;
+    };
+    const onlyRefused = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }] as never, false, {}, { start: true }, runner)
+      .then(() => { throw new Error("expected refusal"); }, (error: PmCliError) => error);
+    expect(onlyRefused).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "no_available_next_item", details: { start_refused: ["pm-a"] } } });
+    expect(onlyRefused.context.why).toBe("1 of 1 ranked candidates refused their start because a declared blocker is open (pm-a), and nothing was written to them; no other candidate was ranked.");
+    const mixed = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }, { id: "pm-held", reasons: [] }] as never, false, {}, { start: true }, runner)
+      .then(() => { throw new Error("expected refusal"); }, (error: PmCliError) => error);
+    expect(mixed.context.why).toContain("every other candidate was claimed by another agent");
+    const unavailable = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }] as never, false, {}, { start: true, ifAvailable: true }, runner);
+    expect(unavailable).toMatchObject({ available: false, attempts: 1, start_refused: ["pm-a"], warnings: ["no_available_next_item"] });
+    const heldOnly = await claimNextFromRecommendations([{ id: "pm-held", reasons: [] }] as never, false, {}, {}, runner)
+      .then(() => { throw new Error("expected refusal"); }, (error: PmCliError) => error);
+    expect(heldOnly.context.why).toBe("Every ranked candidate was claimed by another agent before this atomic selection completed.");
+    expect(heldOnly.context).not.toHaveProperty("details");
+  });
+
   it("honors if-available while advancing skipped ranked candidates", async () => {
     const recommendations = [
       { id: "pm-held", reasons: [] },

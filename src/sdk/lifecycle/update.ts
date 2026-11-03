@@ -10,7 +10,7 @@ import {
   readRoutedItemMetadata,
 } from "./repeated-terminal-state.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
+import { emptyMutationOptionMessage, isLiteralMutationInput, mutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import {
@@ -136,13 +136,10 @@ import {
 } from "./create.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
-  COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
-  CLOSE_REASON_UNSET_ALIASES,
-  COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-  COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  literalSentinelAdvisories,
   parseCommandUnsetTargets,
   resolveRuntimeUnsetFieldDefinition,
-  type CommandUnsetFieldDefinition,
+  UPDATE_UNSET_FIELD_DEFINITIONS,
 } from "./shared-unset-fields.js";
 import type {
   MutationMetadataCommandOptions,
@@ -262,18 +259,6 @@ interface UpdateUnsetFieldDefinition {
   optionKey: string;
   metadataKey: string;
 }
-
-const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
-  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
-  {
-    canonical: "close-reason",
-    aliases: CLOSE_REASON_UNSET_ALIASES,
-    optionKey: "closeReason",
-    metadataKey: "close_reason",
-  },
-  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
-  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-];
 
 const UPDATE_UNSET_ALIAS_MAP: Map<string, UpdateUnsetFieldDefinition> = (() => {
   const map = new Map<string, UpdateUnsetFieldDefinition>();
@@ -1991,18 +1976,12 @@ async function resolveParentReferenceForUpdate(params: {
   ) {
     return { resolvedParentValue: undefined, warnings: [] };
   }
-  const resolvedParentValue = normalizeItemReference(
-    normalizeParentReferenceValue(params.options.parent),
-    params.settings.id_prefix,
-  );
+  const audience = mutationInputAudience(params.options);
+  const resolvedParentValue = normalizeItemReference(normalizeParentReferenceValue(params.options.parent, audience), params.settings.id_prefix);
   if (isExternalDependencyReference(resolvedParentValue)) {
     return { resolvedParentValue, warnings: [] };
   }
-  assertParentReferenceIsNotSelf(
-    params.id,
-    resolvedParentValue,
-    params.settings.id_prefix,
-  );
+  assertParentReferenceIsNotSelf(params.id, resolvedParentValue, params.settings.id_prefix, audience);
   const parentLocated = await locateItem(
     params.pmRoot,
     resolvedParentValue,
@@ -2019,10 +1998,7 @@ async function resolveParentReferenceForUpdate(params: {
   );
   return {
     resolvedParentValue,
-    warnings: validateMissingParentReference(
-      normalizedParentId,
-      params.parentReferencePolicy,
-    ).warnings,
+    warnings: validateMissingParentReference(normalizedParentId, params.parentReferencePolicy, audience).warnings,
   };
 }
 
@@ -2303,7 +2279,7 @@ function applyCloseReasonMutations(
       const closeReason = context.options.closeReason?.trim() ?? "";
       if (closeReason.length === 0) {
         throw new PmCliError(
-          "--close-reason must not be empty",
+          emptyMutationOptionMessage(mutationInputAudience(context.options), "close-reason"),
           EXIT_CODE.USAGE,
         );
       }
@@ -2875,7 +2851,7 @@ function applyAssigneeMutation(
     const assignee = context.options.assignee?.trim() ?? "";
     if (assignee === "") {
       throw new PmCliError(
-        "--assignee must not be empty. Use --unset assignee to clear it.",
+        emptyMutationOptionMessage(mutationInputAudience(context.options), "assignee", ". Use --unset assignee to clear it."),
         EXIT_CODE.USAGE,
       );
     }
@@ -2923,6 +2899,7 @@ function applySprintReleaseMutation(
       key,
       context.options[key] ?? "",
       context.settings.validation.sprint_release_format,
+      mutationInputAudience(context.options),
     );
     document.metadata[key] = validation.value;
     warnings.push(...validation.warnings);
@@ -3515,6 +3492,7 @@ async function runUpdateWithContext(
       item: toItemRecord(result.item),
       changed_fields: result.changedFields,
       warnings: [
+        ...literalSentinelAdvisories("update", options as Record<string, unknown>, mutationInputAudience(options) === "sdk"),
         ...workflowTransitionWarnings,
         ...parentReferenceWarnings,
         ...dependencyTargetWarnings,

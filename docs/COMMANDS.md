@@ -968,7 +968,11 @@ Starting work respects declared blockers
 in_progress`, `pm claim <id> --start`, `pm claim --next --start` and the
 `start-task` action refuse with `start_blocked_by_open_dependency` (exit 4)
 when the item moves into the start status while a `blocked_by` target is still
-open. An item already in that status is not rechecked, so `claim --start` on it
+open. `pm claim --next --start` skips a ranked candidate refused this way (its
+blocker opened after ranking, and nothing is written to it), claims the next
+eligible candidate, and lists the skipped ids in `start_refused`. When the walk
+is exhausted, the `no_available_next_item` refusal (or the `--if-available`
+empty result) carries them too. An item already in that status is not rechecked, so `claim --start` on it
 succeeds. The check runs before any write: the
 explicit `claim <id> --start` judges it under the claim's item lock, and its
 status update judges again under its own lock. When the first check refuses,
@@ -1031,7 +1035,11 @@ carrying `error_code`, `expected_revision`, `current_revision` and
 `details.changes_since`. When `close` auto-unblocks a guarded dependent whose revision
 moved, the close stays committed and the command refuses with that dependent's
 `item_revision_conflict` once the fan-out finishes. `side_effects` names every
-write that committed first: the close and each dependent already unblocked. `close-many` reports such a row as `closed` (`update-many` closing
+write that committed first: the close and each dependent already unblocked. Do
+not retry the close, which is refused as already terminal. The refusal's
+`required` and `nextSteps` name only the remaining step: re-read the dependent,
+then unblock it with `pm update <dependent> --status open --unset blocked_by
+--unset blocked_reason --expect-hash <dependent>=<item_hash>`. `close-many` reports such a row as `closed` (`update-many` closing
 through `--status`, as `updated`), with the dependent's conflict under
 `dependent_revision_conflict`. A guarded `restore` refuses to recover
 over a live file that cannot be read as a document; an unguarded restore still

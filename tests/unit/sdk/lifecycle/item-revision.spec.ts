@@ -493,6 +493,12 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: dependents[0] } });
       expect(refusal.message).toContain(`${blocker} was closed, but auto-unblocking ${dependents[0]} was refused.`);
       expect(refusal.context.side_effects).toEqual([{ path: `history/${blocker}.jsonl`, op: "close" }]);
+      // pm-mrvq8u: the close is complete, so the remedy names only the dependent unblock, never a close retry.
+      const guidance = [refusal.context.required, ...(refusal.context.nextSteps ?? [])].join("\n");
+      expect(refusal.context.required).toContain(`The close of ${blocker} is complete; do not retry it. Only the unblock of ${dependents[0]} remains`);
+      expect(refusal.context.nextSteps).toContain(`pm update ${dependents[0]} --status open --unset blocked_by --unset blocked_reason --expect-hash "${dependents[0]}=<item_hash>"`);
+      expect(guidance).not.toContain("retry with --expect-hash");
+      expect(guidance).not.toMatch(/pm close/u);
       expect((await pm.get(blocker)).item.status).toBe("closed");
       for (const id of dependents) expect((await pm.get(id)).item.status).toBe("blocked");
     });

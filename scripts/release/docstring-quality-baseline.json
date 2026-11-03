@@ -54,7 +54,7 @@
     "src/core/item/item-format-version.ts": 4,
     "src/core/item/item-format.ts": 10,
     "src/core/item/item-type-definition.ts": 1,
-    "src/core/item/parent-reference-policy.ts": 3,
+    "src/core/item/parent-reference-policy.ts": 2,
     "src/core/item/parse.ts": 7,
     "src/core/item/sprint-release-format.ts": 2,
     "src/core/item/status-filter.ts": 1,

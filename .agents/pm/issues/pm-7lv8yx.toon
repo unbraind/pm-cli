@@ -1,0 +1,21 @@
+id: pm-7lv8yx
+title: "Typed SDK collection and dependency refusals still name CLI flags: comment/note/file/test/doc entry grammar and unresolved dependency recovery"
+description: "Found while fixing GH-1655 (pm-gh1655). A probe of 44 create/update options x 4 tokens through PmClient on the 2026.11.3 build shows the scalar refusals now use SDK wording, but two families still speak CLI: (1) collection entry grammar: comment/note/file/test/doc with an empty entry refuse '--comment requires text=<value>', '--file requires path=<value> or a bare file path', '--test requires command=<value> ...', '--doc requires path=<value> ...'; and an empty dep entry refuses '--dep requires id and kind, or a bare item id ...'. (2) dependency resolution: dep ['none'] or ['-'] refuses 'Dependency target not found: <prefix>-none' with next steps that name CLI flags (for example --allow-unresolved-deps) instead of allowUnresolvedDeps. A typed null on a collection option refuses 'create dep must be a string or string array.' without naming the clearDeps/clearComments form. The audience helpers from pm-gh1655 (mutationInputAudience, mutationOptionLabel in core/item/literal-mutation-input.ts) are the intended mechanism."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,pm-gh1655,refusals,sdk
+created_at: "2026-11-03T21:40:03.206Z"
+updated_at: "2026-11-03T21:40:03.206Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Typed SDK collection-entry refusals (comment, note, learning, file, test, doc, dep) name the SDK option key and entry grammar, never a --flag, with a spec per family; An unresolved typed SDK dependency refusal names allowUnresolvedDeps (and clearDeps for a former sentinel) instead of CLI flags; A typed null on a collection option either clears it like its clear* option or refuses naming that option; CLI wording for the same refusals is unchanged, proven by the existing CLI specs"
+parent: pm-9rgaal
+risk: low
+confidence: high
+severity: low
+expected_result: Every typed create/update refusal names an SDK remedy
+actual_result: Collection-entry and unresolved-dependency refusals name CLI flags to SDK callers
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1655,discovered_from,"2026-11-03T21:40:03.206Z","harness:claude-code","cli:create:dep",detected
+body: ""

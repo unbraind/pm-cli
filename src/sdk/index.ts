@@ -301,6 +301,7 @@ export {
   type ExpectHashSpec,
   type ItemRevision,
   type ItemRevisionChange,
+  type ItemRevisionConflictRowFields,
   type ItemRevisionContext,
 } from "./lifecycle/item-revision.js";
 export {

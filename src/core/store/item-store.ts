@@ -648,6 +648,43 @@ function resolveItemStoreWriteOverride(
   };
 }
 
+/**
+ * The revision a later locked write will find after a storage override changed
+ * what this commit persisted: transformed contents, a redirected path, or a
+ * skipped write or delete (pm-thbdxu). Expected-revision scopes advance to it,
+ * not to the pre-override document. A missing item reads as the empty
+ * tombstone; a document that cannot be located or parsed yields an unmatchable
+ * revision, so the scope's next guarded write refuses instead of guessing.
+ */
+async function readOverriddenCommitRevision(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  id: string;
+  typeToFolder: Record<string, string>;
+  extensionFieldNames?: readonly string[];
+  /** Document handed to scoped guards when the stored one cannot be read. */
+  fallback: ItemDocument;
+}): Promise<{ document: ItemDocument; revision?: string }> {
+  try {
+    const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, params.typeToFolder);
+    if (!located) return { document: EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument };
+    // Invalid UTF-8 needs no check here: the next locked read refuses it before any expectation is judged.
+    return {
+      document: parseItemDocument(await fs.readFile(located.itemPath, "utf8"), {
+        format: located.item_format,
+        requireSupportedFormat: true,
+        schema: params.settings.schema,
+        extensionFieldNames: resolveActiveExtensionFieldNames(params.extensionFieldNames),
+      }),
+    };
+  } catch {
+    return { document: params.fallback, revision: UNREADABLE_COMMIT_REVISION };
+  }
+}
+
+/** Expected revision no item_hash can equal: the committed document could not be read back. */
+const UNREADABLE_COMMIT_REVISION = "unreadable-after-storage-override";
+
 /** Run the item_store_delete override and resolve its target path and skip flag. */
 async function resolveItemStoreDeleteOverride(payload: {
   op: "delete";
@@ -911,11 +948,15 @@ async function mutateItemWithDeferredHistoryContext(
           derivedIndexWarnings,
           effectiveTargetItemPath,
           overrideWarnings: serviceWriteOverride.warnings,
+          overridden: skipItemWrite || effectiveTargetItemPath !== targetItemPath || effectiveSerializedAfter !== serializedAfter,
         };
       },
     );
     const { derivedIndexWarnings, effectiveTargetItemPath } = committed;
-    advanceItemMutationPreconditions(params.pmRoot, afterDocument, located.id);
+    const stored = committed.overridden
+      ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder, extensionFieldNames: params.extensionFieldNames, fallback: afterDocument })
+      : { document: afterDocument };
+    advanceItemMutationPreconditions(params.pmRoot, stored.document, located.id, [], stored.revision);
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,
@@ -1200,13 +1241,18 @@ export async function deleteItem(params: {
           derivedIndexWarnings,
           effectiveItemPath,
           overrideWarnings: warnings,
+          overridden: skipDelete || effectiveItemPath !== located.itemPath,
         };
       },
     );
     const { derivedIndexWarnings, effectiveItemPath } = committed;
     // The item is now absent; a later restore in the same scope must find that tombstone revision.
     // The tombstone has no embedded id: carry the pre-delete one so a case-variant spelling still advances.
-    advanceItemMutationPreconditions(params.pmRoot, tombstoneDocument, located.id, [document.metadata.id]);
+    // A delete override that skipped or redirected the removal leaves the stored item it actually kept.
+    const stored = committed.overridden
+      ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder: prepared.typeToFolder, fallback: tombstoneDocument })
+      : { document: tombstoneDocument };
+    advanceItemMutationPreconditions(params.pmRoot, stored.document, located.id, [document.metadata.id], stored.revision);
 
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({

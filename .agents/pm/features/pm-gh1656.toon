@@ -1,0 +1,25 @@
+id: pm-gh1656
+title: "GH-1656: a transaction-owned finalization step for commitItemMutations, so importers keep rollback under the GH-1591 ownership guard"
+description: "Since GH-1591 (pm-pllp78) commitItemMutations compensates only effects it can prove a step owns. pm-github's importer finalizes exact GitHub source-lifecycle fields (persistImportFidelity, a raw mutateItem op 'import') from the committing transition observer. That event is outside every step's ownership proof, so a failure after finalization reports transaction_partial_mutation and leaves a half-imported tracker. The bulk union accepts only create, update, close and release, and update cannot write native lifecycle fields (closed_at, completed_at) or arbitrary extension fields. Need a journaled step the transaction owns, with its own snapshot and compensation, without weakening the ownership guard. Related to transaction inspection (pm-gh1597)."
+type: Feature
+status: open
+priority: 1
+tags[5]: extensions,"gh:1656",importers,sdk,transactions
+created_at: "2026-11-03T21:20:19.362Z"
+updated_at: "2026-11-03T22:32:57.471Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "commitItemMutations accepts a finalization step (field-level document patch or SDK-applied finalize step) that is journaled, attributed to the transaction and compensated by restore exactly like an update step; The GH-1656 reproduction (update step plus finalization, then a failure in the committing observer) restores the item to its pre-batch document with no transaction_partial_mutation; An unowned write by another writer between apply and compensation still refuses with transaction_partial_mutation (negative control); The step is exposed through the public SDK types, docs/SDK.md and the SDK surface snapshot; recovery of an interrupted journal re-applies or adopts the finalization deterministically"
+parent: pm-9rgaal
+risk: high
+confidence: medium
+expected_result: "An importer finalization inside commitItemMutations is journaled as a step the transaction owns, so a failure after it restores the pre-batch document"
+actual_result: "Finalization written from the committing observer is unowned, so a later failure reports transaction_partial_mutation and leaves a half-imported tracker"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1597,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
+  pm-pllp78,discovered_from,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
+  pm-xm7c,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
+  pm-y9hq,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-03T21:20:19.362Z","harness:claude-code","Duplicate check: the create-time detector matched pm-pllp78 (GH-1591, the ownership guard fix, closed). This item is not a recurrence of that defect: the guard stays as shipped, and this asks for a new journaled step type the guard can attribute. pm search for 'finalization commitItemMutations' found only the closed bulk-helper lineage (pm-xm7c, pm-y9hq)."
+body: ""

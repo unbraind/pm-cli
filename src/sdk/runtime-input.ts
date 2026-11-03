@@ -12,6 +12,7 @@ import { resolveCheckpointRollbackId } from "../core/checkpoint/mutation-checkpo
 import { withLiteralMutationInput } from "./lifecycle/cli-input.js";
 import { isCliMutationInput } from "../core/item/literal-mutation-input.js";
 import { assertMutationItemOperand, assertNativeMutationValueTypes } from "./runtime/mutation-value-validation.js";
+import { foldNullClearsIntoUnset } from "./lifecycle/shared-unset-fields.js";
 import {
   normalizeListOptions,
   normalizeCreateOptions,
@@ -549,7 +550,12 @@ function normalizedActionOptions(
     ...(mcpMutation ? hoistedMcpMutationOptions(action, args, nested) : hoisted),
     ...nested,
   };
-  if ((action === "create" || action === "update") && !mcpMutation) assertNativeMutationValueTypes(action, options, true, isRuntimeRecord(args.options) && isCliMutationInput(args.options));
+  if ((action === "create" || action === "update") && !mcpMutation) {
+    const cli = isRuntimeRecord(args.options) && isCliMutationInput(args.options);
+    // `options` is this dispatch's own merged copy, so typed null clears fold into unset here (GH-1655).
+    if (!cli) foldNullClearsIntoUnset(action, options);
+    assertNativeMutationValueTypes(action, options, true, cli);
+  }
   return mcpMutation ? checkedMcpMutationOptions(action, args, options) : normalizeMcpOptionsArrays(options, action);
 }
 

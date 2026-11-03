@@ -230,3 +230,77 @@ describe("literal SDK mutation inputs (pm-gh1614, pm-gh1606)", () => {
     });
   });
 });
+
+/** Run a call that must refuse and return the refusal's guidance text. */
+async function refusalText(run: () => Promise<unknown>): Promise<string> {
+  const error = await run().then(() => { throw new Error("expected a refusal"); }, (refusal: unknown) => refusal as PmCliError);
+  expect(error).toBeInstanceOf(PmCliError);
+  return [error.message, error.context.required ?? "", ...(error.context.nextSteps ?? [])].join(" | ");
+}
+
+describe("typed SDK refusals and clears (pm-gh1655)", () => {
+  it("names SDK remedies, never CLI flags, for parent, sprint, release, assignee and closeReason refusals", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const { item } = await client.create({ type: "Task", title: "Refusal target" });
+      const cases: Array<[() => Promise<unknown>, string]> = [
+        [() => client.create({ type: "Task", title: "a", parent: "none" }), 'parent must not be the placeholder "none". Pass unset: ["parent"] or null to clear it, or omit parent.'],
+        [() => client.update(item.id, { parent: "NULL" }), 'parent must not be the placeholder "NULL". Pass unset: ["parent"] or null to clear it, or omit parent.'],
+        [() => client.create({ type: "Task", title: "b", parent: " " }), 'parent must not be empty. Pass unset: ["parent"] or null to clear it, or omit parent.'],
+        [() => client.update(item.id, { parent: item.id }), `cannot be the same as item "${item.id}". Pass unset: ["parent"] or null to clear it.`],
+        [() => client.create({ type: "Task", title: "c", parent: "pm-zzzz" }), 'Parent item "pm-zzzz" was not found. Create it first or omit parent.'],
+        [() => client.update(item.id, { parent: "pm-zzzz" }), 'Parent item "pm-zzzz" was not found. Create it first or omit parent.'],
+        [() => client.create({ type: "Task", title: "d", sprint: "" }), 'sprint must not be empty. Pass unset: ["sprint"] or null to clear it, or omit sprint.'],
+        [() => client.update(item.id, { release: "" }), 'release must not be empty. Pass unset: ["release"] or null to clear it, or omit release.'],
+        [() => client.update(item.id, { assignee: " " }), 'assignee must not be empty. Pass unset: ["assignee"] or null to clear it, or omit assignee.'],
+        [() => client.update(item.id, { closeReason: "" }), 'closeReason must not be empty. Pass unset: ["close-reason"] or null to clear it, or omit closeReason.'],
+      ];
+      for (const [run, expected] of cases) {
+        const text = await refusalText(run);
+        expect(text).toContain(expected);
+        expect(text).not.toMatch(/(?:^|\s)--[a-z]/u);
+      }
+      await client.config("project", "set", "sprint-release-format-policy", undefined, { policy: "strict_error" });
+      expect(await refusalText(() => client.update(item.id, { sprint: "two words" }))).toContain('Invalid sprint value "two words".');
+    });
+  });
+
+  it("clears a clearable field from typed null on create, update and direct domain calls", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const { item: parent } = await client.create({ type: "Task", title: "Parent" });
+      const created = await client.create({ type: "Task", title: "Null clears", parent: null, assignee: null, unset: ["goal"] } as never);
+      expect(created.item.parent).toBeUndefined();
+      expect(created.item.assignee).toBeUndefined();
+      const { item } = await client.create({ type: "Task", title: "Child", parent: parent.id, assignee: "owner", sprint: "s1" });
+      await client.update(item.id, { parent: null, assignee: null } as never);
+      expect((await client.get(item.id)).item).not.toHaveProperty("parent");
+      expect((await client.get(item.id)).item).not.toHaveProperty("assignee");
+      await client.run("update", { id: item.id, options: { sprint: null, unset: "reviewer" } });
+      expect((await client.get(item.id)).item).not.toHaveProperty("sprint");
+      const global = { path: pmPath };
+      await runUpdate(item.id, { parent: parent.id }, global);
+      await runUpdate(item.id, { parent: null } as never, global);
+      expect((await client.get(item.id)).item).not.toHaveProperty("parent");
+      expect((await runCreate({ type: "Task", title: "Direct null", assignee: null } as never, global)).item.assignee).toBeUndefined();
+      // Fields unset cannot clear, and the author attribution, keep their by-name refusal.
+      expect(await refusalText(() => client.create({ type: "Task", title: null } as never))).toContain("create title must be a string.");
+      expect(await refusalText(() => client.create({ type: "Task", title: "x", author: null } as never))).toContain("create author must be a string.");
+      expect(await refusalText(() => client.update(item.id, { parent: null, unset: 5 } as never))).toContain("must be");
+    });
+  });
+
+  it("advises when typed input stores a former clear sentinel literally, and never advises the CLI", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
+      const created = await client.create({ type: "Task", title: "Advised", assignee: "none", goal: "ship" });
+      expect(created.warnings).toContain("literal_sentinel_stored:assignee:none");
+      expect(created.warnings?.some((warning) => warning.includes(":goal:"))).toBe(false);
+      const updated = await client.update(created.item.id, { reviewer: " NULL ", sprint: "-" });
+      expect(updated.warnings).toEqual(expect.arrayContaining(["literal_sentinel_stored:reviewer:NULL", "literal_sentinel_stored:sprint:-"]));
+      const viaCli = await client.update(created.item.id, withCliMutationInput({ assignee: "none" }));
+      expect(viaCli.warnings?.some((warning) => warning.startsWith("literal_sentinel_stored:")) ?? false).toBe(false);
+      expect((await client.get(created.item.id)).item.assignee).toBeUndefined();
+    });
+  });
+});

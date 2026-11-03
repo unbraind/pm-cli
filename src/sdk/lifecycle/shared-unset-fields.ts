@@ -252,6 +252,76 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetF
     },
   ] as const;
 
+/** Every field `pm create --unset` (and the SDK `unset` option on create) can clear. */
+export const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
+  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
+  {
+    canonical: "author",
+    aliases: ["author"],
+    optionKey: "author",
+    metadataKey: "author",
+  },
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
+];
+
+/** Every field `pm update --unset` (and the SDK `unset` option on update) can clear. */
+export const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
+  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  {
+    canonical: "close-reason",
+    aliases: CLOSE_REASON_UNSET_ALIASES,
+    optionKey: "closeReason",
+    metadataKey: "close_reason",
+  },
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
+];
+
+/** Spellings that once cleared a field on every surface and now persist literally from typed callers. */
+const FORMER_CLEAR_SENTINELS = new Set(["none", "null", "-"]);
+
+function unsetDefinitionsFor(action: "create" | "update"): readonly CommandUnsetFieldDefinition[] {
+  return action === "create" ? CREATE_UNSET_FIELD_DEFINITIONS : UPDATE_UNSET_FIELD_DEFINITIONS;
+}
+
+/**
+ * Treat a typed `null` on a clearable option as an explicit clear (GH-1655):
+ * `{ parent: null }` becomes `unset: ["parent"]`. Options `unset` cannot clear
+ * keep their `null`, so value validation refuses them by name, and so does
+ * `author`: on the SDK it names who performs the write, not a stored field.
+ * Mutates the bag, which must be a caller-private copy; an `unset` that is
+ * neither absent, a string nor an array is left for value validation to refuse.
+ */
+export function foldNullClearsIntoUnset(action: "create" | "update", options: Record<string, unknown>): void {
+  const current = options.unset;
+  if (current !== undefined && typeof current !== "string" && !Array.isArray(current)) return;
+  const tokens: string[] = [];
+  for (const definition of unsetDefinitionsFor(action)) {
+    if (definition.optionKey === "author" || !Object.hasOwn(options, definition.optionKey) || options[definition.optionKey] !== null) continue;
+    Reflect.deleteProperty(options, definition.optionKey);
+    tokens.push(definition.canonical);
+  }
+  if (tokens.length === 0) return;
+  options.unset = [...(current === undefined ? [] : typeof current === "string" ? [current] : current), ...tokens];
+}
+
+/**
+ * Advisory warnings for typed input that stored a former clear sentinel
+ * literally (GH-1614 keeps `assignee: "none"` as a person called none). Each
+ * names the field and the clear form: `literal_sentinel_stored:<field>:<value>`,
+ * cleared with `unset: ["<field>"]` or `null`. CLI input is never advised: its
+ * adapter still maps the sentinels to clears.
+ */
+export function literalSentinelAdvisories(action: "create" | "update", options: Record<string, unknown>, literal: boolean): string[] {
+  if (!literal) return [];
+  return unsetDefinitionsFor(action).flatMap((definition) => {
+    const value = options[definition.optionKey];
+    return typeof value === "string" && FORMER_CLEAR_SENTINELS.has(value.trim().toLowerCase())
+      ? [`literal_sentinel_stored:${definition.canonical}:${value.trim()}`]
+      : [];
+  });
+}
+
 /** Result of matching a runtime schema field against a command `--unset` token. */
 export interface RuntimeUnsetFieldDefinition {
   /** Value that configures or reports option key for this contract. */
