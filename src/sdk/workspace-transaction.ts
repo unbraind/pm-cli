@@ -651,8 +651,8 @@ async function compensateAppliedSteps(
  * Isolation (GH-1620): the lock serializes transaction coordinators only.
  * Ordinary SDK, CLI and MCP writers take per-item locks and do not wait for it,
  * so a peer can commit between a step's `inspect()` and `apply()`. A step that
- * decides from what it read must guard its write, for example by capturing
- * `readItemRevision()` in `inspect()` and running `apply()` inside
+ * decides from what it read must guard its write: take the decision data and
+ * `item_hash` from one `get()` in `inspect()`, then run `apply()` inside
  * `withExpectedItemRevisions()`, which refuses with `item_revision_conflict`.
  */
 export async function commitWorkspaceTransaction(

@@ -48,7 +48,8 @@ describe("pm-gh1576 revision scopes across SDK bundle graphs", () => {
     const precondition = await import(MODULE);
     const root = await mkdtemp(path.join(tmpdir(), "pm-scope-root-"));
     const link = `${root}-link`;
-    await symlink(root, link);
+    // A junction needs no elevated rights on Windows; other platforms ignore the type.
+    await symlink(root, link, "junction");
     try {
       const document = { metadata: { id: "pm-a", title: "A" }, body: "" } as unknown as ItemDocument;
       const scope = precondition.createItemRevisionScope();

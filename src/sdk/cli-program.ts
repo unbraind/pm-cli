@@ -86,7 +86,7 @@ export function createPmCliProgram(version: string): Command {
     .option("--author <id>", "Override mutation author for this invocation")
     .option(
       "--expect-hash <revision>",
-      "Refuse each item write unless the item is still at this item_hash from pm get; repeat or use <id>=<item_hash> for several items",
+      "Refuse writes to the named item unless it is still at this item_hash from pm get (a bare hash names the command's <id>; guard each other item with <id>=<item_hash>, repeatable)",
       (value: string, previous: string[] | undefined) => [...(previous ?? []), value],
     )
     .exitOverride();

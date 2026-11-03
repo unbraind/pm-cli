@@ -151,6 +151,8 @@ interface TestAllItemRunContext {
   trackingAttempt: number | undefined;
   trackingResumedFrom: string | undefined;
   runStartedAt: string;
+  /** Expected-revision refusals from result recording, raised once every item has run (pm-gh1576). */
+  revisionConflicts: unknown[];
 }
 
 interface TestAllItemExecution {
@@ -638,8 +640,12 @@ const appendTestAllItemTracking = async (
       },
     });
   } catch (error: unknown) {
-    // Recording stays best-effort, except a declared expected revision (pm-gh1576) refuses typed.
-    if (isItemRevisionConflict(error)) throw error;
+    // Recording stays best-effort, except a declared expected revision (pm-gh1576) refuses typed,
+    // once every item has run, so one stale item never stops the rest of the batch.
+    if (isItemRevisionConflict(error)) {
+      context.revisionConflicts.push(error);
+      return [];
+    }
     return [
       `test_result_tracking_failed:${entry.item.id}:${formatTrackingError(error)}`,
     ];
@@ -692,6 +698,7 @@ const buildTestAllItemRunContext = (params: {
       process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM,
     ),
     runStartedAt: params.runStartedAt,
+    revisionConflicts: [],
   };
 };
 
@@ -750,6 +757,8 @@ const runTestAllItems = async (
         ` passed=${execution.passed} failed=${execution.failed} skipped=${execution.skipped}`,
     );
   }
+  const [conflict] = context.revisionConflicts;
+  if (conflict !== undefined) throw conflict;
 };
 
 const appendContextPreflightWarning = (

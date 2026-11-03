@@ -8,7 +8,6 @@
  * covers every item write the wrapped operation makes, including writes made
  * by extension commands and bulk transactions.
  */
-import path from "node:path";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { hashDocument } from "../../core/history/history.js";
 import { readHistoryEntries } from "../../core/history/read.js";
@@ -21,7 +20,7 @@ import {
   type ItemRevisionScope,
 } from "../../core/store/item-mutation-precondition.js";
 import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { resolvePmRoot } from "../../core/store/paths.js";
+import { getHistoryPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError, type PmCliErrorDetails } from "../../core/shared/errors.js";
@@ -211,7 +210,7 @@ export async function describeItemRevisionChanges(
 ): Promise<{ expected_revision_recorded: boolean; changes_since: ItemRevisionChange[]; changes_since_omitted: number } | undefined> {
   let history: HistoryEntry[];
   try {
-    history = await readHistoryEntries(path.join(pmRoot, "history", `${id}.jsonl`), id);
+    history = await readHistoryEntries(getHistoryPath(pmRoot, id), id);
   } catch {
     return undefined;
   }

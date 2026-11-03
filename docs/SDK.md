@@ -1313,8 +1313,9 @@ That lock does not exclude ordinary writers ([GH-1620](https://github.com/unbrai
 `update`, `close`, `pm comments --add` and every other SDK, CLI or MCP mutation
 take per-item locks, so a peer can commit between a step's `inspect()` and
 `apply()`. A step that decides from what it read guards its write with an
-[expected item revision](#expected-item-revisions): capture `readItemRevision()`
-in `inspect()` and run the write inside `withExpectedItemRevisions()`. The
+[expected item revision](#expected-item-revisions): in `inspect()`, take both
+the decision data and `item_hash` from one `get()`, then run the write inside
+`withExpectedItemRevisions()`. The
 write then refuses with `item_revision_conflict` instead of overwriting the
 peer's change, and the transaction compensates.
 Before invoking a pending step, it also persists that step's durable ownership
@@ -1364,19 +1365,23 @@ Expected-revision preconditions are tracked by
 Read-decide-write agents and packages guard a write with the revision their
 decision was based on. Every current `pm get` / `PmClient.get` read reports
 `item_hash`, the SHA-256 of the canonical item document and the same value as
-the item's latest history `after_hash`; `readItemRevision(id)` returns it
-without the rest of the read. Run the write inside `withExpectedItemRevisions`:
+the item's latest history `after_hash` (a field-projected read includes it only
+when the selection names `item_hash`, for example `--fields title,tags,item_hash`).
+`readItemRevision(id)` returns it alone. Take the hash from the same read your
+decision uses: a separate read could observe a newer revision than the data you
+decided on. Run the write inside `withExpectedItemRevisions`:
 
 ```ts
 import { PmClient, isItemRevisionConflict } from "@unbrained/pm-cli/sdk";
 
 const pm = new PmClient({ pmRoot });
-const { item_hash } = await pm.readItemRevision(id);
-// ...decide from what was read...
+// Decide from the same read that reports the revision, never from a separate one.
+const read = await pm.get(id);
+const reason = `Delivered by ${read.item.tags?.find((tag) => tag.startsWith("delivery-pr:"))}`;
 try {
   const { result, unchecked } = await pm.withExpectedItemRevisions(
-    [{ id, itemHash: item_hash }],
-    () => pm.close(id, "Delivered by PR 1"),
+    [{ id, itemHash: read.item_hash! }],
+    () => pm.close(id, reason),
   );
 } catch (error) {
   if (!isItemRevisionConflict(error)) throw error;
