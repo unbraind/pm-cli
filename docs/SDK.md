@@ -1221,33 +1221,27 @@ file. This also applies to the corresponding `runCreate`, `runUpdate`,
 `runAppend` operations and update-many mutation values. Normal field validation,
 whitespace handling, structured collection syntax, and project schemas still
 apply. Clear a scalar field with `unset: ["assignee"]`, or pass JavaScript
-`null` for any option that the command's `unset` list covers: `{ parent: null }`
-is `unset: ["parent"]`
-([pm-gh1655](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1655.toon);
-this tracker record is repository-only and excluded from npm). `tags` is a CSV
-option in that list, so `tags: null` clears the tags like `unset: ["tags"]`; it
-has no `clearTags` option. The nullable keys are exactly the option keys of the
-unset table (exported as `CreateNullClearableOptionKey` and
-`UpdateNullClearableOptionKey`): `unset: ["rank"]` clears `order` because `rank`
-is an unset alias, but `rank: null` is refused, so pass `order: null`; on create,
-`unset: ["author"]` is accepted while `author: null` is refused. `null` on any other option (`title`, the `author`
-attribution, the repeatable collection options such as `comment` or `dep`)
-still refuses by name; clear those collections with their `clear*` options. When typed input
+`null` for any option the command's `unset` list covers: `{ parent: null }` is
+`unset: ["parent"]`, and `tags: null` clears the tags (there is no `clearTags`).
+The nullable keys are exactly the unset table's option keys
+(`CreateNullClearableOptionKey`, `UpdateNullClearableOptionKey`). `rank` is only
+an unset alias of `order`, so `rank: null` is refused (pass `order: null`), and
+create accepts `unset: ["author"]` but refuses `author: null`. `null` on any
+other option (`title`, `author`, collection options such as `comment` or `dep`)
+refuses by name; clear collections with their `clear*` options. When typed input
 stores a former clear sentinel (`"none"`, `"null"` or `"-"`) in a clearable
-string field, the result carries the advisory warning
-`literal_sentinel_stored:<field>:<value>`. The value is now data (an assignee
-called `none`), not a clear, and the advisory appears only while the committed
-item still holds it. It reads the document pm committed and recorded in
-history, so an `item_store_write` override that rewrites the stored contents
-can drop the value from storage while the advisory still reports it. Refusals for typed SDK and MCP input name the option key
-and the `unset` remedy both transports accept, for example `parent must not be
-the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.` CLI
-refusals keep their flag wording. `PmCreateActionOptions`,
+field, the result warns `literal_sentinel_stored:<field>:<value>`: the value is
+now data (an assignee called `none`). The advisory appears only while the
+document pm committed and recorded in history still holds the value, so an
+`item_store_write` override that rewrites stored contents can drop it from
+storage while the advisory still reports it. Typed SDK and MCP refusals name the
+option key and the `unset` remedy both accept, for example `parent must not be
+the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.`;
+CLI refusals keep their flag wording. `PmCreateActionOptions`,
 `PmUpdateActionOptions`, `CreateOperationOptions` and `UpdateOperationOptions`
-type the clearable fields as nullable, so `runCreate` and `runUpdate` accept
-the same input as `PmClient.create` and `PmClient.update`. `null` clears are a
-create/update contract: `update-many` (`PmUpdateManyActionOptions`) and MCP
-tools take `unset` only.
+type the clearable fields as nullable, so `runCreate`/`runUpdate` accept the
+same input as `PmClient.create`/`update`. `update-many`
+(`PmUpdateManyActionOptions`) and MCP tools take `unset` only.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
 literal data, including `"none"` and `"null"`. Explicit CLI flags override
@@ -1461,12 +1455,11 @@ and `close-many` keep their partial-success semantics: a stale row fails with
 `changes_since_omitted`) a single-item refusal carries, while fresh rows
 proceed. The exported `ItemRevisionConflictRowFields` type declares those row
 fields; `HistoryCompactBulkItemResult` and `HistoryRepairAllStreamResult` extend
-it. When an `item_store_write` or `item_store_delete` storage override
-transforms, redirects or skips what a guarded write persisted, the scope
-advances to the revision actually stored, read back under the item lock, so the
-scope's own next write is admitted and only a competing write refuses. If the
-stored item cannot be read back, or the override rewrote its embedded id, the
-scope's next guarded write refuses although no other writer ran (fail closed). When a peer writes while `restore` or history maintenance waits for
+it. When an `item_store_write` or `item_store_delete` override transforms,
+redirects or skips a guarded write, the scope advances to the revision read back
+from storage under the item lock: its own next write is admitted, a competing
+one refuses. If the item cannot be read back, or its embedded id was rewritten,
+the next guarded write refuses (fail closed). When a peer writes while `restore` or history maintenance waits for
 its lock, a declared revision turns the generic drift refusal into this typed
 conflict. Linked-test result recording (`test --run`, `test-all` with
 `test_result_tracking` enabled) stays best-effort, except that a stale declared

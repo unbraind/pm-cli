@@ -4183,6 +4183,11 @@ describe("create command helper coverage", () => {
       .toEqual({ title: "x", sprint: "s1", unset: ["order"] });
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ rank: "3" }, { title: "x", rank: "4", unset: ["order"] } as never))
       .toMatchObject({ rank: "4" });
+    // addTags extends tags, so clearing tags drops template addTags; a caller's own addTags stays for the conflict refusal.
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ tags: "a", addTags: ["b"], sprint: "s1" }, { title: "x", unset: ["tags"] } as never))
+      .toEqual({ title: "x", sprint: "s1", unset: ["tags"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ addTags: ["b"] }, { title: "x", addTags: ["c"], unset: ["tags"] } as never))
+      .toMatchObject({ addTags: ["c"] });
   });
 
   it("normalizes template command paths and merges explicit create options over templates", () => {

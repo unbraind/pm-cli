@@ -3071,7 +3071,7 @@
         "signature ./sdk:validateSprintOrReleaseValue"
       ],
       "package_version": "2026.11.3",
-      "reason": "pm-gh1655: assertParentReferenceIsNotSelf, normalizeParentReferenceValue, validateMissingParentReference and validateSprintOrReleaseValue gain only an optional trailing audience parameter (default cli), so every existing caller keeps the same wording and type-compatibility; pm-mrvq8u exports ItemRevisionConflictRowFields"
+      "reason": "pm-gh1655: these validators gain only an optional trailing audience parameter (default cli), so existing callers keep their wording and types; pm-mrvq8u exports ItemRevisionConflictRowFields"
     },
     {
       "changes": [
@@ -3081,7 +3081,7 @@
         "signature ./sdk/contracts:PmUpdateActionOptions"
       ],
       "package_version": "2026.11.3",
-      "reason": "pm-gh1655: PmCreateActionOptions and PmUpdateActionOptions widen the fields the command's unset table covers to also accept null (the typed clear). Writers are unaffected: every value they passed before still compiles. Code that reads these option types must now handle null as well as undefined for those fields, for example a wrapper that calls a string method on options.parent after checking only !== undefined. author and non-clearable fields stay non-nullable."
+      "reason": "pm-gh1655: fields the command's unset table covers also accept null (the typed clear). Writers still compile; readers must handle null as well as undefined there, e.g. a wrapper calling a string method on options.parent after only !== undefined. author and non-clearable fields stay non-nullable."
     },
     {
       "changes": [
@@ -3098,7 +3098,7 @@
         "signature ./sdk/runtime:runUpdate"
       ],
       "package_version": "2026.11.3",
-      "reason": "pm-gh1655: CreateOperationOptions and UpdateOperationOptions get the same nullable clearable fields, and runCreate/runUpdate take them, so a wrapper that forwards PmCreateActionOptions or PmUpdateActionOptions to runCreate or runUpdate compiles again. Writers are unaffected. Readers of these option types must handle null for the clearable fields. PmUpdateManyActionOptions keeps its previous non-nullable shape through the shared PmUpdateActionFields alias."
+      "reason": "pm-gh1655: the operation options get the same nullable clearable fields and runCreate/runUpdate take them, so wrappers forwarding the action options compile again. Writers are unaffected; readers must handle null there. PmUpdateManyActionOptions keeps its non-nullable shape via PmUpdateActionFields."
     }
   ],
   "entrypoints": {

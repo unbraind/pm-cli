@@ -1425,8 +1425,8 @@ function mergeCreateOptionsWithTemplate(
  * Let an explicit unset, including a typed null folded into one (GH-1655),
  * override the template's default for that field. Tokens resolve exactly as the
  * unset parser resolves them, so a legacy runtime field named with a comma stays
- * one field; `rank` writes the same field as `order`, so clearing order drops a
- * template rank too. A value the caller passed explicitly is kept.
+ * one field. `rank` writes `order` and `addTags` extends `tags`, so clearing
+ * either also drops that template companion. A value the caller passed is kept.
  */
 function dropTemplateDefaultsForExplicitUnsets(
   merged: Record<string, unknown>,
@@ -1434,7 +1434,7 @@ function dropTemplateDefaultsForExplicitUnsets(
   runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
 ): void {
   const keys = [...parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys]
-    .flatMap((optionKey) => (optionKey === "order" ? ["order", "rank"] : [optionKey]));
+    .flatMap((key) => (key === "order" ? [key, "rank"] : key === "tags" ? [key, "addTags"] : [key]));
   for (const key of keys) {
     if (Reflect.get(explicitOptions, key) === undefined) Reflect.deleteProperty(merged, key);
   }
