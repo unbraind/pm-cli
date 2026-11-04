@@ -1417,15 +1417,27 @@ function mergeCreateOptionsWithTemplate(
       merged[key] = Array.isArray(value) ? [...value] : value;
     }
   }
-  // An explicit unset, including a typed null folded into one (GH-1655), overrides the template's default for that field.
-  // Resolve tokens exactly as the unset parser will, so a legacy runtime field named with a comma stays one field.
-  for (const optionKey of parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys) {
-    // `rank` writes the same field as `order`, so clearing order drops a template rank too.
-    for (const key of optionKey === "order" ? ["order", "rank"] : [optionKey]) {
-      if (Reflect.get(explicitOptions, key) === undefined) Reflect.deleteProperty(merged, key);
-    }
-  }
+  dropTemplateDefaultsForExplicitUnsets(merged, explicitOptions, runtimeFieldRegistry);
   return transferMutationStdinTokenPolicy(explicitOptions, merged as CreateCommandOptions);
+}
+
+/**
+ * Let an explicit unset, including a typed null folded into one (GH-1655),
+ * override the template's default for that field. Tokens resolve exactly as the
+ * unset parser resolves them, so a legacy runtime field named with a comma stays
+ * one field; `rank` writes the same field as `order`, so clearing order drops a
+ * template rank too. A value the caller passed explicitly is kept.
+ */
+function dropTemplateDefaultsForExplicitUnsets(
+  merged: Record<string, unknown>,
+  explicitOptions: CreateCommandOptions,
+  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
+): void {
+  const keys = [...parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys]
+    .flatMap((optionKey) => (optionKey === "order" ? ["order", "rank"] : [optionKey]));
+  for (const key of keys) {
+    if (Reflect.get(explicitOptions, key) === undefined) Reflect.deleteProperty(merged, key);
+  }
 }
 
 function normalizeExtensionCommandPath(command: string): string {
