@@ -1406,6 +1406,7 @@ export function requireStringOption(
 function mergeCreateOptionsWithTemplate(
   templateOptions: Record<string, unknown>,
   explicitOptions: CreateCommandOptions,
+  runtimeFieldRegistry?: RuntimeFieldRegistry,
 ): CreateCommandOptions {
   const merged: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(templateOptions)) {
@@ -1417,9 +1418,9 @@ function mergeCreateOptionsWithTemplate(
     }
   }
   // An explicit unset, including a typed null folded into one (GH-1655), overrides the template's default for that field.
-  for (const token of (explicitOptions.unset ?? []).flatMap((entry) => entry.split(","))) {
-    const definition = CREATE_UNSET_ALIAS_MAP.get(token.trim().toLowerCase());
-    if (definition !== undefined && Reflect.get(explicitOptions, definition.optionKey) === undefined) Reflect.deleteProperty(merged, definition.optionKey);
+  // Resolve tokens exactly as the unset parser will, so a legacy runtime field named with a comma stays one field.
+  for (const optionKey of parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys) {
+    if (Reflect.get(explicitOptions, optionKey) === undefined) Reflect.deleteProperty(merged, optionKey);
   }
   return transferMutationStdinTokenPolicy(explicitOptions, merged as CreateCommandOptions);
 }
@@ -1898,7 +1899,7 @@ async function resolveCreateTypeSelection(
       pmRoot,
     );
     resolvedOptions = normalizeLegacyNoneCreateOptions(
-      prepareNativeMutationOptions("create", mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions)),
+      prepareNativeMutationOptions("create", mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions, resolveRuntimeFieldRegistry(settings.schema))),
     );
   }
   if (resolvedOptions.type === undefined) {

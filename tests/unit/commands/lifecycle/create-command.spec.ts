@@ -4170,8 +4170,11 @@ describe("create command helper coverage", () => {
 
   it("lets an explicit unset override the template default for that field (pm-gh1655)", () => {
     const template = { parent: "pm-template-parent", sprint: "s1", release: "r1" };
-    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", unset: ["parent,unknown-field"] } as never))
-      .toEqual({ title: "x", sprint: "s1", release: "r1", unset: ["parent,unknown-field"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", unset: ["parent"] } as never))
+      .toEqual({ title: "x", sprint: "s1", release: "r1", unset: ["parent"] });
+    // Tokens resolve exactly as the unset parser resolves them: an unresolvable whole entry splits on commas.
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", unset: ["parent,release"] } as never))
+      .toEqual({ title: "x", sprint: "s1", unset: ["parent,release"] });
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", parent: "pm-explicit", unset: ["parent"] } as never))
       .toMatchObject({ parent: "pm-explicit", sprint: "s1" });
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x" } as never)).toMatchObject({ parent: "pm-template-parent" });

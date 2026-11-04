@@ -431,7 +431,9 @@ async function autoUnblockResolvedDependents(
   if (conflict !== undefined) {
     // Attach the dependent's change evidence first, so the pending list joins it instead of displacing it.
     const enriched = await enrichItemRevisionConflict(conflict, pmRoot) as PmCliError;
-    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, conflictIds, failed, openStatus: statusRegistry.open_status, blockedStatus: statusRegistry.blocked_status, commandScope });
+    // Discovery spans every blocked-role status, the same set the fan-out drew its candidates from.
+    const blockedStatuses = [...statusRegistry.blocked_statuses].sort().join(",");
+    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, conflictIds, failed, openStatus: statusRegistry.open_status, blockedStatuses, commandScope });
   }
   return warnings;
 }
@@ -487,7 +489,7 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   conflictIds: readonly string[];
   failed: ReadonlyArray<{ id: string; reason: string }>;
   openStatus: string;
-  blockedStatus: string;
+  blockedStatuses: string;
   commandScope: readonly string[];
 }): PmCliError {
   const { closedId, conflictIds, failed, commandScope } = fanOut;
@@ -499,7 +501,7 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
     ? ""
     : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives each reason. Fix that cause before unblocking it.`;
   // The fan-out warnings are dropped with the refusal, so ids past the report limit are found by listing instead.
-  const discovery = renderPmCommand([...commandScope, "list", "--status", fanOut.blockedStatus, "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]);
+  const discovery = renderPmCommand([...commandScope, "list", "--status", fanOut.blockedStatuses, "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]);
   const truncated = conflictIds.length > POST_CLOSE_REPORT_LIMIT || failed.length > POST_CLOSE_REPORT_LIMIT;
   const steps = [
     ...conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT).flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),

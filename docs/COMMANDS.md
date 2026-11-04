@@ -1049,9 +1049,10 @@ check can reopen an item that is still blocked. Dependents whose unblock failed
 for another reason are listed with that reason in `details.auto_unblock_failed`;
 fix the cause first. Each list names at most 10 ids and reports the rest as an
 `*_omitted` count, so the details stay within the error-details size limit.
-When ids were omitted, the last next step lists the items still in the blocked
-status (`pm list --status <blocked-status> --fields
-id,title,blocked_by,dependencies`). `close-many` reports such a row as `closed` (`update-many` closing
+When ids were omitted, the last next step lists the items still in any status
+with the blocked role (`pm list --status <blocked-statuses> --fields
+id,title,blocked_by,dependencies`, where `<blocked-statuses>` is the
+comma-separated set the fan-out drew its candidates from). `close-many` reports such a row as `closed` (`update-many` closing
 through `--status`, as `updated`), with the dependent's conflict under
 `dependent_revision_conflict`. A guarded `restore` refuses to recover
 over a live file that cannot be read as a document; an unguarded restore still
