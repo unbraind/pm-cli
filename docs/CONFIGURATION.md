@@ -264,7 +264,14 @@ Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. T
 
 ### Telemetry environment variables
 
-Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to opt out persistently (see [Common Settings](#common-settings)). Consent and the event endpoint live only in the global profile: a scope-less `telemetry-tracking` call targets it, project-scope `get` and `set` refuse while project `list` and `export` omit the key, `pm init` asks only while no choice is recorded there, keeps a choice recorded while its prompt is open, reports the global value, and writes no project `telemetry` block, and an older project block is ignored. When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
+Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to opt out persistently (see [Common Settings](#common-settings)). Consent and the event endpoint live only in the global profile:
+
+- A scope-less `telemetry-tracking` call targets the global profile.
+- Project-scope `get` and `set` refuse. Project `list` and `export` omit the key.
+- `pm init` asks only while no choice is recorded in the global profile. It keeps a choice another process records while its prompt is open. It reports the global value and writes no project `telemetry` block.
+- An older project `telemetry` block is ignored.
+
+When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
 
 | Variable                             | Values                                        | Use                                                                                                                                             |
 | ------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |

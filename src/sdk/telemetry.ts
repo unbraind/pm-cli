@@ -85,7 +85,7 @@ export interface TelemetryStatusSummary {
   configured_enabled: boolean;
   /** Process opt-outs, resolved without changing persisted preferences. */
   env_overrides: ReturnType<typeof resolveTelemetryEnvironmentPolicy>;
-  /** Configured delivery endpoint. */
+  /** Effective delivery endpoint: a valid http(s) `PM_TELEMETRY_ENDPOINT` override, else the configured endpoint, with credentials, query and fragment removed. */
   endpoint: string;
   /** Local event queue path. */
   queue_path: string;
