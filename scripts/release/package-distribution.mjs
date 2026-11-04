@@ -150,10 +150,13 @@ function stageRuntime(root, stage, manifest, ledger) {
     );
 }
 
+/** A pipe that separates cells: one preceded by an even number of backslashes, as GFM reads it. */
+const CELL_SEPARATOR = /(?<=(?:^|[^\\])(?:\\\\)*)\|/u;
+
 /** Split a GFM table row into trimmed cells; an escaped pipe stays inside its cell. */
 function tableCells(row) {
-  const body = row.trim().replace(/^\|/u, "").replace(/(?<!\\)\|$/u, "");
-  return body.split(/(?<!\\)\|/u).map((cell) => cell.trim());
+  const body = row.trim().replace(/^\|/u, "").replace(new RegExp(`${CELL_SEPARATOR.source}$`, "u"), "");
+  return body.split(new RegExp(CELL_SEPARATOR.source, "gu")).map((cell) => cell.trim());
 }
 
 /** A separator cell's alignment: what GFM reads from it, independent of dash count. */
@@ -165,11 +168,11 @@ function separatorAlignment(cell) {
 const TABLE_ROW = /^( {0,3})\|.*\|\s*$/u;
 /** HTML blocks whose raw lines run to a closing marker (CommonMark start conditions 1-5). */
 const RAW_HTML_TO_MARKER = [
-  [/^ {0,3}<(?:pre|script|style|textarea)(?=[\s>]|$)/iu, /<\/(?:pre|script|style|textarea)>/iu],
-  [/^ {0,3}<!--/u, /-->/u],
-  [/^ {0,3}<\?/u, /\?>/u],
-  [/^ {0,3}<![A-Za-z]/u, />/u],
-  [/^ {0,3}<!\[CDATA\[/u, /\]\]>/u],
+  [/^ {0,3}<(?:pre|script|style|textarea)(?=[\s>]|$)/iu, (text) => /<\/(?:pre|script|style|textarea)>/iu.test(text)],
+  [/^ {0,3}<!--/u, (text) => text.includes("-->")],
+  [/^ {0,3}<\?/u, (text) => text.includes("?>")],
+  [/^ {0,3}<![A-Za-z]/u, (text) => text.includes(">")],
+  [/^ {0,3}<!\[CDATA\[/u, (text) => text.includes("]]>")],
 ];
 /** Condition 6: a block-level tag, raw up to the next blank line, which may interrupt a paragraph. */
 const RAW_HTML_BLOCK_TAG = new RegExp(
@@ -197,12 +200,12 @@ function closesFence(content, fence) {
 }
 
 /**
- * Where the HTML block a line opens ends: a closing-marker pattern, "blank", or
+ * Where the HTML block a line opens ends: a closing-marker test, "blank", or
  * undefined when it closes on the same line. Null when the line opens none.
  */
 function rawHtmlEnd(line, previous) {
   const opener = RAW_HTML_TO_MARKER.find(([start]) => start.test(line));
-  if (opener) return opener[1].test(line.replace(opener[0], "")) ? undefined : opener[1];
+  if (opener) return opener[1](line.replace(opener[0], "")) ? undefined : opener[1];
   const loneTagStartsBlock = RAW_HTML_LONE_TAG.test(line) && (previous === undefined || previous.trim() === "");
   return RAW_HTML_BLOCK_TAG.test(line) || loneTagStartsBlock ? "blank" : null;
 }
@@ -221,7 +224,7 @@ function proseLines(lines) {
       return false;
     }
     if (rawEnd !== undefined) {
-      if (rawEnd === "blank" ? line.trim() === "" : rawEnd.test(line)) rawEnd = undefined;
+      if (rawEnd === "blank" ? line.trim() === "" : rawEnd(line)) rawEnd = undefined;
       return false;
     }
     fence = fenceOpener(line);

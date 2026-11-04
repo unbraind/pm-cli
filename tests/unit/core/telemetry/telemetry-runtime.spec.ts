@@ -1316,6 +1316,21 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("records an endpoint override redacted in its state file (GH-1660)", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const restore = snapshotEnv(["PM_TELEMETRY_ENDPOINT"]);
+      try {
+        process.env.PM_TELEMETRY_ENDPOINT = "http://collector-user:collector-pass@127.0.0.1:9/v1/events?token=t";
+        await flushTelemetryQueueNow(globalRoot);
+        const state = await _testOnly.readRuntimeState(globalRoot);
+        expect(state.endpoint).toBe("http://127.0.0.1:9/v1/events");
+        expect(JSON.stringify(state)).not.toMatch(/collector-pass|token=t/u);
+      } finally {
+        restore();
+      }
+    });
+  });
+
   it("records span delivery state in the shared state file even under an endpoint override (GH-1660)", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const restore = snapshotEnv(["PM_TELEMETRY_ENDPOINT"]);

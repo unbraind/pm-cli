@@ -220,6 +220,11 @@ it("compacts only real tables: a block-starting header over a matching delimiter
     ["<custom-tag>\n| x   |\n| --- |", "<custom-tag>\n| x   |\n| --- |"],
     ["text\n\n<custom-tag>\n| x   |\n| --- |", "text\n\n<custom-tag>\n| x   |\n| --- |"],
     ["text\n<custom-tag>\n\n| x   |\n| --- |", "text\n<custom-tag>\n\n| x |\n|---|"],
+    // A pipe after an even number of backslashes separates cells, as GFM reads it.
+    ["| alpha\\\\| beta      |\n| -------- |", "| alpha\\\\| beta      |\n| -------- |"],
+    ["| a\\\\| b   |\n| --- | --- |", "| a\\\\ | b |\n|---|---|"],
+    // A comment block ends at -->, as CommonMark specifies, not at --!>.
+    ["<!-- c --!>\n| x   |\n| --- |\n-->\n\n| y   |\n| --- |", "<!-- c --!>\n| x   |\n| --- |\n-->\n\n| y |\n|---|"],
     // Two pipe rows without a delimiter row are a paragraph, not a table.
     ["| a   |\n| b   |", "| a   |\n| b   |"],
     // A fence inside a list item, a block quote or indentation leaves the whole file unchanged:

@@ -17,6 +17,7 @@ import { resolveAutomaticReadSampleRate } from "./read-sampling.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   isTelemetryTestEnvironment,
+  redactTelemetryEndpoint,
   resolveTelemetryEndpointOverride,
   resolveTelemetryEnvironmentPolicy,
   resolveTelemetrySourceAttribution,
@@ -2162,6 +2163,11 @@ async function markFailedEntriesInCurrentQueue(
 }
 
 /** Send one due event batch without holding the mutation mutex, then reconcile its result against the current queue and record delivery diagnostics. */
+/** The endpoint a state file records: an override redacted, since it may carry credentials or a query token (GH-1660). */
+function recordedStateEndpoint(endpoint: string, override: string | null): string {
+  return override === null ? endpoint : redactTelemetryEndpoint(endpoint);
+}
+
 async function flushQueue(
   globalPmRoot: string,
   endpoint: string,
@@ -2172,6 +2178,7 @@ async function flushQueue(
   // always agree, even when the environment changed since the command started.
   const override = resolveTelemetryEndpointOverride().endpoint;
   const normalizedEndpoint = (override ?? endpoint).trim();
+  const stateEndpoint = recordedStateEndpoint(normalizedEndpoint, override);
   const writeState = (patch: TelemetryRuntimeState): Promise<void> => writeRuntimeState(globalPmRoot, patch, override);
   if (normalizedEndpoint.length === 0) {
     return;
@@ -2179,7 +2186,7 @@ async function flushQueue(
   const raw = await readFileIfExists(queuePath(globalPmRoot, override));
   if (raw === null || raw.trim().length === 0) {
     await writeState({
-      endpoint: normalizedEndpoint,
+      endpoint: stateEndpoint,
       queue_entries: 0,
     });
     return;
@@ -2187,7 +2194,7 @@ async function flushQueue(
   const queueEntries = parseQueueLines(raw);
   if (queueEntries.length === 0) {
     await writeState({
-      endpoint: normalizedEndpoint,
+      endpoint: stateEndpoint,
       queue_entries: 0,
     });
     return;
@@ -2199,7 +2206,7 @@ async function flushQueue(
   if (retainedEntries.length === 0) {
     const remaining = await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays, override);
     await writeState({
-      endpoint: normalizedEndpoint,
+      endpoint: stateEndpoint,
       queue_entries: remaining.length,
     });
     return;
@@ -2212,7 +2219,7 @@ async function flushQueue(
       ? await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays, override)
       : retainedEntries;
     await writeState({
-      endpoint: normalizedEndpoint,
+      endpoint: stateEndpoint,
       queue_entries: remaining.length,
     });
     return;
@@ -2254,7 +2261,7 @@ async function flushQueue(
       return "telemetry_flush_failed";
     })();
     await writeState({
-      endpoint: normalizedEndpoint,
+      endpoint: stateEndpoint,
       queue_entries: retried.length,
       last_attempted_flush_at: attemptTime,
       last_failed_flush_at: attemptTime,
@@ -2271,7 +2278,7 @@ async function flushQueue(
       override,
     );
     await writeState({
-      endpoint: normalizedEndpoint,
+      endpoint: stateEndpoint,
       queue_entries: remaining.length,
       last_attempted_flush_at: attemptTime,
       last_successful_flush_at: attemptTime,
@@ -2290,7 +2297,7 @@ async function flushQueue(
       () => retainedEntries,
     );
     await writeState({
-      endpoint: normalizedEndpoint,
+      endpoint: stateEndpoint,
       queue_entries: currentEntries.length,
       last_attempted_flush_at: attemptTime,
       last_failed_flush_at: attemptTime,
