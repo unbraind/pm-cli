@@ -6,6 +6,7 @@ import * as lockModule from "../../../../src/core/lock/lock.js";
 import { hashDocument } from "../../../../src/core/history/history.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
+import { isPmCliErrorDetails } from "../../../../src/core/shared/error-details.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {
   advanceItemMutationPreconditions,
@@ -550,7 +551,37 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       expect(details.pending_unblock).toHaveLength(10);
       expect(details).toMatchObject({ pending_unblock_omitted: 2, auto_unblock_failed: [], auto_unblock_failed_omitted: 0 });
       expect(refusal.context.required).toContain(", and 2 more)");
+      expect(refusal.context.required).toContain("More dependents were left blocked than this refusal names; list them with");
       expect(refusal.context.nextSteps).toHaveLength(20);
+      expect(refusal.context.nextSteps?.at(-1)).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "list", "--status", "blocked", "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]));
+      expect(isPmCliErrorDetails(refusal.context.details)).toBe(true);
+      expect(Buffer.byteLength(JSON.stringify(refusal.context.details), "utf8")).toBeLessThanOrEqual(4096);
+    });
+  });
+
+  it("bounds a report of many non-conflict failures with long reasons", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const blocker = createTestItemId(context, { title: "Many failures blocker" });
+      const { item: guarded } = await pm.create({ type: "Task", title: "Guarded dependent", status: "blocked", blockedBy: blocker, blockedReason: "waiting" });
+      const stale = (await pm.readItemRevision(guarded.id)).item_hash;
+      await pm.update(guarded.id, { title: "Guarded dependent, edited by a peer" });
+      const broken = [];
+      for (let index = 0; index < 12; index += 1) {
+        broken.push((await pm.create({ type: "Task", title: `Broken dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" })).item.id);
+      }
+      const policy = context.runCli(["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"], { expectJson: true });
+      expect(policy.code, policy.stderr).toBe(0);
+      for (const id of broken) await rm(path.join(context.pmPath, "history", `${id}.jsonl`));
+      const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id: guarded.id, itemHash: stale }], () => pm.close(blocker, "Delivered")));
+      const details = refusal.context.details as { pending_unblock: string[]; auto_unblock_failed: Array<{ reason: string }>; auto_unblock_failed_omitted: number };
+      expect(details.pending_unblock).toEqual([guarded.id]);
+      expect(details.auto_unblock_failed.length).toBeLessThanOrEqual(10);
+      expect(details.auto_unblock_failed.length + details.auto_unblock_failed_omitted).toBe(12);
+      for (const entry of details.auto_unblock_failed) expect(entry.reason.length).toBeLessThanOrEqual(160);
+      expect(isPmCliErrorDetails(refusal.context.details)).toBe(true);
+      expect(refusal.context.nextSteps?.length).toBeLessThanOrEqual(20);
+      expect(refusal.context.nextSteps?.at(-1)).toContain("list --status blocked");
     });
   });
 

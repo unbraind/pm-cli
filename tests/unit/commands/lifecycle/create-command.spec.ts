@@ -4168,6 +4168,15 @@ describe("create command helper coverage", () => {
     expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--estimated-minutes", "sdk")).toThrow("Missing required option estimatedMinutes");
   });
 
+  it("lets an explicit unset override the template default for that field (pm-gh1655)", () => {
+    const template = { parent: "pm-template-parent", sprint: "s1", release: "r1" };
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", unset: ["parent,unknown-field"] } as never))
+      .toEqual({ title: "x", sprint: "s1", release: "r1", unset: ["parent,unknown-field"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", parent: "pm-explicit", unset: ["parent"] } as never))
+      .toMatchObject({ parent: "pm-explicit", sprint: "s1" });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x" } as never)).toMatchObject({ parent: "pm-template-parent" });
+  });
+
   it("normalizes template command paths and merges explicit create options over templates", () => {
     expect(
       _testOnlyCreateCommand.normalizeExtensionCommandPath(

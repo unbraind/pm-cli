@@ -431,13 +431,16 @@ async function autoUnblockResolvedDependents(
   if (conflict !== undefined) {
     // Attach the dependent's change evidence first, so the pending list joins it instead of displacing it.
     const enriched = await enrichItemRevisionConflict(conflict, pmRoot) as PmCliError;
-    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, conflictIds, failed, openStatus: statusRegistry.open_status, commandScope });
+    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, conflictIds, failed, openStatus: statusRegistry.open_status, blockedStatus: statusRegistry.blocked_status, commandScope });
   }
   return warnings;
 }
 
 /** Dependents a post-close refusal names, so its diagnostics stay inside the error-details byte ceiling. */
 const POST_CLOSE_REPORT_LIMIT = 10;
+
+/** Recovery commands a post-close refusal lists, discovery step included. */
+const POST_CLOSE_STEP_LIMIT = 20;
 
 /** Lists trimmed, in order, until the merged post-close details fit the error-details ceiling; each keeps its floor. */
 const POST_CLOSE_DETAIL_TRIMS = [
@@ -484,6 +487,7 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   conflictIds: readonly string[];
   failed: ReadonlyArray<{ id: string; reason: string }>;
   openStatus: string;
+  blockedStatus: string;
   commandScope: readonly string[];
 }): PmCliError {
   const { closedId, conflictIds, failed, commandScope } = fanOut;
@@ -494,13 +498,17 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   const otherFailures = failed.length === 0
     ? ""
     : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives each reason. Fix that cause before unblocking it.`;
+  // The fan-out warnings are dropped with the refusal, so ids past the report limit are found by listing instead.
+  const discovery = renderPmCommand([...commandScope, "list", "--status", fanOut.blockedStatus, "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]);
+  const truncated = conflictIds.length > POST_CLOSE_REPORT_LIMIT || failed.length > POST_CLOSE_REPORT_LIMIT;
+  const steps = [
+    ...conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT).flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
+    ...reported.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
+  ].slice(0, truncated ? POST_CLOSE_STEP_LIMIT - 1 : POST_CLOSE_STEP_LIMIT);
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
-    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}`,
-    nextSteps: [
-      ...conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT).flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
-      ...reported.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
-    ],
+    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` More dependents were left blocked than this refusal names; list them with ${discovery}.` : ""}`,
+    nextSteps: truncated ? [...steps, discovery] : steps,
     details: fitPostCloseDetails({
       ...structuredClone(conflict.context.details),
       pending_unblock: conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT),

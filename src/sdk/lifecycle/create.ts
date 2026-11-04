@@ -1416,6 +1416,11 @@ function mergeCreateOptionsWithTemplate(
       merged[key] = Array.isArray(value) ? [...value] : value;
     }
   }
+  // An explicit unset, including a typed null folded into one (GH-1655), overrides the template's default for that field.
+  for (const token of (explicitOptions.unset ?? []).flatMap((entry) => entry.split(","))) {
+    const definition = CREATE_UNSET_ALIAS_MAP.get(token.trim().toLowerCase());
+    if (definition !== undefined && Reflect.get(explicitOptions, definition.optionKey) === undefined) Reflect.deleteProperty(merged, definition.optionKey);
+  }
   return transferMutationStdinTokenPolicy(explicitOptions, merged as CreateCommandOptions);
 }
 

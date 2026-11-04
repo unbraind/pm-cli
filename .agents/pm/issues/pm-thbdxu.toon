@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: expected-revision,extensions,pm-gh1576,storage-override
 created_at: "2026-11-03T09:22:22.425Z"
-updated_at: "2026-11-04T02:24:31.445Z"
+updated_at: "2026-11-04T03:10:26.436Z"
 closed_at: "2026-11-03T23:23:24.030Z"
 completed_at: "2026-11-03T23:23:24.030Z"
 author: "harness:claude-code"
@@ -21,11 +21,12 @@ expected_result: "Under a contents-transforming item_store_write override, a gua
 actual_result: "Verified: five specs in tests/unit/core/store/item-store.spec.ts (transforming write admits a second guarded write and a peer write still refuses; skipped write; skipped delete; write moved out of the tracker; unparseable contents) fail against the pre-fix item-store.ts and pass with the fix; 100% coverage"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-03T09:22:22.425Z","harness:claude-code","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-11-03T21:28:17.876Z","harness:claude-code","Implemented: when an item_store_write override transforms contents, redirects the path or skips the write (or an item_store_delete override skips or redirects the removal), mutateItem/deleteItem re-locate and parse the stored item under the still-held lock and advance the revision scope to that hash (readOverriddenCommitRevision in core/store/item-store.ts). A missing item advances to the empty tombstone; an unlocatable or unparseable one advances to an unmatchable revision (fail closed). Unoverridden writes keep the in-memory afterDocument, so ordinary writes pay no extra IO. advanceItemMutationPreconditions takes an optional revision. Negative control: the five new specs in tests/unit/core/store/item-store.spec.ts all fail against the pre-fix item-store.ts and pass with it."
   "2026-11-03T22:55:03.569Z","harness:claude-code","Codex review round 1 (gpt-6.1-sol, xhigh) P1, fixed: the stored-revision read-back ran after commitLockedItemWrite returned, i.e. outside lease.fence, so after a lease takeover a competing writer's revision could be adopted as the scope's expected revision and the scope's next guarded write would overwrite it unrefused. The read-back now runs inside the fence callback on both the write and the delete path, and only the in-memory advance happens after it."
   "2026-11-04T01:17:03.868Z","harness:claude-code","CodeRabbit full review of PR 1658: docs/EXTENSION_AUTHOR_CONTRACTS.md now states that a handler persisting contents the store cannot parse makes the scope's next guarded write refuse with item_revision_conflict, matching docs/SDK.md."
   "2026-11-04T02:24:31.444Z","harness:claude-code","CodeRabbit re-review of PR 1658: EXTENSION_AUTHOR_CONTRACTS.md corrected; after an unparseable override write, the scope's next guarded update/close/delete fails reading the document (item_document_invalid) before any revision check, and a guarded restore refuses with item_revision_conflict."
+  "2026-11-04T03:10:26.436Z","harness:claude-code","CodeRabbit review of 6b86e7a98 (Major), fixed: an item_store_write override that rewrites the embedded id leaves the stored item at an identity no scope entry is bound to, so readOverriddenCommitRevision now fails closed (unmatchable revision) when the read-back document embeds an id other than the one the commit kept; spec 'fails closed when the override rewrote the embedded id' with a negative control. The unparseable-override spec also asserts that the scope's next guarded update fails with item_document_invalid."
 files[3]{path,scope}:
   src/core/store/item-mutation-precondition.ts,project
   src/core/store/item-store.ts,project

@@ -1080,6 +1080,20 @@ describe("core/store/item-store", () => {
       });
     });
 
+    it("fails closed when the override rewrote the embedded id, so no entry is left unbound", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-renamed-scope";
+        const { itemPath } = await writeTaskItem(pmPath, id);
+        const settings = await readSettings(pmPath);
+        setActiveExtensionServices({ overrides: [{ layer: "project", name: "rename", service: "item_store_write",
+          run: (context) => ({ contents: String((context.payload as { contents: string }).contents).replace(/^id: pm-renamed-scope$/mu, "id: pm-renamed-elsewhere") }) }] });
+        const scope = await bindScope(pmPath, id, itemPath);
+        await runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "renamed"));
+        expect(await fs.readFile(itemPath, "utf8")).toContain("id: pm-renamed-elsewhere");
+        expect(scope.entries.get(id)?.expected).not.toMatch(/^[0-9a-f]{64}$/u);
+      });
+    });
+
     it("fails closed when the override persisted contents the store cannot parse", async () => {
       await withTempPmPath(async ({ pmPath }) => {
         const id = "pm-garbled-scope";
@@ -1089,6 +1103,9 @@ describe("core/store/item-store", () => {
         const scope = await bindScope(pmPath, id, itemPath);
         await runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "garbled"));
         expect(scope.entries.get(id)?.expected).not.toMatch(/^[0-9a-f]{64}$/u);
+        // The scope's next guarded write cannot proceed: it fails reading the document before any revision check.
+        setActiveExtensionServices(null);
+        await expect(runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "after garble"))).rejects.toMatchObject({ context: { code: "item_document_invalid" } });
       });
     });
   });

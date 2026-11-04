@@ -664,19 +664,21 @@ async function readOverriddenCommitRevision(params: {
   extensionFieldNames?: readonly string[];
   /** Document handed to scoped guards when the stored one cannot be read. */
   fallback: ItemDocument;
+  /** Embedded id the commit kept; a stored item that embeds another id has changed identity. */
+  embeddedId: string;
 }): Promise<{ document: ItemDocument; revision?: string }> {
   try {
     const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, params.typeToFolder);
     if (!located) return { document: EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument };
     // Invalid UTF-8 needs no check here: the next locked read refuses it before any expectation is judged.
-    return {
-      document: parseItemDocument(await fs.readFile(located.itemPath, "utf8"), {
-        format: located.item_format,
-        requireSupportedFormat: true,
-        schema: params.settings.schema,
-        extensionFieldNames: resolveActiveExtensionFieldNames(params.extensionFieldNames),
-      }),
-    };
+    const document = parseItemDocument(await fs.readFile(located.itemPath, "utf8"), {
+      format: located.item_format,
+      requireSupportedFormat: true,
+      schema: params.settings.schema,
+      extensionFieldNames: resolveActiveExtensionFieldNames(params.extensionFieldNames),
+    });
+    // An override that rewrote the embedded id moved the item to an identity no scope entry is bound to; fail closed.
+    return document.metadata.id === params.embeddedId ? { document } : { document: params.fallback, revision: UNREADABLE_COMMIT_REVISION };
   } catch {
     return { document: params.fallback, revision: UNREADABLE_COMMIT_REVISION };
   }
@@ -951,7 +953,7 @@ async function mutateItemWithDeferredHistoryContext(
           effectiveTargetItemPath,
           overrideWarnings: serviceWriteOverride.warnings,
           stored: overridden
-            ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder, extensionFieldNames: params.extensionFieldNames, fallback: afterDocument })
+            ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder, extensionFieldNames: params.extensionFieldNames, fallback: afterDocument, embeddedId: afterDocument.metadata.id })
             : { document: afterDocument },
         };
       },
@@ -1245,7 +1247,7 @@ export async function deleteItem(params: {
           effectiveItemPath,
           overrideWarnings: warnings,
           stored: skipDelete || effectiveItemPath !== located.itemPath
-            ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder: prepared.typeToFolder, fallback: tombstoneDocument })
+            ? await readOverriddenCommitRevision({ pmRoot: params.pmRoot, settings: params.settings, id: located.id, typeToFolder: prepared.typeToFolder, fallback: tombstoneDocument, embeddedId: document.metadata.id })
             : { document: tombstoneDocument },
         };
       },
