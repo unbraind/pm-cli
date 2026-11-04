@@ -1222,7 +1222,8 @@ file. This also applies to the corresponding `runCreate`, `runUpdate`,
 whitespace handling, structured collection syntax, and project schemas still
 apply. Clear a scalar field with `unset: ["assignee"]`, or pass JavaScript
 `null` for any option the command's `unset` list covers: `{ parent: null }` is
-`unset: ["parent"]`, and `tags: null` clears the tags (there is no `clearTags`).
+`unset: ["parent"]`, and `tags: null` clears the tags (`tags` takes a CSV string,
+not an array, and has no `clearTags`).
 The nullable keys are exactly the unset table's option keys
 (`CreateNullClearableOptionKey`, `UpdateNullClearableOptionKey`). `rank` is only
 an unset alias of `order`, so `rank: null` is refused (pass `order: null`), and
