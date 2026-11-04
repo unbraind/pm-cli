@@ -1037,9 +1037,16 @@ moved, the close stays committed and the command refuses with that dependent's
 `item_revision_conflict` once the fan-out finishes. `side_effects` names every
 write that committed first: the close and each dependent already unblocked. Do
 not retry the close, which is refused as already terminal. The refusal's
-`required` and `nextSteps` name only the remaining step: re-read the dependent,
-then unblock it with `pm update <dependent> --status open --unset blocked_by
---unset blocked_reason --expect-hash <dependent>=<item_hash>`. `close-many` reports such a row as `closed` (`update-many` closing
+`required` and `nextSteps` name only the remaining step for each guarded
+dependent it refused (`details.pending_unblock`): re-read the dependent, confirm
+that every blocker it declares is resolved, and only then unblock it with
+`pm update <dependent> --status open --unset blocked_by --unset blocked_reason
+--expect-hash <dependent>=<item_hash>`. `--unset blocked_by` removes every
+`blocked_by` edge, including one a concurrent change added, so skipping the
+check can reopen an item that is still blocked. Dependents whose unblock failed
+for another reason are listed with that reason in `details.auto_unblock_failed`;
+fix the cause first. Each list names at most 10 ids and reports the rest as an
+`*_omitted` count, so the details stay within the error-details size limit. `close-many` reports such a row as `closed` (`update-many` closing
 through `--status`, as `updated`), with the dependent's conflict under
 `dependent_revision_conflict`. A guarded `restore` refuses to recover
 over a live file that cannot be read as a document; an unguarded restore still

@@ -304,6 +304,12 @@ export {
   type ItemRevisionConflictRowFields,
   type ItemRevisionContext,
 } from "./lifecycle/item-revision.js";
+export type {
+  CreateNullClearableOptionKey,
+  NullClearableOptionKey,
+  UpdateNullClearableOptionKey,
+  WithNullClears,
+} from "./lifecycle/shared-unset-fields.js";
 export {
   admitStartWithOpenBlockers,
   isStartTransition,

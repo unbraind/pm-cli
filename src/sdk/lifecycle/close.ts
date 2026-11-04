@@ -433,6 +433,15 @@ async function autoUnblockResolvedDependents(
   return warnings;
 }
 
+/** Dependents a post-close refusal names, so its diagnostics stay inside the error-details byte ceiling. */
+const POST_CLOSE_REPORT_LIMIT = 10;
+
+/** Name at most the report limit of ids, then count the rest. */
+function boundedIdList(ids: readonly string[]): string {
+  const omitted = ids.length - POST_CLOSE_REPORT_LIMIT;
+  return `${ids.slice(0, POST_CLOSE_REPORT_LIMIT).join(", ")}${omitted > 0 ? `, and ${omitted} more` : ""}`;
+}
+
 /**
  * The refusal for a guarded dependent whose auto-unblock refused after the close
  * committed. The dependent's own guidance says to retry with --expect-hash, but
@@ -452,17 +461,25 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   const { closedId, conflictIds, failed, commandScope } = fanOut;
   const dependent = String(conflict.context.item_id);
   const unblock = (id: string) => renderPmCommand([...commandScope, "update", id, "--status", fanOut.openStatus, "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]);
+  // Reasons are bounded too: the whole details object is dropped if it outgrows the ceiling.
+  const reported = failed.slice(0, POST_CLOSE_REPORT_LIMIT).map((entry) => ({ id: entry.id, reason: entry.reason.slice(0, 160) }));
   const otherFailures = failed.length === 0
     ? ""
-    : ` Auto-unblocking also failed for ${failed.map((entry) => `${entry.id} (${entry.reason})`).join("; ")}; fix that cause before unblocking it.`;
+    : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives each reason. Fix that cause before unblocking it.`;
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
-    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${conflictIds.join(", ")})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}`,
+    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}`,
     nextSteps: [
-      ...conflictIds.flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
-      ...failed.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
+      ...conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT).flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
+      ...reported.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
     ],
-    details: { ...conflict.context.details, pending_unblock: [...conflictIds], auto_unblock_failed: failed.map((entry) => ({ ...entry })) },
+    details: {
+      ...conflict.context.details,
+      pending_unblock: conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT),
+      pending_unblock_omitted: Math.max(0, conflictIds.length - POST_CLOSE_REPORT_LIMIT),
+      auto_unblock_failed: reported,
+      auto_unblock_failed_omitted: Math.max(0, failed.length - POST_CLOSE_REPORT_LIMIT),
+    },
     // Every committed write before the refusal: the close and each dependent already unblocked.
     side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...fanOut.unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
   });

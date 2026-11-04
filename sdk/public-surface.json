@@ -3081,7 +3081,7 @@
         "signature ./sdk/contracts:PmUpdateActionOptions"
       ],
       "package_version": "2026.11.3",
-      "reason": "pm-gh1655: PmCreateActionOptions and PmUpdateActionOptions widen only the fields the command's unset table covers to also accept null (the typed clear); every value that compiled before still compiles, and author and non-clearable fields stay non-nullable"
+      "reason": "pm-gh1655: PmCreateActionOptions and PmUpdateActionOptions widen the fields the command's unset table covers to also accept null (the typed clear). Writers are unaffected: every value they passed before still compiles. Code that reads these option types must now handle null as well as undefined for those fields, for example a wrapper that calls a string method on options.parent after checking only !== undefined. author and non-clearable fields stay non-nullable."
     },
     {
       "changes": [
@@ -3098,7 +3098,7 @@
         "signature ./sdk/runtime:runUpdate"
       ],
       "package_version": "2026.11.3",
-      "reason": "pm-gh1655: CreateOperationOptions, UpdateOperationOptions, PmCreateActionOptions and PmUpdateActionOptions widen only the fields the command's unset table covers to also accept null, and runCreate/runUpdate take those widened inputs, so every value and wrapper that compiled before still compiles; PmUpdateManyActionOptions keeps its previous non-nullable shape through the shared PmUpdateActionFields alias"
+      "reason": "pm-gh1655: CreateOperationOptions and UpdateOperationOptions get the same nullable clearable fields, and runCreate/runUpdate take them, so a wrapper that forwards PmCreateActionOptions or PmUpdateActionOptions to runCreate or runUpdate compiles again. Writers are unaffected. Readers of these option types must handle null for the clearable fields. PmUpdateManyActionOptions keeps its previous non-nullable shape through the shared PmUpdateActionFields alias."
     }
   ],
   "entrypoints": {
@@ -6620,6 +6620,12 @@
           "kind": "function",
           "name": "createMutationGuardSdk",
           "signature": "(params: { pmRoot: string; settings: PmSettings; typeToFolder: Record<string, string>; }) => ExtensionMutationGuardSdk | calls: (params: { pmRoot: string; settings: PmSettings; typeToFolder: Record<string, string>; }) => ExtensionMutationGuardSdk"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "CreateNullClearableOptionKey",
+          "signature": "export type CreateNullClearableOptionKey = \"acceptanceCriteria\" | \"actualResult\" | \"affectedVersion\" | \"assignee\" | \"blockedBy\" | \"blockedReason\" | \"component\" | \"confidence\" | \"customerImpact\" | \"deadline\" | \"definitionOfReady\" | \"environment\" | \"estimatedMinutes\" | \"expectedResult\" | \"fixedVersion\" | \"goal\" | \"impact\" | \"objective\" | \"order\" | \"outcome\" | \"parent\" | \"regression\" | \"release\" | \"reporter\" | \"reproSteps\" | \"resolution\" | \"reviewer\" | \"risk\" | \"severity\" | \"sprint\" | \"tags\" | \"unblockNote\" | \"value\" | \"whyNow\";"
         },
         {
           "classification": "advanced_export",
@@ -12566,6 +12572,12 @@
           "kind": "interface",
           "name": "NpmInstallSource",
           "signature": "export interface NpmInstallSource { kind: \"npm\"; input: string; spec: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "NullClearableOptionKey",
+          "signature": "export type NullClearableOptionKey<Table extends readonly { optionKey: string; }[]> = Exclude<Table[number][\"optionKey\"], \"author\">;"
         },
         {
           "classification": "advanced_export",
@@ -21816,6 +21828,12 @@
         {
           "classification": "advanced_export",
           "kind": "type",
+          "name": "UpdateNullClearableOptionKey",
+          "signature": "export type UpdateNullClearableOptionKey = CreateNullClearableOptionKey | \"closeReason\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
           "name": "UpdateOperationOptions",
           "signature": "export type UpdateOperationOptions = WithNullClears<UpdateCommandOptions, UpdateNullClearableOptionKey>;"
         },
@@ -22256,6 +22274,12 @@
           "kind": "function",
           "name": "withMcpCachePolicy",
           "signature": "<Payload extends Record<string, unknown>>(payload: Payload, policy: PmMcpCachePolicy) => Payload & PmMcpCachePolicy | calls: <Payload extends Record<string, unknown>>(payload: Payload, policy: PmMcpCachePolicy) => Payload & PmMcpCachePolicy"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "WithNullClears",
+          "signature": "export type WithNullClears<Shape, Keys extends PropertyKey> = { [Key in keyof Shape]: Key extends Keys ? Shape[Key] | null : Shape[Key]; };"
         },
         {
           "classification": "contract_data",

@@ -528,10 +528,29 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id: guarded, itemHash: stale }], () => pm.close(blocker, "Delivered")));
       expect(refusal.context.details).toMatchObject({ pending_unblock: [guarded], auto_unblock_failed: [expect.objectContaining({ id: broken })] });
       expect(refusal.context.required).toContain(`Only unblocking ${guarded} remains`);
-      expect(refusal.context.required).toContain(`Auto-unblocking also failed for ${broken} (`);
+      expect(refusal.context.required).toContain(`Auto-unblocking also failed for ${broken}; details.auto_unblock_failed gives each reason.`);
       const scope = ["--pm-path", context.pmPath, "--no-extensions"];
       expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", broken, "--json"]));
       expect(refusal.context.nextSteps?.some((step) => step.includes(`update ${broken}`))).toBe(false);
+    });
+  });
+
+  it("bounds the post-close fan-out report so its details stay renderable", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const blocker = createTestItemId(context, { title: "Wide fan-out blocker" });
+      const stale = [];
+      for (let index = 0; index < 12; index += 1) {
+        const { item } = await pm.create({ type: "Task", title: `Wide dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" });
+        stale.push({ id: item.id, itemHash: (await pm.readItemRevision(item.id)).item_hash });
+        await pm.update(item.id, { title: `Wide dependent ${index}, edited by a peer` });
+      }
+      const refusal = await captureError(() => pm.withExpectedItemRevisions(stale, () => pm.close(blocker, "Delivered")));
+      const details = refusal.context.details as { pending_unblock: string[]; pending_unblock_omitted: number; auto_unblock_failed: unknown[]; auto_unblock_failed_omitted: number };
+      expect(details.pending_unblock).toHaveLength(10);
+      expect(details).toMatchObject({ pending_unblock_omitted: 2, auto_unblock_failed: [], auto_unblock_failed_omitted: 0 });
+      expect(refusal.context.required).toContain(", and 2 more)");
+      expect(refusal.context.nextSteps).toHaveLength(20);
     });
   });
 

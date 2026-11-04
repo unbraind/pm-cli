@@ -289,11 +289,50 @@ export type WithNullClears<Shape, Keys extends PropertyKey> = {
   [Key in keyof Shape]: Key extends Keys ? Shape[Key] | null : Shape[Key];
 };
 
-/** Create option keys that accept the typed `null` clear. */
-export type CreateNullClearableOptionKey = NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>;
+/**
+ * Create option keys that accept the typed `null` clear, spelled out so the SDK
+ * surface snapshot records the set (it prints alias text, not resolved types).
+ * tests/types/typed-action-inputs.test-d.ts keeps it equal to
+ * `NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>`.
+ */
+export type CreateNullClearableOptionKey =
+  | "acceptanceCriteria"
+  | "actualResult"
+  | "affectedVersion"
+  | "assignee"
+  | "blockedBy"
+  | "blockedReason"
+  | "component"
+  | "confidence"
+  | "customerImpact"
+  | "deadline"
+  | "definitionOfReady"
+  | "environment"
+  | "estimatedMinutes"
+  | "expectedResult"
+  | "fixedVersion"
+  | "goal"
+  | "impact"
+  | "objective"
+  | "order"
+  | "outcome"
+  | "parent"
+  | "regression"
+  | "release"
+  | "reporter"
+  | "reproSteps"
+  | "resolution"
+  | "reviewer"
+  | "risk"
+  | "severity"
+  | "sprint"
+  | "tags"
+  | "unblockNote"
+  | "value"
+  | "whyNow";
 
-/** Update option keys that accept the typed `null` clear. */
-export type UpdateNullClearableOptionKey = NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>;
+/** Update option keys that accept the typed `null` clear: the create set plus `closeReason`, kept equal to the update unset table by the same type test. */
+export type UpdateNullClearableOptionKey = CreateNullClearableOptionKey | "closeReason";
 
 /** Spellings that once cleared a field on every surface and now persist literally from typed callers. */
 const FORMER_CLEAR_SENTINELS = new Set(["none", "null", "-"]);

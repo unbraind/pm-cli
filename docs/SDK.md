@@ -1224,9 +1224,11 @@ apply. Clear a scalar field with `unset: ["assignee"]`, or pass JavaScript
 `null` for any option that the command's `unset` list covers: `{ parent: null }`
 is `unset: ["parent"]`
 ([pm-gh1655](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1655.toon);
-this tracker record is repository-only and excluded from npm). `null` on any other
-option (`title`, the `author` attribution, collection options) still refuses
-by name; clear collections with the declared `clear*` options. When typed input
+this tracker record is repository-only and excluded from npm). `tags` is a CSV
+option in that list, so `tags: null` clears the tags like `unset: ["tags"]`; it
+has no `clearTags` option. `null` on any other option (`title`, the `author`
+attribution, the repeatable collection options such as `comment` or `dep`)
+still refuses by name; clear those collections with their `clear*` options. When typed input
 stores a former clear sentinel (`"none"`, `"null"` or `"-"`) in a clearable
 string field, the result carries the advisory warning
 `literal_sentinel_stored:<field>:<value>`. The value is now data (an assignee

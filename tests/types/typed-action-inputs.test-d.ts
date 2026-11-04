@@ -18,6 +18,8 @@ import type {
   PmUpdateManyActionOptions,
 } from "../../src/sdk/index.js";
 import { runCreate, runUpdate } from "../../src/sdk/index.js";
+import type { CreateNullClearableOptionKey, NullClearableOptionKey, UpdateNullClearableOptionKey } from "../../src/sdk/index.js";
+import type { CREATE_UNSET_FIELD_DEFINITIONS, UPDATE_UNSET_FIELD_DEFINITIONS } from "../../src/sdk/lifecycle/shared-unset-fields.js";
 
 declare const typedClient: PmClient;
 void typedClient.historyCompactBulk({ ids: 123, dryRun: true });
@@ -178,4 +180,11 @@ void updateWrapper("pm-a", { assignee: null });
 // @ts-expect-error update-many keeps the unset form only; its flat transport has no null clear
 const updateManyNull: PmUpdateManyActionOptions = { ids: ["pm-a"], assignee: null };
 void updateManyNull;
+
+// GH-1655: the spelled-out nullable key unions the SDK snapshot records stay equal to the unset tables.
+type ExactKeys<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
+const createKeysMatchTable: ExactKeys<CreateNullClearableOptionKey, NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>> = true;
+const updateKeysMatchTable: ExactKeys<UpdateNullClearableOptionKey, NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>> = true;
+void createKeysMatchTable;
+void updateKeysMatchTable;
 
