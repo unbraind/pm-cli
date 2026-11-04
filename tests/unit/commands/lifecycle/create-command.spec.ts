@@ -4178,6 +4178,11 @@ describe("create command helper coverage", () => {
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", parent: "pm-explicit", unset: ["parent"] } as never))
       .toMatchObject({ parent: "pm-explicit", sprint: "s1" });
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x" } as never)).toMatchObject({ parent: "pm-template-parent" });
+    // rank writes the same field as order, so clearing order drops a template rank too, unless the caller passed one.
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ rank: "3", sprint: "s1" }, { title: "x", unset: ["order"] } as never))
+      .toEqual({ title: "x", sprint: "s1", unset: ["order"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ rank: "3" }, { title: "x", rank: "4", unset: ["order"] } as never))
+      .toMatchObject({ rank: "4" });
   });
 
   it("normalizes template command paths and merges explicit create options over templates", () => {

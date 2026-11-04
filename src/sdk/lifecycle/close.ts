@@ -502,14 +502,16 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
     : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives each reason. Fix that cause before unblocking it.`;
   // The fan-out warnings are dropped with the refusal, so ids past the report limit are found by listing instead.
   const discovery = renderPmCommand([...commandScope, "list", "--status", fanOut.blockedStatuses, "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]);
-  const truncated = conflictIds.length > POST_CLOSE_REPORT_LIMIT || failed.length > POST_CLOSE_REPORT_LIMIT;
-  const steps = [
+  const allSteps = [
     ...conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT).flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
     ...reported.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
-  ].slice(0, truncated ? POST_CLOSE_STEP_LIMIT - 1 : POST_CLOSE_STEP_LIMIT);
+  ];
+  // Partial when ids were omitted or when the step cap cuts a dependent's step: either way, list them instead.
+  const truncated = conflictIds.length > POST_CLOSE_REPORT_LIMIT || failed.length > POST_CLOSE_REPORT_LIMIT || allSteps.length > POST_CLOSE_STEP_LIMIT;
+  const steps = allSteps.slice(0, truncated ? POST_CLOSE_STEP_LIMIT - 1 : POST_CLOSE_STEP_LIMIT);
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
-    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` More dependents were left blocked than this refusal names; list them with ${discovery}.` : ""}`,
+    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` This refusal does not list a step for every dependent left blocked; list them with ${discovery}.` : ""}`,
     nextSteps: truncated ? [...steps, discovery] : steps,
     details: fitPostCloseDetails({
       ...structuredClone(conflict.context.details),

@@ -60,8 +60,8 @@ export type PmMutationAttributionOptions = {
 /** Typed input for the SDK `create` action, derived from the executable create-command option contract with its custom-field index signature removed; clearable fields also accept `null`. */
 export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, CreateNullClearableOptionKey>;
 
-/** Update fields derived from the executable update-command option contract while hiding internal policy-evaluation controls. */
-type PmUpdateActionFields = Omit<
+/** Update fields derived from the executable update-command option contract while hiding internal policy-evaluation controls; exported so the SDK surface snapshot records the hidden keys. */
+export type PmUpdateActionFields = Omit<
   DeclaredProperties<UpdateCommandOptions>,
   | "runtimeFieldCommands"
   | "ownershipMetadataBypass"

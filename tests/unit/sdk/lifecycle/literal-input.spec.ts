@@ -274,12 +274,15 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
       const created = await client.create({ type: "Task", title: "Null clears", parent: null, assignee: null, unset: ["goal"] });
       expect(created.item.parent).toBeUndefined();
       expect(created.item.assignee).toBeUndefined();
-      const { item } = await client.create({ type: "Task", title: "Child", parent: parent.id, assignee: "owner", sprint: "s1" });
+      const { item } = await client.create({ type: "Task", title: "Child", parent: parent.id, assignee: "owner", sprint: "s1", reviewer: "checker" });
       await client.update(item.id, { parent: null, assignee: null });
       expect((await client.get(item.id)).item).not.toHaveProperty("parent");
       expect((await client.get(item.id)).item).not.toHaveProperty("assignee");
+      expect((await client.get(item.id)).item.reviewer).toBe("checker");
       await client.run("update", { id: item.id, options: { sprint: null, unset: "reviewer" } });
+      // Both halves of the combined clear apply: the folded null and the caller's own unset.
       expect((await client.get(item.id)).item).not.toHaveProperty("sprint");
+      expect((await client.get(item.id)).item).not.toHaveProperty("reviewer");
       const global = { path: pmPath };
       await runUpdate(item.id, { parent: parent.id }, global);
       await runUpdate(item.id, { parent: null } as never, global);

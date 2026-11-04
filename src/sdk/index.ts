@@ -639,6 +639,7 @@ export type {
   PmOutputDegradationStep,
   PmProjectedDiagnostic,
   PmProjectedTextDiagnostic,
+  PmUpdateActionFields,
   PmUpdateActionOptions,
   PmUpdateManyActionOptions,
   PmExtensionCapabilityContract,

@@ -118,6 +118,7 @@ export type {
   PmCreateActionOptions,
   PmMutationAttributionOptions,
   PmOptionScalar,
+  PmUpdateActionFields,
   PmUpdateActionOptions,
   PmUpdateManyActionOptions,
 } from "./cli-contracts/typed-action-inputs.js";

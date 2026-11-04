@@ -551,11 +551,36 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       expect(details.pending_unblock).toHaveLength(10);
       expect(details).toMatchObject({ pending_unblock_omitted: 2, auto_unblock_failed: [], auto_unblock_failed_omitted: 0 });
       expect(refusal.context.required).toContain(", and 2 more)");
-      expect(refusal.context.required).toContain("More dependents were left blocked than this refusal names; list them with");
+      expect(refusal.context.required).toContain("This refusal does not list a step for every dependent left blocked; list them with");
       expect(refusal.context.nextSteps).toHaveLength(20);
       expect(refusal.context.nextSteps?.at(-1)).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "list", "--status", "blocked", "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]));
       expect(isPmCliErrorDetails(refusal.context.details)).toBe(true);
       expect(Buffer.byteLength(JSON.stringify(refusal.context.details), "utf8")).toBeLessThanOrEqual(4096);
+    });
+  });
+
+  it("adds the discovery step when the step cap cuts a dependent's step although no id was omitted", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const blocker = createTestItemId(context, { title: "Step-cap blocker" });
+      const stale = [];
+      for (let index = 0; index < 9; index += 1) {
+        const { item } = await pm.create({ type: "Task", title: `Guarded dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" });
+        stale.push({ id: item.id, itemHash: (await pm.readItemRevision(item.id)).item_hash });
+        await pm.update(item.id, { title: `Guarded dependent ${index}, edited by a peer` });
+      }
+      const broken = [];
+      for (let index = 0; index < 3; index += 1) {
+        broken.push((await pm.create({ type: "Task", title: `Broken dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" })).item.id);
+      }
+      const policy = context.runCli(["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"], { expectJson: true });
+      expect(policy.code, policy.stderr).toBe(0);
+      for (const id of broken) await rm(path.join(context.pmPath, "history", `${id}.jsonl`));
+      const refusal = await captureError(() => pm.withExpectedItemRevisions(stale, () => pm.close(blocker, "Delivered")));
+      expect(refusal.context.details).toMatchObject({ pending_unblock_omitted: 0, auto_unblock_failed_omitted: 0 });
+      expect(refusal.context.nextSteps).toHaveLength(20);
+      expect(refusal.context.nextSteps?.at(-1)).toContain("list --status blocked");
+      expect(refusal.context.required).toContain("This refusal does not list a step for every dependent left blocked");
     });
   });
 

@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2046,
+    "covered_symbols": 2047,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2047
+    "required_symbols": 2048
   },
   "breaking_acknowledgements": [
     {
@@ -15792,6 +15792,12 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmUpdateActionFields",
+          "signature": "export type PmUpdateActionFields = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmUpdateActionOptions",
           "signature": "export type PmUpdateActionOptions = WithNullClears<PmUpdateActionFields, UpdateNullClearableOptionKey>;"
         },
@@ -26192,6 +26198,12 @@
           "kind": "interface",
           "name": "PmTrackerPreflightRecoveryReport",
           "signature": "export interface PmTrackerPreflightRecoveryReport { ok: boolean; probe_count: number; closed_probe_count: number; findings: PmTrackerPreflightRecoveryFinding[]; }"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
+          "name": "PmUpdateActionFields",
+          "signature": "export type PmUpdateActionFields = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
         },
         {
           "classification": "contract_data",
