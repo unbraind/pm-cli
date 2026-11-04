@@ -12,6 +12,7 @@ import {
 } from "../../../../src/cli/commands/lifecycle/close.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { isPmCliErrorDetails } from "../../../../src/core/shared/error-details.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import {
   createTestItemId,
@@ -2861,5 +2862,46 @@ describe("runCloseMany via CLI", () => {
       );
       expect(failedRow).toBeDefined();
     });
+  });
+});
+
+describe("post-close fan-out details budget (pm-mrvq8u)", () => {
+  const { fitPostCloseDetails } = _testOnlyCloseCommand;
+  const change = (index: number) => ({ ts: `2026-11-04T00:00:${String(index).padStart(2, "0")}.000Z`, op: "update", author: "peer-agent-with-a-long-name", fields: ["acceptance_criteria", "assignee", "blocked_reason", "definition_of_ready", "description", "expected_result", "priority", "status", "title"] });
+  const failure = (index: number) => ({ id: `pm-fail${index}`, reason: `History stream for pm-fail${index} is missing and history.missing_stream is strict_error; restore it before writing. `.repeat(2).slice(0, 160) });
+
+  it("leaves details that already fit unchanged", () => {
+    const details = { pending_unblock: ["pm-a"], pending_unblock_omitted: 0, auto_unblock_failed: [], auto_unblock_failed_omitted: 0 };
+    expect(fitPostCloseDetails(structuredClone(details))).toEqual(details);
+  });
+
+  it("drops other failures first, then change evidence, counting each, until the merged details render whole", () => {
+    const merged = {
+      expected_revision_recorded: true,
+      changes_since: Array.from({ length: 10 }, (_, index) => change(index)),
+      changes_since_omitted: 0,
+      pending_unblock: ["pm-a"],
+      pending_unblock_omitted: 0,
+      auto_unblock_failed: Array.from({ length: 10 }, (_, index) => failure(index)),
+      auto_unblock_failed_omitted: 0,
+    };
+    expect(isPmCliErrorDetails(merged)).toBe(false);
+    const fitted = fitPostCloseDetails(merged) as Record<string, unknown> & { auto_unblock_failed: unknown[]; auto_unblock_failed_omitted: number; changes_since: unknown[] };
+    expect(isPmCliErrorDetails(fitted)).toBe(true);
+    expect(fitted.auto_unblock_failed.length + fitted.auto_unblock_failed_omitted).toBe(10);
+    expect(fitted.auto_unblock_failed_omitted).toBeGreaterThan(0);
+    expect(fitted.changes_since).toHaveLength(10);
+    expect(fitted.pending_unblock).toEqual(["pm-a"]);
+  });
+
+  it("skips a missing evidence list and always keeps one pending id", () => {
+    const fitted = fitPostCloseDetails({
+      note: "x".repeat(5000),
+      pending_unblock: ["pm-a", "pm-b"],
+      pending_unblock_omitted: 0,
+      auto_unblock_failed: [failure(1)],
+      auto_unblock_failed_omitted: 0,
+    });
+    expect(fitted).toMatchObject({ pending_unblock: ["pm-a"], pending_unblock_omitted: 1, auto_unblock_failed: [], auto_unblock_failed_omitted: 1 });
   });
 });

@@ -39,6 +39,9 @@ import {
 } from "../lifecycle-policy.js";
 import type { ItemMetadata } from "../../types/index.js";
 import { nowIso } from "../../core/shared/time.js";
+import { isPmCliErrorDetails } from "../../core/shared/error-details.js";
+import { unicodeSafePrefix } from "../../core/shared/text-normalization.js";
+import type { PmCliErrorDetails, PmCliErrorDetailValue } from "../../core/shared/errors.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 
@@ -436,6 +439,31 @@ async function autoUnblockResolvedDependents(
 /** Dependents a post-close refusal names, so its diagnostics stay inside the error-details byte ceiling. */
 const POST_CLOSE_REPORT_LIMIT = 10;
 
+/** Lists trimmed, in order, until the merged post-close details fit the error-details ceiling; each keeps its floor. */
+const POST_CLOSE_DETAIL_TRIMS = [
+  { list: "auto_unblock_failed", omitted: "auto_unblock_failed_omitted", floor: 0 },
+  { list: "changes_since", omitted: "changes_since_omitted", floor: 0 },
+  { list: "pending_unblock", omitted: "pending_unblock_omitted", floor: 1 },
+] as const;
+
+/**
+ * Trim the merged post-close details until the error host renders them whole:
+ * other failures first, then the revision change evidence, then pending ids
+ * (one always stays). Each dropped entry is counted in its list's omitted
+ * field, so a reader knows the list is partial.
+ */
+function fitPostCloseDetails(details: Record<string, PmCliErrorDetailValue>): PmCliErrorDetails {
+  for (const trim of POST_CLOSE_DETAIL_TRIMS) {
+    const list = details[trim.list];
+    if (!Array.isArray(list)) continue;
+    while (list.length > trim.floor && !isPmCliErrorDetails(details)) {
+      list.pop();
+      Reflect.set(details, trim.omitted, Number(details[trim.omitted]) + 1);
+    }
+  }
+  return details;
+}
+
 /** Name at most the report limit of ids, then count the rest. */
 function boundedIdList(ids: readonly string[]): string {
   const omitted = ids.length - POST_CLOSE_REPORT_LIMIT;
@@ -462,7 +490,7 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   const dependent = String(conflict.context.item_id);
   const unblock = (id: string) => renderPmCommand([...commandScope, "update", id, "--status", fanOut.openStatus, "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]);
   // Reasons are bounded too: the whole details object is dropped if it outgrows the ceiling.
-  const reported = failed.slice(0, POST_CLOSE_REPORT_LIMIT).map((entry) => ({ id: entry.id, reason: entry.reason.slice(0, 160) }));
+  const reported = failed.slice(0, POST_CLOSE_REPORT_LIMIT).map((entry) => ({ id: entry.id, reason: unicodeSafePrefix(entry.reason, 160) }));
   const otherFailures = failed.length === 0
     ? ""
     : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives each reason. Fix that cause before unblocking it.`;
@@ -473,13 +501,13 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
       ...conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT).flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
       ...reported.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
     ],
-    details: {
-      ...conflict.context.details,
+    details: fitPostCloseDetails({
+      ...structuredClone(conflict.context.details),
       pending_unblock: conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT),
       pending_unblock_omitted: Math.max(0, conflictIds.length - POST_CLOSE_REPORT_LIMIT),
       auto_unblock_failed: reported,
       auto_unblock_failed_omitted: Math.max(0, failed.length - POST_CLOSE_REPORT_LIMIT),
-    },
+    }),
     // Every committed write before the refusal: the close and each dependent already unblocked.
     side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...fanOut.unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
   });
@@ -718,6 +746,7 @@ function mutateCloseMetadata(
 /** Public contract for test only close command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyCloseCommand = {
   blockedByIds: collectBlockedByIds,
+  fitPostCloseDetails,
 };
 
 /** Close one item through the SDK-owned lifecycle transaction and policy. */
