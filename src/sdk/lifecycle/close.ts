@@ -499,7 +499,7 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   const reported = failed.slice(0, POST_CLOSE_REPORT_LIMIT).map((entry) => ({ id: entry.id, reason: unicodeSafePrefix(entry.reason, 160) }));
   const otherFailures = failed.length === 0
     ? ""
-    : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives each reason. Fix that cause before unblocking it.`;
+    : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives the reasons it kept (auto_unblock_failed_omitted counts the rest; their get step shows the item). Fix that cause before unblocking it.`;
   // The fan-out warnings are dropped with the refusal, so ids past the report limit are found by listing instead.
   const discovery = renderPmCommand([...commandScope, "list", "--status", fanOut.blockedStatuses, "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]);
   const allSteps = [

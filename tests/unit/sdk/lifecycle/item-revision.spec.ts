@@ -529,7 +529,7 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id: guarded, itemHash: stale }], () => pm.close(blocker, "Delivered")));
       expect(refusal.context.details).toMatchObject({ pending_unblock: [guarded], auto_unblock_failed: [expect.objectContaining({ id: broken })] });
       expect(refusal.context.required).toContain(`Only unblocking ${guarded} remains`);
-      expect(refusal.context.required).toContain(`Auto-unblocking also failed for ${broken}; details.auto_unblock_failed gives each reason.`);
+      expect(refusal.context.required).toContain(`Auto-unblocking also failed for ${broken}; details.auto_unblock_failed gives the reasons it kept (auto_unblock_failed_omitted counts the rest; their get step shows the item).`);
       const scope = ["--pm-path", context.pmPath, "--no-extensions"];
       expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", broken, "--json"]));
       expect(refusal.context.nextSteps?.some((step) => step.includes(`update ${broken}`))).toBe(false);

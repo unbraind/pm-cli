@@ -959,7 +959,9 @@ async function mutateItemWithDeferredHistoryContext(
       },
     );
     const { derivedIndexWarnings, effectiveTargetItemPath, stored } = committed;
-    advanceItemMutationPreconditions(params.pmRoot, stored.document, located.id, [], stored.revision);
+    // A write moved out of the tracker leaves a tombstone with no embedded id: carry the written one,
+    // as delete does, so an entry bound to that spelling still advances.
+    advanceItemMutationPreconditions(params.pmRoot, stored.document, located.id, [afterDocument.metadata.id], stored.revision);
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: effectiveTargetItemPath,

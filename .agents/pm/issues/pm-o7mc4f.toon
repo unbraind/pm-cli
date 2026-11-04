@@ -1,0 +1,21 @@
+id: pm-o7mc4f
+title: "A guarded restore of an item a storage override moved out of the tracker matches its revision entry only by the probe spelling, not the former embedded id"
+description: "Found by CodeRabbit on PR 1658 (pm-thbdxu). When an item_store_write override redirects an item out of the tracker, the expected-revision scope advances to the empty tombstone. The write path now also carries the written embedded id as an advancement alias (as delete does), but a later guarded restore of the absent item resolves its target from history and matches scope entries by that probe spelling only. On a case-insensitive filesystem, a scope bound to the former embedded id under another spelling (PM-A vs pm-a) would not be judged by the restore. It is unreachable on case-sensitive filesystems, where the probe and embedded id of a bindable item are equal."
+type: Issue
+status: open
+priority: 3
+tags[5]: case-insensitive,expected-revision,pm-thbdxu,restore,storage-override
+created_at: "2026-11-04T09:05:19.996Z"
+updated_at: "2026-11-04T09:05:19.996Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A guarded restore of an item that a storage override moved out of the tracker judges the scope entry bound to the item's former embedded id, whatever spelling located it, with a spec that simulates a case-variant probe; A peer write between the redirected write and the restore still refuses the restore with item_revision_conflict"
+parent: pm-doxj
+risk: low
+confidence: medium
+severity: low
+expected_result: Restore after a redirected write is judged against the entry bound to the former embedded id
+actual_result: Restore matches scope entries by the probe spelling only
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-thbdxu,discovered_from,"2026-11-04T09:05:19.996Z","harness:claude-code","cli:create:dep",detected
+body: ""
