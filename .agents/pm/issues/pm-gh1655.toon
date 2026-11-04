@@ -6,12 +6,12 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"gh:1655",refusals,sdk,sentinels
 created_at: "2026-11-03T21:19:36.501Z"
-updated_at: "2026-11-04T11:20:28.119Z"
+updated_at: "2026-11-04T12:20:56.039Z"
 closed_at: "2026-11-03T23:23:09.219Z"
 completed_at: "2026-11-03T23:23:09.219Z"
 author: "harness:claude-code"
 estimated_minutes: 240
-acceptance_criteria: "Typed SDK create/update refusals for placeholder, empty and self parent name the SDK remedy (unset: ['parent'] or omit parent) and never a CLI flag, with a spec per refusal; A typed SDK null on a clearable scalar field (parent, assignee, and every field the unset list accepts) clears it exactly like unset: [field]; null on a field that cannot be cleared refuses naming the field, with specs; A typed SDK create/update whose clearable scalar equals a former clear sentinel (none, null, -) succeeds and returns a stable advisory warning naming the field and the unset form; CLI behaviour and wording are unchanged: --parent none still clears, and CLI refusals still name CLI flags, proven by the existing CLI specs; docs/SDK.md documents null-as-clear and the advisory, and the SDK surface snapshot records any type widening"
+acceptance_criteria: "Typed SDK create/update refusals for placeholder, empty and self parent name the SDK remedy (unset: ['parent'] or omit parent) and never a CLI flag, with a spec per refusal; A typed SDK null on a clearable option, meaning an option key of the command's unset table such as parent or assignee, clears it exactly like unset: [field], while the rank alias and the create-only author attribution are excluded and refuse by name; null on a field that cannot be cleared refuses naming the field, with specs; A typed SDK create/update that stores a former clear sentinel (none, null, -) in a clearable field whose validation accepts that value succeeds and returns the stable advisory literal_sentinel_stored:<field>:<value>, whose field is the unset token, while parent refuses the placeholder instead per the first criterion; CLI behaviour and wording are unchanged: --parent none still clears, and CLI refusals still name CLI flags, proven by the existing CLI specs; docs/SDK.md documents null-as-clear and the advisory, and the SDK surface snapshot records any type widening"
 parent: pm-9rgaal
 risk: medium
 confidence: high

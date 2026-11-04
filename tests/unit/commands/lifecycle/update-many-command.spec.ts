@@ -16,6 +16,7 @@ import {
   writeMutationCheckpoint,
 } from "../../../../src/core/checkpoint/mutation-checkpoint.js";
 import { matchesRuntimeFilters } from "../../../../src/core/schema/runtime-field-filters.js";
+import { runUpdateMany as runSdkUpdateMany } from "../../../../src/sdk/lifecycle/update-many.js";
 import { resolveRuntimeStatusRegistry } from "../../../../src/core/schema/runtime-schema.js";
 import {
   EXIT_CODE,
@@ -415,6 +416,25 @@ describe("runUpdateMany", () => {
       expect(result.mode).toBe("apply");
       expect(result.updated_count).toBe(1);
       expect(getItemPriority(context, id)).toBe(2);
+    });
+  });
+
+  it("folds a null in a direct SDK runUpdateMany update record like runUpdate, never in CLI input (pm-gh1655, pm-w7clh6)", async () => {
+    await withTempPmPath(async (context) => {
+      const first = createTask(context, "update-many-null-clear-a", { assignee: "alice" });
+      const second = createTask(context, "update-many-null-clear-b", { assignee: "bob" });
+      const global = { path: context.pmPath };
+      // The CLI adapter keeps CLI grammar, where null is no clear token.
+      await expect(runUpdateMany({ list: { ids: first }, update: { assignee: null } as never }, global))
+        .rejects.toThrow("update assignee must be a string.");
+      expect(getItemMetadataValue(context, first, "assignee")).toBe("alice");
+      const result = await runSdkUpdateMany({ list: { ids: `${first},${second}` }, update: { assignee: null } as never }, global);
+      expect(result.updated_count).toBe(2);
+      expect(getItemMetadataValue(context, first, "assignee")).toBeUndefined();
+      expect(getItemMetadataValue(context, second, "assignee")).toBeUndefined();
+      // A null on a field unset cannot clear still refuses by name, before any row is touched.
+      await expect(runSdkUpdateMany({ list: { ids: first }, update: { title: null } as never }, global))
+        .rejects.toThrow("update title must be a string.");
     });
   });
 

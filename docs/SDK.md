@@ -1241,8 +1241,10 @@ the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.`;
 CLI refusals keep their flag wording. `PmCreateActionOptions`,
 `PmUpdateActionOptions`, `CreateOperationOptions` and `UpdateOperationOptions`
 type the clearable fields as nullable, so `runCreate`/`runUpdate` accept the
-same input as `PmClient.create`/`update`. `update-many`
-(`PmUpdateManyActionOptions`) and MCP tools take `unset` only.
+same input as `PmClient.create`/`update`. A direct SDK `runUpdateMany` folds a
+null in its update record like `runUpdate`, but `runAction("update-many")` drops
+it (pm-w7clh6), so `PmUpdateManyActionOptions` stays non-nullable: use `unset`
+there and in MCP tools.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
 literal data, including `"none"` and `"null"`. Explicit CLI flags override
