@@ -968,8 +968,12 @@ Starting work respects declared blockers
 in_progress`, `pm claim <id> --start`, `pm claim --next --start` and the
 `start-task` action refuse with `start_blocked_by_open_dependency` (exit 4)
 when the item moves into the start status while a `blocked_by` target is still
-open. An item already in that status is not rechecked, so `claim --start` on it
-succeeds. The check runs before any write: the
+open. `pm claim --next --start` skips a ranked candidate refused this way (its
+blocker opened after ranking, and nothing is written to it), claims the next
+eligible candidate, and lists the skipped ids in `start_refused`. When the walk
+is exhausted, the `no_available_next_item` refusal (or the `--if-available`
+empty result) carries them too. An item already in that status is not
+rechecked, so `claim --start` on it succeeds. The check runs before any write: the
 explicit `claim <id> --start` judges it under the claim's item lock, and its
 status update judges again under its own lock. When the first check refuses,
 nothing is written. When a blocker opens between the two writes, the start
@@ -1031,7 +1035,24 @@ carrying `error_code`, `expected_revision`, `current_revision` and
 `details.changes_since`. When `close` auto-unblocks a guarded dependent whose revision
 moved, the close stays committed and the command refuses with that dependent's
 `item_revision_conflict` once the fan-out finishes. `side_effects` names every
-write that committed first: the close and each dependent already unblocked. `close-many` reports such a row as `closed` (`update-many` closing
+write that committed first: the close and each dependent already unblocked. Do
+not retry the close; it is already terminal. `required` and `nextSteps` name
+only the remaining step for each refused guarded dependent
+(`details.pending_unblock`): re-read it, confirm every blocker it declares is
+resolved, then run the scoped unblock `nextSteps` lists (`pm update <dependent>
+--status <open-status> --unset blocked_by --unset blocked_reason --expect-hash
+<dependent>=<item_hash>`, carrying the configured open status and tracker
+scope). `--unset blocked_by` removes every `blocked_by` edge, including one a
+concurrent change added, so skipping the check can reopen a still-blocked item.
+Dependents whose unblock failed for another reason are in
+`details.auto_unblock_failed` with that reason; fix the cause first. Each list
+names at most 10 ids and counts the rest in `*_omitted`, keeping the details
+within the error-details size limit. When ids were omitted, or the steps exceed
+the 20-step cap (ten conflicts plus one other failure make 21), the last step
+lists every item in a blocked-role status (`pm list --status <blocked-statuses>
+--fields id,title,blocked_by,dependencies`, over the statuses the fan-out drew
+from), so a dependent whose step was cut is still found; it returns 200 rows per
+page, so follow `--after <next_cursor>` while `has_more: true`. `close-many` reports such a row as `closed` (`update-many` closing
 through `--status`, as `updated`), with the dependent's conflict under
 `dependent_revision_conflict`. A guarded `restore` refuses to recover
 over a live file that cannot be read as a document; an unguarded restore still

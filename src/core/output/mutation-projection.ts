@@ -228,7 +228,7 @@ function appendCompactMutationEvidence(result: Record<string, unknown>, item: Re
     if (isPlainObject(result[key])) compact[key] = result[key];
   }
   if (typeof result.claimed_by === "string" || typeof result.released_by === "string") {
-    for (const key of ["claimed_by", "released_by", "previous_assignee", "forced", "skipped", "available", "attempts", "suggestions"]) {
+    for (const key of ["claimed_by", "released_by", "previous_assignee", "forced", "skipped", "available", "attempts", "start_refused", "suggestions"]) {
       if (Object.hasOwn(result, key)) compact[key] = result[key];
     }
   }

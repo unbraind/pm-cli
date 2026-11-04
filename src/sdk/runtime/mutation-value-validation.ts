@@ -9,6 +9,7 @@ import { PM_TOOL_ACTION_PARAMETER_CONTRACTS } from "../cli-contracts/tool-schema
 import type { CommanderOptionAliasContract } from "../cli-contracts/commander-types.js";
 import { preserveSdkMutationInput } from "../../core/item/parse.js";
 import { isCliMutationInput } from "../../core/item/literal-mutation-input.js";
+import { foldNullClearsIntoUnset } from "../lifecycle/shared-unset-fields.js";
 
 type MutationAction = "create" | "update" | "append" | "reopen";
 const MUTATION_INPUT_EXAMPLES: Record<MutationAction, string> = {
@@ -115,6 +116,9 @@ export function assertNativeMutationValueTypes(action: "create" | "update", opti
 export function prepareNativeMutationOptions<T extends Record<string, unknown>>(action: "create" | "update", options: T): T {
   assertMutationOptionBag(options, action);
   const prepared = preserveSdkMutationInput(options);
-  assertNativeMutationValueTypes(action, prepared, false, isCliMutationInput(prepared));
+  const cli = isCliMutationInput(prepared);
+  // Typed input was cloned above, so a typed null on a clearable option becomes its unset entry in place (GH-1655).
+  if (!cli) foldNullClearsIntoUnset(action, prepared);
+  assertNativeMutationValueTypes(action, prepared, false, cli);
   return prepared;
 }

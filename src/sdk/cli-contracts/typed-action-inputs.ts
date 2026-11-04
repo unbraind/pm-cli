@@ -16,6 +16,7 @@ import type { CreateCommandOptions } from "../lifecycle/create.js";
 import type { UpdateCommandOptions } from "../lifecycle/update.js";
 import type { UpdateManyCommandOptions } from "../lifecycle/update-many.js";
 import type { TOOL_BULK_MUTATION_FILTER_OPTION_CONTRACT_SOURCE } from "./tool-option-contracts.js";
+import type { CreateNullClearableOptionKey, UpdateNullClearableOptionKey, WithNullClears } from "../lifecycle/shared-unset-fields.js";
 
 /** JSON-compatible scalar the SDK option-normalization layer accepts for one flag value (CLI flags arrive as strings; MCP and SDK callers may pass native numbers and booleans). */
 export type PmOptionScalar = string | number | boolean;
@@ -56,16 +57,19 @@ export type PmMutationAttributionOptions = {
   force?: boolean;
 };
 
-/** Typed input for the SDK `create` action, derived from the executable create-command option contract with its custom-field index signature removed. */
-export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;
+/** Typed input for the SDK `create` action, derived from the executable create-command option contract with its custom-field index signature removed; clearable fields also accept `null`. */
+export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, CreateNullClearableOptionKey>;
 
-/** Typed input for the SDK `update` action, derived from the executable update-command option contract while hiding internal policy-evaluation controls. */
-export type PmUpdateActionOptions = Omit<
+/** Update fields derived from the executable update-command option contract while hiding internal policy-evaluation controls; exported so the SDK surface snapshot records the hidden keys. */
+export type PmUpdateActionFields = Omit<
   DeclaredProperties<UpdateCommandOptions>,
   | "runtimeFieldCommands"
   | "ownershipMetadataBypass"
   | "ownershipDependencyBypass"
 >;
+
+/** Typed input for the SDK `update` action; clearable fields also accept `null`. */
+export type PmUpdateActionOptions = WithNullClears<PmUpdateActionFields, UpdateNullClearableOptionKey>;
 
 /** Typed input for the SDK `close` action, derived from the executable close-command option contract plus the positional reason aliases used by generic action dispatch. */
 export type PmCloseActionOptions = DeclaredProperties<CloseCommandOptions> & {
@@ -98,7 +102,7 @@ export type PmBulkMutationControlOptions = {
 
 /** Typed input for the SDK `update-many` action: bulk-supported update fields plus selection filters and checkpoint controls. */
 export type PmUpdateManyActionOptions = Omit<
-  PmUpdateActionOptions,
+  PmUpdateActionFields,
   "allowMissingParent" | "completedAt"
 > &
   PmBulkMutationFilterOptions &

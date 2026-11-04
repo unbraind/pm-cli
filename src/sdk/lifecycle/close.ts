@@ -4,7 +4,7 @@
  * Implements the pm close command surface and its agent-facing runtime behavior.
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { isItemRevisionConflict, itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
+import { enrichItemRevisionConflict, isItemRevisionConflict, itemRevisionConflictRowFields, type ItemRevisionConflictRowFields } from "./item-revision.js";
 import { toErrorMessage } from "../runtime-primitives.js";
 import {
   toItemRecord,
@@ -39,6 +39,9 @@ import {
 } from "../lifecycle-policy.js";
 import type { ItemMetadata } from "../../types/index.js";
 import { nowIso } from "../../core/shared/time.js";
+import { isPmCliErrorDetails } from "../../core/shared/error-details.js";
+import { unicodeSafePrefix } from "../../core/shared/text-normalization.js";
+import type { PmCliErrorDetails, PmCliErrorDetailValue } from "../../core/shared/errors.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 
@@ -351,10 +354,15 @@ async function autoUnblockResolvedDependents(
   closedId: string,
   author: string,
   statusRegistry: RuntimeStatusRegistry,
+  commandScope: readonly string[],
 ): Promise<string[]> {
   const candidates = findAutoUnblockCandidates(items, closedId, statusRegistry);
   const warnings: string[] = [];
   const unblockedIds: string[] = [];
+  // Dependents the fan-out could not unblock; only another close would have retried them. Revision
+  // conflicts can be retried with a fresh revision, every other failure needs its cause fixed first.
+  const conflictIds: string[] = [];
+  const failed: Array<{ id: string; reason: string }> = [];
   let conflict: PmCliError | undefined;
   for (const candidate of candidates) {
     try {
@@ -405,24 +413,116 @@ async function autoUnblockResolvedDependents(
       unblockedIds.push(unblocked.item.id);
       /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. The revision specs exercise the kept conflict through the typed refusal below. */
     } catch (error) {
-      // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
-      if (conflict === undefined && isItemRevisionConflict(error)) conflict = error;
       const reason =
         error instanceof Error
           ? error.message.replace(/\s+/g, " ").trim()
           : "unknown";
+      // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
+      if (isItemRevisionConflict(error)) {
+        conflict ??= error;
+        conflictIds.push(candidate.id);
+      } else {
+        failed.push({ id: candidate.id, reason });
+      }
       warnings.push(`auto_unblock_failed:${candidate.id}:${reason}`);
     }
     /* c8 ignore stop */
   }
   if (conflict !== undefined) {
-    throw new PmCliError(`${closedId} was closed, but auto-unblocking ${String(conflict.context.item_id)} was refused. ${conflict.message}`, conflict.exitCode, {
-      ...conflict.context,
-      // Every committed write before the refusal: the close and each dependent already unblocked.
-      side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
-    });
+    // Attach the dependent's change evidence first, so the pending list joins it instead of displacing it.
+    const enriched = await enrichItemRevisionConflict(conflict, pmRoot) as PmCliError;
+    // Discovery spans every blocked-role status, the same set the fan-out drew its candidates from.
+    const blockedStatuses = [...statusRegistry.blocked_statuses].sort().join(",");
+    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, conflictIds, failed, openStatus: statusRegistry.open_status, blockedStatuses, commandScope });
   }
   return warnings;
+}
+
+/** Dependents a post-close refusal names, so its diagnostics stay inside the error-details byte ceiling. */
+const POST_CLOSE_REPORT_LIMIT = 10;
+
+/** Recovery commands a post-close refusal lists, discovery step included. */
+const POST_CLOSE_STEP_LIMIT = 20;
+
+/** Lists trimmed, in order, until the merged post-close details fit the error-details ceiling; each keeps its floor. */
+const POST_CLOSE_DETAIL_TRIMS = [
+  { list: "auto_unblock_failed", omitted: "auto_unblock_failed_omitted", floor: 0 },
+  { list: "changes_since", omitted: "changes_since_omitted", floor: 0 },
+  { list: "pending_unblock", omitted: "pending_unblock_omitted", floor: 1 },
+] as const;
+
+/**
+ * Trim the merged post-close details until the error host renders them whole:
+ * other failures first, then the revision change evidence, then pending ids
+ * (one always stays). Each dropped entry is counted in its list's omitted
+ * field, so a reader knows the list is partial.
+ */
+function fitPostCloseDetails(details: Record<string, PmCliErrorDetailValue>): PmCliErrorDetails {
+  for (const trim of POST_CLOSE_DETAIL_TRIMS) {
+    const list = details[trim.list];
+    if (!Array.isArray(list)) continue;
+    while (list.length > trim.floor && !isPmCliErrorDetails(details)) {
+      list.pop();
+      Reflect.set(details, trim.omitted, Number(details[trim.omitted]) + 1);
+    }
+  }
+  return details;
+}
+
+/** Name at most the report limit of ids, then count the rest. */
+function boundedIdList(ids: readonly string[]): string {
+  const omitted = ids.length - POST_CLOSE_REPORT_LIMIT;
+  return `${ids.slice(0, POST_CLOSE_REPORT_LIMIT).join(", ")}${omitted > 0 ? `, and ${omitted} more` : ""}`;
+}
+
+/**
+ * The refusal for a guarded dependent whose auto-unblock refused after the close
+ * committed. The dependent's own guidance says to retry with --expect-hash, but
+ * a repeated close is refused as terminal, so the remedy names only what
+ * remains: unblocking each dependent whose revision conflicted, in the caller's
+ * tracker scope and with the configured open status the automatic unblock would
+ * have written, and fixing the cause of every other failed unblock first.
+ */
+function postCloseDependentConflict(conflict: PmCliError, fanOut: {
+  closedId: string;
+  unblockedIds: readonly string[];
+  conflictIds: readonly string[];
+  failed: ReadonlyArray<{ id: string; reason: string }>;
+  openStatus: string;
+  blockedStatuses: string;
+  commandScope: readonly string[];
+}): PmCliError {
+  const { closedId, conflictIds, failed, commandScope } = fanOut;
+  const dependent = String(conflict.context.item_id);
+  const unblock = (id: string) => renderPmCommand([...commandScope, "update", id, "--status", fanOut.openStatus, "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]);
+  // Reasons are bounded too: the whole details object is dropped if it outgrows the ceiling.
+  const reported = failed.slice(0, POST_CLOSE_REPORT_LIMIT).map((entry) => ({ id: entry.id, reason: unicodeSafePrefix(entry.reason, 160) }));
+  const otherFailures = failed.length === 0
+    ? ""
+    : ` Auto-unblocking also failed for ${boundedIdList(failed.map((entry) => entry.id))}; details.auto_unblock_failed gives the reasons it kept (auto_unblock_failed_omitted counts the rest; their get step shows the item). Fix that cause before unblocking it.`;
+  // The fan-out warnings are dropped with the refusal, so ids past the report limit are found by listing instead.
+  const discovery = renderPmCommand([...commandScope, "list", "--status", fanOut.blockedStatuses, "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]);
+  const allSteps = [
+    ...conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT).flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
+    ...reported.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
+  ];
+  // Partial when ids were omitted or when the step cap cuts a dependent's step: either way, list them instead.
+  const truncated = conflictIds.length > POST_CLOSE_REPORT_LIMIT || failed.length > POST_CLOSE_REPORT_LIMIT || allSteps.length > POST_CLOSE_STEP_LIMIT;
+  const steps = allSteps.slice(0, truncated ? POST_CLOSE_STEP_LIMIT - 1 : POST_CLOSE_STEP_LIMIT);
+  return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
+    ...conflict.context,
+    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` This refusal does not list a step for every dependent left blocked; list them with ${discovery}, and while it reports has_more, continue with --after <next_cursor>.` : ""}`,
+    nextSteps: truncated ? [...steps, discovery] : steps,
+    details: fitPostCloseDetails({
+      ...structuredClone(conflict.context.details),
+      pending_unblock: conflictIds.slice(0, POST_CLOSE_REPORT_LIMIT),
+      pending_unblock_omitted: Math.max(0, conflictIds.length - POST_CLOSE_REPORT_LIMIT),
+      auto_unblock_failed: reported,
+      auto_unblock_failed_omitted: Math.max(0, failed.length - POST_CLOSE_REPORT_LIMIT),
+    }),
+    // Every committed write before the refusal: the close and each dependent already unblocked.
+    side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...fanOut.unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
+  });
 }
 
 /** A guarded dependent whose auto-unblock refused after a bulk row's close committed. */
@@ -658,6 +758,7 @@ function mutateCloseMetadata(
 /** Public contract for test only close command, shared by SDK and presentation-layer consumers. */
 export const _testOnlyCloseCommand = {
   blockedByIds: collectBlockedByIds,
+  fitPostCloseDetails,
 };
 
 /** Close one item through the SDK-owned lifecycle transaction and policy. */
@@ -815,6 +916,7 @@ export async function closeItem(
         located.id,
         author,
         statusRegistry,
+        commandScope,
       )),
     ],
     completion,

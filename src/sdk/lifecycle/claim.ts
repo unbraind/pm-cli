@@ -22,7 +22,7 @@ import { wrapOwnershipConflict } from "../annotations.js";
 import { resolveItemOwnershipConflict } from "../ownership-source.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
-import { admitExplicitStartClaim, admitStartTransition } from "./start-blockers.js";
+import { admitExplicitStartClaim, admitStartTransition, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
 import { resolveTypeWorkflows } from "../../core/schema/type-workflows.js";
 import { resolveStartTaskInProgressStatus } from "../start-task-status.js";
 import type { ItemMetadata, PmSettings } from "../../types/index.js";
@@ -76,6 +76,8 @@ export interface ClaimNextAvailableResult extends ClaimResult {
   recommendation: NextRecommendation;
   /** Value that configures or reports attempts for this contract. */
   attempts: number;
+  /** Earlier candidates skipped because a declared blocker refused their start; nothing was written to them. */
+  start_refused?: string[];
 }
 
 /** Non-error empty result returned when an if-available candidate walk is exhausted. */
@@ -96,6 +98,8 @@ export interface ClaimNextUnavailableResult {
   recommendation: null;
   /** Number of ranked candidates attempted. */
   attempts: number;
+  /** Candidates skipped because a declared blocker refused their start; nothing was written to them. */
+  start_refused?: string[];
   /** Stable machine-readable exhaustion warning. */
   warnings: [typeof NO_AVAILABLE_NEXT_ITEM_CODE];
 }
@@ -105,8 +109,8 @@ export type ClaimNextResult =
   | ClaimNextAvailableResult
   | ClaimNextUnavailableResult;
 
-/** Returns whether a failed claim lost the atomic test-and-set race. */
-export function isAlreadyClaimedError(error: unknown): boolean {
+/** Returns whether an error is a pm refusal carrying the typed `code`. */
+function hasRefusalCode(error: unknown, code: string): boolean {
   if (!(error instanceof Error) || error.name !== "PmCliError") {
     return false;
   }
@@ -115,8 +119,13 @@ export function isAlreadyClaimedError(error: unknown): boolean {
     typeof context === "object" &&
     context !== null &&
     "code" in context &&
-    context.code === "already_claimed_by"
+    context.code === code
   );
+}
+
+/** Returns whether a failed claim lost the atomic test-and-set race. */
+export function isAlreadyClaimedError(error: unknown): boolean {
+  return hasRefusalCode(error, "already_claimed_by");
 }
 
 type ClaimRunner = (
@@ -450,6 +459,9 @@ export async function claimNextFromRecommendations(
   claimRunner: ClaimRunner = runClaim,
 ): Promise<ClaimNextResult> {
   let attempts = 0;
+  // A candidate whose blocker opened after ranking refuses its start before any write, so the walk moves on.
+  const startRefused: string[] = [];
+  const refusals = () => (startRefused.length > 0 ? { start_refused: [...startRefused] } : {});
   for (const recommendation of recommendations) {
     attempts += 1;
     try {
@@ -464,9 +476,14 @@ export async function claimNextFromRecommendations(
         recommendation,
         attempts,
         available: true as const,
+        ...refusals(),
       };
       if (!claimed.skipped) return result;
     } catch (error: unknown) {
+      if (hasRefusalCode(error, START_BLOCKED_REFUSAL_CODE)) {
+        startRefused.push(recommendation.id);
+        continue;
+      }
       if (!isAlreadyClaimedError(error)) throw error;
     }
   }
@@ -480,25 +497,35 @@ export async function claimNextFromRecommendations(
       skipped: true,
       recommendation: null,
       attempts,
+      ...refusals(),
       warnings: [NO_AVAILABLE_NEXT_ITEM_CODE],
     };
   }
+  throw noAvailableNextItemError(attempts, startRefused, options.start === true);
+}
+
+/** Explain an exhausted walk, naming candidates whose start a declared blocker refused. */
+function noAvailableNextItemError(attempts: number, startRefused: readonly string[], start: boolean): PmCliError {
   const noCandidatesMatched = attempts === 0;
-  throw new PmCliError(
+  let why = "Every ranked candidate was claimed by another agent before this atomic selection completed.";
+  if (noCandidatesMatched) why = "No ready items matched the specified filters or selection criteria.";
+  else if (startRefused.length > 0) {
+    why = `${startRefused.length} of ${attempts} attempted candidates refused their start because a declared blocker is open (${startRefused.join(", ")}), and nothing was written to them; ${startRefused.length === attempts ? "no other candidate was attempted" : "every other attempted candidate was claimed by another agent"}.`;
+  }
+  return new PmCliError(
     noCandidatesMatched
       ? "No actionable items matched the selection filters"
       : "No actionable item remained available to claim",
     noCandidatesMatched ? EXIT_CODE.NOT_FOUND : EXIT_CODE.CONFLICT,
     {
       code: NO_AVAILABLE_NEXT_ITEM_CODE,
-      why: noCandidatesMatched
-        ? "No ready items matched the specified filters or selection criteria."
-        : "Every ranked candidate was claimed by another agent before this atomic selection completed.",
+      why,
       nextSteps: [
         noCandidatesMatched
           ? "Verify the filters or run pm next to inspect all ready work."
-          : "Run pm claim --next again to refresh the ranked candidate set.",
+          : `Run pm claim --next${start ? " --start" : ""} again, with the same filters, to refresh the ranked candidate set.`,
       ],
+      ...(startRefused.length > 0 ? { details: { start_refused: [...startRefused] } } : {}),
     },
   );
 }

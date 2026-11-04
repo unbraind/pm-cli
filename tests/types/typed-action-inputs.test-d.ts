@@ -17,6 +17,9 @@ import type {
   PmUpdateActionOptions,
   PmUpdateManyActionOptions,
 } from "../../src/sdk/index.js";
+import { runCreate, runUpdate } from "../../src/sdk/index.js";
+import type { CreateNullClearableOptionKey, NullClearableOptionKey, UpdateNullClearableOptionKey } from "../../src/sdk/index.js";
+import type { CREATE_UNSET_FIELD_DEFINITIONS, UPDATE_UNSET_FIELD_DEFINITIONS } from "../../src/sdk/lifecycle/shared-unset-fields.js";
 
 declare const typedClient: PmClient;
 void typedClient.historyCompactBulk({ ids: 123, dryRun: true });
@@ -146,3 +149,42 @@ const projectedPriority: number | undefined = projectedRow.priority;
 void projectedId;
 void projectedTitle;
 void projectedPriority;
+
+// --- GH-1655: typed null clears every option the command's unset table covers ---
+const createNullClears: PmCreateActionOptions = { title: "Null clears", parent: null, assignee: null, sprint: null, estimatedMinutes: null, tags: null };
+void createNullClears;
+const updateNullClears: PmUpdateActionOptions = { parent: null, assignee: null, closeReason: null, blockedBy: null };
+void updateNullClears;
+void typedClient.create({ type: "Task", title: "Typed null", parent: null });
+void typedClient.update("pm-a", { assignee: null, release: null });
+
+// @ts-expect-error create: title cannot be cleared, so null stays a type error
+const createNullTitle: PmCreateActionOptions = { title: null };
+void createNullTitle;
+
+// @ts-expect-error create: author is attribution, not a clearable field
+const createNullAuthor: PmCreateActionOptions = { title: "x", author: null };
+void createNullAuthor;
+
+// @ts-expect-error update: closeReason clears only on update; create has no close-reason unset
+const createNullCloseReason: PmCreateActionOptions = { title: "x", closeReason: null };
+void createNullCloseReason;
+
+// GH-1655: the direct lifecycle entrypoints accept the same nullable input as the client.
+declare const sdkGlobal: Parameters<typeof runCreate>[1];
+const createWrapper = (options: PmCreateActionOptions) => runCreate(options, sdkGlobal);
+const updateWrapper = (id: string, options: PmUpdateActionOptions) => runUpdate(id, options, sdkGlobal);
+void createWrapper({ title: "Wrapped", parent: null });
+void updateWrapper("pm-a", { assignee: null });
+
+// @ts-expect-error update-many keeps the unset form only; its flat transport has no null clear
+const updateManyNull: PmUpdateManyActionOptions = { ids: ["pm-a"], assignee: null };
+void updateManyNull;
+
+// GH-1655: the spelled-out nullable key unions the SDK snapshot records stay equal to the unset tables.
+type ExactKeys<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
+const createKeysMatchTable: ExactKeys<CreateNullClearableOptionKey, NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>> = true;
+const updateKeysMatchTable: ExactKeys<UpdateNullClearableOptionKey, NullClearableOptionKey<typeof UPDATE_UNSET_FIELD_DEFINITIONS>> = true;
+void createKeysMatchTable;
+void updateKeysMatchTable;
+

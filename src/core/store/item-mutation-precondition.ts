@@ -224,11 +224,13 @@ function conditionsFor(pmRoot: string, ids: readonly unknown[]): ItemMutationPre
  * Notify matching scoped guards of their own committed document (a tombstone
  * after delete) before releasing the item lock. `aliasIds` carries identities
  * the committed document no longer has, such as a deleted item's embedded id.
+ * `revision` overrides the document's hash when the stored state is not that
+ * document (a storage override persisted something the store cannot parse).
  */
-export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id, aliasIds: readonly string[] = []): void {
+export function advanceItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id, aliasIds: readonly string[] = [], revision?: string): void {
   const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id, ...aliasIds]);
   if (entries.length > 0) {
-    const committed = hashDocument(document);
+    const committed = revision ?? hashDocument(document);
     for (const entry of entries) {
       entry.expected = committed;
       entry.committed = true;

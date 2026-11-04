@@ -91,3 +91,35 @@ describe("pm-urzubi explicit start race", () => {
     });
   });
 });
+
+describe("pm-mrvq8u claim --next --start over a start refusal", () => {
+  it("skips a ranked candidate whose blocker opened after ranking and claims the next one", async () => {
+    await withTempPmPath(async (context) => {
+      const { claimNextFromRecommendations } = await import("../../../../src/sdk/lifecycle/claim.js");
+      const { runUpdate } = await import("../../../../src/sdk/lifecycle/update.js");
+      const blocker = createTestItemId(context, { title: "Late blocker" });
+      const raced = createTestItemId(context, { title: "Raced candidate" });
+      const healthy = createTestItemId(context, { title: "Healthy candidate" });
+      const global = { path: context.pmPath };
+      // Ranking saw both candidates ready; the blocker edge lands before the walk reaches the first.
+      await runUpdate(raced, { dep: [`id=${blocker},kind=blocked_by`], author: "peer-agent", force: true }, global);
+      const historyOps = (id: string) =>
+        (context.runCli(["history", id, "--full", "--json"], { expectJson: true }).json as { history: Array<{ op: string }> }).history.map((entry) => entry.op);
+      const before = historyOps(raced);
+      const claimed = await claimNextFromRecommendations(
+        [{ id: raced, reasons: [] }, { id: healthy, reasons: [] }] as never,
+        false,
+        global,
+        { start: true },
+      );
+      expect(claimed).toMatchObject({ available: true, attempts: 2, start_refused: [raced] });
+      expect(claimed.recommendation.id).toBe(healthy);
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      expect((await client.get(healthy)).item).toMatchObject({ status: "in_progress", assignee: "test-author" });
+      const refusedItem = (await client.get(raced, { full: true })).item;
+      expect(refusedItem.status).toBe("open");
+      expect(refusedItem.assignee ?? null).toBeNull();
+      expect(historyOps(raced)).toEqual(before);
+    });
+  });
+});

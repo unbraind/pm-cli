@@ -1,0 +1,23 @@
+id: pm-w7clh6
+title: update-many silently drops a null update field in both the flat and nested runAction transports instead of clearing it or refusing
+description: "Found by Codex review of the GH-1655 change (pm-gh1655) and corrected by CodeRabbit on PR 1658. In runAction('update-many', ...) both spellings normalize a null update field to undefined before resolveUpdateTransportOptions sees it: { ids: [id], assignee: null, description: 'changed' } and { ids: [id], update: { assignee: null, description: 'changed' } } both change the description and silently keep the assignee (reproduced on the PR 1658 build in a sandbox). Only a direct runUpdateMany call whose update record still carries the null reaches the pm-gh1655 fold. pm-gh1655 therefore kept update-many out of the null-clear contract (PmUpdateManyActionOptions stays non-nullable)."
+type: Issue
+status: open
+priority: 3
+tags[4]: bulk,pm-gh1655,sdk,update-many
+created_at: "2026-11-03T23:06:21.402Z"
+updated_at: "2026-11-04T12:20:04.692Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A null on a clearable update field (one the update unset table covers) clears it in every update-many spelling (runAction flat, runAction nested and direct runUpdateMany) exactly like a single update; it is never silently dropped; A null on a non-clearable update field (for example title) refuses naming the field in every update-many spelling, exactly as a single update refuses it; Flat and nested update-many spellings of the same request produce the same rows, clears and refusals alike, with a spec for each spelling; A flat null on a key that is a selection filter rather than an update field is refused naming the key, never applied as a clear"
+parent: pm-9rgaal
+risk: low
+confidence: high
+severity: low
+expected_result: "A null on a clearable update field in a flat update-many payload clears it exactly like the nested form, and a null on a non-clearable field refuses like the nested form"
+actual_result: Both runAction spellings (flat and nested) drop the null field silently while the rest of the update applies
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1655,discovered_from,"2026-11-03T23:06:21.402Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-04T12:20:04.691Z","harness:claude-code","Direct SDK spelling covered on PR #1658 (CodeRabbit review of fdb25f6f0). A direct runUpdateMany from the SDK (src/sdk/lifecycle/update-many.ts) folds a null in its update record into unset through resolveUpdateTransportOptions, exactly like runUpdate, and clears every matched row. The CLI compatibility wrapper (src/cli/commands/lifecycle/update-many.ts) marks the record as CLI input, so the same null is refused as 'update assignee must be a string.' New spec in update-many-command.spec.ts asserts both, plus the by-name refusal of title: null. The two runAction spellings, which drop the null before the fold, remain this item's scope. CodeRabbit suggested refusing the null on the direct path. That was declined, because it would contradict this item's first acceptance criterion (a null clears in every update-many spelling)."
+body: ""

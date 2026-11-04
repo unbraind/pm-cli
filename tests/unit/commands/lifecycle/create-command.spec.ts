@@ -4160,6 +4160,34 @@ describe("create command helper coverage", () => {
     expect(
       _testOnlyCreateCommand.requireStringOption("value", "--description"),
     ).toBe("value");
+    // pm-gh1655: typed SDK callers are told the option key, never the flag.
+    expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--title", "sdk")).toThrow(
+      'Missing required option title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass title (example: client.create({ type: "Issue", title: "Fix login bug" })).',
+    );
+    expect(() => _testOnlyCreateCommand.requireStringOption(" ", "--title", "sdk")).toThrow("Title cannot be empty or whitespace-only. Retry: pass a non-empty title.");
+    expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--estimated-minutes", "sdk")).toThrow("Missing required option estimatedMinutes");
+  });
+
+  it("lets an explicit unset override the template default for that field (pm-gh1655)", () => {
+    const template = { parent: "pm-template-parent", sprint: "s1", release: "r1" };
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", unset: ["parent"] } as never))
+      .toEqual({ title: "x", sprint: "s1", release: "r1", unset: ["parent"] });
+    // Tokens resolve exactly as the unset parser resolves them: an unresolvable whole entry splits on commas.
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", unset: ["parent,release"] } as never))
+      .toEqual({ title: "x", sprint: "s1", unset: ["parent,release"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", parent: "pm-explicit", unset: ["parent"] } as never))
+      .toMatchObject({ parent: "pm-explicit", sprint: "s1" });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x" } as never)).toMatchObject({ parent: "pm-template-parent" });
+    // rank writes the same field as order, so clearing order drops a template rank too, unless the caller passed one.
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ rank: "3", sprint: "s1" }, { title: "x", unset: ["order"] } as never))
+      .toEqual({ title: "x", sprint: "s1", unset: ["order"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ rank: "3" }, { title: "x", rank: "4", unset: ["order"] } as never))
+      .toMatchObject({ rank: "4" });
+    // addTags extends tags, so clearing tags drops template addTags; a caller's own addTags stays for the conflict refusal.
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ tags: "a", addTags: ["b"], sprint: "s1" }, { title: "x", unset: ["tags"] } as never))
+      .toEqual({ title: "x", sprint: "s1", unset: ["tags"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ addTags: ["b"] }, { title: "x", addTags: ["c"], unset: ["tags"] } as never))
+      .toMatchObject({ addTags: ["c"] });
   });
 
   it("normalizes template command paths and merges explicit create options over templates", () => {

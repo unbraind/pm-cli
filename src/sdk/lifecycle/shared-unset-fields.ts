@@ -27,7 +27,7 @@ export interface CommandUnsetFieldDefinition {
 export const CLOSE_REASON_UNSET_ALIASES: readonly string[] = ["close_reason", "close-reason"];
 
 /** Public contract for common unset field definitions before close reason, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON =
   [
     {
       canonical: "tags",
@@ -35,10 +35,10 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON: readonly Comman
       optionKey: "tags",
       metadataKey: "tags",
     },
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Public contract for common unset field definitions after close reason before author, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR =
   [
     {
       canonical: "deadline",
@@ -106,17 +106,17 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR: re
       optionKey: "whyNow",
       metadataKey: "why_now",
     },
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Public contract for common unset field definitions before author, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR =
   [
     ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
     ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
 
 /** Public contract for common unset field definitions after author, shared by SDK and presentation-layer consumers. */
-export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetFieldDefinition[] =
+export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR =
   [
     {
       canonical: "assignee",
@@ -250,7 +250,142 @@ export const COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR: readonly CommandUnsetF
       optionKey: "customerImpact",
       metadataKey: "customer_impact",
     },
-  ] as const;
+  ] as const satisfies readonly CommandUnsetFieldDefinition[];
+
+/** Every field `pm create --unset` (and the SDK `unset` option on create) can clear. */
+export const CREATE_UNSET_FIELD_DEFINITIONS = [
+  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
+  {
+    canonical: "author",
+    aliases: ["author"],
+    optionKey: "author",
+    metadataKey: "author",
+  },
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
+] as const satisfies readonly CommandUnsetFieldDefinition[];
+
+/** Every field `pm update --unset` (and the SDK `unset` option on update) can clear. */
+export const UPDATE_UNSET_FIELD_DEFINITIONS = [
+  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  {
+    canonical: "close-reason",
+    aliases: CLOSE_REASON_UNSET_ALIASES,
+    optionKey: "closeReason",
+    metadataKey: "close_reason",
+  },
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
+  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
+] as const satisfies readonly CommandUnsetFieldDefinition[];
+
+/**
+ * Option keys a typed caller may clear with `null` (GH-1655): every option the
+ * command's `unset` table covers, derived from that table, except the `author`
+ * attribution, which names who performs the write.
+ */
+export type NullClearableOptionKey<Table extends readonly { optionKey: string }[]> = Exclude<Table[number]["optionKey"], "author">;
+
+/** Let the listed keys also take `null`, the typed clear, while every other key keeps its exact value type and optionality. */
+export type WithNullClears<Shape, Keys extends PropertyKey> = {
+  [Key in keyof Shape]: Key extends Keys ? Shape[Key] | null : Shape[Key];
+};
+
+/**
+ * Create option keys that accept the typed `null` clear, spelled out so the SDK
+ * surface snapshot records the set (it prints alias text, not resolved types).
+ * tests/types/typed-action-inputs.test-d.ts keeps it equal to
+ * `NullClearableOptionKey<typeof CREATE_UNSET_FIELD_DEFINITIONS>`.
+ */
+export type CreateNullClearableOptionKey =
+  | "acceptanceCriteria"
+  | "actualResult"
+  | "affectedVersion"
+  | "assignee"
+  | "blockedBy"
+  | "blockedReason"
+  | "component"
+  | "confidence"
+  | "customerImpact"
+  | "deadline"
+  | "definitionOfReady"
+  | "environment"
+  | "estimatedMinutes"
+  | "expectedResult"
+  | "fixedVersion"
+  | "goal"
+  | "impact"
+  | "objective"
+  | "order"
+  | "outcome"
+  | "parent"
+  | "regression"
+  | "release"
+  | "reporter"
+  | "reproSteps"
+  | "resolution"
+  | "reviewer"
+  | "risk"
+  | "severity"
+  | "sprint"
+  | "tags"
+  | "unblockNote"
+  | "value"
+  | "whyNow";
+
+/** Update option keys that accept the typed `null` clear: the create set plus `closeReason`, kept equal to the update unset table by the same type test. */
+export type UpdateNullClearableOptionKey = CreateNullClearableOptionKey | "closeReason";
+
+/** Spellings that once cleared a field on every surface and now persist literally from typed callers. */
+const FORMER_CLEAR_SENTINELS = new Set(["none", "null", "-"]);
+
+function unsetDefinitionsFor(action: "create" | "update"): readonly CommandUnsetFieldDefinition[] {
+  return action === "create" ? CREATE_UNSET_FIELD_DEFINITIONS : UPDATE_UNSET_FIELD_DEFINITIONS;
+}
+
+/**
+ * Treat a typed `null` on a clearable option as an explicit clear (GH-1655):
+ * `{ parent: null }` becomes `unset: ["parent"]`. Options `unset` cannot clear
+ * keep their `null`, so value validation refuses them by name, and so does
+ * `author`: on the SDK it names who performs the write, not a stored field.
+ * Mutates the bag, which must be a caller-private copy; an `unset` that is
+ * neither absent, a string nor an array is left for value validation to refuse.
+ */
+export function foldNullClearsIntoUnset(action: "create" | "update", options: Record<string, unknown>): void {
+  const current = options.unset;
+  if (current !== undefined && typeof current !== "string" && !Array.isArray(current)) return;
+  const tokens: string[] = [];
+  for (const definition of unsetDefinitionsFor(action)) {
+    if (definition.optionKey === "author" || !Object.hasOwn(options, definition.optionKey) || options[definition.optionKey] !== null) continue;
+    Reflect.deleteProperty(options, definition.optionKey);
+    tokens.push(definition.canonical);
+  }
+  if (tokens.length === 0) return;
+  options.unset = [...(current === undefined ? [] : typeof current === "string" ? [current] : current), ...tokens];
+}
+
+function isFormerClearSentinel(value: unknown): value is string {
+  return typeof value === "string" && FORMER_CLEAR_SENTINELS.has(value.trim().toLowerCase());
+}
+
+/**
+ * Advisory warnings for typed input that stored a former clear sentinel
+ * literally (GH-1614 keeps `assignee: "none"` as a person called none). Each
+ * names the field and the clear form: `literal_sentinel_stored:<field>:<value>`,
+ * cleared with `unset: ["<field>"]` or `null`. A field is advised only when the
+ * resulting `stored` item still holds that sentinel, so a value a lifecycle
+ * transition removed is never reported as stored. CLI input is never advised:
+ * its adapter still maps the sentinels to clears.
+ */
+export function literalSentinelAdvisories(action: "create" | "update", options: Record<string, unknown>, literal: boolean, stored: Record<string, unknown>): string[] {
+  if (!literal) return [];
+  return unsetDefinitionsFor(action).flatMap((definition) => {
+    const value = options[definition.optionKey];
+    const kept = stored[definition.metadataKey];
+    // A CSV option such as tags is stored as an array; any element still holding the sentinel counts.
+    return isFormerClearSentinel(value) && (isFormerClearSentinel(kept) || (Array.isArray(kept) && kept.some(isFormerClearSentinel)))
+      ? [`literal_sentinel_stored:${definition.canonical}:${value.trim()}`]
+      : [];
+  });
+}
 
 /** Result of matching a runtime schema field against a command `--unset` token. */
 export interface RuntimeUnsetFieldDefinition {

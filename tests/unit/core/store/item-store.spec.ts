@@ -25,6 +25,13 @@ import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { parseItemDocument, serializeItemDocument } from "../../../../src/core/item/item-format.js";
 import type { ItemDocument, ItemFormat, ItemMetadata } from "../../../../src/types/index.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { hashDocument } from "../../../../src/core/history/history.js";
+import { EMPTY_CANONICAL_DOCUMENT } from "../../../../src/core/shared/constants.js";
+import {
+  bindItemRevisionScope,
+  createItemRevisionScope,
+  runWithItemRevisionScope,
+} from "../../../../src/core/store/item-mutation-precondition.js";
 
 const FIXED_TS = "2026-02-20T00:00:00.000Z";
 
@@ -984,6 +991,122 @@ describe("core/store/item-store", () => {
         Issue: "issues",
       });
       expect(suggestions).toContain("pm-close-alpha");
+    });
+  });
+
+  describe("pm-thbdxu expected revisions under storage overrides", () => {
+    const readStored = async (itemPath: string) => hashDocument(parseItemDocument(await fs.readFile(itemPath, "utf8"), { format: "toon" }));
+    const update = (pmRoot: string, settings: Awaited<ReturnType<typeof readSettings>>, id: string, description: string) =>
+      mutateItem({ pmRoot, settings, id, op: "update", author: "unit-author", mutate: (document) => {
+        document.metadata.description = description;
+        return { changedFields: ["description"] };
+      } });
+    const bindScope = async (pmRoot: string, id: string, itemPath: string) => {
+      const scope = createItemRevisionScope();
+      bindItemRevisionScope(scope, pmRoot, [{ id, itemHash: await readStored(itemPath) }]);
+      return scope;
+    };
+
+    it("advances to the contents a transforming write override persisted, so the scope's next write is admitted", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-transform-scope";
+        const { itemPath } = await writeTaskItem(pmPath, id);
+        const settings = await readSettings(pmPath);
+        setActiveExtensionServices({ overrides: [{ layer: "project", name: "suffix", service: "item_store_write",
+          run: (context) => ({ contents: String((context.payload as { contents: string }).contents).replace(/^description: (\w+)$/mu, 'description: "$1 [stored]"') }) }] });
+        const scope = await bindScope(pmPath, id, itemPath);
+        await runWithItemRevisionScope(scope, async () => {
+          await update(pmPath, settings, id, "first");
+          await update(pmPath, settings, id, "second");
+        });
+        expect((await readLocatedItem((await locateItem(pmPath, id, "pm"))!)).document.metadata.description).toBe("second [stored]");
+        expect(scope.entries.get(id)).toMatchObject({ expected: await readStored(itemPath), checked: true, committed: true });
+        // A peer write between two guarded writes still refuses the scope's next one.
+        setActiveExtensionServices(null);
+        await update(pmPath, settings, id, "peer");
+        await expect(runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "stale"))).rejects.toMatchObject({
+          exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: id },
+        });
+      });
+    });
+
+    it("keeps the stored revision when a write override skips the write, and refuses once a peer changes it", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-skip-scope";
+        const { itemPath } = await writeTaskItem(pmPath, id);
+        const settings = await readSettings(pmPath);
+        const original = await readStored(itemPath);
+        setActiveExtensionServices({ overrides: [{ layer: "project", name: "skip", service: "item_store_write", run: () => ({ skip_write: true }) }] });
+        const scope = await bindScope(pmPath, id, itemPath);
+        await runWithItemRevisionScope(scope, async () => {
+          await update(pmPath, settings, id, "skipped once");
+          await update(pmPath, settings, id, "skipped twice");
+        });
+        expect(scope.entries.get(id)?.expected).toBe(original);
+        setActiveExtensionServices(null);
+        await update(pmPath, settings, id, "peer");
+        await expect(runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "stale"))).rejects.toMatchObject({
+          context: { code: "item_revision_conflict" },
+        });
+      });
+    });
+
+    it("advances to the item a delete override kept, not to the tombstone", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-skip-delete-scope";
+        const { itemPath } = await writeTaskItem(pmPath, id);
+        const settings = await readSettings(pmPath);
+        setActiveExtensionServices({ overrides: [{ layer: "project", name: "keep", service: "item_store_delete", run: () => ({ skip_delete: true }) }] });
+        const scope = await bindScope(pmPath, id, itemPath);
+        await runWithItemRevisionScope(scope, async () => {
+          await deleteItem({ pmRoot: pmPath, settings, id, author: "unit-author" });
+          expect(scope.entries.get(id)?.expected).toBe(await readStored(itemPath));
+          await update(pmPath, settings, id, "after kept delete");
+        });
+        expect(scope.entries.get(id)?.expected).toBe(await readStored(itemPath));
+      });
+    });
+
+    it("advances to the tombstone when a write override moves the item out of the tracker", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-moved-scope";
+        const { itemPath } = await writeTaskItem(pmPath, id);
+        const settings = await readSettings(pmPath);
+        const outside = path.join(path.dirname(pmPath), "moved-out.toon");
+        setActiveExtensionServices({ overrides: [{ layer: "project", name: "move", service: "item_store_write", run: () => ({ target_item_path: outside }) }] });
+        const scope = await bindScope(pmPath, id, itemPath);
+        await runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "moved"));
+        expect(scope.entries.get(id)?.expected).toBe(hashDocument(EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument));
+      });
+    });
+
+    it("fails closed when the override rewrote the embedded id, so no entry is left unbound", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-renamed-scope";
+        const { itemPath } = await writeTaskItem(pmPath, id);
+        const settings = await readSettings(pmPath);
+        setActiveExtensionServices({ overrides: [{ layer: "project", name: "rename", service: "item_store_write",
+          run: (context) => ({ contents: String((context.payload as { contents: string }).contents).replace(/^id: pm-renamed-scope$/mu, "id: pm-renamed-elsewhere") }) }] });
+        const scope = await bindScope(pmPath, id, itemPath);
+        await runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "renamed"));
+        expect(await fs.readFile(itemPath, "utf8")).toContain("id: pm-renamed-elsewhere");
+        expect(scope.entries.get(id)?.expected).not.toMatch(/^[0-9a-f]{64}$/u);
+      });
+    });
+
+    it("fails closed when the override persisted contents the store cannot parse", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-garbled-scope";
+        const { itemPath } = await writeTaskItem(pmPath, id);
+        const settings = await readSettings(pmPath);
+        setActiveExtensionServices({ overrides: [{ layer: "project", name: "garble", service: "item_store_write", run: () => ({ contents: "{not toon" }) }] });
+        const scope = await bindScope(pmPath, id, itemPath);
+        await runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "garbled"));
+        expect(scope.entries.get(id)?.expected).not.toMatch(/^[0-9a-f]{64}$/u);
+        // The scope's next guarded write cannot proceed: it fails reading the document before any revision check.
+        setActiveExtensionServices(null);
+        await expect(runWithItemRevisionScope(scope, () => update(pmPath, settings, id, "after garble"))).rejects.toMatchObject({ context: { code: "item_document_invalid" } });
+      });
     });
   });
 });

@@ -10,7 +10,7 @@ import {
   readRoutedItemMetadata,
 } from "./repeated-terminal-state.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
-import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
+import { emptyMutationOptionMessage, isLiteralMutationInput, mutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { resolveMutationStdinTokenFields } from "../../core/item/parse.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import {
@@ -136,13 +136,12 @@ import {
 } from "./create.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
-  COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
-  CLOSE_REASON_UNSET_ALIASES,
-  COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-  COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
+  literalSentinelAdvisories,
   parseCommandUnsetTargets,
   resolveRuntimeUnsetFieldDefinition,
-  type CommandUnsetFieldDefinition,
+  UPDATE_UNSET_FIELD_DEFINITIONS,
+  type UpdateNullClearableOptionKey,
+  type WithNullClears,
 } from "./shared-unset-fields.js";
 import type {
   MutationMetadataCommandOptions,
@@ -206,7 +205,7 @@ export interface UpdateCommandOptions
 }
 
 /** Presentation-neutral input accepted by the SDK-owned update operation. */
-export type UpdateOperationOptions = UpdateCommandOptions;
+export type UpdateOperationOptions = WithNullClears<UpdateCommandOptions, UpdateNullClearableOptionKey>;
 
 /** Documents the update result payload exchanged by command, SDK, and package integrations. */
 export interface UpdateResult {
@@ -262,18 +261,6 @@ interface UpdateUnsetFieldDefinition {
   optionKey: string;
   metadataKey: string;
 }
-
-const UPDATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
-  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_CLOSE_REASON,
-  {
-    canonical: "close-reason",
-    aliases: CLOSE_REASON_UNSET_ALIASES,
-    optionKey: "closeReason",
-    metadataKey: "close_reason",
-  },
-  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_CLOSE_REASON_BEFORE_AUTHOR,
-  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-];
 
 const UPDATE_UNSET_ALIAS_MAP: Map<string, UpdateUnsetFieldDefinition> = (() => {
   const map = new Map<string, UpdateUnsetFieldDefinition>();
@@ -1544,9 +1531,10 @@ async function resolveStdinUpdateOptions(
 
 /** Resolve update stdin tokens once while preserving transport-marked literals. */
 export async function resolveUpdateTransportOptions(
-  options: UpdateCommandOptions,
+  input: UpdateOperationOptions,
 ): Promise<UpdateCommandOptions> {
-  options = prepareNativeMutationOptions("update", options);
+  // Typed nulls on clearable fields fold into unset here, and value validation refuses any other null (GH-1655).
+  const options = prepareNativeMutationOptions("update", input) as UpdateCommandOptions;
   return shouldResolveMutationStdinTokens(options)
     ? await resolveStdinUpdateOptions(options)
     : normalizeLegacyNoneUpdateOptions(options);
@@ -1991,18 +1979,12 @@ async function resolveParentReferenceForUpdate(params: {
   ) {
     return { resolvedParentValue: undefined, warnings: [] };
   }
-  const resolvedParentValue = normalizeItemReference(
-    normalizeParentReferenceValue(params.options.parent),
-    params.settings.id_prefix,
-  );
+  const audience = mutationInputAudience(params.options);
+  const resolvedParentValue = normalizeItemReference(normalizeParentReferenceValue(params.options.parent, audience), params.settings.id_prefix);
   if (isExternalDependencyReference(resolvedParentValue)) {
     return { resolvedParentValue, warnings: [] };
   }
-  assertParentReferenceIsNotSelf(
-    params.id,
-    resolvedParentValue,
-    params.settings.id_prefix,
-  );
+  assertParentReferenceIsNotSelf(params.id, resolvedParentValue, params.settings.id_prefix, audience);
   const parentLocated = await locateItem(
     params.pmRoot,
     resolvedParentValue,
@@ -2019,10 +2001,7 @@ async function resolveParentReferenceForUpdate(params: {
   );
   return {
     resolvedParentValue,
-    warnings: validateMissingParentReference(
-      normalizedParentId,
-      params.parentReferencePolicy,
-    ).warnings,
+    warnings: validateMissingParentReference(normalizedParentId, params.parentReferencePolicy, audience).warnings,
   };
 }
 
@@ -2159,9 +2138,12 @@ async function closeRoutedItem(
     context.global,
   );
 
+  // Advise against the final closed item only: the close can remove what the pre-update stored, so its own advisories are dropped.
+  const advisories = literalSentinelAdvisories("update", context.options as Record<string, unknown>, mutationInputAudience(context.options) === "sdk", closeResult.item);
   const warnings = [
+    ...advisories,
     ...context.workflowTransitionWarnings,
-    ...(preUpdate?.warnings ?? []),
+    ...(preUpdate?.warnings ?? []).filter((warning) => !warning.startsWith("literal_sentinel_stored:")),
     ...closeResult.warnings,
     "auto_routed_from_update_to_close",
   ];
@@ -2182,7 +2164,7 @@ function applySimpleItemMutations(
   changedFields: string[],
 ): string {
   if (options.title !== undefined) {
-    document.metadata.title = requireStringOption(options.title, "--title");
+    document.metadata.title = requireStringOption(options.title, "--title", mutationInputAudience(options));
     changedFields.push("title");
   }
   if (options.description !== undefined) {
@@ -2303,7 +2285,7 @@ function applyCloseReasonMutations(
       const closeReason = context.options.closeReason?.trim() ?? "";
       if (closeReason.length === 0) {
         throw new PmCliError(
-          "--close-reason must not be empty",
+          emptyMutationOptionMessage(mutationInputAudience(context.options), "close-reason"),
           EXIT_CODE.USAGE,
         );
       }
@@ -2875,7 +2857,7 @@ function applyAssigneeMutation(
     const assignee = context.options.assignee?.trim() ?? "";
     if (assignee === "") {
       throw new PmCliError(
-        "--assignee must not be empty. Use --unset assignee to clear it.",
+        emptyMutationOptionMessage(mutationInputAudience(context.options), "assignee", ". Use --unset assignee to clear it."),
         EXIT_CODE.USAGE,
       );
     }
@@ -2923,6 +2905,7 @@ function applySprintReleaseMutation(
       key,
       context.options[key] ?? "",
       context.settings.validation.sprint_release_format,
+      mutationInputAudience(context.options),
     );
     document.metadata[key] = validation.value;
     warnings.push(...validation.warnings);
@@ -3225,12 +3208,12 @@ function mutateUpdateDocument(
 /** Implements run update for the public runtime surface of this module. */
 async function runUpdateWithContext(
   id: string,
-  options: UpdateCommandOptions,
+  input: UpdateOperationOptions,
   global: GlobalOptions,
   execution: UpdateExecutionContext = {},
 ): Promise<UpdateResult & { lifecycle_transition?: ReopenUpdateReceipt }> {
   assertMutationStringOperand(id, "update", "id");
-  options = await resolveUpdateTransportOptions(options);
+  const options = await resolveUpdateTransportOptions(input);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await assertInitializedTracker(pmRoot);
   const settings = await readSettings(pmRoot);
@@ -3515,6 +3498,7 @@ async function runUpdateWithContext(
       item: toItemRecord(result.item),
       changed_fields: result.changedFields,
       warnings: [
+        ...literalSentinelAdvisories("update", options as Record<string, unknown>, mutationInputAudience(options) === "sdk", result.item as Record<string, unknown>),
         ...workflowTransitionWarnings,
         ...parentReferenceWarnings,
         ...dependencyTargetWarnings,
@@ -3609,7 +3593,7 @@ function prepareRecurrenceTransition(params: {
 /** Implements run update for the public runtime surface of this module. */
 export async function runUpdate(
   id: string,
-  options: UpdateCommandOptions,
+  options: UpdateOperationOptions,
   global: GlobalOptions,
 ): Promise<UpdateResult> {
   return runUpdateWithContext(id, options, global);
@@ -3618,7 +3602,7 @@ export async function runUpdate(
 /** Execute a recurrence transition through the exact atomic update pipeline. */
 export async function runReopenUpdate(
   id: string,
-  options: UpdateCommandOptions,
+  options: UpdateOperationOptions,
   global: GlobalOptions,
   recurrenceReason: string,
 ): Promise<ReopenUpdateResult> {

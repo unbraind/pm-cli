@@ -5,7 +5,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { createExtensionCommandError } from "../error-runtime.js";
-import { isLiteralMutationInput } from "../../core/item/literal-mutation-input.js";
+import { isLiteralMutationInput, mutationInputAudience, mutationOptionLabel, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import {
@@ -135,11 +135,12 @@ import {
 } from "../test/entry.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import {
-  COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-  COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
+  CREATE_UNSET_FIELD_DEFINITIONS,
+  literalSentinelAdvisories,
   parseCommandUnsetTargets,
+  type CreateNullClearableOptionKey,
+  type WithNullClears,
   resolveRuntimeUnsetFieldDefinition,
-  type CommandUnsetFieldDefinition,
 } from "./shared-unset-fields.js";
 import type {
   MutationMetadataCommandOptions,
@@ -231,8 +232,8 @@ export interface CreateCommandOptions
   [key: string]: unknown;
 }
 
-/** Presentation-neutral input accepted by the SDK-owned create operation. */
-export type CreateOperationOptions = CreateCommandOptions;
+/** Presentation-neutral input accepted by the SDK-owned create operation; clearable fields also accept `null`. */
+export type CreateOperationOptions = WithNullClears<CreateCommandOptions, CreateNullClearableOptionKey>;
 
 /** Documents the create result payload exchanged by command, SDK, and package integrations. */
 export interface CreateResult {
@@ -265,17 +266,6 @@ interface CreateUnsetFieldDefinition {
   optionKey: string;
   metadataKey: string;
 }
-
-const CREATE_UNSET_FIELD_DEFINITIONS: readonly CommandUnsetFieldDefinition[] = [
-  ...COMMON_UNSET_FIELD_DEFINITIONS_BEFORE_AUTHOR,
-  {
-    canonical: "author",
-    aliases: ["author"],
-    optionKey: "author",
-    metadataKey: "author",
-  },
-  ...COMMON_UNSET_FIELD_DEFINITIONS_AFTER_AUTHOR,
-];
 
 const CREATE_UNSET_ALIAS_MAP: Map<string, CreateUnsetFieldDefinition> = (() => {
   const map = new Map<string, CreateUnsetFieldDefinition>();
@@ -1387,22 +1377,28 @@ function buildTypeSpecificCreateExample(
 export function requireStringOption(
   value: string | undefined,
   flag: string,
+  audience: MutationInputAudience = "cli",
 ): string {
   const normalized = value?.trim();
   if (!normalized) {
+    const sdk = audience === "sdk";
     if (flag === "--title") {
       if (value !== undefined) {
         throw new PmCliError(
-          "Title cannot be empty or whitespace-only. Retry: pass a non-empty title with --title.",
+          sdk
+            ? "Title cannot be empty or whitespace-only. Retry: pass a non-empty title."
+            : "Title cannot be empty or whitespace-only. Retry: pass a non-empty title with --title.",
           EXIT_CODE.USAGE,
         );
       }
       throw new PmCliError(
-        'Missing required option --title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass the title as the first positional argument (example: pm create "Fix login bug" --type Issue) or with --title.',
+        sdk
+          ? 'Missing required option title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass title (example: client.create({ type: "Issue", title: "Fix login bug" })).'
+          : 'Missing required option --title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass the title as the first positional argument (example: pm create "Fix login bug" --type Issue) or with --title.',
         EXIT_CODE.USAGE,
       );
     }
-    throw new PmCliError(`Missing required option ${flag}`, EXIT_CODE.USAGE);
+    throw new PmCliError(`Missing required option ${sdk ? mutationOptionLabel("sdk", flag.replace(/^--/u, "")) : flag}`, EXIT_CODE.USAGE);
   }
   return normalized;
 }
@@ -1410,6 +1406,7 @@ export function requireStringOption(
 function mergeCreateOptionsWithTemplate(
   templateOptions: Record<string, unknown>,
   explicitOptions: CreateCommandOptions,
+  runtimeFieldRegistry?: RuntimeFieldRegistry,
 ): CreateCommandOptions {
   const merged: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(templateOptions)) {
@@ -1420,7 +1417,27 @@ function mergeCreateOptionsWithTemplate(
       merged[key] = Array.isArray(value) ? [...value] : value;
     }
   }
+  dropTemplateDefaultsForExplicitUnsets(merged, explicitOptions, runtimeFieldRegistry);
   return transferMutationStdinTokenPolicy(explicitOptions, merged as CreateCommandOptions);
+}
+
+/**
+ * Let an explicit unset, including a typed null folded into one (GH-1655),
+ * override the template's default for that field. Tokens resolve exactly as the
+ * unset parser resolves them, so a legacy runtime field named with a comma stays
+ * one field. `rank` writes `order` and `addTags` extends `tags`, so clearing
+ * either also drops that template companion. A value the caller passed is kept.
+ */
+function dropTemplateDefaultsForExplicitUnsets(
+  merged: Record<string, unknown>,
+  explicitOptions: CreateCommandOptions,
+  runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
+): void {
+  const keys = [...parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys]
+    .flatMap((key) => (key === "order" ? [key, "rank"] : key === "tags" ? [key, "addTags"] : [key]));
+  for (const key of keys) {
+    if (Reflect.get(explicitOptions, key) === undefined) Reflect.deleteProperty(merged, key);
+  }
 }
 
 function normalizeExtensionCommandPath(command: string): string {
@@ -1634,15 +1651,16 @@ async function validateCreateParentReference(
   itemId: string,
   parent: string,
   policy: Parameters<typeof validateMissingParentReference>[1],
+  audience: MutationInputAudience,
 ): Promise<{ parent: string; warnings: string[] }> {
   const normalized = normalizeItemReference(
-    normalizeParentReferenceValue(parent),
+    normalizeParentReferenceValue(parent, audience),
     settings.id_prefix,
   );
   if (isExternalDependencyReference(normalized)) {
     return { parent: normalized, warnings: [] };
   }
-  assertParentReferenceIsNotSelf(itemId, normalized, settings.id_prefix);
+  assertParentReferenceIsNotSelf(itemId, normalized, settings.id_prefix, audience);
   const parentLocated = await locateItem(
     pmRoot,
     normalized,
@@ -1656,7 +1674,7 @@ async function validateCreateParentReference(
   const normalizedParentId = normalizeItemId(normalized, settings.id_prefix);
   return {
     parent: normalized,
-    warnings: validateMissingParentReference(normalizedParentId, policy)
+    warnings: validateMissingParentReference(normalizedParentId, policy, audience)
       .warnings,
   };
 }
@@ -1668,6 +1686,7 @@ async function resolveCreateParentWithWarnings(params: {
   settings: PmSettings;
   typeRegistry: ItemTypeRegistry;
   policy: Parameters<typeof validateMissingParentReference>[1];
+  audience: MutationInputAudience;
 }): Promise<{ parent: string | undefined; warnings: string[] }> {
   if (params.parent === undefined) {
     return { parent: undefined, warnings: [] };
@@ -1679,6 +1698,7 @@ async function resolveCreateParentWithWarnings(params: {
     params.itemId,
     params.parent,
     params.policy,
+    params.audience,
   );
   return parentValidation;
 }
@@ -1721,12 +1741,13 @@ function resolveCreateSprintOrRelease(
   raw: string | undefined,
   field: Parameters<typeof validateSprintOrReleaseValue>[0],
   policy: Parameters<typeof validateSprintOrReleaseValue>[2],
+  audience: MutationInputAudience,
 ): { value: string | undefined; warnings: string[] } {
   const resolved = resolveUnsettableOptionalString(unsetKeys, metadataKey, raw);
   if (resolved === undefined) {
     return { value: undefined, warnings: [] };
   }
-  const validation = validateSprintOrReleaseValue(field, resolved, policy);
+  const validation = validateSprintOrReleaseValue(field, resolved, policy, audience);
   return { value: validation.value, warnings: validation.warnings };
 }
 
@@ -1893,7 +1914,7 @@ async function resolveCreateTypeSelection(
       pmRoot,
     );
     resolvedOptions = normalizeLegacyNoneCreateOptions(
-      prepareNativeMutationOptions("create", mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions)),
+      prepareNativeMutationOptions("create", mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions, resolveRuntimeFieldRegistry(settings.schema))),
     );
   }
   if (resolvedOptions.type === undefined) {
@@ -2735,10 +2756,13 @@ async function writeCreatedItem(params: {
 
 /** Implements run create for the public runtime surface of this module. */
 export async function runCreate(
-  options: CreateCommandOptions,
+  input: CreateOperationOptions,
   global: GlobalOptions,
 ): Promise<CreateResult> {
-  options = prepareNativeMutationOptions("create", options);
+  // Typed nulls on clearable fields fold into unset here, and value validation refuses any other null (GH-1655).
+  const options = prepareNativeMutationOptions("create", input) as CreateCommandOptions;
+  // Refusals speak the caller's vocabulary: CLI flags, or SDK option keys (GH-1655).
+  const audience = mutationInputAudience(options);
   let resolvedOptions = normalizeLegacyNoneCreateOptions(
     await resolveCreateTransportInputs(options),
   );
@@ -3012,6 +3036,7 @@ export async function runCreate(
     settings,
     typeRegistry,
     policy: parentReferencePolicy,
+    audience,
   });
   parent = parentValidation.parent;
   validationWarnings.push(...parentValidation.warnings);
@@ -3021,6 +3046,7 @@ export async function runCreate(
     resolvedOptions.sprint,
     "sprint",
     sprintReleasePolicy,
+    audience,
   );
   const sprint = sprintResolved.value;
   validationWarnings.push(...sprintResolved.warnings);
@@ -3030,6 +3056,7 @@ export async function runCreate(
     resolvedOptions.release,
     "release",
     sprintReleasePolicy,
+    audience,
   );
   const release = releaseResolved.value;
   validationWarnings.push(...releaseResolved.warnings);
@@ -3142,7 +3169,7 @@ export async function runCreate(
     "customer_impact",
     resolvedOptions.customerImpact,
   );
-  const title = requireStringOption(resolvedOptions.title, "--title");
+  const title = requireStringOption(resolvedOptions.title, "--title", audience);
   const description = resolvedOptions.description ?? "";
   const body = resolvedOptions.body ?? "";
   const similarityAdvisory = await evaluateSimilarityGovernance(
@@ -3328,7 +3355,11 @@ export async function runCreate(
   return {
     item: outputItem,
     changed_fields: changedFields,
-    warnings: [...validationWarnings, ...hookWarnings],
+    warnings: [
+      ...literalSentinelAdvisories("create", resolvedOptions as Record<string, unknown>, audience === "sdk", outputItem as Record<string, unknown>),
+      ...validationWarnings,
+      ...hookWarnings,
+    ],
     ...Object.fromEntries(
       [
         ["parent_source", parentSource],

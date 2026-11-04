@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import * as lockModule from "../../../../src/core/lock/lock.js";
 import { hashDocument } from "../../../../src/core/history/history.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
+import { isPmCliErrorDetails } from "../../../../src/core/shared/error-details.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {
   advanceItemMutationPreconditions,
@@ -493,8 +495,119 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: dependents[0] } });
       expect(refusal.message).toContain(`${blocker} was closed, but auto-unblocking ${dependents[0]} was refused.`);
       expect(refusal.context.side_effects).toEqual([{ path: `history/${blocker}.jsonl`, op: "close" }]);
+      // pm-mrvq8u: the close is complete, so the remedy names only the unblock of every dependent the
+      // fan-out left blocked, in the caller's tracker scope, never a close retry.
+      const guidance = [refusal.context.required, ...(refusal.context.nextSteps ?? [])].join("\n");
+      expect(refusal.context.required).toContain(`The close of ${blocker} is complete; do not retry it. Only unblocking the guarded dependents it refused (${dependents.join(", ")}) remains`);
+      const scope = ["--pm-path", context.pmPath, "--no-extensions"];
+      for (const id of dependents) {
+        expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", id, "--json"]));
+        expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "update", id, "--status", "open", "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]));
+      }
+      expect(refusal.context.details).toMatchObject({ pending_unblock: dependents, changes_since: [expect.objectContaining({ op: "update" })] });
+      expect(guidance).not.toContain("retry with --expect-hash");
+      expect(guidance).not.toMatch(/pm close/u);
       expect((await pm.get(blocker)).item.status).toBe("closed");
       for (const id of dependents) expect((await pm.get(id)).item.status).toBe("blocked");
+    });
+  });
+
+  it("names a dependent whose unblock failed for another reason apart from the revision conflict", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = createTestItemId(context, { title: "Mixed failure blocker" });
+      const [guarded, broken] = [createTestItemId(context, { title: "Guarded dependent" }), createTestItemId(context, { title: "Broken dependent" })];
+      for (const id of [guarded, broken]) {
+        const blocked = context.runCli(["update", id, "--status", "blocked", "--blocked-by", blocker, "--blocked-reason", "waiting", "--json"], { expectJson: true });
+        expect(blocked.code, blocked.stderr).toBe(0);
+      }
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(guarded)).item_hash;
+      await pm.update(guarded, { title: "Guarded dependent, edited by a peer" });
+      const policy = context.runCli(["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"], { expectJson: true });
+      expect(policy.code, policy.stderr).toBe(0);
+      await rm(path.join(context.pmPath, "history", `${broken}.jsonl`));
+      const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id: guarded, itemHash: stale }], () => pm.close(blocker, "Delivered")));
+      expect(refusal.context.details).toMatchObject({ pending_unblock: [guarded], auto_unblock_failed: [expect.objectContaining({ id: broken })] });
+      expect(refusal.context.required).toContain(`Only unblocking ${guarded} remains`);
+      expect(refusal.context.required).toContain(`Auto-unblocking also failed for ${broken}; details.auto_unblock_failed gives the reasons it kept (auto_unblock_failed_omitted counts the rest; their get step shows the item).`);
+      const scope = ["--pm-path", context.pmPath, "--no-extensions"];
+      expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", broken, "--json"]));
+      expect(refusal.context.nextSteps?.some((step) => step.includes(`update ${broken}`))).toBe(false);
+    });
+  });
+
+  it("bounds the post-close fan-out report so its details stay renderable", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const blocker = createTestItemId(context, { title: "Wide fan-out blocker" });
+      const stale = [];
+      for (let index = 0; index < 12; index += 1) {
+        const { item } = await pm.create({ type: "Task", title: `Wide dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" });
+        stale.push({ id: item.id, itemHash: (await pm.readItemRevision(item.id)).item_hash });
+        await pm.update(item.id, { title: `Wide dependent ${index}, edited by a peer` });
+      }
+      const refusal = await captureError(() => pm.withExpectedItemRevisions(stale, () => pm.close(blocker, "Delivered")));
+      const details = refusal.context.details as { pending_unblock: string[]; pending_unblock_omitted: number; auto_unblock_failed: unknown[]; auto_unblock_failed_omitted: number };
+      expect(details.pending_unblock).toHaveLength(10);
+      expect(details).toMatchObject({ pending_unblock_omitted: 2, auto_unblock_failed: [], auto_unblock_failed_omitted: 0 });
+      expect(refusal.context.required).toContain(", and 2 more)");
+      expect(refusal.context.required).toContain("This refusal does not list a step for every dependent left blocked; list them with");
+      expect(refusal.context.required).toContain("while it reports has_more, continue with --after <next_cursor>.");
+      expect(refusal.context.nextSteps).toHaveLength(20);
+      expect(refusal.context.nextSteps?.at(-1)).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "list", "--status", "blocked", "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]));
+      expect(isPmCliErrorDetails(refusal.context.details)).toBe(true);
+      expect(Buffer.byteLength(JSON.stringify(refusal.context.details), "utf8")).toBeLessThanOrEqual(4096);
+    });
+  });
+
+  it("adds the discovery step when the step cap cuts a dependent's step although no id was omitted", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const blocker = createTestItemId(context, { title: "Step-cap blocker" });
+      const stale = [];
+      for (let index = 0; index < 9; index += 1) {
+        const { item } = await pm.create({ type: "Task", title: `Guarded dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" });
+        stale.push({ id: item.id, itemHash: (await pm.readItemRevision(item.id)).item_hash });
+        await pm.update(item.id, { title: `Guarded dependent ${index}, edited by a peer` });
+      }
+      const broken = [];
+      for (let index = 0; index < 3; index += 1) {
+        broken.push((await pm.create({ type: "Task", title: `Broken dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" })).item.id);
+      }
+      const policy = context.runCli(["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"], { expectJson: true });
+      expect(policy.code, policy.stderr).toBe(0);
+      for (const id of broken) await rm(path.join(context.pmPath, "history", `${id}.jsonl`));
+      const refusal = await captureError(() => pm.withExpectedItemRevisions(stale, () => pm.close(blocker, "Delivered")));
+      expect(refusal.context.details).toMatchObject({ pending_unblock_omitted: 0, auto_unblock_failed_omitted: 0 });
+      expect(refusal.context.nextSteps).toHaveLength(20);
+      expect(refusal.context.nextSteps?.at(-1)).toContain("list --status blocked");
+      expect(refusal.context.required).toContain("This refusal does not list a step for every dependent left blocked");
+    });
+  });
+
+  it("bounds a report of many non-conflict failures with long reasons", async () => {
+    await withTempPmPath(async (context) => {
+      const pm = client(context);
+      const blocker = createTestItemId(context, { title: "Many failures blocker" });
+      const { item: guarded } = await pm.create({ type: "Task", title: "Guarded dependent", status: "blocked", blockedBy: blocker, blockedReason: "waiting" });
+      const stale = (await pm.readItemRevision(guarded.id)).item_hash;
+      await pm.update(guarded.id, { title: "Guarded dependent, edited by a peer" });
+      const broken = [];
+      for (let index = 0; index < 12; index += 1) {
+        broken.push((await pm.create({ type: "Task", title: `Broken dependent ${index}`, status: "blocked", blockedBy: blocker, blockedReason: "waiting" })).item.id);
+      }
+      const policy = context.runCli(["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"], { expectJson: true });
+      expect(policy.code, policy.stderr).toBe(0);
+      for (const id of broken) await rm(path.join(context.pmPath, "history", `${id}.jsonl`));
+      const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id: guarded.id, itemHash: stale }], () => pm.close(blocker, "Delivered")));
+      const details = refusal.context.details as { pending_unblock: string[]; auto_unblock_failed: Array<{ reason: string }>; auto_unblock_failed_omitted: number };
+      expect(details.pending_unblock).toEqual([guarded.id]);
+      expect(details.auto_unblock_failed.length).toBeLessThanOrEqual(10);
+      expect(details.auto_unblock_failed.length + details.auto_unblock_failed_omitted).toBe(12);
+      for (const entry of details.auto_unblock_failed) expect(entry.reason.length).toBeLessThanOrEqual(160);
+      expect(isPmCliErrorDetails(refusal.context.details)).toBe(true);
+      expect(refusal.context.nextSteps?.length).toBeLessThanOrEqual(20);
+      expect(refusal.context.nextSteps?.at(-1)).toContain("list --status blocked");
     });
   });
 

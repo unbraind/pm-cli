@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2046,
+    "covered_symbols": 2047,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2047
+    "required_symbols": 2048
   },
   "breaking_acknowledgements": [
     {
@@ -3062,6 +3062,43 @@
       ],
       "package_version": "2026.11.3",
       "reason": "pm-gh1576: HistoryCompactBulkItemResult and HistoryRepairAllStreamResult gain only optional ItemRevisionConflictRowFields (error_code, expected_revision, current_revision, details) on refused rows; every existing producer and reader stays type-compatible"
+    },
+    {
+      "changes": [
+        "signature ./sdk:assertParentReferenceIsNotSelf",
+        "signature ./sdk:normalizeParentReferenceValue",
+        "signature ./sdk:validateMissingParentReference",
+        "signature ./sdk:validateSprintOrReleaseValue"
+      ],
+      "package_version": "2026.11.3",
+      "reason": "pm-gh1655: these validators gain only an optional trailing audience parameter (default cli), so existing callers keep their wording and types; pm-mrvq8u exports ItemRevisionConflictRowFields"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmCreateActionOptions",
+        "signature ./sdk:PmUpdateActionOptions",
+        "signature ./sdk/contracts:PmCreateActionOptions",
+        "signature ./sdk/contracts:PmUpdateActionOptions"
+      ],
+      "package_version": "2026.11.3",
+      "reason": "pm-gh1655: fields the command's unset table covers also accept null (the typed clear). Writers still compile; readers must handle null as well as undefined there, e.g. a wrapper calling a string method on options.parent after only !== undefined. author and non-clearable fields stay non-nullable."
+    },
+    {
+      "changes": [
+        "signature ./sdk:CreateOperationOptions",
+        "signature ./sdk:PmCreateActionOptions",
+        "signature ./sdk:PmUpdateActionOptions",
+        "signature ./sdk:PmUpdateManyActionOptions",
+        "signature ./sdk:runCreate",
+        "signature ./sdk:runUpdate",
+        "signature ./sdk:UpdateOperationOptions",
+        "signature ./sdk/contracts:PmCreateActionOptions",
+        "signature ./sdk/contracts:PmUpdateActionOptions",
+        "signature ./sdk/contracts:PmUpdateManyActionOptions",
+        "signature ./sdk/runtime:runUpdate"
+      ],
+      "package_version": "2026.11.3",
+      "reason": "pm-gh1655: the operation options get the same nullable clearable fields and runCreate/runUpdate take them, so wrappers forwarding the action options compile again. Writers are unaffected; readers must handle null there. PmUpdateManyActionOptions keeps its non-nullable shape via PmUpdateActionFields."
     }
   ],
   "entrypoints": {
@@ -4002,7 +4039,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "assertParentReferenceIsNotSelf",
-          "signature": "(itemId: string, parentId: string, prefix: string) => void | calls: (itemId: string, parentId: string, prefix: string) => void"
+          "signature": "(itemId: string, parentId: string, prefix: string, audience?: MutationInputAudience) => void | calls: (itemId: string, parentId: string, prefix: string, audience?: MutationInputAudience) => void"
         },
         {
           "classification": "advanced_export",
@@ -6587,8 +6624,14 @@
         {
           "classification": "advanced_export",
           "kind": "type",
+          "name": "CreateNullClearableOptionKey",
+          "signature": "export type CreateNullClearableOptionKey = \"acceptanceCriteria\" | \"actualResult\" | \"affectedVersion\" | \"assignee\" | \"blockedBy\" | \"blockedReason\" | \"component\" | \"confidence\" | \"customerImpact\" | \"deadline\" | \"definitionOfReady\" | \"environment\" | \"estimatedMinutes\" | \"expectedResult\" | \"fixedVersion\" | \"goal\" | \"impact\" | \"objective\" | \"order\" | \"outcome\" | \"parent\" | \"regression\" | \"release\" | \"reporter\" | \"reproSteps\" | \"resolution\" | \"reviewer\" | \"risk\" | \"severity\" | \"sprint\" | \"tags\" | \"unblockNote\" | \"value\" | \"whyNow\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
           "name": "CreateOperationOptions",
-          "signature": "export type CreateOperationOptions = CreateCommandOptions;"
+          "signature": "export type CreateOperationOptions = WithNullClears<CreateCommandOptions, CreateNullClearableOptionKey>;"
         },
         {
           "classification": "advanced_export",
@@ -11171,6 +11214,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "ItemRevisionConflictRowFields",
+          "signature": "export interface ItemRevisionConflictRowFields { error_code?: typeof ITEM_REVISION_CONFLICT_CODE; expected_revision?: string; current_revision?: string; details?: PmCliErrorDetails; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "ItemRevisionContext",
           "signature": "export interface ItemRevisionContext { pmRoot?: string; cwd?: string; }"
         },
@@ -12220,6 +12269,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "MutationInputAudience",
+          "signature": "export type MutationInputAudience = \"cli\" | \"sdk\";"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "NestedSettingResultValue",
           "signature": "export interface NestedSettingResultValue { key: string; canonical_key?: string; path: string; kind: NestedSettingDescriptor[\"kind\"]; value: string | number | boolean | null; summary?: string; choices?: string[]; min?: number; max?: number; }"
@@ -12432,7 +12487,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "normalizeParentReferenceValue",
-          "signature": "(rawValue: unknown) => string | calls: (rawValue: unknown) => string"
+          "signature": "(rawValue: unknown, audience?: MutationInputAudience) => string | calls: (rawValue: unknown, audience?: MutationInputAudience) => string"
         },
         {
           "classification": "supported",
@@ -12523,6 +12578,12 @@
           "kind": "interface",
           "name": "NpmInstallSource",
           "signature": "export interface NpmInstallSource { kind: \"npm\"; input: string; spec: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "NullClearableOptionKey",
+          "signature": "export type NullClearableOptionKey<Table extends readonly { optionKey: string; }[]> = Exclude<Table[number][\"optionKey\"], \"author\">;"
         },
         {
           "classification": "advanced_export",
@@ -14706,7 +14767,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
-          "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
+          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, CreateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
@@ -15737,14 +15798,20 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmUpdateActionFields",
+          "signature": "export type PmUpdateActionFields = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmUpdateActionOptions",
-          "signature": "export type PmUpdateActionOptions = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
+          "signature": "export type PmUpdateActionOptions = WithNullClears<PmUpdateActionFields, UpdateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionOptions, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -18966,7 +19033,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runCreate",
-          "signature": "(options: CreateCommandOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (options: CreateCommandOptions, global: GlobalOptions) => Promise<CreateResult>"
+          "signature": "(input: CreateOperationOptions, global: GlobalOptions) => Promise<CreateResult> | calls: (input: CreateOperationOptions, global: GlobalOptions) => Promise<CreateResult>"
         },
         {
           "classification": "advanced_export",
@@ -19584,7 +19651,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runUpdate",
-          "signature": "(id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult>"
+          "signature": "(id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult>"
         },
         {
           "classification": "advanced_export",
@@ -21773,8 +21840,14 @@
         {
           "classification": "advanced_export",
           "kind": "type",
+          "name": "UpdateNullClearableOptionKey",
+          "signature": "export type UpdateNullClearableOptionKey = CreateNullClearableOptionKey | \"closeReason\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
           "name": "UpdateOperationOptions",
-          "signature": "export type UpdateOperationOptions = UpdateCommandOptions;"
+          "signature": "export type UpdateOperationOptions = WithNullClears<UpdateCommandOptions, UpdateNullClearableOptionKey>;"
         },
         {
           "classification": "supported",
@@ -21942,7 +22015,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validateMissingParentReference",
-          "signature": "(parentId: string, policy: ParentReferencePolicy) => { warnings: string[]; } | calls: (parentId: string, policy: ParentReferencePolicy) => { warnings: string[]; }"
+          "signature": "(parentId: string, policy: ParentReferencePolicy, audience?: MutationInputAudience) => { warnings: string[]; } | calls: (parentId: string, policy: ParentReferencePolicy, audience?: MutationInputAudience) => { warnings: string[]; }"
         },
         {
           "classification": "supported",
@@ -21966,7 +22039,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validateSprintOrReleaseValue",
-          "signature": "(field: \"release\" | \"sprint\", rawValue: string, policy: SprintReleaseFormatPolicy) => { value: string; warnings: string[]; } | calls: (field: \"sprint\" | \"release\", rawValue: string, policy: SprintReleaseFormatPolicy) => { value: string; warnings: string[]; }"
+          "signature": "(field: \"release\" | \"sprint\", rawValue: string, policy: SprintReleaseFormatPolicy, audience?: MutationInputAudience) => { value: string; warnings: string[]; } | calls: (field: \"sprint\" | \"release\", rawValue: string, policy: SprintReleaseFormatPolicy, audience?: MutationInputAudience) => { value: string; warnings: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -22213,6 +22286,12 @@
           "kind": "function",
           "name": "withMcpCachePolicy",
           "signature": "<Payload extends Record<string, unknown>>(payload: Payload, policy: PmMcpCachePolicy) => Payload & PmMcpCachePolicy | calls: <Payload extends Record<string, unknown>>(payload: Payload, policy: PmMcpCachePolicy) => Payload & PmMcpCachePolicy"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "WithNullClears",
+          "signature": "export type WithNullClears<Shape, Keys extends PropertyKey> = { [Key in keyof Shape]: Key extends Keys ? Shape[Key] | null : Shape[Key]; };"
         },
         {
           "classification": "contract_data",
@@ -25704,7 +25783,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmCreateActionOptions",
-          "signature": "export type PmCreateActionOptions = DeclaredProperties<CreateCommandOptions>;"
+          "signature": "export type PmCreateActionOptions = WithNullClears<DeclaredProperties<CreateCommandOptions>, CreateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
@@ -26129,14 +26208,20 @@
         {
           "classification": "contract_data",
           "kind": "type",
+          "name": "PmUpdateActionFields",
+          "signature": "export type PmUpdateActionFields = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "type",
           "name": "PmUpdateActionOptions",
-          "signature": "export type PmUpdateActionOptions = Omit<DeclaredProperties<UpdateCommandOptions>, \"runtimeFieldCommands\" | \"ownershipMetadataBypass\" | \"ownershipDependencyBypass\">;"
+          "signature": "export type PmUpdateActionOptions = WithNullClears<PmUpdateActionFields, UpdateNullClearableOptionKey>;"
         },
         {
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionOptions, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -36264,7 +36349,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runUpdate",
-          "signature": "(id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateCommandOptions, global: GlobalOptions) => Promise<UpdateResult>"
+          "signature": "(id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult> | calls: (id: string, options: UpdateOperationOptions, global: GlobalOptions) => Promise<UpdateResult>"
         },
         {
           "classification": "advanced_export",

@@ -7,6 +7,7 @@ import type { ParentReferencePolicy } from "../../types/index.js";
 import { normalizeItemId } from "./id.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { emptyMutationOptionMessage, sdkClearRemedy, type MutationInputAudience } from "./literal-mutation-input.js";
 
 const PLACEHOLDER_REFERENCE_TOKENS = new Set(["none", "null", "undefined"]);
 
@@ -27,24 +28,27 @@ export function normalizeParentReferencePolicy(
   );
 }
 
-/** Implements normalize parent reference value for the public runtime surface of this module. */
-export function normalizeParentReferenceValue(rawValue: unknown): string {
+/**
+ * Normalize a parent reference. `audience` selects the refusal vocabulary: CLI
+ * flags by default, or the SDK option and its `unset` remedy for typed callers.
+ */
+export function normalizeParentReferenceValue(rawValue: unknown, audience: MutationInputAudience = "cli"): string {
+  const sdk = audience === "sdk";
   if (typeof rawValue !== "string") {
     throw new PmCliError(
-      "--parent must be a string. Use --unset parent to clear this field.",
+      sdk ? `parent must be a string. ${sdkClearRemedy("parent")}.` : "--parent must be a string. Use --unset parent to clear this field.",
       EXIT_CODE.USAGE,
     );
   }
   const value = rawValue.trim();
   if (value.length === 0) {
-    throw new PmCliError(
-      "--parent must not be empty. Use --parent none to unset.",
-      EXIT_CODE.USAGE,
-    );
+    throw new PmCliError(emptyMutationOptionMessage(audience, "parent", ". Use --parent none to unset."), EXIT_CODE.USAGE);
   }
   if (isPlaceholderReferenceToken(value)) {
     throw new PmCliError(
-      `--parent must not use placeholder token "${value}". Use --unset parent to clear this field.`,
+      sdk
+        ? `parent must not be the placeholder "${value}". ${sdkClearRemedy("parent")}, or omit parent.`
+        : `--parent must not use placeholder token "${value}". Use --unset parent to clear this field.`,
       EXIT_CODE.USAGE,
     );
   }
@@ -60,10 +64,11 @@ export function isPlaceholderReferenceToken(value: string): boolean {
 export function validateMissingParentReference(
   parentId: string,
   policy: ParentReferencePolicy,
+  audience: MutationInputAudience = "cli",
 ): { warnings: string[] } {
   if (policy === "strict_error") {
     throw new PmCliError(
-      `Parent item "${parentId}" was not found. Create it first or use --parent none.`,
+      `Parent item "${parentId}" was not found. Create it first or ${audience === "sdk" ? "omit parent" : "use --parent none"}.`,
       EXIT_CODE.USAGE,
     );
   }
@@ -77,6 +82,7 @@ export function assertParentReferenceIsNotSelf(
   itemId: string,
   parentId: string,
   prefix: string,
+  audience: MutationInputAudience = "cli",
 ): void {
   const normalizedItemId = normalizeItemId(itemId, prefix);
   const normalizedParentId = normalizeItemId(parentId, prefix);
@@ -88,7 +94,7 @@ export function assertParentReferenceIsNotSelf(
       ? ` (normalized from parent "${parentId}" and item "${itemId}")`
       : "";
   throw new PmCliError(
-    `Parent item "${normalizedParentId}" cannot be the same as item "${normalizedItemId}"${normalizationDetail}. Use --unset parent to clear this field.`,
+    `Parent item "${normalizedParentId}" cannot be the same as item "${normalizedItemId}"${normalizationDetail}. ${audience === "sdk" ? `${sdkClearRemedy("parent")}.` : "Use --unset parent to clear this field."}`,
     EXIT_CODE.USAGE,
   );
 }

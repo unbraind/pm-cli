@@ -301,8 +301,16 @@ export {
   type ExpectHashSpec,
   type ItemRevision,
   type ItemRevisionChange,
+  type ItemRevisionConflictRowFields,
   type ItemRevisionContext,
 } from "./lifecycle/item-revision.js";
+export type {
+  CreateNullClearableOptionKey,
+  NullClearableOptionKey,
+  UpdateNullClearableOptionKey,
+  WithNullClears,
+} from "./lifecycle/shared-unset-fields.js";
+export type { MutationInputAudience } from "../core/item/literal-mutation-input.js";
 export {
   admitStartWithOpenBlockers,
   isStartTransition,
@@ -632,6 +640,7 @@ export type {
   PmOutputDegradationStep,
   PmProjectedDiagnostic,
   PmProjectedTextDiagnostic,
+  PmUpdateActionFields,
   PmUpdateActionOptions,
   PmUpdateManyActionOptions,
   PmExtensionCapabilityContract,

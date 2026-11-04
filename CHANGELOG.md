@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Start-blocker and revision-conflict follow-ups from the PR 1654 CodeRabbit full review ([pm-mrvq8u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-mrvq8u.toon))
+- Expected revisions advance from the pre-override document when an item_store_write override transforms contents ([pm-thbdxu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-thbdxu.toon))
+- GH-1655: SDK placeholder and type refusals name CLI flags, and parent: null is refused, so typed callers have no documented way to clear a field ([pm-gh1655](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1655.toon))
+
 ## 2026.11.4 - 2026-11-04
 
 ### Added

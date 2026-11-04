@@ -2,11 +2,13 @@ id: pm-thbdxu
 title: Expected revisions advance from the pre-override document when an item_store_write override transforms contents
 description: "Found in Codex review round 22 of PR #1654 (pm-gh1576). When a supported item_store_write extension override changes the persisted contents (for example a description-only transform), mutateItem advances the revision scope with its pre-override afterDocument. That hash does not describe the stored item, so a second guarded write in the same withExpectedItemRevisions scope (or a multi-write CLI command such as claim --start) refuses with item_revision_conflict although no other writer ran. It fails closed: a false refusal, never a lost update. advanceItemMutationPreconditions in core/store/item-mutation-precondition.ts receives the document from the item-store write path before the override result is known. Fix direction: advance from the persisted snapshot under the item lock (re-read or the override's returned contents), accounting for overrides that skip the write or delete, or refuse an incompatible override for a guarded write before committing."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: expected-revision,extensions,pm-gh1576,storage-override
 created_at: "2026-11-03T09:22:22.425Z"
-updated_at: "2026-11-03T09:26:40.321Z"
+updated_at: "2026-11-04T10:04:17.664Z"
+closed_at: "2026-11-03T23:23:24.030Z"
+completed_at: "2026-11-03T23:23:24.030Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A guarded scope that writes the same item twice under a contents-transforming item_store_write override admits both writes; A skipped or delete-converted override write advances the scope to the stored state (or refuses before commit), with a spec for each; A competing peer write between the two guarded writes still refuses with item_revision_conflict"
@@ -14,8 +16,48 @@ parent: pm-doxj
 risk: medium
 confidence: high
 severity: medium
+resolution: "When an item_store_write override transforms, redirects or skips the write, or an item_store_delete override skips or redirects the removal, mutateItem/deleteItem read the stored item back inside the commit fence (readOverriddenCommitRevision in core/store/item-store.ts) and advance the scope to its hash; an item moved out of the tracker advances to the empty tombstone and an unreadable one to an unmatchable revision, so the next guarded write fails closed. Writes without an override keep the in-memory document and pay no extra IO. The read-back was moved inside lease.fence after Codex review round 1 found that a lease takeover could otherwise be adopted as the scope's revision."
 expected_result: "Under a contents-transforming item_store_write override, a guarded scope advances to the revision actually persisted, so its own next write is admitted and only a competing write refuses."
-actual_result: "The scope advances to the pre-override document hash, so its own next guarded write refuses with item_revision_conflict."
+actual_result: "Verified: five specs in tests/unit/core/store/item-store.spec.ts (transforming write admits a second guarded write and a peer write still refuses; skipped write; skipped delete; write moved out of the tracker; unparseable contents) fail against the pre-fix item-store.ts and pass with the fix; 100% coverage"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-03T09:22:22.425Z","harness:claude-code","cli:create:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-11-03T21:28:17.876Z","harness:claude-code","Implemented: when an item_store_write override transforms contents, redirects the path or skips the write (or an item_store_delete override skips or redirects the removal), mutateItem/deleteItem re-locate and parse the stored item under the still-held lock and advance the revision scope to that hash (readOverriddenCommitRevision in core/store/item-store.ts). A missing item advances to the empty tombstone; an unlocatable or unparseable one advances to an unmatchable revision (fail closed). Unoverridden writes keep the in-memory afterDocument, so ordinary writes pay no extra IO. advanceItemMutationPreconditions takes an optional revision. Negative control: the five new specs in tests/unit/core/store/item-store.spec.ts all fail against the pre-fix item-store.ts and pass with it."
+  "2026-11-03T22:55:03.569Z","harness:claude-code","Codex review round 1 (gpt-6.1-sol, xhigh) P1, fixed: the stored-revision read-back ran after commitLockedItemWrite returned, i.e. outside lease.fence, so after a lease takeover a competing writer's revision could be adopted as the scope's expected revision and the scope's next guarded write would overwrite it unrefused. The read-back now runs inside the fence callback on both the write and the delete path, and only the in-memory advance happens after it."
+  "2026-11-04T01:17:03.868Z","harness:claude-code","CodeRabbit full review of PR 1658: docs/EXTENSION_AUTHOR_CONTRACTS.md now states that a handler persisting contents the store cannot parse makes the scope's next guarded write refuse with item_revision_conflict, matching docs/SDK.md."
+  "2026-11-04T02:24:31.444Z","harness:claude-code","CodeRabbit re-review of PR 1658: EXTENSION_AUTHOR_CONTRACTS.md corrected; after an unparseable override write, the scope's next guarded update/close/delete fails reading the document (item_document_invalid) before any revision check, and a guarded restore refuses with item_revision_conflict."
+  "2026-11-04T03:10:26.436Z","harness:claude-code","CodeRabbit review of 6b86e7a98 (Major), fixed: an item_store_write override that rewrites the embedded id leaves the stored item at an identity no scope entry is bound to, so readOverriddenCommitRevision now fails closed (unmatchable revision) when the read-back document embeds an id other than the one the commit kept; spec 'fails closed when the override rewrote the embedded id' with a negative control. The unparseable-override spec also asserts that the scope's next guarded update fails with item_document_invalid."
+  "2026-11-04T09:05:21.410Z","harness:claude-code","CodeRabbit review of b8e03b415, fixed: a write moved out of the tracker advances with the written embedded id as an alias (the tombstone has none), as delete already does; EXTENSION_AUTHOR_CONTRACTS.md now limits the admission claim to items still readable in the tracker. The restore-matching half is the follow-up pm-gdmrjm-style item filed above (case-variant probes only)."
+  "2026-11-04T09:05:32.798Z","harness:claude-code","Correction to the previous comment: the restore-matching follow-up is pm-o7mc4f (the earlier comment named a placeholder id, not a real item)."
+  "2026-11-04T10:04:17.664Z","harness:claude-code","CodeRabbit review of 6181633eb (doc wording only), fixed: docs/SDK.md and EXTENSION_AUTHOR_CONTRACTS.md now state the identity-change fail-closed case (a rewritten embedded id makes the scope's next guarded write refuse although no other writer ran)."
+files[3]{path,scope}:
+  src/core/store/item-mutation-precondition.ts,project
+  src/core/store/item-store.ts,project
+  tests/unit/core/store/item-store.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/store/item-store.spec.ts,project,"harness:claude-code","2026-11-03T21:28:19.282Z",local_mutation,feat/sdk-caller-contract
+test_runs[1]:
+  - run_id: test-local-mw1bboza-jaakfm
+    kind: test
+    status: passed
+    started_at: "2026-11-03T23:22:01.896Z"
+    finished_at: "2026-11-03T23:22:12.406Z"
+    recorded_at: "2026-11-03T23:22:12.406Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/store/item-store.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/EXTENSION_AUTHOR_CONTRACTS.md,project
+  docs/SDK.md,project
+close_reason: "Fixed: expected-revision scopes advance to the revision a storage override actually persisted"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-thbdxu
+  gate_id: expected-revision-storage-overrides
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/store/item-store.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/core/store/item-store.spec.ts tests/unit/sdk/lifecycle/item-revision.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

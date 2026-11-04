@@ -6,6 +6,7 @@
 import type { SprintReleaseFormatPolicy } from "../../types/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { emptyMutationOptionMessage, type MutationInputAudience } from "./literal-mutation-input.js";
 
 const SPRINT_RELEASE_VALUE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 const SPRINT_RELEASE_MAX_LENGTH = 64;
@@ -32,13 +33,11 @@ export function validateSprintOrReleaseValue(
   field: "sprint" | "release",
   rawValue: string,
   policy: SprintReleaseFormatPolicy,
+  audience: MutationInputAudience = "cli",
 ): { value: string; warnings: string[] } {
   const value = rawValue.trim();
   if (value.length === 0) {
-    throw new PmCliError(
-      `--${field} must not be empty. Use --${field} none to unset.`,
-      EXIT_CODE.USAGE,
-    );
+    throw new PmCliError(emptyMutationOptionMessage(audience, field, `. Use --${field} none to unset.`), EXIT_CODE.USAGE);
   }
   const isValid =
     value.length <= SPRINT_RELEASE_MAX_LENGTH &&
@@ -50,7 +49,7 @@ export function validateSprintOrReleaseValue(
     "Expected 1-64 characters matching [A-Za-z0-9][A-Za-z0-9._/-]* (no spaces).";
   if (policy === "strict_error") {
     throw new PmCliError(
-      `Invalid --${field} value "${value}". ${guidance}`,
+      `Invalid ${audience === "sdk" ? field : `--${field}`} value "${value}". ${guidance}`,
       EXIT_CODE.USAGE,
     );
   }

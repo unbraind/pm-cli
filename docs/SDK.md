@@ -1220,8 +1220,31 @@ SDK `create`, `update`, and `append` inputs are data: `"-"` remains text,
 file. This also applies to the corresponding `runCreate`, `runUpdate`,
 `runAppend` operations and update-many mutation values. Normal field validation,
 whitespace handling, structured collection syntax, and project schemas still
-apply. Clear fields explicitly with `unset: ["assignee"]` or the declared
-`clear*` collection options; JavaScript `null` is not an unset directive.
+apply. Clear a scalar field with `unset: ["assignee"]`, or pass JavaScript
+`null` for any option the command's `unset` list covers: `{ parent: null }` is
+`unset: ["parent"]`, and `tags: null` clears the tags (`tags` takes a CSV string,
+not an array, and has no `clearTags`).
+The nullable keys are exactly the unset table's option keys
+(`CreateNullClearableOptionKey`, `UpdateNullClearableOptionKey`). `rank` is only
+an unset alias of `order`, so `rank: null` is refused (pass `order: null`), and
+create accepts `unset: ["author"]` but refuses `author: null`. `null` on any
+other option (`title`, `author`, collection options such as `comment` or `dep`)
+refuses by name; clear collections with their `clear*` options. When typed input
+stores a former clear sentinel (`"none"`, `"null"` or `"-"`) in a clearable
+field, the result warns `literal_sentinel_stored:<field>:<value>`: the value is
+now data (an assignee called `none`). The advisory appears only while the
+document pm committed and recorded in history still holds the value, so an
+`item_store_write` override that rewrites stored contents can drop it from
+storage while the advisory still reports it. Typed SDK and MCP refusals name the
+option key and the `unset` remedy both accept, for example `parent must not be
+the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.`;
+CLI refusals keep their flag wording. `PmCreateActionOptions`,
+`PmUpdateActionOptions`, `CreateOperationOptions` and `UpdateOperationOptions`
+type the clearable fields as nullable, so `runCreate`/`runUpdate` accept the
+same input as `PmClient.create`/`update`. A direct SDK `runUpdateMany` folds a
+null in its update record like `runUpdate`, but `runAction("update-many")` drops
+it (pm-w7clh6), so `PmUpdateManyActionOptions` stays non-nullable: use `unset`
+there and in MCP tools.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
 literal data, including `"none"` and `"null"`. Explicit CLI flags override
@@ -1236,7 +1259,7 @@ For example, `estimatedMinutes` requires `"45"`, while `priority` accepts a
 string or finite number. JavaScript and JSON bridge callers must correct invalid
 types instead of relying on coercion. Integrations that previously used `"-"`
 to request stdin should read that input themselves and pass the resulting text;
-integrations that used `"none"` to clear must migrate to `unset`.
+integrations that used `"none"` to clear must migrate to `unset` or `null`.
 Direct `runCreate`/`runUpdate` calls require the declared string arrays for
 repeatable fields. Generic action dispatch retains its documented scalar-to-array
 normalization before invoking those operations.
@@ -1433,7 +1456,13 @@ and `close-many` keep their partial-success semantics: a stale row fails with
 `error_code: "item_revision_conflict"` plus its `expected_revision`,
 `current_revision` and the same `details` (`changes_since`,
 `changes_since_omitted`) a single-item refusal carries, while fresh rows
-proceed. When a peer writes while `restore` or history maintenance waits for
+proceed. The exported `ItemRevisionConflictRowFields` type declares those row
+fields; `HistoryCompactBulkItemResult` and `HistoryRepairAllStreamResult` extend
+it. When an `item_store_write` or `item_store_delete` override transforms,
+redirects or skips a guarded write, the scope advances to the revision read back
+from storage under the item lock: its own next write is admitted, a competing
+one refuses. If the item cannot be read back, or its embedded id was rewritten,
+the next guarded write refuses (fail closed). When a peer writes while `restore` or history maintenance waits for
 its lock, a declared revision turns the generic drift refusal into this typed
 conflict. Linked-test result recording (`test --run`, `test-all` with
 `test_result_tracking` enabled) stays best-effort, except that a stale declared
