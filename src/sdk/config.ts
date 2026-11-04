@@ -199,8 +199,8 @@ export interface ConfigResult {
   nested_settings?: NestedSettingResultValue[];
   /** Value that configures or reports keys for this contract. */
   keys?: ConfigKeyDescriptor[];
-  /** Value that configures or reports values for this contract. */
-  values?: Record<ConfigKey, ConfigValue>;
+  /** Exported key values; project scope omits the global-only telemetry_tracking key (GH-1660). */
+  values?: Partial<Record<ConfigKey, ConfigValue>>;
   /** Value that configures or reports count for this contract. */
   count?: number;
   /** Configuration controlling context behavior. */
@@ -1248,8 +1248,22 @@ interface ConfigExecutionContext {
   fallbackRepairWritten?: boolean;
 }
 
+/** Telemetry consent is read only from the global profile, so a project value would be inert (GH-1660). */
+function refuseProjectTelemetryTracking(action: "get" | "set", suffix: string): never {
+  const remedy = `pm config global ${action} telemetry-tracking${suffix}`;
+  throw new PmCliError(`Config ${action} telemetry-tracking applies to this CLI install, not one project. Run: ${remedy}`, EXIT_CODE.USAGE, {
+    code: "invalid_argument_value", reason: "telemetry_consent_is_global", field: "scope", changed: false,
+    required: `Run: ${remedy}`, examples: [remedy],
+  });
+}
+
+/** The keys a scope owns: telemetry-tracking belongs only to the global profile (GH-1660). */
+function configKeysForScope(scope: ConfigScope): ConfigKey[] {
+  return (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).filter((key) => scope === "global" || key !== "telemetry_tracking");
+}
+
 function buildConfigListResult(context: ConfigExecutionContext): ConfigResult {
-  const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map(
+  const keys = configKeysForScope(context.scope).map(
     (candidate) => ({
       key: candidate,
       aliases: CONFIG_KEY_ALIASES[candidate],
@@ -1307,11 +1321,11 @@ function buildConfigExportResult(
   context: ConfigExecutionContext,
 ): ConfigResult {
   const values = Object.fromEntries(
-    (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((key) => [
+    configKeysForScope(context.scope).map((key) => [
       key,
       readConfigValue(context.settings, key),
     ]),
-  ) as Record<ConfigKey, ConfigValue>;
+  ) as Partial<Record<ConfigKey, ConfigValue>>;
   return withWarnings(
     {
       scope: context.scope,
@@ -2062,6 +2076,7 @@ async function setTrackingConfig(
     );
   }
   const nextPolicy = normalizeTelemetryTrackingPolicy(options.policy);
+  if (context.scope === "project") refuseProjectTelemetryTracking("set", ` --policy ${nextPolicy}`);
   const nextEnabled = nextPolicy === "enabled";
   const changed =
     context.settings.telemetry.enabled !== nextEnabled ||
@@ -2338,6 +2353,7 @@ export async function runConfig(
   }
 
   assertConfigKeyDefined(key);
+  if (action === "get" && key === "telemetry_tracking" && scope === "project") refuseProjectTelemetryTracking("get", "");
   return action === "get"
     ? buildConfigGetResult(context, key)
     : setConfigValue(context, key, routedOptions);

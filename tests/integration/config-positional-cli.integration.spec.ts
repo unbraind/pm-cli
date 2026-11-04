@@ -19,6 +19,10 @@ describe("config positional CLI parser", () => {
       expect(telemetry.code).toBe(0);
       expect((telemetry.json as { policy?: string; changed?: boolean }).policy).toBe("disabled");
       expect((telemetry.json as { changed?: boolean }).changed).toBe(true);
+      // GH-1660: the documented scope-less opt-out targets the global profile, where consent is read.
+      expect((telemetry.json as { scope?: string }).scope).toBe("global");
+      const status = context.runCli(["ops", "telemetry", "status", "--json"], { expectJson: true });
+      expect((status.json as { status?: { configured_enabled?: boolean } }).status?.configured_enabled).toBe(false);
 
       const format = context.runCli(["config", "project", "set", "item-format", "toon", "--json"], { expectJson: true });
       expect(format.code).toBe(0);

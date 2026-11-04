@@ -2192,6 +2192,27 @@ export interface WriteSettingsOptions {
    * option (pm-4zpq71).
    */
   assignedPaths?: readonly string[];
+  /**
+   * Top-level sections a full write (one without a stored-document snapshot)
+   * leaves out unless the stored document already has them. Snapshot writes
+   * keep the stored shape, so an omitted section stays absent (GH-1660: project
+   * files carry no telemetry block, which only the global profile governs).
+   */
+  omitSections?: readonly "telemetry"[];
+}
+
+/**
+ * Serialize a full settings write without the sections it must not carry. A
+ * section the stored document already has is kept, so a path that aliases the
+ * global profile can never strip its telemetry block.
+ */
+function omitSettingsSections(raw: string, sections: readonly string[] = [], current: unknown = null): string {
+  const stored = asPlainRecord(current) ?? {};
+  const omitted = sections.filter((section) => !Object.hasOwn(stored, section));
+  if (omitted.length === 0) return raw;
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  for (const section of omitted) Reflect.deleteProperty(parsed, section);
+  return `${JSON.stringify(parsed, null, 2)}\n`;
 }
 
 const ASSIGNED_SETTINGS_PATH_SEGMENT = /^[A-Za-z0-9_-]+$/u;
@@ -2407,7 +2428,7 @@ export async function writeSettings(
                 proposed,
                 current,
               ) as Record<string, unknown>, SETTINGS_TOP_LEVEL_KEY_ORDER), null, 2)}\n`
-            : afterRaw,
+            : omitSettingsSections(afterRaw, options.omitSections, current),
           result: undefined,
         };
       },

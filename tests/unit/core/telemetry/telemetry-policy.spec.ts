@@ -1,6 +1,6 @@
 import { runWithWorkspaceHarnessSignalDescriptors } from "../../../../src/core/shared/author.js";
 import crypto from "node:crypto";
-import { resolveTelemetryEnvironmentPolicy, resolveTelemetryReadSampleRate } from "../../../../src/core/telemetry/policy.js";
+import { effectiveTelemetryEndpoint, resolveTelemetryEndpointOverride, resolveTelemetryEnvironmentPolicy, resolveTelemetryReadSampleRate } from "../../../../src/core/telemetry/policy.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -157,5 +157,26 @@ it("honors consent withdrawn between command start and completion", async () => 
     await flushTelemetryQueueNow(root);
     expect(fetch).not.toHaveBeenCalled();
     await expect(readFile(path.join(root, "runtime", "telemetry", "events.jsonl"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
+});
+
+describe("PM_TELEMETRY_ENDPOINT override (GH-1660)", () => {
+  it("accepts only absolute http(s) URLs and fails closed on any other value", () => {
+    expect(resolveTelemetryEndpointOverride({})).toEqual({ endpoint: null, invalid: false });
+    expect(resolveTelemetryEndpointOverride({ PM_TELEMETRY_ENDPOINT: "  " })).toEqual({ endpoint: null, invalid: false });
+    expect(resolveTelemetryEndpointOverride({ PM_TELEMETRY_ENDPOINT: " http://127.0.0.1:9/v1/events " }))
+      .toEqual({ endpoint: "http://127.0.0.1:9/v1/events", invalid: false });
+    expect(resolveTelemetryEndpointOverride({ PM_TELEMETRY_ENDPOINT: "https://collector.test/v1/events" }).endpoint)
+      .toBe("https://collector.test/v1/events");
+    for (const value of ["not a url", "file:///tmp/events", "ftp://collector.test/events"]) {
+      expect(resolveTelemetryEndpointOverride({ PM_TELEMETRY_ENDPOINT: value })).toEqual({ endpoint: null, invalid: true });
+      expect(resolveTelemetryEnvironmentPolicy({ PM_TELEMETRY_ENDPOINT: value }))
+        .toMatchObject({ telemetry_disabled: true, endpoint_override: null, endpoint_override_invalid: true });
+    }
+    expect(resolveTelemetryEnvironmentPolicy({ PM_TELEMETRY_ENDPOINT: "http://127.0.0.1:9/e" }))
+      .toMatchObject({ telemetry_disabled: false, endpoint_override: "http://127.0.0.1:9/e", endpoint_override_invalid: false });
+    expect(effectiveTelemetryEndpoint("https://configured.test/v1/events", {})).toBe("https://configured.test/v1/events");
+    expect(effectiveTelemetryEndpoint("https://configured.test/v1/events", { PM_TELEMETRY_ENDPOINT: "http://127.0.0.1:9/e" }))
+      .toBe("http://127.0.0.1:9/e");
   });
 });

@@ -150,8 +150,50 @@ function stageRuntime(root, stage, manifest, ledger) {
     );
 }
 
-/** Stage first-party files with compact JSON, retaining values and readable checkout bytes. */
+/** Split a GFM table row into trimmed cells; an escaped pipe stays inside its cell. */
+function tableCells(row) {
+  const body = row.trim().replace(/^\|/u, "").replace(/(?<!\\)\|$/u, "");
+  return body.split(/(?<!\\)\|/u).map((cell) => cell.trim());
+}
+
+/** A separator cell's alignment: what GFM reads from it, independent of dash count. */
+function separatorAlignment(cell) {
+  return /^:?-{3,}:?$/u.test(cell) ? `${cell.startsWith(":") ? ":" : ""}-${cell.endsWith(":") ? ":" : ""}` : undefined;
+}
+
+/**
+ * Collapse alignment padding in GFM tables outside code. Cells, their order and
+ * column alignment are unchanged, so the rendered table is identical (pm-998juj).
+ */
+export function compactMarkdownTables(text) {
+  let fence;
+  return text.split("\n").map((line) => {
+    const marker = /^ {0,3}(`{3,}|~{3,})/u.exec(line)?.[1];
+    if (marker && (fence === undefined || (marker[0] === fence[0] && marker.length >= fence.length))) {
+      fence = fence === undefined ? marker : undefined;
+      return line;
+    }
+    if (fence !== undefined || !/^ {0,3}\|.*\|\s*$/u.test(line)) return line;
+    const cells = tableCells(line);
+    const aligned = cells.map(separatorAlignment);
+    const compact = aligned.every(Boolean)
+      ? `|${cells.map((cell) => cell.replace(/-{3,}/u, "---")).join("|")}|`
+      : `| ${cells.join(" | ")} |`;
+    const indent = /^ */u.exec(line)[0];
+    const reparsed = tableCells(compact);
+    /* c8 ignore next 2 -- defensive: every compacted row reparses to the same cells and alignment */
+    if (reparsed.length !== cells.length || reparsed.some((cell, index) => (aligned[index] ?? cell) !== (separatorAlignment(cell) ?? cell)))
+      throw new Error(`Non-lossless markdown table row: ${line}`);
+    return `${indent}${compact}`;
+  }).join("\n");
+}
+
+/** Stage first-party files with compact JSON and markdown tables, retaining values and readable checkout bytes. */
 function copyPublicationFile(relative, source, target) {
+  if (relative.endsWith(".md")) {
+    writeFileSync(target, compactMarkdownTables(readFileSync(source, "utf8")));
+    return;
+  }
   if (!relative.endsWith(".json")) {
     cpSync(source, target);
     return;

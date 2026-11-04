@@ -17,7 +17,7 @@ import { runInitAgentGuidance } from "../init-agent-guidance.js";
 import { extensionVersionRemediation } from "../../core/extensions/version-diagnostics.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { resolveTelemetryEnvironmentPolicy } from "../../core/telemetry/policy.js";
+import { effectiveTelemetryEndpoint, redactTelemetryEndpoint, resolveTelemetryEnvironmentPolicy, telemetryRuntimeFileName } from "../../core/telemetry/policy.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -90,7 +90,7 @@ import {
   resolvePmRoot,
   resolveWorkspaceRoot,
 } from "../../core/store/paths.js";
-import { readSettingsWithMetadata } from "../../core/store/settings.js";
+import { readSettings, readSettingsWithMetadata } from "../../core/store/settings.js";
 import {
   buildRemediationMap,
   resolveRemediation,
@@ -1500,23 +1500,6 @@ function telemetrySourceContextOverride(): string | null {
 }
 /* c8 ignore stop */
 
-function normalizeEndpointForDisplay(rawEndpoint: string): string {
-  const trimmed = rawEndpoint.trim();
-  if (trimmed.length === 0) {
-    return "";
-  }
-  try {
-    const parsed = new URL(trimmed);
-    parsed.username = "";
-    parsed.password = "";
-    parsed.search = "";
-    parsed.hash = "";
-    return parsed.toString();
-  } catch {
-    return trimmed;
-  }
-}
-
 function parseTelemetryQueue(raw: string): {
   validEntries: number;
   invalidRows: number;
@@ -1615,7 +1598,7 @@ async function maybeProbeTelemetryEndpoint(
   settings: PmSettings,
   checkTelemetry: boolean,
 ): Promise<TelemetryEndpointProbeSummary | undefined> {
-  const endpoint = settings.telemetry.endpoint.trim();
+  const endpoint = effectiveTelemetryEndpoint(settings.telemetry.endpoint).trim();
   if (!checkTelemetry || !settings.telemetry.enabled || endpoint.length === 0 ||
     resolveTelemetryEnvironmentPolicy().telemetry_disabled) {
     return undefined;
@@ -1767,7 +1750,7 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
       signal: AbortSignal.timeout(TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS),
     });
     return {
-      probe_url: normalizeEndpointForDisplay(probeUrl),
+      probe_url: redactTelemetryEndpoint(probeUrl),
       ok: response.ok,
       status: response.status,
       max_schema_version: (() => {
@@ -1782,7 +1765,7 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
     };
   } catch (error: unknown) {
     return {
-      probe_url: normalizeEndpointForDisplay(probeUrl),
+      probe_url: redactTelemetryEndpoint(probeUrl),
       ok: false,
       /* c8 ignore next -- non-Error throwables require transport-layer fault injection */
       error: error instanceof Error ? error.message : "probe_failed",
@@ -1791,12 +1774,14 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
 }
 
 async function buildTelemetryCheck(
-  settings: PmSettings,
   options: { checkTelemetry: boolean },
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
   const globalPmRoot = resolveGlobalPmRoot(process.cwd());
-  const queuePath = path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
-  const statePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+  // Consent and endpoint are read only from the global profile; a project block is inert (GH-1660).
+  const settings = await readSettings(globalPmRoot);
+  const queuePath = path.join(path.dirname(path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH)), telemetryRuntimeFileName("events.jsonl"));
+  const defaultStatePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+  const statePath = path.join(path.dirname(defaultStatePath), telemetryRuntimeFileName("state.json"));
 
   const queueRaw = await readFileIfExists(queuePath);
   const queueExists = queueRaw !== null;
@@ -1808,9 +1793,13 @@ async function buildTelemetryCheck(
   const stateRaw = await readFileIfExists(statePath);
   const { runtimeState, stateParseFailed } =
     parseTelemetryRuntimeState(stateRaw);
+  // Span delivery state stays beside the shared span queue, whatever event endpoint override is active (GH-1660).
+  const spanState = statePath === defaultStatePath
+    ? runtimeState
+    : parseTelemetryRuntimeState(await readFileIfExists(defaultStatePath)).runtimeState;
 
-  const endpoint = settings.telemetry.endpoint.trim();
-  const endpointDisplay = normalizeEndpointForDisplay(endpoint);
+  const endpoint = effectiveTelemetryEndpoint(settings.telemetry.endpoint).trim();
+  const endpointDisplay = redactTelemetryEndpoint(endpoint);
   const endpointProbe = await maybeProbeTelemetryEndpoint(
     settings,
     options.checkTelemetry,
@@ -1824,12 +1813,12 @@ async function buildTelemetryCheck(
     ...collectTelemetryQueueWarnings(settings, queueSummary, runtimeState),
     ...collectTelemetryEndpointWarnings(endpointProbe),
     ...collectTelemetrySchemaWarnings(endpointProbe),
-    ...collectTelemetryOtelWarnings(settings, runtimeState),
+    ...collectTelemetryOtelWarnings(settings, spanState),
   );
   const queueHasEntries = telemetryQueueHasEntries(settings, queueSummary);
   const pendingOtelSpans =
-    typeof runtimeState.pending_otel_spans === "number"
-      ? runtimeState.pending_otel_spans
+    typeof spanState.pending_otel_spans === "number"
+      ? spanState.pending_otel_spans
       : 0;
 
   return {
@@ -1858,10 +1847,10 @@ async function buildTelemetryCheck(
         last_failed_flush_at: runtimeState.last_failed_flush_at ?? null,
         last_failed_flush_error: runtimeState.last_failed_flush_error ?? null,
         pending_otel_spans: pendingOtelSpans,
-        last_otel_attempt_at: runtimeState.last_otel_attempt_at ?? null,
-        last_otel_success_at: runtimeState.last_otel_success_at ?? null,
-        last_otel_failure_at: runtimeState.last_otel_failure_at ?? null,
-        last_otel_failure_error: runtimeState.last_otel_failure_error ?? null,
+        last_otel_attempt_at: spanState.last_otel_attempt_at ?? null,
+        last_otel_success_at: spanState.last_otel_success_at ?? null,
+        last_otel_failure_at: spanState.last_otel_failure_at ?? null,
+        last_otel_failure_error: spanState.last_otel_failure_error ?? null,
         endpoint_probe: endpointProbe ?? { attempted: false },
         env_overrides: buildTelemetryEnvOverrideDetails(),
       },
@@ -2960,7 +2949,7 @@ export async function runHealth(
     strictDirectories,
   );
   const settingsValueWarnings = validateSettingsValues(settings);
-  const telemetryCheck = await buildTelemetryCheck(settings, {
+  const telemetryCheck = await buildTelemetryCheck({
     checkTelemetry: options.checkTelemetry === true,
   });
   const extensionCheck = await buildExtensionCheck(
@@ -3184,7 +3173,7 @@ export const _testOnlyHealthCommand = {
   isDirectory,
   isExpectedUnmanagedExtension,
   listItemDocumentPaths,
-  normalizeEndpointForDisplay,
+  normalizeEndpointForDisplay: redactTelemetryEndpoint,
   normalizeExtensionNameForMatch,
   parseTelemetryQueue,
   probeTelemetryEndpointHealth,

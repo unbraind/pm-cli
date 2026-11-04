@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -39,7 +39,7 @@ async function createBundleFixture(optionalPeer = false) {
   const manifest = {
     name: "runtime-bundle-fixture",
     version: "1.0.0",
-    files: ["index.js", "runtime-dependencies.json", "metadata.json"],
+    files: ["index.js", "runtime-dependencies.json", "metadata.json", "README.md"],
     dependencies: { first: "^1.0.0", second: "^1.0.0" },
     devDependencies: { dev: "^1.0.0" },
     scripts: { prepack: "exit 97" },
@@ -88,6 +88,7 @@ async function createBundleFixture(optionalPeer = false) {
   };
   await writeFile(path.join(root, "package.json"), JSON.stringify(manifest));
   await writeFile(path.join(root, "index.js"), "export const result = 1;\n");
+  await writeFile(path.join(root, "README.md"), "# Fixture\n\n| Key    | Value |\n| ------ | ----: |\n| a      | b     |\n");
   await writeFile(
     path.join(root, "runtime-dependencies.json"),
     JSON.stringify(ledger, null, 2),
@@ -155,6 +156,42 @@ it.each([true, false])("retains the complete optional-peer subtree without chang
   await rm(path.join(installed, "node_modules/leaf"), { recursive: true });
   expect(() => verifyRuntimeInstallation(installed)).toThrow("ENOENT");
 }, 60_000);
+
+it("compacts markdown table padding without changing cells, alignment or code (pm-998juj)", () => {
+  const source = [
+    "# Title",
+    "| Key        | Value      |",
+    "| :--------- | ---------: |",
+    "| `a\\|b`     |   spaced   |",
+    "  | nested     | row |",
+    "````md",
+    "| keep   |  fenced |",
+    "```",
+    "| still   | fenced |",
+    "````",
+    "    | indented   | code |",
+    "text | not a row",
+    "| a |",
+    "| -- | bad separator |",
+  ].join("\n");
+  expect(compactMarkdownTables(source).split("\n")).toEqual([
+    "# Title",
+    "| Key | Value |",
+    "|:---|---:|",
+    "| `a\\|b` | spaced |",
+    "  | nested | row |",
+    "````md",
+    "| keep   |  fenced |",
+    "```",
+    "| still   | fenced |",
+    "````",
+    "    | indented   | code |",
+    "text | not a row",
+    "| a |",
+    "| -- | bad separator |",
+  ]);
+  expect(compactMarkdownTables("~~~\n| a  |\n~~~\n| b  |")).toBe("~~~\n| a  |\n~~~\n| b |");
+});
 
 it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {
   const ledger = {
@@ -359,7 +396,7 @@ it("uses npm's Node entrypoint on Windows and writes a real distributable tarbal
 it("packs real npm artifacts through the npm 12 keyed receipt format", async () => {
   const { root, manifest, ledger, metadata } = await createBundleFixture();
   const destination = await harness.createTempRoot("pm-keyed-publication-");
-  const sourcePaths = ["metadata.json", "runtime-dependencies.json", "node_modules/first/package.json"];
+  const sourcePaths = ["metadata.json", "runtime-dependencies.json", "node_modules/first/package.json", "README.md"];
   const originals = await Promise.all(
     sourcePaths.map((file) => readFile(path.join(root, file), "utf8")),
   );
@@ -413,6 +450,9 @@ it("packs real npm artifacts through the npm 12 keyed receipt format", async () 
   expect(
     await readFile(path.join(extracted, "package/node_modules/first/package.json"), "utf8"),
   ).toBe(originals[2]);
+  // Markdown ships with compact tables while the checkout copy stays padded (pm-998juj).
+  expect(await readFile(path.join(extracted, "package/README.md"), "utf8"))
+    .toBe("# Fixture\n\n| Key | Value |\n|---|---:|\n| a | b |\n");
   expect(
     await Promise.all(sourcePaths.map((file) => readFile(path.join(root, file), "utf8"))),
   ).toEqual(originals);

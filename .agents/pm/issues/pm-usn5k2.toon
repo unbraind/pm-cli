@@ -1,0 +1,26 @@
+id: pm-usn5k2
+title: "The release Sentry gate counts environment=test issues, so a downstream extension's CI test run blocks the daily pm-cli release"
+description: "The 2026-11-04 Auto Release dispatcher run 41769022809 failed at sentry-telemetry-gate on PM-CLI-3R, 3S, 3T, 3V, 3W and 3X: ExtensionCommandError from the global pm-vcs extension (vcs fetch/push/clone/remote, pm.error_code=denied, exit 1, ObjectStoreError 'The requested repository is not available'). Every event carries environment=test and pm.source_context=test (env_override) and came from GitHub runners: pm-vcs's test/served-defects.test.ts spawns an installed pm with PM_TELEMETRY_SOURCE_CONTEXT=test, which pm-cli's documented policy treats as permission for intentional test delivery, so the expected refusals reached production Sentry. buildSentryGateQuery in scripts/release/sentry-telemetry-gate.mjs queries 'is:unresolved level:[fatal,error] lastSeen:-Nd' with no environment filter, so test-labeled events block the cut although pm-9aaji6 already routes test children to the test environment so they stay out of production diagnostics. Same failure family as the 2026-10-30 cross-repo block (pm-gh1622)."
+type: Issue
+status: open
+priority: 1
+tags[5]: auto-release,ecosystem,release,sentry,telemetry
+created_at: "2026-11-04T07:05:25.899Z"
+updated_at: "2026-11-04T16:26:01.055Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "The release Sentry gate excludes issues whose events are environment=test (or pm.source_context=test), with a spec and a negative control showing a production-environment error still blocks; pm-vcs's served-defects test stops delivering to production Sentry (PM_TELEMETRY_DISABLED or a local collector), tracked and fixed in the pm-vcs repo; docs/CONFIGURATION.md states that PM_TELEMETRY_SOURCE_CONTEXT=test opts into delivery and that tests which only want the label must also disable telemetry"
+parent: pm-u9d0
+risk: medium
+confidence: high
+severity: high
+expected_result: Test-labeled telemetry from any repository never blocks the pm-cli daily release
+actual_result: Six environment=test issues from pm-vcs CI blocked the 2026-11-04 dispatcher cut
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-9aaji6,related,"2026-11-04T07:05:25.899Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1622,related,"2026-11-04T07:05:25.899Z","harness:claude-code","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-11-04T07:06:38.600Z","harness:claude-code","Operator recovery 2026-11-04: the six environment=test issues were annotated and resolved in Sentry; blocker issue #1659 got a root-cause comment and was closed at 07:05Z, which started the same-day retry run 41789902846. pm-vcs half filed as https://github.com/unbraind/pm-vcs/issues/176. The gate change (exclude environment=test in buildSentryGateQuery) is not started yet."
+  "2026-11-04T08:01:38.164Z","harness:claude-code","Live Sentry API check (2026-11-04): appending !environment:test to the gate query excludes exactly the issues whose every event is test. Over a 60-day window, 17 issues became 11: the six pm-vcs issues (test only) dropped out, while PM-CLI-3H (ci=144, production=44, test=8) and the production-only issues were kept. So the negation filters test-only issues, not mixed ones. Fix direction: buildSentryGateQuery appends !environment:test, and the specs assert the query."
+  "2026-11-04T16:26:01.055Z","harness:claude-code","Progress on branch fix/test-telemetry-delivery: criteria 1 and 3 are delivered. buildSentryGateQuery now appends !environment:test, which applies to both the API path and the sentry CLI fallback. Sentry drops an issue only when every event is environment=test, and a live check against the project showed 17 issues becoming 11 with the mixed-environment PM-CLI-3H kept. A negative-control spec in sentry-telemetry-gate.spec.ts models that search and shows production and mixed issues still blocking. docs/RELEASING.md documents the exclusion. docs/CONFIGURATION.md states that PM_TELEMETRY_SOURCE_CONTEXT=test opts into delivery, so a test that only wants the label must also set PM_TELEMETRY_DISABLED=1, and it now names PM_TELEMETRY_ENDPOINT for local collectors. Criterion 2, that pm-vcs's served-defects test stops delivering, is owned by the pm-vcs repo: unbraind/pm-vcs#176 is fixed by unbraind/pm-vcs#179, which is open with green checks while its rebase is deferred by the fleet session. This item stays open until that PR merges."
+body: ""

@@ -1017,6 +1017,25 @@ describe("runHealth", () => {
     });
   });
 
+  it("reads event state from the override's file and span state from the shared file under PM_TELEMETRY_ENDPOINT (GH-1660)", async () => {
+    await withTempPmPath(async (context) => {
+      const globalRoot = context.env.PM_GLOBAL_PATH as string;
+      const telemetryRuntimeDir = path.join(globalRoot, "runtime", "telemetry");
+      await mkdir(telemetryRuntimeDir, { recursive: true });
+      vi.stubEnv("PM_TELEMETRY_ENDPOINT", "http://127.0.0.1:9/v1/events");
+      try {
+        await writeFile(path.join(telemetryRuntimeDir, "state.json"), `${JSON.stringify({ pending_otel_spans: 3, last_successful_flush_at: "2026-01-01T00:00:00.000Z" })}\n`, "utf8");
+        const health = await runHealth({ path: context.pmPath });
+        const details = health.checks.find((check) => check.name === "telemetry")?.details as Record<string, unknown>;
+        expect(details.pending_otel_spans).toBe(3);
+        expect(path.basename(String(details.runtime_state_path))).toMatch(/^state\.[a-f0-9]{16}\.json$/u);
+        expect(details.last_successful_flush_at).toBeNull();
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
+  });
+
   it("surfaces an advisory storage warning for streams over the compaction threshold", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createSeedItem(context);

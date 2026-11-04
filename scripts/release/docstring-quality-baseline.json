@@ -127,7 +127,7 @@
     "src/sdk/completion/shared.ts": 8,
     "src/sdk/completion/zsh.ts": 1,
     "src/sdk/compose.ts": 1,
-    "src/sdk/config.ts": 34,
+    "src/sdk/config.ts": 33,
     "src/sdk/context-relevance.ts": 60,
     "src/sdk/dependencies.ts": 30,
     "src/sdk/docs.ts": 16,

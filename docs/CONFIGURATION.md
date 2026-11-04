@@ -37,7 +37,7 @@ it to the right typed flag based on the key (so `--policy`/`--format`/`--criteri
 remain optional for single values):
 
 ```bash
-pm config set telemetry-tracking off          # off|on|true|false map to disabled|enabled
+pm config set telemetry-tracking off          # off|on|true|false; global profile
 pm config set item-format toon                # same as --format toon
 pm config set governance-preset strict        # same as --policy strict
 pm config set definition-of-done "Tests pass" # same as --criterion "Tests pass"
@@ -264,7 +264,7 @@ Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. T
 
 ### Telemetry environment variables
 
-Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to opt out persistently (see [Common Settings](#common-settings)). When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
+Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to opt out persistently (see [Common Settings](#common-settings)). Consent and the event endpoint live only in the global profile: a scope-less `telemetry-tracking` call targets it, project-scope `get` and `set` refuse while project `list` and `export` omit the key, `pm init` records its wizard answer there and writes no project `telemetry` block, and an older project block is ignored. When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
 
 | Variable                             | Values                                        | Use                                                                                                                                             |
 | ------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -278,6 +278,7 @@ Telemetry is enabled by default. Use `pm config set telemetry-tracking off` to o
 | `PM_TELEMETRY_SOURCE_CONTEXT`        | `user` \| `automation` \| `test` \| `dogfood` | Override the inferred source context recorded on each event. Unrecognized nonempty values use inferred context with `source_context_source=env_override_rejected`; the raw value is never emitted.                            |
 | `PM_TELEMETRY_HTTP_TIMEOUT_MS`       | integer milliseconds                          | Bound each background event or OTLP request (default `20000`, clamped to `1000`–`25000` to stay below the worker lock TTL).                     |
 | `PM_TELEMETRY_INGEST_KEY`            | string                                        | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged.                                                                         |
+| `PM_TELEMETRY_ENDPOINT` | http(s) URL | Deliver events to this collector instead of the configured endpoint. Events captured under it go to a queue and state file of their own that only a process with the same value reads or reports; a later flush removes them after a day idle, as does `pm telemetry clear`. A value that is not an http(s) URL disables delivery. |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL                                           | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint.                                                           |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`        | URL                                           | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`.                                                                   |
 | `OTEL_SERVICE_NAME`                  | string                                        | `service.name` attribute on exported spans (defaults to `pm-cli`).                                                                              |
@@ -326,9 +327,12 @@ Interaction rules:
 
 Test environments inferred from `VITEST`, `VITEST_WORKER_ID`, `NODE_TEST_CONTEXT`
 (native `node --test` children), or `NODE_ENV=test` suppress telemetry and Sentry
-before identity creation. A valid explicit `PM_TELEMETRY_SOURCE_CONTEXT` or
-`PM_TELEMETRY_SEND_TEST_EVENTS=1` permits intentional test delivery. Point such
-tests at a local collector. Inferred tests use inline telemetry flushing even
+before identity creation. A valid explicit `PM_TELEMETRY_SOURCE_CONTEXT`,
+including `test`, or `PM_TELEMETRY_SEND_TEST_EVENTS=1` permits intentional test
+delivery, so a test that only wants the label must also set
+`PM_TELEMETRY_DISABLED=1`. Point such tests at a local collector: set
+`PM_TELEMETRY_ENDPOINT` for events, `SENTRY_DSN` for errors, and
+`OTEL_EXPORTER_OTLP_*` for spans. Inferred tests use inline telemetry flushing even
 after an opt in, so CLI delivery settles before process exit and disposable-root
 cleanup. SDK telemetry completion also awaits inline delivery before returning.
 Neither setting overrides a hard opt-out. `pm telemetry status` exposes effective `enabled`, persisted

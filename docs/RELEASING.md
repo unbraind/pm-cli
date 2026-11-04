@@ -284,7 +284,8 @@ semantic class is `usage`, `not_found`, or `conflict`. Message and title prose
 never participate. Unknown codes, missing or mismatched exits, unhandled
 events, and every `generic_failure` or `dependency_failed` remain blocking.
 This keeps rewording independent from release policy and makes stale or broad
-message allowlists impossible.
+message allowlists impossible. The query skips issues seen only in
+`environment=test` (opted-in CI tests); an issue with any other event counts.
 
 Sentry API requests use a 120-second deadline by default. Operators can set
 `--sentry-request-timeout-ms` between `1` and `300000` when reproducing

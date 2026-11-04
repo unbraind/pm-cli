@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveConfigPositionalValue } from "../../../../src/core/config/positional-value.js";
+import { defaultConfigScope, resolveConfigPositionalValue } from "../../../../src/core/config/positional-value.js";
 
 describe("resolveConfigPositionalValue", () => {
   it("routes the item-format key to the --format flag (verbatim value)", () => {
@@ -113,5 +113,14 @@ describe("resolveConfigPositionalValue", () => {
     if (!result.routable) {
       expect(result.reason).toContain("bogus-key");
     }
+  });
+});
+
+describe("defaultConfigScope (GH-1660)", () => {
+  it("sends scope-less telemetry-tracking to the global profile and everything else to the project", () => {
+    expect(defaultConfigScope("telemetry-tracking")).toBe("global");
+    expect(defaultConfigScope("telemetry_tracking")).toBe("global");
+    expect(defaultConfigScope("test-result-tracking")).toBe("project");
+    expect(defaultConfigScope(undefined)).toBe("project");
   });
 });

@@ -700,3 +700,44 @@ it("reports effective opt-out without changing persisted consent", async () => {
     }
   });
 });
+
+it("reports the PM_TELEMETRY_ENDPOINT override as the endpoint and an invalid one as disabled delivery (GH-1660)", async () => {
+  await withTempGlobalRoot("pm-telemetry-endpoint-override-", async (globalRoot) => {
+    vi.stubEnv("PM_GLOBAL_PATH", globalRoot);
+    vi.stubEnv("DO_NOT_TRACK", "");
+    vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+    try {
+      // Diagnostics never echo credentials or query tokens from the override.
+      vi.stubEnv("PM_TELEMETRY_ENDPOINT", "http://user:secret@127.0.0.1:9/v1/events?token=abc#frag");
+      const local = await runTelemetry({ subcommand: "status" }, {});
+      expect(JSON.stringify(local.status)).not.toMatch(/secret|token=abc|frag/u);
+      expect(local.status).toMatchObject({
+        endpoint: "http://127.0.0.1:9/v1/events",
+        env_overrides: { endpoint_override: "http://127.0.0.1:9/v1/events", endpoint_override_invalid: false },
+      });
+      // Status reports the queue the override actually uses, not the configured one.
+      const overrideQueue = String((local.status as { queue_path: string }).queue_path);
+      expect(path.basename(overrideQueue)).toMatch(/^events\.[a-f0-9]{16}\.jsonl$/u);
+      await fs.mkdir(path.dirname(overrideQueue), { recursive: true });
+      await fs.writeFile(overrideQueue, `${JSON.stringify({ client_schema_version: 1, event: { event_id: "queued" }, attempts: 0 })}\n`);
+      expect((await runTelemetry({ subcommand: "status" }, {})).status).toMatchObject({ queue_entries: 1 });
+      // Alias usage stays in the default state file, so stats still report it under an override.
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = true;
+      await writeSettings(globalRoot, settings, "test:override_alias_usage");
+      expect(await recordDeprecatedAliasUsage("list-open")).toBe(true);
+      const stats = await runTelemetry({ subcommand: "stats" }, {});
+      expect(stats.alias_usage).toEqual([expect.objectContaining({ alias: "list-open", count: 1 })]);
+      vi.stubEnv("PM_TELEMETRY_ENDPOINT", "localhost:9");
+      const invalid = await runTelemetry({ subcommand: "status" }, {});
+      expect(invalid.status).toMatchObject({
+        enabled: false,
+        configured_enabled: true,
+        endpoint: "https://pm-cli.unbrained.dev/v1/events",
+        env_overrides: { telemetry_disabled: true, endpoint_override: null, endpoint_override_invalid: true },
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});

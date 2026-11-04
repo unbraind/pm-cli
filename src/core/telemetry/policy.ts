@@ -5,6 +5,8 @@
  * Diagnostics and capture share this policy so an opt-out cannot be bypassed
  * by a worker, prompt, or endpoint probe.
  */
+import { createHash } from "node:crypto";
+
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 /** Supported explicit classifications for intentional telemetry delivery. */
 export const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood"] as const;
@@ -61,20 +63,78 @@ function telemetryEnvironmentFlag(
   return TRUE_VALUES.has((env[key] ?? "").trim().toLowerCase());
 }
 
-/** Explain process opt-outs without reading settings or creating installation identity. */
+/**
+ * Resolve the `PM_TELEMETRY_ENDPOINT` event-delivery override (GH-1660). Only an
+ * absolute http(s) URL is used. Any other non-empty value is `invalid`, which
+ * disables delivery instead of falling back to the configured endpoint.
+ */
+export function resolveTelemetryEndpointOverride(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): { endpoint: string | null; invalid: boolean } {
+  const raw = (env.PM_TELEMETRY_ENDPOINT ?? "").trim();
+  const protocol = URL.canParse(raw) ? new URL(raw).protocol : "";
+  if (protocol === "http:" || protocol === "https:") return { endpoint: raw, invalid: false };
+  return { endpoint: null, invalid: raw.length > 0 };
+}
+
+/**
+ * The runtime file holding event-queue or delivery state for an endpoint
+ * override (GH-1660). Override events and their state live in files of their
+ * own, keyed by the override, which no flush without the same override and no
+ * older client reads, so they never reach the configured endpoint.
+ */
+export function telemetryRuntimeFileName(
+  base: "events.jsonl" | "state.json",
+  override: string | null = resolveTelemetryEndpointOverride().endpoint,
+): string {
+  if (override === null) return base;
+  const key = createHash("sha256").update(override).digest("hex").slice(0, 16);
+  return base.replace(/\.(jsonl|json)$/u, `.${key}.$1`);
+}
+
+/** An endpoint as diagnostics may show it: credentials, query and fragment removed. */
+export function redactTelemetryEndpoint(rawEndpoint: string): string {
+  const trimmed = rawEndpoint.trim();
+  if (!URL.canParse(trimmed)) return trimmed;
+  const parsed = new URL(trimmed);
+  parsed.username = "";
+  parsed.password = "";
+  parsed.search = "";
+  parsed.hash = "";
+  return parsed.toString();
+}
+
+/** The endpoint events go to: the `PM_TELEMETRY_ENDPOINT` override, else the configured one. */
+export function effectiveTelemetryEndpoint(
+  configured: string,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): string {
+  return resolveTelemetryEndpointOverride(env).endpoint ?? configured;
+}
+
+/** Explain process opt-outs and the event endpoint override without reading settings or creating installation identity. */
 export function resolveTelemetryEnvironmentPolicy(
   env: Readonly<Record<string, string | undefined>> = process.env,
-): { telemetry_disabled: boolean; do_not_track: boolean; test_suppressed: boolean } {
+): {
+  telemetry_disabled: boolean;
+  do_not_track: boolean;
+  test_suppressed: boolean;
+  endpoint_override: string | null;
+  endpoint_override_invalid: boolean;
+} {
   const doNotTrack = telemetryEnvironmentFlag("DO_NOT_TRACK", env);
+  const endpoint = resolveTelemetryEndpointOverride(env);
   const override = (env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim().toLowerCase();
   const inferredTest = isTelemetryTestEnvironment(env);
   const testSuppressed = inferredTest && !SOURCE_CONTEXTS.has(override) &&
     !telemetryEnvironmentFlag("PM_TELEMETRY_SEND_TEST_EVENTS", env);
   return {
-    telemetry_disabled: doNotTrack || testSuppressed ||
+    telemetry_disabled: doNotTrack || testSuppressed || endpoint.invalid ||
       telemetryEnvironmentFlag("PM_TELEMETRY_DISABLED", env) ||
       telemetryEnvironmentFlag("PM_NO_TELEMETRY", env),
     do_not_track: doNotTrack,
     test_suppressed: testSuppressed,
+    endpoint_override: endpoint.endpoint === null ? null : redactTelemetryEndpoint(endpoint.endpoint),
+    endpoint_override_invalid: endpoint.invalid,
   };
 }

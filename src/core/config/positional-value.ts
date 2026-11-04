@@ -193,3 +193,12 @@ export function resolveConfigPositionalValue(
     : value;
   return { routable: true, flag: "policy", value: policyValue };
 }
+
+/**
+ * The scope a config call without an explicit scope targets. Telemetry consent is
+ * read only from the global profile, so `telemetry-tracking` defaults there and the
+ * documented `pm config set telemetry-tracking off` opts out (GH-1660).
+ */
+export function defaultConfigScope(key: string | undefined): "project" | "global" {
+  return /^telemetry[-_]tracking$/u.test(key ?? "") ? "global" : "project";
+}

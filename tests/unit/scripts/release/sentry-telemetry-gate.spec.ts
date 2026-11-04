@@ -220,10 +220,37 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     });
     const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
     expect(calledUrl.searchParams.get("query")).toBe(
-      "is:unresolved level:[fatal,error] lastSeen:-14d",
+      "is:unresolved level:[fatal,error] !environment:test lastSeen:-14d",
     );
     expect(json.sentry.window_days).toBe(14);
     expect(json.thresholds.sentry.request_timeout_ms).toBe(120_000);
+  });
+
+  it("excludes only test-only issues: production and mixed-environment errors still block (pm-usn5k2)", async () => {
+    // Model Sentry's issue search: `!environment:test` drops an issue only when
+    // every event it holds is environment=test.
+    const issues = [
+      { shortId: "PM-TEST-ONLY", environments: ["test"] },
+      { shortId: "PM-PRODUCTION", environments: ["production"] },
+      { shortId: "PM-MIXED", environments: ["test", "production"] },
+    ].map(({ shortId, environments }) => ({
+      shortId, environments, level: "error", logger: "node", isUnhandled: true,
+      title: "Error: boom", metadata: { value: "boom", type: "Error" },
+    }));
+    const fetchSpy = vi.fn(async (input: string | URL | Request) => {
+      const query = new URL(String(input)).searchParams.get("query") ?? "";
+      const visible = query.includes("!environment:test")
+        ? issues.filter((issue) => issue.environments.some((env) => env !== "test"))
+        : issues;
+      return { ok: true, status: 200, text: async () => JSON.stringify(visible) };
+    });
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "0", "--max-critical", "0"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-PRODUCTION", "PM-MIXED"]);
+    expect(json.sentry.threshold_ok).toBe(false);
   });
 
   it("shares a custom bounded request timeout across issue listing and latest-event enrichment", async () => {
@@ -337,7 +364,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     });
     const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
     expect(calledUrl.searchParams.get("query")).toBe(
-      "is:unresolved level:[fatal,error] lastSeen:-30d",
+      "is:unresolved level:[fatal,error] !environment:test lastSeen:-30d",
     );
     expect(json.sentry.window_days).toBe(30);
   });
@@ -355,7 +382,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     });
     const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
     expect(calledUrl.searchParams.get("query")).toBe(
-      "is:unresolved level:[fatal,error]",
+      "is:unresolved level:[fatal,error] !environment:test",
     );
     expect(json.sentry.window_days).toBe(0);
   });

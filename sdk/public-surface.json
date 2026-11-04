@@ -3099,6 +3099,17 @@
       ],
       "package_version": "2026.11.3",
       "reason": "pm-gh1655: the operation options get the same nullable clearable fields and runCreate/runUpdate take them, so wrappers forwarding the action options compile again. Writers are unaffected; readers must handle null there. PmUpdateManyActionOptions keeps its non-nullable shape via PmUpdateActionFields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:_testOnlyHealthCommand",
+        "signature ./sdk:ConfigResult",
+        "signature ./sdk:WriteSettingsOptions",
+        "signature ./sdk/governance:_testOnlyHealthCommand",
+        "signature ./sdk/runtime:ConfigResult"
+      ],
+      "package_version": "2026.11.4",
+      "reason": "pm-gh1660: WriteSettingsOptions gains optional omitSections; ConfigResult.values is Partial because project scope omits the global-only telemetry_tracking key; the health test helper aliases the shared endpoint redaction"
     }
   ],
   "entrypoints": {
@@ -3151,7 +3162,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildHierarchyIntegrityWarnings: typeof buildHierarchyIntegrityWarnings; buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildHierarchyIntegrityWarnings: typeof buildHierarchyIntegrityWarnings; buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof redactTelemetryEndpoint; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "advanced_export",
@@ -5989,7 +6000,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ConfigResult",
-          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Record<ConfigKey, ConfigValue>; count?: number; context_settings?: ContextConfigValue; identity_vocabulary?: AgentIdentityVocabularySummary; vocabulary_mutation?: AgentIdentityVocabularyMutationPreview; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
+          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Partial<Record<ConfigKey, ConfigValue>>; count?: number; context_settings?: ContextConfigValue; identity_vocabulary?: AgentIdentityVocabularySummary; vocabulary_mutation?: AgentIdentityVocabularyMutationPreview; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -6950,6 +6961,12 @@
           "kind": "value",
           "name": "DEFAULT_WORKSPACE_MEMORY_MINIMUM_ITEMS",
           "signature": "10000"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "defaultConfigScope",
+          "signature": "(key: string | undefined) => \"global\" | \"project\" | calls: (key: string | undefined) => \"project\" | \"global\""
         },
         {
           "classification": "supported",
@@ -22789,7 +22806,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WriteSettingsOptions",
-          "signature": "export interface WriteSettingsOptions { assignedPaths?: readonly string[]; }"
+          "signature": "export interface WriteSettingsOptions { assignedPaths?: readonly string[]; omitSections?: readonly \"telemetry\"[]; }"
         },
         {
           "classification": "advanced_export",
@@ -28195,7 +28212,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "_testOnlyHealthCommand",
-          "signature": "{ buildHierarchyIntegrityWarnings: typeof buildHierarchyIntegrityWarnings; buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof normalizeEndpointForDisplay; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
+          "signature": "{ buildHierarchyIntegrityWarnings: typeof buildHierarchyIntegrityWarnings; buildExtensionHealthTriageSummary: typeof buildExtensionHealthTriageSummary; buildHealthFindings: typeof buildHealthFindings; buildCapabilityContractMetadata: typeof buildCapabilityContractMetadata; buildStaleInProgressHealthSummary: typeof buildStaleInProgressHealthSummary; buildVectorizationProviderDetails: typeof buildVectorizationProviderDetails; collectUnknownCapabilityGuidance: typeof collectUnknownCapabilityGuidance; isAdvisoryHealthWarning: typeof isAdvisoryHealthWarning; isDirectory: typeof isDirectory; isExpectedUnmanagedExtension: typeof isExpectedUnmanagedExtension; listItemDocumentPaths: typeof listItemDocumentPaths; normalizeEndpointForDisplay: typeof redactTelemetryEndpoint; normalizeExtensionNameForMatch: typeof normalizeExtensionNameForMatch; parseTelemetryQueue: typeof parseTelemetryQueue; probeTelemetryEndpointHealth: typeof probeTelemetryEndpointHealth; projectHealthResult: typeof projectHealthResult; resolveActionableUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveHealthSkipPolicy: typeof resolveHealthSkipPolicy; resolveUnknownAuthorEventCount: (authorAttribution: HistoryAuthorAttributionScan) => number; resolveVectorRefreshPolicy: typeof resolveVectorRefreshPolicy; selectStaleItemDetail: typeof selectStaleItemDetail; summarizeHealthCheckDetails: typeof summarizeHealthCheckDetails; summarizeExtensionList: typeof summarizeExtensionList; summarizeRecordList: typeof summarizeRecordList; summarizeStringList: typeof summarizeStringList; telemetryEnvFlagEnabled: typeof telemetryEnvFlagEnabled; warningCode: typeof warningCode; }"
         },
         {
           "classification": "supported",
@@ -34321,7 +34338,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ConfigResult",
-          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Record<ConfigKey, ConfigValue>; count?: number; context_settings?: ContextConfigValue; identity_vocabulary?: AgentIdentityVocabularySummary; vocabulary_mutation?: AgentIdentityVocabularyMutationPreview; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
+          "signature": "export interface ConfigResult { scope: ConfigScope; key?: ConfigKey | string; criteria?: string[]; format?: ItemFormat; policy?: HistoryMissingStreamPolicy | SprintReleaseFormatPolicy | ParentReferencePolicy | ValidateMetadataProfile | GovernancePreset | GovernanceOwnershipEnforcement | GovernanceCreateModeDefault | GovernanceCloseValidationDefault | GovernanceRequireCloseReasonPolicy | GovernanceWorkflowEnforcement | GovernanceForceRequiredForStaleLockPolicy | TestResultTrackingPolicy | TelemetryTrackingPolicy | string; nested_setting?: NestedSettingResultValue; nested_settings?: NestedSettingResultValue[]; keys?: ConfigKeyDescriptor[]; values?: Partial<Record<ConfigKey, ConfigValue>>; count?: number; context_settings?: ContextConfigValue; identity_vocabulary?: AgentIdentityVocabularySummary; vocabulary_mutation?: AgentIdentityVocabularyMutationPreview; has_explicit_item_format?: boolean; migration?: { target_format: ItemFormat; scanned: number; migrated: string[]; removed: string[]; warnings: string[]; }; settings_path: string; changed: boolean; warnings?: string[]; }"
         },
         {
           "classification": "supported",

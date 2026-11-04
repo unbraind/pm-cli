@@ -37,10 +37,12 @@ describe("MCP dynamic package actions", () => {
 
       expect(telemetry?.isError).not.toBe(true);
       const telemetryResult = (telemetry?.structuredContent as {
-        result?: { policy?: string; changed?: boolean };
+        result?: { policy?: string; changed?: boolean; scope?: string };
       } | undefined)?.result;
       expect(telemetryResult?.policy).toBe("disabled");
       expect(telemetryResult?.changed).toBe(true);
+      // GH-1660: a scope-less telemetry-tracking call targets the global profile, where consent is read.
+      expect(telemetryResult?.scope).toBe("global");
 
       const vocabulary = await handleRequest({
         jsonrpc: "2.0",

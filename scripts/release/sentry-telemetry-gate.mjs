@@ -272,7 +272,11 @@ function parseSentryProject(project) {
 }
 
 function buildSentryGateQuery(windowDays) {
-  const baseQuery = "is:unresolved level:[fatal,error]";
+  // Exclude issues whose events are all environment=test: a CI test that opts
+  // into delivery (PM_TELEMETRY_SOURCE_CONTEXT=test) must never block a release.
+  // Sentry still matches an issue with any non-test event, so a production error
+  // that also fired in a test keeps blocking (pm-usn5k2).
+  const baseQuery = "is:unresolved level:[fatal,error] !environment:test";
   if (windowDays <= 0) {
     return baseQuery;
   }

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-04T11:20:27.473Z"
+updated_at: "2026-11-04T16:26:11.519Z"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -19,7 +19,7 @@ risk: low
 confidence: high
 expected_result: "Real source and Sentry-injected distributions fit unchanged ceilings while retaining all first-party metadata values, runtime bytes, SDK/CLI entrypoints and install behavior; verify Sentry release symbolication against a real captured post-change error event before closing the original acceptance criteria."
 actual_result: "Lossless first-party JSON staging is implemented and verified: all 6378 archive paths, 69 parsed JSON values, 4731 runtime digests and 1578 other file bytes remain identical; 34690 bytes are saved in the paired original/candidate proof. Final current-source base 19971036 and real offline Sentry-injected 20212760 satisfy unchanged ceilings with the identical 4731-file/23334884-byte runtime closure. npm/Bun installs, Node24/26/Bun SDK clients, isolated init, npx and bunx pass. Original acceptance still requires real captured-event Sentry symbolication after this change. The CLI empty-query receipt covered unresolved issues only; an explicit resolved query returns four historical groups, latest October 7 in release 2026.10.6, whose inspected event retains seven invalid-location symbolicator diagnostics. These historical events neither establish current-candidate failure nor prove the required post-change symbolication. This broader item remains open and unclaimed; offline debug-ID injection is packaging evidence. Final connected source passes 10090 tests with exact 100/100/100/100 coverage across 776 source files. Already-published main-source recovery now skips remote Sentry release metadata, commits, maps and finalization; its real Bash regression preserves tag-source upload and upload-failure propagation. Final packed-archive proof uses real offline Sentry injection, verifies both original budgets and preserves the entire checkout. Current-candidate captured-error symbolication and fresh trace visibility remain unverified."
-dependencies[6]:
+dependencies[7]:
   - id: pm-feecbs
     kind: related
     created_at: "2026-07-25T07:11:55.544Z"
@@ -41,7 +41,13 @@ dependencies[6]:
     author: "harness:codex"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[38]:
+  - id: pm-gh1660
+    kind: related
+    created_at: "2026-11-04T16:26:11.262Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[39]:
   - created_at: "2026-07-25T07:12:23.380Z"
     author: "harness:claude-code"
     text: "Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
@@ -158,6 +164,9 @@ comments[38]:
   - created_at: "2026-11-04T11:20:27.472Z"
     author: "harness:claude-code"
     text: "Recurrence on PR #1658 (head b6a7977d1, CI run 41812019841): Gates (static) failed the unchanged 20,000,000-byte base ceiling at 20,000,673 bytes. The new weight was the PR's own documentation prose and three SDK surface acknowledgement reasons. Lossless repair, ceiling unchanged: the added prose in docs/SDK.md, docs/COMMANDS.md and docs/EXTENSION_AUTHOR_CONTRACTS.md was rewritten more tightly with every fact kept (1,167 bytes), and the three acknowledgement reasons in sdk/public-surface.json no longer repeat the symbol names their changes lists already carry (461 bytes; sdk-surface-snapshot --check still verifies 0 classified changes). Local package-artifact-gate after a clean build: distribution 19,998,947 bytes, so about 1 KB of headroom remains for the next tranche."
+  - created_at: "2026-11-04T16:26:01.668Z"
+    author: "harness:claude-code"
+    text: "Lossless tranche on branch fix/test-telemetry-delivery. The pm-gh1660 privacy fix adds 14,441 first-party bytes, mostly minified code emitted twice (tsc output and the two bundle variants) plus declaration JSDoc, which took the base distribution to 20,014,949 bytes, over the unchanged 20,000,000 ceiling. scripts/release/package-distribution.mjs now runs compactMarkdownTables in copyPublicationFile, beside the existing JSON compaction, on the staged publication copy only. It collapses GFM table cell padding and separator dash runs outside fenced and indented code, and refuses any row whose reparsed cells or alignment differ. Checkout files stay readable. Proof: all 199 shipped markdown files render byte-identical HTML before and after with marked (GFM). Saving: 45,276 bytes. Distribution after a clean build: 19,969,673 bytes, which leaves about 30 KB of headroom. The ceiling is unchanged and no runtime file, type or export is removed. The criterion that remains open is the decision on whether both the tsc emit (about 5.6 MB) and the bundle (about 7.0 MB) must ship."
 notes[1]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
 learnings[2]{created_at,author,text}:

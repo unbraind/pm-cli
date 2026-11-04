@@ -128,6 +128,7 @@ import { runtimeFilesLookupOptions } from "../traceability/runtime-files-lookup.
 import type { McpActionDispatchContext,McpActionHandler } from "./context.js";
 import { getOwnHandler,readRequiredString } from "./context.js";
 import { runMcpSchemaAction } from "./schema.js";
+import { defaultConfigScope } from "../../core/config/positional-value.js";
 
 /** Resolve a target argument with top-level transport arguments taking precedence over normalized options. */
 function readMcpTarget(ctx: McpActionDispatchContext): string | undefined {
@@ -356,12 +357,11 @@ function runMcpConfigAction(ctx: McpActionDispatchContext): Promise<unknown> {
     throw new PmCliError("Missing required argument: configAction", 64);
   const value = readString(ctx.args, "value") ?? readString(ctx.options, "value");
   const options = readString(ctx.options, "policy") !== undefined && value !== undefined ? { ...ctx.options, value } : ctx.options;
+  const key = readString(ctx.args, "key") ?? readString(ctx.options, "key");
   return runConfig(
-    readString(ctx.args, "scope") ??
-      readString(ctx.options, "scope") ??
-      "project",
+    readString(ctx.args, "scope") ?? readString(ctx.options, "scope") ?? defaultConfigScope(key),
     configAction,
-    readString(ctx.args, "key") ?? readString(ctx.options, "key"),
+    key,
     options,
     ctx.global,
     readString(ctx.options, "policy") === undefined ? value : undefined,

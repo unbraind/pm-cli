@@ -82,6 +82,7 @@ export {
   parseRegisteredItemFieldAssignments,
 } from "../core/extensions/item-fields.js";
 export { resolveExtensionRoots } from "../core/extensions/loader.js";
+export { defaultConfigScope } from "../core/config/positional-value.js";
 export {
   resolveRegisteredSearchProvider,
   resolveRegisteredVectorStoreAdapter,
