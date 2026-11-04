@@ -3110,6 +3110,13 @@
       ],
       "package_version": "2026.11.4",
       "reason": "pm-gh1660: WriteSettingsOptions gains optional omitSections; ConfigResult.values is Partial because project scope omits the global-only telemetry_tracking key; the health test helper aliases the shared endpoint redaction"
+    },
+    {
+      "changes": [
+        "signature ./sdk:WriteSettingsOptions"
+      ],
+      "package_version": "2026.11.4",
+      "reason": "pm-gh1660: WriteSettingsOptions gains optional skipIfStored, a compare-and-set consulted under the settings lock, so the init wizard keeps a telemetry choice another process recorded while its prompt was open; existing calls compile unchanged"
     }
   ],
   "entrypoints": {
@@ -22806,7 +22813,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "WriteSettingsOptions",
-          "signature": "export interface WriteSettingsOptions { assignedPaths?: readonly string[]; omitSections?: readonly \"telemetry\"[]; }"
+          "signature": "export interface WriteSettingsOptions { assignedPaths?: readonly string[]; omitSections?: readonly \"telemetry\"[]; skipIfStored?: (stored: unknown) => boolean; }"
         },
         {
           "classification": "advanced_export",

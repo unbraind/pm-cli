@@ -2199,6 +2199,13 @@ export interface WriteSettingsOptions {
    * files carry no telemetry block, which only the global profile governs).
    */
   omitSections?: readonly "telemetry"[];
+  /**
+   * Compare-and-set, consulted under the settings lock with the stored
+   * document when one exists. Returning true writes nothing: the file, its
+   * history and the caller's snapshot stay unchanged, so a value another writer
+   * recorded after the caller's read stands (GH-1660).
+   */
+  skipIfStored?: (stored: unknown) => boolean;
 }
 
 /**
@@ -2402,6 +2409,7 @@ export async function writeSettings(
     persist_source: source,
   });
   const proposed: unknown = JSON.parse(afterRaw);
+  let skipped = false;
   try {
     await mutateWorkspaceJsonWithHistory({
       pmRoot,
@@ -2409,6 +2417,10 @@ export async function writeSettings(
       mutate: (beforeRaw) => {
         const current: unknown =
           beforeRaw === null ? null : parseExistingSettingsForWrite(beforeRaw);
+        if (beforeRaw !== null && options.skipIfStored?.(current) === true) {
+          skipped = true;
+          return { raw: beforeRaw, result: undefined };
+        }
         if (fallbackOrigin !== undefined && beforeRaw !== null) {
           return {
             raw: applyFallbackChangeToStoredSettings(
@@ -2438,6 +2450,7 @@ export async function writeSettings(
       lockWaitMs: settings.locks.wait_ms,
       recordCreation: false,
     });
+    if (skipped) return;
     if (source) {
       attachSettingsPersistSourceSnapshot(settings, {
         ...source,

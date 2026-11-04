@@ -17,7 +17,7 @@ import { runInitAgentGuidance } from "../init-agent-guidance.js";
 import { extensionVersionRemediation } from "../../core/extensions/version-diagnostics.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { effectiveTelemetryEndpoint, redactTelemetryEndpoint, resolveTelemetryEnvironmentPolicy, telemetryRuntimeFileName } from "../../core/telemetry/policy.js";
+import { effectiveTelemetryEndpoint, redactTelemetryEndpoint, resolveTelemetryEnvironmentPolicy, stripUrlCredentials, telemetryRuntimeFileName } from "../../core/telemetry/policy.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -1727,6 +1727,15 @@ function isTelemetryQueueDraining(
   );
 }
 
+/** Percent-decode one userinfo part as Node's http.request does, keeping a malformed escape as written. */
+function decodeUserinfo(part: string): string {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return part;
+  }
+}
+
 async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
   probe_url: string;
   ok: boolean;
@@ -1735,11 +1744,18 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
   error?: string;
 }> {
   let probeUrl = endpoint;
+  const headers: Record<string, string> = {};
   try {
     const parsed = new URL(endpoint);
     parsed.pathname = "/healthz";
     parsed.search = "";
     parsed.hash = "";
+    // fetch refuses a URL with credentials; send them as Basic auth, as event delivery's http.request does.
+    if (parsed.username.length > 0 || parsed.password.length > 0) {
+      headers.authorization = `Basic ${Buffer.from(`${decodeUserinfo(parsed.username)}:${decodeUserinfo(parsed.password)}`).toString("base64")}`;
+      parsed.username = "";
+      parsed.password = "";
+    }
     probeUrl = parsed.toString();
   } catch {
     // keep original endpoint when URL parsing fails
@@ -1747,6 +1763,7 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
   try {
     const response = await fetch(probeUrl, {
       method: "GET",
+      headers,
       signal: AbortSignal.timeout(TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS),
     });
     return {
@@ -1768,9 +1785,30 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
       probe_url: redactTelemetryEndpoint(probeUrl),
       ok: false,
       /* c8 ignore next -- non-Error throwables require transport-layer fault injection */
-      error: error instanceof Error ? error.message : "probe_failed",
+      error: error instanceof Error ? stripUrlCredentials(error.message.replaceAll(probeUrl, redactTelemetryEndpoint(probeUrl))) : "probe_failed",
     };
   }
+}
+
+/**
+ * Event delivery state comes from the active state file. Span state comes from
+ * the shared file beside the span queue, whatever event endpoint override is
+ * active. A malformed file of either kind is reported (GH-1660).
+ */
+async function readTelemetryRuntimeStates(statePath: string, sharedStatePath: string): Promise<{
+  runtimeState: TelemetryRuntimeStateRecord;
+  spanState: TelemetryRuntimeStateRecord;
+  stateParseFailed: boolean;
+}> {
+  const active = parseTelemetryRuntimeState(await readFileIfExists(statePath));
+  const shared = statePath === sharedStatePath
+    ? active
+    : parseTelemetryRuntimeState(await readFileIfExists(sharedStatePath));
+  return {
+    runtimeState: active.runtimeState,
+    spanState: shared.runtimeState,
+    stateParseFailed: active.stateParseFailed || shared.stateParseFailed,
+  };
 }
 
 async function buildTelemetryCheck(
@@ -1790,13 +1828,8 @@ async function buildTelemetryCheck(
     ? parseTelemetryQueue(queueRaw)
     : emptyTelemetryQueueSummary();
 
-  const stateRaw = await readFileIfExists(statePath);
-  const { runtimeState, stateParseFailed } =
-    parseTelemetryRuntimeState(stateRaw);
-  // Span delivery state stays beside the shared span queue, whatever event endpoint override is active (GH-1660).
-  const spanState = statePath === defaultStatePath
-    ? runtimeState
-    : parseTelemetryRuntimeState(await readFileIfExists(defaultStatePath)).runtimeState;
+  const { runtimeState, spanState, stateParseFailed } =
+    await readTelemetryRuntimeStates(statePath, defaultStatePath);
 
   const endpoint = effectiveTelemetryEndpoint(settings.telemetry.endpoint).trim();
   const endpointDisplay = redactTelemetryEndpoint(endpoint);

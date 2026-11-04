@@ -216,6 +216,8 @@ describe("runHealth", () => {
     expect(healthInternals.normalizeEndpointForDisplay("not a url")).toBe(
       "not a url",
     );
+    // Text that is not a valid URL still loses credentials, query and fragment.
+    expect(healthInternals.normalizeEndpointForDisplay("http://u:p@ss@exa mple.test/v1?token=t#f")).toBe("http://exa mple.test/v1");
     expect(
       healthInternals.normalizeExtensionNameForMatch(" Builtin-Guide "),
     ).toBe("builtin-guide");
@@ -1034,6 +1036,57 @@ describe("runHealth", () => {
         vi.unstubAllEnvs();
       }
     });
+  });
+
+  it("warns about a malformed shared telemetry state file under PM_TELEMETRY_ENDPOINT (GH-1660)", async () => {
+    await withTempPmPath(async (context) => {
+      const telemetryRuntimeDir = path.join(context.env.PM_GLOBAL_PATH as string, "runtime", "telemetry");
+      await mkdir(telemetryRuntimeDir, { recursive: true });
+      vi.stubEnv("PM_TELEMETRY_ENDPOINT", "http://127.0.0.1:9/v1/events");
+      try {
+        await writeFile(path.join(telemetryRuntimeDir, "state.json"), "{not json\n", "utf8");
+        const health = await runHealth({ path: context.pmPath });
+        expect(health.warnings).toContain("telemetry_state_invalid_json");
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    });
+  });
+
+  it("sends endpoint credentials to the health probe as Basic auth, never in the URL (GH-1660)", async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    try {
+      const probe = await healthInternals.probeTelemetryEndpointHealth("https://user%40x:p%3Ass@collector.example/v1/events?k=1");
+      expect(probe).toMatchObject({ ok: true, status: 200, probe_url: "https://collector.example/healthz" });
+      expect(fetchMock).toHaveBeenCalledWith("https://collector.example/healthz", expect.objectContaining({
+        headers: { authorization: `Basic ${Buffer.from("user@x:p:ss").toString("base64")}` },
+      }));
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("never returns endpoint credentials from the health probe, even malformed or unparseable ones (GH-1660)", async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes(" ")) throw new TypeError(`Failed to parse URL from ${url}`);
+      return new Response("ok", { status: 200 });
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    try {
+      // A malformed escape is sent as written instead of failing the decode.
+      await healthInternals.probeTelemetryEndpointHealth("https://a%zz:secret@collector.example/v1/events");
+      expect(fetchMock).toHaveBeenLastCalledWith("https://collector.example/healthz", expect.objectContaining({
+        headers: { authorization: `Basic ${Buffer.from("a%zz:secret").toString("base64")}` },
+      }));
+      const unparseable = await healthInternals.probeTelemetryEndpointHealth("http://u:pw@exa mple.com/v1?token=t");
+      expect(unparseable.ok).toBe(false);
+      expect(JSON.stringify(unparseable)).not.toMatch(/pw|token=t/u);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("surfaces an advisory storage warning for streams over the compaction threshold", async () => {

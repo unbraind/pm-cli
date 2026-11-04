@@ -92,10 +92,15 @@ export function telemetryRuntimeFileName(
   return base.replace(/\.(jsonl|json)$/u, `.${key}.$1`);
 }
 
-/** An endpoint as diagnostics may show it: credentials, query and fragment removed. */
+/** Remove `user:password@` from every URL-like authority in a text, such as a transport error message. */
+export function stripUrlCredentials(text: string): string {
+  return text.replaceAll(/(\/\/)[^/?#\s]*@/gu, "$1");
+}
+
+/** An endpoint as diagnostics may show it: credentials, query and fragment removed, also from text that is not a valid URL. */
 export function redactTelemetryEndpoint(rawEndpoint: string): string {
   const trimmed = rawEndpoint.trim();
-  if (!URL.canParse(trimmed)) return trimmed;
+  if (!URL.canParse(trimmed)) return stripUrlCredentials(trimmed).replace(/[?#].*$/su, "");
   const parsed = new URL(trimmed);
   parsed.username = "";
   parsed.password = "";

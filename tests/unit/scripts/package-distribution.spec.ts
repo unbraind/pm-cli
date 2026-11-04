@@ -179,7 +179,7 @@ it("compacts markdown table padding without changing cells, alignment or code (p
     "| Key | Value |",
     "|:---|---:|",
     "| `a\\|b` | spaced |",
-    "  | nested | row |",
+    "  | nested     | row |",
     "````md",
     "| keep   |  fenced |",
     "```",
@@ -190,7 +190,67 @@ it("compacts markdown table padding without changing cells, alignment or code (p
     "| a |",
     "| -- | bad separator |",
   ]);
-  expect(compactMarkdownTables("~~~\n| a  |\n~~~\n| b  |")).toBe("~~~\n| a  |\n~~~\n| b |");
+  expect(compactMarkdownTables("~~~\n| a  |\n~~~\n\n| b  |\n| --- |")).toBe("~~~\n| a  |\n~~~\n\n| b |\n|---|");
+});
+
+it("compacts only real tables: a block-starting header over a matching delimiter row, outside raw HTML (pm-998juj)", () => {
+  const unchanged = [
+    // A dash-only body row keeps its text; only the delimiter row is shortened.
+    ["| a   |\n| --- |\n| ------- |", "| a |\n|---|\n| ------- |"],
+    // A fence closes only on a bare marker, so a same-length marker with text stays code.
+    ["````\n````example\n| x   | y |\n| --- | - |\n````", "````\n````example\n| x   | y |\n| --- | - |\n````"],
+    // A backtick info string holding a backtick does not open a fence.
+    ["```a`b\n\n| x   |\n| --- |", "```a`b\n\n| x |\n|---|"],
+    // Raw <pre> and comment blocks keep their lines up to the closing marker.
+    ["<pre>\n| x   |\n| --- |\n</pre>\n\n| y   |\n| --- |", "<pre>\n| x   |\n| --- |\n</pre>\n\n| y |\n|---|"],
+    ["<pre>one line</pre>\n\n| y   |\n| --- |", "<pre>one line</pre>\n\n| y |\n|---|"],
+    ["<!-- note\n| x   |\n| --- |\n-->", "<!-- note\n| x   |\n| --- |\n-->"],
+    // Any other HTML block is raw up to the next blank line.
+    ["<div>\n| x   |\n| --- |\n\n| y   |\n| --- |", "<div>\n| x   |\n| --- |\n\n| y |\n|---|"],
+    // A pipe row continuing a paragraph, or a delimiter row whose cell count differs, is not a table.
+    ["text\n| x   |\n| --- |", "text\n| x   |\n| --- |"],
+    ["| x   | y |\n| --- |", "| x   | y |\n| --- |"],
+    // Processing-instruction, declaration and CDATA blocks run to their own closing markers.
+    ["<?php\n\n| x   |\n| --- |\n\n?>", "<?php\n\n| x   |\n| --- |\n\n?>"],
+    ["<!DOCTYPE x\n\n| x   |\n| --- |\n\n>", "<!DOCTYPE x\n\n| x   |\n| --- |\n\n>"],
+    ["<![CDATA[\n\n| x   |\n| --- |\n\n]]>", "<![CDATA[\n\n| x   |\n| --- |\n\n]]>"],
+    // Inline HTML in a paragraph opens no block, so the fence after it is still tracked.
+    ["<b>bold</b> text\n```\n\n| x   |\n| --- |\n```", "<b>bold</b> text\n```\n\n| x   |\n| --- |\n```"],
+    // A lone tag starts a raw block only where it cannot continue a paragraph.
+    ["<custom-tag>\n| x   |\n| --- |", "<custom-tag>\n| x   |\n| --- |"],
+    ["text\n\n<custom-tag>\n| x   |\n| --- |", "text\n\n<custom-tag>\n| x   |\n| --- |"],
+    ["text\n<custom-tag>\n\n| x   |\n| --- |", "text\n<custom-tag>\n\n| x |\n|---|"],
+    // Two pipe rows without a delimiter row are a paragraph, not a table.
+    ["| a   |\n| b   |", "| a   |\n| b   |"],
+    // A fence inside a list item, a block quote or indentation leaves the whole file unchanged:
+    // where it ends depends on containers, as when a list item closes its fence.
+    ["1. ```bash\n   | x   |\n   | --- |\n   ```\n\n| y   |\n| --- |", "1. ```bash\n   | x   |\n   | --- |\n   ```\n\n| y   |\n| --- |"],
+    ["- x\n  ```\n  y\n```\n\n| a   |\n| --- |\n```", "- x\n  ```\n  y\n```\n\n| a   |\n| --- |\n```"],
+    ["> ```\n> | a  |\n> ```\n\n| b   |\n| --- |", "> ```\n> | a  |\n> ```\n\n| b   |\n| --- |"],
+    // Rows at another indentation belong to another container, so they end the table.
+    ["- a\n\n  | x   |\n  | --- |\n| y   |", "- a\n\n  | x |\n  |---|\n| y   |"],
+    ["1. a\n\n   | x   |\n| --- |", "1. a\n\n   | x   |\n| --- |"],
+    // CRLF line endings are kept and do not hide fences.
+    ["```\r\n\r\n| x   |\r\n| --- |\r\n```\r\n\r\n| y   |\r\n| --- |\r\n", "```\r\n\r\n| x   |\r\n| --- |\r\n```\r\n\r\n| y |\r\n|---|\r\n"],
+  ];
+  for (const [source, expected] of unchanged) expect(compactMarkdownTables(source)).toBe(expected);
+});
+
+it("renders every tracked markdown file identically after compaction (pm-998juj)", async () => {
+  // Release controls run the packager without node_modules, so the render proof over the shipped files lives here.
+  const { Marked } = await import("marked");
+  const markdown = new Marked({ gfm: true });
+  const files = execFileSync("git", ["ls-files", "*.md"], { encoding: "utf8" }).trim().split("\n")
+    .filter((file) => !file.startsWith(".agents/pm/"));
+  expect(files.length).toBeGreaterThan(150);
+  let saved = 0;
+  for (const file of files) {
+    const text = await readFile(file, "utf8");
+    const compact = compactMarkdownTables(text);
+    saved += text.length - compact.length;
+    expect(markdown.parse(compact), file).toBe(markdown.parse(text));
+  }
+  expect(saved).toBeGreaterThan(30_000);
 });
 
 it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {

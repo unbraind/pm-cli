@@ -2093,6 +2093,117 @@ describe("runInit", () => {
     }
   });
 
+  it("keeps a telemetry choice another process records while the wizard prompt is open (GH-1660)", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-concurrent-consent-"));
+    const globalRoot = path.join(tempRoot, ".pm-cli-global");
+    await writeSettings(globalRoot, structuredClone(SETTINGS_DEFAULTS));
+    const question = vi.fn().mockResolvedValueOnce("pm-").mockResolvedValueOnce("minimal").mockImplementationOnce(async () => {
+      // Another process opts out while the telemetry question is open.
+      const declined = await readSettings(globalRoot);
+      declined.telemetry.enabled = false;
+      declined.telemetry.first_run_prompt_completed = true;
+      await writeSettings(globalRoot, declined);
+      return "y";
+    });
+    initInternals.setInitReadlineFactoryForTests(
+      () => ({ question, close: vi.fn() }) as unknown as ReturnType<typeof readline.createInterface>,
+    );
+    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.stubEnv("PM_GLOBAL_PATH", globalRoot);
+    vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+    vi.stubEnv("DO_NOT_TRACK", "");
+    try {
+      const result = await runInit("pm", { path: path.join(tempRoot, "project") }, { agentGuidance: "skip" });
+      expect(question).toHaveBeenCalledTimes(3);
+      expect((await readSettings(globalRoot)).telemetry.enabled).toBe(false);
+      expect(result.warnings).toContain("telemetry_consent_kept:recorded_while_prompting");
+      // The result reports the consent the runtime reads, not the wizard's stale answer.
+      expect(result.settings.telemetry.enabled).toBe(false);
+      expect(summarizeInitResult(result, true).telemetry).toMatch(/^disabled /u);
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("records nothing when the global profile becomes unreadable while the wizard prompt is open (GH-1660)", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-unreadable-during-prompt-"));
+    const globalRoot = path.join(tempRoot, ".pm-cli-global");
+    await writeSettings(globalRoot, structuredClone(SETTINGS_DEFAULTS));
+    const question = vi.fn().mockResolvedValueOnce("pm-").mockResolvedValueOnce("minimal").mockImplementationOnce(async () => {
+      await writeFile(path.join(globalRoot, "settings.json"), "{not json\n", "utf8");
+      return "y";
+    });
+    initInternals.setInitReadlineFactoryForTests(
+      () => ({ question, close: vi.fn() }) as unknown as ReturnType<typeof readline.createInterface>,
+    );
+    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.stubEnv("PM_GLOBAL_PATH", globalRoot);
+    vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+    vi.stubEnv("DO_NOT_TRACK", "");
+    try {
+      const result = await runInit("pm", { path: path.join(tempRoot, "project") }, { agentGuidance: "skip" });
+      expect(result.warnings).toContain("telemetry_consent_not_recorded:global_settings_unreadable");
+      expect(await readFile(path.join(globalRoot, "settings.json"), "utf8")).toBe("{not json\n");
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("does not ask for telemetry consent when the global profile cannot record it (GH-1660)", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-unreadable-global-"));
+    const globalRoot = path.join(tempRoot, ".pm-cli-global");
+    await mkdir(globalRoot, { recursive: true });
+    await writeFile(path.join(globalRoot, "settings.json"), "{not json\n", "utf8");
+    const question = vi.fn().mockResolvedValueOnce("pm-").mockResolvedValueOnce("minimal").mockResolvedValue("y");
+    initInternals.setInitReadlineFactoryForTests(
+      () => ({ question, close: vi.fn() }) as unknown as ReturnType<typeof readline.createInterface>,
+    );
+    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    vi.stubEnv("PM_GLOBAL_PATH", globalRoot);
+    vi.stubEnv("PM_TELEMETRY_SEND_TEST_EVENTS", "1");
+    vi.stubEnv("DO_NOT_TRACK", "");
+    try {
+      await runInit("pm", { path: path.join(tempRoot, "project") }, { agentGuidance: "skip" });
+      expect(question).toHaveBeenCalledTimes(2);
+      expect(await readFile(path.join(globalRoot, "settings.json"), "utf8")).toBe("{not json\n");
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports the global telemetry consent for a non-interactive init, not the project default (GH-1660)", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-reported-consent-"));
+    const globalRoot = path.join(tempRoot, ".pm-cli-global");
+    const declined = structuredClone(SETTINGS_DEFAULTS);
+    declined.telemetry.enabled = false;
+    declined.telemetry.first_run_prompt_completed = true;
+    declined.telemetry.endpoint = "https://user:s3cret@collector.example/v1/events";
+    declined.telemetry.installation_id = "inst-1234";
+    await writeSettings(globalRoot, declined);
+    vi.stubEnv("PM_GLOBAL_PATH", globalRoot);
+    try {
+      const result = await runInit("pm", { path: path.join(tempRoot, "project") }, { defaults: true, agentGuidance: "skip" });
+      expect(result.settings.telemetry.enabled).toBe(false);
+      expect(summarizeInitResult(result).telemetry.enabled).toBe(false);
+      // Only consent is taken from the global profile: its endpoint credentials and installation id never appear.
+      expect(JSON.stringify(result)).not.toMatch(/s3cret|inst-1234/u);
+      const projectFile = JSON.parse(await readFile(path.join(tempRoot, "project", "settings.json"), "utf8")) as Record<string, unknown>;
+      expect(projectFile).not.toHaveProperty("telemetry");
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("prompts for missing agent guidance interactively and records accept/decline state", async () => {
     const tempRoot = await mkdtemp(
       path.join(os.tmpdir(), "pm-init-guidance-interactive-"),

@@ -43,7 +43,7 @@ import { readAuthorEnvironment, resolveAuthor } from "../core/shared/author.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveGlobalPmRoot, resolvePmRoot } from "../core/store/paths.js";
 import { resolveTelemetryEnvironmentPolicy } from "../core/telemetry/policy.js";
-import { readSettings, writeSettings, type WriteSettingsOptions } from "../core/store/settings.js";
+import { isSettingsReadFallback, readSettings, writeSettings, type WriteSettingsOptions } from "../core/store/settings.js";
 import { ensurePmGitignore } from "./workspace.js";
 import type { GovernancePreset, PmSettings } from "../types/index.js";
 import { renderPmCommand } from "./command-line.js";
@@ -118,7 +118,7 @@ export interface InitResult {
   path: string;
   /** Value that configures or reports target for this contract. */
   target: InitTargetResolution;
-  /** Value that configures or reports settings for this contract. */
+  /** The tracker settings, with telemetry consent and capture level from the global profile, which the runtime reads (GH-1660). */
   settings: PmSettings;
   /** Value that configures or reports created dirs for this contract. */
   created_dirs: string[];
@@ -209,7 +209,7 @@ export interface InitDisplayResult {
   path: string;
   /** Governance policy selected for this workspace. */
   governance_preset: GovernancePreset;
-  /** Project telemetry consent and capture level. */
+  /** Telemetry consent and capture level from the global profile, which the runtime reads. */
   telemetry: string;
   /** Number of created directories and schema files. */
   created_count: number;
@@ -976,6 +976,7 @@ async function createNewInitSettings(params: {
   pmRoot: string;
   normalizedPrefix: string;
   normalizedOptions: InitNormalizedOptions;
+  warnings: string[];
 }): Promise<InitSettingsResolution> {
   let normalizedPrefix = params.normalizedPrefix;
   let chosenPreset = params.normalizedOptions.presetFromOption;
@@ -1005,14 +1006,16 @@ async function createNewInitSettings(params: {
     params.normalizedOptions.authorFromOption ?? environmentAuthor ?? "";
   // The telemetry runtime reads consent only from the global profile, so the
   // wizard's answer is recorded there and a project file carries no telemetry
-  // block that would look authoritative while nothing reads it (GH-1660).
+  // block that would look authoritative while nothing reads it (GH-1660). When
+  // init targets the global profile itself, this create write records the
+  // answer, and later full writes of these settings keep it.
   const writeOptions = initSettingsWriteOptions(params.pmRoot);
   if (chosenTelemetryEnabled !== undefined) {
     settings.telemetry.enabled = chosenTelemetryEnabled;
     settings.telemetry.first_run_prompt_completed = true;
-    if (writeOptions.omitSections) await persistGlobalTelemetryConsent(chosenTelemetryEnabled);
   }
   await writeSettings(params.pmRoot, settings, undefined, writeOptions);
+  if (chosenTelemetryEnabled !== undefined && writeOptions.omitSections) await persistGlobalTelemetryConsent(chosenTelemetryEnabled, params.warnings);
   return {
     settings,
     normalizedPrefix,
@@ -1027,22 +1030,58 @@ function initSettingsWriteOptions(pmRoot: string): WriteSettingsOptions {
   return ownsTelemetry ? {} : { omitSections: ["telemetry"] };
 }
 
-/** Ask for telemetry consent only while none is recorded, so an earlier global choice or an environment opt-out is never overridden (GH-1660). */
+/**
+ * The wizard's default telemetry answer while consent can still be asked: none
+ * is recorded, no environment opt-out applies, and the global profile is
+ * readable so the answer can be recorded. Otherwise undefined, so an earlier
+ * choice is never overridden (GH-1660).
+ */
 async function resolveWizardTelemetryDefault(): Promise<boolean | undefined> {
-  if (resolveTelemetryEnvironmentPolicy().telemetry_disabled) return undefined;
-  const { telemetry } = await readSettings(resolveGlobalPmRoot(process.cwd()));
-  return telemetry.first_run_prompt_completed ? undefined : telemetry.enabled;
+  const global = await readSettings(resolveGlobalPmRoot(process.cwd()));
+  if (resolveTelemetryEnvironmentPolicy().telemetry_disabled ||
+    global.telemetry.first_run_prompt_completed || isSettingsReadFallback(global)) return undefined;
+  return global.telemetry.enabled;
 }
 
-/** Record the wizard's telemetry answer in the global profile, the one place consent is read. */
-async function persistGlobalTelemetryConsent(enabled: boolean): Promise<void> {
+/**
+ * Record the wizard's telemetry answer in the global profile, the one place
+ * consent is read. Whether a choice is already stored is checked under the
+ * settings lock, so a choice another process recorded while the prompt was
+ * open stands and init reports that it was kept (GH-1660).
+ */
+async function persistGlobalTelemetryConsent(enabled: boolean, warnings: string[]): Promise<void> {
   const globalPmRoot = resolveGlobalPmRoot(process.cwd());
   const global = await readSettings(globalPmRoot);
+  if (isSettingsReadFallback(global)) {
+    warnings.push("telemetry_consent_not_recorded:global_settings_unreadable");
+    return;
+  }
+  let kept = false;
   global.telemetry.enabled = enabled;
   global.telemetry.first_run_prompt_completed = true;
   await writeSettings(globalPmRoot, global, "telemetry:first_run_prompt", {
-    assignedPaths: ["telemetry.enabled", "telemetry.first_run_prompt_completed"],
+    skipIfStored: (stored) => (kept = (stored as { telemetry?: { first_run_prompt_completed?: unknown } }).telemetry?.first_run_prompt_completed === true),
   });
+  if (kept) warnings.push("telemetry_consent_kept:recorded_while_prompting");
+}
+
+/**
+ * Report the consent the runtime reads, the global profile's, instead of the
+ * defaults a project file without a telemetry block resolves to. Only consent
+ * and capture level are taken: the global endpoint may carry credentials and
+ * the installation id is never shown (GH-1660).
+ */
+async function withGlobalTelemetry(settings: PmSettings): Promise<PmSettings> {
+  const { telemetry } = await readSettings(resolveGlobalPmRoot(process.cwd()));
+  return {
+    ...settings,
+    telemetry: {
+      ...settings.telemetry,
+      enabled: telemetry.enabled,
+      first_run_prompt_completed: telemetry.first_run_prompt_completed,
+      capture_level: telemetry.capture_level,
+    },
+  };
 }
 
 async function resolveInitSettings(params: {
@@ -1063,6 +1102,7 @@ async function resolveInitSettings(params: {
     pmRoot: params.pmRoot,
     normalizedPrefix: params.normalizedPrefix,
     normalizedOptions: params.normalizedOptions,
+    warnings: params.warnings,
   });
 }
 
@@ -1430,7 +1470,7 @@ export async function runInit(
     ok: true,
     path: pmRoot,
     target: invocation.target,
-    settings,
+    settings: await withGlobalTelemetry(settings),
     created_dirs: createdDirs,
     warnings,
     governance_preset: settings.governance.preset,

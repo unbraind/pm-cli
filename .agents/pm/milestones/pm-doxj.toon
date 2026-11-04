@@ -6,7 +6,7 @@ status: open
 priority: 0
 tags[6]: backlog,context-management,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:41:50.865Z"
-updated_at: "2026-11-03T09:29:13.065Z"
+updated_at: "2026-11-04T17:39:51.547Z"
 author: maintainer-agent
 estimated_minutes: 60
 acceptance_criteria: "Every feature, issue, decision, story, task, chore, goal, test, documentation change, release concern, and discovered idea has one canonical item or an explicit duplicate/supersession disposition; every active item has acceptance, priority, risk, confidence, estimate, and a typed path to an outcome; all-status reads are complete and omission-aware; graph and history gates preserve zero active isolates, zero dangling references, zero drift, and evidence-backed relationships without synthetic density; horizon milestones remain measurable and are revised through immutable decisions as assumptions change; recurring defects and release failures aggregate into canonical families with prevention gates; tracker changes are made only through public pm SDK-backed surfaces."
@@ -231,7 +231,7 @@ comments[35]:
   - created_at: "2026-09-08T06:56:01.519Z"
     author: "harness:codex"
     text: "Final portfolio receipt: 2718 items, 13553 deduplicated directed edges, 1564 semantic edges, no additional generic related links, no isolates or missing nodes, and a cycle-free 12-layer prerequisite DAG. The fixed 67-edge redundancy ceiling passes. All 1667 tracked non-PM artifacts, including the two new documents, have exact ownership links. Historical recovery reduced missing-evidence records from 295 to 170 without invented outcomes. Local qwen3-embedding:0.6b via Ollama embedded all 391 changed/new records; three semantic queries ranked their intended history, fleet and new retrieval-experiment owners first. A final refresh follows these closeout comments. Local exact coverage and static gates pass; hosted direct-main checks and publication are separate claims."
-notes[149]:
+notes[150]:
   - created_at: "2026-06-07T10:24:45.228Z"
     author: maintainer-agent
     text: "2026-06-07 ecosystem audit (plan pm-8u2a): rebuilt the empty forward backlog — 71 new OPEN items across all 9 capability epics + 2 new ADRs (pm-7sq6 coverage governance, pm-cc04 agent self-repair). Delivered by 5 specialized audit sub-agents (disjoint epic scopes). pm context now returns actionable leaf work again."
@@ -680,6 +680,9 @@ notes[149]:
   - created_at: "2026-11-03T09:29:13.065Z"
     author: "harness:claude-code"
     text: "2026-11-03 session (PR #1654): shipped write-time preconditions. Expected item revisions (pm-gh1576) are enforced inside the locked item store, so every write path is guarded without per-command wiring. Starting work respects open blockers (pm-urzubi). 22 Codex review rounds hardened extension dispatch, partial-success commands (fan-out, bulk, rollback, history bulk rows) and recovery paths (restore, tail salvage, identity conflicts). The convergence rule then filed the final fail-closed finding as pm-thbdxu. Method: for a guard enforced in one store layer, ask which write paths bypass that layer and which catch blocks flatten its typed refusal."
+  - created_at: "2026-11-04T17:39:51.547Z"
+    author: "harness:claude-code"
+    text: "Milestone 2026-11-04 (afternoon), the consent-surface truthfulness pass. Method: for every setting a command writes, ask which reader consumes it, then drive the documented command and check the effect through the reader. Doing that on telemetry found four inert surfaces on 2026.11.4. The init wizard answer, the documented opt-out 'pm config set telemetry-tracking off' (scope-less, so project scope), project-scope telemetry-tracking and the project telemetry.endpoint all wrote project values, while the runtime reads only the global profile. A user who declined kept sending telemetry. These are owned by pm-gh1660 (closed on PR 1661) and fixed with global-only consent, an isolated PM_TELEMETRY_ENDPOINT queue, and the release Sentry gate excluding test-only issues (pm-usn5k2, open pending unbraind/pm-vcs#179). The pm-998juj ceiling was met losslessly by compacting GFM tables in the staged package, verified by identical marked HTML across all 199 shipped markdown files. Codex was unavailable because its token expired. An independent review agent ran five rounds to zero and caught two P1 routing defects in the first design."
 learnings[1]{created_at,author,text}:
   "2026-07-31T06:28:25.423Z","harness:claude-code","A convention adopted to protect an artifact can become the largest blocker in the backlog without anyone deciding it should be. The create-only-on-closed-items rule exists because 78 percent of terminal items resolve their changelog section from a mutable field. It is correct, it is cheap to follow, and it has silently suppressed the entire terminal graph programme for a month. When a discipline is standing in for a structural property, measure what the discipline is costing before adding another pass that works around it — the workaround is usually more expensive than the fix, and the fix here had been unblocked for 21 days."
 tests[3]{command,scope,timeout_seconds}:

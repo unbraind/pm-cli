@@ -161,31 +161,122 @@ function separatorAlignment(cell) {
   return /^:?-{3,}:?$/u.test(cell) ? `${cell.startsWith(":") ? ":" : ""}-${cell.endsWith(":") ? ":" : ""}` : undefined;
 }
 
+/** A pipe-bordered row, at most three spaces in (four make indented code). */
+const TABLE_ROW = /^( {0,3})\|.*\|\s*$/u;
+/** HTML blocks whose raw lines run to a closing marker (CommonMark start conditions 1-5). */
+const RAW_HTML_TO_MARKER = [
+  [/^ {0,3}<(?:pre|script|style|textarea)(?=[\s>]|$)/iu, /<\/(?:pre|script|style|textarea)>/iu],
+  [/^ {0,3}<!--/u, /-->/u],
+  [/^ {0,3}<\?/u, /\?>/u],
+  [/^ {0,3}<![A-Za-z]/u, />/u],
+  [/^ {0,3}<!\[CDATA\[/u, /\]\]>/u],
+];
+/** Condition 6: a block-level tag, raw up to the next blank line, which may interrupt a paragraph. */
+const RAW_HTML_BLOCK_TAG = new RegExp(
+  String.raw`^ {0,3}</?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?=[ \t>]|/>|$)`,
+  "iu",
+);
+/** Condition 7: one complete open or closing tag alone on its line, raw up to the next blank line; it cannot interrupt a paragraph. */
+const RAW_HTML_LONE_TAG = new RegExp(
+  String.raw`^ {0,3}(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][\w.:-]*(?:\s*=\s*(?:[^\s"'=<>` + "`" + String.raw`]+|'[^']*'|"[^"]*"))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)[ \t]*$`,
+  "u",
+);
+/** A fence marker after indentation or a list-item or block-quote marker, whose extent depends on containers. */
+const CONTAINED_FENCE = /^(?:[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t])))*[ \t]*(?<=.)(?:`{3,}|~{3,})/u;
+
+/** The marker a line opens a fence with; a backtick info string cannot hold a backtick. */
+function fenceOpener(content) {
+  const open = /^(`{3,}|~{3,})(.*)$/u.exec(content);
+  return open && !(open[1][0] === "`" && open[2].includes("`")) ? open[1] : undefined;
+}
+
+/** A fence closes only on a bare marker of the opening character that is at least as long. */
+function closesFence(content, fence) {
+  const close = /^(`{3,}|~{3,})[ \t]*$/u.exec(content)?.[1];
+  return close?.[0] === fence[0] && close.length >= fence.length;
+}
+
 /**
- * Collapse alignment padding in GFM tables outside code. Cells, their order and
- * column alignment are unchanged, so the rendered table is identical (pm-998juj).
+ * Where the HTML block a line opens ends: a closing-marker pattern, "blank", or
+ * undefined when it closes on the same line. Null when the line opens none.
+ */
+function rawHtmlEnd(line, previous) {
+  const opener = RAW_HTML_TO_MARKER.find(([start]) => start.test(line));
+  if (opener) return opener[1].test(line.replace(opener[0], "")) ? undefined : opener[1];
+  const loneTagStartsBlock = RAW_HTML_LONE_TAG.test(line) && (previous === undefined || previous.trim() === "");
+  return RAW_HTML_BLOCK_TAG.test(line) || loneTagStartsBlock ? "blank" : null;
+}
+
+/**
+ * Mark the lines Markdown renders as prose, outside fenced code and raw HTML
+ * blocks. Only fences at the left margin occur here: a file with any other
+ * fence is never compacted.
+ */
+function proseLines(lines) {
+  let fence;
+  let rawEnd;
+  return lines.map((line, index) => {
+    if (fence !== undefined) {
+      if (closesFence(line, fence)) fence = undefined;
+      return false;
+    }
+    if (rawEnd !== undefined) {
+      if (rawEnd === "blank" ? line.trim() === "" : rawEnd.test(line)) rawEnd = undefined;
+      return false;
+    }
+    fence = fenceOpener(line);
+    if (fence !== undefined) return false;
+    const end = rawHtmlEnd(line, lines[index - 1]);
+    if (end === null) return true;
+    rawEnd = end;
+    return false;
+  });
+}
+
+/** Compact one table row; a delimiter row keeps each column's alignment, any other row its cell text. */
+function compactTableRow(line, delimiter) {
+  const cells = tableCells(line);
+  const compact = delimiter
+    ? `|${cells.map((cell) => cell.replace(/-{3,}/u, "---")).join("|")}|`
+    : `| ${cells.join(" | ")} |`;
+  const reparsed = tableCells(compact);
+  const same = delimiter ? (cell, index) => separatorAlignment(cell) === separatorAlignment(cells[index]) : (cell, index) => cell === cells[index];
+  /* c8 ignore next 2 -- defensive: every compacted row reparses to the same cells and alignment */
+  if (reparsed.length !== cells.length || !reparsed.every(same))
+    throw new Error(`Non-lossless markdown table row: ${line}`);
+  return `${TABLE_ROW.exec(line)[1]}${compact}`;
+}
+
+/**
+ * Collapse alignment padding in GFM tables outside code and raw HTML. A table is
+ * a pipe row that starts a block, a delimiter row with the same cell count, and
+ * the pipe rows that follow, all at the header's indentation. Cells, their order
+ * and column alignment are unchanged, so the rendered table is identical
+ * (pm-998juj). Line endings are kept. A file whose fences sit inside list items,
+ * block quotes or indentation is returned unchanged, because where those fences
+ * end depends on containers a line scanner does not model. Release controls run
+ * this script without node_modules, so its losslessness over the shipped files is
+ * proven by rendering them in the spec instead of here.
  */
 export function compactMarkdownTables(text) {
-  let fence;
-  return text.split("\n").map((line) => {
-    const marker = /^ {0,3}(`{3,}|~{3,})/u.exec(line)?.[1];
-    if (marker && (fence === undefined || (marker[0] === fence[0] && marker.length >= fence.length))) {
-      fence = fence === undefined ? marker : undefined;
-      return line;
+  const raw = text.split("\n");
+  const lines = raw.map((line) => line.replace(/\r$/u, ""));
+  if (lines.some((line) => CONTAINED_FENCE.test(line))) return text;
+  const prose = proseLines(lines);
+  const indent = (index) => (prose[index] ? TABLE_ROW.exec(lines[index])?.[1] : undefined);
+  const startsBlock = (index) => index === 0 || lines[index - 1].trim() === "" || /^ {0,3}#{1,6}(?:[ \t]|$)/u.test(lines[index - 1]);
+  for (let header = 0; header + 1 < lines.length; header += 1) {
+    const level = indent(header);
+    if (level === undefined || indent(header + 1) !== level || !startsBlock(header)) continue;
+    const alignments = tableCells(lines[header + 1]).map(separatorAlignment);
+    if (alignments.length !== tableCells(lines[header]).length || !alignments.every(Boolean)) continue;
+    let row = header;
+    for (; row < lines.length && indent(row) === level; row += 1) {
+      raw[row] = `${compactTableRow(lines[row], row === header + 1)}${raw[row].endsWith("\r") ? "\r" : ""}`;
     }
-    if (fence !== undefined || !/^ {0,3}\|.*\|\s*$/u.test(line)) return line;
-    const cells = tableCells(line);
-    const aligned = cells.map(separatorAlignment);
-    const compact = aligned.every(Boolean)
-      ? `|${cells.map((cell) => cell.replace(/-{3,}/u, "---")).join("|")}|`
-      : `| ${cells.join(" | ")} |`;
-    const indent = /^ */u.exec(line)[0];
-    const reparsed = tableCells(compact);
-    /* c8 ignore next 2 -- defensive: every compacted row reparses to the same cells and alignment */
-    if (reparsed.length !== cells.length || reparsed.some((cell, index) => (aligned[index] ?? cell) !== (separatorAlignment(cell) ?? cell)))
-      throw new Error(`Non-lossless markdown table row: ${line}`);
-    return `${indent}${compact}`;
-  }).join("\n");
+    header = row - 1;
+  }
+  return raw.join("\n");
 }
 
 /** Stage first-party files with compact JSON and markdown tables, retaining values and readable checkout bytes. */
