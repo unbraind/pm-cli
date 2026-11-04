@@ -254,6 +254,8 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
         [() => client.update(item.id, { release: "" }), 'release must not be empty. Pass unset: ["release"] to clear it, or omit release.'],
         [() => client.update(item.id, { assignee: " " }), 'assignee must not be empty. Pass unset: ["assignee"] to clear it, or omit assignee.'],
         [() => client.update(item.id, { closeReason: "" }), 'closeReason must not be empty. Pass unset: ["close-reason"] to clear it, or omit closeReason.'],
+        [() => client.create({ type: "Task", title: "   " }), "Title cannot be empty or whitespace-only. Retry: pass a non-empty title."],
+        [() => client.update(item.id, { title: " " }), "Title cannot be empty or whitespace-only. Retry: pass a non-empty title."],
       ];
       for (const [run, expected] of cases) {
         const text = await refusalText(run);
@@ -293,8 +295,8 @@ describe("typed SDK refusals and clears (pm-gh1655)", () => {
   it("advises when typed input stores a former clear sentinel literally, and never advises the CLI", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const client = new PmClient({ pmRoot: pmPath, noExtensions: true });
-      const created = await client.create({ type: "Task", title: "Advised", assignee: "none", goal: "ship" });
-      expect(created.warnings).toContain("literal_sentinel_stored:assignee:none");
+      const created = await client.create({ type: "Task", title: "Advised", assignee: "none", goal: "ship", tags: "none" });
+      expect(created.warnings).toEqual(expect.arrayContaining(["literal_sentinel_stored:assignee:none", "literal_sentinel_stored:tags:none"]));
       expect(created.warnings?.some((warning) => warning.includes(":goal:"))).toBe(false);
       const updated = await client.update(created.item.id, { reviewer: " NULL ", sprint: "-" });
       expect(updated.warnings).toEqual(expect.arrayContaining(["literal_sentinel_stored:reviewer:NULL", "literal_sentinel_stored:sprint:-"]));

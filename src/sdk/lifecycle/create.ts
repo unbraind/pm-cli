@@ -5,7 +5,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { createExtensionCommandError } from "../error-runtime.js";
-import { isLiteralMutationInput, mutationInputAudience, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
+import { isLiteralMutationInput, mutationInputAudience, mutationOptionLabel, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import {
@@ -1377,22 +1377,28 @@ function buildTypeSpecificCreateExample(
 export function requireStringOption(
   value: string | undefined,
   flag: string,
+  audience: MutationInputAudience = "cli",
 ): string {
   const normalized = value?.trim();
   if (!normalized) {
+    const sdk = audience === "sdk";
     if (flag === "--title") {
       if (value !== undefined) {
         throw new PmCliError(
-          "Title cannot be empty or whitespace-only. Retry: pass a non-empty title with --title.",
+          sdk
+            ? "Title cannot be empty or whitespace-only. Retry: pass a non-empty title."
+            : "Title cannot be empty or whitespace-only. Retry: pass a non-empty title with --title.",
           EXIT_CODE.USAGE,
         );
       }
       throw new PmCliError(
-        'Missing required option --title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass the title as the first positional argument (example: pm create "Fix login bug" --type Issue) or with --title.',
+        sdk
+          ? 'Missing required option title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass title (example: client.create({ type: "Issue", title: "Fix login bug" })).'
+          : 'Missing required option --title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass the title as the first positional argument (example: pm create "Fix login bug" --type Issue) or with --title.',
         EXIT_CODE.USAGE,
       );
     }
-    throw new PmCliError(`Missing required option ${flag}`, EXIT_CODE.USAGE);
+    throw new PmCliError(`Missing required option ${sdk ? mutationOptionLabel("sdk", flag.replace(/^--/u, "")) : flag}`, EXIT_CODE.USAGE);
   }
   return normalized;
 }
@@ -3142,7 +3148,7 @@ export async function runCreate(
     "customer_impact",
     resolvedOptions.customerImpact,
   );
-  const title = requireStringOption(resolvedOptions.title, "--title");
+  const title = requireStringOption(resolvedOptions.title, "--title", audience);
   const description = resolvedOptions.description ?? "";
   const body = resolvedOptions.body ?? "";
   const similarityAdvisory = await evaluateSimilarityGovernance(

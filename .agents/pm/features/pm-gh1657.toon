@@ -6,10 +6,10 @@ status: open
 priority: 2
 tags[5]: changelog,ecosystem,"gh:1657",release,sdk
 created_at: "2026-11-03T21:20:20.562Z"
-updated_at: "2026-11-03T22:32:58.118Z"
+updated_at: "2026-11-04T01:16:47.415Z"
 author: "harness:claude-code"
 estimated_minutes: 360
-acceptance_criteria: "A closed item can declare an observable SDK or CLI contract change with a migration line through existing pm metadata, documented in docs/RELEASING.md; pm-changelog renders declared contract changes under a Changed (SDK contract) section with the migration line, tracked and fixed in the pm-changelog repo; A release-time check refuses an Unreleased window whose public SDK surface snapshot changed without any declared contract change"
+acceptance_criteria: "A closed item can declare an observable SDK or CLI contract change with a migration line through existing pm metadata, documented in docs/RELEASING.md; pm-changelog renders declared contract changes under a Changed (SDK contract) section with the migration line, tracked and fixed in the pm-changelog repo (unbraind/pm-changelog#317); A release-time check refuses an Unreleased window whose public SDK surface snapshot (sdk/public-surface.json) or a documented default (the defaults tables in docs/CONFIGURATION.md and docs/SDK.md) changed without any declared contract change"
 parent: pm-u9d0
 risk: medium
 confidence: medium

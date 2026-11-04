@@ -66,6 +66,9 @@ describe("typed null clears (pm-gh1655)", () => {
     expect(literalSentinelAdvisories("create", { assignee: "none" }, false, { assignee: "none" })).toEqual([]);
     expect(literalSentinelAdvisories("create", { assignee: " None ", goal: "ship", tags: ["none"], order: 3 }, true, { assignee: "None", goal: "ship" })).toEqual(["literal_sentinel_stored:assignee:None"]);
     expect(literalSentinelAdvisories("update", { closeReason: "-" }, true, { close_reason: "-" })).toEqual(["literal_sentinel_stored:close-reason:-"]);
+    // A CSV option stored as an array is advised when an element still holds the sentinel.
+    expect(literalSentinelAdvisories("create", { tags: "none" }, true, { tags: ["none"] })).toEqual(["literal_sentinel_stored:tags:none"]);
+    expect(literalSentinelAdvisories("create", { tags: "none" }, true, { tags: ["shipped"] })).toEqual([]);
     // A lifecycle transition that removed the value leaves nothing to advise.
     expect(literalSentinelAdvisories("update", { assignee: "none" }, true, {})).toEqual([]);
   });

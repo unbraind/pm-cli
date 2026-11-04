@@ -2164,7 +2164,7 @@ function applySimpleItemMutations(
   changedFields: string[],
 ): string {
   if (options.title !== undefined) {
-    document.metadata.title = requireStringOption(options.title, "--title");
+    document.metadata.title = requireStringOption(options.title, "--title", mutationInputAudience(options));
     changedFields.push("title");
   }
   if (options.description !== undefined) {

@@ -356,8 +356,10 @@ async function autoUnblockResolvedDependents(
   const candidates = findAutoUnblockCandidates(items, closedId, statusRegistry);
   const warnings: string[] = [];
   const unblockedIds: string[] = [];
-  // Every dependent the fan-out could not unblock; only another close would have retried them.
-  const pendingIds: string[] = [];
+  // Dependents the fan-out could not unblock; only another close would have retried them. Revision
+  // conflicts can be retried with a fresh revision, every other failure needs its cause fixed first.
+  const conflictIds: string[] = [];
+  const failed: Array<{ id: string; reason: string }> = [];
   let conflict: PmCliError | undefined;
   for (const candidate of candidates) {
     try {
@@ -408,13 +410,17 @@ async function autoUnblockResolvedDependents(
       unblockedIds.push(unblocked.item.id);
       /* c8 ignore start -- defensive fan-out failure path; normal lock/claim state is auditable and still unblocks. The revision specs exercise the kept conflict through the typed refusal below. */
     } catch (error) {
-      // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
-      if (conflict === undefined && isItemRevisionConflict(error)) conflict = error;
-      pendingIds.push(candidate.id);
       const reason =
         error instanceof Error
           ? error.message.replace(/\s+/g, " ").trim()
           : "unknown";
+      // A guarded dependent the caller declared a revision for refuses typed after the fan-out (pm-gh1576).
+      if (isItemRevisionConflict(error)) {
+        conflict ??= error;
+        conflictIds.push(candidate.id);
+      } else {
+        failed.push({ id: candidate.id, reason });
+      }
       warnings.push(`auto_unblock_failed:${candidate.id}:${reason}`);
     }
     /* c8 ignore stop */
@@ -422,7 +428,7 @@ async function autoUnblockResolvedDependents(
   if (conflict !== undefined) {
     // Attach the dependent's change evidence first, so the pending list joins it instead of displacing it.
     const enriched = await enrichItemRevisionConflict(conflict, pmRoot) as PmCliError;
-    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, pendingIds, openStatus: statusRegistry.open_status, commandScope });
+    throw postCloseDependentConflict(enriched, { closedId, unblockedIds, conflictIds, failed, openStatus: statusRegistry.open_status, commandScope });
   }
   return warnings;
 }
@@ -430,26 +436,33 @@ async function autoUnblockResolvedDependents(
 /**
  * The refusal for a guarded dependent whose auto-unblock refused after the close
  * committed. The dependent's own guidance says to retry with --expect-hash, but
- * a repeated close is refused as terminal, so the remedy names only the unblock
- * of every dependent the fan-out left blocked, in the caller's tracker scope and
- * with the configured open status the automatic unblock would have written.
+ * a repeated close is refused as terminal, so the remedy names only what
+ * remains: unblocking each dependent whose revision conflicted, in the caller's
+ * tracker scope and with the configured open status the automatic unblock would
+ * have written, and fixing the cause of every other failed unblock first.
  */
 function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   closedId: string;
   unblockedIds: readonly string[];
-  pendingIds: readonly string[];
+  conflictIds: readonly string[];
+  failed: ReadonlyArray<{ id: string; reason: string }>;
   openStatus: string;
   commandScope: readonly string[];
 }): PmCliError {
-  const { closedId, pendingIds, commandScope } = fanOut;
+  const { closedId, conflictIds, failed, commandScope } = fanOut;
   const dependent = String(conflict.context.item_id);
   const unblock = (id: string) => renderPmCommand([...commandScope, "update", id, "--status", fanOut.openStatus, "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]);
-  const named = pendingIds.join(", ");
+  const otherFailures = failed.length === 0
+    ? ""
+    : ` Auto-unblocking also failed for ${failed.map((entry) => `${entry.id} (${entry.reason})`).join("; ")}; fix that cause before unblocking it.`;
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
-    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${pendingIds.length === 1 ? dependent : `the dependents it left blocked (${named})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${pendingIds.length === 1 ? "" : " for each id"}.`,
-    nextSteps: pendingIds.flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
-    details: { ...conflict.context.details, pending_unblock: [...pendingIds] },
+    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${conflictIds.join(", ")})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}`,
+    nextSteps: [
+      ...conflictIds.flatMap((id) => [renderPmCommand([...commandScope, "get", id, "--json"]), unblock(id)]),
+      ...failed.map((entry) => renderPmCommand([...commandScope, "get", entry.id, "--json"])),
+    ],
+    details: { ...conflict.context.details, pending_unblock: [...conflictIds], auto_unblock_failed: failed.map((entry) => ({ ...entry })) },
     // Every committed write before the refusal: the close and each dependent already unblocked.
     side_effects: [{ path: `history/${closedId}.jsonl`, op: "close" }, ...fanOut.unblockedIds.map((id) => ({ path: `history/${id}.jsonl`, op: "update" }))],
   });

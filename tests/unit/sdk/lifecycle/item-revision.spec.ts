@@ -497,7 +497,7 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       // pm-mrvq8u: the close is complete, so the remedy names only the unblock of every dependent the
       // fan-out left blocked, in the caller's tracker scope, never a close retry.
       const guidance = [refusal.context.required, ...(refusal.context.nextSteps ?? [])].join("\n");
-      expect(refusal.context.required).toContain(`The close of ${blocker} is complete; do not retry it. Only unblocking the dependents it left blocked (${dependents.join(", ")}) remains`);
+      expect(refusal.context.required).toContain(`The close of ${blocker} is complete; do not retry it. Only unblocking the guarded dependents it refused (${dependents.join(", ")}) remains`);
       const scope = ["--pm-path", context.pmPath, "--no-extensions"];
       for (const id of dependents) {
         expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", id, "--json"]));
@@ -508,6 +508,30 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       expect(guidance).not.toMatch(/pm close/u);
       expect((await pm.get(blocker)).item.status).toBe("closed");
       for (const id of dependents) expect((await pm.get(id)).item.status).toBe("blocked");
+    });
+  });
+
+  it("names a dependent whose unblock failed for another reason apart from the revision conflict", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = createTestItemId(context, { title: "Mixed failure blocker" });
+      const [guarded, broken] = [createTestItemId(context, { title: "Guarded dependent" }), createTestItemId(context, { title: "Broken dependent" })];
+      for (const id of [guarded, broken]) {
+        const blocked = context.runCli(["update", id, "--status", "blocked", "--blocked-by", blocker, "--blocked-reason", "waiting", "--json"], { expectJson: true });
+        expect(blocked.code, blocked.stderr).toBe(0);
+      }
+      const pm = client(context);
+      const stale = (await pm.readItemRevision(guarded)).item_hash;
+      await pm.update(guarded, { title: "Guarded dependent, edited by a peer" });
+      const policy = context.runCli(["config", "project", "set", "history-missing-stream-policy", "--policy", "strict_error", "--json"], { expectJson: true });
+      expect(policy.code, policy.stderr).toBe(0);
+      await rm(path.join(context.pmPath, "history", `${broken}.jsonl`));
+      const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id: guarded, itemHash: stale }], () => pm.close(blocker, "Delivered")));
+      expect(refusal.context.details).toMatchObject({ pending_unblock: [guarded], auto_unblock_failed: [expect.objectContaining({ id: broken })] });
+      expect(refusal.context.required).toContain(`Only unblocking ${guarded} remains`);
+      expect(refusal.context.required).toContain(`Auto-unblocking also failed for ${broken} (`);
+      const scope = ["--pm-path", context.pmPath, "--no-extensions"];
+      expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", broken, "--json"]));
+      expect(refusal.context.nextSteps?.some((step) => step.includes(`update ${broken}`))).toBe(false);
     });
   });
 

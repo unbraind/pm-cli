@@ -4160,6 +4160,12 @@ describe("create command helper coverage", () => {
     expect(
       _testOnlyCreateCommand.requireStringOption("value", "--description"),
     ).toBe("value");
+    // pm-gh1655: typed SDK callers are told the option key, never the flag.
+    expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--title", "sdk")).toThrow(
+      'Missing required option title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass title (example: client.create({ type: "Issue", title: "Fix login bug" })).',
+    );
+    expect(() => _testOnlyCreateCommand.requireStringOption(" ", "--title", "sdk")).toThrow("Title cannot be empty or whitespace-only. Retry: pass a non-empty title.");
+    expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--estimated-minutes", "sdk")).toThrow("Missing required option estimatedMinutes");
   });
 
   it("normalizes template command paths and merges explicit create options over templates", () => {

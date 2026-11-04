@@ -340,7 +340,9 @@ export function literalSentinelAdvisories(action: "create" | "update", options: 
   if (!literal) return [];
   return unsetDefinitionsFor(action).flatMap((definition) => {
     const value = options[definition.optionKey];
-    return isFormerClearSentinel(value) && isFormerClearSentinel(stored[definition.metadataKey])
+    const kept = stored[definition.metadataKey];
+    // A CSV option such as tags is stored as an array; any element still holding the sentinel counts.
+    return isFormerClearSentinel(value) && (isFormerClearSentinel(kept) || (Array.isArray(kept) && kept.some(isFormerClearSentinel)))
       ? [`literal_sentinel_stored:${definition.canonical}:${value.trim()}`]
       : [];
   });

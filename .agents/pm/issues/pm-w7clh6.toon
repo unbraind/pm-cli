@@ -6,15 +6,15 @@ status: open
 priority: 3
 tags[4]: bulk,pm-gh1655,sdk,update-many
 created_at: "2026-11-03T23:06:21.402Z"
-updated_at: "2026-11-03T23:06:21.402Z"
+updated_at: "2026-11-04T01:17:01.516Z"
 author: "harness:claude-code"
 estimated_minutes: 90
-acceptance_criteria: "A flat update-many payload with a null update field either clears it like the nested form or refuses naming the field and the unset form; it never silently drops it; Flat and nested update-many spellings of the same request produce the same rows, with a spec for each"
+acceptance_criteria: "A flat update-many payload with a null update field clears it exactly like the nested form ({ update: { field: null } }); it never silently drops it; Flat and nested update-many spellings of the same request produce the same rows, with a spec for each; A flat null on a key that is a selection filter rather than an update field is refused naming the key, never applied as a clear"
 parent: pm-9rgaal
 risk: low
 confidence: high
 severity: low
-expected_result: A null update field in a flat update-many payload clears or refuses
+expected_result: A null update field in a flat update-many payload clears it exactly like the nested form
 actual_result: The flat payload drops the null field silently while the rest of the update applies
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1655,discovered_from,"2026-11-03T23:06:21.402Z","harness:claude-code","cli:create:dep",detected
