@@ -1049,8 +1049,11 @@ check can reopen an item that is still blocked. Dependents whose unblock failed
 for another reason are listed with that reason in `details.auto_unblock_failed`;
 fix the cause first. Each list names at most 10 ids and reports the rest as an
 `*_omitted` count, so the details stay within the error-details size limit.
-When ids were omitted, the last next step lists the items still in any status
-with the blocked role (`pm list --status <blocked-statuses> --fields
+When ids were omitted, or when the recovery steps exceed the 20-step cap even
+though both `*_omitted` counts are zero (for example ten revision conflicts and
+one other failure make 21 steps), the last next step lists the items still in
+any status with the blocked role, so a dependent whose step was cut is still
+found (`pm list --status <blocked-statuses> --fields
 id,title,blocked_by,dependencies`, where `<blocked-statuses>` is the
 comma-separated set the fan-out drew its candidates from). That listing returns
 200 rows per page: while it reports `has_more: true`, continue with

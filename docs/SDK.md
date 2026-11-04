@@ -1226,14 +1226,20 @@ is `unset: ["parent"]`
 ([pm-gh1655](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1655.toon);
 this tracker record is repository-only and excluded from npm). `tags` is a CSV
 option in that list, so `tags: null` clears the tags like `unset: ["tags"]`; it
-has no `clearTags` option. `null` on any other option (`title`, the `author`
+has no `clearTags` option. The nullable keys are exactly the option keys of the
+unset table (exported as `CreateNullClearableOptionKey` and
+`UpdateNullClearableOptionKey`): `unset: ["rank"]` clears `order` because `rank`
+is an unset alias, but `rank: null` is refused, so pass `order: null`; on create,
+`unset: ["author"]` is accepted while `author: null` is refused. `null` on any other option (`title`, the `author`
 attribution, the repeatable collection options such as `comment` or `dep`)
 still refuses by name; clear those collections with their `clear*` options. When typed input
 stores a former clear sentinel (`"none"`, `"null"` or `"-"`) in a clearable
 string field, the result carries the advisory warning
 `literal_sentinel_stored:<field>:<value>`. The value is now data (an assignee
-called `none`), not a clear, and the advisory appears only while the stored
-item still holds it. Refusals for typed SDK and MCP input name the option key
+called `none`), not a clear, and the advisory appears only while the committed
+item still holds it. It reads the document pm committed and recorded in
+history, so an `item_store_write` override that rewrites the stored contents
+can drop the value from storage while the advisory still reports it. Refusals for typed SDK and MCP input name the option key
 and the `unset` remedy both transports accept, for example `parent must not be
 the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.` CLI
 refusals keep their flag wording. `PmCreateActionOptions`,
@@ -1459,7 +1465,8 @@ it. When an `item_store_write` or `item_store_delete` storage override
 transforms, redirects or skips what a guarded write persisted, the scope
 advances to the revision actually stored, read back under the item lock, so the
 scope's own next write is admitted and only a competing write refuses. If the
-stored item cannot be read back, the scope's next guarded write refuses. When a peer writes while `restore` or history maintenance waits for
+stored item cannot be read back, or the override rewrote its embedded id, the
+scope's next guarded write refuses although no other writer ran (fail closed). When a peer writes while `restore` or history maintenance waits for
 its lock, a declared revision turns the generic drift refusal into this typed
 conflict. Linked-test result recording (`test --run`, `test-all` with
 `test_result_tracking` enabled) stays best-effort, except that a stale declared
