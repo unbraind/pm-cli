@@ -2894,6 +2894,24 @@ describe("post-close fan-out details budget (pm-mrvq8u)", () => {
     expect(fitted.pending_unblock).toEqual(["pm-a"]);
   });
 
+  it("trims change evidence, counting each dropped entry, once no other failures remain", () => {
+    const merged = {
+      expected_revision_recorded: true,
+      changes_since: Array.from({ length: 30 }, (_, index) => change(index)),
+      changes_since_omitted: 0,
+      pending_unblock: ["pm-a"],
+      pending_unblock_omitted: 0,
+      auto_unblock_failed: [],
+      auto_unblock_failed_omitted: 0,
+    };
+    expect(isPmCliErrorDetails(merged)).toBe(false);
+    const fitted = fitPostCloseDetails(merged) as Record<string, unknown> & { changes_since: unknown[]; changes_since_omitted: number };
+    expect(isPmCliErrorDetails(fitted)).toBe(true);
+    expect(fitted.changes_since_omitted).toBeGreaterThan(0);
+    expect(fitted.changes_since.length + fitted.changes_since_omitted).toBe(30);
+    expect(fitted.pending_unblock).toEqual(["pm-a"]);
+  });
+
   it("skips a missing evidence list and always keeps one pending id", () => {
     const fitted = fitPostCloseDetails({
       note: "x".repeat(5000),

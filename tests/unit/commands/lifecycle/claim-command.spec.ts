@@ -158,10 +158,10 @@ describe("runClaim/runRelease", () => {
     const onlyRefused = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }] as never, false, {}, { start: true }, runner)
       .then(() => { throw new Error("expected refusal"); }, (error: PmCliError) => error);
     expect(onlyRefused).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "no_available_next_item", details: { start_refused: ["pm-a"] } } });
-    expect(onlyRefused.context.why).toBe("1 of 1 ranked candidates refused their start because a declared blocker is open (pm-a), and nothing was written to them; no other candidate was ranked.");
+    expect(onlyRefused.context.why).toBe("1 of 1 attempted candidates refused their start because a declared blocker is open (pm-a), and nothing was written to them; no other candidate was attempted.");
     const mixed = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }, { id: "pm-held", reasons: [] }] as never, false, {}, { start: true }, runner)
       .then(() => { throw new Error("expected refusal"); }, (error: PmCliError) => error);
-    expect(mixed.context.why).toContain("every other candidate was claimed by another agent");
+    expect(mixed.context.why).toContain("every other attempted candidate was claimed by another agent");
     const unavailable = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }] as never, false, {}, { start: true, ifAvailable: true }, runner);
     expect(unavailable).toMatchObject({ available: false, attempts: 1, start_refused: ["pm-a"], warnings: ["no_available_next_item"] });
     const heldOnly = await claimNextFromRecommendations([{ id: "pm-held", reasons: [] }] as never, false, {}, {}, runner)

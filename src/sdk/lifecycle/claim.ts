@@ -510,7 +510,7 @@ function noAvailableNextItemError(attempts: number, startRefused: readonly strin
   let why = "Every ranked candidate was claimed by another agent before this atomic selection completed.";
   if (noCandidatesMatched) why = "No ready items matched the specified filters or selection criteria.";
   else if (startRefused.length > 0) {
-    why = `${startRefused.length} of ${attempts} ranked candidates refused their start because a declared blocker is open (${startRefused.join(", ")}), and nothing was written to them; ${startRefused.length === attempts ? "no other candidate was ranked" : "every other candidate was claimed by another agent"}.`;
+    why = `${startRefused.length} of ${attempts} attempted candidates refused their start because a declared blocker is open (${startRefused.join(", ")}), and nothing was written to them; ${startRefused.length === attempts ? "no other candidate was attempted" : "every other attempted candidate was claimed by another agent"}.`;
   }
   return new PmCliError(
     noCandidatesMatched
