@@ -552,6 +552,7 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       expect(details).toMatchObject({ pending_unblock_omitted: 2, auto_unblock_failed: [], auto_unblock_failed_omitted: 0 });
       expect(refusal.context.required).toContain(", and 2 more)");
       expect(refusal.context.required).toContain("This refusal does not list a step for every dependent left blocked; list them with");
+      expect(refusal.context.required).toContain("while it reports has_more, continue with --after <next_cursor>.");
       expect(refusal.context.nextSteps).toHaveLength(20);
       expect(refusal.context.nextSteps?.at(-1)).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "list", "--status", "blocked", "--fields", "id,title,blocked_by,dependencies", "--limit", "200"]));
       expect(isPmCliErrorDetails(refusal.context.details)).toBe(true);

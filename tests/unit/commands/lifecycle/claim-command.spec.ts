@@ -158,6 +158,8 @@ describe("runClaim/runRelease", () => {
     const onlyRefused = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }] as never, false, {}, { start: true }, runner)
       .then(() => { throw new Error("expected refusal"); }, (error: PmCliError) => error);
     expect(onlyRefused).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "no_available_next_item", details: { start_refused: ["pm-a"] } } });
+    // The retry keeps the start request (CodeRabbit PR 1658): following it must not claim without starting.
+    expect(onlyRefused.context.nextSteps).toEqual(["Run pm claim --next --start again, with the same filters, to refresh the ranked candidate set."]);
     expect(onlyRefused.context.why).toBe("1 of 1 attempted candidates refused their start because a declared blocker is open (pm-a), and nothing was written to them; no other candidate was attempted.");
     const mixed = await claimNextFromRecommendations([{ id: "pm-a", reasons: [] }, { id: "pm-held", reasons: [] }] as never, false, {}, { start: true }, runner)
       .then(() => { throw new Error("expected refusal"); }, (error: PmCliError) => error);
@@ -279,7 +281,7 @@ describe("runClaim/runRelease", () => {
         code: "no_available_next_item",
         why: "Every ranked candidate was claimed by another agent before this atomic selection completed.",
         nextSteps: [
-          "Run pm claim --next again to refresh the ranked candidate set.",
+          "Run pm claim --next again, with the same filters, to refresh the ranked candidate set.",
         ],
       },
     });

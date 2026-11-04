@@ -310,6 +310,7 @@ export type {
   UpdateNullClearableOptionKey,
   WithNullClears,
 } from "./lifecycle/shared-unset-fields.js";
+export type { MutationInputAudience } from "../core/item/literal-mutation-input.js";
 export {
   admitStartWithOpenBlockers,
   isStartTransition,

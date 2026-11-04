@@ -501,11 +501,11 @@ export async function claimNextFromRecommendations(
       warnings: [NO_AVAILABLE_NEXT_ITEM_CODE],
     };
   }
-  throw noAvailableNextItemError(attempts, startRefused);
+  throw noAvailableNextItemError(attempts, startRefused, options.start === true);
 }
 
 /** Explain an exhausted walk, naming candidates whose start a declared blocker refused. */
-function noAvailableNextItemError(attempts: number, startRefused: readonly string[]): PmCliError {
+function noAvailableNextItemError(attempts: number, startRefused: readonly string[], start: boolean): PmCliError {
   const noCandidatesMatched = attempts === 0;
   let why = "Every ranked candidate was claimed by another agent before this atomic selection completed.";
   if (noCandidatesMatched) why = "No ready items matched the specified filters or selection criteria.";
@@ -523,7 +523,7 @@ function noAvailableNextItemError(attempts: number, startRefused: readonly strin
       nextSteps: [
         noCandidatesMatched
           ? "Verify the filters or run pm next to inspect all ready work."
-          : "Run pm claim --next again to refresh the ranked candidate set.",
+          : `Run pm claim --next${start ? " --start" : ""} again, with the same filters, to refresh the ranked candidate set.`,
       ],
       ...(startRefused.length > 0 ? { details: { start_refused: [...startRefused] } } : {}),
     },

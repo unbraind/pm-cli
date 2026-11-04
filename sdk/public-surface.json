@@ -12269,6 +12269,12 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "MutationInputAudience",
+          "signature": "export type MutationInputAudience = \"cli\" | \"sdk\";"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "NestedSettingResultValue",
           "signature": "export interface NestedSettingResultValue { key: string; canonical_key?: string; path: string; kind: NestedSettingDescriptor[\"kind\"]; value: string | number | boolean | null; summary?: string; choices?: string[]; min?: number; max?: number; }"

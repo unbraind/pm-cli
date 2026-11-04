@@ -511,7 +511,7 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   const steps = allSteps.slice(0, truncated ? POST_CLOSE_STEP_LIMIT - 1 : POST_CLOSE_STEP_LIMIT);
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
-    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` This refusal does not list a step for every dependent left blocked; list them with ${discovery}.` : ""}`,
+    required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` This refusal does not list a step for every dependent left blocked; list them with ${discovery}, and while it reports has_more, continue with --after <next_cursor>.` : ""}`,
     nextSteps: truncated ? [...steps, discovery] : steps,
     details: fitPostCloseDetails({
       ...structuredClone(conflict.context.details),

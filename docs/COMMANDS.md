@@ -1052,7 +1052,9 @@ fix the cause first. Each list names at most 10 ids and reports the rest as an
 When ids were omitted, the last next step lists the items still in any status
 with the blocked role (`pm list --status <blocked-statuses> --fields
 id,title,blocked_by,dependencies`, where `<blocked-statuses>` is the
-comma-separated set the fan-out drew its candidates from). `close-many` reports such a row as `closed` (`update-many` closing
+comma-separated set the fan-out drew its candidates from). That listing returns
+200 rows per page: while it reports `has_more: true`, continue with
+`--after <next_cursor>` until every page is read. `close-many` reports such a row as `closed` (`update-many` closing
 through `--status`, as `updated`), with the dependent's conflict under
 `dependent_revision_conflict`. A guarded `restore` refuses to recover
 over a live file that cannot be read as a document; an unguarded restore still

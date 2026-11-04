@@ -6,15 +6,15 @@ status: open
 priority: 3
 tags[4]: bulk,pm-gh1655,sdk,update-many
 created_at: "2026-11-03T23:06:21.402Z"
-updated_at: "2026-11-04T01:17:01.516Z"
+updated_at: "2026-11-04T06:30:09.251Z"
 author: "harness:claude-code"
 estimated_minutes: 90
-acceptance_criteria: "A flat update-many payload with a null update field clears it exactly like the nested form ({ update: { field: null } }); it never silently drops it; Flat and nested update-many spellings of the same request produce the same rows, with a spec for each; A flat null on a key that is a selection filter rather than an update field is refused naming the key, never applied as a clear"
+acceptance_criteria: "A flat update-many payload with a null on a clearable update field (one the update unset table covers) clears it exactly like the nested form ({ update: { field: null } }); it never silently drops it; A flat null on a non-clearable update field (for example title) refuses naming the field, exactly as the nested form and a single update refuse it; Flat and nested update-many spellings of the same request produce the same rows, clears and refusals alike, with a spec for each; A flat null on a key that is a selection filter rather than an update field is refused naming the key, never applied as a clear"
 parent: pm-9rgaal
 risk: low
 confidence: high
 severity: low
-expected_result: A null update field in a flat update-many payload clears it exactly like the nested form
+expected_result: "A null on a clearable update field in a flat update-many payload clears it exactly like the nested form, and a null on a non-clearable field refuses like the nested form"
 actual_result: The flat payload drops the null field silently while the rest of the update applies
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1655,discovered_from,"2026-11-03T23:06:21.402Z","harness:claude-code","cli:create:dep",detected
