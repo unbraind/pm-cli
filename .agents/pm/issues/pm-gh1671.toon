@@ -1,0 +1,25 @@
+id: pm-gh1671
+title: "GH-1671: linked tests have no setup step, so every command embeds its build and --add re-runs heavy suites just to fix metadata"
+description: "GitHub issue #1671 (reported 2026-11-05 against 2026.11.4 from three fleet PR reviews: pm-vcs#182, pm-rl#145 and pm-linear#208). Linked test commands have no setup or prerequisite step. In TypeScript extension packages the specs import built output (../dist/index.js), so a linked command works only after npm run build, and every command must embed npm run build && itself (5 linked commands on pm-rl, each rebuilding). CodeRabbit flagged the missing build on all three PRs. Because pm test <id> --add verifies by running the command, a metadata-only fix re-runs every heavy suite (300-750 s each on pm-rl). Expected: a declared per-item or per-tracker setup step (for example pm test <id> --setup \"npm run build\" or a tests.setup settings key) that pm test --run executes once before the linked commands, recorded with provenance like the commands, cached by input digest where possible, and reported as a typed setup_failed result distinct from test failures. Also an explicit way to add a command without running it, recorded as verified false in provenance, so metadata fixes need no re-run. Why it matters for agents: linked tests are the evidence the next agent reproduces with pm test --run; a missing build today fails with a confusing module-not-found error, and the only workaround multiplies run time. Duplicate check: searched linked test setup, prerequisite, build step and pm test --run across all statuses. pm-dlvv (closed) added per-linked-test env directives, and pm-mf5z, pm-44iu and pm-wn34 (closed) enforce runnable command-required linked tests; none adds a setup phase or unverified add."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,extensions,"gh:1671",linked-tests,sdk
+created_at: "2026-11-05T20:48:02.161Z"
+updated_at: "2026-11-05T20:48:02.161Z"
+author: "harness:claude-code"
+estimated_minutes: 360
+acceptance_criteria: "A per-item or per-tracker setup command can be declared through CLI, SDK and MCP, is stored with provenance, and pm test --run executes it once before the linked commands; A failing setup step is reported as a typed setup_failed result distinct from test failures, and no linked command runs after it; An explicit add-without-run option records the command with verified false in provenance, and pm test --run still executes it; Negative control: removing the setup execution makes a spec whose linked command needs the setup output fail"
+parent: pm-doxj
+risk: medium
+confidence: medium
+severity: medium
+repro_steps: "In a TypeScript extension package whose specs import ../dist/index.js: pm test <id> --add command='node --test test/x.test.js' on a clean checkout fails with module-not-found until the command embeds npm run build &&, and each --add re-runs the suite"
+expected_result: "A declared setup step runs once per pm test --run before linked commands, with provenance and a typed setup_failed result, and an explicit unverified add records verified false"
+actual_result: pm test help lists only --shared-host-safe and --check-context; every linked command repeats the build and --add always executes the command
+affected_version: 2026.11.4
+component: test
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dlvv,related,"2026-11-05T20:48:02.161Z","harness:claude-code","cli:create:dep",detected
+  pm-mf5z,related,"2026-11-05T20:48:02.161Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -11,19 +11,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** Resolve a named unpacked-size ceiling and reject malformed budget profiles. */
-function resolveMaxUnpackedSize(budget, profile) {
-  if (
-    typeof budget.max_unpacked_bytes_by_profile !== "object" ||
-    budget.max_unpacked_bytes_by_profile === null
-  ) {
-    throw new TypeError(
-      "Package artifact budget is missing named size profiles",
-    );
-  }
-  if (!Object.hasOwn(budget.max_unpacked_bytes_by_profile, profile)) {
-    throw new RangeError(`Unknown package artifact profile: ${profile}`);
-  }
+/** Read one fixed unpacked-size ceiling and reject malformed values. */
+function readFixedCeiling(budget, profile) {
   const maxUnpackedSize = budget.max_unpacked_bytes_by_profile[profile];
   if (typeof maxUnpackedSize !== "number") {
     throw new TypeError(`Package artifact profile ${profile} is not numeric`);
@@ -32,6 +21,87 @@ function resolveMaxUnpackedSize(budget, profile) {
     throw new TypeError(`Package artifact profile ${profile} is not finite`);
   }
   return maxUnpackedSize;
+}
+
+/** Require the declared shape of a derived injection profile before trusting its allowance. */
+function readInjectionProfile(budget, profile) {
+  const declaration = budget.injection_profiles[profile];
+  if (
+    typeof declaration?.base_profile !== "string" ||
+    !Object.hasOwn(budget.max_unpacked_bytes_by_profile, declaration.base_profile)
+  ) {
+    throw new TypeError(
+      `Injection profile ${profile} must name a fixed base profile`,
+    );
+  }
+  for (const field of ["injected_prefix", "injected_suffix"]) {
+    if (
+      typeof declaration[field] !== "string" ||
+      declaration[field].length === 0
+    ) {
+      throw new TypeError(
+        `Injection profile ${profile} requires a non-empty ${field}`,
+      );
+    }
+  }
+  if (
+    !Number.isSafeInteger(declaration.max_bytes_per_injected_file) ||
+    declaration.max_bytes_per_injected_file <= 0
+  ) {
+    throw new TypeError(
+      `Injection profile ${profile} requires a positive safe integer max_bytes_per_injected_file`,
+    );
+  }
+  return declaration;
+}
+
+/**
+ * Resolve a named unpacked-size ceiling and reject malformed budget profiles.
+ *
+ * A fixed profile states its ceiling directly. An injection profile derives it:
+ * the base ceiling plus a bounded per-file allowance for every packed file the
+ * transform rewrites. Debug-ID injection adds a fixed-length snippet to each
+ * emitted JavaScript file, so a constant allowance stops covering the transform
+ * as soon as the file count grows past it; the derived ceiling cannot, while the
+ * base profile keeps bounding every byte the transform did not add.
+ */
+function resolveMaxUnpackedSize(budget, profile, paths) {
+  if (
+    typeof budget.max_unpacked_bytes_by_profile !== "object" ||
+    budget.max_unpacked_bytes_by_profile === null
+  ) {
+    throw new TypeError(
+      "Package artifact budget is missing named size profiles",
+    );
+  }
+  if (Object.hasOwn(budget.max_unpacked_bytes_by_profile, profile)) {
+    return { maxUnpackedSize: readFixedCeiling(budget, profile) };
+  }
+  if (
+    typeof budget.injection_profiles !== "object" ||
+    budget.injection_profiles === null ||
+    !Object.hasOwn(budget.injection_profiles, profile)
+  ) {
+    throw new RangeError(`Unknown package artifact profile: ${profile}`);
+  }
+  const declaration = readInjectionProfile(budget, profile);
+  const injectedFileCount = paths.filter(
+    (file) =>
+      file.startsWith(declaration.injected_prefix) &&
+      file.endsWith(declaration.injected_suffix),
+  ).length;
+  const injectionAllowance =
+    injectedFileCount * declaration.max_bytes_per_injected_file;
+  return {
+    maxUnpackedSize:
+      readFixedCeiling(budget, declaration.base_profile) + injectionAllowance,
+    injection: {
+      base_profile: declaration.base_profile,
+      injected_file_count: injectedFileCount,
+      max_bytes_per_injected_file: declaration.max_bytes_per_injected_file,
+      injection_allowance: injectionAllowance,
+    },
+  };
 }
 
 /** Normalize npm 11/12 receipts without accepting ambiguous or misidentified artifacts. */
@@ -82,7 +152,6 @@ function resolveRuntimeBundleBudget(budget) {
 /** Validate one npm pack report against a named committed distribution budget. */
 export function validatePackageArtifact(report, budget, profile = "base") {
   const artifact = readSingleArtifact(report);
-  const maxUnpackedSize = resolveMaxUnpackedSize(budget, profile);
   const paths = artifact.files
     .map((file) =>
       typeof file === "object" && file !== null && typeof file.path === "string"
@@ -90,6 +159,11 @@ export function validatePackageArtifact(report, budget, profile = "base") {
         : "",
     )
     .filter(Boolean);
+  const { maxUnpackedSize, injection } = resolveMaxUnpackedSize(
+    budget,
+    profile,
+    paths,
+  );
   const violations = [];
   const runtimeFiles = artifact.files.filter((file) =>
     file?.path?.startsWith("node_modules/"),
@@ -137,6 +211,7 @@ export function validatePackageArtifact(report, budget, profile = "base") {
     version: artifact.version,
     unpacked_size: artifact.unpackedSize,
     max_unpacked_size: maxUnpackedSize,
+    ...(injection === undefined ? {} : { injection }),
     file_count: paths.length,
     distribution_size: distributionSize,
     distribution_file_count: distributionCount,

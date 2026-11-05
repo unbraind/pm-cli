@@ -357,6 +357,16 @@
         "skip_policy": "forbidden"
       },
       {
+        "id": "package-artifact",
+        "gates": ["package-consumer"],
+        "executable": {
+          "command": "node",
+          "args": ["scripts/release/package-artifact-gate.mjs"],
+          "capture_json": true
+        },
+        "skip_policy": "forbidden"
+      },
+      {
         "id": "compatibility-check",
         "gates": ["compatibility"],
         "executable": {

@@ -4,10 +4,17 @@ import { createScriptHarness } from "../../../helpers/scriptModule";
 
 const harness = createScriptHarness();
 const budget = {
-  version: 2,
+  version: 4,
   max_unpacked_bytes_by_profile: {
     base: 100,
-    "sentry-injected": 110,
+  },
+  injection_profiles: {
+    "sentry-injected": {
+      base_profile: "base",
+      injected_prefix: "dist/",
+      injected_suffix: ".js",
+      max_bytes_per_injected_file: 5,
+    },
   },
   max_file_count: 4,
   forbidden_suffixes: [".map"],
@@ -106,28 +113,139 @@ describe("package artifact gate", () => {
     expect(result.readFileSync).toHaveBeenCalled();
   });
 
-  it("uses the explicit Sentry-injected budget for the publishable artifact", async () => {
+  it.each([
+    [109, true],
+    [111, false],
+  ])(
+    "derives the Sentry-injected ceiling from the base ceiling and the injected file count (%i bytes)",
+    async (unpackedSize, accepted) => {
+      const result = await run(
+        [
+          {
+            name: "@unbrained/pm-cli",
+            version: "2026.11.5",
+            unpackedSize,
+            files: [
+              { path: "dist/cli.js" },
+              { path: "dist/sdk/index.js" },
+              { path: "dist/sdk/index.d.ts" },
+              { path: "package.json" },
+            ],
+          },
+        ],
+        { ...budget, max_file_count: 10 },
+        ["--profile=sentry-injected"],
+      );
+
+      if (!accepted) {
+        expect(String(result.failure)).toContain("unpacked_size:111>110");
+        return;
+      }
+      expect(result.failure).toBeNull();
+      expect(JSON.parse(String(result.log.mock.calls[0]?.[0]))).toMatchObject({
+        profile: "sentry-injected",
+        max_unpacked_size: 110,
+        injection: {
+          base_profile: "base",
+          injected_file_count: 2,
+          max_bytes_per_injected_file: 5,
+          injection_allowance: 10,
+        },
+      });
+    },
+  );
+
+  it("keeps fixed profiles free of an injection receipt", async () => {
     const result = await run(
       [
         {
-          name: "@unbrained/pm-cli",
-          version: "2026.9.4",
-          unpackedSize: 105,
+          unpackedSize: 120,
           files: [{ path: "dist/cli.js" }, { path: "package.json" }],
         },
       ],
-      budget,
-      ["--profile=sentry-injected"],
+      {
+        ...budget,
+        max_unpacked_bytes_by_profile: { base: 100, preview: 120 },
+      },
+      ["--profile=preview"],
     );
 
     expect(result.failure).toBeNull();
-    expect(result.log.mock.calls.flat().join(" ")).toContain(
-      '"profile": "sentry-injected"',
-    );
-    expect(result.log.mock.calls.flat().join(" ")).toContain(
-      '"max_unpacked_size": 110',
-    );
+    const receipt = JSON.parse(String(result.log.mock.calls[0]?.[0]));
+    expect(receipt).toMatchObject({ profile: "preview", max_unpacked_size: 120 });
+    expect(receipt).not.toHaveProperty("injection");
   });
+
+  it.each([
+    [{ base_profile: "missing" }, "must name a fixed base profile"],
+    [{ base_profile: 1 }, "must name a fixed base profile"],
+    [{ injected_prefix: "" }, "non-empty injected_prefix"],
+    [{ injected_suffix: 1 }, "non-empty injected_suffix"],
+    [{ max_bytes_per_injected_file: 0 }, "positive safe integer"],
+    [{ max_bytes_per_injected_file: 1.5 }, "positive safe integer"],
+    [{ max_bytes_per_injected_file: "5" }, "positive safe integer"],
+  ])(
+    "rejects a malformed injection profile %#",
+    async (override, message) => {
+      const result = await run(
+        [
+          {
+            unpackedSize: 2,
+            files: [{ path: "dist/cli.js" }, { path: "package.json" }],
+          },
+        ],
+        {
+          ...budget,
+          injection_profiles: {
+            "sentry-injected": {
+              ...budget.injection_profiles["sentry-injected"],
+              ...override,
+            },
+          },
+        },
+        ["--profile=sentry-injected"],
+      );
+
+      expect(result.failure).toBeInstanceOf(TypeError);
+      expect(String(result.failure)).toContain(message);
+    },
+  );
+
+  it("rejects a null injection profile declaration", async () => {
+    const result = await run(
+      [
+        {
+          unpackedSize: 2,
+          files: [{ path: "dist/cli.js" }, { path: "package.json" }],
+        },
+      ],
+      { ...budget, injection_profiles: { "sentry-injected": null } },
+      ["--profile=sentry-injected"],
+    );
+
+    expect(result.failure).toBeInstanceOf(TypeError);
+    expect(String(result.failure)).toContain("must name a fixed base profile");
+  });
+
+  it.each([undefined, null])(
+    "treats a profile as unknown when no injection profiles are declared (%s)",
+    async (injectionProfiles) => {
+      const result = await run(
+        [
+          {
+            unpackedSize: 2,
+            files: [{ path: "dist/cli.js" }, { path: "package.json" }],
+          },
+        ],
+        { ...budget, injection_profiles: injectionProfiles },
+        ["--profile=sentry-injected"],
+      );
+
+      expect(String(result.failure)).toContain(
+        "Unknown package artifact profile: sentry-injected",
+      );
+    },
+  );
 
   it.each([
     [90, 20, true],

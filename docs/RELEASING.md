@@ -465,12 +465,24 @@ pnpm release:pipeline
 
 The static phase includes `pnpm sdk:surface:check`,
 `pnpm benchmark:sdk-entrypoints:check`, and
-`pnpm benchmark:transport:check`. The packaging phase runs
-`pnpm quality:package-artifact`, which evaluates npm's actual packlist against
-the committed unpacked-size, file-count, required-runtime-file, and forbidden
-source-map budgets. Release additionally reruns the packlist gate immediately
-after Sentry debug-ID injection and before any Sentry upload or finalization,
-using the separately committed `sentry-injected` ceiling. CI constrains the base
+`pnpm benchmark:transport:check`. The packaging phase runs the
+`package-artifact` preflight step (`scripts/release/package-artifact-gate.mjs`,
+the gate behind `pnpm quality:package-artifact`) before any version commit or
+tag exists. It evaluates npm's actual packlist against the committed
+unpacked-size, file-count, required-runtime-file, and forbidden source-map
+budgets, so an over-budget candidate never receives an immutable tag. Release
+additionally reruns the packlist gate immediately after Sentry debug-ID
+injection and before any Sentry upload or finalization, using the derived
+`sentry-injected` profile: the base ceiling plus `max_bytes_per_injected_file`
+for every packed `dist/**/*.js` file. `sentry-cli sourcemaps inject dist/`
+adds one fixed-length snippet to each such file (358 bytes with
+`@sentry/cli` 3.8.2), so a fixed allowance stopped covering the transform once
+the file count grew and blocked the already-tagged 2026.11.5
+([pm-998juj](../.agents/pm/tasks/pm-998juj.toon)). With the derived ceiling, a
+candidate that passes the base profile also passes after injection.
+`tests/unit/scripts/release/sentry-injection-allowance.spec.ts` runs the
+installed `sentry-cli` against a fixture, so an upgrade that grows the snippet
+fails in the pull request that upgrades it, not on a tag. CI constrains the base
 build, publication constrains the exact mutated artifact users install, and a
 rejected package cannot leave finalized observability artifacts. Additive SDK
 exports require a reviewed

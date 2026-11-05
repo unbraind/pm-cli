@@ -33,7 +33,7 @@ describe("scripts/release/run-gates", () => {
   it("marks dogfood/compatibility/sentry checks skipped and emits a JSON summary", async () => {
     const spawnSync = vi.fn((_command: string, args: string[]) => ({
       status: 0,
-      stdout: (args.includes("scripts/release/hosted-analysis-gate.mjs") || args.includes("scripts/release/workspace-compatibility.mjs"))
+      stdout: (args.includes("scripts/release/hosted-analysis-gate.mjs") || args.includes("scripts/release/workspace-compatibility.mjs") || args.includes("scripts/release/package-artifact-gate.mjs"))
         ? '{"ok":true}'
         : "",
       stderr: "",
@@ -103,7 +103,7 @@ describe("scripts/release/run-gates", () => {
     process.env.RELEASE_POLICY_TOKEN = "policy-token";
     const spawnSync = vi.fn((_command: string, args: string[]) => ({
       status: 0,
-      stdout: (args.includes("scripts/release/hosted-analysis-gate.mjs") || args.includes("scripts/release/workspace-compatibility.mjs"))
+      stdout: (args.includes("scripts/release/hosted-analysis-gate.mjs") || args.includes("scripts/release/workspace-compatibility.mjs") || args.includes("scripts/release/package-artifact-gate.mjs"))
         ? '{"ok":true}'
         : "",
       stderr: "",
@@ -149,6 +149,13 @@ describe("scripts/release/run-gates", () => {
       }
       if (joined.includes("workspace-compatibility.mjs")) {
         return { status: 0, stdout: '{"ok":true}', stderr: "" };
+      }
+      if (joined.includes("package-artifact-gate.mjs")) {
+        return {
+          status: 0,
+          stdout: '{"ok":true,"profile":"base","distribution_size":90}',
+          stderr: "",
+        };
       }
       if (joined.includes("sentry-telemetry-gate.mjs")) {
         return {
@@ -202,6 +209,19 @@ describe("scripts/release/run-gates", () => {
         return [c[0], ...args].join(" ").includes("hosted-analysis-gate.mjs");
       }),
     ).toBe(true);
+    // The artifact budget runs in preflight, after the build it measures and
+    // before any version commit or tag can exist (pm-998juj).
+    const invocations = spawnSync.mock.calls.map((c) =>
+      [c[0], ...((c[1] as string[] | undefined) ?? [])].join(" "),
+    );
+    const buildIndex = invocations.findIndex((joined) =>
+      joined.endsWith(" build"),
+    );
+    const artifactIndex = invocations.findIndex((joined) =>
+      joined.includes("scripts/release/package-artifact-gate.mjs"),
+    );
+    expect(buildIndex).toBeGreaterThanOrEqual(0);
+    expect(artifactIndex).toBeGreaterThan(buildIndex);
     expect(
       spawnSync.mock.calls.some((c) => {
         const args = (c[1] as string[] | undefined) ?? [];
@@ -247,7 +267,10 @@ describe("scripts/release/run-gates", () => {
   it("fails a captured gate and includes stdout + stderr detail in the message", async () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
-      if (joined.includes("hosted-analysis-gate.mjs")) {
+      if (
+        joined.includes("hosted-analysis-gate.mjs") ||
+        joined.includes("package-artifact-gate.mjs")
+      ) {
         return { status: 0, stdout: '{"ok":true}', stderr: "" };
       }
       if (joined.includes("compatibility-check.mjs")) {
@@ -287,7 +310,10 @@ describe("scripts/release/run-gates", () => {
   it("fails a gate with no stdout/stderr detail (empty suffix branch)", async () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
-      if (joined.includes("hosted-analysis-gate.mjs")) {
+      if (
+        joined.includes("hosted-analysis-gate.mjs") ||
+        joined.includes("package-artifact-gate.mjs")
+      ) {
         return { status: 0, stdout: '{"ok":true}', stderr: "" };
       }
       if (joined.includes("build")) {
@@ -315,7 +341,10 @@ describe("scripts/release/run-gates", () => {
   it("fails a captured gate with only stdout (stderr-empty branch)", async () => {
     const spawnSync = vi.fn((command: string, args: string[]) => {
       const joined = [command, ...args].join(" ");
-      if (joined.includes("hosted-analysis-gate.mjs")) {
+      if (
+        joined.includes("hosted-analysis-gate.mjs") ||
+        joined.includes("package-artifact-gate.mjs")
+      ) {
         return { status: 0, stdout: '{"ok":true}', stderr: "" };
       }
       if (joined.includes("compatibility-check.mjs")) {
@@ -355,7 +384,10 @@ describe("scripts/release/run-gates", () => {
       if (joined.includes("sentry-telemetry-gate.mjs")) {
         return { status: 0, stdout: '{"ok":true}', stderr: "" };
       }
-      if (joined.includes("hosted-analysis-gate.mjs")) {
+      if (
+        joined.includes("hosted-analysis-gate.mjs") ||
+        joined.includes("package-artifact-gate.mjs")
+      ) {
         return { status: 0, stdout: '{"ok":true}', stderr: "" };
       }
       return { status: 0, stdout: "", stderr: "" };
