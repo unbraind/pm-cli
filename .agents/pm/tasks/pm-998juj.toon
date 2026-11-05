@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-04T21:30:26.374Z"
+updated_at: "2026-11-05T00:24:42.458Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#cbb285dba71f705676688611"
 author: unknown
@@ -49,7 +49,7 @@ dependencies[7]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[43]:
+comments[44]:
   - created_at: "2026-07-25T07:12:23.380Z"
     author: "harness:claude-code"
     text: "Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
@@ -181,6 +181,9 @@ comments[43]:
   - created_at: "2026-11-04T21:30:26.374Z"
     author: "harness:claude-code"
     text: "PR 1661, third review round on compactMarkdownTables. Cell splitting now follows GFM's backslash parity: a pipe after an even number of backslashes separates cells, including the trailing pipe, so the row from the review, alpha followed by two backslashes and a pipe, over a one-cell delimiter, is not taken for a table. CodeQL (js/bad-tag-filter) flagged the comment-end regex because it did not match --!>. This is not a sanitizer: CommonMark ends a comment block at -->. The HTML end markers are now substring predicates that follow the spec exactly, and a spec keeps a comment containing --!> raw until -->. Focused v8 coverage is 161/161 branches, the tracked-markdown render proof passes, and the distribution is 19,977,014 bytes.\n"
+  - created_at: "2026-11-05T00:24:42.458Z"
+    author: "harness:claude-code"
+    text: "PR 1661, fourth CodeRabbit round, fixed. A lone HTML tag (CommonMark start condition 7) was read as raw only at the start of a file or after a blank line. It also starts a raw block after an ATX heading, a table or any other ended block; only a paragraph cannot be interrupted. For '# Page', '<custom-tag>', '# Raw heading', '| Key    |', '| ------ |' the compactor rewrote the pipe rows inside the raw block, and marked rendered different HTML. compactMarkdownTables now reads a lone tag as raw up to the next blank line wherever it appears. Inside a paragraph that only leaves a table uncompacted and never changes what renders, so no paragraph tracking is needed. New spec cases cover the heading and table-row variants. All 210 tracked markdown files outside .agents/pm still render identically under marked; the package gate reports a distribution of 19,977,367 of 20,000,000 bytes."
 notes[1]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
 learnings[2]{created_at,author,text}:

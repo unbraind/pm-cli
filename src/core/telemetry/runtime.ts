@@ -21,6 +21,7 @@ import {
   resolveTelemetryEndpointOverride,
   resolveTelemetryEnvironmentPolicy,
   resolveTelemetrySourceAttribution,
+  stripUrlCredentials,
   telemetryRuntimeFileName,
 } from "./policy.js";
 import type { GlobalOptions } from "../shared/command-types.js";
@@ -1978,7 +1979,7 @@ async function flushPendingOtelSpans(
       } catch (error: unknown) {
         lastError =
           error instanceof Error
-            ? sanitizeString(error.message, "redacted")
+            ? sanitizeString(stripUrlCredentials(error.message), "redacted")
             : "local_otel_export_failed";
         const nextAttempts = span.attempts + 1;
         failedUpdates.set(span.id, {
@@ -2256,7 +2257,7 @@ async function flushQueue(
     );
     const errorMessage = (() => {
       if (error instanceof Error) {
-        return sanitizeString(error.message, "redacted");
+        return sanitizeString(stripUrlCredentials(error.message), "redacted");
       }
       return "telemetry_flush_failed";
     })();
@@ -2289,7 +2290,7 @@ async function flushQueue(
   } catch (error: unknown) {
     const errorMessage = (() => {
       if (error instanceof Error) {
-        return sanitizeString(error.message, "redacted");
+        return sanitizeString(stripUrlCredentials(error.message), "redacted");
       }
       return "telemetry_flush_failed";
     })();

@@ -179,7 +179,13 @@ const RAW_HTML_BLOCK_TAG = new RegExp(
   String.raw`^ {0,3}</?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?=[ \t>]|/>|$)`,
   "iu",
 );
-/** Condition 7: one complete open or closing tag alone on its line, raw up to the next blank line; it cannot interrupt a paragraph. */
+/**
+ * Condition 7: one complete open or closing tag alone on its line, raw up to the
+ * next blank line. CommonMark lets it start a block after a heading, a table or
+ * any other ended block, but not inside a paragraph. It is read as raw wherever
+ * it appears: inside a paragraph that only leaves a table uncompacted, never
+ * changes what renders.
+ */
 const RAW_HTML_LONE_TAG = new RegExp(
   String.raw`^ {0,3}(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][\w.:-]*(?:\s*=\s*(?:[^\s"'=<>` + "`" + String.raw`]+|'[^']*'|"[^"]*"))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)[ \t]*$`,
   "u",
@@ -203,11 +209,10 @@ function closesFence(content, fence) {
  * Where the HTML block a line opens ends: a closing-marker test, "blank", or
  * undefined when it closes on the same line. Null when the line opens none.
  */
-function rawHtmlEnd(line, previous) {
+function rawHtmlEnd(line) {
   const opener = RAW_HTML_TO_MARKER.find(([start]) => start.test(line));
   if (opener) return opener[1](line.replace(opener[0], "")) ? undefined : opener[1];
-  const loneTagStartsBlock = RAW_HTML_LONE_TAG.test(line) && (previous === undefined || previous.trim() === "");
-  return RAW_HTML_BLOCK_TAG.test(line) || loneTagStartsBlock ? "blank" : null;
+  return RAW_HTML_BLOCK_TAG.test(line) || RAW_HTML_LONE_TAG.test(line) ? "blank" : null;
 }
 
 /**
@@ -218,7 +223,7 @@ function rawHtmlEnd(line, previous) {
 function proseLines(lines) {
   let fence;
   let rawEnd;
-  return lines.map((line, index) => {
+  return lines.map((line) => {
     if (fence !== undefined) {
       if (closesFence(line, fence)) fence = undefined;
       return false;
@@ -229,7 +234,7 @@ function proseLines(lines) {
     }
     fence = fenceOpener(line);
     if (fence !== undefined) return false;
-    const end = rawHtmlEnd(line, lines[index - 1]);
+    const end = rawHtmlEnd(line);
     if (end === null) return true;
     rawEnd = end;
     return false;

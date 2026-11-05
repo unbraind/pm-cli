@@ -1331,6 +1331,36 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("strips URL credentials from a delivery error before recording it (GH-1660)", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = true;
+      settings.telemetry.endpoint = "https://telemetry.example.test/events";
+      await writeSettings(globalRoot, settings, "test:credential_error");
+      await _testOnly.rewriteQueue(globalRoot, [{
+        client_schema_version: 1,
+        attempts: 0,
+        event: {
+          schema_version: 1,
+          event_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          event_type: "command_error" as const,
+          occurred_at: new Date().toISOString(),
+          installation_id: "22222222-2222-4222-8222-222222222222",
+          session_id: "33333333-3333-4333-8333-333333333333",
+          command: "credential-error",
+          payload: {},
+        },
+      }]);
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("fetch failed for http://collector-user:collector-pass@127.0.0.1:9/v1/events");
+      }) as unknown as typeof fetch;
+      await flushTelemetryQueueNow(globalRoot);
+      const state = await _testOnly.readRuntimeState(globalRoot);
+      expect(state.last_failed_flush_error).toBe("fetch failed for http://127.0.0.1:9/v1/events");
+      expect(JSON.stringify(state)).not.toMatch(/collector-user|collector-pass/u);
+    });
+  });
+
   it("records span delivery state in the shared state file even under an endpoint override (GH-1660)", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const restore = snapshotEnv(["PM_TELEMETRY_ENDPOINT"]);
