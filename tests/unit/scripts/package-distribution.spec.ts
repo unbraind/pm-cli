@@ -216,12 +216,17 @@ it("compacts only real tables: a block-starting header over a matching delimiter
     ["<![CDATA[\n\n| x   |\n| --- |\n\n]]>", "<![CDATA[\n\n| x   |\n| --- |\n\n]]>"],
     // Inline HTML in a paragraph opens no block, so the fence after it is still tracked.
     ["<b>bold</b> text\n```\n\n| x   |\n| --- |\n```", "<b>bold</b> text\n```\n\n| x   |\n| --- |\n```"],
-    // A lone tag is read as raw up to the next blank line wherever it appears,
-    // including after a heading or a table, where it starts a block.
+    // A lone tag is raw up to the next blank line where it certainly starts a
+    // block: at the start, after a blank line or heading, or after a fence or
+    // raw block ends. After a line that may be a paragraph, a table body or a
+    // list item, the file is left unchanged.
     ["<custom-tag>\n| x   |\n| --- |", "<custom-tag>\n| x   |\n| --- |"],
     ["text\n\n<custom-tag>\n| x   |\n| --- |", "text\n\n<custom-tag>\n| x   |\n| --- |"],
-    ["text\n<custom-tag>\n\n| x   |\n| --- |", "text\n<custom-tag>\n\n| x |\n|---|"],
     ["# Page\n<custom-tag>\n# Raw heading\n| Key    |\n| ------ |", "# Page\n<custom-tag>\n# Raw heading\n| Key    |\n| ------ |"],
+    ["# Page\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y   |\n| --- |", "# Page\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y |\n|---|"],
+    ["```\ncode\n```\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y   |\n| --- |", "```\ncode\n```\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y |\n|---|"],
+    ["text\n<custom-tag>\n\n| x   |\n| --- |", "text\n<custom-tag>\n\n| x   |\n| --- |"],
+    ["text\n<custom-tag>\n```\n\n| Key    |\n| ------ |\n```", "text\n<custom-tag>\n```\n\n| Key    |\n| ------ |\n```"],
     ["| h |\n|---|\n| 1 |\n<custom-tag>\n# Raw\n| Key    |\n| ------ |", "| h |\n|---|\n| 1 |\n<custom-tag>\n# Raw\n| Key    |\n| ------ |"],
     // A pipe after an even number of backslashes separates cells, as GFM reads it.
     ["| alpha\\\\| beta      |\n| -------- |", "| alpha\\\\| beta      |\n| -------- |"],

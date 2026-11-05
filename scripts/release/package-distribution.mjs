@@ -181,15 +181,15 @@ const RAW_HTML_BLOCK_TAG = new RegExp(
 );
 /**
  * Condition 7: one complete open or closing tag alone on its line, raw up to the
- * next blank line. CommonMark lets it start a block after a heading, a table or
- * any other ended block, but not inside a paragraph. It is read as raw wherever
- * it appears: inside a paragraph that only leaves a table uncompacted, never
- * changes what renders.
+ * next blank line. It starts a block after any ended block but cannot interrupt
+ * a paragraph, where it is paragraph text and a fence after it still opens.
  */
 const RAW_HTML_LONE_TAG = new RegExp(
   String.raw`^ {0,3}(?:<[A-Za-z][A-Za-z0-9-]*(?:\s+[A-Za-z_:][\w.:-]*(?:\s*=\s*(?:[^\s"'=<>` + "`" + String.raw`]+|'[^']*'|"[^"]*"))?)*\s*/?>|</[A-Za-z][A-Za-z0-9-]*\s*>)[ \t]*$`,
   "u",
 );
+/** An ATX heading: a one-line block, so the line after it starts a new block. */
+const ATX_HEADING = /^ {0,3}#{1,6}(?:[ \t]|$)/u;
 /** A fence marker after indentation or a list-item or block-quote marker, whose extent depends on containers. */
 const CONTAINED_FENCE = /^(?:[ \t]*(?:>|[-*+](?=[ \t])|\d{1,9}[.)](?=[ \t])))*[ \t]*(?<=.)(?:`{3,}|~{3,})/u;
 
@@ -207,38 +207,58 @@ function closesFence(content, fence) {
 
 /**
  * Where the HTML block a line opens ends: a closing-marker test, "blank", or
- * undefined when it closes on the same line. Null when the line opens none.
+ * undefined when it closes on the same line. Null when the line opens none, and
+ * "unknown" for a lone tag that may continue a paragraph, a table body or a
+ * list item, which a line scanner cannot tell apart.
  */
-function rawHtmlEnd(line) {
+function rawHtmlEnd(line, blockEnded) {
   const opener = RAW_HTML_TO_MARKER.find(([start]) => start.test(line));
   if (opener) return opener[1](line.replace(opener[0], "")) ? undefined : opener[1];
-  return RAW_HTML_BLOCK_TAG.test(line) || RAW_HTML_LONE_TAG.test(line) ? "blank" : null;
+  if (RAW_HTML_BLOCK_TAG.test(line)) return "blank";
+  if (!RAW_HTML_LONE_TAG.test(line)) return null;
+  return blockEnded ? "blank" : "unknown";
+}
+
+/**
+ * Classify one line and advance the scan state: true for prose, false for
+ * fenced code or raw HTML, undefined where the block a lone tag belongs to
+ * cannot be established.
+ */
+function scanLine(state, line) {
+  if (state.fence !== undefined) {
+    if (closesFence(line, state.fence)) state.fence = undefined;
+    return false;
+  }
+  if (state.rawEnd !== undefined) {
+    if (state.rawEnd === "blank" ? line.trim() === "" : state.rawEnd(line)) state.rawEnd = undefined;
+    return false;
+  }
+  state.fence = fenceOpener(line);
+  if (state.fence !== undefined) return false;
+  const end = rawHtmlEnd(line, state.blockEnded);
+  if (end === "unknown") return undefined;
+  if (end === null) return true;
+  state.rawEnd = end;
+  return false;
 }
 
 /**
  * Mark the lines Markdown renders as prose, outside fenced code and raw HTML
- * blocks. Only fences at the left margin occur here: a file with any other
+ * blocks, or undefined when a lone tag's block is uncertain. A lone tag is raw
+ * at the start, after a blank line or heading, or right after a fence or raw
+ * block ends. Only fences at the left margin occur here: a file with any other
  * fence is never compacted.
  */
 function proseLines(lines) {
-  let fence;
-  let rawEnd;
-  return lines.map((line) => {
-    if (fence !== undefined) {
-      if (closesFence(line, fence)) fence = undefined;
-      return false;
-    }
-    if (rawEnd !== undefined) {
-      if (rawEnd === "blank" ? line.trim() === "" : rawEnd(line)) rawEnd = undefined;
-      return false;
-    }
-    fence = fenceOpener(line);
-    if (fence !== undefined) return false;
-    const end = rawHtmlEnd(line);
-    if (end === null) return true;
-    rawEnd = end;
-    return false;
-  });
+  const state = { fence: undefined, rawEnd: undefined, blockEnded: true };
+  const prose = [];
+  for (const line of lines) {
+    const isProse = scanLine(state, line);
+    if (isProse === undefined) return undefined;
+    prose.push(isProse);
+    state.blockEnded = !isProse || line.trim() === "" || ATX_HEADING.test(line);
+  }
+  return prose;
 }
 
 /** Compact one table row; a delimiter row keeps each column's alignment, any other row its cell text. */
@@ -260,9 +280,10 @@ function compactTableRow(line, delimiter) {
  * a pipe row that starts a block, a delimiter row with the same cell count, and
  * the pipe rows that follow, all at the header's indentation. Cells, their order
  * and column alignment are unchanged, so the rendered table is identical
- * (pm-998juj). Line endings are kept. A file whose fences sit inside list items,
- * block quotes or indentation is returned unchanged, because where those fences
- * end depends on containers a line scanner does not model. Release controls run
+ * (pm-998juj). Line endings are kept. A file is returned unchanged when its
+ * fences sit inside list items, block quotes or indentation, or when a lone HTML
+ * tag follows a line that may be a paragraph, because those block boundaries
+ * depend on structure a line scanner does not model. Release controls run
  * this script without node_modules, so its losslessness over the shipped files is
  * proven by rendering them in the spec instead of here.
  */
@@ -271,8 +292,9 @@ export function compactMarkdownTables(text) {
   const lines = raw.map((line) => line.replace(/\r$/u, ""));
   if (lines.some((line) => CONTAINED_FENCE.test(line))) return text;
   const prose = proseLines(lines);
+  if (prose === undefined) return text;
   const indent = (index) => (prose[index] ? TABLE_ROW.exec(lines[index])?.[1] : undefined);
-  const startsBlock = (index) => index === 0 || lines[index - 1].trim() === "" || /^ {0,3}#{1,6}(?:[ \t]|$)/u.test(lines[index - 1]);
+  const startsBlock = (index) => index === 0 || lines[index - 1].trim() === "" || ATX_HEADING.test(lines[index - 1]);
   for (let header = 0; header + 1 < lines.length; header += 1) {
     const level = indent(header);
     if (level === undefined || indent(header + 1) !== level || !startsBlock(header)) continue;
