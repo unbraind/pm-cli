@@ -271,20 +271,19 @@ function parseSentryProject(project) {
   return { org, projectSlug };
 }
 
+const SENTRY_GATE_BASE_QUERY = "is:unresolved level:[fatal,error]";
+/** Unresolved issues with at least one event outside environment=test, at any time. */
+const SENTRY_NON_TEST_QUERY = `${SENTRY_GATE_BASE_QUERY} !environment:test`;
+
 function buildSentryGateQuery(windowDays) {
-  // Exclude issues whose events are all environment=test: a CI test that opts
-  // into delivery (PM_TELEMETRY_SOURCE_CONTEXT=test) must never block a release.
-  // Sentry still matches an issue with any non-test event, so a production error
-  // that also fired in a test keeps blocking (pm-usn5k2).
-  const baseQuery = "is:unresolved level:[fatal,error] !environment:test";
   if (windowDays <= 0) {
-    return baseQuery;
+    return SENTRY_GATE_BASE_QUERY;
   }
   // Bound the gate to issues whose most recent event falls inside the window so a
   // stale, benign unresolved issue that stopped firing long ago no longer blocks
   // every scheduled release. Sentry's relative date syntax `lastSeen:-Nd` matches
   // issues last seen within the past N days.
-  return `${baseQuery} lastSeen:-${windowDays}d`;
+  return `${SENTRY_GATE_BASE_QUERY} lastSeen:-${windowDays}d`;
 }
 
 function buildSentryIssuesUrl(project, query, limit) {
@@ -467,6 +466,7 @@ function fetchSentryIssuesViaCli(
   priorFailure,
   windowDays,
   requestTimeoutMs,
+  enrich = true,
 ) {
   const result = runCommand(
     commandFor("sentry"),
@@ -502,16 +502,14 @@ function fetchSentryIssuesViaCli(
   try {
     const payload =
       result.stdout.trim().length > 0 ? JSON.parse(result.stdout) : [];
+    const issues = parseIssuePayload(payload);
     return {
       ok: true,
       reason: null,
       token_source: "sentry_cli",
-      issues: enrichSentryIssuesViaCli(
-        parseIssuePayload(payload),
-        project,
-        windowDays,
-        requestTimeoutMs,
-      ),
+      issues: enrich
+        ? enrichSentryIssuesViaCli(issues, project, windowDays, requestTimeoutMs)
+        : issues,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -531,6 +529,7 @@ async function fetchSentryIssues(
   allowCliFallback,
   windowDays,
   requestTimeoutMs,
+  enrich = true,
 ) {
   const tokens = redactedTokenCandidates();
   if (tokens.length === 0) {
@@ -542,6 +541,7 @@ async function fetchSentryIssues(
         "missing_sentry_auth_token",
         windowDays,
         requestTimeoutMs,
+        enrich,
       );
     }
     return {
@@ -574,12 +574,10 @@ async function fetchSentryIssues(
         ok: true,
         reason: null,
         token_source: tokenSource,
-        issues: await enrichSentryIssuesWithLatestEvents(
-          issues,
-          project,
-          token,
-          requestTimeoutMs,
-        ),
+        has_more: /rel="next"; results="true"/u.test(response.headers?.get("link") ?? ""),
+        issues: enrich
+          ? await enrichSentryIssuesWithLatestEvents(issues, project, token, requestTimeoutMs)
+          : issues,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -595,6 +593,7 @@ async function fetchSentryIssues(
       lastFailure,
       windowDays,
       requestTimeoutMs,
+      enrich,
     );
   }
 
@@ -604,6 +603,41 @@ async function fetchSentryIssues(
     token_source: null,
     issues: [],
   };
+}
+
+/**
+ * Drop the active issues whose events are all environment=test (pm-usn5k2): an
+ * issue drops out only when a complete listing of issues with any non-test event
+ * lacks it. A listing that may be truncated drops nothing.
+ */
+function excludeTestOnlyIssues(active, nonTest, limit) {
+  const complete = nonTest.has_more !== true && nonTest.issues.length < limit;
+  const nonTestIds = new Set(nonTest.issues.map((issue) => issue?.shortId));
+  const testOnly = complete
+    ? active.issues.filter((issue) => typeof issue?.shortId === "string" && !nonTestIds.has(issue.shortId))
+    : [];
+  return {
+    ...active,
+    issues: active.issues.filter((issue) => !testOnly.includes(issue)),
+    test_only: testOnly,
+    environment_listing_complete: complete,
+  };
+}
+
+/**
+ * The unresolved fatal and error issues the gate judges: active within the window
+ * in any environment, minus those seen only in environment=test. Activity and
+ * environment are separate queries because Sentry applies lastSeen after an
+ * environment filter, so one combined query would also drop an issue whose
+ * production event predates the window while a test event falls inside it. A
+ * failed environment listing fails the fetch instead of skipping anything.
+ */
+async function fetchSentryGateIssues(project, windowDays, limit, allowCliFallback, requestTimeoutMs) {
+  const active = await fetchSentryIssues(project, buildSentryGateQuery(windowDays), limit, allowCliFallback, windowDays, requestTimeoutMs);
+  if (!active.ok || active.issues.length === 0) return active;
+  const nonTest = await fetchSentryIssues(project, SENTRY_NON_TEST_QUERY, limit, allowCliFallback, windowDays, requestTimeoutMs, false);
+  if (!nonTest.ok) return { ...nonTest, reason: `sentry_environment_query_failed:${nonTest.reason}` };
+  return excludeTestOnlyIssues(active, nonTest, limit);
 }
 
 function usage() {
@@ -817,6 +851,12 @@ function buildSentryTelemetryGateResult(params) {
         .map((issue) => issue?.shortId)
         .filter((value) => typeof value === "string")
         .slice(0, 25),
+      ignored_test_only_total: (params.sentryFetch.test_only ?? []).length,
+      ignored_test_only_short_ids: (params.sentryFetch.test_only ?? [])
+        .map((issue) => issue.shortId)
+        .slice(0, 25),
+      environment_listing_complete:
+        params.sentryFetch.environment_listing_complete ?? null,
       access_ok: params.sentryAccessOk,
       threshold_ok: params.sentryThresholdOk,
     },
@@ -921,12 +961,11 @@ async function main() {
   const allowSentryCliFallback =
     telemetryMode === "required" ||
     (telemetryMode === "best-effort" && sentryTokenConfigured);
-  const sentryFetch = await fetchSentryIssues(
+  const sentryFetch = await fetchSentryGateIssues(
     sentryProject,
-    buildSentryGateQuery(sentryWindowDays),
+    sentryWindowDays,
     sentryLimit,
     allowSentryCliFallback,
-    sentryWindowDays,
     sentryRequestTimeoutMs,
   );
   const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];

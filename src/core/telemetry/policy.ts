@@ -109,6 +109,11 @@ export function redactTelemetryEndpoint(rawEndpoint: string): string {
   return parsed.toString();
 }
 
+/** Redact every URL in free text, such as a transport error, the way redactTelemetryEndpoint redacts the endpoint: no credentials, query or fragment (GH-1660). */
+export function redactUrlsInText(text: string): string {
+  return text.replaceAll(/\b[a-z][a-z\d+.-]*:\/\/[^\s"'<>]+/giu, (url) => redactTelemetryEndpoint(url));
+}
+
 /** The endpoint events go to: the `PM_TELEMETRY_ENDPOINT` override, else the configured one. */
 export function effectiveTelemetryEndpoint(
   configured: string,

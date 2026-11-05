@@ -1,6 +1,6 @@
 import { runWithWorkspaceHarnessSignalDescriptors } from "../../../../src/core/shared/author.js";
 import crypto from "node:crypto";
-import { effectiveTelemetryEndpoint, resolveTelemetryEndpointOverride, resolveTelemetryEnvironmentPolicy, resolveTelemetryReadSampleRate } from "../../../../src/core/telemetry/policy.js";
+import { effectiveTelemetryEndpoint, redactUrlsInText, resolveTelemetryEndpointOverride, resolveTelemetryEnvironmentPolicy, resolveTelemetryReadSampleRate } from "../../../../src/core/telemetry/policy.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -178,5 +178,13 @@ describe("PM_TELEMETRY_ENDPOINT override (GH-1660)", () => {
     expect(effectiveTelemetryEndpoint("https://configured.test/v1/events", {})).toBe("https://configured.test/v1/events");
     expect(effectiveTelemetryEndpoint("https://configured.test/v1/events", { PM_TELEMETRY_ENDPOINT: "http://127.0.0.1:9/e" }))
       .toBe("http://127.0.0.1:9/e");
+  });
+
+  it("redacts every URL in free text without touching the rest", () => {
+    expect(redactUrlsInText("fetch failed for http://u:p@127.0.0.1:9/v1/events?key=k3y#frag after 3 tries"))
+      .toBe("fetch failed for http://127.0.0.1:9/v1/events after 3 tries");
+    expect(redactUrlsInText("a https://h.test/x?token=t and b HTTP://u@h2.test/y#f")).toBe("a https://h.test/x and b http://h2.test/y");
+    expect(redactUrlsInText("unparseable http://u:p@[bad/x?k=1 stays without its secret")).toBe("unparseable http://[bad/x stays without its secret");
+    expect(redactUrlsInText("no url here")).toBe("no url here");
   });
 });

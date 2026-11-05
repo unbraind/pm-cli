@@ -1302,13 +1302,20 @@ describe("core/telemetry/runtime", () => {
           global: { json: true, quiet: false, noExtensions: false, noPager: false, profile: false },
           pm_root: "/tmp/project/.agents/pm",
         });
+        // A flush resolves the override once, before anything else, so the flush the
+        // command start scheduled posts the configured queue to the configured endpoint.
+        await waitForPendingFlush();
+        const configuredPosts = posted.splice(0);
+        expect(configuredPosts.every((post) => post.url === "https://pm-cli.unbrained.dev/v1/events")).toBe(true);
+        const queuedConfiguredIds = (await fs.readFile(configuredQueue, "utf8")).trim().split("\n").filter(Boolean)
+          .map((line) => (JSON.parse(line) as { event: { event_id: string } }).event.event_id);
+        const configuredIds = [...configuredPosts.flatMap((post) => post.ids), ...queuedConfiguredIds];
+        expect(configuredIds.length).toBeGreaterThan(0);
         process.env.PM_TELEMETRY_ENDPOINT = override;
         await finishTelemetryCommand(active, { ok: true, result: { count: 0, items: [] } });
         await waitForPendingFlush();
         expect(posted.length).toBeGreaterThan(0);
         expect(posted.every((post) => post.url === override)).toBe(true);
-        const configuredIds = (await fs.readFile(configuredQueue, "utf8")).trim().split("\n").filter(Boolean)
-          .map((line) => (JSON.parse(line) as { event: { event_id: string } }).event.event_id);
         expect(posted.flatMap((post) => post.ids).some((id) => configuredIds.includes(id))).toBe(false);
       } finally {
         restore();
@@ -1331,7 +1338,7 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
-  it("strips URL credentials from a delivery error before recording it (GH-1660)", async () => {
+  it("redacts URL credentials, query and fragment from a delivery error before recording it (GH-1660)", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const settings = await readSettings(globalRoot);
       settings.telemetry.enabled = true;
@@ -1352,12 +1359,12 @@ describe("core/telemetry/runtime", () => {
         },
       }]);
       globalThis.fetch = vi.fn(async () => {
-        throw new Error("fetch failed for http://collector-user:collector-pass@127.0.0.1:9/v1/events");
+        throw new Error("fetch failed for http://collector-user:collector-pass@127.0.0.1:9/v1/events?key=k3y#frag");
       }) as unknown as typeof fetch;
       await flushTelemetryQueueNow(globalRoot);
       const state = await _testOnly.readRuntimeState(globalRoot);
       expect(state.last_failed_flush_error).toBe("fetch failed for http://127.0.0.1:9/v1/events");
-      expect(JSON.stringify(state)).not.toMatch(/collector-user|collector-pass/u);
+      expect(JSON.stringify(state)).not.toMatch(/collector-user|collector-pass|k3y|frag/u);
     });
   });
 
@@ -1370,6 +1377,28 @@ describe("core/telemetry/runtime", () => {
         await _testOnly.flushPendingOtelSpans(globalRoot, 1);
         await expect(_testOnly.readRuntimeState(globalRoot, null)).resolves.toMatchObject({ pending_otel_spans: 0 });
         await expect(_testOnly.readRuntimeState(globalRoot)).resolves.not.toHaveProperty("pending_otel_spans");
+      } finally {
+        restore();
+      }
+    });
+  });
+
+  it("keeps the active override's idle queue and state files during cleanup (GH-1660)", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const restore = snapshotEnv(["PM_TELEMETRY_ENDPOINT"]);
+      try {
+        process.env.PM_TELEMETRY_ENDPOINT = "http://127.0.0.1:3/active";
+        const activeQueue = _testOnly.queuePath(globalRoot);
+        const activeState = activeQueue.replace(/events\.([a-f0-9]{16})\.jsonl$/u, "state.$1.json");
+        expect(activeState).not.toBe(activeQueue);
+        const otherQueue = _testOnly.queuePath(globalRoot, "http://127.0.0.1:4/other");
+        await fs.mkdir(path.dirname(activeQueue), { recursive: true });
+        for (const file of [activeQueue, activeState, otherQueue]) await fs.writeFile(file, "");
+        const old = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+        for (const file of [activeQueue, activeState, otherQueue]) await fs.utimes(file, old, old);
+        await _testOnly.cleanupTelemetryQueueTempOrphans(globalRoot);
+        const remaining = (await fs.readdir(path.dirname(activeQueue))).sort();
+        expect(remaining).toEqual([path.basename(activeQueue), path.basename(activeState)].sort());
       } finally {
         restore();
       }

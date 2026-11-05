@@ -220,37 +220,97 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     });
     const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
     expect(calledUrl.searchParams.get("query")).toBe(
-      "is:unresolved level:[fatal,error] !environment:test lastSeen:-14d",
+      "is:unresolved level:[fatal,error] lastSeen:-14d",
     );
     expect(json.sentry.window_days).toBe(14);
     expect(json.thresholds.sentry.request_timeout_ms).toBe(120_000);
   });
 
-  it("excludes only test-only issues: production and mixed-environment errors still block (pm-usn5k2)", async () => {
-    // Model Sentry's issue search: `!environment:test` drops an issue only when
-    // every event it holds is environment=test.
-    const issues = [
-      { shortId: "PM-TEST-ONLY", environments: ["test"] },
-      { shortId: "PM-PRODUCTION", environments: ["production"] },
-      { shortId: "PM-MIXED", environments: ["test", "production"] },
-    ].map(({ shortId, environments }) => ({
-      shortId, environments, level: "error", logger: "node", isUnhandled: true,
+  // Model Sentry's issue search: `!environment:test` keeps an issue with any
+  // non-test event, and `lastSeen` applies to the events left after that filter.
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  function environmentIssue(shortId: string, events: Array<[environment: string, ageDays: number]>) {
+    return {
+      shortId, events, level: "error", logger: "node", isUnhandled: true,
       title: "Error: boom", metadata: { value: "boom", type: "Error" },
-    }));
-    const fetchSpy = vi.fn(async (input: string | URL | Request) => {
+    };
+  }
+  function sentrySearch(
+    issues: ReturnType<typeof environmentIssue>[],
+    link?: (query: string) => string | undefined,
+  ) {
+    return vi.fn(async (input: string | URL | Request) => {
       const query = new URL(String(input)).searchParams.get("query") ?? "";
-      const visible = query.includes("!environment:test")
-        ? issues.filter((issue) => issue.environments.some((env) => env !== "test"))
-        : issues;
-      return { ok: true, status: 200, text: async () => JSON.stringify(visible) };
+      const windowDays = Number(/lastSeen:-(\d+)d/u.exec(query)?.[1] ?? Number.POSITIVE_INFINITY);
+      const visible = issues.filter((issue) => issue.events.some(([environment, ageDays]) =>
+        (!query.includes("!environment:test") || environment !== "test") && ageDays * DAY_MS <= windowDays * DAY_MS));
+      const header = link?.(query);
+      return {
+        ok: true, status: 200,
+        headers: { get: (name: string) => (name === "link" ? header ?? null : null) },
+        text: async () => JSON.stringify(visible),
+      };
     });
+  }
+
+  it("excludes only test-only issues: production and mixed-environment errors still block (pm-usn5k2)", async () => {
+    const fetchSpy = sentrySearch([
+      environmentIssue("PM-TEST-ONLY", [["test", 0]]),
+      environmentIssue("PM-PRODUCTION", [["production", 1]]),
+      environmentIssue("PM-MIXED", [["test", 0], ["production", 2]]),
+      // Sentry would drop this one from a combined `!environment:test lastSeen:-14d` query.
+      environmentIssue("PM-MIXED-STALE-PRODUCTION", [["production", 20], ["test", 0]]),
+      environmentIssue("PM-STALE-PRODUCTION", [["production", 20]]),
+    ]);
     const { json } = await runSentryGate({
       argv: ["--json", "--telemetry-mode", "off", "--max-high", "0", "--max-critical", "0"],
       env: { SENTRY_AUTH_TOKEN: "token-test" },
       fetchImpl: fetchSpy as unknown as typeof fetch,
     });
-    expect(json.sentry.blocking_short_ids).toEqual(["PM-PRODUCTION", "PM-MIXED"]);
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-PRODUCTION", "PM-MIXED", "PM-MIXED-STALE-PRODUCTION"]);
+    expect(json.sentry.ignored_test_only_short_ids).toEqual(["PM-TEST-ONLY"]);
+    expect(json.sentry.ignored_test_only_total).toBe(1);
+    expect(json.sentry.environment_listing_complete).toBe(true);
     expect(json.sentry.threshold_ok).toBe(false);
+    const queries = fetchSpy.mock.calls.map(([input]) => new URL(String(input)).searchParams.get("query"));
+    expect(queries).toContain("is:unresolved level:[fatal,error] !environment:test");
+  });
+
+  it.each([
+    ["a next page", ["--json", "--telemetry-mode", "off"], () => '<https://sentry.test/next>; rel="next"; results="true"'],
+    ["the limit", ["--json", "--telemetry-mode", "off", "--sentry-limit", "1"], () => undefined],
+  ])("drops nothing when the non-test listing may be truncated by %s", async (_label, argv, link) => {
+    const fetchSpy = sentrySearch([
+      environmentIssue("PM-TEST-ONLY", [["test", 0]]),
+      environmentIssue("PM-OLD-PRODUCTION", [["production", 40]]),
+    ], (query) => (query.includes("!environment:test") ? link() : undefined));
+    const { json } = await runSentryGate({
+      argv,
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-TEST-ONLY"]);
+    expect(json.sentry.ignored_test_only_total).toBe(0);
+    expect(json.sentry.environment_listing_complete).toBe(false);
+  });
+
+  it("fails the Sentry fetch when the environment listing fails instead of skipping issues", async () => {
+    const activeIssues = [environmentIssue("PM-TEST-ONLY", [["test", 0]])];
+    const fetchSpy = vi.fn(async (input: string | URL | Request) => {
+      const query = new URL(String(input)).searchParams.get("query") ?? "";
+      return query.includes("!environment:test")
+        ? { ok: false, status: 503, text: async () => "unavailable" }
+        : { ok: true, status: 200, text: async () => JSON.stringify(activeIssues) };
+    });
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.checked).toBe(false);
+    expect(json.sentry.warning).toBe("sentry_environment_query_failed:sentry_api_503");
+    expect(json.sentry.access_ok).toBe(false);
+    expect(json.ok).toBe(false);
   });
 
   it("shares a custom bounded request timeout across issue listing and latest-event enrichment", async () => {
@@ -294,9 +354,11 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       fetchImpl: fetchSpy as unknown as typeof fetch,
     });
 
-    expect(timeoutSpy).toHaveBeenCalledTimes(2);
+    // Issue listing, latest-event enrichment and the environment listing.
+    expect(timeoutSpy).toHaveBeenCalledTimes(3);
     expect(timeoutSpy).toHaveBeenNthCalledWith(1, 45_000);
     expect(timeoutSpy).toHaveBeenNthCalledWith(2, 45_000);
+    expect(timeoutSpy).toHaveBeenNthCalledWith(3, 45_000);
     expect(json.thresholds.sentry.request_timeout_ms).toBe(45_000);
     expect(json.sentry.ignored_expected_handled_short_ids).toEqual([
       "PM-TIMEOUT-CONTRACT",
@@ -345,8 +407,9 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
       fetchImpl: fetchSpy as unknown as typeof fetch,
     });
 
-    expect(fetchSpy).toHaveBeenCalledTimes(11);
-    expect(timeoutSpy).toHaveBeenCalledTimes(11);
+    // One listing, ten enrichments before the budget runs out, one environment listing.
+    expect(fetchSpy).toHaveBeenCalledTimes(12);
+    expect(timeoutSpy).toHaveBeenCalledTimes(12);
     expect(json.sentry.ignored_expected_handled_total).toBe(10);
     expect(json.sentry.blocking_short_ids).toEqual(["PM-BUDGET-10"]);
   });
@@ -364,7 +427,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     });
     const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
     expect(calledUrl.searchParams.get("query")).toBe(
-      "is:unresolved level:[fatal,error] !environment:test lastSeen:-30d",
+      "is:unresolved level:[fatal,error] lastSeen:-30d",
     );
     expect(json.sentry.window_days).toBe(30);
   });
@@ -382,7 +445,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     });
     const calledUrl = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? ""));
     expect(calledUrl.searchParams.get("query")).toBe(
-      "is:unresolved level:[fatal,error] !environment:test",
+      "is:unresolved level:[fatal,error]",
     );
     expect(json.sentry.window_days).toBe(0);
   });
@@ -755,7 +818,8 @@ describe("scripts/release/sentry-telemetry-gate: telemetry modes", () => {
     expect(json.sentry.ignored_expected_handled_short_ids).toEqual([
       "PM-EVENT-CONTRACT",
     ]);
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    // Issue listing, one latest-event enrichment, and the unenriched environment listing.
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 
   it("fails safe when token-based latest-event enrichment is unavailable or malformed", async () => {
@@ -1448,9 +1512,12 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
     const sentryCalls = runCommand.mock.calls.filter(
       ([command]) => command === "sentry",
     );
-    expect(sentryCalls).toHaveLength(2);
+    expect(sentryCalls).toHaveLength(3);
     expect(sentryCalls[0]?.[2]).toMatchObject({ timeout: 120_000 });
     expect(sentryCalls[1]?.[2]).toMatchObject({ timeout: 120_000 });
+    // The environment listing is a second, unenriched issue list.
+    expect(sentryCalls[2]?.[1]).toEqual(expect.arrayContaining(["issue", "list", "is:unresolved level:[fatal,error] !environment:test"]));
+    expect(sentryCalls[2]?.[2]).toMatchObject({ timeout: 120_000 });
   });
 
   it("leaves CLI issue rows blocking after the shared enrichment budget expires", async () => {

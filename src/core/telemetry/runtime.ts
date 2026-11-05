@@ -18,10 +18,10 @@ import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   isTelemetryTestEnvironment,
   redactTelemetryEndpoint,
+  redactUrlsInText,
   resolveTelemetryEndpointOverride,
   resolveTelemetryEnvironmentPolicy,
   resolveTelemetrySourceAttribution,
-  stripUrlCredentials,
   telemetryRuntimeFileName,
 } from "./policy.js";
 import type { GlobalOptions } from "../shared/command-types.js";
@@ -1979,7 +1979,7 @@ async function flushPendingOtelSpans(
       } catch (error: unknown) {
         lastError =
           error instanceof Error
-            ? sanitizeString(stripUrlCredentials(error.message), "redacted")
+            ? sanitizeString(redactUrlsInText(error.message), "redacted")
             : "local_otel_export_failed";
         const nextAttempts = span.attempts + 1;
         failedUpdates.set(span.id, {
@@ -2037,16 +2037,24 @@ async function flushTelemetryArtifacts(
   }
 }
 
-/** Best-effort removal of aged atomic-write temporary files whose names match the event queue, leaving recent and unrelated files intact. */
+/**
+ * Best-effort removal of aged atomic-write temporary files whose names match the
+ * event queue, and of idle queue and state files of other endpoint overrides,
+ * leaving recent and unrelated files intact. The active override's files are
+ * kept however long they sat idle, since its next flush still reads them.
+ */
 async function cleanupTelemetryQueueTempOrphans(
   globalPmRoot: string,
   maxAgeMs = TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS,
+  activeOverride = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<void> {
   try {
     const dirPath = telemetryRuntimeDirectory(globalPmRoot);
     const entries = await readdir(dirPath, { withFileTypes: true });
     const now = Date.now();
+    const active = new Set([telemetryRuntimeFileName("events.jsonl", activeOverride), telemetryRuntimeFileName("state.json", activeOverride)]);
     const cutoffFor = (name: string): number | undefined => {
+      if (active.has(name)) return undefined;
       if (/^\.events(?:\.[a-f0-9]{16})?\.jsonl\.\d+\.\d+\.[a-f0-9]+\.tmp$/.test(name)) return now - Math.max(0, maxAgeMs);
       return /^(?:events\.[a-f0-9]{16}\.jsonl|state\.[a-f0-9]{16}\.json)$/.test(name) ? now - TELEMETRY_OVERRIDE_QUEUE_MAX_IDLE_MS : undefined;
     };
@@ -2174,10 +2182,10 @@ async function flushQueue(
   endpoint: string,
   retentionDays: number,
 ): Promise<void> {
-  await cleanupTelemetryQueueTempOrphans(globalPmRoot);
-  // Resolve the override once, so the queue file read and the endpoint posted to
-  // always agree, even when the environment changed since the command started.
+  // Resolve the override once, so the cleanup, the queue file read and the endpoint
+  // posted to always agree, even when the environment changed since the command started.
   const override = resolveTelemetryEndpointOverride().endpoint;
+  await cleanupTelemetryQueueTempOrphans(globalPmRoot, undefined, override);
   const normalizedEndpoint = (override ?? endpoint).trim();
   const stateEndpoint = recordedStateEndpoint(normalizedEndpoint, override);
   const writeState = (patch: TelemetryRuntimeState): Promise<void> => writeRuntimeState(globalPmRoot, patch, override);
@@ -2257,7 +2265,7 @@ async function flushQueue(
     );
     const errorMessage = (() => {
       if (error instanceof Error) {
-        return sanitizeString(stripUrlCredentials(error.message), "redacted");
+        return sanitizeString(redactUrlsInText(error.message), "redacted");
       }
       return "telemetry_flush_failed";
     })();
@@ -2290,7 +2298,7 @@ async function flushQueue(
   } catch (error: unknown) {
     const errorMessage = (() => {
       if (error instanceof Error) {
-        return sanitizeString(stripUrlCredentials(error.message), "redacted");
+        return sanitizeString(redactUrlsInText(error.message), "redacted");
       }
       return "telemetry_flush_failed";
     })();
