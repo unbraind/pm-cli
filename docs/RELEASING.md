@@ -470,7 +470,14 @@ The static phase includes `pnpm sdk:surface:check`,
 the gate behind `pnpm quality:package-artifact`) before any version commit or
 tag exists. It evaluates npm's actual packlist against the committed
 unpacked-size, file-count, required-runtime-file, and forbidden source-map
-budgets, so an over-budget candidate never receives an immutable tag. Release
+budgets, so an over-budget candidate never receives an immutable tag. The
+`package-artifact-sentry-injected` step then runs the same gate with
+`--profile=sentry-injected --simulate-injection`. It runs the installed
+`sentry-cli` on a disposable copy of `dist/` and adds each packed file's
+measured growth to the packlist, so it checks the bytes the release will
+publish without rewriting the checkout. An incremental rebuild does not
+re-emit unchanged modules, so injecting the checkout itself would leave
+injected files behind. Release
 additionally reruns the packlist gate immediately after Sentry debug-ID
 injection and before any Sentry upload or finalization, using the derived
 `sentry-injected` profile: the base ceiling plus `max_bytes_per_injected_file`
@@ -478,8 +485,7 @@ for every packed `dist/**/*.js` file. `sentry-cli sourcemaps inject dist/`
 adds one fixed-length snippet to each such file (358 bytes with
 `@sentry/cli` 3.8.2), so a fixed allowance stopped covering the transform once
 the file count grew and blocked the already-tagged 2026.11.5
-([pm-998juj](../.agents/pm/tasks/pm-998juj.toon)). With the derived ceiling, a
-candidate that passes the base profile also passes after injection.
+([pm-998juj](../.agents/pm/tasks/pm-998juj.toon)).
 `tests/unit/scripts/release/sentry-injection-allowance.spec.ts` runs the
 installed `sentry-cli` against a fixture, so an upgrade that grows the snippet
 fails in the pull request that upgrades it, not on a tag. CI constrains the base

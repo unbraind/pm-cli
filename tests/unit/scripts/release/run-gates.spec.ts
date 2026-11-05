@@ -220,8 +220,17 @@ describe("scripts/release/run-gates", () => {
     const artifactIndex = invocations.findIndex((joined) =>
       joined.includes("scripts/release/package-artifact-gate.mjs"),
     );
+    const injectedIndex = invocations.findIndex(
+      (joined) =>
+        joined.includes("scripts/release/package-artifact-gate.mjs") &&
+        joined.includes("--profile=sentry-injected") &&
+        joined.includes("--simulate-injection"),
+    );
     expect(buildIndex).toBeGreaterThanOrEqual(0);
     expect(artifactIndex).toBeGreaterThan(buildIndex);
+    // The injected profile is measured on a disposable copy before any tag,
+    // mirroring the release workflow's base-then-injected order.
+    expect(injectedIndex).toBeGreaterThan(artifactIndex);
     expect(
       spawnSync.mock.calls.some((c) => {
         const args = (c[1] as string[] | undefined) ?? [];

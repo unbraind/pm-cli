@@ -7,7 +7,14 @@
  * verdict covers the artifact users actually install instead of the build tree.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -221,6 +228,83 @@ export function validatePackageArtifact(report, budget, profile = "base") {
   };
 }
 
+/**
+ * Add the bytes a real transform adds to each packed file, measured on a
+ * disposable copy so the checkout's build output is never rewritten.
+ *
+ * Pre-tag preflight uses this to check the exact injected profile the release
+ * workflow later enforces in place. Injecting the checkout itself would leave
+ * injected modules behind that an incremental rebuild does not re-emit.
+ */
+export function simulateInjection(report, budget, profile, { root, inject }) {
+  const artifact = readSingleArtifact(report);
+  if (
+    typeof budget.injection_profiles !== "object" ||
+    budget.injection_profiles === null ||
+    !Object.hasOwn(budget.injection_profiles, profile)
+  ) {
+    throw new RangeError(
+      `--simulate-injection requires an injection profile, not ${profile}`,
+    );
+  }
+  const declaration = readInjectionProfile(budget, profile);
+  const scratch = mkdtempSync(path.join(tmpdir(), "pm-artifact-injection-"));
+  try {
+    const copy = path.join(scratch, declaration.injected_prefix);
+    cpSync(path.join(root, declaration.injected_prefix), copy, {
+      recursive: true,
+    });
+    inject(copy);
+    let addedBytes = 0;
+    let injectedFiles = 0;
+    const files = artifact.files.map((file) => {
+      if (
+        typeof file?.path !== "string" ||
+        !file.path.startsWith(declaration.injected_prefix) ||
+        !file.path.endsWith(declaration.injected_suffix)
+      ) {
+        return file;
+      }
+      const added =
+        statSync(path.join(scratch, file.path)).size -
+        statSync(path.join(root, file.path)).size;
+      addedBytes += added;
+      if (added > 0) injectedFiles += 1;
+      return { ...file, size: file.size + added };
+    });
+    return {
+      report: {
+        ...artifact,
+        unpackedSize: artifact.unpackedSize + addedBytes,
+        files,
+      },
+      simulation: {
+        source: "disposable_copy",
+        injected_file_count: injectedFiles,
+        added_bytes: addedBytes,
+      },
+    };
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+/** Run the checkout's installed sentry-cli debug-ID injection on one directory. */
+async function createSentryInjector(root) {
+  const { createRequire } = await import("node:module");
+  const { SentryCli } = createRequire(path.join(root, "package.json"))(
+    "@sentry/cli",
+  );
+  const binary = SentryCli.getPath();
+  return (directory) =>
+    execFileSync(binary, ["sourcemaps", "inject", directory], {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, SENTRY_DISABLE_UPDATE_CHECK: "1" },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+}
+
 const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
 const budget = JSON.parse(
   readFileSync(path.join(scriptRoot, "package-artifact-budget.json"), "utf8"),
@@ -246,6 +330,26 @@ if (
   throw new TypeError("Package artifact gate requires --profile=<name>");
 }
 const profile = profileArgument?.slice("--profile=".length) ?? "base";
-console.log(
-  JSON.stringify(validatePackageArtifact(report, budget, profile), null, 2),
-);
+if (process.argv.slice(2).includes("--simulate-injection")) {
+  const root = process.cwd();
+  const { report: injectedReport, simulation } = simulateInjection(
+    report,
+    budget,
+    profile,
+    { root, inject: await createSentryInjector(root) },
+  );
+  console.log(
+    JSON.stringify(
+      {
+        ...validatePackageArtifact(injectedReport, budget, profile),
+        simulation,
+      },
+      null,
+      2,
+    ),
+  );
+} else {
+  console.log(
+    JSON.stringify(validatePackageArtifact(report, budget, profile), null, 2),
+  );
+}

@@ -21,19 +21,55 @@ const budget = {
   required_paths: ["dist/cli.js", "package.json"],
 };
 
+interface InjectionFixture {
+  /** Bytes the simulated injector adds to each file under the copied prefix. */
+  added: Record<string, number>;
+  /** Original checkout sizes keyed by packed path. */
+  sizes: Record<string, number>;
+}
+
 async function run(
   report: unknown,
   configuredBudget: unknown = budget,
   profileArguments: string[] = [],
+  injection?: InjectionFixture,
 ) {
-  const execFileSync = vi.fn(() => JSON.stringify(report));
+  const execFileSync = vi.fn((command: string) =>
+    command === "/bin/sentry-cli" ? "" : JSON.stringify(report),
+  );
   const readFileSync = vi.fn(() =>
     typeof configuredBudget === "string"
       ? configuredBudget
       : JSON.stringify(configuredBudget),
   );
+  const scratch = path.join("/scratch", "pm-artifact-injection-x");
+  const cpSync = vi.fn();
+  const mkdtempSync = vi.fn(() => scratch);
+  const rmSync = vi.fn();
+  const statSync = vi.fn((file: string) => {
+    const relative = path
+      .relative(file.startsWith(scratch) ? scratch : process.cwd(), file)
+      .split(path.sep)
+      .join("/");
+    const original = injection?.sizes[relative] ?? 0;
+    return {
+      size: file.startsWith(scratch)
+        ? original + (injection?.added[relative] ?? 0)
+        : original,
+    };
+  });
+  const getPath = vi.fn(() => "/bin/sentry-cli");
   vi.doMock("node:child_process", () => ({ execFileSync }));
-  vi.doMock("node:fs", () => ({ readFileSync }));
+  vi.doMock("node:fs", () => ({
+    cpSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    statSync,
+  }));
+  vi.doMock("node:module", () => ({
+    createRequire: () => () => ({ SentryCli: { getPath } }),
+  }));
   const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
   const originalArgv = process.argv;
   process.argv = [...originalArgv, ...profileArguments];
@@ -48,7 +84,16 @@ async function run(
   } finally {
     process.argv = originalArgv;
   }
-  return { execFileSync, failure, log, readFileSync };
+  return {
+    cpSync,
+    execFileSync,
+    failure,
+    log,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    scratch,
+  };
 }
 
 describe("package artifact gate", () => {
@@ -210,6 +255,119 @@ describe("package artifact gate", () => {
       expect(String(result.failure)).toContain(message);
     },
   );
+
+  it("measures the injected profile on a disposable copy without touching the checkout", async () => {
+    const result = await run(
+      [
+        {
+          name: "@unbrained/pm-cli",
+          version: "2026.11.5",
+          unpackedSize: 100,
+          files: [
+            { path: "dist/cli.js", size: 40 },
+            { path: "dist/sdk/index.js", size: 40 },
+            // A module without a source map is left unchanged by the injector.
+            { path: "dist/vendor.js", size: 0 },
+            { path: "dist/sdk/index.d.ts", size: 10 },
+            { path: "package.json", size: 10 },
+          ],
+        },
+      ],
+      { ...budget, max_file_count: 10 },
+      ["--profile=sentry-injected", "--simulate-injection"],
+      {
+        sizes: { "dist/cli.js": 40, "dist/sdk/index.js": 40 },
+        added: { "dist/cli.js": 4, "dist/sdk/index.js": 5 },
+      },
+    );
+
+    expect(result.failure).toBeNull();
+    expect(result.cpSync).toHaveBeenCalledWith(
+      path.join(process.cwd(), "dist/"),
+      path.join(result.scratch, "dist/"),
+      { recursive: true },
+    );
+    expect(result.execFileSync).toHaveBeenCalledWith(
+      "/bin/sentry-cli",
+      ["sourcemaps", "inject", path.join(result.scratch, "dist/")],
+      expect.objectContaining({ cwd: process.cwd() }),
+    );
+    expect(result.rmSync).toHaveBeenCalledWith(result.scratch, {
+      recursive: true,
+      force: true,
+    });
+    expect(JSON.parse(String(result.log.mock.calls[0]?.[0]))).toMatchObject({
+      ok: true,
+      profile: "sentry-injected",
+      distribution_size: 109,
+      max_unpacked_size: 115,
+      simulation: {
+        source: "disposable_copy",
+        injected_file_count: 2,
+        added_bytes: 9,
+      },
+    });
+  });
+
+  it("fails the simulated profile when real injection outgrows the derived ceiling", async () => {
+    const result = await run(
+      [
+        {
+          unpackedSize: 100,
+          files: [
+            { path: "dist/cli.js", size: 50 },
+            { path: "package.json", size: 50 },
+            null,
+          ],
+        },
+      ],
+      budget,
+      ["--profile=sentry-injected", "--simulate-injection"],
+      { sizes: { "dist/cli.js": 50 }, added: { "dist/cli.js": 6 } },
+    );
+
+    expect(String(result.failure)).toContain("unpacked_size:106>105");
+    expect(result.rmSync).toHaveBeenCalled();
+  });
+
+  it.each([[[]], [["--profile=base"]]])(
+    "refuses to simulate injection for a fixed profile %#",
+    async (profileArguments) => {
+      const result = await run(
+        [
+          {
+            unpackedSize: 2,
+            files: [{ path: "dist/cli.js" }, { path: "package.json" }],
+          },
+        ],
+        budget,
+        [...profileArguments, "--simulate-injection"],
+      );
+
+      expect(result.failure).toBeInstanceOf(RangeError);
+      expect(String(result.failure)).toContain(
+        "--simulate-injection requires an injection profile",
+      );
+      expect(result.mkdtempSync).not.toHaveBeenCalled();
+    },
+  );
+
+  it("refuses to simulate injection when no injection profiles are declared", async () => {
+    const result = await run(
+      [
+        {
+          unpackedSize: 2,
+          files: [{ path: "dist/cli.js" }, { path: "package.json" }],
+        },
+      ],
+      { ...budget, injection_profiles: null },
+      ["--profile=sentry-injected", "--simulate-injection"],
+    );
+
+    expect(String(result.failure)).toContain(
+      "--simulate-injection requires an injection profile",
+    );
+  });
 
   it("rejects a null injection profile declaration", async () => {
     const result = await run(
