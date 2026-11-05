@@ -1952,6 +1952,22 @@ describe("operation command actions", () => {
     expect(contractsOptions.full).toBe(true);
   });
 
+  it.each([
+    [["--strict-exit"], { summary: true, full: false }],
+    [["--strict-exit", "--full"], { summary: false, full: true }],
+    [["--strict-exit", "--full", "--summary"], { summary: true, full: true }],
+    [["--full", "--summary"], { summary: true, full: true }],
+  ])(
+    "lets strict exit imply the health summary only without --full (GH-1670) %#",
+    async (flags, expected) => {
+      vi.mocked(runHealth).mockResolvedValue({ ok: true, warnings: [] } as never);
+      await runCli("health", ...flags);
+      expect(
+        lastCallArg<Record<string, unknown>>(vi.mocked(runHealth) as never, 1),
+      ).toMatchObject(expected);
+    },
+  );
+
   it("escalates health and validate findings under strict exit", async () => {
     await runCli("health", "--summary", "--skip-drift");
     const healthOptions = lastCallArg<Record<string, unknown>>(

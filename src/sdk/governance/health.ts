@@ -270,11 +270,11 @@ export interface RunHealthOptions {
   skipIntegrity?: boolean;
   /** Value that configures or reports skip drift for this contract. */
   skipDrift?: boolean;
-  /** Value that configures or reports full for this contract. */
+  /** Run every check, overriding skip flags and check-only fast paths; returns complete details unless `summary` or `brief` selects a compact projection. */
   full?: boolean;
-  /** Value that configures or reports brief for this contract. */
+  /** Render compact per-check details; takes precedence over the complete details `full` would return. */
   brief?: boolean;
-  /** Value that configures or reports summary for this contract. */
+  /** Render the one-line-style summary; takes precedence over `brief` and over the complete details `full` would return. */
   summary?: boolean;
 }
 
@@ -2485,9 +2485,10 @@ function resolveHealthSkipPolicy(options: RunHealthOptions): HealthSkipPolicy {
     options.brief !== true &&
     options.summary !== true &&
     options.full !== true;
-  const summaryMode =
-    (options.summary === true || checkOnlyDefaultSummary) &&
-    options.full !== true;
+  // `full` widens the check scope; an explicit compact projection still
+  // selects how that complete run is rendered (GH-1670), so `--full --summary`
+  // runs every check and summarizes it instead of silently dropping the flag.
+  const summaryMode = options.summary === true || checkOnlyDefaultSummary;
   const fastProjectionCheckOnly =
     options.checkOnly === true &&
     (options.brief === true || options.summary === true) &&

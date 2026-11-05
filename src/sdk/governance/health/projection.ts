@@ -441,9 +441,11 @@ function applySummaryHealthProjection(result: HealthResult): HealthResult {
 
 /** Select the requested evidence projection after computing the authoritative verdict. */
 function selectHealthProjection(result: HealthResult, options: RunHealthOptions, summaryMode: boolean): HealthResult {
-  if (options.full === true) return result;
+  // An explicit compact projection wins over the complete details `full`
+  // otherwise returns; `full` keeps forcing every check to run (GH-1670).
   if (summaryMode) return applySummaryHealthProjection(result);
   if (options.brief === true) return applyBriefHealthProjection(result);
+  if (options.full === true) return result;
   return {
     ...result,
     checks: result.checks.map((check) => check.name === "extensions" && check.status === "ok"

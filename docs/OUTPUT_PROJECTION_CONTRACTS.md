@@ -9,6 +9,13 @@ check details. Warning and failure details remain available by default.
 `--full` restores structured evidence; `--brief` never expands an individual
 check's serialized detail beyond the standard projection. Summary and check-only
 verdict semantics remain unchanged. SDK `runHealth` and MCP use the same engine.
+For `pm health`, `--full` widens the check scope. An explicit `--summary` or
+`--brief` still selects the projection, so `pm health --full --summary` runs
+every check and returns the summary instead of silently dropping the flag.
+`--strict-exit` only implies the summary and leaves `--full` details in place
+([pm-gh1670](../.agents/pm/issues/pm-gh1670.toon)). This differs from `list`,
+`graph` and `deps`, where `--full` is purely a projection and refuses
+`--summary` or `--brief` as a conflict.
 
 Tracker references: [pm-p258tx](../.agents/pm/features/pm-p258tx.toon),
 [pm-cyrfjq](../.agents/pm/issues/pm-cyrfjq.toon), and

@@ -504,7 +504,9 @@ async function runHealthAction(
     verboseStaleItems: Boolean(options.verboseStaleItems),
     verboseAuthorEvents: Boolean(options.verboseAuthorEvents),
     brief: Boolean(options.brief),
-    summary: Boolean(options.summary) || strictExit,
+    // Strict exit implies the summary only when the caller did not ask for
+    // complete details with --full; an explicit --summary always applies.
+    summary: Boolean(options.summary) || (strictExit && options.full !== true),
     skipVectors: Boolean(options.skipVectors),
     skipIntegrity: Boolean(options.skipIntegrity),
     skipDrift: Boolean(options.skipDrift),
@@ -1133,7 +1135,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--brief", "Emit compact health details for low-token agent checks")
     .option(
       "--summary",
-      "Emit one-line-style health status with check names and warning count",
+      "Emit one-line-style status and warning count, also with --full",
     )
     .option("--skip-vectors", "Skip vectorization check for a faster run")
     .option(
@@ -1143,7 +1145,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--skip-drift", "Skip history drift hash check for a faster run")
     .option(
       "--full",
-      "Run all checks including slow integrity, drift, and vectorization checks",
+      "Run every check (slow integrity, drift, vectors too); keeps --summary/--brief",
     )
     .option(
       "--strict-exit",
