@@ -444,7 +444,7 @@ describe("runConfig", () => {
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(27);
+      expect(result.count).toBe(26); // project scope omits the global-only telemetry-tracking key (GH-1660)
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -470,7 +470,6 @@ describe("runConfig", () => {
         "governance_force_required_for_stale_lock",
         "test_result_tracking",
         "untrusted_linked_test_execution",
-        "telemetry_tracking",
         "agent_identity_vocabulary",
         "context",
       ]);
@@ -495,9 +494,8 @@ describe("runConfig", () => {
           (entry) => entry.key === "untrusted_linked_test_execution",
         )?.value,
       ).toBe("disabled");
-      expect(
-        result.keys?.find((entry) => entry.key === "telemetry_tracking")?.value,
-      ).toBe("enabled");
+      // GH-1660: telemetry-tracking belongs to the global profile, so project scope does not list it.
+      expect(result.keys?.find((entry) => entry.key === "telemetry_tracking")).toBeUndefined();
     });
   });
 
@@ -568,7 +566,6 @@ describe("runConfig", () => {
         governance_force_required_for_stale_lock: "enabled",
         test_result_tracking: "disabled",
         untrusted_linked_test_execution: "disabled",
-        telemetry_tracking: "enabled",
         context: {
           default_depth: "brief",
           activity_limit: 10,
@@ -680,7 +677,6 @@ describe("runConfig", () => {
         { key: "governance-force-required-for-stale-lock", policy: "enabled" },
         { key: "test-result-tracking", policy: "enabled" },
         { key: "untrusted-linked-test-execution", policy: "enabled" },
-        { key: "telemetry-tracking", policy: "disabled" },
       ];
 
       for (const entry of cases) {
@@ -818,7 +814,7 @@ describe("runConfig", () => {
         runConfig(
           "project",
           "set",
-          "telemetry-tracking",
+          "test-result-tracking",
           { clearCriteria: true },
           globalOptions,
         ),
@@ -1727,53 +1723,47 @@ describe("runConfig", () => {
     });
   });
 
-  it("gets and sets telemetry tracking policy", async () => {
+  it("gets and sets telemetry tracking policy in the global profile and refuses project scope (GH-1660)", async () => {
     await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const globalRoot = path.join(tempRoot, ".pm-cli-global");
+      process.env.PM_GLOBAL_PATH = globalRoot;
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
 
-      const getDefault = await runConfig(
-        "project",
-        "get",
-        "telemetry-tracking",
-        {},
-        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
-      );
+      await expect(runConfig("project", "get", "telemetry-tracking", {}, globalOptions))
+        .rejects.toThrow("Config get telemetry-tracking applies to this CLI install, not one project. Run: pm config global get telemetry-tracking");
+      const getDefault = await runConfig("global", "get", "telemetry-tracking", {}, globalOptions);
       expect(getDefault.key).toBe("telemetry_tracking");
       expect(getDefault.policy).toBe("enabled");
       expect(getDefault.changed).toBe(false);
+      const globalList = await runConfig("global", "list", undefined, {}, globalOptions);
+      expect(globalList.keys?.find((entry) => entry.key === "telemetry_tracking")?.value).toBe("enabled");
 
-      const setDisabled = await runConfig(
-        "project",
-        "set",
-        "telemetry_tracking",
-        { policy: "disabled" },
-        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
-      );
+      // Consent is read only from the global profile, so a project value would be inert.
+      await expect(runConfig("project", "set", "telemetry_tracking", { policy: "disabled" }, globalOptions))
+        .rejects.toThrow("Config set telemetry-tracking applies to this CLI install, not one project. Run: pm config global set telemetry-tracking --policy disabled");
+      await expect(runConfig("project", "set", "telemetry-tracking", { policy: "enabled" }, globalOptions))
+        .rejects.toMatchObject({ context: { code: "invalid_argument_value", reason: "telemetry_consent_is_global", field: "scope" } });
+      expect((await readSettings(pmRoot)).telemetry.enabled).toBe(true);
+
+      const setDisabled = await runConfig("global", "set", "telemetry_tracking", { policy: "disabled" }, globalOptions);
       expect(setDisabled.key).toBe("telemetry_tracking");
       expect(setDisabled.policy).toBe("disabled");
       expect(setDisabled.changed).toBe(true);
-      const persistedAfterSet = await readSettings(pmRoot);
+      const persistedAfterSet = await readSettings(globalRoot);
+      expect(persistedAfterSet.telemetry.enabled).toBe(false);
       expect(persistedAfterSet.telemetry.first_run_prompt_completed).toBe(true);
 
-      const setDisabledAgain = await runConfig(
-        "project",
-        "set",
-        "telemetry-tracking",
-        { policy: "disabled" },
-        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
-      );
+      const setDisabledAgain = await runConfig("global", "set", "telemetry-tracking", { policy: "disabled" }, globalOptions);
       expect(setDisabledAgain.policy).toBe("disabled");
       expect(setDisabledAgain.changed).toBe(false);
+      expect((await runConfig("global", "export", undefined, {}, globalOptions)).values?.telemetry_tracking).toBe("disabled");
+      const setEnabled = await runConfig("global", "set", "telemetry-tracking", { policy: "enabled" }, globalOptions);
+      expect(setEnabled).toMatchObject({ policy: "enabled", changed: true });
 
       await expect(
-        runConfig(
-          "project",
-          "set",
-          "telemetry-tracking",
-          { policy: "auto_create" },
-          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
-        ),
+        runConfig("global", "set", "telemetry-tracking", { policy: "auto_create" }, globalOptions),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -1842,8 +1832,8 @@ describe("runConfig", () => {
       const setResult = await runConfig(
         "project",
         "set",
-        "telemetry-tracking",
-        { policy: "disabled" },
+        "test-result-tracking",
+        { policy: "enabled" },
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
       expect(setResult.changed).toBe(true);
@@ -2213,7 +2203,8 @@ describe("runConfig", () => {
         globalOptions,
       );
       expect(result.values?.governance_require_close_reason).toBe("disabled");
-      expect(result.values?.telemetry_tracking).toBe("disabled");
+      // GH-1660: project scope does not export the global-only telemetry-tracking key.
+      expect(result.values).not.toHaveProperty("telemetry_tracking");
     });
   });
 
@@ -2571,24 +2562,24 @@ describe("runConfig", () => {
         const off = await runConfig(
           "project",
           "set",
-          "telemetry-tracking",
+          "test-result-tracking",
           {},
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
           "off",
         );
         expect(off.policy).toBe("disabled");
-        expect((await readSettings(pmRoot)).telemetry.enabled).toBe(false);
+        expect((await readSettings(pmRoot)).testing.record_results_to_items).toBe(false);
 
         const on = await runConfig(
           "project",
           "set",
-          "telemetry-tracking",
+          "test-result-tracking",
           {},
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
           "enabled",
         );
         expect(on.policy).toBe("enabled");
-        expect((await readSettings(pmRoot)).telemetry.enabled).toBe(true);
+        expect((await readSettings(pmRoot)).testing.record_results_to_items).toBe(true);
       });
     });
 
@@ -2634,7 +2625,7 @@ describe("runConfig", () => {
         const result = await runConfig(
           "project",
           "set",
-          "telemetry-tracking",
+          "test-result-tracking",
           { policy: "disabled" },
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
           "off",
@@ -2661,7 +2652,7 @@ describe("runConfig", () => {
         const telemetry = await runConfig(
           "project",
           "set",
-          "telemetry-tracking",
+          "test-result-tracking",
           { policy: "DISABLED" },
           { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
           "off",
@@ -2689,7 +2680,7 @@ describe("runConfig", () => {
           runConfig(
             "project",
             "set",
-            "telemetry-tracking",
+            "test-result-tracking",
             { policy: "enabled" },
             { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
             "off",

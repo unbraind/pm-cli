@@ -880,6 +880,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
       "cli/error-guidance.ts",
       "core/item/priority.ts",
       "core/telemetry/observability.ts",
+      "sdk/config.ts",
       "sdk/context-intent-contracts.ts",
       "sdk/dependencies.ts",
       "sdk/governance/assurance-mutation-error.ts",

@@ -869,7 +869,8 @@ exit "\${NPM_STATUS}"
     expect(gateSource).toContain("function buildSentryGateQuery(windowDays)");
     expect(gateSource).toMatch(/lastSeen:-\$\{windowDays\}d/);
     expect(gateSource).toContain('"sentry-window-days"');
-    expect(gateSource).toContain("buildSentryGateQuery(sentryWindowDays)");
+    expect(gateSource).toMatch(/fetchSentryGateIssues\(\s*sentryProject,\s*sentryWindowDays,/u);
+    expect(gateSource).toContain("fetchSentryIssues(project, buildSentryGateQuery(windowDays),");
     expect(gateSource).toContain("window_days: params.sentryWindowDays");
 
     // The release + auto-release surfaces invoke the gate with an explicit window.

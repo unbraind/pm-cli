@@ -12,16 +12,11 @@ import { PmCliError } from "../core/shared/errors.js";
 import { nowIso } from "../core/shared/time.js";
 import { resolveGlobalPmRoot } from "../core/store/paths.js";
 import { readSettings, writeSettings } from "../core/store/settings.js";
-import { resolveTelemetryEnvironmentPolicy } from "../core/telemetry/policy.js";
+import { effectiveTelemetryEndpoint, redactTelemetryEndpoint, resolveTelemetryEnvironmentPolicy, telemetryRuntimeFileName } from "../core/telemetry/policy.js";
 import { flushTelemetryQueueNow, withTelemetryQueueMutation } from "../core/telemetry/runtime.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
 import { PM_COMMAND_ALIAS_CONTRACTS } from "./cli-contracts/command-aliases.js";
 
-const TELEMETRY_QUEUE_RELATIVE_PATH = path.join(
-  "runtime",
-  "telemetry",
-  "events.jsonl",
-);
 const TELEMETRY_STATE_RELATIVE_PATH = path.join(
   "runtime",
   "telemetry",
@@ -90,7 +85,7 @@ export interface TelemetryStatusSummary {
   configured_enabled: boolean;
   /** Process opt-outs, resolved without changing persisted preferences. */
   env_overrides: ReturnType<typeof resolveTelemetryEnvironmentPolicy>;
-  /** Configured delivery endpoint. */
+  /** Effective delivery endpoint: a valid http(s) `PM_TELEMETRY_ENDPOINT` override, else the configured endpoint, with credentials, query and fragment removed. */
   endpoint: string;
   /** Local event queue path. */
   queue_path: string;
@@ -620,8 +615,9 @@ const buildTelemetryStatusSummary = async (
   globalPmRoot: string,
 ): Promise<TelemetryStatusSummary> => {
   const settings = await readSettings(globalPmRoot);
-  const queuePath = path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
-  const statePath = path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+  // Report the queue and delivery state the current endpoint override actually uses (GH-1660).
+  const queuePath = path.join(globalPmRoot, TELEMETRY_RUNTIME_RELATIVE_PATH, telemetryRuntimeFileName("events.jsonl"));
+  const statePath = path.join(globalPmRoot, TELEMETRY_RUNTIME_RELATIVE_PATH, telemetryRuntimeFileName("state.json"));
   const queueRaw = await readFileIfExists(queuePath);
   const queue = parseTelemetryQueue(queueRaw);
   const runtimeState = await readTelemetryRuntimeState(statePath);
@@ -630,7 +626,7 @@ const buildTelemetryStatusSummary = async (
     enabled: settings.telemetry.enabled && !environmentPolicy.telemetry_disabled,
     configured_enabled: settings.telemetry.enabled,
     env_overrides: environmentPolicy,
-    endpoint: settings.telemetry.endpoint,
+    endpoint: redactTelemetryEndpoint(effectiveTelemetryEndpoint(settings.telemetry.endpoint)),
     queue_path: queuePath,
     state_path: statePath,
     queue_rows_total: queue.rows_total,
@@ -727,7 +723,8 @@ const runTelemetryStats: TelemetryCommandHandler = async (options, context) => {
   const buckets = buildTelemetryStatsBuckets(queue.entries);
   const selected = buckets.slice(0, limit);
   const settings = await readSettings(context.globalPmRoot);
-  const usage = await readRetainedAliasUsage(context.globalPmRoot, context.statePath, settings.telemetry.retention_days);
+  // Alias usage is recorded in the default state file, whatever endpoint override is active.
+  const usage = await readRetainedAliasUsage(context.globalPmRoot, path.join(context.globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH), settings.telemetry.retention_days);
   const aliasUsage = Object.entries(usage).map(([alias, entry]) => {
     const days = Object.values(entry.days);
     return {
@@ -821,7 +818,7 @@ export async function runTelemetry(
   const globalPmRoot = resolveGlobalPmRoot(process.cwd());
   return TELEMETRY_COMMAND_HANDLERS[subcommand](options, {
     globalPmRoot,
-    queuePath: path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH),
-    statePath: path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH),
+    queuePath: path.join(globalPmRoot, TELEMETRY_RUNTIME_RELATIVE_PATH, telemetryRuntimeFileName("events.jsonl")),
+    statePath: path.join(globalPmRoot, TELEMETRY_RUNTIME_RELATIVE_PATH, telemetryRuntimeFileName("state.json")),
   });
 }

@@ -10,6 +10,7 @@ import {
   type GlobalOptions,
   EXIT_CODE,
   PmCliError,
+  defaultConfigScope,
   readSettings,
   resolvePmRoot,
 } from "../sdk/runtime-primitives.js";
@@ -1169,7 +1170,7 @@ function resolveConfigPositionals(
   const actionShorthands = new Set(["get", "set", "list", "export"]);
   const scopeShorthand = scope !== undefined && actionShorthands.has(scope);
   return {
-    resolvedScope: scopeShorthand ? "project" : (scope ?? "project"),
+    resolvedScope: scopeShorthand ? defaultConfigScope(action) : (scope ?? "project"),
     resolvedAction: scopeShorthand ? scope : (action ?? "list"),
     resolvedKey: scopeShorthand ? action : key,
     resolvedValue: scopeShorthand ? key : value,

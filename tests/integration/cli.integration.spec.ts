@@ -1000,13 +1000,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const projectSettingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(projectSettingsPath, "utf8")) as {
-        telemetry: {
+        telemetry?: {
           enabled: boolean;
           endpoint: string;
         };
       };
-      settings.telemetry.enabled = true;
-      settings.telemetry.endpoint = "http://127.0.0.1:1/v1/events";
+      // A project file carries no telemetry block (GH-1660); the global profile owns it.
+      expect(settings.telemetry).toBeUndefined();
+      settings.telemetry = { enabled: true, endpoint: "http://127.0.0.1:1/v1/events" };
       const globalSettingsPath = path.join(context.env.PM_GLOBAL_PATH as string, "settings.json");
       await mkdir(path.dirname(globalSettingsPath), { recursive: true });
       await writeFile(globalSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -3181,8 +3182,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(sprintReleasePolicyGetJson.policy).toBe("strict_error");
       expect(sprintReleasePolicyGetJson.changed).toBe(false);
 
+      // GH-1660: consent lives in the global profile, so project scope refuses with the global command.
+      const telemetryProjectSet = context.runCli(["config", "project", "set", "telemetry-tracking", "--policy", "disabled", "--json"]);
+      expect(telemetryProjectSet.code).toBe(2);
+      expect(`${telemetryProjectSet.stdout}${telemetryProjectSet.stderr}`).toContain("pm config global set telemetry-tracking --policy disabled");
       const telemetryPolicySet = context.runCli(
-        ["config", "project", "set", "telemetry-tracking", "--policy", "disabled", "--json"],
+        ["config", "global", "set", "telemetry-tracking", "--policy", "disabled", "--json"],
         { expectJson: true },
       );
       expect(telemetryPolicySet.code).toBe(0);
@@ -3196,7 +3201,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(telemetryPolicySetJson.changed).toBe(true);
 
       const telemetryPolicyGet = context.runCli(
-        ["config", "project", "get", "telemetry-tracking", "--json"],
+        ["config", "global", "get", "telemetry-tracking", "--json"],
         { expectJson: true },
       );
       expect(telemetryPolicyGet.code).toBe(0);

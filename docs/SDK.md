@@ -177,6 +177,13 @@ preflight refusal. An absent property gives no guarantee about writes; do not
 coerce it to `false` or treat an executed failure as safe to retry. Consumers
 that enumerate error keys should accept the additional optional property.
 
+The telemetry consent update (pm-gh1660) records two conservative breaking
+acknowledgements. `WriteSettingsOptions` gains optional `omitSections` and
+`skipIfStored`; existing calls compile and behave unchanged. `ConfigResult.values`
+becomes `Partial`, because project-scope `list` and `export` omit the global-only
+`telemetry_tracking` key: treat that key as possibly absent, and read consent
+from a global-scope export. No data migration or new dependency bounds are needed.
+
 Validation refusals for item status and priority carry producer-owned
 `code: "invalid_argument_value"` and `context.field`, `context.value` and
 `context.allowed`. The allowed spellings come from the active status schema or

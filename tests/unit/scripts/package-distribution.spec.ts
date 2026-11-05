@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -39,7 +39,7 @@ async function createBundleFixture(optionalPeer = false) {
   const manifest = {
     name: "runtime-bundle-fixture",
     version: "1.0.0",
-    files: ["index.js", "runtime-dependencies.json", "metadata.json"],
+    files: ["index.js", "runtime-dependencies.json", "metadata.json", "README.md"],
     dependencies: { first: "^1.0.0", second: "^1.0.0" },
     devDependencies: { dev: "^1.0.0" },
     scripts: { prepack: "exit 97" },
@@ -88,6 +88,7 @@ async function createBundleFixture(optionalPeer = false) {
   };
   await writeFile(path.join(root, "package.json"), JSON.stringify(manifest));
   await writeFile(path.join(root, "index.js"), "export const result = 1;\n");
+  await writeFile(path.join(root, "README.md"), "# Fixture\n\n| Key    | Value |\n| ------ | ----: |\n| a      | b     |\n");
   await writeFile(
     path.join(root, "runtime-dependencies.json"),
     JSON.stringify(ledger, null, 2),
@@ -155,6 +156,119 @@ it.each([true, false])("retains the complete optional-peer subtree without chang
   await rm(path.join(installed, "node_modules/leaf"), { recursive: true });
   expect(() => verifyRuntimeInstallation(installed)).toThrow("ENOENT");
 }, 60_000);
+
+it("compacts markdown table padding without changing cells, alignment or code (pm-998juj)", () => {
+  const source = [
+    "# Title",
+    "| Key        | Value      |",
+    "| :--------- | ---------: |",
+    "| `a\\|b`     |   spaced   |",
+    "  | nested     | row |",
+    "````md",
+    "| keep   |  fenced |",
+    "```",
+    "| still   | fenced |",
+    "````",
+    "    | indented   | code |",
+    "text | not a row",
+    "| a |",
+    "| -- | bad separator |",
+  ].join("\n");
+  expect(compactMarkdownTables(source).split("\n")).toEqual([
+    "# Title",
+    "| Key | Value |",
+    "|:---|---:|",
+    "| `a\\|b` | spaced |",
+    "  | nested     | row |",
+    "````md",
+    "| keep   |  fenced |",
+    "```",
+    "| still   | fenced |",
+    "````",
+    "    | indented   | code |",
+    "text | not a row",
+    "| a |",
+    "| -- | bad separator |",
+  ]);
+  expect(compactMarkdownTables("~~~\n| a  |\n~~~\n\n| b  |\n| --- |")).toBe("~~~\n| a  |\n~~~\n\n| b |\n|---|");
+});
+
+it("compacts only real tables: a block-starting header over a matching delimiter row, outside raw HTML (pm-998juj)", () => {
+  const unchanged = [
+    // A dash-only body row keeps its text; only the delimiter row is shortened.
+    ["| a   |\n| --- |\n| ------- |", "| a |\n|---|\n| ------- |"],
+    // A fence closes only on a bare marker, so a same-length marker with text stays code.
+    ["````\n````example\n| x   | y |\n| --- | - |\n````", "````\n````example\n| x   | y |\n| --- | - |\n````"],
+    // A backtick info string holding a backtick does not open a fence.
+    ["```a`b\n\n| x   |\n| --- |", "```a`b\n\n| x |\n|---|"],
+    // Raw <pre> and comment blocks keep their lines up to the closing marker.
+    ["<pre>\n| x   |\n| --- |\n</pre>\n\n| y   |\n| --- |", "<pre>\n| x   |\n| --- |\n</pre>\n\n| y |\n|---|"],
+    ["<pre>one line</pre>\n\n| y   |\n| --- |", "<pre>one line</pre>\n\n| y |\n|---|"],
+    ["<!-- note\n| x   |\n| --- |\n-->", "<!-- note\n| x   |\n| --- |\n-->"],
+    // Any other HTML block is raw up to the next blank line.
+    ["<div>\n| x   |\n| --- |\n\n| y   |\n| --- |", "<div>\n| x   |\n| --- |\n\n| y |\n|---|"],
+    // A pipe row continuing a paragraph, or a delimiter row whose cell count differs, is not a table.
+    ["text\n| x   |\n| --- |", "text\n| x   |\n| --- |"],
+    ["| x   | y |\n| --- |", "| x   | y |\n| --- |"],
+    // Processing-instruction, declaration and CDATA blocks run to their own closing markers.
+    ["<?php\n\n| x   |\n| --- |\n\n?>", "<?php\n\n| x   |\n| --- |\n\n?>"],
+    ["<!DOCTYPE x\n\n| x   |\n| --- |\n\n>", "<!DOCTYPE x\n\n| x   |\n| --- |\n\n>"],
+    ["<![CDATA[\n\n| x   |\n| --- |\n\n]]>", "<![CDATA[\n\n| x   |\n| --- |\n\n]]>"],
+    // Inline HTML in a paragraph opens no block, so the fence after it is still tracked.
+    ["<b>bold</b> text\n```\n\n| x   |\n| --- |\n```", "<b>bold</b> text\n```\n\n| x   |\n| --- |\n```"],
+    // A lone tag is raw up to the next blank line where it certainly starts a
+    // block: at the start, after a blank line or heading, or after a fence or
+    // raw block ends. After a line that may be a paragraph, a table body or a
+    // list item, the file is left unchanged.
+    ["<custom-tag>\n| x   |\n| --- |", "<custom-tag>\n| x   |\n| --- |"],
+    ["text\n\n<custom-tag>\n| x   |\n| --- |", "text\n\n<custom-tag>\n| x   |\n| --- |"],
+    ["# Page\n<custom-tag>\n# Raw heading\n| Key    |\n| ------ |", "# Page\n<custom-tag>\n# Raw heading\n| Key    |\n| ------ |"],
+    ["# Page\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y   |\n| --- |", "# Page\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y |\n|---|"],
+    ["```\ncode\n```\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y   |\n| --- |", "```\ncode\n```\n<custom-tag>\n# Raw\n| x   |\n| --- |\n\n| y |\n|---|"],
+    ["text\n<custom-tag>\n\n| x   |\n| --- |", "text\n<custom-tag>\n\n| x   |\n| --- |"],
+    ["text\n<custom-tag>\n```\n\n| Key    |\n| ------ |\n```", "text\n<custom-tag>\n```\n\n| Key    |\n| ------ |\n```"],
+    ["| h |\n|---|\n| 1 |\n<custom-tag>\n# Raw\n| Key    |\n| ------ |", "| h |\n|---|\n| 1 |\n<custom-tag>\n# Raw\n| Key    |\n| ------ |"],
+    // GFM trims only spaces and tabs: a non-breaking space is cell content, and a
+    // line holding only one is not blank, so it does not end a raw HTML block.
+    ["| a   | b |\n| --- | --- |\n| \u00a0x | y |", "| a | b |\n|---|---|\n| \u00a0x | y |"],
+    ["<div>\n\u00a0\n| x   |\n| --- |", "<div>\n\u00a0\n| x   |\n| --- |"],
+    // A pipe after an even number of backslashes separates cells, as GFM reads it.
+    ["| alpha\\\\| beta      |\n| -------- |", "| alpha\\\\| beta      |\n| -------- |"],
+    ["| a\\\\| b   |\n| --- | --- |", "| a\\\\ | b |\n|---|---|"],
+    // A comment block ends at -->, as CommonMark specifies, not at --!>.
+    ["<!-- c --!>\n| x   |\n| --- |\n-->\n\n| y   |\n| --- |", "<!-- c --!>\n| x   |\n| --- |\n-->\n\n| y |\n|---|"],
+    // Two pipe rows without a delimiter row are a paragraph, not a table.
+    ["| a   |\n| b   |", "| a   |\n| b   |"],
+    // A fence inside a list item, a block quote or indentation leaves the whole file unchanged:
+    // where it ends depends on containers, as when a list item closes its fence.
+    ["1. ```bash\n   | x   |\n   | --- |\n   ```\n\n| y   |\n| --- |", "1. ```bash\n   | x   |\n   | --- |\n   ```\n\n| y   |\n| --- |"],
+    ["- x\n  ```\n  y\n```\n\n| a   |\n| --- |\n```", "- x\n  ```\n  y\n```\n\n| a   |\n| --- |\n```"],
+    ["> ```\n> | a  |\n> ```\n\n| b   |\n| --- |", "> ```\n> | a  |\n> ```\n\n| b   |\n| --- |"],
+    // Rows at another indentation belong to another container, so they end the table.
+    ["- a\n\n  | x   |\n  | --- |\n| y   |", "- a\n\n  | x |\n  |---|\n| y   |"],
+    ["1. a\n\n   | x   |\n| --- |", "1. a\n\n   | x   |\n| --- |"],
+    // CRLF line endings are kept and do not hide fences.
+    ["```\r\n\r\n| x   |\r\n| --- |\r\n```\r\n\r\n| y   |\r\n| --- |\r\n", "```\r\n\r\n| x   |\r\n| --- |\r\n```\r\n\r\n| y |\r\n|---|\r\n"],
+  ];
+  for (const [source, expected] of unchanged) expect(compactMarkdownTables(source)).toBe(expected);
+});
+
+it("renders every tracked markdown file identically after compaction (pm-998juj)", async () => {
+  // Release controls run the packager without node_modules, so the render proof over the shipped files lives here.
+  const { Marked } = await import("marked");
+  const markdown = new Marked({ gfm: true });
+  const files = execFileSync("git", ["ls-files", "*.md"], { encoding: "utf8" }).trim().split("\n")
+    .filter((file) => !file.startsWith(".agents/pm/"));
+  expect(files.length).toBeGreaterThan(150);
+  let saved = 0;
+  for (const file of files) {
+    const text = await readFile(file, "utf8");
+    const compact = compactMarkdownTables(text);
+    saved += text.length - compact.length;
+    expect(markdown.parse(compact), file).toBe(markdown.parse(text));
+  }
+  expect(saved).toBeGreaterThan(30_000);
+});
 
 it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {
   const ledger = {
@@ -359,7 +473,7 @@ it("uses npm's Node entrypoint on Windows and writes a real distributable tarbal
 it("packs real npm artifacts through the npm 12 keyed receipt format", async () => {
   const { root, manifest, ledger, metadata } = await createBundleFixture();
   const destination = await harness.createTempRoot("pm-keyed-publication-");
-  const sourcePaths = ["metadata.json", "runtime-dependencies.json", "node_modules/first/package.json"];
+  const sourcePaths = ["metadata.json", "runtime-dependencies.json", "node_modules/first/package.json", "README.md"];
   const originals = await Promise.all(
     sourcePaths.map((file) => readFile(path.join(root, file), "utf8")),
   );
@@ -413,6 +527,9 @@ it("packs real npm artifacts through the npm 12 keyed receipt format", async () 
   expect(
     await readFile(path.join(extracted, "package/node_modules/first/package.json"), "utf8"),
   ).toBe(originals[2]);
+  // Markdown ships with compact tables while the checkout copy stays padded (pm-998juj).
+  expect(await readFile(path.join(extracted, "package/README.md"), "utf8"))
+    .toBe("# Fixture\n\n| Key | Value |\n|---|---:|\n| a | b |\n");
   expect(
     await Promise.all(sourcePaths.map((file) => readFile(path.join(root, file), "utf8"))),
   ).toEqual(originals);

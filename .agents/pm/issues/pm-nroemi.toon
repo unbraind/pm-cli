@@ -1,0 +1,23 @@
+id: pm-nroemi
+title: "A settings read of a missing settings.json carries no snapshot, so a later write replaces a file another process created meanwhile (a first-run telemetry opt-out can be lost)"
+description: "readSettings on a missing settings.json returns cloned defaults with no persist-source snapshot, and writeSettings treats such settings as caller-constructed: it replaces the whole document without reconciling against what is on disk. A successful read of an existing, valid settings.json carries a snapshot, and its write reconciles leaf by leaf under the settings lock, so a concurrent edit to an untouched leaf survives and a conflicting one refuses. Fallback reads (unreadable, malformed or schema-invalid files) carry none either; they take the separate fallback write path. Reproduced on 2026.11.4 dist with a sandbox root: read A of the missing file, writer B records telemetry.enabled=false with first_run_prompt_completed=true, then A writes enabled=true and the stored file says enabled=true; the opt-out is lost. The same sequence over an existing file keeps enabled=false. Two consent writers remain exposed on a fresh install. First, the runtime first-use prompt in core/telemetry/consent.ts prompts and then writes without a stored-value check, so it can replace a profile another process created meanwhile. Second, when pm init targets the global profile itself, it builds settings from cloneDefaults() after a missing-file read and writes the whole document with no snapshot or stored-value check, so a telemetry opt-out recorded concurrently is replaced with telemetry.enabled=true. The pm init wizard's consent write for a project root is not affected: since PR 1661 it passes WriteSettingsOptions.skipIfStored, which writeSettings consults under the settings lock against the stored document, so a consent choice recorded meanwhile is kept. Beyond consent, any write after a missing-file read also loses a concurrent writer's other fields. Found while answering a CodeRabbit finding on PR 1661 for the closed pm-gh1660; it is the missing-file residual of the closed lock-free settings family pm-bgcu."
+type: Issue
+status: open
+priority: 2
+tags[4]: concurrency,configuration,settings,telemetry
+created_at: "2026-11-04T18:35:24.672Z"
+updated_at: "2026-11-05T03:47:34.397Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A missing-file settings read carries a snapshot (or equivalent marker) so writeSettings reconciles against the document present under the lock; a spec reproduces the read-missing, concurrent-create, stale-write sequence and shows the concurrent telemetry opt-out survives; a spec drives pm init against the global profile itself with the settings file created between init's read and its write, carrying telemetry.enabled=false, and shows the opt-out survives; a spec shows the runtime first-use prompt keeps a consent choice recorded while it prompts; a first write to a still-missing file behaves exactly as today; caller-constructed settings without a read keep their documented whole-document replacement"
+parent: pm-doxj
+risk: medium
+confidence: high
+expected_result: "A write from settings read while settings.json was missing reconciles against an empty stored document when the file has appeared, so a concurrent writer's leaves survive or the write refuses as stale_settings_snapshot"
+actual_result: The write replaces the concurrently created settings.json wholesale; a recorded telemetry opt-out flips back to enabled
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-bgcu,related,"2026-11-04T18:35:24.672Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1660,discovered_from,"2026-11-04T18:35:24.672Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-04T19:11:08.569Z","harness:claude-code","Scope update from the same PR 1661 review round. The pm init wizard no longer depends on this item for consent: its write passes the new WriteSettingsOptions.skipIfStored compare-and-set, consulted under the settings lock, so a consent choice stored by another process, even in a file that did not exist at the re-read, is kept. Still open here: the runtime first-use prompt in core/telemetry/consent.ts still writes without that check, so it can replace a concurrently created profile; when pm init targets the global profile itself, its create write replaces a concurrently created file; and any missing-file read loses a concurrent writer's non-consent fields. The first is a one-line skipIfStored adoption plus a kept message; the general fix is the missing-file snapshot this item describes.\n"
+body: ""

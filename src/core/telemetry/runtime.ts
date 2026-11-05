@@ -17,8 +17,12 @@ import { resolveAutomaticReadSampleRate } from "./read-sampling.js";
 import {
   PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   isTelemetryTestEnvironment,
+  redactTelemetryEndpoint,
+  redactUrlsInText,
+  resolveTelemetryEndpointOverride,
   resolveTelemetryEnvironmentPolicy,
   resolveTelemetrySourceAttribution,
+  telemetryRuntimeFileName,
 } from "./policy.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
@@ -89,6 +93,8 @@ export const TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15;
 const TELEMETRY_RESULT_PREVIEW_MAX_BYTES = 8_192;
 const TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS = [25, 50, 100, 200] as const;
 const TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS = 60 * 60 * 1000;
+/** An override queue (GH-1660) only ever holds events for a local test collector; one idle this long was abandoned. */
+const TELEMETRY_OVERRIDE_QUEUE_MAX_IDLE_MS = 24 * 60 * 60 * 1000;
 const TELEMETRY_FLUSH_LOCK_STALE_MS = 60_000;
 const TELEMETRY_FLUSH_SPAWN_LOCK_STALE_MS = 60_000;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
@@ -316,8 +322,9 @@ export interface TelemetryErrorEventContext {
   resolution_stage?: TelemetryResolutionStage;
 }
 
-function queuePath(globalPmRoot: string): string {
-  return path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
+/** The event queue file for an endpoint override, or the configured endpoint's queue (GH-1660). */
+function queuePath(globalPmRoot: string, override = resolveTelemetryEndpointOverride().endpoint): string {
+  return path.join(path.dirname(path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH)), telemetryRuntimeFileName("events.jsonl", override));
 }
 
 function otelSpansQueuePath(globalPmRoot: string): string {
@@ -325,11 +332,12 @@ function otelSpansQueuePath(globalPmRoot: string): string {
 }
 
 function telemetryRuntimeDirectory(globalPmRoot: string): string {
-  return path.dirname(queuePath(globalPmRoot));
+  return path.dirname(queuePath(globalPmRoot, null));
 }
 
-function runtimeStatePath(globalPmRoot: string): string {
-  return path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+/** Event delivery state follows the endpoint override's queue; span state (`null`) stays with the shared span queue. */
+function runtimeStatePath(globalPmRoot: string, override = resolveTelemetryEndpointOverride().endpoint): string {
+  return path.join(path.dirname(path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH)), telemetryRuntimeFileName("state.json", override));
 }
 
 function flushLockPath(globalPmRoot: string): string {
@@ -362,8 +370,9 @@ function shouldFlushInline(): boolean {
 
 async function readRuntimeState(
   globalPmRoot: string,
+  override = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<TelemetryRuntimeState> {
-  const raw = await readFileIfExists(runtimeStatePath(globalPmRoot));
+  const raw = await readFileIfExists(runtimeStatePath(globalPmRoot, override));
   if (!raw || raw.trim().length === 0) {
     return {};
   }
@@ -385,10 +394,11 @@ async function readRuntimeState(
 async function writeRuntimeState(
   globalPmRoot: string,
   patch: TelemetryRuntimeState,
+  override = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<void> {
   try {
     await withQueueMutation(async () => {
-      const current = await readRuntimeState(globalPmRoot);
+      const current = await readRuntimeState(globalPmRoot, override);
       const next: TelemetryRuntimeState = { ...current, ...patch };
       const normalized = Object.fromEntries(
         Object.entries(next)
@@ -396,7 +406,7 @@ async function writeRuntimeState(
           .sort((left, right) => left[0].localeCompare(right[0])),
       );
       await writeFileAtomic(
-        runtimeStatePath(globalPmRoot),
+        runtimeStatePath(globalPmRoot, override),
         `${JSON.stringify(normalized, null, 2)}\n`,
         { createParentDirectories: !parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]) },
       );
@@ -1530,6 +1540,7 @@ async function ensureInstallationId(globalPmRoot: string): Promise<{
   }
   return {
     installationId: settings.telemetry.installation_id,
+    // flushQueue applies any PM_TELEMETRY_ENDPOINT override when it delivers.
     endpoint: settings.telemetry.endpoint,
     retentionDays: Math.max(1, Math.trunc(settings.telemetry.retention_days)),
     captureLevel: normalizeCaptureLevel(settings.telemetry.capture_level),
@@ -1684,12 +1695,13 @@ function pruneExpiredQueueEntries(
 async function rewriteQueue(
   globalPmRoot: string,
   entries: QueuedTelemetryEvent[],
+  override = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<void> {
   const serialized = entries.map((entry) => JSON.stringify(entry)).join("\n");
   const contents = serialized.length > 0 ? `${serialized}\n` : "";
   for (let attempt = 0; ; attempt += 1) {
     try {
-      await writeFileAtomic(queuePath(globalPmRoot), contents, {
+      await writeFileAtomic(queuePath(globalPmRoot, override), contents, {
         createParentDirectories: !parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV]),
       });
       return;
@@ -1912,7 +1924,7 @@ async function flushPendingOtelSpans(
 ): Promise<void> {
   const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
   if (raw === null || raw.trim().length === 0) {
-    await writeRuntimeState(globalPmRoot, { pending_otel_spans: 0 });
+    await writeRuntimeState(globalPmRoot, { pending_otel_spans: 0 }, null);
     return;
   }
   const entries = parsePendingOtelSpanLines(raw);
@@ -1935,7 +1947,7 @@ async function flushPendingOtelSpans(
             new Map(),
           )
         : retained.length;
-    await writeRuntimeState(globalPmRoot, { pending_otel_spans: remaining });
+    await writeRuntimeState(globalPmRoot, { pending_otel_spans: remaining }, null);
     return;
   }
 
@@ -1967,7 +1979,7 @@ async function flushPendingOtelSpans(
       } catch (error: unknown) {
         lastError =
           error instanceof Error
-            ? sanitizeString(error.message, "redacted")
+            ? sanitizeString(redactUrlsInText(error.message), "redacted")
             : "local_otel_export_failed";
         const nextAttempts = span.attempts + 1;
         failedUpdates.set(span.id, {
@@ -2001,7 +2013,7 @@ async function flushPendingOtelSpans(
     statePatch.last_otel_failure_at = undefined;
     statePatch.last_otel_failure_error = undefined;
   }
-  await writeRuntimeState(globalPmRoot, statePatch);
+  await writeRuntimeState(globalPmRoot, statePatch, null);
 }
 
 /** Flush event and OTLP queues together for a detached worker or inline test delivery, isolating each artifact's failures for a later retry. */
@@ -2025,29 +2037,34 @@ async function flushTelemetryArtifacts(
   }
 }
 
-/** Best-effort removal of aged atomic-write temporary files whose names match the event queue, leaving recent and unrelated files intact. */
+/**
+ * Best-effort removal of aged atomic-write temporary files whose names match the
+ * event queue, and of idle queue and state files of other endpoint overrides,
+ * leaving recent and unrelated files intact. The active override's files are
+ * kept however long they sat idle, since its next flush still reads them.
+ */
 async function cleanupTelemetryQueueTempOrphans(
   globalPmRoot: string,
   maxAgeMs = TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS,
+  activeOverride = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<void> {
   try {
     const dirPath = telemetryRuntimeDirectory(globalPmRoot);
     const entries = await readdir(dirPath, { withFileTypes: true });
-    const cutoffMs = Date.now() - Math.max(0, maxAgeMs);
+    const now = Date.now();
+    const active = new Set([telemetryRuntimeFileName("events.jsonl", activeOverride), telemetryRuntimeFileName("state.json", activeOverride)]);
+    const cutoffFor = (name: string): number | undefined => {
+      if (active.has(name)) return undefined;
+      if (/^\.events(?:\.[a-f0-9]{16})?\.jsonl\.\d+\.\d+\.[a-f0-9]+\.tmp$/.test(name)) return now - Math.max(0, maxAgeMs);
+      return /^(?:events\.[a-f0-9]{16}\.jsonl|state\.[a-f0-9]{16}\.json)$/.test(name) ? now - TELEMETRY_OVERRIDE_QUEUE_MAX_IDLE_MS : undefined;
+    };
     await Promise.all(
-      entries
-        .filter(
-          (entry) =>
-            entry.isFile() &&
-            /^\.events\.jsonl\.\d+\.\d+\.[a-f0-9]+\.tmp$/.test(entry.name),
-        )
-        .map(async (entry) => {
-          const candidate = path.join(dirPath, entry.name);
-          const candidateStats = await stat(candidate);
-          if (candidateStats.mtimeMs < cutoffMs) {
-            await rm(candidate, { force: true });
-          }
-        }),
+      entries.map(async (entry) => {
+        const cutoffMs = entry.isFile() ? cutoffFor(entry.name) : undefined;
+        if (cutoffMs === undefined) return;
+        const candidate = path.join(dirPath, entry.name);
+        if ((await stat(candidate)).mtimeMs < cutoffMs) await rm(candidate, { force: true });
+      }),
     );
   } catch {
     // Telemetry cleanup is best-effort and must not affect command execution.
@@ -2093,8 +2110,9 @@ async function withQueueMutation<T>(
 /** Read the current event snapshot, treating a missing or blank queue as empty and dropping malformed records through the shared parser. */
 async function readCurrentQueueEntries(
   globalPmRoot: string,
+  override = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<QueuedTelemetryEvent[]> {
-  const raw = await readFileIfExists(queuePath(globalPmRoot));
+  const raw = await readFileIfExists(queuePath(globalPmRoot, override));
   if (raw === null || raw.trim().length === 0) {
     return [];
   }
@@ -2106,9 +2124,10 @@ async function removeFlushedEntriesFromCurrentQueue(
   globalPmRoot: string,
   flushedIds: ReadonlySet<string>,
   retentionDays: number,
+  override = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<QueuedTelemetryEvent[]> {
   return withQueueMutation(async () => {
-    const currentEntries = await readCurrentQueueEntries(globalPmRoot);
+    const currentEntries = await readCurrentQueueEntries(globalPmRoot, override);
     const { entries: retainedEntries } = pruneExpiredQueueEntries(
       currentEntries,
       retentionDays,
@@ -2116,7 +2135,7 @@ async function removeFlushedEntriesFromCurrentQueue(
     const remaining = retainedEntries.filter(
       (entry) => !flushedIds.has(entry.event.event_id),
     );
-    await rewriteQueue(globalPmRoot, remaining);
+    await rewriteQueue(globalPmRoot, remaining, override);
     return remaining;
   }, globalPmRoot);
 }
@@ -2127,9 +2146,10 @@ async function markFailedEntriesInCurrentQueue(
   failedIds: ReadonlySet<string>,
   attemptTime: string,
   retentionDays: number,
+  override = resolveTelemetryEndpointOverride().endpoint,
 ): Promise<QueuedTelemetryEvent[]> {
   return withQueueMutation(async () => {
-    const currentEntries = await readCurrentQueueEntries(globalPmRoot);
+    const currentEntries = await readCurrentQueueEntries(globalPmRoot, override);
     const { entries: retainedEntries } = pruneExpiredQueueEntries(
       currentEntries,
       retentionDays,
@@ -2146,34 +2166,44 @@ async function markFailedEntriesInCurrentQueue(
         next_attempt_after: nextRetryIso(attempts),
       };
     });
-    await rewriteQueue(globalPmRoot, retried);
+    await rewriteQueue(globalPmRoot, retried, override);
     return retried;
   }, globalPmRoot);
 }
 
 /** Send one due event batch without holding the mutation mutex, then reconcile its result against the current queue and record delivery diagnostics. */
+/** The endpoint a state file records: an override redacted, since it may carry credentials or a query token (GH-1660). */
+function recordedStateEndpoint(endpoint: string, override: string | null): string {
+  return override === null ? endpoint : redactTelemetryEndpoint(endpoint);
+}
+
 async function flushQueue(
   globalPmRoot: string,
   endpoint: string,
   retentionDays: number,
 ): Promise<void> {
-  await cleanupTelemetryQueueTempOrphans(globalPmRoot);
-  const normalizedEndpoint = endpoint.trim();
+  // Resolve the override once, so the cleanup, the queue file read and the endpoint
+  // posted to always agree, even when the environment changed since the command started.
+  const override = resolveTelemetryEndpointOverride().endpoint;
+  await cleanupTelemetryQueueTempOrphans(globalPmRoot, undefined, override);
+  const normalizedEndpoint = (override ?? endpoint).trim();
+  const stateEndpoint = recordedStateEndpoint(normalizedEndpoint, override);
+  const writeState = (patch: TelemetryRuntimeState): Promise<void> => writeRuntimeState(globalPmRoot, patch, override);
   if (normalizedEndpoint.length === 0) {
     return;
   }
-  const raw = await readFileIfExists(queuePath(globalPmRoot));
+  const raw = await readFileIfExists(queuePath(globalPmRoot, override));
   if (raw === null || raw.trim().length === 0) {
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
+    await writeState({
+      endpoint: stateEndpoint,
       queue_entries: 0,
     });
     return;
   }
   const queueEntries = parseQueueLines(raw);
   if (queueEntries.length === 0) {
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
+    await writeState({
+      endpoint: stateEndpoint,
       queue_entries: 0,
     });
     return;
@@ -2183,9 +2213,9 @@ async function flushQueue(
     retentionDays,
   );
   if (retainedEntries.length === 0) {
-    const remaining = await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays);
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
+    const remaining = await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays, override);
+    await writeState({
+      endpoint: stateEndpoint,
       queue_entries: remaining.length,
     });
     return;
@@ -2195,10 +2225,10 @@ async function flushQueue(
     .slice(0, TELEMETRY_FLUSH_BATCH_SIZE);
   if (dueEntries.length === 0) {
     const remaining = prunedCount > 0
-      ? await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays)
+      ? await removeFlushedEntriesFromCurrentQueue(globalPmRoot, new Set(), retentionDays, override)
       : retainedEntries;
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
+    await writeState({
+      endpoint: stateEndpoint,
       queue_entries: remaining.length,
     });
     return;
@@ -2231,15 +2261,16 @@ async function flushQueue(
       dueIds,
       attemptTime,
       retentionDays,
+      override,
     );
     const errorMessage = (() => {
       if (error instanceof Error) {
-        return sanitizeString(error.message, "redacted");
+        return sanitizeString(redactUrlsInText(error.message), "redacted");
       }
       return "telemetry_flush_failed";
     })();
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
+    await writeState({
+      endpoint: stateEndpoint,
       queue_entries: retried.length,
       last_attempted_flush_at: attemptTime,
       last_failed_flush_at: attemptTime,
@@ -2253,9 +2284,10 @@ async function flushQueue(
       globalPmRoot,
       dueIds,
       retentionDays,
+      override,
     );
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
+    await writeState({
+      endpoint: stateEndpoint,
       queue_entries: remaining.length,
       last_attempted_flush_at: attemptTime,
       last_successful_flush_at: attemptTime,
@@ -2266,15 +2298,15 @@ async function flushQueue(
   } catch (error: unknown) {
     const errorMessage = (() => {
       if (error instanceof Error) {
-        return sanitizeString(error.message, "redacted");
+        return sanitizeString(redactUrlsInText(error.message), "redacted");
       }
       return "telemetry_flush_failed";
     })();
-    const currentEntries = await readCurrentQueueEntries(globalPmRoot).catch(
+    const currentEntries = await readCurrentQueueEntries(globalPmRoot, override).catch(
       () => retainedEntries,
     );
-    await writeRuntimeState(globalPmRoot, {
-      endpoint: normalizedEndpoint,
+    await writeState({
+      endpoint: stateEndpoint,
       queue_entries: currentEntries.length,
       last_attempted_flush_at: attemptTime,
       last_failed_flush_at: attemptTime,
@@ -2401,6 +2433,8 @@ function releaseTelemetryFlushSpawnGate(globalPmRoot: string): void {
 
 /** Public contract for test only, shared by SDK and presentation-layer consumers. */
 export const _testOnly = {
+  queuePath,
+  cleanupTelemetryQueueTempOrphans,
   acquireTelemetryFlushSpawnGate,
   acquireTelemetryFlushLock,
   buildAuthorContextPayloadFields,
