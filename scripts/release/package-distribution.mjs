@@ -153,10 +153,24 @@ function stageRuntime(root, stage, manifest, ledger) {
 /** A pipe that separates cells: one preceded by an even number of backslashes, as GFM reads it. */
 const CELL_SEPARATOR = /(?<=(?:^|[^\\])(?:\\\\)*)\|/u;
 
+/**
+ * Trim spaces and tabs only, the whitespace GFM strips around cell text.
+ * String.prototype.trim would also strip U+00A0 and other Unicode spaces, which
+ * are cell content.
+ */
+function trimSpaces(text) {
+  return text.replace(/^[ \t]+|[ \t]+$/gu, "");
+}
+
+/** A blank line as CommonMark defines it: nothing but spaces and tabs. */
+function isBlank(line) {
+  return /^[ \t]*$/u.test(line);
+}
+
 /** Split a GFM table row into trimmed cells; an escaped pipe stays inside its cell. */
 function tableCells(row) {
-  const body = row.trim().replace(/^\|/u, "").replace(new RegExp(`${CELL_SEPARATOR.source}$`, "u"), "");
-  return body.split(new RegExp(CELL_SEPARATOR.source, "gu")).map((cell) => cell.trim());
+  const body = trimSpaces(row).replace(/^\|/u, "").replace(new RegExp(`${CELL_SEPARATOR.source}$`, "u"), "");
+  return body.split(new RegExp(CELL_SEPARATOR.source, "gu")).map(trimSpaces);
 }
 
 /** A separator cell's alignment: what GFM reads from it, independent of dash count. */
@@ -165,7 +179,7 @@ function separatorAlignment(cell) {
 }
 
 /** A pipe-bordered row, at most three spaces in (four make indented code). */
-const TABLE_ROW = /^( {0,3})\|.*\|\s*$/u;
+const TABLE_ROW = /^( {0,3})\|.*\|[ \t]*$/u;
 /** HTML blocks whose raw lines run to a closing marker (CommonMark start conditions 1-5). */
 const RAW_HTML_TO_MARKER = [
   [/^ {0,3}<(?:pre|script|style|textarea)(?=[\s>]|$)/iu, (text) => /<\/(?:pre|script|style|textarea)>/iu.test(text)],
@@ -230,7 +244,7 @@ function scanLine(state, line) {
     return false;
   }
   if (state.rawEnd !== undefined) {
-    if (state.rawEnd === "blank" ? line.trim() === "" : state.rawEnd(line)) state.rawEnd = undefined;
+    if (state.rawEnd === "blank" ? isBlank(line) : state.rawEnd(line)) state.rawEnd = undefined;
     return false;
   }
   state.fence = fenceOpener(line);
@@ -256,7 +270,7 @@ function proseLines(lines) {
     const isProse = scanLine(state, line);
     if (isProse === undefined) return undefined;
     prose.push(isProse);
-    state.blockEnded = !isProse || line.trim() === "" || ATX_HEADING.test(line);
+    state.blockEnded = !isProse || isBlank(line) || ATX_HEADING.test(line);
   }
   return prose;
 }
@@ -294,7 +308,7 @@ export function compactMarkdownTables(text) {
   const prose = proseLines(lines);
   if (prose === undefined) return text;
   const indent = (index) => (prose[index] ? TABLE_ROW.exec(lines[index])?.[1] : undefined);
-  const startsBlock = (index) => index === 0 || lines[index - 1].trim() === "" || ATX_HEADING.test(lines[index - 1]);
+  const startsBlock = (index) => index === 0 || isBlank(lines[index - 1]) || ATX_HEADING.test(lines[index - 1]);
   for (let header = 0; header + 1 < lines.length; header += 1) {
     const level = indent(header);
     if (level === undefined || indent(header + 1) !== level || !startsBlock(header)) continue;

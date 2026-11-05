@@ -228,6 +228,10 @@ it("compacts only real tables: a block-starting header over a matching delimiter
     ["text\n<custom-tag>\n\n| x   |\n| --- |", "text\n<custom-tag>\n\n| x   |\n| --- |"],
     ["text\n<custom-tag>\n```\n\n| Key    |\n| ------ |\n```", "text\n<custom-tag>\n```\n\n| Key    |\n| ------ |\n```"],
     ["| h |\n|---|\n| 1 |\n<custom-tag>\n# Raw\n| Key    |\n| ------ |", "| h |\n|---|\n| 1 |\n<custom-tag>\n# Raw\n| Key    |\n| ------ |"],
+    // GFM trims only spaces and tabs: a non-breaking space is cell content, and a
+    // line holding only one is not blank, so it does not end a raw HTML block.
+    ["| a   | b |\n| --- | --- |\n| \u00a0x | y |", "| a | b |\n|---|---|\n| \u00a0x | y |"],
+    ["<div>\n\u00a0\n| x   |\n| --- |", "<div>\n\u00a0\n| x   |\n| --- |"],
     // A pipe after an even number of backslashes separates cells, as GFM reads it.
     ["| alpha\\\\| beta      |\n| -------- |", "| alpha\\\\| beta      |\n| -------- |"],
     ["| a\\\\| b   |\n| --- | --- |", "| a\\\\ | b |\n|---|---|"],

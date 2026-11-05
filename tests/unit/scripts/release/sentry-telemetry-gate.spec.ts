@@ -237,14 +237,14 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
   }
   function sentrySearch(
     issues: ReturnType<typeof environmentIssue>[],
-    link?: (query: string) => string | undefined,
+    link?: (query: string, url: string) => string | undefined,
   ) {
     return vi.fn(async (input: string | URL | Request) => {
       const query = new URL(String(input)).searchParams.get("query") ?? "";
       const windowDays = Number(/lastSeen:-(\d+)d/u.exec(query)?.[1] ?? Number.POSITIVE_INFINITY);
       const visible = issues.filter((issue) => issue.events.some(([environment, ageDays]) =>
         (!query.includes("!environment:test") || environment !== "test") && ageDays * DAY_MS <= windowDays * DAY_MS));
-      const header = link?.(query);
+      const header = link?.(query, String(input));
       return {
         ok: true, status: 200,
         headers: { get: (name: string) => (name === "link" ? header ?? null : null) },
@@ -277,13 +277,15 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
   });
 
   it.each([
-    ["a next page", ["--json", "--telemetry-mode", "off"], () => '<https://sentry.test/next>; rel="next"; results="true"'],
-    ["the limit", ["--json", "--telemetry-mode", "off", "--sentry-limit", "1"], () => undefined],
-  ])("drops nothing when the non-test listing may be truncated by %s", async (_label, argv, link) => {
+    ["a next page past the limit", (url: string) => `<${url}&cursor=next>; rel="next"; results="true"`],
+    ["a full last page", () => undefined],
+  ])("drops nothing when the non-test listing may be truncated by %s", async (_label, link) => {
     const fetchSpy = sentrySearch([
       environmentIssue("PM-TEST-ONLY", [["test", 0]]),
       environmentIssue("PM-OLD-PRODUCTION", [["production", 40]]),
-    ], (query) => (query.includes("!environment:test") ? link() : undefined));
+      environmentIssue("PM-OLD-PRODUCTION-2", [["production", 50]]),
+    ], (query, url) => (query.includes("!environment:test") ? link(url) : undefined));
+    const argv = ["--json", "--telemetry-mode", "off", "--sentry-limit", "2"];
     const { json } = await runSentryGate({
       argv,
       env: { SENTRY_AUTH_TOKEN: "token-test" },
@@ -292,6 +294,54 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.blocking_short_ids).toEqual(["PM-TEST-ONLY"]);
     expect(json.sentry.ignored_test_only_total).toBe(0);
     expect(json.sentry.environment_listing_complete).toBe(false);
+    expect(json.sentry.active_listing_complete).toBe(true);
+  });
+
+  it("reads every active page, so a production issue after a page of test-only issues still blocks", async () => {
+    const pages = [[environmentIssue("PM-TEST-ONLY", [["test", 0]])], [environmentIssue("PM-PRODUCTION-PAGE-2", [["production", 1]])]];
+    const fetchSpy = vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input));
+      const nonTest = (url.searchParams.get("query") ?? "").includes("!environment:test");
+      const second = url.searchParams.get("cursor") === "2";
+      const body = nonTest ? pages[1] : pages[second ? 1 : 0];
+      const link = !nonTest && !second ? `<${url.href}&cursor=2>; rel="next"; results="true"` : null;
+      return { ok: true, status: 200, headers: { get: () => link }, text: async () => JSON.stringify(body) };
+    });
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-PRODUCTION-PAGE-2"]);
+    expect(json.sentry.ignored_test_only_short_ids).toEqual(["PM-TEST-ONLY"]);
+    expect(json.sentry.active_listing_complete).toBe(true);
+    expect(json.sentry.threshold_ok).toBe(false);
+  });
+
+  it("fails when the active listing is cut off at the limit, even if every issue it read is test-only", async () => {
+    let page = 0;
+    const fetchSpy = vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input));
+      if ((url.searchParams.get("query") ?? "").includes("!environment:test")) {
+        return { ok: true, status: 200, text: async () => "[]" };
+      }
+      page += 1;
+      const link = `<${url.origin}${url.pathname}?query=${encodeURIComponent(url.searchParams.get("query") ?? "")}&cursor=${page}>; rel="next"; results="true"`;
+      return {
+        ok: true, status: 200, headers: { get: () => link },
+        text: async () => JSON.stringify([environmentIssue(`PM-TEST-ONLY-${page}`, [["test", 0]])]),
+      };
+    });
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--sentry-limit", "2"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.blocking_short_ids).toEqual([]);
+    expect(json.sentry.ignored_test_only_short_ids).toEqual(["PM-TEST-ONLY-1", "PM-TEST-ONLY-2"]);
+    expect(json.sentry.active_listing_complete).toBe(false);
+    expect(json.sentry.threshold_ok).toBe(false);
+    expect(json.ok).toBe(false);
   });
 
   it("fails the Sentry fetch when the environment listing fails instead of skipping issues", async () => {

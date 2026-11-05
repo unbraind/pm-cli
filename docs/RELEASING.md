@@ -291,7 +291,9 @@ environment are separate Sentry queries, because Sentry applies `lastSeen` after
 an environment filter: a combined query would also skip an issue whose
 production event predates the window while a test event falls inside it. When
 the listing of issues with non-test events may be truncated, nothing is skipped,
-and a failed listing fails the gate.
+and a failed listing fails the gate. Both listings follow Sentry's next-page links
+up to `--sentry-limit` (default `200`); when active issues remain beyond it, the
+gate fails, because it cannot judge issues it never read.
 
 Sentry API requests use a 120-second deadline by default. Operators can set
 `--sentry-request-timeout-ms` between `1` and `300000` when reproducing
