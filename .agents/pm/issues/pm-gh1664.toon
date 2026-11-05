@@ -1,0 +1,27 @@
+id: pm-gh1664
+title: "GH-1664: pm context --for orient --limit 3 and pm activity --limit 3 reparse every history stream, so a three-row recent-activity read pays archive-scale I/O"
+description: "GitHub issue #1664 (reported 2026-11-04 against 2026.11.4 from an agent-UX audit). On a 3,188-item tracker copy with about 124 MB of history in 3,206 streams, the reporter measured p50 16.36 s for pm context --for orient --limit 3, 6.10 s for pm context --limit 3 and 8.21 s for pm activity --limit 3 on a shared, contended host. Source confirms the algorithm: the orient context builds its activity section through runActivity with compact output and a small limit (src/sdk/query/context.ts), and collectActivityEntries in src/sdk/query/activity.ts lists every .jsonl file in the history directory and calls readHistoryEntries on each, so time filtering, sorting and the row limit apply only after the whole archive is parsed. The limit bounds delivery, not history I/O. One uncontended run on this repository's own tracker (126 MB, 3,217 history streams) on 2026-11-05 took 3.27 s for pm context --for orient --limit 3, against 1.48 s for pm context --limit 3 and 1.61 s for pm activity --limit 3, so the activity section roughly doubles the cost of the canonical cold-start read, and that cost grows with history volume rather than item count. Expected: a bounded recent-activity read uses a coherent recent-event index or revision-keyed per-stream summaries, reads only enough verified tails to fill the window and the requested rows, falls back explicitly when the index is unavailable, and keeps history policy and integrity checks, with invalidation on append, replacement, repair, redaction and compaction. Why it matters for agents: every reconnecting agent and parallel worker pays a full-history scan in the canonical cold-start read to obtain three events. Related open work on other axes: pm-801d indexes item files with zero output change, pm-29ymfn owns strict history verification cost, and pm-1wujzi owns the claim-state history fold. The same orient read is the subject of the budget defect pm-gh1662. Duplicate check: searched activity history scan, recent activity index, context latency, history volume scaling and collectActivityEntries across all statuses, and no item owns the activity read's full scan."
+type: Issue
+status: open
+priority: 2
+tags[7]: activity,agent-ux,context,"gh:1664",history,performance,scale
+created_at: "2026-11-05T06:09:12.493Z"
+updated_at: "2026-11-05T06:09:12.493Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "pm activity --limit N and the activity section of pm context read a bounded number of history entries, independent of total history volume, when a valid recent-event index or per-stream summary is present; The index or summary is derived, rebuildable and never authoritative: it is invalidated on append, replacement, repair, redaction and compaction, and a stale or missing index falls back to the full scan with an explicit receipt field naming the fallback; pm activity and pm context output is identical with and without the index on the same corpus, proven by a spec that includes redacted and compacted streams; scripts/bench gains a scale budget for a three-row pm context --for orient read on a fixture with thousands of history streams and at least 100 MB of history, with a declared p50 ceiling that CI fails on regression; Negative control: forcing the full-scan path on the benchmark fixture exceeds the declared ceiling"
+parent: pm-9rxu
+risk: medium
+confidence: high
+severity: medium
+repro_steps: "On a tracker with thousands of history streams, time pm context --for orient --limit 3, pm context --limit 3 and pm activity --limit 3. The orient and activity reads scale with total history volume"
+expected_result: "A three-row recent-activity read costs time proportional to the rows and window it returns, not to the size of the history archive"
+actual_result: "collectActivityEntries parses every history stream before filtering and limiting: reporter p50 16.36 s for orient on a 124 MB tracker, and 3.27 s orient against 1.48 s brief context on this repository's 126 MB tracker"
+affected_version: 2026.11.4
+component: activity
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1wujzi,related,"2026-11-05T06:09:12.493Z","harness:claude-code","cli:create:dep",detected
+  pm-29ymfn,related,"2026-11-05T06:09:12.493Z","harness:claude-code","cli:create:dep",detected
+  pm-801d,related,"2026-11-05T06:09:12.493Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1662,related,"2026-11-05T06:09:12.493Z","harness:claude-code","cli:create:dep",detected
+body: ""
