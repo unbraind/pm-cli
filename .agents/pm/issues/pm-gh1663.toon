@@ -1,0 +1,26 @@
+id: pm-gh1663
+title: "GH-1663: nested get --fields projections pad unrequested sibling collections with empty arrays (linked.files emits tests: [] and docs: [] for populated collections) and claim_state.claimed expands to the whole group"
+description: "GitHub issue #1663 (reported 2026-11-04 against 2026.11.4 from an agent-UX audit). Reproduced 2026-11-05 on the installed 2026.11.4 CLI in a sandbox tracker whose one claimed Task has exactly one linked file, one linked test and one linked doc. pm get <id> --fields id,linked.files,claim_state.claimed --json returns linked with files holding the one file but tests: [] and docs: [], although both collections are populated, and pm get <id> --fields linked.tests --json likewise returns files: [] and docs: []. claim_state.claimed returns the whole claim_state group (claimed, assignee, last_claim, last_release). The omission_receipt in both responses reports has_omissions false, so nothing tells the caller that the empty siblings were not requested. The reporter reproduced it through the public SDK with client.get(id, {fields: 'id,linked.files,claim_state.claimed'}). Expected: an unrequested sibling under a nested path is omitted or explicitly marked as not requested, a genuinely requested empty collection still renders as [], and a nested claim_state leaf selects that leaf, or the contract documents that it expands to the group. Why it matters for agents: agents keep several narrow reads as durable context, and an empty tests or docs array reads as evidence of absence, which can trigger duplicate linking or a false claim that verification is missing. Relation to closed work: pm-4fwgaz (GH-1033) made requested empty collections render as [], and its AC3 requires typed receipts to distinguish absent, empty, omitted and inapplicable groups, which a has_omissions false receipt beside padded siblings does not do. pm-b1w8vr AC1 made an absent key mean not carried and never empty, and this is the inverse failure: an empty key that means not carried. pm-cyrfjq fixed the same zero-fill class for mode-paired envelopes. Duplicate check: searched nested fields, linked projection, claim_state projection, absent versus empty and zero-fill across all statuses, and no open item owns this."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,context,"gh:1663",projection,sdk
+created_at: "2026-11-05T06:09:08.528Z"
+updated_at: "2026-11-05T06:09:08.528Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "pm get --fields with a nested path such as linked.files or linked.tests emits only the requested child keys of that group, or marks each unrequested sibling explicitly as not requested, and never renders an unrequested populated collection as an empty array, in CLI JSON, TOON, SDK and MCP; A requested collection that is genuinely empty still renders as an empty array, so requested-empty and unrequested stay distinguishable, proven by a spec over an item with both populated and empty collections; omission_receipt reports the unrequested siblings of a nested projection as omitted, each with a restore_with, instead of has_omissions false; claim_state.claimed returns only the claimed leaf, or the projection contract and get help state that nested claim_state paths expand to the whole group and the receipt says so; Negative control: reintroducing the parent-group default padding fails the spec"
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: medium
+repro_steps: "In a fresh tracker, create and claim one Task, link one file, one doc and one test. pm get <id> --fields id,linked.files,claim_state.claimed --json and pm get <id> --fields linked.tests --json show empty sibling arrays and has_omissions false"
+expected_result: "A nested projection returns only what was requested, or marks the rest as not requested, so an empty collection always means empty"
+actual_result: "--fields linked.files returns tests: [] and docs: [] for populated collections, linked.tests returns files: [] and docs: [], and claim_state.claimed returns the full group, all with has_omissions false"
+affected_version: 2026.11.4
+component: get
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4fwgaz,related,"2026-11-05T06:09:08.528Z","harness:claude-code","cli:create:dep",detected
+  pm-b1w8vr,related,"2026-11-05T06:09:08.528Z","harness:claude-code","cli:create:dep",detected
+  pm-cyrfjq,related,"2026-11-05T06:09:08.528Z","harness:claude-code","cli:create:dep",detected
+body: ""
