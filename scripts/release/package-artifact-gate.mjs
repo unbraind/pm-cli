@@ -301,7 +301,10 @@ async function createSentryInjector(root) {
       cwd: root,
       encoding: "utf8",
       env: { ...process.env, SENTRY_DISABLE_UPDATE_CHECK: "1" },
-      stdio: ["ignore", "pipe", "pipe"],
+      // The per-file injection report is unused and grows with the module
+      // count; discard it and bound a hung injector like the hosted step.
+      stdio: ["ignore", "ignore", "pipe"],
+      timeout: 300_000,
     });
 }
 

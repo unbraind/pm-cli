@@ -290,7 +290,11 @@ describe("package artifact gate", () => {
     expect(result.execFileSync).toHaveBeenCalledWith(
       "/bin/sentry-cli",
       ["sourcemaps", "inject", path.join(result.scratch, "dist/")],
-      expect.objectContaining({ cwd: process.cwd() }),
+      expect.objectContaining({
+        cwd: process.cwd(),
+        stdio: ["ignore", "ignore", "pipe"],
+        timeout: 300_000,
+      }),
     );
     expect(result.rmSync).toHaveBeenCalledWith(result.scratch, {
       recursive: true,
