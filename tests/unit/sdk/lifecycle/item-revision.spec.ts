@@ -1120,6 +1120,41 @@ describe("pm-gh1677 revision refusal recovery replays the caller's tracker scope
   });
 });
 
+describe("pm-gh1677 nested and dispatched revision recovery", () => {
+  it("keeps a nested scope's refusal, evidence and recovery on the tracker that raised it", async () => {
+    await withTempPmPath(async (context) => {
+      const other = path.join(context.tempRoot, "other", ".agents", "pm");
+      expect(context.runCli(["--pm-path", other, "init", "--defaults", "--agent-guidance", "skip", "--json"]).code).toBe(0);
+      expect(context.runCli(["--pm-path", other, "create", "Task", "Inner tracker item", "--id", "nested", "--json"]).code).toBe(0);
+      const outerId = createTestItemId(context, { title: "Outer tracker item" });
+      const outerHash = (await readItemRevision(outerId, { pmRoot: context.pmPath })).item_hash;
+      const inner = new PmClient({ pmRoot: other, noExtensions: true, author: "revision-agent" });
+      const stale = (await inner.readItemRevision("pm-nested")).item_hash;
+      await inner.update("pm-nested", { tags: "peer-edit" });
+      const refusal = await captureError(() => withExpectedItemRevisions([{ id: outerId, itemHash: outerHash }], () =>
+        inner.withExpectedItemRevisions([{ id: "pm-nested", itemHash: stale }], () => inner.update("pm-nested", { tags: "stale-edit" })),
+      { pmRoot: context.pmPath }));
+      expect(refusal.context).toMatchObject({ code: "item_revision_conflict", item_id: "pm-nested", details: { expected_revision_recorded: true } });
+      expect(refusal.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", other, "get", "pm-nested", "--json"]));
+      // A non-error rejection passes through enrichment untouched.
+      expect(await enrichItemRevisionConflict("not an error", context.pmPath, { scopeArgs: [] })).toBe("not an error");
+    });
+  });
+
+  it("renders the resolved tracker for a runAction call with an explicit cwd", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Dispatch cwd scope" });
+      const stale = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      const common = { path: ".agents/pm", cwd: context.tempRoot, noExtensions: true, author: "mcp-agent" };
+      await runAction({ ...common, action: "update", id, options: { tags: "peer-edit" } });
+      const refusal = await captureError(() => runAction({ ...common, action: "update", id, options: { tags: "stale-edit" }, expectHash: stale }));
+      expect(refusal.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "get", id, "--json"]));
+      const implicit = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-again" }, expectHash: stale, cwd: context.tempRoot }));
+      expect(implicit.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
+    });
+  });
+});
+
 describe("GH-1620 workspace transaction isolation", () => {
   it("lets an ordinary writer interleave, and an expected revision turns the lost update into a refusal", async () => {
     await withTempPmPath(async (context) => {

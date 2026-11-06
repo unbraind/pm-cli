@@ -69,24 +69,32 @@ describe("refusal recovery replays the caller's own invocation", () => {
     });
   });
 
-  it("pm-gh1676: a strict close refused for missing close fields retries as the same close, in one write", async () => {
+  it("pm-gh1676: a strict close refused for missing close fields retries as the same close, in one write, guard included", async () => {
     await withTempPmPath(async (context) => {
       seedDecoyAndTarget(context);
-      const refused = run(context, ["--pm-path", TARGET, "close", "pm-same", "Delivered", "--validate-close", "strict", "--resolution", "", "--json"]);
+      const decided = targetHash(context);
+      const invocation = ["--pm-path", TARGET, "close", "pm-same", "Delivered", "-m", "audit", "--expect-hash", `pm-same=${decided}`, "--validate-close", "strict", "--resolution", "", "--json"];
+      const refused = run(context, invocation);
       expect(refused.code).toBe(EXIT_CODE.USAGE);
       const refusal = JSON.parse(refused.stderr) as { code: string; next_steps: string[]; recovery: { suggested_retry_args: string[]; next_best_command: string } };
       expect(refusal.code).toBe("close_validation_missing_fields");
-      expect(refusal.recovery.suggested_retry_args).toEqual(["--pm-path", TARGET, "close", "pm-same", "Delivered", "--validate-close", "strict", "--json", "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"]);
+      // Short options and the revision guard survive; the blank --resolution is replaced, not repeated.
+      expect(refusal.recovery.suggested_retry_args).toEqual([...invocation.slice(0, -3), "--json", "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"]);
       expect(refusal.next_steps[0]).toContain("Retry the same pm close");
       expect(refusal.recovery.next_best_command).toContain(" update pm-same ");
-
       const retry = refusal.recovery.suggested_retry_args.map((token) => (token === "<value>" ? "Recorded at close" : token));
-      const closed = run(context, retry);
+
+      // The carried guard still protects the retry: a peer edit after the refusal makes it refuse.
+      expect(run(context, ["--pm-path", TARGET, "update", "pm-same", "--description", "Peer edit", "--json"]).code).toBe(0);
+      expect(run(context, retry).code).toBe(EXIT_CODE.CONFLICT);
+
+      const fresh = retry.map((token) => (token === `pm-same=${decided}` ? `pm-same=${targetHash(context)}` : token));
+      const closed = run(context, fresh);
       expect(closed.code, closed.stderr).toBe(0);
       const history = JSON.parse(run(context, ["--pm-path", TARGET, "history", "pm-same", "--json"]).stdout) as { total: number; compact_history: Array<{ op: string }> };
-      // One write: the evidence and the closure share the close entry.
-      expect(history.total).toBe(2);
-      expect(history.compact_history.map((entry) => entry.op).sort()).toEqual(["close", "create"]);
+      // One write closes: the evidence and the closure share the close entry after the peer's update.
+      expect(history.total).toBe(3);
+      expect(history.compact_history.map((entry) => entry.op).sort()).toEqual(["close", "create", "update"]);
       const item = JSON.parse(run(context, ["--pm-path", TARGET, "get", "pm-same", "--json"]).stdout) as { item: Record<string, unknown> };
       expect(item.item).toMatchObject({ status: "closed", resolution: "Recorded at close", expected_result: "Recorded at close", actual_result: "Recorded at close" });
     });

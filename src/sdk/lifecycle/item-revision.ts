@@ -17,7 +17,9 @@ import {
   createItemRevisionScope,
   ITEM_REVISION_CONFLICT_CHANGED_REASON,
   ITEM_REVISION_CONFLICT_UNREADABLE_REASON,
+  isItemRevisionRefusalFrom,
   itemRevisionConflictGuidance,
+  retainItemRevisionRefusalTracker,
   itemRevisionScopeReceipt,
   runWithItemRevisionScope,
   type ItemRevisionRecoveryInvocation,
@@ -319,7 +321,7 @@ export function scopeItemRevisionConflict(error: unknown, invocation: ItemRevisi
   if (invocation === undefined || !isItemRevisionConflict(error) || typeof error.context.item_id !== "string") return error;
   const unreadable = error.context.reason === ITEM_REVISION_CONFLICT_UNREADABLE_REASON;
   if (!unreadable && error.context.reason !== ITEM_REVISION_CONFLICT_CHANGED_REASON) return error;
-  const scoped = new PmCliError(error.message, error.exitCode, { ...error.context, ...itemRevisionConflictGuidance(error.context.item_id, unreadable, invocation) });
+  const scoped = retainItemRevisionRefusalTracker(error, new PmCliError(error.message, error.exitCode, { ...error.context, ...itemRevisionConflictGuidance(error.context.item_id, unreadable, invocation) }));
   scoped.stack = error.stack;
   return scoped;
 }
@@ -328,9 +330,13 @@ export function scopeItemRevisionConflict(error: unknown, invocation: ItemRevisi
  * Attach bounded change evidence to a revision conflict. The evidence is read
  * after the lock is released, so it describes the record as it was then; the
  * refusal's `current_revision` remains the revision the locked write found.
- * With an `invocation`, the recovery commands are also re-rendered for it.
+ * With an `invocation`, the recovery commands are also re-rendered for it. A
+ * refusal raised by another tracker's guard is returned unchanged.
  */
 export async function enrichItemRevisionConflict(error: unknown, pmRoot: string, invocation?: ItemRevisionRecoveryInvocation): Promise<unknown> {
+  // A refusal another tracker's guard raised (an inner scope nested in this one) is that
+  // scope's to describe: neither its evidence nor its recovery commands belong to this tracker.
+  if (!isItemRevisionRefusalFrom(error, pmRoot)) return error;
   const scoped = scopeItemRevisionConflict(error, invocation);
   if (!isItemRevisionConflict(scoped) || scoped.context.details !== undefined) return scoped;
   const id = scoped.context.item_id;
@@ -349,7 +355,7 @@ export async function enrichItemRevisionConflict(error: unknown, pmRoot: string,
     changes_since: changes.changes_since.map((change) => ({ ts: change.ts, op: change.op, author: change.author, fields: [...change.fields] })),
     changes_since_omitted: changes.changes_since_omitted,
   };
-  const enriched = new PmCliError(scoped.message, scoped.exitCode, { ...scoped.context, details });
+  const enriched = retainItemRevisionRefusalTracker(scoped, new PmCliError(scoped.message, scoped.exitCode, { ...scoped.context, details }));
   enriched.stack = scoped.stack;
   return enriched;
 }

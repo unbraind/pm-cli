@@ -1097,8 +1097,9 @@ describe("runClose", () => {
           // pm-gh1676: pm close accepts the missing fields itself, so the retry is the same close.
           required: "Pass --resolution, --expected-result, --actual-result on this pm close; it records them in the same write as the closure.",
           recovery: {
+            // The supplied reason and validation mode are carried, the reason as an attached value.
             suggested_retry: expect.stringMatching(
-              /^pm --pm-path \S+ close \S+ "close with strict validation" --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
+              /^pm --pm-path \S+ close \S+ "--reason=close with strict validation" --validate-close=strict --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
             ),
             next_best_command: expect.stringMatching(
               /^pm --pm-path \S+ update \S+ --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
@@ -1128,11 +1129,29 @@ describe("runClose", () => {
         context: {
           recovery: {
             // Without a reason the retry renders no reason operand.
-            suggested_retry: expect.stringMatching(/ close \S+ --resolution "<value>" --expected-result/),
+            suggested_retry: expect.stringMatching(/ close \S+ --validate-close=strict --resolution "<value>" --expected-result/),
             suggested_retry_args: expect.arrayContaining(["close", noReasonId]),
           },
         },
       });
+    });
+  });
+
+  it("pm-gh1676: carries every supplied close option into the SDK retry and keeps a flag-looking reason a value", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-validate-strict-supplied");
+      const refusal = await runClose(
+        id,
+        "--force",
+        { validateClose: "strict", resolution: "Implemented", message: "-m audit", author: "sdk-agent", completedAt: "2026-11-06T00:00:00.000Z", force: true },
+        { path: context.pmPath },
+      ).catch((error: unknown) => error as PmCliError);
+      expect(refusal).toBeInstanceOf(PmCliError);
+      expect((refusal as PmCliError).context.recovery?.suggested_retry_args).toEqual([
+        "--pm-path", expect.any(String), "close", id, "--reason=--force",
+        "--resolution=Implemented", "--validate-close=strict", "--completed-at=2026-11-06T00:00:00.000Z", "--message=-m audit", "--author=sdk-agent", "--force",
+        "--expected-result", "<value>", "--actual-result", "<value>",
+      ]);
     });
   });
 

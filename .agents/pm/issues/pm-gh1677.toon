@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,expect-hash,"gh:1677",recovery,tracker-scope
 created_at: "2026-11-06T11:32:59.995Z"
-updated_at: "2026-11-06T12:45:22.658Z"
+updated_at: "2026-11-06T13:30:02.189Z"
 closed_at: "2026-11-06T12:45:21.027Z"
 completed_at: "2026-11-06T12:45:21.027Z"
 author: "harness:claude-code"
@@ -21,8 +21,9 @@ actual_result: "Verified with the reporter's two-tracker shape (same id in a dec
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-06T11:32:59.995Z","harness:claude-code","cli:create:dep",detected
   pm-mrvq8u,related,"2026-11-06T11:32:59.995Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-06T11:59:38.533Z","harness:claude-code","Implementation evidence (branch fix/recovery-replays-invocation). The store-layer refusal (assertRevisionEntries in src/core/store/item-mutation-precondition.ts) now builds required/examples/nextSteps through itemRevisionConflictGuidance and records reason revision_changed or document_unreadable. scopeItemRevisionConflict in src/sdk/lifecycle/item-revision.ts re-renders those fields for an invocation ({scopeArgs, json}). It runs inside enrichItemRevisionConflict, so it also covers refusals that already carry change evidence, and it skips close's post-close fan-out report (reason post_close_auto_unblock_refused, already scoped by commandScope). Hosts: the CLI binds invocationRevisionRecovery(globalOptions) (resolvePmCommandScopeArgs: --pm-path spelling, PM_PATH when not the cwd default, --no-extensions, and JSON when --json or --output-format json) at both preAction bind sites in src/cli/main.ts. SDK withExpectedItemRevisions adds --pm-path for an explicit pmRoot or cwd, PmClient.withExpectedItemRevisions always names its tracker, and runAction/MCP pass resolvePmCommandScopeArgs(global). Verified with the reporter's two-tracker shape: the emitted next_steps now read the target item at current_revision, and the history step returns the target's stream (total 2) in the caller's output mode. The guard still exits 4 and writes nothing. Negative control: dropping the invocation from enrichInvocationRevisionError fails tests/integration/recovery-replays-invocation.integration.spec.ts."
+  "2026-11-06T13:30:02.188Z","harness:claude-code","Codex review (gpt-6.1-sol, xhigh) on PR #1680 head b0a334fa1: 2 findings on this item, both verified and fixed.\n(P2) Nested scopes: an outer clientA.withExpectedItemRevisions re-rendered (and added evidence to) a refusal raised by an inner clientB scope on another tracker. The guard now records the canonical tracker of each refusal it raises (itemRevisionRefusalTracker in src/core/store/item-mutation-precondition.ts), and re-created errors keep it (retainItemRevisionRefusalTracker). enrichItemRevisionConflict returns a refusal from another tracker unchanged, so the owning scope supplies both its evidence and its scoped commands.\n(P2) runAction with an explicit cwd rendered the caller's relative path, which names another tracker from the caller's process cwd. It now renders the resolved tracker root, including when cwd alone selected the tracker.\nSpecs: a two-tracker nested-scope case and a runAction explicit-cwd case in tests/unit/sdk/lifecycle/item-revision.spec.ts."
 files[9]{path,scope}:
   src/cli/expected-revisions.ts,project
   src/cli/main.ts,project

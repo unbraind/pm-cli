@@ -606,22 +606,43 @@ function applyDuplicateCloseMetadata(
 }
 
 /**
+ * Options the refused close supplied, rendered as attached `--flag=value`
+ * tokens so a value that starts with a hyphen stays a value. The refused write
+ * persisted none of them, so the retry must carry them again.
+ */
+function suppliedCloseOptionTokens(options: CloseOperationOptions, missingFlags: ReadonlySet<string>): string[] {
+  const valued: Array<[string, string | undefined]> = [
+    ["--resolution", options.resolution],
+    ["--expected-result", options.expectedResult],
+    ["--actual-result", options.actualResult],
+    ["--validate-close", options.validateClose],
+    ["--completed-at", options.completedAt],
+    ["--message", options.message],
+    ["--author", options.author],
+  ];
+  const tokens = valued.flatMap(([flag, value]) => (missingFlags.has(flag) || value === undefined || value.trim().length === 0 ? [] : [`${flag}=${value}`]));
+  return options.force === true ? [...tokens, "--force"] : tokens;
+}
+
+/**
  * Refuse a strict close that lacks close evidence (pm-gh1676). pm close accepts
  * every missing field itself, so the retry is the same close with the missing
- * flags added: one write, one history entry. The CLI re-renders it from the
- * caller's exact argv; a separate pm update stays only as a secondary route.
+ * flags added: one write, one history entry. It carries every option the
+ * refused close supplied, and the reason as `--reason=<text>` so a reason that
+ * looks like a flag is not parsed as one. The CLI re-renders the retry from
+ * the caller's exact argv; a separate pm update stays only as a secondary route.
  */
 function closeValidationMissingFieldsError(
   metadata: ItemMetadata,
   missingFields: ReadonlyArray<(typeof CLOSE_VALIDATION_FIELDS)[number]>,
-  commandScope: readonly string[],
-  closeReason: string | undefined,
+  context: Pick<CloseMutationContext, "commandScope" | "closeReason" | "options">,
 ): PmCliError {
   const missingLabels = missingFields.map((field) => field.label);
   const missingFlags = missingFields.map((field) => `--${field.key.replaceAll("_", "-")}`);
   const placeholders = missingFlags.flatMap((flag) => [flag, "<value>"]);
-  const closeTokens = [...commandScope, "close", metadata.id, ...(closeReason === undefined ? [] : [closeReason]), ...placeholders];
-  const updateTokens = [...commandScope, "update", metadata.id, ...placeholders];
+  const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
+  const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...placeholders];
+  const updateTokens = [...context.commandScope, "update", metadata.id, ...placeholders];
   return new PmCliError(
     `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`,
     EXIT_CODE.USAGE,
@@ -646,8 +667,7 @@ function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
-  commandScope: readonly string[],
-  closeReason: string | undefined,
+  context: Pick<CloseMutationContext, "commandScope" | "closeReason" | "options">,
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
@@ -655,7 +675,7 @@ function collectCloseValidationWarnings(
     if (missingFields.length > 0) {
       const missingLabels = missingFields.map((field) => field.label);
       if (validateCloseMode === "strict") {
-        throw closeValidationMissingFieldsError(metadata, missingFields, commandScope, closeReason);
+        throw closeValidationMissingFieldsError(metadata, missingFields, context);
       }
       warnings.push(
         `close_validation_missing_fields:${metadata.id}:${missingLabels.join(",")}`,
@@ -730,8 +750,7 @@ function mutateCloseMetadata(
     metadata,
     context.validateCloseMode,
     context.activeChildIds,
-    context.commandScope,
-    context.closeReason,
+    context,
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;

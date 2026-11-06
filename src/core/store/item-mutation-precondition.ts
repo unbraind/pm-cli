@@ -166,7 +166,7 @@ export function hasActiveItemRevisionScope(pmRoot: string): boolean {
 /** Refuse a locked write whose stored revision is not the one its scope declared. */
 function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, targetId: string): void {
   const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id]);
-  if (entries.length > 0) assertRevisionEntries(entries, targetId, hashDocument(document), false);
+  if (entries.length > 0) assertRevisionEntries(entries, targetId, hashDocument(document), false, pmRoot);
 }
 
 /**
@@ -177,7 +177,7 @@ function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, 
  */
 export function assertItemRevisionExpectationsOnUnreadable(pmRoot: string, targetId: string, raw: string): void {
   const entries = matchingRevisionEntries(pmRoot, [targetId]);
-  if (entries.length > 0) assertRevisionEntries(entries, targetId, sha256Hex(raw), true);
+  if (entries.length > 0) assertRevisionEntries(entries, targetId, sha256Hex(raw), true, pmRoot);
 }
 
 /** `reason` of a revision refusal over a document that could be read and changed since the caller's read. */
@@ -224,12 +224,24 @@ export function itemRevisionConflictGuidance(
   };
 }
 
+/** Canonical tracker root of each revision refusal the locked-write guard raised. */
+const refusalTrackers = new WeakMap<object, string>();
+
+/**
+ * The canonical tracker whose locked write raised this revision refusal, or
+ * undefined for a refusal the guard did not raise itself. Nested scopes use it
+ * so only the scope bound to that tracker re-renders the refusal's recovery.
+ */
+export function itemRevisionRefusalTracker(error: unknown): string | undefined {
+  return typeof error === "object" && error !== null ? refusalTrackers.get(error) : undefined;
+}
+
 /** Mark matching entries checked and refuse the first one the locked revision does not satisfy. */
-function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targetId: string, current: string, unreadable: boolean): void {
+function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targetId: string, current: string, unreadable: boolean, pmRoot: string): void {
   for (const entry of entries) {
     entry.checked = true;
     if (!unreadable && entry.expected === current) continue;
-    throw new PmCliError(
+    throw trackRefusal(pmRoot, new PmCliError(
       `Item ${targetId} is no longer at the expected revision ${entry.expected.slice(0, 12)}${unreadable ? " (its live document cannot be read)" : ""}; refusing to write over a revision this decision did not see.${entry.committed ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
       EXIT_CODE.CONFLICT,
       {
@@ -241,8 +253,30 @@ function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targe
         why: "The caller declared the revision its decision was based on, and another write changed the item before this locked write.",
         ...itemRevisionConflictGuidance(targetId, unreadable),
       },
-    );
+    ));
   }
+}
+
+/**
+ * Whether a revision refusal was raised by this tracker's guard. A refusal
+ * with no recorded tracker (one another producer built) is attributed to the
+ * caller's tracker, as before nested scopes were distinguished.
+ */
+export function isItemRevisionRefusalFrom(error: unknown, pmRoot: string): boolean {
+  const tracker = itemRevisionRefusalTracker(error);
+  return tracker === undefined || tracker === canonicalTrackerRoot(pmRoot);
+}
+
+/** Keep a refusal's originating tracker on an error re-created from it. */
+export function retainItemRevisionRefusalTracker(source: unknown, target: PmCliError): PmCliError {
+  const tracker = itemRevisionRefusalTracker(source);
+  if (tracker !== undefined) refusalTrackers.set(target, tracker);
+  return target;
+}
+
+function trackRefusal(pmRoot: string, error: PmCliError): PmCliError {
+  refusalTrackers.set(error, canonicalTrackerRoot(pmRoot));
+  return error;
 }
 
 /**

@@ -4,7 +4,7 @@
  */
 import { attachPreflightWarnings, attachSerializedPreflightWarnings, emitPreflightWarning, runWithPreflightWarnings } from "./preflight-warnings.js";
 import { assertGuardedDispatchUnchanged, bindInvocationExpectedRevisions, invocationRewritten, parseWithInvocationRevisionScope, refuseInventoryExpectHash } from "./expected-revisions.js";
-import { Command,CommanderError } from "commander";
+import { Command,CommanderError,type Option } from "commander";
 import { PM_COMMAND_ALIAS_CONTRACTS,findPmNamespacedCommand,resolvePmCommandOperation } from "../sdk/cli-contracts/command-aliases.js";
 import { createPmCliProgram } from "../sdk/cli-program.js";
 import { runWithDiscoveredContextIntentContracts } from "../sdk/context-intent-runtime.js";
@@ -415,7 +415,14 @@ function withContextRecovery(context: PmCliErrorContext | undefined, recovery: P
 function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
   const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
-  return repairCloseFieldsRecovery(argv, context.code, recovery);
+  return repairCloseFieldsRecovery(argv, context.code, recovery, invokedCommandOptions(argv));
+}
+
+/** The parser's option table (global plus command options) for the invoked root command. */
+function invokedCommandOptions(argv: string[]): readonly Option[] | undefined {
+  const name = parseBootstrapCommandName(argv);
+  const command = program.commands.find((candidate) => candidate.name() === name || candidate.aliases().includes(name ?? ""));
+  return command === undefined ? undefined : [...program.options, ...command.options];
 }
 
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */

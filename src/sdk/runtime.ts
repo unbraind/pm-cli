@@ -2979,8 +2979,9 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       options: asRecordClone(dispatchArgs.options),
       background: dispatchArgs.background,
       pmRoot: resolvePmRoot(resolutionCwd, global.path),
-      // pm-gh1677: recovery reads keep the caller's tracker spelling and extension isolation.
-      invocation: { scopeArgs: resolvePmCommandScopeArgs(global, resolutionCwd) },
+      // pm-gh1677: recovery reads keep the caller's tracker spelling and extension isolation. An explicit
+      // cwd is not the caller's process cwd, so a relative spelling would name another tracker there.
+      invocation: { scopeArgs: explicitCwd === undefined ? resolvePmCommandScopeArgs(global, resolutionCwd) : ["--pm-path", resolvePmRoot(resolutionCwd, global.path), ...(global.noExtensions === true ? ["--no-extensions"] : [])] },
       run: () => dispatchAction(resolved.action, dispatchArgs, global, activeExtensions),
     });
   };
