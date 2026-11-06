@@ -50,11 +50,19 @@ Warning-mode follow-up exists for incomplete historical or interrupted workflows
 `close_validation_missing_fields` (exit 2) and writes nothing. Because
 `pm close` accepts `--resolution`, `--expected-result` and `--actual-result`
 itself, `recovery.suggested_retry_args` is the caller's own close invocation
-with each missing flag added before any `--` terminator. The item id, reason,
-tracker selection, `--json`, `--expect-hash` and every other supplied token are
-kept, and a blank value supplied for a missing field (under any alias) is
-replaced rather than repeated. Replace each `<value>` and run it: one write
-records the evidence and the closure in the same history entry.
+with each missing flag appended. Every typed token is kept as it was: the item
+id, reason, tracker selection, `--json`, `--expect-hash` and the rest. The
+appended flag also overrides a blank value supplied for that field, because the
+parser keeps the last value of a repeated option. When a `--` follows the
+command, the flags go directly after the command token instead. When the
+invocation named no tracker, the tracker an environment selection (`PM_PATH`)
+resolved is prepended. Replace each `<value>` and run it: one write records the
+evidence and the closure in the same history entry.
+
+When the refused command cannot accept the missing fields itself (for example
+`pm close-task`), or the flags cannot be placed safely, the refusal proposes no
+retry rather than one that drops the caller's tokens. `recovery.missing` still
+names the fields.
 
 ```bash
 pm --pm-path <tracker-root> close <item-id> "Delivered" --validate-close strict \

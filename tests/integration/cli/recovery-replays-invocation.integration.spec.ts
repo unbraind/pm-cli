@@ -69,6 +69,21 @@ describe("refusal recovery replays the caller's own invocation", () => {
     });
   });
 
+  it("pm-gh1676: a command that cannot accept the missing close fields gets no invented retry", async () => {
+    await withTempPmPath(async (context) => {
+      seedDecoyAndTarget(context);
+      // close-task accepts --validate-close but none of the evidence flags.
+      const refused = await context.runCliInProcess(["--pm-path", TARGET, "close-task", "pm-same", "Done", "--validate-close", "strict", "--json"], { cwd: context.tempRoot, preserveDefaultMutationOutput: true });
+      expect(refused.code).toBe(EXIT_CODE.USAGE);
+      const refusal = JSON.parse(refused.stderr) as { code: string; recovery: Record<string, unknown> };
+      expect(refusal.code).toBe("close_validation_missing_fields");
+      // Message-text inference must not rebuild a retry the typed producer withdrew.
+      expect(refusal.recovery.suggested_retry).toBeUndefined();
+      expect(refusal.recovery.suggested_retry_args).toBeUndefined();
+      expect(refusal.recovery).toMatchObject({ missing: ["--resolution", "--expected-result", "--actual-result"], next_best_command: expect.stringContaining(" update pm-same ") });
+    });
+  });
+
   it("pm-gh1676: a strict close refused for missing close fields retries as the same close, in one write, guard included", async () => {
     await withTempPmPath(async (context) => {
       seedDecoyAndTarget(context);
@@ -78,8 +93,9 @@ describe("refusal recovery replays the caller's own invocation", () => {
       expect(refused.code).toBe(EXIT_CODE.USAGE);
       const refusal = JSON.parse(refused.stderr) as { code: string; next_steps: string[]; recovery: { suggested_retry_args: string[]; next_best_command: string } };
       expect(refusal.code).toBe("close_validation_missing_fields");
-      // Short options and the revision guard survive; the blank --resolution is replaced, not repeated.
-      expect(refusal.recovery.suggested_retry_args).toEqual([...invocation.slice(0, -3), "--json", "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"]);
+      // Every typed token survives, short options and the revision guard included; the appended
+      // --resolution overrides the blank one because the parser keeps the last value.
+      expect(refusal.recovery.suggested_retry_args).toEqual([...invocation, "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"]);
       expect(refusal.next_steps[0]).toContain("Retry the same pm close");
       expect(refusal.recovery.next_best_command).toContain(" update pm-same ");
       const retry = refusal.recovery.suggested_retry_args.map((token) => (token === "<value>" ? "Recorded at close" : token));

@@ -1168,6 +1168,11 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
       expect(refusal.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "get", id, "--json"]));
       const implicit = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-again" }, expectHash: stale, cwd: context.tempRoot }));
       expect(implicit.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
+      // An active-extension-host client disables extensions only internally, so its recovery keeps them enabled.
+      const host = PmClient.forActiveExtensionHost({ pmRoot: context.pmPath });
+      const hosted = await captureError(() => host.run("update", { id, options: { tags: "stale-host" }, expectHash: stale }));
+      expect(hosted.context.code).toBe("item_revision_conflict");
+      expect(hosted.context.nextSteps?.every((step) => !step.includes("--no-extensions"))).toBe(true);
       // A requested output encoding carries into the recovery reads.
       const toon = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-toon" }, expectHash: stale, path: context.pmPath, outputFormat: "toon" }));
       expect(toon.context.nextSteps?.[1]).toMatch(/ history \S+ --limit 5 --output-format toon$/u);
