@@ -1166,7 +1166,7 @@ describe("runClose", () => {
       expect(refused.code).toBe("close_validation_missing_fields");
       expect(refused.recovery).toEqual({ missing: ["--expected-result", "--actual-result"], next_best_command: expect.stringContaining(` update ${id} --expected-result`) });
       expect(refused.required).toContain(`lifecyclePolicy override (${Object.keys(lifecyclePolicy)[0]}) has no CLI spelling`);
-      expect(refused.nextSteps?.[0]).toBe("Retry the same SDK close with the missing evidence supplied, keeping its lifecyclePolicy override.");
+      expect(refused.nextSteps?.[0]).toBe("Retry the same SDK close with the missing evidence supplied, inside the same lifecycle policy and revision guards.");
     });
   });
 

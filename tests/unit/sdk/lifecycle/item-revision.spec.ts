@@ -1197,6 +1197,16 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
       const sdk = new PmClient({ pmRoot: context.pmPath });
       const withDependent = await captureError(() => sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () => sdk.close(id, "Done", { validateClose: "strict" })));
       expect(withDependent.context.recovery?.suggested_retry_args).toContain(`--expect-hash=${dependent}=${dependentHash}`);
+      // Nested scopes expecting different revisions of one item cannot be spelled as one invocation's guards.
+      const conflicting = await captureError(() => sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () =>
+        withExpectedItemRevisions([{ id: dependent, itemHash: "b".repeat(64) }], () => sdk.close(id, "Done", { validateClose: "strict" }), { pmRoot: context.pmPath })));
+      expect(conflicting.context.recovery?.suggested_retry_args).toBeUndefined();
+      expect(conflicting.context.required).toContain("nested revision guards expect different revisions of one item");
+      // An embedded CLI run inside an SDK guard keeps that guard in its argv-based retry.
+      const embedded = await sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () =>
+        context.runCliInProcess(["close", id, "Done", "--validate-close", "strict", "--json"], { preserveDefaultMutationOutput: true }));
+      const embeddedRetry = (JSON.parse(embedded.result.stderr) as { recovery: { suggested_retry_args: string[] } }).recovery.suggested_retry_args;
+      expect(embeddedRetry).toEqual(expect.arrayContaining(["close", id, "Done", `--expect-hash=${dependent}=${dependentHash}`]));
       // A requested output encoding carries into the recovery reads.
       const toon = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-toon" }, expectHash: stale, path: context.pmPath, outputFormat: "toon" }));
       expect(toon.context.nextSteps?.[1]).toMatch(/ history \S+ --limit 5 --output-format toon$/u);

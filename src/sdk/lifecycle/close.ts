@@ -650,18 +650,22 @@ function closeValidationMissingFieldsError(
   // An SDK-only lifecycle override (requireCloseReason, orderingEdges) has no CLI spelling, so a CLI close
   // would perform a different transition: retry the SDK call itself, with the evidence supplied.
   const overrides = Object.entries(context.options.lifecyclePolicy ?? {}).filter(([, value]) => value !== undefined).map(([key]) => key);
-  if (overrides.length > 0) {
+  // An SDK or MCP guard never reaches argv, so the retry carries every revision the active scopes expect
+  // on this tracker, including guards on dependents the close would auto-unblock.
+  const expectations = activeItemRevisionExpectations(context.pmRoot);
+  const unreplayable = overrides.length > 0
+    ? `its lifecyclePolicy override (${overrides.join(", ")}) has no CLI spelling`
+    : expectations === undefined ? "its nested revision guards expect different revisions of one item" : undefined;
+  if (unreplayable !== undefined) {
     return new PmCliError(message, EXIT_CODE.USAGE, {
       code: "close_validation_missing_fields",
-      required: `Pass ${missingFields.map((field) => field.key).join(", ")} on the same SDK close; its lifecyclePolicy override (${overrides.join(", ")}) has no CLI spelling, so no CLI retry reproduces it.`,
+      required: `Pass ${missingFields.map((field) => field.key).join(", ")} on the same SDK close; ${unreplayable}, so no CLI retry reproduces it.`,
       recovery: { missing: missingFlags, next_best_command: renderPmCommand(updateTokens) },
-      nextSteps: ["Retry the same SDK close with the missing evidence supplied, keeping its lifecyclePolicy override.", warnStep],
+      nextSteps: ["Retry the same SDK close with the missing evidence supplied, inside the same lifecycle policy and revision guards.", warnStep],
     });
   }
   const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
-  // An SDK or MCP guard never reaches argv, so the retry carries every revision the active scopes expect
-  // on this tracker, including guards on dependents the close would auto-unblock.
-  const guards = activeItemRevisionExpectations(context.pmRoot).map((guard) => `--expect-hash=${guard}`);
+  const guards = (expectations ?? []).map((guard) => `--expect-hash=${guard}`);
   const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...guards, ...placeholders];
   return new PmCliError(message, EXIT_CODE.USAGE, {
     code: "close_validation_missing_fields",

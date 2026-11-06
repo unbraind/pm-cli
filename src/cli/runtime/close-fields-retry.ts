@@ -60,7 +60,11 @@ export function repairCloseFieldsRecovery(
   const declared = missing.map((flag) => contracts.find((entry) => entry.flag === flag || entry.aliases?.includes(flag) === true));
   if (declared.some((contract) => contract === undefined)) return withdrawn;
   const spellings = new Set(declared.flatMap((contract) => [contract!.flag, ...(contract!.aliases ?? [])]));
-  const placed = placeMissingFlags(argv, commandIndex, spellings, missing.flatMap((flag) => [flag, "<value>"]));
+  // Guards the producer read from an enclosing SDK scope (an embedded CLI run) never reached argv; keep
+  // them. A guard the caller typed (as a bare hash, <id>=<hash>, or either attached) is not repeated.
+  const typedGuard = (hash: string) => argv.some((token) => token === hash || token.endsWith(`=${hash}`));
+  const outOfBandGuards = (recovery!.suggested_retry_args ?? []).filter((token) => token.startsWith("--expect-hash=") && !typedGuard(token.slice(token.lastIndexOf("=") + 1)));
+  const placed = placeMissingFlags(argv, commandIndex, spellings, [...missing.flatMap((flag) => [flag, "<value>"]), ...outOfBandGuards]);
   if (placed === undefined) return withdrawn;
   const retry = [...scopePrefix, ...placed];
   return { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry };

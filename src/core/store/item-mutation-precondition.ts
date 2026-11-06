@@ -159,15 +159,21 @@ function matchingRevisionEntries(pmRoot: string, ids: readonly unknown[]): ItemR
  * `<id>=<hash>` guard values, so a refusal that prescribes a retry carries the
  * same guards (`--expect-hash <id>=<hash>`) the refused operation ran under,
  * including those on items it would write as a side effect (auto-unblocked
- * dependents).
+ * dependents). Undefined when nested scopes expect different revisions of the
+ * same item, which no single invocation can declare.
  */
-export function activeItemRevisionExpectations(pmRoot: string): string[] {
+export function activeItemRevisionExpectations(pmRoot: string): string[] | undefined {
   const scopes = revisionScopes.getStore() ?? [];
   if (scopes.length === 0) return [];
   const resolvedRoot = canonicalTrackerRoot(pmRoot);
-  return [...new Set(scopes.flatMap((scope) => scope.pmRoot === resolvedRoot
-    ? [...scope.entries].map(([id, entry]) => `${id}=${entry.expected}`)
-    : []))];
+  const expected = new Map<string, Set<string>>();
+  for (const scope of scopes) {
+    if (scope.pmRoot !== resolvedRoot) continue;
+    for (const [id, entry] of scope.entries) expected.set(id, (expected.get(id) ?? new Set()).add(entry.expected));
+  }
+  // Nested scopes that expect different revisions of one item cannot be spelled as one invocation's guards.
+  if ([...expected.values()].some((hashes) => hashes.size > 1)) return undefined;
+  return [...expected].map(([id, hashes]) => `${id}=${[...hashes][0]!}`);
 }
 
 /**
