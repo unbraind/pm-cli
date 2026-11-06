@@ -2309,13 +2309,23 @@ always retained. SDK query functions continue returning their full typed
 results; lean projection belongs to the CLI presentation boundary.
 
 Custom agent hosts can import `projectPmBriefListEnvelope` from
-`@unbrained/pm-cli/sdk` to apply the same brief-list presentation without
-mutating the original result. It retains unchecked source status and actionable
-continuation, and leaves partial, custom, or inconsistent envelopes intact.
-`projectPmBriefSearchEnvelope` does the same for search pages. It drops
-`truncated` when it repeats `has_more` and a `filters.limit` echo of
-`applied_limit`, and it replaces the single default `projection_metadata`
-omission receipt with `details: "--full"`. For flat default lists, the list
+`@unbrained/pm-cli/sdk` to apply the same list presentation without mutating
+the original result. It covers the brief default, `--compact` and `--fields`
+row projections alike
+([GH-1674](https://github.com/unbraind/pm-cli/issues/1674)), so a narrower
+`--fields` page never carries more envelope than the default. It retains
+unchecked source status and actionable continuation, and leaves partial,
+custom, or inconsistent envelopes intact. The projection echo is dropped
+because the row header already lists the fields; an empty `--fields` page
+keeps it, since no row shows them. A `filters.fields` echo equal to that
+projection is dropped too. `projectPmBriefSearchEnvelope` does the same for
+compact and `--fields` search pages. It drops `truncated` when it repeats
+`has_more`, a `filters.limit` echo of `applied_limit`, and on `--fields` pages
+the projection, `now`, and a `mode_source` other than `settings`. It replaces
+the single default `projection_metadata` or `full_item_fields` omission
+receipt with `details: "--full"`. SDK `runSearch` results for a `fields`
+projection echo only the filters the caller set, like the compact default;
+`--full` keeps the complete resolved filter echo. For flat default lists, the list
 projection replaces the default ascending sort's legacy `sort`/`order` echo with
 one `effective_keys` comparator line, so the effective default order stays
 visible. Tree-mode lists carry no `effective_keys`, because hierarchy traversal

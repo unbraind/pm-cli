@@ -6,17 +6,17 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-11-06T01:38:19.209Z"
+updated_at: "2026-11-06T10:02:48.999Z"
 reminders[1]{at,text}:
-  "2026-11-03T06:00:00.000Z","Verify the 2026-11-03 daily cut (the first after PR #1649) against npm latest, GitHub Release, npm/npx/Bun/bunx consumers and fresh Sentry/telemetry; record any scheduled failure stage"
+  "2026-11-07T06:00:00.000Z",Verify the 2026-11-07 daily cut (the first after PR #1675) against npm latest; GitHub Release; npm/npx/Bun/bunx consumers and fresh Sentry/telemetry; record any scheduled failure stage
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"
 parent: pm-u9d0
 risk: low
 confidence: high
-expected_result: "At November 3 06:00 UTC verify the November 3 daily cut (the first containing PR #1649) against the latest merged delivery, including tag/npm identity, npm/Bun/npx/bunx consumers and fresh observability; preserve original reliability outcomes."
-actual_result: "October28 morning Auto Release40628452727 and Release40631211289 succeed. Exactly v2026.10.28 is published; independent registry integrity, actual npx/bunx, all bins, MCP Skills/Apps and HTTP acceptance pass. This immutable release precedes PR1616 SDK changes. Fresh real read spans are accepted/indexed in Sentry; required observability gate passes with zero unresolved issues, zero missing error codes and5.91percent finish-error rate. Recent installation-scoped telemetry has28 matched starts/finishes, zero settled mismatches and empty broker queue. Historical reliability remains separate."
+expected_result: "At each reminder occurrence, verify that day's daily cut against the latest merged delivery: tag and npm identity, GitHub Release, npm/Bun/npx/bunx consumers and fresh Sentry/telemetry observability; record any failing stage and keep the original reliability outcome"
+actual_result: "Latest verification 2026-11-06: the morning_dispatcher Auto Release run 42158412412 cut v2026.11.6 at 04:25Z on its first attempt and Release run 42162429452 published it; npm latest 2026.11.6, GitHub Latest v2026.11.6, and npx and bunx @latest both print 2026.11.6. One automatic release per day held. Next check is the reminder at 2026-11-07T06:00Z."
 dependencies[15]:
   - id: pm-7n5a
     kind: related
@@ -96,7 +96,7 @@ dependencies[15]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[262]:
+comments[263]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -886,6 +886,10 @@ comments[262]:
   - created_at: "2026-11-06T01:38:19.208Z"
     author: "harness:claude-code"
     text: "Release-health change, 2026-11-05/06. Tag v2026.11.5 was cut by the blocker retry at 06:27Z. Both tag-sourced Release runs then failed the Sentry-injected package artifact gate (20,257,274 > 20,250,000 bytes) before any publication, and the native schedule run on 11-05 failed at the same stage.\n\nFixed by PR 1672: a derived injected ceiling, plus pre-tag base and simulated injected packlist steps. Recovered by the operator exact-tag Release run 42137916821, which published 2026.11.5 to npm latest and GitHub Latest at 01:30Z on 11-06, with nine of nine registry-acceptance jobs passing and npx and bunx verified.\n\nOne release covers 2026-11-05. Issue 1668 is closed. Main's Unreleased section was empty when it closed, so the triggered retry has nothing to cut. The next automatic cut is the 2026-11-06 morning dispatcher."
+  - created_at: "2026-11-06T06:02:01.768Z"
+    author: "harness:claude-code"
+    text: "Release-health change, 2026-11-06: back to the healthy primary path. The morning_dispatcher Auto Release run 42158412412 (03:45Z) cut v2026.11.6 at 04:25Z on its first attempt, and tag Release run 42162429452 published it. Verified before this comment was written (it is timestamped 06:02Z): npm latest 2026.11.6, GitHub Latest v2026.11.6, and npx @latest and bunx @latest both print 2026.11.6. One automatic release per day held: the v2026.11.5 publication earlier on 11-06 was the operator exact-tag recovery of the 11-05 tag, and the two blocker_retry runs after #1668 closed skipped with same_day_window_expired. The pre-tag package-artifact steps from PR 1672 passed on this cut."
+    edited_at: "2026-11-06T06:59:14.423Z"
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

@@ -70,7 +70,7 @@ const cases = [
   {
     sourcePath: "src/sdk/output-projection.ts",
     testPath: "tests/unit/regressions/actionable-get-receipts.spec.ts",
-    testName: "distinguishes rendered linked artifacts from unselected placeholders",
+    testName: "returns only the selected linked groups and names populated siblings",
     before: '(["files", "tests", "docs"].includes(name) &&\n      isRecord(result.linked) && Array.isArray(result.linked[name]) &&\n      result.linked[name].length > 0)',
     after: "false",
   },

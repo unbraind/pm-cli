@@ -1,0 +1,26 @@
+id: pm-hka7ep
+title: "pm comments --edit/--delete take an absolute index while a budget-truncated listing reports count as the page size and shows no row index, so 'edit the last comment' by count rewrites an older comment"
+description: "Found 2026-11-06 while correcting a release-health comment on pm-7zs0 (263 comments). pm comments pm-7zs0 --json returned a 3000-token default page with count: 28, has_more true and the oldest 28 comments. Nothing in the rows names their absolute position, and the total (263) appears only inside output_budget_truncation.continuations[].total_rows. pm comments --edit 28 then replaced the 2026-06-30 comment at absolute index 28, not the newest comment the caller meant. The edit is audited and was reverted from git before commit, but in a clean workflow it silently rewrites unrelated history evidence. pm comments --limit 1 returns the newest comment, so the two listing modes also order differently. Expected: comment rows carry their absolute 1-based index (or a stable comment id) that --edit and --delete accept, the envelope carries total beside count, and --edit/--delete can guard on the expected created_at, text hash or item hash, refusing when the target is not the comment the caller read. The same applies to notes and learnings, which share the collection primitive. Duplicate check: searched comments edit delete index truncated page count budget; pm-4swf (edit/delete lifecycle), pm-6vfg and pm-9stazf (bounded comment reads) are closed and do not cover index addressing."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,collections,comments,safety
+created_at: "2026-11-06T06:59:42.442Z"
+updated_at: "2026-11-06T07:03:12.688Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "Comment, note and learning listing rows in TOON, JSON, SDK and MCP carry their absolute 1-based index or a stable entry id that --edit and --delete accept; A budget-truncated collection listing carries total beside count at the top level; --edit and --delete accept an expected-content guard (created_at or text hash) and refuse with a typed error when the addressed entry differs; Negative control: editing by page count on a truncated listing without the guard is refused or provably addresses the intended row in a spec"
+parent: pm-mpbb
+risk: medium
+confidence: high
+severity: medium
+repro_steps: "On an item with more comments than one default page holds, run pm comments <id> --json, read count, then run pm comments <id> --edit <count> with new text and compare which comment changed"
+expected_result: "The caller can address the comment it read without guessing: each row names its absolute index or id, the envelope states the total, and a guarded edit refuses a mismatched target"
+actual_result: "count is the page size, rows carry no index, and --edit 28 rewrote the 2026-06-30 comment instead of the newest one"
+component: comments
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4swf,related,"2026-11-06T06:59:42.442Z","harness:claude-code","cli:create:dep",detected
+  pm-9stazf,related,"2026-11-06T06:59:42.442Z","harness:claude-code","cli:create:dep",detected
+  pm-6vfg,related,"2026-11-06T07:03:12.440Z","harness:claude-code","cli:update:dep",detected
+  pm-7zs0,discovered_from,"2026-11-06T07:03:12.440Z","harness:claude-code","cli:update:dep",detected
+body: ""

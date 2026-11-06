@@ -86,19 +86,22 @@ function emptySearchResult(
     items: [],
     count: 0,
     ...countExtras,
-    filters: buildVerboseSearchFilters({
-      effectiveMode: mode,
-      matchMode,
-      options,
-      includeLinked,
-      titleExact: options.titleExact === true,
-      phraseExact: options.phraseExact === true,
-      scoreThreshold,
-      hybridSemanticWeight,
-      queryExpansion,
-      rerank,
-      runtimeFieldFilters: runtimeFieldFilters ?? {},
-    }),
+    filters: buildProjectedSearchFilters(
+      {
+        effectiveMode: mode,
+        matchMode,
+        options,
+        includeLinked,
+        titleExact: options.titleExact === true,
+        phraseExact: options.phraseExact === true,
+        scoreThreshold,
+        hybridSemanticWeight,
+        queryExpansion,
+        rerank,
+        runtimeFieldFilters: runtimeFieldFilters ?? {},
+      },
+      projection,
+    ),
     projection: {
       mode: projection.mode,
       fields: projectionFields,
@@ -235,19 +238,7 @@ function buildCountOnlySearchResult(
       count: total,
       total,
       count_only: true,
-      filters: buildVerboseSearchFilters({
-        effectiveMode: response.effectiveMode,
-        matchMode: response.matchMode,
-        options: response.options,
-        includeLinked: response.includeLinked,
-        titleExact: response.titleExact,
-        phraseExact: response.phraseExact,
-        scoreThreshold: response.scoreThreshold,
-        hybridSemanticWeight: response.hybridSemanticWeight,
-        queryExpansion: response.queryExpansion,
-        rerank: response.rerank,
-        runtimeFieldFilters: response.runtimeFieldFilters,
-      }),
+      filters: buildProjectedSearchFilters(response, response.projection),
       projection: {
         mode: response.projection.mode,
         fields: projectionFields,
@@ -256,6 +247,52 @@ function buildCountOnlySearchResult(
     },
     response.warnings,
   );
+}
+
+/** Resolved search settings a projected response echoes as its filters. */
+type SearchFilterEchoInput = Pick<
+  SearchResponseContext,
+  | "effectiveMode"
+  | "matchMode"
+  | "options"
+  | "includeLinked"
+  | "titleExact"
+  | "phraseExact"
+  | "scoreThreshold"
+  | "hybridSemanticWeight"
+  | "queryExpansion"
+  | "rerank"
+  | "runtimeFieldFilters"
+>;
+
+/**
+ * Echo the filters a projected response applied, shared by the hit, empty and
+ * count-only paths. A `--fields` projection echoes only the filters the caller
+ * set, like the compact default (GH-1674); `--full` keeps the complete resolved
+ * echo, including settings-derived defaults.
+ */
+function buildProjectedSearchFilters(
+  response: SearchFilterEchoInput,
+  projection: SearchProjectionConfig,
+): Record<string, unknown> {
+  const shared = {
+    matchMode: response.matchMode,
+    options: response.options,
+    includeLinked: response.includeLinked,
+    titleExact: response.titleExact,
+    phraseExact: response.phraseExact,
+    scoreThreshold: response.scoreThreshold,
+    hybridSemanticWeight: response.hybridSemanticWeight,
+    runtimeFieldFilters: response.runtimeFieldFilters,
+  };
+  return projection.mode === "fields"
+    ? buildCompactSearchFilterSummary({ ...shared, mode: response.effectiveMode })
+    : buildVerboseSearchFilters({
+        ...shared,
+        effectiveMode: response.effectiveMode,
+        queryExpansion: response.queryExpansion,
+        rerank: response.rerank,
+      });
 }
 
 /**
@@ -384,19 +421,7 @@ function buildSearchResultForHits(
     count: projectedItems.length,
     ...truncationExtras,
     ...pageExtras,
-    filters: buildVerboseSearchFilters({
-      effectiveMode: response.effectiveMode,
-      matchMode: response.matchMode,
-      options: response.options,
-      includeLinked: response.includeLinked,
-      titleExact: response.titleExact,
-      phraseExact: response.phraseExact,
-      scoreThreshold: response.scoreThreshold,
-      hybridSemanticWeight: response.hybridSemanticWeight,
-      queryExpansion: response.queryExpansion,
-      rerank: response.rerank,
-      runtimeFieldFilters: response.runtimeFieldFilters,
-    }),
+    filters: buildProjectedSearchFilters(response, effectiveProjection),
     projection: {
       mode: effectiveProjection.mode,
       fields: finalProjectionFields,
