@@ -127,8 +127,9 @@ describe("refusal recovery replays the caller's own invocation", () => {
       const refusal = JSON.parse(refused.stderr) as { code: string; next_steps: string[]; recovery: { suggested_retry_args: string[]; next_best_command: string } };
       expect(refusal.code).toBe("close_validation_missing_fields");
       // Every typed token survives, short options and the revision guard included; the appended
-      // --resolution overrides the blank one because the parser keeps the last value.
-      expect(refusal.recovery.suggested_retry_args).toEqual([...invocation, "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>"]);
+      // --resolution overrides the blank one because the parser keeps the last value. The producer's
+      // guard repeats the typed one at the same revision, which the binder accepts.
+      expect(refusal.recovery.suggested_retry_args).toEqual([...invocation, "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>", `--expect-hash=pm-same=${decided}`]);
       expect(refusal.next_steps[0]).toContain("Run recovery.suggested_retry when it is present");
       expect(refusal.recovery.next_best_command).toContain(" update pm-same ");
       const retry = refusal.recovery.suggested_retry_args.map((token) => (token === "<value>" ? "Recorded at close" : token));
@@ -137,7 +138,8 @@ describe("refusal recovery replays the caller's own invocation", () => {
       expect(run(context, ["--pm-path", TARGET, "update", "pm-same", "--description", "Peer edit", "--json"]).code).toBe(0);
       expect(run(context, retry).code).toBe(EXIT_CODE.CONFLICT);
 
-      const fresh = retry.map((token) => (token === `pm-same=${decided}` ? `pm-same=${targetHash(context)}` : token));
+      const current = targetHash(context);
+      const fresh = retry.map((token) => token.replace(`pm-same=${decided}`, `pm-same=${current}`));
       const closed = run(context, fresh);
       expect(closed.code, closed.stderr).toBe(0);
       const history = JSON.parse(run(context, ["--pm-path", TARGET, "history", "pm-same", "--json"]).stdout) as { total: number; compact_history: Array<{ op: string }> };

@@ -34,6 +34,19 @@ function placeMissingFlags(argv: readonly string[], commandIndex: number, spelli
 }
 
 /**
+ * The producer's revision guards: the run of `--expect-hash=<id>=<hash>` tokens
+ * it places directly before the trailing `<flag> <value>` placeholders, after
+ * its tracker scope and close options. Reading only that run never mistakes a
+ * scope operand (a tracker named `--expect-hash=x`) for a guard.
+ */
+function producerRevisionGuards(producerRetry: readonly string[], missingCount: number): string[] {
+  const beforePlaceholders = producerRetry.slice(0, producerRetry.length - 2 * missingCount);
+  let start = beforePlaceholders.length;
+  while (start > 0 && beforePlaceholders[start - 1]!.startsWith("--expect-hash=")) start -= 1;
+  return beforePlaceholders.slice(start);
+}
+
+/**
  * Rewrite a missing-close-fields refusal's retry as the caller's invocation
  * plus each missing flag. `scopePrefix` is the tracker selection the parsed
  * invocation did not spell itself (an environment-selected tracker), prepended
@@ -67,7 +80,7 @@ export function repairCloseFieldsRecovery(
   // Carry every revision guard the producer saw: those from an enclosing SDK scope (an embedded CLI run)
   // never reached argv. A guard the caller also typed repeats with the same revision, which the binder
   // accepts, so no argv token is matched against a hash (a message that equals one is not a guard).
-  const guards = producerRetry.filter((token) => token.startsWith("--expect-hash="));
+  const guards = producerRevisionGuards(producerRetry, missing.length);
   const placed = placeMissingFlags(argv, commandIndex, spellings, [...missing.flatMap((flag) => [flag, "<value>"]), ...guards]);
   if (placed === undefined) return withdrawn;
   const retry = [...scopePrefix, ...placed];

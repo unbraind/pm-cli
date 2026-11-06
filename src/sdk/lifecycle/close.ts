@@ -655,7 +655,9 @@ function closeValidationMissingFieldsError(
   const expectations = activeItemRevisionExpectations(context.pmRoot);
   const unreplayable = overrides.length > 0
     ? `its lifecyclePolicy override (${overrides.join(", ")}) has no CLI spelling`
-    : expectations === undefined ? "its nested revision guards expect different revisions of one item" : undefined;
+    : expectations === undefined
+      ? "its revision guards cannot be replayed as typed (nested revision guards expect different revisions of one item, or a write in the same operation advanced a guarded revision)"
+      : undefined;
   if (unreplayable !== undefined) {
     return new PmCliError(message, EXIT_CODE.USAGE, {
       code: "close_validation_missing_fields",

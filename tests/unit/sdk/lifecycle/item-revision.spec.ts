@@ -1202,6 +1202,16 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
         withExpectedItemRevisions([{ id: dependent, itemHash: "b".repeat(64) }], () => sdk.close(id, "Done", { validateClose: "strict" }), { pmRoot: context.pmPath })));
       expect(conflicting.context.recovery?.suggested_retry_args).toBeUndefined();
       expect(conflicting.context.required).toContain("nested revision guards expect different revisions of one item");
+      // A write inside the guarded operation advances the guard past the declared revision: replaying the
+      // caller's own guard would conflict with the advanced one, so no CLI retry is proposed.
+      const declared = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      const advanced = await captureError(() => sdk.withExpectedItemRevisions([{ id, itemHash: declared }], async () => {
+        await sdk.update(id, { tags: "advanced-in-scope" });
+        return sdk.close(id, "Done", { validateClose: "strict" });
+      }));
+      expect(advanced.context.code).toBe("close_validation_missing_fields");
+      expect(advanced.context.recovery?.suggested_retry_args).toBeUndefined();
+      expect(advanced.context.required).toContain("a write in the same operation advanced a guarded revision");
       // An embedded CLI run inside an SDK guard keeps that guard in its argv-based retry.
       const embedded = await sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () =>
         context.runCliInProcess(["close", id, "Done", "--validate-close", "strict", "--json"], { preserveDefaultMutationOutput: true }));

@@ -35,7 +35,7 @@ describe("pm-gh1676 strict close retry replays the caller's close", () => {
   });
 
   it("keeps every revision guard the producer read, including those from an enclosing SDK scope", () => {
-    const producer = { ...PRODUCER, suggested_retry_args: ["close", "pm-one", "--expect-hash=pm-one=abc", "--expect-hash=pm-dep=def", "--resolution", "<value>"] };
+    const producer = { ...PRODUCER, suggested_retry_args: ["close", "pm-one", "--expect-hash=pm-one=abc", "--expect-hash=pm-dep=def", ...FILLED] };
     const repaired = repairCloseFieldsRecovery(["close", "pm-one", "--expect-hash=pm-one=abc", "--json"], CODE, producer);
     // A typed guard repeats at the same revision, which the binder accepts; nothing is matched against argv.
     expect(repaired?.suggested_retry_args).toEqual(["close", "pm-one", "--expect-hash=pm-one=abc", "--json", ...FILLED, "--expect-hash=pm-one=abc", "--expect-hash=pm-dep=def"]);
@@ -43,10 +43,15 @@ describe("pm-gh1676 strict close retry replays the caller's close", () => {
   });
 
   it("never mistakes a hash-valued message or reason for a typed guard", () => {
-    const producer = { ...PRODUCER, suggested_retry_args: ["close", "pm-one", "--expect-hash=pm-dep=def", "--resolution", "<value>"] };
+    const producer = { ...PRODUCER, suggested_retry_args: ["close", "pm-one", "--expect-hash=pm-dep=def", ...FILLED] };
     for (const argv of [["close", "pm-one", "--message=def"], ["close", "pm-one", "Done", "-m", "def"], ["close", "pm-one", "--reason=x=def"]]) {
       expect(repairCloseFieldsRecovery(argv, CODE, producer)?.suggested_retry_args).toEqual([...argv, ...FILLED, "--expect-hash=pm-dep=def"]);
     }
+  });
+
+  it("reads guards only from the producer's guard run, never from a tracker operand that looks like one", () => {
+    const producer = { ...PRODUCER, suggested_retry_args: ["--pm-path", "--expect-hash=bad", "close", "pm-one", "--reason=--expect-hash=x", ...FILLED] };
+    expect(repairCloseFieldsRecovery(["--pm-path=--expect-hash=bad", "close", "pm-one"], CODE, producer)?.suggested_retry_args).toEqual(["--pm-path=--expect-hash=bad", "close", "pm-one", ...FILLED]);
   });
 
   it("proposes no retry when the producer withdrew its own, as for conflicting nested revision guards", () => {
