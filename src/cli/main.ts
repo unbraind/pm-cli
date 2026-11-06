@@ -421,22 +421,25 @@ function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | u
   return repairCloseFieldsRecovery(argv, context.code, recovery, closeRetryScopePrefix(argv));
 }
 
-const EMPTY_VALUE_MARK = "\u0000";
+/** Stands in for an empty value so the bootstrap scanner keeps it; tracker resolution trims it back to empty. */
+const EMPTY_VALUE_MARK = " ";
 
 /**
  * Tracker selection a close retry must prepend, decided by the parsed final
  * tracker value rather than a token scan. Empty values are marked so the real
  * bootstrap scanner reports which value the parser keeps last: no typed
- * tracker means the environment's selection must be named; a typed non-empty
- * tracker needs nothing; a final empty tracker value would override any
- * prepended selection, so null withdraws the retry when one is needed.
+ * tracker means the environment's selection must be named; a typed tracker
+ * that is not blank needs nothing; a final blank value (empty or whitespace,
+ * which tracker resolution trims to nothing and so defers to the environment)
+ * would override any prepended selection, so null withdraws the retry when one
+ * is needed.
  */
 function closeRetryScopePrefix(argv: readonly string[]): readonly string[] | null {
   const marked = argv.map((token) => (token === "" ? EMPTY_VALUE_MARK : /^--(?:pm-)?path=$/u.test(token) ? `${token}${EMPTY_VALUE_MARK}` : token));
   const finalTracker = parseBootstrapGlobalOptions(marked).path;
-  if (finalTracker !== undefined && finalTracker !== EMPTY_VALUE_MARK) return [];
+  if (finalTracker !== undefined && finalTracker.trim() !== "") return [];
   const environmentScope = resolvePmCommandScopeArgs({});
-  return finalTracker === EMPTY_VALUE_MARK && environmentScope.length > 0 ? null : environmentScope;
+  return finalTracker !== undefined && environmentScope.length > 0 ? null : environmentScope;
 }
 
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */

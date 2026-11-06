@@ -88,7 +88,8 @@ describe("refusal recovery replays the caller's own invocation", () => {
       expect((JSON.parse(scoped.stderr) as { recovery: { suggested_retry_args: string[] } }).recovery.suggested_retry_args.slice(0, 3)).toEqual(["--pm-path", path.join("..", ".agents", "pm"), "close"]);
       // The parser keeps an empty --pm-path as its last value, so a prepended tracker would not bind.
       // The final value decides, including an empty one typed after a non-empty tracker.
-      for (const empty of [["--pm-path", ""], ["--pm-path="], ["--pm-path", ".agents/pm", "--pm-path="]]) {
+      // A whitespace-only value resolves like an empty one (tracker resolution trims it), so it is blank too.
+      for (const empty of [["--pm-path", ""], ["--pm-path="], ["--pm-path", ".agents/pm", "--pm-path="], ["--pm-path", " "], ["--pm-path=  "]]) {
         const refused = await context.runCliInProcess([...empty, "close", "pm-same", "Done", "--validate-close", "strict", "--json"], inTarget);
         expect(refused.code).toBe(EXIT_CODE.USAGE);
         const recovery = (JSON.parse(refused.stderr) as { recovery: Record<string, unknown> }).recovery;
