@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[4]: agent-ux,collections,comments,safety
 created_at: "2026-11-06T06:59:42.442Z"
-updated_at: "2026-11-06T06:59:42.442Z"
+updated_at: "2026-11-06T07:03:12.688Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "Comment, note and learning listing rows in TOON, JSON, SDK and MCP carry their absolute 1-based index or a stable entry id that --edit and --delete accept; A budget-truncated collection listing carries total beside count at the top level; --edit and --delete accept an expected-content guard (created_at or text hash) and refuse with a typed error when the addressed entry differs; Negative control: editing by page count on a truncated listing without the guard is refused or provably addresses the intended row in a spec"
@@ -18,7 +18,9 @@ repro_steps: "On an item with more comments than one default page holds, run pm 
 expected_result: "The caller can address the comment it read without guessing: each row names its absolute index or id, the envelope states the total, and a guarded edit refuses a mismatched target"
 actual_result: "count is the page size, rows carry no index, and --edit 28 rewrote the 2026-06-30 comment instead of the newest one"
 component: comments
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4swf,related,"2026-11-06T06:59:42.442Z","harness:claude-code","cli:create:dep",detected
   pm-9stazf,related,"2026-11-06T06:59:42.442Z","harness:claude-code","cli:create:dep",detected
+  pm-6vfg,related,"2026-11-06T07:03:12.440Z","harness:claude-code","cli:update:dep",detected
+  pm-7zs0,discovered_from,"2026-11-06T07:03:12.440Z","harness:claude-code","cli:update:dep",detected
 body: ""
