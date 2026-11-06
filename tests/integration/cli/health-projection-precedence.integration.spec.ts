@@ -20,6 +20,7 @@ describe("health projection precedence (GH-1670)", () => {
       expect(
         context.runCli(["create", "--json", "--title", "Health precedence seed", "--type", "Task"]).code,
       ).toBe(0);
+      /** Run `pm health <args> --json`, require exit 0, and return the envelope with its byte size. */
       const cli = (args: string[]) => {
         const result = context.runCli(["health", ...args, "--json"], { expectJson: true });
         expect(result.code, args.join(" ")).toBe(0);
