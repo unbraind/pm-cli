@@ -653,9 +653,13 @@ function closeValidationMissingFieldsError(
   // An SDK or MCP guard never reaches argv, so the retry carries every revision the active scopes expect
   // on this tracker, including guards on dependents the close would auto-unblock.
   const expectations = activeItemRevisionExpectations(context.pmRoot);
+  // An explicitly blank author is attributed differently from an omitted one, and pm close refuses an empty --author.
+  const blankAuthor = typeof context.options.author === "string" && context.options.author.trim().length === 0;
   const unreplayable = overrides.length > 0
     ? `its lifecyclePolicy override (${overrides.join(", ")}) has no CLI spelling`
-    : expectations === undefined
+    : blankAuthor
+      ? "its explicitly blank author has no CLI spelling (pm close refuses an empty --author)"
+      : expectations === undefined
       ? "its revision guards cannot be replayed as typed (nested revision guards expect different revisions of one item, or a write in the same operation advanced a guarded revision)"
       : undefined;
   if (unreplayable !== undefined) {

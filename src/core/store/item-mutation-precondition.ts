@@ -275,13 +275,28 @@ const REFUSAL_CAUSE_DEPTH = 8;
  * it so only the scope bound to that tracker re-renders the recovery.
  */
 export function itemRevisionRefusalTracker(error: unknown): string | undefined {
-  let current = error;
-  for (let depth = 0; depth < REFUSAL_CAUSE_DEPTH && typeof current === "object" && current !== null; depth += 1) {
-    const tracker = refusalTrackers.get(current);
+  for (const link of refusalCauseChain(error)) {
+    const tracker = refusalTrackers.get(link);
     if (tracker !== undefined) return tracker;
-    current = (current as { cause?: unknown }).cause;
   }
   return undefined;
+}
+
+/**
+ * The error and the wrappers it keeps as `cause`, bounded. A `cause` accessor
+ * that throws ends the chain: inspecting an unrelated error for a refusal must
+ * never replace that error with the accessor's exception.
+ */
+function* refusalCauseChain(error: unknown): Generator<object> {
+  let current = error;
+  for (let depth = 0; depth < REFUSAL_CAUSE_DEPTH && typeof current === "object" && current !== null; depth += 1) {
+    yield current;
+    try {
+      current = (current as { cause?: unknown }).cause;
+    } catch {
+      return;
+    }
+  }
 }
 
 /** Mark matching entries checked and refuse the first one the locked revision does not satisfy. */
@@ -327,10 +342,8 @@ const scopedRefusals = (scopedRefusalRegistry[SCOPED_REFUSALS_KEY] ??= new WeakS
 
 /** Whether this refusal (or a refusal it wraps as `cause`) already carries invocation-scoped recovery. */
 export function isItemRevisionRefusalScoped(error: unknown): boolean {
-  let current = error;
-  for (let depth = 0; depth < REFUSAL_CAUSE_DEPTH && typeof current === "object" && current !== null; depth += 1) {
-    if (scopedRefusals.has(current)) return true;
-    current = (current as { cause?: unknown }).cause;
+  for (const link of refusalCauseChain(error)) {
+    if (scopedRefusals.has(link)) return true;
   }
   return false;
 }

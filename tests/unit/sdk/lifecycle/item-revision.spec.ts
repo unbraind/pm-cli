@@ -1212,6 +1212,15 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
       expect(advanced.context.code).toBe("close_validation_missing_fields");
       expect(advanced.context.recovery?.suggested_retry_args).toBeUndefined();
       expect(advanced.context.required).toContain("a write in the same operation advanced a guarded revision");
+      // An explicitly blank SDK author is attributed unlike an omitted one, and pm close refuses an empty --author.
+      const blankAuthor = await captureError(() => sdk.close(id, "Done", { validateClose: "strict", author: "" }));
+      expect(blankAuthor.context.code).toBe("close_validation_missing_fields");
+      expect(blankAuthor.context.recovery?.suggested_retry_args).toBeUndefined();
+      expect(blankAuthor.context.required).toContain("explicitly blank author");
+      // Inspecting an unrelated rejection for a refusal never replaces it with its cause accessor's exception.
+      const opaque = new Error("unrelated callback failure");
+      Object.defineProperty(opaque, "cause", { get() { throw new Error("cause accessor"); } });
+      await expect(withExpectedItemRevisions([], async () => { throw opaque; }, { pmRoot: context.pmPath })).rejects.toBe(opaque);
       // An embedded CLI run inside an SDK guard keeps that guard in its argv-based retry.
       const embedded = await sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () =>
         context.runCliInProcess(["close", id, "Done", "--validate-close", "strict", "--json"], { preserveDefaultMutationOutput: true }));
