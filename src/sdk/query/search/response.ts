@@ -86,31 +86,22 @@ function emptySearchResult(
     items: [],
     count: 0,
     ...countExtras,
-    filters: projection.mode === "fields"
-      ? buildCompactSearchFilterSummary({
-          mode,
-          matchMode,
-          options,
-          includeLinked,
-          titleExact: options.titleExact === true,
-          phraseExact: options.phraseExact === true,
-          scoreThreshold,
-          hybridSemanticWeight,
-          runtimeFieldFilters,
-        })
-      : buildVerboseSearchFilters({
-          effectiveMode: mode,
-          matchMode,
-          options,
-          includeLinked,
-          titleExact: options.titleExact === true,
-          phraseExact: options.phraseExact === true,
-          scoreThreshold,
-          hybridSemanticWeight,
-          queryExpansion,
-          rerank,
-          runtimeFieldFilters: runtimeFieldFilters ?? {},
-        }),
+    filters: buildProjectedSearchFilters(
+      {
+        effectiveMode: mode,
+        matchMode,
+        options,
+        includeLinked,
+        titleExact: options.titleExact === true,
+        phraseExact: options.phraseExact === true,
+        scoreThreshold,
+        hybridSemanticWeight,
+        queryExpansion,
+        rerank,
+        runtimeFieldFilters: runtimeFieldFilters ?? {},
+      },
+      projection,
+    ),
     projection: {
       mode: projection.mode,
       fields: projectionFields,
@@ -258,13 +249,30 @@ function buildCountOnlySearchResult(
   );
 }
 
+/** Resolved search settings a projected response echoes as its filters. */
+type SearchFilterEchoInput = Pick<
+  SearchResponseContext,
+  | "effectiveMode"
+  | "matchMode"
+  | "options"
+  | "includeLinked"
+  | "titleExact"
+  | "phraseExact"
+  | "scoreThreshold"
+  | "hybridSemanticWeight"
+  | "queryExpansion"
+  | "rerank"
+  | "runtimeFieldFilters"
+>;
+
 /**
- * Echo the filters a projected response applied. A `--fields` projection echoes
- * only the filters the caller set, like the compact default (GH-1674); `--full`
- * keeps the complete resolved echo, including settings-derived defaults.
+ * Echo the filters a projected response applied, shared by the hit, empty and
+ * count-only paths. A `--fields` projection echoes only the filters the caller
+ * set, like the compact default (GH-1674); `--full` keeps the complete resolved
+ * echo, including settings-derived defaults.
  */
 function buildProjectedSearchFilters(
-  response: SearchResponseContext,
+  response: SearchFilterEchoInput,
   projection: SearchProjectionConfig,
 ): Record<string, unknown> {
   const shared = {
