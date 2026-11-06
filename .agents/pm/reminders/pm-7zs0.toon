@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-11-06T06:02:01.769Z"
+updated_at: "2026-11-06T06:59:14.424Z"
 reminders[1]{at,text}:
   "2026-11-03T06:00:00.000Z","Verify the 2026-11-03 daily cut (the first after PR #1649) against npm latest, GitHub Release, npm/npx/Bun/bunx consumers and fresh Sentry/telemetry; record any scheduled failure stage"
 author: maintainer-agent
@@ -888,7 +888,8 @@ comments[263]:
     text: "Release-health change, 2026-11-05/06. Tag v2026.11.5 was cut by the blocker retry at 06:27Z. Both tag-sourced Release runs then failed the Sentry-injected package artifact gate (20,257,274 > 20,250,000 bytes) before any publication, and the native schedule run on 11-05 failed at the same stage.\n\nFixed by PR 1672: a derived injected ceiling, plus pre-tag base and simulated injected packlist steps. Recovered by the operator exact-tag Release run 42137916821, which published 2026.11.5 to npm latest and GitHub Latest at 01:30Z on 11-06, with nine of nine registry-acceptance jobs passing and npx and bunx verified.\n\nOne release covers 2026-11-05. Issue 1668 is closed. Main's Unreleased section was empty when it closed, so the triggered retry has nothing to cut. The next automatic cut is the 2026-11-06 morning dispatcher."
   - created_at: "2026-11-06T06:02:01.768Z"
     author: "harness:claude-code"
-    text: "Release-health change, 2026-11-06: back to the healthy primary path. The morning_dispatcher Auto Release run 42158412412 (03:45Z) cut v2026.11.6 at 04:25Z on its first attempt, and tag Release run 42162429452 published it. Verified 06:05Z: npm latest 2026.11.6, GitHub Latest v2026.11.6, and npx @latest and bunx @latest both print 2026.11.6. One automatic release per day held: the v2026.11.5 publication earlier on 11-06 was the operator exact-tag recovery of the 11-05 tag, and the two blocker_retry runs after #1668 closed skipped with same_day_window_expired. The pre-tag package-artifact steps from PR 1672 passed on this cut."
+    text: "Release-health change, 2026-11-06: back to the healthy primary path. The morning_dispatcher Auto Release run 42158412412 (03:45Z) cut v2026.11.6 at 04:25Z on its first attempt, and tag Release run 42162429452 published it. Verified before this comment was written (it is timestamped 06:02Z): npm latest 2026.11.6, GitHub Latest v2026.11.6, and npx @latest and bunx @latest both print 2026.11.6. One automatic release per day held: the v2026.11.5 publication earlier on 11-06 was the operator exact-tag recovery of the 11-05 tag, and the two blocker_retry runs after #1668 closed skipped with same_day_window_expired. The pre-tag package-artifact steps from PR 1672 passed on this cut."
+    edited_at: "2026-11-06T06:59:14.423Z"
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent
