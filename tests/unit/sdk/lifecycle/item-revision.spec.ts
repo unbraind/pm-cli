@@ -1122,8 +1122,13 @@ describe("pm-gh1677 revision refusal recovery replays the caller's tracker scope
       const plain = new PmClient({ pmRoot: context.pmPath });
       const viaPlain = await captureError(() => plain.withExpectedItemRevisions([{ id, itemHash: decided }], () => plain.update(id, { tags: "plain-edit" })));
       expect(viaPlain.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
-      const canonical = await captureError(() => withExpectedItemRevisions([{ id, itemHash: decided }], stale, { pmRoot: context.pmPath }));
-      expect(scopeItemRevisionConflict(canonical, { outputArgs: ["--output-format", "toon"] }) as PmCliError).toMatchObject({ context: { nextSteps: [`pm get ${id} --output-format toon`, `pm history ${id} --limit 5 --output-format toon`] } });
+      // A refusal already rendered for its own invocation keeps that rendering in an enclosing scope on the
+      // same tracker, so the inner client's extension isolation survives.
+      const nested = await captureError(() => withExpectedItemRevisions([{ id, itemHash: decided }], () => pm.withExpectedItemRevisions([{ id, itemHash: decided }], stale), { pmRoot: context.pmPath }));
+      expect(nested.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "get", id, "--json"]));
+      expect(scopeItemRevisionConflict(nested, { outputArgs: ["--output-format", "toon"] })).toBe(nested);
+      const unscoped = new PmCliError("stale", EXIT_CODE.CONFLICT, { code: "item_revision_conflict", item_id: id, expected_revision: decided, reason: "revision_changed" });
+      expect(scopeItemRevisionConflict(unscoped, { outputArgs: ["--output-format", "toon"] }) as PmCliError).toMatchObject({ context: { nextSteps: [`pm get ${id} --output-format toon`, `pm history ${id} --limit 5 --output-format toon`] } });
     });
   });
 });
@@ -1152,7 +1157,15 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
       const wrapped = new PmCliError(raw.message, raw.exitCode, { ...raw.context, details: undefined });
       wrapped.cause = raw;
       expect(await enrichItemRevisionConflict(wrapped, context.pmPath, { scopeArgs: ["--pm-path", "outer"] })).toBe(wrapped);
-      expect((await enrichItemRevisionConflict(wrapped, other, { scopeArgs: ["--pm-path", "inner"] }) as PmCliError).context.nextSteps?.[0]).toBe("pm --pm-path inner get pm-nested --json");
+      // The owning tracker still adds evidence, but keeps the recovery the inner scope already rendered.
+      const owned = await enrichItemRevisionConflict(wrapped, other, { scopeArgs: ["--pm-path", "inner"] }) as PmCliError;
+      expect(owned.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", other, "--no-extensions", "get", "pm-nested", "--json"]));
+      expect(owned.context.details).toMatchObject({ expected_revision_recorded: true });
+      // A close retry carries only guards bound to its own tracker, never an enclosing scope's on another.
+      const foreign = await captureError(() => withExpectedItemRevisions([{ id: outerId, itemHash: outerHash }], () =>
+        inner.close("pm-nested", "Done", { validateClose: "strict" }), { pmRoot: context.pmPath }));
+      expect(foreign.context.code).toBe("close_validation_missing_fields");
+      expect(foreign.context.recovery?.suggested_retry_args?.some((token) => token.startsWith("--expect-hash"))).toBe(false);
       // A non-error rejection passes through enrichment untouched.
       expect(await enrichItemRevisionConflict("not an error", context.pmPath, { scopeArgs: [] })).toBe("not an error");
     });
@@ -1178,6 +1191,12 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
       const unguarded = await captureError(() => runAction({ action: "close", id, reason: "Done", path: context.pmPath, expectHash: fresh, options: { validateClose: "strict" } }));
       expect(unguarded.context.code).toBe("close_validation_missing_fields");
       expect(unguarded.context.recovery?.suggested_retry_args).toContain(`--expect-hash=${id}=${fresh}`);
+      // Guards on other items (a dependent the close would auto-unblock) are carried too.
+      const dependent = createTestItemId(context, { title: "Guarded dependent" });
+      const dependentHash = (await readItemRevision(dependent, { pmRoot: context.pmPath })).item_hash;
+      const sdk = new PmClient({ pmRoot: context.pmPath });
+      const withDependent = await captureError(() => sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () => sdk.close(id, "Done", { validateClose: "strict" })));
+      expect(withDependent.context.recovery?.suggested_retry_args).toContain(`--expect-hash=${dependent}=${dependentHash}`);
       // A requested output encoding carries into the recovery reads.
       const toon = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-toon" }, expectHash: stale, path: context.pmPath, outputFormat: "toon" }));
       expect(toon.context.nextSteps?.[1]).toMatch(/ history \S+ --limit 5 --output-format toon$/u);

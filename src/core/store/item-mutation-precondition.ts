@@ -155,12 +155,19 @@ function matchingRevisionEntries(pmRoot: string, ids: readonly unknown[]): ItemR
 }
 
 /**
- * Revisions the active scopes currently expect for one item on this tracker,
- * so a refusal that prescribes a retry can carry the same guard
- * (`--expect-hash <id>=<hash>`) the refused invocation ran under.
+ * Every revision the active scopes currently expect on this tracker, as
+ * `<id>=<hash>` guard values, so a refusal that prescribes a retry carries the
+ * same guards (`--expect-hash <id>=<hash>`) the refused operation ran under,
+ * including those on items it would write as a side effect (auto-unblocked
+ * dependents).
  */
-export function activeItemRevisionExpectations(pmRoot: string, id: string): string[] {
-  return [...new Set(matchingRevisionEntries(pmRoot, [id]).map((entry) => entry.expected))];
+export function activeItemRevisionExpectations(pmRoot: string): string[] {
+  const scopes = revisionScopes.getStore() ?? [];
+  if (scopes.length === 0) return [];
+  const resolvedRoot = canonicalTrackerRoot(pmRoot);
+  return [...new Set(scopes.flatMap((scope) => scope.pmRoot === resolvedRoot
+    ? [...scope.entries].map(([id, entry]) => `${id}=${entry.expected}`)
+    : []))];
 }
 
 /**
@@ -297,10 +304,37 @@ export function isItemRevisionRefusalFrom(error: unknown, pmRoot: string): boole
   return tracker === undefined || tracker === canonicalTrackerRoot(pmRoot);
 }
 
-/** Keep a refusal's originating tracker on an error re-created from it. */
+/**
+ * Refusals whose recovery was already rendered for the invocation that ran
+ * them. An enclosing scope, even on the same tracker, keeps that rendering, so
+ * an inner caller's extension isolation and encoding survive. Shared like the
+ * tracker registry.
+ */
+const SCOPED_REFUSALS_KEY = Symbol.for("@unbrained/pm-cli/item-revision-scoped-refusals");
+const scopedRefusalRegistry = globalThis as typeof globalThis & { [SCOPED_REFUSALS_KEY]?: WeakSet<object> };
+const scopedRefusals = (scopedRefusalRegistry[SCOPED_REFUSALS_KEY] ??= new WeakSet<object>());
+
+/** Whether this refusal (or a refusal it wraps as `cause`) already carries invocation-scoped recovery. */
+export function isItemRevisionRefusalScoped(error: unknown): boolean {
+  let current = error;
+  for (let depth = 0; depth < REFUSAL_CAUSE_DEPTH && typeof current === "object" && current !== null; depth += 1) {
+    if (scopedRefusals.has(current)) return true;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
+/** Record that a refusal's recovery was rendered for its own invocation. */
+export function markItemRevisionRefusalScoped(error: PmCliError): PmCliError {
+  scopedRefusals.add(error);
+  return error;
+}
+
+/** Keep a refusal's originating tracker, and whether it was scoped, on an error re-created from it. */
 export function retainItemRevisionRefusalTracker(source: unknown, target: PmCliError): PmCliError {
   const tracker = itemRevisionRefusalTracker(source);
   if (tracker !== undefined) refusalTrackers.set(target, tracker);
+  if (isItemRevisionRefusalScoped(source)) scopedRefusals.add(target);
   return target;
 }
 

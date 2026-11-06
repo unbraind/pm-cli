@@ -1096,7 +1096,7 @@ describe("runClose", () => {
         exitCode: EXIT_CODE.USAGE,
         context: {
           // pm-gh1676: pm close accepts the missing fields itself, so the retry is the same close.
-          required: "Pass --resolution, --expected-result, --actual-result on this pm close; it records them in the same write as the closure.",
+          required: "Supply --resolution, --expected-result, --actual-result: pm close accepts them and records them in the same write as the closure.",
           recovery: {
             // The supplied reason and validation mode are carried, the reason as an attached value.
             suggested_retry: expect.stringMatching(
@@ -1106,7 +1106,7 @@ describe("runClose", () => {
               /^pm --pm-path \S+ update \S+ --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
             ),
           },
-          nextSteps: [expect.stringContaining("Retry the same pm close"), expect.stringContaining("--validate-close warn")],
+          nextSteps: [expect.stringContaining("Run recovery.suggested_retry when it is present"), expect.stringContaining("recovery.next_best_command"), expect.stringContaining("--validate-close warn")],
         },
       });
 

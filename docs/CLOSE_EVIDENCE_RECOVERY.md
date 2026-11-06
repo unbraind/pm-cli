@@ -62,7 +62,11 @@ evidence and the closure in the same history entry.
 When the refused command cannot accept the missing fields itself (for example
 `pm close-task`), or the flags cannot be placed safely, the refusal proposes no
 retry rather than one that drops the caller's tokens. `recovery.missing` still
-names the fields.
+names the fields: record them with `recovery.next_best_command`, then repeat the
+original command. An SDK close whose `lifecyclePolicy` override has no CLI
+spelling likewise gets no CLI retry and is told to retry the SDK call with the
+evidence supplied. An SDK or MCP retry carries the revision guards
+(`--expect-hash=<id>=<hash>`) that the refused operation ran under.
 
 ```bash
 pm --pm-path <tracker-root> close <item-id> "Delivered" --validate-close strict \

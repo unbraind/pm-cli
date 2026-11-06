@@ -659,12 +659,15 @@ function closeValidationMissingFieldsError(
     });
   }
   const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
-  // An SDK or MCP guard never reaches argv, so the retry carries the revision the active scope expects.
-  const guards = activeItemRevisionExpectations(context.pmRoot, metadata.id).map((hash) => `--expect-hash=${metadata.id}=${hash}`);
+  // An SDK or MCP guard never reaches argv, so the retry carries every revision the active scopes expect
+  // on this tracker, including guards on dependents the close would auto-unblock.
+  const guards = activeItemRevisionExpectations(context.pmRoot).map((guard) => `--expect-hash=${guard}`);
   const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...guards, ...placeholders];
   return new PmCliError(message, EXIT_CODE.USAGE, {
     code: "close_validation_missing_fields",
-    required: `Pass ${missingFlags.join(", ")} on this pm close; it records them in the same write as the closure.`,
+    // Truthful whether or not a host keeps the retry: the CLI withdraws it for commands (close-task)
+    // that cannot accept the evidence flags.
+    required: `Supply ${missingFlags.join(", ")}: pm close accepts them and records them in the same write as the closure.`,
     recovery: {
       missing: missingFlags,
       suggested_retry: renderPmCommand(closeTokens),
@@ -672,7 +675,8 @@ function closeValidationMissingFieldsError(
       next_best_command: renderPmCommand(updateTokens),
     },
     nextSteps: [
-      "Retry the same pm close with the missing flags added (recovery.suggested_retry): one write records the evidence and the closure.",
+      "Run recovery.suggested_retry when it is present: the same close with the missing flags added, so one write records the evidence and the closure.",
+      "Without it, record the evidence with recovery.next_best_command, then repeat the original close.",
       warnStep,
     ],
   });

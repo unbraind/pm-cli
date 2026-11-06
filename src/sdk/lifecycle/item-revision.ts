@@ -18,7 +18,9 @@ import {
   ITEM_REVISION_CONFLICT_CHANGED_REASON,
   ITEM_REVISION_CONFLICT_UNREADABLE_REASON,
   isItemRevisionRefusalFrom,
+  isItemRevisionRefusalScoped,
   itemRevisionConflictGuidance,
+  markItemRevisionRefusalScoped,
   retainItemRevisionRefusalTracker,
   itemRevisionScopeReceipt,
   runWithItemRevisionScope,
@@ -318,10 +320,10 @@ export function expectHashInvocationRewrittenError(): PmCliError {
 export function scopeItemRevisionConflict(error: unknown, invocation: ItemRevisionRecoveryInvocation | undefined): unknown {
   // Only the locked-write guard's own guidance is re-rendered; a producer that rewrote the
   // refusal (close's post-close fan-out report) set its reason and already scoped its commands.
-  if (invocation === undefined || !isItemRevisionConflict(error) || typeof error.context.item_id !== "string") return error;
+  if (invocation === undefined || !isItemRevisionConflict(error) || typeof error.context.item_id !== "string" || isItemRevisionRefusalScoped(error)) return error;
   const unreadable = error.context.reason === ITEM_REVISION_CONFLICT_UNREADABLE_REASON;
   if (!unreadable && error.context.reason !== ITEM_REVISION_CONFLICT_CHANGED_REASON) return error;
-  const scoped = retainItemRevisionRefusalTracker(error, new PmCliError(error.message, error.exitCode, { ...error.context, ...itemRevisionConflictGuidance(error.context.item_id, unreadable, invocation) }));
+  const scoped = markItemRevisionRefusalScoped(retainItemRevisionRefusalTracker(error, new PmCliError(error.message, error.exitCode, { ...error.context, ...itemRevisionConflictGuidance(error.context.item_id, unreadable, invocation) })));
   scoped.stack = error.stack;
   return scoped;
 }
@@ -383,8 +385,7 @@ export async function runWithBoundItemRevisionScope<T>(
  * because the caller's process may not run where that tracker is implicit.
  */
 function revisionRecoveryInvocation(context: ItemRevisionContext): ItemRevisionRecoveryInvocation | undefined {
-  if (context.cwd !== undefined) return { scopeArgs: ["--pm-path", resolveRevisionRoot(context)] };
-  return context.pmRoot === undefined ? undefined : { scopeArgs: ["--pm-path", context.pmRoot] };
+  return context.cwd === undefined && context.pmRoot === undefined ? undefined : { scopeArgs: ["--pm-path", resolveRevisionRoot(context)] };
 }
 
 /**
