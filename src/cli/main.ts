@@ -14,7 +14,8 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
-import { repairCloseFieldsRecovery } from "./runtime/close-fields-retry.js";
+import { CLOSE_FIELDS_REFUSAL_CODE, repairCloseFieldsRecovery } from "./runtime/close-fields-retry.js";
+import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
@@ -313,10 +314,10 @@ function inferMissingFieldsFromErrorMessage(message: string): string[] | undefin
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function inferMissingFieldsForRecovery(rawMessage: string, invocationArgv: string[], existingRecovery: PmCliErrorRecoveryPayload | undefined): string[] | undefined {
-  // A producer that typed what is missing owns its retry, including a retry it withdrew: message-text
-  // inference is the fallback for untyped refusals and must not rebuild one (pm-gh1676).
-  if (existingRecovery?.suggested_retry || (existingRecovery?.missing?.length ?? 0) > 0 || rawMessage.includes("failed in extension handler (") || !/\b(?:missing|required|requires)\b/i.test(rawMessage)) {
+function inferMissingFieldsForRecovery(rawMessage: string, invocationArgv: string[], existingRecovery: PmCliErrorRecoveryPayload | undefined, code: string | undefined): string[] | undefined {
+  // The close-fields repair owns its retry, including one it withdrew: message-text inference must not
+  // rebuild it (pm-gh1676). Other refusals keep inference, even when they type their missing operand.
+  if (existingRecovery?.suggested_retry || code === CLOSE_FIELDS_REFUSAL_CODE || rawMessage.includes("failed in extension handler (") || !/\b(?:missing|required|requires)\b/i.test(rawMessage)) {
     return undefined;
   }
   const providedFields = extractProvidedOptionFlags(invocationArgv);
@@ -414,14 +415,16 @@ function withContextRecovery(context: PmCliErrorContext | undefined, recovery: P
 }
 
 /** Rewrite producer recovery as minimal edits of the caller's own invocation where the refusal code allows it. */
-function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
+function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined, bootstrapGlobal: GlobalOptions): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
   const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
-  return repairCloseFieldsRecovery(argv, context.code, recovery);
+  // The parsed tracker selection, not a token scan, decides whether the retry must name the environment's tracker.
+  const environmentScope = bootstrapGlobal.path === undefined ? resolvePmCommandScopeArgs({}) : [];
+  return repairCloseFieldsRecovery(argv, context.code, recovery, environmentScope);
 }
 
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */
-function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string): PmCliErrorContext {
+function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invocationArgv: string[], rawMessage: string, bootstrapGlobal: GlobalOptions = {}): PmCliErrorContext {
   const safeInvocationArgv = redactSensitiveCommandArgs(invocationArgv);
   const commandArgs = stripGlobalBootstrapTokens(safeInvocationArgv);
   const commandIndex = findBootstrapCommandTokenIndex(commandArgs);
@@ -429,7 +432,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   const explainRequested = safeInvocationArgv.includes("--explain");
   // A foreign error's context is read once, as plain data: no getter on it is ever run.
   context = context === undefined ? undefined : (snapshotPmCliErrorContext(context) as PmCliErrorContext);
-  const rawExistingRecovery = repairInvocationRecovery(safeInvocationArgv, context);
+  const rawExistingRecovery = repairInvocationRecovery(safeInvocationArgv, context, bootstrapGlobal);
   const existingRecovery =
     rawExistingRecovery && (rootCommand === "history-redact" || (rootCommand === "history" && subcommand === "redact"))
       ? {
@@ -445,7 +448,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   }
   const attemptedCommand = renderAttemptedCommand(safeInvocationArgv);
   const providedFields = extractProvidedOptionFlags(safeInvocationArgv);
-  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, safeInvocationArgv, existingRecovery);
+  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, safeInvocationArgv, existingRecovery, context?.code);
   const suggestedRetry = resolveRecoverySuggestedRetry(safeInvocationArgv, attemptedCommand, inferredMissing, existingRecovery);
   const recovery = buildRecoveryPayload({
     invocationArgv: safeInvocationArgv,
@@ -1872,7 +1875,7 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   const errorMessage = describeUnknownError(context.error);
   const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
   const rawContext = context.error instanceof PmCliError || isPmCliExpectedError(context.error) ? context.error.context : undefined;
-  const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
+  const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage, context.bootstrapGlobal);
   const classification = classifyPmCliError(errorMessage, enrichedContext);
   const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean
     ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: author-attribution,hermeticity,local-hosted-parity,testing
 created_at: "2026-11-06T12:40:40.399Z"
-updated_at: "2026-11-06T12:40:40.399Z"
+updated_at: "2026-11-06T15:40:52.537Z"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "tests/unit/sdk/author-attribution.spec.ts passes with every harness, PM_AUTHOR and CI variable unset, under Node 24 and Node 26; The fixture pins its author explicitly, so unknown-author counts describe only the events each test writes; Negative control: removing the pinned author makes the plain-terminal run fail again"
@@ -14,7 +14,10 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "The author-attribution spec gives the same verdict in a plain terminal, under an agent harness and in hosted CI"
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-631t9p,related,"2026-11-06T12:40:40.399Z","harness:claude-code","cli:create:dep",detected
   pm-xgah3a,related,"2026-11-06T12:40:40.399Z","harness:claude-code","cli:create:dep",detected
+  pm-t7wn04,related,"2026-11-06T15:40:52.073Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T15:40:48.463Z","harness:claude-code","Duplicate check at creation (2026-11-06): pm search \"local test suite fails differently from CI host environment harness\" returned pm-xgah3a (closed, a fixture recording provenance from the host harness), pm-631t9p (closed, harness-detection specs inheriting the ambient harness) and pm-t7wn04 (closed, a gate red locally from a telemetry warning). All three cover a spec that inherits host state. This item is the inverse: a fixture that needs an author it never pins, so it fails only when the host supplies none."
 body: ""

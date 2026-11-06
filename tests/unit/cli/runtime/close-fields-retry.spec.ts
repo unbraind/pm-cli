@@ -1,4 +1,3 @@
-import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { repairCloseFieldsRecovery } from "../../../../src/cli/runtime/close-fields-retry.js";
 
@@ -53,12 +52,8 @@ describe("pm-gh1676 strict close retry replays the caller's close", () => {
     expect(repair(["close", "pm-one", "--expected=", "--", "literal"])).toEqual(WITHDRAWN);
   });
 
-  it("names the environment-selected tracker when the invocation named none", () => {
-    const tracker = path.join(path.dirname(process.cwd()), "elsewhere", ".agents", "pm");
-    vi.stubEnv("PM_PATH", tracker);
-    const retry = repair(["close", "pm-one", "--json"])?.suggested_retry_args;
-    expect(retry).toEqual(["--pm-path", path.relative(process.cwd(), tracker), "close", "pm-one", "--json", ...FILLED]);
-    // An explicit tracker option keeps the caller's own spelling.
+  it("prepends the tracker selection the parsed invocation did not spell itself", () => {
+    expect(repairCloseFieldsRecovery(["close", "pm-one", "--json"], CODE, PRODUCER, ["--pm-path", "../elsewhere/.agents/pm"])?.suggested_retry_args).toEqual(["--pm-path", "../elsewhere/.agents/pm", "close", "pm-one", "--json", ...FILLED]);
     expect(repair(["--path=mine", "close", "pm-one"])?.suggested_retry_args).toEqual(["--path=mine", "close", "pm-one", ...FILLED]);
   });
 

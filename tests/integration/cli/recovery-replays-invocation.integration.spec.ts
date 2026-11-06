@@ -69,6 +69,17 @@ describe("refusal recovery replays the caller's own invocation", () => {
     });
   });
 
+  it("pm-gh1676: a retry names the environment-selected tracker, decided by the parsed options, not by a literal operand", async () => {
+    await withTempPmPath(async (context) => {
+      seedDecoyAndTarget(context);
+      // PM_PATH selects the temp tracker while the process runs inside the target workspace.
+      const refused = context.runCli(["close", "pm-same", "--validate-close", "strict", "--json", "--", "--pm-path=literal-reason"], { cwd: path.join(context.tempRoot, "target"), preserveDefaultMutationOutput: true });
+      expect(refused.code).toBe(EXIT_CODE.USAGE);
+      const refusal = JSON.parse(refused.stderr) as { recovery: { suggested_retry_args: string[] } };
+      expect(refusal.recovery.suggested_retry_args).toEqual(["--pm-path", path.join("..", ".agents", "pm"), "close", "--resolution", "<value>", "--expected-result", "<value>", "--actual-result", "<value>", "pm-same", "--validate-close", "strict", "--json", "--", "--pm-path=literal-reason"]);
+    });
+  });
+
   it("pm-gh1676: a command that cannot accept the missing close fields gets no invented retry", async () => {
     await withTempPmPath(async (context) => {
       seedDecoyAndTarget(context);

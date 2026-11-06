@@ -12,11 +12,10 @@
 import type { PmCliErrorRecoveryPayload } from "../../sdk/runtime-primitives.js";
 import { findBootstrapCommandTokenIndex } from "../../sdk/cli-bootstrap.js";
 import { resolveSubcommandFlagContractsForCommand } from "../../sdk/cli-contracts/flag-contracts.js";
-import { resolvePmCommandScopeArgs } from "../../sdk/command-line.js";
 import { renderPmCommand } from "../argv-utils.js";
 
-const CLOSE_FIELDS_REFUSAL_CODE = "close_validation_missing_fields";
-const TRACKER_OPTION = /^--(?:pm-)?path(?:=|$)/u;
+/** Refusal whose retry this module owns: message-text inference must never rebuild one it withdrew. */
+export const CLOSE_FIELDS_REFUSAL_CODE = "close_validation_missing_fields";
 
 /**
  * Place the missing flags. Appended after every typed token, each one is a
@@ -36,17 +35,19 @@ function placeMissingFlags(argv: readonly string[], commandIndex: number, spelli
 
 /**
  * Rewrite a missing-close-fields refusal's retry as the caller's invocation
- * plus each missing flag. When the invocation named no tracker, the tracker an
- * environment selection resolved is prepended, so the retry closes the same
- * item wherever it runs. When the invoked command cannot accept every missing
- * field itself, or the flags cannot be placed safely, the retry is withdrawn
- * rather than replaced by one that would drop the caller's own tokens (such as
- * an `--expect-hash` guard); `missing` and the secondary route stay.
+ * plus each missing flag. `scopePrefix` is the tracker selection the parsed
+ * invocation did not spell itself (an environment-selected tracker), prepended
+ * so the retry closes the same item wherever it runs. When the invoked command
+ * cannot accept every missing field itself, or the flags cannot be placed
+ * safely, the retry is withdrawn rather than replaced by one that would drop
+ * the caller's own tokens (such as an `--expect-hash` guard); `missing` and the
+ * secondary route stay.
  */
 export function repairCloseFieldsRecovery(
   argv: readonly string[],
   code: string | undefined,
   recovery: PmCliErrorRecoveryPayload | undefined,
+  scopePrefix: readonly string[] = [],
 ): PmCliErrorRecoveryPayload | undefined {
   const missing = recovery?.missing;
   if (code !== CLOSE_FIELDS_REFUSAL_CODE || missing === undefined || missing.length === 0) return recovery;
@@ -59,6 +60,6 @@ export function repairCloseFieldsRecovery(
   const spellings = new Set(declared.flatMap((contract) => [contract!.flag, ...(contract!.aliases ?? [])]));
   const placed = placeMissingFlags(argv, commandIndex, spellings, missing.flatMap((flag) => [flag, "<value>"]));
   if (placed === undefined) return withdrawn;
-  const retry = argv.some((token) => TRACKER_OPTION.test(token)) ? placed : [...resolvePmCommandScopeArgs({}), ...placed];
+  const retry = [...scopePrefix, ...placed];
   return { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry };
 }

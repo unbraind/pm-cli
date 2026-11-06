@@ -642,7 +642,10 @@ function closeValidationMissingFieldsError(
   const missingLabels = missingFields.map((field) => field.label);
   const missingFlags = missingFields.map((field) => `--${field.key.replaceAll("_", "-")}`);
   const placeholders = missingFlags.flatMap((flag) => [flag, "<value>"]);
-  const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
+  // An SDK-only lifecycle override (lifecyclePolicy.requireCloseReason: false) has no CLI spelling, so a
+  // retry without a reason would be refused by workspace governance: ask for one explicitly.
+  const reasonPlaceholder = context.options.lifecyclePolicy?.requireCloseReason === false ? ["--reason=<reason>"] : [];
+  const reason = context.closeReason === undefined ? reasonPlaceholder : [`--reason=${context.closeReason}`];
   const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...placeholders];
   const updateTokens = [...context.commandScope, "update", metadata.id, ...placeholders];
   return new PmCliError(

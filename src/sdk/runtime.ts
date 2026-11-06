@@ -2947,7 +2947,10 @@ function revisionRecoveryScopeArgs(args: PmActionInput, global: GlobalOptions, e
   const hostContext = (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[ACTIVE_EXTENSION_HOST_CONTEXT] === true;
   const isolation = global.noExtensions === true && !hostContext ? ["--no-extensions"] : [];
   if (explicitCwd !== undefined) return ["--pm-path", resolvePmRoot(resolutionCwd, global.path), ...isolation];
-  return [...resolvePmCommandScopeArgs(global, resolutionCwd).filter((token) => token !== "--no-extensions"), ...isolation];
+  // resolvePmCommandScopeArgs appends --no-extensions last when it applies; drop only that token, never a
+  // tracker value that happens to be spelled the same.
+  const scoped = resolvePmCommandScopeArgs(global, resolutionCwd);
+  return [...(global.noExtensions === true ? scoped.slice(0, -1) : scoped), ...isolation];
 }
 
 /** Execute one native or extension-contributed pm action in-process. */

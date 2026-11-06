@@ -12,6 +12,7 @@ import {
 } from "../../../../src/cli/commands/lifecycle/close.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { closeItem } from "../../../../src/sdk/lifecycle/close.js";
 import { isPmCliErrorDetails } from "../../../../src/core/shared/error-details.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import {
@@ -1152,6 +1153,17 @@ describe("runClose", () => {
         "--resolution=Implemented", "--validate-close=strict", "--completed-at=2026-11-06T00:00:00.000Z", "--message=-m audit", "--author=sdk-agent", "--force",
         "--expected-result", "<value>", "--actual-result", "<value>",
       ]);
+    });
+  });
+
+  it("pm-gh1676: asks for a reason when an SDK-only lifecycle override that waived it cannot be replayed", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-validate-strict-override");
+      // Stored resolution evidence is not a close reason; only a supplied --resolution doubles as one.
+      expect(context.runCli(["update", id, "--resolution", "Stored", "--json"]).code).toBe(0);
+      const refusal = await closeItem(id, undefined, { validateClose: "strict", lifecyclePolicy: { requireCloseReason: false } }, { path: context.pmPath })
+        .catch((error: unknown) => error as PmCliError);
+      expect((refusal as PmCliError).context.recovery?.suggested_retry_args).toEqual(["--pm-path", expect.any(String), "close", id, "--reason=<reason>", "--validate-close=strict", "--expected-result", "<value>", "--actual-result", "<value>"]);
     });
   });
 

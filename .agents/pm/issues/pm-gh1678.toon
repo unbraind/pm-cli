@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: agent-ux,extensions,"gh:1678",output-budget,renderer,sdk
 created_at: "2026-11-06T11:33:06.300Z"
-updated_at: "2026-11-06T11:34:55.255Z"
+updated_at: "2026-11-06T15:40:49.535Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The caller's --output-budget applies to the string a selected custom renderer returns, and output that cannot fit returns the bounded native output_budget_exceeded refusal with exit 2; A refusal is never routed back through an expanding custom renderer; read_output estimated_tokens and within_budget describe the delivered bytes of a custom rendering; Explicitly unbounded custom rendering stays available; A spec with a synthetic extension renderer asserts the bounded and unbounded behaviour in TOON and JSON, and a negative control that measures the native payload instead fails it"
@@ -14,7 +14,13 @@ parent: pm-5t33or
 risk: medium
 confidence: medium
 expected_result: A custom renderer's delivered output obeys --output-budget and its receipt measures the delivered bytes
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1552,related,"2026-11-06T11:33:06.300Z","harness:claude-code","cli:create:dep",detected
   pm-gh1662,related,"2026-11-06T11:33:06.300Z","harness:claude-code","cli:create:dep",detected
+  pm-gd6vnn,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+  pm-odw3j8,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+  pm-prsvjh,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+  pm-t2t709,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T15:40:46.675Z","harness:claude-code","Duplicate check at creation (2026-11-06): pm search \"renderer output budget\" returned pm-5t33or (open, the declared-budget feature, now this item's parent), pm-prsvjh (closed, intent budget binding), pm-odw3j8 (closed, rendered relationship budgets), pm-gh1552 (closed, SDK compact JSON accounting), pm-t2t709 (closed, dependency budget measured on another representation) and pm-gd6vnn (open, observation contract). None covers a scoped registerRenderer replacement escaping the final-byte budget with a receipt measuring the native payload. The GitHub dedupe in the issue (#560, #96, #1552, #1662) reaches the same conclusion."
 body: ""
