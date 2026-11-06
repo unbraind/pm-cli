@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,"gh:1670",health,token-efficiency
 created_at: "2026-11-05T20:47:58.374Z"
-updated_at: "2026-11-06T00:37:26.628Z"
+updated_at: "2026-11-06T01:23:44.813Z"
 closed_at: "2026-11-06T00:37:26.520Z"
 completed_at: "2026-11-06T00:37:26.520Z"
 author: "harness:claude-code"
@@ -39,4 +39,12 @@ files[7]{path,scope,note}:
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/cli/health-projection-precedence.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts,project,300,"harness:claude-code","2026-11-05T22:21:11.630Z",local_mutation,fix/health-projection-precedence
 close_reason: "Fixed: pm health --full --summary now runs every check and returns the summary projection instead of silently dropping --summary. --full stays a check-scope flag, and an explicit --summary, otherwise an explicit --brief, selects the projection. --strict-exit implies the summary only without --full. The CLI, PmClient.health and MCP action dispatch agree."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1670
+  gate_id: health-projection-precedence
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/health-projection-precedence.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/integration/cli/health-projection-precedence.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

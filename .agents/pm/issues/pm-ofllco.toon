@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:release",packaging,release-reliability
 created_at: "2026-11-06T00:38:44.952Z"
-updated_at: "2026-11-06T00:38:59.487Z"
+updated_at: "2026-11-06T01:23:46.187Z"
 closed_at: "2026-11-06T00:38:44.952Z"
 completed_at: "2026-11-06T00:38:44.952Z"
 author: "harness:claude-code"
@@ -29,4 +29,12 @@ files[5]{path,scope}:
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Pre-tag artifact preflight and derived injected profile
 close_reason: "Fixed in PR 1672 (merge a14511d0f): derived Sentry-injected ceiling, pre-tag base and simulated injected packlist gates, and a sentry-cli allowance spec."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ofllco
+  gate_id: package-artifact-sentry-injected
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/unit/scripts/release/sentry-injection-allowance.spec.ts tests/unit/scripts/release/run-gates.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/scripts/release tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,node scripts/release/package-artifact-gate.mjs --profile=sentry-injected --simulate-injection,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
