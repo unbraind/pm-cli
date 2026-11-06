@@ -1156,14 +1156,17 @@ describe("runClose", () => {
     });
   });
 
-  it("pm-gh1676: asks for a reason when an SDK-only lifecycle override that waived it cannot be replayed", async () => {
+  it.each([{ requireCloseReason: false }, { orderingEdges: "remove" as const }])("pm-gh1676: proposes no CLI retry for an SDK-only lifecycle override (%o) a CLI close cannot reproduce", async (lifecyclePolicy) => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-validate-strict-override");
-      // Stored resolution evidence is not a close reason; only a supplied --resolution doubles as one.
-      expect(context.runCli(["update", id, "--resolution", "Stored", "--json"]).code).toBe(0);
-      const refusal = await closeItem(id, undefined, { validateClose: "strict", lifecyclePolicy: { requireCloseReason: false } }, { path: context.pmPath })
+      const refusal = await closeItem(id, "Delivered", { validateClose: "strict", resolution: "Implemented", lifecyclePolicy }, { path: context.pmPath })
         .catch((error: unknown) => error as PmCliError);
-      expect((refusal as PmCliError).context.recovery?.suggested_retry_args).toEqual(["--pm-path", expect.any(String), "close", id, "--reason=<reason>", "--validate-close=strict", "--expected-result", "<value>", "--actual-result", "<value>"]);
+      expect(refusal).toBeInstanceOf(PmCliError);
+      const { context: refused } = refusal as PmCliError;
+      expect(refused.code).toBe("close_validation_missing_fields");
+      expect(refused.recovery).toEqual({ missing: ["--expected-result", "--actual-result"], next_best_command: expect.stringContaining(` update ${id} --expected-result`) });
+      expect(refused.required).toContain(`lifecyclePolicy override (${Object.keys(lifecyclePolicy)[0]}) has no CLI spelling`);
+      expect(refused.nextSteps?.[0]).toBe("Retry the same SDK close with the missing evidence supplied, keeping its lifecyclePolicy override.");
     });
   });
 

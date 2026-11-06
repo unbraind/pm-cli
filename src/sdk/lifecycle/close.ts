@@ -633,6 +633,8 @@ function suppliedCloseOptionTokens(options: CloseOperationOptions, missingFlags:
  * refused close supplied, and the reason as `--reason=<text>` so a reason that
  * looks like a flag is not parsed as one. The CLI re-renders the retry from
  * the caller's exact argv; a separate pm update stays only as a secondary route.
+ * A close with an SDK-only lifecycle override gets no CLI retry, since none can
+ * reproduce that override; it is told to retry the SDK call with the evidence.
  */
 function closeValidationMissingFieldsError(
   metadata: ItemMetadata,
@@ -642,30 +644,36 @@ function closeValidationMissingFieldsError(
   const missingLabels = missingFields.map((field) => field.label);
   const missingFlags = missingFields.map((field) => `--${field.key.replaceAll("_", "-")}`);
   const placeholders = missingFlags.flatMap((flag) => [flag, "<value>"]);
-  // An SDK-only lifecycle override (lifecyclePolicy.requireCloseReason: false) has no CLI spelling, so a
-  // retry without a reason would be refused by workspace governance: ask for one explicitly.
-  const reasonPlaceholder = context.options.lifecyclePolicy?.requireCloseReason === false ? ["--reason=<reason>"] : [];
-  const reason = context.closeReason === undefined ? reasonPlaceholder : [`--reason=${context.closeReason}`];
-  const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...placeholders];
   const updateTokens = [...context.commandScope, "update", metadata.id, ...placeholders];
-  return new PmCliError(
-    `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`,
-    EXIT_CODE.USAGE,
-    {
+  const message = `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`;
+  const warnStep = "Use --validate-close warn only when governance permits an evidenced exception.";
+  // An SDK-only lifecycle override (requireCloseReason, orderingEdges) has no CLI spelling, so a CLI close
+  // would perform a different transition: retry the SDK call itself, with the evidence supplied.
+  const overrides = Object.entries(context.options.lifecyclePolicy ?? {}).filter(([, value]) => value !== undefined).map(([key]) => key);
+  if (overrides.length > 0) {
+    return new PmCliError(message, EXIT_CODE.USAGE, {
       code: "close_validation_missing_fields",
-      required: `Pass ${missingFlags.join(", ")} on this pm close; it records them in the same write as the closure.`,
-      recovery: {
-        missing: missingFlags,
-        suggested_retry: renderPmCommand(closeTokens),
-        suggested_retry_args: closeTokens,
-        next_best_command: renderPmCommand(updateTokens),
-      },
-      nextSteps: [
-        "Retry the same pm close with the missing flags added (recovery.suggested_retry): one write records the evidence and the closure.",
-        "Use --validate-close warn only when governance permits an evidenced exception.",
-      ],
+      required: `Pass ${missingFields.map((field) => field.key).join(", ")} on the same SDK close; its lifecyclePolicy override (${overrides.join(", ")}) has no CLI spelling, so no CLI retry reproduces it.`,
+      recovery: { missing: missingFlags, next_best_command: renderPmCommand(updateTokens) },
+      nextSteps: ["Retry the same SDK close with the missing evidence supplied, keeping its lifecyclePolicy override.", warnStep],
+    });
+  }
+  const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
+  const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...placeholders];
+  return new PmCliError(message, EXIT_CODE.USAGE, {
+    code: "close_validation_missing_fields",
+    required: `Pass ${missingFlags.join(", ")} on this pm close; it records them in the same write as the closure.`,
+    recovery: {
+      missing: missingFlags,
+      suggested_retry: renderPmCommand(closeTokens),
+      suggested_retry_args: closeTokens,
+      next_best_command: renderPmCommand(updateTokens),
     },
-  );
+    nextSteps: [
+      "Retry the same pm close with the missing flags added (recovery.suggested_retry): one write records the evidence and the closure.",
+      warnStep,
+    ],
+  });
 }
 
 function collectCloseValidationWarnings(
