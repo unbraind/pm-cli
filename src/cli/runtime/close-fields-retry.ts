@@ -53,6 +53,10 @@ export function repairCloseFieldsRecovery(
 ): PmCliErrorRecoveryPayload | undefined {
   const missing = recovery?.missing;
   if (code !== CLOSE_FIELDS_REFUSAL_CODE || missing === undefined || missing.length === 0) return recovery;
+  // A producer that withdrew its own retry (an SDK-only lifecycle override, or nested revision guards
+  // that expect different revisions of one item) knows no CLI command reproduces the close.
+  const producerRetry = recovery!.suggested_retry_args;
+  if (producerRetry === undefined) return recovery;
   const withdrawn = { ...recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const commandIndex = findBootstrapCommandTokenIndex([...argv]);
   if (commandIndex === undefined || scopePrefix === null) return withdrawn;
@@ -60,11 +64,11 @@ export function repairCloseFieldsRecovery(
   const declared = missing.map((flag) => contracts.find((entry) => entry.flag === flag || entry.aliases?.includes(flag) === true));
   if (declared.some((contract) => contract === undefined)) return withdrawn;
   const spellings = new Set(declared.flatMap((contract) => [contract!.flag, ...(contract!.aliases ?? [])]));
-  // Guards the producer read from an enclosing SDK scope (an embedded CLI run) never reached argv; keep
-  // them. A guard the caller typed (as a bare hash, <id>=<hash>, or either attached) is not repeated.
-  const typedGuard = (hash: string) => argv.some((token) => token === hash || token.endsWith(`=${hash}`));
-  const outOfBandGuards = (recovery!.suggested_retry_args ?? []).filter((token) => token.startsWith("--expect-hash=") && !typedGuard(token.slice(token.lastIndexOf("=") + 1)));
-  const placed = placeMissingFlags(argv, commandIndex, spellings, [...missing.flatMap((flag) => [flag, "<value>"]), ...outOfBandGuards]);
+  // Carry every revision guard the producer saw: those from an enclosing SDK scope (an embedded CLI run)
+  // never reached argv. A guard the caller also typed repeats with the same revision, which the binder
+  // accepts, so no argv token is matched against a hash (a message that equals one is not a guard).
+  const guards = producerRetry.filter((token) => token.startsWith("--expect-hash="));
+  const placed = placeMissingFlags(argv, commandIndex, spellings, [...missing.flatMap((flag) => [flag, "<value>"]), ...guards]);
   if (placed === undefined) return withdrawn;
   const retry = [...scopePrefix, ...placed];
   return { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry };

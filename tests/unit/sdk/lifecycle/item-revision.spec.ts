@@ -1207,6 +1207,17 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
         context.runCliInProcess(["close", id, "Done", "--validate-close", "strict", "--json"], { preserveDefaultMutationOutput: true }));
       const embeddedRetry = (JSON.parse(embedded.result.stderr) as { recovery: { suggested_retry_args: string[] } }).recovery.suggested_retry_args;
       expect(embeddedRetry).toEqual(expect.arrayContaining(["close", id, "Done", `--expect-hash=${dependent}=${dependentHash}`]));
+      // A message that equals the guarded hash is not a typed guard: the dependent's guard stays.
+      const hashMessage = await sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () =>
+        context.runCliInProcess(["close", id, "Done", `--message=${dependentHash}`, "--validate-close", "strict", "--json"], { preserveDefaultMutationOutput: true }));
+      expect((JSON.parse(hashMessage.result.stderr) as { recovery: { suggested_retry_args: string[] } }).recovery.suggested_retry_args).toContain(`--expect-hash=${dependent}=${dependentHash}`);
+      // Conflicting nested scopes around an embedded CLI run: the producer withdrew its retry, so the CLI proposes none.
+      const embeddedConflict = await sdk.withExpectedItemRevisions([{ id: dependent, itemHash: dependentHash }], () =>
+        withExpectedItemRevisions([{ id: dependent, itemHash: "b".repeat(64) }], () =>
+          context.runCliInProcess(["close", id, "Done", "--validate-close", "strict", "--json"], { preserveDefaultMutationOutput: true }), { pmRoot: context.pmPath }));
+      const conflictRecovery = (JSON.parse(embeddedConflict.result.result.stderr) as { recovery: { suggested_retry_args?: string[]; missing: string[] } }).recovery;
+      expect(conflictRecovery.missing.length).toBeGreaterThan(0);
+      expect(conflictRecovery.suggested_retry_args).toBeUndefined();
       // A requested output encoding carries into the recovery reads.
       const toon = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-toon" }, expectHash: stale, path: context.pmPath, outputFormat: "toon" }));
       expect(toon.context.nextSteps?.[1]).toMatch(/ history \S+ --limit 5 --output-format toon$/u);

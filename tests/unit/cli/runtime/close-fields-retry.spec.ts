@@ -34,12 +34,24 @@ describe("pm-gh1676 strict close retry replays the caller's close", () => {
     expect(argv).toHaveLength(13);
   });
 
-  it("keeps revision guards the producer read from an enclosing SDK scope, without repeating typed ones", () => {
+  it("keeps every revision guard the producer read, including those from an enclosing SDK scope", () => {
     const producer = { ...PRODUCER, suggested_retry_args: ["close", "pm-one", "--expect-hash=pm-one=abc", "--expect-hash=pm-dep=def", "--resolution", "<value>"] };
     const repaired = repairCloseFieldsRecovery(["close", "pm-one", "--expect-hash=pm-one=abc", "--json"], CODE, producer);
-    expect(repaired?.suggested_retry_args).toEqual(["close", "pm-one", "--expect-hash=pm-one=abc", "--json", ...FILLED, "--expect-hash=pm-dep=def"]);
-    // A bare typed hash is the same guard as the producer's <id>=<hash> spelling.
-    expect(repairCloseFieldsRecovery(["close", "pm-one", "--expect-hash", "abc"], CODE, producer)?.suggested_retry_args).toEqual(["close", "pm-one", "--expect-hash", "abc", ...FILLED, "--expect-hash=pm-dep=def"]);
+    // A typed guard repeats at the same revision, which the binder accepts; nothing is matched against argv.
+    expect(repaired?.suggested_retry_args).toEqual(["close", "pm-one", "--expect-hash=pm-one=abc", "--json", ...FILLED, "--expect-hash=pm-one=abc", "--expect-hash=pm-dep=def"]);
+    expect(repairCloseFieldsRecovery(["close", "pm-one", "--expect-hash", "abc"], CODE, producer)?.suggested_retry_args).toEqual(["close", "pm-one", "--expect-hash", "abc", ...FILLED, "--expect-hash=pm-one=abc", "--expect-hash=pm-dep=def"]);
+  });
+
+  it("never mistakes a hash-valued message or reason for a typed guard", () => {
+    const producer = { ...PRODUCER, suggested_retry_args: ["close", "pm-one", "--expect-hash=pm-dep=def", "--resolution", "<value>"] };
+    for (const argv of [["close", "pm-one", "--message=def"], ["close", "pm-one", "Done", "-m", "def"], ["close", "pm-one", "--reason=x=def"]]) {
+      expect(repairCloseFieldsRecovery(argv, CODE, producer)?.suggested_retry_args).toEqual([...argv, ...FILLED, "--expect-hash=pm-dep=def"]);
+    }
+  });
+
+  it("proposes no retry when the producer withdrew its own, as for conflicting nested revision guards", () => {
+    const producerWithdrawn = { missing: MISSING, next_best_command: PRODUCER.next_best_command };
+    expect(repairCloseFieldsRecovery(["close", "pm-one", "--json"], CODE, producerWithdrawn)).toBe(producerWithdrawn);
   });
 
   it("overrides blank supplied values by appending, since the parser keeps the last value of a repeated option", () => {
