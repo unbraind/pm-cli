@@ -8,6 +8,7 @@ import {
   assertGuardedDispatchUnchanged,
   bindInvocationExpectedRevisions,
   enrichInvocationRevisionError,
+  invocationRevisionRecovery,
   invocationRewritten,
   parseWithInvocationRevisionScope,
   refuseInventoryExpectHash,
@@ -179,6 +180,32 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
       expect(await enrichInvocationRevisionError(scope, conflict)).toMatchObject({ context: { details: { expected_revision_recorded: false } } });
       const plain = new Error("plain");
       expect(await enrichInvocationRevisionError(createItemRevisionScope(), plain)).toBe(plain);
+    });
+  });
+});
+
+describe("pm-gh1677 invocation-scoped revision recovery", () => {
+  it("derives the tracker scope and output mode recovery reads replay", () => {
+    expect(invocationRevisionRecovery({ path: "../target/.agents/pm", noExtensions: true, json: true })).toEqual({ scopeArgs: ["--pm-path", "../target/.agents/pm", "--no-extensions"], json: true });
+    expect(invocationRevisionRecovery({ path: "t", outputFormat: "json" }).json).toBe(true);
+    expect(invocationRevisionRecovery({ path: "t", outputFormat: "toon" }).json).toBe(false);
+  });
+
+  it("rescopes a bound invocation's conflict, and leaves an invocation bound without options unscoped", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Scoped enrich" });
+      const conflict = () => new PmCliError("stale", EXIT_CODE.CONFLICT, { code: "item_revision_conflict", item_id: id, expected_revision: HASH, reason: "revision_changed" });
+      const refusal = async (globalOptions?: Parameters<typeof invocationRevisionRecovery>[0]) => {
+        let error: unknown;
+        await inInvocation(async () => {
+          await bindInvocationExpectedRevisions({ command: commandWithArgument("id"), commandPath: "update", commandArgs: [id], expectHash: [HASH], pmRoot: context.pmPath, globalOptions });
+          throw conflict();
+        }).catch((caught: unknown) => { error = caught; });
+        return error as PmCliError;
+      };
+      expect((await refusal({ path: "elsewhere/.agents/pm" })).context.nextSteps).toEqual([`pm --pm-path elsewhere/.agents/pm get ${id}`, `pm --pm-path elsewhere/.agents/pm history ${id} --limit 5`]);
+      // Without global options the producer's guidance is kept as it was raised.
+      expect((await refusal()).context.nextSteps).toBeUndefined();
     });
   });
 });

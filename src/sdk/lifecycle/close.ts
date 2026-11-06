@@ -483,6 +483,9 @@ function boundedIdList(ids: readonly string[]): string {
  * tracker scope and with the configured open status the automatic unblock would
  * have written, and fixing the cause of every other failed unblock first.
  */
+/** `reason` of a revision refusal close rewrote into its post-close auto-unblock report. */
+const POST_CLOSE_AUTO_UNBLOCK_REFUSED_REASON = "post_close_auto_unblock_refused";
+
 function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   closedId: string;
   unblockedIds: readonly string[];
@@ -511,6 +514,8 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   const steps = allSteps.slice(0, truncated ? POST_CLOSE_STEP_LIMIT - 1 : POST_CLOSE_STEP_LIMIT);
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
+    // This report's commands are scoped already; hosts must not re-render it as a plain revision refusal.
+    reason: POST_CLOSE_AUTO_UNBLOCK_REFUSED_REASON,
     required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` This refusal does not list a step for every dependent left blocked; list them with ${discovery}, and while it reports has_more, continue with --after <next_cursor>.` : ""}`,
     nextSteps: truncated ? [...steps, discovery] : steps,
     details: fitPostCloseDetails({
@@ -600,11 +605,49 @@ function applyDuplicateCloseMetadata(
   return duplicateFallbackFields;
 }
 
+/**
+ * Refuse a strict close that lacks close evidence (pm-gh1676). pm close accepts
+ * every missing field itself, so the retry is the same close with the missing
+ * flags added: one write, one history entry. The CLI re-renders it from the
+ * caller's exact argv; a separate pm update stays only as a secondary route.
+ */
+function closeValidationMissingFieldsError(
+  metadata: ItemMetadata,
+  missingFields: ReadonlyArray<(typeof CLOSE_VALIDATION_FIELDS)[number]>,
+  commandScope: readonly string[],
+  closeReason: string | undefined,
+): PmCliError {
+  const missingLabels = missingFields.map((field) => field.label);
+  const missingFlags = missingFields.map((field) => `--${field.key.replaceAll("_", "-")}`);
+  const placeholders = missingFlags.flatMap((flag) => [flag, "<value>"]);
+  const closeTokens = [...commandScope, "close", metadata.id, ...(closeReason === undefined ? [] : [closeReason]), ...placeholders];
+  const updateTokens = [...commandScope, "update", metadata.id, ...placeholders];
+  return new PmCliError(
+    `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "close_validation_missing_fields",
+      required: `Pass ${missingFlags.join(", ")} on this pm close; it records them in the same write as the closure.`,
+      recovery: {
+        missing: missingFlags,
+        suggested_retry: renderPmCommand(closeTokens),
+        suggested_retry_args: closeTokens,
+        next_best_command: renderPmCommand(updateTokens),
+      },
+      nextSteps: [
+        "Retry the same pm close with the missing flags added (recovery.suggested_retry): one write records the evidence and the closure.",
+        "Use --validate-close warn only when governance permits an evidenced exception.",
+      ],
+    },
+  );
+}
+
 function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
   commandScope: readonly string[],
+  closeReason: string | undefined,
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
@@ -612,31 +655,7 @@ function collectCloseValidationWarnings(
     if (missingFields.length > 0) {
       const missingLabels = missingFields.map((field) => field.label);
       if (validateCloseMode === "strict") {
-        const missingFlags = missingFields.map(
-          (field) => `--${field.key.replaceAll("_", "-")}`,
-        );
-        const updateTokens = [
-          ...commandScope,
-          "update",
-          metadata.id,
-          ...missingFlags.flatMap((flag) => [flag, "<value>"]),
-        ];
-        throw new PmCliError(
-          `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`,
-          EXIT_CODE.USAGE,
-          {
-            code: "close_validation_missing_fields",
-            recovery: {
-              missing: missingFlags,
-              suggested_retry: renderPmCommand(updateTokens),
-              suggested_retry_args: updateTokens,
-            },
-            nextSteps: [
-              "Run the suggested pm update, then retry the original pm close invocation.",
-              "Use --validate-close warn only when governance permits an evidenced exception.",
-            ],
-          },
-        );
+        throw closeValidationMissingFieldsError(metadata, missingFields, commandScope, closeReason);
       }
       warnings.push(
         `close_validation_missing_fields:${metadata.id}:${missingLabels.join(",")}`,
@@ -712,6 +731,7 @@ function mutateCloseMetadata(
     context.validateCloseMode,
     context.activeChildIds,
     context.commandScope,
+    context.closeReason,
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;

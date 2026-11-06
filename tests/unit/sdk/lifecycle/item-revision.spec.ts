@@ -11,6 +11,7 @@ import { PmCliError } from "../../../../src/core/shared/errors.js";
 import {
   advanceItemMutationPreconditions,
   assertItemMutationPreconditions,
+  itemRevisionConflictGuidance,
 } from "../../../../src/core/store/item-mutation-precondition.js";
 import {
   bindExpectedItemRevisions,
@@ -28,6 +29,7 @@ import {
   resolveExpectedItemRevisions,
   runWithBoundItemRevisionScope,
   runWithItemRevisionScope,
+  scopeItemRevisionConflict,
   throwFirstItemRevisionConflict,
   withExpectedItemRevisions,
 } from "../../../../src/sdk/lifecycle/item-revision.js";
@@ -811,7 +813,8 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       }, { pmRoot: context.pmPath }));
       expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: id, expected_revision: decided } });
       expect(refusal.message).toContain("its live document cannot be read");
-      expect(refusal.context.required).toContain(`pm restore ${id} <version>`);
+      // pm-gh1677: an SDK caller that named its tracker gets recovery scoped to that tracker.
+      expect(refusal.context.required).toContain(renderPmCommand(["--pm-path", context.pmPath, "restore", id, "<version>"]));
       expect(await readFile(itemPath, "utf8")).toBe("this is not a toon document: [\n");
       await expect(pm.run("restore", { id, target: "1", force: true })).resolves.toBeDefined();
       expect((await pm.get(id)).item.title).toBe("Corrupted live item");
@@ -1067,6 +1070,53 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     for (const action of ["get", "create", "copy", "list"]) {
       expect(pmToolActionParameterKeys(action)).not.toContain("expectHash");
     }
+  });
+});
+
+describe("pm-gh1677 revision refusal recovery replays the caller's tracker scope", () => {
+  const conflict = (context: Record<string, unknown> = {}) =>
+    new PmCliError("stale", EXIT_CODE.CONFLICT, { code: "item_revision_conflict", item_id: "pm-one", expected_revision: "a".repeat(64), reason: "revision_changed", ...context });
+
+  it("renders read-only recovery for the invocation's scope and output mode", () => {
+    const scope = ["--pm-path", "../target/.agents/pm", "--no-extensions"];
+    expect(itemRevisionConflictGuidance("pm-one", false, { scopeArgs: scope, json: false })).toEqual({
+      required: `Re-read pm-one (${renderPmCommand([...scope, "get", "pm-one"])} reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
+      examples: [renderPmCommand([...scope, "get", "pm-one", "--fields", "item_hash"]), renderPmCommand([...scope, "history", "pm-one", "--limit", "5"])],
+      nextSteps: [renderPmCommand([...scope, "get", "pm-one"]), renderPmCommand([...scope, "history", "pm-one", "--limit", "5"])],
+    });
+    // The store-layer default is unscoped JSON, and an unreadable document points at restore.
+    expect(itemRevisionConflictGuidance("pm-one", false).nextSteps).toEqual(["pm get pm-one --json", "pm history pm-one --limit 5 --json"]);
+    expect(itemRevisionConflictGuidance("pm-one", true, { scopeArgs: scope }).required).toContain(renderPmCommand([...scope, "restore", "pm-one", "<version>"]));
+  });
+
+  it("re-renders only the locked-write guard's own refusals", () => {
+    const invocation = { scopeArgs: ["--pm-path", "elsewhere"] };
+    const scoped = scopeItemRevisionConflict(conflict(), invocation) as PmCliError;
+    expect(scoped.context.nextSteps).toEqual([renderPmCommand(["--pm-path", "elsewhere", "get", "pm-one", "--json"]), renderPmCommand(["--pm-path", "elsewhere", "history", "pm-one", "--limit", "5", "--json"])]);
+    expect(scoped.message).toBe("stale");
+    expect((scopeItemRevisionConflict(conflict({ reason: "document_unreadable" }), invocation) as PmCliError).context.required).toContain("restore pm-one");
+    // A rewritten report (close's post-close fan-out), another error, or a missing id or invocation pass through.
+    for (const passthrough of [conflict({ reason: "post_close_auto_unblock_refused" }), conflict({ reason: undefined }), conflict({ item_id: 7 }), new Error("plain")]) {
+      expect(scopeItemRevisionConflict(passthrough, invocation)).toBe(passthrough);
+    }
+    const unscoped = conflict();
+    expect(scopeItemRevisionConflict(unscoped, undefined)).toBe(unscoped);
+  });
+
+  it("scopes SDK recovery to the tracker the caller selected by pmRoot or cwd, and leaves the implicit tracker unscoped", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "SDK recovery scope" });
+      const decided = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      const pm = client(context);
+      await pm.update(id, { tags: "peer-edit" });
+      const stale = () => pm.update(id, { tags: "stale-edit" });
+      const byCwd = await captureError(() => withExpectedItemRevisions([{ id, itemHash: decided }], stale, { cwd: context.tempRoot }));
+      expect(byCwd.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
+      const implicit = await captureError(() => withExpectedItemRevisions([{ id, itemHash: decided }], stale));
+      expect(implicit.context.nextSteps?.[0]).toBe(renderPmCommand(["get", id, "--json"]));
+      const viaClient = await captureError(() => pm.withExpectedItemRevisions([{ id, itemHash: decided }], stale));
+      expect(viaClient.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
+    });
   });
 });
 

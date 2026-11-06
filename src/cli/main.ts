@@ -14,6 +14,7 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
+import { repairCloseFieldsRecovery } from "./runtime/close-fields-retry.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
@@ -413,7 +414,8 @@ function withContextRecovery(context: PmCliErrorContext | undefined, recovery: P
 /** Rewrite producer recovery as minimal edits of the caller's own invocation where the refusal code allows it. */
 function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
-  return repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
+  const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
+  return repairCloseFieldsRecovery(argv, context.code, recovery);
 }
 
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */
@@ -1547,7 +1549,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       await startActiveSentryCommandTracing(commandPath, commandArgs, commandOptions);
       await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, fallbackPmRoot, defaultPreflightDecision());
       await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, fallbackPmRoot);
-      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: fallbackPmRoot });
+      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: fallbackPmRoot, globalOptions });
       return;
     }
 
@@ -1605,7 +1607,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     // Overrides that rewrote the tracker or arguments refuse a guard; otherwise every view is the typed one.
     await bindInvocationExpectedRevisions({
       command: actionCommand, commandPath, commandArgs: invocationStage.args, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot,
-      rewritten: invocationRewritten(invocationStage, [parserStage, { args: commandArgs, path: globalOptions.path }]),
+      rewritten: invocationRewritten(invocationStage, [parserStage, { args: commandArgs, path: globalOptions.path }]), globalOptions,
     });
 
     /* c8 ignore next */

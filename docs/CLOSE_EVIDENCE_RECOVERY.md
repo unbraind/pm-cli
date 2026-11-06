@@ -1,7 +1,8 @@
 # Recovering missing close evidence
 
-Tracked by [pm-ub1ott](../.agents/pm/issues/pm-ub1ott.toon) and
-[pm-gh1464](../.agents/pm/issues/pm-gh1464.toon).
+Tracked by [pm-ub1ott](../.agents/pm/issues/pm-ub1ott.toon),
+[pm-gh1464](../.agents/pm/issues/pm-gh1464.toon) and
+[pm-gh1676](../.agents/pm/issues/pm-gh1676.toon).
 
 `pm close --validate-close warn` can close an item while reporting missing
 resolution, expected outcome, or actual outcome. Its SDK result and compact CLI
@@ -42,3 +43,24 @@ pm close <item-id> "Delivered and verified" --resolution "What changed" \
 ```
 
 Warning-mode follow-up exists for incomplete historical or interrupted workflows.
+
+## Strict closes refused for missing evidence
+
+`pm close --validate-close strict` refuses with
+`close_validation_missing_fields` (exit 2) and writes nothing. Because
+`pm close` accepts `--resolution`, `--expected-result` and `--actual-result`
+itself, `recovery.suggested_retry_args` is the caller's own close invocation
+with each missing flag added before any `--` terminator. The item id, reason,
+tracker selection, `--json`, `--expect-hash` and every other supplied token are
+kept, and a blank value supplied for a missing field (under any alias) is
+replaced rather than repeated. Replace each `<value>` and run it: one write
+records the evidence and the closure in the same history entry.
+
+```bash
+pm --pm-path <tracker-root> close <item-id> "Delivered" --validate-close strict \
+  --resolution "<value>" --expected-result "<value>" --actual-result "<value>"
+```
+
+`recovery.next_best_command` keeps the two-step route (`pm update` with the
+missing fields, then the close) for callers that must record evidence before
+deciding to close. It costs a second write and history entry.

@@ -9,8 +9,9 @@ import { realpathSync } from "node:fs";
 import path from "node:path";
 import { hashDocument } from "../history/history.js";
 import { sha256Hex } from "../shared/serialization.js";
+import { renderPmCommand } from "../shared/command-line.js";
 import { EXIT_CODE } from "../shared/constants.js";
-import { PmCliError } from "../shared/errors.js";
+import { PmCliError, type PmCliErrorContext } from "../shared/errors.js";
 import type { ItemDocument } from "../../types/index.js";
 
 interface ItemMutationPrecondition {
@@ -179,6 +180,50 @@ export function assertItemRevisionExpectationsOnUnreadable(pmRoot: string, targe
   if (entries.length > 0) assertRevisionEntries(entries, targetId, sha256Hex(raw), true);
 }
 
+/** `reason` of a revision refusal over a document that could be read and changed since the caller's read. */
+export const ITEM_REVISION_CONFLICT_CHANGED_REASON = "revision_changed";
+
+/** `reason` of a revision refusal over a live document that cannot be read at all. */
+export const ITEM_REVISION_CONFLICT_UNREADABLE_REASON = "document_unreadable";
+
+/**
+ * The invocation a revision refusal's read-only recovery commands must replay
+ * (pm-gh1677): the store layer never sees global options, so hosts that do
+ * re-render the commands with the caller's tracker scope and output mode.
+ */
+export interface ItemRevisionRecoveryInvocation {
+  /** Tracker and extension scope tokens, such as `--pm-path <root>` and `--no-extensions`. */
+  scopeArgs?: readonly string[];
+  /** Whether recovery reads request JSON; defaults to true, the machine-readable form. */
+  json?: boolean;
+}
+
+/** Recovery guidance fields of a revision refusal. */
+export type ItemRevisionConflictGuidance = Required<Pick<PmCliErrorContext, "required" | "examples" | "nextSteps">>;
+
+/**
+ * Render the read-only recovery of a revision refusal for one invocation. The
+ * commands only re-read the item; deciding again and retrying with a fresh
+ * `--expect-hash` stays with the caller, so the guard never writes on its own.
+ */
+export function itemRevisionConflictGuidance(
+  targetId: string,
+  unreadable: boolean,
+  invocation: ItemRevisionRecoveryInvocation = {},
+): ItemRevisionConflictGuidance {
+  const scope = [...(invocation.scopeArgs ?? [])];
+  const output = invocation.json === false ? [] : ["--json"];
+  const read = renderPmCommand([...scope, "get", targetId, ...output]);
+  const history = renderPmCommand([...scope, "history", targetId, "--limit", "5", ...output]);
+  return {
+    required: unreadable
+      ? `Recover ${targetId} without --expect-hash (${renderPmCommand([...scope, "restore", targetId, "<version>"])}), since no declared revision describes an unreadable document.`
+      : `Re-read ${targetId} (${read} reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
+    examples: [renderPmCommand([...scope, "get", targetId, "--fields", "item_hash", ...output]), history],
+    nextSteps: [read, history],
+  };
+}
+
 /** Mark matching entries checked and refuse the first one the locked revision does not satisfy. */
 function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targetId: string, current: string, unreadable: boolean): void {
   for (const entry of entries) {
@@ -192,12 +237,9 @@ function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targe
         item_id: targetId,
         expected_revision: entry.expected,
         current_revision: current,
-        required: unreadable
-          ? `Recover ${targetId} without --expect-hash (pm restore ${targetId} <version>), since no declared revision describes an unreadable document.`
-          : `Re-read ${targetId} (pm get ${targetId} --json reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
+        reason: unreadable ? ITEM_REVISION_CONFLICT_UNREADABLE_REASON : ITEM_REVISION_CONFLICT_CHANGED_REASON,
         why: "The caller declared the revision its decision was based on, and another write changed the item before this locked write.",
-        examples: [`pm get ${targetId} --fields item_hash --json`, `pm history ${targetId} --limit 5`],
-        nextSteps: [`pm get ${targetId} --json`, `pm history ${targetId} --limit 5`],
+        ...itemRevisionConflictGuidance(targetId, unreadable),
       },
     );
   }

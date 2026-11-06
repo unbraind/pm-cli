@@ -1094,11 +1094,17 @@ describe("runClose", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         context: {
+          // pm-gh1676: pm close accepts the missing fields itself, so the retry is the same close.
+          required: "Pass --resolution, --expected-result, --actual-result on this pm close; it records them in the same write as the closure.",
           recovery: {
             suggested_retry: expect.stringMatching(
+              /^pm --pm-path \S+ close \S+ "close with strict validation" --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
+            ),
+            next_best_command: expect.stringMatching(
               /^pm --pm-path \S+ update \S+ --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
             ),
           },
+          nextSteps: [expect.stringContaining("Retry the same pm close"), expect.stringContaining("--validate-close warn")],
         },
       });
 
@@ -1121,7 +1127,9 @@ describe("runClose", () => {
         exitCode: EXIT_CODE.USAGE,
         context: {
           recovery: {
-            suggested_retry: expect.stringContaining("pm update"),
+            // Without a reason the retry renders no reason operand.
+            suggested_retry: expect.stringMatching(/ close \S+ --resolution "<value>" --expected-result/),
+            suggested_retry_args: expect.arrayContaining(["close", noReasonId]),
           },
         },
       });

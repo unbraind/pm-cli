@@ -1,0 +1,73 @@
+id: pm-gh1676
+title: "GH-1676: a pm close refused for missing close fields suggests a separate pm update and a retry, although pm close accepts --resolution, --expected-result and --actual-result itself"
+description: "GitHub issue #1676 (reported 2026-11-06 against 2026.11.5). Reproduced 2026-11-06 on main af6fd5583 (2026.11.6) in a disposable non-git tracker: pm --no-extensions --pm-path .agents/pm close lab-one done --validate-close strict exits 2 with close_validation_missing_fields. The recovery bundle's suggested_retry is pm --pm-path .agents/pm --no-extensions update lab-one --resolution \"<value>\" --expected-result \"<value>\" --actual-result \"<value>\", and next_steps say \"Run the suggested pm update, then retry the original pm close invocation.\" pm close declares --resolution, --expected-result (alias --expected) and --actual-result (alias --actual) itself, so the single close call succeeds. Following the advertised route costs two writes, two history entries and two lock cycles, leaves a window where the item carries close evidence while still open, and moves updated_at (which reorders downstream changelog sections, unbraind/pm-changelog#323). GH-757 fixed the same class for pm update --status closed. Cause: collectCloseValidationWarnings in src/sdk/lifecycle/close.ts renders an update command from commandScope, and the CLI recovery builder keeps a producer suggested_retry verbatim. Expected: suggested_retry and suggested_retry_args are the caller's own close invocation with each missing flag appended before any -- terminator (every other token, including tracker scope, --json and --expect-hash, preserved; an empty supplied value is replaced rather than duplicated), next_steps name that single command, and the update route stays as a secondary next_best_command. SDK callers without argv get a close command rendered from the item id, reason and command scope. Duplicate check: searched suggested_retry close refusal; pm-p316vn (GH-953, closed) preserved supplied flags for the close_reason path, pm-ulqu (GH-519, closed) fixed the enum placeholder, pm-5uclvd (GH-885, closed) fixed create-time close_reason_required. None covers the missing close-field refusal recommending a different command."
+type: Issue
+status: closed
+priority: 2
+tags[5]: agent-ux,close,"gh:1676",recovery,token-efficiency
+created_at: "2026-11-06T11:32:56.324Z"
+updated_at: "2026-11-06T12:45:21.884Z"
+closed_at: "2026-11-06T12:45:20.254Z"
+completed_at: "2026-11-06T12:45:20.254Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A strict close refused for missing close fields returns suggested_retry and suggested_retry_args equal to the caller's own pm close invocation with each missing flag appended before any -- terminator, preserving tracker scope, --json and every other supplied token; An empty supplied close field (for example --resolution with an empty string, or its --expected/--actual alias) is replaced in the retry rather than duplicated; next_steps name the single pm close retry first and keep the pm update route only as a secondary next_best_command; SDK callers without an invocation argv receive a pm close command rendered from the item id, reason and command scope; A spec executes the emitted suggested_retry_args against a sandbox tracker and the item closes in one write with one history entry"
+parent: pm-mpbb
+risk: low
+confidence: high
+resolution: "The producer in src/sdk/lifecycle/close.ts renders the retry as a pm close and keeps the pm update route as recovery.next_best_command. The new CLI repair src/cli/runtime/close-fields-retry.ts rebuilds suggested_retry and suggested_retry_args from the caller's exact argv with each missing flag inserted before any -- terminator. It is contract-aware: declared option values are consumed, and blank values under any alias are replaced. When the command cannot accept a field itself, or an option's arity is unknown, it keeps the producer's recovery."
+expected_result: "suggested_retry is the same pm close plus the missing flags, preserving tracker scope, --json and --expect-hash. Replaying it closes the item in one write with one history entry."
+actual_result: "Verified in a sandbox and by tests/integration/cli/recovery-replays-invocation.integration.spec.ts: the emitted suggested_retry_args, with values filled in, closed the item, and its history holds only create and close. 6 repair unit tests and the updated close-command spec pass. Disabling the repair fails the integration spec (negative control). Full suite 12112 passed, coverage 100/100/100/100."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-p316vn,related,"2026-11-06T11:32:56.324Z","harness:claude-code","cli:create:dep",detected
+  pm-ulqu,related,"2026-11-06T11:32:56.324Z","harness:claude-code","cli:create:dep",detected
+  pm-5uclvd,related,"2026-11-06T11:33:23.119Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T11:59:37.821Z","harness:claude-code","Implementation evidence (branch fix/recovery-replays-invocation). Producer: closeValidationMissingFieldsError in src/sdk/lifecycle/close.ts now renders suggested_retry as a pm close (scope, id, reason, missing flags), keeps the pm update route as recovery.next_best_command, names the flags in required, and next_steps say to retry the same close. CLI: new src/cli/runtime/close-fields-retry.ts (repairCloseFieldsRecovery, wired into repairInvocationRecovery in src/cli/main.ts) rebuilds the retry from the caller's exact argv with each missing flag inserted before any -- terminator. It walks the global plus command flag contracts so declared option values are consumed (a flag-looking --reason value is kept), and removes blank supplied values under every alias (--expected=, --actual \" \"). If the command does not declare every missing flag, or an option's arity is unknown, the producer recovery is kept. Verified: the sandbox replay of the emitted suggested_retry_args closes in one write (history create plus close only). tests/integration/recovery-replays-invocation.integration.spec.ts executes it end to end, tests/unit/cli/runtime/close-fields-retry.spec.ts covers the repair edges, close-command.spec.ts asserts the SDK producer shape. Negative control: disabling the repair fails the integration spec."
+files[6]{path,scope}:
+  src/cli/main.ts,project
+  src/cli/runtime/close-fields-retry.ts,project
+  src/sdk/lifecycle/close.ts,project
+  tests/integration/cli/recovery-replays-invocation.integration.spec.ts,project
+  tests/unit/cli/runtime/close-fields-retry.spec.ts,project
+  tests/unit/commands/lifecycle/close-command.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/runtime/close-fields-retry.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts,project,unknown,"2026-11-06T11:59:49.760Z",local_mutation,fix/recovery-replays-invocation
+test_runs[3]:
+  - run_id: test-local-mw4yqrk3-tihfdu
+    kind: test
+    status: passed
+    started_at: "2026-11-06T12:40:50.239Z"
+    finished_at: "2026-11-06T12:41:05.283Z"
+    recorded_at: "2026-11-06T12:41:05.283Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/runtime/close-fields-retry.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw4yrju4-gnr3b2
+    kind: test
+    status: passed
+    started_at: "2026-11-06T12:41:27.067Z"
+    finished_at: "2026-11-06T12:41:41.932Z"
+    recorded_at: "2026-11-06T12:41:41.932Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/runtime/close-fields-retry.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw4yrutg-oknzrs
+    kind: test
+    status: passed
+    started_at: "2026-11-06T12:41:42.477Z"
+    finished_at: "2026-11-06T12:41:56.164Z"
+    recorded_at: "2026-11-06T12:41:56.164Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/runtime/close-fields-retry.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/CLOSE_EVIDENCE_RECOVERY.md,project
+close_reason: "A strict close refused for missing close evidence now suggests the caller's own pm close with the missing flags added, so one write closes the item"
+body: ""

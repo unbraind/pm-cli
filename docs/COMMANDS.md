@@ -1024,7 +1024,14 @@ the subcommand; `plan create` has none). `<id>=<item_hash>`
 (repeatable or comma-separated) names targets explicitly and is required for
 commands without one item argument. The refusal reports `expected_revision`,
 `current_revision`, and `details.changes_since` (the newest 10 history entries
-since the declared revision, with their top-level `fields`). The refused write
+since the declared revision, with their top-level `fields`). Its `required`,
+`examples` and `nextSteps` are read-only re-reads (`get` and `history`) rendered
+for the refused invocation
+([pm-gh1677](../.agents/pm/issues/pm-gh1677.toon)): they keep its tracker
+selection (`--pm-path`/`--path`, or `PM_PATH` when that tracker is not the cwd
+default), `--no-extensions` and output mode, so replaying them reads the
+refused item at `current_revision`. The guard never retries the write or
+replaces the expected hash itself. The refused write
 is suppressed; writes the same command already committed (for example the
 claim of a composed `claim --start`) stay durable, and the message then says
 so ("Earlier writes by this same invocation already committed"). Read commands refuse the flag with

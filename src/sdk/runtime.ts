@@ -4,7 +4,7 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { describeUnknownError, createExtensionCommandError } from "./error-runtime.js";
-import { capturePmCommandScope } from "./command-line.js";
+import { capturePmCommandScope, resolvePmCommandScopeArgs } from "./command-line.js";
 import {
   createEmptyExtensionCommandRegistry,
   createEmptyExtensionHookRegistry,
@@ -815,8 +815,13 @@ export class PmClient {
     const revisions = await import("./lifecycle/item-revision.js");
     // Bind inside the extension context, but run the operation outside it so its own
     // actions (including extension commands) activate and dispatch normally.
-    const scope = await this.withItemTransactionContext(({ pmRoot }) => revisions.bindExpectedItemRevisions(expectations, { pmRoot }));
-    return revisions.runWithBoundItemRevisionScope(scope, operation);
+    let tracker = "";
+    const scope = await this.withItemTransactionContext(({ pmRoot }) => {
+      tracker = pmRoot;
+      return revisions.bindExpectedItemRevisions(expectations, { pmRoot });
+    });
+    // pm-gh1677: recovery reads name this client's tracker, wherever the caller's process runs.
+    return revisions.runWithBoundItemRevisionScope(scope, operation, { scopeArgs: ["--pm-path", tracker] });
   }
 
   /** Return the same context snapshot produced by `pm context`. */
@@ -2974,6 +2979,8 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       options: asRecordClone(dispatchArgs.options),
       background: dispatchArgs.background,
       pmRoot: resolvePmRoot(resolutionCwd, global.path),
+      // pm-gh1677: recovery reads keep the caller's tracker spelling and extension isolation.
+      invocation: { scopeArgs: resolvePmCommandScopeArgs(global, resolutionCwd) },
       run: () => dispatchAction(resolved.action, dispatchArgs, global, activeExtensions),
     });
   };

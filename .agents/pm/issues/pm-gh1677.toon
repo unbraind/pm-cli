@@ -1,0 +1,54 @@
+id: pm-gh1677
+title: "GH-1677: the stale-revision refusal's next_steps and examples drop --pm-path, --no-extensions and the output mode, so the recovery reads return another tracker's item"
+description: "GitHub issue #1677 (reported 2026-11-06 against 2026.11.5 from an agent-UX review). The expected-revision write guard (pm-gh1576) correctly refuses a stale write with item_revision_conflict (exit 4), but its required, examples and next_steps are rendered as pm get <id> --json and pm history <id> --limit 5 with no tracker scope. When the caller selected a tracker with --pm-path (or --path) and --no-extensions, replaying the emitted next_steps reads the cwd tracker instead. In the reporter's two-tracker repro (same id in both), the emitted get returns the DECOY item with a hash different from current_revision and the emitted history returns the decoy's create-only stream: two wasted reads (1,529 B) that look successful. The history step also drops JSON mode. recovery.attempted_command and normalized_args keep the correct scope, so only the prescribed follow-ups are wrong. Cause: assertRevisionEntries in src/core/store/item-mutation-precondition.ts builds the commands deep in the store layer, which never sees the invocation's global options; enrichInvocationRevisionError in src/cli/expected-revisions.ts adds change evidence but does not rescope the commands. Every guarded verb (update, mutate, comments, files, close, release) shares this refusal. Expected: read-only recovery commands carry the invocation's tracker scope (resolvePmCommandScopeArgs: --pm-path spelling and --no-extensions) and the requested output encoding. The guard keeps refusing and never replaces the stale hash or retries the write itself. SDK callers that passed an explicit pmRoot get the same scoped commands. Duplicate check: searched revision conflict next_steps pm-path; pm-mrvq8u (closed) covered revision-conflict follow-ups from the PR 1654 review, not scope; GH-1364 and GH-1386 (closed) own projection-correction retries. This is the revision guard's evidence recovery."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,expect-hash,"gh:1677",recovery,tracker-scope
+created_at: "2026-11-06T11:32:59.995Z"
+updated_at: "2026-11-06T12:45:22.658Z"
+closed_at: "2026-11-06T12:45:21.027Z"
+completed_at: "2026-11-06T12:45:21.027Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "An item_revision_conflict refusal raised by a CLI invocation that selected a tracker with --pm-path or --path renders required, examples and next_steps with that tracker scope and --no-extensions when given; The recovery commands keep the invocation's requested output mode (JSON when --json was given, the default encoding otherwise); The guard still refuses with exit 4, never replaces the expected hash and never retries the write; SDK withExpectedItemRevisions callers that passed an explicit pmRoot receive the same scoped commands; A two-tracker spec with the same id in both executes the emitted next_steps and asserts they read the target tracker's item and history (current_revision matches); Negative control: reverting to unscoped commands fails that spec"
+parent: pm-mpbb
+risk: medium
+confidence: high
+resolution: "Revision refusals built in the store layer now record a reason (revision_changed or document_unreadable) and their guidance through itemRevisionConflictGuidance. scopeItemRevisionConflict re-renders that guidance for an invocation. The CLI binds the invocation's resolvePmCommandScopeArgs and JSON mode. SDK withExpectedItemRevisions with an explicit pmRoot or cwd, PmClient.withExpectedItemRevisions, and runAction/MCP pass their tracker scope. Close's post-close fan-out report keeps its own scoped commands."
+expected_result: "next_steps, examples and required name --pm-path and --no-extensions as the caller gave them, plus --json when requested. Replaying them returns the refused item at current_revision, and the guard still refuses with exit 4 without writing."
+actual_result: "Verified with the reporter's two-tracker shape (same id in a decoy and a target tracker). The emitted get returned the target item with item_hash equal to current_revision and the edited description. The emitted history returned the target stream (total 2) in JSON, and the TOON refusal emits TOON reads. Removing the invocation from the CLI enrichment fails tests/integration/cli/recovery-replays-invocation.integration.spec.ts (negative control). Full suite 12112 passed, coverage 100/100/100/100."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1576,discovered_from,"2026-11-06T11:32:59.995Z","harness:claude-code","cli:create:dep",detected
+  pm-mrvq8u,related,"2026-11-06T11:32:59.995Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T11:59:38.533Z","harness:claude-code","Implementation evidence (branch fix/recovery-replays-invocation). The store-layer refusal (assertRevisionEntries in src/core/store/item-mutation-precondition.ts) now builds required/examples/nextSteps through itemRevisionConflictGuidance and records reason revision_changed or document_unreadable. scopeItemRevisionConflict in src/sdk/lifecycle/item-revision.ts re-renders those fields for an invocation ({scopeArgs, json}). It runs inside enrichItemRevisionConflict, so it also covers refusals that already carry change evidence, and it skips close's post-close fan-out report (reason post_close_auto_unblock_refused, already scoped by commandScope). Hosts: the CLI binds invocationRevisionRecovery(globalOptions) (resolvePmCommandScopeArgs: --pm-path spelling, PM_PATH when not the cwd default, --no-extensions, and JSON when --json or --output-format json) at both preAction bind sites in src/cli/main.ts. SDK withExpectedItemRevisions adds --pm-path for an explicit pmRoot or cwd, PmClient.withExpectedItemRevisions always names its tracker, and runAction/MCP pass resolvePmCommandScopeArgs(global). Verified with the reporter's two-tracker shape: the emitted next_steps now read the target item at current_revision, and the history step returns the target's stream (total 2) in the caller's output mode. The guard still exits 4 and writes nothing. Negative control: dropping the invocation from enrichInvocationRevisionError fails tests/integration/recovery-replays-invocation.integration.spec.ts."
+files[9]{path,scope}:
+  src/cli/expected-revisions.ts,project
+  src/cli/main.ts,project
+  src/core/store/item-mutation-precondition.ts,project
+  src/sdk/lifecycle/close.ts,project
+  src/sdk/lifecycle/item-revision.ts,project
+  src/sdk/runtime.ts,project
+  tests/integration/cli/recovery-replays-invocation.integration.spec.ts,project
+  tests/unit/cli/expected-revisions.spec.ts,project
+  tests/unit/sdk/lifecycle/item-revision.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-revision.spec.ts tests/unit/cli/expected-revisions.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts,project,unknown,"2026-11-06T11:59:50.363Z",local_mutation,fix/recovery-replays-invocation
+test_runs[1]:
+  - run_id: test-local-mw4yr4xk-ap7yz0
+    kind: test
+    status: passed
+    started_at: "2026-11-06T12:41:05.945Z"
+    finished_at: "2026-11-06T12:41:22.616Z"
+    recorded_at: "2026-11-06T12:41:22.616Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-revision.spec.ts tests/unit/cli/expected-revisions.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: "A stale-revision refusal's read-only recovery now carries the caller's tracker scope, extension isolation and output mode, so replaying it reads the refused item"
+body: ""
