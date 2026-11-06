@@ -1,0 +1,26 @@
+id: pm-gh1666
+title: "GH-1666: per-command help and contracts for extension commands omit the inherited host flags (--json, --author, --pm-path) the command accepts and mark no flag as host- or extension-owned"
+description: "GitHub issue #1666 (reported 2026-11-04 against 2026.11.4, found while authoring an extension from the published docs). For an extension command demo-brief that declares --item-id, --status-filter and --commit, pm demo-brief --help shows the three extension flags plus -h/--help, while pm help demo-brief --json and pm contracts --command demo-brief --flags-only --json list only the three extension flags. Yet pm demo-brief --json works, as do --author and --pm-path. The public GLOBAL_FLAG_CONTRACTS table declares these flags as inherited, but focused discovery neither links that table nor says that inherited flags were left out, so an agent has to probe the command to learn what it accepts (the reporter's four probes cost about 2.6 s and about 2.7k output tokens). Extension authors face the converse confusion: the pm-brief package carries a documented helper, resolveBriefFormat, to reconcile an explicit format, global.json and direct-test options.json, because nothing tells a renderer author which object a host-consumed flag arrives in. Expected: command-specific discovery returns the effective applicable flags, or an explicit executable route to the inherited contract, each flag is marked host-owned (delivered through context.global) or extension-owned (delivered in context.options), and root-only flags or read-output controls the command does not support stay excluded so the list does not overstate support. Why it matters for agents: per-command contracts are the documented source of exact flags, and an agent that trusts them either under-uses the command or keeps re-probing it. Related: pm-ill9gv (GH-719) made host-owned globals canonical and delivered through context.global, but discovery still omits them. pm-gh1363 is the broad discovery plan, which the report notes does not specify this inventory. pm-gh1665 asks the same contracts to publish the handler key for extension flags. Duplicate check: searched extension command help, inherited global flags, GLOBAL_FLAG_CONTRACTS and per-command contracts across all statuses, and no item owns the omission of inherited flags from per-command discovery."
+type: Issue
+status: open
+priority: 2
+tags[6]: agent-ux,contracts,discoverability,extensions,"gh:1666",help
+created_at: "2026-11-05T06:09:19.310Z"
+updated_at: "2026-11-05T06:09:19.310Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "pm help <extension-command> --json and pm contracts --command <extension-command> --flags-only --json list the host flags the command accepts (at least --json, --author and --pm-path), or carry an explicit inherited-flags reference with an executable command that returns them; Every listed flag carries an ownership marker: host for flags delivered through context.global and extension for flags delivered in context.options; Root-only flags and read-output controls the command does not accept are excluded, proven by a spec that invokes every listed flag on a mutating extension command and expects none to be refused as unknown; Text help for an extension command names the inherited host flags or points to where they are listed; Negative control: dropping the inherited flags from the per-command contract fails the spec"
+parent: pm-1kxs
+risk: low
+confidence: medium
+severity: low
+repro_steps: "For an extension command with three declared flags, run pm <cmd> --help, pm help <cmd> --json and pm contracts --command <cmd> --flags-only --json, then pm <cmd> --json. The inherited flags work but are not listed"
+expected_result: "Per-command discovery for an extension command lists every flag it accepts with host or extension ownership, without overstating support"
+actual_result: "help --json and contracts --flags-only list only the three extension flags, while --json, --author and --pm-path work on the command"
+affected_version: 2026.11.4
+component: help
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1363,related,"2026-11-05T06:09:19.310Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1665,related,"2026-11-05T06:09:19.310Z","harness:claude-code","cli:create:dep",detected
+  pm-ill9gv,related,"2026-11-05T06:09:19.310Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -1,0 +1,25 @@
+id: pm-gh1667
+title: "GH-1667: sdk/graph does not export ProjectedGraphResult, the public return type of runGraph, and the merge conflict_resolution union has no public name, so extensions derive both"
+description: "GitHub issue #1667 (reported 2026-11-04 against 2026.11.4, TypeScript NodeNext, strict, skipLibCheck false). import type { ProjectedGraphResult } from '@unbrained/pm-cli/sdk/graph' and import type { MergeConflictResolution } from '@unbrained/pm-cli/sdk/merge' both fail with TS2305. Source confirms it: ProjectedGraphResult is exported from src/sdk/graph/run.ts and is the declared return type of runGraph, but src/sdk/graph/index.ts re-exports runGraph from run.js through a named list that omits the type, and sdk/public-surface.json records runGraph's signature as returning ProjectedGraphResult while the type itself is not on the surface. MergeDecisionReceipt in src/sdk/merge/receipts.ts types conflict_resolution inline with no public alias. Two fleet packages, pm-graph and pm-brief, independently derive the names with Awaited<ReturnType<typeof runGraph>> and an indexed access on MergeDecisionReceipt. Expected: ProjectedGraphResult is re-exported from sdk/graph and the aggregate entrypoint, the merge resolution union has a public name that the receipt declaration uses, and the SDK surface acceptance covers type-only imports next to the value-export parity checks. Why it matters for agents and extension authors: derived aliases break silently when the internal shape moves, and every extension author repeats the workaround. Related closed work covers values only: pm-obbh43 (GH-740) made the aggregate barrel complete for value exports of declared subpaths, and pm-suhxny derived the surface denominator from the export map, but neither checks that a type named in a public signature is itself importable. Duplicate check: searched SDK named type exports, ProjectedGraphResult, type-only surface acceptance, MergeDecisionReceipt and the aggregate entrypoint across all statuses, and no item owns missing public type names."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,extensions,"gh:1667",sdk,types
+created_at: "2026-11-05T06:09:22.085Z"
+updated_at: "2026-11-05T06:09:22.085Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "import type { ProjectedGraphResult } from '@unbrained/pm-cli/sdk/graph' and from '@unbrained/pm-cli/sdk' compile under NodeNext with strict and skipLibCheck false; The conflict_resolution union of MergeDecisionReceipt has an exported public name (for example MergeConflictResolution) that the receipt declaration uses, importable from sdk/merge and from the aggregate entrypoint; The SDK surface gate fails when a type referenced by an exported function's public signature is not importable from the same entrypoint, with a negative control that removes one such re-export; A packed-consumer fixture with type-only imports of these names runs beside the existing value-export parity checks"
+parent: pm-9rgaal
+risk: low
+confidence: high
+severity: low
+repro_steps: "In a NodeNext strict project with skipLibCheck false: import type { ProjectedGraphResult } from '@unbrained/pm-cli/sdk/graph' fails with TS2305"
+expected_result: Types named in public SDK signatures are importable by name from the entrypoint that exports the function
+actual_result: TS2305 for ProjectedGraphResult from sdk/graph and for a merge conflict-resolution alias from sdk/merge
+affected_version: 2026.11.4
+component: sdk
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-obbh43,related,"2026-11-05T06:09:22.085Z","harness:claude-code","cli:create:dep",detected
+  pm-suhxny,related,"2026-11-05T06:09:22.085Z","harness:claude-code","cli:create:dep",detected
+body: ""

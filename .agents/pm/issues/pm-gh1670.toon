@@ -1,0 +1,26 @@
+id: pm-gh1670
+title: "GH-1670: pm health --full --summary silently drops --summary and emits the full projection (15.7 KB vs 636 B) with no receipt"
+description: "GitHub issue #1670 (reported 2026-11-05 against 2026.11.4 from a fleet health gate run on pm-graph). Reproduced 2026-11-05 on main (e268c5b92, the 2026.11.5 cut) in a disposable one-item tracker: pm health --summary emits 636 B, while pm health --full --summary, pm health --summary --full and pm health --full each emit 15,704 B, all exit 0. Flag order does not matter and nothing in the output says the summary projection was dropped. Cause: runHealthAction in src/cli/register-operations.ts passes both summary and full to runHealth, and the full projection wins. The --full help text says it runs all checks including slow integrity, drift and vectorization, while the --strict-exit help says --full gives complete details, so one flag carries two meanings: check scope and output projection. Expected: an explicit --summary with --full runs the full check set and renders the compact summary of it (run everything, read little), which is what agents and CI gates ask for; or the combination is refused with a remedy. Never a silent drop. --strict-exit, which only implies summary, keeps its documented behaviour that --full restores complete details. Why it matters for agents: a strict gate that asks for the summary pays about 11k extra tokens per call (43.9 KB at bytes/4 on the reporter's 113-item tracker) with no omission receipt. Duplicate check: searched health summary, full, projection and flag precedence across all statuses. pm-nbht (closed) added the one-line summary mode, pm-gh1486 (closed) made passing diagnostics concise by default and pm-yjub (closed) made MCP pm_health default to the summary; none owns the precedence between --full and --summary."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,cli,"gh:1670",health,token-efficiency
+created_at: "2026-11-05T20:47:58.374Z"
+updated_at: "2026-11-05T20:47:58.374Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "pm health --full --summary runs the full check set (integrity, drift and vectorization included) and emits the summary projection, proven by a spec that compares its bytes and check names with --summary and --full on the same tracker in CLI, SDK and MCP; pm health --strict-exit --full keeps its documented complete-details output, because strict-exit only implies summary, and help text for --full and --summary states the precedence; Negative control: restoring the full projection for an explicit --summary fails the spec"
+parent: pm-5t33or
+risk: low
+confidence: high
+severity: medium
+repro_steps: "In a fresh tracker: pm health --summary | wc -c (636), pm health --full --summary | wc -c (15704), pm health --summary --full | wc -c (15704), pm health --full | wc -c (15704); all exit 0"
+expected_result: "An explicit --summary with --full runs every check and renders the compact summary, or the pair is refused with a remedy; never a silent drop"
+actual_result: "--full wins in either order and the output is byte-identical to --full alone with no warning, refusal or omission receipt"
+affected_version: 2026.11.4
+component: health
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1486,related,"2026-11-05T20:47:58.374Z","harness:claude-code","cli:create:dep",detected
+  pm-nbht,related,"2026-11-05T20:47:58.374Z","harness:claude-code","cli:create:dep",detected
+  pm-yjub,related,"2026-11-05T20:47:58.374Z","harness:claude-code","cli:create:dep",detected
+body: ""

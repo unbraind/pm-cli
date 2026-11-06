@@ -6,9 +6,9 @@ status: in_progress
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-05T05:06:29.516Z"
+updated_at: "2026-11-05T22:54:21.154Z"
 assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#cbb285dba71f705676688611"
+claim_principal: "harness:claude-code#77179288e1d1c04bcc4da0e8"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -49,7 +49,7 @@ dependencies[7]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[46]:
+comments[49]:
   - created_at: "2026-07-25T07:12:23.380Z"
     author: "harness:claude-code"
     text: "Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
@@ -190,18 +190,31 @@ comments[46]:
   - created_at: "2026-11-05T05:06:29.515Z"
     author: "harness:claude-code"
     text: "PR 1661, CodeRabbit round on 209e7234b, fixed. tableCells trimmed rows and cells with String.prototype.trim, which also strips U+00A0 and other Unicode spaces. A cell starting with a non-breaking space lost it, and the reparse check used the same trim, so it could not notice. The same trim also decided blankness, so a line holding only a non-breaking space ended a raw HTML block early, and the pipe rows after it could be compacted inside the block. GFM trims only spaces and tabs, and CommonMark calls a line blank only when it holds nothing but spaces and tabs. trimSpaces and isBlank now apply exactly those rules, and TABLE_ROW accepts only trailing spaces or tabs. Spec cases cover a leading non-breaking space in a body cell, which is kept, and a non-breaking-space line inside a div block, which stays raw. The 210 tracked markdown files outside .agents/pm still render identically under marked and save the same 44,941 bytes."
-notes[1]{created_at,author,text}:
+  - created_at: "2026-11-05T05:56:14.727Z"
+    author: "harness:claude-code"
+    text: "Claim released after PR 1661 merged into main at 32ba98892. This PR delivered one tranche: render-equivalent markdown table compaction in scripts/release/package-distribution.mjs, saving 44,941 bytes across the 210 tracked markdown files, with the distribution at 19,979,096 of the 20,000,000-byte ceiling. Every acceptance criterion is still open: source maps out of the tarball with symbolication proven on a real captured event, the documented tsc-emit versus esbuild-bundle decision, the unused typebox peer, a committed size and file-count budget in the release gates, and green npx and dogfood proofs."
+  - created_at: "2026-11-05T20:48:24.121Z"
+    author: "harness:claude-code"
+    text: "2026-11-05 release blocker, root cause and fix. Tag v2026.11.5 (6503e2736, cut by blocker_retry run 41977052960 at 06:27Z) never reached npm. Both Release runs, tag push 41980508196 and scheduled recovery dispatch 42005294363, failed at \"Sentry-injected package artifact gate\" with unpacked_size:20257274>20250000. In the same runs the base profile passed at 19,979,108 B against 20,000,000 B, with 1,799 of 1,800 first-party files.\n\nMeasured cause: sentry-cli sourcemaps inject dist/ adds exactly 358 B to every dist/**/*.js file. That is 777 files and 278,166 B, identical locally and in CI. The fixed 250,000 B sentry-injected allowance covers only about 698 files, so it stopped covering the transform once the emitted module count grew. Nothing earlier could catch this. CI runs only the base profile, and run-gates.mjs (the pre-tag local_preflight) never ran the artifact gate, although RELEASING.md said its packaging phase did. The first injected check therefore ran on an immutable tag.\n\nFix, budget version 4:\n- The sentry-injected profile is now derived. Its ceiling is the base ceiling plus max_bytes_per_injected_file (384) for each packed file matching injected_prefix dist/ and injected_suffix .js. Base content that fits the base ceiling therefore also fits after injection.\n- The gate receipt carries an injection block: base_profile, injected_file_count, max_bytes_per_injected_file and injection_allowance.\n- gate-registry local_preflight gains a forbidden-skip package-artifact step after the build. An over-budget candidate is now refused before any version commit or tag.\n- The new tests/unit/scripts/release/sentry-injection-allowance.spec.ts runs the installed @sentry/cli 3.8.2 binary offline against plain, shebang and large-module fixtures. It asserts that the delta is positive and within the allowance, so a sentry-cli upgrade that grows the snippet fails in its own PR.\n\nReplaying the exact CI packlist against the new budget gives base 19,979,108 <= 20,000,000 and injected 20,257,274 <= 20,298,368 (777 x 384 = 298,368).\n\nThe base ceiling and the file-count ceiling are unchanged. Headroom is now 20,892 B and one file, so the next weight-reduction tranche is still needed before features that add emitted modules.\n\nRecovery: release.yml exact-tag recovery copies the gate and budget from dispatch-time main into runner-temp release controls, then checks out the unpublished tag. Once this lands on main, a workflow_dispatch of release.yml for v2026.11.5 can publish the immutable tagged bytes under the reviewed policy."
+  - created_at: "2026-11-05T22:35:36.324Z"
+    author: "harness:claude-code"
+    text: "PR 1672 review round 1, CodeRabbit (Major): the pre-tag preflight checked only the base packlist. Its suggestion was to run pnpm sentry:inject in local_preflight and then gate the sentry-injected profile.\n\nAccepted in intent with a safer mechanism. Injecting the checkout in place is unsafe. tsconfig.json builds incrementally (.cache/tsbuildinfo) and prepare-build-cache.mjs drops that cache only when required outputs are missing. A later pnpm build would therefore not re-emit unchanged modules, the injected snippets would stay in dist, and the next base check would fail by about 278 KB. This is the same mechanism as the 586 stale injected outputs recorded on this item on 2026-10-14.\n\nThe existing gate now accepts --simulate-injection, valid only with an injection profile. It copies dist/ to a disposable temp directory and runs the checkout's installed sentry-cli (SentryCli.getPath) on the copy. It adds each packed file's measured growth to the npm packlist, validates the injection profile and removes the copy. The receipt carries simulation.source disposable_copy, injected_file_count and added_bytes.\n\ngate-registry local_preflight now runs package-artifact (base), then package-artifact-sentry-injected (--profile=sentry-injected --simulate-injection), mirroring release.yml's base, inject, injected order before any tag exists.\n\nMeasured on the current tree: added_bytes 278166 across 777 files, the same total as CI, with injected 20258510 <= 20298368. dist is left untouched; the base profile reads the same before and after.\n\nSpecs cover the copy, the injector call, cleanup, the derived ceiling on simulated sizes, an over-ceiling failure, unchanged files, and refusal for fixed or undeclared profiles. Gate coverage is 100/100/100/100."
+notes[2]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
+  "2026-11-05T22:54:21.153Z","harness:claude-code","Next-tranche headroom census, 2026-11-05. Measured at the PR 1672 head on the npm packlist from package-distribution.mjs, excluding the bundled runtime.\n\nCurrent state: base 19,980,344 of 20,000,000 bytes (about 19.7 KB headroom) and 1,799 of 1,800 files. Headroom is one file, so the next change that ships one more emitted module or packaged doc fails the PR base gate.\n\nMeasured candidate groups (files, bytes):\n\n| Group | Files | Bytes |\n| --- | ---: | ---: |\n| dist tsc JavaScript under dist/sdk | 388 | 3,823,149 |\n| dist **/*.d.ts | 684 | 2,655,971 |\n| docs/*.md | 108 | 1,506,584 |\n| packages/pm-* | 85 | 387,014 |\n| .agents/skills | 27 | 77,198 |\n| plugins/ | 57 | 72,944 |\n| docs/examples | 27 | 46,155 |\n| repo-only community files (CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md) | 3 | 16,234 |\n\nThe community files are referenced only by the validate well-known-files list and by docs-skills and release-readiness specs, not by any runtime package read.\n\nEach of these is a user-visible packaging decision. It belongs in its own tranche with consumer proof (npx, bunx, the SDK entrypoints and extension installs), not in a release-blocker fix."
 learnings[2]{created_at,author,text}:
   "2026-10-10T06:04:52.512Z","harness:codex","Compact first-party machine metadata in the publication staging copy, verify the serialized values before writing, and preserve third-party bytes. The artifact budget should reject new weight rather than grow. Real archive comparisons must retain the complete copied helper import closure; module-loading setup failures are not negative-control evidence."
   "2026-10-16T05:26:36.181Z","harness:codex","Bind package measurements to the packing pipeline, source tree or patch, and archive hash. Keep raw checkout bytes, staged compact JSON, first-party distribution size, and bundled-runtime totals distinct; only a controlled same-candidate comparison proves an exclusion delta."
-files[16]:
+files[20]:
   - path: .github/workflows/ci.yml
     scope: project
     note: mandatory PR artifact gate
   - path: .github/workflows/release.yml
     scope: project
     note: mandatory release artifact gate
+  - path: docs/RELEASING.md
+    scope: project
+    note: Pre-tag base and simulated sentry-injected preflight steps
   - path: package.json
     scope: project
     note: "files: exclude historical ecosystem-review censuses from the published artifact"
@@ -214,6 +227,9 @@ files[16]:
   - path: scripts/finalize-build.mjs
     scope: project
     note: Semantics-preserving declaration whitespace compaction
+  - path: scripts/release/gate-registry.json
+    scope: project
+    note: Pre-tag package-artifact preflight step
   - path: scripts/release/package-artifact-budget.json
     scope: project
     note: reviewable artifact size and contents budgets
@@ -241,7 +257,13 @@ files[16]:
   - path: tests/unit/scripts/release/package-artifact-gate.spec.ts
     scope: project
     note: fail-closed artifact negative controls
-tests[5]:
+  - path: tests/unit/scripts/release/run-gates.spec.ts
+    scope: project
+    note: Asserts the artifact gate runs after build in preflight
+  - path: tests/unit/scripts/release/sentry-injection-allowance.spec.ts
+    scope: project
+    note: Binds the per-file injection allowance to the installed sentry-cli
+tests[6]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts
     scope: project
     timeout_seconds: 240
@@ -280,6 +302,14 @@ tests[5]:
       source_kind: local_mutation
       source_ref: fix/extension-flag-semantics
     note: Declaration and artifact boundary regression
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/unit/scripts/release/sentry-injection-allowance.spec.ts tests/unit/scripts/release/run-gates.spec.ts
+    scope: project
+    timeout_seconds: 300
+    provenance:
+      author: "harness:claude-code"
+      created_at: "2026-11-05T20:48:27.695Z"
+      source_kind: local_mutation
+      source_ref: fix/release-artifact-preflight
 test_runs[5]:
   - run_id: test-local-msdbz6wt-4n92fd
     kind: test

@@ -7,23 +7,19 @@
  * verdict covers the artifact users actually install instead of the build tree.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** Resolve a named unpacked-size ceiling and reject malformed budget profiles. */
-function resolveMaxUnpackedSize(budget, profile) {
-  if (
-    typeof budget.max_unpacked_bytes_by_profile !== "object" ||
-    budget.max_unpacked_bytes_by_profile === null
-  ) {
-    throw new TypeError(
-      "Package artifact budget is missing named size profiles",
-    );
-  }
-  if (!Object.hasOwn(budget.max_unpacked_bytes_by_profile, profile)) {
-    throw new RangeError(`Unknown package artifact profile: ${profile}`);
-  }
+/** Read one fixed unpacked-size ceiling and reject malformed values. */
+function readFixedCeiling(budget, profile) {
   const maxUnpackedSize = budget.max_unpacked_bytes_by_profile[profile];
   if (typeof maxUnpackedSize !== "number") {
     throw new TypeError(`Package artifact profile ${profile} is not numeric`);
@@ -32,6 +28,87 @@ function resolveMaxUnpackedSize(budget, profile) {
     throw new TypeError(`Package artifact profile ${profile} is not finite`);
   }
   return maxUnpackedSize;
+}
+
+/** Require the declared shape of a derived injection profile before trusting its allowance. */
+function readInjectionProfile(budget, profile) {
+  const declaration = budget.injection_profiles[profile];
+  if (
+    typeof declaration?.base_profile !== "string" ||
+    !Object.hasOwn(budget.max_unpacked_bytes_by_profile, declaration.base_profile)
+  ) {
+    throw new TypeError(
+      `Injection profile ${profile} must name a fixed base profile`,
+    );
+  }
+  for (const field of ["injected_prefix", "injected_suffix"]) {
+    if (
+      typeof declaration[field] !== "string" ||
+      declaration[field].length === 0
+    ) {
+      throw new TypeError(
+        `Injection profile ${profile} requires a non-empty ${field}`,
+      );
+    }
+  }
+  if (
+    !Number.isSafeInteger(declaration.max_bytes_per_injected_file) ||
+    declaration.max_bytes_per_injected_file <= 0
+  ) {
+    throw new TypeError(
+      `Injection profile ${profile} requires a positive safe integer max_bytes_per_injected_file`,
+    );
+  }
+  return declaration;
+}
+
+/**
+ * Resolve a named unpacked-size ceiling and reject malformed budget profiles.
+ *
+ * A fixed profile states its ceiling directly. An injection profile derives it:
+ * the base ceiling plus a bounded per-file allowance for every packed file the
+ * transform rewrites. Debug-ID injection adds a fixed-length snippet to each
+ * emitted JavaScript file, so a constant allowance stops covering the transform
+ * as soon as the file count grows past it; the derived ceiling cannot, while the
+ * base profile keeps bounding every byte the transform did not add.
+ */
+function resolveMaxUnpackedSize(budget, profile, paths) {
+  if (
+    typeof budget.max_unpacked_bytes_by_profile !== "object" ||
+    budget.max_unpacked_bytes_by_profile === null
+  ) {
+    throw new TypeError(
+      "Package artifact budget is missing named size profiles",
+    );
+  }
+  if (Object.hasOwn(budget.max_unpacked_bytes_by_profile, profile)) {
+    return { maxUnpackedSize: readFixedCeiling(budget, profile) };
+  }
+  if (
+    typeof budget.injection_profiles !== "object" ||
+    budget.injection_profiles === null ||
+    !Object.hasOwn(budget.injection_profiles, profile)
+  ) {
+    throw new RangeError(`Unknown package artifact profile: ${profile}`);
+  }
+  const declaration = readInjectionProfile(budget, profile);
+  const injectedFileCount = paths.filter(
+    (file) =>
+      file.startsWith(declaration.injected_prefix) &&
+      file.endsWith(declaration.injected_suffix),
+  ).length;
+  const injectionAllowance =
+    injectedFileCount * declaration.max_bytes_per_injected_file;
+  return {
+    maxUnpackedSize:
+      readFixedCeiling(budget, declaration.base_profile) + injectionAllowance,
+    injection: {
+      base_profile: declaration.base_profile,
+      injected_file_count: injectedFileCount,
+      max_bytes_per_injected_file: declaration.max_bytes_per_injected_file,
+      injection_allowance: injectionAllowance,
+    },
+  };
 }
 
 /** Normalize npm 11/12 receipts without accepting ambiguous or misidentified artifacts. */
@@ -82,7 +159,6 @@ function resolveRuntimeBundleBudget(budget) {
 /** Validate one npm pack report against a named committed distribution budget. */
 export function validatePackageArtifact(report, budget, profile = "base") {
   const artifact = readSingleArtifact(report);
-  const maxUnpackedSize = resolveMaxUnpackedSize(budget, profile);
   const paths = artifact.files
     .map((file) =>
       typeof file === "object" && file !== null && typeof file.path === "string"
@@ -90,6 +166,11 @@ export function validatePackageArtifact(report, budget, profile = "base") {
         : "",
     )
     .filter(Boolean);
+  const { maxUnpackedSize, injection } = resolveMaxUnpackedSize(
+    budget,
+    profile,
+    paths,
+  );
   const violations = [];
   const runtimeFiles = artifact.files.filter((file) =>
     file?.path?.startsWith("node_modules/"),
@@ -137,6 +218,7 @@ export function validatePackageArtifact(report, budget, profile = "base") {
     version: artifact.version,
     unpacked_size: artifact.unpackedSize,
     max_unpacked_size: maxUnpackedSize,
+    ...(injection === undefined ? {} : { injection }),
     file_count: paths.length,
     distribution_size: distributionSize,
     distribution_file_count: distributionCount,
@@ -144,6 +226,86 @@ export function validatePackageArtifact(report, budget, profile = "base") {
     runtime_bundle_file_count: runtimeFiles.length,
     forbidden_suffixes: budget.forbidden_suffixes,
   };
+}
+
+/**
+ * Add the bytes a real transform adds to each packed file, measured on a
+ * disposable copy so the checkout's build output is never rewritten.
+ *
+ * Pre-tag preflight uses this to check the exact injected profile the release
+ * workflow later enforces in place. Injecting the checkout itself would leave
+ * injected modules behind that an incremental rebuild does not re-emit.
+ */
+export function simulateInjection(report, budget, profile, { root, inject }) {
+  const artifact = readSingleArtifact(report);
+  if (
+    typeof budget.injection_profiles !== "object" ||
+    budget.injection_profiles === null ||
+    !Object.hasOwn(budget.injection_profiles, profile)
+  ) {
+    throw new RangeError(
+      `--simulate-injection requires an injection profile, not ${profile}`,
+    );
+  }
+  const declaration = readInjectionProfile(budget, profile);
+  const scratch = mkdtempSync(path.join(tmpdir(), "pm-artifact-injection-"));
+  try {
+    const copy = path.join(scratch, declaration.injected_prefix);
+    cpSync(path.join(root, declaration.injected_prefix), copy, {
+      recursive: true,
+    });
+    inject(copy);
+    let addedBytes = 0;
+    let injectedFiles = 0;
+    const files = artifact.files.map((file) => {
+      if (
+        typeof file?.path !== "string" ||
+        !file.path.startsWith(declaration.injected_prefix) ||
+        !file.path.endsWith(declaration.injected_suffix)
+      ) {
+        return file;
+      }
+      const added =
+        statSync(path.join(scratch, file.path)).size -
+        statSync(path.join(root, file.path)).size;
+      addedBytes += added;
+      if (added > 0) injectedFiles += 1;
+      return { ...file, size: file.size + added };
+    });
+    return {
+      report: {
+        ...artifact,
+        unpackedSize: artifact.unpackedSize + addedBytes,
+        files,
+      },
+      simulation: {
+        source: "disposable_copy",
+        injected_file_count: injectedFiles,
+        added_bytes: addedBytes,
+      },
+    };
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+/** Run the checkout's installed sentry-cli debug-ID injection on one directory. */
+async function createSentryInjector(root) {
+  const { createRequire } = await import("node:module");
+  const { SentryCli } = createRequire(path.join(root, "package.json"))(
+    "@sentry/cli",
+  );
+  const binary = SentryCli.getPath();
+  return (directory) =>
+    execFileSync(binary, ["sourcemaps", "inject", directory], {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, SENTRY_DISABLE_UPDATE_CHECK: "1" },
+      // The per-file injection report is unused and grows with the module
+      // count; discard it and bound a hung injector like the hosted step.
+      stdio: ["ignore", "ignore", "pipe"],
+      timeout: 300_000,
+    });
 }
 
 const scriptRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -171,6 +333,26 @@ if (
   throw new TypeError("Package artifact gate requires --profile=<name>");
 }
 const profile = profileArgument?.slice("--profile=".length) ?? "base";
-console.log(
-  JSON.stringify(validatePackageArtifact(report, budget, profile), null, 2),
-);
+if (process.argv.slice(2).includes("--simulate-injection")) {
+  const root = process.cwd();
+  const { report: injectedReport, simulation } = simulateInjection(
+    report,
+    budget,
+    profile,
+    { root, inject: await createSentryInjector(root) },
+  );
+  console.log(
+    JSON.stringify(
+      {
+        ...validatePackageArtifact(injectedReport, budget, profile),
+        simulation,
+      },
+      null,
+      2,
+    ),
+  );
+} else {
+  console.log(
+    JSON.stringify(validatePackageArtifact(report, budget, profile), null, 2),
+  );
+}

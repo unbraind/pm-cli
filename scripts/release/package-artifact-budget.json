@@ -1,8 +1,16 @@
 {
-  "version": 3,
+  "version": 4,
   "max_unpacked_bytes_by_profile": {
-    "base": 20000000,
-    "sentry-injected": 20250000
+    "base": 20000000
+  },
+  "injection_profiles": {
+    "sentry-injected": {
+      "base_profile": "base",
+      "injected_prefix": "dist/",
+      "injected_suffix": ".js",
+      "max_bytes_per_injected_file": 384,
+      "reason": "sentry-cli sourcemaps inject dist/ adds one fixed-length debug-ID snippet (358 bytes with @sentry/cli 3.8.2) to every emitted dist/**/*.js file; the ceiling is the base ceiling plus this bounded allowance per packed injected file, so injection overhead scales with the file count the base profile already bounds."
+    }
   },
   "max_file_count": 1800,
   "forbidden_suffixes": [
