@@ -77,13 +77,21 @@ returns `linked.files` alone. It never pads `linked.tests` or `linked.docs`
 with empty arrays, so in JSON, SDK and MCP results a present empty array always
 means the group is empty. `--fields claim_state.claimed` returns only that
 member, the same way `schedule.<member>` selectors already work. The whole
-`linked` or `claim_state` selector, or a depth read, returns every member.
+`linked` or `claim_state` selector returns every member, and so do standard and
+deep depth reads; `--depth brief` omits both facets.
 When a nested selector leaves out a populated sibling, the omission receipt
 names it as `<facet>.<member>` with a narrow restoration, for example
 `linked.tests` restored with `--fields linked.tests`. A sibling that is empty,
-null or `false` carries no withheld evidence and is not listed. TOON keeps its
-sparse policy and drops empty groups, so there an absent group that the
-receipt does not list is empty.
+null or `false` carries no withheld evidence and is not listed. Neither is a
+sibling returned through its item metadata field: `--fields linked.files,tests`
+already returns the tests as `item.tests`, and the same holds for `deadline`,
+`reminders`, `events` and `assignee`. TOON keeps its
+sparse policy and drops empty groups. There, a group is known to be empty only
+when its facet was selected through a nested selector and the receipt does not
+list it. A facet the projection never selected stays unknown: `--fields
+item.title` returns no `linked` group and lists none, whether or not the item
+has linked files. Rendering requested empty groups in TOON is tracked by
+[pm-sj66lm](../.agents/pm/issues/pm-sj66lm.toon).
 
 ```bash
 pm get <id> --fields schedule.reminders

@@ -248,6 +248,9 @@ describe("actionable get receipts", () => {
       expect(result.linked).toEqual({ tests: [], docs: [] });
       const receipt = resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!;
       expect(receipt.omitted_field_groups).toEqual([{ name: "linked.files", restore_with: "--fields linked.files" }]);
+      const aliased = await runGet(created.item.id, global, { fields: "id,linked.tests,files" });
+      expect(aliased.item.files).toEqual(created.item.files);
+      expect(resolveOutputOmissionReceipt("get", aliased as unknown as Record<string, unknown>)!.has_omissions).toBe(false);
       const emptySibling = await runGet(created.item.id, global, { fields: "id,linked.files" });
       expect(emptySibling.linked).toEqual({ files: created.item.files });
       expect(resolveOutputOmissionReceipt("get", emptySibling as unknown as Record<string, unknown>)!.has_omissions).toBe(false);
@@ -279,6 +282,9 @@ describe("actionable get receipts", () => {
       expect(deadline.result.schedule).toEqual({ deadline: "2026-10-05T12:00:00.000Z" });
       expect(deadline.omitted).toEqual(["schedule.reminders"]);
       expect((await omittedFor("id,title")).omitted).toEqual([]);
+      // A sibling returned through its item metadata alias is not withheld.
+      expect((await omittedFor("id,schedule.reminders,deadline")).omitted).toEqual([]);
+      expect((await omittedFor("id,claim_state.claimed,assignee")).omitted).toEqual(["claim_state.last_claim"]);
     });
   });
 });

@@ -735,21 +735,36 @@ function projectGetClaimState(
 }
 
 /**
+ * Facet members whose same-named item metadata field carries the same facts, so
+ * selecting that field (for example `tests` beside `linked.files`) already
+ * returns the member. Derived members such as `schedule.start_at` have no alias.
+ */
+const NESTED_MEMBER_METADATA_ALIASES: Readonly<Record<"linked" | "schedule" | "claim_state", ReadonlySet<string>>> = {
+  linked: new Set(LINKED_GROUPS),
+  schedule: new Set(["deadline", "reminders", "events"]),
+  claim_state: new Set(["assignee"]),
+};
+
+/**
  * Name the populated members a nested selector left out, as `<facet>.<member>`,
  * so the omission receipt can disclose them with a narrow restoration. Selecting
- * the whole facet, or none of its members, withholds nothing inside it.
+ * the whole facet, or none of its members, withholds nothing inside it, and a
+ * member returned through its item metadata alias is not withheld either.
  */
 function nestedFieldSiblingGroups(
   fields: readonly string[],
-  facet: string,
+  facet: keyof typeof NESTED_MEMBER_METADATA_ALIASES,
   members: object,
 ): string[] {
   const normalized = fields.map(normalizeGetField);
   if (normalized.includes(facet)) return [];
   const prefix = `${facet}.`;
   if (!normalized.some((field) => field.startsWith(prefix))) return [];
+  const aliases = NESTED_MEMBER_METADATA_ALIASES[facet];
   return Object.entries(members).flatMap(([member, value]) =>
-    !normalized.includes(`${prefix}${member}`) && isMaterialFacetMember(value)
+    !normalized.includes(`${prefix}${member}`) &&
+    !(aliases.has(member) && normalized.includes(member)) &&
+    isMaterialFacetMember(value)
       ? [`${prefix}${member}`]
       : [],
   );

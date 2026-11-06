@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,context,"gh:1663",projection,sdk
 created_at: "2026-11-05T06:09:08.528Z"
-updated_at: "2026-11-06T05:44:06.766Z"
+updated_at: "2026-11-06T05:57:59.450Z"
 closed_at: "2026-11-06T05:43:52.202Z"
 completed_at: "2026-11-06T05:43:52.202Z"
 author: "harness:claude-code"
@@ -22,10 +22,14 @@ expected_result: "pm get --fields id,linked.files,claim_state.claimed returns li
 actual_result: "Verified in a sandbox tracker and by tests/integration/read-output/projection-envelopes.integration.spec.ts (CLI JSON, TOON and MCP pm_get) and tests/unit/regressions/actionable-get-receipts.spec.ts (23 passed). Negative control: restoring the linked padding fails 4 specs. Full quality:static chain minus mutation passed; focused coverage of the changed modules is 100% on every changed line."
 affected_version: 2026.11.4
 component: get
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4fwgaz,related,"2026-11-05T06:09:08.528Z","harness:claude-code","cli:create:dep",detected
   pm-b1w8vr,related,"2026-11-05T06:09:08.528Z","harness:claude-code","cli:create:dep",detected
   pm-cyrfjq,related,"2026-11-05T06:09:08.528Z","harness:claude-code","cli:create:dep",detected
+  pm-sj66lm,related,"2026-11-06T05:57:59.164Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-06T05:57:07.877Z","harness:claude-code","Review follow-up (Codex review of PR #1675): a mixed selector such as --fields linked.files,tests returned item.tests but still listed linked.tests as omitted, and schedule.reminders,deadline listed schedule.deadline. Fixed in nestedFieldSiblingGroups through NESTED_MEMBER_METADATA_ALIASES: a sibling returned through its same-named item metadata field (files, tests, docs, deadline, reminders, events, assignee) is not registered as withheld. Derived members (schedule.start_at, end_at, location, claim_state.claimed, last_claim, last_release) have no alias. Regression cases added to actionable-get-receipts.spec.ts; removing only the alias check fails 2 specs."
+  "2026-11-06T05:57:58.519Z","harness:claude-code","Closure scope note (CodeRabbit review of PR #1675): AC2's requested-empty [] holds for CLI JSON, SDK and MCP. TOON keeps its pre-existing sparse policy (pm-4fwgaz scoped requested empties to structured output), so a requested empty linked group is dropped in TOON; there the receipt disambiguates only for selected facets, as docs/GET_READ_EVIDENCE.md now states. Rendering requested empty collections in TOON is deferred to pm-sj66lm, which was filed from this item."
 notes[1]{created_at,author,text,edited_at}:
   "2026-11-06T00:37:17.735Z","harness:claude-code","Re-reproduced 2026-11-06 on main a14511d0f (the 2026.11.5 cut plus the artifact-preflight fix) in a one-item sandbox with one linked file, doc and test.\n\npm get <id> --fields id,linked.files,claim_state.claimed --json returns linked.files with the file, but tests: [] and docs: []. claim_state comes back whole (claimed, assignee, last_claim, last_release), and omission_receipt reports has_omissions false. --fields linked.tests behaves the same: files: [] and docs: [].\n\nSource: attachGetLinked in src/sdk/query/get.ts deliberately keeps the linked envelope's stable three-group shape, filling unselected groups with [] (its docstring says so). The receipt cannot report the padded siblings for a second reason. For explicit --fields selectors, runGet calls registerOutputMaterialFieldGroups with an empty set. resolveGetReceipt in src/sdk/output-projection.ts then filters its declared groups down to material groups or keys present on the projected owner, which drops the unrequested tests and docs groups before any inclusion check runs. Changing only the non-empty predicate in isGetFieldGroupIncluded therefore cannot report these omissions. The fix must also declare unrequested nested siblings as omittable groups for field projections. shouldIncludeGetField treats any claim_state.* selector as the whole group (fieldsIncludeRoot).\n\nDesign constraint for the fix: GetResult.linked declares files, tests and docs as required arrays. Omitting unrequested siblings therefore changes the public SDK type and needs sdk:surface:update --acknowledge-breaking plus migration notes. The non-breaking alternative keeps the shape but records each padded sibling in omission_receipt with restore_with --fields linked.<group>, plus an explicit per-group not-requested marker. Either way, a requested empty group must still render as [] and stay distinguishable.","2026-11-06T01:35:14.967Z"
 learnings[1]{created_at,author,text}:
