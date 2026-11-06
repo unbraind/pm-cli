@@ -37,7 +37,9 @@ function placeMissingFlags(argv: readonly string[], commandIndex: number, spelli
  * Rewrite a missing-close-fields refusal's retry as the caller's invocation
  * plus each missing flag. `scopePrefix` is the tracker selection the parsed
  * invocation did not spell itself (an environment-selected tracker), prepended
- * so the retry closes the same item wherever it runs. When the invoked command
+ * so the retry closes the same item wherever it runs; null means that selection
+ * cannot be made binding (a typed empty tracker option would override it, since
+ * the parser keeps the last value), so no retry is proposed. When the invoked command
  * cannot accept every missing field itself, or the flags cannot be placed
  * safely, the retry is withdrawn rather than replaced by one that would drop
  * the caller's own tokens (such as an `--expect-hash` guard); `missing` and the
@@ -47,13 +49,13 @@ export function repairCloseFieldsRecovery(
   argv: readonly string[],
   code: string | undefined,
   recovery: PmCliErrorRecoveryPayload | undefined,
-  scopePrefix: readonly string[] = [],
+  scopePrefix: readonly string[] | null = [],
 ): PmCliErrorRecoveryPayload | undefined {
   const missing = recovery?.missing;
   if (code !== CLOSE_FIELDS_REFUSAL_CODE || missing === undefined || missing.length === 0) return recovery;
   const withdrawn = { ...recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const commandIndex = findBootstrapCommandTokenIndex([...argv]);
-  if (commandIndex === undefined) return withdrawn;
+  if (commandIndex === undefined || scopePrefix === null) return withdrawn;
   const contracts = resolveSubcommandFlagContractsForCommand(argv[commandIndex]!.trim().toLowerCase());
   const declared = missing.map((flag) => contracts.find((entry) => entry.flag === flag || entry.aliases?.includes(flag) === true));
   if (declared.some((contract) => contract === undefined)) return withdrawn;

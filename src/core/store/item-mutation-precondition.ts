@@ -155,6 +155,15 @@ function matchingRevisionEntries(pmRoot: string, ids: readonly unknown[]): ItemR
 }
 
 /**
+ * Revisions the active scopes currently expect for one item on this tracker,
+ * so a refusal that prescribes a retry can carry the same guard
+ * (`--expect-hash <id>=<hash>`) the refused invocation ran under.
+ */
+export function activeItemRevisionExpectations(pmRoot: string, id: string): string[] {
+  return [...new Set(matchingRevisionEntries(pmRoot, [id]).map((entry) => entry.expected))];
+}
+
+/**
  * Whether any active scope declared a revision on this tracker, so writers that
  * must read a document to learn its embedded id can skip that read otherwise.
  */

@@ -420,7 +420,21 @@ function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | u
   const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
   // The parsed tracker selection, not a token scan, decides whether the retry must name the environment's tracker.
   const environmentScope = bootstrapGlobal.path === undefined ? resolvePmCommandScopeArgs({}) : [];
-  return repairCloseFieldsRecovery(argv, context.code, recovery, environmentScope);
+  const bindable = environmentScope.length === 0 || !typedEmptyTrackerOption(argv);
+  return repairCloseFieldsRecovery(argv, context.code, recovery, bindable ? environmentScope : null);
+}
+
+const EMPTY_VALUE_MARK = "\u0000";
+
+/**
+ * Whether the caller typed a tracker option with an empty value, which the
+ * bootstrap parse reads as no selection although the parser keeps it as the
+ * option's last value. Empty values are marked and the real scanner decides
+ * which of them is a tracker option's value.
+ */
+function typedEmptyTrackerOption(argv: readonly string[]): boolean {
+  const marked = argv.map((token) => (token === "" ? EMPTY_VALUE_MARK : /^--(?:pm-)?path=$/u.test(token) ? `${token}${EMPTY_VALUE_MARK}` : token));
+  return parseBootstrapGlobalOptions(marked).path === EMPTY_VALUE_MARK;
 }
 
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */

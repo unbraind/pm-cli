@@ -1173,6 +1173,11 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
       const hosted = await captureError(() => host.run("update", { id, options: { tags: "stale-host" }, expectHash: stale }));
       expect(hosted.context.code).toBe("item_revision_conflict");
       expect(hosted.context.nextSteps?.every((step) => !step.includes("--no-extensions"))).toBe(true);
+      // pm-gh1676: an SDK close refused for missing evidence carries the guard it ran under into its CLI retry.
+      const fresh = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      const unguarded = await captureError(() => runAction({ action: "close", id, reason: "Done", path: context.pmPath, expectHash: fresh, options: { validateClose: "strict" } }));
+      expect(unguarded.context.code).toBe("close_validation_missing_fields");
+      expect(unguarded.context.recovery?.suggested_retry_args).toContain(`--expect-hash=${id}=${fresh}`);
       // A requested output encoding carries into the recovery reads.
       const toon = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-toon" }, expectHash: stale, path: context.pmPath, outputFormat: "toon" }));
       expect(toon.context.nextSteps?.[1]).toMatch(/ history \S+ --limit 5 --output-format toon$/u);

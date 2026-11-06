@@ -44,7 +44,7 @@ import { unicodeSafePrefix } from "../../core/shared/text-normalization.js";
 import type { PmCliErrorDetails, PmCliErrorDetailValue } from "../../core/shared/errors.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
-import { itemRevisionConflictGuidance } from "../../core/store/item-mutation-precondition.js";
+import { activeItemRevisionExpectations, itemRevisionConflictGuidance } from "../../core/store/item-mutation-precondition.js";
 
 /** Compatibility options for command-shaped close consumers. */
 export interface CloseCommandOptions {
@@ -639,7 +639,7 @@ function suppliedCloseOptionTokens(options: CloseOperationOptions, missingFlags:
 function closeValidationMissingFieldsError(
   metadata: ItemMetadata,
   missingFields: ReadonlyArray<(typeof CLOSE_VALIDATION_FIELDS)[number]>,
-  context: Pick<CloseMutationContext, "commandScope" | "closeReason" | "options">,
+  context: Pick<CloseMutationContext, "pmRoot" | "commandScope" | "closeReason" | "options">,
 ): PmCliError {
   const missingLabels = missingFields.map((field) => field.label);
   const missingFlags = missingFields.map((field) => `--${field.key.replaceAll("_", "-")}`);
@@ -659,7 +659,9 @@ function closeValidationMissingFieldsError(
     });
   }
   const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
-  const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...placeholders];
+  // An SDK or MCP guard never reaches argv, so the retry carries the revision the active scope expects.
+  const guards = activeItemRevisionExpectations(context.pmRoot, metadata.id).map((hash) => `--expect-hash=${metadata.id}=${hash}`);
+  const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...guards, ...placeholders];
   return new PmCliError(message, EXIT_CODE.USAGE, {
     code: "close_validation_missing_fields",
     required: `Pass ${missingFlags.join(", ")} on this pm close; it records them in the same write as the closure.`,
@@ -680,7 +682,7 @@ function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
-  context: Pick<CloseMutationContext, "commandScope" | "closeReason" | "options">,
+  context: Pick<CloseMutationContext, "pmRoot" | "commandScope" | "closeReason" | "options">,
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {

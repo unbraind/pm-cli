@@ -80,6 +80,23 @@ describe("refusal recovery replays the caller's own invocation", () => {
     });
   });
 
+  it("pm-gh1676: proposes no retry when a typed empty tracker option would override the environment's tracker", async () => {
+    await withTempPmPath(async (context) => {
+      seedDecoyAndTarget(context);
+      const inTarget = { cwd: path.join(context.tempRoot, "target"), preserveDefaultMutationOutput: true };
+      const scoped = await context.runCliInProcess(["close", "pm-same", "Done", "--validate-close", "strict", "--json"], inTarget);
+      expect((JSON.parse(scoped.stderr) as { recovery: { suggested_retry_args: string[] } }).recovery.suggested_retry_args.slice(0, 3)).toEqual(["--pm-path", path.join("..", ".agents", "pm"), "close"]);
+      // The parser keeps an empty --pm-path as its last value, so a prepended tracker would not bind.
+      for (const empty of [["--pm-path", ""], ["--pm-path="]]) {
+        const refused = await context.runCliInProcess([...empty, "close", "pm-same", "Done", "--validate-close", "strict", "--json"], inTarget);
+        expect(refused.code).toBe(EXIT_CODE.USAGE);
+        const recovery = (JSON.parse(refused.stderr) as { recovery: Record<string, unknown> }).recovery;
+        expect(recovery.suggested_retry_args).toBeUndefined();
+        expect(recovery.missing).toEqual(["--resolution", "--expected-result", "--actual-result"]);
+      }
+    });
+  });
+
   it("pm-gh1676: a command that cannot accept the missing close fields gets no invented retry", async () => {
     await withTempPmPath(async (context) => {
       seedDecoyAndTarget(context);

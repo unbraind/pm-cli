@@ -55,6 +55,8 @@ describe("pm-gh1676 strict close retry replays the caller's close", () => {
   it("prepends the tracker selection the parsed invocation did not spell itself", () => {
     expect(repairCloseFieldsRecovery(["close", "pm-one", "--json"], CODE, PRODUCER, ["--pm-path", "../elsewhere/.agents/pm"])?.suggested_retry_args).toEqual(["--pm-path", "../elsewhere/.agents/pm", "close", "pm-one", "--json", ...FILLED]);
     expect(repair(["--path=mine", "close", "pm-one"])?.suggested_retry_args).toEqual(["--path=mine", "close", "pm-one", ...FILLED]);
+    // A selection the host cannot make binding withdraws the retry.
+    expect(repairCloseFieldsRecovery(["close", "pm-one"], CODE, PRODUCER, null)).toEqual(WITHDRAWN);
   });
 
   it("passes other refusals through and withdraws a retry it cannot place instead of dropping the caller's tokens", () => {
