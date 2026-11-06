@@ -186,9 +186,11 @@ describe("pm-gh1576 --expect-hash invocation binding", () => {
 
 describe("pm-gh1677 invocation-scoped revision recovery", () => {
   it("derives the tracker scope and output mode recovery reads replay", () => {
-    expect(invocationRevisionRecovery({ path: "../target/.agents/pm", noExtensions: true, json: true })).toEqual({ scopeArgs: ["--pm-path", "../target/.agents/pm", "--no-extensions"], json: true });
-    expect(invocationRevisionRecovery({ path: "t", outputFormat: "json" }).json).toBe(true);
-    expect(invocationRevisionRecovery({ path: "t", outputFormat: "toon" }).json).toBe(false);
+    expect(invocationRevisionRecovery({ path: "../target/.agents/pm", noExtensions: true, json: true })).toEqual({ scopeArgs: ["--pm-path", "../target/.agents/pm", "--no-extensions"], outputArgs: ["--json"] });
+    expect(invocationRevisionRecovery({ path: "t", outputFormat: "json" }).outputArgs).toEqual(["--output-format", "json"]);
+    // The canonical encoding wins over the legacy --json, and an explicit TOON choice is kept.
+    expect(invocationRevisionRecovery({ path: "t", json: true, outputFormat: "toon" }).outputArgs).toEqual(["--output-format", "toon"]);
+    expect(invocationRevisionRecovery({ path: "t" }).outputArgs).toEqual([]);
   });
 
   it("rescopes a bound invocation's conflict, and leaves an invocation bound without options unscoped", async () => {

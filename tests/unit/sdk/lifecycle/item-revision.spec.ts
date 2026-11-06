@@ -502,6 +502,8 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
       const guidance = [refusal.context.required, ...(refusal.context.nextSteps ?? [])].join("\n");
       expect(refusal.context.required).toContain(`The close of ${blocker} is complete; do not retry it. Only unblocking the guarded dependents it refused (${dependents.join(", ")}) remains`);
       const scope = ["--pm-path", context.pmPath, "--no-extensions"];
+      // pm-gh1677: the report's examples are scoped too, not the store refusal's unscoped reads.
+      expect(refusal.context.examples).toEqual([renderPmCommand([...scope, "get", dependents[0]!, "--fields", "item_hash", "--json"]), renderPmCommand([...scope, "history", dependents[0]!, "--limit", "5", "--json"])]);
       for (const id of dependents) {
         expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "get", id, "--json"]));
         expect(refusal.context.nextSteps).toContain(renderPmCommand([...scope, "update", id, "--status", "open", "--unset", "blocked_by", "--unset", "blocked_reason", "--expect-hash", `${id}=<item_hash>`]));
@@ -1079,7 +1081,7 @@ describe("pm-gh1677 revision refusal recovery replays the caller's tracker scope
 
   it("renders read-only recovery for the invocation's scope and output mode", () => {
     const scope = ["--pm-path", "../target/.agents/pm", "--no-extensions"];
-    expect(itemRevisionConflictGuidance("pm-one", false, { scopeArgs: scope, json: false })).toEqual({
+    expect(itemRevisionConflictGuidance("pm-one", false, { scopeArgs: scope, outputArgs: [] })).toEqual({
       required: `Re-read pm-one (${renderPmCommand([...scope, "get", "pm-one"])} reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
       examples: [renderPmCommand([...scope, "get", "pm-one", "--fields", "item_hash"]), renderPmCommand([...scope, "history", "pm-one", "--limit", "5"])],
       nextSteps: [renderPmCommand([...scope, "get", "pm-one"]), renderPmCommand([...scope, "history", "pm-one", "--limit", "5"])],
@@ -1114,8 +1116,14 @@ describe("pm-gh1677 revision refusal recovery replays the caller's tracker scope
       expect(byCwd.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
       const implicit = await captureError(() => withExpectedItemRevisions([{ id, itemHash: decided }], stale));
       expect(implicit.context.nextSteps?.[0]).toBe(renderPmCommand(["get", id, "--json"]));
+      // A client's recovery keeps its extension isolation; a default client names only its tracker.
       const viaClient = await captureError(() => pm.withExpectedItemRevisions([{ id, itemHash: decided }], stale));
-      expect(viaClient.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
+      expect(viaClient.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "get", id, "--json"]));
+      const plain = new PmClient({ pmRoot: context.pmPath });
+      const viaPlain = await captureError(() => plain.withExpectedItemRevisions([{ id, itemHash: decided }], () => plain.update(id, { tags: "plain-edit" })));
+      expect(viaPlain.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
+      const canonical = await captureError(() => withExpectedItemRevisions([{ id, itemHash: decided }], stale, { pmRoot: context.pmPath }));
+      expect(scopeItemRevisionConflict(canonical, { outputArgs: ["--output-format", "toon"] }) as PmCliError).toMatchObject({ context: { nextSteps: [`pm get ${id} --output-format toon`, `pm history ${id} --limit 5 --output-format toon`] } });
     });
   });
 });
@@ -1135,7 +1143,16 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
         inner.withExpectedItemRevisions([{ id: "pm-nested", itemHash: stale }], () => inner.update("pm-nested", { tags: "stale-edit" })),
       { pmRoot: context.pmPath }));
       expect(refusal.context).toMatchObject({ code: "item_revision_conflict", item_id: "pm-nested", details: { expected_revision_recorded: true } });
-      expect(refusal.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", other, "get", "pm-nested", "--json"]));
+      expect(refusal.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", other, "--no-extensions", "get", "pm-nested", "--json"]));
+      // The ownership record is shared through the global registry, so every SDK bundle graph reads it.
+      const registry = (globalThis as Record<symbol, unknown>)[Symbol.for("@unbrained/pm-cli/item-revision-refusal-trackers")];
+      expect(registry).toBeInstanceOf(WeakMap);
+      // A wrapper that keeps the refusal as its cause (task composition) still belongs to the inner tracker.
+      const raw = await captureError(() => inner.withExpectedItemRevisions([{ id: "pm-nested", itemHash: stale }], () => inner.update("pm-nested", { tags: "again" })));
+      const wrapped = new PmCliError(raw.message, raw.exitCode, { ...raw.context, details: undefined });
+      wrapped.cause = raw;
+      expect(await enrichItemRevisionConflict(wrapped, context.pmPath, { scopeArgs: ["--pm-path", "outer"] })).toBe(wrapped);
+      expect((await enrichItemRevisionConflict(wrapped, other, { scopeArgs: ["--pm-path", "inner"] }) as PmCliError).context.nextSteps?.[0]).toBe("pm --pm-path inner get pm-nested --json");
       // A non-error rejection passes through enrichment untouched.
       expect(await enrichItemRevisionConflict("not an error", context.pmPath, { scopeArgs: [] })).toBe("not an error");
     });
@@ -1151,6 +1168,9 @@ describe("pm-gh1677 nested and dispatched revision recovery", () => {
       expect(refusal.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "--no-extensions", "get", id, "--json"]));
       const implicit = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-again" }, expectHash: stale, cwd: context.tempRoot }));
       expect(implicit.context.nextSteps?.[0]).toBe(renderPmCommand(["--pm-path", context.pmPath, "get", id, "--json"]));
+      // A requested output encoding carries into the recovery reads.
+      const toon = await captureError(() => runAction({ action: "update", id, options: { tags: "stale-toon" }, expectHash: stale, path: context.pmPath, outputFormat: "toon" }));
+      expect(toon.context.nextSteps?.[1]).toMatch(/ history \S+ --limit 5 --output-format toon$/u);
     });
   });
 });

@@ -820,8 +820,10 @@ export class PmClient {
       tracker = pmRoot;
       return revisions.bindExpectedItemRevisions(expectations, { pmRoot });
     });
-    // pm-gh1677: recovery reads name this client's tracker, wherever the caller's process runs.
-    return revisions.runWithBoundItemRevisionScope(scope, operation, { scopeArgs: ["--pm-path", tracker] });
+    // pm-gh1677: recovery reads name this client's tracker, wherever the caller's process runs, and keep
+    // its extension isolation. An active-extension-host client disables extensions only internally.
+    const isolated = this.defaults.noExtensions === true && this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] !== true;
+    return revisions.runWithBoundItemRevisionScope(scope, operation, { scopeArgs: ["--pm-path", tracker, ...(isolated ? ["--no-extensions"] : [])] });
   }
 
   /** Return the same context snapshot produced by `pm context`. */
@@ -2981,7 +2983,11 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       pmRoot: resolvePmRoot(resolutionCwd, global.path),
       // pm-gh1677: recovery reads keep the caller's tracker spelling and extension isolation. An explicit
       // cwd is not the caller's process cwd, so a relative spelling would name another tracker there.
-      invocation: { scopeArgs: explicitCwd === undefined ? resolvePmCommandScopeArgs(global, resolutionCwd) : ["--pm-path", resolvePmRoot(resolutionCwd, global.path), ...(global.noExtensions === true ? ["--no-extensions"] : [])] },
+      invocation: {
+        scopeArgs: explicitCwd === undefined ? resolvePmCommandScopeArgs(global, resolutionCwd) : ["--pm-path", resolvePmRoot(resolutionCwd, global.path), ...(global.noExtensions === true ? ["--no-extensions"] : [])],
+        // A requested encoding carries into the recovery reads; otherwise they stay machine-readable JSON.
+        ...(global.outputFormat === undefined ? {} : { outputArgs: ["--output-format", global.outputFormat] }),
+      },
       run: () => dispatchAction(resolved.action, dispatchArgs, global, activeExtensions),
     });
   };

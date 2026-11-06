@@ -194,8 +194,12 @@ export const ITEM_REVISION_CONFLICT_UNREADABLE_REASON = "document_unreadable";
 export interface ItemRevisionRecoveryInvocation {
   /** Tracker and extension scope tokens, such as `--pm-path <root>` and `--no-extensions`. */
   scopeArgs?: readonly string[];
-  /** Whether recovery reads request JSON; defaults to true, the machine-readable form. */
-  json?: boolean;
+  /**
+   * Output-encoding tokens the recovery reads carry, such as `--json` or
+   * `--output-format toon`; empty for the tracker's default encoding.
+   * Defaults to `--json`, the machine-readable form.
+   */
+  outputArgs?: readonly string[];
 }
 
 /** Recovery guidance fields of a revision refusal. */
@@ -212,7 +216,7 @@ export function itemRevisionConflictGuidance(
   invocation: ItemRevisionRecoveryInvocation = {},
 ): ItemRevisionConflictGuidance {
   const scope = [...(invocation.scopeArgs ?? [])];
-  const output = invocation.json === false ? [] : ["--json"];
+  const output = [...(invocation.outputArgs ?? ["--json"])];
   const read = renderPmCommand([...scope, "get", targetId, ...output]);
   const history = renderPmCommand([...scope, "history", targetId, "--limit", "5", ...output]);
   return {
@@ -224,16 +228,33 @@ export function itemRevisionConflictGuidance(
   };
 }
 
-/** Canonical tracker root of each revision refusal the locked-write guard raised. */
-const refusalTrackers = new WeakMap<object, string>();
+/**
+ * Canonical tracker root of each revision refusal the locked-write guard
+ * raised. Shared through the global registry like the scopes themselves, so a
+ * guard opened through one published SDK entrypoint recognizes a refusal
+ * another entrypoint's bundle raised.
+ */
+const REFUSAL_TRACKERS_KEY = Symbol.for("@unbrained/pm-cli/item-revision-refusal-trackers");
+const refusalTrackerRegistry = globalThis as typeof globalThis & { [REFUSAL_TRACKERS_KEY]?: WeakMap<object, string> };
+const refusalTrackers = (refusalTrackerRegistry[REFUSAL_TRACKERS_KEY] ??= new WeakMap<object, string>());
+
+/** Wrappers searched for an originating refusal (composition steps wrap it as `cause`). */
+const REFUSAL_CAUSE_DEPTH = 8;
 
 /**
  * The canonical tracker whose locked write raised this revision refusal, or
- * undefined for a refusal the guard did not raise itself. Nested scopes use it
- * so only the scope bound to that tracker re-renders the refusal's recovery.
+ * undefined for a refusal the guard did not raise itself. A wrapper that kept
+ * the refusal as its `cause` reports the refusal's tracker. Nested scopes use
+ * it so only the scope bound to that tracker re-renders the recovery.
  */
 export function itemRevisionRefusalTracker(error: unknown): string | undefined {
-  return typeof error === "object" && error !== null ? refusalTrackers.get(error) : undefined;
+  let current = error;
+  for (let depth = 0; depth < REFUSAL_CAUSE_DEPTH && typeof current === "object" && current !== null; depth += 1) {
+    const tracker = refusalTrackers.get(current);
+    if (tracker !== undefined) return tracker;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return undefined;
 }
 
 /** Mark matching entries checked and refuse the first one the locked revision does not satisfy. */

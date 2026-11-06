@@ -1029,9 +1029,11 @@ since the declared revision, with their top-level `fields`). Its `required`,
 for the refused invocation
 ([pm-gh1677](../.agents/pm/issues/pm-gh1677.toon)): they keep its tracker
 selection (`--pm-path`/`--path`, or `PM_PATH` when that tracker is not the cwd
-default), `--no-extensions` and output mode, so replaying them reads the
-refused item at `current_revision`. The guard never retries the write or
-replaces the expected hash itself. The refused write
+default), `--no-extensions` and output encoding, so replaying them reads the
+refused item and its history from the same tracker. Those reads are live, not
+pinned to `current_revision`: a write after the refusal shows up in them, so
+decide against the `item_hash` they report. The guard never retries the write
+or replaces the expected hash itself. The refused write
 is suppressed; writes the same command already committed (for example the
 claim of a composed `claim --start`) stay durable, and the message then says
 so ("Earlier writes by this same invocation already committed"). Read commands refuse the flag with

@@ -33,12 +33,16 @@ const invocationScopes = new AsyncLocalStorage<ItemRevisionScope>();
 /** The tracker scope and output mode each bound invocation's revision refusals replay (pm-gh1677). */
 const invocationRecoveries = new WeakMap<ItemRevisionScope, ItemRevisionRecoveryInvocation>();
 
-/** Recovery reads replay the caller's tracker scope, extension isolation and output mode. */
+/**
+ * Recovery reads replay the caller's tracker scope, extension isolation and
+ * output encoding. The canonical `--output-format` wins over the legacy
+ * `--json`, as it does for the invocation's own output.
+ */
 export function invocationRevisionRecovery(globalOptions: GlobalOptions): ItemRevisionRecoveryInvocation {
-  return {
-    scopeArgs: resolvePmCommandScopeArgs(globalOptions),
-    json: globalOptions.json === true || globalOptions.outputFormat === "json",
-  };
+  const outputArgs = globalOptions.outputFormat !== undefined
+    ? ["--output-format", globalOptions.outputFormat]
+    : globalOptions.json === true ? ["--json"] : [];
+  return { scopeArgs: resolvePmCommandScopeArgs(globalOptions), outputArgs };
 }
 /** Invocation scopes whose guard preAction bound, with the command path admitted; final dispatch must not rewrite them. */
 const guardedInvocations = new WeakMap<ItemRevisionScope, string>();

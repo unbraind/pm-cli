@@ -44,6 +44,7 @@ import { unicodeSafePrefix } from "../../core/shared/text-normalization.js";
 import type { PmCliErrorDetails, PmCliErrorDetailValue } from "../../core/shared/errors.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
+import { itemRevisionConflictGuidance } from "../../core/store/item-mutation-precondition.js";
 
 /** Compatibility options for command-shaped close consumers. */
 export interface CloseCommandOptions {
@@ -516,6 +517,7 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
     ...conflict.context,
     // This report's commands are scoped already; hosts must not re-render it as a plain revision refusal.
     reason: POST_CLOSE_AUTO_UNBLOCK_REFUSED_REASON,
+    examples: itemRevisionConflictGuidance(dependent, false, { scopeArgs: commandScope }).examples,
     required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` This refusal does not list a step for every dependent left blocked; list them with ${discovery}, and while it reports has_more, continue with --after <next_cursor>.` : ""}`,
     nextSteps: truncated ? [...steps, discovery] : steps,
     details: fitPostCloseDetails({
