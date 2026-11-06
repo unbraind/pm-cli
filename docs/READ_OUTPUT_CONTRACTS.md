@@ -350,6 +350,44 @@ fixed. `applied_limit` and both continuation forms follow the retained item coun
 A complete page and a truncated page have different mandatory metadata costs;
 row counts across that boundary are not an unconditional monotonicity guarantee. An infeasible ceiling returns the explicit omission result.
 
+### Delivered bytes, intent budgets and complete receipts
+
+Tracked by [pm-gh1678](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1678.toon),
+[pm-gh1662](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1662.toon) and
+[pm-sj66lm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sj66lm.toon)
+(repository-only tracker records excluded from npm).
+
+The CLI measures what it writes. When a scoped `registerRenderer` replacement,
+an `output_format` service override, or a markdown default renders a declared
+read, every estimate, compaction step and omission decision uses that
+delivered string, so `read_output.estimated_tokens` describes the bytes the
+caller receives. A string that cannot fit returns the bounded native
+`output_budget_exceeded` refusal with exit 2; a refusal is always rendered
+natively and never passed back through an expanding renderer. Commands that
+declare no read output keep their renderer untouched, and
+`--output-budget unbounded` keeps unbounded custom rendering.
+
+Read intents (`--for <intent>`) accept one budget under both spellings: a
+numeric `--output-budget` binds the intent's token budget exactly as the legacy
+`--token-budget` does, including its budget-derived row limit, so the same value
+on the same corpus yields the same success, omission and exit status. The intent
+estimate covers the delivered encoding (pretty JSON or TOON, without a
+`row_contract` the caller did not request). An omitted intent result is
+unsuccessful everywhere: the CLI exits 2, and `context_intent`, `read_output`
+and the omission branch all report `result_omitted: true` and
+`within_budget: false`. The canonical spelling keeps the shared
+`output_budget_exceeded` branch; the legacy spelling keeps `budget_exceeded`,
+whose `restore_with` carries the universal 25% recovery margin so the retry it
+names returns the result. SDK consumers detect either branch with
+`isReadResultOmittedForBudget`. `--output-budget unbounded` on an intent read
+never omits the result; its receipt reports `within_budget: false` when the
+result exceeds the declared intent ceiling.
+
+In TOON, an omission receipt that reports nothing omitted costs one line,
+`omission_receipt: complete`, and an explicit `get --fields` selection renders
+each requested empty collection as `key: []`. JSON, SDK and MCP keep the typed
+receipt, and receipts that report omissions are unchanged.
+
 For `context` and `next`, that final projection is also the usage-feedback
 delivery boundary. The SDK carries a JSON-invisible serve receipt through
 intent and universal output projection, then appends the final omitted decision

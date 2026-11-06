@@ -2,11 +2,13 @@ id: pm-sj66lm
 title: "TOON get --fields spends four lines on a complete omission receipt and drops requested empty collections, so a narrow read is two-thirds receipt and absent-vs-empty depends on that receipt"
 description: "Found 2026-11-06 while fixing pm-gh1663 on main 2fd348267 plus the fix branch. In a sandbox tracker, pm get <id> --fields id,title,comments (TOON) emits 143 B: item id and title, then a four-line omission_receipt with has_omissions false, omitted_field_group_count 0 and omitted_field_groups [] (96 B, 67% of the response). The requested comments collection is empty, and TOON's sparse policy drops it, so the only proof that comments was read and is empty is that receipt. JSON, SDK and MCP render comments: [] as pm-4fwgaz requires, and pm-gh1408 made the explicit-selection receipt compact in structured output, but TOON still prints the full complete receipt and loses the requested-empty value. Expected: in TOON a requested empty collection renders as key: [] (it is information the caller asked for), and a complete explicit-selection receipt collapses to one line or is omitted when every requested key is present in the output, with --full or --json keeping the typed receipt. The default and depth receipts that do report omissions are unchanged. Duplicate check: searched TOON requested empty collection, sparse policy, complete omission receipt, explicit selection receipt; pm-4fwgaz and pm-gh1408 are closed and covered structured output only."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: agent-ux,output,projection,token-efficiency,toon
 created_at: "2026-11-06T05:09:12.052Z"
-updated_at: "2026-11-06T05:09:12.052Z"
+updated_at: "2026-11-06T20:10:05.199Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#4d05e51e9085533fb7cd32a8"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "TOON get --fields renders each explicitly requested empty collection as an empty array, while unrequested empty groups stay absent; A complete explicit-selection omission receipt costs at most one TOON line, and receipts that report omissions are unchanged in TOON, JSON, SDK and MCP; A spec measures the TOON bytes of a two-field get --fields read before and after and asserts the receipt share drops below a third; Negative control: restoring the four-line complete receipt or dropping the requested empty collection fails the spec"
@@ -22,4 +24,14 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4fwgaz,related,"2026-11-06T05:09:12.052Z","harness:claude-code","cli:create:dep",detected
   pm-gh1408,related,"2026-11-06T05:09:12.052Z","harness:claude-code","cli:create:dep",detected
   pm-gh1663,discovered_from,"2026-11-06T05:09:12.052Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T20:10:05.198Z","harness:claude-code","Fix: in TOON, an omission receipt equal to the complete shape (has_omissions false, count 0, no groups) renders as the single line omission_receipt: complete; receipts that report omissions are unchanged and JSON/SDK/MCP keep the typed receipt. For an explicit get --fields selection (command get with a non-empty fields option) the host passes preserveEmptyItemCollections to formatBuiltInOutput, which restores every empty array or object the projection kept in item, in order, after the sparse policy drops them (unrequested empty groups are never in the projection, so they stay absent). Measured: pm get <id> --fields id,title,comments on a fresh tracker went from 162 B (receipt 96 B, 59%) to 105 B (receipt 27 B, 26%) and now shows comments: []. The unit spec compares the four-line receipt (share above a third) with the new rendering (below a third)."
+files[3]{path,scope}:
+  src/core/output/output.ts,project
+  tests/integration/read-output/delivered-output-budget.integration.spec.ts,project
+  tests/unit/core/output/delivered-output-budget.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,project,"harness:claude-code","2026-11-06T20:09:49.369Z",local_mutation,fix/output-budget-delivered-bytes
+docs[1]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
 body: ""

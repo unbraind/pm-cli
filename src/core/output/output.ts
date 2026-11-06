@@ -17,9 +17,10 @@ import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
 import { propagateContextUsageServingReceipt } from "../../sdk/context-usage.js";
 import {
-  isReadOutputBudgetExceeded,
+  isReadResultOmittedForBudget,
   resolveReadOutputEncoding,
 } from "../../sdk/read-output-contracts.js";
+import { withDeliveredOutputRenderer } from "../../sdk/read-output-budget.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 import { encodePmTableRows } from "../../sdk/output/table-rows.js";
 import {
@@ -260,6 +261,10 @@ function renderToonObjectEntry(
   const indent = "  ".repeat(depth);
   if (!isPlainObject(entry) && !Array.isArray(entry)) {
     return `${indent}${key}: ${renderScalar(entry)}`;
+  }
+  // A receipt that reports no omission costs one line; JSON keeps its typed form (pm-sj66lm).
+  if (key === "omission_receipt" && isCompleteOmissionReceipt(entry)) {
+    return `${indent}${key}: complete`;
   }
   if (Array.isArray(entry)) {
     if (entry.length === 0) return `${indent}${key}: []`;
@@ -594,6 +599,7 @@ export function formatBuiltInOutput(
   result: unknown,
   format: "json" | "toon",
   lean = false,
+  toon: BuiltInToonOptions = {},
 ): string {
   result = prepareWellFormedOutputText(result);
   if (format === "json") {
@@ -602,15 +608,64 @@ export function formatBuiltInOutput(
       result.projection.mode === "brief" && Array.isArray(result.items);
     return `${JSON.stringify(value, null, briefList ? undefined : 2)}\n`;
   }
-  const compactedToon = compactToonValue(
-    projectEmptyCheckDetails(
-      projectPmBriefSearchEnvelope(projectPmBriefListEnvelope(result)),
+  const compactedToon = restoreRequestedEmptyItemCollections(
+    result,
+    compactToonValue(
+      projectEmptyCheckDetails(
+        projectPmBriefSearchEnvelope(projectPmBriefListEnvelope(result)),
+      ),
+      { omitDuplicateCountAliases: true, preserveRowFacts: true },
     ),
-    { omitDuplicateCountAliases: true, preserveRowFacts: true },
+    toon.preserveEmptyItemCollections === true,
   );
   return compactedToon === undefined
     ? "{}\n"
     : `${renderToonValue(compactedToon, 0)}\n`;
+}
+
+/** TOON presentation choices that depend on how the caller selected the result. */
+export interface BuiltInToonOptions {
+  /**
+   * The result is an explicit `get --fields` selection: every collection its
+   * item carries was requested, so an empty one renders as `key: []` instead
+   * of being dropped by the sparse policy (pm-sj66lm).
+   */
+  preserveEmptyItemCollections?: boolean;
+}
+
+/** Re-insert the empty collections an explicit item selection requested, in their original order. */
+function restoreRequestedEmptyItemCollections(
+  source: unknown,
+  compacted: unknown,
+  preserve: boolean,
+): unknown {
+  if (!preserve || !isPlainObject(source) || !isPlainObject(source.item)) {
+    return compacted;
+  }
+  // The sparse policy may drop an item (or the whole envelope) whose values are all empty.
+  const base = isPlainObject(compacted) ? compacted : {};
+  const compactedItem = isPlainObject(base.item) ? base.item : {};
+  const item = Object.fromEntries(
+    Object.entries(source.item).flatMap(([key, value]): Array<[string, unknown]> => {
+      if (Object.hasOwn(compactedItem, key)) return [[key, compactedItem[key]]];
+      if (Array.isArray(value) && value.length === 0) return [[key, []]];
+      return isPlainObject(value) && Object.keys(value).length === 0
+        ? [[key, {}]]
+        : [];
+    }),
+  );
+  return Object.hasOwn(base, "item") ? { ...base, item } : { item, ...base };
+}
+
+const COMPLETE_OMISSION_RECEIPT = JSON.stringify({
+  has_omissions: false,
+  omitted_field_group_count: 0,
+  omitted_field_groups: [],
+});
+
+/** Whether an omission receipt reports that nothing was omitted, in exactly its declared shape. */
+function isCompleteOmissionReceipt(value: unknown): boolean {
+  return JSON.stringify(value) === COMPLETE_OMISSION_RECEIPT;
 }
 
 interface OutputServiceResolution {
@@ -706,9 +761,34 @@ function formatEffectiveOutput(
     effectiveOptions,
     format,
   );
+  const selectedFields = (resolvedCommandOptions as Record<string, unknown>).fields;
+  const explicitItemSelection =
+    command === "get" &&
+    typeof selectedFields === "string" &&
+    selectedFields.trim().length > 0;
+  const renderNative = (value: unknown): string =>
+    format === "json"
+      ? formatBuiltInOutput(value, "json", options.lean === true)
+      : formatBuiltInOutput(value, "toon", false, {
+          preserveEmptyItemCollections: explicitItemSelection,
+        });
   if (service.rendered !== null) {
-    setActiveCommandResultOmitted(effectiveResult);
-    return service.rendered;
+    const serviceRendered = service.rendered;
+    // A service-rendered read still answers to the caller's output budget: the
+    // contracts measure the string the service returned, and a string that
+    // cannot fit is replaced by the bounded native refusal (GH-1678).
+    const audited = withDeliveredOutputRenderer(
+      format,
+      () => serviceRendered,
+      () => attachReadOutputContracts(command, resolvedCommandOptions, effectiveResult),
+    );
+    if (!isReadResultOmittedForBudget(audited)) {
+      setActiveCommandResultOmitted(effectiveResult);
+      return serviceRendered;
+    }
+    process.exitCode ||= EXIT_CODE.USAGE;
+    setActiveCommandDeliveryResult(audited, effectiveResult, options.quiet !== true);
+    return renderNative(audited);
   }
   const outputResult = service.result;
   propagateContextUsageServingReceipt(effectiveResult, outputResult);
@@ -716,37 +796,45 @@ function formatEffectiveOutput(
     command === "test"
       ? projectLinkedTestEvidence(outputResult, options.lean === true)
       : outputResult;
-  const intentOutputResult = attachReadOutputContracts(
-    command,
-    resolvedCommandOptions,
-    projectedOutputResult,
+  /**
+   * Render one value exactly as it is delivered. A budget refusal is always
+   * rendered natively: routing it through an expanding renderer would undo
+   * the bound it reports (GH-1678).
+   */
+  const renderDelivered = (value: unknown): { text: string; custom: boolean } => {
+    if (format === "toon") {
+      const markdownDefault = renderDefaultMarkdownResult(value);
+      if (markdownDefault !== null) return { text: markdownDefault, custom: false };
+    }
+    const rendererOverride =
+      nativeOutput || isReadResultOmittedForBudget(value)
+        ? { rendered: null }
+        : runActiveRendererOverride(format, value);
+    if (rendererOverride.rendered !== null) {
+      return {
+        text: rendererOverride.rendered.endsWith("\n")
+          ? rendererOverride.rendered
+          : `${rendererOverride.rendered}\n`,
+        custom: true,
+      };
+    }
+    return { text: renderNative(value), custom: false };
+  };
+  // Every receipt estimate, compaction step and omission decision measures the
+  // delivered bytes, including a scoped extension renderer's string.
+  const intentOutputResult = withDeliveredOutputRenderer(
+    format,
+    (value) => renderDelivered(value).text,
+    () => attachReadOutputContracts(command, resolvedCommandOptions, projectedOutputResult),
   );
-  if (isReadOutputBudgetExceeded(intentOutputResult)) {
+  if (isReadResultOmittedForBudget(intentOutputResult)) {
     process.exitCode ||= EXIT_CODE.USAGE;
   }
   let { structuredDeliveryPreserved } = service;
   const renderResolvedOutput = (value: unknown): string => {
-    if (format === "toon") {
-      const markdownDefault = renderDefaultMarkdownResult(value);
-      if (markdownDefault !== null) return markdownDefault;
-    }
-    const rendererOverride = nativeOutput
-      ? { rendered: null }
-      : runActiveRendererOverride(format, value);
-    if (rendererOverride.rendered !== null) {
-      structuredDeliveryPreserved = false;
-      return rendererOverride.rendered.endsWith("\n")
-        ? rendererOverride.rendered
-        : `${rendererOverride.rendered}\n`;
-    }
-    if (format === "json") {
-      return formatBuiltInOutput(
-        value,
-        "json",
-        options.lean === true,
-      );
-    }
-    return formatBuiltInOutput(value, "toon");
+    const delivered = renderDelivered(value);
+    if (delivered.custom) structuredDeliveryPreserved = false;
+    return delivered.text;
   };
   const accountedOutputResult =
     options.tokenAccounting === true

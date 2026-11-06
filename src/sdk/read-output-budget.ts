@@ -145,7 +145,45 @@ export function preserveReadOutputRowContract(
   }
 }
 
-/** Estimate UTF-8 token cost using the selected JSON/TOON renderer, or compact JSON for structured SDK calls without a renderer. */
+/** Resolve host, canonical, then legacy renderer selection for consistent per-call and session measurement. */
+export function readOutputMeasurementFormat(
+  options: Record<string, unknown>,
+): "json" | "toon" | undefined {
+  const format =
+    options.resolvedOutputFormat ??
+    options.outputFormat ??
+    options.output_format ??
+    options.format;
+  return format === "json" || format === "toon" ? format : undefined;
+}
+
+/** The renderer and encoding the host is delivering inside {@link withDeliveredOutputRenderer}. */
+let activeDeliveredOutput:
+  | { format: "json" | "toon"; render: (result: unknown) => string }
+  | undefined;
+
+/**
+ * Measure every read-output estimate in `format` inside `run` with the
+ * renderer the host will deliver (a scoped extension renderer, a service
+ * override's string, a markdown default or lean JSON), so receipts,
+ * compaction and omission describe the delivered bytes (GH-1678). The scope is
+ * synchronous: rendering never awaits, so another invocation cannot observe it.
+ */
+export function withDeliveredOutputRenderer<T>(
+  format: "json" | "toon",
+  render: (result: unknown) => string,
+  run: () => T,
+): T {
+  const previous = activeDeliveredOutput;
+  activeDeliveredOutput = { format, render };
+  try {
+    return run();
+  } finally {
+    activeDeliveredOutput = previous;
+  }
+}
+
+/** Estimate UTF-8 token cost using the delivered JSON/TOON renderer, or compact JSON for structured SDK calls without a renderer. */
 export function estimateReadOutputTokens(
   result: unknown,
   format?: "json" | "toon",
@@ -153,7 +191,10 @@ export function estimateReadOutputTokens(
   const rendered =
     format === undefined
       ? JSON.stringify(result)
-      : formatBuiltInOutput(result, format);
+      : activeDeliveredOutput !== undefined &&
+          activeDeliveredOutput.format === format
+        ? activeDeliveredOutput.render(result)
+        : formatBuiltInOutput(result, format);
   return Math.ceil(Buffer.byteLength(rendered, "utf8") / 4);
 }
 
