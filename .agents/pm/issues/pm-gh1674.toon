@@ -1,0 +1,65 @@
+id: pm-gh1674
+title: "GH-1674: pm list --fields/--compact and pm search print the verbose envelope that GH-1642 removed from the default projection, so --fields costs more than the default"
+description: "GitHub issue #1674 (reported 2026-11-06 against 2026.11.5). Reproduced 2026-11-06 on main 2fd348267 (2026.11.6) against this repository's tracker (3,211 items). pm list --status open --limit 3 (brief) emits 962 B; the same page with --fields id,title emits 1,296 B and with --compact 1,274 B, although both carry smaller rows. pm search \"release workflow\" --limit 3 emits 864 B, with --fields id,title 1,036 B. The --fields and --compact envelopes still carry truncated (repeating has_more), completeness unchecked with two zero unreadable counts, a projection block that echoes the flag just given, filters.limit and filters.fields that repeat applied_limit and the projection, the legacy sort/order echo plus effective_keys as a four-row nested array, a now timestamp, and the 4-line full_item_fields omission_receipt instead of details --full. pm search --fields echoes 13 default-valued filter keys (include_linked false, score_threshold 0, rerank_model, query_expansion_provider, ...) when only --limit was given, and the default search page keeps an items_encoding block whose json_columns and absent lists are empty. Root cause: projectPmBriefListEnvelope (src/sdk/output/list-envelope.ts) only accepts a projection whose mode is brief with the exact BRIEF_LIST_FIELDS, and projectPmBriefSearchEnvelope bails out whenever a projection key exists, so every other read projection falls through to the verbose shape. GH-1642 (pm-gh1642) compacted only the brief page and its AC kept other projections unchanged on purpose, so this is a new defect rather than a recurrence; pm-vhx6 earlier trimmed compact-mode filters through PR #147. Expected: --fields, --compact, --brief and the default list projection, and every pm search projection, share one lean TOON envelope: only explicitly set filters, no projection echo when it equals the flags, completeness only when checked as partial or something was unreadable, the sorting comparator on one line, and the one-line details hint; --full restores the verbose form, and JSON keeps its typed result. Duplicate check: searched fields compact envelope verbose list search projection, GH-1642, GH-1501; nearest owners pm-gh1642 and pm-6pycus are closed and covered the brief page only (create acknowledged the pm-gh1642 overlap with --allow-duplicate for that reason)."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"gh:1674",output,projection,token-efficiency
+created_at: "2026-11-06T04:34:36.628Z"
+updated_at: "2026-11-06T05:44:05.990Z"
+closed_at: "2026-11-06T05:44:05.251Z"
+completed_at: "2026-11-06T05:44:05.251Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "--full, --json, custom or partial omission receipts, unreadable completeness and non-default sorting are unchanged, and the projections stay pure SDK exports that leave their input unchanged; A spec measures the TOON bytes of --fields id,title against the default brief page on the same corpus and asserts the --fields envelope is not larger; Negative control: reverting either projection to brief-only recognition fails the spec; pm search with or without --fields prints only explicitly set filters (no default-valued filter keys) in TOON and JSON, and its TOON page carries no projection echo, no now, no truncated alias, no mode_source the caller already knows and details --full; pm list with --fields or --compact prints the lean TOON envelope of the default brief page: no truncated when it equals has_more, no projection echo while rows show the fields, no filters.limit equal to applied_limit and no filters.fields equal to the projection, no now, completeness reduced to its status line, sorting as one effective_keys line, and details --full instead of the default full_item_fields omission receipt"
+parent: pm-5t33or
+risk: medium
+confidence: high
+reporter: unbraind
+severity: medium
+repro_steps: "In any tracker with more than three open items, compare the byte size of pm list --status open --limit 3 with the same command plus --fields id,title or --compact, and pm search <query> --limit 3 with and without --fields id,title"
+resolution: "projectPmBriefListEnvelope and projectPmBriefSearchEnvelope (src/sdk/output/list-envelope.ts) now recognize any standard row projection (mode brief, compact or fields with a non-empty field list) instead of only the exact brief field list, and they require every row to carry exactly the projected keys, so a producer whose echo disagrees with its rows passes through unchanged. The projection echo is dropped because the row header lists the fields; an empty --fields page keeps it. A filters.fields echo equal to the projection is dropped, and on --fields search pages so are now and a mode_source other than settings. SDK runSearch with a fields projection echoes filters through the same set-only summary as the compact default (buildProjectedSearchFilters), so search --fields JSON no longer carries 13 default-valued keys; --full keeps the verbose echo. Kept by contract: completeness keeps its status line (pm-6pycus), and items_encoding keeps json_columns and absent because decoders detect an encoding block by them. On this tracker, list --fields id,title went from 1,296 B to 887 B, --compact from 1,274 B to 957 B, and search --fields id,title from 1,036 B to 444 B."
+expected_result: "pm list --fields/--compact and pm search --fields TOON pages carry no truncated alias, projection echo, now, limit/fields filter echo or four-line omission receipt, and are no larger in envelope than the default brief page; search --fields JSON echoes only set filters"
+actual_result: "Verified on this repository's tracker (byte table in the resolution) and by tests/integration/read-output/projection-envelopes.integration.spec.ts, which runs the built CLI and asserts envelope bytes are no larger than the brief page, plus 77 compact-agent-output specs. Negative control: reverting list-envelope.ts to brief-only recognition fails 4 specs. Full quality:static chain minus mutation passed; focused coverage of the changed modules is 100% on every changed line."
+affected_version: 2026.11.5
+component: list
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6pycus,related,"2026-11-06T04:34:36.628Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1642,discovered_from,"2026-11-06T04:34:36.628Z","harness:claude-code","cli:create:dep",detected
+  pm-vhx6,related,"2026-11-06T04:34:36.628Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-06T04:48:52.041Z","harness:claude-code","Scope decisions made during implementation (2026-11-06). (1) items_encoding keeps json_columns and absent even when both are empty. The table-rows spec's own TOON decoder recognizes an encoding block by checking that both are arrays, and external hosts that decode TOON tables can use the same signature, so omitting them would break table detection for about 37 B per table. pm-gh1642 kept the block for the same reason. (2) completeness unchecked stays visible as one status line, because pm-6pycus requires that unchecked or partial source evidence never disappears; only the two zero unreadable counts are dropped. (3) JSON list envelopes are unchanged: default and --fields JSON already differ only by the filters.fields echo. JSON search --fields now echoes only the filters the caller set, through the same compact summary the default search uses, and keeps projection, now and mode_source in the typed result. (4) A projection whose field list disagrees with the row keys is treated as inconsistent and passes through unchanged, so the compaction never hides a producer mismatch."
+learnings[1]{created_at,author,text}:
+  "2026-11-06T05:08:17.377Z","harness:claude-code","A presentation compaction keyed to one exact projection shape silently stops applying to every sibling projection. projectPmBriefListEnvelope accepted only mode brief with the exact BRIEF_LIST_FIELDS, so --fields, --compact and a brief page led by another sort field all fell through to the verbose envelope, and the narrower projection cost more than the default. Recognize the projection class (mode plus field list), then bind the echo to the rows: every row must carry exactly the projected keys, otherwise the projection is inconsistent and passes through. Measure each sibling projection against the default on the same corpus in a spec, so the next new projection mode cannot regress unnoticed."
+files[5]{path,scope}:
+  src/sdk/output/list-envelope.ts,project
+  src/sdk/query/search/response.ts,project
+  tests/integration/read-output/projection-envelopes.integration.spec.ts,project
+  tests/unit/cli/compact-agent-output.spec.ts,project
+  tests/unit/commands/query/search-command.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts tests/integration/read-output/projection-envelopes.integration.spec.ts,project,"harness:claude-code","2026-11-06T04:55:23.421Z",local_mutation,fix/read-projection-envelopes
+test_runs[1]:
+  - run_id: test-local-mw4jsxlb-lmqa4o
+    kind: test
+    status: passed
+    started_at: "2026-11-06T05:42:42.544Z"
+    finished_at: "2026-11-06T05:42:52.175Z"
+    recorded_at: "2026-11-06T05:42:52.175Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts tests/integration/read-output/projection-envelopes.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: "Fixed: --fields, --compact and every projected pm search page share the lean TOON envelope of the default brief page"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1674
+  gate_id: read-projection-envelope-parity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts tests/integration/read-output/projection-envelopes.integration.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/compact-agent-output.spec.ts tests/unit/commands/query/search-command.spec.ts tests/integration/read-output/projection-envelopes.integration.spec.ts,pnpm typecheck,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

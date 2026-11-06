@@ -478,13 +478,18 @@ function resolveContextReceipt(
   return receipt;
 }
 
-/** Recognize metadata and rendered aliases while excluding the stable linked envelope's unselected empty placeholders. */
+/** Recognize metadata, rendered aliases and nested facet members; an empty linked group never certifies withheld contents. */
 function isGetFieldGroupIncluded(
   name: string,
   owner: Record<string, unknown>,
   result: Record<string, unknown>,
 ): boolean {
   if (name === "dependency_provenance") return false;
+  const nested = splitNestedGetGroup(name);
+  if (nested !== undefined) {
+    const facet = result[nested.facet];
+    return isRecord(facet) && Object.hasOwn(facet, nested.member);
+  }
   return Object.hasOwn(owner, name) ||
     ((name === "reminders" || name === "events") &&
       isRecord(result.schedule) && Object.hasOwn(result.schedule, name)) ||
@@ -493,7 +498,17 @@ function isGetFieldGroupIncluded(
       result.linked[name].length > 0);
 }
 
-/** Count material withheld get groups, honoring schedule members, nonempty linked artifacts and current blocker disclosure without certifying unselected empty linked placeholders. */
+/** Split a `<facet>.<member>` receipt group that a nested get selector withheld (GH-1663). */
+function splitNestedGetGroup(
+  name: string,
+): { facet: string; member: string } | undefined {
+  const dot = name.indexOf(".");
+  return dot === -1
+    ? undefined
+    : { facet: name.slice(0, dot), member: name.slice(dot + 1) };
+}
+
+/** Count material withheld get groups, honoring schedule members, nonempty linked artifacts, nested facet siblings and current blocker disclosure. */
 function resolveGetReceipt(
   result: Record<string, unknown>,
 ): OutputOmissionReceipt | undefined {
@@ -526,6 +541,9 @@ function resolveGetReceipt(
     ...(materialGroups?.has("dependency_provenance") ? ["dependency_provenance"] : []),
     ...(materialGroups?.has("blockers") || Object.hasOwn(result, "blockers")
       ? ["blockers"] : []),
+    ...[...(materialGroups ?? [])].filter(
+      (name) => splitNestedGetGroup(name) !== undefined,
+    ),
   ]
     .filter((name) =>
       materialGroups === undefined ||

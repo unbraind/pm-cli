@@ -126,14 +126,24 @@ export interface GetResult extends Partial<PmReadOutputMetadata> {
    * Omitted for historical `--at` reads.
    */
   item_hash?: string;
-  /** Requested artifact groups; narrower selectors leave unrequested groups empty. */
+  /**
+   * Requested artifact groups. Depth reads and the whole `linked` selector carry
+   * all three groups; `linked.files`, `linked.tests` and `linked.docs` carry only
+   * the selected groups, so a present empty array always means the group is empty
+   * (GH-1663). Populated groups a nested selector left out are named by the
+   * omission receipt as `linked.<group>`.
+   */
   linked?: {
-    files: LinkedFile[];
-    tests: LinkedTest[];
-    docs: LinkedDoc[];
+    files?: LinkedFile[];
+    tests?: LinkedTest[];
+    docs?: LinkedDoc[];
   };
-  /** Ownership evidence for the current or selected historical snapshot. */
-  claim_state?: ClaimStateContext;
+  /**
+   * Ownership evidence for the current or selected historical snapshot. Depth
+   * reads and the whole `claim_state` selector carry every member; a
+   * `claim_state.<member>` selector carries only the selected members (GH-1663).
+   */
+  claim_state?: Partial<ClaimStateContext>;
   /** Current child rollup for full or explicit child reads and deep container reads; historical hierarchy is not indexed. */
   children?: ChildRollupContext;
   /** Normalized scheduling data for scheduled item types and metadata. */
@@ -688,32 +698,84 @@ function attachGetItemHash(result: GetResult, context: GetItemContext, projectio
   result.item_hash = hashDocument({ metadata: context.metadata, body: context.body });
 }
 
-/** Attach only requested artifact groups while preserving the linked envelope's stable three-group shape. */
+const LINKED_GROUPS = ["files", "tests", "docs"] as const;
+const CLAIM_STATE_MEMBERS = ["claimed", "assignee", "last_claim", "last_release"] as const;
+
+/**
+ * Attach requested artifact groups. The whole group carries all three arrays;
+ * nested selectors carry only their own groups, never an empty placeholder for a
+ * group that was not requested (GH-1663).
+ */
 function attachGetLinked(
   result: GetResult,
   context: GetItemContext,
   fields: string[] | null,
   includeLinked: boolean,
 ): void {
-  const includeLinkedFiles =
-    includeLinked || fieldsInclude(fields, "linked.files");
-  const includeLinkedTests =
-    includeLinked || fieldsInclude(fields, "linked.tests");
-  const includeLinkedDocs =
-    includeLinked || fieldsInclude(fields, "linked.docs");
-  if (
-    !includeLinked &&
-    !includeLinkedFiles &&
-    !includeLinkedTests &&
-    !includeLinkedDocs
-  ) {
-    return;
-  }
-  result.linked = {
-    files: includeLinkedFiles ? (context.metadata.files ?? []) : [],
-    tests: includeLinkedTests ? (context.metadata.tests ?? []) : [],
-    docs: includeLinkedDocs ? (context.metadata.docs ?? []) : [],
-  };
+  const selected = LINKED_GROUPS.filter(
+    (group) => includeLinked || fieldsInclude(fields, `linked.${group}`),
+  );
+  if (selected.length === 0) return;
+  result.linked = Object.fromEntries(
+    selected.map((group) => [group, context.metadata[group] ?? []]),
+  ) as NonNullable<GetResult["linked"]>;
+}
+
+/** Keep only the selected claim members unless the whole facet was requested (GH-1663). */
+function projectGetClaimState(
+  claimState: ClaimStateContext,
+  fields: string[] | null,
+): Partial<ClaimStateContext> {
+  if (fields === null || fieldsInclude(fields, "claim_state")) return claimState;
+  return Object.fromEntries(
+    CLAIM_STATE_MEMBERS.filter((member) =>
+      fields.some((field) => normalizeGetField(field) === `claim_state.${member}`),
+    ).map((member) => [member, claimState[member]]),
+  );
+}
+
+/**
+ * Name the populated members a nested selector left out, as `<facet>.<member>`,
+ * so the omission receipt can disclose them with a narrow restoration. Selecting
+ * the whole facet, or none of its members, withholds nothing inside it.
+ */
+function nestedFieldSiblingGroups(
+  fields: readonly string[],
+  facet: string,
+  members: object,
+): string[] {
+  const normalized = fields.map(normalizeGetField);
+  if (normalized.includes(facet)) return [];
+  const prefix = `${facet}.`;
+  if (!normalized.some((field) => field.startsWith(prefix))) return [];
+  return Object.entries(members).flatMap(([member, value]) =>
+    !normalized.includes(`${prefix}${member}`) && isMaterialFacetMember(value)
+      ? [`${prefix}${member}`]
+      : [],
+  );
+}
+
+/** Treat null, false and empty arrays as carrying no withheld evidence. */
+function isMaterialFacetMember(value: unknown): boolean {
+  return value !== undefined && value !== null && value !== false &&
+    !(Array.isArray(value) && value.length === 0);
+}
+
+/** Material siblings withheld by nested linked, claim_state and schedule selectors. */
+function getFieldProjectionMaterialGroups(
+  context: GetItemContext,
+  fields: readonly string[],
+  claimState: ClaimStateContext | undefined,
+): string[] {
+  return [
+    ...nestedFieldSiblingGroups(fields, "linked", {
+      files: context.metadata.files,
+      tests: context.metadata.tests,
+      docs: context.metadata.docs,
+    }),
+    ...(claimState ? nestedFieldSiblingGroups(fields, "claim_state", claimState) : []),
+    ...nestedFieldSiblingGroups(fields, "schedule", buildItemSchedule(context.metadata) ?? {}),
+  ];
 }
 
 /** Enumerate hierarchy metadata only when the caller explicitly requested a child rollup. */
@@ -863,7 +925,7 @@ export async function runGet(
   attachGetItemHash(result, context, projection);
   attachGetLinked(result, context, projection.fields, includeLinked);
   if (claimState) {
-    result.claim_state = claimState;
+    result.claim_state = projectGetClaimState(claimState, projection.fields);
   }
   attachGetSchedule(result, context, projection.fields, includeSchedule);
   await attachGetBlockers(result, context, projection);
@@ -902,9 +964,13 @@ export async function runGet(
   }
   registerOutputMaterialFieldGroups(
     result,
-    // Explicit selectors define the requested answer. Default/depth reads still
-    // disclose material groups; budget truncation has its own shared receipt.
-    projection.fieldProjection ? [] : itemMaterialFieldGroups(context.metadata, context.body, children, context.historical === undefined, projection),
+    // Explicit selectors define the requested answer, except that a nested
+    // selector discloses the populated siblings it left out (GH-1663).
+    // Default/depth reads still disclose material groups; budget truncation has
+    // its own shared receipt.
+    projection.fieldProjection
+      ? getFieldProjectionMaterialGroups(context, projection.fields as string[], claimState)
+      : itemMaterialFieldGroups(context.metadata, context.body, children, context.historical === undefined, projection),
   );
   return result;
 }

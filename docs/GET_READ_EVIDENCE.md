@@ -69,13 +69,26 @@ because a present-day target status cannot certify a past prerequisite state.
 Omission receipts account for what the result actually renders. A reminder or
 event supplied through `schedule.reminders` or `schedule.events` is included even
 when its metadata alias is absent. Nonempty files, tests and docs rendered under
-`linked` are included too. Narrow selectors continue to disclose unselected
-material members; the stable linked envelope's empty placeholders do not certify
-that unrequested artifact contents were returned.
+`linked` are included too.
+
+Nested selectors return only what they name
+([pm-gh1663](../.agents/pm/issues/pm-gh1663.toon)). `--fields linked.files`
+returns `linked.files` alone. It never pads `linked.tests` or `linked.docs`
+with empty arrays, so in JSON, SDK and MCP results a present empty array always
+means the group is empty. `--fields claim_state.claimed` returns only that
+member, the same way `schedule.<member>` selectors already work. The whole
+`linked` or `claim_state` selector, or a depth read, returns every member.
+When a nested selector leaves out a populated sibling, the omission receipt
+names it as `<facet>.<member>` with a narrow restoration, for example
+`linked.tests` restored with `--fields linked.tests`. A sibling that is empty,
+null or `false` carries no withheld evidence and is not listed. TOON keeps its
+sparse policy and drops empty groups, so there an absent group that the
+receipt does not list is empty.
 
 ```bash
 pm get <id> --fields schedule.reminders
 pm get <id> --fields linked.tests
+pm get <id> --fields claim_state.claimed
 ```
 
 The regression suite creates actual disposable tracker data and checks open,

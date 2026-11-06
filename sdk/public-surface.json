@@ -3117,6 +3117,16 @@
       ],
       "package_version": "2026.11.4",
       "reason": "pm-gh1660: WriteSettingsOptions gains optional skipIfStored, a compare-and-set consulted under the settings lock, so the init wizard keeps a telemetry choice another process recorded while its prompt was open; existing calls compile unchanged"
+    },
+    {
+      "changes": [
+        "signature ./sdk:GetResult",
+        "signature ./sdk/core:GetResult",
+        "signature ./sdk/query:GetResult",
+        "signature ./sdk/runtime:GetResult"
+      ],
+      "package_version": "2026.11.6",
+      "reason": "GH-1663 (pm-gh1663): GetResult.linked members files/tests/docs become optional and GetResult.claim_state becomes Partial<ClaimStateContext>. Depth reads and the whole linked or claim_state selector still return every member; a nested selector such as linked.files or claim_state.claimed now returns only the members it names instead of padding unrequested linked groups with empty arrays, and the omission receipt names populated siblings it left out as <facet>.<member>. Migration: read linked.<group> with optional chaining or a ?? [] default, or request the whole linked selector when all three groups are needed."
     }
   ],
   "entrypoints": {
@@ -9523,7 +9533,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files?: LinkedFile[]; tests?: LinkedTest[]; docs?: LinkedDoc[]; }; claim_state?: Partial<ClaimStateContext>; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "advanced_export",
@@ -27409,7 +27419,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files?: LinkedFile[]; tests?: LinkedTest[]; docs?: LinkedDoc[]; }; claim_state?: Partial<ClaimStateContext>; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "supported",
@@ -32923,7 +32933,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files?: LinkedFile[]; tests?: LinkedTest[]; docs?: LinkedDoc[]; }; claim_state?: Partial<ClaimStateContext>; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "supported",
@@ -34813,7 +34823,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "GetResult",
-          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files: LinkedFile[]; tests: LinkedTest[]; docs: LinkedDoc[]; }; claim_state?: ClaimStateContext; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
+          "signature": "export interface GetResult extends Partial<PmReadOutputMetadata> { item: GetItemProjection; item_hash?: string; linked?: { files?: LinkedFile[]; tests?: LinkedTest[]; docs?: LinkedDoc[]; }; claim_state?: Partial<ClaimStateContext>; children?: ChildRollupContext; schedule?: Partial<ItemScheduleContext>; blockers?: { scope: \"declared\"; open: Omit<ResolvedBlocker, \"resolved\">[]; closed_count: number; }; reconstructed?: true; as_of_version?: number | null; as_of_timestamp?: string; tree?: { root_id: string; root_title: string | null; depth_limit: number | null; count: number; items: Record<string, unknown>[]; }; }"
         },
         {
           "classification": "advanced_export",

@@ -320,7 +320,7 @@ describe("runGet and runAppend", () => {
       expect(withBodyAndFiles.item).toEqual({ id, body: "fields body" });
       expect(withBodyAndFiles.item.body).toBe("fields body");
       expect(withBodyAndFiles.linked.files).toHaveLength(1);
-      expect(withBodyAndFiles.linked.tests).toEqual([]);
+      expect(withBodyAndFiles.linked).not.toHaveProperty("tests");
 
       const withOnlyTests = await runGet(
         id,
@@ -332,9 +332,7 @@ describe("runGet and runAppend", () => {
       if (withOnlyTests.linked === undefined) {
         throw new TypeError("linked projection was not returned");
       }
-      expect(withOnlyTests.linked.files).toEqual([]);
-      expect(withOnlyTests.linked.tests).toHaveLength(1);
-      expect(withOnlyTests.linked.docs).toEqual([]);
+      expect(withOnlyTests.linked).toEqual({ tests: [expect.any(Object)] });
 
       const withNotesCount = await runGet(
         id,
@@ -399,7 +397,7 @@ describe("runGet and runAppend", () => {
       if (withDottedClaimState.claim_state === undefined) {
         throw new TypeError("claim_state projection was not returned");
       }
-      expect(withDottedClaimState.claim_state.claimed).toBe(false);
+      expect(withDottedClaimState.claim_state).toEqual({ claimed: false });
 
       const withChildren = await runGet(
         id,

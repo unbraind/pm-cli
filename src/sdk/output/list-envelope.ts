@@ -1,28 +1,61 @@
 /**
  * @module sdk/output/list-envelope
  *
- * Projects standard brief-list receipts for agent presentation while retaining
- * source uncertainty, pagination and producer-owned diagnostics.
+ * Projects standard list and search read receipts for agent presentation while
+ * retaining source uncertainty, pagination and producer-owned diagnostics. The
+ * brief default, `--compact` and `--fields` row projections share one lean
+ * envelope (GH-1642, GH-1674); `--full` and JSON keep the typed result.
  */
-import { BRIEF_LIST_FIELDS } from "../query/projection-contracts.js";
 
 /** Recognize metadata records without treating null or arrays as objects. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** Recognize the default brief projection without dropping producer extensions. */
-function hasStandardBriefProjection(value: unknown): boolean {
+/** Row projection modes whose echo the rendered rows already disclose. */
+const ROW_PROJECTION_MODES: ReadonlySet<unknown> = new Set(["brief", "compact", "fields"]);
+
+/** A standard row projection: a known mode and its field list, with no producer extensions. */
+interface RowProjection {
+  mode: "brief" | "compact" | "fields";
+  fields: string[];
+}
+
+/** Recognize a standard row projection without dropping producer extensions. */
+function isRowProjection(value: unknown): value is RowProjection {
   if (!isRecord(value)) return false;
   const fields = value.fields;
   return (
-    value.mode === "brief" &&
+    ROW_PROJECTION_MODES.has(value.mode) &&
     Object.keys(value).length === 2 &&
     Array.isArray(fields) &&
-    (fields.length === BRIEF_LIST_FIELDS.length ||
-      (fields.length === BRIEF_LIST_FIELDS.length + 1 && fields.at(-1) === "priority")) &&
-    BRIEF_LIST_FIELDS.every((field, index) => fields[index] === field)
+    fields.length > 0 &&
+    fields.every((field) => typeof field === "string" && field.length > 0)
   );
+}
+
+/**
+ * Require every row to carry exactly the projected fields, so dropping the
+ * projection echo never hides a producer mismatch between echo and rows.
+ */
+function rowsMatchProjection(items: readonly unknown[], projection: RowProjection): boolean {
+  return items.every(
+    (row) =>
+      isRecord(row) &&
+      Object.keys(row).length === projection.fields.length &&
+      projection.fields.every((field) => Object.hasOwn(row, field)),
+  );
+}
+
+/**
+ * Keep a custom field list only on an empty page, where no row header shows it.
+ * Brief and compact field lists are documented defaults, so they never need it.
+ */
+function retainedProjection(
+  projection: RowProjection,
+  rowCount: number,
+): { projection?: RowProjection } {
+  return projection.mode === "fields" && rowCount === 0 ? { projection } : {};
 }
 
 /** Require truthful standard pagination before removing redundant aliases. */
@@ -78,17 +111,19 @@ function hasDefaultOmissions(
 }
 
 /**
- * Compact a standard brief-list envelope without mutating its typed SDK result.
- * Full, custom, partial and inconsistent receipts pass through unchanged.
- * Unchecked pages retain their explicit source status, including empty pages.
- * JSON hosts should retain the original result when full receipts are required.
+ * Compact a standard brief, compact or fields list envelope without mutating
+ * its typed SDK result. Full, custom, partial and inconsistent receipts pass
+ * through unchanged. Unchecked pages retain their explicit source status,
+ * including empty pages. JSON hosts should retain the original result when full
+ * receipts are required.
  */
 export function projectPmBriefListEnvelope(value: unknown): unknown {
   if (
     !isRecord(value) ||
     !Array.isArray(value.items) ||
     Object.hasOwn(value, "details") ||
-    !hasStandardBriefProjection(value.projection) ||
+    !isRowProjection(value.projection) ||
+    !rowsMatchProjection(value.items, value.projection) ||
     !hasCompactibleSource(value.completeness) ||
     !hasStandardPagination(value, value.items.length) ||
     !hasDefaultOmissions(value.omission_receipt)
@@ -100,7 +135,7 @@ export function projectPmBriefListEnvelope(value: unknown): unknown {
     truncated: _truncated,
     next_cursor: nextCursor,
     completeness,
-    projection: _projection,
+    projection,
     now: _now,
     omission_receipt: _omissions,
     sorting,
@@ -121,7 +156,8 @@ export function projectPmBriefListEnvelope(value: unknown): unknown {
     ...(!completed ? { total, has_more: hasMore, completeness: source } : {}),
     ...(hasMore ? { next_cursor: nextCursor } : {}),
     ...projectDefaultSorting(sorting),
-    ...compactEchoedFilters(filters, rest.applied_limit),
+    ...compactEchoedFilters(filters, rest.applied_limit, projection),
+    ...retainedProjection(projection, value.items.length),
     details: "--full",
   };
 }
@@ -164,16 +200,30 @@ function projectDefaultSorting(value: unknown): { sorting?: unknown } {
   };
 }
 
-/** Drop a filters.limit echo that applied_limit already states, and the filters block once nothing else remains. */
+/** Whether a `filters.fields` flag echo names exactly the projected field list. */
+function echoesProjectionFields(value: unknown, projection: RowProjection | undefined): boolean {
+  if (typeof value !== "string" || projection === undefined) return false;
+  const requested = value.split(",").map((field) => field.trim()).filter(Boolean);
+  return requested.length === projection.fields.length &&
+    requested.every((field, index) => field === projection.fields[index]);
+}
+
+/**
+ * Drop filter echoes the envelope already states: a `limit` equal to
+ * `applied_limit`, a `fields` flag equal to the projection, and empty
+ * `runtime_filters`. The filters block disappears once nothing else remains.
+ */
 function compactEchoedFilters(
   filters: unknown,
   appliedLimit: unknown,
+  projection?: RowProjection,
 ): { filters?: unknown } {
   if (!isRecord(filters)) return filters === undefined ? {} : { filters };
   const remaining = Object.fromEntries(
     Object.entries(filters).filter(
       ([key, value]) =>
         !(key === "limit" && String(value) === String(appliedLimit)) &&
+        !(key === "fields" && echoesProjectionFields(value, projection)) &&
         !(key === "runtime_filters" && isRecord(value) && Object.keys(value).length === 0),
     ),
   );
@@ -195,11 +245,33 @@ function hasTerminalSearchPagination(
 }
 
 /**
+ * A compact search page carries no projection and restores it with the
+ * `projection_metadata` group; a `--fields` page carries its row projection and
+ * restores full rows with `full_item_fields`. Anything else is not standard.
+ */
+function standardSearchProjection(
+  value: Record<string, unknown>,
+): { projection?: RowProjection } | undefined {
+  if (!Object.hasOwn(value, "projection")) {
+    return hasDefaultOmissions(value.omission_receipt, "projection_metadata") ? {} : undefined;
+  }
+  const projection = value.projection;
+  return isRowProjection(projection) && projection.mode === "fields" &&
+    rowsMatchProjection(value.items as unknown[], projection) &&
+    typeof value.now === "string" &&
+    hasDefaultOmissions(value.omission_receipt)
+    ? { projection }
+    : undefined;
+}
+
+/**
  * Compact a standard search page without mutating its typed SDK result:
  * drops `truncated` when it repeats `has_more`, a `filters.limit` echo of
- * `applied_limit`, and the single default `projection_metadata` omission
- * receipt in favour of `details: "--full"`. Custom, partial and inconsistent
- * receipts pass through unchanged; JSON hosts should keep the original result.
+ * `applied_limit`, and the single default omission receipt in favour of
+ * `details: "--full"`. A `--fields` page also drops its projection and `fields`
+ * echo, `now`, and a `mode_source` the caller already knows (GH-1674). Custom,
+ * partial and inconsistent receipts pass through unchanged; JSON hosts should
+ * keep the original result.
  */
 export function projectPmBriefSearchEnvelope(value: unknown): unknown {
   if (
@@ -207,23 +279,33 @@ export function projectPmBriefSearchEnvelope(value: unknown): unknown {
     typeof value.query !== "string" ||
     !Array.isArray(value.items) ||
     Object.hasOwn(value, "details") ||
-    Object.hasOwn(value, "projection") ||
     !(
       hasStandardPagination(value, value.items.length) ||
       hasTerminalSearchPagination(value, value.items.length)
-    ) ||
-    !hasDefaultOmissions(value.omission_receipt, "projection_metadata")
+    )
   )
     return value;
+  const standard = standardSearchProjection(value);
+  if (standard === undefined) return value;
   const {
     truncated: _truncated,
     omission_receipt: _omissions,
     filters,
+    projection: _projection,
+    now: _now,
+    mode_source: modeSource,
     ...rest
   } = value;
   return {
     ...rest,
-    ...compactEchoedFilters(filters, rest.applied_limit),
+    ...(modeSource === "settings" ||
+    (standard.projection === undefined && modeSource !== undefined)
+      ? { mode_source: modeSource }
+      : {}),
+    ...compactEchoedFilters(filters, rest.applied_limit, standard.projection),
+    ...(standard.projection
+      ? retainedProjection(standard.projection, value.items.length)
+      : {}),
     details: "--full",
   };
 }

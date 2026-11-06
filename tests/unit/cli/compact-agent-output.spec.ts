@@ -491,3 +491,123 @@ describe("GH-1642 brief search and list envelopes", () => {
     expect(JSON.parse(formatBuiltInOutput(value, "json"))).toEqual(value);
   });
 });
+
+const fieldsList = {
+  ...completeList,
+  items: completeList.items.map(({ id, title }) => ({ id, title })),
+  total: 12,
+  applied_limit: 3,
+  has_more: true,
+  truncated: true,
+  next_cursor: "continue",
+  completeness: { status: "unchecked", unreadable_item_count: 0, unreadable_directory_count: 0 },
+  filters: { status: "open", limit: "3", fields: "id,title", runtime_filters: {} },
+  projection: { mode: "fields", fields: ["id", "title"] },
+  sorting: { sort: "default", order: "asc", effective_keys: [["priority", "asc"], ["id", "asc"]] },
+};
+
+const fieldsSearchPage = {
+  ...searchPage,
+  mode_source: "auto",
+  items: searchPage.items.map(({ id, title }) => ({ id, title })),
+  filters: { limit: "2" },
+  projection: { mode: "fields", fields: ["id", "title"] },
+  now: "2026-11-06T00:00:00Z",
+  omission_receipt: completeList.omission_receipt,
+};
+
+describe("GH-1674 fields and compact read envelopes", () => {
+  it("gives a --fields list page the lean brief envelope without mutating the SDK result", () => {
+    const before = structuredClone(fieldsList);
+    expect(projectPmBriefListEnvelope(fieldsList)).toEqual({
+      items: fieldsList.items,
+      count: 3,
+      applied_limit: 3,
+      total: 12,
+      has_more: true,
+      completeness: { status: "unchecked" },
+      next_cursor: "continue",
+      sorting: { effective_keys: "priority asc, id asc" },
+      filters: { status: "open" },
+      details: "--full",
+    });
+    expect(fieldsList).toEqual(before);
+    expect(JSON.parse(formatBuiltInOutput(fieldsList, "json"))).toEqual(fieldsList);
+  });
+
+  it("gives a --compact list page the same envelope and never makes a narrower projection cost more than brief", () => {
+    const compactItems = completeList.items.map((item) => ({ ...item, priority: 1, parent: null, updated_at: "2026-11-06T00:00:00Z" }));
+    const compact = { ...fieldsList, items: compactItems, filters: { status: "open", limit: "3" }, projection: { mode: "compact", fields: ["id", "status", "type", "title", "priority", "parent", "updated_at"] } };
+    const projected = projectPmBriefListEnvelope(compact) as Record<string, unknown>;
+    expect(projected).not.toHaveProperty("projection");
+    expect(projected).not.toHaveProperty("truncated");
+    expect(projected).not.toHaveProperty("now");
+    expect(projected.details).toBe("--full");
+    const brief = { ...fieldsList, items: completeList.items, filters: { status: "open", limit: "3" }, projection: completeList.projection };
+    const envelopeBytes = (value: Record<string, unknown>, rows: unknown[]): number =>
+      Buffer.byteLength(formatBuiltInOutput(value, "toon")) - Buffer.byteLength(formatBuiltInOutput({ items: rows }, "toon"));
+    expect(envelopeBytes(fieldsList, fieldsList.items)).toBeLessThanOrEqual(envelopeBytes(brief, brief.items));
+    expect(envelopeBytes(compact, compactItems)).toBeLessThanOrEqual(envelopeBytes(brief, brief.items));
+  });
+
+  it("keeps a custom field list on an empty page and keeps filters.fields when it differs from the projection", () => {
+    const empty = { ...fieldsList, items: [], count: 0, total: 0, has_more: false, truncated: false, next_cursor: null };
+    expect(projectPmBriefListEnvelope(empty)).toMatchObject({ projection: { mode: "fields", fields: ["id", "title"] } });
+    expect(projectPmBriefListEnvelope({ ...empty, projection: completeList.projection })).not.toHaveProperty("projection");
+    for (const fields of ["title,id", "id", "id,title,status", 7]) {
+      expect(projectPmBriefListEnvelope({ ...fieldsList, filters: { fields } })).toMatchObject({ filters: { fields } });
+    }
+    expect(projectPmBriefListEnvelope({ ...fieldsList, filters: { fields: " id , title ," } })).not.toHaveProperty("filters");
+  });
+
+  it.each([
+    { ...fieldsList, projection: { mode: "full", fields: ["id", "title"] } },
+    { ...fieldsList, projection: { mode: "fields", fields: [] } },
+    { ...fieldsList, projection: { mode: "fields", fields: ["id", ""] } },
+    { ...fieldsList, projection: { mode: "fields", fields: ["id", 7] } },
+    { ...fieldsList, projection: { mode: "fields", fields: ["id"] } },
+    { ...fieldsList, projection: { mode: "fields", fields: ["id", "status"] } },
+    { ...fieldsList, items: [null, ...fieldsList.items.slice(1)] },
+    { ...fieldsList, items: [{ ...fieldsList.items[0], extra: true }, ...fieldsList.items.slice(1)] },
+  ])("leaves a list page whose projection disagrees with its rows intact: %j", (value) => {
+    expect(projectPmBriefListEnvelope(value)).toBe(value);
+  });
+
+  it("gives a --fields search page the lean envelope and keeps only a settings-pinned mode source", () => {
+    const before = structuredClone(fieldsSearchPage);
+    expect(projectPmBriefSearchEnvelope(fieldsSearchPage)).toEqual({
+      query: "release workflow",
+      mode: "hybrid",
+      items: fieldsSearchPage.items,
+      count: 2,
+      total: 9,
+      applied_limit: 2,
+      has_more: true,
+      next_cursor: "next",
+      details: "--full",
+    });
+    expect(fieldsSearchPage).toEqual(before);
+    expect(projectPmBriefSearchEnvelope({ ...fieldsSearchPage, mode_source: "settings" })).toMatchObject({ mode_source: "settings" });
+    expect(projectPmBriefSearchEnvelope({ ...fieldsSearchPage, mode_source: "explicit" })).not.toHaveProperty("mode_source");
+    expect(projectPmBriefSearchEnvelope({ ...searchPage, mode_source: "settings" })).toMatchObject({ mode_source: "settings" });
+    expect(projectPmBriefSearchEnvelope({ ...fieldsSearchPage, filters: { fields: "id,title", type: "Task" } })).toMatchObject({ filters: { type: "Task" } });
+    const empty = { ...fieldsSearchPage, items: [], count: 0, total: 0, has_more: false, truncated: false, next_cursor: undefined };
+    expect(projectPmBriefSearchEnvelope(empty)).toMatchObject({ projection: { mode: "fields", fields: ["id", "title"] }, details: "--full" });
+    expect(projectPmBriefSearchEnvelope(empty)).not.toHaveProperty("now");
+    const terminal = { ...fieldsSearchPage, items: [], count: 0, total: undefined, has_more: undefined, truncated: undefined, next_cursor: undefined };
+    const { has_more: _more, truncated: _truncated, next_cursor: _cursor, total: _total, ...terminalPage } = terminal;
+    expect(projectPmBriefSearchEnvelope(terminalPage)).toMatchObject({ projection: { mode: "fields", fields: ["id", "title"] }, details: "--full" });
+    const text = formatBuiltInOutput(fieldsSearchPage, "toon");
+    for (const key of ["projection:", "now:", "mode_source:", "truncated:", "omission_receipt:", "filters:"]) expect(text).not.toContain(key);
+    expect(JSON.parse(formatBuiltInOutput(fieldsSearchPage, "json"))).toEqual(fieldsSearchPage);
+  });
+
+  it.each([
+    { ...fieldsSearchPage, projection: { mode: "compact", fields: ["id", "title"] } },
+    { ...fieldsSearchPage, projection: { mode: "fields", fields: ["id"] } },
+    { ...fieldsSearchPage, now: undefined },
+    { ...fieldsSearchPage, omission_receipt: searchPage.omission_receipt },
+  ])("leaves a non-standard --fields search page intact: %j", (value) => {
+    expect(projectPmBriefSearchEnvelope(value)).toBe(value);
+  });
+});

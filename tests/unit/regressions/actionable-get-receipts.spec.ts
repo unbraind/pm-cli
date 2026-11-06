@@ -9,6 +9,7 @@ import { encode } from "@toon-format/toon";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { syncBuiltinESMExports } from "node:module";
+import { runClaim } from "../../../src/sdk/lifecycle/claim.js";
 import { runCreate } from "../../../src/sdk/lifecycle/create.js";
 import { runGet } from "../../../src/sdk/query/get.js";
 import { resolveOutputOmissionReceipt } from "../../../src/sdk/output-projection.js";
@@ -218,16 +219,66 @@ describe("actionable get receipts", () => {
     });
   });
 
-  it.each([undefined, "linked.files", "linked.tests", "linked.docs"])("distinguishes rendered linked artifacts from unselected placeholders for %s", async (fields) => {
+  it.each([undefined, "linked", "linked.files", "linked.tests", "linked.docs"])("returns only the selected linked groups and names populated siblings for %s (GH-1663)", async (fields) => {
     await withTempPmPath(async ({ pmPath }) => {
       const global = { path: pmPath };
       const created = await runCreate({ title: "Linked read evidence", type: "Task", file: ["path=source.ts"], test: ["command=node -v"], doc: ["path=README.md"] }, global);
       const result = await runGet(created.item.id, global, { fields });
-      const omitted = resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name);
+      const receipt = resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!;
+      const omitted = receipt.omitted_field_groups.map((group) => group.name);
       for (const group of ["files", "tests", "docs"] as const) {
         expect(omitted.includes(group)).toBe(false);
-        expect(result.linked?.[group]).toEqual(fields === undefined || fields === `linked.${group}` ? created.item[group] : []);
+        const selected = fields === undefined || fields === "linked" || fields === `linked.${group}`;
+        if (selected) expect(result.linked?.[group]).toEqual(created.item[group]);
+        else expect(result.linked).not.toHaveProperty(group);
+        expect(omitted.includes(`linked.${group}`)).toBe(!selected);
       }
+      if (fields?.startsWith("linked.")) {
+        expect(receipt.has_omissions).toBe(true);
+        expect(receipt.omitted_field_groups).toContainEqual({ name: fields === "linked.files" ? "linked.tests" : "linked.files", restore_with: `--fields ${fields === "linked.files" ? "linked.tests" : "linked.files"}` });
+      }
+    });
+  });
+
+  it("keeps a requested empty linked group as [] and omits empty siblings from the receipt (GH-1663)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      const created = await runCreate({ title: "Partly linked", type: "Task", file: ["path=source.ts"] }, global);
+      const result = await runGet(created.item.id, global, { fields: "id,linked.tests,linked.docs" });
+      expect(result.linked).toEqual({ tests: [], docs: [] });
+      const receipt = resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!;
+      expect(receipt.omitted_field_groups).toEqual([{ name: "linked.files", restore_with: "--fields linked.files" }]);
+      const emptySibling = await runGet(created.item.id, global, { fields: "id,linked.files" });
+      expect(emptySibling.linked).toEqual({ files: created.item.files });
+      expect(resolveOutputOmissionReceipt("get", emptySibling as unknown as Record<string, unknown>)!.has_omissions).toBe(false);
+    });
+  });
+
+  it("selects claim_state and schedule members and names their populated siblings (GH-1663)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const global = { path: pmPath };
+      const created = await runCreate({
+        title: "Claimed and scheduled", type: "Task", deadline: "2026-10-05T12:00:00.000Z",
+        reminder: ["at=2026-10-05T09:00:00.000Z,text=Check outcome"],
+      }, global);
+      await runClaim(created.item.id, false, global, { author: "owner-a" });
+      const omittedFor = async (fields: string) => {
+        const result = await runGet(created.item.id, global, { fields });
+        return { result, omitted: resolveOutputOmissionReceipt("get", result as unknown as Record<string, unknown>)!.omitted_field_groups.map((group) => group.name) };
+      };
+      const claimed = await omittedFor("id,claim_state.claimed");
+      expect(claimed.result.claim_state).toEqual({ claimed: true });
+      expect(claimed.omitted).toEqual(["claim_state.assignee", "claim_state.last_claim"]);
+      const assignee = await omittedFor("id,claim_state.assignee");
+      expect(assignee.result.claim_state).toEqual({ assignee: "owner-a" });
+      expect(assignee.omitted).toEqual(["claim_state.claimed", "claim_state.last_claim"]);
+      const whole = await omittedFor("id,claim_state");
+      expect(Object.keys(whole.result.claim_state ?? {})).toEqual(["claimed", "assignee", "last_claim", "last_release"]);
+      expect(whole.omitted).toEqual([]);
+      const deadline = await omittedFor("id,schedule.deadline");
+      expect(deadline.result.schedule).toEqual({ deadline: "2026-10-05T12:00:00.000Z" });
+      expect(deadline.omitted).toEqual(["schedule.reminders"]);
+      expect((await omittedFor("id,title")).omitted).toEqual([]);
     });
   });
 });

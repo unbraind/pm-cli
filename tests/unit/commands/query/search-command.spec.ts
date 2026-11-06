@@ -18,6 +18,11 @@ import { createSearchCursorFingerprint } from "../../../../src/sdk/query/search-
 import { runSearch } from "../../../../src/cli/commands/query/search.js";
 import { readJsonFixture } from "../../../helpers/fixtures.js";
 
+/** Name the filter keys a search result echoed. */
+function searchFilterKeys(result: { filters: Record<string, unknown> }): string[] {
+  return Object.keys(result.filters);
+}
+
 const {
   pathExistsMock,
   readSettingsMock,
@@ -3408,6 +3413,14 @@ describe("runSearch", () => {
       mode: "fields",
       fields: ["id", "score", "item.title", "item.status"],
     });
+    // GH-1674: a fields projection echoes only the filters the caller set.
+    expect(fieldResult.filters).toEqual({});
+    const filteredFieldResult = await runSearch(
+      "token",
+      { mode: "keyword", fields: "id", type: "Task", limit: "5" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(filteredFieldResult.filters).toEqual({ type: "Task", limit: "5" });
     const projected = fieldResult.items[0] as Record<string, unknown>;
     expect(projected.id).toBe("pm-projection");
     expect(typeof projected.score).toBe("number");
@@ -3970,6 +3983,12 @@ describe("classifyImplicitSemanticFallbackReason", () => {
         mode: "fields",
         fields: ["id", "score"],
       });
+      expect(fieldsCounted.filters).toEqual({});
+      expect(searchFilterKeys(await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, full: true },
+        { path: "/tmp/pm-search" },
+      ))).toContain("rerank_model");
 
       const zeroLimitedCounted = await runSearch(
         "alpha",
