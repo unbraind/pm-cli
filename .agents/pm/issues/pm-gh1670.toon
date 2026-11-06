@@ -2,11 +2,13 @@ id: pm-gh1670
 title: "GH-1670: pm health --full --summary silently drops --summary and emits the full projection (15.7 KB vs 636 B) with no receipt"
 description: "GitHub issue #1670 (reported 2026-11-05 against 2026.11.4 from a fleet health gate run on pm-graph). Reproduced 2026-11-05 on main (e268c5b92, the 2026.11.5 cut) in a disposable one-item tracker: pm health --summary emits 636 B, while pm health --full --summary, pm health --summary --full and pm health --full each emit 15,704 B, all exit 0. Flag order does not matter and nothing in the output says the summary projection was dropped. Cause: runHealthAction in src/cli/register-operations.ts passes both summary and full to runHealth, and the full projection wins. The --full help text says it runs all checks including slow integrity, drift and vectorization, while the --strict-exit help says --full gives complete details, so one flag carries two meanings: check scope and output projection. Expected: an explicit --summary with --full runs the full check set and renders the compact summary of it (run everything, read little), which is what agents and CI gates ask for; or the combination is refused with a remedy. Never a silent drop. --strict-exit, which only implies summary, keeps its documented behaviour that --full restores complete details. Why it matters for agents: a strict gate that asks for the summary pays about 11k extra tokens per call (43.9 KB at bytes/4 on the reporter's 113-item tracker) with no omission receipt. Duplicate check: searched health summary, full, projection and flag precedence across all statuses. pm-nbht (closed) added the one-line summary mode, pm-gh1486 (closed) made passing diagnostics concise by default and pm-yjub (closed) made MCP pm_health default to the summary; none owns the precedence between --full and --summary."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,cli,"gh:1670",health,token-efficiency
 created_at: "2026-11-05T20:47:58.374Z"
-updated_at: "2026-11-05T20:47:58.374Z"
+updated_at: "2026-11-06T01:23:44.813Z"
+closed_at: "2026-11-06T00:37:26.520Z"
+completed_at: "2026-11-06T00:37:26.520Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "pm health --full --summary runs the full check set (integrity, drift and vectorization included) and emits the summary projection, proven by a spec that compares its bytes and check names with --summary and --full on the same tracker in CLI, SDK and MCP; pm health --strict-exit --full keeps its documented complete-details output, because strict-exit only implies summary, and help text for --full and --summary states the precedence; Negative control: restoring the full projection for an explicit --summary fails the spec"
@@ -15,12 +17,34 @@ risk: low
 confidence: high
 severity: medium
 repro_steps: "In a fresh tracker: pm health --summary | wc -c (636), pm health --full --summary | wc -c (15704), pm health --summary --full | wc -c (15704), pm health --full | wc -c (15704); all exit 0"
-expected_result: "An explicit --summary with --full runs every check and renders the compact summary, or the pair is refused with a remedy; never a silent drop"
-actual_result: "--full wins in either order and the output is byte-identical to --full alone with no warning, refusal or omission receipt"
+resolution: "For health, --full overrides the check-only fast path and the skip flags so every check runs, and its complete-details projection is now only the default. resolveHealthSkipPolicy keeps an explicit summary in summaryMode with full set. selectHealthProjection picks summary, then brief, then full. runHealthAction derives the strict-exit summary only when --full is absent. The help for --summary and --full states the precedence within the ratcheted 485-token help budget, and OUTPUT_PROJECTION_CONTRACTS.md records why health composes these flags while list, graph and deps refuse them. Proven by an integration spec over the CLI, SDK client and MCP runAction on one tracker, by projection-contract and register-commands specs, and by a negative control: reverting the source fails five assertions."
+expected_result: An explicit --summary with --full runs every check and renders the compact summary; --strict-exit --full keeps complete details
+actual_result: "--full --summary and --summary --full return mode summary with omitted_checks empty and the same check names as --full; --check-only --full --summary runs integrity, history_drift and vectorization; --strict-exit --full returns complete details; full suite 12072 passed with 100/100/100/100 coverage"
 affected_version: 2026.11.4
 component: health
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1486,related,"2026-11-05T20:47:58.374Z","harness:claude-code","cli:create:dep",detected
   pm-nbht,related,"2026-11-05T20:47:58.374Z","harness:claude-code","cli:create:dep",detected
   pm-yjub,related,"2026-11-05T20:47:58.374Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-05T21:19:04.453Z","harness:claude-code","Design decision: compose, not refuse. list, graph and deps refuse --summary or --brief together with --full as a usage conflict, because there --full is purely a projection. For health, --full is first a check-scope flag: it overrides --check-only fast paths and the skip flags, and its help says it runs all checks including the slow integrity, drift and vectorization checks. The projection was a side effect. Fleet CI gates already call pm health --full --summary, so a refusal would break them with exit 2 on upgrade.\n\nThe flags now compose. --full decides which checks run. An explicit --summary, otherwise an explicit --brief, decides the projection. --full alone still returns complete details. --strict-exit implies the summary only when --full is absent, so --strict-exit --full keeps its documented complete details.\n\nMeasured on a one-item sandbox tracker: plain --summary already runs every check, with omitted_checks empty. --check-only --summary omits integrity, history_drift and vectorization. --check-only --full --summary now runs all ten checks and returns the summary with omitted_checks empty, and that summary is far smaller than --full (636 B against 15,704 B for the pair before the fix).\n\nThe negative control was run: reverting the three source edits fails five assertions across the new integration spec and the projection contract spec."
+files[7]{path,scope,note}:
+  docs/OUTPUT_PROJECTION_CONTRACTS.md,project,Documents health scope versus projection precedence
+  src/cli/register-operations.ts,project,Strict exit implies summary only without --full; help states precedence
+  src/sdk/governance/health.ts,project,Explicit summary wins over full in the skip policy
+  src/sdk/governance/health/projection.ts,project,Compact projections are selected before full details
+  tests/integration/cli/health-projection-precedence.integration.spec.ts,project,"CLI, SDK and MCP precedence proof"
+  tests/unit/commands/register-commands.spec.ts,project,CLI option mapping for strict exit and full
+  tests/unit/sdk/health-check-only-contract.spec.ts,project,Projection precedence contract
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/cli/health-projection-precedence.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts,project,300,"harness:claude-code","2026-11-05T22:21:11.630Z",local_mutation,fix/health-projection-precedence
+close_reason: "Fixed: pm health --full --summary now runs every check and returns the summary projection instead of silently dropping --summary. --full stays a check-scope flag, and an explicit --summary, otherwise an explicit --brief, selects the projection. --strict-exit implies the summary only without --full. The CLI, PmClient.health and MCP action dispatch agree."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1670
+  gate_id: health-projection-precedence
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/cli/health-projection-precedence.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/integration/cli/health-projection-precedence.integration.spec.ts tests/unit/sdk/health-check-only-contract.spec.ts tests/unit/commands/register-commands.spec.ts tests/unit/scripts/flag-lexicon-gate.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

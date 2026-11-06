@@ -142,7 +142,7 @@
     "src/sdk/extension/shared.ts": 7,
     "src/sdk/files.ts": 36,
     "src/sdk/governance/gc.ts": 25,
-    "src/sdk/governance/health.ts": 16,
+    "src/sdk/governance/health.ts": 13,
     "src/sdk/governance/reindex.ts": 11,
     "src/sdk/governance/upgrade.ts": 43,
     "src/sdk/governance/validate.ts": 35,

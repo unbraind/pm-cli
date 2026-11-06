@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Release refuses an over-budget Sentry-injected package before tagging instead of stranding the tag ([pm-ofllco](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ofllco.toon))
+- GH-1670: pm health --full --summary silently drops --summary and emits the full projection (15.7 KB vs 636 B) with no receipt ([pm-gh1670](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1670.toon))
+
 ## 2026.11.5 - 2026-11-05
 
 ### Fixed

@@ -16,7 +16,7 @@ describe("health check-only projection contract", () => {
       generated_at: "2026-10-17T00:00:00.000Z",
     };
     const before = JSON.stringify(result);
-    const modes: [RunHealthOptions, boolean][] = [[{}, false], [{ brief: true }, false], [{}, true], [{ full: true }, false]];
+    const modes: [RunHealthOptions, boolean][] = [[{}, false], [{ brief: true }, false], [{}, true], [{ full: true }, false], [{ brief: true, full: true }, false], [{ full: true }, true]];
     for (const [options, summary] of modes) {
       const projected = projectHealthResult(result, options, summary);
       expect(projected.findings).toEqual(retained);
@@ -27,7 +27,7 @@ describe("health check-only projection contract", () => {
     expect(JSON.stringify(result)).toBe(before);
   });
 
-  it("keeps legacy healthy extension detail concise and full authoritative over brief", () => {
+  it("keeps legacy healthy extension detail concise and lets an explicit brief projection win over full (GH-1670)", () => {
     const result = {
       ok: true,
       checks: [{ name: "extensions" as const, status: "ok" as const, details: {} }],
@@ -39,9 +39,13 @@ describe("health check-only projection contract", () => {
     const standard = _testOnlyHealthCommand.projectHealthResult(result, {}, false);
     expect(standard.projection?.mode).toBe("standard");
     expect(standard.checks[0]?.details).toMatchObject({ loaded_count: 0, warning_count: 0 });
-    const full = _testOnlyHealthCommand.projectHealthResult(result, { brief: true, full: true }, false);
+    const full = _testOnlyHealthCommand.projectHealthResult(result, { full: true }, false);
     expect(full.projection).toBeUndefined();
     expect(full.checks[0]?.details).toEqual({});
+    const briefFull = _testOnlyHealthCommand.projectHealthResult(result, { brief: true, full: true }, false);
+    expect(briefFull.projection?.mode).toBe("brief");
+    const summaryFull = _testOnlyHealthCommand.projectHealthResult(result, { summary: true, brief: true, full: true }, true);
+    expect(summaryFull.projection?.mode).toBe("summary");
   });
 
   it("defaults to a verdict-only projection while retaining complete checks", () => {
@@ -81,6 +85,18 @@ describe("health check-only projection contract", () => {
     });
     expect(JSON.stringify(projected)).not.toContain("/private");
   });
+
+  it.each([{ full: true, summary: true }, { checkOnly: true, full: true, summary: true }])(
+    "runs every check and keeps an explicit summary over full %#",
+    (options) => {
+      expect(_testOnlyHealthCommand.resolveHealthSkipPolicy(options)).toEqual({
+        summaryMode: true,
+        skipIntegrity: false,
+        skipDrift: false,
+        skipVectors: false,
+      });
+    },
+  );
 
   it("keeps full evidence as an explicit check-only override", () => {
     expect(

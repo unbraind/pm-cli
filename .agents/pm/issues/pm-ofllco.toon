@@ -1,0 +1,40 @@
+id: pm-ofllco
+title: Release refuses an over-budget Sentry-injected package before tagging instead of stranding the tag
+description: "Tranche of the publication-weight budget work. Tag v2026.11.5 was cut but never published, because both Release runs failed the Sentry-injected package artifact gate at 20,257,274 against 20,250,000 bytes while the base profile passed. sentry-cli sourcemaps inject adds a fixed 358 bytes to every emitted dist JavaScript file (777 files), and the fixed 250,000-byte allowance had stopped covering the transform as the module count grew. Before the tag, neither CI nor the release preflight ever checked the injected profile, so the first injected check ran on an immutable tag. PR 1672 (merge a14511d0f) derives the injected ceiling as the base ceiling plus 384 bytes per packed dist JavaScript file. It adds base and simulated-injection package-artifact steps to the pre-tag local preflight, measuring the injected profile on a disposable dist copy so the checkout is never rewritten, and it binds the per-file allowance to the installed sentry-cli in a spec."
+type: Issue
+status: closed
+priority: 1
+tags[3]: "area:release",packaging,release-reliability
+created_at: "2026-11-06T00:38:44.952Z"
+updated_at: "2026-11-06T01:23:46.187Z"
+closed_at: "2026-11-06T00:38:44.952Z"
+completed_at: "2026-11-06T00:38:44.952Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The sentry-injected ceiling is derived from the base ceiling plus a bounded per-file allowance for every packed dist JavaScript file, and the gate validates the declaration fail-closed; The pre-tag local preflight runs the base profile and a simulated sentry-injected profile on a disposable dist copy before any version commit or tag; A spec runs the installed sentry-cli and fails when its per-file snippet outgrows the allowance"
+parent: pm-998juj
+risk: medium
+confidence: high
+severity: high
+resolution: "Budget v4 declares sentry-injected as an injection profile: the base ceiling plus 384 bytes for each packed file under dist/ ending .js. Injection adds a fixed 358 bytes per file with @sentry/cli 3.8.2. package-artifact-gate.mjs validates the declaration, reports an injection receipt, and with --simulate-injection copies dist to a temp directory and runs the installed sentry-cli on the copy, bounded at five minutes with stdout discarded. It then adds each packed file's measured growth and validates the profile. gate-registry local_preflight runs package-artifact and package-artifact-sentry-injected after the build, so run-gates refuses before the release pipeline commits or tags. sentry-injection-allowance.spec.ts binds the allowance to the real binary."
+expected_result: "A candidate whose injected package exceeds the budget is refused before tagging, and the stranded v2026.11.5 tag publishes through exact-tag recovery under the reviewed policy"
+actual_result: "Replaying the 2026.11.5 packlist gives injected 20,257,274 within the derived 20,298,368; the simulated preflight measures 278,166 added bytes across 777 files on a disposable copy; CI, codex and CodeRabbit reviews passed on PR 1672"
+component: release
+files[5]{path,scope}:
+  scripts/release/gate-registry.json,project
+  scripts/release/package-artifact-budget.json,project
+  scripts/release/package-artifact-gate.mjs,project
+  tests/unit/scripts/release/package-artifact-gate.spec.ts,project
+  tests/unit/scripts/release/sentry-injection-allowance.spec.ts,project
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Pre-tag artifact preflight and derived injected profile
+close_reason: "Fixed in PR 1672 (merge a14511d0f): derived Sentry-injected ceiling, pre-tag base and simulated injected packlist gates, and a sentry-cli allowance spec."
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ofllco
+  gate_id: package-artifact-sentry-injected
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/unit/scripts/release/sentry-injection-allowance.spec.ts tests/unit/scripts/release/run-gates.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/scripts/release tests/integration/release-automation-contract.spec.ts tests/integration/ci-workflow-contract.spec.ts,node scripts/release/package-artifact-gate.mjs --profile=sentry-injected --simulate-injection,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""
