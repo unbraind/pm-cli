@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,close,"gh:1676",recovery,token-efficiency
 created_at: "2026-11-06T11:32:56.324Z"
-updated_at: "2026-11-06T20:16:37.159Z"
+updated_at: "2026-11-06T23:02:55.094Z"
 closed_at: "2026-11-06T12:45:20.254Z"
 completed_at: "2026-11-06T12:45:20.254Z"
 author: "harness:claude-code"
@@ -84,4 +84,12 @@ test_runs[3]:
 docs[1]{path,scope}:
   docs/CLOSE_EVIDENCE_RECOVERY.md,project
 close_reason: "A strict close refused for missing close evidence now suggests the caller's own pm close with the missing flags added, so one write closes the item"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1676
+  gate_id: recovery-replays-invocation
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/runtime/close-fields-retry.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/cli/runtime/close-fields-retry.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts tests/unit/sdk/lifecycle/item-revision.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

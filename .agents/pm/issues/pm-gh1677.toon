@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,expect-hash,"gh:1677",recovery,tracker-scope
 created_at: "2026-11-06T11:32:59.995Z"
-updated_at: "2026-11-06T20:16:38.983Z"
+updated_at: "2026-11-06T23:02:55.794Z"
 closed_at: "2026-11-06T12:45:21.027Z"
 completed_at: "2026-11-06T12:45:21.027Z"
 author: "harness:claude-code"
@@ -60,4 +60,12 @@ docs[2]{path,scope}:
   docs/COMMANDS.md,project
   docs/SDK.md,project
 close_reason: "A stale-revision refusal's read-only recovery now carries the caller's tracker scope, extension isolation and output mode, so replaying it reads the refused item"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1677
+  gate_id: recovery-replays-invocation
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-revision.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/item-revision.spec.ts tests/unit/cli/expected-revisions.spec.ts tests/integration/cli/recovery-replays-invocation.integration.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

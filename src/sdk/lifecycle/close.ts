@@ -671,7 +671,8 @@ function closeValidationMissingFieldsError(
     });
   }
   const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
-  const guards = (expectations ?? []).map((guard) => `--expect-hash=${guard}`);
+  // A replayable close has typed guards: an undefined expectation set took the unreplayable branch above.
+  const guards = expectations!.map((guard) => `--expect-hash=${guard}`);
   const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...guards, ...placeholders];
   return new PmCliError(message, EXIT_CODE.USAGE, {
     code: "close_validation_missing_fields",
