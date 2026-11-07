@@ -28,6 +28,7 @@ import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectExtensionFlagDefinitionsForCommand,
   collectLooseCommandOptionKeysForDefinitions,
+  resolveExtensionFlagOptionKey,
   parseLooseCommandOptions,
   validateLooseCommandOptionsWithFlagDefinitions
 } from "../../sdk/extension/command-options.js";
@@ -38,10 +39,12 @@ import {
 
 const READ_OUTPUT_INVOCATION_PROVENANCE = Symbol.for("pm.readOutputInvocationProvenance");
 
-/** Option keys of the root-only host flags, which extension commands never inherit. */
-const ROOT_ONLY_OPTION_KEYS: readonly string[] = GLOBAL_FLAG_CONTRACTS.filter(
-  (contract) => contract.reservation_scope === "root_only",
-).map((contract) => contract.flag.slice(2).replaceAll(/-([a-z0-9])/gu, (_match, letter: string) => letter.toUpperCase()));
+/** Root-only host flags by the option key Commander delivers them under; extension commands never inherit them. */
+const ROOT_ONLY_FLAG_BY_OPTION_KEY: ReadonlyMap<string, string> = new Map(
+  GLOBAL_FLAG_CONTRACTS.filter((contract) => contract.reservation_scope === "root_only").map(
+    (contract) => [resolveExtensionFlagOptionKey({ long: contract.flag }) as string, contract.flag] as const,
+  ),
+);
 
 /** Carry private read-output provenance across Commander's option rebuilds. */
 function copyReadOutputInvocationProvenance(source: object, target: object): void {
@@ -220,9 +223,9 @@ function refuseUndeclaredRootOnlyOptions(
 ): void {
   // Only a declared long flag owns the root-only spelling; a short alias that normalizes to the same key does not.
   const declared = collectLooseCommandOptionKeysForDefinitions(definitions.map(({ long }) => ({ long })));
-  const supplied = ROOT_ONLY_OPTION_KEYS.find((key) => options[key] !== undefined && !declared.has(key));
+  const supplied = [...ROOT_ONLY_FLAG_BY_OPTION_KEY].find(([key]) => options[key] !== undefined && !declared.has(key));
   if (supplied === undefined) return;
-  const flag = `--${supplied.replaceAll(/[A-Z]/gu, (letter) => `-${letter.toLowerCase()}`)}`;
+  const flag = supplied[1];
   throw new PmCliError(`Unknown option '${flag}' for extension command '${commandPath}'. ${flag} is a root-only pm flag and this command does not declare it.`, EXIT_CODE.USAGE, {
     code: "unknown_option",
     flag,

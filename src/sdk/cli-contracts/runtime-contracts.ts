@@ -1951,9 +1951,10 @@ function mergeFlagContracts(
 
 /** Mark a package-declared flag as extension-owned and publish the `context.options` key its handler reads (pm-gh1665). */
 function withExtensionFlagOwnership(contract: CliFlagContract): CliFlagContract {
-  const long = contract.flag.startsWith("--") ? contract.flag : undefined;
-  const short = contract.short ?? (long === undefined ? contract.flag : undefined);
-  const sdkOption = resolveExtensionFlagOptionKey({ long, short });
+  // A row's flag is its long spelling, or its short one when it declares no long flag.
+  const sdkOption = resolveExtensionFlagOptionKey(
+    contract.flag.startsWith("--") ? { long: contract.flag } : { short: contract.flag },
+  );
   return {
     ...contract,
     owner: "extension",
@@ -3431,6 +3432,7 @@ export const _testOnlyContractsCommand = {
   collectExtensionFlagContractsByCommand,
   extractActionBranches,
   extensionSchemaPropertyNameFromFlag,
+  withExtensionFlagOwnership,
   filterSchemaByAction,
   filterSchemaByActions,
   isCoreCommandPath,

@@ -371,7 +371,7 @@ describe("SDK surface snapshot semantics", () => {
       'export type { Visible } from "./run.js";',
       "export declare function readHidden<T extends Options>(value: T): Promise<Map<string, Hidden>>;",
       "export declare function writeHidden(value: Hidden, visible: Visible): void;",
-      "export declare function untyped(env: NodeJS.ProcessEnv, missing: Missing);",
+      "export declare function untyped(env: NodeJS.ProcessEnv, missing: Missing, query: typeof missingValue);",
       "export declare function merged(): void;",
       "export declare namespace merged { const marker: number; }",
       // Typed and callable values name their types through the annotation (Codex review, pm-gh1667).

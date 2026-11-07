@@ -708,15 +708,14 @@ export function buildExtensionInheritedHelpOptionSummaries(
       readOutput: descriptor.read_output_declared === true,
     }),
   ).map((row) => ({
-    flags: row.takes_value
-      ? `${row.flag} ${row.value_required ? `<${row.value_name}>` : `[${row.value_name}]`}`
-      : row.flag,
+    // Inherited host flags are switches or take one required value (resolveExtensionCommandInheritedFlagContracts).
+    flags: row.takes_value ? `${row.flag} <${row.value_name as string}>` : row.flag,
     long: row.flag,
     short: null,
     description: row.description,
     takes_value: row.takes_value,
     value_required: row.value_required,
-    value_name: row.takes_value ? (row.value_name ?? null) : null,
+    value_name: row.takes_value ? (row.value_name as string) : null,
     variadic: false,
     required: false,
     aliases: [...(row.aliases ?? [])],
