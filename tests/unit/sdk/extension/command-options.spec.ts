@@ -346,6 +346,8 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
     const parent = (tokens: string[], stop?: ArgvOptionScope["stop"]) =>
       commander(tokens, { optionOf: (spelling) => parentOptions.get(spelling), includesLooseFlags: false, ...(stop ? { stop } : {}) });
     expect(refuse(parent(["child", "--status-filter", "open", "-s", "closed"]), commander([]))).toThrow("both set --status-filter");
+    // A registered `--long=value` the parent consumed is recorded too (Greptile review): only unparsed forms are leaf-only.
+    expect(refuse(parent(["--status-filter=open", "child"]), commander(["-s", "closed"]))).toThrow("both set --status-filter");
     // An ancestor reads only its own registered options, never the leaf's loose declarations.
     expect(refuse(commander(["--status-filter", "open"], { optionOf: () => undefined, includesLooseFlags: false }), commander(["-s", "closed"]))).not.toThrow();
     // Positional options: the parent stops at its subcommand, so `-s done` after it is the child's own token.

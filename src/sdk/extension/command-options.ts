@@ -1295,7 +1295,7 @@ function scanArgvOptionToken(
     return { consumedByCommander: true, consumed: takesNext ? 1 : 0, variadic: exact.variadic === true };
   }
   if (token[1] !== "-") return { consumed: 0, ...scanShortGroup(token, resolve, record) };
-  return { consumedByCommander: scanLongToken(token, resolve, scope.includesLooseFlags ? record : () => undefined), consumed: 0 };
+  return { consumedByCommander: scanLongToken(token, resolve, record, scope.includesLooseFlags ? record : () => undefined), consumed: 0 };
 }
 
 /**
@@ -1342,26 +1342,31 @@ function scanShortGroup(
 
 /**
  * Read `--long=value` for a registered option: Commander consumes it when the
- * option takes a value. It leaves `--switch=<literal>` and `--no-<flag>` for a
- * registered declared boolean unparsed, and the loose parser of the leaf
- * delivers them, so they are recorded (the caller passes a no-op sink for an
- * ancestor, whose unparsed tokens go to its subcommand) but not consumed.
- * Returns whether Commander consumed the token.
+ * option takes a value, so it is always recorded. Commander leaves
+ * `--switch=<literal>` and `--no-<flag>` for a registered declared boolean
+ * unparsed and the leaf's loose parser delivers them, so they go to
+ * `recordUnparsed`, which is a no-op for an ancestor whose unparsed tokens
+ * belong to its subcommand. Returns whether Commander consumed the token.
  */
 function scanLongToken(
   token: string,
   resolve: (spelling: string) => ArgvSpellingEntry | undefined,
   record: ArgvOccurrenceSink,
+  recordUnparsed: ArgvOccurrenceSink,
 ): boolean {
   const equals = token.indexOf("=");
   if (equals > 2) {
     const spelling = token.slice(0, equals);
     const entry = resolve(spelling);
-    if (entry !== undefined && (entry.arity !== "none" || entry.declared?.kind === "boolean")) record(spelling, entry, token.slice(equals + 1));
-    return entry !== undefined && entry.arity !== "none";
+    if (entry !== undefined && entry.arity !== "none") {
+      record(spelling, entry, token.slice(equals + 1));
+      return true;
+    }
+    if (entry?.declared?.kind === "boolean") recordUnparsed(spelling, entry, token.slice(equals + 1));
+    return false;
   }
   const negated = token.startsWith("--no-") ? resolve(`--${token.slice(5)}`) : undefined;
-  if (negated?.declared?.kind === "boolean") record(token, negated, false);
+  if (negated?.declared?.kind === "boolean") recordUnparsed(token, negated, false);
   return false;
 }
 
