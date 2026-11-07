@@ -1110,6 +1110,8 @@ export interface ArgvCommandOption {
   arity: ArgvOptionArity;
   /** Commander attribute the option sets, compared with a declaration's handler key. */
   key: string;
+  /** Whether the option is variadic, so it keeps consuming following operands. */
+  variadic?: boolean;
 }
 
 /**
@@ -1150,6 +1152,10 @@ interface ArgvSpellingEntry {
   declared?: DeclaredArgvSpelling;
   /** True for a declared flag Commander did not register, which the loose parser reads instead. */
   loose?: true;
+  /** True for a registered `--no-<flag>` that sets a declared boolean to false. */
+  negates?: true;
+  /** True for a registered variadic option. */
+  variadic?: true;
 }
 
 /** Index declared long and short spellings; the first declaration of a spelling owns it. */
@@ -1191,7 +1197,11 @@ function resolveArgvSpelling(
   const declared = index.get(spelling);
   const settable = declared?.scalar === true ? declared : undefined;
   if (registered !== undefined) {
-    return settable?.handlerKey === registered.key ? { arity: registered.arity, declared: settable } : { arity: registered.arity };
+    const base: ArgvSpellingEntry = { arity: registered.arity, ...(registered.variadic === true ? { variadic: true } : {}) };
+    if (settable?.handlerKey === registered.key) return { ...base, declared: settable };
+    // A registered `--no-<flag>` (a core option an extension augments) sets the declared boolean's own attribute.
+    const positive = declared === undefined && spelling.startsWith("--no-") ? index.get(`--${spelling.slice(5)}`) : undefined;
+    return positive?.scalar === true && positive.kind === "boolean" && positive.handlerKey === registered.key ? { ...base, declared: positive, negates: true } : base;
   }
   if (!scope.includesLooseFlags || declared === undefined) return undefined;
   return settable === undefined ? { arity: declared.arity, loose: true } : { arity: declared.arity, declared: settable, loose: true };
@@ -1227,23 +1237,33 @@ function scanArgvScope(
   let position = 0;
   let group: string | undefined;
   let unrecognizedSeen = false;
+  let variadic = false;
   while (position < tokens.length || group !== undefined) {
     const token = group ?? tokens[position++]!;
     if (token === "--") return;
+    // A variadic option keeps consuming operands and negative numbers.
+    if (variadic && group === undefined && isArgvVariadicValue(scope, token)) continue;
     const step: ArgvScanStep = isArgvOptionToken(token) ? scanArgvOptionToken(scope, token, tokens[position], resolve, record) : { consumedByCommander: false, consumed: 0 };
     position += step.consumed;
     group = step.group;
+    variadic = step.variadic === true;
     if (step.consumedByCommander) continue;
     if (stopsArgvScope(scope.stop, token, unrecognizedSeen)) return;
     unrecognizedSeen = true;
   }
 }
 
-/** The outcome of reading one token: whether Commander consumed it, the value token it consumed, and the rest of a short group. */
+/** The outcome of reading one token: whether Commander consumed it, the value token it consumed, the rest of a short group, and whether a variadic option is now active. */
 interface ArgvScanStep {
   consumedByCommander: boolean;
   consumed: 0 | 1;
   group?: string;
+  variadic?: boolean;
+}
+
+/** Whether a token is another value of an active variadic option: an operand or a negative number. */
+function isArgvVariadicValue(scope: ArgvOptionScope, token: string): boolean {
+  return !isArgvOptionToken(token) || (scope.negativeNumbersAreValues && NEGATIVE_NUMBER_ARGV_TOKEN.test(token));
 }
 
 /** Whether an unrecognized token ends the command's own options under its stop rule. */
@@ -1271,17 +1291,17 @@ function scanArgvOptionToken(
     const takesNext =
       exact.arity === "required" ||
       (exact.arity === "optional" && next !== undefined && (!isArgvOptionToken(next) || (scope.negativeNumbersAreValues && NEGATIVE_NUMBER_ARGV_TOKEN.test(next))));
-    record(token, exact, takesNext ? next : true);
-    return { consumedByCommander: true, consumed: takesNext ? 1 : 0 };
+    record(token, exact, exact.negates === true ? false : takesNext ? next : true);
+    return { consumedByCommander: true, consumed: takesNext ? 1 : 0, variadic: exact.variadic === true };
   }
   if (token[1] !== "-") return { consumed: 0, ...scanShortGroup(token, resolve, record) };
-  return { consumedByCommander: scanLongToken(token, resolve, record), consumed: 0 };
+  return { consumedByCommander: scanLongToken(token, resolve, scope.includesLooseFlags ? record : () => undefined), consumed: 0 };
 }
 
 /**
  * Read one occurrence of a declared flag Commander did not register, with the
- * loose parser's grammar: `--flag=value` and `-f=value` attach, a value-taking
- * flag takes the next token unless it starts with `-`, a switch is presence,
+ * loose parser's grammar (parseLooseOptionToken): `--flag=value` and
+ * `-f=value` attach, any flag takes the next token unless it starts with `-`,
  * `--no-<flag>` is false for a declared boolean, and there are no short groups.
  */
 function readLooseArgvOccurrence(
@@ -1294,7 +1314,8 @@ function readLooseArgvOccurrence(
   const entry = resolve(spelling);
   if (entry?.loose === true) {
     if (equals > 1) return { spelling, entry, value: token.slice(equals + 1), consumed: 0 };
-    const takesNext = entry.arity !== "none" && next !== undefined && !next.startsWith("-");
+    // The loose parser takes any following token that does not start with `-`, switch or not.
+    const takesNext = next !== undefined && !next.startsWith("-");
     return takesNext ? { spelling, entry, value: next, consumed: 1 } : { spelling, entry, value: true, consumed: 0 };
   }
   const negated = equals < 0 && token.startsWith("--no-") ? resolve(`--${token.slice(5)}`) : undefined;
@@ -1322,9 +1343,10 @@ function scanShortGroup(
 /**
  * Read `--long=value` for a registered option: Commander consumes it when the
  * option takes a value. It leaves `--switch=<literal>` and `--no-<flag>` for a
- * registered declared boolean unparsed, and the loose parser delivers them,
- * so they are recorded but not consumed. Returns whether Commander consumed
- * the token.
+ * registered declared boolean unparsed, and the loose parser of the leaf
+ * delivers them, so they are recorded (the caller passes a no-op sink for an
+ * ancestor, whose unparsed tokens go to its subcommand) but not consumed.
+ * Returns whether Commander consumed the token.
  */
 function scanLongToken(
   token: string,

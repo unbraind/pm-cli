@@ -28,12 +28,15 @@ interface SwallowingToken {
  * Locate every `<textFlag> <token>` or `<textFlag>=<token>` after the
  * annotation command's own token and before `--`. A pair before it was
  * consumed by a namespace parent (`pm item --add=--stdin comments ...`), where
- * the option alone would not dispatch the annotation command.
+ * the option alone would not dispatch the annotation command. When an option
+ * precedes the annotation command, its token cannot be told apart from an
+ * option value, so nothing is located.
  */
 function findSwallowingTokens(argv: readonly string[], commandIndex: number, collection: string, textFlag: string, token: string): SwallowingToken[] {
   const found: SwallowingToken[] = [];
   const leafIndex = argv.indexOf(collection, commandIndex);
-  if (leafIndex < 0) return found;
+  // Only command path tokens may precede the annotation command; an option there could own the value that looks like it.
+  if (leafIndex < 0 || argv.slice(commandIndex, leafIndex).some((entry) => entry.startsWith("-"))) return found;
   for (let index = leafIndex + 1; index < argv.length; index += 1) {
     const current = argv[index]!;
     if (current === "--") break;

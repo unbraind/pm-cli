@@ -47,6 +47,8 @@ describe("pm-y26mvc annotation option retry replays the caller's command", () =>
     const stdinProducer = { suggested_flags: ["--stdin"], suggested_retry_args: ["comments", "pm-one", "--stdin"] };
     expect(repairAnnotationOptionRecovery(["item", "--add=--stdin", "comments", "pm-one"], CODE, "--add", stdinProducer)).toEqual({ ...stdinProducer, suggested_retry: undefined, suggested_retry_args: undefined });
     expect(repairAnnotationOptionRecovery(["item", "notes", "pm-one", "--add", "--stdin"], CODE, "--add", stdinProducer)).toEqual({ ...stdinProducer, suggested_retry: undefined, suggested_retry_args: undefined });
+    // An option before the annotation command could own a value that looks like it.
+    expect(repairAnnotationOptionRecovery(["item", "--author", "comments", "--add=--stdin", "comments", "pm-one"], CODE, "--add", stdinProducer)).toEqual({ ...stdinProducer, suggested_retry: undefined, suggested_retry_args: undefined });
     // Without a command token nothing can be placed.
     expect(repairAnnotationOptionRecovery(["--json"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
   });

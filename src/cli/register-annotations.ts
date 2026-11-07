@@ -86,7 +86,7 @@ const ANNOTATION_TEXT_ALIASES = {
  * text flag would still leave zero or two text sources: `--file` needs the
  * operand that followed it as its path, while `--stdin` and `--file=<path>`
  * conflict with one, and any other text alias, `--add-json`, `--stdin` or
- * `--file` the caller supplied is a second source.
+ * `--file` the caller supplied is a second source. `--delete` takes no text.
  */
 function resolveSwallowedSourceRetry(
   collection: keyof typeof ANNOTATION_TEXT_ALIASES,
@@ -96,7 +96,8 @@ function resolveSwallowedSourceRetry(
   options: Record<string, unknown>,
 ): string[] | undefined {
   const otherTextSource = ANNOTATION_TEXT_ALIASES[collection].some((alias) => `--${alias}` !== swallowedBy && readOptionString(options, alias) !== undefined);
-  if (otherTextSource || options.stdin === true || readOptionString(options, "file") !== undefined || readOptionString(options, "addJson") !== undefined) return undefined;
+  // Delete takes no text at all, so no single source makes it valid.
+  if (otherTextSource || options.delete !== undefined || options.stdin === true || readOptionString(options, "file") !== undefined || readOptionString(options, "addJson") !== undefined) return undefined;
   if (token === "--file") return operand === undefined ? undefined : ["--file", operand];
   if (token === "--stdin" || token.startsWith("--file=")) return operand === undefined ? [token] : undefined;
   return undefined;

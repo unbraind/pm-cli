@@ -276,6 +276,8 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
       ["--count", "1", "-c", "1"],
       // A loose list flag accumulates.
       ["--tags", "a", "-t", "b"],
+      // The loose parser takes a following non-dash token even for a switch.
+      ["--verbose", "false", "-v=false"],
     ]) {
       expect(refuse(loose(tokens))).not.toThrow();
     }
@@ -305,6 +307,35 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
     expect(() => refuseConflictingArgvOptionSpellings([titled(["--status-filter", "open", "-r", "done"])], colliding, "close")).not.toThrow();
     // A value-taking option at the end of argv has no value to consume.
     expect(refuse(commander(["--status-filter", "open", "-s"]))).toThrow();
+  });
+
+  it("records unparsed boolean forms only in the leaf, and keeps a variadic option's operands from stopping the scan", () => {
+    const parentOptions = new Map([
+      ["--verbose", { arity: "none" as const, key: "verbose" }],
+      ["-v", { arity: "none" as const, key: "verbose" }],
+    ]);
+    const childOptions = new Map([...parentOptions, ["--title", { arity: "required" as const, key: "title" }]]);
+    // The parent consumes -v and forwards `--title --verbose=false`; the child reads --verbose=false as the title.
+    const parent = commander(["child", "--title", "--verbose=false", "-v"], { optionOf: (spelling) => parentOptions.get(spelling), includesLooseFlags: false });
+    const child = commander(["--title", "--verbose=false"], { optionOf: (spelling) => childOptions.get(spelling) });
+    expect(refuse(parent, child)).not.toThrow();
+
+    const sectioned = new Map([...REGISTERED, ["--section", { arity: "required" as const, key: "section", variadic: true }]]);
+    const stop = { atSubcommand: (token: string) => token === "tests", atFirstUnrecognized: false };
+    const context = (tokens: string[]) => commander(tokens, { optionOf: (spelling) => sectioned.get(spelling), stop });
+    expect(refuse(context(["--section", "hierarchy", "tests", "--status-filter", "open", "-s", "closed"]))).toThrow("both set --status-filter");
+    expect(refuse(context(["--section", "hierarchy", "-1", "--status-filter", "open", "-s", "open"]))).not.toThrow();
+    // Without the variadic option, `tests` is the subcommand that ends the scope.
+    expect(refuse(context(["tests", "--status-filter", "open", "-s", "closed"]))).not.toThrow();
+  });
+
+  it("reads a registered --no-<flag> as false for the declared boolean on the same attribute", () => {
+    const negatable = new Map([...REGISTERED, ["--no-verbose", { arity: "none" as const, key: "verbose" }], ["--no-count", { arity: "none" as const, key: "count" }], ["--no-color", { arity: "none" as const, key: "color" }]]);
+    const scope = (tokens: string[]) => commander(tokens, { optionOf: (spelling) => negatable.get(spelling) });
+    expect(refuse(scope(["-v", "--no-verbose"]))).toThrow("Options '-v' and '--no-verbose' both set --verbose");
+    expect(refuse(scope(["--no-verbose", "--verbose=false"]))).not.toThrow();
+    // A negation of a non-boolean, or of an undeclared flag, sets nothing declared.
+    expect(refuse(scope(["--count", "1", "--no-count", "--no-color"]))).not.toThrow();
   });
 
   it("joins occurrences across the scopes on the dispatch path, honoring each command's stop rule", () => {

@@ -324,7 +324,7 @@ function captureCommandOptionTokens(command: Command): void {
 function indexCommandOptions(command: Command): Map<string, ArgvCommandOption> {
   const options = new Map<string, ArgvCommandOption>();
   for (const option of command.options) {
-    const entry: ArgvCommandOption = { arity: option.required ? "required" : option.optional ? "optional" : "none", key: option.attributeName() };
+    const entry: ArgvCommandOption = { arity: option.required ? "required" : option.optional ? "optional" : "none", key: option.attributeName(), variadic: option.variadic };
     for (const spelling of [option.short, option.long]) if (spelling) options.set(spelling, entry);
   }
   return options;
