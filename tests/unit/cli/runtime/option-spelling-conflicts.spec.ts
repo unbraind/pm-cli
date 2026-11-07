@@ -74,6 +74,33 @@ describe("pm-wlxf8f command option spelling conflicts", () => {
     expect(() => refuseConflictingCommandOptionSpellings(demo, optional, "demo")).toThrow("both set --level");
   });
 
+  it("stops a namespace parent's scan at its subcommand, as Commander does with positional options", async () => {
+    const program = new Command().exitOverride();
+    const item = program.command("item").enablePositionalOptions().allowUnknownOption(true).action(() => {});
+    const close = item.command("close").alias("finish").option("-r, --reason <text>").allowUnknownOption(true).allowExcessArguments(true).action(() => {});
+    const flags = [{ long: "--message", short: "-r", value_type: "string" }];
+    applyDynamicExtensionFlagOptions(item, flags);
+    applyDynamicExtensionFlagOptions(close, flags);
+    for (const command of [program, item, close]) captureCommandOptionTokens(command);
+    // item reads `--message why` and stops at close; close keeps -r for its core --reason.
+    await program.parseAsync(["item", "--message", "why", "close", "pm-one", "-r", "done", "--message", "why"], { from: "user" });
+    expect(() => refuseConflictingCommandOptionSpellings(close, flags, "item close")).not.toThrow();
+    expect(close.opts()).toMatchObject({ reason: "done" });
+    // A subcommand alias ends the parent's options the same way.
+    await program.parseAsync(["item", "--message", "why", "finish", "pm-one", "-r", "done"], { from: "user" });
+    expect(() => refuseConflictingCommandOptionSpellings(close, flags, "item close")).not.toThrow();
+  });
+
+  it("stops a pass-through command's scan at its first unrecognized token", async () => {
+    const program = new Command().exitOverride().enablePositionalOptions();
+    const demo = program.command("demo").passThroughOptions().allowUnknownOption(true).allowExcessArguments(true).action(() => {});
+    applyDynamicExtensionFlagOptions(demo, FLAGS);
+    captureCommandOptionTokens(demo);
+    await program.parseAsync(["demo", "--status-filter", "open", "--bogus", "-s", "closed"], { from: "user" });
+    expect(() => refuseConflictingCommandOptionSpellings(demo, FLAGS, "demo")).not.toThrow();
+    expect(demo.opts()).toMatchObject({ statusFilter: "open" });
+  });
+
   it("skips commands without declared extension flags", async () => {
     const demo = await parse(["demo", "--status-filter", "open", "-s", "closed"], true);
     expect(() => refuseConflictingCommandOptionSpellings(demo, [], "demo")).not.toThrow();

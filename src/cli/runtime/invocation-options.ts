@@ -331,6 +331,23 @@ function indexCommandOptions(command: Command): Map<string, ArgvCommandOption> {
 }
 
 /**
+ * Commander's stop rule for a command's own options: a command with
+ * positional options (every pm namespace) stops at a subcommand name, and
+ * one with pass-through options at its first unrecognized token. The tokens
+ * after the stop belong to the subcommand's scope.
+ */
+function resolveCommandOptionStop(command: Command): Pick<ArgvOptionScope, "stop"> {
+  const passThrough = Reflect.get(command, "_passThroughOptions") === true;
+  if (!passThrough && Reflect.get(command, "_enablePositionalOptions") !== true) return {};
+  return {
+    stop: {
+      atSubcommand: (token) => command.commands.some((child) => child.name() === token || child.aliases().includes(token)),
+      atFirstUnrecognized: passThrough,
+    },
+  };
+}
+
+/**
  * Refuse two spellings of one declared extension flag with different values.
  * Every command between the root and the leaf is a scope, because Commander
  * lets a command consume its own options anywhere after its name, so a value
@@ -358,6 +375,7 @@ function refuseConflictingCommandOptionSpellings(
       optionOf: (spelling) => options.get(spelling),
       includesLooseFlags: scope === command,
       negativeNumbersAreValues: !lineage.some((entry) => entry.options.some((option) => option.short !== undefined && /^-\d$/u.test(option.short))),
+      ...resolveCommandOptionStop(scope),
     });
   }
   refuseConflictingArgvOptionSpellings(scopes, definitions, commandPath);

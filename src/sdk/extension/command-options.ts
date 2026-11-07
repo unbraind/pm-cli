@@ -1126,6 +1126,13 @@ export interface ArgvOptionScope {
   includesLooseFlags: boolean;
   /** Whether a negative number is a value, which Commander allows when no numeric short option exists on the path. */
   negativeNumbersAreValues: boolean;
+  /**
+   * Where the command stops reading its own options, as Commander does for a
+   * command with positional options (at a subcommand name before any other
+   * unrecognized token) or pass-through options (at the first unrecognized
+   * token). Absent: the command reads its options anywhere.
+   */
+  stop?: { atSubcommand: (token: string) => boolean; atFirstUnrecognized: boolean };
 }
 
 /** A declared flag spelling and the scalar flag it sets; list flags only lend their arity. */
@@ -1141,6 +1148,8 @@ interface DeclaredArgvSpelling {
 interface ArgvSpellingEntry {
   arity: ArgvOptionArity;
   declared?: DeclaredArgvSpelling;
+  /** True for a declared flag Commander did not register, which the loose parser reads instead. */
+  loose?: true;
 }
 
 /** Index declared long and short spellings; the first declaration of a spelling owns it. */
@@ -1185,7 +1194,7 @@ function resolveArgvSpelling(
     return settable?.handlerKey === registered.key ? { arity: registered.arity, declared: settable } : { arity: registered.arity };
   }
   if (!scope.includesLooseFlags || declared === undefined) return undefined;
-  return settable === undefined ? { arity: declared.arity } : { arity: declared.arity, declared: settable };
+  return settable === undefined ? { arity: declared.arity, loose: true } : { arity: declared.arity, declared: settable, loose: true };
 }
 
 /** Commander's test for a token that may be an option. */
@@ -1203,9 +1212,11 @@ type ArgvOccurrenceSink = (spelling: string, entry: ArgvSpellingEntry, value: un
  * Walk one scope's tokens as Commander's parseOptions does: exact spellings
  * (a required value consumes the next token, an optional one a following
  * operand or negative number), short groups (`-vs closed`: switches continue
- * the group, a value-taking letter takes the rest or the next token) and
- * `--long=value`. The loose parser also delivers `--switch=<literal>` and
- * `--no-<switch>` to a declared boolean, so both count as occurrences.
+ * the group, a value-taking letter takes the rest or the next token),
+ * `--long=value`, and the command's stop rule for positional or pass-through
+ * options. A declared flag Commander did not register follows the loose
+ * parser instead, which also delivers `--switch=<literal>` and `--no-<flag>`
+ * to a declared boolean, so both count as occurrences.
  */
 function scanArgvScope(
   scope: ArgvOptionScope,
@@ -1213,60 +1224,123 @@ function scanArgvScope(
   record: ArgvOccurrenceSink,
 ): void {
   const { tokens } = scope;
-  const takesOptionalValue = (token: string | undefined): token is string =>
-    token !== undefined && (!isArgvOptionToken(token) || (scope.negativeNumbersAreValues && NEGATIVE_NUMBER_ARGV_TOKEN.test(token)));
   let position = 0;
   let group: string | undefined;
+  let unrecognizedSeen = false;
   while (position < tokens.length || group !== undefined) {
     const token = group ?? tokens[position++]!;
-    group = undefined;
     if (token === "--") return;
-    if (!isArgvOptionToken(token)) continue;
-    const exact = resolve(token);
-    if (exact !== undefined) {
-      if (exact.arity === "required") record(token, exact, tokens[position++]);
-      else if (exact.arity === "optional" && takesOptionalValue(tokens[position])) record(token, exact, tokens[position++]);
-      else record(token, exact, true);
-    } else if (token[1] !== "-") {
-      group = scanShortGroup(token, resolve, record);
-    } else {
-      scanLongToken(token, resolve, record);
-    }
+    const step: ArgvScanStep = isArgvOptionToken(token) ? scanArgvOptionToken(scope, token, tokens[position], resolve, record) : { consumedByCommander: false, consumed: 0 };
+    position += step.consumed;
+    group = step.group;
+    if (step.consumedByCommander) continue;
+    if (stopsArgvScope(scope.stop, token, unrecognizedSeen)) return;
+    unrecognizedSeen = true;
   }
 }
 
-/** Read a short group's first letter; returns the rest of the group when the letter is a switch. */
+/** The outcome of reading one token: whether Commander consumed it, the value token it consumed, and the rest of a short group. */
+interface ArgvScanStep {
+  consumedByCommander: boolean;
+  consumed: 0 | 1;
+  group?: string;
+}
+
+/** Whether an unrecognized token ends the command's own options under its stop rule. */
+function stopsArgvScope(stop: ArgvOptionScope["stop"], token: string, unrecognizedSeen: boolean): boolean {
+  return stop !== undefined && (stop.atFirstUnrecognized || (!unrecognizedSeen && stop.atSubcommand(token)));
+}
+
+/** Read one option-like token: a loose occurrence, an exact registered spelling, a short group, or a long token. */
+function scanArgvOptionToken(
+  scope: ArgvOptionScope,
+  token: string,
+  next: string | undefined,
+  resolve: (spelling: string) => ArgvSpellingEntry | undefined,
+  record: ArgvOccurrenceSink,
+): ArgvScanStep {
+  // Loose occurrences are unknown options to Commander.
+  const loose = readLooseArgvOccurrence(token, next, resolve);
+  if (loose !== undefined) {
+    record(loose.spelling, loose.entry, loose.value);
+    return { consumedByCommander: false, consumed: loose.consumed };
+  }
+  const exact = resolve(token);
+  if (exact !== undefined) {
+    // A required value consumes the next token; an optional one a following operand or negative number.
+    const takesNext =
+      exact.arity === "required" ||
+      (exact.arity === "optional" && next !== undefined && (!isArgvOptionToken(next) || (scope.negativeNumbersAreValues && NEGATIVE_NUMBER_ARGV_TOKEN.test(next))));
+    record(token, exact, takesNext ? next : true);
+    return { consumedByCommander: true, consumed: takesNext ? 1 : 0 };
+  }
+  if (token[1] !== "-") return { consumed: 0, ...scanShortGroup(token, resolve, record) };
+  return { consumedByCommander: scanLongToken(token, resolve, record), consumed: 0 };
+}
+
+/**
+ * Read one occurrence of a declared flag Commander did not register, with the
+ * loose parser's grammar: `--flag=value` and `-f=value` attach, a value-taking
+ * flag takes the next token unless it starts with `-`, a switch is presence,
+ * `--no-<flag>` is false for a declared boolean, and there are no short groups.
+ */
+function readLooseArgvOccurrence(
+  token: string,
+  next: string | undefined,
+  resolve: (spelling: string) => ArgvSpellingEntry | undefined,
+): { spelling: string; entry: ArgvSpellingEntry; value: unknown; consumed: 0 | 1 } | undefined {
+  const equals = token.indexOf("=");
+  const spelling = equals > 1 ? token.slice(0, equals) : token;
+  const entry = resolve(spelling);
+  if (entry?.loose === true) {
+    if (equals > 1) return { spelling, entry, value: token.slice(equals + 1), consumed: 0 };
+    const takesNext = entry.arity !== "none" && next !== undefined && !next.startsWith("-");
+    return takesNext ? { spelling, entry, value: next, consumed: 1 } : { spelling, entry, value: true, consumed: 0 };
+  }
+  const negated = equals < 0 && token.startsWith("--no-") ? resolve(`--${token.slice(5)}`) : undefined;
+  return negated?.loose === true && negated.declared?.kind === "boolean" ? { spelling: token, entry: negated, value: false, consumed: 0 } : undefined;
+}
+
+/** Read a short group's first registered letter; the rest of the group follows a switch. */
 function scanShortGroup(
   token: string,
   resolve: (spelling: string) => ArgvSpellingEntry | undefined,
   record: ArgvOccurrenceSink,
-): string | undefined {
+): { consumedByCommander: boolean; group?: string } {
   const spelling = token.slice(0, 2);
   const entry = token.length > 2 ? resolve(spelling) : undefined;
-  if (entry === undefined) return undefined;
+  // The loose parser reads `-vs` as one key, so only a registered letter starts a group.
+  if (entry === undefined || entry.loose === true) return { consumedByCommander: false };
   if (entry.arity !== "none") {
     record(spelling, entry, token.slice(2));
-    return undefined;
+    return { consumedByCommander: true };
   }
   record(spelling, entry, true);
-  return `-${token.slice(2)}`;
+  return { consumedByCommander: true, group: `-${token.slice(2)}` };
 }
 
-/** Read `--long=value` for an option that takes a value or a declared boolean, and `--no-<switch>` for a declared boolean. */
+/**
+ * Read `--long=value` for a registered option: Commander consumes it when the
+ * option takes a value. It leaves `--switch=<literal>` and `--no-<flag>` for a
+ * registered declared boolean unparsed, and the loose parser delivers them,
+ * so they are recorded but not consumed. Returns whether Commander consumed
+ * the token.
+ */
 function scanLongToken(
   token: string,
   resolve: (spelling: string) => ArgvSpellingEntry | undefined,
   record: ArgvOccurrenceSink,
-): void {
+): boolean {
   const equals = token.indexOf("=");
   if (equals > 2) {
     const spelling = token.slice(0, equals);
     const entry = resolve(spelling);
     if (entry !== undefined && (entry.arity !== "none" || entry.declared?.kind === "boolean")) record(spelling, entry, token.slice(equals + 1));
-    return;
+    return entry !== undefined && entry.arity !== "none";
   }
   const negated = token.startsWith("--no-") ? resolve(`--${token.slice(5)}`) : undefined;
-  if (negated?.declared?.kind === "boolean" && negated.arity === "none") record(token, negated, false);
+  if (negated?.declared?.kind === "boolean") record(token, negated, false);
+  return false;
 }
 
 /**

@@ -36,13 +36,17 @@ describe("pm-y26mvc annotation option retry replays the caller's command", () =>
     // Tokens after `--` are operands, never options.
     expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--", "--add", "--file"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
     // Dropping --add before the item id would make --file read the id as its path and retarget the append.
-    const reordered = { suggested_flags: ["--file"], suggested_retry_args: ["item", "comments", "pm-one", "--file", "pm-two"] };
+    const reordered = { suggested_flags: ["--file"], suggested_retry_args: ["comments", "pm-one", "--file", "pm-two"] };
     expect(repairAnnotationOptionRecovery(["item", "comments", "--add", "--file", "pm-one", "pm-two"], CODE, "--add", reordered)).toEqual({ ...reordered, suggested_retry: undefined, suggested_retry_args: undefined });
     // An earlier --add Commander overwrote would become a second text source.
     expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--add", "hello", "--add", "--file", "note.md"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
     expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--add=hello", "--add", "--file", "note.md"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
     // A producer retry that does not name the option is never trusted.
     expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--add", "--file", "note.md"], CODE, "--add", { ...PRODUCER, suggested_retry_args: ["comments", "pm-one"] })).toEqual(WITHDRAWN);
+    // A pair a namespace parent consumed before the annotation command would not dispatch it alone.
+    const stdinProducer = { suggested_flags: ["--stdin"], suggested_retry_args: ["comments", "pm-one", "--stdin"] };
+    expect(repairAnnotationOptionRecovery(["item", "--add=--stdin", "comments", "pm-one"], CODE, "--add", stdinProducer)).toEqual({ ...stdinProducer, suggested_retry: undefined, suggested_retry_args: undefined });
+    expect(repairAnnotationOptionRecovery(["item", "notes", "pm-one", "--add", "--stdin"], CODE, "--add", stdinProducer)).toEqual({ ...stdinProducer, suggested_retry: undefined, suggested_retry_args: undefined });
     // Without a command token nothing can be placed.
     expect(repairAnnotationOptionRecovery(["--json"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
   });

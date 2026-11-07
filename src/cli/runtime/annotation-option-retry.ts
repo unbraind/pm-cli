@@ -24,10 +24,17 @@ interface SwallowingToken {
   width: 1 | 2;
 }
 
-/** Locate every `<textFlag> <token>` or `<textFlag>=<token>` after the command token and before `--`. */
-function findSwallowingTokens(argv: readonly string[], commandIndex: number, textFlag: string, token: string): SwallowingToken[] {
+/**
+ * Locate every `<textFlag> <token>` or `<textFlag>=<token>` after the
+ * annotation command's own token and before `--`. A pair before it was
+ * consumed by a namespace parent (`pm item --add=--stdin comments ...`), where
+ * the option alone would not dispatch the annotation command.
+ */
+function findSwallowingTokens(argv: readonly string[], commandIndex: number, collection: string, textFlag: string, token: string): SwallowingToken[] {
   const found: SwallowingToken[] = [];
-  for (let index = commandIndex + 1; index < argv.length; index += 1) {
+  const leafIndex = argv.indexOf(collection, commandIndex);
+  if (leafIndex < 0) return found;
+  for (let index = leafIndex + 1; index < argv.length; index += 1) {
     const current = argv[index]!;
     if (current === "--") break;
     if (current === `${textFlag}=${token}`) {
@@ -59,11 +66,12 @@ export function repairAnnotationOptionRecovery(
   const withdrawn = { ...recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const commandIndex = findBootstrapCommandTokenIndex([...argv]);
   if (commandIndex === undefined) return withdrawn;
-  const matches = findSwallowingTokens(argv, commandIndex, field, token);
+  const producerRetry = recovery!.suggested_retry_args!;
+  const matches = findSwallowingTokens(argv, commandIndex, producerRetry[0]!, field, token);
   if (matches.length !== 1) return withdrawn;
   const { index, width } = matches[0]!;
   const retry = [...argv.slice(0, index), token, ...argv.slice(index + width)];
-  return bindsAsProducerIntended(retry, index, field, token, recovery!.suggested_retry_args!) ? { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry } : withdrawn;
+  return bindsAsProducerIntended(retry, index, field, token, producerRetry) ? { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry } : withdrawn;
 }
 
 /**

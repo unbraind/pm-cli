@@ -185,18 +185,36 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
     { long: "--verbose", short: "-v", value_type: "boolean" },
     { long: "--level [value]", short: "-l", value_type: "string" },
     { long: "--tags", short: "-t", value_type: "string", list: true },
+    { long: "--debug", short: "-d", type: "bool" },
     // A declaration without a spelling, and a short spelling a later flag cannot steal.
     { description: "label only" },
     { long: "--silent", short: "-s", value_type: "boolean" },
   ];
-  /** A leaf scope whose declared flags are read loosely (not registered with Commander). */
-  const leaf = (tokens: string[], overrides: Partial<ArgvOptionScope> = {}): ArgvOptionScope => ({
+  /** Commander registrations matching the declarations, as applyDynamicExtensionFlagOptions makes them. */
+  const REGISTERED = new Map<string, { arity: "required" | "optional" | "none"; key: string }>([
+    ["--status-filter", { arity: "required", key: "statusFilter" }],
+    ["-s", { arity: "required", key: "statusFilter" }],
+    ["--count", { arity: "required", key: "count" }],
+    ["-c", { arity: "required", key: "count" }],
+    ["--verbose", { arity: "none", key: "verbose" }],
+    ["-v", { arity: "none", key: "verbose" }],
+    ["--level", { arity: "optional", key: "level" }],
+    ["-l", { arity: "optional", key: "level" }],
+    ["--tags", { arity: "required", key: "tags" }],
+    ["-t", { arity: "required", key: "tags" }],
+    ["--debug", { arity: "optional", key: "debug" }],
+    ["-d", { arity: "optional", key: "debug" }],
+  ]);
+  /** A leaf scope whose declared flags Commander registered. */
+  const commander = (tokens: string[], overrides: Partial<ArgvOptionScope> = {}): ArgvOptionScope => ({
     tokens,
-    optionOf: () => undefined,
+    optionOf: (spelling) => REGISTERED.get(spelling),
     includesLooseFlags: true,
     negativeNumbersAreValues: true,
     ...overrides,
   });
+  /** A leaf scope whose declared flags Commander did not register, read by the loose parser. */
+  const loose = (tokens: string[]): ArgvOptionScope => commander(tokens, { optionOf: () => undefined });
   const refuse = (...scopes: ArgvOptionScope[]) => () => refuseConflictingArgvOptionSpellings(scopes, definitions, "demo");
 
   it("refuses two spellings of one scalar flag with different values, in every attached and grouped form", () => {
@@ -207,17 +225,18 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
       ["--count", "1", "-c", "2"],
       // Short groups: switches continue the group and a value-taking letter takes the next token.
       ["--status-filter", "open", "-vs", "closed"],
-      // The loose parser delivers --switch=<literal> and --no-<switch> to a declared boolean.
+      // The loose parser delivers --switch=<literal> and --no-<flag> to a declared boolean, optional bool too.
       ["--verbose=false", "-v"],
       ["--no-verbose", "-v"],
+      ["--no-debug", "-d", "true"],
     ]) {
-      expect(refuse(leaf(tokens))).toThrowError(PmCliError);
+      expect(refuse(commander(tokens))).toThrowError(PmCliError);
     }
-    expect(refuse(leaf(["--status-filter", "open", "-s", "closed"]))).toThrow(
+    expect(refuse(commander(["--status-filter", "open", "-s", "closed"]))).toThrow(
       "Options '--status-filter' and '-s' both set --status-filter for extension command 'demo' with different values.",
     );
     try {
-      refuse(leaf(["-c", "1", "--count", "2"]))();
+      refuse(commander(["-c", "1", "--count", "2"]))();
     } catch (error) {
       expect((error as PmCliError).context).toMatchObject({ code: "extension_option_spelling_conflict", required: "Pass --count once, under the handler key 'count'." });
     }
@@ -237,51 +256,73 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
       ["--level=-1", "-l", "-1"],
       // Tokens after `--` are operands, and unknown spellings are skipped.
       ["--status-filter", "open", "--", "-s", "closed"],
-      ["--bogus", "-s", "open", "-x", "--bogus=1", "--no-bogus"],
+      ["--bogus", "-s", "open", "-x", "--bogus=1", "--no-bogus", "--verbose=1"],
       // A value-taking letter ends its group: `-vt -s` binds -s as the --tags value.
       ["--status-filter", "open", "-vt", "-s"],
       // A grouped value-taking letter takes the rest of the group.
       ["-vsopen", "--status-filter", "open"],
     ]) {
-      expect(refuse(leaf(tokens))).not.toThrow();
+      expect(refuse(commander(tokens))).not.toThrow();
     }
     expect(refuseConflictingArgvOptionSpellings([], [], "demo")).toBeUndefined();
   });
 
-  it("compares untyped values as typed", () => {
-    const untyped = [{ long: "--mode <value>", short: "-m" }];
-    expect(() => refuseConflictingArgvOptionSpellings([leaf(["--mode", "a", "-m", "b"])], untyped, "demo")).toThrow("both set --mode");
-    expect(() => refuseConflictingArgvOptionSpellings([leaf(["--mode", "a", "-m", "a"])], untyped, "demo")).not.toThrow();
+  it("reads unregistered declared flags with the loose grammar", () => {
+    for (const tokens of [
+      ["--verbose=false", "-v=false"],
+      // No short groups and no dash-leading values: `-vs` is one unknown key, and -s takes no `-x` value.
+      ["--status-filter", "open", "-vs", "closed"],
+      ["-s", "-x", "--status-filter", "-y"],
+      ["--count", "1", "-c", "1"],
+      // A loose list flag accumulates.
+      ["--tags", "a", "-t", "b"],
+    ]) {
+      expect(refuse(loose(tokens))).not.toThrow();
+    }
+    for (const tokens of [["--status-filter", "open", "-s=closed"], ["--no-verbose", "-v"], ["--level", "a", "-l", "b"]]) {
+      expect(refuse(loose(tokens))).toThrow();
+    }
   });
 
   it("reads a negative number as an option when the path has a numeric short option", () => {
-    expect(refuse(leaf(["--level=-1", "-l", "-1"], { negativeNumbersAreValues: false }))).toThrow("both set --level");
+    expect(refuse(commander(["--level=-1", "-l", "-1"], { negativeNumbersAreValues: false }))).toThrow("both set --level");
+  });
+
+  it("compares untyped values as typed", () => {
+    const untyped = [{ long: "--mode <value>", short: "-m" }];
+    expect(() => refuseConflictingArgvOptionSpellings([loose(["--mode", "a", "-m", "b"])], untyped, "demo")).toThrow("both set --mode");
+    expect(() => refuseConflictingArgvOptionSpellings([loose(["--mode", "a", "-m", "a"])], untyped, "demo")).not.toThrow();
   });
 
   it("follows the command's registered options: their arity, and a core owner of a colliding spelling", () => {
-    const registered = new Map([
-      ["--title", { arity: "required" as const, key: "title" }],
-      // A core option keeps -r even though the extension declares it for --status-filter.
-      ["-r", { arity: "required" as const, key: "reason" }],
-      ["--status-filter", { arity: "required" as const, key: "statusFilter" }],
-    ]);
-    const withRegistered = (tokens: string[]) => leaf(tokens, { optionOf: (spelling) => registered.get(spelling) });
+    const withTitle = new Map([...REGISTERED, ["--title", { arity: "required" as const, key: "title" }], ["-r", { arity: "required" as const, key: "reason" }]]);
+    const titled = (tokens: string[]) => commander(tokens, { optionOf: (spelling) => withTitle.get(spelling) });
     // `--title` takes a value, so `-s` is its value, not a second spelling of --status-filter.
-    expect(refuse(withRegistered(["--status-filter", "open", "--title", "-s", "closed"]))).not.toThrow();
-    expect(refuse(leaf(["--status-filter", "open", "--title", "-s", "closed"]))).toThrow();
-    const collidingDefinitions = [{ long: "--status-filter", short: "-r", value_type: "string" }];
-    expect(() => refuseConflictingArgvOptionSpellings([withRegistered(["--status-filter", "open", "-r", "done"])], collidingDefinitions, "close")).not.toThrow();
+    expect(refuse(titled(["--status-filter", "open", "--title", "-s", "closed"]))).not.toThrow();
+    expect(refuse(commander(["--status-filter", "open", "--title", "-s", "closed"]))).toThrow();
+    // A core option keeps -r even though the extension declares it for --status-filter.
+    const colliding = [{ long: "--status-filter", short: "-r", value_type: "string" }];
+    expect(() => refuseConflictingArgvOptionSpellings([titled(["--status-filter", "open", "-r", "done"])], colliding, "close")).not.toThrow();
     // A value-taking option at the end of argv has no value to consume.
-    expect(refuse(leaf(["--status-filter", "open", "-s"]))).toThrow();
+    expect(refuse(commander(["--status-filter", "open", "-s"]))).toThrow();
   });
 
-  it("joins occurrences across the scopes on the dispatch path, reading ancestors' registered options only", () => {
+  it("joins occurrences across the scopes on the dispatch path, honoring each command's stop rule", () => {
     const parentOptions = new Map([
       ["--status-filter", { arity: "required" as const, key: "statusFilter" }],
       ["-s", { arity: "required" as const, key: "statusFilter" }],
     ]);
-    const parent = leaf(["child", "--status-filter", "open", "-s", "closed"], { optionOf: (spelling) => parentOptions.get(spelling), includesLooseFlags: false });
-    expect(refuse(parent, leaf([]))).toThrow("both set --status-filter");
-    expect(refuse(leaf(["--status-filter", "open"], { includesLooseFlags: false }), leaf(["-s", "closed"]))).not.toThrow();
+    const parent = (tokens: string[], stop?: ArgvOptionScope["stop"]) =>
+      commander(tokens, { optionOf: (spelling) => parentOptions.get(spelling), includesLooseFlags: false, ...(stop ? { stop } : {}) });
+    expect(refuse(parent(["child", "--status-filter", "open", "-s", "closed"]), commander([]))).toThrow("both set --status-filter");
+    // An ancestor reads only its own registered options, never the leaf's loose declarations.
+    expect(refuse(commander(["--status-filter", "open"], { optionOf: () => undefined, includesLooseFlags: false }), commander(["-s", "closed"]))).not.toThrow();
+    // Positional options: the parent stops at its subcommand, so `-s done` after it is the child's own token.
+    const positional = { atSubcommand: (token: string) => token === "child", atFirstUnrecognized: false };
+    expect(refuse(parent(["--status-filter", "why", "child", "-s", "done"], positional), commander([], { optionOf: () => undefined }))).not.toThrow();
+    // ...but only before any other unrecognized token.
+    expect(refuse(parent(["--bogus", "child", "--status-filter", "a", "-s", "b"], positional))).toThrow();
+    // Pass-through options stop at the first unrecognized token.
+    expect(refuse(parent(["--status-filter", "a", "--bogus", "-s", "b"], { atSubcommand: () => false, atFirstUnrecognized: true }))).not.toThrow();
   });
 });
