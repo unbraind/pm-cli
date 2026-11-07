@@ -4,12 +4,18 @@
 
 ### Fixed
 
+- CLI argv keeps one value silently when two spellings of one extension flag differ (--status-filter a -s b), while direct callers are refused with extension_option_spelling_conflict ([pm-wlxf8f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wlxf8f.toon))
+- pm comments/notes <id\> --add --file <path\> is refused as positional-and---add conflict instead of naming the swallowed --file flag, so the annotation flag-like check from pm-vcu7 loses precedence ([pm-y26mvc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y26mvc.toon))
 - GH-1667: sdk/graph does not export ProjectedGraphResult, the public return type of runGraph, and the merge conflict_resolution union has no public name, so extensions derive both ([pm-gh1667](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1667.toon))
 - GH-1666: per-command help and contracts for extension commands omit the inherited host flags (--json, --author, --pm-path) the command accepts and mark no flag as host- or extension-owned ([pm-gh1666](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1666.toon))
 - GH-1665: extension flag contracts omit the SDK option key, so PmClient.run and the extension test harness silently ignore a CLI-spelled option such as status-filter and fall back to the default ([pm-gh1665](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1665.toon))
 - TOON get --fields spends four lines on a complete omission receipt and drops requested empty collections, so a narrow read is two-thirds receipt and absent-vs-empty depends on that receipt ([pm-sj66lm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sj66lm.toon))
 - GH-1662: an infeasible --token-budget on context --for orient exits 0 with no context and contradictory receipts, its restore_with retry fails, and get/list intent receipts undercount the emitted envelope ([pm-gh1662](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1662.toon))
 - GH-1678: a scoped registerRenderer replacement bypasses --output-budget and its read_output receipt reports within_budget for the native payload, not the delivered bytes ([pm-gh1678](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1678.toon))
+
+### Other
+
+- Unknown-option refusals on extension commands with declared flags carry code unknown_option and list only the flags the command accepts ([pm-1du7s3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1du7s3.toon))
 
 ## 2026.11.7 - 2026-11-07
 
