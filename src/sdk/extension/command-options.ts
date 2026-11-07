@@ -917,6 +917,8 @@ export function normalizeDirectExtensionCommandOptions(
   for (const [key, value] of Object.entries(folded)) {
     (handlerKeys.has(key) ? declared : passthrough)[key] = value;
   }
+  // Required and disabled declarations bind direct callers as they bind CLI argv.
+  validateLooseCommandOptionsWithFlagDefinitions(declared, definitions, commandPath);
   return Object.assign(
     passthrough,
     coerceLooseCommandOptionsWithFlagDefinitions(
@@ -999,6 +1001,29 @@ function resolveDeclaredOptionSpelling(
   );
 }
 
+/**
+ * Read `--no-verbose: true` (or `no-verbose`) as `verbose: false` for a declared
+ * boolean flag, as Commander does on the CLI. A spelling that is itself
+ * declared, or names no declared boolean, is left as it is.
+ */
+function resolveNegatedBooleanSpelling(
+  index: DeclaredOptionSpellingIndex,
+  spelling: string,
+  value: unknown,
+): { spelling: string; value: unknown } {
+  const negated = /^(?:--)?no-(.+)$/u.exec(spelling)?.[1];
+  if (negated === undefined || resolveDeclaredOptionSpelling(index, spelling) !== undefined) {
+    return { spelling, value };
+  }
+  const declared = resolveDeclaredOptionSpelling(index, negated);
+  const flag = coerceLooseBooleanOptionValue(value);
+  return declared !== undefined &&
+    resolveLooseOptionCoercionKind(declared.definition) === "boolean" &&
+    typeof flag === "boolean"
+    ? { spelling: negated, value: !flag }
+    : { spelling, value };
+}
+
 /** Fold declared spellings into handler keys, refusing two spellings of one flag with different values. */
 function foldDirectOptionSpellings(
   options: Record<string, unknown>,
@@ -1007,7 +1032,8 @@ function foldDirectOptionSpellings(
 ): Record<string, unknown> {
   const folded = Object.create(null) as Record<string, unknown>;
   const suppliedBy = new Map<string, string>();
-  for (const [spelling, value] of Object.entries(options)) {
+  for (const [rawSpelling, rawValue] of Object.entries(options)) {
+    const { spelling, value } = resolveNegatedBooleanSpelling(index, rawSpelling, rawValue);
     const declared = resolveDeclaredOptionSpelling(index, spelling);
     if (declared === undefined) {
       folded[spelling] = value;

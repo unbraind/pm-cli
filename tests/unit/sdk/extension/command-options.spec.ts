@@ -75,6 +75,39 @@ describe("direct extension command options", () => {
     expect(normalizeDirectExtensionCommandOptions({ s: "keep" }, onlyUpper, "demo brief")).toEqual({ s: "keep" });
   });
 
+  it("binds required and disabled declarations and reads negated boolean spellings on direct calls (CodeRabbit review)", () => {
+    const definitions = [
+      { long: "--target", value_type: "string", required: true },
+      { long: "--legacy", value_type: "string", enabled: false },
+      { long: "--verbose", value_type: "boolean", default: true },
+    ];
+    expect(() => normalizeDirectExtensionCommandOptions({}, definitions, "demo brief")).toThrow(
+      "Missing required option '--target' for extension command 'demo brief'",
+    );
+    expect(() => normalizeDirectExtensionCommandOptions({ target: "a", legacy: "x" }, definitions, "demo brief")).toThrow(
+      "Option '--legacy' is disabled for extension command 'demo brief'",
+    );
+    expect(normalizeDirectExtensionCommandOptions({ target: "a", "--no-verbose": true }, definitions, "demo brief")).toEqual({
+      target: "a",
+      verbose: false,
+    });
+    expect(normalizeDirectExtensionCommandOptions({ target: "a", "no-verbose": "false" }, definitions, "demo brief")).toEqual({
+      target: "a",
+      verbose: true,
+    });
+    // A negated spelling of a non-boolean, or of nothing declared, passes through unchanged.
+    expect(normalizeDirectExtensionCommandOptions({ target: "a", "no-target": true, "no-such": 1 }, definitions, "demo brief")).toEqual({
+      target: "a",
+      verbose: true,
+      "no-target": true,
+      "no-such": 1,
+    });
+    // A flag that is itself declared with a no- prefix keeps its own key.
+    expect(
+      normalizeDirectExtensionCommandOptions({ "--no-cache": true }, [{ long: "--no-cache", value_type: "boolean" }], "demo brief"),
+    ).toEqual({ noCache: true });
+  });
+
   it("refuses two spellings of one flag that carry different values", () => {
     let refusal: unknown;
     try {

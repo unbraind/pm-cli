@@ -116,6 +116,16 @@ describe("extension option contract (pm-gh1665)", () => {
           options: { statusFilter: "closed", "status-filter": "open" },
         }),
       ).rejects.toThrow("both set --status-filter");
+      // The registrations travel with the registry under a global symbol, so a structurally copied
+      // registry that keeps the symbol still normalizes (another SDK copy reads the same symbol).
+      const carried = Object.defineProperty(
+        { overrides: [], handlers: [...activation.commands.handlers] },
+        Symbol.for("pm.sdk.testing.activatedFlagRegistrations"),
+        { value: activation.registrations },
+      );
+      await expect(
+        runRegisteredCommandForTest(carried, { command: "demo-brief", options: { "status-filter": "closed" } }),
+      ).resolves.toMatchObject({ handled: true, result: { selection: "closed" } });
       // A hand-built registry has no declared flags to normalize against, so options pass through verbatim.
       const unrelated = await runRegisteredCommandForTest(
         { overrides: [], handlers: [...activation.commands.handlers] },

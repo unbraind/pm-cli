@@ -224,11 +224,21 @@ export interface RunRegisteredCommandForTestOptions {
   }) => ExtensionCommandSdk;
 }
 
-/** Flag registrations of each activation, so the command harness normalizes options against the declared flags. */
-const ACTIVATED_COMMAND_FLAG_REGISTRATIONS = new WeakMap<
-  ExtensionCommandRegistry,
-  Pick<ExtensionActivationResult["registrations"], "flags">
->();
+/**
+ * Flag registrations of an activation, attached to its command registry under a
+ * global symbol so the command harness normalizes options against the declared
+ * flags even when activation and invocation load different SDK copies.
+ */
+const ACTIVATED_COMMAND_FLAG_REGISTRATIONS = Symbol.for("pm.sdk.testing.activatedFlagRegistrations");
+
+/** Read the flag registrations an activation attached to its command registry. */
+function readActivatedFlagRegistrations(
+  commands: ExtensionCommandRegistry,
+): Pick<ExtensionActivationResult["registrations"], "flags"> | undefined {
+  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_FLAG_REGISTRATIONS]?: Pick<ExtensionActivationResult["registrations"], "flags"> })[
+    ACTIVATED_COMMAND_FLAG_REGISTRATIONS
+  ];
+}
 
 /** Options for invoking a registered transactional mutation guard in package tests. */
 export interface RunRegisteredMutationGuardForTestOptions {
@@ -928,7 +938,10 @@ export async function activateExtensionForTest(
       policy: options.policy ?? createDefaultExtensionGovernancePolicy(),
     }),
   );
-  ACTIVATED_COMMAND_FLAG_REGISTRATIONS.set(activation.commands, activation.registrations);
+  Object.defineProperty(activation.commands, ACTIVATED_COMMAND_FLAG_REGISTRATIONS, {
+    value: activation.registrations,
+    enumerable: false,
+  });
   return activation;
 }
 
@@ -1026,7 +1039,7 @@ export async function runRegisteredCommandForTest(
     (pmRoot.length > 0
       ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }), undefined, command)
       : undefined);
-  const registrations = ACTIVATED_COMMAND_FLAG_REGISTRATIONS.get(commands);
+  const registrations = readActivatedFlagRegistrations(commands);
   const handlerOptions = options.options ? { ...options.options } : {};
   return runCommandHandler(commands, {
     command,

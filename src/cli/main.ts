@@ -1322,6 +1322,10 @@ function attachDynamicExtensionHelp(command: Command, descriptor: ExtensionComma
   } else if (flagHelp) {
     command.addHelpText("after", flagHelp);
   }
+  // An extension-created node reached through an alias path is still an extension command (pm-gh1666).
+  if (descriptor && isExtensionCreatedCommand(command)) {
+    command.addHelpText("after", buildExtensionInheritedFlagHelp(descriptor));
+  }
   if (metadataHelp) {
     command.addHelpText("after", metadataHelp);
   }

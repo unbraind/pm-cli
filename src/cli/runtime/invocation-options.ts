@@ -218,7 +218,8 @@ function refuseUndeclaredRootOnlyOptions(
   definitions: readonly LooseCommandFlagDefinition[],
   commandPath: string,
 ): void {
-  const declared = collectLooseCommandOptionKeysForDefinitions(definitions);
+  // Only a declared long flag owns the root-only spelling; a short alias that normalizes to the same key does not.
+  const declared = collectLooseCommandOptionKeysForDefinitions(definitions.map(({ long }) => ({ long })));
   const supplied = ROOT_ONLY_OPTION_KEYS.find((key) => options[key] !== undefined && !declared.has(key));
   if (supplied === undefined) return;
   const flag = `--${supplied.replaceAll(/[A-Z]/gu, (letter) => `-${letter.toLowerCase()}`)}`;
