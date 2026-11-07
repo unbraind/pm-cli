@@ -1688,8 +1688,11 @@ function canReturnReadOutputUnchanged(
   format: "json" | "toon" | undefined,
   options: Record<string, unknown>,
 ): boolean {
+  // A budget omission always carries its read-output receipt: callers that
+  // detect the refusal read read_output from it (GH-1662).
   if (
     session !== undefined ||
+    isReadResultOmittedForBudget(result) ||
     requiresReadOutputAudit(resolved, options, result)
   )
     return false;

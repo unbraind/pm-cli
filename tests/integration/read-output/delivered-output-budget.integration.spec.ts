@@ -186,6 +186,20 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
         expect(retried.code, retried.stdout).toBe(0);
       }
 
+      // An SDK intent refusal always carries the read-output receipt its type promises.
+      const sdk = new PmClient({ pmRoot: context.pmPath });
+      let sdkRefusal: unknown;
+      for (const outputBudget of ["500", "400", "300", "256"]) {
+        const read = await sdk.get(wideId, { for: "inspect", outputBudget });
+        if (isReadOutputBudgetExceeded(read)) {
+          sdkRefusal = read;
+          break;
+        }
+      }
+      expect(sdkRefusal).toBeDefined();
+      // Negative control: the refusal was returned before its read_output receipt was attached.
+      expect(Number.isFinite((sdkRefusal as { read_output: { estimated_tokens: number } }).read_output.estimated_tokens)).toBe(true);
+
       // A session charges exactly the delivered envelope, including the settled fit flag.
       const state = { version: 1, id: "probe", token_budget: 5000, spent_tokens: 15, seen_item_ids: [] };
       const tinyId = createTestItemId(context, { title: "TT" });
