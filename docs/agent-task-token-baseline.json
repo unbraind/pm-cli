@@ -13,12 +13,12 @@
       "active_ownership",
       "workspace_state"
     ],
-    "measured_winner_tokens": 1051,
+    "measured_winner_tokens": 1052,
     "protocols": [
       {
         "task_id": "orientation-context-intent",
         "command_count": 1,
-        "estimated_tokens": 1051,
+        "estimated_tokens": 1052,
         "capabilities": [
           "actionable_work",
           "active_ownership",
@@ -110,11 +110,11 @@
   "tasks": [
     {
       "id": "orientation-context-intent",
-      "max_estimated_tokens": 1051,
+      "max_estimated_tokens": 1052,
       "steps": [
         {
           "id": "context",
-          "max_estimated_tokens": 1051,
+          "max_estimated_tokens": 1052,
           "accounting_mode": "self_reported"
         }
       ]
@@ -288,5 +288,5 @@
       ]
     }
   ],
-  "composite_max_estimated_tokens": 13715
+  "composite_max_estimated_tokens": 13716
 }

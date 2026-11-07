@@ -2,18 +2,22 @@ id: pm-gh1678
 title: "GH-1678: a scoped registerRenderer replacement bypasses --output-budget and its read_output receipt reports within_budget for the native payload, not the delivered bytes"
 description: "GitHub issue #1678 (reported 2026-11-06 against 2026.11.5 from an agent-UX review). An extension command that declares read_output participates in host output controls, but when a scoped registerRenderer (SDK) replaces the TOON rendering, the host packs and measures the native structured payload and then writes the renderer's string without applying the caller's --output-budget. In the reporter's synthetic repro, --output-budget 400 --output-row-contract emits 10,780 B (about 2,695 tokens) while read_output reports estimated_tokens 179 and within_budget true. Native JSON (1,004 B) and native TOON (716 B) controls measure correctly. With --output-budget 1 the refusal exits 2 but is itself expanded through the renderer (10,574 B). Without the receipt flag the excess remains (10,073 B). Expected: the final-output ceiling applies to the string the selected renderer returns. If it cannot fit, the host returns the bounded native refusal with a nonzero exit, never routing a refusal back through the expanding renderer. A within_budget receipt must describe the delivered bytes. Unbounded artifact rendering stays available when explicitly requested. Duplicate check: searched renderer output budget, registerRenderer output, within_budget extension; GH-560 and GH-96 (closed) cover ignored or unscoped overrides, pm-gh1552 (closed) SDK compact-versus-pretty accounting, pm-gh1662 (open) native intent budgets. This item owns post-packing custom renderer output escaping the final-byte budget. Not yet reproduced locally; the repro block in the issue is executable."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: agent-ux,extensions,"gh:1678",output-budget,renderer,sdk
 created_at: "2026-11-06T11:33:06.300Z"
-updated_at: "2026-11-06T15:40:49.535Z"
+updated_at: "2026-11-07T04:18:49.664Z"
+closed_at: "2026-11-07T04:18:07.512Z"
+completed_at: "2026-11-07T04:18:07.512Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "The caller's --output-budget applies to the string a selected custom renderer returns, and output that cannot fit returns the bounded native output_budget_exceeded refusal with exit 2; A refusal is never routed back through an expanding custom renderer; read_output estimated_tokens and within_budget describe the delivered bytes of a custom rendering; Explicitly unbounded custom rendering stays available; A spec with a synthetic extension renderer asserts the bounded and unbounded behaviour in TOON and JSON, and a negative control that measures the native payload instead fails it"
 parent: pm-5t33or
 risk: medium
 confidence: medium
-expected_result: A custom renderer's delivered output obeys --output-budget and its receipt measures the delivered bytes
+resolution: "Every read-output estimate, compaction step and omission decision now measures the delivered string: a scoped registerRenderer override, an output_format service string, the calendar markdown default or lean JSON (withDeliveredOutputRenderer in src/sdk/read-output-budget.ts; deliverContractedRead and deliverServiceRendering in src/core/output/output.ts). Output that cannot fit returns the bounded native output_budget_exceeded refusal with exit 2, and a refusal is never rendered through an override. A renderer's nested SDK contract calls measure their own representation. A custom rendering whose receipts understate it, which happens when the renderer depends on its own receipts, is re-measured and rendered natively, so no unmeasured byte is delivered. Undeclared commands and --output-budget unbounded keep unbounded custom rendering."
+expected_result: "The caller's --output-budget applies to the bytes a custom renderer or output_format service delivers, receipts describe those bytes, and output that cannot fit is refused natively with exit 2"
+actual_result: "Unit and integration specs (TOON and JSON renderer overrides, a service string, nested contract renderers, self-referential renderers) assert refusal with exit 2 at 400 and 1 tokens, fitting receipts equal to ceil(delivered bytes / 4), unbounded expansion kept, and negative controls that fail without each fix"
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1552,related,"2026-11-06T11:33:06.300Z","harness:claude-code","cli:create:dep",detected
   pm-gh1662,related,"2026-11-06T11:33:06.300Z","harness:claude-code","cli:create:dep",detected
@@ -21,6 +25,41 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-odw3j8,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
   pm-prsvjh,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
   pm-t2t709,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-11-06T15:40:46.675Z","harness:claude-code","Duplicate check at creation (2026-11-06): pm search \"renderer output budget\" returned pm-5t33or (open, the declared-budget feature, now this item's parent), pm-prsvjh (closed, intent budget binding), pm-odw3j8 (closed, rendered relationship budgets), pm-gh1552 (closed, SDK compact JSON accounting), pm-t2t709 (closed, dependency budget measured on another representation) and pm-gd6vnn (open, observation contract). None covers a scoped registerRenderer replacement escaping the final-byte budget with a receipt measuring the native payload. The GitHub dedupe in the issue (#560, #96, #1552, #1662) reaches the same conclusion."
+  "2026-11-07T01:36:59.220Z","harness:claude-code","Root cause: every read-output estimate, compaction step and omission decision measured formatBuiltInOutput's native rendering. formatEffectiveOutput then delivered a different string: a scoped registerRenderer override, or an output_format service result. A renderer that expands a 50-token payload to 10 KB therefore reported within_budget: true for bytes the caller never received, and the caller's --output-budget never applied to what was printed. Fix (branch fix/output-budget-delivered-bytes): withDeliveredOutputRenderer (internal, src/sdk/read-output-budget.ts) scopes estimateReadOutputTokens to the renderer the host will deliver, for the delivered encoding only, so receipts, compaction and omission measure the delivered string. The service path audits its string the same way. Output that cannot fit returns the native output_budget_exceeded refusal with exit 2. renderDelivered never routes a budget refusal through the override, so an expanding renderer cannot inflate it. Commands without a read_output declaration (for example pm-changelog's renderers) and --output-budget unbounded keep unbounded custom rendering. Evidence: tests/unit/core/output/delivered-output-budget.spec.ts covers TOON and JSON renderer overrides and the output_format service: refused natively with exit 2 at budgets 400 and 1, a fitting receipt equal to ceil(delivered bytes / 4), and unbounded expansion kept. Negative control: the native estimate is about 50 tokens against a 10 KB delivery. tests/integration/read-output/delivered-output-budget.integration.spec.ts drives a synthetic extension renderer through the real CLI from source. The defect's 179-token native estimate is the negative control there. pm test run passed."
+  "2026-11-07T01:47:28.677Z","harness:claude-code","Codex batch review round 1 (P2), confirmed and fixed. When an output_format service string cannot fit, the bounded refusal is delivered natively (renderNative). But the delivered-renderer scope measured every value as the service string, including the refusal envelope itself, so the refusal's read_output.estimated_tokens described the service string instead. Reproduced: a 600-character service at --output-budget 150 delivered a 183-token JSON / 125-token TOON refusal whose receipt said 151. formatEffectiveOutput now measures a budget-omitted value natively, exactly as it is delivered. The regression in delivered-output-budget.spec.ts asserts receipt == ceil(delivered bytes / 4) for the service-triggered refusal in JSON and TOON. Negative control: with the old callback the 10 KB service reports 2,503 tokens for a 183-token refusal."
+  "2026-11-07T02:03:13.638Z","harness:claude-code","Codex batch review round 2 (P2), confirmed and fixed. An extension renderer that computes its own SDK read-output contracts (attachReadOutputContracts on an embedded auxiliary read) inherited the outer delivered-renderer scope during measurement. At final delivery it ran with that scope restored, so the outer receipt measured different bytes than were delivered (503 tokens estimated for 446 delivered), and a budget just above the delivered size falsely refused with exit 2. estimateReadOutputTokens now invokes the delivered renderer with the measurement scope suspended (renderOutsideDeliveredScope in src/sdk/read-output-budget.ts), so nested calls measure their own representation in both phases. Regression: delivered-output-budget.spec.ts 'lets a renderer's own nested contract calls measure their own representation' asserts an exact receipt and no outer refusal at delivered+20. Negative control: with the old direct render call it fails with 503 vs 446."
+  "2026-11-07T02:18:44.903Z","harness:claude-code","Codex batch review round 3: three P2s, one shared cause, all confirmed and fixed by one guard. A custom renderer whose output depends on its own receipts can leave a bounded estimate fixpoint at a value the final delivery exceeds: read_output reported 101 tokens for 1,001 delivered; the intent receipt claimed within_budget at 850 for 1,000 delivered; a read session charged 1,200 per call for 1,300 delivered, overrunning a 2,500 ceiling across two calls. Bounding the loops (round 2) prevents hangs but is no proof of fit. formatEffectiveOutput's contracted-read stage was extracted into deliverContractedRead (src/core/output/output.ts). It now checks the final custom rendering, before token accounting, which the receipts exclude by design, against read_output.estimated_tokens, context_intent.estimated_tokens and read_session.spent_this_call_tokens, and against the intent receipt's within_budget/token_budget claim. On any misstatement the read is re-contracted with native measurement and rendered natively, so no unmeasured byte is delivered, and an omission still exits 2. Without token accounting the check reuses the final rendering, so there is no extra render. Regressions in delivered-output-budget.spec.ts reproduce all three cases and assert truthful receipts, plus guards that a stable custom renderer is still delivered for intent reads, an unbounded intent read and token accounting. Negative control: with the check disabled the oscillating renderer's bytes are delivered (expected startsWith('x') to be false). docs/READ_OUTPUT_CONTRACTS.md states the rule."
+  "2026-11-07T03:51:27.537Z","harness:claude-code","Final-tree refactor for the CodeFactor complexity ceiling (formatEffectiveOutput was 18 > 16). The built-in renderer factory (nativeRenderer) and the output_format service delivery (deliverServiceRendering) were extracted from formatEffectiveOutput, next to deliverContractedRead, with behavior unchanged. receiptsUnderstateDelivery dropped its intent fit-claim branch: settled intent receipts never claim a fit their estimate exceeds, so the estimate check covers it, and coverage showed the branch was unreachable. static-quality-gate.mts reports 0 complexity violations."
+files[3]{path,scope}:
+  src/core/output/output.ts,project
+  src/sdk/read-output-budget.ts,project
+  src/sdk/read-output-contracts.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,project,"harness:claude-code","2026-11-07T01:36:31.889Z",local_mutation,fix/output-budget-delivered-bytes
+test_runs[1]:
+  - run_id: test-local-mw5qgaxo-zd5wkt
+    kind: test
+    status: passed
+    started_at: "2026-11-07T01:36:32.522Z"
+    finished_at: "2026-11-07T01:36:46.428Z"
+    recorded_at: "2026-11-07T01:36:46.428Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+  docs/SDK.md,project
+close_reason: Custom renderers and output_format services answer to --output-budget over the bytes they deliver
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1678
+  gate_id: delivered-output-budget
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

@@ -17,7 +17,8 @@ interface StringCompactionState {
   compacted: boolean;
 }
 
-const MAX_ESTIMATE_ITERATIONS = 8;
+/** Fixpoint bound for receipts whose estimate is part of the rendering it measures. */
+export const MAX_ESTIMATE_ITERATIONS = 8;
 const MAX_COMPACTION_ITERATIONS = 64;
 const RECOVERY_MARGIN_NUMERATOR = 5;
 const RECOVERY_MARGIN_DENOMINATOR = 4;
@@ -193,9 +194,27 @@ export function estimateReadOutputTokens(
       ? JSON.stringify(result)
       : activeDeliveredOutput !== undefined &&
           activeDeliveredOutput.format === format
-        ? activeDeliveredOutput.render(result)
+        ? renderOutsideDeliveredScope(activeDeliveredOutput, result)
         : formatBuiltInOutput(result, format);
   return Math.ceil(Buffer.byteLength(rendered, "utf8") / 4);
+}
+
+/**
+ * Run the delivered renderer with the measurement scope suspended. An
+ * extension renderer may compute its own SDK read-output contracts; those
+ * nested calls measure their own representation, as they do when the renderer
+ * runs for final delivery after the scope is restored.
+ */
+function renderOutsideDeliveredScope(
+  delivered: NonNullable<typeof activeDeliveredOutput>,
+  result: unknown,
+): string {
+  activeDeliveredOutput = undefined;
+  try {
+    return delivered.render(result);
+  } finally {
+    activeDeliveredOutput = delivered;
+  }
 }
 
 /** Return whether a value is a non-array object record. */

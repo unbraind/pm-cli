@@ -367,12 +367,34 @@ natively and never passed back through an expanding renderer. Commands that
 declare no read output keep their renderer untouched, and
 `--output-budget unbounded` keeps unbounded custom rendering.
 
+A renderer whose output depends on its own receipts need not converge, so the
+receipt estimates stop after a bounded number of passes. That bound is never
+taken as proof of fit. The CLI checks the final custom rendering against its
+receipts. If any receipt reports fewer tokens than the rendering costs, or the
+intent receipt claims a fit that the rendering exceeds, the read is measured
+and rendered natively instead. No byte that a receipt did not measure is
+delivered. A renderer's own nested SDK contract calls measure their own
+representation, never the outer delivery.
+
 Read intents (`--for <intent>`) accept one budget under both spellings: a
 numeric `--output-budget` binds the intent's token budget exactly as the legacy
-`--token-budget` does, including its budget-derived row limit, so the same value
-on the same corpus yields the same success, omission and exit status. The intent
-estimate covers the delivered encoding (pretty JSON or TOON, without a
-`row_contract` the caller did not request). An omitted intent result is
+`--token-budget` does, including its budget-derived row limit. Both spellings
+apply one rule to the bytes they deliver. The legacy spelling's receipt also
+carries its migration hint, so at the exact boundary it can omit where the
+canonical spelling still fits. The intent estimate covers the delivered
+encoding (pretty JSON or TOON, without a `row_contract` the caller did not
+request). It is settled over the complete envelope, including the
+`read_output` receipt and any requested row contract. A delivery whose settled
+envelope exceeds the intent budget is decided again, with the measured overhead
+charged against the budget, so row compaction leaves room for the receipts. A
+re-settled envelope that still exceeds the budget is omitted, so a read never
+delivers more than its budget allows. `--output-include` never shapes an
+omission: a refused read keeps its refusal under every include selection. A
+successful include projection that drops the intent receipt still answers to
+the intent budget over the bytes it delivers. A refused continuation page keeps
+its receipts whole, and every receipt agrees that it omitted. The retry that a
+legacy refusal names keeps the caller's `--fields` projection, because its
+budget was sized against that projection. An omitted intent result is
 unsuccessful everywhere: the CLI exits 2, and `context_intent`, `read_output`
 and the omission branch all report `result_omitted: true` and
 `within_budget: false`. The canonical spelling keeps the shared

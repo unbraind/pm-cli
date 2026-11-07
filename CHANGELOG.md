@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- TOON get --fields spends four lines on a complete omission receipt and drops requested empty collections, so a narrow read is two-thirds receipt and absent-vs-empty depends on that receipt ([pm-sj66lm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sj66lm.toon))
+- GH-1662: an infeasible --token-budget on context --for orient exits 0 with no context and contradictory receipts, its restore_with retry fails, and get/list intent receipts undercount the emitted envelope ([pm-gh1662](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1662.toon))
+- GH-1678: a scoped registerRenderer replacement bypasses --output-budget and its read_output receipt reports within_budget for the native payload, not the delivered bytes ([pm-gh1678](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1678.toon))
 - GH-1677: the stale-revision refusal's next_steps and examples drop --pm-path, --no-extensions and the output mode, so the recovery reads return another tracker's item ([pm-gh1677](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1677.toon))
 - GH-1676: a pm close refused for missing close fields suggests a separate pm update and a retry, although pm close accepts --resolution, --expected-result and --actual-result itself ([pm-gh1676](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1676.toon))
 - GH-1674: pm list --fields/--compact and pm search print the verbose envelope that GH-1642 removed from the default projection, so --fields costs more than the default ([pm-gh1674](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1674.toon))

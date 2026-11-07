@@ -95,11 +95,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 9945,
-        "remaining_tokens": 10055,
-        "seen_item_count": 111,
+        "spent_tokens": 8210,
+        "remaining_tokens": 11790,
+        "seen_item_count": 83,
         "suppressed_repeat_count": 8,
-        "delivered_bytes": 39771
+        "delivered_bytes": 32834
       },
       "cursor_walks": {
         "list": {

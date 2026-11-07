@@ -761,34 +761,15 @@ function formatEffectiveOutput(
     effectiveOptions,
     format,
   );
-  const selectedFields = (resolvedCommandOptions as Record<string, unknown>).fields;
-  const explicitItemSelection =
-    command === "get" &&
-    typeof selectedFields === "string" &&
-    selectedFields.trim().length > 0;
-  const renderNative = (value: unknown): string =>
-    format === "json"
-      ? formatBuiltInOutput(value, "json", options.lean === true)
-      : formatBuiltInOutput(value, "toon", false, {
-          preserveEmptyItemCollections: explicitItemSelection,
-        });
+  const renderNative = nativeRenderer(format, command, resolvedCommandOptions, options.lean === true);
   if (service.rendered !== null) {
-    const serviceRendered = service.rendered;
-    // A service-rendered read still answers to the caller's output budget: the
-    // contracts measure the string the service returned, and a string that
-    // cannot fit is replaced by the bounded native refusal (GH-1678).
-    const audited = withDeliveredOutputRenderer(
+    return deliverServiceRendering(service.rendered, {
       format,
-      () => serviceRendered,
-      () => attachReadOutputContracts(command, resolvedCommandOptions, effectiveResult),
-    );
-    if (!isReadResultOmittedForBudget(audited)) {
-      setActiveCommandResultOmitted(effectiveResult);
-      return serviceRendered;
-    }
-    process.exitCode ||= EXIT_CODE.USAGE;
-    setActiveCommandDeliveryResult(audited, effectiveResult, options.quiet !== true);
-    return renderNative(audited);
+      renderNative,
+      contract: () => attachReadOutputContracts(command, resolvedCommandOptions, effectiveResult),
+      effectiveResult,
+      quiet: options.quiet === true,
+    });
   }
   const outputResult = service.result;
   propagateContextUsageServingReceipt(effectiveResult, outputResult);
@@ -801,13 +782,14 @@ function formatEffectiveOutput(
    * rendered natively: routing it through an expanding renderer would undo
    * the bound it reports (GH-1678).
    */
+  let nativeFallback = false;
   const renderDelivered = (value: unknown): { text: string; custom: boolean } => {
     if (format === "toon") {
       const markdownDefault = renderDefaultMarkdownResult(value);
       if (markdownDefault !== null) return { text: markdownDefault, custom: false };
     }
     const rendererOverride =
-      nativeOutput || isReadResultOmittedForBudget(value)
+      nativeOutput || nativeFallback || isReadResultOmittedForBudget(value)
         ? { rendered: null }
         : runActiveRendererOverride(format, value);
     if (rendererOverride.rendered !== null) {
@@ -820,33 +802,135 @@ function formatEffectiveOutput(
     }
     return { text: renderNative(value), custom: false };
   };
+  return deliverContractedRead({
+    format,
+    contract: () => attachReadOutputContracts(command, resolvedCommandOptions, projectedOutputResult),
+    renderDelivered,
+    renderNative,
+    useNativeRendering: () => {
+      nativeFallback = true;
+    },
+    structuredDeliveryPreserved: service.structuredDeliveryPreserved,
+    tokenAccounting: options.tokenAccounting === true,
+    quiet: options.quiet === true,
+    effectiveResult,
+  });
+}
+
+/** The built-in renderer for one read: lean JSON, or TOON that keeps the empty collections an explicit get selection requested. */
+function nativeRenderer(
+  format: "json" | "toon",
+  command: string | undefined,
+  commandOptions: Record<string, unknown>,
+  lean: boolean,
+): (value: unknown) => string {
+  if (format === "json") return (value) => formatBuiltInOutput(value, "json", lean);
+  const selectedFields = commandOptions.fields;
+  const preserveEmptyItemCollections =
+    command === "get" && typeof selectedFields === "string" && selectedFields.trim().length > 0;
+  return (value) => formatBuiltInOutput(value, "toon", false, { preserveEmptyItemCollections });
+}
+
+/**
+ * Deliver an output_format service's string. A service-rendered read still
+ * answers to the caller's output budget: the contracts measure the string the
+ * service returned, and a string that cannot fit is replaced by the bounded
+ * native refusal (GH-1678). The refusal is delivered natively, so its own
+ * receipt measures it natively.
+ */
+function deliverServiceRendering(
+  serviceRendered: string,
+  delivery: Pick<ContractedReadDelivery, "format" | "renderNative" | "contract" | "effectiveResult" | "quiet">,
+): string {
+  const audited = withDeliveredOutputRenderer(
+    delivery.format,
+    (value) => (isReadResultOmittedForBudget(value) ? delivery.renderNative(value) : serviceRendered),
+    delivery.contract,
+  );
+  if (!isReadResultOmittedForBudget(audited)) {
+    setActiveCommandResultOmitted(delivery.effectiveResult);
+    return serviceRendered;
+  }
+  process.exitCode ||= EXIT_CODE.USAGE;
+  setActiveCommandDeliveryResult(audited, delivery.effectiveResult, !delivery.quiet);
+  return delivery.renderNative(audited);
+}
+
+/** One read's delivery: its contracts, its renderers and the host settings that shape what is written. */
+interface ContractedReadDelivery {
+  format: "json" | "toon";
+  contract: () => unknown;
+  renderDelivered: (value: unknown) => { text: string; custom: boolean };
+  renderNative: (value: unknown) => string;
+  useNativeRendering: () => void;
+  structuredDeliveryPreserved: boolean;
+  tokenAccounting: boolean;
+  quiet: boolean;
+  effectiveResult: unknown;
+}
+
+/**
+ * Attach a read's contracts against the renderer that will deliver it, verify
+ * the delivered rendering against its receipts, and render it (GH-1678).
+ */
+function deliverContractedRead(delivery: ContractedReadDelivery): string {
   // Every receipt estimate, compaction step and omission decision measures the
   // delivered bytes, including a scoped extension renderer's string.
-  const intentOutputResult = withDeliveredOutputRenderer(
-    format,
-    (value) => renderDelivered(value).text,
-    () => attachReadOutputContracts(command, resolvedCommandOptions, projectedOutputResult),
+  let contracted = withDeliveredOutputRenderer(
+    delivery.format,
+    (value) => delivery.renderDelivered(value).text,
+    delivery.contract,
   );
-  if (isReadResultOmittedForBudget(intentOutputResult)) {
+  // The receipts describe the output before token accounting, which is also
+  // the delivery when no accounting block is added.
+  let unaccounted = delivery.renderDelivered(contracted);
+  if (unaccounted.custom && receiptsUnderstateDelivery(contracted, unaccounted.text)) {
+    // A custom rendering that depends on its own receipts need not converge, and
+    // a bounded estimate is no proof that it fits. Bytes no receipt measured are
+    // never delivered: the read is measured and rendered natively instead.
+    delivery.useNativeRendering();
+    contracted = withDeliveredOutputRenderer(delivery.format, delivery.renderNative, delivery.contract);
+    unaccounted = { text: delivery.renderNative(contracted), custom: false };
+  }
+  if (isReadResultOmittedForBudget(contracted)) {
     process.exitCode ||= EXIT_CODE.USAGE;
   }
-  let { structuredDeliveryPreserved } = service;
+  let structuredDeliveryPreserved = delivery.structuredDeliveryPreserved && !unaccounted.custom;
+  if (!delivery.tokenAccounting) {
+    setActiveCommandDeliveryResult(contracted, delivery.effectiveResult, !delivery.quiet && structuredDeliveryPreserved);
+    return unaccounted.text;
+  }
   const renderResolvedOutput = (value: unknown): string => {
-    const delivered = renderDelivered(value);
+    const delivered = delivery.renderDelivered(value);
     if (delivered.custom) structuredDeliveryPreserved = false;
     return delivered.text;
   };
-  const accountedOutputResult =
-    options.tokenAccounting === true
-      ? attachOutputTokenAccounting(intentOutputResult, renderResolvedOutput)
-      : intentOutputResult;
+  const accountedOutputResult = attachOutputTokenAccounting(contracted, renderResolvedOutput);
   const rendered = renderResolvedOutput(accountedOutputResult);
-  setActiveCommandDeliveryResult(
-    accountedOutputResult,
-    effectiveResult,
-    options.quiet !== true && structuredDeliveryPreserved,
-  );
+  setActiveCommandDeliveryResult(accountedOutputResult, delivery.effectiveResult, !delivery.quiet && structuredDeliveryPreserved);
   return rendered;
+}
+
+/** Receipt fields that state how many tokens the delivered output costs. */
+const DELIVERED_TOKEN_RECEIPTS = [
+  ["read_output", "estimated_tokens"],
+  ["context_intent", "estimated_tokens"],
+  ["read_session", "spent_this_call_tokens"],
+] as const;
+
+/**
+ * Whether any receipt in a delivered result reports fewer tokens than its
+ * rendering costs. Settled intent receipts never claim a fit their estimate
+ * exceeds, so an estimate that covers the rendering also covers its fit claim.
+ */
+function receiptsUnderstateDelivery(value: unknown, text: string): boolean {
+  const deliveredTokens = Math.ceil(Buffer.byteLength(text, "utf8") / 4);
+  const record = Object(value) as Record<string, unknown>;
+  return DELIVERED_TOKEN_RECEIPTS.some(([receipt, field]) => {
+    const section = record[receipt];
+    const estimate = isPlainObject(section) ? section[field] : undefined;
+    return typeof estimate === "number" && estimate < deliveredTokens;
+  });
 }
 
 /** Resolve command ownership and suppression before projecting and rendering the result. */

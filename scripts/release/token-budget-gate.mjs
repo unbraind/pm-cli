@@ -662,11 +662,14 @@ function measureCorpus(cliPath) {
         options,
       ),
     };
-    const intentNegativeControl = runCliJson(
-      cliPath,
-      ["list", "--for", "triage", "--token-budget", "256", "--json"],
-      options,
-    ).context_intent;
+    // An omitted intent result is unsuccessful: it exits 2 (GH-1662) and still
+    // carries its receipt, so the control reads the receipt from the failed run.
+    const intentArgs = ["list", "--for", "triage", "--token-budget", "256", "--json"];
+    const intentOmission = runCli(cliPath, intentArgs, options, true);
+    const intentNegativeControl = {
+      ...parseCliJson(intentOmission.stdout, intentArgs).context_intent,
+      exit_status: intentOmission.status,
+    };
     return { measurements, negativeControl, intentNegativeControl };
   } finally {
     cleanupTempRoot(workspaceRoot);
@@ -872,6 +875,7 @@ function compareNegativeControls(negativeControl, intentNegativeControl) {
     );
   }
   if (
+    intentNegativeControl?.exit_status !== 2 ||
     intentNegativeControl?.declaration_feasible !== true ||
     intentNegativeControl?.result_omitted !== true ||
     intentNegativeControl?.within_budget !== false ||
@@ -881,7 +885,7 @@ function compareNegativeControls(negativeControl, intentNegativeControl) {
       intentNegativeControl.token_budget
   ) {
     violations.push(
-      "intent-negative-control: infeasible 256-token list override did not return an explicit omitted-result receipt",
+      "intent-negative-control: infeasible 256-token list override did not exit 2 with an explicit omitted-result receipt",
     );
   }
   return violations;

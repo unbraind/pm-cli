@@ -2,13 +2,13 @@ id: pm-sj66lm
 title: "TOON get --fields spends four lines on a complete omission receipt and drops requested empty collections, so a narrow read is two-thirds receipt and absent-vs-empty depends on that receipt"
 description: "Found 2026-11-06 while fixing pm-gh1663 on main 2fd348267 plus the fix branch. In a sandbox tracker, pm get <id> --fields id,title,comments (TOON) emits 143 B: item id and title, then a four-line omission_receipt with has_omissions false, omitted_field_group_count 0 and omitted_field_groups [] (96 B, 67% of the response). The requested comments collection is empty, and TOON's sparse policy drops it, so the only proof that comments was read and is empty is that receipt. JSON, SDK and MCP render comments: [] as pm-4fwgaz requires, and pm-gh1408 made the explicit-selection receipt compact in structured output, but TOON still prints the full complete receipt and loses the requested-empty value. Expected: in TOON a requested empty collection renders as key: [] (it is information the caller asked for), and a complete explicit-selection receipt collapses to one line or is omitted when every requested key is present in the output, with --full or --json keeping the typed receipt. The default and depth receipts that do report omissions are unchanged. Duplicate check: searched TOON requested empty collection, sparse policy, complete omission receipt, explicit selection receipt; pm-4fwgaz and pm-gh1408 are closed and covered structured output only."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[5]: agent-ux,output,projection,token-efficiency,toon
 created_at: "2026-11-06T05:09:12.052Z"
-updated_at: "2026-11-06T20:10:05.199Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#4d05e51e9085533fb7cd32a8"
+updated_at: "2026-11-07T04:18:51.074Z"
+closed_at: "2026-11-07T04:18:20.730Z"
+completed_at: "2026-11-07T04:18:20.730Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "TOON get --fields renders each explicitly requested empty collection as an empty array, while unrequested empty groups stay absent; A complete explicit-selection omission receipt costs at most one TOON line, and receipts that report omissions are unchanged in TOON, JSON, SDK and MCP; A spec measures the TOON bytes of a two-field get --fields read before and after and asserts the receipt share drops below a third; Negative control: restoring the four-line complete receipt or dropping the requested empty collection fails the spec"
@@ -17,8 +17,9 @@ risk: low
 confidence: high
 severity: low
 repro_steps: "In a sandbox tracker create one Task, then run pm get <id> --fields id,title,comments in TOON and compare with --json"
-expected_result: "TOON shows comments: [] for the requested empty collection and spends at most one line on a complete selection receipt"
-actual_result: "TOON drops the requested comments collection and prints a four-line has_omissions false receipt, 96 of 143 B"
+resolution: "TOON explicit selection: a complete omission receipt renders as the one line 'omission_receipt: complete', while JSON, SDK and MCP keep the typed receipt and receipts that report omissions are unchanged. get --fields renders every requested empty collection as key: [] or key: {} (restoreRequestedEmptyItemCollections in src/core/output/output.ts), so absent and empty no longer depend on the receipt. pm get <id> --fields id,title,comments drops from 162 B (receipt share 59%) to 105 B (26%)."
+expected_result: A narrow TOON get --fields read is no longer dominated by its complete omission receipt and shows requested empty collections
+actual_result: "delivered-output-budget specs assert the one-line receipt, the requested empties restored in order, JSON kept typed, and a receipt share below a third for the measured two-field shape"
 component: get
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-4fwgaz,related,"2026-11-06T05:09:12.052Z","harness:claude-code","cli:create:dep",detected
@@ -32,6 +33,27 @@ files[3]{path,scope}:
   tests/unit/core/output/delivered-output-budget.spec.ts,project
 tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,project,"harness:claude-code","2026-11-06T20:09:49.369Z",local_mutation,fix/output-budget-delivered-bytes
+test_runs[1]:
+  - run_id: test-local-mw5qh27b-w3k5yn
+    kind: test
+    status: passed
+    started_at: "2026-11-07T01:37:11.583Z"
+    finished_at: "2026-11-07T01:37:21.766Z"
+    recorded_at: "2026-11-07T01:37:21.766Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: TOON explicit selections are compact and keep requested empty collections
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-sj66lm
+  gate_id: delivered-output-budget
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts tests/integration/read-output/delivered-output-budget.integration.spec.ts,pnpm typecheck,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

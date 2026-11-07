@@ -296,7 +296,8 @@ function mockRuntime(
     };
   });
   const runCommand = vi.fn((_command: string, args: string[]) => ({
-    status: options.status ? options.status(args) : 0,
+    // An omitted intent result exits 2 (GH-1662).
+    status: options.status ? options.status(args) : args.join(" ").includes("--token-budget 256") ? 2 : 0,
     stdout: options.stdout ? options.stdout(args) : commandStdout(args),
     stderr: options.stderr ? options.stderr(args) : "",
   }));
@@ -1201,6 +1202,17 @@ describe("scripts/release/token-budget-gate", () => {
     });
     await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
       "intent-negative-control: infeasible 256-token list override",
+    );
+  });
+
+  it("fails when the infeasible intent control omits its result but exits successfully", async () => {
+    // Negative control: an omitted intent result must be unsuccessful (GH-1662).
+    mockRuntime({
+      manifestText: manifestForBudget(10_000),
+      status: () => 0,
+    });
+    await expect(loadModule().then((mod) => mod.main())).rejects.toThrow(
+      "intent-negative-control: infeasible 256-token list override did not exit 2",
     );
   });
 

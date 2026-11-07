@@ -118,6 +118,10 @@ describe("GH-1662 one budget contract for intent reads", () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Estimate target", description: "d".repeat(400) });
       createTestItemId(context, { title: "Second row" });
+      // A shaped read keeps its refusal: include projection never drops an intent omission.
+      const shaped = await runSource(context, ["get", id, "--for", "inspect", "--output-budget", "300", "--output-include", "item", "--json"]);
+      expect(shaped.code, shaped.stdout).toBe(2);
+      expect(isReadResultOmittedForBudget(JSON.parse(shaped.stdout))).toBe(true);
       for (const args of [["get", id, "--for", "inspect"], ["list", "--for", "triage", "--limit", "2"]]) {
         for (const budget of ["500", "3000"]) {
           for (const flag of ["--token-budget", "--output-budget"]) {
@@ -132,6 +136,56 @@ describe("GH-1662 one budget contract for intent reads", () => {
       }
     });
   });
+});
+
+describe("GH-1662 intent budgets bind every shaped, resumed and session read", () => {
+  /** Split a rendered recovery command into argv, honouring POSIX single quotes. */
+  const argvOf = (command: string): string[] => [...command.matchAll(/'((?:[^']|'"'"')*)'|(\S+)/gu)].map((match) => match[1] === undefined ? match[2]! : match[1].replaceAll(`'"'"'`, "'")).slice(1);
+
+  it("binds include-shaped reads, keeps resumed refusals whole, names working retries and charges sessions exactly", async () => {
+    await withTempPmPath(async (context) => {
+      const shapedId = createTestItemId(context, { title: "s".repeat(40), description: "d".repeat(500) });
+      // An include projection drops the intent receipt; its budget still binds the delivered bytes.
+      for (let budget = 300; budget <= 600; budget += 25) {
+        const shaped = await runSource(context, ["get", shapedId, "--for", "inspect", "--fields", "id,title,description,children", "--output-include", "item", "--token-budget", String(budget), "--output-row-contract", "--json"]);
+        const omitted = isReadResultOmittedForBudget(JSON.parse(shaped.stdout));
+        // Negative control: at 350 the shaped read delivered 413 tokens with exit 0.
+        if (omitted) expect(shaped.code, `budget ${budget}`).toBe(2);
+        else expect(tokensOf(shaped.stdout), `budget ${budget}`).toBeLessThanOrEqual(budget);
+      }
+
+      // A refused continuation page keeps every receipt in agreement.
+      createTestItemId(context, { title: "c".repeat(60) });
+      createTestItemId(context, { title: "e".repeat(60) });
+      const first = JSON.parse((await runSource(context, ["list", "--for", "triage", "--limit", "1", "--json"])).stdout) as { next_cursor: string };
+      for (const budget of ["256", "300", "400"]) {
+        const resumed = await runSource(context, ["list", "--for", "triage", "--limit", "1", "--after", first.next_cursor, "--output-budget", budget, "--output-row-contract", "--json"]);
+        const envelope = JSON.parse(resumed.stdout) as Record<string, { result_omitted?: boolean; within_budget?: boolean }>;
+        const refused = Object.hasOwn(envelope, "output_budget_exceeded");
+        expect(envelope.read_output!.result_omitted, `budget ${budget}`).toBe(refused);
+        expect(resumed.code, `budget ${budget}`).toBe(refused ? 2 : 0);
+      }
+
+      // The retry a refusal names keeps the caller's field projection and returns the result.
+      const wideId = createTestItemId(context, { title: "T", description: "w".repeat(1000), acceptanceCriteria: "a".repeat(1000) });
+      const narrow = await runSource(context, ["get", wideId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);
+      const restore = (JSON.parse(narrow.stdout) as { budget_exceeded?: { restore_with: string } }).budget_exceeded?.restore_with;
+      if (restore !== undefined) {
+        expect(restore).toContain("--fields 'id,title'");
+        const retried = await runSource(context, argvOf(restore));
+        expect(retried.code, retried.stdout).toBe(0);
+      }
+
+      // A session charges exactly the delivered envelope, including the settled fit flag.
+      const state = { version: 1, id: "probe", token_budget: 5000, spent_tokens: 15, seen_item_ids: [] };
+      const tinyId = createTestItemId(context, { title: "TT" });
+      const session = await runSource(context, ["get", tinyId, "--fields", "id,title", "--for", "inspect", "--token-budget", "256", "--output-budget", "unbounded", "--output-row-contract", "--output-session", JSON.stringify(state), "--json"]);
+      const receipts = JSON.parse(session.stdout) as { read_output: { estimated_tokens: number }; read_session: { next_state: { spent_tokens: number } } };
+      // Negative control: the receipts reported 559 tokens for a 560-token envelope.
+      expect(receipts.read_output.estimated_tokens).toBe(tokensOf(session.stdout));
+      expect(receipts.read_session.next_state.spent_tokens).toBe(15 + tokensOf(session.stdout));
+    });
+  }, 120_000);
 });
 
 describe("pm-sj66lm TOON get --fields", () => {

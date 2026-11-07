@@ -1409,6 +1409,18 @@ function attachValidateDiagnosticRowContract(
       };
 }
 
+/**
+ * Whether a canonical include projection shapes this result. A budget omission
+ * is a refusal, not a result to shape: selecting sections from it would drop
+ * the refusal and report success (GH-1662).
+ */
+function includeProjectionApplies(
+  resolved: PmResolvedReadOutputDimensions,
+  result: Record<string, unknown>,
+): boolean {
+  return resolved.include?.source === "canonical" && !isReadResultOmittedForBudget(result);
+}
+
 /** Capture continuation coordinates before amount bounds, then apply row and repeat projections. */
 function projectReadOutputRows(
   result: Record<string, unknown>,
@@ -1421,11 +1433,11 @@ function projectReadOutputRows(
   continuationState: ReadOutputContinuationState;
 } {
   let projected = { ...result };
-  if (resolved.include?.source === "canonical") {
+  if (includeProjectionApplies(resolved, result)) {
     projected = applyIncludeProjection(
       resolved.command,
       projected,
-      resolved.include.value,
+      resolved.include!.value,
     );
   }
   if (resolved.command === "assurance") {
@@ -2064,7 +2076,7 @@ export function applyReadOutputDimensions<
   );
   // An intent layer that already omitted the result makes the whole envelope
   // unsuccessful; the shared receipt must agree with it (GH-1662).
-  const intentOmitted = isContextIntentResultOmitted(projected);
+  const intentOmitted = isReadResultOmittedForBudget(projected);
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
