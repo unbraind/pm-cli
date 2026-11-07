@@ -14,6 +14,7 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
+import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
 import { CLOSE_FIELDS_REFUSAL_CODE, repairCloseFieldsRecovery } from "./runtime/close-fields-retry.js";
 import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
@@ -154,6 +155,7 @@ import {
 } from "./extension-command-help.js";
 import {
   type LooseCommandFlagDefinition,
+  type LooseOptionRefusalListing,
   collectLoosePositionalArgs,
   stripLooseCommandOptionTokens
 } from "../sdk/extension/command-options.js";
@@ -188,7 +190,7 @@ import {
 } from "./registration-helpers.js";
 import type { RuntimeExtensionActivationProbe } from "./runtime/activation.js";
 import { activationCommandMatchesProbe,buildBootstrapActivationProbe,buildRuntimeExtensionActivationScope,buildRuntimeExtensionFilterForProbe,collectActivationCommandCandidates,collectLeadingCommandArgs,collectParsedActivationCommandArgs,commandPathNeedsSearchExtensions,commandPathNeedsTemplateExtensions,discoveryNeedsActivationForProbe,extensionActivationCommands,extensionCapabilities,extensionNeedsActivationForProbe,extensionProvidesTemplatesRuntime,hasAnyCapability,hasGlobalExtensionContributions,matchesStaticExtensionCommand,probeUsesAnyFlag,resolveStaticExtensionActivationDecision } from "./runtime/activation.js";
-import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,refuseUndeclaredRootOnlyOptions,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
+import { captureCommandOptionTokens,refuseConflictingCommandOptionSpellings,resolveExtensionCommandRefusalListing,collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,refuseUndeclaredRootOnlyOptions,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
 import type { CoreCommandRegistrationSelection } from "./runtime/selection.js";
 import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveStructuredMutationPreviewInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
 import { buildPostActionTelemetryOutcome,inferPostActionErrorCode,inferPostActionFailureMessage,normalizeTelemetryCommandResolution,normalizeTelemetryErrorCategory,normalizeTelemetryResolutionStage,readRecordBoolean,readRecordNumber,readRecordString } from "./runtime/telemetry-outcome.js";
@@ -317,9 +319,9 @@ function inferMissingFieldsFromErrorMessage(message: string): string[] | undefin
 }
 
 function inferMissingFieldsForRecovery(rawMessage: string, invocationArgv: string[], existingRecovery: PmCliErrorRecoveryPayload | undefined, code: string | undefined): string[] | undefined {
-  // The close-fields repair owns its retry, including one it withdrew: message-text inference must not
-  // rebuild it (pm-gh1676). Other refusals keep inference, even when they type their missing operand.
-  if (existingRecovery?.suggested_retry || code === CLOSE_FIELDS_REFUSAL_CODE || rawMessage.includes("failed in extension handler (") || !/\b(?:missing|required|requires)\b/i.test(rawMessage)) {
+  // The close-fields and annotation-option repairs own their retries, including one they withdrew:
+  // message-text inference must not rebuild it (pm-gh1676, pm-y26mvc). Other refusals keep inference, even when they type their missing operand.
+  if (existingRecovery?.suggested_retry || code === CLOSE_FIELDS_REFUSAL_CODE || code === ANNOTATION_OPTION_REFUSAL_CODE || rawMessage.includes("failed in extension handler (") || !/\b(?:missing|required|requires)\b/i.test(rawMessage)) {
     return undefined;
   }
   const providedFields = extractProvidedOptionFlags(invocationArgv);
@@ -420,7 +422,8 @@ function withContextRecovery(context: PmCliErrorContext | undefined, recovery: P
 function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
   const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
-  return repairCloseFieldsRecovery(argv, context.code, recovery, closeRetryScopePrefix(argv));
+  const annotationRecovery = repairAnnotationOptionRecovery(argv, context.code, context.field, recovery);
+  return repairCloseFieldsRecovery(argv, context.code, annotationRecovery, closeRetryScopePrefix(argv));
 }
 
 /** Stands in for an empty value so the bootstrap scanner keeps it; tracker resolution trims it back to empty. */
@@ -1197,6 +1200,21 @@ function syncCommanderActionArgs(actionCommand: Command, actionArgs: unknown[], 
   }
 }
 
+/**
+ * What an unknown-option refusal lists for an extension-created command: its
+ * declared flags and inherited host flags (pm-4of199). Undefined for a core
+ * command, including one an extension only augments, which lists its own.
+ */
+function resolveCommandRefusalListing(
+  actionCommand: Command,
+  commandPath: string,
+  definitions: LooseCommandFlagDefinition[],
+): LooseOptionRefusalListing | undefined {
+  if (!isExtensionCreatedCommand(actionCommand)) return undefined;
+  const readOutput = activeRuntimeExtensionCommandDescriptors.get(normalizeExtensionCommandPath(commandPath))?.read_output_declared === true;
+  return resolveExtensionCommandRefusalListing(definitions, readOutput);
+}
+
 /** Wrap each action once so validated parser overrides and extension handlers precede the original core action. */
 function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
   /** Traverse nested command registrations and wrap each action at most once. */
@@ -1204,6 +1222,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
     const actionEntry = entry as ActionMutableCommand;
     if (typeof actionEntry._actionHandler === "function" && actionEntry[WRAPPED_ACTION_HANDLER] !== true) {
       const originalAction = actionEntry._actionHandler;
+      captureCommandOptionTokens(entry);
       /** Apply extension parsing and dispatch while preserving core action receipts. */
       actionEntry._actionHandler = async function wrappedActionHandler(this: unknown, ...actionArgs: unknown[]): Promise<unknown> {
         const actionCommand = resolveActionCommand(actionArgs, entry);
@@ -1220,12 +1239,15 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         const activeRegistrations = getActiveExtensionRegistrations();
         const extensionFlagDefinitions = activeRegistrations ? collectExtensionFlagDefinitionsForInvocation(activeRegistrations, commandPath, commandArgs) : [];
         const runtimeFieldFlagDefinitions = await collectRuntimeFieldLooseFlagDefinitionsForCommand(commandPath, pmRoot);
-        let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, [...extensionFlagDefinitions, ...runtimeFieldFlagDefinitions]);
+        const refusalListing = resolveCommandRefusalListing(actionCommand, commandPath, extensionFlagDefinitions);
+        let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, [...extensionFlagDefinitions, ...runtimeFieldFlagDefinitions], refusalListing);
+        refuseConflictingCommandOptionSpellings(actionCommand, extensionFlagDefinitions, commandPath);
         if (activeRuntimeExtensionCommandDescriptors.has(normalizeExtensionCommandPath(commandPath))) {
           delete commandOptions.author;
         }
-        // A core command an extension only augments with flags keeps its own --all and --explain.
-        if (isExtensionCreatedCommand(actionCommand)) {
+        // A core command an extension only augments with flags keeps its own --all and --explain. Other
+        // undeclared options still reach a zero-flag command's handler: released packages read them (pm-4of199).
+        if (refusalListing !== undefined) {
           refuseUndeclaredRootOnlyOptions(commandOptions, extensionFlagDefinitions, commandPath);
         }
         const dispatchInput = { args: [...commandArgs], path: globalOptions.path };
@@ -1469,7 +1491,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
         const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(snapshot.registrations, commandPath, command.args.map(String));
-        const scopedOptions = extractCommandScopedOptions(command, command.args.map(String), extensionFlagDefinitions);
+        const scopedOptions = extractCommandScopedOptions(command, command.args.map(String), extensionFlagDefinitions, resolveCommandRefusalListing(command, commandPath, extensionFlagDefinitions));
         const result = await runRequiredExtensionCommand(command, scopedOptions, globalOptions, extensionFlagDefinitions);
         await invalidateSearchCachesForMutation(globalOptions, result);
         printResult(result, {
@@ -1609,7 +1631,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     setActiveExtensionRegistrations(runtimeExtensions.registrations);
 
     const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(runtimeExtensions.registrations, commandPath, commandArgs);
-    commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions);
+    commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions, resolveCommandRefusalListing(actionCommand, commandPath, extensionFlagDefinitions));
     forwardReadOutputIncludeModes(actionCommand, commandPath, globalOptions, commandOptions);
     const parserOverride = await runActiveParserOverride({
       command: commandPath,

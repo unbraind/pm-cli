@@ -14,6 +14,7 @@ import {
   shouldResolveMutationStdinTokens,
   transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
+import { renderPmCommand } from "../core/shared/command-line.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -428,35 +429,120 @@ function annotationStdinHint(collectionKey: string): string {
   return collectionKey === "comments" ? "--stdin" : "--add -";
 }
 
-function assertAnnotationAddValueIsNotFlagLike(
-  raw: string,
-  config: AnnotationCommandConfig<string, AnnotationEntry>,
-): void {
-  const emptyFlag = config.input.emptyFlag ?? "--add";
-  if (emptyFlag !== "--add") {
-    return;
+/** Refusal code for annotation text that is an option token a parser bound as a text flag's value; the refusals spell it literally for the error catalog. */
+export const ANNOTATION_FLAG_LIKE_VALUE_CODE = "annotation_flag_like_value";
+
+/** Whether annotation text is an option token such as `--file` or `--file=x`; `text=` escapes literal dash-leading text. */
+export function isFlagLikeAnnotationValue(raw: string): boolean {
+  return /^-{1,2}[A-Za-z][\w-]*(?:=.*)?$/.test(raw.trim());
+}
+
+/**
+ * The own form of an annotation source option a text flag took as its value
+ * (pm-y26mvc): `--add --file note.md` means `--file note.md`, so the recovery
+ * is to drop `--add`, not to switch to stdin. Undefined for any other token.
+ */
+function annotationSourceOptionForm(token: string): string | undefined {
+  if (token === "--file") return "--file <path>";
+  if (token.startsWith("--file=")) return token;
+  return token === "--stdin" ? "--stdin" : undefined;
+}
+
+/** Inputs for the refusal raised when annotation text is an option token. */
+export interface FlagLikeAnnotationValueRefusalInput {
+  /** Annotation collection key: `comments`, `notes`, or `learnings`. */
+  collectionKey: string;
+  /** Text option that received the token, such as `--add`. */
+  textFlag: string;
+  /** The option token received as annotation text. */
+  value: string;
+  /** Command the examples start with, such as `pm comments <id>`. */
+  commandPrefix: string;
+  /** Executable retry of the caller's invocation, when the caller knows one. */
+  retryArgs?: string[];
+  /** Positional text that followed the token and that the source option cannot be combined with. */
+  conflictingOperand?: string;
+}
+
+/**
+ * Build the refusal for annotation text that is an option token. A source
+ * option (`--file`, `--stdin`) is named in its own form so the agent learns
+ * that it works without the text flag; any other token keeps the stdin and
+ * `text=` escape guidance. A supplied retry is carried as recovery with the
+ * text flag as `field` and the token as the suggested flag, which lets the
+ * CLI rewrite it as a minimal edit of the typed argv.
+ */
+export function createFlagLikeAnnotationValueRefusal(
+  input: FlagLikeAnnotationValueRefusalInput,
+): PmCliError {
+  const trimmed = input.value.trim();
+  const noun = input.collectionKey.replace(/s$/, "");
+  const sourceForm = annotationSourceOptionForm(trimmed);
+  const stdinHint = annotationStdinHint(input.collectionKey);
+  const retry =
+    input.retryArgs === undefined
+      ? {}
+      : {
+          field: input.textFlag,
+          recovery: {
+            suggested_flags: [trimmed],
+            suggested_retry: renderPmCommand(input.retryArgs),
+            suggested_retry_args: [...input.retryArgs],
+          },
+        };
+  if (sourceForm !== undefined) {
+    const sourceFlag = sourceForm.split(/[ =]/, 1)[0];
+    const source = sourceFlag === "--file" ? "that file" : "stdin";
+    const operandNote =
+      input.conflictingOperand === undefined
+        ? ""
+        : ` "${input.conflictingOperand}" was read as positional text, which ${sourceFlag} cannot be combined with: drop it, or pass it as the text without ${sourceFlag}.`;
+    return new PmCliError(
+      `${input.textFlag} value "${trimmed}" looks like an option, not annotation text: ${input.textFlag} took ${sourceFlag} as its value. Drop ${input.textFlag} and pass ${sourceForm} on its own.${operandNote}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "annotation_flag_like_value",
+        required: `Drop ${input.textFlag}: ${sourceForm} reads the ${noun} text from ${source} by itself. Use ${input.textFlag} text=${trimmed} only when the text really is "${trimmed}".`,
+        examples: [
+          `${input.commandPrefix} ${sourceForm}`,
+          `${input.commandPrefix} ${input.textFlag} text=${trimmed}`,
+        ],
+        ...retry,
+      },
+    );
   }
-  const trimmed = raw.trim();
-  if (!/^-{1,2}[A-Za-z][\w-]*(?:=.*)?$/.test(trimmed)) {
-    return;
-  }
-  const stdinHint = annotationStdinHint(config.collectionKey);
-  const commandPrefix =
-    config.input.mode === "edit"
-      ? `pm ${config.collectionKey} <id> --edit <index>`
-      : `pm ${config.collectionKey} <id>`;
-  throw new PmCliError(
-    `--add value "${trimmed}" looks like an option, not annotation text. Use ${stdinHint} to read stdin, or use text=${trimmed} for literal dash-leading text.`,
+  return new PmCliError(
+    `${input.textFlag} value "${trimmed}" looks like an option, not annotation text. Use ${stdinHint} to read stdin, or use text=${trimmed} for literal dash-leading text.`,
     EXIT_CODE.USAGE,
     {
       code: "annotation_flag_like_value",
       required: `Use ${stdinHint} for stdin input, pass plain text, or use text=${trimmed} when the text really starts with "-".`,
       examples: [
-        `${commandPrefix} ${stdinHint}`,
-        `${commandPrefix} --add text=${trimmed}`,
+        `${input.commandPrefix} ${stdinHint}`,
+        `${input.commandPrefix} ${input.textFlag} text=${trimmed}`,
       ],
+      ...retry,
     },
   );
+}
+
+function assertAnnotationAddValueIsNotFlagLike(
+  raw: string,
+  config: AnnotationCommandConfig<string, AnnotationEntry>,
+): void {
+  const emptyFlag = config.input.emptyFlag ?? "--add";
+  if (emptyFlag !== "--add" || !isFlagLikeAnnotationValue(raw)) {
+    return;
+  }
+  throw createFlagLikeAnnotationValueRefusal({
+    collectionKey: config.collectionKey,
+    textFlag: "--add",
+    value: raw,
+    commandPrefix:
+      config.input.mode === "edit"
+        ? `pm ${config.collectionKey} <id> --edit <index>`
+        : `pm ${config.collectionKey} <id>`,
+  });
 }
 
 /**

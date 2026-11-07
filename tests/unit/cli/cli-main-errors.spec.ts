@@ -1917,11 +1917,11 @@ describe("CLI main bootstrap helper coverage", () => {
     ).toThrow(/Missing required argument.*pm tools export <target> \[extras\.\.\.\]/);
     expect(() => _testOnly.validateDynamicExtensionCommandInvocation({ ...descriptor, command: "tools", arguments: [], flags: [] }, [], {}, [])).not.toThrow();
     expect(() => _testOnly.validateDynamicExtensionCommandInvocation({ ...descriptor, command: "tools", arguments: [], flags: [] }, [], { definitelyNotReal: true }, [])).toThrow(
-      /Unknown option '--definitely-not-real'.*does not define extension flags/,
+      /Unknown option '--definitely-not-real'.*declares no flags; it accepts only the host flags --json,/,
     );
     expect(() =>
       _testOnly.validateDynamicExtensionCommandInvocation({ ...descriptor, command: "tools", arguments: [], flags: [] }, [], { noDefinitelyNotReal: false }, []),
-    ).toThrow(/Unknown option '--no-definitely-not-real'.*does not define extension flags/);
+    ).toThrow(/Unknown option '--no-definitely-not-real'.*declares no flags/);
     expect(() =>
       _testOnly.validateDynamicExtensionCommandInvocation(
         {

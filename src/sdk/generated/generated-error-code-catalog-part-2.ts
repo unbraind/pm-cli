@@ -884,6 +884,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
       "cli/error-guidance.ts",
       "cli/runtime/invocation-options.ts",
       "core/telemetry/observability.ts",
+      "sdk/extension/command-options.ts",
     ],
     owned_states: [
       { state: "declared_option_is_rejected_on_the_selected_command_path", probe_id: "cross-command-unknown-option", entrypoints: ["deps"], expected_exit_class: "usage" },

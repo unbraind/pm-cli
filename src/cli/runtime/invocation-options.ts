@@ -4,6 +4,7 @@
  */
 import { Command } from "commander";
 import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "../../sdk/cli-contracts.js";
+import { resolveExtensionCommandInheritedFlagContracts } from "../../sdk/cli-contracts/flag-contracts.js";
 import { resolvePmCommandOperation } from "../../sdk/cli-contracts/command-aliases.js";
 import {
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
@@ -24,12 +25,15 @@ import {
   normalizeExtensionCommandPath
 } from "../extension-command-help.js";
 import {
+  type ArgvOptionArity,
   type LooseCommandFlagDefinition,
+  type LooseOptionRefusalListing,
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectExtensionFlagDefinitionsForCommand,
   collectLooseCommandOptionKeysForDefinitions,
   resolveExtensionFlagOptionKey,
   parseLooseCommandOptions,
+  refuseConflictingArgvOptionSpellings,
   validateLooseCommandOptionsWithFlagDefinitions
 } from "../../sdk/extension/command-options.js";
 import {
@@ -151,7 +155,12 @@ function forwardReadOutputIncludeModes(actionCommand: Command, commandPath: stri
 }
 
 /** Separate handler options from global controls, then validate and coerce contributed flags against the command's declared schema. */
-function extractCommandScopedOptions(command: Command, commandArgs: string[], extensionFlagDefinitions: LooseCommandFlagDefinition[] = []): Record<string, unknown> {
+function extractCommandScopedOptions(
+  command: Command,
+  commandArgs: string[],
+  extensionFlagDefinitions: LooseCommandFlagDefinition[] = [],
+  refusalListing?: LooseOptionRefusalListing,
+): Record<string, unknown> {
   const allOptions = collectCommandInvocationOptions(command);
   const scoped: Record<string, unknown> = { ...allOptions };
   copyReadOutputInvocationProvenance(command, scoped);
@@ -199,7 +208,7 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[], ex
       }
     }
 
-    validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, [...coreFlagDefinitions, ...extensionFlagDefinitions], getCommandPath(command));
+    validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, [...coreFlagDefinitions, ...extensionFlagDefinitions], getCommandPath(command), refusalListing);
     const coerced = coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions, getCommandPath(command));
     copyReadOutputInvocationProvenance(scoped, coerced);
     return coerced;
@@ -291,6 +300,38 @@ function isImporterOrExporterCommandPath(registrations: ReturnType<typeof create
   );
 }
 
+const COMMAND_OPTION_TOKENS = Symbol("pm.commandOptionTokens");
+
+/**
+ * Record the tokens Commander hands this command's own option parser: its
+ * options and operands, after the root program consumed the host flags
+ * (pm-wlxf8f). Commander keeps only the last value of an option, so these
+ * tokens are the one record of which spelling supplied which value.
+ */
+function captureCommandOptionTokens(command: Command): void {
+  const parseOptions = command.parseOptions.bind(command);
+  command.parseOptions = (argv: string[]) => {
+    Reflect.set(command, COMMAND_OPTION_TOKENS, [...argv]);
+    return parseOptions(argv);
+  };
+}
+
+/** Refuse two spellings of one declared extension flag with different values in the command's own tokens. */
+function refuseConflictingCommandOptionSpellings(
+  command: Command,
+  definitions: readonly LooseCommandFlagDefinition[],
+  commandPath: string,
+): void {
+  const tokens = Reflect.get(command, COMMAND_OPTION_TOKENS) as string[] | undefined;
+  if (tokens === undefined || definitions.length === 0) return;
+  const arities = new Map<string, ArgvOptionArity>();
+  for (const option of command.options) {
+    const arity: ArgvOptionArity = option.required ? "required" : option.optional ? "optional" : "none";
+    for (const spelling of [option.short, option.long]) if (spelling) arities.set(spelling, arity);
+  }
+  refuseConflictingArgvOptionSpellings(tokens, definitions, commandPath, (spelling) => arities.get(spelling));
+}
+
 /** Reject missing required or excess positional arguments before invoking a contributed handler. */
 function validateDynamicExtensionCommandArgs(descriptor: ExtensionCommandHelpDescriptor, args: string[]): void {
   const descriptorArguments = dynamicCommandArguments(descriptor);
@@ -319,26 +360,69 @@ function formatDynamicOptionFlag(optionKey: string): string {
     .toLowerCase()}`;
 }
 
+/**
+ * What an unknown-option refusal on an extension-created command lists
+ * (pm-4of199): the flags it declares, then the host flags it inherits from
+ * the same declaration `pm contracts` publishes as `inherited_flags`. The
+ * host definitions it is also validated against include `--no-extensions`
+ * and, on a non-read command, read-output controls it refuses.
+ */
+function resolveExtensionCommandRefusalListing(
+  definitions: readonly LooseCommandFlagDefinition[],
+  readOutput: boolean,
+): Required<LooseOptionRefusalListing> {
+  return {
+    definitions,
+    inheritedFlags: resolveExtensionCommandInheritedFlagContracts({ readOutput }).map((contract) => contract.flag),
+  };
+}
+
+/**
+ * Refuse every option an extension command that declares no flags receives,
+ * listing the host flags it inherits (pm-4of199). Only the dynamic dispatch
+ * path applies it today: a registered handler still receives undeclared
+ * options, because released packages read options they never declared.
+ */
+function refuseUndeclaredExtensionCommandOptions(
+  options: Record<string, unknown>,
+  commandPath: string,
+  readOutput: boolean,
+): void {
+  const unknownOptions = Object.keys(options)
+    .filter((key) => options[key] !== undefined)
+    .sort()
+    .map(formatDynamicOptionFlag);
+  if (unknownOptions.length === 0) return;
+  const { inheritedFlags } = resolveExtensionCommandRefusalListing([], readOutput);
+  throw new PmCliError(
+    `Unknown option '${unknownOptions.join(", ")}' for extension command '${commandPath}'. This command declares no flags; it accepts only the host flags ${inheritedFlags.join(", ")}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "unknown_option",
+      flag: unknownOptions[0],
+      required: `Remove ${unknownOptions.join(", ")}, or ask the package to declare it with api.registerFlags.`,
+      nextSteps: [`Run pm contracts --command ${commandPath} --flags-only --json to list the flags this command accepts.`],
+    },
+  );
+}
+
 /** Validate declared extension flags and reject all supplied options when a command declares no flags. */
 function validateDynamicExtensionCommandOptions(
   descriptor: ExtensionCommandHelpDescriptor,
   options: Record<string, unknown>,
   extensionFlagDefinitions: LooseCommandFlagDefinition[],
 ): void {
+  const readOutput = descriptor.read_output_declared === true;
   if (extensionFlagDefinitions.length > 0) {
-    validateLooseCommandOptionsWithFlagDefinitions(options, extensionFlagDefinitions, descriptor.command);
+    validateLooseCommandOptionsWithFlagDefinitions(
+      options,
+      extensionFlagDefinitions,
+      descriptor.command,
+      resolveExtensionCommandRefusalListing(extensionFlagDefinitions, readOutput),
+    );
     return;
   }
-  const unknownOptions = Object.keys(options)
-    .filter((key) => options[key] !== undefined)
-    .sort();
-  if (unknownOptions.length === 0) {
-    return;
-  }
-  throw new PmCliError(
-    `Unknown option '${unknownOptions.map(formatDynamicOptionFlag).join(", ")}' for extension command '${descriptor.command}'. This command does not define extension flags.`,
-    EXIT_CODE.USAGE,
-  );
+  refuseUndeclaredExtensionCommandOptions(options, descriptor.command, readOutput);
 }
 
 /** Validate contributed arguments and options together before extension dispatch. */
@@ -355,4 +439,4 @@ function validateDynamicExtensionCommandInvocation(
   validateDynamicExtensionCommandOptions(descriptor, options, extensionFlagDefinitions);
 }
 
-export { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,refuseUndeclaredRootOnlyOptions,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation };
+export { captureCommandOptionTokens,refuseConflictingCommandOptionSpellings,resolveExtensionCommandRefusalListing,collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,refuseUndeclaredRootOnlyOptions,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation };

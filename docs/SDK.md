@@ -3117,7 +3117,13 @@ tracker record excluded from npm). A direct caller should pass the handler key.
 The flag's own spellings (`status-filter`, `--status-filter`, or its short
 letter) fold into the same key, and undeclared keys pass through unchanged. Two
 spellings of one flag with different values are refused with
-`extension_option_spelling_conflict` (exit 2) instead of silently picking one:
+`extension_option_spelling_conflict` (exit 2) instead of silently picking one.
+CLI argv gets the same refusal: `pm demo-brief --status-filter open -s closed`
+exits 2 instead of running with whichever value Commander kept last. Equal
+values after the declared coercion (`--count 1 -c 1.0`), repeats of one
+spelling, and `list` flags keep their accumulation
+([pm-wlxf8f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wlxf8f.toon),
+tracker record excluded from npm):
 
 ```ts
 const client = new PmClient({ pmRoot });
@@ -3152,6 +3158,19 @@ controls (`--output-include`, `--output-limit`, `--output-budget`,
 commands that declare `read_output`, `--no-extensions` never appears because it
 removes the command itself, and root-only flags (`--version`, `--all`,
 `--explain`) are refused as unknown unless the command declares them.
+
+On the CLI, a command with declared flags refuses any other option with
+`unknown_option` (exit 2), and the refusal lists exactly what the command
+accepts: its declared flags, then its inherited host flags, never
+`--no-extensions` or, on a command without `read_output`, the read-output
+controls
+([pm-4of199](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4of199.toon),
+tracker record excluded from npm). A command that declares no flags still
+receives undeclared options in `context.options`, because released packages
+read options they never declared; pm-4of199 tracks refusing them once those
+packages declare their flags. Declare every option a handler reads with
+`api.registerFlags` or inline `flags`, so the command keeps working when that
+refusal lands.
 
 ## Output Ownership
 

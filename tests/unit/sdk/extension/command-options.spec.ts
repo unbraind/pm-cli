@@ -7,6 +7,7 @@ import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
+  refuseConflictingArgvOptionSpellings,
   resolveExtensionFlagOptionKey,
 } from "../../../../src/sdk/extension/command-options.js";
 import { PmCliError } from "../../../../src/sdk/runtime-primitives.js";
@@ -173,5 +174,70 @@ describe("direct extension command options", () => {
     };
     expect(collectExtensionFlagDefinitionsForCommand(registrations, "demo brief")).toEqual([{ long: "--a" }, { long: "--c" }]);
     expect(collectExtensionFlagDefinitionsForCommand(registrations, "   ")).toEqual([]);
+  });
+});
+
+describe("pm-wlxf8f argv spelling conflicts", () => {
+  const definitions = [
+    { long: "--status-filter", short: "-s", value_type: "string" },
+    { long: "--count", short: "-c", value_type: "number" },
+    { long: "--verbose", short: "-v", value_type: "boolean" },
+    { long: "--level [value]", short: "-l", value_type: "string" },
+    { long: "--tags", short: "-t", value_type: "string", list: true },
+    // A declaration without a spelling, and a short spelling a later flag cannot steal.
+    { description: "label only" },
+    { long: "--silent", short: "-s", value_type: "boolean" },
+  ];
+  const refuse = (tokens: string[], arityOf?: (spelling: string) => "required" | "optional" | "none" | undefined) =>
+    () => refuseConflictingArgvOptionSpellings(tokens, definitions, "demo", arityOf);
+
+  it("refuses two spellings of one scalar flag with different values, in every attached form", () => {
+    for (const tokens of [
+      ["--status-filter", "open", "-s", "closed"],
+      ["--status-filter=open", "-sclosed"],
+      ["-s", "open", "--status-filter", "open", "-s", "closed"],
+      ["--count", "1", "-c", "2"],
+    ]) {
+      expect(refuse(tokens)).toThrowError(PmCliError);
+    }
+    expect(refuse(["--status-filter", "open", "-s", "closed"])).toThrow(
+      "Options '--status-filter' and '-s' both set --status-filter for extension command 'demo' with different values.",
+    );
+    try {
+      refuse(["-c", "1", "--count", "2"])();
+    } catch (error) {
+      expect((error as PmCliError).context).toMatchObject({ code: "extension_option_spelling_conflict", required: "Pass --count once, under the handler key 'count'." });
+    }
+  });
+
+  it("accepts equal values after coercion, repeats of one spelling, list flags and switch presence", () => {
+    for (const tokens of [
+      ["--status-filter", "open", "-s", "open"],
+      ["--count", "1", "-c", "1.0"],
+      ["--status-filter", "a", "--status-filter", "b"],
+      ["--tags", "a", "-t", "b"],
+      // A switch keeps presence semantics: the following operand stays positional.
+      ["-v", "positional", "--verbose"],
+      // An optional value is not read from a following option token.
+      ["--level", "-l"],
+      ["--level", "high", "-l", "high"],
+      // Tokens after `--` are operands, and unknown spellings are skipped.
+      ["--status-filter", "open", "--", "-s", "closed"],
+      ["--bogus", "-s", "open", "-x"],
+      // A switch with an attached suffix is not a recognized option.
+      ["--verbose=yes", "-vx", "--verbose"],
+    ]) {
+      expect(refuse(tokens)).not.toThrow();
+    }
+    expect(refuseConflictingArgvOptionSpellings([], [], "demo")).toBeUndefined();
+  });
+
+  it("reads another option's value through the command's arity table instead of as a flag", () => {
+    // `--title` takes a value, so `-s` is its value, not a second spelling of --status-filter.
+    const arity = (spelling: string) => (spelling === "--title" ? "required" : undefined);
+    expect(refuse(["--status-filter", "open", "--title", "-s", "closed"], arity)).not.toThrow();
+    expect(refuse(["--status-filter", "open", "--title", "-s", "closed"])).toThrow();
+    // A value-taking option at the end of argv has no value to consume.
+    expect(refuse(["--status-filter", "open", "-s"])).toThrow();
   });
 });

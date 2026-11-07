@@ -243,11 +243,36 @@ function formatLooseOptionLabel(
   return null;
 }
 
+/**
+ * The flags an unknown-option refusal lists (pm-4of199). By default every
+ * validated definition is listed; an extension-created command lists only
+ * its declared flags and the host flags it inherits, because the host
+ * definitions it is also validated against include controls it refuses.
+ */
+export interface LooseOptionRefusalListing {
+  /** Definitions whose labels are listed, in place of every validated definition. */
+  definitions?: ReadonlyArray<LooseCommandFlagDefinition>;
+  /** Host flags listed after the definitions' labels. */
+  inheritedFlags?: readonly string[];
+}
+
+/** Labels an unknown-option refusal lists: the listing's definitions (default: every validated one), then its host flags. */
+function collectRefusalListingLabels(
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+  listing: LooseOptionRefusalListing,
+): string[] {
+  const labels = (listing.definitions ?? definitions)
+    .map((definition) => formatLooseOptionLabel(definition))
+    .filter((label): label is string => label !== null);
+  return [...labels, ...(listing.inheritedFlags ?? [])];
+}
+
 /** Refuse an option no declaration owns, a disabled flag that was supplied, or a required flag that is missing, naming the command and its accepted flags. */
 export function validateLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
   commandPath: string,
+  listing: LooseOptionRefusalListing = {},
 ): void {
   if (definitions.length === 0) {
     return;
@@ -255,13 +280,10 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
   const allowed = new Set<string>();
   const disabled = new Map<string, string>();
   const required: Array<{ keys: string[]; label: string }> = [];
-  const labels: string[] = [];
+  const labels = collectRefusalListingLabels(definitions, listing);
   for (const definition of definitions) {
     const keys = collectLooseOptionKeys(definition);
     const normalizedLabel = formatLooseOptionLabel(definition);
-    if (normalizedLabel !== null) {
-      labels.push(normalizedLabel);
-    }
     for (const key of keys) {
       allowed.add(key);
       if (definition.enabled === false) {
@@ -285,6 +307,11 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
       throw new PmCliError(
         `Unknown option '--${key}' for extension command '${commandPath}'.${expected}`,
         EXIT_CODE.USAGE,
+        {
+          code: "unknown_option",
+          flag: `--${key}`,
+          required: `Use a flag the command accepts; run pm contracts --command ${commandPath} --flags-only --json to list them.`,
+        },
       );
     }
     const disabledLabel = disabled.get(key);
@@ -1072,4 +1099,124 @@ function foldDirectOptionSpellings(
     }
   }
   return folded;
+}
+
+/** How an argv option token takes its value, as Commander parses it: `<value>`, `[value]`, or a switch. */
+export type ArgvOptionArity = "required" | "optional" | "none";
+
+/** One option spelling the argv scan recognizes, and the declared scalar flag it sets, if any. */
+interface ArgvOptionSpelling {
+  arity: ArgvOptionArity;
+  declared?: { definition: LooseCommandFlagDefinition; handlerKey: string; kind: LooseOptionCoercionKind | null };
+}
+
+/** The argv spelling entry of one declaration with a handler key; list flags only lend their arity. */
+function toArgvOptionSpelling(definition: LooseCommandFlagDefinition, handlerKey: string): ArgvOptionSpelling {
+  const arity = resolveExtensionFlagValueContract(definition as Parameters<typeof resolveExtensionFlagValueContract>[0]).value_arity as ArgvOptionArity;
+  return definition.list === true ? { arity } : { arity, declared: { definition, handlerKey, kind: resolveLooseOptionCoercionKind(definition) } };
+}
+
+/** Index declared long and short spellings; the first declaration of a spelling owns it. */
+function indexArgvOptionSpellings(
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+): Map<string, ArgvOptionSpelling> {
+  const index = new Map<string, ArgvOptionSpelling>();
+  for (const definition of definitions) {
+    const handlerKey = resolveCanonicalLooseOptionKey(definition);
+    if (handlerKey === null) continue;
+    const entry = toArgvOptionSpelling(definition, handlerKey);
+    const spellings = [resolveExtensionLongFlagName(definition.long), typeof definition.short === "string" ? definition.short.trim() : ""];
+    for (const spelling of spellings.filter((candidate): candidate is string => candidate?.startsWith("-") === true)) {
+      if (!index.has(spelling)) index.set(spelling, entry);
+    }
+  }
+  return index;
+}
+
+/** Resolve one argv token to a known spelling and its attached value, following Commander's `--long=value` and `-sVALUE` forms. */
+function resolveArgvOptionToken(
+  token: string,
+  lookup: (spelling: string) => ArgvOptionSpelling | undefined,
+): { spelling: string; entry: ArgvOptionSpelling; attached?: string } | undefined {
+  const exact = lookup(token);
+  if (exact !== undefined) return { spelling: token, entry: exact };
+  const [spelling, attached] = token.startsWith("--")
+    ? [token.slice(0, Math.max(token.indexOf("="), 0)), token.slice(token.indexOf("=") + 1)]
+    : [token.slice(0, 2), token.slice(2)];
+  const entry = spelling.length > 1 ? lookup(spelling) : undefined;
+  // Commander attaches a value only to an option that takes one; a switch token with a suffix stays unknown.
+  return entry !== undefined && entry.arity !== "none" ? { spelling, entry, attached } : undefined;
+}
+
+/**
+ * Refuse CLI argv that sets one declared scalar flag through two spellings
+ * with different values (pm-wlxf8f), as direct callers are refused through
+ * {@link normalizeDirectExtensionCommandOptions}. Commander keeps the last
+ * value of an option whatever spelling supplied it, so `--status-filter open
+ * -s closed` would otherwise run with one value and drop the other silently.
+ * `tokens` are the tokens the command's own option parser received;
+ * `arityOf` names the arity of the command's other options, so their values
+ * are never read as flags. Values compare after the declared coercion, so
+ * `--count 1 -c 1` is accepted; list flags accumulate and are not checked.
+ */
+export function refuseConflictingArgvOptionSpellings(
+  tokens: readonly string[],
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+  commandPath: string,
+  arityOf: (spelling: string) => ArgvOptionArity | undefined = () => undefined,
+): void {
+  const index = indexArgvOptionSpellings(definitions);
+  const lookup = (spelling: string): ArgvOptionSpelling | undefined => {
+    const declared = index.get(spelling);
+    if (declared !== undefined) return declared;
+    const arity = arityOf(spelling);
+    return arity === undefined ? undefined : { arity };
+  };
+  const latest = new Map<string, Map<string, unknown>>();
+  for (let position = 0; position < tokens.length; position += 1) {
+    const token = tokens[position]!;
+    if (token === "--") return;
+    const resolved = isArgvOptionToken(token) ? resolveArgvOptionToken(token, lookup) : undefined;
+    if (resolved === undefined) continue;
+    const { value, consumed } = readArgvOptionValue(resolved, tokens[position + 1]);
+    position += consumed;
+    if (resolved.entry.declared !== undefined) {
+      recordArgvSpellingValue(latest, resolved.entry.declared, resolved.spelling, value, commandPath);
+    }
+  }
+}
+
+/** Commander's test for a token that may be an option. */
+function isArgvOptionToken(token: string): boolean {
+  return token.length > 1 && token.startsWith("-");
+}
+
+/** Read an option occurrence's value as Commander does: attached, the next token when required (or optional and not an option), or presence. */
+function readArgvOptionValue(
+  resolved: { entry: ArgvOptionSpelling; attached?: string },
+  next: string | undefined,
+): { value: unknown; consumed: 0 | 1 } {
+  if (resolved.attached !== undefined) return { value: resolved.attached, consumed: 0 };
+  const { arity } = resolved.entry;
+  const takesNext = next !== undefined && (arity === "required" || (arity === "optional" && !isArgvOptionToken(next)));
+  return takesNext ? { value: next, consumed: 1 } : { value: true, consumed: 0 };
+}
+
+/** Record one spelling's coerced value, refusing it when another spelling of the same flag holds a different value. */
+function recordArgvSpellingValue(
+  latest: Map<string, Map<string, unknown>>,
+  declared: NonNullable<ArgvOptionSpelling["declared"]>,
+  spelling: string,
+  value: unknown,
+  commandPath: string,
+): void {
+  const { definition, handlerKey, kind } = declared;
+  const coerced = kind ? coerceLooseOptionValue(value, kind) : value;
+  const spellings = latest.get(handlerKey) ?? new Map<string, unknown>();
+  const conflicting = [...spellings].find(([other, otherValue]) => other !== spelling && !isDeepStrictEqual(otherValue, coerced));
+  if (conflicting !== undefined) {
+    refuseConflictingOptionSpellings(definition, handlerKey, [conflicting[0], spelling], commandPath);
+  }
+  spellings.set(spelling, coerced);
+  latest.set(handlerKey, spellings);
 }
