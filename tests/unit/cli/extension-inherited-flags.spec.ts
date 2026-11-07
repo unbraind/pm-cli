@@ -5,6 +5,7 @@
 import { Command } from "commander";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  buildDynamicExtensionHelpOptionSummaries,
   buildExtensionInheritedFlagHelp,
   buildExtensionInheritedHelpOptionSummaries,
   ensureCommandPath,
@@ -40,6 +41,15 @@ describe("extension inherited host flags (pm-gh1666)", () => {
     expect(buildExtensionInheritedFlagHelp(descriptor("demo brief"))).toContain(
       "Run pm contracts --command demo brief --flags-only --json for each flag's owner and sdk_option key.",
     );
+  });
+
+  it("publishes a help row's handler key only when the declaration has one (Greptile review)", () => {
+    const rows = buildDynamicExtensionHelpOptionSummaries(
+      descriptor("demo brief", { flags: [{ long: "--status-filter" }, { long: "--constructor" }] }),
+    );
+    expect(rows[0]).toMatchObject({ owner: "extension", sdk_option: "statusFilter" });
+    expect(rows[1]).toMatchObject({ owner: "extension" });
+    expect(rows[1]).not.toHaveProperty("sdk_option");
   });
 
   it("carries ownership into merged help rows only when the extension row declares it", () => {

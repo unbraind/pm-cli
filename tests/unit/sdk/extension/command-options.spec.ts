@@ -95,6 +95,13 @@ describe("direct extension command options", () => {
       target: "a",
       verbose: true,
     });
+    // A disabled flag's short alias never refuses an independent enabled flag's key (Greptile review).
+    const shadowed = [
+      { long: "--sort-order", short: "-S", value_type: "string", enabled: false },
+      { long: "--s", value_type: "string" },
+      { long: "--optional-off", value_type: "string", required: true, enabled: false },
+    ];
+    expect(normalizeDirectExtensionCommandOptions({ s: "keep" }, shadowed, "demo brief")).toEqual({ s: "keep" });
     // A negated spelling of a non-boolean, or of nothing declared, passes through unchanged.
     expect(normalizeDirectExtensionCommandOptions({ target: "a", "no-target": true, "no-such": 1 }, definitions, "demo brief")).toEqual({
       target: "a",

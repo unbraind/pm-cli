@@ -684,9 +684,13 @@ function buildDynamicExtensionHelpOptionSummary(
     alias_for: null,
     ...(definition.default !== undefined ? { default_value: definition.default } : {}),
     owner: "extension",
-    // A declaration that renders an option label always names a long or short spelling, so it has a handler key.
-    sdk_option: resolveExtensionFlagOptionKey(definition) as string,
+    ...withSdkOption(resolveExtensionFlagOptionKey(definition)),
   };
+}
+
+/** Publish the handler key only when the declaration has one (`--constructor` names an unsafe key and has none). */
+function withSdkOption(key: string | null): { sdk_option?: string } {
+  return key === null ? {} : { sdk_option: key };
 }
 
 /**

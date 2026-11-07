@@ -917,8 +917,7 @@ export function normalizeDirectExtensionCommandOptions(
   for (const [key, value] of Object.entries(folded)) {
     (handlerKeys.has(key) ? declared : passthrough)[key] = value;
   }
-  // Required and disabled declarations bind direct callers as they bind CLI argv.
-  validateLooseCommandOptionsWithFlagDefinitions(declared, definitions, commandPath);
+  refuseDirectDeclarationViolations(declared, definitions, commandPath);
   return Object.assign(
     passthrough,
     coerceLooseCommandOptionsWithFlagDefinitions(
@@ -951,6 +950,31 @@ function recordDirectOptionOccurrences(
   const occurrenceSource = Object.create(null) as LooseOptionsWithOccurrences;
   Object.defineProperty(occurrenceSource, LOOSE_OPTION_OCCURRENCES, { value: occurrences });
   return occurrenceSource;
+}
+
+/**
+ * Required and disabled declarations bind direct callers as they bind CLI argv.
+ * Each declaration is checked against its own handler key only, so a short
+ * alias (`-S`) never makes an independent flag's key (`--s`) look disabled.
+ */
+function refuseDirectDeclarationViolations(
+  declared: Record<string, unknown>,
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+  commandPath: string,
+): void {
+  for (const definition of definitions) {
+    const handlerKey = resolveCanonicalLooseOptionKey(definition);
+    if (handlerKey === null) continue;
+    // A declaration with a handler key always renders a long or short label.
+    const label = formatLooseOptionLabel(definition) as string;
+    const supplied = Object.hasOwn(declared, handlerKey);
+    if (definition.enabled === false && supplied) {
+      throw new PmCliError(`Option '${label}' is disabled for extension command '${commandPath}'.`, EXIT_CODE.USAGE);
+    }
+    if (definition.required === true && definition.enabled !== false && !supplied) {
+      throw new PmCliError(`Missing required option '${label}' for extension command '${commandPath}'.`, EXIT_CODE.USAGE);
+    }
+  }
 }
 
 /** A declared flag reachable through one direct-caller spelling. */
