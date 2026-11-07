@@ -422,8 +422,10 @@ function withContextRecovery(context: PmCliErrorContext | undefined, recovery: P
 function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
   const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
-  const annotationRecovery = repairAnnotationOptionRecovery(argv, context.code, context.field, recovery);
-  return repairCloseFieldsRecovery(argv, context.code, annotationRecovery, closeRetryScopePrefix(argv));
+  // Both argv repairs bind an environment-selected tracker into the retry, so it acts on the same item anywhere.
+  const scopePrefix = closeRetryScopePrefix(argv);
+  const annotationRecovery = repairAnnotationOptionRecovery(argv, context.code, context.field, recovery, scopePrefix);
+  return repairCloseFieldsRecovery(argv, context.code, annotationRecovery, scopePrefix);
 }
 
 /** Stands in for an empty value so the bootstrap scanner keeps it; tracker resolution trims it back to empty. */

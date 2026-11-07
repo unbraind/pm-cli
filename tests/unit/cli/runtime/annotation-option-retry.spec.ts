@@ -23,6 +23,13 @@ describe("pm-y26mvc annotation option retry replays the caller's command", () =>
     expect(argv).toHaveLength(10);
   });
 
+  it("binds an environment-selected tracker, and withdraws when that selection cannot be made binding", () => {
+    const argv = ["comments", "pm-one", "--add", "--file", "note.md"];
+    const scoped = repairAnnotationOptionRecovery(argv, CODE, "--add", PRODUCER, ["--pm-path", "/srv/target/.agents/pm"]);
+    expect(scoped?.suggested_retry_args).toEqual(["--pm-path", "/srv/target/.agents/pm", "comments", "pm-one", "--file", "note.md"]);
+    expect(repairAnnotationOptionRecovery(argv, CODE, "--add", PRODUCER, null)).toEqual(WITHDRAWN);
+  });
+
   it("unwraps an attached text-flag spelling into the option it carried", () => {
     const repaired = repairAnnotationOptionRecovery(["notes", "pm-one", "--add=--stdin"], CODE, "--add", { suggested_flags: ["--stdin"], suggested_retry_args: ["notes", "pm-one", "--stdin"] });
     expect(repaired?.suggested_retry_args).toEqual(["notes", "pm-one", "--stdin"]);

@@ -57,24 +57,31 @@ function findSwallowingTokens(argv: readonly string[], commandIndex: number, col
  * the swallowed option as the first suggested flag. When the typed argv does
  * not hold exactly one such pair, the retry is withdrawn rather than replaced
  * by the producer's shorter command, which would drop the caller's options.
+ * `scopePrefix` is the tracker selection the invocation did not spell itself
+ * (an environment-selected tracker), prepended so the retry appends to the
+ * same item wherever it runs; null means that selection cannot be made
+ * binding, so the retry is withdrawn.
  */
 export function repairAnnotationOptionRecovery(
   argv: readonly string[],
   code: string | undefined,
   field: string | undefined,
   recovery: PmCliErrorRecoveryPayload | undefined,
+  scopePrefix: readonly string[] | null = [],
 ): PmCliErrorRecoveryPayload | undefined {
   const token = recovery?.suggested_flags?.[0];
   if (code !== ANNOTATION_OPTION_REFUSAL_CODE || field === undefined || token === undefined || recovery!.suggested_retry_args === undefined) return recovery;
   const withdrawn = { ...recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const commandIndex = findBootstrapCommandTokenIndex([...argv]);
-  if (commandIndex === undefined) return withdrawn;
+  if (commandIndex === undefined || scopePrefix === null) return withdrawn;
   const producerRetry = recovery!.suggested_retry_args!;
   const matches = findSwallowingTokens(argv, commandIndex, producerRetry[0]!, field, token);
   if (matches.length !== 1) return withdrawn;
   const { index, width } = matches[0]!;
-  const retry = [...argv.slice(0, index), token, ...argv.slice(index + width)];
-  return bindsAsProducerIntended(retry, index, field, token, producerRetry) ? { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry } : withdrawn;
+  const rewritten = [...argv.slice(0, index), token, ...argv.slice(index + width)];
+  if (!bindsAsProducerIntended(rewritten, index, field, token, producerRetry)) return withdrawn;
+  const retry = [...scopePrefix, ...rewritten];
+  return { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry };
 }
 
 /**

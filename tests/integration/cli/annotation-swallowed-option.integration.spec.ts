@@ -49,6 +49,20 @@ describe("pm-y26mvc swallowed annotation source option", () => {
     });
   });
 
+  it("binds the environment-selected tracker into the retry when the cwd holds another tracker", async () => {
+    await withTempPmPath(async (context) => {
+      const target = path.join(context.tempRoot, "target");
+      expect(run(context, ["--pm-path", path.join("target", ".agents", "pm"), "init", "--defaults", "--agent-guidance", "skip", "--json"]).code).toBe(0);
+      expect(run(context, ["create", "Task", "Environment item", "--id", "same", "--json"]).code).toBe(0);
+      await writeFile(path.join(target, "note.md"), "from the file\n", "utf8");
+      // PM_PATH selects the temp tracker while the cwd is the target workspace, so a pasted retry must name it.
+      const result = context.runCli(["comments", "pm-same", "--add", "--file", "note.md", "--json"], { cwd: target, preserveDefaultMutationOutput: true });
+      expect(result.code).toBe(EXIT_CODE.USAGE);
+      const refusal = JSON.parse(result.stderr) as AnnotationRefusal;
+      expect(refusal.recovery?.suggested_retry_args?.slice(0, 2)).toEqual(["--pm-path", path.join("..", ".agents", "pm")]);
+    });
+  });
+
   it("refuses --add --stdin <operand> with the operand named and no retry, and retries --add --stdin through stdin", async () => {
     await withTempPmPath(async (context) => {
       expect(run(context, ["create", "Task", "Swallowed stdin", "--id", "stdin", "--json"]).code).toBe(0);
