@@ -1118,6 +1118,7 @@ describe("mcp server branch residual coverage", () => {
             renderers: { itemSections: [] },
             registrations: {
               commands: [{ action: "custom", command: "pm custom" }],
+              flags: [],
             },
           })),
           runActiveCommandHandler,

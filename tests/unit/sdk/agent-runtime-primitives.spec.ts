@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { coerceLooseCommandOptionsWithFlagDefinitions } from "../../../src/cli/extension-command-options.js";
+import { coerceLooseCommandOptionsWithFlagDefinitions } from "../../../src/sdk/extension/command-options.js";
 import {
   activateExtensions,
   resolvePortableWorkspaceContext,

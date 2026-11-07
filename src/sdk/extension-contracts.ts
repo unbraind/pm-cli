@@ -35,8 +35,8 @@ import {
  */
 export const EXTENSION_CAPABILITIES = KNOWN_EXTENSION_CAPABILITIES;
 
-/** Restricts extension capability values accepted by command, SDK, and storage contracts. */
-export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];
+// One declaration, so function signatures typed with the core alias name the type this module exports (pm-gh1667).
+export type { ExtensionCapability } from "../core/extensions/extension-types.js";
 
 /** Canonical extension governance policy modes. */
 export const EXTENSION_POLICY_MODES = KNOWN_EXTENSION_POLICY_MODES;

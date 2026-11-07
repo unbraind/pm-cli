@@ -5,7 +5,7 @@ import {
   parseLooseCommandOptions,
   stripLooseCommandOptionTokens,
   validateLooseCommandOptionsWithFlagDefinitions,
-} from "../../../src/cli/extension-command-options.js";
+} from "../../../src/sdk/extension/command-options.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 

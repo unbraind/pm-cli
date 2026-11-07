@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: architecture,"area:cli","area:mcp","area:sdk",ci
 created_at: "2026-07-06T13:13:21.203Z"
-updated_at: "2026-09-22T05:25:23.114Z"
+updated_at: "2026-11-07T09:41:32.558Z"
 closed_at: "2026-07-22T19:18:34.259Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -152,7 +152,6 @@ files[124]{path,scope,note}:
   src/cli/commands/workspace/upgrade.ts,project,SDK presentation-boundary capstone
   src/cli/error-guidance.ts,project,SDK presentation-boundary capstone
   src/cli/extension-command-help.ts,project,SDK presentation-boundary capstone
-  src/cli/extension-command-options.ts,project,SDK presentation-boundary capstone
   src/cli/help-json-payload.ts,project,SDK presentation-boundary capstone
   src/cli/main.ts,project,SDK presentation-boundary capstone
   src/cli/migration-gates.ts,project,SDK presentation-boundary capstone
@@ -169,6 +168,7 @@ files[124]{path,scope,note}:
   src/sdk/eval.ts,project,Evaluation directly consumes SDK search ownership
   src/sdk/extension.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/sdk/extension/bundled-catalog.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
+  src/sdk/extension/command-options.ts,project,SDK presentation-boundary capstone
   src/sdk/extension/describe.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/sdk/extension/doctor.ts,project,Extension engine SDK promotion and boundary ratchet burn-down
   src/sdk/extension/install-sources.ts,project,Extension engine SDK promotion and boundary ratchet burn-down

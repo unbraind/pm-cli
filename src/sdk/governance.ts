@@ -46,3 +46,13 @@ export * from "./history/maintenance.js";
 export * from "./history/attestation.js";
 export * from "./history/attestation-command.js";
 export * from "../core/history/digest.js";
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { LoadedExtension } from "../core/extensions/extension-types.js";
+export type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+export type { GlobalOptions } from "../core/shared/command-types.js";
+export type { ValidateFixRecord } from "../core/validate/fix-planning.js";
+export type { OwnerItemMetadata, StaleLinkOwnerInput } from "../core/validate/missing-link-owners.js";
+export type { ClassifiedStaleLinkedPath } from "../core/validate/stale-file-classification.js";
+export type { HistoryEntry, ItemDocument, ItemMetadata } from "../types.js";
+export type { ValidateItem } from "./governance/validate-item-reader.js";

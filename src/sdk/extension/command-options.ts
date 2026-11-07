@@ -1,8 +1,13 @@
 /**
- * @module cli/extension-command-options
+ * @module sdk/extension/command-options
  *
- * Provides CLI runtime support for Extension Command Options.
+ * Definition-driven extension command option grammar shared by every caller:
+ * CLI argv dispatch, `PmClient.run`, MCP, and the extension test harness all
+ * fold declared flag spellings into the handler key, apply declared defaults,
+ * and coerce values through the functions in this module (pm-gh1665).
  */
+import { isDeepStrictEqual } from "node:util";
+import { resolvePmCommandOperation } from "../cli-contracts/command-aliases.js";
 import {
   describeFlagScalarValueFailure,
   type FlagScalarValueFailure,
@@ -12,7 +17,8 @@ import {
   PmCliError,
   flattenFlagListValue,
   resolveFlagValueKind,
-} from "../sdk/runtime-primitives.js";
+  type FlagDefinition,
+} from "../runtime-primitives.js";
 
 /** Flag metadata consumed by loose-option parsing across core and extension commands. */
 export interface LooseCommandFlagDefinition {
@@ -600,10 +606,19 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
   for (const [key, value] of Object.entries(options)) {
     coerced[key] = value;
   }
+  const canonicalKeys = new Set(
+    definitions
+      .map((definition) => resolveCanonicalLooseOptionKey(definition))
+      .filter((key): key is string => key !== null),
+  );
   for (const definition of definitions) {
     const canonical = resolveCanonicalLooseOptionKey(definition);
     if (canonical) {
-      coerceDefinedLooseOption(coerced, definition, canonical, occurrenceSource, commandPath);
+      // A lower-cased short alias (`-S` -> `s`) never absorbs another flag's own key (`--s`).
+      const optionKeys = collectLooseOptionKeys(definition).filter(
+        (key) => key === canonical || !canonicalKeys.has(key),
+      );
+      coerceDefinedLooseOption(coerced, definition, canonical, optionKeys, occurrenceSource, commandPath);
     }
   }
   return coerced;
@@ -614,11 +629,11 @@ function coerceDefinedLooseOption(
   coerced: Record<string, unknown>,
   definition: LooseCommandFlagDefinition,
   canonical: string,
+  optionKeys: readonly string[],
   occurrenceSource: Record<string, unknown>,
   commandPath: string | undefined,
 ): void {
   const isListFlag = definition.list === true;
-  const optionKeys = collectLooseOptionKeys(definition);
   const kind = resolveLooseOptionCoercionKind(definition);
   if (kind && !isListFlag) {
     refuseMalformedScalarAliasValues(coerced, definition, canonical, optionKeys, kind, commandPath);
@@ -800,4 +815,211 @@ export function stripLooseCommandOptionTokens(
     index += 1;
   }
   return stripped;
+}
+
+/**
+ * Handler option key a declared extension flag is delivered under in
+ * `context.options` — the key `pm contracts` publishes as `sdk_option` and the
+ * key direct callers pass to `PmClient.run` or the test harness.
+ */
+export function resolveExtensionFlagOptionKey(
+  definition: LooseCommandFlagDefinition,
+): string | null {
+  return resolveCanonicalLooseOptionKey(definition);
+}
+
+/** Normalize a command path the way extension registration does: trimmed, lower-cased, single-spaced. */
+function normalizeFlagTargetCommandPath(commandPath: string): string {
+  return commandPath
+    .trim()
+    .toLowerCase()
+    .split(/\s+/u)
+    .filter((part) => part.length > 0)
+    .join(" ");
+}
+
+/** Join contributed flags by stable operation identity so canonical and compatibility command paths share one schema. */
+export function collectExtensionFlagDefinitionsForCommand(
+  registrations: {
+    readonly flags: ReadonlyArray<{
+      readonly target_command: string;
+      readonly flags: readonly FlagDefinition[];
+    }>;
+  },
+  commandPath: string,
+): FlagDefinition[] {
+  const normalizedCommandPath = normalizeFlagTargetCommandPath(commandPath);
+  if (normalizedCommandPath.length === 0) {
+    return [];
+  }
+  const operation = resolvePmCommandOperation(normalizedCommandPath);
+  return registrations.flags
+    .filter(
+      (entry) =>
+        resolvePmCommandOperation(
+          normalizeFlagTargetCommandPath(entry.target_command),
+        ) === operation,
+    )
+    .flatMap((entry) => [...entry.flags]);
+}
+
+/** Refuse two spellings of one declared flag that carry different values, instead of silently keeping one. */
+function refuseConflictingOptionSpellings(
+  definition: LooseCommandFlagDefinition,
+  handlerKey: string,
+  spellings: readonly [string, string],
+  commandPath: string,
+): never {
+  // Declarations with a handler key always carry a printable long or short label.
+  const label = formatLooseOptionLabel(definition) as string;
+  const [first, second] = spellings;
+  throw new PmCliError(
+    `Options '${first}' and '${second}' both set ${label} for extension command '${commandPath}' with different values.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_option_spelling_conflict",
+      required: `Pass ${label} once, under the handler key '${handlerKey}'.`,
+      why: `'${first}' and '${second}' are spellings of the same declared flag, and pm refuses to choose between two different values.`,
+      nextSteps: [
+        `Remove '${first}' or '${second}' and pass one value as '${handlerKey}'.`,
+        `Run pm contracts --command ${commandPath} --flags-only --json to read each flag's sdk_option key.`,
+      ],
+    },
+  );
+}
+
+/**
+ * Normalize the options a direct caller — `PmClient.run`, an MCP tool call, or
+ * the extension test harness — passes to an extension command, exactly as CLI
+ * dispatch normalizes argv. Each declared spelling of a flag (`statusFilter`,
+ * `status-filter`, `--status-filter`, or its short letter) folds into the
+ * handler key, then declared defaults, value coercion, and strict validation
+ * apply through {@link coerceLooseCommandOptionsWithFlagDefinitions}. An
+ * `undefined` value counts as omitted. Undeclared keys pass through unchanged.
+ * Two spellings of one flag with different values are refused with
+ * `extension_option_spelling_conflict`.
+ */
+export function normalizeDirectExtensionCommandOptions(
+  options: Record<string, unknown>,
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+  commandPath: string,
+): Record<string, unknown> {
+  if (definitions.length === 0) {
+    return options;
+  }
+  const index = indexDeclaredOptionSpellings(definitions);
+  const folded = foldDirectOptionSpellings(options, index, commandPath);
+  // Only declared handler keys reach the shared coercer: its CLI alias folding (`-S` -> `s`) must never
+  // rewrite or absorb an undeclared key a direct caller passes through.
+  const handlerKeys = new Set([...index.long.values()].map(({ handlerKey }) => handlerKey));
+  const declared = Object.create(null) as Record<string, unknown>;
+  const passthrough = Object.create(null) as Record<string, unknown>;
+  for (const [key, value] of Object.entries(folded)) {
+    (handlerKeys.has(key) ? declared : passthrough)[key] = value;
+  }
+  return Object.assign(
+    passthrough,
+    coerceLooseCommandOptionsWithFlagDefinitions(
+      declared,
+      definitions,
+      recordDirectOptionOccurrences(declared, index),
+      commandPath,
+    ),
+  );
+}
+
+/**
+ * Record each declared direct value as an attached occurrence. A direct caller
+ * names the value explicitly, as `--flag=value` does, so there is no following
+ * positional token to reinterpret: a strict boolean switch given `"nonsense"`
+ * is refused instead of resolving to `true` (CLI argv keeps that fallback for
+ * a separated token). Array values, nested or not, become one occurrence per
+ * scalar entry, matching the list coercer's recursive flattening.
+ */
+function recordDirectOptionOccurrences(
+  folded: Record<string, unknown>,
+  index: DeclaredOptionSpellingIndex,
+): Record<string, unknown> {
+  const handlerKeys = new Set([...index.long.values()].map(({ handlerKey }) => handlerKey));
+  const occurrences: ParsedLooseOptionToken[] = Object.entries(folded)
+    .filter(([key]) => handlerKeys.has(key))
+    .flatMap(([key, value]) =>
+      (Array.isArray(value) ? value.flat(Infinity) : [value]).map((entry) => ({ consumed: 1, key, value: entry, attached: true })),
+    );
+  const occurrenceSource = Object.create(null) as LooseOptionsWithOccurrences;
+  Object.defineProperty(occurrenceSource, LOOSE_OPTION_OCCURRENCES, { value: occurrences });
+  return occurrenceSource;
+}
+
+/** A declared flag reachable through one direct-caller spelling. */
+interface DeclaredOptionSpelling {
+  handlerKey: string;
+  definition: LooseCommandFlagDefinition;
+}
+
+/**
+ * Direct-caller spellings of the declared flags. Long spellings fold through
+ * the CLI's camel-case key; short letters stay case-sensitive, as Commander
+ * keeps `-s` and `-S` distinct on the CLI. The first declaration of a spelling
+ * owns it.
+ */
+interface DeclaredOptionSpellingIndex {
+  long: Map<string, DeclaredOptionSpelling>;
+  short: Map<string, DeclaredOptionSpelling>;
+}
+
+/** Index every declared long and short spelling by the handler key it folds into. */
+function indexDeclaredOptionSpellings(
+  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+): DeclaredOptionSpellingIndex {
+  const index: DeclaredOptionSpellingIndex = { long: new Map(), short: new Map() };
+  const claim = (map: Map<string, DeclaredOptionSpelling>, spelling: string, entry: DeclaredOptionSpelling): void => {
+    if (spelling.length > 0 && !map.has(spelling)) map.set(spelling, entry);
+  };
+  for (const definition of definitions) {
+    const handlerKey = resolveCanonicalLooseOptionKey(definition);
+    if (handlerKey === null) continue;
+    const entry = { handlerKey, definition };
+    claim(index.long, handlerKey, entry);
+    const short = typeof definition.short === "string" ? definition.short.trim() : "";
+    if (short.startsWith("-") && !short.startsWith("--")) claim(index.short, short.slice(1), entry);
+  }
+  return index;
+}
+
+/** Resolve one direct-caller key: a handler key, a case-sensitive short letter, or a long spelling. */
+function resolveDeclaredOptionSpelling(
+  index: DeclaredOptionSpellingIndex,
+  spelling: string,
+): DeclaredOptionSpelling | undefined {
+  return (
+    index.long.get(spelling) ??
+    index.short.get(spelling.replace(/^-(?!-)/u, "")) ??
+    index.long.get(toLooseOptionKey(spelling.replace(/^-{1,2}/u, "")))
+  );
+}
+
+/** Fold declared spellings into handler keys, refusing two spellings of one flag with different values. */
+function foldDirectOptionSpellings(
+  options: Record<string, unknown>,
+  index: DeclaredOptionSpellingIndex,
+  commandPath: string,
+): Record<string, unknown> {
+  const folded = Object.create(null) as Record<string, unknown>;
+  const suppliedBy = new Map<string, string>();
+  for (const [spelling, value] of Object.entries(options)) {
+    const declared = resolveDeclaredOptionSpelling(index, spelling);
+    if (declared === undefined) {
+      folded[spelling] = value;
+    } else if (value !== undefined) {
+      const prior = suppliedBy.get(declared.handlerKey);
+      if (prior === undefined) {
+        suppliedBy.set(declared.handlerKey, spelling);
+        folded[declared.handlerKey] = value;
+      } else if (!isDeepStrictEqual(folded[declared.handlerKey], value)) {
+        refuseConflictingOptionSpellings(declared.definition, declared.handlerKey, [prior, spelling], commandPath);
+      }
+    }
+  }
+  return folded;
 }

@@ -188,6 +188,183 @@ export function collectEntrypointSymbols(
 }
 
 /**
+ * `_testOnly*` exports are pm's own test seams, not supported API: they expose
+ * internal functions through `typeof`, and publishing those internals' types
+ * would widen the supported surface. They are counted, never gated.
+ */
+const SIGNATURE_TYPE_EXEMPT_EXPORT_PATTERN = /^_testOnly/u;
+
+const NAMED_TYPE_FLAGS =
+  ts.SymbolFlags.Interface |
+  ts.SymbolFlags.TypeAlias |
+  ts.SymbolFlags.Class |
+  ts.SymbolFlags.Enum;
+
+/** Resolve an export alias to the declaration it names. */
+function resolveAliasedSymbol(checker, symbol) {
+  return (symbol.flags & ts.SymbolFlags.Alias) !== 0
+    ? checker.getAliasedSymbol(symbol)
+    : symbol;
+}
+
+/** The entity a type node names: `Foo<T>`, `typeof foo`, or the qualifier of an inline `import("./x.js").Foo`. */
+function namedTypeEntity(node) {
+  if (ts.isTypeReferenceNode(node)) return node.typeName;
+  if (ts.isTypeQueryNode(node)) return node.exprName;
+  return ts.isImportTypeNode(node) ? node.qualifier : undefined;
+}
+
+/** An enum member reference (`State.Ready`) names its declaring enum, and `typeof Class.prototype` its class. */
+function owningTypeSymbol(symbol) {
+  return (symbol.flags & (ts.SymbolFlags.EnumMember | ts.SymbolFlags.Prototype)) !== 0
+    ? symbol.parent
+    : symbol;
+}
+
+/**
+ * Collect the package-declared named types the given signature nodes
+ * reference. A type query of a package value (`typeof internalRun`) exposes
+ * that value's own signature, so its referenced types count too.
+ */
+function collectSignatureTypeReferences(checker, nodes, isPackageFile) {
+  const referenced = new Set();
+  const followedValues = new Set();
+  const visit = (node) => {
+    const entity = namedTypeEntity(node);
+    if (entity !== undefined) {
+      const symbol = checker.getSymbolAtLocation(entity);
+      const target =
+        symbol === undefined
+          ? undefined
+          : owningTypeSymbol(resolveAliasedSymbol(checker, symbol));
+      // Unresolved ambient names (NodeJS.ProcessEnv without @types/node) resolve to declaration-less symbols.
+      const declaration = target?.declarations?.[0];
+      if (
+        declaration !== undefined &&
+        isPackageFile(declaration.getSourceFile().fileName)
+      ) {
+        if ((target.flags & NAMED_TYPE_FLAGS) !== 0) {
+          referenced.add(target);
+        } else if (!followedValues.has(target)) {
+          followedValues.add(target);
+          for (const valueNode of target.declarations.flatMap(publicSignatureNodes)) {
+            visit(valueNode);
+          }
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  for (const node of nodes) visit(node);
+  return referenced;
+}
+
+/**
+ * The public signature nodes of one declaration: a function's or method's
+ * parameters, type parameters, and return type, or a variable's or property's
+ * annotation (which covers callable values such as `export const run: (o: Options) => R`).
+ * A function merged with a namespace also carries a module declaration, which
+ * has no signature.
+ */
+function publicSignatureNodes(declaration) {
+  // Functions, methods and call signatures (also reached through `typeof api.run`).
+  if (ts.isFunctionLike(declaration)) {
+    return [
+      ...declaration.parameters,
+      ...(declaration.typeParameters ?? []),
+      ...(declaration.type ? [declaration.type] : []),
+    ];
+  }
+  // Variables and properties, including callable ones, name their types through the annotation.
+  return (ts.isVariableDeclaration(declaration) ||
+    ts.isPropertySignature(declaration) ||
+    ts.isPropertyDeclaration(declaration)) &&
+    declaration.type
+    ? [declaration.type]
+    : [];
+}
+
+/**
+ * Report package types an entrypoint's exported function signatures or value
+ * annotations name but the entrypoint itself does not export (pm-gh1667).
+ *
+ * A consumer that compiles against `runGraph(...): Promise<ProjectedGraphResult>`
+ * can only name the result through `Awaited<ReturnType<typeof runGraph>>` when
+ * the type is not exported beside the function, and that derived alias breaks
+ * silently when the shape moves. This is API Extractor's forgotten-export rule,
+ * checked on the emitted declarations consumers actually compile against.
+ * Identity is by declaration, so a same-named but different type is still a gap.
+ */
+export function analyzeSignatureTypeReachability(
+  program,
+  declarationPath,
+  packageRoot,
+) {
+  const checker = program.getTypeChecker();
+  const sourceFile = program.getSourceFile(declarationPath);
+  const moduleSymbol = sourceFile
+    ? checker.getSymbolAtLocation(sourceFile)
+    : undefined;
+  if (!moduleSymbol) {
+    throw new Error(
+      `SDK declaration entrypoint has no module symbol: ${declarationPath}`,
+    );
+  }
+  const distRoot = `${path.join(packageRoot, "dist")}${path.sep}`;
+  const isPackageFile = (fileName) =>
+    path.resolve(fileName).startsWith(distRoot);
+  const exported = checker.getExportsOfModule(moduleSymbol);
+  const exportedTargets = new Set(
+    exported.map((symbol) => resolveAliasedSymbol(checker, symbol)),
+  );
+  const missing = new Map();
+  const referencedTypes = new Set();
+  const recordReference = (target, functionName) => {
+    referencedTypes.add(target);
+    if (exportedTargets.has(target)) return;
+    const entry = missing.get(target) ?? {
+      type: target.name,
+      declared_in: path
+        .relative(packageRoot, target.declarations[0].getSourceFile().fileName)
+        .replaceAll(path.sep, "/"),
+      referenced_by: new Set(),
+    };
+    entry.referenced_by.add(functionName);
+    missing.set(target, entry);
+  };
+  const valueExports = exported
+    .map((exportedSymbol) => ({
+      name: exportedSymbol.name,
+      symbol: resolveAliasedSymbol(checker, exportedSymbol),
+    }))
+    .filter(({ symbol }) => (symbol.flags & (ts.SymbolFlags.Function | ts.SymbolFlags.Variable)) !== 0);
+  const exportedValues = valueExports.filter(
+    ({ name }) => !SIGNATURE_TYPE_EXEMPT_EXPORT_PATTERN.test(name),
+  );
+  for (const { name, symbol } of exportedValues) {
+    const nodes = symbol.declarations.flatMap(publicSignatureNodes);
+    for (const target of collectSignatureTypeReferences(checker, nodes, isPackageFile)) {
+      recordReference(target, name);
+    }
+  }
+  const isFunction = ({ symbol }) => (symbol.flags & ts.SymbolFlags.Function) !== 0;
+  return {
+    checked_functions: exportedValues.filter(isFunction).length,
+    checked_values: exportedValues.filter((entry) => !isFunction(entry)).length,
+    exempt_test_seams: valueExports.length - exportedValues.length,
+    referenced_types: referencedTypes.size,
+    missing: [...missing.values()]
+      .map((entry) => ({
+        ...entry,
+        referenced_by: [...entry.referenced_by].sort((left, right) =>
+          left.localeCompare(right),
+        ),
+      }))
+      .sort((left, right) => left.type.localeCompare(right.type)),
+  };
+}
+
+/**
  * List every package export path that publishes compiled code to consumers.
  *
  * The export map is the artifact npm resolves, so it — not a hand-maintained
@@ -386,6 +563,26 @@ export async function buildSdkSurfaceSnapshot(options = {}) {
       },
     ]),
   );
+  const signatureTypeReachability = Object.fromEntries(
+    entrypoints
+      .filter((entry) => entry.aliasOf === undefined)
+      .map((entry) => [
+        entry.exportPath,
+        analyzeSignatureTypeReachability(program, entry.declarationPath, root),
+      ]),
+  );
+  const unreachable = Object.entries(signatureTypeReachability).flatMap(
+    ([exportPath, report]) =>
+      report.missing.map(
+        (entry) =>
+          `${exportPath}: ${entry.type} (declared in ${entry.declared_in}; named by ${entry.referenced_by.join(", ")})`,
+      ),
+  );
+  if (unreachable.length > 0) {
+    throw new Error(
+      `SDK function signatures and value annotations name types their entrypoint does not export:\n${unreachable.join("\n")}\nRe-export each type from the entrypoint that exports the function.`,
+    );
+  }
   const supportedNames = new Set(
     Object.values(rawEntrypoints)
       .filter((entry) => entry.classification === "supported")
@@ -432,6 +629,17 @@ export async function buildSdkSurfaceSnapshot(options = {}) {
     package: packageJson.name,
     entrypoints: classifiedEntrypoints,
     aggregate_completeness: aggregateCompleteness,
+    signature_type_reachability: Object.fromEntries(
+      Object.entries(signatureTypeReachability).map(([exportPath, report]) => [
+        exportPath,
+        {
+          checked_functions: report.checked_functions,
+          checked_values: report.checked_values,
+          exempt_test_seams: report.exempt_test_seams,
+          referenced_types: report.referenced_types,
+        },
+      ]),
+    ),
     error_codes: await collectDeclaredErrorCodes(root),
   };
 }

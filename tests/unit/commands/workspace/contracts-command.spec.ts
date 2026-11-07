@@ -2670,6 +2670,8 @@ describe("contracts command runtime", () => {
               value_name: "path",
               value_type: "string",
               value_arity: "required",
+              owner: "extension",
+              sdk_option: "source",
             },
             {
               flag: "--target",
@@ -2677,9 +2679,16 @@ describe("contracts command runtime", () => {
               value_name: "path",
               value_type: "string",
               value_arity: "required",
+              owner: "extension",
+              sdk_option: "target",
             },
-            { flag: "--dry-run", description: "Preview migration only.", value_arity: "none" },
+            { flag: "--dry-run", description: "Preview migration only.", value_arity: "none", owner: "extension", sdk_option: "dryRun" },
           ],
+          // pm-gh1666: host flags the command inherits, without read-output controls (no read_output declared).
+          inherited_flags: expect.arrayContaining([
+            expect.objectContaining({ flag: "--json", owner: "host", value_arity: "none" }),
+            expect.objectContaining({ flag: "--pm-path", owner: "host", value_name: "path" }),
+          ]),
           extension_sources: [
             {
               layer: "project",

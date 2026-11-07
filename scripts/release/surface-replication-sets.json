@@ -670,14 +670,6 @@
       "reason": "Commander schema flag normalization remains an adapter responsibility."
     },
     {
-      "path": "src/cli/extension-command-options.ts",
-      "expected_count": 4,
-      "rule_ownership": "all_occurrences",
-      "owner": "pm-0xmajx",
-      "disposition": "transport_validation",
-      "reason": "Extension command option decoding occurs before the SDK extension runtime boundary."
-    },
-    {
       "path": "src/cli/register-files-lookup.ts",
       "expected_count": 2,
       "rule_ownership": "all_occurrences",
@@ -695,11 +687,11 @@
     },
     {
       "path": "src/cli/runtime/invocation-options.ts",
-      "expected_count": 4,
+      "expected_count": 5,
       "rule_ownership": "all_occurrences",
       "owner": "pm-gh1368",
       "disposition": "transport_validation",
-      "reason": "The three existing global-option syntax checks and the new declared ancestor/leaf option-scope refusal are Commander transport validation before host preparation; domain validation remains SDK-owned."
+      "reason": "The three existing global-option syntax checks, the declared ancestor/leaf option-scope refusal, and the undeclared root-only flag refusal on extension-created commands (pm-gh1666) are Commander transport validation before host preparation; domain validation remains SDK-owned."
     },
     {
       "path": "src/cli/runtime/selection.ts",

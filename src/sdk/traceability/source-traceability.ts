@@ -81,8 +81,11 @@ export interface SourceTraceabilityReceipt {
   decision_depth: number;
 }
 
-interface TraceabilityCandidate {
+/** An item that may explain a source file, with the linked files that tie it to the source. */
+export interface TraceabilityCandidate {
+  /** Candidate item metadata. */
   item: ItemMetadata;
+  /** Linked files of the item that match the source under explanation. */
   files: LinkedFile[];
 }
 

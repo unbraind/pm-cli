@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: coverage,docs,quality,source
 created_at: "2026-06-18T14:50:06.093Z"
-updated_at: "2026-09-22T05:25:12.231Z"
+updated_at: "2026-11-07T09:40:44.968Z"
 closed_at: "2026-06-18T16:01:36.511Z"
 author: codex-gpt5
 parent: pm-u9d0
@@ -102,7 +102,6 @@ files[219]{path,scope,note}:
   src/cli/commands/workspace/upgrade.ts,project,Source files covered by repo-wide docstring coverage gate
   src/cli/error-guidance.ts,project,Source files covered by repo-wide docstring coverage gate
   src/cli/extension-command-help.ts,project,Source files covered by repo-wide docstring coverage gate
-  src/cli/extension-command-options.ts,project,Source files covered by repo-wide docstring coverage gate
   src/cli/guide-topics.ts,project,Source files covered by repo-wide docstring coverage gate
   src/cli/help-content.ts,project,Source files covered by repo-wide docstring coverage gate
   src/cli/help-json-payload.ts,project,Source files covered by repo-wide docstring coverage gate
@@ -236,6 +235,7 @@ files[219]{path,scope,note}:
   src/sdk/cli-contracts/tool-option-contracts.ts,project,Source files covered by repo-wide docstring coverage gate
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,Source files covered by repo-wide docstring coverage gate
   src/sdk/errors.ts,project,Source files covered by repo-wide docstring coverage gate
+  src/sdk/extension/command-options.ts,project,Source files covered by repo-wide docstring coverage gate
   src/sdk/index.ts,project,Source files covered by repo-wide docstring coverage gate
   src/sdk/init-agent-guidance.ts,project,Source files covered by repo-wide docstring coverage gate
   src/sdk/lifecycle/lifecycle-transitions.ts,project,Source files covered by repo-wide docstring coverage gate

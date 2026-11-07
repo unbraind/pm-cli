@@ -143,7 +143,8 @@ type ExtensionVectorAdapter = {
   upsert?: ExtensionVectorUpsert;
 };
 
-type ImplicitSemanticFallbackReason = "timeout" | "connection" | "error";
+/** Why an implicit semantic search fell back to keyword search: a timeout, an unreachable backend, or another error. */
+export type ImplicitSemanticFallbackReason = "timeout" | "connection" | "error";
 
 /**
  * Aggregate the `code` strings found along an error's `cause` chain.
@@ -217,14 +218,21 @@ function buildExplicitSemanticFallbackWarning(
   return `search_${requestedMode}_fallback:${reason}:using_keyword_mode`;
 }
 
-interface VectorIndexRecoveryRegistrations {
+/** Active extension command registrations that may own the vector reindex recovery path. */
+export interface VectorIndexRecoveryRegistrations {
+  /** Registered command paths, read to find a package-owned reindex command. */
   commands?: readonly { command: string }[];
 }
 
-interface VectorIndexRecovery {
+/** Executable recovery for a missing or stale vector index. */
+export interface VectorIndexRecovery {
+  /** Command that rebuilds the vector index. */
   command: string;
+  /** Arguments for the rebuild command. */
   args: string[];
+  /** Command to run after the rebuild, when one is needed. */
   follow_up_command?: string;
+  /** Arguments for the follow-up command. */
   follow_up_args?: string[];
 }
 

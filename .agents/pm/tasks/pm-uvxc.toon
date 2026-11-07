@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: "area:cli","area:tests",coverage
 created_at: "2026-06-15T05:17:50.618Z"
-updated_at: "2026-09-19T08:41:55.531Z"
+updated_at: "2026-11-07T09:41:30.484Z"
 closed_at: "2026-06-16T05:50:14.125Z"
 author: maintainer-agent
 parent: pm-xau3
@@ -30,7 +30,6 @@ files[22]{path,scope,note}:
   src/cli/bootstrap-args.ts,project,Added test-only helper exposure and branch guards
   src/cli/commander-usage.ts,project,Added test hooks for usage context edge coverage
   src/cli/error-guidance.ts,project,Improved helper testability and deterministic title handling
-  src/cli/extension-command-options.ts,project,Refined loose option label normalization for branch determinism
   src/cli/help-content.ts,project,Exposed rendering helpers for focused unit coverage
   src/cli/help-json-payload.ts,project,Hardened alias compaction typing for build-safe coverage
   src/cli/main.ts,project,Added defensive coverage pragmas for unreachable runtime guards
@@ -38,6 +37,7 @@ files[22]{path,scope,note}:
   src/cli/register-mutation.ts,project,Applied proven branch-complete command registration fixes
   src/cli/register-setup.ts,project,Applied branch-complete setup registration fixes
   src/cli/registration-helpers.ts,project,Extended helper coverage and search refresh warning flow
+  src/sdk/extension/command-options.ts,project,Refined loose option label normalization for branch determinism
   tests/unit/bootstrap-args.spec.ts,project,Added typo-tie and canonical flag edge coverage
   tests/unit/cli-main-errors.spec.ts,project,Expanded main and help payload edge branch scenarios
   tests/unit/cli/help-content.spec.ts,project,Covered compact and detailed help rendering absence cases

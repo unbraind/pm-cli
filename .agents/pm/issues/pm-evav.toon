@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: agent-experience,extension-sdk,gh-550
 created_at: "2026-07-14T10:18:53.391Z"
-updated_at: "2026-07-26T17:13:15.740Z"
+updated_at: "2026-11-07T09:41:36.889Z"
 closed_at: "2026-07-14T18:08:20.229Z"
 author: codex-gpt5
 estimated_minutes: 180
@@ -19,17 +19,26 @@ resolution: Registered list options accumulate through Commander and preserve va
 expected_result: "One, comma-separated, repeated, and aliased list values reach extension handlers in occurrence order."
 actual_result: The loose parser replaced Commander-parsed list values with an empty array when no loose occurrences remained.
 regression: true
-dependencies[4]{id,kind,created_at,author,source_kind}:
-  pm-kfq5,related,"2026-07-14T10:18:53.391Z",codex-gpt5,null
-  pm-albl,related,"2026-07-14T17:32:16.591Z",null,null
-  pm-as4a,related,"2026-07-14T17:32:16.591Z",null,null
-  pm-x6jf,implements,"2026-07-26T17:13:15.548Z",null,null
+dependencies[4]:
+  - id: pm-kfq5
+    kind: related
+    created_at: "2026-07-14T10:18:53.391Z"
+    author: codex-gpt5
+  - id: pm-albl
+    kind: related
+    created_at: "2026-07-14T17:32:16.591Z"
+  - id: pm-as4a
+    kind: related
+    created_at: "2026-07-14T17:32:16.591Z"
+  - id: pm-x6jf
+    kind: implements
+    created_at: "2026-07-26T17:13:15.548Z"
 comments[2]{created_at,author,text}:
   "2026-07-14T10:18:53.391Z",codex-gpt5,"Duplicate check 2026-07-14: pm search GH-550 --status all returned no item. Related closed pm-kfq5 covered repeated occurrence accumulation but GitHub #550 reports a distinct real-CLI coercion regression in 2026.7.13. Source: https://github.com/unbraind/pm-cli/issues/550"
   "2026-07-14T18:08:03.346Z",codex-root,"Final evidence: Commander now accumulates repeated long/short list occurrences before shared coercion; empty loose occurrence ledgers preserve those values. Linked pm tests pass. Full suite: 290 files / 5,699 tests / 100% statements, branches, functions, lines. Packed tarball proof produced [alpha,beta,gamma,delta] from -r alpha --repos beta,gamma --repos=delta."
 files[4]{path,scope,note}:
   src/cli/extension-command-help.ts,project,Commander list-option accumulation at the real CLI boundary
-  src/cli/extension-command-options.ts,project,ordered loose-list reconciliation preserves declared option values
+  src/sdk/extension/command-options.ts,project,ordered loose-list reconciliation preserves declared option values
   tests/integration/extension-host-contracts.integration.spec.ts,project,real CLI list flag coverage across aliases repeats and comma values
   tests/unit/cli/extension-command-help.spec.ts,project,source-instrumented Commander list accumulator coverage
 tests[2]{command,scope,timeout_seconds}:

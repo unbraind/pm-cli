@@ -60,10 +60,12 @@ import type {
 } from "../core/extensions/loader.js";
 import type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
 
-type ExactDefinition<TDefinition, TContract> = TDefinition &
+/** A definition literal with no keys beyond its contract, so misspelled fields fail at compile time. */
+export type ExactDefinition<TDefinition, TContract> = TDefinition &
   Record<Exclude<keyof TDefinition, keyof TContract>, never>;
 
-type FlagAuthoringDefinition = Pick<
+/** Flag declaration fields a package author may set with defineFlags. */
+export type FlagAuthoringDefinition = Pick<
   FlagDefinition,
   | "long"
   | "short"
@@ -79,11 +81,13 @@ type FlagAuthoringDefinition = Pick<
   | "default"
   | "value_validation"
 >;
-type ItemFieldAuthoringDefinition = Pick<
+/** Custom item field declaration fields a package author may set with defineItemFields. */
+export type ItemFieldAuthoringDefinition = Pick<
   SchemaFieldDefinition,
   "name" | "type" | "optional" | "default" | "values"
 >;
-type ItemTypeAuthoringDefinition = Pick<
+/** Custom item type declaration fields a package author may set with defineItemTypes. */
+export type ItemTypeAuthoringDefinition = Pick<
   SchemaItemTypeDefinition,
   | "name"
   | "folder"
@@ -96,11 +100,13 @@ type ItemTypeAuthoringDefinition = Pick<
   | "default_status"
   | "execution_role"
 >;
-type MigrationAuthoringDefinition = Pick<
+/** Schema migration declaration fields a package author may set with defineMigration. */
+export type MigrationAuthoringDefinition = Pick<
   SchemaMigrationDefinition,
   "id" | "description" | "status" | "mandatory" | "run"
 >;
-type SearchProviderAuthoringDefinition = Pick<
+/** Search provider declaration fields a package author may set with defineSearchProvider. */
+export type SearchProviderAuthoringDefinition = Pick<
   SearchProviderDefinition,
   | "name"
   | "query"
@@ -111,7 +117,8 @@ type SearchProviderAuthoringDefinition = Pick<
   | "embed_batch"
   | "embed"
 >;
-type VectorStoreAdapterAuthoringDefinition = Pick<
+/** Vector store adapter declaration fields a package author may set with defineVectorStoreAdapter. */
+export type VectorStoreAdapterAuthoringDefinition = Pick<
   VectorStoreAdapterDefinition,
   "name" | "query" | "upsert" | "delete"
 >;

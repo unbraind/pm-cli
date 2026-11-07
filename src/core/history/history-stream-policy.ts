@@ -12,17 +12,27 @@ import { PmCliError } from "../shared/errors.js";
 import { getHistoryPath } from "../store/paths.js";
 import type { PmSettings } from "../../types/index.js";
 
-interface HistoryStreamPolicyParams {
+/** Inputs for applying the history stream policy to one item before a mutation writes its history. */
+export interface HistoryStreamPolicyParams {
+  /** Tracker storage root that owns the item and its history stream. */
   pmRoot: string;
+  /** Resolved settings that carry the history stream policy. */
   settings: PmSettings;
+  /** Item whose history stream the policy inspects. */
   itemId: string;
+  /** Command name reported in policy warnings and auto-created stream notices. */
   commandLabel: string;
 }
 
-interface HistoryStreamPolicyManyParams {
+/** Inputs for applying the history stream policy to several items in one mutation. */
+export interface HistoryStreamPolicyManyParams {
+  /** Tracker storage root that owns the items and their history streams. */
   pmRoot: string;
+  /** Resolved settings that carry the history stream policy. */
   settings: PmSettings;
+  /** Items whose history streams the policy inspects. */
   itemIds: string[];
+  /** Command name reported in policy warnings and auto-created stream notices. */
   commandLabel: string;
 }
 

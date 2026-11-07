@@ -131,7 +131,8 @@ export interface CorpusShapeMeasurement {
   finish(): CorpusShapeProfile;
 }
 
-type ExactCorpusShape<Shape extends CorpusShape> = Shape &
+/** A corpus shape literal with no keys beyond CorpusShape, so misspelled fields fail at compile time. */
+export type ExactCorpusShape<Shape extends CorpusShape> = Shape &
   Record<Exclude<keyof Shape, keyof CorpusShape>, never>;
 
 function positiveInteger(value: number, field: string): number {

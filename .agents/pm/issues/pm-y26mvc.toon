@@ -1,0 +1,26 @@
+id: pm-y26mvc
+title: "pm comments/notes <id> --add --file <path> is refused as positional-and---add conflict instead of naming the swallowed --file flag, so the annotation flag-like check from pm-vcu7 loses precedence"
+description: "Found 2026-11-07 while reading telemetry: comments is the top failing command (255 finish failures in 24 h, automation context). Repro on 2026.11.7: pm comments <id> --add --file note.md exits 2 with code command_failed and detail 'Specify comment text either as positional [text] or with --add, not both'. Commander binds --file as the value of --add, so note.md becomes positional text and the positional/--add conflict check fires first. The same shape hits --add --stdin x and pm notes/learnings. Without a trailing operand the pm-vcu7 guard does fire (annotation_flag_like_value), but its recovery says 'Use --stdin to read stdin' even when the swallowed flag was --file, so the agent is not told that --file <path> works on its own. pm-vcu7 is closed and its AC covered notes --add --stdin, learnings --add --file and comments --add --stdin without a trailing operand; this is the operand-following composition it did not test. Duplicate check: searched comments --add --file, flag-like annotation values, positional and --add conflict across all statuses; pm-vcu7 (closed, fixed), pm-hcco and pm-yp56 are the nearest and do not cover this precedence."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,annotations,comments,recovery,recurrence
+created_at: "2026-11-07T09:07:11.835Z"
+updated_at: "2026-11-07T09:07:11.835Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "pm comments|notes|learnings <id> --add --file <path> and --add --stdin <operand> refuse with annotation_flag_like_value (not command_failed), before the positional/--add conflict check; The recovery names the swallowed flag's own form: for --file it says to drop --add and pass --file <path>, for --stdin to drop --add; The executable retry, when offered, runs successfully against a sandbox tracker; Regression tests cover each annotation command with a trailing operand, with a negative control that restores the old check order"
+parent: pm-f05lsg
+risk: low
+confidence: high
+severity: low
+repro_steps: pm comments <id> --add --file note.md --json
+expected_result: "annotation_flag_like_value naming --file: drop --add and pass --file note.md"
+actual_result: "command_failed: Specify comment text either as positional [text] or with --add, not both"
+affected_version: 2026.11.7
+component: annotations
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-hcco,related,"2026-11-07T09:07:11.835Z","harness:claude-code","cli:create:dep",detected
+  pm-vcu7,related,"2026-11-07T09:07:11.835Z","harness:claude-code","cli:create:dep",detected
+  pm-yp56,related,"2026-11-07T09:07:11.835Z","harness:claude-code","cli:create:dep",detected
+body: ""

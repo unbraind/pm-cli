@@ -489,7 +489,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   {
     code: "extension_flag_value_invalid",
     exit_code: 2,
-    sources: ["cli/extension-command-options.ts"],
+    sources: ["sdk/extension/command-options.ts"],
   },
   {
     code: "extension_install_incomplete_source_scan",
@@ -554,6 +554,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 4,
     stable: true,
     sources: ["core/extensions/extension-hook-runtime.ts"],
+  },
+  {
+    code: "extension_option_spelling_conflict",
+    exit_code: 2,
+    sources: ["sdk/extension/command-options.ts"],
   },
   {
     code: "extension_read_output_invalid",
@@ -1318,11 +1323,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "merge_reconcile_receipt_evidence_untrusted",
     exit_code: 4,
     sources: ["sdk/history-repair.ts"],
-  },
-  {
-    code: "merge_root_not_found",
-    exit_code: 3,
-    stable: true,
-    sources: ["sdk/merge/install.ts"],
   },
 ];

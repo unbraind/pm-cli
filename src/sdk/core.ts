@@ -177,3 +177,19 @@ export type {
 
 export type { CloseCompletionReceipt, CloseEvidenceFollowUp } from "./lifecycle-policy.js";
 export { assertWellFormedOutputText, toWellFormedText } from "../core/shared/output-unicode.js";
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { ItemDocumentFormatOptions } from "../core/item/item-format.js";
+export type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+export type { AgentSemanticAttribution } from "../core/session/session-state.js";
+export type { GlobalOptions } from "../core/shared/command-types.js";
+export type { HistoryEntry } from "../types.js";
+export type { GraphSubcommand } from "./cli-contracts/enum-contracts.js";
+export type { PmCreateActionOptions, PmUpdateActionOptions } from "./cli-contracts/typed-action-inputs.js";
+export type { CreatePmCliExpectedErrorOptions, PmCliExpectedError } from "./errors.js";
+export type { GraphCommandOptions, GraphResult } from "./graph/run.js";
+export type { ClaimNextResult } from "./lifecycle/claim.js";
+export type { PmResolvedReadOutputDimensions, ReadOutputResultForSession } from "./read-output-contracts.js";
+export type { CloseTaskResult, PauseTaskResult, PmClientCloseActionOptions, PmClientFullMutationOptions, StartTaskResult } from "./runtime-public-contracts.js";
+export type { InitialReadOptions, ReadOptions, ReadPromise } from "./runtime.js";
+export type { TraceabilityCandidate } from "./traceability/source-traceability.js";

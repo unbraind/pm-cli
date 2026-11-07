@@ -5,6 +5,9 @@
  */
 import { Command, Option } from "commander";
 import { PM_RELOCATED_COMMAND_ALIASES } from "../sdk/cli-contracts/command-aliases.js";
+import { resolveExtensionCommandInheritedFlagContracts } from "../sdk/cli-contracts/flag-contracts.js";
+import { resolveExtensionFlagOptionKey } from "../sdk/extension/command-options.js";
+import { enrichCliFlagInvocationContracts } from "../sdk/flag-invocation-contracts.js";
 import {
   resolveExtensionFlagValueContract,
   resolveExtensionLongFlagName,
@@ -50,6 +53,8 @@ export interface ExtensionCommandHelpDescriptor {
   tier: PmCommandVisibilityTier;
   /** Capability family declared by the package. */
   family: PmCommandCapabilityFamily;
+  /** Whether the package declared structured read output, which admits the read-output host controls. */
+  read_output_declared?: boolean;
   /** Value that configures or reports source for this contract. */
   source?: {
     layer: "global" | "project";
@@ -85,6 +90,10 @@ export interface HelpOptionSummary {
   alias_for: string | null;
   /** Fallback value used when callers do not provide an override. */
   default_value?: unknown;
+  /** Runtime that owns the flag on an extension command: `host` flags arrive in `context.global`, `extension` flags in `context.options` (pm-gh1666). */
+  owner?: "host" | "extension";
+  /** Handler key an extension flag arrives under in `context.options`, and the key direct SDK callers pass (pm-gh1665). */
+  sdk_option?: string;
 }
 
 /** Implements normalize extension command path for the public runtime surface of this module. */
@@ -369,6 +378,7 @@ function collectExtensionDefinitionsByCommand(
       flags: [],
       tier: definition.tier ?? "standard",
       family: definition.family ?? "extensions",
+      ...(definition.read_output === undefined ? {} : { read_output_declared: true }),
       source: {
         layer: definition.layer,
         name: definition.name,
@@ -673,7 +683,61 @@ function buildDynamicExtensionHelpOptionSummary(
     aliases: [],
     alias_for: null,
     ...(definition.default !== undefined ? { default_value: definition.default } : {}),
+    owner: "extension",
+    ...withSdkOption(resolveExtensionFlagOptionKey(definition)),
   };
+}
+
+/** Spread the handler key only when the declaration names one. */
+function withSdkOption(key: string | null): { sdk_option?: string } {
+  return key === null ? {} : { sdk_option: key };
+}
+
+/**
+ * Host-owned flags an extension command accepts, as help option rows marked
+ * `owner: "host"` (pm-gh1666). They come from the same declaration as the
+ * command's `pm contracts` `inherited_flags`, so help never lists a flag the
+ * command refuses.
+ */
+export function buildExtensionInheritedHelpOptionSummaries(
+  descriptor: ExtensionCommandHelpDescriptor,
+): HelpOptionSummary[] {
+  return enrichCliFlagInvocationContracts(
+    descriptor.command,
+    resolveExtensionCommandInheritedFlagContracts({
+      readOutput: descriptor.read_output_declared === true,
+    }),
+  ).map((row) => ({
+    flags: row.takes_value
+      ? `${row.flag} ${row.value_required ? `<${row.value_name}>` : `[${row.value_name}]`}`
+      : row.flag,
+    long: row.flag,
+    short: null,
+    description: row.description,
+    takes_value: row.takes_value,
+    value_required: row.value_required,
+    value_name: row.takes_value ? (row.value_name ?? null) : null,
+    variadic: false,
+    required: false,
+    aliases: [...(row.aliases ?? [])],
+    alias_for: null,
+    owner: "host",
+  }));
+}
+
+/** Text help naming the host flags an extension command inherits and where their contract lives. */
+export function buildExtensionInheritedFlagHelp(
+  descriptor: ExtensionCommandHelpDescriptor,
+): string {
+  const flags = buildExtensionInheritedHelpOptionSummaries(descriptor).map(
+    (summary) => summary.flags,
+  );
+  return [
+    "",
+    "Inherited host flags (delivered through context.global):",
+    `  ${flags.join(", ")}`,
+    `  Run pm contracts --command ${descriptor.command} --flags-only --json for each flag's owner and sdk_option key.`,
+  ].join("\n");
 }
 
 /** Implements build dynamic extension help option summaries for the public runtime surface of this module. */
@@ -708,7 +772,12 @@ export function mergeHelpOptionSummaries(
   for (const entry of extension) {
     const existing = merged.get(entry.flags);
     merged.set(entry.flags, existing
-      ? { ...existing, ...(entry.default_value !== undefined ? { default_value: entry.default_value } : {}) }
+      ? {
+          ...existing,
+          ...(entry.default_value !== undefined ? { default_value: entry.default_value } : {}),
+          ...(entry.owner === undefined ? {} : { owner: entry.owner }),
+          ...(entry.sdk_option === undefined ? {} : { sdk_option: entry.sdk_option }),
+        }
       : entry);
   }
   return [...merged.values()];
@@ -803,6 +872,11 @@ export function findCommandByPath(
 }
 
 const extensionCreatedCommands = new WeakSet<Command>();
+
+/** Whether an extension registration created this command node, as opposed to augmenting a core command. */
+export function isExtensionCreatedCommand(command: Command): boolean {
+  return extensionCreatedCommands.has(command);
+}
 
 /** Implements ensure command path for the public runtime surface of this module. */
 export function ensureCommandPath(

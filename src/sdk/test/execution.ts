@@ -209,14 +209,23 @@ function linkedTestPipeCloseGraceMs(): number {
   );
 }
 
-interface LinkedTestExecutionResult {
+/** Captured outcome of one linked test command run. */
+export interface LinkedTestExecutionResult {
+  /** Standard output captured from the command. */
   stdout: string;
+  /** Standard error captured from the command. */
   stderr: string;
+  /** Exit code, or null when the process ended by signal or did not start. */
   exitCode: number | null;
+  /** Signal that ended the process, when one did. */
   signal?: NodeJS.Signals | null;
+  /** Whether the run exceeded its timeout and was stopped. */
   timedOut: boolean;
+  /** Whether output exceeded the capture buffer. */
   maxBufferExceeded: boolean;
+  /** Whether captured output was truncated before it was returned. */
   outputTruncated: boolean;
+  /** Error message when the command could not be started. */
   spawnError?: string;
 }
 
@@ -2049,26 +2058,45 @@ function commandUsesTestNameFilter(command: string): boolean {
   );
 }
 
-/* c8 ignore start -- linked-test orchestration branch matrix is covered by end-to-end command integration runs */
-interface RunLinkedTestsOptions {
+/** Options that control how pm test runs an item's linked test commands. */
+export interface RunLinkedTestsOptions {
+  /** Emit per-test progress on stderr. */
   progress?: boolean;
+  /** Source roots mirrored into the sandbox the tests run in. */
   sourceRoots?: LinkedTestSandboxSourceRoots;
+  /** Environment assignments (NAME=value) applied to each test process. */
   envSet?: string[];
+  /** Environment variable names removed from each test process. */
   envClear?: string[];
+  /** Mark the run as safe on a shared host, which relaxes host-isolation refusals. */
   sharedHostSafe?: boolean;
+  /** Tracker context mode for the run (sandboxed or project). */
   pmContext?: string;
+  /** Apply the run-level tracker context over each test's linked metadata. */
   overrideLinkedPmContext?: boolean;
+  /** Fail a test whose linked context disagrees with the run context. */
   failOnContextMismatch?: boolean;
+  /** Fail when a linked test command ran zero tests. */
   failOnEmptyTestRun?: boolean;
+  /** Require tests that touch pm data to declare assertions. */
   requireAssertionsForPm?: boolean;
+  /** Check each linked test's context without running it. */
   checkContext?: boolean;
+  /** Choose the tracker context from each test's linked metadata. */
   autoPmContext?: boolean;
+  /** Source-workspace visibility and working-directory mode. */
   workspaceContext?: string;
+  /** Apply the run-level workspace mode over each test's linked metadata. */
   overrideLinkedWorkspaceContext?: boolean;
+  /** Tracker storage root whose items own the linked tests. */
   pmRoot?: string;
+  /** Explicitly permit untrusted commands when project policy also permits them. */
   allowUntrustedLinkedTests?: boolean;
+  /** Whether project policy permits untrusted linked test commands at all. */
   untrustedLinkedTestsPolicyEnabled?: boolean;
 }
+
+/* c8 ignore start -- linked-test orchestration branch matrix is covered by end-to-end command integration runs */
 
 interface LinkedTestSandboxLayout {
   root: string;

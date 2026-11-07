@@ -216,6 +216,18 @@ from every non-testing SDK subpath must be available from
 Consumers and release tooling can read the exact shipped artifact from
 `@unbrained/pm-cli/sdk/public-surface.json` without locating repository files.
 
+The snapshot also records a signature-type census
+(`signature_type_reachability`). Every package type named by an exported
+function's parameters, return type, or type-parameter constraints must be
+importable from the same entrypoint, so `import type { ProjectedGraphResult }
+from "@unbrained/pm-cli/sdk/graph"` works beside `runGraph` instead of forcing
+`Awaited<ReturnType<typeof runGraph>>`. Identity is by declaration, so a
+same-named but different type does not count. `pnpm sdk:surface:check` refuses
+a gap and names the type, where it is declared, and the functions that name it
+([pm-gh1667](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1667.toon),
+tracker record excluded from npm). The merge receipt's `conflict_resolution`
+field is typed by the exported `ItemScalarConflictResolution`.
+
 The denominator is the package export map itself, not a list inside the
 generator. Every `exports` entry that declares a `types` path must carry a
 classification, and `pnpm sdk:surface:check` refuses to run while any published
@@ -909,7 +921,13 @@ is the "invoke" verb that completes the package-author testing loop —
 pm's real engine and returns the `CommandHandlerResult`, so a test can assert
 _behavior_ (`result.result`) rather than only that the command is wired. The
 `CommandHandlerContext` is built with agent-safe global defaults
-(`{ json: true, quiet: true, noPager: true }`) that callers may override. A clean
+(`{ json: true, quiet: true, noPager: true }`) that callers may override. When
+`commands` comes from `activateExtensionForTest`, `options` pass through the
+same normalizer as CLI dispatch and `PmClient.run`: `"status-filter"` reaches
+the handler as `statusFilter`, declared defaults and coercion apply, and two
+spellings with different values are refused (see
+[Handler keys and ownership](#handler-keys-and-ownership)). A hand-built
+registry has no declared flags, so its options pass through verbatim. A clean
 run yields `{ handled: true, result, warnings: [] }`; a handler that throws a
 non-exit error yields `{ handled: false, warnings: [code], errorMessage }` so the
 failure can be asserted. Returned objects may declare `exit_code` from `1`
@@ -3085,6 +3103,55 @@ Dynamic extension commands follow the same end-of-options contract as core
 commands. Put `--` before variadic content that begins with a dash or resembles a
 pm flag: `pm query run -- RETURN -h --json`. Everything after the separator is
 delivered to the registered positional arguments unchanged.
+
+### Handler keys and ownership
+
+A declared flag reaches the handler in `context.options` under one **handler
+key**: the long flag in camel case (`--status-filter` becomes `statusFilter`;
+a legacy underscore spelling such as `--include_history` keeps it). Every caller
+gets the same key, defaults, and coercion, because CLI argv dispatch,
+`PmClient.run`, MCP tool calls, and `runRegisteredCommandForTest` share one
+definition-driven normalizer
+([pm-gh1665](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1665.toon),
+tracker record excluded from npm). A direct caller should pass the handler key.
+The flag's own spellings (`status-filter`, `--status-filter`, or its short
+letter) fold into the same key, and undeclared keys pass through unchanged. Two
+spellings of one flag with different values are refused with
+`extension_option_spelling_conflict` (exit 2) instead of silently picking one:
+
+```ts
+const client = new PmClient({ pmRoot });
+await client.run("demo-brief", { options: { statusFilter: "closed" } }); // handler key
+await client.run("demo-brief", { options: { "status-filter": "closed" } }); // same result
+```
+
+`pm contracts --command <command> --flags-only --json` publishes the key as
+`sdk_option` on every extension-declared row, and marks the row `owner:
+"extension"`. The same entry lists the host flags the command inherits under
+`inherited_flags`, each marked `owner: "host"` because it arrives in
+`context.global`, not in `context.options`
+([pm-gh1666](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1666.toon),
+tracker record excluded from npm):
+
+```json
+{
+  "command": "demo-brief",
+  "flags": [{ "flag": "--status-filter", "owner": "extension", "sdk_option": "statusFilter", "default": "open" }],
+  "inherited_flags": [
+    { "flag": "--json", "owner": "host", "reservation_scope": "inherited", "value_arity": "none" },
+    { "flag": "--pm-path", "aliases": ["--path"], "owner": "host", "reservation_scope": "inherited", "value_arity": "required", "value_name": "path" }
+  ]
+}
+```
+
+`pm help <command> --json` carries the same split as `options` and
+`inherited_options`, and text help prints an "Inherited host flags" section.
+The inherited set is derived from the reserved host-flag table: read-output
+controls (`--output-include`, `--output-limit`, `--output-budget`,
+`--output-session`, `--output-cursor`, `--output-row-contract`) appear only on
+commands that declare `read_output`, `--no-extensions` never appears because it
+removes the command itself, and root-only flags (`--version`, `--all`,
+`--explain`) are refused as unknown unless the command declares them.
 
 ## Output Ownership
 
