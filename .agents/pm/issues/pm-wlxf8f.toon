@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,cli,extensions,flags
 created_at: "2026-11-07T13:26:16.419Z"
-updated_at: "2026-11-07T19:07:15.791Z"
+updated_at: "2026-11-07T19:16:34.635Z"
 closed_at: "2026-11-07T19:07:15.107Z"
 completed_at: "2026-11-07T19:07:15.107Z"
 author: "harness:claude-code"
@@ -57,4 +57,12 @@ docs[2]{path,scope,note}:
   docs/EXTENSIONS.md,project,registerFlags CLI refusals
   docs/SDK.md,project,"Handler keys and ownership: CLI argv spelling conflicts"
 close_reason: CLI argv with two spellings of one declared scalar extension flag and different values is refused like direct callers
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-wlxf8f
+  gate_id: extension-option-spelling-conflicts
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/runtime/option-spelling-conflicts.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/extension/command-options.spec.ts tests/unit/cli/runtime/option-spelling-conflicts.spec.ts tests/integration/extensions/extension-option-refusals.integration.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

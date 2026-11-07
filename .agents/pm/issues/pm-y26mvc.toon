@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,annotations,comments,recovery,recurrence
 created_at: "2026-11-07T09:07:11.835Z"
-updated_at: "2026-11-07T19:07:04.326Z"
+updated_at: "2026-11-07T19:16:33.937Z"
 closed_at: "2026-11-07T19:07:03.694Z"
 completed_at: "2026-11-07T19:07:03.694Z"
 author: "harness:claude-code"
@@ -57,4 +57,12 @@ test_runs[1]:
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Logs section documents the refusal and retry
 close_reason: Annotation commands refuse a swallowed source option first and offer the caller's own command without the text flag
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-y26mvc
+  gate_id: annotation-swallowed-option
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/annotation-swallowed-option.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/annotation-swallowed-option.spec.ts tests/unit/cli/runtime/annotation-option-retry.spec.ts tests/integration/cli/annotation-swallowed-option.integration.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
