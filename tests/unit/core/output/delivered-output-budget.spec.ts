@@ -335,6 +335,9 @@ describe("pm-sj66lm TOON explicit selection keeps requested empties and a one-li
     const partial = { has_omissions: true, omitted_field_group_count: 1, omitted_field_groups: [{ name: "children", restore_with: "--fields children" }] };
     expect(formatBuiltInOutput({ item: { id: "pm-a" }, omission_receipt: partial }, "toon")).toContain("has_omissions: true");
     expect(JSON.parse(formatBuiltInOutput({ omission_receipt: complete }, "json"))).toEqual({ omission_receipt: complete });
+    // Field order does not matter; a receipt with an extra field is not complete.
+    expect(formatBuiltInOutput({ omission_receipt: { omitted_field_groups: [], has_omissions: false, omitted_field_group_count: 0 } }, "toon")).toBe("omission_receipt: complete\n");
+    expect(formatBuiltInOutput({ omission_receipt: { ...complete, extra: 1 } }, "toon")).toContain("has_omissions: false");
   });
 
   it("restores only the empty collections an explicit selection kept, in order", () => {

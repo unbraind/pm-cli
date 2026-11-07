@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: agent-ux,recovery,security,windows
 created_at: "2026-10-31T09:47:32.983Z"
-updated_at: "2026-10-31T09:49:23.919Z"
+updated_at: "2026-11-07T05:21:59.965Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Decide the recovery-command shell dialect on win32 (cmd/CreateProcess, PowerShell, or a declared dialect field); quoteCommandArg renders arguments containing $, backtick, ( or ) so that pasting into the declared shell never expands them; unit tests cover win32 cmd and PowerShell rendering of a tracker path containing $(...) and a backtick; existing cmd/CreateProcess round-trip tests stay green"
@@ -16,4 +16,6 @@ confidence: medium
 expected_result: "A recovery command rendered on Windows can be pasted into the declared shell without expanding $, $(...) or backticks in any argument."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-b24b,related,"2026-10-31T09:47:32.983Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-07T05:21:59.965Z","harness:claude-code","Extension from the CodeRabbit review of PR 1681: the legacy intent restore_with renders its positional and the newly carried --fields with POSIX single quotes (shellQuote in src/sdk/context-intent-contracts.ts). On Windows cmd.exe, a retry such as \"--fields 'id'\" passes the quotes as part of the selector and fails validation. That recovery should use the platform-aware quoteCommandArg/renderPmCommand path this item owns."
 body: ""

@@ -665,7 +665,9 @@ const COMPLETE_OMISSION_RECEIPT = JSON.stringify({
 
 /** Whether an omission receipt reports that nothing was omitted, in exactly its declared shape. */
 function isCompleteOmissionReceipt(value: unknown): boolean {
-  return JSON.stringify(value) === COMPLETE_OMISSION_RECEIPT;
+  // Compare by value: a receipt with the same fields in another order is still complete.
+  const entries = Object.entries(Object(value) as Record<string, unknown>).sort(([left], [right]) => left.localeCompare(right));
+  return JSON.stringify(Object.fromEntries(entries)) === COMPLETE_OMISSION_RECEIPT;
 }
 
 interface OutputServiceResolution {

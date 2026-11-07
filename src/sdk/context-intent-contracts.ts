@@ -1014,29 +1014,10 @@ export function attachContextIntentReceipt<
   const envelopeOverhead = intentEnvelopeOverheads.get(options) ?? 0;
   const reportedBudget = receipt.token_budget;
   receipt.token_budget = reportedBudget - envelopeOverhead;
-  let projected: Record<string, unknown> = {
-    ...resultWithDiagnostics,
-    context_intent: receipt,
-  };
-  updateContextIntentEstimate(projected, receipt, options);
-  if (receipt.estimated_tokens > receipt.token_budget) {
-    receipt.degradation = "recursive_budget_compaction";
-    projected = {
-      ...(compactContextIntentValue(resultWithDiagnostics) as Record<
-        string,
-        unknown
-      >),
-      context_intent: receipt,
-    };
-    updateContextIntentEstimate(projected, receipt, options);
-  }
-  if (
-    receipt.estimated_tokens > receipt.token_budget &&
-    compactContextIntentRows(builtInCommand, projected, receipt, options)
-  ) {
-    receipt.degradation = "budget_row_compaction";
-    updateContextIntentEstimate(projected, receipt, options);
-  }
+  // An explicitly unbounded read keeps everything it asked for: no string or row compaction.
+  const projected = canonicalBudget === "unbounded"
+    ? estimatedIntentProjection(resultWithDiagnostics, receipt, options)
+    : compactIntentProjection(builtInCommand, resultWithDiagnostics, receipt, options);
   receipt.declaration_feasible =
     receipt.estimated_tokens <= receipt.declared_token_budget;
   const outcome = intentBudgetOutcome(canonicalBudget, receipt, projected, () =>
@@ -1052,9 +1033,45 @@ export function attachContextIntentReceipt<
   );
   // An omitted result's estimate covers the envelope it would have delivered,
   // including the overhead this pass reserved, so it exceeds the budget it reports.
-  if (receipt.result_omitted) receipt.estimated_tokens += envelopeOverhead;
+  if (receipt.result_omitted) {
+    receipt.estimated_tokens += envelopeOverhead;
+    receipt.declaration_feasible = receipt.estimated_tokens <= receipt.declared_token_budget;
+  }
   receipt.token_budget = reportedBudget;
   return outcome as Result & { context_intent: PmContextIntentReceipt };
+}
+
+/** Project an intent result with its receipt and settle the receipt's estimate over it. */
+function estimatedIntentProjection(
+  result: Record<string, unknown>,
+  receipt: PmContextIntentReceipt,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const projected: Record<string, unknown> = { ...result, context_intent: receipt };
+  updateContextIntentEstimate(projected, receipt, options);
+  return projected;
+}
+
+/** Compact strings, then rows, until an intent projection fits its fit ceiling or nothing more can be removed. */
+function compactIntentProjection(
+  builtInCommand: BuiltInContextIntentCommand,
+  result: Record<string, unknown>,
+  receipt: PmContextIntentReceipt,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  let projected = estimatedIntentProjection(result, receipt, options);
+  if (receipt.estimated_tokens > receipt.token_budget) {
+    receipt.degradation = "recursive_budget_compaction";
+    projected = estimatedIntentProjection(compactContextIntentValue(result) as Record<string, unknown>, receipt, options);
+  }
+  if (
+    receipt.estimated_tokens > receipt.token_budget &&
+    compactContextIntentRows(builtInCommand, projected, receipt, options)
+  ) {
+    receipt.degradation = "budget_row_compaction";
+    updateContextIntentEstimate(projected, receipt, options);
+  }
+  return projected;
 }
 
 /** Envelope overhead a settled second pass charges against an intent budget, keyed by that pass's options. */

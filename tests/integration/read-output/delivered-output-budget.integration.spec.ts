@@ -102,10 +102,16 @@ describe("GH-1662 one budget contract for intent reads", () => {
       expect(retried.code, retried.stderr).toBe(0);
       expect(omitted(retried.stdout)).toBe(false);
 
-      // An explicitly unbounded canonical read keeps its result.
+      // An explicitly unbounded canonical read keeps its result, uncompacted.
       const unbounded = await runSource(context, ["context", "--for", "orient", "--output-budget", "unbounded", "--json"]);
       expect(unbounded.code).toBe(0);
       expect(omitted(unbounded.stdout)).toBe(false);
+      const longBody = "b".repeat(20_000);
+      const bodyId = createTestItemId(context, { title: "Unbounded body", description: "d" });
+      expect(context.runCli(["update", bodyId, "--body", longBody, "--json"]).code).toBe(0);
+      const inspected = await runSource(context, ["get", bodyId, "--for", "inspect", "--output-budget", "unbounded", "--json"]);
+      // Negative control: intent compaction truncated the requested body to 240 characters.
+      expect((JSON.parse(inspected.stdout) as { item: { body: string } }).item.body).toBe(longBody);
 
       // SDK consumers detect both branches.
       const client = new PmClient({ pmRoot: context.pmPath });
@@ -170,21 +176,19 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
       const shortId = createTestItemId(context, { title: "Short task" });
       const shortRead = await runSource(context, ["get", shortId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);
       const shortIntent = (JSON.parse(shortRead.stdout) as { context_intent: { result_omitted: boolean; estimated_tokens: number; token_budget: number } }).context_intent;
-      if (shortIntent.result_omitted) {
-        expect(shortRead.code).toBe(2);
-        // Negative control: the omission reported 210 tokens against its 300-token budget.
-        expect(shortIntent.estimated_tokens).toBeGreaterThan(shortIntent.token_budget);
-      }
+      expect(shortIntent.result_omitted).toBe(true);
+      expect(shortRead.code).toBe(2);
+      // Negative control: the omission reported 210 tokens against its 300-token budget.
+      expect(shortIntent.estimated_tokens).toBeGreaterThan(shortIntent.token_budget);
 
       // The retry a refusal names keeps the caller's field projection and returns the result.
       const wideId = createTestItemId(context, { title: "T", description: "w".repeat(1000), acceptanceCriteria: "a".repeat(1000) });
       const narrow = await runSource(context, ["get", wideId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);
       const restore = (JSON.parse(narrow.stdout) as { budget_exceeded?: { restore_with: string } }).budget_exceeded?.restore_with;
-      if (restore !== undefined) {
-        expect(restore).toContain("--fields 'id,title'");
-        const retried = await runSource(context, argvOf(restore));
-        expect(retried.code, retried.stdout).toBe(0);
-      }
+      expect(restore, narrow.stdout).toBeDefined();
+      expect(restore).toContain("--fields 'id,title'");
+      const retried = await runSource(context, argvOf(restore!));
+      expect(retried.code, retried.stdout).toBe(0);
 
       // An SDK intent refusal always carries the read-output receipt its type promises.
       const sdk = new PmClient({ pmRoot: context.pmPath });
