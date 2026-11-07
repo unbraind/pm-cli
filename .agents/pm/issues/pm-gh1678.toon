@@ -1,0 +1,26 @@
+id: pm-gh1678
+title: "GH-1678: a scoped registerRenderer replacement bypasses --output-budget and its read_output receipt reports within_budget for the native payload, not the delivered bytes"
+description: "GitHub issue #1678 (reported 2026-11-06 against 2026.11.5 from an agent-UX review). An extension command that declares read_output participates in host output controls, but when a scoped registerRenderer (SDK) replaces the TOON rendering, the host packs and measures the native structured payload and then writes the renderer's string without applying the caller's --output-budget. In the reporter's synthetic repro, --output-budget 400 --output-row-contract emits 10,780 B (about 2,695 tokens) while read_output reports estimated_tokens 179 and within_budget true. Native JSON (1,004 B) and native TOON (716 B) controls measure correctly. With --output-budget 1 the refusal exits 2 but is itself expanded through the renderer (10,574 B). Without the receipt flag the excess remains (10,073 B). Expected: the final-output ceiling applies to the string the selected renderer returns. If it cannot fit, the host returns the bounded native refusal with a nonzero exit, never routing a refusal back through the expanding renderer. A within_budget receipt must describe the delivered bytes. Unbounded artifact rendering stays available when explicitly requested. Duplicate check: searched renderer output budget, registerRenderer output, within_budget extension; GH-560 and GH-96 (closed) cover ignored or unscoped overrides, pm-gh1552 (closed) SDK compact-versus-pretty accounting, pm-gh1662 (open) native intent budgets. This item owns post-packing custom renderer output escaping the final-byte budget. Not yet reproduced locally; the repro block in the issue is executable."
+type: Issue
+status: open
+priority: 1
+tags[6]: agent-ux,extensions,"gh:1678",output-budget,renderer,sdk
+created_at: "2026-11-06T11:33:06.300Z"
+updated_at: "2026-11-06T15:40:49.535Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The caller's --output-budget applies to the string a selected custom renderer returns, and output that cannot fit returns the bounded native output_budget_exceeded refusal with exit 2; A refusal is never routed back through an expanding custom renderer; read_output estimated_tokens and within_budget describe the delivered bytes of a custom rendering; Explicitly unbounded custom rendering stays available; A spec with a synthetic extension renderer asserts the bounded and unbounded behaviour in TOON and JSON, and a negative control that measures the native payload instead fails it"
+parent: pm-5t33or
+risk: medium
+confidence: medium
+expected_result: A custom renderer's delivered output obeys --output-budget and its receipt measures the delivered bytes
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1552,related,"2026-11-06T11:33:06.300Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1662,related,"2026-11-06T11:33:06.300Z","harness:claude-code","cli:create:dep",detected
+  pm-gd6vnn,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+  pm-odw3j8,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+  pm-prsvjh,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+  pm-t2t709,related,"2026-11-06T15:40:49.223Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T15:40:46.675Z","harness:claude-code","Duplicate check at creation (2026-11-06): pm search \"renderer output budget\" returned pm-5t33or (open, the declared-budget feature, now this item's parent), pm-prsvjh (closed, intent budget binding), pm-odw3j8 (closed, rendered relationship budgets), pm-gh1552 (closed, SDK compact JSON accounting), pm-t2t709 (closed, dependency budget measured on another representation) and pm-gd6vnn (open, observation contract). None covers a scoped registerRenderer replacement escaping the final-byte budget with a receipt measuring the native payload. The GitHub dedupe in the issue (#560, #96, #1552, #1662) reaches the same conclusion."
+body: ""

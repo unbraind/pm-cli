@@ -1,0 +1,26 @@
+id: pm-gh1679
+title: "GH-1679: SDK and CLI item history have no producer cursor, so paging backwards through a long history requests an ever-larger newest suffix per page"
+description: "GitHub issue #1679 (reported 2026-11-06 against 2026.11.5 from an SDK adoption review of the fleet). HistoryCommandOptions exposes limit and order but no producer cursor, and HistoryResult returns no continuation (dist/sdk/query/history.d.ts). Public output cursors page an already-produced projection, so they do not bound the historical read. A consumer paging backwards through a long item history must request an ever-larger newest suffix for each older page, then verify and filter it. The concrete consumer is pm-web's item-history panel (src/services/item-history.ts), which requests successively larger suffixes. Proposal: opaque bounded backwards and forwards item-history paging in the SDK and CLI. The continuation is bound to the item, order, projection and a verified stream boundary. Each page returns bounded rows, explicit completeness and omission receipts, and a safe stale_cursor refusal. Pages stay stable under appends where safe, and compaction, rewrite or truncation ambiguities are refused. The producer cursor stays distinct from the output cursor contract. Duplicate check: searched history cursor paging; pm-c3aiik (GH-1325, closed) fixed history diff cursor advancement, pm-dfg0 (closed) list/search/context cursors, pm-8s53lj (open) newest-page retention for comments/notes, pm-tuadp2 (open) delta projections, GH-1470 replay infrastructure. None provides a producer cursor over one item's history stream. No benchmark was run; evidence is declaration and consumer-code analysis."
+type: Issue
+status: open
+priority: 2
+tags[6]: cursor,"gh:1679",history,pm-web,scale,sdk
+created_at: "2026-11-06T11:33:09.523Z"
+updated_at: "2026-11-06T15:40:50.959Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "HistoryCommandOptions accepts an opaque producer cursor for backwards and forwards paging and HistoryResult returns a continuation bound to the item, order, projection and a verified stream boundary; Each page reads a bounded number of entries regardless of history length, proven by a work-bound spec over a long history; Concurrent appends between pages neither skip nor duplicate certified rows, and a cursor for another item, a tampered cursor, or a stream compacted or rewritten since issue is refused with a typed stale_cursor error; The producer cursor is distinct from the output cursor contract and works in JSON and TOON through CLI, SDK and MCP"
+parent: pm-9rgaal
+risk: medium
+confidence: medium
+expected_result: Backwards item-history paging reads a bounded page per call through an opaque producer cursor that refuses stale or foreign continuations
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8s53lj,related,"2026-11-06T11:33:09.523Z","harness:claude-code","cli:create:dep",detected
+  pm-c3aiik,related,"2026-11-06T11:33:09.523Z","harness:claude-code","cli:create:dep",detected
+  pm-dfg0,related,"2026-11-06T11:33:24.152Z","harness:claude-code","cli:update:dep",detected
+  pm-tuadp2,related,"2026-11-06T11:33:24.152Z","harness:claude-code","cli:update:dep",detected
+  pm-0luwp4,related,"2026-11-06T15:40:50.518Z","harness:claude-code","cli:update:dep",detected
+  pm-ice4,related,"2026-11-06T15:40:50.518Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T15:40:47.463Z","harness:claude-code","Duplicate check at creation (2026-11-06): pm search \"history cursor paging\" returned pm-c3aiik (closed, GH-1325 history diff cursor advancement), pm-dfg0 (closed, list/search/context cursors), pm-tuadp2 (open, delta projections with --since), pm-0luwp4 (closed, context cursor page boundaries), pm-ice4 (closed, list offset pagination) and pm-8s53lj (open, newest-page retention for comments/notes). None provides a producer cursor that bounds the read of one item's history stream."
+body: ""

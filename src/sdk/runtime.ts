@@ -4,7 +4,7 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { describeUnknownError, createExtensionCommandError } from "./error-runtime.js";
-import { capturePmCommandScope } from "./command-line.js";
+import { capturePmCommandScope, resolvePmCommandScopeArgs } from "./command-line.js";
 import {
   createEmptyExtensionCommandRegistry,
   createEmptyExtensionHookRegistry,
@@ -815,8 +815,15 @@ export class PmClient {
     const revisions = await import("./lifecycle/item-revision.js");
     // Bind inside the extension context, but run the operation outside it so its own
     // actions (including extension commands) activate and dispatch normally.
-    const scope = await this.withItemTransactionContext(({ pmRoot }) => revisions.bindExpectedItemRevisions(expectations, { pmRoot }));
-    return revisions.runWithBoundItemRevisionScope(scope, operation);
+    let tracker = "";
+    const scope = await this.withItemTransactionContext(({ pmRoot }) => {
+      tracker = pmRoot;
+      return revisions.bindExpectedItemRevisions(expectations, { pmRoot });
+    });
+    // pm-gh1677: recovery reads name this client's tracker, wherever the caller's process runs, and keep
+    // its extension isolation. An active-extension-host client disables extensions only internally.
+    const isolated = this.defaults.noExtensions === true && this.defaults[ACTIVE_EXTENSION_HOST_CONTEXT] !== true;
+    return revisions.runWithBoundItemRevisionScope(scope, operation, { scopeArgs: ["--pm-path", tracker, ...(isolated ? ["--no-extensions"] : [])] });
   }
 
   /** Return the same context snapshot produced by `pm context`. */
@@ -2930,6 +2937,22 @@ function resolveSdkActionInput(args: PmActionInput): {
   return { action, args: resolvedArgs };
 }
 
+/**
+ * Tracker scope a guarded action's revision recovery replays (pm-gh1677). An
+ * explicit cwd is not the caller's process cwd, so the resolved root replaces
+ * a relative spelling. An active-extension-host client disables extensions only
+ * internally, so its recovery keeps extensions enabled.
+ */
+function revisionRecoveryScopeArgs(args: PmActionInput, global: GlobalOptions, explicitCwd: string | undefined, resolutionCwd: string): string[] {
+  const hostContext = (args as PmActionInput & { [ACTIVE_EXTENSION_HOST_CONTEXT]?: true })[ACTIVE_EXTENSION_HOST_CONTEXT] === true;
+  const isolation = global.noExtensions === true && !hostContext ? ["--no-extensions"] : [];
+  if (explicitCwd !== undefined) return ["--pm-path", resolvePmRoot(resolutionCwd, global.path), ...isolation];
+  // resolvePmCommandScopeArgs appends --no-extensions last when it applies; drop only that token, never a
+  // tracker value that happens to be spelled the same.
+  const scoped = resolvePmCommandScopeArgs(global, resolutionCwd);
+  return [...(global.noExtensions === true ? scoped.slice(0, -1) : scoped), ...isolation];
+}
+
 /** Execute one native or extension-contributed pm action in-process. */
 export async function runAction(args: PmActionInput): Promise<unknown> {
   const resolved = resolveSdkActionInput(args);
@@ -2974,6 +2997,13 @@ export async function runAction(args: PmActionInput): Promise<unknown> {
       options: asRecordClone(dispatchArgs.options),
       background: dispatchArgs.background,
       pmRoot: resolvePmRoot(resolutionCwd, global.path),
+      // pm-gh1677: recovery reads keep the caller's tracker spelling and extension isolation. An explicit
+      // cwd is not the caller's process cwd, so a relative spelling would name another tracker there.
+      invocation: {
+        scopeArgs: revisionRecoveryScopeArgs(args, global, explicitCwd, resolutionCwd),
+        // A requested encoding carries into the recovery reads; otherwise they stay machine-readable JSON.
+        ...(global.outputFormat === undefined ? {} : { outputArgs: ["--output-format", global.outputFormat] }),
+      },
       run: () => dispatchAction(resolved.action, dispatchArgs, global, activeExtensions),
     });
   };

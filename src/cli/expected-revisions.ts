@@ -22,11 +22,28 @@ import {
   parseExpectHashSpecs,
   resolveExpectedItemRevisions,
   runWithItemRevisionScope,
+  type ItemRevisionRecoveryInvocation,
   type ItemRevisionScope,
 } from "../sdk/lifecycle/item-revision.js";
+import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
+import type { GlobalOptions } from "../sdk/runtime-primitives.js";
 import { emitPreflightWarning } from "./preflight-warnings.js";
 
 const invocationScopes = new AsyncLocalStorage<ItemRevisionScope>();
+/** The tracker scope and output mode each bound invocation's revision refusals replay (pm-gh1677). */
+const invocationRecoveries = new WeakMap<ItemRevisionScope, ItemRevisionRecoveryInvocation>();
+
+/**
+ * Recovery reads replay the caller's tracker scope, extension isolation and
+ * output encoding. The canonical `--output-format` wins over the legacy
+ * `--json`, as it does for the invocation's own output.
+ */
+export function invocationRevisionRecovery(globalOptions: GlobalOptions): ItemRevisionRecoveryInvocation {
+  const outputArgs = globalOptions.outputFormat !== undefined
+    ? ["--output-format", globalOptions.outputFormat]
+    : globalOptions.json === true ? ["--json"] : [];
+  return { scopeArgs: resolvePmCommandScopeArgs(globalOptions), outputArgs };
+}
 /** Invocation scopes whose guard preAction bound, with the command path admitted; final dispatch must not rewrite them. */
 const guardedInvocations = new WeakMap<ItemRevisionScope, string>();
 
@@ -74,6 +91,8 @@ export async function bindInvocationExpectedRevisions(params: {
   commandOptions?: Record<string, unknown>;
   /** Whether an extension parser or preflight override rewrote the tracker or arguments. */
   rewritten?: boolean;
+  /** Global options whose tracker scope and output mode recovery commands replay. */
+  globalOptions?: GlobalOptions;
 }): Promise<void> {
   if (params.expectHash === undefined) return;
   const specs = parseExpectHashSpecs(params.expectHash);
@@ -85,6 +104,7 @@ export async function bindInvocationExpectedRevisions(params: {
   const expectations = await resolveExpectedItemRevisions(params.pmRoot, specs, itemArgumentOf(params.command, params.commandArgs));
   bindItemRevisionScope(scope, params.pmRoot, expectations);
   guardedInvocations.set(scope, action);
+  if (params.globalOptions !== undefined) invocationRecoveries.set(scope, invocationRevisionRecovery(params.globalOptions));
 }
 
 /**
@@ -118,9 +138,9 @@ export function reportInvocationRevisionScope(scope: ItemRevisionScope): void {
   }
 }
 
-/** Attach bounded change evidence to a revision refusal raised by this invocation. */
+/** Attach bounded change evidence to a revision refusal raised by this invocation, with recovery reads scoped to it. */
 export async function enrichInvocationRevisionError(scope: ItemRevisionScope, error: unknown): Promise<unknown> {
-  return scope.pmRoot === undefined ? error : enrichItemRevisionConflict(error, scope.pmRoot);
+  return scope.pmRoot === undefined ? error : enrichItemRevisionConflict(error, scope.pmRoot, invocationRecoveries.get(scope));
 }
 
 /**

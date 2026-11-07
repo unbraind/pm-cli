@@ -27,10 +27,14 @@ function environmentCommandScope(cwd: string): string | undefined {
     ? undefined : path.relative(cwd, resolved) || ".";
 }
 
-/** Build copy-safe tracker and extension arguments, preserving explicit spelling and omitting the implicit cwd tracker. */
+/**
+ * Build copy-safe tracker and extension arguments, preserving explicit spelling and omitting the implicit cwd tracker.
+ * A blank typed tracker (empty or whitespace-only) is not an explicit selection: tracker resolution trims it and
+ * defers to PM_PATH, so the arguments name the environment's tracker the invocation actually used (pm-gh1677).
+ */
 export function resolvePmCommandScopeArgs(options: CommandScope, cwd = process.cwd()): string[] {
   const requested = requestedPaths.has(options) ? requestedPaths.get(options) : options.path;
-  const selected = requested || environmentCommandScope(cwd);
+  const selected = requested?.trim() ? requested : environmentCommandScope(cwd);
   const args = selected ? ["--pm-path", selected] : [];
   if (options.noExtensions) args.push("--no-extensions");
   return args;

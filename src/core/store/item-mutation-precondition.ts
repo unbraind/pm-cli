@@ -9,8 +9,9 @@ import { realpathSync } from "node:fs";
 import path from "node:path";
 import { hashDocument } from "../history/history.js";
 import { sha256Hex } from "../shared/serialization.js";
+import { renderPmCommand } from "../shared/command-line.js";
 import { EXIT_CODE } from "../shared/constants.js";
-import { PmCliError } from "../shared/errors.js";
+import { PmCliError, type PmCliErrorContext } from "../shared/errors.js";
 import type { ItemDocument } from "../../types/index.js";
 
 interface ItemMutationPrecondition {
@@ -154,6 +155,33 @@ function matchingRevisionEntries(pmRoot: string, ids: readonly unknown[]): ItemR
 }
 
 /**
+ * Every revision the active scopes currently expect on this tracker, as
+ * `<id>=<hash>` guard values, so a refusal that prescribes a retry carries the
+ * same guards (`--expect-hash <id>=<hash>`) the refused operation ran under,
+ * including those on items it would write as a side effect (auto-unblocked
+ * dependents). Undefined when no single invocation can declare them: nested
+ * scopes expect different revisions of the same item, or a write inside the
+ * refused operation (a beforeCommand hook) advanced a guard past the revision
+ * its caller declared, so replaying the caller's own guard would conflict.
+ */
+export function activeItemRevisionExpectations(pmRoot: string): string[] | undefined {
+  const scopes = revisionScopes.getStore() ?? [];
+  if (scopes.length === 0) return [];
+  const resolvedRoot = canonicalTrackerRoot(pmRoot);
+  const expected = new Map<string, Set<string>>();
+  for (const scope of scopes) {
+    if (scope.pmRoot !== resolvedRoot) continue;
+    for (const [id, entry] of scope.entries) {
+      if (entry.expected !== entry.declared) return undefined;
+      expected.set(id, (expected.get(id) ?? new Set()).add(entry.expected));
+    }
+  }
+  // Nested scopes that expect different revisions of one item cannot be spelled as one invocation's guards.
+  if ([...expected.values()].some((hashes) => hashes.size > 1)) return undefined;
+  return [...expected].map(([id, hashes]) => `${id}=${[...hashes][0]!}`);
+}
+
+/**
  * Whether any active scope declared a revision on this tracker, so writers that
  * must read a document to learn its embedded id can skip that read otherwise.
  */
@@ -165,7 +193,7 @@ export function hasActiveItemRevisionScope(pmRoot: string): boolean {
 /** Refuse a locked write whose stored revision is not the one its scope declared. */
 function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, targetId: string): void {
   const entries = matchingRevisionEntries(pmRoot, [targetId, document.metadata.id]);
-  if (entries.length > 0) assertRevisionEntries(entries, targetId, hashDocument(document), false);
+  if (entries.length > 0) assertRevisionEntries(entries, targetId, hashDocument(document), false, pmRoot);
 }
 
 /**
@@ -176,15 +204,107 @@ function assertItemRevisionExpectations(pmRoot: string, document: ItemDocument, 
  */
 export function assertItemRevisionExpectationsOnUnreadable(pmRoot: string, targetId: string, raw: string): void {
   const entries = matchingRevisionEntries(pmRoot, [targetId]);
-  if (entries.length > 0) assertRevisionEntries(entries, targetId, sha256Hex(raw), true);
+  if (entries.length > 0) assertRevisionEntries(entries, targetId, sha256Hex(raw), true, pmRoot);
+}
+
+/** `reason` of a revision refusal over a document that could be read and changed since the caller's read. */
+export const ITEM_REVISION_CONFLICT_CHANGED_REASON = "revision_changed";
+
+/** `reason` of a revision refusal over a live document that cannot be read at all. */
+export const ITEM_REVISION_CONFLICT_UNREADABLE_REASON = "document_unreadable";
+
+/**
+ * The invocation a revision refusal's read-only recovery commands must replay
+ * (pm-gh1677): the store layer never sees global options, so hosts that do
+ * re-render the commands with the caller's tracker scope and output mode.
+ */
+export interface ItemRevisionRecoveryInvocation {
+  /** Tracker and extension scope tokens, such as `--pm-path <root>` and `--no-extensions`. */
+  scopeArgs?: readonly string[];
+  /**
+   * Output-encoding tokens the recovery reads carry, such as `--json` or
+   * `--output-format toon`; empty for the tracker's default encoding.
+   * Defaults to `--json`, the machine-readable form.
+   */
+  outputArgs?: readonly string[];
+}
+
+/** Recovery guidance fields of a revision refusal. */
+export type ItemRevisionConflictGuidance = Required<Pick<PmCliErrorContext, "required" | "examples" | "nextSteps">>;
+
+/**
+ * Render the read-only recovery of a revision refusal for one invocation. The
+ * commands only re-read the item; deciding again and retrying with a fresh
+ * `--expect-hash` stays with the caller, so the guard never writes on its own.
+ */
+export function itemRevisionConflictGuidance(
+  targetId: string,
+  unreadable: boolean,
+  invocation: ItemRevisionRecoveryInvocation = {},
+): ItemRevisionConflictGuidance {
+  const scope = [...(invocation.scopeArgs ?? [])];
+  const output = [...(invocation.outputArgs ?? ["--json"])];
+  const read = renderPmCommand([...scope, "get", targetId, ...output]);
+  const history = renderPmCommand([...scope, "history", targetId, "--limit", "5", ...output]);
+  return {
+    required: unreadable
+      ? `Recover ${targetId} without --expect-hash (${renderPmCommand([...scope, "restore", targetId, "<version>"])}), since no declared revision describes an unreadable document.`
+      : `Re-read ${targetId} (${read} reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
+    examples: [renderPmCommand([...scope, "get", targetId, "--fields", "item_hash", ...output]), history],
+    nextSteps: [read, history],
+  };
+}
+
+/**
+ * Canonical tracker root of each revision refusal the locked-write guard
+ * raised. Shared through the global registry like the scopes themselves, so a
+ * guard opened through one published SDK entrypoint recognizes a refusal
+ * another entrypoint's bundle raised.
+ */
+const REFUSAL_TRACKERS_KEY = Symbol.for("@unbrained/pm-cli/item-revision-refusal-trackers");
+const refusalTrackerRegistry = globalThis as typeof globalThis & { [REFUSAL_TRACKERS_KEY]?: WeakMap<object, string> };
+const refusalTrackers = (refusalTrackerRegistry[REFUSAL_TRACKERS_KEY] ??= new WeakMap<object, string>());
+
+/** Wrappers searched for an originating refusal (composition steps wrap it as `cause`). */
+const REFUSAL_CAUSE_DEPTH = 8;
+
+/**
+ * The canonical tracker whose locked write raised this revision refusal, or
+ * undefined for a refusal the guard did not raise itself. A wrapper that kept
+ * the refusal as its `cause` reports the refusal's tracker. Nested scopes use
+ * it so only the scope bound to that tracker re-renders the recovery.
+ */
+export function itemRevisionRefusalTracker(error: unknown): string | undefined {
+  for (const link of refusalCauseChain(error)) {
+    const tracker = refusalTrackers.get(link);
+    if (tracker !== undefined) return tracker;
+  }
+  return undefined;
+}
+
+/**
+ * The error and the wrappers it keeps as `cause`, bounded. A `cause` accessor
+ * that throws ends the chain: inspecting an unrelated error for a refusal must
+ * never replace that error with the accessor's exception.
+ */
+function* refusalCauseChain(error: unknown): Generator<object> {
+  let current = error;
+  for (let depth = 0; depth < REFUSAL_CAUSE_DEPTH && typeof current === "object" && current !== null; depth += 1) {
+    yield current;
+    try {
+      current = (current as { cause?: unknown }).cause;
+    } catch {
+      return;
+    }
+  }
 }
 
 /** Mark matching entries checked and refuse the first one the locked revision does not satisfy. */
-function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targetId: string, current: string, unreadable: boolean): void {
+function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targetId: string, current: string, unreadable: boolean, pmRoot: string): void {
   for (const entry of entries) {
     entry.checked = true;
     if (!unreadable && entry.expected === current) continue;
-    throw new PmCliError(
+    throw trackRefusal(pmRoot, new PmCliError(
       `Item ${targetId} is no longer at the expected revision ${entry.expected.slice(0, 12)}${unreadable ? " (its live document cannot be read)" : ""}; refusing to write over a revision this decision did not see.${entry.committed ? " Earlier writes by this same invocation already committed." : " Nothing was written to this item."}`,
       EXIT_CODE.CONFLICT,
       {
@@ -192,15 +312,59 @@ function assertRevisionEntries(entries: readonly ItemRevisionScopeEntry[], targe
         item_id: targetId,
         expected_revision: entry.expected,
         current_revision: current,
-        required: unreadable
-          ? `Recover ${targetId} without --expect-hash (pm restore ${targetId} <version>), since no declared revision describes an unreadable document.`
-          : `Re-read ${targetId} (pm get ${targetId} --json reports item_hash), decide again against the current revision, then retry with --expect-hash <item_hash>.`,
+        reason: unreadable ? ITEM_REVISION_CONFLICT_UNREADABLE_REASON : ITEM_REVISION_CONFLICT_CHANGED_REASON,
         why: "The caller declared the revision its decision was based on, and another write changed the item before this locked write.",
-        examples: [`pm get ${targetId} --fields item_hash --json`, `pm history ${targetId} --limit 5`],
-        nextSteps: [`pm get ${targetId} --json`, `pm history ${targetId} --limit 5`],
+        ...itemRevisionConflictGuidance(targetId, unreadable),
       },
-    );
+    ));
   }
+}
+
+/**
+ * Whether a revision refusal was raised by this tracker's guard. A refusal
+ * with no recorded tracker (one another producer built) is attributed to the
+ * caller's tracker, as before nested scopes were distinguished.
+ */
+export function isItemRevisionRefusalFrom(error: unknown, pmRoot: string): boolean {
+  const tracker = itemRevisionRefusalTracker(error);
+  return tracker === undefined || tracker === canonicalTrackerRoot(pmRoot);
+}
+
+/**
+ * Refusals whose recovery was already rendered for the invocation that ran
+ * them. An enclosing scope, even on the same tracker, keeps that rendering, so
+ * an inner caller's extension isolation and encoding survive. Shared like the
+ * tracker registry.
+ */
+const SCOPED_REFUSALS_KEY = Symbol.for("@unbrained/pm-cli/item-revision-scoped-refusals");
+const scopedRefusalRegistry = globalThis as typeof globalThis & { [SCOPED_REFUSALS_KEY]?: WeakSet<object> };
+const scopedRefusals = (scopedRefusalRegistry[SCOPED_REFUSALS_KEY] ??= new WeakSet<object>());
+
+/** Whether this refusal (or a refusal it wraps as `cause`) already carries invocation-scoped recovery. */
+export function isItemRevisionRefusalScoped(error: unknown): boolean {
+  for (const link of refusalCauseChain(error)) {
+    if (scopedRefusals.has(link)) return true;
+  }
+  return false;
+}
+
+/** Record that a refusal's recovery was rendered for its own invocation. */
+export function markItemRevisionRefusalScoped(error: PmCliError): PmCliError {
+  scopedRefusals.add(error);
+  return error;
+}
+
+/** Keep a refusal's originating tracker, and whether it was scoped, on an error re-created from it. */
+export function retainItemRevisionRefusalTracker(source: unknown, target: PmCliError): PmCliError {
+  const tracker = itemRevisionRefusalTracker(source);
+  if (tracker !== undefined) refusalTrackers.set(target, tracker);
+  if (isItemRevisionRefusalScoped(source)) scopedRefusals.add(target);
+  return target;
+}
+
+function trackRefusal(pmRoot: string, error: PmCliError): PmCliError {
+  refusalTrackers.set(error, canonicalTrackerRoot(pmRoot));
+  return error;
 }
 
 /**

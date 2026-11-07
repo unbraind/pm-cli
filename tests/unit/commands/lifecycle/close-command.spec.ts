@@ -12,6 +12,7 @@ import {
 } from "../../../../src/cli/commands/lifecycle/close.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { closeItem } from "../../../../src/sdk/lifecycle/close.js";
 import { isPmCliErrorDetails } from "../../../../src/core/shared/error-details.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import {
@@ -1094,11 +1095,18 @@ describe("runClose", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         context: {
+          // pm-gh1676: pm close accepts the missing fields itself, so the retry is the same close.
+          required: "Supply --resolution, --expected-result, --actual-result: pm close accepts them and records them in the same write as the closure.",
           recovery: {
+            // The supplied reason and validation mode are carried, the reason as an attached value.
             suggested_retry: expect.stringMatching(
+              /^pm --pm-path \S+ close \S+ "--reason=close with strict validation" --validate-close=strict --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
+            ),
+            next_best_command: expect.stringMatching(
               /^pm --pm-path \S+ update \S+ --resolution "<value>" --expected-result "<value>" --actual-result "<value>"$/,
             ),
           },
+          nextSteps: [expect.stringContaining("Run recovery.suggested_retry when it is present"), expect.stringContaining("recovery.next_best_command"), expect.stringContaining("--validate-close warn")],
         },
       });
 
@@ -1121,10 +1129,44 @@ describe("runClose", () => {
         exitCode: EXIT_CODE.USAGE,
         context: {
           recovery: {
-            suggested_retry: expect.stringContaining("pm update"),
+            // Without a reason the retry renders no reason operand.
+            suggested_retry: expect.stringMatching(/ close \S+ --validate-close=strict --resolution "<value>" --expected-result/),
+            suggested_retry_args: expect.arrayContaining(["close", noReasonId]),
           },
         },
       });
+    });
+  });
+
+  it("pm-gh1676: carries every supplied close option into the SDK retry and keeps a flag-looking reason a value", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-validate-strict-supplied");
+      const refusal = await runClose(
+        id,
+        "--force",
+        { validateClose: "strict", resolution: "Implemented", message: "-m audit", author: "sdk-agent", completedAt: "2026-11-06T00:00:00.000Z", force: true },
+        { path: context.pmPath },
+      ).catch((error: unknown) => error as PmCliError);
+      expect(refusal).toBeInstanceOf(PmCliError);
+      expect((refusal as PmCliError).context.recovery?.suggested_retry_args).toEqual([
+        "--pm-path", expect.any(String), "close", id, "--reason=--force",
+        "--resolution=Implemented", "--validate-close=strict", "--completed-at=2026-11-06T00:00:00.000Z", "--message=-m audit", "--author=sdk-agent", "--force",
+        "--expected-result", "<value>", "--actual-result", "<value>",
+      ]);
+    });
+  });
+
+  it.each([{ requireCloseReason: false }, { orderingEdges: "remove" as const }])("pm-gh1676: proposes no CLI retry for an SDK-only lifecycle override (%o) a CLI close cannot reproduce", async (lifecyclePolicy) => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-validate-strict-override");
+      const refusal = await closeItem(id, "Delivered", { validateClose: "strict", resolution: "Implemented", lifecyclePolicy }, { path: context.pmPath })
+        .catch((error: unknown) => error as PmCliError);
+      expect(refusal).toBeInstanceOf(PmCliError);
+      const { context: refused } = refusal as PmCliError;
+      expect(refused.code).toBe("close_validation_missing_fields");
+      expect(refused.recovery).toEqual({ missing: ["--expected-result", "--actual-result"], next_best_command: expect.stringContaining(` update ${id} --expected-result`) });
+      expect(refused.required).toContain(`lifecyclePolicy override (${Object.keys(lifecyclePolicy)[0]}) has no CLI spelling`);
+      expect(refused.nextSteps?.[0]).toBe("Retry the same SDK close with the missing evidence supplied, inside the same lifecycle policy and revision guards.");
     });
   });
 

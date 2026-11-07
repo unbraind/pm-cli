@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { compactMarkdownTables, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, exportedDeclarationClosure, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -269,6 +269,63 @@ it("renders every tracked markdown file identically after compaction (pm-998juj)
   }
   expect(saved).toBeGreaterThan(30_000);
 });
+
+it("keeps exactly the declarations exported types entries reach and refuses dangling references (pm-998juj)", () => {
+  const files: Record<string, string> = {
+    "dist/sdk/index.d.ts": 'export * from "./query.js";\nexport type { Item } from"../core/item.js";\nimport type { Server } from "node:http";\nexport type Data = typeof import("./data.json");\n',
+    "dist/sdk/query.d.ts": 'export declare const query: import( "./shared.js" ).Shared;\nexport type Query = number;\n',
+    // A cycle back into an already reached declaration.
+    "dist/sdk/shared.d.ts": 'export type Shared = import("./query.js").Query;\n',
+    "dist/core/item.d.ts": "export interface Item { id: string }\n",
+    // Only an unexported module imports it, so no consumer can reach it.
+    "dist/cli/main.d.ts": 'export * from "../core/item.js";\n',
+  };
+  const read = (file: string): string => files[file]!;
+  const manifest = {
+    types: "./dist/sdk/index.d.ts",
+    exports: {
+      ".": { types: "./dist/sdk/index.d.ts", import: "./dist/cli-bundle/sdk.js" },
+      "./internal/*": null,
+      "./package.json": "./package.json",
+    },
+  };
+  expect([...exportedDeclarationClosure(manifest, Object.keys(files), read)].sort()).toEqual([
+    "dist/core/item.d.ts",
+    "dist/sdk/index.d.ts",
+    "dist/sdk/query.d.ts",
+    "dist/sdk/shared.d.ts",
+  ]);
+  // Negative controls: a reached declaration missing from the packlist, and a specifier the walk cannot resolve.
+  expect(() => exportedDeclarationClosure(manifest, Object.keys(files).filter((file) => file !== "dist/core/item.d.ts"), read))
+    .toThrow("Exported type closure references an unpacked declaration: dist/core/item.d.ts");
+  expect(() => exportedDeclarationClosure({ exports: { ".": { types: "./dist/a.d.ts" } } }, ["dist/a.d.ts"], () => 'export * from "./b";'))
+    .toThrow("Unsupported declaration specifier ./b in dist/a.d.ts");
+  expect(exportedDeclarationClosure({}, [], read).size).toBe(0);
+});
+
+it("publishes only the dist declarations an exported types entry reaches, leaving the checkout intact and unmapped packages whole (pm-998juj)", async () => {
+  const { root, manifest } = await createBundleFixture();
+  await mkdir(path.join(root, "dist"), { recursive: true });
+  await mkdir(path.join(root, "types"), { recursive: true });
+  await writeFile(path.join(root, "dist/index.js"), "export const value = 1;\n");
+  await writeFile(path.join(root, "dist/index.d.ts"), 'export * from "./value.js";\n');
+  await writeFile(path.join(root, "dist/value.d.ts"), "export declare const value: number;\n");
+  await writeFile(path.join(root, "dist/internal.d.ts"), "export declare const hidden: string;\n");
+  await writeFile(path.join(root, "types/ambient.d.ts"), "declare const ambient: string;\n");
+  await writeFile(path.join(root, "package.json"), JSON.stringify({
+    ...manifest,
+    files: [...manifest.files, "dist/**", "types/**"],
+    exports: { ".": { types: "./dist/index.d.ts", import: "./dist/index.js" } },
+  }));
+  const files = (await packDistribution(root)).files.map((file: { path: string }) => file.path) as string[];
+  expect(files).toEqual(expect.arrayContaining(["dist/index.js", "dist/index.d.ts", "dist/value.d.ts", "types/ambient.d.ts"]));
+  expect(files).not.toContain("dist/internal.d.ts");
+  expect(await readFile(path.join(root, "dist/internal.d.ts"), "utf8")).toContain("hidden");
+  // Without an exports map every subpath stays importable, so every declaration ships.
+  await writeFile(path.join(root, "package.json"), JSON.stringify({ ...manifest, files: [...manifest.files, "dist/**", "types/**"] }));
+  const unmapped = (await packDistribution(root)).files.map((file: { path: string }) => file.path) as string[];
+  expect(unmapped).toEqual(expect.arrayContaining(["dist/index.d.ts", "dist/value.d.ts", "dist/internal.d.ts", "types/ambient.d.ts"]));
+}, 60_000);
 
 it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {
   const ledger = {

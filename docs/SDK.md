@@ -1439,6 +1439,13 @@ between the read and the restore refuses instead of being resurrected over. A mi
 10 history entries after the declared revision
 (`op`, `author`, `ts`, top-level `fields`), plus `changes_since_omitted`.
 `expected_revision_recorded: false` means no history entry ever had that hash.
+Its `required`, `examples` and `nextSteps` re-read the item with `get` and
+`history`, naming the tracker the caller selected
+([pm-gh1677](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1677.toon);
+this tracker record is repository-only and excluded from npm). An explicit
+`pmRoot` or `cwd` on `withExpectedItemRevisions()`, and every
+`PmClient.withExpectedItemRevisions()` call, add `--pm-path <tracker>`, so the
+commands read the same tracker wherever the caller's process runs.
 After one of the operation's own writes commits, the expectation advances to
 that revision, so a multi-write composition such as `claim --start` does not
 refuse itself; an interleaved peer write still refuses the next step. The

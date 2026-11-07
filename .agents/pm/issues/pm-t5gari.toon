@@ -1,0 +1,23 @@
+id: pm-t5gari
+title: "author-attribution.spec counts its own fixture's unknown-author init event when no harness, PM_AUTHOR or CI variable is present, so 5 tests fail in a plain terminal and pass under an agent or in CI"
+description: "Found 2026-11-06 while running the full suite for the GH-1676/GH-1677 branch. tests/unit/sdk/author-attribution.spec.ts builds its trackers with its own mkdtemp root (createTempRoot) and runInit, without pinning an author. When the shell carries no harness signal, no PM_AUTHOR and no CI variables (a contributor's plain terminal, simulated by unsetting every CLAUDE*, AI_AGENT and CODEX* variable), the fixture's own init writes history/_workspace.jsonl line 1 with author unknown. scanHistoryAuthorAttribution then counts that event, and 5 of 14 tests fail on main af6fd5583 under both Node 24.21.0 and Node 26.13.0, for example: unknown_event_count 4 instead of 3, affected_item_ids gains _workspace, actionable_unknown_event_count 1 instead of 0. The same spec passes under Claude Code (harness detected) and in hosted CI (GITHUB_ACTIONS detected), so the verdict depends on whether the runner happens to supply an author. This is the inverse of pm-631t9p and pm-xgah3a (both closed): those specs inherited an ambient harness, while this one silently requires one. Expected: the fixture pins its author (an explicit init author or PM_AUTHOR inside the fixture), so the counts describe only the events the test wrote, in every environment. Related host note, not a defect: tests/integration/read-output/composed-continuation.integration.spec.ts needs npm resolvable from the Node runtime, so it fails under Linuxbrew Node 26, which ships npm as a separate formula, and passes under mise Node 24. Its refusal message already names that prerequisite."
+type: Issue
+status: open
+priority: 2
+tags[4]: author-attribution,hermeticity,local-hosted-parity,testing
+created_at: "2026-11-06T12:40:40.399Z"
+updated_at: "2026-11-06T15:40:52.537Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "tests/unit/sdk/author-attribution.spec.ts passes with every harness, PM_AUTHOR and CI variable unset, under Node 24 and Node 26; The fixture pins its author explicitly, so unknown-author counts describe only the events each test writes; Negative control: removing the pinned author makes the plain-terminal run fail again"
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: "The author-attribution spec gives the same verdict in a plain terminal, under an agent harness and in hosted CI"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-631t9p,related,"2026-11-06T12:40:40.399Z","harness:claude-code","cli:create:dep",detected
+  pm-xgah3a,related,"2026-11-06T12:40:40.399Z","harness:claude-code","cli:create:dep",detected
+  pm-t7wn04,related,"2026-11-06T15:40:52.073Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-06T15:40:48.463Z","harness:claude-code","Duplicate check at creation (2026-11-06): pm search \"local test suite fails differently from CI host environment harness\" returned pm-xgah3a (closed, a fixture recording provenance from the host harness), pm-631t9p (closed, harness-detection specs inheriting the ambient harness) and pm-t7wn04 (closed, a gate red locally from a telemetry warning). All three cover a spec that inherits host state. This item is the inverse: a fixture that needs an author it never pins, so it fails only when the host supplies none."
+body: ""

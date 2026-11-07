@@ -4,8 +4,14 @@
 
 ### Fixed
 
+- GH-1677: the stale-revision refusal's next_steps and examples drop --pm-path, --no-extensions and the output mode, so the recovery reads return another tracker's item ([pm-gh1677](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1677.toon))
+- GH-1676: a pm close refused for missing close fields suggests a separate pm update and a retry, although pm close accepts --resolution, --expected-result and --actual-result itself ([pm-gh1676](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1676.toon))
 - GH-1674: pm list --fields/--compact and pm search print the verbose envelope that GH-1642 removed from the default projection, so --fields costs more than the default ([pm-gh1674](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1674.toon))
 - GH-1663: nested get --fields projections pad unrequested sibling collections with empty arrays (linked.files emits tests: \[\] and docs: \[\] for populated collections) and claim_state.claimed expands to the whole group ([pm-gh1663](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1663.toon))
+
+### Other
+
+- Packing ships only the declarations an exported types entry reaches, restoring the artifact headroom PR 1680 exhausted ([pm-dg68kr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dg68kr.toon))
 
 ## 2026.11.6 - 2026-11-06
 

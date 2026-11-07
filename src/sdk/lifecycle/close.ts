@@ -44,6 +44,7 @@ import { unicodeSafePrefix } from "../../core/shared/text-normalization.js";
 import type { PmCliErrorDetails, PmCliErrorDetailValue } from "../../core/shared/errors.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
+import { activeItemRevisionExpectations, itemRevisionConflictGuidance } from "../../core/store/item-mutation-precondition.js";
 
 /** Compatibility options for command-shaped close consumers. */
 export interface CloseCommandOptions {
@@ -483,6 +484,9 @@ function boundedIdList(ids: readonly string[]): string {
  * tracker scope and with the configured open status the automatic unblock would
  * have written, and fixing the cause of every other failed unblock first.
  */
+/** `reason` of a revision refusal close rewrote into its post-close auto-unblock report. */
+const POST_CLOSE_AUTO_UNBLOCK_REFUSED_REASON = "post_close_auto_unblock_refused";
+
 function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   closedId: string;
   unblockedIds: readonly string[];
@@ -511,6 +515,9 @@ function postCloseDependentConflict(conflict: PmCliError, fanOut: {
   const steps = allSteps.slice(0, truncated ? POST_CLOSE_STEP_LIMIT - 1 : POST_CLOSE_STEP_LIMIT);
   return new PmCliError(`${closedId} was closed, but auto-unblocking ${dependent} was refused. ${conflict.message}`, conflict.exitCode, {
     ...conflict.context,
+    // This report's commands are scoped already; hosts must not re-render it as a plain revision refusal.
+    reason: POST_CLOSE_AUTO_UNBLOCK_REFUSED_REASON,
+    examples: itemRevisionConflictGuidance(dependent, false, { scopeArgs: commandScope }).examples,
     required: `The close of ${closedId} is complete; do not retry it. Only unblocking ${conflictIds.length === 1 ? dependent : `the guarded dependents it refused (${boundedIdList(conflictIds)})`} remains: re-read each one (pm get <id> --json reports item_hash), check that every blocker it declares is resolved, then unblock it with ${unblock(dependent)}${conflictIds.length === 1 ? "" : " for each id"}.${otherFailures}${truncated ? ` This refusal does not list a step for every dependent left blocked; list them with ${discovery}, and while it reports has_more, continue with --after <next_cursor>.` : ""}`,
     nextSteps: truncated ? [...steps, discovery] : steps,
     details: fitPostCloseDetails({
@@ -600,11 +607,97 @@ function applyDuplicateCloseMetadata(
   return duplicateFallbackFields;
 }
 
+/**
+ * Options the refused close supplied, rendered as attached `--flag=value`
+ * tokens so a value that starts with a hyphen stays a value. The refused write
+ * persisted none of them, so the retry must carry them again.
+ */
+function suppliedCloseOptionTokens(options: CloseOperationOptions, missingFlags: ReadonlySet<string>): string[] {
+  const valued: Array<[string, string | undefined]> = [
+    ["--resolution", options.resolution],
+    ["--expected-result", options.expectedResult],
+    ["--actual-result", options.actualResult],
+    ["--validate-close", options.validateClose],
+    ["--completed-at", options.completedAt],
+    ["--message", options.message],
+    ["--author", options.author],
+  ];
+  const tokens = valued.flatMap(([flag, value]) => (missingFlags.has(flag) || value === undefined || value.trim().length === 0 ? [] : [`${flag}=${value}`]));
+  return options.force === true ? [...tokens, "--force"] : tokens;
+}
+
+/**
+ * Refuse a strict close that lacks close evidence (pm-gh1676). pm close accepts
+ * every missing field itself, so the retry is the same close with the missing
+ * flags added: one write, one history entry. It carries every option the
+ * refused close supplied, and the reason as `--reason=<text>` so a reason that
+ * looks like a flag is not parsed as one. The CLI re-renders the retry from
+ * the caller's exact argv; a separate pm update stays only as a secondary route.
+ * A close with an SDK-only lifecycle override gets no CLI retry, since none can
+ * reproduce that override; it is told to retry the SDK call with the evidence.
+ */
+function closeValidationMissingFieldsError(
+  metadata: ItemMetadata,
+  missingFields: ReadonlyArray<(typeof CLOSE_VALIDATION_FIELDS)[number]>,
+  context: Pick<CloseMutationContext, "pmRoot" | "commandScope" | "closeReason" | "options">,
+): PmCliError {
+  const missingLabels = missingFields.map((field) => field.label);
+  const missingFlags = missingFields.map((field) => `--${field.key.replaceAll("_", "-")}`);
+  const placeholders = missingFlags.flatMap((flag) => [flag, "<value>"]);
+  const updateTokens = [...context.commandScope, "update", metadata.id, ...placeholders];
+  const message = `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`;
+  const warnStep = "Use --validate-close warn only when governance permits an evidenced exception.";
+  // An SDK-only lifecycle override (requireCloseReason, orderingEdges) has no CLI spelling, so a CLI close
+  // would perform a different transition: retry the SDK call itself, with the evidence supplied.
+  const overrides = Object.entries(context.options.lifecyclePolicy ?? {}).filter(([, value]) => value !== undefined).map(([key]) => key);
+  // An SDK or MCP guard never reaches argv, so the retry carries every revision the active scopes expect
+  // on this tracker, including guards on dependents the close would auto-unblock.
+  const expectations = activeItemRevisionExpectations(context.pmRoot);
+  // An explicitly blank author is attributed differently from an omitted one, and pm close refuses an empty --author.
+  const blankAuthor = typeof context.options.author === "string" && context.options.author.trim().length === 0;
+  const unreplayable = overrides.length > 0
+    ? `its lifecyclePolicy override (${overrides.join(", ")}) has no CLI spelling`
+    : blankAuthor
+      ? "its explicitly blank author has no CLI spelling (pm close refuses an empty --author)"
+      : expectations === undefined
+      ? "its revision guards cannot be replayed as typed (nested revision guards expect different revisions of one item, or a write in the same operation advanced a guarded revision)"
+      : undefined;
+  if (unreplayable !== undefined) {
+    return new PmCliError(message, EXIT_CODE.USAGE, {
+      code: "close_validation_missing_fields",
+      required: `Pass ${missingFields.map((field) => field.key).join(", ")} on the same SDK close; ${unreplayable}, so no CLI retry reproduces it.`,
+      recovery: { missing: missingFlags, next_best_command: renderPmCommand(updateTokens) },
+      nextSteps: ["Retry the same SDK close with the missing evidence supplied, inside the same lifecycle policy and revision guards.", warnStep],
+    });
+  }
+  const reason = context.closeReason === undefined ? [] : [`--reason=${context.closeReason}`];
+  // A replayable close has typed guards: an undefined expectation set took the unreplayable branch above.
+  const guards = expectations!.map((guard) => `--expect-hash=${guard}`);
+  const closeTokens = [...context.commandScope, "close", metadata.id, ...reason, ...suppliedCloseOptionTokens(context.options, new Set(missingFlags)), ...guards, ...placeholders];
+  return new PmCliError(message, EXIT_CODE.USAGE, {
+    code: "close_validation_missing_fields",
+    // Truthful whether or not a host keeps the retry: the CLI withdraws it for commands (close-task)
+    // that cannot accept the evidence flags.
+    required: `Supply ${missingFlags.join(", ")}: pm close accepts them and records them in the same write as the closure.`,
+    recovery: {
+      missing: missingFlags,
+      suggested_retry: renderPmCommand(closeTokens),
+      suggested_retry_args: closeTokens,
+      next_best_command: renderPmCommand(updateTokens),
+    },
+    nextSteps: [
+      "Run recovery.suggested_retry when it is present: the same close with the missing flags added, so one write records the evidence and the closure.",
+      "Without it, record the evidence with recovery.next_best_command, then repeat the original close.",
+      warnStep,
+    ],
+  });
+}
+
 function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
   activeChildIds: string[],
-  commandScope: readonly string[],
+  context: Pick<CloseMutationContext, "pmRoot" | "commandScope" | "closeReason" | "options">,
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
@@ -612,31 +705,7 @@ function collectCloseValidationWarnings(
     if (missingFields.length > 0) {
       const missingLabels = missingFields.map((field) => field.label);
       if (validateCloseMode === "strict") {
-        const missingFlags = missingFields.map(
-          (field) => `--${field.key.replaceAll("_", "-")}`,
-        );
-        const updateTokens = [
-          ...commandScope,
-          "update",
-          metadata.id,
-          ...missingFlags.flatMap((flag) => [flag, "<value>"]),
-        ];
-        throw new PmCliError(
-          `Cannot close item ${metadata.id}: missing ${missingLabels.join(", ")}. Populate fields or use --validate-close warn.`,
-          EXIT_CODE.USAGE,
-          {
-            code: "close_validation_missing_fields",
-            recovery: {
-              missing: missingFlags,
-              suggested_retry: renderPmCommand(updateTokens),
-              suggested_retry_args: updateTokens,
-            },
-            nextSteps: [
-              "Run the suggested pm update, then retry the original pm close invocation.",
-              "Use --validate-close warn only when governance permits an evidenced exception.",
-            ],
-          },
-        );
+        throw closeValidationMissingFieldsError(metadata, missingFields, context);
       }
       warnings.push(
         `close_validation_missing_fields:${metadata.id}:${missingLabels.join(",")}`,
@@ -711,7 +780,7 @@ function mutateCloseMetadata(
     metadata,
     context.validateCloseMode,
     context.activeChildIds,
-    context.commandScope,
+    context,
   );
   metadata.status = context.statusRegistry.close_status;
   metadata.closed_at = context.closedAt;

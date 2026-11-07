@@ -15,8 +15,16 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import {
   bindItemRevisionScope,
   createItemRevisionScope,
+  ITEM_REVISION_CONFLICT_CHANGED_REASON,
+  ITEM_REVISION_CONFLICT_UNREADABLE_REASON,
+  isItemRevisionRefusalFrom,
+  isItemRevisionRefusalScoped,
+  itemRevisionConflictGuidance,
+  markItemRevisionRefusalScoped,
+  retainItemRevisionRefusalTracker,
   itemRevisionScopeReceipt,
   runWithItemRevisionScope,
+  type ItemRevisionRecoveryInvocation,
   type ItemRevisionScope,
 } from "../../core/store/item-mutation-precondition.js";
 import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
@@ -32,7 +40,7 @@ import { EMPTY_CANONICAL_DOCUMENT } from "../../core/shared/constants.js";
 import { isMutationAction } from "../mutation-guard.js";
 import { isPmCliExpectedError } from "../errors.js";
 
-export type { ItemRevisionScope } from "../../core/store/item-mutation-precondition.js";
+export type { ItemRevisionRecoveryInvocation, ItemRevisionScope } from "../../core/store/item-mutation-precondition.js";
 
 /** Refusal code for a locked write that found a revision other than the declared one. */
 export const ITEM_REVISION_CONFLICT_CODE = "item_revision_conflict";
@@ -304,30 +312,53 @@ export function expectHashInvocationRewrittenError(): PmCliError {
 }
 
 /**
+ * Re-render a revision refusal's read-only recovery (`required`, `examples`,
+ * `next_steps`) for the invocation that raised it (pm-gh1677), so replaying
+ * them reads the same tracker in the same output mode. Other errors, and an
+ * omitted invocation, pass through unchanged.
+ */
+export function scopeItemRevisionConflict(error: unknown, invocation: ItemRevisionRecoveryInvocation | undefined): unknown {
+  // Only the locked-write guard's own guidance is re-rendered; a producer that rewrote the
+  // refusal (close's post-close fan-out report) set its reason and already scoped its commands.
+  if (invocation === undefined || !isItemRevisionConflict(error) || typeof error.context.item_id !== "string" || isItemRevisionRefusalScoped(error)) return error;
+  const unreadable = error.context.reason === ITEM_REVISION_CONFLICT_UNREADABLE_REASON;
+  if (!unreadable && error.context.reason !== ITEM_REVISION_CONFLICT_CHANGED_REASON) return error;
+  const scoped = markItemRevisionRefusalScoped(retainItemRevisionRefusalTracker(error, new PmCliError(error.message, error.exitCode, { ...error.context, ...itemRevisionConflictGuidance(error.context.item_id, unreadable, invocation) })));
+  scoped.stack = error.stack;
+  return scoped;
+}
+
+/**
  * Attach bounded change evidence to a revision conflict. The evidence is read
  * after the lock is released, so it describes the record as it was then; the
  * refusal's `current_revision` remains the revision the locked write found.
+ * With an `invocation`, the recovery commands are also re-rendered for it. A
+ * refusal raised by another tracker's guard is returned unchanged.
  */
-export async function enrichItemRevisionConflict(error: unknown, pmRoot: string): Promise<unknown> {
-  if (!isItemRevisionConflict(error) || error.context.details !== undefined) return error;
-  const id = error.context.item_id;
-  const expected = error.context.expected_revision;
-  if (typeof id !== "string" || typeof expected !== "string") return error;
+export async function enrichItemRevisionConflict(error: unknown, pmRoot: string, invocation?: ItemRevisionRecoveryInvocation): Promise<unknown> {
+  // A refusal another tracker's guard raised (an inner scope nested in this one) is that
+  // scope's to describe: neither its evidence nor its recovery commands belong to this tracker.
+  if (!isItemRevisionRefusalFrom(error, pmRoot)) return error;
+  const scoped = scopeItemRevisionConflict(error, invocation);
+  if (!isItemRevisionConflict(scoped) || scoped.context.details !== undefined) return scoped;
+  const id = scoped.context.item_id;
+  const expected = scoped.context.expected_revision;
+  if (typeof id !== "string" || typeof expected !== "string") return scoped;
   let changes: Awaited<ReturnType<typeof describeItemRevisionChanges>>;
   try {
     changes = await describeItemRevisionChanges(pmRoot, id, expected);
   } catch {
     // Evidence is best-effort: malformed history must never replace the typed refusal.
-    return error;
+    return scoped;
   }
-  if (changes === undefined) return error;
+  if (changes === undefined) return scoped;
   const details: PmCliErrorDetails = {
     expected_revision_recorded: changes.expected_revision_recorded,
     changes_since: changes.changes_since.map((change) => ({ ts: change.ts, op: change.op, author: change.author, fields: [...change.fields] })),
     changes_since_omitted: changes.changes_since_omitted,
   };
-  const enriched = new PmCliError(error.message, error.exitCode, { ...error.context, details });
-  enriched.stack = error.stack;
+  const enriched = retainItemRevisionRefusalTracker(scoped, new PmCliError(scoped.message, scoped.exitCode, { ...scoped.context, details }));
+  enriched.stack = scoped.stack;
   return enriched;
 }
 
@@ -338,13 +369,23 @@ export async function enrichItemRevisionConflict(error: unknown, pmRoot: string)
 export async function runWithBoundItemRevisionScope<T>(
   scope: ItemRevisionScope,
   operation: () => Promise<T>,
+  invocation?: ItemRevisionRecoveryInvocation,
 ): Promise<ExpectedItemRevisionsOutcome<T>> {
   try {
     const result = await runWithItemRevisionScope(scope, operation);
     return { result, ...itemRevisionScopeReceipt(scope) };
   } catch (error: unknown) {
-    throw scope.pmRoot === undefined ? error : await enrichItemRevisionConflict(error, scope.pmRoot);
+    throw scope.pmRoot === undefined ? error : await enrichItemRevisionConflict(error, scope.pmRoot, invocation);
   }
+}
+
+/**
+ * The recovery invocation an SDK caller's tracker selection implies: an
+ * explicit `pmRoot` or `cwd` names the tracker on every recovery command,
+ * because the caller's process may not run where that tracker is implicit.
+ */
+function revisionRecoveryInvocation(context: ItemRevisionContext): ItemRevisionRecoveryInvocation | undefined {
+  return context.cwd === undefined && context.pmRoot === undefined ? undefined : { scopeArgs: ["--pm-path", resolveRevisionRoot(context)] };
 }
 
 /**
@@ -360,7 +401,7 @@ export async function withExpectedItemRevisions<T>(
   operation: () => Promise<T>,
   context: ItemRevisionContext = {},
 ): Promise<ExpectedItemRevisionsOutcome<T>> {
-  return runWithBoundItemRevisionScope(await bindExpectedItemRevisions(expectations, context), operation);
+  return runWithBoundItemRevisionScope(await bindExpectedItemRevisions(expectations, context), operation, revisionRecoveryInvocation(context));
 }
 
 /**
@@ -444,6 +485,8 @@ export async function dispatchWithExpectedItemRevisions<T>(params: {
   options?: Record<string, unknown>;
   /** Top-level background flag, consulted like `options.background`. */
   background?: unknown;
+  /** Invocation whose tracker scope a revision refusal's recovery commands replay. */
+  invocation?: ItemRevisionRecoveryInvocation;
 }): Promise<T> {
   const raw = params.expectHash;
   if (raw !== undefined && typeof raw !== "string" && !(Array.isArray(raw) && raw.every((entry) => typeof entry === "string"))) {
@@ -454,6 +497,6 @@ export async function dispatchWithExpectedItemRevisions<T>(params: {
   assertExpectHashAdmissible(params.action, { background: params.background === true || params.options?.background === true });
   const scope = createItemRevisionScope();
   bindItemRevisionScope(scope, params.pmRoot, await resolveExpectedItemRevisions(params.pmRoot, specs, params.defaultId));
-  const outcome = await runWithBoundItemRevisionScope(scope, params.run);
+  const outcome = await runWithBoundItemRevisionScope(scope, params.run, params.invocation);
   return withUncheckedRevisionWarnings(outcome.result, outcome.unchecked);
 }

@@ -14,6 +14,8 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
+import { CLOSE_FIELDS_REFUSAL_CODE, repairCloseFieldsRecovery } from "./runtime/close-fields-retry.js";
+import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import {
@@ -312,8 +314,10 @@ function inferMissingFieldsFromErrorMessage(message: string): string[] | undefin
   return normalized.length > 0 ? normalized : undefined;
 }
 
-function inferMissingFieldsForRecovery(rawMessage: string, invocationArgv: string[], existingRecovery: PmCliErrorRecoveryPayload | undefined): string[] | undefined {
-  if (existingRecovery?.suggested_retry || rawMessage.includes("failed in extension handler (") || !/\b(?:missing|required|requires)\b/i.test(rawMessage)) {
+function inferMissingFieldsForRecovery(rawMessage: string, invocationArgv: string[], existingRecovery: PmCliErrorRecoveryPayload | undefined, code: string | undefined): string[] | undefined {
+  // The close-fields repair owns its retry, including one it withdrew: message-text inference must not
+  // rebuild it (pm-gh1676). Other refusals keep inference, even when they type their missing operand.
+  if (existingRecovery?.suggested_retry || code === CLOSE_FIELDS_REFUSAL_CODE || rawMessage.includes("failed in extension handler (") || !/\b(?:missing|required|requires)\b/i.test(rawMessage)) {
     return undefined;
   }
   const providedFields = extractProvidedOptionFlags(invocationArgv);
@@ -413,7 +417,29 @@ function withContextRecovery(context: PmCliErrorContext | undefined, recovery: P
 /** Rewrite producer recovery as minimal edits of the caller's own invocation where the refusal code allows it. */
 function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
-  return repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
+  const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
+  return repairCloseFieldsRecovery(argv, context.code, recovery, closeRetryScopePrefix(argv));
+}
+
+/** Stands in for an empty value so the bootstrap scanner keeps it; tracker resolution trims it back to empty. */
+const EMPTY_VALUE_MARK = " ";
+
+/**
+ * Tracker selection a close retry must prepend, decided by the parsed final
+ * tracker value rather than a token scan. Empty values are marked so the real
+ * bootstrap scanner reports which value the parser keeps last: no typed
+ * tracker means the environment's selection must be named; a typed tracker
+ * that is not blank needs nothing; a final blank value (empty or whitespace,
+ * which tracker resolution trims to nothing and so defers to the environment)
+ * would override any prepended selection, so null withdraws the retry when one
+ * is needed.
+ */
+function closeRetryScopePrefix(argv: readonly string[]): readonly string[] | null {
+  const marked = argv.map((token) => (token === "" ? EMPTY_VALUE_MARK : /^--(?:pm-)?path=$/u.test(token) ? `${token}${EMPTY_VALUE_MARK}` : token));
+  const finalTracker = parseBootstrapGlobalOptions(marked).path;
+  if (finalTracker !== undefined && finalTracker.trim() !== "") return [];
+  const environmentScope = resolvePmCommandScopeArgs({});
+  return finalTracker !== undefined && environmentScope.length > 0 ? null : environmentScope;
 }
 
 /** Build replayable recovery guidance after removing sensitive matcher values from every invocation representation. */
@@ -441,7 +467,7 @@ function buildPmCliRecoveryContext(context: PmCliErrorContext | undefined, invoc
   }
   const attemptedCommand = renderAttemptedCommand(safeInvocationArgv);
   const providedFields = extractProvidedOptionFlags(safeInvocationArgv);
-  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, safeInvocationArgv, existingRecovery);
+  const inferredMissing = inferMissingFieldsForRecovery(rawMessage, safeInvocationArgv, existingRecovery, context?.code);
   const suggestedRetry = resolveRecoverySuggestedRetry(safeInvocationArgv, attemptedCommand, inferredMissing, existingRecovery);
   const recovery = buildRecoveryPayload({
     invocationArgv: safeInvocationArgv,
@@ -1547,7 +1573,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
       await startActiveSentryCommandTracing(commandPath, commandArgs, commandOptions);
       await enforceItemFormatWriteGateAndPreflightMigration(commandPath, commandOptions, fallbackPmRoot, defaultPreflightDecision());
       await enforceMutationGuardPreflight(commandPath, commandArgs, commandOptions, globalOptions, fallbackPmRoot);
-      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: fallbackPmRoot });
+      await bindInvocationExpectedRevisions({ command: actionCommand, commandPath, commandArgs, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: fallbackPmRoot, globalOptions });
       return;
     }
 
@@ -1606,6 +1632,9 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     await bindInvocationExpectedRevisions({
       command: actionCommand, commandPath, commandArgs: invocationStage.args, commandOptions, expectHash: bootstrapGlobalOptions.expectHash, pmRoot: runtimeExtensions.pmRoot,
       rewritten: invocationRewritten(invocationStage, [parserStage, { args: commandArgs, path: globalOptions.path }]),
+      // Recovery replays the typed tracker scope, never one an extension override substituted; output
+      // controls come from the full parse, since the bootstrap parse does not read command-position --json.
+      globalOptions: { ...globalOptions, path: bootstrapGlobalOptions.path, noExtensions: bootstrapGlobalOptions.noExtensions },
     });
 
     /* c8 ignore next */
