@@ -1,0 +1,22 @@
+id: pm-kl1nio
+title: "Twelve extension commands in eight package repos read options they never declare, and pm-graph parses its flags from context.args, so the host cannot refuse undeclared options yet"
+description: "Found 2026-11-07 while fixing pm-4of199. A read-only census of all 47 unbraind pm-* package repos plus the 13 bundled packages (about 561 commands, 108 with no declared flags, 25 importers/exporters) checked every command that declares no flags for reads of option keys it never declared. Refusing undeclared options on zero-flag extension commands, the pm-4of199 fix, would break these released commands:\n\n- pm-graph src/index.ts:3911, exporter graph-export export: format, edges, include-closed, root, depth, filter, output\n- pm-csv index.ts:3537, exporter csv-export export: delimiter, columns, output, status, type, header, all-fields/discover-fields, crlf, excel\n- pm-jira index.ts:2763, importer jira-sync import: project, jql, max-results, status-map, map, status, assignee, issue-type, label, updated-since\n- pm-starter index.ts:959 exporter starter-lab export: operation; index.ts:963 importer starter-demo import: file, url\n- pm-evidence src/commands.ts:66, evidence show: root, budget, diff, maxBytes, timeoutMs (shared setup step)\n- pm-http src/commands.ts:63, http probe list/compare/missing: operation, expectedRevision (shared setup step)\n- pm-hypothesis src/commands.ts:52, hypothesis next/show: operation, expectedRevision, budget\n- pm-review src/commands.ts:79, review coverage: revision, criterion, evidence, excerpt, reason, judgment (shared with review cover; values unused)\n\nSeparately, pm-graph parses its flags from raw context.args and relies on unknown options passing through, so 12 of its 17 commands (export, sync, analyze, cycles, path, critical-path, topo-sort, impact, explain, refresh, project, snapshot-impact) would break outright. Two further populations need classification, not migration yet: 94 commands in 25 repos declare flags but read undeclared keys (mostly shared setup code, fallback spellings, or keys the package injects itself, such as pm-linear preflight keys and pm-presets resolvedParameterValues; scan-only, not verified by hand), and pm-brief (index.ts:588, 684, 5252, 5319) and pm-graph (src/index.ts:120) read json or output-control keys through context.options, which the host strips, so those reads are always empty and belong on context.global. A suspected core author drop in the pm-calendar scheduling shortcuts was checked on the built CLI and is not real: pm meet --author bob records bob.\n\nDuplicate check: searched undeclared options, registerFlags, context.args, fleet and package flags across all statuses; pm-4of199 owns the host refusal, pm-gh1665 and pm-gh1666 (closed) own the option contract and inherited flags; nothing owns the package-side migration."
+type: Chore
+status: open
+priority: 2
+tags[5]: extensions,flags,fleet,migration,packages
+created_at: "2026-11-07T17:18:06.719Z"
+updated_at: "2026-11-07T17:27:09.850Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Every listed zero-flag command declares each option it reads, with registerFlags or inline flags, in a published package version; pm-graph reads its options from context.options instead of parsing context.args; pm-brief and pm-graph read json and output controls from context.global; A re-run of the read-only census over the unbraind pm-* repos reports zero zero-flag commands that read undeclared keys, recorded as a comment here; The 94 declared-flag commands with undeclared reads are classified as injected, fallback, or real gaps, and real gaps are declared"
+parent: pm-4of199
+risk: medium
+confidence: medium
+repro_steps: "Re-run the read-only census over the unbraind pm-* repos (registerCommand, registerImporter, registerExporter without flags whose handler reads context.options keys)"
+expected_result: "Every option an extension handler reads is declared with registerFlags or inline flags, so the host can refuse undeclared options without breaking a released package"
+actual_result: "12 zero-flag commands in 8 package repos read options they never declare, and pm-graph parses its flags from context.args"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1665,related,"2026-11-07T17:18:06.719Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1666,related,"2026-11-07T17:18:06.719Z","harness:claude-code","cli:create:dep",detected
+body: ""

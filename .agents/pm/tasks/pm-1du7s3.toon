@@ -1,0 +1,52 @@
+id: pm-1du7s3
+title: Unknown-option refusals on extension commands with declared flags carry code unknown_option and list only the flags the command accepts
+description: "Shippable tranche of pm-4of199 (2026-11-07). On an extension-created command that declares flags, an undeclared option was refused with an untyped command_failed and a list of every host definition it is validated against, including --no-extensions and, on a non-read command, the read-output controls the command refuses. The refusal now carries code unknown_option with the refused flag, and lists the command's declared flags followed by the host flags it inherits, from the same declaration pm contracts publishes as inherited_flags. The dynamic-dispatch refusal for a command without declared flags gets the same code and host-flag list. Refusing undeclared options on a zero-flag command's handler path is NOT part of this tranche: a census of the package fleet found released packages that read options they never declare, so that flip stays on pm-4of199 behind the fleet migration item."
+type: Task
+status: closed
+priority: 2
+tags[4]: agent-ux,extensions,flags,validation
+created_at: "2026-11-07T17:17:57.100Z"
+updated_at: "2026-11-07T19:07:17.432Z"
+closed_at: "2026-11-07T19:07:16.610Z"
+completed_at: "2026-11-07T19:07:16.610Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "pm <ext-cmd> --bogus on a command with declared flags exits 2 with code unknown_option and flag --bogus; The refusal lists the declared flags, then the inherited host flags, never --no-extensions, and read-output controls only on a command that declares read_output; The dynamic-dispatch zero-flag refusal carries the same code and host-flag list; A built-CLI integration spec covers a non-read and a read_output command"
+parent: pm-4of199
+risk: low
+confidence: high
+resolution: "validateLooseCommandOptionsWithFlagDefinitions takes a LooseOptionRefusalListing and refuses with code unknown_option and the flag. resolveCommandRefusalListing (src/cli/main.ts) supplies declared flags plus inherited host flags (no --no-extensions; read-output controls only with read_output) at the preAction, wrapper and dynamic extraction sites. The dynamic zero-flag refusal carries the same code and list. The handler-path zero-flag refusal stays on the parent until the fleet migration child lands."
+expected_result: pm <ext-cmd> --bogus on a command with declared flags exits 2 unknown_option listing only its declared and inherited host flags
+actual_result: "Built-CLI spec shows declared flags first, then host flags, without --no-extensions or read-output controls on a non-read command, and with them on a read_output command"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1666,related,"2026-11-07T17:24:41.187Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-07T17:52:55.389Z","harness:claude-code","Implemented on branch fix/cli-option-contract-truthfulness. validateLooseCommandOptionsWithFlagDefinitions takes an optional LooseOptionRefusalListing, and its unknown-option refusal now carries code unknown_option, the flag, and a required line pointing at pm contracts --command. resolveCommandRefusalListing (src/cli/main.ts) supplies it at all three extraction sites: the preAction hook, where the first validation actually runs, the handler wrapper, and the dynamic action. It applies only to extension-created commands, where the listing is the declared flags followed by resolveExtensionCommandInheritedFlagContracts rows (no --no-extensions; read-output controls only with read_output). A core command an extension augments keeps listing its own flags. The dynamic-path zero-flag refusal gets the same code and host-flag list. The error-code catalog and contracts snapshot gain the new unknown_option source.\n\nVerification: the built-CLI spec checks the listing order and exclusions on a non-read command and a read_output command, and the unit specs cover the listing, the typed context and the dynamic path.\n"
+files[8]{path,scope,note}:
+  src/cli/main.ts,project,resolveCommandRefusalListing at the three extraction sites
+  src/cli/runtime/invocation-options.ts,project,resolveExtensionCommandRefusalListing and dynamic-path zero-flag refusal
+  src/sdk/extension/command-options.ts,project,LooseOptionRefusalListing and typed unknown_option refusal
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project,unknown_option gains its new source
+  tests/fixtures/contracts/full.json,project,regenerated error catalog source
+  tests/integration/extensions/extension-option-refusals.integration.spec.ts,project,built CLI refusal listing
+  tests/unit/cli/cli-main-errors.spec.ts,project,dynamic zero-flag refusal text
+  tests/unit/cli/runtime/extension-command-refusals.spec.ts,project,listing and typed refusal
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/cli/runtime/extension-command-refusals.spec.ts tests/integration/extensions/extension-option-refusals.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,project,900,"harness:claude-code","2026-11-07T17:19:43.228Z",local_mutation,fix/cli-option-contract-truthfulness
+test_runs[1]:
+  - run_id: test-local-mw6rysym-dacehw
+    kind: test
+    status: passed
+    started_at: "2026-11-07T19:06:41.995Z"
+    finished_at: "2026-11-07T19:06:55.390Z"
+    recorded_at: "2026-11-07T19:06:55.390Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/cli/runtime/extension-command-refusals.spec.ts tests/integration/extensions/extension-option-refusals.integration.spec.ts tests/unit/cli/cli-main-errors.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,registerFlags CLI refusals
+  docs/SDK.md,project,what an extension command accepts on the CLI
+close_reason: Unknown-option refusals on extension commands with declared flags are typed and list only accepted flags
+body: ""

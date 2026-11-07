@@ -2,11 +2,13 @@ id: pm-wlxf8f
 title: "CLI argv keeps one value silently when two spellings of one extension flag differ (--status-filter a -s b), while direct callers are refused with extension_option_spelling_conflict"
 description: "Found by CodeRabbit on PR 1682 (pm-gh1665). The shared extension option normalizer now refuses two spellings of one declared flag with different values for PmClient.run, MCP and the test harness (extension_option_spelling_conflict). CLI argv dispatch still folds them through mergeAliasOptionKeys in src/sdk/extension/command-options.ts: for scalar flags the canonical value wins and the alias value is dropped without a refusal, so pm demo --status-filter open -s closed silently runs with open. The parse-time occurrences recorded by parseLooseCommandOptions carry enough information to apply the same conflict check before dispatch. Changing this alters CLI behavior for existing scripts that repeat a flag under two spellings, so it was deferred from the batch. Duplicate check: searched spelling conflict, alias folding, repeated flag values and short alias across all statuses; pm-kfq5 owns list accumulation across long/short occurrences, not scalar conflicts."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,cli,extensions,flags
 created_at: "2026-11-07T13:26:16.419Z"
-updated_at: "2026-11-07T13:26:16.419Z"
+updated_at: "2026-11-07T19:07:15.791Z"
+closed_at: "2026-11-07T19:07:15.107Z"
+completed_at: "2026-11-07T19:07:15.107Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "CLI argv that supplies two spellings of one declared scalar extension flag with different values exits 2 with extension_option_spelling_conflict naming both spellings and the handler key; Equal values and list flags keep their current accumulation; A spec drives the built CLI with --long and -s spellings, with a negative control that restores silent folding"
@@ -15,11 +17,44 @@ risk: low
 confidence: high
 severity: low
 repro_steps: "Declare --status-filter with short -s, run pm demo --status-filter open -s closed --json"
-expected_result: exit 2 extension_option_spelling_conflict
-actual_result: exit 0; the handler receives statusFilter open
+resolution: "Each command records the tokens its own option parser receives (captureCommandOptionTokens). refuseConflictingArgvOptionSpellings (src/sdk/extension/command-options.ts) replays Commander's parseOptions rules over every command on the dispatch path: short groups, required/optional/variadic values, negative numbers, --long=value, the positional and pass-through stop rules, registered ownership and negations, plus the loose grammar for unregistered declared flags. It refuses with extension_option_spelling_conflict when two spellings hold different values after coercion. Equal values, repeats of one spelling and list flags are unchanged. Codex review rounds 1-3 hardened the scan."
+expected_result: pm demo --status-filter open -s closed exits 2 with extension_option_spelling_conflict naming both spellings
+actual_result: "Built-CLI spec refuses separate, attached and grouped spellings, and accepts equal values, list accumulation and repeated-spelling last-wins; real-Commander specs cover ancestor consumption, positional and pass-through stops and core short-alias ownership; negative control without captured tokens keeps the last value silently"
 affected_version: 2026.11.7
 component: extensions
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1665,discovered_from,"2026-11-07T13:26:16.419Z","harness:claude-code","cli:create:dep",detected
   pm-kfq5,related,"2026-11-07T13:26:16.419Z","harness:claude-code","cli:create:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-11-07T17:52:53.178Z","harness:claude-code","Implemented on branch fix/cli-option-contract-truthfulness. Root cause: Commander registers both spellings of a declared extension flag as one option, so --status-filter open -s closed sets one attribute (last wins) and removes both tokens from command.args, and the loose occurrence parser never sees either spelling. Fix: captureCommandOptionTokens (src/cli/runtime/invocation-options.ts) patches each wrapped command's parseOptions to record the tokens Commander hands that command's own parser (the root has already consumed the host flags). refuseConflictingArgvOptionSpellings (src/sdk/extension/command-options.ts) scans those tokens with Commander's value rules (separate, --long=value, -sVALUE, optional values not read from a following option, switches with a following positional count as presence), using the command's own arity table so another option's value is never read as a flag. It refuses with extension_option_spelling_conflict when two spellings of one declared scalar flag hold different values after the declared coercion. Equal values (--count 1 -c 1.0), repeats of one spelling and list flags are unchanged.\n\nVerification: the built-CLI spec covers the conflict refusal, attached forms, equal values, list accumulation and repeated-spelling last-wins. The in-process spec includes a negative control: without the captured tokens Commander keeps \"closed\" silently. The SDK unit spec covers every scanner branch. Docs: SDK.md \"Handler keys and ownership\" and EXTENSIONS.md registerFlags.\n"
+  "2026-11-07T18:21:52.356Z","harness:claude-code","Codex review round 1 (gpt-6.1-sol, xhigh, read-only) found five scan gaps here, all reproduced and fixed in commit c6210382d. (1) Short groups were skipped: --status-filter open -vs closed ran with closed, and -vt -s was falsely refused although Commander binds -s as the --tags value. (2) A separated negative number was not taken as an optional value (--count=-1 -c -1 was falsely refused). (3) A core option that owns a colliding short alias (close keeps -r for --reason) was read as the extension flag. (4) When parent and child both declare the flag, the parent parser consumes both spellings, so the child's own tokens are empty and the conflict was missed. (5) --verbose=false -v was missed, because Commander leaves --switch=value unparsed while the loose parser delivers it. The scanner is now a port of Commander's parseOptions loop over every command on the dispatch path. Ownership comes from the registered Commander options, and negative numbers are values unless the path has a numeric short option. --switch=<literal> and --no-<switch> count for a declared boolean. Each case has a unit spec, and the ancestor and ownership cases run on real Commander programs.\n"
+  "2026-11-07T18:40:45.111Z","harness:claude-code","Codex review round 2 found three narrower scan gaps here, fixed in commit 8f4c6f6ba. (1) pm namespaces enable positional options, so a parent stops reading its own options at its subcommand. The ancestor scan read the whole argv and falsely refused pm item --message why close pm-one -r done, where close keeps -r for --reason. Each scope now applies Commander's stop rule (subcommand or alias before any other unrecognized token; first unrecognized token for pass-through), and only tokens Commander consumes count as recognized. (2) Declared flags Commander did not register are read by the loose parser, so the scan uses its grammar for them: -v=false attaches, no short groups, no dash-leading values. (3) --no-<flag> for a legacy optional bool declaration now counts. Each case has a unit spec, and the stop rules also run on real Commander programs with enablePositionalOptions and passThroughOptions.\n"
+  "2026-11-07T18:57:01.812Z","harness:claude-code","Codex review round 3 found four more scan paths, fixed in commit 0ea4615fe: unparsed --switch=<literal> recorded in an ancestor scope (now leaf-only), loose switches taking a following token as parseLooseOptionToken does, variadic options consuming operands before the positional-options stop rule, and registered core --no-<flag> options on the declared boolean's attribute. Each has a unit spec."
+learnings[1]{created_at,author,text}:
+  "2026-11-07T18:21:53.106Z","harness:claude-code","Commander lets every command on the dispatch path consume its own options anywhere after its name, and it folds all spellings of an option into one attribute (last wins). So no single command's args ever show both spellings, and an ancestor can swallow a leaf's flag. To audit what the caller typed, capture each command's parseOptions input and replay Commander's own rules (groups, required/optional values, negative numbers, --long=value) per scope."
+files[6]{path,scope,note}:
+  src/cli/main.ts,project,wrapper captures each command's option tokens and runs the check
+  src/cli/runtime/invocation-options.ts,project,captureCommandOptionTokens and refuseConflictingCommandOptionSpellings
+  src/sdk/extension/command-options.ts,project,refuseConflictingArgvOptionSpellings scans tokens with Commander value rules
+  tests/integration/extensions/extension-option-refusals.integration.spec.ts,project,built CLI spelling conflicts
+  tests/unit/cli/runtime/option-spelling-conflicts.spec.ts,project,captured tokens with a negative control
+  tests/unit/sdk/extension/command-options.spec.ts,project,"scanner forms, coercion, arity table"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/sdk/extension/command-options.spec.ts tests/unit/cli/runtime/option-spelling-conflicts.spec.ts tests/integration/extensions/extension-option-refusals.integration.spec.ts,project,600,"harness:claude-code","2026-11-07T17:19:36.823Z",local_mutation,fix/cli-option-contract-truthfulness
+test_runs[1]:
+  - run_id: test-local-mw6ryi2r-1ymu2q
+    kind: test
+    status: passed
+    started_at: "2026-11-07T19:06:32.163Z"
+    finished_at: "2026-11-07T19:06:41.283Z"
+    recorded_at: "2026-11-07T19:06:41.283Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/sdk/extension/command-options.spec.ts tests/unit/cli/runtime/option-spelling-conflicts.spec.ts tests/integration/extensions/extension-option-refusals.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,registerFlags CLI refusals
+  docs/SDK.md,project,"Handler keys and ownership: CLI argv spelling conflicts"
+close_reason: CLI argv with two spellings of one declared scalar extension flag and different values is refused like direct callers
 body: ""
