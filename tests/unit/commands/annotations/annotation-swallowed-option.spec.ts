@@ -69,6 +69,9 @@ describe("pm-y26mvc swallowed annotation source options", () => {
     expect((await refusal(["notes", "pm-one", "--add-json", "{}", "--add", "--stdin"])).context?.recovery).toBeUndefined();
     // Delete takes no text, so no retry with a text source is valid.
     expect((await refusal(["notes", "pm-one", "--delete", "1", "--add", "--stdin"])).context?.recovery).toBeUndefined();
+    // --if-absent is append-only: an edit retry keeping it would be refused; edit alone keeps its retry.
+    expect((await refusal(["comments", "pm-one", "--edit", "1", "--if-absent", "--add", "--file=README.md"])).context?.recovery).toBeUndefined();
+    expect((await refusal(["comments", "pm-one", "--if-absent", "--add", "--file=README.md"])).context?.recovery?.suggested_retry_args).toEqual(["comments", "pm-one", "--file=README.md"]);
   });
 
   it("keeps the generic guidance for a swallowed option that is not a text source", async () => {
