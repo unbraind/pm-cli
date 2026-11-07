@@ -2,11 +2,13 @@ id: pm-y26mvc
 title: "pm comments/notes <id> --add --file <path> is refused as positional-and---add conflict instead of naming the swallowed --file flag, so the annotation flag-like check from pm-vcu7 loses precedence"
 description: "Found 2026-11-07 while reading telemetry: comments is the top failing command (255 finish failures in 24 h, automation context). Repro on 2026.11.7: pm comments <id> --add --file note.md exits 2 with code command_failed and detail 'Specify comment text either as positional [text] or with --add, not both'. Commander binds --file as the value of --add, so note.md becomes positional text and the positional/--add conflict check fires first. The same shape hits --add --stdin x and pm notes/learnings. Without a trailing operand the pm-vcu7 guard does fire (annotation_flag_like_value), but its recovery says 'Use --stdin to read stdin' even when the swallowed flag was --file, so the agent is not told that --file <path> works on its own. pm-vcu7 is closed and its AC covered notes --add --stdin, learnings --add --file and comments --add --stdin without a trailing operand; this is the operand-following composition it did not test. Duplicate check: searched comments --add --file, flag-like annotation values, positional and --add conflict across all statuses; pm-vcu7 (closed, fixed), pm-hcco and pm-yp56 are the nearest and do not cover this precedence."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,annotations,comments,recovery,recurrence
 created_at: "2026-11-07T09:07:11.835Z"
-updated_at: "2026-11-07T09:07:11.835Z"
+updated_at: "2026-11-07T20:31:05.043Z"
+closed_at: "2026-11-07T19:07:03.694Z"
+completed_at: "2026-11-07T19:07:03.694Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "pm comments|notes|learnings <id> --add --file <path> and --add --stdin <operand> refuse with annotation_flag_like_value (not command_failed), before the positional/--add conflict check; The recovery names the swallowed flag's own form: for --file it says to drop --add and pass --file <path>, for --stdin to drop --add; The executable retry, when offered, runs successfully against a sandbox tracker; Regression tests cover each annotation command with a trailing operand, with a negative control that restores the old check order"
@@ -15,12 +17,53 @@ risk: low
 confidence: high
 severity: low
 repro_steps: pm comments <id> --add --file note.md --json
-expected_result: "annotation_flag_like_value naming --file: drop --add and pass --file note.md"
-actual_result: "command_failed: Specify comment text either as positional [text] or with --add, not both"
+resolution: "assertNoSwallowedAnnotationOption (src/cli/register-annotations.ts) runs before every source-count check and throws annotation_flag_like_value, naming the swallowed option's own form. A retry is offered only when dropping the text flag leaves exactly one valid source (no other alias, --add-json, --stdin, --file, --delete, or --edit with --if-absent). The CLI repair (src/cli/runtime/annotation-option-retry.ts) rebuilds it from the typed argv and withdraws it when the bindings would change, the text flag repeats, or the pair precedes the annotation command. Codex review rounds 1-4 hardened the retry paths."
+expected_result: "pm comments|notes|learnings <id> --add --file <path> refuses with annotation_flag_like_value naming --file, and the suggested retry appends the file to the same item"
+actual_result: Built-CLI spec replays suggested_retry_args for all three commands and each appends the file text; --stdin with an operand names the operand and offers no retry; negative control restores the old positional/--add message
 affected_version: 2026.11.7
 component: annotations
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-hcco,related,"2026-11-07T09:07:11.835Z","harness:claude-code","cli:create:dep",detected
   pm-vcu7,related,"2026-11-07T09:07:11.835Z","harness:claude-code","cli:create:dep",detected
   pm-yp56,related,"2026-11-07T09:07:11.835Z","harness:claude-code","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-11-07T17:52:51.175Z","harness:claude-code","Implemented on branch fix/cli-option-contract-truthfulness. assertNoSwallowedAnnotationOption (src/cli/register-annotations.ts) runs right after the transposed-subcommand check and before every source-count check, for every text alias of comments, notes and learnings. It throws createFlagLikeAnnotationValueRefusal (src/sdk/annotations.ts), which names a swallowed --file or --stdin in its own form (\"drop --add and pass --file <path> on its own\") and, for --stdin or --file=<path> followed by an operand, names the operand that cannot be combined with it. A retry is offered only when dropping the text flag leaves exactly one source; the CLI recovery repair (src/cli/runtime/annotation-option-retry.ts, wired in repairInvocationRecovery and excluded from message-text inference) rewrites it as the typed argv minus the text flag, so tracker scope, --message, --author and --json stay, and withdraws it when the argv holds zero or two swallowing pairs. Direct SDK callers get the same source-form guidance with placeholder examples.\n\nVerification: the built-CLI spec runs the prescribed suggested_retry_args for comments, notes and learnings and each one appends the file text; it also covers --add --stdin x (named operand, no retry) and --add --stdin (retry run with piped stdin). The in-process spec covers every branch, with a negative control that disables the check (vi.doMock) and gets the old \"positional [text] or with --add\" message back. The unit spec for the repair covers rewrite, attached --add=--file, withdrawal (no pair, two pairs, after --, no command token) and pass-through. The full suite passed 12,202 of 12,203; the one failure was a host npm-path issue in an unrelated spec, and it passes with NODE_PATH set.\n"
+  "2026-11-07T18:21:53.910Z","harness:claude-code","Codex review round 1 found two retry gaps here, both fixed in commit c6210382d. (1) P1: pm item comments --add --file pm-one pm-two parses id=pm-one with text pm-two, but dropping --add yields --file pm-one pm-two, which would read the file pm-one into item pm-two. The repair now requires the producer's intended option and operand at the rewritten position and withdraws the retry otherwise. (2) An earlier --add hello (overwritten by Commander), another text alias, or --add-json made the retry a two-source invocation. The producer now offers no retry when another alias or --add-json is present, and the repair withdraws when the text flag appears again in the argv.\n"
+  "2026-11-07T18:40:45.791Z","harness:claude-code","Codex review round 2 found one retry gap, fixed in commit 8f4c6f6ba: an annotation text flag a namespace parent consumed (pm item --add=--stdin comments pm-one, possible when an extension adds --add to item) produced a retry that dispatches nowhere, because item does not declare --stdin. The repair now rewrites only a pair after the annotation command's own token and withdraws the retry otherwise."
+  "2026-11-07T18:57:02.486Z","harness:claude-code","Codex review round 3 found two retry paths, fixed in commit 0ea4615fe: an option before the annotation command token (its value could look like the command) now withdraws the retry, and --delete, which takes no text, never gets a text-source retry."
+  "2026-11-07T20:31:05.042Z","harness:claude-code","Final Codex review found that the retry dropped an environment-selected tracker (PM_PATH), so pasting it where the cwd holds another tracker with the same id appends to the wrong item. Fixed in commit 2b8230084: the annotation repair takes the close-fields repair's environment scope prefix and withdraws the retry when that selection cannot be bound. A built-CLI spec runs from a cwd holding a different tracker."
+files[8]{path,scope,note}:
+  src/cli/main.ts,project,recovery chain and inference exclusion
+  src/cli/register-annotations.ts,project,assertNoSwallowedAnnotationOption runs before the source-count checks
+  src/cli/runtime/annotation-option-retry.ts,project,retry rewritten as the typed argv without the text flag
+  src/sdk/annotations.ts,project,createFlagLikeAnnotationValueRefusal names a swallowed source option in its own form
+  tests/integration/cli/annotation-swallowed-option.integration.spec.ts,project,built CLI executes the suggested retry
+  tests/unit/cli/runtime/annotation-option-retry.spec.ts,project,argv repair rewrite and withdrawal
+  tests/unit/commands/annotations/annotation-swallowed-option.spec.ts,project,in-process pre-check with a negative control
+  tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,source-form guidance for direct callers
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/commands/annotations/annotation-swallowed-option.spec.ts tests/unit/cli/runtime/annotation-option-retry.spec.ts tests/integration/cli/annotation-swallowed-option.integration.spec.ts tests/unit/commands/annotations/notes-learnings-command.spec.ts,project,600,"harness:claude-code","2026-11-07T17:19:19.056Z",local_mutation,fix/cli-option-contract-truthfulness
+test_runs[1]:
+  - run_id: test-local-mw6ryajr-y6x59t
+    kind: test
+    status: passed
+    started_at: "2026-11-07T19:06:18.082Z"
+    finished_at: "2026-11-07T19:06:31.526Z"
+    recorded_at: "2026-11-07T19:06:31.526Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/commands/annotations/annotation-swallowed-option.spec.ts tests/unit/cli/runtime/annotation-option-retry.spec.ts tests/integration/cli/annotation-swallowed-option.integration.spec.ts tests/unit/commands/annotations/notes-learnings-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Logs section documents the refusal and retry
+close_reason: Annotation commands refuse a swallowed source option first and offer the caller's own command without the text flag
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-y26mvc
+  gate_id: annotation-swallowed-option
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/annotation-swallowed-option.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/annotation-swallowed-option.spec.ts tests/unit/cli/runtime/annotation-option-retry.spec.ts tests/integration/cli/annotation-swallowed-option.integration.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

@@ -672,7 +672,8 @@ describe.each(TARGETS)("run%s", (target) => {
         ),
         context: expect.objectContaining({
           code: "annotation_flag_like_value",
-          required: expect.stringContaining("--add -"),
+          // pm-y26mvc: a swallowed source option is named in its own form, not redirected to stdin.
+          required: expect.stringContaining(`Drop --add: ${badToken}`),
         }),
       });
 

@@ -10,6 +10,7 @@ import {
   PmCliError,
   type GlobalOptions,
 } from "../sdk/runtime-primitives.js";
+import { createFlagLikeAnnotationValueRefusal, isFlagLikeAnnotationValue } from "../sdk/annotations.js";
 import { renderPmCommand } from "../sdk/command-line.js";
 import { runComments } from "./commands/annotations/comments.js";
 import { runLearnings } from "./commands/annotations/learnings.js";
@@ -71,6 +72,67 @@ function assertNoTransposedAnnotationAction(
       },
     },
   );
+}
+
+/** Text options of each annotation command, canonical first; Commander binds the next token as their value. */
+const ANNOTATION_TEXT_ALIASES = {
+  comments: ["add", "text", "body", "comment"],
+  notes: ["add", "text", "note"],
+  learnings: ["add", "text"],
+} as const;
+
+/**
+ * Retry tail for a swallowed source option, or undefined when dropping the
+ * text flag would still leave zero or two text sources: `--file` needs the
+ * operand that followed it as its path, while `--stdin` and `--file=<path>`
+ * conflict with one, and any other text alias, `--add-json`, `--stdin` or
+ * `--file` the caller supplied is a second source. `--delete` takes no text,
+ * and `--if-absent` cannot be combined with `--edit`.
+ */
+function resolveSwallowedSourceRetry(
+  collection: keyof typeof ANNOTATION_TEXT_ALIASES,
+  swallowedBy: string,
+  token: string,
+  operand: string | undefined,
+  options: Record<string, unknown>,
+): string[] | undefined {
+  const otherTextSource = ANNOTATION_TEXT_ALIASES[collection].some((alias) => `--${alias}` !== swallowedBy && readOptionString(options, alias) !== undefined);
+  // Delete takes no text at all, and --if-absent is append-only, so neither combination has a valid retry.
+  const invalidMode = options.delete !== undefined || (options.edit !== undefined && options.ifAbsent === true);
+  if (otherTextSource || invalidMode || options.stdin === true || readOptionString(options, "file") !== undefined || readOptionString(options, "addJson") !== undefined) return undefined;
+  if (token === "--file") return operand === undefined ? undefined : ["--file", operand];
+  if (token === "--stdin" || token.startsWith("--file=")) return operand === undefined ? [token] : undefined;
+  return undefined;
+}
+
+/**
+ * Refuse an option token bound as annotation text before any source-count
+ * check (pm-y26mvc). `--add --file note.md` binds `--file` as the text and
+ * `note.md` as positional text, so the positional/--add conflict fired first
+ * and hid the swallowed option. The retry is the caller's command without the
+ * text flag; the CLI recovery layer rewrites it from the typed argv so every
+ * other option stays.
+ */
+function assertNoSwallowedAnnotationOption(
+  collection: "comments" | "notes" | "learnings",
+  id: string,
+  text: string | undefined,
+  options: Record<string, unknown>,
+): void {
+  const swallowed = ANNOTATION_TEXT_ALIASES[collection]
+    .map((alias) => ({ flag: `--${alias}`, value: readOptionString(options, alias)?.trim() }))
+    .find((entry): entry is { flag: string; value: string } => entry.value !== undefined && isFlagLikeAnnotationValue(entry.value));
+  if (swallowed === undefined) return;
+  const prefixArgs = [collection, id, ...(typeof options.edit === "number" ? ["--edit", String(options.edit)] : [])];
+  const retryTail = resolveSwallowedSourceRetry(collection, swallowed.flag, swallowed.value, text, options);
+  throw createFlagLikeAnnotationValueRefusal({
+    collectionKey: collection,
+    textFlag: swallowed.flag,
+    value: swallowed.value,
+    commandPrefix: renderPmCommand(prefixArgs),
+    ...(retryTail === undefined ? {} : { retryArgs: [...prefixArgs, ...retryTail] }),
+    ...(retryTail === undefined && text !== undefined && swallowed.value !== "--file" ? { conflictingOperand: text } : {}),
+  });
 }
 
 function resolveAnnotationTextAliases(
@@ -215,6 +277,7 @@ async function runCommentsAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertNoTransposedAnnotationAction("comments", id, text, options);
+  assertNoSwallowedAnnotationOption("comments", id, text, options);
   const sources = resolveCommentSources(text, options);
   const result = await runComments(
     id,
@@ -249,6 +312,7 @@ async function runNotesAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertNoTransposedAnnotationAction("notes", id, text, options);
+  assertNoSwallowedAnnotationOption("notes", id, text, options);
   const sources = resolveSingleAnnotationSources("note", text, options);
   const result = await runNotes(
     id,
@@ -287,6 +351,7 @@ async function runLearningsAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   assertNoTransposedAnnotationAction("learnings", id, text, options);
+  assertNoSwallowedAnnotationOption("learnings", id, text, options);
   const sources = resolveSingleAnnotationSources("learning", text, options);
   const result = await runLearnings(
     id,

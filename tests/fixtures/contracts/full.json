@@ -27881,7 +27881,8 @@
       "sources": [
         "cli/error-guidance.ts",
         "cli/runtime/invocation-options.ts",
-        "core/telemetry/observability.ts"
+        "core/telemetry/observability.ts",
+        "sdk/extension/command-options.ts"
       ],
       "stability": "stable"
     },
