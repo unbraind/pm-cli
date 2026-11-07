@@ -7,6 +7,7 @@ import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
+  type ArgvOptionScope,
   refuseConflictingArgvOptionSpellings,
   resolveExtensionFlagOptionKey,
 } from "../../../../src/sdk/extension/command-options.js";
@@ -188,29 +189,41 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
     { description: "label only" },
     { long: "--silent", short: "-s", value_type: "boolean" },
   ];
-  const refuse = (tokens: string[], arityOf?: (spelling: string) => "required" | "optional" | "none" | undefined) =>
-    () => refuseConflictingArgvOptionSpellings(tokens, definitions, "demo", arityOf);
+  /** A leaf scope whose declared flags are read loosely (not registered with Commander). */
+  const leaf = (tokens: string[], overrides: Partial<ArgvOptionScope> = {}): ArgvOptionScope => ({
+    tokens,
+    optionOf: () => undefined,
+    includesLooseFlags: true,
+    negativeNumbersAreValues: true,
+    ...overrides,
+  });
+  const refuse = (...scopes: ArgvOptionScope[]) => () => refuseConflictingArgvOptionSpellings(scopes, definitions, "demo");
 
-  it("refuses two spellings of one scalar flag with different values, in every attached form", () => {
+  it("refuses two spellings of one scalar flag with different values, in every attached and grouped form", () => {
     for (const tokens of [
       ["--status-filter", "open", "-s", "closed"],
       ["--status-filter=open", "-sclosed"],
       ["-s", "open", "--status-filter", "open", "-s", "closed"],
       ["--count", "1", "-c", "2"],
+      // Short groups: switches continue the group and a value-taking letter takes the next token.
+      ["--status-filter", "open", "-vs", "closed"],
+      // The loose parser delivers --switch=<literal> and --no-<switch> to a declared boolean.
+      ["--verbose=false", "-v"],
+      ["--no-verbose", "-v"],
     ]) {
-      expect(refuse(tokens)).toThrowError(PmCliError);
+      expect(refuse(leaf(tokens))).toThrowError(PmCliError);
     }
-    expect(refuse(["--status-filter", "open", "-s", "closed"])).toThrow(
+    expect(refuse(leaf(["--status-filter", "open", "-s", "closed"]))).toThrow(
       "Options '--status-filter' and '-s' both set --status-filter for extension command 'demo' with different values.",
     );
     try {
-      refuse(["-c", "1", "--count", "2"])();
+      refuse(leaf(["-c", "1", "--count", "2"]))();
     } catch (error) {
       expect((error as PmCliError).context).toMatchObject({ code: "extension_option_spelling_conflict", required: "Pass --count once, under the handler key 'count'." });
     }
   });
 
-  it("accepts equal values after coercion, repeats of one spelling, list flags and switch presence", () => {
+  it("accepts equal values after coercion, repeats of one spelling, list flags and Commander's value rules", () => {
     for (const tokens of [
       ["--status-filter", "open", "-s", "open"],
       ["--count", "1", "-c", "1.0"],
@@ -218,26 +231,57 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
       ["--tags", "a", "-t", "b"],
       // A switch keeps presence semantics: the following operand stays positional.
       ["-v", "positional", "--verbose"],
-      // An optional value is not read from a following option token.
+      // An optional value is not read from a following option token, but a negative number is a value.
       ["--level", "-l"],
       ["--level", "high", "-l", "high"],
+      ["--level=-1", "-l", "-1"],
       // Tokens after `--` are operands, and unknown spellings are skipped.
       ["--status-filter", "open", "--", "-s", "closed"],
-      ["--bogus", "-s", "open", "-x"],
-      // A switch with an attached suffix is not a recognized option.
-      ["--verbose=yes", "-vx", "--verbose"],
+      ["--bogus", "-s", "open", "-x", "--bogus=1", "--no-bogus"],
+      // A value-taking letter ends its group: `-vt -s` binds -s as the --tags value.
+      ["--status-filter", "open", "-vt", "-s"],
+      // A grouped value-taking letter takes the rest of the group.
+      ["-vsopen", "--status-filter", "open"],
     ]) {
-      expect(refuse(tokens)).not.toThrow();
+      expect(refuse(leaf(tokens))).not.toThrow();
     }
     expect(refuseConflictingArgvOptionSpellings([], [], "demo")).toBeUndefined();
   });
 
-  it("reads another option's value through the command's arity table instead of as a flag", () => {
+  it("compares untyped values as typed", () => {
+    const untyped = [{ long: "--mode <value>", short: "-m" }];
+    expect(() => refuseConflictingArgvOptionSpellings([leaf(["--mode", "a", "-m", "b"])], untyped, "demo")).toThrow("both set --mode");
+    expect(() => refuseConflictingArgvOptionSpellings([leaf(["--mode", "a", "-m", "a"])], untyped, "demo")).not.toThrow();
+  });
+
+  it("reads a negative number as an option when the path has a numeric short option", () => {
+    expect(refuse(leaf(["--level=-1", "-l", "-1"], { negativeNumbersAreValues: false }))).toThrow("both set --level");
+  });
+
+  it("follows the command's registered options: their arity, and a core owner of a colliding spelling", () => {
+    const registered = new Map([
+      ["--title", { arity: "required" as const, key: "title" }],
+      // A core option keeps -r even though the extension declares it for --status-filter.
+      ["-r", { arity: "required" as const, key: "reason" }],
+      ["--status-filter", { arity: "required" as const, key: "statusFilter" }],
+    ]);
+    const withRegistered = (tokens: string[]) => leaf(tokens, { optionOf: (spelling) => registered.get(spelling) });
     // `--title` takes a value, so `-s` is its value, not a second spelling of --status-filter.
-    const arity = (spelling: string) => (spelling === "--title" ? "required" : undefined);
-    expect(refuse(["--status-filter", "open", "--title", "-s", "closed"], arity)).not.toThrow();
-    expect(refuse(["--status-filter", "open", "--title", "-s", "closed"])).toThrow();
+    expect(refuse(withRegistered(["--status-filter", "open", "--title", "-s", "closed"]))).not.toThrow();
+    expect(refuse(leaf(["--status-filter", "open", "--title", "-s", "closed"]))).toThrow();
+    const collidingDefinitions = [{ long: "--status-filter", short: "-r", value_type: "string" }];
+    expect(() => refuseConflictingArgvOptionSpellings([withRegistered(["--status-filter", "open", "-r", "done"])], collidingDefinitions, "close")).not.toThrow();
     // A value-taking option at the end of argv has no value to consume.
-    expect(refuse(["--status-filter", "open", "-s"])).toThrow();
+    expect(refuse(leaf(["--status-filter", "open", "-s"]))).toThrow();
+  });
+
+  it("joins occurrences across the scopes on the dispatch path, reading ancestors' registered options only", () => {
+    const parentOptions = new Map([
+      ["--status-filter", { arity: "required" as const, key: "statusFilter" }],
+      ["-s", { arity: "required" as const, key: "statusFilter" }],
+    ]);
+    const parent = leaf(["child", "--status-filter", "open", "-s", "closed"], { optionOf: (spelling) => parentOptions.get(spelling), includesLooseFlags: false });
+    expect(refuse(parent, leaf([]))).toThrow("both set --status-filter");
+    expect(refuse(leaf(["--status-filter", "open"], { includesLooseFlags: false }), leaf(["-s", "closed"]))).not.toThrow();
   });
 });

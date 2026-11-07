@@ -25,7 +25,8 @@ import {
   normalizeExtensionCommandPath
 } from "../extension-command-help.js";
 import {
-  type ArgvOptionArity,
+  type ArgvCommandOption,
+  type ArgvOptionScope,
   type LooseCommandFlagDefinition,
   type LooseOptionRefusalListing,
   coerceLooseCommandOptionsWithFlagDefinitions,
@@ -301,14 +302,17 @@ function isImporterOrExporterCommandPath(registrations: ReturnType<typeof create
 }
 
 const COMMAND_OPTION_TOKENS = Symbol("pm.commandOptionTokens");
+const CAPTURES_OPTION_TOKENS = Symbol("pm.capturesOptionTokens");
 
 /**
- * Record the tokens Commander hands this command's own option parser: its
- * options and operands, after the root program consumed the host flags
+ * Record the tokens Commander hands this command's own option parser
  * (pm-wlxf8f). Commander keeps only the last value of an option, so these
- * tokens are the one record of which spelling supplied which value.
+ * tokens are the one record of which spelling supplied which value. Each
+ * command is patched once.
  */
 function captureCommandOptionTokens(command: Command): void {
+  if (Reflect.get(command, CAPTURES_OPTION_TOKENS) === true) return;
+  Reflect.set(command, CAPTURES_OPTION_TOKENS, true);
   const parseOptions = command.parseOptions.bind(command);
   command.parseOptions = (argv: string[]) => {
     Reflect.set(command, COMMAND_OPTION_TOKENS, [...argv]);
@@ -316,20 +320,47 @@ function captureCommandOptionTokens(command: Command): void {
   };
 }
 
-/** Refuse two spellings of one declared extension flag with different values in the command's own tokens. */
+/** The options a command registered with Commander, by spelling. */
+function indexCommandOptions(command: Command): Map<string, ArgvCommandOption> {
+  const options = new Map<string, ArgvCommandOption>();
+  for (const option of command.options) {
+    const entry: ArgvCommandOption = { arity: option.required ? "required" : option.optional ? "optional" : "none", key: option.attributeName() };
+    for (const spelling of [option.short, option.long]) if (spelling) options.set(spelling, entry);
+  }
+  return options;
+}
+
+/**
+ * Refuse two spellings of one declared extension flag with different values.
+ * Every command between the root and the leaf is a scope, because Commander
+ * lets a command consume its own options anywhere after its name, so a value
+ * an ancestor consumed never reaches the leaf's tokens. The root only holds
+ * host flags, which no extension can declare.
+ */
 function refuseConflictingCommandOptionSpellings(
   command: Command,
   definitions: readonly LooseCommandFlagDefinition[],
   commandPath: string,
 ): void {
-  const tokens = Reflect.get(command, COMMAND_OPTION_TOKENS) as string[] | undefined;
-  if (tokens === undefined || definitions.length === 0) return;
-  const arities = new Map<string, ArgvOptionArity>();
-  for (const option of command.options) {
-    const arity: ArgvOptionArity = option.required ? "required" : option.optional ? "optional" : "none";
-    for (const spelling of [option.short, option.long]) if (spelling) arities.set(spelling, arity);
+  if (definitions.length === 0) return;
+  const path: Command[] = [];
+  for (let scope: Command | null = command; scope?.parent; scope = scope.parent) path.unshift(scope);
+  const scopes: ArgvOptionScope[] = [];
+  for (const scope of path) {
+    const tokens = Reflect.get(scope, COMMAND_OPTION_TOKENS) as string[] | undefined;
+    if (tokens === undefined) continue;
+    const options = indexCommandOptions(scope);
+    // Commander reads a negative number as a value unless the command or an ancestor has a numeric short option.
+    const lineage: Command[] = [];
+    for (let entry: Command | null = scope; entry; entry = entry.parent) lineage.push(entry);
+    scopes.push({
+      tokens,
+      optionOf: (spelling) => options.get(spelling),
+      includesLooseFlags: scope === command,
+      negativeNumbersAreValues: !lineage.some((entry) => entry.options.some((option) => option.short !== undefined && /^-\d$/u.test(option.short))),
+    });
   }
-  refuseConflictingArgvOptionSpellings(tokens, definitions, commandPath, (spelling) => arities.get(spelling));
+  refuseConflictingArgvOptionSpellings(scopes, definitions, commandPath);
 }
 
 /** Reject missing required or excess positional arguments before invoking a contributed handler. */

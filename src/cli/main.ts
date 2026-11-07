@@ -1220,9 +1220,10 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
   /** Traverse nested command registrations and wrap each action at most once. */
   const visit = (entry: Command): void => {
     const actionEntry = entry as ActionMutableCommand;
+    // Every command records its own option tokens: an ancestor can consume a leaf's flag (pm-wlxf8f).
+    captureCommandOptionTokens(entry);
     if (typeof actionEntry._actionHandler === "function" && actionEntry[WRAPPED_ACTION_HANDLER] !== true) {
       const originalAction = actionEntry._actionHandler;
-      captureCommandOptionTokens(entry);
       /** Apply extension parsing and dispatch while preserving core action receipts. */
       actionEntry._actionHandler = async function wrappedActionHandler(this: unknown, ...actionArgs: unknown[]): Promise<unknown> {
         const actionCommand = resolveActionCommand(actionArgs, entry);

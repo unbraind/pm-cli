@@ -64,6 +64,9 @@ describe("pm-y26mvc swallowed annotation source options", () => {
     expect(withStdin.context?.recovery).toBeUndefined();
     const withFile = await refusal(["notes", "pm-one", "--file", "a.md", "--note", "--stdin"]);
     expect(withFile.context?.recovery).toBeUndefined();
+    // Another text alias or a structured event is a second source after --add is dropped.
+    expect((await refusal(["comments", "pm-one", "--text", "hello", "--add", "--stdin"])).context?.recovery).toBeUndefined();
+    expect((await refusal(["notes", "pm-one", "--add-json", "{}", "--add", "--stdin"])).context?.recovery).toBeUndefined();
   });
 
   it("keeps the generic guidance for a swallowed option that is not a text source", async () => {

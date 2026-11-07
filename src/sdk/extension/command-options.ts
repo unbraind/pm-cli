@@ -1104,27 +1104,60 @@ function foldDirectOptionSpellings(
 /** How an argv option token takes its value, as Commander parses it: `<value>`, `[value]`, or a switch. */
 export type ArgvOptionArity = "required" | "optional" | "none";
 
-/** One option spelling the argv scan recognizes, and the declared scalar flag it sets, if any. */
-interface ArgvOptionSpelling {
+/** An option a command registered with Commander: how it takes its value and the attribute it sets. */
+export interface ArgvCommandOption {
+  /** Value arity Commander applies to the option. */
   arity: ArgvOptionArity;
-  declared?: { definition: LooseCommandFlagDefinition; handlerKey: string; kind: LooseOptionCoercionKind | null };
+  /** Commander attribute the option sets, compared with a declaration's handler key. */
+  key: string;
 }
 
-/** The argv spelling entry of one declaration with a handler key; list flags only lend their arity. */
-function toArgvOptionSpelling(definition: LooseCommandFlagDefinition, handlerKey: string): ArgvOptionSpelling {
-  const arity = resolveExtensionFlagValueContract(definition as Parameters<typeof resolveExtensionFlagValueContract>[0]).value_arity as ArgvOptionArity;
-  return definition.list === true ? { arity } : { arity, declared: { definition, handlerKey, kind: resolveLooseOptionCoercionKind(definition) } };
+/**
+ * One command's captured option tokens and the options its own parser
+ * recognizes. Commander lets an ancestor consume its own options anywhere in
+ * the argv after its name, so every command on the dispatch path is a scope.
+ */
+export interface ArgvOptionScope {
+  /** Tokens the command's option parser received. */
+  tokens: readonly string[];
+  /** The Commander option that owns a spelling on this command, if any. */
+  optionOf: (spelling: string) => ArgvCommandOption | undefined;
+  /** Whether declared flags the command did not register with Commander are read too (the dispatched leaf). */
+  includesLooseFlags: boolean;
+  /** Whether a negative number is a value, which Commander allows when no numeric short option exists on the path. */
+  negativeNumbersAreValues: boolean;
+}
+
+/** A declared flag spelling and the scalar flag it sets; list flags only lend their arity. */
+interface DeclaredArgvSpelling {
+  definition: LooseCommandFlagDefinition;
+  handlerKey: string;
+  kind: LooseOptionCoercionKind | null;
+  arity: ArgvOptionArity;
+  scalar: boolean;
+}
+
+/** A spelling the scan recognizes in one scope, and the declared scalar flag it sets, if any. */
+interface ArgvSpellingEntry {
+  arity: ArgvOptionArity;
+  declared?: DeclaredArgvSpelling;
 }
 
 /** Index declared long and short spellings; the first declaration of a spelling owns it. */
-function indexArgvOptionSpellings(
+function indexDeclaredArgvSpellings(
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
-): Map<string, ArgvOptionSpelling> {
-  const index = new Map<string, ArgvOptionSpelling>();
+): Map<string, DeclaredArgvSpelling> {
+  const index = new Map<string, DeclaredArgvSpelling>();
   for (const definition of definitions) {
     const handlerKey = resolveCanonicalLooseOptionKey(definition);
     if (handlerKey === null) continue;
-    const entry = toArgvOptionSpelling(definition, handlerKey);
+    const entry: DeclaredArgvSpelling = {
+      definition,
+      handlerKey,
+      kind: resolveLooseOptionCoercionKind(definition),
+      arity: resolveExtensionFlagValueContract(definition as Parameters<typeof resolveExtensionFlagValueContract>[0]).value_arity as ArgvOptionArity,
+      scalar: definition.list !== true,
+    };
     const spellings = [resolveExtensionLongFlagName(definition.long), typeof definition.short === "string" ? definition.short.trim() : ""];
     for (const spelling of spellings.filter((candidate): candidate is string => candidate?.startsWith("-") === true)) {
       if (!index.has(spelling)) index.set(spelling, entry);
@@ -1133,19 +1166,107 @@ function indexArgvOptionSpellings(
   return index;
 }
 
-/** Resolve one argv token to a known spelling and its attached value, following Commander's `--long=value` and `-sVALUE` forms. */
-function resolveArgvOptionToken(
+/**
+ * Resolve a spelling in one scope. A spelling the command registered with
+ * Commander follows Commander's arity and sets the declaration only when the
+ * registered option sets the declaration's handler key: a core option that
+ * owns a colliding short alias keeps it. A declared flag the command did not
+ * register is read from the leaf's tokens only.
+ */
+function resolveArgvSpelling(
+  scope: ArgvOptionScope,
+  index: ReadonlyMap<string, DeclaredArgvSpelling>,
+  spelling: string,
+): ArgvSpellingEntry | undefined {
+  const registered = scope.optionOf(spelling);
+  const declared = index.get(spelling);
+  const settable = declared?.scalar === true ? declared : undefined;
+  if (registered !== undefined) {
+    return settable?.handlerKey === registered.key ? { arity: registered.arity, declared: settable } : { arity: registered.arity };
+  }
+  if (!scope.includesLooseFlags || declared === undefined) return undefined;
+  return settable === undefined ? { arity: declared.arity } : { arity: declared.arity, declared: settable };
+}
+
+/** Commander's test for a token that may be an option. */
+function isArgvOptionToken(token: string): boolean {
+  return token.length > 1 && token.startsWith("-");
+}
+
+/** Commander's negative-number operand form. */
+const NEGATIVE_NUMBER_ARGV_TOKEN = /^-(\d+|\d*\.\d+)(e[+-]?\d+)?$/u;
+
+/** One recognized option occurrence. */
+type ArgvOccurrenceSink = (spelling: string, entry: ArgvSpellingEntry, value: unknown) => void;
+
+/**
+ * Walk one scope's tokens as Commander's parseOptions does: exact spellings
+ * (a required value consumes the next token, an optional one a following
+ * operand or negative number), short groups (`-vs closed`: switches continue
+ * the group, a value-taking letter takes the rest or the next token) and
+ * `--long=value`. The loose parser also delivers `--switch=<literal>` and
+ * `--no-<switch>` to a declared boolean, so both count as occurrences.
+ */
+function scanArgvScope(
+  scope: ArgvOptionScope,
+  resolve: (spelling: string) => ArgvSpellingEntry | undefined,
+  record: ArgvOccurrenceSink,
+): void {
+  const { tokens } = scope;
+  const takesOptionalValue = (token: string | undefined): token is string =>
+    token !== undefined && (!isArgvOptionToken(token) || (scope.negativeNumbersAreValues && NEGATIVE_NUMBER_ARGV_TOKEN.test(token)));
+  let position = 0;
+  let group: string | undefined;
+  while (position < tokens.length || group !== undefined) {
+    const token = group ?? tokens[position++]!;
+    group = undefined;
+    if (token === "--") return;
+    if (!isArgvOptionToken(token)) continue;
+    const exact = resolve(token);
+    if (exact !== undefined) {
+      if (exact.arity === "required") record(token, exact, tokens[position++]);
+      else if (exact.arity === "optional" && takesOptionalValue(tokens[position])) record(token, exact, tokens[position++]);
+      else record(token, exact, true);
+    } else if (token[1] !== "-") {
+      group = scanShortGroup(token, resolve, record);
+    } else {
+      scanLongToken(token, resolve, record);
+    }
+  }
+}
+
+/** Read a short group's first letter; returns the rest of the group when the letter is a switch. */
+function scanShortGroup(
   token: string,
-  lookup: (spelling: string) => ArgvOptionSpelling | undefined,
-): { spelling: string; entry: ArgvOptionSpelling; attached?: string } | undefined {
-  const exact = lookup(token);
-  if (exact !== undefined) return { spelling: token, entry: exact };
-  const [spelling, attached] = token.startsWith("--")
-    ? [token.slice(0, Math.max(token.indexOf("="), 0)), token.slice(token.indexOf("=") + 1)]
-    : [token.slice(0, 2), token.slice(2)];
-  const entry = spelling.length > 1 ? lookup(spelling) : undefined;
-  // Commander attaches a value only to an option that takes one; a switch token with a suffix stays unknown.
-  return entry !== undefined && entry.arity !== "none" ? { spelling, entry, attached } : undefined;
+  resolve: (spelling: string) => ArgvSpellingEntry | undefined,
+  record: ArgvOccurrenceSink,
+): string | undefined {
+  const spelling = token.slice(0, 2);
+  const entry = token.length > 2 ? resolve(spelling) : undefined;
+  if (entry === undefined) return undefined;
+  if (entry.arity !== "none") {
+    record(spelling, entry, token.slice(2));
+    return undefined;
+  }
+  record(spelling, entry, true);
+  return `-${token.slice(2)}`;
+}
+
+/** Read `--long=value` for an option that takes a value or a declared boolean, and `--no-<switch>` for a declared boolean. */
+function scanLongToken(
+  token: string,
+  resolve: (spelling: string) => ArgvSpellingEntry | undefined,
+  record: ArgvOccurrenceSink,
+): void {
+  const equals = token.indexOf("=");
+  if (equals > 2) {
+    const spelling = token.slice(0, equals);
+    const entry = resolve(spelling);
+    if (entry !== undefined && (entry.arity !== "none" || entry.declared?.kind === "boolean")) record(spelling, entry, token.slice(equals + 1));
+    return;
+  }
+  const negated = token.startsWith("--no-") ? resolve(`--${token.slice(5)}`) : undefined;
+  if (negated?.declared?.kind === "boolean" && negated.arity === "none") record(token, negated, false);
 }
 
 /**
@@ -1154,58 +1275,33 @@ function resolveArgvOptionToken(
  * {@link normalizeDirectExtensionCommandOptions}. Commander keeps the last
  * value of an option whatever spelling supplied it, so `--status-filter open
  * -s closed` would otherwise run with one value and drop the other silently.
- * `tokens` are the tokens the command's own option parser received;
- * `arityOf` names the arity of the command's other options, so their values
- * are never read as flags. Values compare after the declared coercion, so
- * `--count 1 -c 1` is accepted; list flags accumulate and are not checked.
+ * `scopes` are the commands on the dispatch path, each with the tokens its
+ * own parser received, so an occurrence an ancestor consumed is still seen.
+ * Values compare after the declared coercion, so `--count 1 -c 1` is
+ * accepted; repeats of one spelling and list flags are not checked.
  */
 export function refuseConflictingArgvOptionSpellings(
-  tokens: readonly string[],
+  scopes: readonly ArgvOptionScope[],
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
   commandPath: string,
-  arityOf: (spelling: string) => ArgvOptionArity | undefined = () => undefined,
 ): void {
-  const index = indexArgvOptionSpellings(definitions);
-  const lookup = (spelling: string): ArgvOptionSpelling | undefined => {
-    const declared = index.get(spelling);
-    if (declared !== undefined) return declared;
-    const arity = arityOf(spelling);
-    return arity === undefined ? undefined : { arity };
-  };
+  const index = indexDeclaredArgvSpellings(definitions);
   const latest = new Map<string, Map<string, unknown>>();
-  for (let position = 0; position < tokens.length; position += 1) {
-    const token = tokens[position]!;
-    if (token === "--") return;
-    const resolved = isArgvOptionToken(token) ? resolveArgvOptionToken(token, lookup) : undefined;
-    if (resolved === undefined) continue;
-    const { value, consumed } = readArgvOptionValue(resolved, tokens[position + 1]);
-    position += consumed;
-    if (resolved.entry.declared !== undefined) {
-      recordArgvSpellingValue(latest, resolved.entry.declared, resolved.spelling, value, commandPath);
-    }
+  for (const scope of scopes) {
+    scanArgvScope(
+      scope,
+      (spelling) => resolveArgvSpelling(scope, index, spelling),
+      (spelling, entry, value) => {
+        if (entry.declared !== undefined) recordArgvSpellingValue(latest, entry.declared, spelling, value, commandPath);
+      },
+    );
   }
-}
-
-/** Commander's test for a token that may be an option. */
-function isArgvOptionToken(token: string): boolean {
-  return token.length > 1 && token.startsWith("-");
-}
-
-/** Read an option occurrence's value as Commander does: attached, the next token when required (or optional and not an option), or presence. */
-function readArgvOptionValue(
-  resolved: { entry: ArgvOptionSpelling; attached?: string },
-  next: string | undefined,
-): { value: unknown; consumed: 0 | 1 } {
-  if (resolved.attached !== undefined) return { value: resolved.attached, consumed: 0 };
-  const { arity } = resolved.entry;
-  const takesNext = next !== undefined && (arity === "required" || (arity === "optional" && !isArgvOptionToken(next)));
-  return takesNext ? { value: next, consumed: 1 } : { value: true, consumed: 0 };
 }
 
 /** Record one spelling's coerced value, refusing it when another spelling of the same flag holds a different value. */
 function recordArgvSpellingValue(
   latest: Map<string, Map<string, unknown>>,
-  declared: NonNullable<ArgvOptionSpelling["declared"]>,
+  declared: DeclaredArgvSpelling,
   spelling: string,
   value: unknown,
   commandPath: string,

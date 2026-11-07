@@ -85,14 +85,18 @@ const ANNOTATION_TEXT_ALIASES = {
  * Retry tail for a swallowed source option, or undefined when dropping the
  * text flag would still leave zero or two text sources: `--file` needs the
  * operand that followed it as its path, while `--stdin` and `--file=<path>`
- * conflict with one.
+ * conflict with one, and any other text alias, `--add-json`, `--stdin` or
+ * `--file` the caller supplied is a second source.
  */
 function resolveSwallowedSourceRetry(
+  collection: keyof typeof ANNOTATION_TEXT_ALIASES,
+  swallowedBy: string,
   token: string,
   operand: string | undefined,
   options: Record<string, unknown>,
 ): string[] | undefined {
-  if (options.stdin === true || readOptionString(options, "file") !== undefined) return undefined;
+  const otherTextSource = ANNOTATION_TEXT_ALIASES[collection].some((alias) => `--${alias}` !== swallowedBy && readOptionString(options, alias) !== undefined);
+  if (otherTextSource || options.stdin === true || readOptionString(options, "file") !== undefined || readOptionString(options, "addJson") !== undefined) return undefined;
   if (token === "--file") return operand === undefined ? undefined : ["--file", operand];
   if (token === "--stdin" || token.startsWith("--file=")) return operand === undefined ? [token] : undefined;
   return undefined;
@@ -117,7 +121,7 @@ function assertNoSwallowedAnnotationOption(
     .find((entry): entry is { flag: string; value: string } => entry.value !== undefined && isFlagLikeAnnotationValue(entry.value));
   if (swallowed === undefined) return;
   const prefixArgs = [collection, id, ...(typeof options.edit === "number" ? ["--edit", String(options.edit)] : [])];
-  const retryTail = resolveSwallowedSourceRetry(swallowed.value, text, options);
+  const retryTail = resolveSwallowedSourceRetry(collection, swallowed.flag, swallowed.value, text, options);
   throw createFlagLikeAnnotationValueRefusal({
     collectionKey: collection,
     textFlag: swallowed.flag,

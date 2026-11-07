@@ -24,7 +24,7 @@ describe("pm-y26mvc annotation option retry replays the caller's command", () =>
   });
 
   it("unwraps an attached text-flag spelling into the option it carried", () => {
-    const repaired = repairAnnotationOptionRecovery(["notes", "pm-one", "--add=--stdin"], CODE, "--add", { ...PRODUCER, suggested_flags: ["--stdin"] });
+    const repaired = repairAnnotationOptionRecovery(["notes", "pm-one", "--add=--stdin"], CODE, "--add", { suggested_flags: ["--stdin"], suggested_retry_args: ["notes", "pm-one", "--stdin"] });
     expect(repaired?.suggested_retry_args).toEqual(["notes", "pm-one", "--stdin"]);
   });
 
@@ -35,6 +35,14 @@ describe("pm-y26mvc annotation option retry replays the caller's command", () =>
     expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--add", "--file", "--add", "--file", "x"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
     // Tokens after `--` are operands, never options.
     expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--", "--add", "--file"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
+    // Dropping --add before the item id would make --file read the id as its path and retarget the append.
+    const reordered = { suggested_flags: ["--file"], suggested_retry_args: ["item", "comments", "pm-one", "--file", "pm-two"] };
+    expect(repairAnnotationOptionRecovery(["item", "comments", "--add", "--file", "pm-one", "pm-two"], CODE, "--add", reordered)).toEqual({ ...reordered, suggested_retry: undefined, suggested_retry_args: undefined });
+    // An earlier --add Commander overwrote would become a second text source.
+    expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--add", "hello", "--add", "--file", "note.md"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
+    expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--add=hello", "--add", "--file", "note.md"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
+    // A producer retry that does not name the option is never trusted.
+    expect(repairAnnotationOptionRecovery(["comments", "pm-one", "--add", "--file", "note.md"], CODE, "--add", { ...PRODUCER, suggested_retry_args: ["comments", "pm-one"] })).toEqual(WITHDRAWN);
     // Without a command token nothing can be placed.
     expect(repairAnnotationOptionRecovery(["--json"], CODE, "--add", PRODUCER)).toEqual(WITHDRAWN);
   });

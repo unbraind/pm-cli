@@ -63,5 +63,26 @@ export function repairAnnotationOptionRecovery(
   if (matches.length !== 1) return withdrawn;
   const { index, width } = matches[0]!;
   const retry = [...argv.slice(0, index), token, ...argv.slice(index + width)];
-  return { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry };
+  return bindsAsProducerIntended(retry, index, field, token, recovery!.suggested_retry_args!) ? { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry } : withdrawn;
+}
+
+/**
+ * Whether the rewritten argv binds the option the way the producer intended.
+ * The producer's retry ends with the option and, for `--file`, the path it
+ * reads: that operand must now follow the option, or dropping the text flag
+ * moved a positional (`pm item comments --add --file pm-one pm-two` would
+ * read the file `pm-one` into item `pm-two`). The text flag must not appear
+ * again either: Commander kept only its last value, so an earlier `--add
+ * hello` would become a second text source.
+ */
+function bindsAsProducerIntended(
+  retry: readonly string[],
+  index: number,
+  field: string,
+  token: string,
+  producerRetry: readonly string[],
+): boolean {
+  const start = producerRetry.lastIndexOf(token);
+  if (start < 0 || producerRetry.slice(start).some((entry, offset) => retry[index + offset] !== entry)) return false;
+  return !retry.some((entry, position) => position !== index && (entry === field || entry.startsWith(`${field}=`)));
 }
