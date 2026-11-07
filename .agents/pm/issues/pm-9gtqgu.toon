@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-ux,budget,read-output,token-efficiency
 created_at: "2026-11-07T05:21:57.911Z"
-updated_at: "2026-11-07T05:59:43.249Z"
+updated_at: "2026-11-07T06:22:42.630Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "An intent omission is decided over the projection the caller requested; a cursor replay of an omitted intent returns the refusal with its receipts; every value isReadOutputBudgetExceeded accepts carries a measured read_output receipt, including a direct attachContextIntentReceipt call; specs with negative controls cover each case"
@@ -16,4 +16,6 @@ confidence: high
 expected_result: Every intent omission is decided over the requested projection and every refusal carries a measured read_output receipt
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1662,discovered_from,"2026-11-07T05:21:57.911Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-07T06:22:42.629Z","harness:claude-code","Scope extension from CodeRabbit's third pass on PR 1681: attachContextIntentReceipt's declared return type (Result & { context_intent?: PmContextIntentReceipt }) hides its omission branches. On omission it returns { output_budget_exceeded | budget_exceeded, context_intent } without any Result field, behind a cast, and isReadResultOmittedForBudget returns boolean rather than a type predicate, so a direct SDK caller cannot narrow. Typing the omission union and making the detector a type guard is a public SDK signature change (sdk-surface 'breaking: signature'), so it belongs with this item's direct-helper criterion rather than the delivered-bytes batch."
 body: ""
