@@ -200,7 +200,7 @@ function collectLooseOptionKeys(
   return [...new Set(keys)];
 }
 
-/** Implements collect loose command option keys for definitions for the public runtime surface of this module. */
+/** Collect every option key the declared flags answer to: each long flag's camel-case key and each short letter. */
 export function collectLooseCommandOptionKeysForDefinitions(
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
 ): Set<string> {
@@ -243,7 +243,7 @@ function formatLooseOptionLabel(
   return null;
 }
 
-/** Implements validate loose command options with flag definitions for the public runtime surface of this module. */
+/** Refuse an option no declaration owns, a disabled flag that was supplied, or a required flag that is missing, naming the command and its accepted flags. */
 export function validateLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
@@ -592,7 +592,7 @@ function mergeAliasOptionKeys(
   }
 }
 
-/** Implements coerce loose command options with flag definitions for the public runtime surface of this module. */
+/** Fold each declared flag's spellings into its handler key, apply declared defaults, and coerce values by declared type, refusing malformed strict scalars. */
 export function coerceLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,
@@ -719,7 +719,7 @@ function coerceAccumulatedLooseOption(
     : normalized;
 }
 
-/** Implements parse loose command options for the public runtime surface of this module. */
+/** Parse option tokens from argv into camel-case keys, accumulating repeats and recording each occurrence in order for list and switch handling. */
 export function parseLooseCommandOptions(
   args: string[],
 ): Record<string, unknown> {
@@ -768,7 +768,7 @@ export function collectLoosePositionalArgs(args: string[]): string[] {
   return positionals;
 }
 
-/** Implements strip loose command option tokens for the public runtime surface of this module. */
+/** Remove the tokens of declared flags (and the values they consume) from argv, leaving positional operands and undeclared tokens. */
 export function stripLooseCommandOptionTokens(
   args: string[],
   definitions: ReadonlyArray<LooseCommandFlagDefinition>,

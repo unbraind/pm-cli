@@ -12,7 +12,6 @@
     "src/cli/commander-usage.ts": 10,
     "src/cli/error-guidance.ts": 33,
     "src/cli/extension-command-help.ts": 40,
-    "src/sdk/extension/command-options.ts": 5,
     "src/cli/help-content.ts": 15,
     "src/cli/help-json-payload.ts": 12,
     "src/cli/main.ts": 1,
