@@ -2,11 +2,13 @@ id: pm-gh1667
 title: "GH-1667: sdk/graph does not export ProjectedGraphResult, the public return type of runGraph, and the merge conflict_resolution union has no public name, so extensions derive both"
 description: "GitHub issue #1667 (reported 2026-11-04 against 2026.11.4, TypeScript NodeNext, strict, skipLibCheck false). import type { ProjectedGraphResult } from '@unbrained/pm-cli/sdk/graph' and import type { MergeConflictResolution } from '@unbrained/pm-cli/sdk/merge' both fail with TS2305. Source confirms it: ProjectedGraphResult is exported from src/sdk/graph/run.ts and is the declared return type of runGraph, but src/sdk/graph/index.ts re-exports runGraph from run.js through a named list that omits the type, and sdk/public-surface.json records runGraph's signature as returning ProjectedGraphResult while the type itself is not on the surface. MergeDecisionReceipt in src/sdk/merge/receipts.ts types conflict_resolution inline with no public alias. Two fleet packages, pm-graph and pm-brief, independently derive the names with Awaited<ReturnType<typeof runGraph>> and an indexed access on MergeDecisionReceipt. Expected: ProjectedGraphResult is re-exported from sdk/graph and the aggregate entrypoint, the merge resolution union has a public name that the receipt declaration uses, and the SDK surface acceptance covers type-only imports next to the value-export parity checks. Why it matters for agents and extension authors: derived aliases break silently when the internal shape moves, and every extension author repeats the workaround. Related closed work covers values only: pm-obbh43 (GH-740) made the aggregate barrel complete for value exports of declared subpaths, and pm-suhxny derived the surface denominator from the export map, but neither checks that a type named in a public signature is itself importable. Duplicate check: searched SDK named type exports, ProjectedGraphResult, type-only surface acceptance, MergeDecisionReceipt and the aggregate entrypoint across all statuses, and no item owns missing public type names."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,extensions,"gh:1667",sdk,types
 created_at: "2026-11-05T06:09:22.085Z"
-updated_at: "2026-11-05T06:09:22.085Z"
+updated_at: "2026-11-07T11:15:05.973Z"
+closed_at: "2026-11-07T11:10:36.134Z"
+completed_at: "2026-11-07T11:10:36.134Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "import type { ProjectedGraphResult } from '@unbrained/pm-cli/sdk/graph' and from '@unbrained/pm-cli/sdk' compile under NodeNext with strict and skipLibCheck false; The conflict_resolution union of MergeDecisionReceipt has an exported public name (for example MergeConflictResolution) that the receipt declaration uses, importable from sdk/merge and from the aggregate entrypoint; The SDK surface gate fails when a type referenced by an exported function's public signature is not importable from the same entrypoint, with a negative control that removes one such re-export; A packed-consumer fixture with type-only imports of these names runs beside the existing value-export parity checks"
@@ -15,11 +17,63 @@ risk: low
 confidence: high
 severity: low
 repro_steps: "In a NodeNext strict project with skipLibCheck false: import type { ProjectedGraphResult } from '@unbrained/pm-cli/sdk/graph' fails with TS2305"
-expected_result: Types named in public SDK signatures are importable by name from the entrypoint that exports the function
-actual_result: TS2305 for ProjectedGraphResult from sdk/graph and for a merge conflict-resolution alias from sdk/merge
+resolution: "scripts/sdk-surface-snapshot.mjs now refuses an entrypoint whose exported functions or exported value annotations name a package type it does not export (analyzeSignatureTypeReachability, identity by declaration), following type references, inline import types, type queries (including a queried value's, method's or property's own signature, with a cycle guard), enum members and class prototypes; _testOnly test seams are counted as exempt, not gated. The snapshot records signature_type_reachability per entrypoint. All gaps found were closed with type-only re-exports (ProjectedGraphResult from sdk/graph and the aggregate, HistoryEntry, UpdateManyResult, PmSettings for sdk/merge and others) plus export keywords on module-local types, and ExtensionCapability now names one declaration. MergeDecisionReceipt.conflict_resolution is typed by the exported ItemScalarConflictResolution."
+expected_result: "Types named in public SDK signatures are importable by name from the entrypoint that exports the function, and the gate fails when one is not"
+actual_result: "sdk-surface-snapshot --check passes with zero gaps; tests/types imports ProjectedGraphResult, ItemScalarConflictResolution, MergeDecisionReceipt, HistoryEntry and ExtensionActivationResult as type-only imports and typechecks; the unit spec covers every declaration form; negative control: deleting the ProjectedGraphResult re-export makes the gate fail naming runGraph"
 affected_version: 2026.11.4
 component: sdk
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-obbh43,related,"2026-11-05T06:09:22.085Z","harness:claude-code","cli:create:dep",detected
   pm-suhxny,related,"2026-11-05T06:09:22.085Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1665,related,"2026-11-07T11:15:05.698Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-07T09:04:28.169Z","harness:claude-code","Implementation evidence (branch feat/extension-authoring-contracts, 2026-11-07).\n\nMeasured the gap on the emitted declarations with the TypeScript checker: 281 entrypoint x type gaps, 197 distinct package types named by exported function signatures (parameters, return types, type-parameter constraints) that the entrypoint did not export: ./sdk 120, ./sdk/testing 41, ./sdk/runtime 39, ./sdk/core 24, ./sdk/query 20, ./sdk/authoring 14, ./sdk/governance 11, ./sdk/graph 7 (including ProjectedGraphResult for runGraph), ./sdk/contracts 3, ./sdk/merge 2. HistoryEntry (named by appendHistoryEntry) was exported from no entrypoint at all.\n\nChange:\n- scripts/sdk-surface-snapshot.mjs: analyzeSignatureTypeReachability walks every exported function declaration's signature, resolves each type reference to its declaration, and reports package types (declared under dist/) the same entrypoint does not export. Identity is by declaration, so a same-named different type is still a gap. buildSdkSurfaceSnapshot refuses any gap, naming the type, its declaration file and the functions that name it, and the snapshot records signature_type_reachability counts per entrypoint.\n- Closed all 281 gaps with type-only re-exports per entrypoint, plus export keywords on 27 module-local types (for example ReadPromise, ReadOptions, InitialReadOptions in runtime.ts; AcquireLockOptions in core/lock).\n- sdk/extension-contracts ExtensionCapability re-exports the structurally identical core declaration, so signatures typed with the core alias resolve to the exported type.\n- The merge half already held: MergeDecisionReceipt.conflict_resolution is typed by the exported ItemScalarConflictResolution, importable from sdk/merge and the aggregate; the type test now imports it from both.\n- tests/types/sdk-subpath-entrypoints.test-d.ts imports ProjectedGraphResult (sdk/graph and sdk), ItemScalarConflictResolution and MergeDecisionReceipt (sdk/merge), HistoryEntry (sdk) and ExtensionActivationResult (sdk/testing) as type-only imports beside the value-export parity checks.\n\nSDK surface: 306 classified changes, all additive or compatible except four acknowledged signature changes (CliFlagContract gains optional owner/sdk_option in ./sdk and ./sdk/contracts; ExtensionCapability now names the core declaration in ./sdk and ./sdk/authoring).\n\nVerified: tests/unit/scripts/sdk-surface-snapshot.spec.ts (19 tests) covers gaps, identity, unresolved names, merged function+namespace, and the build refusal. Negative control: deleting the ProjectedGraphResult re-export from dist/sdk/graph.d.ts makes sdk-surface-snapshot --check fail with './sdk/graph: ProjectedGraphResult (declared in dist/sdk/graph/run.d.ts; named by runGraph)'.\n\nFollow-up filed: pm-bqyk1z (98 class-member and 875 type-declaration references still name unexported types; mostly PmClient methods from ./sdk/core).\n"
+  "2026-11-07T10:00:02.250Z","harness:claude-code","Codex round 1 on the batch: the signature gate now also checks exported variable annotations (callable values such as runUpdateMany) and resolves inline import type qualifiers; eight more gaps closed. Details on pm-gh1665."
+files[32]{path,scope}:
+  scripts/sdk-surface-snapshot.mjs,project
+  sdk/public-surface.json,project
+  src/core/history/history-stream-policy.ts,project
+  src/core/history/projection.ts,project
+  src/core/lock/lock.ts,project
+  src/core/search/providers.ts,project
+  src/core/search/vector-stores.ts,project
+  src/core/sentry/instrument.ts,project
+  src/sdk/authoring.ts,project
+  src/sdk/command-line.ts,project
+  src/sdk/context-intent-contracts.ts,project
+  src/sdk/contracts.ts,project
+  src/sdk/core.ts,project
+  src/sdk/corpus-shape.ts,project
+  src/sdk/define.ts,project
+  src/sdk/extension-contracts.ts,project
+  src/sdk/governance.ts,project
+  src/sdk/graph.ts,project
+  src/sdk/index.ts,project
+  src/sdk/merge.ts,project
+  src/sdk/query.ts,project
+  src/sdk/query/list.ts,project
+  src/sdk/query/search-rendering.ts,project
+  src/sdk/query/search/semantic.ts,project
+  src/sdk/read-output-contracts.ts,project
+  src/sdk/runtime.ts,project
+  src/sdk/test/execution.ts,project
+  src/sdk/testing.ts,project
+  src/sdk/traceability/source-traceability.ts,project
+  src/sdk/workspace-recipe.ts,project
+  tests/types/sdk-subpath-entrypoints.test-d.ts,project
+  tests/unit/scripts/sdk-surface-snapshot.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,project,900,"harness:claude-code","2026-11-07T10:28:44.876Z",local_mutation,feat/extension-authoring-contracts
+  pnpm exec tsc --noEmit -p tsconfig.typetests.json,project,600,"harness:claude-code","2026-11-07T10:28:51.232Z",local_mutation,feat/extension-authoring-contracts
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: "Types named by public SDK signatures are importable from the entrypoint that exports them, and the surface gate enforces it"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1667
+  gate_id: sdk-surface-signature-type-reachability
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts
+  local_checks[5]: node scripts/sdk-surface-snapshot.mjs --check,node scripts/run-tests.mjs test -- tests/unit/scripts/sdk-surface-snapshot.spec.ts,pnpm exec tsc --noEmit -p tsconfig.typetests.json,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

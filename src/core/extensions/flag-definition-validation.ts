@@ -61,7 +61,11 @@ export function validateExtensionLongFlagToken(
   }
   const token = value.trim();
   const hostToken = token.split(/[ =]/, 1)[0]!;
-  if (RESERVED_EXTENSION_HOST_FLAG_NAMES.has(hostToken)) {
+  // The CLI folds an underscore spelling into its kebab flag (--output_limit is --output-limit), so it is host-owned too.
+  if (
+    RESERVED_EXTENSION_HOST_FLAG_NAMES.has(hostToken) ||
+    RESERVED_EXTENSION_HOST_FLAG_NAMES.has(`--${hostToken.slice(2).replaceAll("_", "-")}`)
+  ) {
     return "host_owned_flag_collision";
   }
   return EXTENSION_LONG_FLAG_PATTERN.test(token)

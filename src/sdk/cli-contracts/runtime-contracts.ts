@@ -149,7 +149,8 @@ import {
   type PmCommandAliasContract,
 } from "../cli-contracts.js";
 import { PM_NAMESPACED_COMMAND_ALIASES, resolvePmCommandOperation } from "./command-aliases.js";
-import { HISTORY_ATTEST_FLAG_CONTRACTS, PM_POSITIONAL_ACTION_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "./flag-contracts.js";
+import { HISTORY_ATTEST_FLAG_CONTRACTS, PM_POSITIONAL_ACTION_FLAG_CONTRACTS, resolveExtensionCommandInheritedFlagContracts, resolveSubcommandFlagContractsForCommand } from "./flag-contracts.js";
+import { resolveExtensionFlagOptionKey } from "../extension/command-options.js";
 import {
   GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES,
   GOVERNANCE_CREATE_MODE_DEFAULT_VALUES,
@@ -236,6 +237,8 @@ interface CommandFlagSurface {
   flags: CliFlagContract[];
   positionals?: PmCommandPositionalContract["slots"];
   flag_invocations?: CliFlagInvocationContract[];
+  /** Host-owned flags an extension command accepts through `context.global`; present only for extension-provided commands (pm-gh1666). */
+  inherited_flags?: CliFlagContract[];
   provider?: "core" | "extension" | "mixed";
   extension_sources?: Array<{
     layer: "global" | "project";
@@ -1452,19 +1455,17 @@ function buildCollectedExtensionCommandContract(
   };
 }
 
+/** Name a flag's MCP tool property after the handler key, so a structured call reaches the handler under the key it reads (pm-gh1665). */
 function extensionSchemaPropertyNameFromFlag(
   flag: CliFlagContract,
 ): string | null {
-  const normalized = flag.flag.replace(/^-+/, "").trim();
-  if (normalized.length === 0) {
-    return null;
-  }
-  const camelCased = normalized.replace(
-    /-([a-z0-9])/g,
-    (_match, char: string) => char.toUpperCase(),
-  );
-  const cleaned = camelCased.replace(/[^a-zA-Z0-9]/g, "");
-  return cleaned.length > 0 ? cleaned : null;
+  const long = flag.flag.startsWith("--") ? flag.flag : undefined;
+  const key = resolveExtensionFlagOptionKey({
+    long,
+    short: long === undefined ? flag.flag : undefined,
+  });
+  // A dash-only spelling names no option a handler could read.
+  return key !== null && /[a-z0-9]/iu.test(key) ? key : null;
 }
 
 function buildExtensionArgumentSchema(
@@ -1948,6 +1949,76 @@ function mergeFlagContracts(
   /* c8 ignore stop */
 }
 
+/** Mark a package-declared flag as extension-owned and publish the `context.options` key its handler reads (pm-gh1665). */
+function withExtensionFlagOwnership(contract: CliFlagContract): CliFlagContract {
+  // A row's flag is its long spelling, or its short one when it declares no long flag.
+  const sdkOption = resolveExtensionFlagOptionKey(
+    contract.flag.startsWith("--") ? { long: contract.flag } : { short: contract.flag },
+  );
+  return {
+    ...contract,
+    owner: "extension",
+    ...(sdkOption === null ? {} : { sdk_option: sdkOption }),
+  };
+}
+
+/**
+ * Mark extension-contributed flags with their owner and handler key, and derive
+ * the host flags an extension-provided command inherits (pm-gh1665,
+ * pm-gh1666). Core rows, and core commands without a core flag table, are
+ * left as they are.
+ */
+function resolveExtensionCommandOwnership(
+  command: string,
+  provider: CommandFlagSurface["provider"],
+  extensionFlags: CliFlagContract[] | undefined,
+  extensionContracts: readonly ExtensionCommandContract[],
+): { flags: CliFlagContract[]; inherited: Pick<CommandFlagSurface, "inherited_flags"> } {
+  // Extension-contributed rows carry their owner and handler key on every command, including core commands
+  // an extension only augments (provider mixed); only extension-provided commands inherit host rows here.
+  const flags = (extensionFlags ?? []).map(withExtensionFlagOwnership);
+  const registered =
+    provider === "extension" &&
+    (extensionFlags !== undefined || isRegisteredExtensionCommand(command, extensionContracts));
+  return {
+    flags,
+    inherited: registered
+      ? {
+          inherited_flags: resolveExtensionCommandInheritedFlagContracts({
+            readOutput: declaresExtensionReadOutput(command, extensionContracts),
+          }),
+        }
+      : {},
+  };
+}
+
+/** Find the package contract registered for a command path by operation identity. */
+function findExtensionCommandContract(
+  command: string,
+  extensionContracts: readonly ExtensionCommandContract[],
+): ExtensionCommandContract | undefined {
+  const operation = resolvePmCommandOperation(command);
+  return extensionContracts.find(
+    (entry) => resolvePmCommandOperation(entry.command) === operation,
+  );
+}
+
+/** Whether a package registered the command, as opposed to a core command without a core flag table. */
+function isRegisteredExtensionCommand(
+  command: string,
+  extensionContracts: readonly ExtensionCommandContract[],
+): boolean {
+  return findExtensionCommandContract(command, extensionContracts) !== undefined;
+}
+
+/** Whether the package declared structured read output for a command, which admits the read-output host controls. */
+function declaresExtensionReadOutput(
+  command: string,
+  extensionContracts: readonly ExtensionCommandContract[],
+): boolean {
+  return findExtensionCommandContract(command, extensionContracts)?.read_output !== undefined;
+}
+
 /** Merge core, runtime field, and extension flags for each public command path with optional semantic metadata. */
 function buildCommandFlagSurface(
   commands: string[],
@@ -1974,19 +2045,23 @@ function buildCommandFlagSurface(
         ) ?? [];
       const extensionFlags = flagsByPath.get(command);
       const coreWithRuntime = mergeFlagContracts(coreFlags, runtimeFlags);
-      const flags = mergeFlagContracts(
-        coreWithRuntime,
-        extensionFlags?.flags ?? [],
-      );
       const provider: CommandFlagSurface["provider"] =
         coreFlags.length > 0 && (extensionFlags?.flags.length ?? 0) > 0
           ? "mixed"
           : isCoreCommand
             ? "core"
             : "extension";
+      const ownership = resolveExtensionCommandOwnership(
+        command,
+        provider,
+        extensionFlags?.flags,
+        extensionContracts,
+      );
+      const flags = mergeFlagContracts(coreWithRuntime, ownership.flags);
       return {
         command,
         flags,
+        ...ownership.inherited,
         ...(includeSemanticMetadata
           ? {
               canonical_command: canonicalSummaryCommand(command),
@@ -3357,6 +3432,7 @@ export const _testOnlyContractsCommand = {
   collectExtensionFlagContractsByCommand,
   extractActionBranches,
   extensionSchemaPropertyNameFromFlag,
+  withExtensionFlagOwnership,
   filterSchemaByAction,
   filterSchemaByActions,
   isCoreCommandPath,

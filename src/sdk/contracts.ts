@@ -28,3 +28,8 @@ export type {
   PmReadOutputSessionReference,
   PmReadOutputSessionState,
 } from "./read-output-session.js";
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { FlagDefinition } from "../core/extensions/extension-types.js";
+export type { ContextIntentCursorEnvelope } from "./context-intent-contracts.js";
+export type { ReadOutputResultForSession } from "./read-output-contracts.js";

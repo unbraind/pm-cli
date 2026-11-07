@@ -1,0 +1,26 @@
+id: pm-6vk110
+title: "Core per-command help and contracts omit the inherited host flags a core command accepts, so pm contracts --command close lists no --json, --pm-path or --author"
+description: "Found while fixing pm-gh1666 on 2026.11.7. pm-gh1666 made extension commands publish inherited_flags (owner host, delivered through context.global) in pm contracts --command <cmd> --flags-only --json and inherited_options in pm help <cmd> --json, derived from the reserved host flag table with per-flag extension_command_availability. Core commands still omit them: pm contracts --command close --flags-only --json lists 14 command flags with only --output-format marked inherited, and pm help close --json lists none of --json, --quiet, --pm-path, --author, --no-pager or --expect-hash, although close accepts all of them. An agent that trusts the per-command contract under-uses or re-probes every core command, the same failure GH-1666 reported for extensions. The fix should reuse resolveExtensionCommandInheritedFlagContracts-style data, declare per-command availability of read-output controls (core read surfaces from PM_READ_OUTPUT_SURFACE_CONTRACTS), and keep root-only flags out. Duplicate check: searched inherited host flags, per-command contracts, help options and global flags across all statuses; pm-4bhw (extension help introspection) and pm-xhot (completion from contracts) are closed and do not cover core inherited rows."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,contracts,discoverability,help
+created_at: "2026-11-07T08:59:37.693Z"
+updated_at: "2026-11-07T09:00:50.371Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "pm contracts --command <core-cmd> --flags-only --json carries inherited_flags with owner host for every host flag that command accepts, and excludes read-output controls on commands that are not read surfaces; pm help <core-cmd> --json carries the same rows as inherited_options; A spec invokes every listed inherited flag on a representative read command and a mutating command and none is refused as unknown, with a negative control that drops one row; The contracts fixture and token budgets are updated and stay within their ceilings"
+parent: pm-1kxs
+risk: medium
+confidence: medium
+severity: low
+repro_steps: "Run pm contracts --command close --flags-only --json and pm help close --json, then pm close <id> done --json --pm-path <tracker>"
+expected_result: "Per-command discovery lists the host flags close accepts, marked host-owned"
+actual_result: "Neither surface lists --json, --pm-path or --author, although close accepts them"
+affected_version: 2026.11.7
+component: contracts
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1666,discovered_from,"2026-11-07T08:59:37.693Z","harness:claude-code","cli:create:dep",detected
+  pm-4bhw,related,"2026-11-07T09:00:49.490Z","harness:claude-code","cli:update:dep",detected
+  pm-xhot,related,"2026-11-07T09:00:49.490Z","harness:claude-code","cli:update:dep",detected
+body: ""

@@ -34,11 +34,17 @@ export interface ResolveHistoryTargetOptions {
   allowFutureTimestamp?: boolean;
 }
 
-interface PatchFailureContext {
+/** Locates the history patch operation that failed to apply during replay. */
+export interface PatchFailureContext {
+  /** Zero-based index of the failing operation within the entry patch. */
   patchIndex?: number;
+  /** JSON Patch operation name, such as add, replace or move. */
   op?: string;
+  /** JSON Pointer the operation targets. */
   path?: string;
+  /** Source JSON Pointer for move and copy operations. */
   from?: string;
+  /** Why the operation could not be applied. */
   reason?: string;
 }
 

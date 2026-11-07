@@ -39,7 +39,8 @@ export interface WorkspaceRecipe extends ReproducibleExecutionSettings {
   operations: readonly WorkspaceRecipeOperation[];
 }
 
-type ExactWorkspaceRecipe<TRecipe extends WorkspaceRecipe> = TRecipe &
+/** A workspace recipe literal with no keys beyond WorkspaceRecipe, so misspelled fields fail at compile time. */
+export type ExactWorkspaceRecipe<TRecipe extends WorkspaceRecipe> = TRecipe &
   Record<Exclude<keyof TRecipe, keyof WorkspaceRecipe>, never>;
 
 function cloneAndFreezeRecipeJson(

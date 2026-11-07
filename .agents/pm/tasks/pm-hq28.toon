@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: developer-experience,metadata,refactor,toon,vocabulary
 created_at: "2026-07-12T20:24:28.207Z"
-updated_at: "2026-09-22T05:25:09.749Z"
+updated_at: "2026-11-07T09:40:44.045Z"
 closed_at: "2026-07-13T08:56:20.378Z"
 author: codex-frontmatter-vocabulary
 estimated_minutes: 240
@@ -187,7 +187,6 @@ files[631]{path,scope,note}:
   src/cli/commands/workspace/upgrade.ts,project,TOON metadata API rename
   src/cli/error-guidance.ts,project,TOON metadata API rename
   src/cli/extension-command-help.ts,project,TOON metadata API rename
-  src/cli/extension-command-options.ts,project,TOON metadata API rename
   src/cli/guide-topics.ts,project,TOON metadata API rename
   src/cli/help-content.ts,project,TOON metadata API rename
   src/cli/help-json-payload.ts,project,TOON metadata API rename
@@ -347,6 +346,7 @@ files[631]{path,scope,note}:
   src/sdk/define.ts,project,TOON metadata API rename
   src/sdk/dependency-flag-validation.ts,project,TOON metadata API rename
   src/sdk/errors.ts,project,TOON metadata API rename
+  src/sdk/extension/command-options.ts,project,TOON metadata API rename
   src/sdk/index.ts,project,TOON metadata API rename
   src/sdk/init-agent-guidance.ts,project,TOON metadata API rename
   src/sdk/lifecycle/lifecycle-transitions.ts,project,TOON metadata API rename

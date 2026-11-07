@@ -97,7 +97,9 @@ export interface ExecuteEmbeddingRequestOptions {
   fetcher?: EmbeddingRequestFetcher;
 }
 
-type ProviderSettingsInput = {
+/** Settings subset that configures the embedding providers semantic search can call. */
+export type ProviderSettingsInput = {
+  /** OpenAI-compatible and Ollama endpoint, credential and model settings. */
   providers?: {
     openai?: {
       base_url?: string;

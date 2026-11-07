@@ -24,6 +24,8 @@ import {
   type HelpOptionSummary,
   type ExtensionCommandHelpDescriptor,
   buildDynamicExtensionHelpOptionSummaries,
+  buildExtensionInheritedHelpOptionSummaries,
+  isExtensionCreatedCommand,
   mergeHelpOptionSummaries,
   findCommandByPath,
   findDirectChildCommand,
@@ -640,6 +642,16 @@ function buildPositionalActionHelpProjection(
 }
 
 /** Build structured help for the requested command path, including canonical metadata, flags, aliases, and examples. */
+/** Host flags an extension-created command inherits; core commands an extension augments keep their own help (pm-gh1666). */
+function inheritedHelpOptions(
+  targetCommand: Command,
+  extensionDescriptor: ExtensionCommandHelpDescriptor | undefined,
+): { inherited_options?: HelpOptionSummary[] } {
+  return extensionDescriptor !== undefined && isExtensionCreatedCommand(targetCommand)
+    ? { inherited_options: buildExtensionInheritedHelpOptionSummaries(extensionDescriptor) }
+    : {};
+}
+
 function buildJsonHelpPayload(
   rootProgram: Command,
   targetCommand: Command,
@@ -724,6 +736,7 @@ function buildJsonHelpPayload(
       : narrative.tips,
     arguments: projection.arguments,
     options: projection.options,
+    ...inheritedHelpOptions(targetCommand, extensionDescriptor),
     subcommands: projection.subcommands,
     has_subcommands: projection.subcommands.length > 0,
     ...(fullCommandAliases === undefined

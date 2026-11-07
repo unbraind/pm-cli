@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: "area:extensions","area:packages",dx,exemplar
 created_at: "2026-06-07T10:05:50.627Z"
-updated_at: "2026-09-19T08:39:15.769Z"
+updated_at: "2026-11-07T09:41:20.323Z"
 closed_at: "2026-06-09T18:41:08.236Z"
 author: audit-platform-agent
 acceptance_criteria: "- A first-party exemplar package demonstrates registerCommand + registerFlags + registerParser\n- Ships hand-maintained .js alongside .ts (per ADR pm-tsio)\n- Listed in marketplace.json + docs; smoke-tested"
@@ -36,16 +36,16 @@ files[13]{path,scope,note}:
   packages/pm-command-kit/extensions/command-kit/index.js,project,runtime command-kit exemplar
   packages/pm-command-kit/extensions/command-kit/index.ts,project,typed command-kit exemplar
   packages/pm-command-kit/extensions/command-kit/manifest.json,project,command-kit extension manifest
+  packages/pm-command-kit/extensions/command-kit/package.json,project,Exact artifact link for the package or gate delivered by this canonical item
   packages/pm-command-kit/package.json,project,command-kit package manifest
   packages/pm-command-kit/README.md,project,command-kit author docs
   src/cli/extension-command-help.ts,project,extension-provided Commander option registration
-  src/cli/extension-command-options.ts,project,loose option arg stripping helpers
   src/cli/main.ts,project,dynamic extension flag bootstrap and arg stripping
+  src/sdk/extension/command-options.ts,project,loose option arg stripping helpers
   tests/fixtures/contracts/full.json,project,contract snapshot for dynamic extension flag parsing
   tests/integration/cli.integration.spec.ts,project,install-all count coverage
   tests/unit/extension-command.spec.ts,project,command-kit registration and catalog tests
   tests/unit/main-loose-options.spec.ts,project,loose option strip coverage
-  packages/pm-command-kit/extensions/command-kit/package.json,project,Exact artifact link for the package or gate delivered by this canonical item
 tests[2]{command,scope,timeout_seconds,note}:
   "pnpm contracts:check",project,180,contract snapshot validation
   "pnpm quality:docs-links",project,180,SDK command-kit docs link validation

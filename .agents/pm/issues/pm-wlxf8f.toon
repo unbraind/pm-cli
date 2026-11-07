@@ -1,0 +1,25 @@
+id: pm-wlxf8f
+title: "CLI argv keeps one value silently when two spellings of one extension flag differ (--status-filter a -s b), while direct callers are refused with extension_option_spelling_conflict"
+description: "Found by CodeRabbit on PR 1682 (pm-gh1665). The shared extension option normalizer now refuses two spellings of one declared flag with different values for PmClient.run, MCP and the test harness (extension_option_spelling_conflict). CLI argv dispatch still folds them through mergeAliasOptionKeys in src/sdk/extension/command-options.ts: for scalar flags the canonical value wins and the alias value is dropped without a refusal, so pm demo --status-filter open -s closed silently runs with open. The parse-time occurrences recorded by parseLooseCommandOptions carry enough information to apply the same conflict check before dispatch. Changing this alters CLI behavior for existing scripts that repeat a flag under two spellings, so it was deferred from the batch. Duplicate check: searched spelling conflict, alias folding, repeated flag values and short alias across all statuses; pm-kfq5 owns list accumulation across long/short occurrences, not scalar conflicts."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,cli,extensions,flags
+created_at: "2026-11-07T13:26:16.419Z"
+updated_at: "2026-11-07T13:26:16.419Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "CLI argv that supplies two spellings of one declared scalar extension flag with different values exits 2 with extension_option_spelling_conflict naming both spellings and the handler key; Equal values and list flags keep their current accumulation; A spec drives the built CLI with --long and -s spellings, with a negative control that restores silent folding"
+parent: pm-ugqx
+risk: low
+confidence: high
+severity: low
+repro_steps: "Declare --status-filter with short -s, run pm demo --status-filter open -s closed --json"
+expected_result: exit 2 extension_option_spelling_conflict
+actual_result: exit 0; the handler receives statusFilter open
+affected_version: 2026.11.7
+component: extensions
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1665,discovered_from,"2026-11-07T13:26:16.419Z","harness:claude-code","cli:create:dep",detected
+  pm-kfq5,related,"2026-11-07T13:26:16.419Z","harness:claude-code","cli:create:dep",detected
+body: ""

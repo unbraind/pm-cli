@@ -156,7 +156,8 @@ function scrubStackFrame(frame: Record<string, unknown>): void {
   }
 }
 
-type SentryLike = typeof SentryModuleTypes;
+/** Shape of the lazily loaded @sentry/node module, so tests can inject a stand-in loader. */
+export type SentryLike = typeof SentryModuleTypes;
 type NodeOptions = SentryModuleTypes.NodeOptions;
 type SentryEnvelope = Parameters<SentryModuleTypes.NodeClient["sendEnvelope"]>[0];
 type LogEnvelopeItem = Extract<SentryEnvelope[1][number], [{ type: "log" }, unknown]>;

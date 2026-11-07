@@ -3,7 +3,7 @@
  * Preserves global-option boundaries, contributed flag schemas and read-output provenance.
  */
 import { Command } from "commander";
-import { resolveSubcommandFlagContractsForCommand } from "../../sdk/cli-contracts.js";
+import { GLOBAL_FLAG_CONTRACTS, resolveSubcommandFlagContractsForCommand } from "../../sdk/cli-contracts.js";
 import { resolvePmCommandOperation } from "../../sdk/cli-contracts/command-aliases.js";
 import {
   PM_READ_OUTPUT_SURFACE_CONTRACTS,
@@ -26,16 +26,25 @@ import {
 import {
   type LooseCommandFlagDefinition,
   coerceLooseCommandOptionsWithFlagDefinitions,
+  collectExtensionFlagDefinitionsForCommand,
   collectLooseCommandOptionKeysForDefinitions,
+  resolveExtensionFlagOptionKey,
   parseLooseCommandOptions,
   validateLooseCommandOptionsWithFlagDefinitions
-} from "../extension-command-options.js";
+} from "../../sdk/extension/command-options.js";
 import {
   getCommandPath,
   setResolvedGlobalOptions
 } from "../registration-helpers.js";
 
 const READ_OUTPUT_INVOCATION_PROVENANCE = Symbol.for("pm.readOutputInvocationProvenance");
+
+/** Root-only host flags by the option key Commander delivers them under; extension commands never inherit them. */
+const ROOT_ONLY_FLAG_BY_OPTION_KEY: ReadonlyMap<string, string> = new Map(
+  GLOBAL_FLAG_CONTRACTS.filter((contract) => contract.reservation_scope === "root_only").map(
+    (contract) => [resolveExtensionFlagOptionKey({ long: contract.flag }) as string, contract.flag] as const,
+  ),
+);
 
 /** Carry private read-output provenance across Commander's option rebuilds. */
 function copyReadOutputInvocationProvenance(source: object, target: object): void {
@@ -189,6 +198,7 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[], ex
         optionsToValidate[key] = scoped[key];
       }
     }
+
     validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, [...coreFlagDefinitions, ...extensionFlagDefinitions], getCommandPath(command));
     const coerced = coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions, looseOptions, getCommandPath(command));
     copyReadOutputInvocationProvenance(scoped, coerced);
@@ -199,13 +209,29 @@ function extractCommandScopedOptions(command: Command, commandArgs: string[], ex
 
 /* c8 ignore stop */
 
-/** Join contributed flags by stable operation identity so canonical and compatibility command paths share the same schema. */
-function collectExtensionFlagDefinitionsForCommand(registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>, commandPath: string): FlagDefinition[] {
-  const normalizedCommandPath = normalizeExtensionCommandPath(commandPath);
-  if (normalizedCommandPath.length === 0) {
-    return [];
-  }
-  return registrations.flags.filter((entry) => resolvePmCommandOperation(normalizeExtensionCommandPath(entry.target_command)) === resolvePmCommandOperation(normalizedCommandPath)).flatMap((entry) => entry.flags);
+/**
+ * Refuse root-only host controls (`--all`, `--explain`) that an extension
+ * command did not declare (pm-gh1666). They parse on the root program, so they
+ * reach scoped options without appearing in the leaf argv, and would otherwise
+ * arrive in the handler's `context.options`. Applies whether or not the
+ * command declares other flags.
+ */
+function refuseUndeclaredRootOnlyOptions(
+  options: Record<string, unknown>,
+  definitions: readonly LooseCommandFlagDefinition[],
+  commandPath: string,
+): void {
+  // Only a declared long flag owns the root-only spelling; a short alias that normalizes to the same key does not.
+  const declared = collectLooseCommandOptionKeysForDefinitions(definitions.map(({ long }) => ({ long })));
+  const supplied = [...ROOT_ONLY_FLAG_BY_OPTION_KEY].find(([key]) => options[key] !== undefined && !declared.has(key));
+  if (supplied === undefined) return;
+  const flag = supplied[1];
+  throw new PmCliError(`Unknown option '${flag}' for extension command '${commandPath}'. ${flag} is a root-only pm flag and this command does not declare it.`, EXIT_CODE.USAGE, {
+    code: "unknown_option",
+    flag,
+    required: `Remove ${flag}, or use it on the root command (pm --help ${flag}).`,
+    nextSteps: [`Run pm contracts --command ${commandPath} --flags-only --json to list the flags this command accepts.`],
+  });
 }
 
 /** Collect contributed flag definitions for the command paths traversed by this invocation. */
@@ -329,4 +355,4 @@ function validateDynamicExtensionCommandInvocation(
   validateDynamicExtensionCommandOptions(descriptor, options, extensionFlagDefinitions);
 }
 
-export { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation };
+export { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,refuseUndeclaredRootOnlyOptions,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation };

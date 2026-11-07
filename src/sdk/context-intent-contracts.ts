@@ -776,9 +776,13 @@ const CONTEXT_INTENT_ROW_KEYS: Readonly<
   search: ["items"],
 };
 
-interface ContextIntentCursorEnvelope {
+/** Decoded continuation cursor of a row-compacted context intent read. */
+export interface ContextIntentCursorEnvelope {
+  /** Fingerprint of the request the cursor continues, so a changed request is refused. */
   fingerprint: string;
+  /** Index of the last row already delivered. */
   after_index: number;
+  /** Snapshot identity the continuation reads from, when the producer pinned one. */
   snapshot?: string;
 }
 

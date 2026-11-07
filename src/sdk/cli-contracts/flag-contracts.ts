@@ -47,6 +47,10 @@ export interface CliFlagContract {
   cursor_semantics?: "presentation";
   /** Host reservation boundary: inherited flags are forbidden on extensions; root-only flags may have command-local meanings. */
   reservation_scope?: "inherited" | "root_only";
+  /** Runtime that owns the flag on an extension command: `host` flags reach the handler through `context.global`, `extension` flags through `context.options` (pm-gh1666). */
+  owner?: "host" | "extension";
+  /** Handler key an extension flag is delivered under in `context.options`, and the key a direct `PmClient.run` or test-harness caller passes (pm-gh1665). */
+  sdk_option?: string;
 }
 
 /** Maps an MCP tool option `param` to the CLI `flag` it forwards to, plus the value semantics (`allowEmpty`, `repeatable`, `booleanish`) the bridge needs to translate a structured tool call into argv. */
@@ -132,6 +136,35 @@ export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] =
     ...(definition.aliases ? { aliases: [...definition.aliases] } : {}),
     ...(definition.value_name ? { value_name: definition.value_name } : {}),
   }));
+
+/**
+ * Host-owned flags an extension command accepts, marked `owner: "host"` because
+ * they reach the handler through `context.global` (pm-gh1666). Read-output
+ * controls apply only when the command declares structured read output, and
+ * `--no-extensions` is never listed because it removes the command itself.
+ * The availability is declared beside each reserved flag, so a new host flag
+ * is classified where it is reserved.
+ */
+export function resolveExtensionCommandInheritedFlagContracts(
+  options: { readOutput?: boolean } = {},
+): CliFlagContract[] {
+  return RESERVED_EXTENSION_HOST_FLAGS.filter(
+    (definition) =>
+      definition.extension_command_availability === undefined ||
+      (definition.extension_command_availability === "read_output" &&
+        options.readOutput === true),
+  ).map((definition) => {
+    const valueName = definition.value_name ?? definition.discovery_value_name;
+    return {
+      flag: definition.flag,
+      reservation_scope: "inherited",
+      owner: "host",
+      ...(definition.aliases ? { aliases: [...definition.aliases] } : {}),
+      value_arity: valueName === undefined ? "none" : "required",
+      ...(valueName === undefined ? {} : { value_name: valueName }),
+    };
+  });
+}
 
 /** Public contract for global flag contracts, shared by SDK and presentation-layer consumers. */
 export const GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [

@@ -1064,7 +1064,7 @@ export interface LockLease {
 }
 
 /** Positional lock policy shared by acquireLock and acquireLockLease. */
-type AcquireLockOptions = {
+export type AcquireLockOptions = {
   /** Allow lock acquisition to initialize missing lock directories. */
   createParentDirectories?: boolean;
   /** Ceiling on the effective retry budget, including PM_LOCK_WAIT_MS. */

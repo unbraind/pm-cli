@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: architecture,"area:extensions","area:sdk"
 created_at: "2026-07-06T21:58:30.613Z"
-updated_at: "2026-09-22T05:18:41.045Z"
+updated_at: "2026-11-07T09:41:34.830Z"
 closed_at: "2026-07-14T18:08:27.801Z"
 author: maintainer-agent
 estimated_minutes: 480
@@ -62,8 +62,8 @@ learnings[1]{created_at,author,text}:
   "2026-07-14T18:08:01.631Z",codex-root,"Dynamic extension list flags cross two parsers: Commander consumes declared options before loose argv reconciliation, so an empty loose-occurrence ledger must preserve Commander values rather than replace them. Public output ownership should use a structural marker so independently installed packages do not depend on shared class identity."
 files[10]{path,scope,note}:
   src/cli/extension-command-help.ts,project,package-owned dynamic option registration
-  src/cli/extension-command-options.ts,project,package-owned option coercion
   src/core/output/output-control.ts,project,package host output primitive
+  src/sdk/extension/command-options.ts,project,package-owned option coercion
   src/sdk/index.ts,project,public SDK barrel exports lifecycle helpers and contracts
   src/sdk/runtime.ts,project,typed package and extension lifecycle PmClient/top-level primitives
   tests/integration/extension-host-contracts.integration.spec.ts,project,package host lifecycle real-boundary contracts
