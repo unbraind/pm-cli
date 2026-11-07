@@ -366,7 +366,7 @@ type ReadOutputSessionOption<Options> =
   | ("output_session" extends keyof Options ? Options["output_session"] : never);
 
 /** Keep universal budget omissions while adding references only for possible sessions. */
-type ReadOutputResultForSession<Result, Options> = Options extends unknown
+export type ReadOutputResultForSession<Result, Options> = Options extends unknown
   ? PmReadOutputResultFor<Result, { outputSession: ReadOutputSessionOption<Options> }>
   : never;
 

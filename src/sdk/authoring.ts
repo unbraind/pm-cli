@@ -182,3 +182,17 @@ export type {
   VectorStoreUpsertContext,
   VectorStoreUpsertPoint,
 } from "../core/extensions/loader.js";
+
+// pm-gh1665: the definition-driven option normalizer shared by CLI dispatch, PmClient.run, MCP and the test harness.
+export {
+  normalizeDirectExtensionCommandOptions,
+  resolveExtensionFlagOptionKey,
+  type LooseCommandFlagDefinition,
+} from "./extension/command-options.js";
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { ExtensionActivationSummary } from "../core/extensions/activation-summary.js";
+export type { ExtensionLayer, ScopedPreflightOverrideDefinition, ScopedRendererOverrideDefinition } from "../core/extensions/extension-types.js";
+export type { CommanderOptionAliasContract } from "./cli-contracts/commander-types.js";
+export type { CliFlagContract } from "./cli-contracts/flag-contracts.js";
+export type { ExactDefinition, FlagAuthoringDefinition, ItemFieldAuthoringDefinition, ItemTypeAuthoringDefinition, MigrationAuthoringDefinition, SearchProviderAuthoringDefinition, VectorStoreAdapterAuthoringDefinition } from "./define.js";

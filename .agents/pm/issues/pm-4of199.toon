@@ -1,0 +1,29 @@
+id: pm-4of199
+title: "An extension command that declares no flags hands every undeclared option to its handler, although the dynamic validator documents refusing them"
+description: "Found while fixing pm-gh1666 on 2026.11.7. An extension registers demo-plain with registerCommand and no registerFlags. pm demo-plain --bogus --json exits 0 and the handler receives options.bogus = true; pm demo-plain --all --json delivers options.all = true. validateDynamicExtensionCommandOptions in src/cli/runtime/invocation-options.ts is documented to reject all supplied options when a command declares no flags, and cli-main-errors.spec asserts that refusal on the function directly, but the built CLI never reaches it with these options. A command with declared flags refuses the same spellings as unknown options, so the two shapes disagree. The unknown-option refusal on a command with flags also lists --no-extensions and the read-output controls as expected flags, although a non-read extension command refuses them. Duplicate check: searched undeclared option, no flags, dynamic validator and unknown option across all statuses; pm-in23qu and pm-8nyc own unknown-option suggestions, not this leak."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,extensions,flags,validation
+created_at: "2026-11-07T08:59:15.085Z"
+updated_at: "2026-11-07T11:15:07.378Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "pm <cmd> --bogus on an extension command that declares no flags exits 2 with an unknown-option refusal naming the command, and the handler never runs; Root-only flags (--all, --explain) are refused the same way unless the command declares them; The unknown-option refusal on an extension command lists only the flags that command accepts: its declared flags plus its inherited host flags from pm contracts, not --no-extensions or read-output controls on a non-read command; An integration spec drives the built CLI for both command shapes, with a negative control that bypasses the validator"
+parent: pm-ugqx
+risk: low
+confidence: high
+severity: medium
+repro_steps: "Register demo-plain with registerCommand and no flags, then run pm demo-plain --bogus --json"
+expected_result: exit 2 unknown-option refusal; the handler does not run
+actual_result: exit 0 and the handler receives options.bogus = true
+affected_version: 2026.11.7
+component: extensions
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1666,discovered_from,"2026-11-07T08:59:15.085Z","harness:claude-code","cli:create:dep",detected
+  pm-8nyc,related,"2026-11-07T09:00:45.802Z","harness:claude-code","cli:update:dep",detected
+  pm-in23qu,related,"2026-11-07T09:00:45.802Z","harness:claude-code","cli:update:dep",detected
+  pm-gh1665,related,"2026-11-07T11:15:07.043Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-07T10:00:00.820Z","harness:claude-code","Root cause located (2026-11-07, while fixing a Codex review finding on the pm-gh1665/1666/1667 batch): wrapProgramActionsForExtensionHandlers in src/cli/main.ts wraps every Commander action and calls runActiveCommandHandler for a registered extension handler BEFORE the dynamic command action runs. validateDynamicExtensionCommandOptions lives only in that dynamic action (runRequiredExtensionCommand), so for a handler-backed command it is never reached. A command with declared flags is still guarded because extractCommandScopedOptions validates loose options against its definitions; a command with no flags is not. The batch PR closes only the root-only subset (--all/--explain) for every extension command, via refuseUndeclaredRootOnlyOptions in the wrapper. The general fix (call the zero-flag option validator in the wrapper) is deliberately left here: it can break packages whose handlers read options they never declared through registerFlags, so it needs a fleet census of package commands that read context.options without declarations, and a migration note.\n"
+body: ""

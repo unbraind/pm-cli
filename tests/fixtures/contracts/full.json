@@ -22705,7 +22705,7 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [
-        "cli/extension-command-options.ts"
+        "sdk/extension/command-options.ts"
       ],
       "stability": "provisional"
     },
@@ -22895,6 +22895,23 @@
         "core/extensions/extension-hook-runtime.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "extension_option_spelling_conflict",
+      "class": "usage",
+      "code": "extension_option_spelling_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Extension option spelling conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/extension/command-options.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],

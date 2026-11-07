@@ -140,6 +140,8 @@ import {
   applyDynamicExtensionFlagOptions,
   buildCanonicalExtensionAliases,
   buildDynamicExtensionCommandMetadataHelp,
+  buildExtensionInheritedFlagHelp,
+  isExtensionCreatedCommand,
   buildResidualDynamicExtensionFlagHelp,
   collectDynamicExtensionFlagHelpByCommand,
   collectExtensionCommandHelpDescriptors,
@@ -154,7 +156,7 @@ import {
   type LooseCommandFlagDefinition,
   collectLoosePositionalArgs,
   stripLooseCommandOptionTokens
-} from "./extension-command-options.js";
+} from "../sdk/extension/command-options.js";
 import { loadExtensionRecoveryFailures,loadUnknownCommandRecoveryFailures } from "./extension-recovery.js";
 import {
   attachRichHelpText,
@@ -186,7 +188,7 @@ import {
 } from "./registration-helpers.js";
 import type { RuntimeExtensionActivationProbe } from "./runtime/activation.js";
 import { activationCommandMatchesProbe,buildBootstrapActivationProbe,buildRuntimeExtensionActivationScope,buildRuntimeExtensionFilterForProbe,collectActivationCommandCandidates,collectLeadingCommandArgs,collectParsedActivationCommandArgs,commandPathNeedsSearchExtensions,commandPathNeedsTemplateExtensions,discoveryNeedsActivationForProbe,extensionActivationCommands,extensionCapabilities,extensionNeedsActivationForProbe,extensionProvidesTemplatesRuntime,hasAnyCapability,hasGlobalExtensionContributions,matchesStaticExtensionCommand,probeUsesAnyFlag,resolveStaticExtensionActivationDecision } from "./runtime/activation.js";
-import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
+import { collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,refuseUndeclaredRootOnlyOptions,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
 import type { CoreCommandRegistrationSelection } from "./runtime/selection.js";
 import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveStructuredMutationPreviewInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
 import { buildPostActionTelemetryOutcome,inferPostActionErrorCode,inferPostActionFailureMessage,normalizeTelemetryCommandResolution,normalizeTelemetryErrorCategory,normalizeTelemetryResolutionStage,readRecordBoolean,readRecordNumber,readRecordString } from "./runtime/telemetry-outcome.js";
@@ -1222,6 +1224,10 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         if (activeRuntimeExtensionCommandDescriptors.has(normalizeExtensionCommandPath(commandPath))) {
           delete commandOptions.author;
         }
+        // A core command an extension only augments with flags keeps its own --all and --explain.
+        if (isExtensionCreatedCommand(actionCommand)) {
+          refuseUndeclaredRootOnlyOptions(commandOptions, extensionFlagDefinitions, commandPath);
+        }
         const dispatchInput = { args: [...commandArgs], path: globalOptions.path };
         const parserOverride = await runActiveParserOverride({
           command: commandPath,
@@ -1326,6 +1332,24 @@ function attachDynamicExtensionHelp(command: Command, descriptor: ExtensionComma
 /* v8 ignore stop */
 
 
+/** Append an extension-created command's help sections in order: residual flags, inherited host flags (pm-gh1666), then metadata. */
+function attachDynamicCommandHelpSections(
+  command: Command,
+  residualFlagHelp: string | undefined,
+  descriptor: ExtensionCommandHelpDescriptor | undefined,
+  metadataHelp: string | null,
+): void {
+  if (residualFlagHelp) {
+    command.addHelpText("after", residualFlagHelp);
+  }
+  if (descriptor) {
+    command.addHelpText("after", buildExtensionInheritedFlagHelp(descriptor));
+  }
+  if (metadataHelp) {
+    command.addHelpText("after", metadataHelp);
+  }
+}
+
 /** Apply descendant-derived visibility to every generated extension namespace. */
 function applyDynamicExtensionRootHelpVisibility(
   rootProgram: Command,
@@ -1429,12 +1453,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
         residualDynamicFlagHelp = buildResidualDynamicExtensionFlagHelp(dynamicCommand, descriptor.flags) ?? undefined;
       }
     }
-    if (residualDynamicFlagHelp) {
-      dynamicCommand.addHelpText("after", residualDynamicFlagHelp);
-    }
-    if (metadataHelp) {
-      dynamicCommand.addHelpText("after", metadataHelp);
-    }
+    attachDynamicCommandHelpSections(dynamicCommand, residualDynamicFlagHelp, descriptor, metadataHelp);
 
     dynamicCommand
       .allowUnknownOption(true)

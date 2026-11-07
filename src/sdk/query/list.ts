@@ -553,9 +553,13 @@ function applyGovernanceMissingFilterEcho(
   }
 }
 
-interface FilterValueEchoEntry {
+/** Maps one caller-supplied list option to the compact filter summary key that echoes it. */
+export interface FilterValueEchoEntry {
+  /** Option key read from the caller input. */
   optionKey: string;
+  /** Key written into the compact filter summary. */
   summaryKey: string;
+  /** Optional transform applied to the value before it is echoed. */
   normalize?: (value: unknown) => unknown;
 }
 

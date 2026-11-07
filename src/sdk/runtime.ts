@@ -74,6 +74,10 @@ import {
 } from "./duplicates.js";
 import { createExtensionCommandSdk } from "./extension-command-context.js";
 import {
+  collectExtensionFlagDefinitionsForCommand,
+  normalizeDirectExtensionCommandOptions,
+} from "./extension/command-options.js";
+import {
   type ExtensionCommandOptions,
   type ExtensionCommandResult
 } from "./extension.js";
@@ -700,12 +704,14 @@ interface PmClientDefaults {
   [ACTIVE_EXTENSION_HOST_CONTEXT]?: true;
 }
 
-type ReadOptions<Options> = Options & PmReadOutputOptions;
+/** Command options of a read method combined with the universal read-output controls. */
+export type ReadOptions<Options> = Options & PmReadOutputOptions;
 
 /** Omitted options carry neither producer cursors nor explicit budget controls. */
-type InitialReadOptions = Record<never, never>;
+export type InitialReadOptions = Record<never, never>;
 
-type ReadPromise<Result, Options> = Promise<
+/** Promise a PmClient read method returns, typed by the read-output projection its options request. */
+export type ReadPromise<Result, Options> = Promise<
   PmReadOutputResultFor<Result, Options>
 >;
 
@@ -2873,10 +2879,18 @@ async function dispatchActiveExtensionAction(
     );
   }
   const extensionAuthor = typeof options.author === "string" ? options.author : global.author;
+  const commandPath = normalizeCommandPath(command);
+  // pm-gh1665: a direct caller's CLI spelling (`status-filter`) folds into the handler key and
+  // receives the same defaults and coercion as CLI dispatch, through the shared normalizer.
+  const handlerOptions = normalizeDirectExtensionCommandOptions(
+    extensionOptionsFromArgs(args, options),
+    collectExtensionFlagDefinitionsForCommand(active.registrations, commandPath),
+    commandPath,
+  );
   const handlerResult = await runActiveCommandHandler({
-    command: normalizeCommandPath(command),
+    command: commandPath,
     args: readStringArray(options.args ?? args.args),
-    options: extensionOptionsFromArgs(args, options),
+    options: handlerOptions,
     global: { ...global, author: extensionAuthor },
     pm_root: active.pmRoot,
     sdk: createExtensionCommandSdk(
@@ -2886,7 +2900,7 @@ async function dispatchActiveExtensionAction(
         author: extensionAuthor,
       }),
       extensionAuthor,
-      normalizeCommandPath(command),
+      commandPath,
     ),
   });
   if (!handlerResult.handled) {
@@ -3209,3 +3223,26 @@ export type { ContractsCommandOptions,ContractsResult };
     ValidateCountsResult,
     ValidateResult
   };
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { ExtensionRegistrationRegistry, OnReadHookContext, OnWriteHookContext } from "../core/extensions/extension-types.js";
+export type { HistoryHashAlgorithm } from "../core/history/digest.js";
+export type { ItemDocumentFormatOptions } from "../core/item/item-format.js";
+export type { ItemTypeRegistry } from "../core/item/type-registry.js";
+export type { AcquireLockOptions } from "../core/lock/lock.js";
+export type { RuntimeFieldRegistry, RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+export type { AuthorSource } from "../core/shared/author.js";
+export type { LocatedItem } from "../core/store/item-store.js";
+export type { BackgroundLogStream, BackgroundTestRunStatus } from "../core/test/background-runs.js";
+export type { ConfidenceTextLevel, HistoryEntry, ItemFormat, RuntimeSchemaSettings } from "../types.js";
+export type { GraphSubcommand } from "./cli-contracts/enum-contracts.js";
+export type { PmCreateActionOptions, PmUpdateActionOptions } from "./cli-contracts/typed-action-inputs.js";
+export type { CompletionRuntimeConfig } from "./completion/shared.js";
+export type { ValidateCheck } from "./governance/validate.js";
+export type { GraphCommandOptions, GraphResult } from "./graph/run.js";
+export type { HistoryCompactBulkCommandOptions, HistoryCompactBulkResult, HistoryCompactCommandOptions, HistoryCompactResult } from "./history-compact.js";
+export type { HistoryRedactCommandOptions, HistoryRedactResult } from "./history-redact.js";
+export type { HistoryRepairAllResult, HistoryRepairCommandOptions, HistoryRepairResult } from "./history-repair.js";
+export type { ClaimNextResult } from "./lifecycle/claim.js";
+export type { UpdateOperationOptions } from "./lifecycle/update.js";
+export type { CalendarOutputFormat } from "./query/calendar.js";

@@ -90,3 +90,16 @@ export {
   type EmbeddingBatchProgressEvent,
 } from "../core/search/embedding-batches.js";
 export type { EmbeddingProviderConfig } from "../core/search/providers.js";
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { ItemTypeRegistry } from "../core/item/type-registry.js";
+export type { RuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+export type { GlobalOptions } from "../core/shared/command-types.js";
+export type { ContextDepth, ContextSectionName, ContextSettings, HistoryEntry, ItemMetadata, ItemStatus, ItemType, LinkScope, PmSettings } from "../types.js";
+export type { ContentFieldFilters } from "../core/governance/content-fields.js";
+export type { MissingMetadataFilters } from "../core/governance/metadata-coverage.js";
+export type { CliFlagContract } from "./cli-contracts/flag-contracts.js";
+export type { FilterValueEchoEntry } from "./query/list.js";
+export type { SearchRenderingQueryExpansion, SearchRenderingRerank } from "./query/search-rendering.js";
+export type { ImplicitSemanticFallbackReason, VectorIndexRecovery, VectorIndexRecoveryRegistrations } from "./query/search/semantic.js";
+export type { FindDuplicateClustersOptions } from "./similarity.js";

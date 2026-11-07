@@ -2,11 +2,13 @@ id: pm-gh1666
 title: "GH-1666: per-command help and contracts for extension commands omit the inherited host flags (--json, --author, --pm-path) the command accepts and mark no flag as host- or extension-owned"
 description: "GitHub issue #1666 (reported 2026-11-04 against 2026.11.4, found while authoring an extension from the published docs). For an extension command demo-brief that declares --item-id, --status-filter and --commit, pm demo-brief --help shows the three extension flags plus -h/--help, while pm help demo-brief --json and pm contracts --command demo-brief --flags-only --json list only the three extension flags. Yet pm demo-brief --json works, as do --author and --pm-path. The public GLOBAL_FLAG_CONTRACTS table declares these flags as inherited, but focused discovery neither links that table nor says that inherited flags were left out, so an agent has to probe the command to learn what it accepts (the reporter's four probes cost about 2.6 s and about 2.7k output tokens). Extension authors face the converse confusion: the pm-brief package carries a documented helper, resolveBriefFormat, to reconcile an explicit format, global.json and direct-test options.json, because nothing tells a renderer author which object a host-consumed flag arrives in. Expected: command-specific discovery returns the effective applicable flags, or an explicit executable route to the inherited contract, each flag is marked host-owned (delivered through context.global) or extension-owned (delivered in context.options), and root-only flags or read-output controls the command does not support stay excluded so the list does not overstate support. Why it matters for agents: per-command contracts are the documented source of exact flags, and an agent that trusts them either under-uses the command or keeps re-probing it. Related: pm-ill9gv (GH-719) made host-owned globals canonical and delivered through context.global, but discovery still omits them. pm-gh1363 is the broad discovery plan, which the report notes does not specify this inventory. pm-gh1665 asks the same contracts to publish the handler key for extension flags. Duplicate check: searched extension command help, inherited global flags, GLOBAL_FLAG_CONTRACTS and per-command contracts across all statuses, and no item owns the omission of inherited flags from per-command discovery."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,contracts,discoverability,extensions,"gh:1666",help
 created_at: "2026-11-05T06:09:19.310Z"
-updated_at: "2026-11-05T06:09:19.310Z"
+updated_at: "2026-11-07T11:27:43.585Z"
+closed_at: "2026-11-07T11:10:34.458Z"
+completed_at: "2026-11-07T11:10:34.458Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "pm help <extension-command> --json and pm contracts --command <extension-command> --flags-only --json list the host flags the command accepts (at least --json, --author and --pm-path), or carry an explicit inherited-flags reference with an executable command that returns them; Every listed flag carries an ownership marker: host for flags delivered through context.global and extension for flags delivered in context.options; Root-only flags and read-output controls the command does not accept are excluded, proven by a spec that invokes every listed flag on a mutating extension command and expects none to be refused as unknown; Text help for an extension command names the inherited host flags or points to where they are listed; Negative control: dropping the inherited flags from the per-command contract fails the spec"
@@ -15,12 +17,40 @@ risk: low
 confidence: medium
 severity: low
 repro_steps: "For an extension command with three declared flags, run pm <cmd> --help, pm help <cmd> --json and pm contracts --command <cmd> --flags-only --json, then pm <cmd> --json. The inherited flags work but are not listed"
+resolution: "pm contracts --command <ext> --flags-only --json now carries inherited_flags (owner host, delivered through context.global) for registered extension commands, and pm help <ext> --json carries the same rows as inherited_options; text help prints an Inherited host flags section that points at the contracts command. The rows derive from extension_command_availability declared beside each reserved host flag (read-output controls only on commands that declare read_output; --no-extensions never listed; discovery_value_name path for --pm-path), so a new host flag is classified where it is reserved. Extension rows carry owner extension and sdk_option. CLI dispatch refuses an undeclared root-only --all or --explain on an extension-created command (refuseUndeclaredRootOnlyOptions in the action wrapper) instead of leaking it into context.options; core commands an extension only augments keep their own --all."
 expected_result: "Per-command discovery for an extension command lists every flag it accepts with host or extension ownership, without overstating support"
-actual_result: "help --json and contracts --flags-only list only the three extension flags, while --json, --author and --pm-path work on the command"
+actual_result: "The integration spec reads inherited_flags from the contract and invokes every listed flag except --help on a mutating command with exit 0, asserts --json, --author, --pm-path, --output-format and --expect-hash are present and read-output controls, --no-extensions and root-only flags absent, checks text and JSON help carry the same set, and refuses --all/--explain on commands with and without declared flags while pm list --all still works with an extension flag on list"
 affected_version: 2026.11.4
 component: help
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1363,related,"2026-11-05T06:09:19.310Z","harness:claude-code","cli:create:dep",detected
   pm-gh1665,related,"2026-11-05T06:09:19.310Z","harness:claude-code","cli:create:dep",detected
   pm-ill9gv,related,"2026-11-05T06:09:19.310Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-07T09:04:26.135Z","harness:claude-code","Implementation evidence (branch feat/extension-authoring-contracts, 2026-11-07).\n\nProbe of the built 2026.11.7 CLI against a sandbox extension (pm demo-brief with --item-id, --status-filter, --commit), one host flag per run:\n- accepted: --json, --lean, --token-accounting, --output-format, --quiet, --no-changed-fields, --full-changed-fields, --id-only, --pm-path (alias --path), --no-pager, --profile, --help, --author, --expect-hash (refuses a malformed revision, accepts id=item_hash);\n- refused on a non-read command: --output-include, --output-limit, --output-budget, --output-session, --output-cursor, --output-row-contract (Universal output controls apply only to read commands);\n- --no-extensions removes the command itself (unknown command);\n- root-only --all and --explain leaked into the handler options as all/explain = true.\n\nChange:\n- RESERVED_EXTENSION_HOST_FLAGS declares extension_command_availability per flag (read_output for the six read-output controls, never for --no-extensions) and discovery_value_name path for --pm-path, so availability is data next to the reservation.\n- resolveExtensionCommandInheritedFlagContracts derives the applicable host rows (owner host, reservation_scope inherited, value_arity, value_name).\n- pm contracts --command <ext> --flags-only --json gains inherited_flags for registered extension commands (help and item, which are core commands without a core flag table, are excluded); every extension row carries owner extension and sdk_option.\n- pm help <ext> --json gains inherited_options (same rows, owner host); options rows carry owner and sdk_option. Text help prints an Inherited host flags section that points at the contracts command.\n- CLI dispatch refuses an undeclared root-only flag on an extension command with the existing unknown-option refusal instead of leaking it.\n\nVerified by tests/integration/extensions/extension-option-contract.integration.spec.ts: it reads inherited_flags from the contract, invokes every listed flag (except --help) on a mutating command that records a comment, and expects exit 0 for each; it asserts --json, --author, --pm-path, --output-format and --expect-hash are listed (negative control: dropping the rows fails), that excluded flags stay out, that text and JSON help carry the same set, and that --all/--explain are refused.\n\nFollow-ups filed: pm-4of199 (a command that declares NO flags still hands any undeclared option to its handler; the unknown-option message lists flags the command refuses) and pm-6vk110 (core per-command contracts and help omit inherited host flags too).\n"
+  "2026-11-07T10:00:02.980Z","harness:claude-code","Codex round 1 on the batch: the undeclared root-only refusal (--all/--explain) now runs in the extension action wrapper for every extension command, including commands that declare no flags; covered by the integration spec with demo-plain. Details on pm-gh1665."
+files[9]{path,scope}:
+  scripts/release/surface-replication-sets.json,project
+  src/cli/extension-command-help.ts,project
+  src/cli/help-json-payload.ts,project
+  src/cli/main.ts,project
+  src/cli/runtime/invocation-options.ts,project
+  src/core/extensions/reserved-host-flags.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/runtime-contracts.ts,project
+  tests/integration/extensions/extension-option-contract.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/extension-option-contract.integration.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,project,900,"harness:claude-code","2026-11-07T10:28:44.221Z",local_mutation,feat/extension-authoring-contracts
+docs[2]{path,scope}:
+  docs/EXTENSIONS.md,project
+  docs/SDK.md,project
+close_reason: "Extension commands list every flag they accept, marked host- or extension-owned"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1666
+  gate_id: extension-inherited-flag-discovery
+  negative_control: node scripts/run-tests.mjs test -- tests/integration/extensions/extension-option-contract.integration.spec.ts
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/integration/extensions/extension-option-contract.integration.spec.ts tests/unit/commands/workspace/contracts-command.spec.ts,node scripts/contracts-snapshot.mjs --check,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

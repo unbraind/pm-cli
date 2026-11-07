@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:extensions","area:sdk",command-contracts,github-intake
 created_at: "2026-10-13T20:29:26.956Z"
-updated_at: "2026-10-13T23:40:51.591Z"
+updated_at: "2026-11-07T09:38:05.898Z"
 closed_at: "2026-10-13T23:40:50.818Z"
 completed_at: "2026-10-13T23:40:50.818Z"
 author: "harness:codex"
@@ -36,10 +36,10 @@ learnings[2]{created_at,author,text}:
 files[13]{path,scope}:
   sdk/public-surface.json,project
   src/cli/extension-command-help.ts,project
-  src/cli/extension-command-options.ts,project
   src/core/extensions/flag-definition-validation.ts,project
   src/core/extensions/flag-value-types.ts,project
   src/sdk/cli-contracts/runtime-contracts.ts,project
+  src/sdk/extension/command-options.ts,project
   src/sdk/runtime-primitives.ts,project
   tests/integration/extensions/authoring-output.integration.spec.ts,project
   tests/unit/cli/extension-command-help.spec.ts,project

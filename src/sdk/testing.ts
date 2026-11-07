@@ -136,6 +136,10 @@ import {
   resolveActivatablePropertyRecord,
 } from "../core/shared/primitives.js";
 import { createExtensionCommandSdk } from "./extension-command-context.js";
+import {
+  collectExtensionFlagDefinitionsForCommand,
+  normalizeDirectExtensionCommandOptions,
+} from "./extension/command-options.js";
 import { PmClient } from "./runtime.js";
 
 /** Host-pinned TOON codecs for semantic package-output assertions without deep imports. */
@@ -219,6 +223,12 @@ export interface RunRegisteredCommandForTestOptions {
     global: GlobalOptions;
   }) => ExtensionCommandSdk;
 }
+
+/** Flag registrations of each activation, so the command harness normalizes options against the declared flags. */
+const ACTIVATED_COMMAND_FLAG_REGISTRATIONS = new WeakMap<
+  ExtensionCommandRegistry,
+  Pick<ExtensionActivationResult["registrations"], "flags">
+>();
 
 /** Options for invoking a registered transactional mutation guard in package tests. */
 export interface RunRegisteredMutationGuardForTestOptions {
@@ -499,7 +509,8 @@ const RUNNABLE_HOOK_KIND_TO_REGISTRY_FIELD = {
   keyof ExtensionHookRegistry
 >;
 
-type RegisteredHookEntry<TKind extends RegisteredHookKind> = NonNullable<
+/** One registered hook of the given lifecycle kind, as stored in the extension hook registry. */
+export type RegisteredHookEntry<TKind extends RegisteredHookKind> = NonNullable<
   ExtensionHookRegistry[(typeof HOOK_KIND_TO_REGISTRY_FIELD)[TKind]]
 >[number];
 
@@ -909,7 +920,7 @@ export async function activateExtensionForTest(
   options: ActivateExtensionForTestOptions = {},
 ): Promise<ExtensionActivationResult> {
   const manifest = readTestExtensionManifest(module);
-  return activateExtensions(
+  const activation = await activateExtensions(
     buildSingleExtensionLoadResult(module, manifest, {
       name: resolveTestExtensionName(manifest, options.name),
       layer: options.layer ?? "project",
@@ -917,6 +928,8 @@ export async function activateExtensionForTest(
       policy: options.policy ?? createDefaultExtensionGovernancePolicy(),
     }),
   );
+  ACTIVATED_COMMAND_FLAG_REGISTRATIONS.set(activation.commands, activation.registrations);
+  return activation;
 }
 
 /**
@@ -965,6 +978,13 @@ export async function deactivateExtensionForTest(
  * the `"<name> import"` / `"<name> export"` command paths, this same helper
  * exercises importer and exporter handlers too.
  *
+ * When `commands` comes from {@link activateExtensionForTest}, `options` pass
+ * through the same definition-driven normalizer as CLI dispatch and
+ * `PmClient.run` (pm-gh1665): a declared CLI spelling such as `status-filter`
+ * folds into the handler key `statusFilter`, declared defaults and value
+ * coercion apply, two spellings with different values are refused with
+ * `extension_option_spelling_conflict`, and undeclared keys pass through.
+ *
  * Throws a descriptive error (listing the available handler command paths) when
  * no handler is registered for `command`, since that is a wiring/typo bug in the
  * test rather than a behavior under test. When a handler is found, the result is
@@ -1006,10 +1026,19 @@ export async function runRegisteredCommandForTest(
     (pmRoot.length > 0
       ? createExtensionCommandSdk(pmRoot, new PmClient({ pmRoot }), undefined, command)
       : undefined);
+  const registrations = ACTIVATED_COMMAND_FLAG_REGISTRATIONS.get(commands);
+  const handlerOptions = options.options ? { ...options.options } : {};
   return runCommandHandler(commands, {
     command,
     args: options.args ? [...options.args] : [],
-    options: options.options ? { ...options.options } : {},
+    options:
+      registrations === undefined
+        ? handlerOptions
+        : normalizeDirectExtensionCommandOptions(
+            handlerOptions,
+            collectExtensionFlagDefinitionsForCommand(registrations, command),
+            command,
+          ),
     global,
     pm_root: pmRoot,
     ...(sdk === undefined ? {} : { sdk }),
@@ -2925,3 +2954,10 @@ export async function createExtensionTestHarness(
     },
   };
 }
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { CommandHandlerResult, CommandOverrideContext, CommandOverrideResult, ExtensionActivationResult, ExtensionCommandRegistry, ExtensionDeactivationResult, ExtensionHookRegistry, ExtensionManifest, ExtensionParserRegistry, ExtensionPreflightRegistry, ExtensionRegistrationRegistry, ExtensionRendererRegistry, ExtensionServiceRegistry, ParserOverrideContext, ParserOverrideResult, PreflightOverrideContext, PreflightOverrideResult, RegisteredExtensionCommandOverride, RegisteredExtensionExporter, RegisteredExtensionFlagDefinitions, RegisteredExtensionImporter, RegisteredExtensionParserOverride, RegisteredExtensionPreflightOverride, RegisteredExtensionRendererOverride, RegisteredExtensionSchemaMigrationDefinition, RegisteredExtensionSearchProvider, RegisteredExtensionServiceOverride, RegisteredExtensionVectorStoreAdapter, RendererOverrideContext, RendererOverrideResult, ServiceOverrideContext, ServiceOverrideResult } from "../core/extensions/extension-types.js";
+export type { PmPackageManifest } from "../core/packages/manifest.js";
+export type { ProjectProfileLintReport } from "../core/profile/profile-lint.js";
+export type { ProjectProfileDefinition } from "../core/profile/profile-presets.js";
+export type { ExtensionManifestCompatibilityManifest, ExtensionManifestCompatibilityResult, ExtensionManifestCompatibilityTarget, ExtensionPreflightReport, PreflightExtensionOptions } from "./compose.js";

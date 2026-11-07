@@ -146,7 +146,9 @@ export interface ExecuteVectorRequestOptions {
   warnings?: string[];
 }
 
-type VectorSettingsInput = {
+/** Settings subset that configures the vector store semantic search reads and writes. */
+export type VectorSettingsInput = {
+  /** Collection name plus Qdrant or LanceDB connection settings. */
   vector_store?: {
     collection_name?: string;
     qdrant?: {

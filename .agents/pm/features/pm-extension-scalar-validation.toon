@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags: []
 created_at: "2026-10-14T16:21:40.172Z"
-updated_at: "2026-10-16T14:04:28.855Z"
+updated_at: "2026-11-07T09:41:45.847Z"
 closed_at: "2026-10-16T14:04:28.036Z"
 completed_at: "2026-10-16T14:04:28.036Z"
 author: "harness:codex"
@@ -31,9 +31,6 @@ comments[9]{created_at,author,text}:
   "2026-10-16T13:43:07.054Z","harness:codex","Latest full-review remediation: attached boolean-switch values are checked before list presence normalization. CSV lists validate split entries while repeatable lists preserve each occurrence; malformed canonical/alias tokens and empty/CSV-empty entries refuse, while valid true/false/1/0 lists and positional presence retain order and semantics. All 137 linked scalar/loader/public CLI tests pass. Three filtered old-head regressions fail on unchanged 53aa49473; the final full-source run remains required."
   "2026-10-16T14:04:26.988Z","harness:codex","Final local acceptance: 10540 tests pass with three skips and exact source coverage: 69207/69207 statements, 53134/53134 branches, 14251/14251 functions and 65701/65701 lines. The scalar/loader/CLI linked command passes 137 cases and the SDK/CLI/MCP command passes 87. Three filtered regressions fail on isolated unchanged 53aa49473. Nine packed npx/bunx workflows, four typecheck projects, focused lint, docs links and generated contract/error/capability/SDK surface checks pass. Final-head hosted checks and full review remain required."
 files[7]:
-  - path: src/cli/extension-command-options.ts
-    scope: project
-    note: strict scalar validation before dispatch
   - path: src/cli/runtime/invocation-options.ts
     scope: project
     note: command path threaded into coercion
@@ -46,6 +43,9 @@ files[7]:
   - path: src/core/extensions/registration-contracts.ts
     scope: project
     note: value_validation registration validation
+  - path: src/sdk/extension/command-options.ts
+    scope: project
+    note: strict scalar validation before dispatch
   - path: tests/integration/extensions/extension-flag-value-validation.integration.spec.ts
     scope: project
     note: public CLI strict scalar acceptance

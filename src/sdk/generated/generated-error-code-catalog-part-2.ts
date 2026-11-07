@@ -8,6 +8,12 @@ import type { PmErrorCodeCatalogRow } from "./error-code-catalog-rows.js";
 /** Generated partition 2 of the exhaustive error-code catalog, as compact rows. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
+    code: "merge_root_not_found",
+    exit_code: 3,
+    stable: true,
+    sources: ["sdk/merge/install.ts"],
+  },
+  {
     code: "merge_settlement_hook_conflict",
     exit_code: 4,
     sources: ["sdk/merge/settlement-hook.ts"],

@@ -56,7 +56,6 @@ src/
       extension/
     help-content.ts
     error-guidance.ts
-    extension-command-options.ts
   core/
     extensions/
       loader.ts
@@ -101,6 +100,8 @@ src/
         semantic.ts
         response.ts
         types.ts
+    extension/
+      command-options.ts
     mcp/
       discovery.ts
   types/

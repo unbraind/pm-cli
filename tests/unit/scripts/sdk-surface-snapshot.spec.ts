@@ -54,6 +54,17 @@ interface SurfaceModule {
     entrypoints: SurfaceSnapshot["entrypoints"],
     exclusions?: Record<string, string>,
   ): NonNullable<SurfaceSnapshot["aggregate_completeness"]>;
+  analyzeSignatureTypeReachability(
+    program: ts.Program,
+    declarationPath: string,
+    packageRoot: string,
+  ): {
+    checked_functions: number;
+    checked_values: number;
+    exempt_test_seams: number;
+    referenced_types: number;
+    missing: Array<{ type: string; declared_in: string; referenced_by: string[] }>;
+  };
   listPublishedCodeExports(packageJson: unknown): string[];
   findUnclassifiedPackageCodeExports(
     packageJson: unknown,
@@ -324,6 +335,170 @@ describe("SDK surface snapshot semantics", () => {
       ]),
     });
   });
+  it("reports package types a function signature names but its entrypoint does not export (pm-gh1667)", async () => {
+    const mod = await loadModule();
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-signature-types-"));
+    temporaryRoots.push(root);
+    const dist = path.join(root, "dist");
+    await mkdir(dist, { recursive: true });
+    await writeFile(
+      path.join(dist, "run.d.ts"),
+      [
+        "export interface Hidden { a: number }",
+        "export type Visible = { b: string };",
+        "export interface Options { c: boolean }",
+        "",
+      ].join("\n"),
+    );
+    await writeFile(
+      path.join(dist, "other.d.ts"),
+      "export interface Hidden { different: true }\n",
+    );
+    const entryPath = path.join(dist, "entry.d.ts");
+    const writeEntry = (lines: string[]) => writeFile(entryPath, `${lines.join("\n")}\n`);
+    const analyze = () => {
+      const program = ts.createProgram([entryPath], {
+        module: ts.ModuleKind.NodeNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        target: ts.ScriptTarget.ES2022,
+        skipLibCheck: true,
+      });
+      return mod.analyzeSignatureTypeReachability(program, entryPath, root);
+    };
+    await writeEntry([
+      'import type { Hidden, Options, Visible } from "./run.js";',
+      'export type { Hidden as Renamed } from "./other.js";',
+      'export type { Visible } from "./run.js";',
+      "export declare function readHidden<T extends Options>(value: T): Promise<Map<string, Hidden>>;",
+      "export declare function writeHidden(value: Hidden, visible: Visible): void;",
+      "export declare function untyped(env: NodeJS.ProcessEnv, missing: Missing);",
+      "export declare function merged(): void;",
+      "export declare namespace merged { const marker: number; }",
+      // Typed and callable values name their types through the annotation (Codex review, pm-gh1667).
+      "export declare const typedValue: Hidden;",
+      'export declare const callableValue: (options: import("./run.js").Options) => void;',
+      "export declare let untypedValue;",
+    ]);
+    const gaps = analyze();
+    expect(gaps).toEqual({
+      checked_functions: 4,
+      checked_values: 3,
+      exempt_test_seams: 0,
+      referenced_types: 3,
+      missing: [
+        { type: "Hidden", declared_in: "dist/run.d.ts", referenced_by: ["readHidden", "typedValue", "writeHidden"] },
+        { type: "Options", declared_in: "dist/run.d.ts", referenced_by: ["callableValue", "readHidden"] },
+      ],
+    });
+    // A same-named but different exported type does not satisfy the reference: identity is by declaration.
+    expect(gaps.missing.map((entry) => entry.type)).toContain("Hidden");
+    await writeEntry([
+      'import type { Options } from "./run.js";',
+      'export type { Hidden, Visible } from "./run.js";',
+      'import type { Hidden, Visible } from "./run.js";',
+      "export declare function readHidden<T extends Options>(value: T): Promise<Map<string, Hidden>>;",
+      "export declare function writeHidden(value: Hidden, visible: Visible): void;",
+    ]);
+    expect(analyze().missing).toEqual([
+      { type: "Options", declared_in: "dist/run.d.ts", referenced_by: ["readHidden"] },
+    ]);
+    // Negative control: re-exporting the last named type closes the gap.
+    await writeEntry([
+      'export type { Hidden, Options, Visible } from "./run.js";',
+      'import type { Hidden, Options, Visible } from "./run.js";',
+      "export declare function readHidden<T extends Options>(value: T): Promise<Map<string, Hidden>>;",
+      "export declare function writeHidden(value: Hidden, visible: Visible): void;",
+    ]);
+    expect(analyze()).toMatchObject({ checked_functions: 2, checked_values: 0, referenced_types: 3, missing: [] });
+    // An inline import type names the same declaration as a direct reference.
+    await writeEntry(['export declare function inline(): import("./run.js").Hidden;']);
+    expect(analyze().missing).toEqual([
+      { type: "Hidden", declared_in: "dist/run.d.ts", referenced_by: ["inline"] },
+    ]);
+    await writeEntry(['export declare function moduleOnly(): typeof import("./run.js");']);
+    expect(analyze()).toMatchObject({ checked_functions: 1, referenced_types: 0, missing: [] });
+    // Type queries and enum members name their declarations too (Codex review round 2).
+    await writeFile(
+      path.join(dist, "values.d.ts"),
+      [
+        'import type { Options } from "./run.js";',
+        "export declare class HiddenClass { ready: boolean }",
+        "export declare enum State { Ready = 0 }",
+        "export declare function internalRun(options: Options): void;",
+        "export declare function recursive(): typeof recursive;",
+        "export declare namespace Space { const marker: number; }",
+        "",
+      ].join("\n"),
+    );
+    await writeEntry([
+      'import { HiddenClass, State, internalRun, recursive, Space } from "./values.js";',
+      "export declare function make(ctor: typeof HiddenClass): void;",
+      "export declare function read(): State.Ready;",
+      "export declare function instance(): typeof HiddenClass.prototype;",
+      "export declare const runAlias: typeof internalRun;",
+      "export declare const loop: typeof recursive;",
+      "export declare const space: typeof Space;",
+      "export declare const _testOnlySeam: { run: typeof internalRun };",
+    ]);
+    expect(analyze()).toEqual({
+      checked_functions: 3,
+      checked_values: 3,
+      exempt_test_seams: 1,
+      referenced_types: 3,
+      missing: [
+        { type: "HiddenClass", declared_in: "dist/values.d.ts", referenced_by: ["instance", "make"] },
+        { type: "Options", declared_in: "dist/run.d.ts", referenced_by: ["runAlias"] },
+        { type: "State", declared_in: "dist/values.d.ts", referenced_by: ["read"] },
+      ],
+    });
+    // Querying a method or a callable property follows that member's signature (Codex review round 3).
+    await writeFile(
+      path.join(dist, "api.d.ts"),
+      [
+        'import type { Hidden, Options } from "./run.js";',
+        "export declare const api: { run(options: Options): void; call: (value: Hidden) => void };",
+        "",
+      ].join("\n"),
+    );
+    await writeEntry([
+      'import { api } from "./api.js";',
+      "export declare function viaMethod(): typeof api.run;",
+      "export declare const viaProperty: typeof api.call;",
+    ]);
+    expect(analyze().missing).toEqual([
+      { type: "Hidden", declared_in: "dist/run.d.ts", referenced_by: ["viaProperty"] },
+      { type: "Options", declared_in: "dist/run.d.ts", referenced_by: ["viaMethod"] },
+    ]);
+    const program = ts.createProgram([entryPath], {});
+    expect(() =>
+      mod.analyzeSignatureTypeReachability(program, path.join(dist, "absent.d.ts"), root),
+    ).toThrow("SDK declaration entrypoint has no module symbol");
+  }, 120_000);
+
+  it("refuses to build a snapshot while a public signature names an unexported type", async () => {
+    const mod = await loadModule();
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-sdk-signature-gate-"));
+    temporaryRoots.push(root);
+    await mkdir(path.join(root, "dist"), { recursive: true });
+    await mkdir(path.join(root, "src", "sdk"), { recursive: true });
+    await writeFile(path.join(root, "dist", "types.d.ts"), "export interface ProjectedResult { ok: true }\n");
+    await writeFile(
+      path.join(root, "dist", "entry.d.ts"),
+      'import type { ProjectedResult } from "./types.js";\nexport declare function runProjected(): Promise<ProjectedResult>;\n',
+    );
+    const exportNames = [".", "./cli", "./sdk", "./sdk/authoring", "./sdk/contracts", "./sdk/core", "./sdk/governance", "./sdk/graph", "./sdk/merge", "./sdk/query", "./sdk/runtime", "./sdk/testing"];
+    await writeFile(
+      path.join(root, "package.json"),
+      JSON.stringify({
+        name: "fixture",
+        exports: Object.fromEntries(exportNames.map((name) => [name, { types: "./dist/entry.d.ts" }])),
+      }),
+    );
+    await expect(mod.buildSdkSurfaceSnapshot({ repoRoot: root })).rejects.toThrow(
+      "./sdk/graph: ProjectedResult (declared in dist/types.d.ts; named by runProjected)",
+    );
+  }, 120_000);
+
   it("sorts object keys recursively while preserving array order", async () => {
     const mod = await loadModule();
     expect(mod.stableJson({ z: [{ b: 2, a: 1 }], a: 1 })).toBe(

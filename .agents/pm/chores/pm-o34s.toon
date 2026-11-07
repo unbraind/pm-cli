@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:codefactor","area:extensions",living-map,pm-cli
 created_at: "2026-06-30T20:28:51.469Z"
-updated_at: "2026-09-22T05:12:37.506Z"
+updated_at: "2026-11-07T09:41:39.195Z"
 closed_at: "2026-07-01T00:55:07.349Z"
 author: claude-code-agent
 parent: pm-92if
@@ -39,12 +39,12 @@ files[17]{path,scope,note}:
   src/cli/commands/list-filter-shared.ts,project,Replaces long scalar filter condition chains with typed filter key helpers
   src/cli/commands/query/search.ts,project,Reduced search filter and scorer complexity through explicit helper boundaries
   src/cli/commands/test/test.ts,project,Reduced linked-test command complexity in parser/assertion and invocation-detection helpers
-  src/cli/extension-command-options.ts,project,Extracts extension option coercion helpers for lower complexity
   src/cli/registration-helpers.ts,project,Extracts option-normalization helpers used by command registration
   src/core/extensions/extension-policy.ts,project,Splits extension policy normalization and evaluation helpers
   src/core/item/item-format.ts,project,"Removed all item-format cyclomatic-complexity suppressions by splitting validation,normalization,and sort helpers"
   src/mcp/server.ts,project,Replaces large MCP action dispatch switch with action handler map
   src/sdk/cli-contracts/tool-schema.ts,project,Extracts SDK tool-schema action branch helpers
+  src/sdk/extension/command-options.ts,project,Extracts extension option coercion helpers for lower complexity
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,Covers MCP install alias after action dispatcher complexity refactor
   tests/unit/core/extensions/extension-policy.spec.ts,project,Covers missing extension policy fallback branch after normalization refactor
   tests/unit/core/item/item-format-internal.spec.ts,project,Covers linked-test empty-normalization branches after item-format refactor

@@ -13,14 +13,21 @@ import type { SearchMatchMode, SearchOptions } from "./search.js";
 /** Search execution modes represented in response metadata. */
 export type SearchMode = "keyword" | "semantic" | "hybrid";
 
-interface SearchRenderingQueryExpansion {
+/** Query expansion state reported in verbose search filters. */
+export interface SearchRenderingQueryExpansion {
+  /** Whether query expansion ran for this search. */
   enabled: boolean;
+  /** Provider that expanded the query, or null when none ran. */
   provider: string | null;
 }
 
-interface SearchRenderingRerank {
+/** Reranking state reported in verbose search filters. */
+export interface SearchRenderingRerank {
+  /** Whether reranking ran for this search. */
   enabled: boolean;
+  /** Model that reranked the candidates. */
   model: string;
+  /** Number of candidates passed to the reranker. */
   top_k: number;
 }
 

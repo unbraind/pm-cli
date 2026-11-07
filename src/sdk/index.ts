@@ -1411,3 +1411,71 @@ export type {
   PmSettings,
   StructuredJsonValue,
 } from "../types/index.js";
+
+// pm-gh1665: the definition-driven option normalizer shared by CLI dispatch, PmClient.run, MCP and the test harness.
+export {
+  normalizeDirectExtensionCommandOptions,
+  resolveExtensionFlagOptionKey,
+  type LooseCommandFlagDefinition,
+} from "./extension/command-options.js";
+
+// Types named by this entrypoint's exported function signatures, so consumers can import them (pm-gh1667).
+export type { CheckpointRestoreFn, CheckpointRollbackResult, LoadedMutationCheckpoint } from "../core/checkpoint/mutation-checkpoint.js";
+export type { CommandOverrideResult, DiscoverExtensionsOptions, ExtensionLayer, LoadedExtension, ParserOverrideResult, PreflightOverrideResult, RegisteredExtensionCommandOverride, RegisteredExtensionParserOverride, RegisteredExtensionPreflightOverride, RegisteredExtensionRendererOverride, RendererOverrideResult, ScopedPreflightOverrideDefinition, ScopedRendererOverrideDefinition, ServiceOverrideResult } from "../core/extensions/extension-types.js";
+export type { FlagValueKind } from "../core/extensions/flag-value-types.js";
+export type { HistoryCompactScope } from "../core/history/history-compact-bulk.js";
+export type { HistoryStreamPolicyManyParams, HistoryStreamPolicyParams, HistoryStreamPolicyResult } from "../core/history/history-stream-policy.js";
+export type { PatchFailureContext, ResolveHistoryTargetOptions, ResolvedHistoryTarget } from "../core/history/projection.js";
+export type { ReanchorHistoryOptions, ReanchorResult, ReplayDocument } from "../core/history/replay.js";
+export type { BodyFileReader } from "../core/io/body-file.js";
+export type { ItemDocumentFormatOptions } from "../core/item/item-format.js";
+export type { StdinTokenResolver } from "../core/item/parse.js";
+export type { Priority } from "../core/item/priority.js";
+export type { ParseStatusFilterOptions } from "../core/item/status-filter.js";
+export type { CommandOptionPolicyCommand, CommandOptionPolicyState } from "../core/item/type-registry.js";
+export type { AcquireLockOptions } from "../core/lock/lock.js";
+export type { OutputOptions } from "../core/output/output.js";
+export type { TabularRow } from "../core/output/tabular.js";
+export type { LoadedRuntimeSchemaSections, RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
+export type { EvaluateTransitionInput, EvaluateTransitionResult } from "../core/schema/type-workflows.js";
+export type { RefreshSearchArtifactsForMutationOptions, SearchMutationArtifactRefreshResult, VectorizationStatusLedgerReadResult } from "../core/search/cache.js";
+export type { SearchCorpusOptions, SemanticCorpusCharacterLimitResolution, SemanticCorpusInputOptions } from "../core/search/corpus.js";
+export type { EvalQuerySet } from "../core/search/eval.js";
+export type { EmbeddingProviderResolution, ProviderSettingsInput } from "../core/search/providers.js";
+export type { SemanticRuntimeDefaultsResolution } from "../core/search/semantic-defaults.js";
+export type { ExecuteVectorRequestOptions, VectorRecord, VectorSettingsInput, VectorStoreConfig, VectorStoreResolution, VectorUpsertResult } from "../core/search/vector-stores.js";
+export type { SentryLike } from "../core/sentry/instrument.js";
+export type { AgentSemanticAttribution } from "../core/session/session-state.js";
+export type { SerialQueue } from "../core/shared/serial-queue.js";
+export type { SplitCommaListOptions } from "../core/shared/split-comma-list.js";
+export type { ItemFormatMigrationResult } from "../core/store/item-format-migration.js";
+export type { ListCacheOptions } from "../core/store/item-metadata-cache.js";
+export type { SettingsReadResult } from "../core/store/settings.js";
+export type { TelemetryCommandContext, TelemetryErrorEventContext } from "../core/telemetry/runtime.js";
+export type { BackgroundLogStream, BackgroundTestRunStatus } from "../core/test/background-runs.js";
+export type { ValidateFixRecord } from "../core/validate/fix-planning.js";
+export type { OwnerItemMetadata, StaleLinkOwnerInput } from "../core/validate/missing-link-owners.js";
+export type { ClassifiedStaleLinkedPath } from "../core/validate/stale-file-classification.js";
+export type { BuiltinItemType, ConfidenceTextLevel, ContextDepth, ContextSectionName, ContextSettings, GovernanceStartBlockerEnforcement, HistoryEntry, HistoryPatchOp, ItemFormat, ItemTestRunSummary, LinkScope, ParentReferencePolicy, PlanMode, RuntimeSchemaSettings, SprintReleaseFormatPolicy, TestRunMeasurement } from "../types.js";
+export type { ContentFieldFilters } from "../core/governance/content-fields.js";
+export type { MissingMetadataFilters } from "../core/governance/metadata-coverage.js";
+export type { UpdateManyCommandOptions, UpdateManyResult } from "./lifecycle/update-many.js";
+export type { CommandScope } from "./command-line.js";
+export type { ContextIntentCursorEnvelope } from "./context-intent-contracts.js";
+export type { ExactCorpusShape } from "./corpus-shape.js";
+export type { ExactDefinition, FlagAuthoringDefinition, ItemFieldAuthoringDefinition, ItemTypeAuthoringDefinition, MigrationAuthoringDefinition, SearchProviderAuthoringDefinition, VectorStoreAdapterAuthoringDefinition } from "./define.js";
+export type { ManagedExtensionRecord } from "./extension/managed-state.js";
+export type { ValidateItem } from "./governance/validate-item-reader.js";
+export type { ProjectedGraphResult } from "./graph/run.js";
+export type { ClaimMutationOptions, ClaimNextResult } from "./lifecycle/claim.js";
+export type { CloseManyCommandOptions, CloseManyResult } from "./lifecycle/close-many.js";
+export type { RenamedLinkedArtifactResult } from "./linked-artifacts.js";
+export type { FilterValueEchoEntry } from "./query/list.js";
+export type { SearchRenderingQueryExpansion, SearchRenderingRerank } from "./query/search-rendering.js";
+export type { ImplicitSemanticFallbackReason, VectorIndexRecovery, VectorIndexRecoveryRegistrations } from "./query/search/semantic.js";
+export type { ReadOutputResultForSession } from "./read-output-contracts.js";
+export type { InitialReadOptions, ReadOptions, ReadPromise } from "./runtime.js";
+export type { LinkedTestExecutionResult, RunLinkedTestsOptions } from "./test/execution.js";
+export type { RegisteredHookEntry } from "./testing.js";
+export type { TraceabilityCandidate } from "./traceability/source-traceability.js";
+export type { ExactWorkspaceRecipe } from "./workspace-recipe.js";
