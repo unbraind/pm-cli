@@ -2821,7 +2821,19 @@ shared `output_budget_exceeded` branch, and CLI exits 2. SDK consumers should
 check `isReadOutputBudgetExceeded` before treating the payload as their result.
 Packages can describe their own omitted groups with the existing
 `OutputProjectionDeclaration`; the host also discloses reductions caused by
-its output controls. JSON and TOON estimates include their receipts.
+its output controls. JSON and TOON estimates include their receipts. A scoped
+`registerRenderer` replacement or `output_format` service is measured too: the
+estimate, compaction and omission describe the string it returns, and an
+infeasible budget returns the native refusal rather than the renderer's output
+(see [Read Output Contracts](READ_OUTPUT_CONTRACTS.md#delivered-bytes-intent-budgets-and-complete-receipts)).
+For a read that declares read output, the host calls a scoped renderer once
+for every estimate it measures. That includes each compaction candidate as
+well as the final delivery, so such a renderer must be pure, idempotent and
+cheap: no counters, file writes or timestamps in its output, and no expensive
+work per call. If the final rendering costs more than its receipts measured,
+the host re-measures the read and delivers it natively instead.
+Read intents report an omitted result either through `output_budget_exceeded`
+or through `budget_exceeded`; `isReadResultOmittedForBudget` recognizes both.
 
 ```ts
 import { defineExtension } from "@unbrained/pm-cli/sdk";

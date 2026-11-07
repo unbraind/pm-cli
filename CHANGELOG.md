@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- TOON get --fields spends four lines on a complete omission receipt and drops requested empty collections, so a narrow read is two-thirds receipt and absent-vs-empty depends on that receipt ([pm-sj66lm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sj66lm.toon))
+- GH-1662: an infeasible --token-budget on context --for orient exits 0 with no context and contradictory receipts, its restore_with retry fails, and get/list intent receipts undercount the emitted envelope ([pm-gh1662](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1662.toon))
+- GH-1678: a scoped registerRenderer replacement bypasses --output-budget and its read_output receipt reports within_budget for the native payload, not the delivered bytes ([pm-gh1678](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1678.toon))
+
 ## 2026.11.7 - 2026-11-07
 
 ### Fixed

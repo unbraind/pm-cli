@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2047,
+    "covered_symbols": 2048,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2048
+    "required_symbols": 2049
   },
   "breaking_acknowledgements": [
     {
@@ -10992,6 +10992,12 @@
           "kind": "function",
           "name": "isReadProjectionRecoveryFlag",
           "signature": "(flag: string) => boolean | calls: (flag: string) => boolean"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isReadResultOmittedForBudget",
+          "signature": "(result: unknown) => boolean | calls: (result: unknown) => boolean"
         },
         {
           "classification": "advanced_export",
@@ -25002,6 +25008,12 @@
           "kind": "function",
           "name": "isReadOutputBudgetExceeded",
           "signature": "(result: unknown) => result is PmReadOutputBudgetExceeded | calls: (result: unknown) => result is PmReadOutputBudgetExceeded"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "function",
+          "name": "isReadResultOmittedForBudget",
+          "signature": "(result: unknown) => boolean | calls: (result: unknown) => boolean"
         },
         {
           "classification": "contract_data",

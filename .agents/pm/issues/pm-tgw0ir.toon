@@ -1,0 +1,19 @@
+id: pm-tgw0ir
+title: "Read paths that render outside the contracted delivery stage bypass --output-budget: direct context/next markdown renders, output_format services rendering before row projection, and custom renderers that grow after a receipt-free fit check"
+description: "CodeRabbit review of PR 1681 (deferred as heavy-lift or a poor tradeoff for that batch). (1) 'pm context --for orient --output-budget 1 --format markdown' renders directly in src/cli/register-list-query.ts and emits more than the budget with exit 0, so the direct-render paths need the same accounting and refusal as formatEffectiveOutput. (2) When an output_format service renders a two-row result under --output-limit 1, the audit measures the projected one-row result while the CLI may emit the service's two-row string. The projected result should be rendered through the service and the resulting string audited. (3) A renderer can grow after a receipt-free fit check, or add substantive output when token_accounting is attached, so the final substantive output should be verified against the budget and receipts excluding receipt overhead, with a native fallback, while unbounded custom rendering is preserved."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,budget,read-output,token-efficiency
+created_at: "2026-11-07T05:21:56.821Z"
+updated_at: "2026-11-07T05:59:42.531Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Every read path that writes output, including direct markdown renders and service strings, answers to --output-budget over the bytes it writes and refuses with exit 2 when it cannot fit; service rendering runs on the projected result; a growing custom renderer cannot exceed the budget, including under token accounting; specs with negative controls cover each path"
+parent: pm-5t33or
+risk: medium
+confidence: high
+expected_result: Every read path that writes output answers to --output-budget over the bytes it writes
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1678,discovered_from,"2026-11-07T05:21:56.821Z","harness:claude-code","cli:create:dep",detected
+body: ""

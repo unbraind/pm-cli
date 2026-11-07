@@ -17,9 +17,10 @@ import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
 import { propagateContextUsageServingReceipt } from "../../sdk/context-usage.js";
 import {
-  isReadOutputBudgetExceeded,
+  isReadResultOmittedForBudget,
   resolveReadOutputEncoding,
 } from "../../sdk/read-output-contracts.js";
+import { withDeliveredOutputRenderer } from "../../sdk/read-output-budget.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 import { encodePmTableRows } from "../../sdk/output/table-rows.js";
 import {
@@ -260,6 +261,10 @@ function renderToonObjectEntry(
   const indent = "  ".repeat(depth);
   if (!isPlainObject(entry) && !Array.isArray(entry)) {
     return `${indent}${key}: ${renderScalar(entry)}`;
+  }
+  // A receipt that reports no omission costs one line; JSON keeps its typed form (pm-sj66lm).
+  if (key === "omission_receipt" && isCompleteOmissionReceipt(entry)) {
+    return `${indent}${key}: complete`;
   }
   if (Array.isArray(entry)) {
     if (entry.length === 0) return `${indent}${key}: []`;
@@ -594,6 +599,7 @@ export function formatBuiltInOutput(
   result: unknown,
   format: "json" | "toon",
   lean = false,
+  toon: BuiltInToonOptions = {},
 ): string {
   result = prepareWellFormedOutputText(result);
   if (format === "json") {
@@ -602,15 +608,66 @@ export function formatBuiltInOutput(
       result.projection.mode === "brief" && Array.isArray(result.items);
     return `${JSON.stringify(value, null, briefList ? undefined : 2)}\n`;
   }
-  const compactedToon = compactToonValue(
-    projectEmptyCheckDetails(
-      projectPmBriefSearchEnvelope(projectPmBriefListEnvelope(result)),
+  const compactedToon = restoreRequestedEmptyItemCollections(
+    result,
+    compactToonValue(
+      projectEmptyCheckDetails(
+        projectPmBriefSearchEnvelope(projectPmBriefListEnvelope(result)),
+      ),
+      { omitDuplicateCountAliases: true, preserveRowFacts: true },
     ),
-    { omitDuplicateCountAliases: true, preserveRowFacts: true },
+    toon.preserveEmptyItemCollections === true,
   );
   return compactedToon === undefined
     ? "{}\n"
     : `${renderToonValue(compactedToon, 0)}\n`;
+}
+
+/** TOON presentation choices that depend on how the caller selected the result. */
+export interface BuiltInToonOptions {
+  /**
+   * The result is an explicit `get --fields` selection: every collection its
+   * item carries was requested, so an empty one renders as `key: []` instead
+   * of being dropped by the sparse policy (pm-sj66lm).
+   */
+  preserveEmptyItemCollections?: boolean;
+}
+
+/** Re-insert the empty collections an explicit item selection requested, in their original order. */
+function restoreRequestedEmptyItemCollections(
+  source: unknown,
+  compacted: unknown,
+  preserve: boolean,
+): unknown {
+  if (!preserve || !isPlainObject(source) || !isPlainObject(source.item)) {
+    return compacted;
+  }
+  // The sparse policy may drop an item (or the whole envelope) whose values are all empty.
+  const base = isPlainObject(compacted) ? compacted : {};
+  const compactedItem = isPlainObject(base.item) ? base.item : {};
+  const item = Object.fromEntries(
+    Object.entries(source.item).flatMap(([key, value]): Array<[string, unknown]> => {
+      if (Object.hasOwn(compactedItem, key)) return [[key, compactedItem[key]]];
+      if (Array.isArray(value) && value.length === 0) return [[key, []]];
+      return isPlainObject(value) && Object.keys(value).length === 0
+        ? [[key, {}]]
+        : [];
+    }),
+  );
+  return Object.hasOwn(base, "item") ? { ...base, item } : { item, ...base };
+}
+
+const COMPLETE_OMISSION_RECEIPT = JSON.stringify({
+  has_omissions: false,
+  omitted_field_group_count: 0,
+  omitted_field_groups: [],
+});
+
+/** Whether an omission receipt reports that nothing was omitted, in exactly its declared shape. */
+function isCompleteOmissionReceipt(value: unknown): boolean {
+  // Compare by value: a receipt with the same fields in another order is still complete.
+  const entries = Object.entries(Object(value) as Record<string, unknown>).sort(([left], [right]) => left.localeCompare(right));
+  return JSON.stringify(Object.fromEntries(entries)) === COMPLETE_OMISSION_RECEIPT;
 }
 
 interface OutputServiceResolution {
@@ -706,9 +763,15 @@ function formatEffectiveOutput(
     effectiveOptions,
     format,
   );
+  const renderNative = nativeRenderer(format, command, resolvedCommandOptions, options.lean === true);
   if (service.rendered !== null) {
-    setActiveCommandResultOmitted(effectiveResult);
-    return service.rendered;
+    return deliverServiceRendering(service.rendered, {
+      format,
+      renderNative,
+      contract: () => attachReadOutputContracts(command, resolvedCommandOptions, effectiveResult),
+      effectiveResult,
+      quiet: options.quiet === true,
+    });
   }
   const outputResult = service.result;
   propagateContextUsageServingReceipt(effectiveResult, outputResult);
@@ -716,49 +779,160 @@ function formatEffectiveOutput(
     command === "test"
       ? projectLinkedTestEvidence(outputResult, options.lean === true)
       : outputResult;
-  const intentOutputResult = attachReadOutputContracts(
-    command,
-    resolvedCommandOptions,
-    projectedOutputResult,
-  );
-  if (isReadOutputBudgetExceeded(intentOutputResult)) {
-    process.exitCode ||= EXIT_CODE.USAGE;
-  }
-  let { structuredDeliveryPreserved } = service;
-  const renderResolvedOutput = (value: unknown): string => {
+  /**
+   * Render one value exactly as it is delivered. A budget refusal is always
+   * rendered natively: routing it through an expanding renderer would undo
+   * the bound it reports (GH-1678).
+   */
+  let nativeFallback = false;
+  const renderDelivered = (value: unknown): { text: string; custom: boolean } => {
     if (format === "toon") {
       const markdownDefault = renderDefaultMarkdownResult(value);
-      if (markdownDefault !== null) return markdownDefault;
+      if (markdownDefault !== null) return { text: markdownDefault, custom: false };
     }
-    const rendererOverride = nativeOutput
-      ? { rendered: null }
-      : runActiveRendererOverride(format, value);
+    const rendererOverride =
+      nativeOutput || nativeFallback || isReadResultOmittedForBudget(value)
+        ? { rendered: null }
+        : runActiveRendererOverride(format, value);
     if (rendererOverride.rendered !== null) {
-      structuredDeliveryPreserved = false;
-      return rendererOverride.rendered.endsWith("\n")
-        ? rendererOverride.rendered
-        : `${rendererOverride.rendered}\n`;
+      return {
+        text: rendererOverride.rendered.endsWith("\n")
+          ? rendererOverride.rendered
+          : `${rendererOverride.rendered}\n`,
+        custom: true,
+      };
     }
-    if (format === "json") {
-      return formatBuiltInOutput(
-        value,
-        "json",
-        options.lean === true,
-      );
-    }
-    return formatBuiltInOutput(value, "toon");
+    return { text: renderNative(value), custom: false };
   };
-  const accountedOutputResult =
-    options.tokenAccounting === true
-      ? attachOutputTokenAccounting(intentOutputResult, renderResolvedOutput)
-      : intentOutputResult;
-  const rendered = renderResolvedOutput(accountedOutputResult);
-  setActiveCommandDeliveryResult(
-    accountedOutputResult,
+  return deliverContractedRead({
+    format,
+    contract: () => attachReadOutputContracts(command, resolvedCommandOptions, projectedOutputResult),
+    renderDelivered,
+    renderNative,
+    useNativeRendering: () => {
+      nativeFallback = true;
+    },
+    structuredDeliveryPreserved: service.structuredDeliveryPreserved,
+    tokenAccounting: options.tokenAccounting === true,
+    quiet: options.quiet === true,
     effectiveResult,
-    options.quiet !== true && structuredDeliveryPreserved,
+  });
+}
+
+/** The built-in renderer for one read: lean JSON, or TOON that keeps the empty collections an explicit get selection requested. */
+function nativeRenderer(
+  format: "json" | "toon",
+  command: string | undefined,
+  commandOptions: Record<string, unknown>,
+  lean: boolean,
+): (value: unknown) => string {
+  if (format === "json") return (value) => formatBuiltInOutput(value, "json", lean);
+  const selectedFields = commandOptions.fields;
+  const preserveEmptyItemCollections =
+    command === "get" && typeof selectedFields === "string" && selectedFields.trim().length > 0;
+  return (value) => formatBuiltInOutput(value, "toon", false, { preserveEmptyItemCollections });
+}
+
+/**
+ * Deliver an output_format service's string. A service-rendered read still
+ * answers to the caller's output budget: the contracts measure the string the
+ * service returned, and a string that cannot fit is replaced by the bounded
+ * native refusal (GH-1678). The refusal is delivered natively, so its own
+ * receipt measures it natively.
+ */
+function deliverServiceRendering(
+  serviceRendered: string,
+  delivery: Pick<ContractedReadDelivery, "format" | "renderNative" | "contract" | "effectiveResult" | "quiet">,
+): string {
+  const audited = withDeliveredOutputRenderer(
+    delivery.format,
+    (value) => (isReadResultOmittedForBudget(value) ? delivery.renderNative(value) : serviceRendered),
+    delivery.contract,
   );
+  if (!isReadResultOmittedForBudget(audited)) {
+    setActiveCommandResultOmitted(delivery.effectiveResult);
+    return serviceRendered;
+  }
+  process.exitCode ||= EXIT_CODE.USAGE;
+  setActiveCommandDeliveryResult(audited, delivery.effectiveResult, !delivery.quiet);
+  return delivery.renderNative(audited);
+}
+
+/** One read's delivery: its contracts, its renderers and the host settings that shape what is written. */
+interface ContractedReadDelivery {
+  format: "json" | "toon";
+  contract: () => unknown;
+  renderDelivered: (value: unknown) => { text: string; custom: boolean };
+  renderNative: (value: unknown) => string;
+  useNativeRendering: () => void;
+  structuredDeliveryPreserved: boolean;
+  tokenAccounting: boolean;
+  quiet: boolean;
+  effectiveResult: unknown;
+}
+
+/**
+ * Attach a read's contracts against the renderer that will deliver it, verify
+ * the delivered rendering against its receipts, and render it (GH-1678).
+ */
+function deliverContractedRead(delivery: ContractedReadDelivery): string {
+  // Every receipt estimate, compaction step and omission decision measures the
+  // delivered bytes, including a scoped extension renderer's string.
+  let contracted = withDeliveredOutputRenderer(
+    delivery.format,
+    (value) => delivery.renderDelivered(value).text,
+    delivery.contract,
+  );
+  // The receipts describe the output before token accounting, which is also
+  // the delivery when no accounting block is added.
+  let unaccounted = delivery.renderDelivered(contracted);
+  if (unaccounted.custom && receiptsUnderstateDelivery(contracted, unaccounted.text)) {
+    // A custom rendering that depends on its own receipts need not converge, and
+    // a bounded estimate is no proof that it fits. Bytes no receipt measured are
+    // never delivered: the read is measured and rendered natively instead.
+    delivery.useNativeRendering();
+    contracted = withDeliveredOutputRenderer(delivery.format, delivery.renderNative, delivery.contract);
+    unaccounted = { text: delivery.renderNative(contracted), custom: false };
+  }
+  if (isReadResultOmittedForBudget(contracted)) {
+    process.exitCode ||= EXIT_CODE.USAGE;
+  }
+  let structuredDeliveryPreserved = delivery.structuredDeliveryPreserved && !unaccounted.custom;
+  if (!delivery.tokenAccounting) {
+    setActiveCommandDeliveryResult(contracted, delivery.effectiveResult, !delivery.quiet && structuredDeliveryPreserved);
+    return unaccounted.text;
+  }
+  const renderResolvedOutput = (value: unknown): string => {
+    const delivered = delivery.renderDelivered(value);
+    if (delivered.custom) structuredDeliveryPreserved = false;
+    return delivered.text;
+  };
+  const accountedOutputResult = attachOutputTokenAccounting(contracted, renderResolvedOutput);
+  const rendered = renderResolvedOutput(accountedOutputResult);
+  setActiveCommandDeliveryResult(accountedOutputResult, delivery.effectiveResult, !delivery.quiet && structuredDeliveryPreserved);
   return rendered;
+}
+
+/** Receipt fields that state how many tokens the delivered output costs. */
+const DELIVERED_TOKEN_RECEIPTS = [
+  ["read_output", "estimated_tokens"],
+  ["context_intent", "estimated_tokens"],
+  ["read_session", "spent_this_call_tokens"],
+] as const;
+
+/**
+ * Whether any receipt in a delivered result reports fewer tokens than its
+ * rendering costs. Settled intent receipts never claim a fit their estimate
+ * exceeds, so an estimate that covers the rendering also covers its fit claim.
+ */
+function receiptsUnderstateDelivery(value: unknown, text: string): boolean {
+  const deliveredTokens = Math.ceil(Buffer.byteLength(text, "utf8") / 4);
+  const record = Object(value) as Record<string, unknown>;
+  return DELIVERED_TOKEN_RECEIPTS.some(([receipt, field]) => {
+    const section = record[receipt];
+    const estimate = isPlainObject(section) ? section[field] : undefined;
+    return typeof estimate === "number" && estimate < deliveredTokens;
+  });
 }
 
 /** Resolve command ownership and suppression before projecting and rendering the result. */

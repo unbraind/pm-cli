@@ -302,6 +302,29 @@ function renderRegisteredListResult(
   }
 }
 
+/**
+ * Apply a read intent with the caller's global `--output-budget` in view, as
+ * SDK and MCP callers pass it beside their options: a numeric canonical budget
+ * binds the intent exactly like `--token-budget` (GH-1662). The global control
+ * is not left behind in the command's own options.
+ */
+function projectCliIntentOptions(
+  command: Parameters<typeof applyContextIntentProjection>[0],
+  options: Record<string, unknown>,
+  globalOptions: { outputBudget?: string },
+  positionalArguments: readonly string[] = [],
+): Record<string, unknown> {
+  if (globalOptions.outputBudget === undefined) {
+    return applyContextIntentProjection(command, options, positionalArguments);
+  }
+  const { outputBudget: _outputBudget, ...projected } = applyContextIntentProjection(
+    command,
+    { ...options, outputBudget: globalOptions.outputBudget },
+    positionalArguments,
+  );
+  return projected;
+}
+
 /** Resolve alias, intent, lifecycle, and output controls before delegating one list selection to the SDK and recording optional CLI timing. */
 async function runRegisteredListCommand(params: {
   name: ListCommandName;
@@ -325,7 +348,7 @@ async function runRegisteredListCommand(params: {
       printError(renderPmCommandAliasMigrationHint(params.aliasContract));
     }
   }
-  const intentOptions = applyContextIntentProjection("list", params.options);
+  const intentOptions = projectCliIntentOptions("list", params.options, globalOptions);
   const listOptions = normalizeListOptions(intentOptions);
   const selection = resolveRegisteredListSelection(params, listOptions);
   const {
@@ -632,7 +655,7 @@ async function runContextAction(
   const globalOptions = getGlobalOptions(actionCommand);
   const startedAt = Date.now();
   const normalized = normalizeContextOptions(
-    applyContextIntentProjection("context", options),
+    projectCliIntentOptions("context", options, globalOptions),
   );
   const result = await runContext(normalized, globalOptions);
   const outputFormat = resolveContextOutputFormat(normalized, globalOptions);
@@ -669,7 +692,7 @@ async function runNextAction(
   const globalOptions = getGlobalOptions(actionCommand);
   const startedAt = Date.now();
   const nextOptions = normalizeNextOptions(
-    applyContextIntentProjection("next", options),
+    projectCliIntentOptions("next", options, globalOptions),
   );
   const result = await runNext(nextOptions, globalOptions);
   const outputFormat = resolveNextOutputFormat(nextOptions, globalOptions);
@@ -694,7 +717,7 @@ async function runSearchAction(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const query = normalizeSearchKeywordsInput(keywords);
-  const intentOptions = applyContextIntentProjection("search", options, [
+  const intentOptions = projectCliIntentOptions("search", options, globalOptions, [
     query,
   ]);
   const searchOptions = normalizeSearchOptions(intentOptions);
@@ -767,7 +790,7 @@ async function runGetAction(
 ): Promise<void> {
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const intentOptions = applyContextIntentProjection("get", options, [id]);
+  const intentOptions = projectCliIntentOptions("get", options, globalOptions, [id]);
   const result = await runGet(id, globalOptions, {
     depth:
       typeof intentOptions.depth === "string" ? intentOptions.depth : undefined,

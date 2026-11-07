@@ -25,6 +25,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import {
   compactReadOutputToBudget,
   estimateReadOutputTokens,
+  readOutputMeasurementFormat,
   projectReadOutputItemToBrief,
   preserveReadOutputRowContract,
   resolveReadOutputRecoveryBudget,
@@ -1290,18 +1291,6 @@ function requestedDimensions(
   );
 }
 
-/** Resolve host, canonical, then legacy renderer selection for consistent per-call and session measurement. */
-function readOutputMeasurementFormat(
-  options: Record<string, unknown>,
-): "json" | "toon" | undefined {
-  const format =
-    options.resolvedOutputFormat ??
-    options.outputFormat ??
-    options.output_format ??
-    options.format;
-  return format === "json" || format === "toon" ? format : undefined;
-}
-
 /** Stabilize the per-call and cross-call receipts in one complete envelope. */
 function attachReadOutputSessionContracts(
   result: Record<string, unknown>,
@@ -1420,6 +1409,18 @@ function attachValidateDiagnosticRowContract(
       };
 }
 
+/**
+ * Whether a canonical include projection shapes this result. A budget omission
+ * is a refusal, not a result to shape: selecting sections from it would drop
+ * the refusal and report success (GH-1662).
+ */
+function includeProjectionApplies(
+  resolved: PmResolvedReadOutputDimensions,
+  result: Record<string, unknown>,
+): boolean {
+  return resolved.include?.source === "canonical" && !isReadResultOmittedForBudget(result);
+}
+
 /** Capture continuation coordinates before amount bounds, then apply row and repeat projections. */
 function projectReadOutputRows(
   result: Record<string, unknown>,
@@ -1432,11 +1433,11 @@ function projectReadOutputRows(
   continuationState: ReadOutputContinuationState;
 } {
   let projected = { ...result };
-  if (resolved.include?.source === "canonical") {
+  if (includeProjectionApplies(resolved, result)) {
     projected = applyIncludeProjection(
       resolved.command,
       projected,
-      resolved.include.value,
+      resolved.include!.value,
     );
   }
   if (resolved.command === "assurance") {
@@ -1687,8 +1688,11 @@ function canReturnReadOutputUnchanged(
   format: "json" | "toon" | undefined,
   options: Record<string, unknown>,
 ): boolean {
+  // A budget omission always carries its read-output receipt: callers that
+  // detect the refusal read read_output from it (GH-1662).
   if (
     session !== undefined ||
+    isReadResultOmittedForBudget(result) ||
     requiresReadOutputAudit(resolved, options, result)
   )
     return false;
@@ -2073,6 +2077,9 @@ export function applyReadOutputDimensions<
     projected,
     options.outputRowContract === false,
   );
+  // An intent layer that already omitted the result makes the whole envelope
+  // unsuccessful; the shared receipt must agree with it (GH-1662).
+  const intentOmitted = isReadResultOmittedForBudget(projected);
   const receipt: PmReadOutputReceipt = {
     contract_version: 1,
     command: resolved.command,
@@ -2083,10 +2090,10 @@ export function applyReadOutputDimensions<
     legacy_aliases_used: resolved.legacy_aliases_used,
     migration_hints: resolved.migration_hints,
     estimated_tokens: 0,
-    within_budget: true,
+    within_budget: !intentOmitted,
     strings_compacted: false,
     rows_compacted: false,
-    result_omitted: false,
+    result_omitted: intentOmitted,
   };
   projected.read_output = receipt;
   projected =
@@ -2138,6 +2145,27 @@ export function applyReadOutputDimensions<
     ) as ReadOutputResultForSession<Result, Options>;
   }
   return projected as ReadOutputResultForSession<Result, Options>;
+}
+
+/**
+ * Whether a built-in read intent (`--for <intent>`) omitted its result because
+ * even its most compact projection exceeds the intent token budget.
+ */
+function isContextIntentResultOmitted(result: unknown): boolean {
+  return (
+    isRecord(result) &&
+    isRecord(result.context_intent) &&
+    result.context_intent.result_omitted === true
+  );
+}
+
+/**
+ * Whether a read envelope withheld its requested result for a budget: the
+ * shared `output_budget_exceeded` branch or an omitted read-intent result.
+ * Transports treat both as unsuccessful (CLI exit 2).
+ */
+export function isReadResultOmittedForBudget(result: unknown): boolean {
+  return isReadOutputBudgetExceeded(result) || isContextIntentResultOmitted(result);
 }
 
 /** Narrow a universal read result to its budget-omission branch. */
