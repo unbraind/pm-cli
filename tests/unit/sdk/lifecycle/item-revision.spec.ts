@@ -38,6 +38,7 @@ import { commitWorkspaceTransaction } from "../../../../src/sdk/workspace-transa
 import type { ItemDocument } from "../../../../src/types/index.js";
 import { pmToolActionParameterKeys, resolvePmToolCustomFieldCollision } from "../../../../src/sdk/cli-contracts/tool-schema.js";
 import { splitExpectHashInput } from "../../../../src/sdk/runtime-input.js";
+import { resolvePmCommandScopeArgs } from "../../../../src/sdk/command-line.js";
 import { verifyHistoryRewriteNoDrift } from "../../../../src/core/history/history-rewrite.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
@@ -1277,6 +1278,20 @@ describe("GH-1620 workspace transaction isolation", () => {
       expect((await pm.get(id)).item.title).toBe("Transaction tx-unguarded");
       await expect(runStep(true, "tx-guarded")).rejects.toMatchObject({ context: { code: "item_revision_conflict" } });
       expect((await pm.get(id)).item.title).toBe("Peer tx-guarded");
+    });
+  });
+});
+
+describe("pm-gh1677 recovery scope for a blank typed tracker", () => {
+  it("names the environment's tracker when the typed tracker is empty or whitespace-only, and keeps an explicit spelling", async () => {
+    await withTempPmPath(async (context) => {
+      // PM_PATH selects the temp tracker; the caller works in a nested workspace whose implicit tracker differs.
+      const workspace = path.join(context.tempRoot, "target");
+      expect(context.runCli(["--pm-path", path.join("target", ".agents", "pm"), "init", "--defaults", "--agent-guidance", "skip", "--json"], { cwd: context.tempRoot }).code).toBe(0);
+      const environment = ["--pm-path", path.relative(workspace, context.pmPath)];
+      // Tracker resolution trims these and defers to PM_PATH, so they are not explicit selections.
+      for (const blank of [undefined, "", " ", "\t  "]) expect(resolvePmCommandScopeArgs({ path: blank }, workspace), JSON.stringify(blank)).toEqual(environment);
+      expect(resolvePmCommandScopeArgs({ path: " ../tracker ", noExtensions: true }, workspace)).toEqual(["--pm-path", " ../tracker ", "--no-extensions"]);
     });
   });
 });

@@ -69,6 +69,30 @@ describe("refusal recovery replays the caller's own invocation", () => {
     });
   });
 
+  it("pm-gh1677: a whitespace-only typed tracker defers to the environment, so the recovery reads name the tracker the refused write used", async () => {
+    await withTempPmPath(async (context) => {
+      seedDecoyAndTarget(context);
+      // PM_PATH selects the temp tracker; the caller runs inside the target workspace and types a blank tracker,
+      // which tracker resolution trims and defers to PM_PATH.
+      const inTarget = { cwd: path.join(context.tempRoot, "target"), preserveDefaultMutationOutput: true };
+      const environmentTracker = path.join("..", ".agents", "pm");
+      const envHash = () => (JSON.parse(run(context, ["get", "pm-same", "--fields", "item_hash", "--json"]).stdout) as { item_hash: string }).item_hash;
+      const decided = envHash();
+      expect(run(context, ["update", "pm-same", "--description", "Peer edit", "--json"]).code).toBe(0);
+      const current = envHash();
+      for (const blank of [["--pm-path", " "], ["--pm-path=  "]]) {
+        const stale = await context.runCliInProcess([...blank, "--expect-hash", decided, "update", "pm-same", "--title", "Stale change", "--json"], inTarget);
+        expect(stale.code).toBe(EXIT_CODE.CONFLICT);
+        const refusal = JSON.parse(stale.stderr) as { current_revision: string; next_steps: string[] };
+        // Negative control: before the fix the reads named the blank value, so replaying them without PM_PATH read the target tracker.
+        expect(refusal).toMatchObject({ current_revision: current });
+        expect(refusal.next_steps).toEqual([`pm --pm-path ${environmentTracker} get pm-same --json`, `pm --pm-path ${environmentTracker} history pm-same --limit 5 --json`]);
+        const read = await context.runCliInProcess(refusal.next_steps[0]!.split(" ").slice(1), inTarget);
+        expect(JSON.parse(read.stdout)).toMatchObject({ item: { title: "DECOY item", description: "Peer edit" }, item_hash: current });
+      }
+    });
+  });
+
   it("pm-gh1676: a retry names the environment-selected tracker, decided by the parsed options, not by a literal operand", async () => {
     await withTempPmPath(async (context) => {
       seedDecoyAndTarget(context);
