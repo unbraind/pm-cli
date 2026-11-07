@@ -27,6 +27,11 @@ describe("extension flag definition validation", () => {
     expect(validateExtensionLongFlagToken("--json")).toBe(
       "host_owned_flag_collision",
     );
+    // An underscore spelling is the same host flag on the CLI (CodeRabbit review of PR 1682).
+    expect(validateExtensionLongFlagToken("--output_limit <count>")).toBe(
+      "host_owned_flag_collision",
+    );
+    expect(validateExtensionLongFlagToken("--include_history")).toBeNull();
     expect(findExtensionFlagTokenFailure(undefined, undefined)).toBeNull();
     expect(findExtensionFlagTokenFailure("--safe", "--json")).toEqual({
       token: "--json",
