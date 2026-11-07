@@ -166,6 +166,16 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
         expect(resumed.code, `budget ${budget}`).toBe(refused ? 2 : 0);
       }
 
+      // An ordinary second-pass omission reports an estimate above the budget it states.
+      const shortId = createTestItemId(context, { title: "Short task" });
+      const shortRead = await runSource(context, ["get", shortId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);
+      const shortIntent = (JSON.parse(shortRead.stdout) as { context_intent: { result_omitted: boolean; estimated_tokens: number; token_budget: number } }).context_intent;
+      if (shortIntent.result_omitted) {
+        expect(shortRead.code).toBe(2);
+        // Negative control: the omission reported 210 tokens against its 300-token budget.
+        expect(shortIntent.estimated_tokens).toBeGreaterThan(shortIntent.token_budget);
+      }
+
       // The retry a refusal names keeps the caller's field projection and returns the result.
       const wideId = createTestItemId(context, { title: "T", description: "w".repeat(1000), acceptanceCriteria: "a".repeat(1000) });
       const narrow = await runSource(context, ["get", wideId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);

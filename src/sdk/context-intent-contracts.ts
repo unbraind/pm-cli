@@ -1050,6 +1050,9 @@ export function attachContextIntentReceipt<
       options,
     ),
   );
+  // An omitted result's estimate covers the envelope it would have delivered,
+  // including the overhead this pass reserved, so it exceeds the budget it reports.
+  if (receipt.result_omitted) receipt.estimated_tokens += envelopeOverhead;
   receipt.token_budget = reportedBudget;
   return outcome as Result & { context_intent: PmContextIntentReceipt };
 }
