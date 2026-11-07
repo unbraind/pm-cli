@@ -6,10 +6,14 @@ status: open
 priority: 2
 tags[4]: agent-ux,budget,read-output,token-efficiency
 created_at: "2026-11-07T05:21:57.911Z"
-updated_at: "2026-11-07T05:21:57.911Z"
+updated_at: "2026-11-07T05:59:43.249Z"
 author: "harness:claude-code"
+estimated_minutes: 180
 acceptance_criteria: "An intent omission is decided over the projection the caller requested; a cursor replay of an omitted intent returns the refusal with its receipts; every value isReadOutputBudgetExceeded accepts carries a measured read_output receipt, including a direct attachContextIntentReceipt call; specs with negative controls cover each case"
 parent: pm-5t33or
+risk: medium
+confidence: high
+expected_result: Every intent omission is decided over the requested projection and every refusal carries a measured read_output receipt
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1662,discovered_from,"2026-11-07T05:21:57.911Z","harness:claude-code","cli:create:dep",detected
 body: ""

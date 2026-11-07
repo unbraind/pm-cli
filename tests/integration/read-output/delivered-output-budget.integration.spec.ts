@@ -184,10 +184,11 @@ describe("GH-1662 intent budgets bind every shaped, resumed and session read", (
       // The retry a refusal names keeps the caller's field projection and returns the result.
       const wideId = createTestItemId(context, { title: "T", description: "w".repeat(1000), acceptanceCriteria: "a".repeat(1000) });
       const narrow = await runSource(context, ["get", wideId, "--fields", "id,title", "--for", "inspect", "--token-budget", "300", "--output-row-contract", "--json"]);
-      const restore = (JSON.parse(narrow.stdout) as { budget_exceeded?: { restore_with: string } }).budget_exceeded?.restore_with;
-      expect(restore, narrow.stdout).toBeDefined();
+      const refusal = JSON.parse(narrow.stdout) as { budget_exceeded: { restore_with: string } };
+      expect(refusal.budget_exceeded, narrow.stdout).toBeDefined();
+      const restore = refusal.budget_exceeded.restore_with;
       expect(restore).toContain("--fields 'id,title'");
-      const retried = await runSource(context, argvOf(restore!));
+      const retried = await runSource(context, argvOf(restore));
       expect(retried.code, retried.stdout).toBe(0);
 
       // An SDK intent refusal always carries the read-output receipt its type promises.

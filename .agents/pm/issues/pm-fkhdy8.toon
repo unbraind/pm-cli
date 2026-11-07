@@ -6,10 +6,14 @@ status: open
 priority: 3
 tags[3]: agent-ux,read-output,toon
 created_at: "2026-11-07T05:21:58.835Z"
-updated_at: "2026-11-07T05:21:58.835Z"
+updated_at: "2026-11-07T05:59:44.015Z"
 author: "harness:claude-code"
+estimated_minutes: 60
 acceptance_criteria: "TOON get --fields renders every empty collection inside selected fields, recursively, exactly as JSON delivers it; JSON, SDK and MCP output are unchanged; a spec covers a nested scalar-plus-empty-array field with a negative control"
 parent: pm-5t33or
+risk: low
+confidence: high
+expected_result: TOON get --fields renders nested empty collections inside selected fields exactly as JSON does
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-sj66lm,discovered_from,"2026-11-07T05:21:58.835Z","harness:claude-code","cli:create:dep",detected
 body: ""
