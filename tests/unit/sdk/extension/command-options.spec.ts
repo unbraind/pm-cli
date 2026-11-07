@@ -66,6 +66,13 @@ describe("direct extension command options", () => {
       s: "lower",
       sortOrder: "upper",
     });
+    // An undeclared key equal to a lower-cased short alias passes through untouched (Greptile review).
+    const onlyUpper = [{ long: "--sort-order", short: "-S", value_type: "string" }];
+    expect(normalizeDirectExtensionCommandOptions({ s: "keep", sortOrder: "descending" }, onlyUpper, "demo brief")).toEqual({
+      s: "keep",
+      sortOrder: "descending",
+    });
+    expect(normalizeDirectExtensionCommandOptions({ s: "keep" }, onlyUpper, "demo brief")).toEqual({ s: "keep" });
   });
 
   it("refuses two spellings of one flag that carry different values", () => {

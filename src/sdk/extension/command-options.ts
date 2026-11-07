@@ -909,11 +909,22 @@ export function normalizeDirectExtensionCommandOptions(
   }
   const index = indexDeclaredOptionSpellings(definitions);
   const folded = foldDirectOptionSpellings(options, index, commandPath);
-  return coerceLooseCommandOptionsWithFlagDefinitions(
-    folded,
-    definitions,
-    recordDirectOptionOccurrences(folded, index),
-    commandPath,
+  // Only declared handler keys reach the shared coercer: its CLI alias folding (`-S` -> `s`) must never
+  // rewrite or absorb an undeclared key a direct caller passes through.
+  const handlerKeys = new Set([...index.long.values()].map(({ handlerKey }) => handlerKey));
+  const declared = Object.create(null) as Record<string, unknown>;
+  const passthrough = Object.create(null) as Record<string, unknown>;
+  for (const [key, value] of Object.entries(folded)) {
+    (handlerKeys.has(key) ? declared : passthrough)[key] = value;
+  }
+  return Object.assign(
+    passthrough,
+    coerceLooseCommandOptionsWithFlagDefinitions(
+      declared,
+      definitions,
+      recordDirectOptionOccurrences(declared, index),
+      commandPath,
+    ),
   );
 }
 
