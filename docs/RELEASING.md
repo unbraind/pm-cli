@@ -514,6 +514,23 @@ so `PM_ERROR_CODE_CATALOG` and every serialized projection stay byte-identical.
 The catalog appears once in the tsc emit and once in each CLI bundle, and the
 compact rows removed about 320 KB from the packed distribution.
 
+The publication tree ships only the emitted declarations a consumer can reach
+([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon)).
+`exportedDeclarationClosure` in `scripts/release/package-distribution.mjs`
+walks every exported `types` entry through its relative `from` and `import()`
+specifiers. The exports map refuses unexported subpaths, so a consumer cannot
+import any other `dist/**/*.d.ts`: the CLI internals behind `./cli`, the MCP
+servers, and internal SDK and core modules. Packing leaves those out, and the
+checkout keeps every declaration. A manifest without an exports map ships every
+declaration, because any subpath then stays importable. The walk fails closed. An exported or
+referenced declaration missing from the packlist, or a relative specifier that
+is not a `.js` module path, refuses the pack instead of publishing a dangling
+type reference. The packed smoke's strict TypeScript consumer imports every
+exported types entry, so it compiles the complete shipped closure. The cut
+dropped 212 declarations (266,135 bytes) from the 2026.11.6 distribution.
+Artifact ceilings remain unchanged. The tsc `.js` emit still ships, because the
+`pm` and MCP bins and the `./cli` export import it directly.
+
 5. Land the implementation through a reviewed pull request, then use hosted
    preparation for publication.
 

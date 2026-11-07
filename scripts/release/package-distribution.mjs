@@ -323,6 +323,43 @@ export function compactMarkdownTables(text) {
   return raw.join("\n");
 }
 
+/** A relative module specifier in an emitted declaration: `from "./x.js"` or `import("./x.js")`. */
+const DECLARATION_SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*)["']([^"']+)["']/gu;
+
+/**
+ * Collect the declarations a consumer can reach from the manifest's exported `types` entries (pm-998juj).
+ *
+ * The exports map refuses every unexported subpath, so a dist declaration outside this closure is
+ * unreachable for any consumer, and packing stops shipping it. Callers apply this only when the
+ * manifest declares an exports map: without one every subpath stays importable. The walk fails closed: an entry or a
+ * referenced declaration that is not in the packlist, or a relative specifier that is not a `.js`
+ * module path, refuses the pack instead of publishing a dangling type reference.
+ */
+export function exportedDeclarationClosure(manifest, packedPaths, readText) {
+  const packed = new Set(packedPaths);
+  const pending = [];
+  const collect = (value) => {
+    if (typeof value === "string") {
+      if (value.endsWith(".d.ts")) pending.push(path.posix.normalize(value));
+    } else if (value !== null && typeof value === "object") Object.values(value).forEach(collect);
+  };
+  collect(manifest.exports);
+  collect(manifest.types);
+  const reachable = new Set();
+  while (pending.length > 0) {
+    const file = pending.pop();
+    if (reachable.has(file)) continue;
+    if (!packed.has(file)) throw new Error(`Exported type closure references an unpacked declaration: ${file}`);
+    reachable.add(file);
+    for (const [, specifier] of readText(file).matchAll(DECLARATION_SPECIFIER)) {
+      if (!specifier.startsWith(".") || specifier.endsWith(".json")) continue;
+      if (!specifier.endsWith(".js")) throw new Error(`Unsupported declaration specifier ${specifier} in ${file}`);
+      pending.push(path.posix.join(path.posix.dirname(file), `${specifier.slice(0, -".js".length)}.d.ts`));
+    }
+  }
+  return reachable;
+}
+
 /** Stage first-party files with compact JSON and markdown tables, retaining values and readable checkout bytes. */
 function copyPublicationFile(relative, source, target) {
   if (relative.endsWith(".md")) {
@@ -338,6 +375,34 @@ function copyPublicationFile(relative, source, target) {
   if (!isDeepStrictEqual(value, JSON.parse(compact)))
     throw new Error(`Non-lossless publication JSON: ${relative}`);
   writeFileSync(target, compact);
+}
+
+/** Copy the checked source packlist into the publication tree, leaving out declarations no consumer can reach. */
+function stageSourceFiles(root, stage, manifest, files) {
+  // Without an exports map a consumer can deep-import any subpath, so every declaration ships.
+  const exportedDeclarations = manifest.exports === undefined ? undefined : exportedDeclarationClosure(
+    manifest,
+    files.map((file) => file.path),
+    (file) => readFileSync(path.join(root, file), "utf8"),
+  );
+  for (const file of files) {
+    if (
+      typeof file.path !== "string" ||
+      path.isAbsolute(file.path) ||
+      file.path.split(/[\\/]/u).includes("..") ||
+      file.path.startsWith("node_modules/")
+    )
+      throw new Error("Unsafe source distribution path");
+    // A dist declaration no exported types entry reaches cannot be imported by any consumer.
+    if (file.path.startsWith("dist/") && file.path.endsWith(".d.ts") && exportedDeclarations !== undefined && !exportedDeclarations.has(file.path)) continue;
+    const target = path.join(stage, file.path);
+    mkdirSync(path.dirname(target), { recursive: true });
+    const source = realpathSync(path.join(root, file.path));
+    const relative = path.relative(realpathSync(root), source);
+    if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
+      throw new Error("Source distribution file escapes the checkout");
+    copyPublicationFile(file.path, source, target);
+  }
 }
 
 /** Materialize one leased, complete generation into an isolated physical publication tree. */
@@ -405,22 +470,7 @@ function packLeasedDistribution(root, options) {
         },
       ),
     );
-    for (const file of sourceReport.files) {
-      if (
-        typeof file.path !== "string" ||
-        path.isAbsolute(file.path) ||
-        file.path.split(/[\\/]/u).includes("..") ||
-        file.path.startsWith("node_modules/")
-      )
-        throw new Error("Unsafe source distribution path");
-      const target = path.join(stage, file.path);
-      mkdirSync(path.dirname(target), { recursive: true });
-      const source = realpathSync(path.join(root, file.path));
-      const relative = path.relative(realpathSync(root), source);
-      if (relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative))
-        throw new Error("Source distribution file escapes the checkout");
-      copyPublicationFile(file.path, source, target);
-    }
+    stageSourceFiles(root, stage, manifest, sourceReport.files);
     stageRuntime(root, stage, manifest, ledger);
     const published = structuredClone(manifest);
     delete published.devDependencies;

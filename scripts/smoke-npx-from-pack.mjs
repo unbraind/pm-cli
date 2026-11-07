@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import crossSpawn from "cross-spawn";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -278,11 +278,20 @@ function assertPackedCalendarWorkflow(runPackedPm, commandOptions) {
  * The compiler executable comes from this checkout, but Node declarations must
  * resolve from the consumer's declared optional SDK peer so GH-602 cannot
  * regress behind repository-local dependencies. CLI-only installs omit it.
+ * The consumer imports every exported types entry, so the strict compile loads
+ * the complete packed declaration closure that packing keeps (pm-998juj).
  */
 function assertPackedTypescriptConsumer(consumerRoot) {
+  const manifest = JSON.parse(readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
+  // Object() reads a string target's absent `types` without a null branch.
+  const typeEntries = Object.entries(manifest.exports)
+    .filter(([, target]) => typeof Object(target).types === "string")
+    .map(([subpath]) => `${manifest.name}${subpath.slice(1)}`);
   writeFileSync(
     path.join(consumerRoot, "consumer.ts"),
     [
+      ...typeEntries.map((specifier, index) => `import type * as packedTypes${index} from "${specifier}";`),
+      `export type PackedTypeEntries = [${typeEntries.map((_, index) => `typeof packedTypes${index}`).join(", ")}];`,
       'import { assertTestMeasurementRun, quoteCommandArg, PmClient, runContextEvaluationScenario, type ContextEvaluationReader } from "@unbrained/pm-cli/sdk";',
       'import type { PmUpdateManyActionOptions, PmCloseManyActionOptions } from "@unbrained/pm-cli/sdk";',
       'const updateRollback: PmUpdateManyActionOptions = { rollback: "update-many-checkpoint" };',

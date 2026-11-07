@@ -1,4 +1,5 @@
 import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createScriptHarness } from "../../helpers/scriptModule";
 
@@ -204,11 +205,15 @@ function mockFs() {
   vi.doMock("../../../scripts/release/agent-recovery-acceptance.mjs", () => ({
     verifyInstalledAgentRecovery: vi.fn(),
   }));
-  vi.doMock("node:fs", () => ({
+  const writeFileSync = vi.fn();
+  vi.doMock("node:fs", async () => ({
     mkdirSync: vi.fn(),
     mkdtempSync: vi.fn(() => "/tmp/pm-pack-smoke"),
-    writeFileSync: vi.fn(),
+    // The consumer reads the checkout manifest for its exported types entries.
+    readFileSync: (await vi.importActual<typeof import("node:fs")>("node:fs")).readFileSync,
+    writeFileSync,
   }));
+  return { writeFileSync };
 }
 
 describe("smoke-npx-from-pack", () => {
@@ -219,7 +224,7 @@ describe("smoke-npx-from-pack", () => {
     vi.doMock("../../../scripts/smoke-cleanup.mjs", () => ({
       cleanupTempRoot,
     }));
-    mockFs();
+    const { writeFileSync } = mockFs();
     vi.doMock("node:child_process", () => ({
       execFileSync: buildExecFileSync({}),
     }));
@@ -235,6 +240,13 @@ describe("smoke-npx-from-pack", () => {
     expect(String(warnSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
       "[pm-pack-smoke] cleanup warning",
     );
+    // The strict consumer imports every exported types entry, so it compiles the whole packed declaration closure (pm-998juj).
+    const consumer = String(writeFileSync.mock.calls.find(([file]) => String(file).endsWith("consumer.ts"))?.[1]);
+    const manifest = JSON.parse(await readFile(path.join(process.cwd(), "package.json"), "utf8")) as { name: string; exports: Record<string, unknown> };
+    const typeEntries = Object.entries(manifest.exports).filter(([, target]) => typeof Object(target).types === "string");
+    expect(typeEntries.length).toBeGreaterThan(10);
+    for (const [subpath] of typeEntries) expect(consumer).toContain(`from "${manifest.name}${subpath.slice(1)}";`);
+    expect(consumer).toContain(`export type PackedTypeEntries = [typeof packedTypes0, `);
   });
 
   it("runs cleanly when cleanup succeeds (no warning, readCommandError non-Error tolerated)", async () => {
