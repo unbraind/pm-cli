@@ -64,6 +64,17 @@ describe("MCP annotation tools read every declared flat parameter (pm-wsqxwb)", 
     expect(optionsWithAuthor({ text: "unrelated" }, "files")).not.toHaveProperty("add");
   });
 
+  it("renames a nested snake_case spelling of a declared annotation parameter so a guard is never dropped", () => {
+    const flatAndNested = optionsWithAuthor({ expectAt: "flat", options: { expect_at: "nested", edit: 1 } }, "comments");
+    expect(flatAndNested).toMatchObject({ expectAt: "nested", edit: 1 });
+    expect(flatAndNested).not.toHaveProperty("expect_at");
+    const both = optionsWithAuthor({ options: { expectAt: "camel", expect_at: "snake", if_absent: true } }, "notes");
+    expect(both).toMatchObject({ expectAt: "camel", ifAbsent: true });
+    expect(both).not.toHaveProperty("expect_at");
+    expect(both).not.toHaveProperty("if_absent");
+    expect(optionsWithAuthor({ options: { add_glob: "src/*.ts" } }, "files")).toHaveProperty("add_glob");
+  });
+
   it("writes through the tools/call path for every annotation action given top-level add or text", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Flat annotation writes" });

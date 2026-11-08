@@ -387,6 +387,26 @@ function declaredContractActionOptionKeys(action: string): readonly string[] {
 }
 
 /**
+ * Rename a nested snake_case spelling of a declared parameter (expect_at,
+ * if_absent) to the camelCase key the SDK reads. Hoisting already lets either
+ * nested spelling win over the flat argument, so without this a nested
+ * expect_at would silently drop the guard. An explicit camelCase key wins.
+ */
+function camelCaseDeclaredOptions(
+  action: string,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const renamed: Record<string, unknown> = { ...options };
+  for (const key of PM_TOOL_ACTION_PARAMETER_CONTRACTS[action as PmToolAction].optional!) {
+    const snakeKey = key.replace(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`);
+    if (snakeKey === key || renamed[snakeKey] === undefined) continue;
+    renamed[key] ??= renamed[snakeKey];
+    delete renamed[snakeKey];
+  }
+  return renamed;
+}
+
+/**
  * Bind the declared annotation `text` operand (top level or nested) to the
  * `add` source the SDK reads, as the CLI binds positional text. Text that
  * disagrees with an explicit `add` is refused rather than silently dropped.
@@ -394,9 +414,10 @@ function declaredContractActionOptionKeys(action: string): readonly string[] {
 function foldAnnotationTextOperand(
   action: string | undefined,
   args: Record<string, unknown>,
-  options: Record<string, unknown>,
+  normalized: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (!SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action ?? "")) return options;
+  if (!SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action ?? "")) return normalized;
+  const options = camelCaseDeclaredOptions(action!, normalized);
   const text = options.text ?? args.text;
   if (text === undefined) return options;
   if (options.add !== undefined && options.add !== text) {

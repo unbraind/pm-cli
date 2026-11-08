@@ -70,7 +70,7 @@ pm guide release --json
 - [SDK Context Platform](SDK_CONTEXT.md) - task-oriented entry point for authoritative reads, ranking, package workflows, diagnostics, recovery, and verification.
 - [Self-Describing Context Contracts](SELF_DESCRIBING_CONTEXT_CONTRACTS.md) - intent-scoped reads, semantic flag invocation metadata, visibility parity, and generated error vocabulary.
 - [Generated Agent Capability Routing](generated/AGENT_CAPABILITY_ROUTING.md) - contract-derived command families shared by help, guide, skills, completion, MCP, and extensions.
-- [Generated Refusal Closure Census](https://github.com/unbraind/pm-cli/blob/main/docs/generated/REFUSAL_CLOSURE_CENSUS.md) - complete error-catalog join to executable refusal evidence and explicit uncovered obligations (repository-only gate evidence, excluded from npm).
+- [Generated Refusal Closure Census](https://github.com/unbraind/pm-cli/blob/main/docs/generated/REFUSAL_CLOSURE_CENSUS.md) - complete error-catalog join to executable refusal evidence and explicit uncovered obligations (repository-only gate evidence on upstream `main`, excluded from npm; in a fork or another checkout, open `docs/generated/REFUSAL_CLOSURE_CENSUS.md` there).
 - [Universal Read Output Contracts](READ_OUTPUT_CONTRACTS.md) - cross-command include, amount, cost, and encoding controls for CLI, SDK, MCP, and packages.
 - [Diagnostic Output Contracts](DIAGNOSTIC_OUTPUT_CONTRACTS.md) - action-first error budgets, deterministic degradation, SDK projection, and executable refusal assurance.
 - [History Algorithms and Detached Attestations](HISTORY_ATTESTATION.md) - named record digests, portable exact-byte proofs, and read-only verification.

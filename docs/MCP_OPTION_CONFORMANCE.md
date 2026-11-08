@@ -27,16 +27,18 @@ Array values that become CLI CSV inputs, such as `tags`, must contain only
 strings and are checked before conversion. Validation follows nested precedence:
 an explicit valid nested value replaces a flat value before either is normalized.
 
-The read tools (`context`, `get`, `list`, `next`, `search`) and the annotation
-and linked-artifact tools (`comments`, `notes`, `learnings`, `files`, `docs`)
-hoist every optional parameter their strict action contract declares, derived
+The read tools (`context`, `get`, `list`, `next`, `search`) and the annotation,
+linked-artifact and linked-test tools (`comments`, `notes`, `learnings`,
+`files`, `docs`, `test`) hoist every optional parameter their strict action contract declares, derived
 from `PM_TOOL_ACTION_PARAMETER_CONTRACTS` rather than a hand list
 ([pm-wsqxwb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wsqxwb.toon);
 tracker record excluded from npm). A flat `add` therefore writes instead of
 falling through to a listing read. The annotation `text` operand (flat or
 nested) is bound to `add` the way the CLI binds positional text. Equal values
 are accepted, and different `text` and `add` values are refused with
-`annotation_text_source_conflict` before anything is written.
+`annotation_text_source_conflict` before anything is written. A nested snake_case
+spelling of a declared annotation parameter (`expect_at`, `if_absent`) is renamed
+to the camelCase key the SDK reads, so it cannot silently drop a guard.
 
 For example, `{ "id": "pm-one", "options": {}, "priority": 4 }` changes priority;
 with `"options": { "priority": 2 }`, priority becomes `2`. Create also honors its

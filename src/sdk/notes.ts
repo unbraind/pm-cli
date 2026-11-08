@@ -51,7 +51,7 @@ export interface NotesCommandOptions {
   fullHistory?: boolean;
   /** Append only when no note has the same resolved author and text. */
   ifAbsent?: boolean;
-  /** For edit/delete: the created_at of the note read at that index; a different entry is refused. */
+  /** For edit/delete: the created_at of the note read at that index. Compares timestamps, not identities: an entry with a different created_at is refused, one sharing the timestamp is not. */
   expectAt?: string;
   /** Value that configures or reports author for this contract. */
   author?: string;

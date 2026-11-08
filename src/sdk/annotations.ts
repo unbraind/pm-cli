@@ -60,7 +60,8 @@ export interface AnnotationCommandOptions {
   ifAbsent?: boolean;
   /**
    * For `--edit`/`--delete`: the `created_at` of the entry the caller read at
-   * that index. The write is refused when the addressed entry differs.
+   * that index. The write is refused when the addressed entry has a different
+   * `created_at`; this compares timestamps, not entry identities.
    */
   expectAt?: string;
 }
@@ -691,7 +692,7 @@ function appendAnnotationEntry<
   text: string,
   ifAbsent: boolean,
   createEntry: AnnotationCommandConfig<TKey, TEntry>["createEntry"],
-): { changedFields: string[]; entryIndex: number } {
+): { changedFields: string[]; entry: TEntry } {
   const entries = readAnnotationEntries<TEntry>(
     document.metadata,
     collectionKey,
@@ -702,11 +703,32 @@ function appendAnnotationEntry<
       )
     : -1;
   if (existingIndex >= 0) {
-    return { changedFields: [], entryIndex: existingIndex + 1 };
+    return { changedFields: [], entry: entries[existingIndex]! };
   }
-  entries.push(createEntry({ created_at: nowIso(), author, text }));
+  const entry = createEntry({ created_at: nowIso(), author, text });
+  entries.push(entry);
   document.metadata[collectionKey] = entries as never;
-  return { changedFields: [collectionKey], entryIndex: entries.length };
+  return { changedFields: [collectionKey], entry };
+}
+
+/**
+ * The one-based position of a written entry after the store's canonical
+ * created_at ordering: an entry appended behind a later-stamped one (clock
+ * skew, import) sorts before it, so its push position is not its address.
+ */
+function locateAnnotationEntry(
+  entries: readonly AnnotationEntry[],
+  target: AnnotationEntry,
+): number {
+  return entries.reduce(
+    (found, entry, position) =>
+      entry.created_at === target.created_at &&
+      entry.author === target.author &&
+      entry.text === target.text
+        ? position + 1
+        : found,
+    0,
+  );
 }
 
 /** Implements run annotation command for the public runtime surface of this module. */
@@ -820,6 +842,7 @@ export async function runAnnotationCommand<
   if (config.input.mode === "edit") {
     const op = config.editOp ?? config.op;
     let result: Awaited<ReturnType<typeof mutateItem>>;
+    let edited: TEntry | undefined;
     try {
       result = await mutateItem({
         pmRoot,
@@ -843,11 +866,12 @@ export async function runAnnotationCommand<
           assertExpectedAnnotationEntry(id, entries, arrayIndex, config, options.expectAt);
           const existing = entries[arrayIndex];
           assertAnnotationEntryMutable(existing, "edited");
-          entries[arrayIndex] = {
+          edited = {
             ...existing,
             text,
             edited_at: nowIso(),
           } as TEntry;
+          entries[arrayIndex] = edited;
           document.metadata[config.collectionKey] = entries as never;
           return { changedFields: [config.collectionKey] };
         },
@@ -859,6 +883,8 @@ export async function runAnnotationCommand<
       result.item,
       config.collectionKey,
     );
+    // An edit can reorder entries that share a created_at (the store orders by text next).
+    const editedIndex = locateAnnotationEntry(allEntries, edited!);
     return renderAnnotationResult(
       result.item.id,
       config.collectionKey,
@@ -867,15 +893,15 @@ export async function runAnnotationCommand<
       options.includeMeta === true,
       {
         action: "edit",
-        entryIndex: config.input.index as number,
-        entry: allEntries[(config.input.index as number) - 1],
+        entryIndex: editedIndex,
+        entry: allEntries[editedIndex - 1],
       },
       options.fullHistory === true,
     );
   }
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
-  let entryIndex = 0;
+  let written: TEntry | undefined;
   try {
     result = await mutateItem({
       pmRoot,
@@ -896,7 +922,7 @@ export async function runAnnotationCommand<
           options.ifAbsent === true,
           config.createEntry,
         );
-        entryIndex = appended.entryIndex;
+        written = appended.entry;
         return { changedFields: appended.changedFields };
       },
     });
@@ -908,6 +934,7 @@ export async function runAnnotationCommand<
     result.item,
     config.collectionKey,
   );
+  const entryIndex = locateAnnotationEntry(allEntries, written!);
   return renderAnnotationResult(
     result.item.id,
     config.collectionKey,
@@ -999,6 +1026,11 @@ function indexAnnotationEntry<TEntry>(
   entry: TEntry,
   index: number,
 ): IndexedAnnotationEntry<TEntry> {
+  // A malformed stored entry (not an object) is delivered as stored, never
+  // spread into character-numbered keys; typed refusal is pm-30tjoh.
+  if (Object.prototype.toString.call(entry) !== "[object Object]") {
+    return entry as IndexedAnnotationEntry<TEntry>;
+  }
   const indexed = { index, ...entry };
   indexed.index = index;
   return indexed;

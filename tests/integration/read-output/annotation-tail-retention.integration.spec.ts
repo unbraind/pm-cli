@@ -54,7 +54,14 @@ describe("bare annotation reads keep the newest entries through the CLI (pm-8s53
         expect(toon.stdout).toContain(`${command} entry ${ENTRIES} `);
         expect(toon.stdout).not.toContain(`${command} entry 1 `);
         expect(toon.stdout).toMatch(new RegExp(`^total_count: ${ENTRIES}$`, "mu"));
-        expect(toon.stdout).toMatch(/^next_cursor: /mu);
+        const toonCursor = /^next_cursor: "?([^"\n]+)"?$/mu.exec(toon.stdout)?.[1];
+        expect(toonCursor).toBeDefined();
+        expect(decodeReadOutputContinuationCursor(toonCursor!)).toMatchObject({ command, direction: "backward" });
+        const olderToon = context.runCli([command, id, "--output-cursor", toonCursor!]);
+        expect(olderToon.code).toBe(0);
+        const newestDelivered = rows[0]!.index;
+        expect(olderToon.stdout).toContain(`${command} entry ${newestDelivered - 1} `);
+        expect(olderToon.stdout).not.toContain(`${command} entry ${ENTRIES} `);
       });
     },
     120_000,

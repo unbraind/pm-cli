@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
@@ -73,6 +73,44 @@ describe("annotation entry addressing (pm-hka7ep)", () => {
       await runLearnings(id, { add: "second learning" }, { path: context.pmPath });
       const learnings = await runLearnings(id, { limit: "1" }, { path: context.pmPath });
       expect(learnings.learnings).toEqual([expect.objectContaining({ index: 2, text: "second learning" })]);
+    });
+  });
+
+  it("reports an added or edited entry by its position after the store's created_at ordering", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Post-sort addresses" });
+      // A later-stamped entry (clock skew or import) is written first.
+      vi.useFakeTimers({ toFake: ["Date"], now: new Date("2099-01-01T00:00:00.000Z") });
+      try {
+        await runComments(id, { add: "stamped in the future" }, { path: context.pmPath });
+      } finally {
+        vi.useRealTimers();
+      }
+      const added = await runComments(id, { add: "written now" }, { path: context.pmPath });
+      expect(added.mutation_receipt?.entry_index).toBe(1);
+      expect(added.comments).toEqual([expect.objectContaining({ index: 1, text: "written now" })]);
+      // Two entries share a created_at, so an edit that changes text can reorder them.
+      vi.useFakeTimers({ toFake: ["Date"], now: new Date("2098-01-01T00:00:00.000Z") });
+      try {
+        await runComments(id, { add: "b shared" }, { path: context.pmPath });
+        await runComments(id, { add: "c shared" }, { path: context.pmPath });
+      } finally {
+        vi.useRealTimers();
+      }
+      const before = (await runComments(id, {}, { path: context.pmPath })).comments.map((row) => [row.index, row.text]);
+      expect(before).toEqual([[1, "written now"], [2, "b shared"], [3, "c shared"], [4, "stamped in the future"]]);
+      const edited = await runComments(id, { edit: 2, add: "z shared" }, { path: context.pmPath });
+      expect(edited.mutation_receipt?.entry_index).toBe(3);
+      expect(edited.comments).toEqual([expect.objectContaining({ index: 3, text: "z shared" })]);
+    });
+  });
+
+  it("delivers a malformed stored entry as stored instead of spreading it into indexed characters", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Malformed single entry" });
+      await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), "comments[1]: just-a-string\n", "utf8");
+      const listed = await runComments(id, {}, { path: context.pmPath });
+      expect(listed.comments).toEqual(["just-a-string"]);
     });
   });
 
