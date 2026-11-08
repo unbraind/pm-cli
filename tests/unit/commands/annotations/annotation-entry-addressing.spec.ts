@@ -210,4 +210,20 @@ describe("annotation entry addressing (pm-hka7ep)", () => {
       expect(intended.comments).toEqual([expect.objectContaining({ index: 5, text: "meant the newest" })]);
     });
   });
+
+  it("keeps unguarded absolute-index edits valid: the row index addresses its entry, the page count does not", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Unguarded addressing" });
+      await seedComments(context, id, 5);
+      const page = await runComments(id, { limit: "2" }, { path: context.pmPath });
+      const newest = page.comments.at(-1)!;
+      // Without --expect-at nothing is refused: the absolute index is the contract.
+      const byIndex = await runComments(id, { edit: newest.index, add: "newest by index" }, { path: context.pmPath });
+      expect(byIndex.comments).toEqual([expect.objectContaining({ index: 5, text: "newest by index" })]);
+      const byCount = await runComments(id, { edit: page.count, add: "older by count" }, { path: context.pmPath });
+      expect(byCount.comments).toEqual([expect.objectContaining({ index: 2, text: "older by count" })]);
+      const stored = (await runComments(id, {}, { path: context.pmPath })).comments.map((row) => row.text);
+      expect(stored).toEqual(["comment 1", "older by count", "comment 3", "comment 4", "newest by index"]);
+    });
+  });
 });

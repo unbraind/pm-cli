@@ -109,7 +109,7 @@ describe("newest-tail retention for annotation reads (pm-8s53lj)", () => {
       { id: "pm-tail", comments: page, count: 20, total_count: 60, returned_count: 20 },
     ) as Record<string, unknown>;
     expect((withTotal.comments as Row[]).map((row) => row.index)).toEqual([59, 60]);
-    expect(withTotal).toMatchObject({ total_count: 60 });
+    expect(withTotal).toMatchObject({ total_count: 60, count: 2, returned_count: 2 });
     const compacted = applyReadOutputDimensions(
       "comments",
       { outputBudget: 1500 },

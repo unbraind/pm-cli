@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[6]: agent-ux,context,"gh:1684",output,token-efficiency,toon
 created_at: "2026-11-07T22:10:47.408Z"
-updated_at: "2026-11-07T22:10:47.408Z"
+updated_at: "2026-11-08T01:18:27.761Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "pm context TOON focus tables omit empty json_columns and absent arrays and a decoder recognizes the block by its reserved collection_encoding key name; decodePmTableRows restores rows exactly from a block without json_columns or absent, and still decodes every block shape earlier releases emitted; Missing cells use an encoding no larger than the pair list on the pm context corpus, and round-trip tests cover sparse, null, list and nested columns; null_columns and list_columns stay declared so explicit nulls and list cells remain distinguishable, and JSON output is unchanged; A spec measures pm context --limit 20 TOON encoding bytes against the 2026.11.7 baseline and fails on regression, and release notes carry a migration line for TOON table decoders"
@@ -15,9 +15,9 @@ risk: medium
 confidence: medium
 reporter: unbraind
 severity: low
-repro_steps: "In any tracker with blocked and unblocked open items, run pm context --limit 20 and compare the bytes of the high_level_encoding and low_level_encoding blocks with the total"
+repro_steps: "On this repository's tracker at main 70c14d4a3 (3,230 items, blocked and unblocked open items present), run pm context --limit 20 and compare the bytes of the high_level_encoding and low_level_encoding blocks with the total TOON output; pm context --limit 5 emits only the high_level_encoding block"
 expected_result: "pm context TOON carries no empty encoding arrays and encodes missing cells densely, so encoding metadata is a small fraction of the read while every JSON fact stays decodable"
-actual_result: "pm context --limit 20 on this tracker: 629 of 8,510 B are encoding metadata, including json_columns: [] and absent: [] on every table and 14 absent coordinate pairs for blocked and blocker_ids"
+actual_result: "pm context --limit 20 on this tracker: 629 of 8,510 B are encoding metadata in two blocks. high_level_encoding has json_columns: [] and 14 absent coordinate pairs for blocked and blocker_ids on unblocked rows, plus list_columns and null_columns. low_level_encoding has json_columns: [] and absent: [] plus list_columns and null_columns"
 dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-4euctr,related,"2026-11-07T22:10:47.408Z","harness:claude-code","cli:create:dep",detected
   pm-gh1603,related,"2026-11-07T22:10:47.408Z","harness:claude-code","cli:create:dep",detected

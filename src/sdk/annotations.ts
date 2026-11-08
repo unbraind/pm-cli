@@ -1004,6 +1004,19 @@ function indexAnnotationEntry<TEntry>(
   return indexed;
 }
 
+/**
+ * Index only the retained newest-tail slice, numbering each row by its
+ * position in the complete collection, so a short page of a long history
+ * clones only what it delivers.
+ */
+function indexRetainedAnnotationEntries<TEntry>(
+  allEntries: readonly TEntry[],
+  retained: readonly TEntry[],
+): Array<IndexedAnnotationEntry<TEntry>> {
+  const offset = allEntries.length - retained.length;
+  return retained.map((entry, position) => indexAnnotationEntry(entry, offset + position + 1));
+}
+
 function renderAnnotationResult<
   TKey extends string,
   TEntry extends AnnotationEntry,
@@ -1018,9 +1031,12 @@ function renderAnnotationResult<
 ): AnnotationCommandResult<TKey, TEntry> {
   const entries =
     mutation === undefined || fullHistory
-      ? limitAnnotationEntries(
-          allEntries.map((entry, position) => indexAnnotationEntry(entry, position + 1)),
-          mutation !== undefined && fullHistory ? undefined : limit,
+      ? indexRetainedAnnotationEntries(
+          allEntries,
+          limitAnnotationEntries(
+            allEntries,
+            mutation !== undefined && fullHistory ? undefined : limit,
+          ),
         )
       : mutation.entry === undefined
         ? []

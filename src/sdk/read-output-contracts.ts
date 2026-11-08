@@ -1299,6 +1299,11 @@ function applyAmountBound(
         ? bounded[activeRowKey].length
         : countReadOutputRows(bounded);
   }
+  // A producer page counter (annotation includeMeta, aggregate groups) must
+  // describe the rows actually delivered, as count does.
+  if (typeof bounded.returned_count === "number") {
+    bounded.returned_count = countReadOutputRows(bounded);
+  }
   bounded.applied_bound = {
     kind: "output_limit",
     source: "explicit",

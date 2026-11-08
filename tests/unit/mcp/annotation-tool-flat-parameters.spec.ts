@@ -67,23 +67,32 @@ describe("MCP annotation tools read every declared flat parameter (pm-wsqxwb)", 
   it("writes through the tools/call path for every annotation action given top-level add or text", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Flat annotation writes" });
-      const cases: Array<[string, Record<string, unknown>, string]> = [
-        ["pm_comments", { add: "flat comment" }, "comments"],
-        ["pm_comments", { text: "flat text comment" }, "comments"],
-        ["pm_notes", { add: "flat note" }, "notes"],
-        ["pm_notes", { text: "flat text note" }, "notes"],
-        ["pm_learnings", { add: "flat learning" }, "learnings"],
-        ["pm_learnings", { text: "flat text learning" }, "learnings"],
-        ["pm_files", { add: ["README.md"] }, "files"],
-        ["pm_docs", { add: "docs/README.md" }, "docs"],
-        ["pm_test", { add: "command=node -e 0" }, "tests"],
+      const cases: Array<[string, Record<string, unknown>, string, string, string]> = [
+        ["pm_comments", { add: "flat comment" }, "comments", "text", "flat comment"],
+        ["pm_comments", { text: "flat text comment" }, "comments", "text", "flat text comment"],
+        ["pm_notes", { add: "flat note" }, "notes", "text", "flat note"],
+        ["pm_notes", { text: "flat text note" }, "notes", "text", "flat text note"],
+        ["pm_learnings", { add: "flat learning" }, "learnings", "text", "flat learning"],
+        ["pm_learnings", { text: "flat text learning" }, "learnings", "text", "flat text learning"],
+        ["pm_files", { add: ["README.md"] }, "files", "path", "README.md"],
+        ["pm_docs", { add: "docs/README.md" }, "docs", "path", "docs/README.md"],
+        ["pm_test", { add: "command=node -e 0" }, "tests", "command", "node -e 0"],
       ];
-      for (const [tool, args, key] of cases) {
+      for (const [tool, args, key, field, expected] of cases) {
         const content = await callTool(context, tool, { id, ...args });
         const result = content.result as Record<string, unknown>;
         expect(result, tool).toBeDefined();
+        // The write's own result names the new entry; a fallback listing of
+        // earlier entries would not contain it.
         const rows = result[key] as Array<Record<string, unknown>>;
-        expect(rows.length, `${tool} ${JSON.stringify(args)}`).toBeGreaterThan(0);
+        expect(rows.map((row) => row[field]), `${tool} ${JSON.stringify(args)}`).toContain(expected);
+      }
+      for (const [collection, expected] of [
+        ["notes", ["flat note", "flat text note"]],
+        ["learnings", ["flat learning", "flat text learning"]],
+      ] as const) {
+        const listed = context.runCli([collection, id, "--json"], { expectJson: true }).json as Record<string, Array<{ text: string }>>;
+        expect(listed[collection]!.map((row) => row.text)).toEqual(expected);
       }
       const comments = context.runCli(["comments", id, "--json"], { expectJson: true }).json as {
         comments: Array<{ index: number; text: string }>;
