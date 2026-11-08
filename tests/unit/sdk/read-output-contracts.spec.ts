@@ -74,7 +74,9 @@ describe("read output contracts", () => {
       expect(contract.budget_retention_policy).toBe(
         contract.command === "assurance"
           ? "verdict_priority"
-          : "ordered_prefix",
+          : ["comments", "notes", "learnings"].includes(contract.command)
+            ? "ordered_suffix"
+            : "ordered_prefix",
       );
     }
   });

@@ -421,6 +421,10 @@ uses `unbounded` explicitly. `resolveReadOutputRecoveryBudget()` exposes the
 versioned pure calculation to package authors; there is no hard-coded smaller
 retry and no recovery cycle.
 
+Comments, notes and learnings declare `budget_retention_policy: ordered_suffix`:
+budget compaction keeps their newest rows and their continuation pages
+backwards (see the tail retention policy above). Every other surface except
+assurance declares `ordered_prefix`.
 Assurance declares `budget_retention_policy: verdict_priority`: failing block,
 warn, and observe rows precede retired and passing rows while preserving order
 within each class. `assertions_total` remains the pre-projection denominator,

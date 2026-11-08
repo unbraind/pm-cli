@@ -406,6 +406,7 @@
     {
       "set_id": "annotation-mutation-receipts",
       "member_path": "src/sdk/runtime/actions.ts",
+      "scope": "unchanged",
       "pm_item": "pm-hka7ep",
       "reason": "MCP annotation dispatch is unchanged: rows gain index in the shared SDK renderer, and the expectAt guard reaches the command through contract-derived hoisting in runtime-input.ts.",
       "expires_on": "2026-11-22"

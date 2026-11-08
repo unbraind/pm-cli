@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2115,
+    "covered_symbols": 2116,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2116
+    "required_symbols": 2117
   },
   "breaking_acknowledgements": [
     {
@@ -3170,6 +3170,18 @@
       ],
       "package_version": "2026.11.7",
       "reason": "pm-8s53lj/pm-hka7ep annotation reads. Before: comment, note and learning rows carried only their stored fields, a bounded comments/notes read kept the OLDEST rows, learnings had no output ceiling, and PmReadOutputCursorEnvelope continued forward only. After: every listing row leads with index (its absolute 1-based position, IndexedAnnotationEntry); CommentsCommandOptions, NotesCommandOptions and LearningsCommandOptions accept expectAt for edit/delete; learnings joins PM_READ_OUTPUT_SURFACES; comments/notes/learnings bounded reads keep the NEWEST rows and continue through a cursor with direction backward; sliceReadOutputRowCollection accepts an optional end. Migrate: address entries by row.index instead of array position, follow next_cursor for older entries, and accept the optional direction field when decoding cursors."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmReadOutputSurfaceContract",
+        "signature ./sdk:PmReadOutputTailRetentionPolicy",
+        "signature ./sdk/contracts:PmReadOutputSurfaceContract",
+        "signature ./sdk/contracts:PmReadOutputTailRetentionPolicy",
+        "signature ./sdk/core:PmReadOutputSurfaceContract",
+        "signature ./sdk/runtime:PmReadOutputSurfaceContract"
+      ],
+      "package_version": "2026.11.7",
+      "reason": "pm-8s53lj review follow-up. Before: PmReadOutputSurfaceContract.budget_retention_policy was ordered_prefix or verdict_priority, and PmReadOutputTailRetentionPolicy declared only paths and total_key. After: comments, notes and learnings declare ordered_suffix (they keep their newest rows and page backwards), and a tail policy may declare delivered_row_counters (notes recount structured_event_count from the delivered rows). Migrate: treat ordered_suffix as newest-first retention, and accept the optional delivered_row_counters field when reading tail policies."
     }
   ],
   "entrypoints": {
@@ -15903,6 +15915,12 @@
           "signature": "export interface PmReadOutputCursorEnvelope { version: 1; command: PmReadOutputSurface; path: string; offset: number; total_rows: number; fingerprint: string; direction?: \"backward\"; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputDeliveredRowCounter",
+          "signature": "export interface PmReadOutputDeliveredRowCounter { key: string; field: string; equals: string; }"
+        },
+        {
           "classification": "supported",
           "kind": "type",
           "name": "PmReadOutputDimension",
@@ -16014,13 +16032,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"ordered_suffix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTailRetentionPolicy",
-          "signature": "export interface PmReadOutputTailRetentionPolicy { paths: readonly string[]; total_key: \"total_count\"; }"
+          "signature": "export interface PmReadOutputTailRetentionPolicy { paths: readonly string[]; total_key: \"total_count\"; delivered_row_counters?: readonly PmReadOutputDeliveredRowCounter[]; }"
         },
         {
           "classification": "contract_data",
@@ -27004,6 +27022,12 @@
         },
         {
           "classification": "contract_data",
+          "kind": "interface",
+          "name": "PmReadOutputDeliveredRowCounter",
+          "signature": "export interface PmReadOutputDeliveredRowCounter { key: string; field: string; equals: string; }"
+        },
+        {
+          "classification": "contract_data",
           "kind": "type",
           "name": "PmReadOutputDimension",
           "signature": "export type PmReadOutputDimension = (typeof PM_READ_OUTPUT_DIMENSIONS)[number];"
@@ -27108,13 +27132,13 @@
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"ordered_suffix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
         },
         {
           "classification": "contract_data",
           "kind": "interface",
           "name": "PmReadOutputTailRetentionPolicy",
-          "signature": "export interface PmReadOutputTailRetentionPolicy { paths: readonly string[]; total_key: \"total_count\"; }"
+          "signature": "export interface PmReadOutputTailRetentionPolicy { paths: readonly string[]; total_key: \"total_count\"; delivered_row_counters?: readonly PmReadOutputDeliveredRowCounter[]; }"
         },
         {
           "classification": "contract_data",
@@ -28944,7 +28968,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"ordered_suffix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
         },
         {
           "classification": "supported",
@@ -37398,7 +37422,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "PmReadOutputSurfaceContract",
-          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
+          "signature": "export interface PmReadOutputSurfaceContract { command: PmReadOutputSurface; dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>; precedence: readonly [ \"canonical\", \"legacy\", \"intent\", \"default\" ]; budget_retention_policy: \"ordered_prefix\" | \"ordered_suffix\" | \"verdict_priority\"; projection_modes?: readonly string[]; }"
         },
         {
           "classification": "supported",

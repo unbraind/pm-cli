@@ -139,7 +139,7 @@ catalog rows across 17 canonical groups. Two of those rows are author-manifest
 schema findings reached through a real `pm health --full --strict-exit --json`
 process: an unknown top-level key and omitted canonical pm version bounds. The
 remaining rows stay explicit `uncovered` obligations in
-[the generated census](https://github.com/unbraind/pm-cli/blob/main/docs/generated/REFUSAL_CLOSURE_CENSUS.md) (repository-only gate evidence, excluded from npm); the ratchet does not
+[the generated census](https://github.com/unbraind/pm-cli/blob/main/docs/generated/REFUSAL_CLOSURE_CENSUS.md) (current `main`, repository-only gate evidence excluded from npm; for an installed release, open the same path at its `v<version>` tag); the ratchet does not
 turn partial catalog closure into an approval claim.
 
 Run the focused proof with:

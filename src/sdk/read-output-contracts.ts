@@ -51,23 +51,29 @@ import {
   applyReadOutputContinuation,
   decodeReadOutputContinuationCursor,
   encodeReadOutputContinuationCursor,
-  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
   prioritizeAssuranceAssertions,
   readOutputCollectionFingerprint,
-  readOutputRetainsTail,
+  refreshReadOutputDeliveredRowCounters,
 } from "./read-output/continuation.js";
+import {
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
+  readOutputRetainsTail,
+} from "./read-output/tail-retention.js";
 export {
   decodeReadOutputContinuationCursor,
   encodeReadOutputContinuationCursor,
   PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES,
-  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
   readOutputCollectionFingerprint,
+} from "./read-output/continuation.js";
+export {
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
   readOutputRetainsTail,
-} from "./read-output/continuation.js";
+} from "./read-output/tail-retention.js";
+export type { PmReadOutputContinuationFingerprintPolicy } from "./read-output/continuation.js";
 export type {
-  PmReadOutputContinuationFingerprintPolicy,
+  PmReadOutputDeliveredRowCounter,
   PmReadOutputTailRetentionPolicy,
-} from "./read-output/continuation.js";
+} from "./read-output/tail-retention.js";
 import {
   applyReadOutputSessionReferences,
   attachReadOutputSessionReceipt,
@@ -155,8 +161,11 @@ export interface PmReadOutputSurfaceContract {
   dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>;
   /** Deterministic precedence from strongest caller declaration to fallback. */
   precedence: readonly ["canonical", "legacy", "intent", "default"];
-  /** Stable policy used before budget compaction selects retained rows. */
-  budget_retention_policy: "ordered_prefix" | "verdict_priority";
+  /**
+   * Stable policy used before budget compaction selects retained rows:
+   * `ordered_suffix` surfaces keep their newest (last) rows and page backwards.
+   */
+  budget_retention_policy: "ordered_prefix" | "ordered_suffix" | "verdict_priority";
   /** Exact command-local whole-result modes accepted by `outputInclude`. */
   projection_modes?: readonly string[];
 }
@@ -458,7 +467,11 @@ function buildSurfaceContract(
     dimensions,
     precedence: READ_OUTPUT_PRECEDENCE,
     budget_retention_policy:
-      command === "assurance" ? "verdict_priority" : "ordered_prefix",
+      command === "assurance"
+        ? "verdict_priority"
+        : Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
+          ? "ordered_suffix"
+          : "ordered_prefix",
     projection_modes: Object.freeze([
       ...readOutputIncludeModeOptionsForSurface(command).keys(),
     ]),
@@ -1306,6 +1319,7 @@ function applyAmountBound(
   if (typeof bounded.returned_count === "number") {
     bounded.returned_count = countReadOutputRows(bounded);
   }
+  refreshReadOutputDeliveredRowCounters(bounded, command);
   bounded.applied_bound = {
     kind: "output_limit",
     source: "explicit",
@@ -2083,6 +2097,7 @@ function compactReadOutputProjection(
     format,
     (compacted) => {
       refreshReadOutputDeliveredCounts(compacted, deliveredSource);
+      refreshReadOutputDeliveredRowCounters(compacted, resolved.command);
       const continuationCursorRebased = rebaseCompactedProducerCursor(
         compacted,
         continuationState.originalItems,

@@ -376,11 +376,13 @@ function normalizeReplicationSet(set) {
 }
 
 /** Find a matching reasoned PM waiver whose calendar date is valid and has not expired on the evaluation day. */
-function activeWaiver(config, setId, memberPath, today) {
+function activeWaiver(config, setId, memberPath, today, check) {
   return (config.waivers ?? []).find(
     (waiver) =>
       waiver.set_id === setId &&
       waiver.member_path === memberPath &&
+      // A scoped waiver covers only its named check; an unscoped one covers both.
+      (waiver.scope === undefined || waiver.scope === check) &&
       typeof waiver.reason === "string" &&
       /^pm-[a-z0-9]+$/u.test(waiver.pm_item ?? "") &&
       typeof waiver.expires_on === "string" &&
@@ -426,7 +428,7 @@ async function validateMembers(config, setId, members, root, today) {
       });
     }
     if (missing.length === 0) continue;
-    const waiver = activeWaiver(config, setId, member.path, today);
+    const waiver = activeWaiver(config, setId, member.path, today, "missing");
     if (waiver) {
       waivers.push({ set_id: setId, member_path: member.path, ...waiver });
       continue;
@@ -642,7 +644,7 @@ async function validateActiveSets(
     }
     for (const memberPath of requiredPaths) {
       if (changedFiles.includes(memberPath)) continue;
-      const waiver = activeWaiver(config, set.id, memberPath, today);
+      const waiver = activeWaiver(config, set.id, memberPath, today, "unchanged");
       if (waiver) {
         waivers.push({ set_id: set.id, member_path: memberPath, ...waiver });
       } else {

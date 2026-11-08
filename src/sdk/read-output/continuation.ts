@@ -20,6 +20,20 @@ import {
   sliceReadOutputRowCollection,
 } from "../read-output-rows.js";
 
+import {
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
+  readOutputRetainsTail,
+} from "./tail-retention.js";
+
+export {
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
+  readOutputRetainsTail,
+} from "./tail-retention.js";
+export type {
+  PmReadOutputDeliveredRowCounter,
+  PmReadOutputTailRetentionPolicy,
+} from "./tail-retention.js";
+
 const MAX_READ_OUTPUT_CURSOR_LENGTH = 4096;
 
 const HEALTH_TELEMETRY_VOLATILE_DETAIL_FIELDS = Object.freeze([
@@ -70,41 +84,29 @@ export const PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES: Readonly<
   }),
 });
 
-/**
- * Declared retention for a chronological (oldest-first) collection whose
- * bounded reads must keep the newest entries: budget compaction and
- * `--output-limit` retain the tail and the continuation pages backwards.
- */
-export interface PmReadOutputTailRetentionPolicy {
-  /** Declared row paths whose entries are stored oldest first. */
-  paths: readonly string[];
-  /** Top-level key that reports the complete collection size beside `count` when rows are withheld. */
-  total_key: "total_count";
-}
-
-/** Read surfaces whose newest entries are the ones a bounded read must deliver (pm-8s53lj). */
-export const PM_READ_OUTPUT_TAIL_RETENTION_POLICIES: Readonly<
-  Partial<Record<PmReadOutputSurface, PmReadOutputTailRetentionPolicy>>
-> = Object.freeze({
-  comments: Object.freeze({ paths: Object.freeze(["comments"]), total_key: "total_count" }),
-  notes: Object.freeze({ paths: Object.freeze(["notes"]), total_key: "total_count" }),
-  learnings: Object.freeze({ paths: Object.freeze(["learnings"]), total_key: "total_count" }),
-});
-
-/** Whether bounded reads of one declared row path keep its newest tail. */
-export function readOutputRetainsTail(
-  command: PmReadOutputSurface | string | undefined,
-  path: string,
-): boolean {
-  if (command === undefined) return false;
-  const policy = Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
-    ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command as PmReadOutputSurface]
-    : undefined;
-  return policy?.paths.includes(path) === true;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Recount a tail-retention surface's declared delivered-row counters from the
+ * rows actually delivered, so withheld rows are never counted (notes report
+ * structured_event_count for the returned projection).
+ */
+export function refreshReadOutputDeliveredRowCounters(
+  result: Record<string, unknown>,
+  command: PmReadOutputSurface,
+): void {
+  const policy = Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
+    ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]
+    : undefined;
+  for (const counter of policy?.delivered_row_counters ?? []) {
+    const rows = result[policy!.paths[0]!];
+    if (typeof result[counter.key] !== "number" || !Array.isArray(rows)) continue;
+    result[counter.key] = rows.filter(
+      (row) => isRecord(row) && row[counter.field] === counter.equals,
+    ).length;
+  }
 }
 
 function normalizeReadOutputFingerprintValue(value: unknown): unknown {
@@ -332,5 +334,10 @@ export function applyReadOutputContinuation(
   for (const key of ["count", "returned_count"] as const) {
     if (typeof sliced[key] === "number") sliced[key] = cursor.offset;
   }
+  // An older page still reports the complete collection beside its count; a
+  // producer total already counts it, otherwise the cursor's snapshot does.
+  const totalKey = PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]!.total_key;
+  if (typeof sliced[totalKey] !== "number") sliced[totalKey] = cursor.total_rows;
+  refreshReadOutputDeliveredRowCounters(sliced, command);
   return sliced;
 }

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { compactReadOutputToBudget } from "../../../../src/sdk/read-output-budget.js";
+import { refreshReadOutputDeliveredRowCounters } from "../../../../src/sdk/read-output/continuation.js";
 import {
   PM_READ_OUTPUT_SURFACES,
+  PM_READ_OUTPUT_SURFACE_CONTRACTS,
   PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
   applyReadOutputDimensions,
   decodeReadOutputContinuationCursor,
@@ -150,6 +152,75 @@ describe("newest-tail retention for annotation reads (pm-8s53lj)", () => {
       );
     }
     expect(() => validateReadOutputOptions("learnings", { limit: "5", outputBudget: 500 })).not.toThrow();
+  });
+
+  it("declares ordered_suffix retention exactly for the tail-retention surfaces", () => {
+    const declared = Object.fromEntries(
+      PM_READ_OUTPUT_SURFACE_CONTRACTS.map((contract) => [contract.command, contract.budget_retention_policy]),
+    );
+    expect(declared).toMatchObject({
+      comments: "ordered_suffix",
+      notes: "ordered_suffix",
+      learnings: "ordered_suffix",
+      list: "ordered_prefix",
+      assurance: "verdict_priority",
+    });
+    expect(Object.values(declared).filter((policy) => policy === "ordered_suffix")).toHaveLength(3);
+  });
+
+  it("reports the complete total on an older page, keeping a producer total", () => {
+    const rows = annotationRows(60);
+    const first = bounded("comments", rows, { outputBudget: 1500 });
+    const replay = bounded("comments", rows, { outputBudget: 1500, outputCursor: first.next_cursor });
+    expect(replay).toMatchObject({ total_count: 60 });
+    const fromProducer = applyReadOutputDimensions(
+      "comments",
+      { outputBudget: "unbounded", outputCursor: first.next_cursor },
+      { id: "pm-tail", comments: rows, count: 60, total_count: 75 },
+    ) as Record<string, unknown>;
+    expect(fromProducer).toMatchObject({ total_count: 75 });
+  });
+
+  it("recounts structured note events among the delivered rows only", () => {
+    const notes = annotationRows(40).map((row) =>
+      row.index % 4 === 0 ? { ...row, format: "json", data: { n: row.index } } : row,
+    );
+    const structured = (rows: Array<Record<string, unknown>>) => rows.filter((row) => row.format === "json").length;
+    const limited = applyReadOutputDimensions(
+      "notes",
+      { outputLimit: 5 },
+      { id: "pm-tail", notes, count: 40, structured_event_count: 10 },
+    ) as Record<string, Array<Record<string, unknown>>> & Record<string, unknown>;
+    expect(limited.structured_event_count).toBe(structured(limited.notes));
+    expect(limited.structured_event_count).toBe(2);
+    const compacted = applyReadOutputDimensions(
+      "notes",
+      { outputBudget: 1500 },
+      { id: "pm-tail", notes, count: 40, structured_event_count: 10 },
+    ) as Record<string, Array<Record<string, unknown>>> & Record<string, unknown>;
+    expect(compacted.structured_event_count).toBe(structured(compacted.notes));
+    const replay = applyReadOutputDimensions(
+      "notes",
+      { outputBudget: "unbounded", outputCursor: compacted.next_cursor },
+      { id: "pm-tail", notes, count: 40, structured_event_count: 10 },
+    ) as Record<string, Array<Record<string, unknown>>> & Record<string, unknown>;
+    expect(replay.structured_event_count).toBe(structured(replay.notes));
+  });
+
+  it("leaves counters it cannot recount untouched", () => {
+    const absent: Record<string, unknown> = { notes: [{ format: "json" }] };
+    refreshReadOutputDeliveredRowCounters(absent, "notes");
+    expect(absent).not.toHaveProperty("structured_event_count");
+    const noRows: Record<string, unknown> = { structured_event_count: 3 };
+    refreshReadOutputDeliveredRowCounters(noRows, "notes");
+    expect(noRows.structured_event_count).toBe(3);
+    const mixed: Record<string, unknown> = { structured_event_count: 3, notes: ["malformed", { format: "json" }] };
+    refreshReadOutputDeliveredRowCounters(mixed, "notes");
+    expect(mixed.structured_event_count).toBe(1);
+    const other: Record<string, unknown> = { structured_event_count: 3, items: [] };
+    refreshReadOutputDeliveredRowCounters(other, "list");
+    refreshReadOutputDeliveredRowCounters(other, "comments");
+    expect(other.structured_event_count).toBe(3);
   });
 
   it("refreshes a producer returned_count with the delivered page", () => {

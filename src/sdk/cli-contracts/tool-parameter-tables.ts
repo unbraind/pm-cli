@@ -1404,7 +1404,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   expectAt: {
     description:
-      "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at.",
+      "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at. It compares timestamps, not entry identities.",
     examples: ["2026-11-06T06:02:01.768Z"],
   },
   assignee: {
