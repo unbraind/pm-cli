@@ -1319,7 +1319,6 @@ function applyAmountBound(
   if (typeof bounded.returned_count === "number") {
     bounded.returned_count = countReadOutputRows(bounded);
   }
-  refreshReadOutputDeliveredRowCounters(bounded, command);
   bounded.applied_bound = {
     kind: "output_limit",
     source: "explicit",
@@ -1552,6 +1551,7 @@ function projectReadOutputRows(
     }
   }
   refreshReadOutputDeliveredCounts(projected, continuationSource);
+  refreshTailRetentionRowCounters(projected, resolved.command, continuationState);
   return {
     projected:
       session === undefined
@@ -1800,6 +1800,26 @@ function attachTailRetentionTotal(
   }
 }
 
+/**
+ * Recount delivered-row counters against the unprojected producer rows. The
+ * captured pre-budget row count is where the delivered newest tail ends: the
+ * full collection, or the older slice a backward cursor replays.
+ */
+function refreshTailRetentionRowCounters(
+  delivered: Record<string, unknown>,
+  command: PmReadOutputSurface,
+  continuationState: ReadOutputContinuationState,
+): void {
+  const path = PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]?.paths[0];
+  if (path === undefined) return;
+  refreshReadOutputDeliveredRowCounters(
+    delivered,
+    command,
+    continuationState.producer,
+    continuationState.collectionsBeforeBudget.get(path)?.rows,
+  );
+}
+
 /** Pre-budget coordinates of one declared row collection, used to resume what compaction withholds. */
 interface ReadOutputCollectionBeforeBudget {
   /** Rows present before budget compaction (a replay counts only its slice). */
@@ -2001,6 +2021,8 @@ interface ReadOutputContinuationState {
   cursorContinuesExistingPage: boolean;
   /** Original producer cursor, or incoming boundary for a terminal page. */
   cursorSource: unknown;
+  /** The unprojected producer result, whose rows keep fields a projection drops. */
+  producer: Record<string, unknown>;
 }
 
 /** Bind replay fingerprints and positional fallback to the uncapped selected producer page. */
@@ -2050,6 +2072,7 @@ function captureReadOutputContinuationState(
     cursorSource: cursorContinuesExistingPage
       ? projected.next_cursor
       : options.after,
+    producer: source,
   };
 }
 
@@ -2097,7 +2120,7 @@ function compactReadOutputProjection(
     format,
     (compacted) => {
       refreshReadOutputDeliveredCounts(compacted, deliveredSource);
-      refreshReadOutputDeliveredRowCounters(compacted, resolved.command);
+      refreshTailRetentionRowCounters(compacted, resolved.command, continuationState);
       const continuationCursorRebased = rebaseCompactedProducerCursor(
         compacted,
         continuationState.originalItems,

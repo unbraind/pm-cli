@@ -207,6 +207,37 @@ describe("newest-tail retention for annotation reads (pm-8s53lj)", () => {
     expect(replay.structured_event_count).toBe(structured(replay.notes));
   });
 
+  it("counts structured events from the producer rows when a projection drops their classification field", () => {
+    const notes = [
+      { index: 1, created_at: "2026-11-01T00:00:00.000Z", author: "a", text: "plain" },
+      { index: 2, created_at: "2026-11-02T00:00:00.000Z", author: "a", text: "{}", format: "json", data: { n: 2 } },
+    ];
+    const projected = applyReadOutputDimensions(
+      "notes",
+      { outputInclude: "index,data", outputLimit: 1, outputBudget: "unbounded" },
+      { id: "pm-tail", notes, count: 2, structured_event_count: 1 },
+    ) as Record<string, Array<Record<string, unknown>>> & Record<string, unknown>;
+    expect(projected.notes).toEqual([{ index: 2, data: { n: 2 } }]);
+    expect(projected.structured_event_count).toBe(1);
+    const many = annotationRows(40).map((row) =>
+      row.index % 4 === 0 ? { ...row, format: "json", data: { n: row.index } } : row,
+    );
+    const page = applyReadOutputDimensions(
+      "notes",
+      { outputInclude: "index,text", outputBudget: 1500 },
+      { id: "pm-tail", notes: many, count: 40, structured_event_count: 10 },
+    ) as Record<string, Array<{ index: number }>> & Record<string, unknown>;
+    const expected = (rows: Array<{ index: number }>) => rows.filter((row) => row.index % 4 === 0).length;
+    expect(page.structured_event_count).toBe(expected(page.notes));
+    const older = applyReadOutputDimensions(
+      "notes",
+      { outputInclude: "index,text", outputBudget: 1500, outputCursor: page.next_cursor },
+      { id: "pm-tail", notes: many, count: 40, structured_event_count: 10 },
+    ) as Record<string, Array<{ index: number }>> & Record<string, unknown>;
+    expect(older.notes.at(-1)!.index).toBe(page.notes[0]!.index - 1);
+    expect(older.structured_event_count).toBe(expected(older.notes));
+  });
+
   it("leaves counters it cannot recount untouched", () => {
     const absent: Record<string, unknown> = { notes: [{ format: "json" }] };
     refreshReadOutputDeliveredRowCounters(absent, "notes");
@@ -221,6 +252,12 @@ describe("newest-tail retention for annotation reads (pm-8s53lj)", () => {
     refreshReadOutputDeliveredRowCounters(other, "list");
     refreshReadOutputDeliveredRowCounters(other, "comments");
     expect(other.structured_event_count).toBe(3);
+    // A delivered tail is aligned to the end of the producer rows it was cut from.
+    const tail: Record<string, unknown> = { structured_event_count: 9, notes: [{}, {}] };
+    refreshReadOutputDeliveredRowCounters(tail, "notes", { notes: [{ format: "json" }, { format: "json" }, {}, { format: "json" }] }, 3);
+    expect(tail.structured_event_count).toBe(1);
+    refreshReadOutputDeliveredRowCounters(tail, "notes", { notes: "not rows" });
+    expect(tail.structured_event_count).toBe(1);
   });
 
   it("refreshes a producer returned_count with the delivered page", () => {

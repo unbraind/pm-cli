@@ -90,20 +90,30 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * Recount a tail-retention surface's declared delivered-row counters from the
- * rows actually delivered, so withheld rows are never counted (notes report
- * structured_event_count for the returned projection).
+ * rows actually delivered (notes report structured_event_count for the
+ * returned projection). Delivered rows are a contiguous newest tail ending at
+ * `end` of the producer's rows, so the unprojected producer rows are counted:
+ * they keep the classification fields that a field projection may drop.
  */
 export function refreshReadOutputDeliveredRowCounters(
   result: Record<string, unknown>,
   command: PmReadOutputSurface,
+  producer: Record<string, unknown> = result,
+  end?: number,
 ): void {
   const policy = Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
     ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]
     : undefined;
-  for (const counter of policy?.delivered_row_counters ?? []) {
-    const rows = result[policy!.paths[0]!];
-    if (typeof result[counter.key] !== "number" || !Array.isArray(rows)) continue;
-    result[counter.key] = rows.filter(
+  if (policy?.delivered_row_counters === undefined) return;
+  const path = policy.paths[0]!;
+  const rows = result[path];
+  const producerRows = producer[path];
+  if (!Array.isArray(rows) || !Array.isArray(producerRows)) return;
+  const stop = end ?? producerRows.length;
+  const delivered = producerRows.slice(Math.max(0, stop - rows.length), stop);
+  for (const counter of policy.delivered_row_counters) {
+    if (typeof result[counter.key] !== "number") continue;
+    result[counter.key] = delivered.filter(
       (row) => isRecord(row) && row[counter.field] === counter.equals,
     ).length;
   }
@@ -338,6 +348,5 @@ export function applyReadOutputContinuation(
   // producer total already counts it, otherwise the cursor's snapshot does.
   const totalKey = PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]!.total_key;
   if (typeof sliced[totalKey] !== "number") sliced[totalKey] = cursor.total_rows;
-  refreshReadOutputDeliveredRowCounters(sliced, command);
   return sliced;
 }
