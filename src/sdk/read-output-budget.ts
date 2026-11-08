@@ -290,8 +290,9 @@ function compactRowsToBudget(
   receipt: PmReadOutputReceipt,
   budget: number,
   minimumRowsByPath: ReadonlyMap<string, number>,
-  format?: "json" | "toon",
-  finalize?: (result: Record<string, unknown>) => void,
+  format: "json" | "toon" | undefined,
+  finalize: ((result: Record<string, unknown>) => void) | undefined,
+  retainsTail: (path: string) => boolean,
 ): void {
   for (
     let iteration = 0;
@@ -307,17 +308,21 @@ function compactRowsToBudget(
     const values = Array.isArray(candidate.value)
       ? [...candidate.value]
       : Object.entries(candidate.value);
-    const retainPrefix = (length: number): void => {
+    // A newest-tail collection keeps its last rows; every other keeps its first.
+    const tail = retainsTail(candidate.path);
+    const retainRows = (length: number): void => {
+      const start = tail ? values.length - length : 0;
       if (Array.isArray(candidate.value)) {
         candidate.value.length = length;
-        for (let index = 0; index < length; index += 1) candidate.value[index] = values[index];
+        for (let index = 0; index < length; index += 1) candidate.value[index] = values[start + index];
       } else {
         for (const key of Object.keys(candidate.value)) delete candidate.value[key];
         Object.defineProperties(candidate.value, Object.getOwnPropertyDescriptors(
-          Object.fromEntries(values.slice(0, length) as [string, unknown][]),
+          Object.fromEntries(values.slice(start, start + length) as [string, unknown][]),
         ));
       }
       if (typeof result.count === "number") result.count = countReadOutputRows(result);
+      if (typeof result.returned_count === "number") result.returned_count = countReadOutputRows(result);
       if (candidate.path === "items") result.applied_limit = length;
       finalize?.(result);
       updateReadOutputReceiptEstimate(result, receipt, format);
@@ -335,7 +340,7 @@ function compactRowsToBudget(
     let retained = minimumRows;
     while (low <= high) {
       const middle = Math.floor((low + high) / 2);
-      retainPrefix(middle);
+      retainRows(middle);
       if (receipt.estimated_tokens <= budget) {
         retained = middle;
         low = middle + 1;
@@ -343,7 +348,7 @@ function compactRowsToBudget(
         high = middle - 1;
       }
     }
-    retainPrefix(retained);
+    retainRows(retained);
   }
 }
 
@@ -356,6 +361,7 @@ export function compactReadOutputToBudget(
   format?: "json" | "toon",
   finalize?: (result: Record<string, unknown>) => void,
   preserveStrings = false,
+  retainsTail: (path: string) => boolean = () => false,
 ): Record<string, unknown> {
   const stringCompactionState: StringCompactionState = { compacted: false };
   const compacted = Object.fromEntries(
@@ -367,7 +373,7 @@ export function compactReadOutputToBudget(
   preserveReadOutputRowContract(result, compacted);
   receipt.strings_compacted = stringCompactionState.compacted;
   compacted.read_output = receipt;
-  compactRowsToBudget(compacted, receipt, budget, minimumRowsByPath, format, finalize);
+  compactRowsToBudget(compacted, receipt, budget, minimumRowsByPath, format, finalize, retainsTail);
   updateReadOutputReceiptEstimate(compacted, receipt, format);
   return compacted;
 }

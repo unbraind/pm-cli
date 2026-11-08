@@ -60,6 +60,21 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["cli/register-annotations.ts"],
   },
   {
+    code: "annotation_entry_mismatch",
+    exit_code: 4,
+    sources: ["sdk/annotations.ts"],
+  },
+  {
+    code: "annotation_expectation_empty",
+    exit_code: 2,
+    sources: ["sdk/annotations.ts"],
+  },
+  {
+    code: "annotation_expectation_without_target",
+    exit_code: 2,
+    sources: ["sdk/annotations.ts"],
+  },
+  {
     code: "annotation_flag_like_value",
     exit_code: 2,
     stable: true,
@@ -75,6 +90,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 2,
     stable: true,
     sources: ["sdk/annotations.ts"],
+  },
+  {
+    code: "annotation_text_source_conflict",
+    exit_code: 2,
+    sources: ["sdk/runtime-input.ts"],
   },
   {
     code: "annotation_transposed_subcommand",
@@ -1313,15 +1333,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "merge_receipt_not_portable",
     exit_code: 4,
     sources: ["sdk/merge/receipts.ts"],
-  },
-  {
-    code: "merge_receipts_pending",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
-    code: "merge_reconcile_receipt_evidence_untrusted",
-    exit_code: 4,
-    sources: ["sdk/history-repair.ts"],
   },
 ];

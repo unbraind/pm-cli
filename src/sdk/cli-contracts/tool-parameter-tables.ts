@@ -518,6 +518,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   force: { type: "boolean" },
   ifAvailable: { type: "boolean" },
   ifAbsent: { type: "boolean" },
+  expectAt: { type: "string", minLength: 1 },
   next: { type: "boolean" },
   maxAttempts: {
     anyOf: [
@@ -1400,6 +1401,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   ifAbsent: {
     description:
       "For annotations, append only when no existing entry has the same resolved author and exact stored text; retries return changed false without a history event.",
+  },
+  expectAt: {
+    description:
+      "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at.",
+    examples: ["2026-11-06T06:02:01.768Z"],
   },
   assignee: {
     description: "Assignee identity.",

@@ -17,6 +17,7 @@ import type {
 } from "../types/index.js";
 import {
   type AnnotationMutationReceipt,
+  type IndexedAnnotationEntry,
   type AnnotationOmissionReceipt,
   limitAnnotationEntries,
   parseAnnotationTextInput,
@@ -50,6 +51,8 @@ export interface NotesCommandOptions {
   fullHistory?: boolean;
   /** Append only when no note has the same resolved author and text. */
   ifAbsent?: boolean;
+  /** For edit/delete: the created_at of the note read at that index; a different entry is refused. */
+  expectAt?: string;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -63,7 +66,7 @@ export interface NotesResult {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports notes for this contract. */
-  notes: LogNote[];
+  notes: Array<IndexedAnnotationEntry<LogNote>>;
   /** Value that configures or reports count for this contract. */
   count: number;
   /** Total entries before limit and structured-event filters. */

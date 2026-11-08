@@ -2,11 +2,13 @@ id: pm-hka7ep
 title: "pm comments --edit/--delete take an absolute index while a budget-truncated listing reports count as the page size and shows no row index, so 'edit the last comment' by count rewrites an older comment"
 description: "Found 2026-11-06 while correcting a release-health comment on pm-7zs0 (263 comments). pm comments pm-7zs0 --json returned a 3000-token default page with count: 28, has_more true and the oldest 28 comments. Nothing in the rows names their absolute position, and the total (263) appears only inside output_budget_truncation.continuations[].total_rows. pm comments --edit 28 then replaced the 2026-06-30 comment at absolute index 28, not the newest comment the caller meant. The edit is audited and was reverted from git before commit, but in a clean workflow it silently rewrites unrelated history evidence. pm comments --limit 1 returns the newest comment, so the two listing modes also order differently. Expected: comment rows carry their absolute 1-based index (or a stable comment id) that --edit and --delete accept, the envelope carries total beside count, and --edit/--delete can guard on the expected created_at, text hash or item hash, refusing when the target is not the comment the caller read. The same applies to notes and learnings, which share the collection primitive. Duplicate check: searched comments edit delete index truncated page count budget; pm-4swf (edit/delete lifecycle), pm-6vfg and pm-9stazf (bounded comment reads) are closed and do not cover index addressing."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,collections,comments,safety
 created_at: "2026-11-06T06:59:42.442Z"
-updated_at: "2026-11-06T07:03:12.688Z"
+updated_at: "2026-11-08T00:39:17.966Z"
+closed_at: "2026-11-08T00:38:54.578Z"
+completed_at: "2026-11-08T00:38:54.578Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "Comment, note and learning listing rows in TOON, JSON, SDK and MCP carry their absolute 1-based index or a stable entry id that --edit and --delete accept; A budget-truncated collection listing carries total beside count at the top level; --edit and --delete accept an expected-content guard (created_at or text hash) and refuse with a typed error when the addressed entry differs; Negative control: editing by page count on a truncated listing without the guard is refused or provably addresses the intended row in a spec"
@@ -15,12 +17,58 @@ risk: medium
 confidence: high
 severity: medium
 repro_steps: "On an item with more comments than one default page holds, run pm comments <id> --json, read count, then run pm comments <id> --edit <count> with new text and compare which comment changed"
-expected_result: "The caller can address the comment it read without guessing: each row names its absolute index or id, the envelope states the total, and a guarded edit refuses a mismatched target"
-actual_result: "count is the page size, rows carry no index, and --edit 28 rewrote the 2026-06-30 comment instead of the newest one"
+resolution: "Annotation listing rows in TOON, JSON, SDK and MCP lead with index, their absolute one-based position in the stored collection (IndexedAnnotationEntry, assigned in renderAnnotationResult before limits, pages and note event filters). Receipts and full-history mutation output carry it too. A budget-truncated listing reports total_count beside count. --edit and --delete accept --expect-at <ts> (SDK and MCP expectAt). Inside the locked mutation, a different created_at at the addressed index is refused with exit 4 and annotation_entry_mismatch before any write, and details list matching_indexes. The flag is refused without --edit/--delete (annotation_expectation_without_target) or when empty (annotation_expectation_empty). The flag is wired through flag contracts, the MCP schema, the bash/zsh/fish completions, help budgets (one flag and 18 help tokens per command, no spare allowance), the error catalog, SDK surface and context-integrity docs."
+expected_result: "Every listed comment, note and learning row carries the absolute index --edit and --delete accept, a truncated listing reports total_count, and --expect-at refuses an edit or delete whose addressed entry is not the one read"
+actual_result: "tests/unit/commands/annotations/annotation-entry-addressing.spec.ts proves indexed rows across list, limit, receipts, full history, note event filters and learnings. It also covers guarded edit and delete, the refusal with zero, one and two matching indexes with no history write, and the no-target and empty refusals. The negative control is a 5-comment item whose limit-2 page reports count 2: editing by that count with the newest row's created_at is refused (entry_index 2, matching_indexes [5]), and the row's own index 5 succeeds. Through the CLI on a sandbox tracker, the refusal names the right index and exits 4. read-contract-integrity.spec.ts asserts that receipt rows carry index equal to entry_index. Flag lexicon, flag parity, surface replication, contracts and SDK surface gates pass."
 component: comments
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-4swf,related,"2026-11-06T06:59:42.442Z","harness:claude-code","cli:create:dep",detected
   pm-9stazf,related,"2026-11-06T06:59:42.442Z","harness:claude-code","cli:create:dep",detected
   pm-6vfg,related,"2026-11-06T07:03:12.440Z","harness:claude-code","cli:update:dep",detected
   pm-7zs0,discovered_from,"2026-11-06T07:03:12.440Z","harness:claude-code","cli:update:dep",detected
+  pm-8s53lj,related,"2026-11-08T00:33:16.332Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-07T22:53:40.707Z","harness:claude-code","Implementation (2026-11-07, branch fix/annotation-collection-reads). Every comment, note and learning row in TOON, JSON, SDK and MCP now leads with index, its absolute one-based position in the stored collection. renderAnnotationResult (src/sdk/annotations.ts) indexes the stored collection before --limit, so the index survives limits, budget pages and the pm notes --since/--event-type filters. It also indexes add and edit receipts and full-history mutation output. The index is assigned first and then reasserted, so a stored field of the same name cannot override it. The SDK types advertise IndexedAnnotationEntry. A budget-truncated listing carries total_count beside count (see pm-8s53lj).\n\nNew guard: --expect-at <ts> (SDK and MCP expectAt; the first spelling --expect-created-at widened the Commander option column and cost about 130 help tokens per command, so the flag was shortened) on --edit and --delete for comments, notes and learnings. Inside the locked mutate, a different created_at at the addressed index is refused with exit 4 and annotation_entry_mismatch before anything is written. details carries the collection, entry_index, expected and actual created_at, and matching_indexes (every index whose entry has the expected created_at). The message and the retry example name the index when exactly one entry matches. The flag is refused without --edit/--delete (annotation_expectation_without_target), and an empty value is refused as annotation_expectation_empty. The MCP schema declares expectAt and treats it as mutually exclusive with ifAbsent.\n\nNegative control (tests/unit/commands/annotations/annotation-entry-addressing.spec.ts): on a 5-comment item a --limit 2 page reports count 2. Editing by that count with the newest row's created_at is refused with entry_index 2 and matching_indexes [5], and editing the row's own index 5 succeeds.\n"
+learnings[1]{created_at,author,text}:
+  "2026-11-08T00:39:17.966Z","harness:claude-code","A page count is never an entry address: once output can be bounded, every row must carry its absolute position, and a write by position needs an expectation that proves the position still names what was read. Also measure the help cost of a new flag's spelling before committing to it: Commander aligns every option to the widest term, so one long flag (--expect-created-at <timestamp>) re-wrapped every description and cost about 130 help tokens per command, while --expect-at <ts> cost 18."
+files[21]{path,scope}:
+  docs/generated/FLAG_LEXICON_BUDGETS.md,project
+  scripts/release/flag-help-baseline.json,project
+  scripts/release/surface-replication-sets.json,project
+  src/cli/register-annotations.ts,project
+  src/mcp/tool-definitions.ts,project
+  src/sdk/annotations.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/comments.ts,project
+  src/sdk/completion/bash.ts,project
+  src/sdk/completion/fish.ts,project
+  src/sdk/completion/zsh.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/learnings.ts,project
+  src/sdk/notes.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/commands/annotations/annotation-entry-addressing.spec.ts,project
+  tests/unit/sdk/read-contract-integrity.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/annotations,project,"harness:claude-code","2026-11-07T22:54:29.915Z",local_mutation,fix/annotation-collection-reads
+test_runs[1]:
+  - run_id: test-local-mw73sukw-0auo3j
+    kind: test
+    status: passed
+    started_at: "2026-11-08T00:37:48.309Z"
+    finished_at: "2026-11-08T00:38:12.944Z"
+    recorded_at: "2026-11-08T00:38:12.944Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/annotations,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK_CONTEXT_INTEGRITY.md,project
+close_reason: "Fixed: annotation rows carry their absolute index and --expect-at guards edit and delete"
 body: ""

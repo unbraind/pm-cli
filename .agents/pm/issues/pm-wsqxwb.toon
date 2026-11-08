@@ -2,11 +2,13 @@ id: pm-wsqxwb
 title: "MCP annotation and linked-artifact tools silently read when add is passed at the top level: the strict schema declares add/text but dispatch only hoists ifAbsent"
 description: "Measured on the feat/write-time-preconditions branch (2026.11.2 source). The strict action schema for comments, notes, learnings and files declares top-level add (and text for comments), so pm_comments {id, add: \"x\"} validates. The dispatcher's HOISTED_ACTION_OPTION_KEYS hoists only ifAbsent for the annotation actions and nothing for files, so the top-level add never reaches the command. The call becomes a listing read and returns success with count 0. The agent believes it recorded evidence. Only options.add works. Found when pm-gh1576's expected-revision receipt reported expect_hash_unchecked for a comments call that was meant to write. Same class as pm-upi0 (nested unknown keys no-op) and pm-yp56 (comment invocation recording nothing exited 0), but on DECLARED top-level keys, so no unknown-key warning fires."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,annotations,"area:mcp",schema-dispatch-parity,silent-no-op
 created_at: "2026-11-02T13:09:28.011Z"
-updated_at: "2026-11-02T14:54:02.256Z"
+updated_at: "2026-11-08T00:38:58.343Z"
+closed_at: "2026-11-08T00:38:55.639Z"
+completed_at: "2026-11-08T00:38:55.639Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Every top-level parameter the strict MCP/SDK action schema declares for comments, notes, learnings, files and docs is either hoisted into the command options or removed from the schema, proven by a parity test that iterates the schema-declared keys rather than a hand list; A pm_comments/pm_files call with top-level add writes the entry (or refuses), never returns a listing; Regression test drives the MCP handleRequest path for each annotation action"
@@ -14,12 +16,35 @@ parent: pm-5k4v
 risk: medium
 confidence: high
 severity: high
-expected_result: "A declared top-level add on an annotation or linked-artifact MCP tool writes the entry, exactly like options.add"
-actual_result: "pm_comments {id, add} and pm_files {id, add} return a successful listing with count 0 and write nothing"
-dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "runtime-input.ts now derives flat-to-options hoisting for comments, notes, learnings, files, docs and test from PM_TOOL_ACTION_PARAMETER_CONTRACTS, as for the read actions. Operands (id, text, query, keywords) are excluded, and nested options still win. foldAnnotationTextOperand binds the annotation text operand, flat or nested, to add, the way the CLI binds positional text. Disagreeing text and add values are refused with annotation_text_source_conflict before any write. MCP option-conformance docs describe the rule. Remaining silent drops in other action families, such as pm_history with a flat limit, are owned by pm-yjjo4l."
+expected_result: "A pm_comments, pm_notes, pm_learnings, pm_files, pm_docs or pm_test call with a top-level add (or annotation text) writes the entry or refuses, and never returns a listing"
+actual_result: "Through the MCP tools/call handler on a sandbox tracker, pm_comments, pm_notes and pm_learnings with a top-level add or text now write the entry, and pm_files, pm_docs and pm_test with a top-level add link it. Before the fix each returned an empty listing and wrote nothing. The text plus add conflict is refused with exit 2. tests/unit/mcp/annotation-tool-flat-parameters.spec.ts iterates every schema-declared optional key of the six actions and drives tools/call for each. It reads the written state back through the CLI and guards an MCP edit with a flat expectAt. The linked tests pass through pm test --run."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1576,discovered_from,"2026-11-02T13:09:28.011Z","harness:claude-code","cli:create:dep",detected
   pm-upi0,related,"2026-11-02T13:09:28.011Z","harness:claude-code","cli:create:dep",detected
   pm-yp56,related,"2026-11-02T13:09:28.011Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+  pm-yjjo4l,related,"2026-11-07T22:53:42.607Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
   "2026-11-02T14:54:02.256Z","harness:claude-code","Scope evidence from the pm-gh1576 Codex fix round: the same declared-but-not-hoisted class also hits history-redact. pmToolActionParameterKeys(\"history-redact\") declares top-level literal, regex and replacement, but runAction only reads them from options, so {id, literal: [...]} refuses with 'history-redact requires at least one literal' (loud, not silent). The parity test this item's AC asks for should iterate every action's schema-declared keys, not only the annotation and linked-artifact actions."
+  "2026-11-07T22:53:41.592Z","harness:claude-code","Reproduced on 2026.11.7 through the MCP tools/call handler (PM_MCP_PROFILE=full sandbox). pm_comments/pm_notes/pm_learnings with top-level add or text, and pm_files/pm_docs with top-level add, all returned an empty listing with success and wrote nothing. text was dead even nested (options.text), because the SDK only reads add. Only options.add wrote.\n\nFix (src/sdk/runtime-input.ts): CONTRACT_HOISTED_ACTIONS now covers comments, notes, learnings, files, docs and test beside the five read actions (pm_test with a flat add had the same silent read). declaredContractActionOptionKeys hoists every optional parameter PM_TOOL_ACTION_PARAMETER_CONTRACTS declares for them, excluding the operands id, text, query and keywords. Nested options still win. foldAnnotationTextOperand binds the annotation text operand (flat or nested) to add the way the CLI binds positional text. Equal values are accepted, and text that disagrees with add is refused with annotation_text_source_conflict before any write. The hoisted set also fixes flat limit, message, author, force, full, expectAt and the files lookupPath/discover parameters.\n\nParity spec tests/unit/mcp/annotation-tool-flat-parameters.spec.ts iterates the schema-declared keys of all six actions rather than a hand list. It also drives the tools/call path for each action with top-level add and text, then reads the written state back through the CLI.\n\nA census of the remaining actions found further silent drops outside this family (pm_history with a flat limit of 1 returns 10 entries), filed as pm-yjjo4l with a generic parity-harness AC instead of widening this batch.\n"
+files[2]{path,scope}:
+  src/sdk/runtime-input.ts,project
+  tests/unit/mcp/annotation-tool-flat-parameters.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/mcp/annotation-tool-flat-parameters.spec.ts tests/unit/mcp/read-tool-flat-parameters.spec.ts,project,"harness:claude-code","2026-11-07T22:54:30.825Z",local_mutation,fix/annotation-collection-reads
+test_runs[1]:
+  - run_id: test-local-mw73t30c-bt8o4u
+    kind: test
+    status: passed
+    started_at: "2026-11-08T00:38:13.715Z"
+    finished_at: "2026-11-08T00:38:23.868Z"
+    recorded_at: "2026-11-08T00:38:23.868Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/mcp/annotation-tool-flat-parameters.spec.ts tests/unit/mcp/read-tool-flat-parameters.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/MCP_OPTION_CONFORMANCE.md,project
+close_reason: "Fixed: MCP annotation, linked-artifact and linked-test tools write when add or text is passed at the top level"
 body: ""

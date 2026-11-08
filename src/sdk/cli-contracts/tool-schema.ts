@@ -1044,11 +1044,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "limit",
         "full",
         "ifAbsent",
+        "expectAt",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       mutuallyExclusive: [
         ["edit", "ifAbsent"],
         ["delete", "ifAbsent"],
+        ["expectAt", "ifAbsent"],
       ],
     },
     notes: {
@@ -1066,6 +1068,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "includeMeta",
         "full",
         "ifAbsent",
+        "expectAt",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       mutuallyExclusive: [
@@ -1076,6 +1079,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         ["addJson", "delete"],
         ["edit", "ifAbsent"],
         ["delete", "ifAbsent"],
+        ["expectAt", "ifAbsent"],
       ],
     },
     learnings: {
@@ -1089,11 +1093,13 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> =
         "limit",
         "full",
         "ifAbsent",
+        "expectAt",
         ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
       ],
       mutuallyExclusive: [
         ["edit", "ifAbsent"],
         ["delete", "ifAbsent"],
+        ["expectAt", "ifAbsent"],
       ],
     },
     files: {

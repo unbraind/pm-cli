@@ -36,6 +36,7 @@ export const PM_READ_OUTPUT_SURFACES = [
   "contracts",
   "comments",
   "notes",
+  "learnings",
   "files",
   "docs",
   "stats",

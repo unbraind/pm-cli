@@ -956,6 +956,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--edit[Replace the comment at 1-based index (text from positional/--add/--stdin/--file)]:index' \\
             '--delete[Delete the comment at 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
+            '--expect-at[Edit/delete only if the entry created_at matches]:timestamp' \\
             '--full-history[Return complete post-mutation history]' \\
             '--if-absent[Append only when the resolved author and text are absent]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
@@ -977,6 +978,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--since[Return structured events at or after an ISO timestamp]:timestamp' \\
             '--event-type[Return structured events with this top-level type]:event_type' \\
             '--include-meta[Include result counts and truncation metadata]' \\
+            '--expect-at[Edit/delete only if the entry created_at matches]:timestamp' \\
             '--full-history[Return complete post-mutation history]' \\
             '--if-absent[Append only when the resolved author and text are absent]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\
@@ -994,6 +996,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--edit[Replace the entry at a 1-based index]:index' \\
             '--delete[Delete the entry at a 1-based index]:index' \\
             '--limit[Return only latest n entries]:number' \\
+            '--expect-at[Edit/delete only if the entry created_at matches]:timestamp' \\
             '--full-history[Return complete post-mutation history]' \\
             '--if-absent[Append only when the resolved author and text are absent]' \\
             '--author[Entry author (falls back to PM_AUTHOR/settings)]:author' \\

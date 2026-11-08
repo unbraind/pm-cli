@@ -51,16 +51,23 @@ import {
   applyReadOutputContinuation,
   decodeReadOutputContinuationCursor,
   encodeReadOutputContinuationCursor,
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
   prioritizeAssuranceAssertions,
   readOutputCollectionFingerprint,
+  readOutputRetainsTail,
 } from "./read-output/continuation.js";
 export {
   decodeReadOutputContinuationCursor,
   encodeReadOutputContinuationCursor,
   PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES,
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
   readOutputCollectionFingerprint,
+  readOutputRetainsTail,
 } from "./read-output/continuation.js";
-export type { PmReadOutputContinuationFingerprintPolicy } from "./read-output/continuation.js";
+export type {
+  PmReadOutputContinuationFingerprintPolicy,
+  PmReadOutputTailRetentionPolicy,
+} from "./read-output/continuation.js";
 import {
   applyReadOutputSessionReferences,
   attachReadOutputSessionReceipt,
@@ -294,12 +301,17 @@ export interface PmReadOutputCursorEnvelope {
   command: PmReadOutputSurface;
   /** Dot-delimited declared row path being continued. */
   path: string;
-  /** Zero-based index of the first withheld row. */
+  /**
+   * Forward: zero-based index of the first withheld row. Backward: number of
+   * older rows still withheld, so the next page ends just before this index.
+   */
   offset: number;
   /** Stable pre-projection denominator for the row collection. */
   total_rows: number;
   /** Stable identity fingerprint used to refuse stale continuation. */
   fingerprint: string;
+  /** `backward` for a newest-tail collection whose next page holds older rows; absent means forward. */
+  direction?: "backward";
 }
 
 /** Result returned when the requested cost ceiling cannot fit useful content. */
@@ -1256,12 +1268,27 @@ function applyIncludeProjection(
 function applyAmountBound(
   result: Record<string, unknown>,
   amount: number | "unbounded",
+  command: PmReadOutputSurface,
+  collectionsBeforeBound: ReadonlyMap<string, ReadOutputCollectionBeforeBudget>,
 ): Record<string, unknown> {
   if (amount === "unbounded") return result;
-  const { result: bounded, truncated } = boundReadOutputRows(result, amount);
+  const { result: bounded, truncated } = boundReadOutputRows(
+    result,
+    amount,
+    (path) => readOutputRetainsTail(command, path),
+  );
   if (!truncated) return bounded;
   bounded.has_more = true;
   bounded.truncated = true;
+  // Totals come from the captured snapshot, so a replayed slice still reports
+  // the complete collection rather than the slice it was cut from.
+  attachTailRetentionTotal(
+    bounded,
+    command,
+    [...collectionsBeforeBound.entries()].flatMap(([path, before]) =>
+      before.rows > amount ? [{ path, total_rows: before.totalRows }] : [],
+    ),
+  );
   if (typeof bounded.count === "number") {
     const activeRowKey = isRecord(bounded.projection)
       ? bounded.projection.row_key
@@ -1484,7 +1511,12 @@ function projectReadOutputRows(
     options,
   );
   if (resolved.amount?.source === "canonical") {
-    projected = applyAmountBound(projected, resolved.amount.value);
+    projected = applyAmountBound(
+      projected,
+      resolved.amount.value,
+      resolved.command,
+      continuationState.collectionsBeforeBudget,
+    );
     // Explicit terminal caps remain deliberate partial reads. An advertised
     // producer cursor, however, must never jump past rows removed here.
     if (continuationState.cursorContinuesExistingPage) {
@@ -1726,6 +1758,68 @@ function canReturnReadOutputUnchanged(
 }
 
 /**
+ * Report the complete size of a withheld newest-tail collection beside its
+ * page `count` (pm-hka7ep), so a caller never mistakes the page for the set.
+ */
+function attachTailRetentionTotal(
+  projected: Record<string, unknown>,
+  command: PmReadOutputSurface,
+  continuations: readonly { path: string; total_rows: number }[],
+): void {
+  const policy = Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
+    ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]
+    : undefined;
+  const withheld = continuations.find((entry) => policy?.paths.includes(entry.path));
+  if (policy !== undefined && withheld !== undefined) {
+    projected[policy.total_key] = withheld.total_rows;
+  }
+}
+
+/** Pre-budget coordinates of one declared row collection, used to resume what compaction withholds. */
+interface ReadOutputCollectionBeforeBudget {
+  /** Rows present before budget compaction (a replay counts only its slice). */
+  rows: number;
+  /** Rows in the complete stable snapshot. */
+  totalRows: number;
+  /** Absolute index of the first present row on a forward replay; zero otherwise. */
+  baseOffset: number;
+  /** Snapshot fingerprint the continuation is bound to. */
+  fingerprint: string;
+  /** Whether the collection keeps its newest tail and pages backwards. */
+  backward: boolean;
+}
+
+/**
+ * Build the resumable continuation for one compacted collection. A newest-tail
+ * page withholds the rows before it, so its cursor counts the older rows still
+ * to read; a forward page withholds the rows after it.
+ */
+function buildReadOutputContinuation(
+  command: PmReadOutputSurface,
+  path: string,
+  before: ReadOutputCollectionBeforeBudget,
+  retainedRows: number,
+): PmReadOutputContinuation {
+  const offset = before.backward
+    ? before.rows - retainedRows
+    : before.baseOffset + retainedRows;
+  return {
+    path,
+    cursor: encodeReadOutputContinuationCursor({
+      command,
+      path,
+      offset,
+      total_rows: before.totalRows,
+      fingerprint: before.fingerprint,
+      ...(before.backward ? { direction: "backward" as const } : {}),
+    }),
+    retained_rows: retainedRows,
+    remaining_rows: before.backward ? offset : before.totalRows - offset,
+    total_rows: before.totalRows,
+  };
+}
+
+/**
  * Disclose a budget-driven row drop in the envelope that carries it.
  *
  * `has_more` and `truncated` say that rows were withheld but not why, by what,
@@ -1745,7 +1839,7 @@ function attachReadOutputTruncationDisclosure(
   measuredResultTokens: number,
   collectionsBeforeBudget: ReadonlyMap<
     string,
-    { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
+    ReadOutputCollectionBeforeBudget
   >,
 ): void {
   if (!receipt.rows_compacted) return;
@@ -1764,26 +1858,13 @@ function attachReadOutputTruncationDisclosure(
       // Budget compaction preserves every declared collection and shortens its
       // contents, so each pre-budget path has a post-budget cardinality.
       const retainedRows = afterByPath.get(path)!;
-      if (retainedRows >= before.rows) return [];
-      const offset = before.baseOffset + retainedRows;
-      return [
-        {
-          path,
-          cursor: encodeReadOutputContinuationCursor({
-            command: resolved.command,
-            path,
-            offset,
-            total_rows: before.totalRows,
-            fingerprint: before.fingerprint,
-          }),
-          retained_rows: retainedRows,
-          remaining_rows: before.totalRows - offset,
-          total_rows: before.totalRows,
-        },
-      ];
+      return retainedRows >= before.rows
+        ? []
+        : [buildReadOutputContinuation(resolved.command, path, before, retainedRows)];
     },
   );
   const primary = continuations[0];
+  attachTailRetentionTotal(projected, resolved.command, continuations);
   const continuationHint = primary ? "; page --output-cursor" : "";
   const budgetHint =
     bindingBudget.source === "session"
@@ -1885,7 +1966,7 @@ interface ReadOutputContinuationState {
   /** Per-collection identity and suffix offset for output-cursor replay. */
   collectionsBeforeBudget: ReadonlyMap<
     string,
-    { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
+    ReadOutputCollectionBeforeBudget
   >;
   /** Unprojected rows in this replay suffix, retaining identities privately through field and row projection. */
   originalItems: readonly unknown[];
@@ -1911,12 +1992,14 @@ function captureReadOutputContinuationState(
         ? collection.value.length
         : Object.keys(collection.value).length;
       const continued = cursor?.path === collection.path;
+      const backward = readOutputRetainsTail(command, collection.path);
       return [
         collection.path,
         {
           rows,
           totalRows: continued ? cursor.total_rows : rows,
-          baseOffset: continued ? cursor.offset : 0,
+          baseOffset: continued && !backward ? cursor.offset : 0,
+          backward,
           fingerprint: continued
             ? cursor.fingerprint
             : readOutputCollectionFingerprint(
@@ -2023,6 +2106,7 @@ function compactReadOutputProjection(
       }
     },
     resolved.command === "history" && Array.isArray(projected.diff),
+    (path) => readOutputRetainsTail(resolved.command, path),
   );
 }
 

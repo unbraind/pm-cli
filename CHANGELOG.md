@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- MCP annotation and linked-artifact tools silently read when add is passed at the top level: the strict schema declares add/text but dispatch only hoists ifAbsent ([pm-wsqxwb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wsqxwb.toon))
+- pm comments --edit/--delete take an absolute index while a budget-truncated listing reports count as the page size and shows no row index, so 'edit the last comment' by count rewrites an older comment ([pm-hka7ep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hka7ep.toon))
+- Bare pm comments / pm notes reads keep the oldest page when output must be bounded, withholding the newest entries (GH-1605 fixed this for history only) ([pm-8s53lj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8s53lj.toon))
 - CLI argv keeps one value silently when two spellings of one extension flag differ (--status-filter a -s b), while direct callers are refused with extension_option_spelling_conflict ([pm-wlxf8f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wlxf8f.toon))
 - pm comments/notes <id\> --add --file <path\> is refused as positional-and---add conflict instead of naming the swallowed --file flag, so the annotation flag-like check from pm-vcu7 loses precedence ([pm-y26mvc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y26mvc.toon))
 - GH-1667: sdk/graph does not export ProjectedGraphResult, the public return type of runGraph, and the merge conflict_resolution union has no public name, so extensions derive both ([pm-gh1667](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1667.toon))

@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 456
+- Catalog error codes: 460
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 437
-- Coverage fraction: 0.041667
+- Uncovered error codes: 441
+- Coverage fraction: 0.041304
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -24,9 +24,13 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `already_claimed_by` | `already_claimed_by` | uncovered | none | 0 |
 | `ambiguous_option_combination` | `ambiguous_option_combination` | uncovered | none | 0 |
 | `annotation_alias_conflict` | `annotation_alias_conflict` | uncovered | none | 0 |
+| `annotation_entry_mismatch` | `annotation_entry_mismatch` | uncovered | none | 0 |
+| `annotation_expectation_empty` | `annotation_expectation_empty` | uncovered | none | 0 |
+| `annotation_expectation_without_target` | `annotation_expectation_without_target` | uncovered | none | 0 |
 | `annotation_flag_like_value` | `annotation_flag_like_value` | uncovered | none | 0 |
 | `annotation_if_absent_without_append` | `annotation_if_absent_without_append` | uncovered | none | 0 |
 | `annotation_message_without_text` | `annotation_message_without_text` | uncovered | none | 0 |
+| `annotation_text_source_conflict` | `annotation_text_source_conflict` | uncovered | none | 0 |
 | `annotation_transposed_subcommand` | `annotation_transposed_subcommand` | uncovered | none | 0 |
 | `append_empty_body` | `append_empty_body` | uncovered | none | 0 |
 | `assurance_registry_invalid` | `assurance_registry_invalid` | uncovered | none | 0 |

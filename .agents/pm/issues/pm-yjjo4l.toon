@@ -1,0 +1,27 @@
+id: pm-yjjo4l
+title: "Declared flat MCP parameters are still dropped outside the eleven hoisted actions: pm_history with a flat limit of 1 returns 10 entries"
+description: "Found 2026-11-07 while fixing pm-wsqxwb. After that fix, eleven actions hoist every optional parameter their strict contract declares (context, get, list, next, search, comments, notes, learnings, files, docs, test). A census over PM_TOOL_ACTION_PARAMETER_CONTRACTS, run through optionsWithAuthor on the built SDK, still lists about 60 actions whose declared optional keys are not hoisted from flat arguments. Examples: history (14 of 15 keys, including limit, compact and full), events (12 of 13), activity (16 of 17), aggregate, duplicates, graph, schema, merge, profile, the history-redact/repair/compact/author-acknowledge family, item-reopen, focus, the extension-* and package-* families, init and config. The census alone proves nothing: many of these handlers read the top-level arguments directly (create and update through hoistedMcpMutationOptions, config, the extension family, aggregate and events). A behavioral probe through runAction in a sandbox tracker confirms at least one real silent drop: history with flat limit 1 returns 10 entries while the nested options form returns 1. Aggregate groupBy and events limit agree flat and nested, so those handlers do read the flat value. Same class as pm-wsqxwb, pm-hke9z7, pm-jozc and pm-hno5 (each fixed one tool family by hand). Expected: one generic tools/call parity harness drives every action with each declared optional parameter flat and nested and compares the effect. Every declared parameter is either honored identically or removed from the contract, so no family needs its own hand fix again. Duplicate check: searched declared flat parameter silently ignored MCP, MCP top-level argument ignored hoist, and flat arguments every action parity. pm-hke9z7, pm-jozc, pm-hno5, pm-qxwu and pm-upi0 are closed and each covered one family or warned on unknown keys only."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,contracts,mcp,parity
+created_at: "2026-11-07T22:53:23.581Z"
+updated_at: "2026-11-07T22:53:23.581Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A generic parity harness drives every PM_TOOL_ACTION_PARAMETER_CONTRACTS action through tools/call with each declared optional parameter flat and nested and asserts the same effect or a declared exemption with a reason; pm_history honors flat limit, compact, full and the other declared keys the way the nested form does; Hoisting is derived from the contract for every action whose handler reads options, and the harness fails when a new declared parameter is dropped"
+parent: pm-5k4v
+risk: medium
+confidence: high
+severity: medium
+repro_steps: "In a sandbox tracker with an item that has more than one history entry, call runAction with action history, the item id and a flat limit of 1, then the same call with options limit 1, and compare the returned row counts"
+expected_result: "Every optional parameter a tool contract declares has the same effect flat and nested, or it is removed from the contract"
+actual_result: "history with a flat limit of 1 returns 10 entries while the nested options form returns 1, and about 60 actions hoist none or only some of their declared flat keys"
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
+  pm-hke9z7,related,"2026-11-07T22:53:23.581Z","harness:claude-code","cli:create:dep",detected
+  pm-hno5,related,"2026-11-07T22:53:23.581Z","harness:claude-code","cli:create:dep",detected
+  pm-jozc,related,"2026-11-07T22:53:23.581Z","harness:claude-code","cli:create:dep",detected
+  pm-qxwu,related,"2026-11-07T22:53:23.581Z","harness:claude-code","cli:create:dep",detected
+  pm-upi0,related,"2026-11-07T22:53:23.581Z","harness:claude-code","cli:create:dep",detected
+  pm-wsqxwb,discovered_from,"2026-11-07T22:53:23.581Z","harness:claude-code","cli:create:dep",detected
+body: ""

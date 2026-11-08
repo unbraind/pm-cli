@@ -193,6 +193,8 @@ pm notes pm-a1b2 --delete 2 --full-history
 
 SDK callers use `fullHistory: true`; MCP callers use `full: true`. The default stays bounded on every transport. An omission receipt identifies the semantic `full_history` selector and includes its CLI (`--full-history`), SDK (`fullHistory`), and MCP (`full`) spellings, so non-CLI consumers never need to interpret shell-only guidance.
 
+Every returned row, in a receipt or a listing, leads with `index`, the entry's absolute 1-based position, so `mutation_receipt.entry_index` and the row's `index` agree ([pm-hka7ep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hka7ep.toon); tracker record excluded from npm). To make an edit or delete prove that the addressed entry is the one the caller read, pass that row's `created_at` as `--expect-at <ts>` (SDK and MCP `expectAt`). A different entry at the index is refused with `annotation_entry_mismatch` before anything is written.
+
 ## Author acknowledgment coordinates
 
 CLI, SDK, and MCP use the same selector and coordinate parser for `history-author-acknowledge`. A coordinate is `<item-id>:<line>` or `_workspace:<line>`, with a positive one-based line number. Exactly one of explicit events or `all_actionable` is required. Applying is a two-step operation: dry-run returns a deterministic SHA-256 over the complete, ordered coordinate set and every exact source-line hash; apply requires that fingerprint and refuses stale source or selection drift with `CONFLICT` exit 4 before writing history.

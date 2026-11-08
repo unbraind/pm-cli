@@ -7,6 +7,7 @@ import { type GlobalOptions } from "./runtime-primitives.js";
 import type { LogNote } from "../types/index.js";
 import {
   type AnnotationMutationReceipt,
+  type IndexedAnnotationEntry,
   type AnnotationOmissionReceipt,
   parseAnnotationTextInput,
   resolveAnnotationInput,
@@ -31,6 +32,8 @@ export interface LearningsCommandOptions {
   fullHistory?: boolean;
   /** Append only when no learning has the same resolved author and text. */
   ifAbsent?: boolean;
+  /** For edit/delete: the created_at of the learning read at that index; a different entry is refused. */
+  expectAt?: string;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -44,7 +47,7 @@ export interface LearningsResult {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports learnings for this contract. */
-  learnings: LogNote[];
+  learnings: Array<IndexedAnnotationEntry<LogNote>>;
   /** Value that configures or reports count for this contract. */
   count: number;
   /** Total learning count after the mutation. */

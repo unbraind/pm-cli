@@ -2,25 +2,58 @@ id: pm-8s53lj
 title: "Bare pm comments / pm notes reads keep the oldest page when output must be bounded, withholding the newest entries (GH-1605 fixed this for history only)"
 description: "Measured on pm 2026.11.1 against this repository's tracker. When a bare read of an item's comments or notes has to be bounded, it returns the OLDEST page and withholds the newest entries:\n\n- pm comments pm-7zs0 --json (261 comments) returns 28 entries dated 2026-06-10..2026-06-30 with has_more: true and an output cursor. The newest entry (2026-11-01) is reachable only through --limit N (\"Return only latest n comments\") or by following about ten cursors.\n- pm notes pm-doxj --json returns 28 notes dated 2026-06-07..2026-07-10, while pm notes pm-doxj --limit 1 shows the newest note is from 2026-09-28.\n\nThis is the same defect GH-1605 (pm-gh1605) fixed for pm history: a default read should preserve the recent tail when it must truncate. The annotation surfaces did not get that fix. It has a real cost. While recording a release-health checkpoint, an agent verified its new comment with pm comments <id> --json | .comments[-1], saw a June entry, concluded the write had failed, and posted a duplicate that then had to be deleted with --delete. On long-lived living-map items, the newest evidence is exactly what the default view hides.\n\nScope: the default bounded selection for pm comments and pm notes (and pm learnings, if it shares the reader). Explicit --limit already selects the latest N."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,annotations,context-management,output-contract,token-efficiency
 created_at: "2026-11-01T11:19:29.712Z"
-updated_at: "2026-11-01T12:19:04.795Z"
+updated_at: "2026-11-08T00:39:16.886Z"
+closed_at: "2026-11-08T00:38:53.699Z"
+completed_at: "2026-11-08T00:38:53.699Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "A bare pm comments <id> and pm notes <id> read that must be bounded returns the newest entries (the recent tail) and reports the omitted older entries with a cursor that continues backwards; pm learnings follows the same rule; Regression test: an item with more annotations than the default bound returns the latest entry on a bare read in JSON and TOON; Command reference documents the bounded default for annotation reads"
 parent: pm-mpbb
 risk: medium
 confidence: high
-expected_result: A bare annotation read on a long-lived item always includes the most recent comment or note.
-actual_result: pm comments pm-7zs0 --json returns 28 comments from June 2026 out of 261; the 2026-11-01 entry is withheld.
+resolution: "PM_READ_OUTPUT_TAIL_RETENTION_POLICIES (src/sdk/read-output/continuation.ts) declares comments, notes and learnings as newest-tail row paths. Budget compaction (compactRowsToBudget) and the --output-limit bound (boundReadOutputRows) retain the tail of those paths instead of the head. The continuation cursor carries direction backward: offset counts the older rows still withheld, and replay slices the collection to them. A cursor issued under the other direction is refused as read_output_cursor_stale. A withheld tail sets total_count beside count, and a producer returned_count is refreshed to the delivered page. learnings joined PM_READ_OUTPUT_SURFACES with --limit as its amount alias, so its reads are bounded like comments and notes. Command reference and read-output contract docs describe the bounded default."
+expected_result: "A bare pm comments, notes or learnings read that must be bounded returns the newest entries with total_count beside count and a cursor that continues backwards; --output-limit keeps the newest rows like --limit"
+actual_result: "On this repository's tracker with the built CLI: bare pm comments pm-7zs0 --json returns indexes 238..263 (count 26, total_count 263, has_more true), following next_cursor returns 211..237, and --output-limit 2 returns 262 and 263 (it returned the two oldest before). tests/unit/sdk/read-output/tail-retention.spec.ts pages comments, notes and learnings backwards to the oldest row in JSON-shaped results. It refuses mismatched-direction cursors and keeps every other surface head-first. The linked tests pass through pm test --run, and so do the focused read-output, annotation and MCP specs (307 tests). Every added source line is covered."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-6vfg,related,"2026-11-01T11:19:29.712Z","harness:claude-code","cli:create:dep",detected
   pm-gh1605,related,"2026-11-01T11:19:29.712Z","harness:claude-code","cli:create:dep",detected
   pm-7zs0,related,"2026-11-01T12:19:04.541Z","harness:claude-code","cli:update:dep",detected
   pm-doxj,related,"2026-11-01T12:19:04.541Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-01T11:19:35.934Z","harness:claude-code","Duplicate-check evidence: the strict duplicate guard flagged pm-gh1605 (closed). Its title, AC and resolution are scoped to pm history only ('Preserve newest compact/provenance history...'), so reopening it would widen a shipped item. This item covers the sibling annotation readers that did not receive the same tail-preserving default. Related closed precedent: pm-6vfg (MCP pm_comments default limit). Searched: pm search 'comments default page oldest latest bounded read'."
+  "2026-11-07T22:53:39.958Z","harness:claude-code","Investigation and implementation (2026-11-07, branch fix/annotation-collection-reads). Root cause: the universal budget compaction (compactRowsToBudget in src/sdk/read-output-budget.ts) and the --output-limit bound (boundReadOutputRows in src/sdk/read-output-rows.ts) always retained the FIRST rows of a declared collection, while the annotation producer stores entries oldest first. So pm comments pm-7zs0 --json returned indexes 1..28 of 263, and --output-limit 2 returned the two oldest comments while --limit 2 returned the two newest. pm learnings was not a read-output surface at all, so its reads had no output ceiling.\n\nFix: PM_READ_OUTPUT_TAIL_RETENTION_POLICIES (src/sdk/read-output/continuation.ts) declares comments, notes and learnings as newest-tail paths, as data. Budget compaction and --output-limit retain the tail of those paths. Their continuation cursor carries direction backward: offset counts the older rows still withheld, and replay slices [0, offset) then keeps that slice's newest rows. A cursor whose direction disagrees with the path's declared retention is refused as read_output_cursor_stale. A withheld tail sets total_count beside count, and a producer returned_count is refreshed to the delivered page. learnings joined PM_READ_OUTPUT_SURFACES with --limit as its legacy amount alias.\n\nMeasured on this tracker with the built CLI: bare pm comments pm-7zs0 --json now returns indexes 238..263 (count 26, total_count 263), the cursor's next page returns 211..237, and --output-limit 2 returns 262 and 263.\n"
+learnings[1]{created_at,author,text}:
+  "2026-11-08T00:39:16.886Z","harness:claude-code","A universal compaction that always keeps the first rows silently inverts the meaning of a chronological collection: for an append-only log, the head is the least useful part, and the producer's own latest-N limit already disagreed with it. Declare retention per row path as data (PM_READ_OUTPUT_TAIL_RETENTION_POLICIES), make the continuation cursor carry its direction, and refuse a cursor whose direction disagrees with the path's declaration, so pages from the two directions can never be mixed."
+files[8]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/read-output-budget.ts,project
+  src/sdk/read-output-contracts.ts,project
+  src/sdk/read-output-rows.ts,project
+  src/sdk/read-output/continuation.ts,project
+  src/sdk/read-output/options.ts,project
+  src/sdk/read-output/surfaces.ts,project
+  tests/unit/sdk/read-output/tail-retention.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/tail-retention.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,"harness:claude-code","2026-11-07T22:54:29.084Z",local_mutation,fix/annotation-collection-reads
+test_runs[1]:
+  - run_id: test-local-mw73sax2-ktqigo
+    kind: test
+    status: passed
+    started_at: "2026-11-08T00:37:38.402Z"
+    finished_at: "2026-11-08T00:37:47.461Z"
+    recorded_at: "2026-11-08T00:37:47.461Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/tail-retention.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: "Fixed: bounded comments, notes and learnings reads keep the newest entries and page backwards"
 escape_class: production_defect
 body: ""

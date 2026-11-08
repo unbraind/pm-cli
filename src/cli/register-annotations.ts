@@ -268,6 +268,27 @@ function resolveSingleAnnotationSources(
   };
 }
 
+/** Options every annotation command forwards unchanged from its parsed flags. */
+function sharedAnnotationCommandOptions(options: Record<string, unknown>): {
+  fullHistory: boolean;
+  ifAbsent: boolean;
+  expectAt: string | undefined;
+  author: string | undefined;
+  message: string | undefined;
+  ownershipAppendBypass: boolean;
+  force: boolean;
+} {
+  return {
+    fullHistory: options.fullHistory === true,
+    ifAbsent: options.ifAbsent === true,
+    expectAt: readOptionString(options, "expectAt"),
+    author: readOptionString(options, "author"),
+    message: readOptionString(options, "message"),
+    ownershipAppendBypass: options.ownershipAppendBypass === true,
+    force: Boolean(options.force),
+  };
+}
+
 async function runCommentsAction(
   id: string,
   text: string | undefined,
@@ -288,12 +309,7 @@ async function runCommentsAction(
       edit: sources.editIndex,
       delete: sources.deleteIndex,
       limit: readOptionString(options, "limit"),
-      fullHistory: options.fullHistory === true,
-      ifAbsent: options.ifAbsent === true,
-      author: readOptionString(options, "author"),
-      message: readOptionString(options, "message"),
-      ownershipAppendBypass: options.ownershipAppendBypass === true,
-      force: Boolean(options.force),
+      ...sharedAnnotationCommandOptions(options),
     } as Parameters<typeof runComments>[1],
     globalOptions,
   );
@@ -327,12 +343,7 @@ async function runNotesAction(
       since: readOptionString(options, "since"),
       eventType: readOptionString(options, "eventType"),
       includeMeta: options.includeMeta === true,
-      fullHistory: options.fullHistory === true,
-      ifAbsent: options.ifAbsent === true,
-      author: readOptionString(options, "author"),
-      message: readOptionString(options, "message"),
-      ownershipAppendBypass: options.ownershipAppendBypass === true,
-      force: Boolean(options.force),
+      ...sharedAnnotationCommandOptions(options),
     } as Parameters<typeof runNotes>[1],
     globalOptions,
   );
@@ -362,12 +373,7 @@ async function runLearningsAction(
       edit: sources.editIndex,
       delete: sources.deleteIndex,
       limit: readOptionString(options, "limit"),
-      fullHistory: options.fullHistory === true,
-      ifAbsent: options.ifAbsent === true,
-      author: readOptionString(options, "author"),
-      message: readOptionString(options, "message"),
-      ownershipAppendBypass: options.ownershipAppendBypass === true,
-      force: Boolean(options.force),
+      ...sharedAnnotationCommandOptions(options),
     } as Parameters<typeof runLearnings>[1],
     globalOptions,
   );
@@ -417,6 +423,10 @@ export function registerAnnotationCommands(
       "Delete the comment at 1-based <index>",
       parsePositiveInteger("--delete"),
     )
+    .option(
+      "--expect-at <ts>",
+      "Edit/delete only if the entry's created_at is <ts>",
+    )
     .option("--limit <n>", "Return only latest n comments")
     .option(
       "--full-history",
@@ -462,6 +472,10 @@ export function registerAnnotationCommands(
       "Delete the note at 1-based <index>",
       parsePositiveInteger("--delete"),
     )
+    .option(
+      "--expect-at <ts>",
+      "Edit/delete only if the entry's created_at is <ts>",
+    )
     .option("--limit <n>", "Return only latest n notes")
     .option("--since <timestamp>", "Filter JSON events from this ISO time")
     .option("--event-type <value>", "Filter JSON events by top-level type")
@@ -500,6 +514,10 @@ export function registerAnnotationCommands(
       "--delete <index>",
       "Delete the learning at 1-based <index>",
       parsePositiveInteger("--delete"),
+    )
+    .option(
+      "--expect-at <ts>",
+      "Edit/delete only if the entry's created_at is <ts>",
     )
     .option("--limit <n>", "Return only latest n learnings")
     .option(

@@ -70,6 +70,39 @@ export const PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES: Readonly<
   }),
 });
 
+/**
+ * Declared retention for a chronological (oldest-first) collection whose
+ * bounded reads must keep the newest entries: budget compaction and
+ * `--output-limit` retain the tail and the continuation pages backwards.
+ */
+export interface PmReadOutputTailRetentionPolicy {
+  /** Declared row paths whose entries are stored oldest first. */
+  paths: readonly string[];
+  /** Top-level key that reports the complete collection size beside `count` when rows are withheld. */
+  total_key: "total_count";
+}
+
+/** Read surfaces whose newest entries are the ones a bounded read must deliver (pm-8s53lj). */
+export const PM_READ_OUTPUT_TAIL_RETENTION_POLICIES: Readonly<
+  Partial<Record<PmReadOutputSurface, PmReadOutputTailRetentionPolicy>>
+> = Object.freeze({
+  comments: Object.freeze({ paths: Object.freeze(["comments"]), total_key: "total_count" }),
+  notes: Object.freeze({ paths: Object.freeze(["notes"]), total_key: "total_count" }),
+  learnings: Object.freeze({ paths: Object.freeze(["learnings"]), total_key: "total_count" }),
+});
+
+/** Whether bounded reads of one declared row path keep its newest tail. */
+export function readOutputRetainsTail(
+  command: PmReadOutputSurface | string | undefined,
+  path: string,
+): boolean {
+  if (command === undefined) return false;
+  const policy = Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
+    ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command as PmReadOutputSurface]
+    : undefined;
+  return policy?.paths.includes(path) === true;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -166,6 +199,7 @@ export function encodeReadOutputContinuationCursor(
       o: cursor.offset,
       n: cursor.total_rows,
       f: cursor.fingerprint,
+      ...(cursor.direction === "backward" ? { d: "b" } : {}),
     }),
     "utf8",
   ).toString("base64url");
@@ -174,6 +208,11 @@ export function encodeReadOutputContinuationCursor(
 /** Validate command identities without requiring an extension to be activated merely to decode a cursor. */
 function isReadOutputCursorCommand(value: unknown): boolean {
   return typeof value === "string" && (resolveReadOutputSurface(value) === value || /^extension:\S(?:[^\r\n]*\S)?$/u.test(value));
+}
+
+/** A cursor is forward when it carries no direction, and backward only as `b`. */
+function isReadOutputCursorDirection(value: unknown): boolean {
+  return value === undefined || value === "b";
 }
 
 /** Decode and validate one universal declared-row continuation cursor. */
@@ -204,7 +243,8 @@ export function decodeReadOutputContinuationCursor(
     !Number.isSafeInteger(candidate.n) ||
     (candidate.n as number) < 1 ||
     typeof candidate.f !== "string" ||
-    candidate.f.length === 0
+    candidate.f.length === 0 ||
+    !isReadOutputCursorDirection(candidate.d)
   ) {
     throw new PmCliError(
       "The read-output continuation cursor is malformed or unsupported.",
@@ -219,6 +259,7 @@ export function decodeReadOutputContinuationCursor(
     offset: candidate.o as number,
     total_rows: candidate.n as number,
     fingerprint: candidate.f as string,
+    ...(candidate.d === "b" ? { direction: "backward" as const } : {}),
   };
 }
 
@@ -267,10 +308,14 @@ export function applyReadOutputContinuation(
       ? collection.value.length
       : Object.keys(collection.value).length
     : 0;
+  // A cursor issued under the other retention direction would page the wrong
+  // end of the collection, so it is as stale as a changed snapshot.
+  const backward = readOutputRetainsTail(command, cursor.path);
   if (
     !collection ||
     totalRows !== cursor.total_rows ||
     cursor.offset > totalRows ||
+    backward !== (cursor.direction === "backward") ||
     readOutputCollectionFingerprint(cursor.path, collection.value, command) !==
       cursor.fingerprint
   ) {
@@ -280,5 +325,7 @@ export function applyReadOutputContinuation(
       { code: "read_output_cursor_stale" },
     );
   }
-  return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
+  return backward
+    ? sliceReadOutputRowCollection(result, cursor.path, 0, cursor.offset)
+    : sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
 }

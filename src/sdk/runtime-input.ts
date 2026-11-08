@@ -350,25 +350,70 @@ export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string
     append: ["body"],
   };
 
-/** Read actions whose MCP tools declare intent, projection and filter parameters flat. */
-const CONTRACT_HOISTED_READ_ACTIONS: ReadonlySet<string> = new Set([
+/**
+ * Actions whose strict tool contract declares their parameters flat: the
+ * intent, projection and filter reads (pm-hke9z7) and the annotation,
+ * linked-artifact and linked-test actions (pm-wsqxwb), whose declared `add`
+ * used to fall through to a listing read.
+ */
+const CONTRACT_HOISTED_ACTIONS: ReadonlySet<string> = new Set([
   "context",
   "get",
   "list",
   "next",
   "search",
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "docs",
+  "test",
 ]);
 
-/** Positional operands the read handlers take from the top-level arguments rather than options. */
-const READ_ACTION_OPERAND_KEYS: ReadonlySet<string> = new Set(["query", "keywords"]);
+/**
+ * Operands the handlers take from the top-level arguments rather than
+ * options: the search query and its alias, the item id, and annotation
+ * `text`, which {@link foldAnnotationTextOperand} binds to `add`.
+ */
+const ACTION_OPERAND_KEYS: ReadonlySet<string> = new Set(["query", "keywords", "id", "text"]);
 
-/** Hoist every optional parameter a read action's tool contract declares, so no declared flat argument is silently ignored. */
-function declaredReadActionOptionKeys(action: string): readonly string[] {
-  return CONTRACT_HOISTED_READ_ACTIONS.has(action)
+/** Hoist every optional parameter an action's tool contract declares, so no declared flat argument is silently ignored. */
+function declaredContractActionOptionKeys(action: string): readonly string[] {
+  return CONTRACT_HOISTED_ACTIONS.has(action)
     ? PM_TOOL_ACTION_PARAMETER_CONTRACTS[action as PmToolAction].optional!.filter(
-        (key) => !READ_ACTION_OPERAND_KEYS.has(key),
+        (key) => !ACTION_OPERAND_KEYS.has(key),
       )
     : [];
+}
+
+/**
+ * Bind the declared annotation `text` operand (top level or nested) to the
+ * `add` source the SDK reads, as the CLI binds positional text. Text that
+ * disagrees with an explicit `add` is refused rather than silently dropped.
+ */
+function foldAnnotationTextOperand(
+  action: string | undefined,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action ?? "")) return options;
+  const text = options.text ?? args.text;
+  if (text === undefined) return options;
+  if (options.add !== undefined && options.add !== text) {
+    const noun = action!.replace(/s$/u, "");
+    throw new PmCliError(
+      `Specify ${noun} text either as text or with add, not both.`,
+      EXIT_CODE.USAGE,
+      {
+        code: "annotation_text_source_conflict",
+        field: "text",
+        required: `Pass the ${noun} text once: text and add are the same source.`,
+      },
+    );
+  }
+  const folded: Record<string, unknown> = { ...options, add: text };
+  delete folded.text;
+  return folded;
 }
 
 /** Whether nested options already carry a key under its camelCase or snake_case spelling. */
@@ -384,7 +429,7 @@ function nestedOptionPresent(
 function hoistedActionOptionKeys(action: string): readonly string[] {
   return [
     ...(HOISTED_ACTION_OPTION_KEYS[action] ?? []),
-    ...declaredReadActionOptionKeys(action),
+    ...declaredContractActionOptionKeys(action),
     ...UNIVERSAL_READ_OUTPUT_OPTION_KEYS,
   ];
 }
@@ -589,7 +634,11 @@ export function optionsWithAuthor(
   if (action !== undefined && isMcpMutationTransportInput(args)) {
     assertMcpAnnotationFileUnavailable(action, baseOptions);
   }
-  const options = normalizedActionOptions(args, action, hoistedTopLevel, baseOptions);
+  const options = foldAnnotationTextOperand(
+    action,
+    args,
+    normalizedActionOptions(args, action, hoistedTopLevel, baseOptions),
+  );
   if (action === "history-attest" && isMcpMutationTransportInput(args)) {
     if (options.output !== undefined || typeof options.verify === "string") {
       throw new PmCliError(

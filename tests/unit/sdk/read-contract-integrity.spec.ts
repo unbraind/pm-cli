@@ -372,6 +372,10 @@ describe("SDK read contract integrity", () => {
         expect(
           (receipt as unknown as Record<string, unknown[]>)[collection],
         ).toHaveLength(1);
+        // pm-hka7ep: the receipt row carries the same address as entry_index.
+        expect(
+          (receipt as unknown as Record<string, Array<{ index: number }>>)[collection]![0]!.index,
+        ).toBe(22);
         expect(JSON.stringify(receipt).length).toBeLessThan(1_000);
 
         const full = await run(
@@ -380,8 +384,8 @@ describe("SDK read contract integrity", () => {
           { path: context.pmPath },
         );
         expect(
-          (full as unknown as Record<string, unknown[]>)[collection],
-        ).toHaveLength(23);
+          (full as unknown as Record<string, Array<{ index: number }>>)[collection]!.map((row) => row.index),
+        ).toEqual(Array.from({ length: 23 }, (_, position) => position + 1));
         expect(full).toMatchObject({
           total_count: 23,
           omission_receipt: { has_omissions: false },
