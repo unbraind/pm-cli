@@ -2,7 +2,8 @@ import { appendFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
-import { compareLogValues } from "../../../../src/core/item/item-format.js";
+import { encode as encodeToon } from "@toon-format/toon";
+import { compareLogValues, parseItemDocument } from "../../../../src/core/item/item-format.js";
 import { compareTimestampStrings } from "../../../../src/core/shared/time.js";
 import { buildSearchCorpus, buildSemanticCorpusInput } from "../../../../src/core/search/corpus.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
@@ -50,6 +51,9 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
       { created_at: "2026-11-07T23:45:00.000Z", author: "d", text: "b" },
       { created_at: 42, author: "n", text: "n" },
       { created_at: "2026-11-07T23:45:00Z", text: "b" },
+      // Greptile review of PR #1687: String() throws on this valid JSON value.
+      { created_at: "2026-11-06T00:00:00Z", author: "o", text: { toString: 42 } },
+      { created_at: { toString: 42 }, author: "p", text: "p" },
     ] as unknown as Comment[];
     let compared = 0;
     for (const a of pool) {
@@ -64,10 +68,44 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
         expect(Math.sign(compareLogValues(a, b))).toBe(Math.sign(expected));
       }
     }
+    // Total where the legacy comparator threw: no pair throws.
+    for (const a of pool) for (const b of pool) expect(() => compareLogValues(a, b)).not.toThrow();
     expect(compared).toBeGreaterThan(40);
     const mixed = [pool[3]!, pool[1]!, pool[0]!];
     expect([...mixed].sort(compareLogValues)).toEqual([...mixed].sort(legacy));
   });
+
+  it.each(["toon", "json_markdown"] as const)(
+    "parses a %s item whose annotation fields cannot be converted to strings",
+    (format) => {
+      // Greptile and Codex review of PR #1687: the legacy comparator never
+      // read text or author when created_at differed, so these items loaded.
+      const unconvertible = { toString: null };
+      const metadata = {
+        id: "pm-x",
+        title: "probe",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 2,
+        tags: [],
+        created_at: "2026-11-01T00:00:00.000Z",
+        updated_at: "2026-11-01T00:00:00.000Z",
+        comments: [
+          { created_at: "2026-11-02T00:00:00.000Z", text: "ok", author: "b" },
+          { created_at: "2026-11-01T00:00:00.000Z", text: unconvertible, author: "a" },
+          { created_at: "2026-11-03T00:00:00.000Z", text: "later", author: [unconvertible] },
+        ],
+      };
+      const content = format === "toon" ? encodeToon(metadata) : `${JSON.stringify(metadata)}\n`;
+      const comments = parseItemDocument(content, { format }).metadata.comments as unknown as Array<{ created_at: string }>;
+      expect(comments.map((entry) => entry.created_at)).toEqual([
+        "2026-11-01T00:00:00.000Z",
+        "2026-11-02T00:00:00.000Z",
+        "2026-11-03T00:00:00.000Z",
+      ]);
+    },
+  );
 
   it("keeps malformed entries out of the search corpus instead of aborting search and reindexing", () => {
     // Codex review of PR #1687: once malformed entries load, the BM25 and

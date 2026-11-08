@@ -827,8 +827,23 @@ export const CANONICALLY_ORDERED_LOG_COLLECTIONS: ReadonlySet<string> = new Set(
  */
 function logSortFields(entry: unknown): { created_at: string; text: string; author: string } {
   const field = (key: string): string =>
-    String(entry === null || entry === undefined ? undefined : (entry as Record<string, unknown>)[key]);
+    logSortKeyString(entry === null || entry === undefined ? undefined : (entry as Record<string, unknown>)[key]);
   return { created_at: field("created_at"), text: field("text"), author: field("author") };
+}
+
+/**
+ * String() of a sort field, falling back to its Object.prototype.toString
+ * tag when conversion throws (a stored object such as {"toString": 42}).
+ * Fields are converted eagerly, so a field the legacy comparator never read
+ * (text, when created_at already differs) must not throw; where String()
+ * succeeds it is the same ToString the legacy comparator applied.
+ */
+function logSortKeyString(value: unknown): string {
+  try {
+    return String(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
 }
 
 /**
