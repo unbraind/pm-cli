@@ -12,6 +12,7 @@ import {
   READ_OUTPUT_SHAPING_CONTROL_FLAGS,
   validateReadOutputOptions,
 } from "../../../../src/sdk/read-output-contracts.js";
+import { isTrackerRevisionGuarded, readItemRevision, withExpectedItemRevisions } from "../../../../src/sdk/lifecycle/item-revision.js";
 import { createTestItemId } from "../../../helpers/itemFactory.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
@@ -47,13 +48,19 @@ describe("pm-rrwh2o typed refusal for a mutation given universal output controls
     expect(error.context?.why).toEqual(expect.any(String));
   });
 
-  it.each(["comments", "notes", "learnings", "files", "docs", "package-catalog"])("names runnable examples for the %s surface", (surface) => {
+  it.each([
+    ["comments", 'pm comments <id> --add "<text>"', "pm comments <id> --output-limit 5"],
+    ["notes", 'pm notes <id> --add "<text>"', "pm notes <id> --output-limit 5"],
+    ["learnings", 'pm learnings <id> --add "<text>"', "pm learnings <id> --output-limit 5"],
+    ["files", "pm files <id> --add path=<path>", "pm files <id> --output-limit 5"],
+    ["docs", "pm docs <id> --add path=<path>", "pm docs <id> --output-limit 5"],
+    ["package-catalog", "pm package install <source> --project", "pm package catalog --output-limit 5"],
+  ])("names the write and the separate bounded read for the %s surface", (surface, write, read) => {
     const key = surface === "package-catalog" ? "install" : "add";
     const error = refusal(surface, { [key]: "x", outputRowContract: true });
     expect(error.context?.code).toBe(CODE);
     expect(error.context?.details).toMatchObject({ output_controls: ["--output-row-contract"], mutation_options: [key] });
-    expect(error.context?.examples).toHaveLength(2);
-    for (const example of error.context!.examples!) expect(example.startsWith("pm ")).toBe(true);
+    expect(error.context?.examples).toEqual([write, read]);
   });
 
   it("leaves reads, format-only selections and non-hybrid surfaces alone", () => {
@@ -99,6 +106,8 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "x"], CODE, undefined)).toBeUndefined();
     // A tracker selection that cannot be made binding.
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--output-limit", "2"], CODE, producer, null)).toEqual(withheld);
+    // CodeRabbit review of PR #1688: an enclosing SDK revision scope's guards never reached argv.
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "x", "--output-limit", "2"], CODE, producer, [], () => true)).toEqual(withheld);
     // A command path that is only flags, or a namespace whose next token is a flag.
     expect(repairReadOutputMutationRecovery(["--json"], CODE, producer)).toEqual(withheld);
     expect(repairReadOutputMutationRecovery(["comments", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual(["comments"]);
@@ -140,6 +149,42 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
         const listed = environment.runCli(["comments", id, "--json"], { expectJson: true }).json as { comments: unknown[] };
         expect(listed.comments).toEqual([]);
       });
+    });
+  }, 60_000);
+
+  it("withholds the retry for an embedded CLI run inside an SDK revision scope, and offers it outside one", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Guarded embedded write" });
+      const argv = ["learnings", id, "--add", "guarded", "--output-limit", "2", "--json"];
+      const recoveryOf = (result: { stdout: string; stderr: string }): { code: string; recovery?: { suggested_retry_args?: string[] } } =>
+        JSON.parse(result.stdout || result.stderr) as { code: string; recovery?: { suggested_retry_args?: string[] } };
+      const revision = await readItemRevision(id, { pmRoot: context.pmPath });
+      const { result: guarded } = await withExpectedItemRevisions([{ id, itemHash: revision.item_hash }], () => context.runCliInProcess(argv), {
+        pmRoot: context.pmPath,
+      });
+      expect(recoveryOf(guarded)).toMatchObject({ code: CODE });
+      expect(recoveryOf(guarded).recovery?.suggested_retry_args).toBeUndefined();
+      const unguarded = await context.runCliInProcess(argv);
+      const retry = recoveryOf(unguarded).recovery?.suggested_retry_args;
+      // The in-process harness prepends its own tracker scope; the command tokens follow unchanged.
+      expect(retry?.slice(-6)).toEqual(["item", "learnings", id, "--add", "guarded", "--json"]);
+      expect(retry).not.toContain("--output-limit");
+    });
+  }, 60_000);
+
+  it("reports a tracker as revision-guarded only inside a scope that expects revisions on it", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Scope probe" });
+      expect(isTrackerRevisionGuarded(context.pmPath)).toBe(false);
+      const revision = await readItemRevision(id, { pmRoot: context.pmPath });
+      const inScope = await withExpectedItemRevisions([{ id, itemHash: revision.item_hash }], async () => {
+        // Nested scopes that expect different revisions of one item cannot be spelled as guards at all.
+        const nested = await withExpectedItemRevisions([{ id, itemHash: "b".repeat(64) }], async () => isTrackerRevisionGuarded(context.pmPath), {
+          pmRoot: context.pmPath,
+        });
+        return { outer: isTrackerRevisionGuarded(context.pmPath), nested: nested.result };
+      }, { pmRoot: context.pmPath });
+      expect(inScope.result).toEqual({ outer: true, nested: true });
     });
   }, 60_000);
 

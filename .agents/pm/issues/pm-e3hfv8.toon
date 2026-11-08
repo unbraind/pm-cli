@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: annotations,"area:output",toon,ux
 created_at: "2026-11-08T11:17:07.960Z"
-updated_at: "2026-11-08T13:45:00.446Z"
+updated_at: "2026-11-08T16:07:57.747Z"
 closed_at: "2026-11-08T13:44:49.085Z"
 completed_at: "2026-11-08T13:44:49.085Z"
 author: "harness:claude-code"
@@ -21,8 +21,9 @@ actual_result: "pm comments on [object, null, 42] renders comments[3] with '- nu
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-30tjoh,discovered_from,"2026-11-08T11:17:07.960Z","harness:claude-code","cli:create:dep",detected
   pm-yo46im,related,"2026-11-08T13:20:25.383Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-08T13:07:46.848Z","harness:claude-code","Implementation evidence, branch fix/annotation-read-fidelity. Reproduced on main dbe6be164: a sandbox item with comments [object, null, 42] rendered comments[2] beside count 3 in TOON, while --json delivered all three rows. Fix: src/sdk/read-output/positional-rows.ts declares PM_READ_OUTPUT_POSITIONAL_ROW_PATHS (comments, notes and learnings, the collections --edit and --delete address by absolute index) and readOutputPositionalRowPaths(surface). nativeRenderer in src/core/output/output.ts resolves the read surface, so the item namespace form 'pm item comments' resolves too, and passes the paths to formatBuiltInOutput. There, restorePositionalRows re-delivers every row of a declared path, compacting each row as the sparse policy compacts a row object, so a null renders as '- null'. It runs only when some row would be dropped, so a well-formed listing renders byte-for-byte as before. The general TOON null-dropping contract is unchanged for every other payload: the spec's negative control shows the same listing without the declaration still renders comments[2]. JSON is unchanged. Verified with the built CLI: pm comments, pm item comments --limit 2 and --limit 1 render one row per delivered entry. A non-object row in a --limit page still carries no index field; its address is its position counted back from total_count. pm-yo46im's validate clause is the repair path."
+  "2026-11-08T16:07:57.744Z","harness:claude-code","CodeRabbit re-review of PR 1688, fixed. restorePositionalRows rebuilt the envelope in source key order, so it dropped keys a presentation projection added (for example details beside a brief-list shape). Both restore helpers now merge through mergeRestoredEntries. It keeps the compacted key order, replaces restored values in place, and inserts a restored key the policy dropped before the first kept key that follows it in the source. A spec renders a brief-shaped envelope with a null comment and compares it with the same envelope without restoration."
 files[3]{path,scope}:
   src/core/output/output.ts,project
   src/sdk/read-output/positional-rows.ts,project

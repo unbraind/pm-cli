@@ -701,14 +701,35 @@ function restoreRequestedEmptyCollections(
   if (!preserve || !isPlainObject(source)) return compacted;
   // The sparse policy may drop an item (or the whole envelope) whose values are all empty.
   const base = isPlainObject(compacted) ? compacted : {};
-  return Object.fromEntries(
-    Object.entries(source).flatMap(([key, value]): Array<[string, unknown]> => {
-      const kept = Object.hasOwn(base, key) ? base[key] : undefined;
-      if (key !== "item" && !GET_FACET_ROOTS.has(key)) return kept === undefined ? [] : [[key, kept]];
-      const restored = restoreEmptyCollections(value, kept);
-      return restored === undefined ? [] : [[key, restored]];
-    }),
+  const restored = new Map(
+    Object.keys(source)
+      .filter((key) => key === "item" || GET_FACET_ROOTS.has(key))
+      .map((key) => [key, restoreEmptyCollections(source[key], base[key])] as const),
   );
+  return mergeRestoredEntries(source, base, restored);
+}
+
+/**
+ * Rebuild a compacted envelope around restored values in the compacted key
+ * order, so keys a presentation projection added stay. A restored key the
+ * sparse policy dropped returns before the first kept key that follows it in
+ * the source; a dropped key whose restoration is undefined stays dropped.
+ */
+function mergeRestoredEntries(
+  source: Record<string, unknown>,
+  base: Record<string, unknown>,
+  restored: ReadonlyMap<string, unknown>,
+): Record<string, unknown> {
+  // A key the policy kept always restores to a value: restoration only adds around what was kept.
+  const entries = Object.entries(base).map(([key, value]): [string, unknown] => [key, restored.has(key) ? restored.get(key) : value]);
+  const sourceKeys = Object.keys(source);
+  for (const [key, value] of restored) {
+    if (Object.hasOwn(base, key) || value === undefined) continue;
+    const later = new Set(sourceKeys.slice(sourceKeys.indexOf(key) + 1));
+    const position = entries.findIndex(([entryKey]) => later.has(entryKey));
+    entries.splice(position === -1 ? entries.length : position, 0, [key, value]);
+  }
+  return Object.fromEntries(entries);
 }
 
 /**
@@ -728,14 +749,10 @@ function restorePositionalRows(
   });
   if (restorable.length === 0) return compacted;
   const base = isPlainObject(compacted) ? compacted : {};
-  return Object.fromEntries(
-    Object.entries(source).flatMap(([key, value]): Array<[string, unknown]> => {
-      if (restorable.includes(key)) {
-        return [[key, (value as unknown[]).map((row) => compactToonValue(row, TOON_COMPACTION_POLICY, true))]];
-      }
-      return Object.hasOwn(base, key) ? [[key, base[key]]] : [];
-    }),
+  const restored = new Map(
+    restorable.map((path) => [path, (source[path] as unknown[]).map((row) => compactToonValue(row, TOON_COMPACTION_POLICY, true))] as const),
   );
+  return mergeRestoredEntries(source, base, restored);
 }
 
 const COMPLETE_OMISSION_RECEIPT = JSON.stringify({

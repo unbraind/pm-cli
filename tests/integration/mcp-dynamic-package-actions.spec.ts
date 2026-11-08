@@ -688,7 +688,7 @@ describe("MCP dynamic package actions", () => {
         jsonrpc: "2.0",
         id: 5,
         method: "tools/call",
-        params: { name: "pm_comments", arguments: { path: context.pmPath, id, options: { limit: "20" } } },
+        params: { name: "pm_comments", arguments: { path: context.pmPath, id, options: { limit: 20 } } },
       });
       const pagedResult = (paged?.structuredContent as { result?: typeof commentsResult } | undefined)?.result;
       expect(pagedResult).toMatchObject({ count: 20, returned_count: 20, total_count: 27, has_more: true, limit: 20 });

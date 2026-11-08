@@ -19,7 +19,7 @@ import {
   READ_OUTPUT_SHAPING_CONTROL_FLAGS,
 } from "../../sdk/read-output-contracts.js";
 import { renderPmCommand } from "../argv-utils.js";
-import { scanOptionTokens } from "./projection-retry.js";
+import { scanOptionTokens, type ScannedOptionToken } from "./projection-retry.js";
 
 const SHAPING_CONTROL_FLAGS: ReadonlySet<string> = new Set(READ_OUTPUT_SHAPING_CONTROL_FLAGS);
 
@@ -58,29 +58,46 @@ function valueTakingFlags(commandPath: string | undefined): ReadonlySet<string> 
  * a flag-like token as its value swallowed another option, and a control
  * right after a value-taking option may be that option's value. A retry
  * rebuilt from such an argv would replay the misparse as a clean write.
+ * `revisionGuarded` reports an enclosing SDK revision scope (an embedded CLI
+ * run): its guards never reached argv, so a retry run on its own would write
+ * unguarded and is withheld too.
  */
 export function repairReadOutputMutationRecovery(
   argv: readonly string[],
   code: string | undefined,
   recovery: PmCliErrorRecoveryPayload | undefined,
   scopePrefix: readonly string[] | null = [],
+  revisionGuarded: () => boolean = () => false,
 ): PmCliErrorRecoveryPayload | undefined {
   if (code !== READ_OUTPUT_MUTATION_CONFLICT_CODE) return recovery;
   const withheld = recovery === undefined ? undefined : { ...recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const commandPath = invocationCommandPath(argv);
   const options = scanOptionTokens(argv, commandPath);
-  if (options === undefined || scopePrefix === null) return withheld;
-  const valueFlags = valueTakingFlags(commandPath);
+  if (options === undefined || scopePrefix === null || revisionGuarded()) return withheld;
+  const removed = controlTokenIndexes(argv, options, valueTakingFlags(commandPath));
+  if (removed === undefined || removed.size === 0) return withheld;
+  const retry = [...scopePrefix, ...argv.filter((_, index) => !removed.has(index))];
+  return { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry };
+}
+
+/**
+ * Indexes of every control token and the value it consumed, or undefined when
+ * the parse around a control is ambiguous: the control took a flag-like token
+ * as its value, or it follows a value-taking option that may own it.
+ */
+function controlTokenIndexes(
+  argv: readonly string[],
+  options: ReadonlyMap<number, ScannedOptionToken>,
+  valueFlags: ReadonlySet<string>,
+): Set<number> | undefined {
   const removed = new Set<number>();
   for (const [index, { flag, consumesValue }] of options) {
     if (!SHAPING_CONTROL_FLAGS.has(flag)) continue;
     const previous = argv[index - 1];
-    if (previous !== undefined && !previous.includes("=") && valueFlags.has(previous)) return withheld;
-    if (consumesValue && argv[index + 1]?.startsWith("-") === true) return withheld;
+    if (previous !== undefined && !previous.includes("=") && valueFlags.has(previous)) return undefined;
+    if (consumesValue && argv[index + 1]?.startsWith("-") === true) return undefined;
     removed.add(index);
     if (consumesValue) removed.add(index + 1);
   }
-  if (removed.size === 0) return withheld;
-  const retry = [...scopePrefix, ...argv.filter((_, index) => !removed.has(index))];
-  return { ...recovery, suggested_retry: renderPmCommand(retry), suggested_retry_args: retry };
+  return removed;
 }

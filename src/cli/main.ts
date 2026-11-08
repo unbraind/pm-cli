@@ -14,6 +14,7 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairReadOutputMutationRecovery } from "./runtime/read-output-mutation-retry.js";
+import { isTrackerRevisionGuarded } from "../sdk/lifecycle/item-revision.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
 import { annotationPositionalMutationOptions } from "./register-annotations.js";
@@ -427,7 +428,9 @@ function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | u
   // The mutation retries bind an environment-selected tracker into the retry, so it acts on the same item anywhere.
   const scopePrefix = closeRetryScopePrefix(argv);
   const annotationRecovery = repairAnnotationOptionRecovery(argv, context.code, context.field, recovery, scopePrefix);
-  const outputControlRecovery = repairReadOutputMutationRecovery(argv, context.code, annotationRecovery, scopePrefix);
+  const outputControlRecovery = repairReadOutputMutationRecovery(argv, context.code, annotationRecovery, scopePrefix, () =>
+    isTrackerRevisionGuarded(resolvePmRoot(process.cwd(), parseBootstrapGlobalOptions(argv).path)),
+  );
   return repairCloseFieldsRecovery(argv, context.code, outputControlRecovery, scopePrefix);
 }
 

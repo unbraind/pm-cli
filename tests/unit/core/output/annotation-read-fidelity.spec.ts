@@ -56,6 +56,17 @@ describe("pm-e3hfv8 TOON position-addressed annotation rows", () => {
     // A path that is not an array, a scalar result and an undeclared collection are left alone.
     expect(formatBuiltInOutput({ comments: "x", other: [null] }, "toon", false, { positionalRowPaths: ["comments", "missing"] })).toBe('comments: "x"\n');
     expect(formatBuiltInOutput("value", "toon", false, { positionalRowPaths: ["comments"] })).toBe('"value"\n');
+    // CodeRabbit review of PR #1688: keys a presentation projection added survive restoration.
+    const briefShaped = formatBuiltInOutput(
+      { id: "pm-a", comments: [null], projection: { mode: "brief", fields: ["id"] }, items: [{ id: "pm-a" }], omission_receipt: { has_omissions: false, omitted_field_group_count: 0, omitted_field_groups: [] } },
+      "toon",
+      false,
+      { positionalRowPaths: ["comments"] },
+    );
+    expect(briefShaped).toContain("comments[1]: null");
+    expect(briefShaped).toBe(
+      formatBuiltInOutput({ id: "pm-a", comments: [], projection: { mode: "brief", fields: ["id"] }, items: [{ id: "pm-a" }], omission_receipt: { has_omissions: false, omitted_field_group_count: 0, omitted_field_groups: [] } }, "toon").replace('id: "pm-a"\n', 'id: "pm-a"\ncomments[1]: null\n'),
+    );
     // Keys the sparse policy dropped stay dropped beside a restored collection.
     expect(formatBuiltInOutput({ id: null, comments: [null] }, "toon", false, { positionalRowPaths: ["comments"] })).toBe("comments[1]: null\n");
   });

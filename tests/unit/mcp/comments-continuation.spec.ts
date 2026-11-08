@@ -55,6 +55,8 @@ describe("MCP pm_comments continuations reach the oldest comment (pm-sbqn4h)", (
       let page = await callComments(context, { id });
       expect(page.comments.at(-1)?.index).toBe(ENTRIES);
       expect(page.total_count).toBe(ENTRIES);
+      // The default budget must withhold older comments, so the walk really follows a cursor.
+      expect(typeof page.next_cursor).toBe("string");
       for (let step = 0; step < ENTRIES; step += 1) {
         seen.unshift(...page.comments.map(({ index }) => index));
         expect(page.has_more).toBe(typeof page.next_cursor === "string");
@@ -66,6 +68,8 @@ describe("MCP pm_comments continuations reach the oldest comment (pm-sbqn4h)", (
       const newest = await callComments(context, { id, options: { limit: "5" } });
       expect(newest.comments.map(({ index }) => index)).toEqual([26, 27, 28, 29, 30]);
       expect(newest).toMatchObject({ total_count: ENTRIES, has_more: true });
+      // The caller chose this window: older comments are reported by has_more, never by a cursor.
+      expect(newest.next_cursor ?? undefined).toBeUndefined();
     });
   }, 120_000);
 });
