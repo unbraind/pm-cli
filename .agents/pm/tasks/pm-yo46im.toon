@@ -1,0 +1,20 @@
+id: pm-yo46im
+title: "Annotation canonical order is not transitive for mixed parseable and unparseable created_at stamps, and fixing it in place breaks existing history hashes"
+description: "## Observed\ncompareLogValues in src/core/item/item-format.ts orders comments, notes and learnings by created_at through compareTimestampStrings. That function compares two parseable stamps by instant but a pair with an unparseable stamp as text, so the order is not transitive when a collection mixes the two. Example: A 2026-11-08T00:30:00+01:00 sorts before B 2026-11-07T23:45:00Z by instant, B sorts before X 2026-11-07T99 as text, and X sorts before A as text. The stored order then depends on the input order the sort received. pm itself always writes ISO stamps; mixed stamps arrive through hand edits, imports (commitImportedItem) and merges.\n\n## Why it is not fixed in place\nThe canonical order is hashed into item history (canonicalDocument feeds history hashing and replay for every existing hash epoch). The PR 1687 review tried grouping unparseable stamps first. Codex reproduced that an unchanged history stream generated before the change then reported verify_failed:after_hash_mismatch:entry_1, and the reordered collection persisted on the next write. That change was reverted: the comparator stays legacy-exact.\n\n## Fix direction\nIntroduce the transitive order as a versioned canonicalization:\n- an item format or hash-epoch bump in which existing epochs keep the legacy comparator for verification and replay, while new writes use the grouped order;\n- an old mixed-stamp history fixture that must keep verifying;\n- pm validate reporting unparseable annotation stamps, so they can be repaired."
+type: Task
+status: open
+priority: 3
+tags[4]: annotations,"area:core",history,integrity
+created_at: "2026-11-08T08:51:43.697Z"
+updated_at: "2026-11-08T09:57:43.700Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "compareLogValues (or its successor) is a strict weak ordering over any mix of created_at stamps for items at the new canonicalization version; History streams written before the change keep verifying and replaying unchanged, proven by a committed mixed-stamp history fixture; pm validate reports annotation entries whose created_at does not parse, with the item id, collection and index"
+parent: pm-doxj
+risk: medium
+confidence: high
+expected_result: "Annotation entries with any mix of created_at stamps sort into one transitive order at the new canonicalization version, while history streams written under the legacy order keep verifying and replaying unchanged"
+actual_result: "compareLogValues stays legacy-exact: mixed parseable and unparseable created_at stamps can form an ordering cycle (A < B by instant, B < X < A as text), so the stored order depends on the input order the sort received"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-30tjoh,discovered_from,"2026-11-08T08:51:43.697Z","harness:claude-code","cli:create:dep",detected
+body: ""

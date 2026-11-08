@@ -610,7 +610,18 @@ never move a published tag or mint a second automatic version for the same UTC d
   post-publish npm/npx/bunx verifier so those identities cannot drift. The
   explicit stable dist-tag also preserves
   correct `latest` behavior when rerunning historical ordinal tags.
-- post-publish npm/npx/bunx verification through
+- post-publish npm/npx/bunx verification in the separate `publication` job,
+  which needs the publishing job and owns a 110-minute limit, so a slow build
+  phase can no longer cut the registry wait short. npm's publish-time malware
+  scan holds a new version for about five minutes and sometimes far longer
+  (2026.11.8 became visible 55m22s after publish); the verifier polls for
+  about ninety minutes, and an exhausted wait names the version, the scan and
+  the publication-only re-run
+  ([pm-0jzl5t](../.agents/pm/issues/pm-0jzl5t.toon)). The job checks out
+  the exact commit the release job published (recorded after exact-tag source
+  selection), so the verifiers read the same `package.json` identity as the
+  publish guard; previous-release selection keeps the reviewed dispatch-source
+  selector. The verifier runs
   `scripts/release/verify-published-release.mjs`, using isolated empty npm and
   Bun caches plus an empty npm user config so maintainer credentials and cached
   metadata cannot mask a public-registry outage. The verifier dispatches a real
@@ -636,10 +647,11 @@ never move a published tag or mint a second automatic version for the same UTC d
 - GitHub Release creation
 - GitHub Release metadata verification through the same local verification script
 
-The Auto Release parent has a 180-minute orchestration limit: 60 minutes for
-preparation and gates, 30 for aggregate runner queue delays, the unchanged
-60-minute publication, 15-minute acceptance and 5-minute advertisement job
-limits, and 10 minutes for orchestration overhead. Runner queue time consumes
+The Auto Release parent has a 290-minute orchestration limit: 60 minutes for
+preparation and gates, 30 for aggregate runner queue delays, the serial
+60-minute build-and-publish, 110-minute publication verification, 15-minute
+acceptance and 5-minute advertisement job limits, and 10 minutes for
+orchestration overhead. Runner queue time consumes
 the waiting parent's wall time even when no child job is executing. The
 reserve accommodates delays without extending a child job or changing a
 quality gate. Extreme queue delays can still exhaust the parent; recover the
@@ -722,6 +734,16 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
   use the same guarded regeneration because their tag did not exist when the
   release commit's changelog was prepared. Other registry failures stop before
   source selection or publication.
+- If the `publication` job fails because npm has not yet made a version that
+  `Publish to npm` accepted visible, the package is held by npm's publish-time
+  scan, not lost. Do not dispatch a recovery or touch the tag. Once
+  `npm view @unbrained/pm-cli@<version> version` succeeds, run
+  `gh run rerun <run-id> --failed`: only the publication job and the skipped
+  acceptance and advertisement jobs run again, without rebuilding or
+  republishing. The failure message prints the exact command
+  ([pm-0jzl5t](../.agents/pm/issues/pm-0jzl5t.toon)). Close the bot-created
+  `Auto Release blocked` issue by hand after that run succeeds; the parent run
+  that recorded the failure stays red.
 - If an immutable published package contains a defect that cannot be repaired
   by rerunning the same tag workflow, document the incident and ship the code
   fix in the next UTC day's release.

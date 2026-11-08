@@ -1,0 +1,297 @@
+import { appendFile } from "node:fs/promises";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
+import { runLearnings } from "../../../../src/cli/commands/annotations/learnings.js";
+import { runNotes } from "../../../../src/cli/commands/annotations/notes.js";
+import { encode as encodeToon } from "@toon-format/toon";
+import { compareLogValues, parseItemDocument } from "../../../../src/core/item/item-format.js";
+import { compareTimestampStrings } from "../../../../src/core/shared/time.js";
+import { buildSearchCorpus, buildSemanticCorpusInput } from "../../../../src/core/search/corpus.js";
+import { PmCliError } from "../../../../src/core/shared/errors.js";
+import type { Comment, ItemDocument } from "../../../../src/types/index.js";
+import { createTestItemId } from "../../../helpers/itemFactory.js";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+
+/**
+ * pm-30tjoh: a malformed comments, notes or learnings entry used to crash
+ * every read of its item (sortLogValues called localeCompare on a missing
+ * text), surfacing as an unknown_error and an unexpected Sentry fault
+ * (PM-CLI-3Y). Reads now tolerate it and deliver it as stored.
+ */
+
+const MALFORMED_COLLECTIONS = ["comments", "notes", "learnings"] as const;
+const RUNNERS = { comments: runComments, notes: runNotes, learnings: runLearnings } as const;
+
+describe("malformed stored annotation entries (pm-30tjoh)", () => {
+  it("orders malformed entries deterministically instead of throwing", () => {
+    const valid = { created_at: "2026-11-08T00:00:00.000Z", author: "a", text: "valid" } as Comment;
+    const textless = { created_at: "2026-11-07T00:00:00.000Z", author: "b" } as unknown as Comment;
+    const malformed = ["just-a-string", 42, null] as unknown as Comment[];
+    const sorted = [valid, ...malformed, textless].sort(compareLogValues);
+    // Stamped entries keep their instant order; unstamped ones read "undefined".
+    expect(sorted.slice(0, 2)).toEqual([textless, valid]);
+    expect(compareLogValues(malformed[0]!, malformed[2]!)).toBe(0);
+  });
+
+  it("keeps the legacy order, and so existing history hashes, wherever the legacy comparator could sort", () => {
+    // Codex review round 4 of PR #1687: the canonical order is hashed into
+    // item history, so the crash fix must not reorder any document the legacy
+    // comparator sorted (pm-yo46im owns a versioned transitive order).
+    const legacy = (a: Comment, b: Comment): number => {
+      const byCreated = compareTimestampStrings(a.created_at, b.created_at);
+      if (byCreated !== 0) return byCreated;
+      const byText = a.text.localeCompare(b.text);
+      if (byText !== 0) return byText;
+      return a.author.localeCompare(b.author);
+    };
+    const pool = [
+      { created_at: "2026-11-08T00:30:00+01:00", author: "a", text: "a" },
+      { created_at: "2026-11-07T23:45:00Z", author: "b", text: "b" },
+      { created_at: "2026-11-07T99", author: "x", text: "x" },
+      { created_at: "zzzz", author: "z", text: "z" },
+      { created_at: "2026-11-07T23:45:00Z", author: "c" },
+      { created_at: "2026-11-07T23:45:00.000Z", author: "d", text: "b" },
+      { created_at: 42, author: "n", text: "n" },
+      { created_at: "2026-11-07T23:45:00Z", text: "b" },
+      // Greptile review of PR #1687: String() throws on this valid JSON value.
+      { created_at: "2026-11-06T00:00:00Z", author: "o", text: { toString: 42 } },
+      { created_at: { toString: 42 }, author: "p", text: "p" },
+    ] as unknown as Comment[];
+    let compared = 0;
+    for (const a of pool) {
+      for (const b of pool) {
+        let expected: number;
+        try {
+          expected = legacy(a, b);
+        } catch {
+          continue;
+        }
+        compared += 1;
+        expect(Math.sign(compareLogValues(a, b))).toBe(Math.sign(expected));
+      }
+    }
+    // Total where the legacy comparator threw: no pair throws.
+    for (const a of pool) for (const b of pool) expect(() => compareLogValues(a, b)).not.toThrow();
+    expect(compared).toBeGreaterThan(40);
+    const mixed = [pool[3]!, pool[1]!, pool[0]!];
+    expect([...mixed].sort(compareLogValues)).toEqual([...mixed].sort(legacy));
+  });
+
+  it("reads text and author only on a created_at tie and never calls a conversion twice when one throws", () => {
+    // Codex review round 6 of PR #1687: SDK-supplied entries can carry
+    // getters; the legacy comparator never read text when created_at differed.
+    let textReads = 0;
+    const lazy = {
+      created_at: "2026-11-02T00:00:00.000Z",
+      author: "a",
+      get text(): string {
+        textReads += 1;
+        throw new Error("text must not be read");
+      },
+    } as unknown as Comment;
+    const later = { created_at: "2026-11-03T00:00:00.000Z", author: "b", text: "b" } as Comment;
+    expect([later, lazy].sort(compareLogValues)).toEqual([lazy, later]);
+    expect(textReads).toBe(0);
+    const hostile = {
+      toString: null,
+      get [Symbol.toStringTag](): string {
+        throw new Error("tag");
+      },
+    };
+    const tied = { created_at: "2026-11-02T00:00:00.000Z", author: "c", text: hostile } as unknown as Comment;
+    const plain = { created_at: "2026-11-02T00:00:00.000Z", author: "d", text: "plain" } as Comment;
+    expect(() => [plain, tied].sort(compareLogValues)).not.toThrow();
+    expect(compareLogValues(tied, tied)).toBe(0);
+  });
+
+  it.each(["toon", "json_markdown"] as const)(
+    "parses a %s item whose annotation fields cannot be converted to strings",
+    (format) => {
+      // Greptile and Codex review of PR #1687: the legacy comparator never
+      // read text or author when created_at differed, so these items loaded.
+      const unconvertible = { toString: null };
+      const metadata = {
+        id: "pm-x",
+        title: "probe",
+        description: "",
+        type: "Task",
+        status: "open",
+        priority: 2,
+        tags: [],
+        created_at: "2026-11-01T00:00:00.000Z",
+        updated_at: "2026-11-01T00:00:00.000Z",
+        comments: [
+          { created_at: "2026-11-02T00:00:00.000Z", text: "ok", author: "b" },
+          { created_at: "2026-11-01T00:00:00.000Z", text: unconvertible, author: "a" },
+          { created_at: "2026-11-03T00:00:00.000Z", text: "later", author: [unconvertible] },
+        ],
+      };
+      const content = format === "toon" ? encodeToon(metadata) : `${JSON.stringify(metadata)}\n`;
+      const comments = parseItemDocument(content, { format }).metadata.comments as unknown as Array<{ created_at: string }>;
+      expect(comments.map((entry) => entry.created_at)).toEqual([
+        "2026-11-01T00:00:00.000Z",
+        "2026-11-02T00:00:00.000Z",
+        "2026-11-03T00:00:00.000Z",
+      ]);
+    },
+  );
+
+  it("keeps malformed entries out of the search corpus instead of aborting search and reindexing", () => {
+    // Codex review of PR #1687: once malformed entries load, the BM25 and
+    // reindex corpus must not dereference their text.
+    const malformed = [null, 42, "just-a-string", { created_at: "2026-11-07T00:00:00.000Z", author: "b" }, { text: 7 }];
+    const valid = { created_at: "2026-11-08T00:00:00.000Z", author: "a", text: "valid zebra" };
+    const document = {
+      metadata: { id: "pm-x", title: "t", comments: [...malformed, valid], notes: malformed, learnings: [valid, null] },
+      body: "",
+    } as unknown as ItemDocument;
+    const fields = ["comments", "notes", "learnings"];
+    expect(buildSearchCorpus(document, { fields })).toEqual({ comments: ["valid zebra"], notes: [], learnings: ["valid zebra"] });
+    expect(buildSemanticCorpusInput(document, { fields })).toContain("valid zebra");
+  });
+
+  it.each(MALFORMED_COLLECTIONS)("reads, appends to and guards a %s collection holding malformed entries", async (collection) => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: `Malformed ${collection}` });
+      await appendFile(
+        path.join(context.pmPath, "tasks", `${id}.toon`),
+        `${collection}[3]:\n  - just-a-string\n  - 42\n  - created_at: "2026-11-07T00:00:00.000Z"\n    author: someone\n`,
+        "utf8",
+      );
+      const listed = context.runCli([collection, id, "--json"], { expectJson: true });
+      expect(listed.code).toBe(0);
+      const rows = (listed.json as Record<string, unknown[]>)[collection]!;
+      expect(rows).toHaveLength(3);
+      expect(rows).toEqual(expect.arrayContaining(["just-a-string", 42]));
+      const fetched = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
+      expect(fetched.code).toBe(0);
+      // CodeRabbit review of PR #1687: get must deliver every stored entry.
+      expect((fetched.json as { item: Record<string, unknown[]> }).item[collection]).toHaveLength(3);
+      const appended = context.runCli([collection, id, "a valid entry", "--json"], { expectJson: true });
+      expect(appended.code).toBe(0);
+      const after = context.runCli([collection, id, "--json"], { expectJson: true }).json as Record<string, unknown[]>;
+      expect(after[collection]).toHaveLength(4);
+      expect(after[collection]).toEqual(expect.arrayContaining([expect.objectContaining({ text: "a valid entry" })]));
+    });
+  });
+
+  it.each(MALFORMED_COLLECTIONS)(
+    "appends idempotently to a %s collection of null entries and repairs a malformed entry on edit",
+    async (collection) => {
+      // Codex review of PR #1687: --if-absent dereferenced entry.author, and
+      // an edit spread a bare string into character keys.
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: `Idempotent ${collection}` });
+        await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), `${collection}[3]: null,null,just-a-string\n`, "utf8");
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const appended = context.runCli([collection, id, "--add", "only once", "--if-absent", "--json"], { expectJson: true });
+          expect(appended.code).toBe(0);
+        }
+        const listed = (context.runCli([collection, id, "--json"], { expectJson: true }).json as Record<string, unknown[]>)[collection]!;
+        expect(listed).toHaveLength(4);
+        expect(listed.filter((row) => (row as { text?: unknown } | null)?.text === "only once")).toHaveLength(1);
+        const stringIndex = listed.indexOf("just-a-string") + 1;
+        expect(stringIndex).toBeGreaterThan(0);
+        expect(context.runCli([collection, id, "--edit", String(stringIndex), "repaired", "--json"], { expectJson: true }).code).toBe(0);
+        const repaired = (context.runCli([collection, id, "--json"], { expectJson: true }).json as Record<string, unknown[]>)[collection]!;
+        const entry = repaired.find((row) => (row as { text?: unknown } | null)?.text === "repaired") as Record<string, unknown>;
+        expect(entry).toMatchObject({ text: "repaired", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
+        expect(Object.keys(entry)).not.toContain("0");
+        expect(repaired).not.toContain("just-a-string");
+      });
+    },
+  );
+
+  it.each(MALFORMED_COLLECTIONS)(
+    "repairs a malformed %s entry and skips non-records for --if-absent in process",
+    async (collection) => {
+      // The CLI cases above run in a subprocess; these drive the same SDK
+      // branches in process (isAnnotationRecord false for dedup and edit).
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: `In-process ${collection}` });
+        await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), `${collection}[2]: null,just-a-string\n`, "utf8");
+        const run = RUNNERS[collection];
+        await run(id, { add: "only once", ifAbsent: true }, { path: context.pmPath });
+        await run(id, { add: "only once", ifAbsent: true }, { path: context.pmPath });
+        const listed = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, unknown[]>;
+        expect(listed[collection]!.filter((row) => (row as { text?: unknown } | null)?.text === "only once")).toHaveLength(1);
+        const stringIndex = listed[collection]!.indexOf("just-a-string") + 1;
+        expect(stringIndex).toBeGreaterThan(0);
+        await run(id, { edit: stringIndex, add: "repaired" }, { path: context.pmPath });
+        const after = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, unknown[]>;
+        const entry = after[collection]!.find((row) => (row as { text?: unknown } | null)?.text === "repaired") as Record<string, unknown>;
+        expect(entry).toMatchObject({ text: "repaired", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
+        expect(Object.keys(entry)).not.toContain("0");
+      });
+    },
+  );
+
+  it.each(MALFORMED_COLLECTIONS)(
+    "stamps a %s record missing created_at and author on edit so it can be guarded afterwards",
+    async (collection) => {
+      // CodeRabbit review of PR #1687: an unstamped record stayed unguardable.
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: `Unstamped ${collection}` });
+        await appendFile(
+          path.join(context.pmPath, "tasks", `${id}.toon`),
+          `${collection}[2]:\n  - text: stored\n    extra: kept\n  - created_at: ""\n    author: ""\n    text: blank\n`,
+          "utf8",
+        );
+        const run = RUNNERS[collection];
+        const indexOf = async (text: string): Promise<number> =>
+          ((await run(id, {}, { path: context.pmPath })) as unknown as Record<string, Array<Record<string, unknown>>>)[collection]!.find(
+            (row) => row.text === text,
+          )!.index as number;
+        await run(id, { edit: await indexOf("stored"), add: "repaired" }, { path: context.pmPath });
+        await run(id, { edit: await indexOf("blank"), add: "restamped" }, { path: context.pmPath });
+        const after = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, Array<Record<string, unknown>>>;
+        const entry = after[collection]!.find((row) => row.text === "repaired")!;
+        expect(entry).toMatchObject({ extra: "kept", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
+        const restamped = after[collection]!.find((row) => row.text === "restamped")!;
+        expect(restamped.created_at).not.toBe("");
+        expect(restamped.author).not.toBe("");
+        await run(id, { edit: entry.index as number, add: "guarded", expectAt: entry.created_at as string }, { path: context.pmPath });
+        const guarded = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, Array<Record<string, unknown>>>;
+        expect(guarded[collection]!.some((row) => row.text === "guarded" && row.created_at === entry.created_at)).toBe(true);
+      });
+    },
+  );
+
+  it("refuses a guarded edit of a malformed entry with the typed mismatch, not a TypeError", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Guarded malformed edit" });
+      await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), "comments[1]: null\n", "utf8");
+      const error = await runComments(
+        id,
+        { edit: 1, add: "replacement", expectAt: "2026-11-07T00:00:00.000Z" },
+        { path: context.pmPath },
+      ).then(
+        () => undefined,
+        (reason: unknown) => reason,
+      );
+      expect(error).toBeInstanceOf(PmCliError);
+      expect((error as PmCliError).context).toMatchObject({
+        code: "annotation_entry_mismatch",
+        details: { actual_created_at: null, matching_indexes: [] },
+      });
+      expect((error as PmCliError).message).toContain("an unrecorded time (malformed entry)");
+    });
+  });
+
+  it.each([
+    ['created_at: ""', ""],
+    ["created_at: 42", null],
+  ])("labels a stored %s as an unrecorded time in the guarded-edit refusal", async (field, reported) => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Guarded unstamped edit" });
+      await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), `comments[1]:\n  - ${field}\n    author: someone\n    text: stored\n`, "utf8");
+      const error = await runComments(id, { edit: 1, add: "replacement", expectAt: "2026-11-07T00:00:00.000Z" }, { path: context.pmPath }).then(
+        () => undefined,
+        (reason: unknown) => reason,
+      );
+      expect((error as PmCliError).context).toMatchObject({ code: "annotation_entry_mismatch", details: { actual_created_at: reported } });
+      expect((error as PmCliError).message).toContain("was created at an unrecorded time (malformed entry), not 2026-11-07T00:00:00.000Z");
+    });
+  });
+});

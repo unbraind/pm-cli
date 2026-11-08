@@ -1095,7 +1095,7 @@ describe("GitHub workflow contract", () => {
       "npm publish --dry-run --ignore-scripts --loglevel verbose --tag latest",
       'grep -Fq "oidc Successfully retrieved and set token"',
       "npm trusted publisher OIDC exchange failed before release gates.",
-      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json',
+      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --npm-attempts 360 --json',
       'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
       "uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",
@@ -1275,6 +1275,8 @@ describe("GitHub workflow contract", () => {
       jobs?: { "auto-release"?: { "timeout-minutes"?: unknown } };
     };
     const releaseTimeout = releaseWorkflow.jobs.release["timeout-minutes"];
+    const publicationTimeout =
+      releaseWorkflow.jobs.publication["timeout-minutes"];
     const acceptanceTimeout =
       releaseWorkflow.jobs["installed-acceptance"]["timeout-minutes"];
     const advertisementTimeout =
@@ -1283,15 +1285,19 @@ describe("GitHub workflow contract", () => {
       autoReleaseWorkflow.jobs?.["auto-release"]?.["timeout-minutes"];
 
     expect(releaseTimeout).toBe(60);
+    // pm-0jzl5t: post-publish verification owns its budget, so npm's
+    // publish-time scan cannot be cut short by a slow build phase.
+    expect(publicationTimeout).toBe(110);
     expect(acceptanceTimeout).toBe(15);
     expect(advertisementTimeout).toBe(5);
     const preparationReserve = 60;
     const runnerQueueReserve = 30;
     const orchestrationReserve = 10;
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
-      releaseTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve + orchestrationReserve,
+      releaseTimeout + publicationTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve + orchestrationReserve,
     );
-    expect(autoReleaseTimeout).toBeLessThanOrEqual(180);
+    // GitHub-hosted jobs stop at 360 minutes; keep the parent well inside it.
+    expect(autoReleaseTimeout).toBeLessThanOrEqual(300);
   });
 
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {

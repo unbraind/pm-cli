@@ -68,8 +68,9 @@ const MCP_DISCOVER_TIMEOUT_MS = 60_000;
 const MCP_HTTP_READY_TIMEOUT_MS = 15_000;
 const MCP_HTTP_EXECUTOR_TIMEOUT_MS = 20_000;
 const MCP_HTTP_EXECUTOR_MAX_ATTEMPTS = 2;
-/** Default npm metadata polls at 15s each: about fifteen minutes of propagation budget. */
-const DEFAULT_NPM_ATTEMPTS = 60;
+/** Default npm metadata polls at 15s each: about ninety minutes of propagation budget. */
+const DEFAULT_NPM_ATTEMPTS = 360;
+const NPM_METADATA_POLL_MS = 15_000;
 const MCP_HTTP_SHUTDOWN_GRACE_MS = 2_000;
 const MCP_HTTP_EXECUTOR_SCRIPT = String.raw`
 import { spawn } from "node:child_process";
@@ -322,7 +323,7 @@ function usage() {
   node scripts/release/verify-published-release.mjs --version <YYYY.M.D[-N]> [--json]
     [--skip-package]
     [--skip-github-release]
-    [--npm-attempts 60]
+    [--npm-attempts 360]
     [--executor-attempts 10]
 
 Verifies the public release surfaces after publish:
@@ -398,7 +399,7 @@ function runWithRetries(label, attempts, delayMs, action) {
  */
 function verifyNpmMetadata(version, attempts, publicRegistryEnv) {
   const npm = commandFor("npm");
-  return runWithRetries("npm metadata", attempts, 15000, () => {
+  return runWithRetries("npm metadata", attempts, NPM_METADATA_POLL_MS, () => {
     const result = runCommand(
       npm,
       [
@@ -665,6 +666,36 @@ function verifyMissingBinControl(label, args, tempRoot, publicRegistryEnv) {
   return { ok: true, observed_nonzero_status: result.status };
 }
 
+/** Reasons for metadata npm returned but the verifier rejected (not a visibility delay). */
+const NPM_METADATA_REJECTION = /^npm_(?:metadata_shape_unsupported|version_mismatch:|json_parse_failed:)/u;
+
+/**
+ * Explain an exhausted npm metadata wait (pm-0jzl5t). A version npm does not
+ * show yet is usually held by npm's publish-time scan, so the message gives
+ * the publication-only re-run; metadata npm returns but the verifier rejects
+ * is not a propagation delay, so it points at diagnosis instead of another
+ * full wait.
+ */
+function npmMetadataFailureMessage(version, attempts, reason, runId = process.env.GITHUB_RUN_ID) {
+  const minutes = Math.round((attempts * NPM_METADATA_POLL_MS) / 60_000);
+  const budget = `${attempts} polls (about ${minutes} minute${minutes === 1 ? "" : "s"})`;
+  const spec = `${NPM_PACKAGE}@${version}`;
+  if (NPM_METADATA_REJECTION.test(reason)) {
+    return [
+      `npm metadata verification failed: ${reason}.`,
+      `npm returned metadata for ${spec} that the verifier rejected on every one of ${budget}.`,
+      `This is not a propagation delay: inspect \`npm view ${spec} --json\` before re-running, because a re-run repeats the full wait.`,
+    ].join(" ");
+  }
+  const rerun = runId ? `gh run rerun ${runId} --failed` : "gh run rerun <run-id> --failed";
+  return [
+    `npm metadata verification failed: ${reason}.`,
+    `${spec} was not visible after ${budget}.`,
+    "npm holds a new version for its publish-time malware scan before it becomes installable;",
+    `once \`npm view ${spec} version\` succeeds, re-run only the failed publication job: ${rerun}`,
+  ].join(" ");
+}
+
 function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-cli-published-verify-"));
   const releaseCleanup = registerTempCleanup(tempRoot);
@@ -688,7 +719,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       publicRegistryEnv,
     );
     if (!npmMetadata.ok) {
-      fail(`npm metadata verification failed: ${npmMetadata.reason}`);
+      fail(npmMetadataFailureMessage(version, npmAttempts, npmMetadata.reason));
     }
 
     const packageSpec = `${NPM_PACKAGE}@${version}`;
@@ -946,7 +977,11 @@ function main() {
   // npm registry metadata for a freshly published version became visible
   // 8m14s (2026.9.11) and 6m10s (2026.9.12) after `npm publish` returned; the
   // previous 20x15s (5 min) ceiling recorded both correct publications as
-  // failed releases (pm-wzmbvn). 60x15s waits about fifteen minutes.
+  // failed releases (pm-wzmbvn). npm's publish-time malware scan (GitHub
+  // changelog 2026-07-28) now holds a new version for about five minutes and
+  // "up to 15 minutes or more"; 2026.11.8 became visible 55m22s after publish
+  // and outlasted the 60x15s ceiling (pm-0jzl5t). 360x15s waits about ninety
+  // minutes; a longer hold is recovered by re-running the publication job.
   const npmAttempts = parsePositiveInteger(flags, "npm-attempts", DEFAULT_NPM_ATTEMPTS);
   const executorAttempts = parsePositiveInteger(flags, "executor-attempts", 10);
   const version = parseVersionFromFlags(flags);

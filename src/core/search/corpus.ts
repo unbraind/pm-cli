@@ -260,6 +260,21 @@ export function buildPlanCorpus(
   };
 }
 
+/**
+ * Text of each well-formed annotation entry. A malformed stored entry (a bare
+ * string, a number, null, or an object without string text) is delivered by
+ * reads as stored (pm-30tjoh) but contributes nothing to the search corpus,
+ * so one damaged item cannot abort search or reindexing for every item.
+ */
+function annotationTexts(entries: readonly unknown[] | undefined): string[] {
+  return (entries ?? []).flatMap((entry) =>
+    Object.prototype.toString.call(entry) === "[object Object]" &&
+    typeof (entry as { text?: unknown }).text === "string"
+      ? [(entry as { text: string }).text]
+      : [],
+  );
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
@@ -337,12 +352,9 @@ const CORPUS_FIELD_BUILDERS: Record<
       ? document.metadata.actual_result
       : undefined,
   body: (document) => document.body,
-  comments: (document) =>
-    (document.metadata.comments ?? []).map((entry) => entry.text),
-  notes: (document) =>
-    (document.metadata.notes ?? []).map((entry) => entry.text),
-  learnings: (document) =>
-    (document.metadata.learnings ?? []).map((entry) => entry.text),
+  comments: (document) => annotationTexts(document.metadata.comments),
+  notes: (document) => annotationTexts(document.metadata.notes),
+  learnings: (document) => annotationTexts(document.metadata.learnings),
   reminders: (document) => buildReminderCorpus(document.metadata),
   events: (document) => buildEventCorpus(document.metadata),
   dependencies: (document) =>

@@ -63,11 +63,14 @@ it("executes preserved reviewed artifact controls with their transitive imports 
 
 interface Job {
   needs?: string | string[];
+  "timeout-minutes"?: number;
+  outputs?: Record<string, string>;
+  env?: Record<string, string>;
   strategy?: {
     "fail-fast": boolean;
     matrix: { os: string[]; install: string[] };
   };
-  steps: Array<{ name: string; run?: string }>;
+  steps: Array<{ name: string; id?: string; run?: string; "timeout-minutes"?: number; with?: Record<string, unknown> }>;
 }
 
 it("blocks advertisement until every registry platform and manager accepted candidate and previous release", async () => {
@@ -75,7 +78,7 @@ it("blocks advertisement until every registry platform and manager accepted cand
     await readFile(".github/workflows/release.yml", "utf8"),
   ) as { jobs: Record<string, Job> };
   const acceptance = workflow.jobs["installed-acceptance"];
-  expect(acceptance.needs).toBe("release");
+  expect(acceptance.needs).toBe("publication");
   expect(acceptance.strategy).toEqual({
     "fail-fast": false,
     matrix: {
@@ -90,6 +93,7 @@ it("blocks advertisement until every registry platform and manager accepted cand
   ).toContain('--previous-version "${CONTROL_VERSION}"');
   expect(workflow.jobs.advertise.needs).toEqual([
     "release",
+    "publication",
     "installed-acceptance",
   ]);
   expect(
@@ -103,15 +107,70 @@ it("blocks advertisement until every registry platform and manager accepted cand
     ),
   ).toBe(true);
   expect(
-    workflow.jobs.release.steps.find(
-      (step) => step.name === "Preserve reviewed package artifact controls",
-    )?.run,
-  ).toContain("cp scripts/release/release-control.mjs");
-  expect(
-    workflow.jobs.release.steps.find(
+    workflow.jobs.publication.steps.find(
       (step) => step.name === "Select previous public release control",
     )?.run,
   ).toContain('node "${RELEASE_CONTROL}"');
+});
+
+it("verifies the publication in its own job whose budget covers the full npm metadata wait (pm-0jzl5t)", async () => {
+  const workflow = parse(
+    await readFile(".github/workflows/release.yml", "utf8"),
+  ) as { jobs: Record<string, Job> };
+  const verifier = await readFile("scripts/release/verify-published-release.mjs", "utf8");
+  const attempts = Number(/const DEFAULT_NPM_ATTEMPTS = (\d+);/u.exec(verifier)?.[1]);
+  const pollMs = Number(/const NPM_METADATA_POLL_MS = ([\d_]+);/u.exec(verifier)?.[1]?.replaceAll("_", ""));
+  const publication = workflow.jobs.publication;
+  expect(publication.needs).toBe("release");
+  const moved = [
+    "Verify published package on npm, npx, and bunx",
+    "Accept exact installed package through npm and Bun agent sessions",
+    "Select previous public release control",
+  ];
+  for (const name of moved) {
+    expect(publication.steps.some((step) => step.name === name)).toBe(true);
+    expect(workflow.jobs.release.steps.some((step) => step.name === name)).toBe(false);
+  }
+  const verify = publication.steps.find((step) => step.name === moved[0])!;
+  // Exact-tag recovery runs the recovered tag's verifier, so the workflow
+  // passes the reviewed wait explicitly instead of relying on that default.
+  expect(verify.run).toContain(`--npm-attempts ${attempts} `);
+  const waitMinutes = (attempts * pollMs) / 60_000;
+  // 2026.11.8 became visible 55m22s after publish under npm's publish-time scan.
+  expect(waitMinutes).toBeGreaterThanOrEqual(60);
+  // The verifier still has to run npx/bunx journeys after the registry wait.
+  expect(verify["timeout-minutes"]).toBeGreaterThanOrEqual(waitMinutes + 5);
+  const stepBudget = publication.steps.reduce((total, step) => total + (step["timeout-minutes"] ?? 0), 0);
+  expect(publication["timeout-minutes"]).toBeGreaterThanOrEqual(stepBudget + 3);
+});
+
+it("verifies the exact source the release job published, with the reviewed release control (Codex review of PR #1687)", async () => {
+  const workflow = parse(
+    await readFile(".github/workflows/release.yml", "utf8"),
+  ) as { jobs: Record<string, Job> };
+  const release = workflow.jobs.release;
+  const names = release.steps.map((step) => step.name);
+  const record = release.steps.find((step) => step.name === "Record published source");
+  expect(record?.id).toBe("published-source");
+  expect(record?.run).toContain("git rev-parse --verify 'HEAD^{commit}'");
+  // Recorded after exact-tag source selection and immediately before publication.
+  expect(names.indexOf("Select exact-tag recovery source")).toBeLessThan(names.indexOf("Record published source"));
+  expect(names.indexOf("Record published source") + 1).toBe(names.indexOf("Publish to npm"));
+  expect(release.outputs?.source_sha).toBe("${{ steps.published-source.outputs.sha }}");
+
+  const publication = workflow.jobs.publication;
+  const [source, control] = publication.steps;
+  expect(source).toMatchObject({ name: "Checkout published source", with: { ref: "${{ needs.release.outputs.source_sha }}" } });
+  expect(source?.with?.path).toBeUndefined();
+  expect(control).toMatchObject({
+    name: "Checkout reviewed release control",
+    with: {
+      ref: "${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}",
+      path: ".reviewed-release-control",
+      "sparse-checkout": "scripts/release/release-control.mjs",
+    },
+  });
+  expect(publication.env?.RELEASE_CONTROL).toBe(".reviewed-release-control/scripts/release/release-control.mjs");
 });
 
 it.each(["npm", "npm-global", "bun"])(
@@ -178,3 +237,14 @@ it.each(["npm", "npm-global", "bun"])(
     }
   },
 );
+
+it("never restores a cached Bun in release, publication or acceptance jobs (CodeRabbit review of PR #1687)", async () => {
+  const workflow = parse(
+    await readFile(".github/workflows/release.yml", "utf8"),
+  ) as { jobs: Record<string, Job & { steps: Array<{ uses?: string }> }> };
+  const bunSteps = Object.entries(workflow.jobs).flatMap(([job, definition]) =>
+    definition.steps.filter((step) => step.uses?.startsWith("oven-sh/setup-bun@")).map((step) => ({ job, step })),
+  );
+  expect(bunSteps.map(({ job }) => job).sort()).toEqual(["installed-acceptance", "publication", "release"]);
+  for (const { step } of bunSteps) expect(step.with?.["no-cache"]).toBe(true);
+});

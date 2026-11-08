@@ -817,13 +817,41 @@ function sortDependencies(
 /** Annotation collections the store keeps in {@link compareLogValues} order; any other collection keeps write order. */
 export const CANONICALLY_ORDERED_LOG_COLLECTIONS: ReadonlySet<string> = new Set(["comments", "notes", "learnings"]);
 
-/** The canonical stored order of annotation entries: created_at, then text, then author (a stable sort keeps ties in write order). */
+/** Sort key of an annotation field whose read or string conversion throws. */
+const UNCONVERTIBLE_LOG_SORT_KEY = "[unconvertible]";
+
+/**
+ * One sort field of a stored annotation entry (pm-30tjoh), coerced with
+ * String() exactly as the legacy comparator's Date.parse and
+ * String.prototype.localeCompare arguments were (a missing field reads
+ * "undefined"). Every document the legacy comparator could sort therefore
+ * keeps its order and its history hashes. A read or conversion that throws
+ * (null entry, {"toString": null}, a throwing SDK getter) yields a fixed key
+ * instead of invoking another caller-controlled conversion.
+ */
+function logSortField(entry: unknown, key: "created_at" | "text" | "author"): string {
+  try {
+    return String(entry === null || entry === undefined ? undefined : (entry as Record<string, unknown>)[key]);
+  } catch {
+    return UNCONVERTIBLE_LOG_SORT_KEY;
+  }
+}
+
+/**
+ * The canonical stored order of annotation entries: created_at, then text,
+ * then author (a stable sort keeps ties in write order). Fields are read in
+ * the legacy order and only when the previous key ties, so a field the
+ * legacy comparator never read is never converted. This order is hashed into
+ * item history, so it must not change for documents that sorted before;
+ * ordering mixed parseable and unparseable stamps transitively needs a
+ * versioned canonicalization transition (pm-yo46im).
+ */
 export function compareLogValues(a: Comment | LogNote, b: Comment | LogNote): number {
-  const byCreated = compareTimestampStrings(a.created_at, b.created_at);
+  const byCreated = compareTimestampStrings(logSortField(a, "created_at"), logSortField(b, "created_at"));
   if (byCreated !== 0) return byCreated;
-  const byText = a.text.localeCompare(b.text);
+  const byText = logSortField(a, "text").localeCompare(logSortField(b, "text"));
   if (byText !== 0) return byText;
-  return a.author.localeCompare(b.author);
+  return logSortField(a, "author").localeCompare(logSortField(b, "author"));
 }
 
 function sortLogValues<T extends Comment | LogNote>(

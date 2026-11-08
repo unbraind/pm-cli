@@ -33,13 +33,13 @@ jobs:
   release:
     name: Build, Test, Publish
     runs-on: ubuntu-latest
-    # The full quality suite currently reaches post-publish verification near
-    # minute 20. Leave enough time for both clean installed-agent sessions and
-    # GitHub Release advertisement after the immutable npm publish succeeds.
+    # Build, test, gates and the immutable npm publish. The pre-publish phase
+    # took 26 minutes on 2026-11-07 and 45 on 2026-11-08; post-publish
+    # verification runs in the publication job so its registry wait never
+    # spends this budget (pm-0jzl5t).
     timeout-minutes: 60
     outputs:
-      version: ${{ steps.control.outputs.version }}
-      previous: ${{ steps.control.outputs.previous }}
+      source_sha: ${{ steps.published-source.outputs.sha }}
     permissions:
       contents: write
       id-token: write
@@ -53,7 +53,6 @@ jobs:
       PACKAGE_ARTIFACT_GATE: scripts/release/package-artifact-gate.mjs
       PACKAGE_DISTRIBUTION: scripts/release/package-distribution.mjs
       EXTENSION_FLAG_ACCEPTANCE: scripts/release/extension-flag-acceptance.mjs
-      RELEASE_CONTROL: scripts/release/release-control.mjs
       WORKSPACE_COMPATIBILITY: scripts/release/workspace-compatibility.mjs
       RELEASE_PUBLICATION_ADMISSION: scripts/release/release-run-selection.mjs
 
@@ -112,7 +111,6 @@ jobs:
           cp scripts/release/package-distribution.mjs "${RELEASE_CONTROLS}/package-distribution.mjs"
           cp scripts/release/extension-flag-acceptance.mjs "${RELEASE_CONTROLS}/extension-flag-acceptance.mjs"
           cp scripts/release/package-artifact-budget.json "${RELEASE_CONTROLS}/package-artifact-budget.json"
-          cp scripts/release/release-control.mjs "${RELEASE_CONTROLS}/release-control.mjs"
           cp scripts/release/release-run-selection.mjs "${RELEASE_CONTROLS}/release-run-selection.mjs"
           cp scripts/release/utils.mjs "${RELEASE_CONTROLS}/utils.mjs"
           cp scripts/release/workspace-compatibility.mjs "${RELEASE_CONTROLS}/workspace-compatibility.mjs"
@@ -130,7 +128,6 @@ jobs:
             echo "PACKAGE_ARTIFACT_GATE=${RELEASE_CONTROLS}/package-artifact-gate.mjs"
             echo "PACKAGE_DISTRIBUTION=${RELEASE_CONTROLS}/package-distribution.mjs"
             echo "EXTENSION_FLAG_ACCEPTANCE=${RELEASE_CONTROLS}/extension-flag-acceptance.mjs"
-            echo "RELEASE_CONTROL=${RELEASE_CONTROLS}/release-control.mjs"
             echo "RELEASE_PUBLICATION_ADMISSION=${RELEASE_CONTROLS}/release-run-selection.mjs"
             echo "WORKSPACE_COMPATIBILITY=${RELEASE_CONTROLS}/workspace-compatibility.mjs"
           } >> "${GITHUB_ENV}"
@@ -150,6 +147,9 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          # Never restore a cached Bun: a poisoned cache entry would run inside
+          # release and publication checks.
+          no-cache: true
 
       - name: Verify npm trusted publisher exchange
         timeout-minutes: 2
@@ -398,6 +398,12 @@ jobs:
           path: ${{ runner.temp }}/release-notes.md
           if-no-files-found: error
 
+      - name: Record published source
+        # Exact-tag recovery may have switched this checkout to the immutable
+        # tag; the publication job verifies against this same package.json.
+        id: published-source
+        run: echo "sha=$(git rev-parse --verify 'HEAD^{commit}')" >> "${GITHUB_OUTPUT}"
+
       - name: Publish to npm
         timeout-minutes: 5
         env:
@@ -453,11 +459,67 @@ jobs:
           if-no-files-found: ignore
           retention-days: 90
 
+  publication:
+    name: Verify npm, npx, and bunx publication
+    needs: release
+    runs-on: ubuntu-latest
+    # npm's publish-time malware scan holds a new version for about five
+    # minutes and "up to 15 minutes or more" (GitHub changelog 2026-07-28);
+    # 2026.11.8 became visible 55m22s after publish. The verifier waits about
+    # ninety minutes in this job of its own, so a slow build cannot spend that
+    # wait, and `gh run rerun <run-id> --failed` recovers a longer hold without
+    # rebuilding or republishing (pm-0jzl5t).
+    timeout-minutes: 110
+    outputs:
+      version: ${{ steps.control.outputs.version }}
+      previous: ${{ steps.control.outputs.previous }}
+    permissions:
+      contents: read
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      RELEASE_CONTROL: .reviewed-release-control/scripts/release/release-control.mjs
+    steps:
+      - name: Checkout published source
+        # The verifiers read package identity and bins from the exact source
+        # the release job published, including a recovered immutable tag.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.release.outputs.source_sha }}
+
+      - name: Checkout reviewed release control
+        # Previous-release selection stays on the reviewed dispatch source;
+        # a recovered legacy tag may predate the selector.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}
+          path: .reviewed-release-control
+          sparse-checkout: scripts/release/release-control.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.4.0
+          # Never restore a cached Bun: a poisoned cache entry would run inside
+          # release and publication checks.
+          no-cache: true
+
       - name: Verify published package on npm, npx, and bunx
         # npm metadata propagation measured at 6-8 minutes after publish on
-        # 2026-09-11/12; the verifier polls for about fifteen minutes (pm-wzmbvn).
-        timeout-minutes: 20
-        run: node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json
+        # 2026-09-11/12 (pm-wzmbvn) and 55m22s under npm's publish-time scan on
+        # 2026-11-08; the verifier polls for about ninety minutes (pm-0jzl5t).
+        # The wait is passed explicitly: exact-tag recovery runs the recovered
+        # tag's verifier, whose default may be lower (the flag exists since
+        # 2026-05-14).
+        timeout-minutes: 95
+        run: node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --npm-attempts 360 --json
 
       - name: Accept exact installed package through npm and Bun agent sessions
         timeout-minutes: 12
@@ -475,7 +537,7 @@ jobs:
 
   installed-acceptance:
     name: Registry acceptance (${{ matrix.os }}, ${{ matrix.install }})
-    needs: release
+    needs: publication
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -497,11 +559,14 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          # Never restore a cached Bun: a poisoned cache entry would run inside
+          # release and publication checks.
+          no-cache: true
       - name: Accept candidate and previous release
         shell: bash
         env:
-          CANDIDATE_VERSION: ${{ needs.release.outputs.version }}
-          CONTROL_VERSION: ${{ needs.release.outputs.previous }}
+          CANDIDATE_VERSION: ${{ needs.publication.outputs.version }}
+          CONTROL_VERSION: ${{ needs.publication.outputs.previous }}
           INSTALL_MODE: ${{ matrix.install }}
         run: |
           set -euo pipefail
@@ -523,13 +588,13 @@ jobs:
 
   advertise:
     name: Advertise accepted release
-    needs: [release, installed-acceptance]
+    needs: [release, publication, installed-acceptance]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: write
     env:
-      RELEASE_TAG: v${{ needs.release.outputs.version }}
+      RELEASE_TAG: v${{ needs.publication.outputs.version }}
     steps:
       - name: Checkout verification harness
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -542,7 +607,7 @@ jobs:
       - name: Download accepted release notes
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: release-notes-v${{ needs.release.outputs.version }}
+          name: release-notes-v${{ needs.publication.outputs.version }}
           path: ${{ runner.temp }}
 
       - name: Create GitHub release

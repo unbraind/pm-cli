@@ -845,6 +845,7 @@
         "ci.yml#build-test",
         "ci.yml#gates",
         "release.yml#release",
+        "release.yml#publication",
         "release.yml#installed-acceptance"
       ],
       "failure_taxonomy": [
@@ -870,6 +871,7 @@
         "ci.yml#release-analyzer-readiness",
         "nightly.yml#quality",
         "release.yml#release",
+        "release.yml#publication",
         "release.yml#advertise"
       ],
       "failure_taxonomy": [
