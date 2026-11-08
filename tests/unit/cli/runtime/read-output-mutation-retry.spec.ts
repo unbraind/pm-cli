@@ -147,47 +147,38 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     // CodeRabbit review of PR #1688: a credentialed package source never reaches another recovery field.
     const credentialed = ["package", "--catalog", "--install", "https://user:token@example.invalid/pkg.tgz", "--output-limit", "2"];
     expect(repairReadOutputMutationRecovery(credentialed, CODE, producer)).toEqual(withheld);
-    // Codex review of PR #1688: spellings the URL parser normalizes, behind a wrapper, and a token-only userinfo.
+    // Codex and Greptile review rounds 4-7 of PR #1688: every spelling the URL parser normalizes (backslash
+    // authorities, wrapper chains, inline option values, a tab inside the scheme, token-only userinfo) has an
+    // @ and a :, so all of them withhold the retry without having to be enumerated.
     for (const source of [
       "npm:https:\\user:secret@example.invalid/pkg.tgz",
       "git+https://token@example.invalid/repo.git",
-      "git+https:\\token@example.invalid/repo.git",
       "npm:git+https:\\user:fake-secret@example.invalid/repo.git",
-      "npm:https://user:pw@example.invalid/x.tgz",
-      // Greptile and Codex round 6 of PR #1688: an inline option value.
       "--add=https:user:fake-secret@example.invalid/pkg.tgz",
-      "--add=https:\\user:secret@example.invalid/x",
-      // More candidate schemes than the bounded scan parses: judged conservatively by its @.
-      "a:b:c:d:e:f:g:h:i:j@example.invalid",
+      "h\tttps:user:fake-secret@example.invalid/pkg.tgz",
     ]) {
       expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", source, "--output-limit", "2"], CODE, producer)).toEqual(withheld);
     }
-    // CodeQL js/polynomial-redos on PR #1688: a long colon-free run is checked in linear time.
+    // Deliberately conservative: a scoped package name or an @mention beside a colon loses the convenience retry too.
+    expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", "npm:@scope/pkg", "--output-limit", "2"], CODE, producer)).toEqual(withheld);
+    // A long text without an @ is checked in linear time and keeps its retry.
     const started = performance.now();
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "a".repeat(200_000), "--output-limit", "2"], CODE, undefined)?.suggested_retry_args?.length).toBe(4);
     expect(performance.now() - started).toBeLessThan(2_000);
-    // An @ beside a colon that does not parse as a credentialed URL keeps the retry.
-    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "mail me@ http:", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
-      "comments",
-      "pm-one",
-      "--add",
-      "mail me@ http:",
-    ]);
     // CodeRabbit round 6: a control right after a value-taking option is withheld, never kept in the retry.
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "x", "--limit", "--output-session", "{}", "5", "--output-limit", "2"], CODE, producer)).toEqual(withheld);
-    // Text that only looks like a scheme (an unparseable "http:") is not a credential either.
+    // A colon without an @, or an @ without a colon, keeps the retry.
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "see http:", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
       "comments",
       "pm-one",
       "--add",
       "see http:",
     ]);
-    // A scoped npm name or a plain word with a colon is not a credential.
-    expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", "npm:@scope/pkg", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
-      "package",
-      "--catalog",
-      "--install",
-      "npm:@scope/pkg",
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "thanks @alice", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
+      "comments",
+      "pm-one",
+      "--add",
+      "thanks @alice",
     ]);
     expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", "https://example.invalid/pkg.tgz", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
       "package",
@@ -263,6 +254,7 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
         ["package", "--catalog", "--install", "npm:https:\\user:fake-secret@example.invalid/pkg.tgz"],
         ["package", "--catalog", "--install", "npm:git+https:\\user:fake-secret@example.invalid/repo.git"],
         ["comments", inlineId, "--add=https:user:fake-secret@example.invalid/pkg.tgz"],
+        ["package", "--catalog", "--install", "h\tttps:user:fake-secret@example.invalid/pkg.tgz"],
       ]) {
         const refused = context.runCli(["--no-extensions", ...argv, "--output-limit", "2", "--json"]);
         expect(refused.code).toBe(2);
