@@ -1275,6 +1275,8 @@ describe("GitHub workflow contract", () => {
       jobs?: { "auto-release"?: { "timeout-minutes"?: unknown } };
     };
     const releaseTimeout = releaseWorkflow.jobs.release["timeout-minutes"];
+    const publicationTimeout =
+      releaseWorkflow.jobs.publication["timeout-minutes"];
     const acceptanceTimeout =
       releaseWorkflow.jobs["installed-acceptance"]["timeout-minutes"];
     const advertisementTimeout =
@@ -1283,15 +1285,18 @@ describe("GitHub workflow contract", () => {
       autoReleaseWorkflow.jobs?.["auto-release"]?.["timeout-minutes"];
 
     expect(releaseTimeout).toBe(60);
+    // pm-0jzl5t: post-publish verification owns its budget, so npm's
+    // publish-time scan cannot be cut short by a slow build phase.
+    expect(publicationTimeout).toBe(50);
     expect(acceptanceTimeout).toBe(15);
     expect(advertisementTimeout).toBe(5);
     const preparationReserve = 60;
     const runnerQueueReserve = 30;
     const orchestrationReserve = 10;
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
-      releaseTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve + orchestrationReserve,
+      releaseTimeout + publicationTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve + orchestrationReserve,
     );
-    expect(autoReleaseTimeout).toBeLessThanOrEqual(180);
+    expect(autoReleaseTimeout).toBeLessThanOrEqual(240);
   });
 
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {

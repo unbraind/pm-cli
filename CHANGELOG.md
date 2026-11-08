@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Release verification shares the build job's timeout and waits fifteen minutes while npm's publish-time scan can hold a version longer: 2026.11.8 was published but the job was cancelled before acceptance ([pm-0jzl5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0jzl5t.toon))
 - A malformed comments, notes or learnings entry in an item document crashes annotation reads with unknown_error (sortLogValues calls localeCompare on a missing text) ([pm-30tjoh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-30tjoh.toon))
 - MCP annotation and linked-artifact tools silently read when add is passed at the top level: the strict schema declares add/text but dispatch only hoists ifAbsent ([pm-wsqxwb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wsqxwb.toon))
 - pm comments --edit/--delete take an absolute index while a budget-truncated listing reports count as the page size and shows no row index, so 'edit the last comment' by count rewrites an older comment ([pm-hka7ep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hka7ep.toon))

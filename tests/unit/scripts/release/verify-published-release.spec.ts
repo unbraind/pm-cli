@@ -636,19 +636,20 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
     );
   });
 
-  it("waits about fifteen minutes of npm metadata propagation by default (60 polls)", async () => {
+  it("waits about thirty minutes of npm metadata propagation by default (120 polls)", async () => {
     let npmViews = 0;
     const { json, errors } = await runVerify({
-      argv: ["--version", "2026.9.12", "--json", "--skip-github-release", "--executor-attempts", "1"],
+      argv: ["--version", "2026.11.8", "--json", "--skip-github-release", "--executor-attempts", "1"],
       sleepMs: "0",
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
           npmViews += 1;
-          // Registry metadata became visible 6-8 minutes after publish on
-          // 2026-09-11/12; the default must outlast that, so only the 60th poll succeeds.
-          return npmViews < 60
+          // npm's publish-time scan held 2026.11.8 for more than twenty
+          // minutes (pm-0jzl5t); the default must outlast the documented
+          // "15 minutes or more", so only the 120th poll succeeds.
+          return npmViews < 120
             ? { status: 1, stdout: "", stderr: "npm error code E404" }
-            : npmViewResult("2026.9.12");
+            : npmViewResult("2026.11.8");
         }
         if (command === "npx" || command === "bunx" || command === "node") {
           return successfulPublishedVerifierResult(command, args);
@@ -657,10 +658,36 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
       },
     });
     expect(json.ok).toBe(true);
-    expect(json.package.npm.attempts).toBe(60);
+    expect(json.package.npm.attempts).toBe(120);
     expect(errors.join("\n")).toContain(
-      "Waiting for npm metadata propagation (attempt 59/60)",
+      "Waiting for npm metadata propagation (attempt 119/120)",
     );
+  });
+
+  it.each([
+    ["42454411958", "4", "after 4 polls (about 1 minute).", "gh run rerun 42454411958 --failed"],
+    [undefined, "8", "after 8 polls (about 2 minutes).", "gh run rerun <run-id> --failed"],
+  ])("explains an exhausted npm wait with the publish-time scan and a publication-only re-run (run %s)", async (runId, attempts, budget, rerun) => {
+    const previousRunId = process.env.GITHUB_RUN_ID;
+    if (runId === undefined) delete process.env.GITHUB_RUN_ID;
+    else process.env.GITHUB_RUN_ID = runId;
+    try {
+      const { failure } = await runVerify({
+        argv: ["--version", "2026.11.8", "--skip-github-release", "--npm-attempts", attempts, "--executor-attempts", "1"],
+        runCommand: (command, args) =>
+          command === "npm" && args[0] === "view"
+            ? { status: 1, stdout: "", stderr: "npm error code E404" }
+            : { status: 0, stdout: "", stderr: "" },
+      });
+      const message = String(failure ?? "");
+      expect(message).toContain(`@unbrained/pm-cli@2026.11.8 was not visible ${budget}`);
+      expect(message).toContain("publish-time malware scan");
+      expect(message).toContain("npm view @unbrained/pm-cli@2026.11.8 version");
+      expect(message).toContain(`re-run only the failed publication job: ${rerun}`);
+    } finally {
+      if (previousRunId === undefined) delete process.env.GITHUB_RUN_ID;
+      else process.env.GITHUB_RUN_ID = previousRunId;
+    }
   });
 
   it("fails npm metadata after exhausting attempts", async () => {

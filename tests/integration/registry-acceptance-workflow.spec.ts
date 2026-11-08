@@ -63,11 +63,12 @@ it("executes preserved reviewed artifact controls with their transitive imports 
 
 interface Job {
   needs?: string | string[];
+  "timeout-minutes"?: number;
   strategy?: {
     "fail-fast": boolean;
     matrix: { os: string[]; install: string[] };
   };
-  steps: Array<{ name: string; run?: string }>;
+  steps: Array<{ name: string; run?: string; "timeout-minutes"?: number }>;
 }
 
 it("blocks advertisement until every registry platform and manager accepted candidate and previous release", async () => {
@@ -75,7 +76,7 @@ it("blocks advertisement until every registry platform and manager accepted cand
     await readFile(".github/workflows/release.yml", "utf8"),
   ) as { jobs: Record<string, Job> };
   const acceptance = workflow.jobs["installed-acceptance"];
-  expect(acceptance.needs).toBe("release");
+  expect(acceptance.needs).toBe("publication");
   expect(acceptance.strategy).toEqual({
     "fail-fast": false,
     matrix: {
@@ -90,6 +91,7 @@ it("blocks advertisement until every registry platform and manager accepted cand
   ).toContain('--previous-version "${CONTROL_VERSION}"');
   expect(workflow.jobs.advertise.needs).toEqual([
     "release",
+    "publication",
     "installed-acceptance",
   ]);
   expect(
@@ -103,15 +105,37 @@ it("blocks advertisement until every registry platform and manager accepted cand
     ),
   ).toBe(true);
   expect(
-    workflow.jobs.release.steps.find(
-      (step) => step.name === "Preserve reviewed package artifact controls",
-    )?.run,
-  ).toContain("cp scripts/release/release-control.mjs");
-  expect(
-    workflow.jobs.release.steps.find(
+    workflow.jobs.publication.steps.find(
       (step) => step.name === "Select previous public release control",
     )?.run,
   ).toContain('node "${RELEASE_CONTROL}"');
+});
+
+it("verifies the publication in its own job whose budget covers the full npm metadata wait (pm-0jzl5t)", async () => {
+  const workflow = parse(
+    await readFile(".github/workflows/release.yml", "utf8"),
+  ) as { jobs: Record<string, Job> };
+  const verifier = await readFile("scripts/release/verify-published-release.mjs", "utf8");
+  const attempts = Number(/const DEFAULT_NPM_ATTEMPTS = (\d+);/u.exec(verifier)?.[1]);
+  const pollMs = Number(/const NPM_METADATA_POLL_MS = ([\d_]+);/u.exec(verifier)?.[1]?.replaceAll("_", ""));
+  const publication = workflow.jobs.publication;
+  expect(publication.needs).toBe("release");
+  const moved = [
+    "Verify published package on npm, npx, and bunx",
+    "Accept exact installed package through npm and Bun agent sessions",
+    "Select previous public release control",
+  ];
+  for (const name of moved) {
+    expect(publication.steps.some((step) => step.name === name)).toBe(true);
+    expect(workflow.jobs.release.steps.some((step) => step.name === name)).toBe(false);
+  }
+  const verify = publication.steps.find((step) => step.name === moved[0])!;
+  const waitMinutes = (attempts * pollMs) / 60_000;
+  expect(waitMinutes).toBeGreaterThanOrEqual(30);
+  // The verifier still has to run npx/bunx journeys after the registry wait.
+  expect(verify["timeout-minutes"]).toBeGreaterThanOrEqual(waitMinutes + 5);
+  const stepBudget = publication.steps.reduce((total, step) => total + (step["timeout-minutes"] ?? 0), 0);
+  expect(publication["timeout-minutes"]).toBeGreaterThanOrEqual(stepBudget + 3);
 });
 
 it.each(["npm", "npm-global", "bun"])(
