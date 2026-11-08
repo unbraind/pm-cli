@@ -147,6 +147,24 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     // CodeRabbit review of PR #1688: a credentialed package source never reaches another recovery field.
     const credentialed = ["package", "--catalog", "--install", "https://user:token@example.invalid/pkg.tgz", "--output-limit", "2"];
     expect(repairReadOutputMutationRecovery(credentialed, CODE, producer)).toEqual(withheld);
+    // Codex review of PR #1688: spellings the URL parser normalizes, behind a wrapper, and a token-only userinfo.
+    for (const source of ["npm:https:\\user:secret@example.invalid/pkg.tgz", "git+https://token@example.invalid/repo.git", "npm:https://user:pw@example.invalid/x.tgz"]) {
+      expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", source, "--output-limit", "2"], CODE, producer)).toEqual(withheld);
+    }
+    // Text that only looks like a scheme (an unparseable "http:") is not a credential either.
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "see http:", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
+      "comments",
+      "pm-one",
+      "--add",
+      "see http:",
+    ]);
+    // A scoped npm name or a plain word with a colon is not a credential.
+    expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", "npm:@scope/pkg", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
+      "package",
+      "--catalog",
+      "--install",
+      "npm:@scope/pkg",
+    ]);
     expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", "https://example.invalid/pkg.tgz", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
       "package",
       "--catalog",
@@ -210,6 +228,17 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
         return { outer: isTrackerRevisionGuarded(context.pmPath), nested: nested.result };
       }, { pmRoot: context.pmPath });
       expect(inScope.result).toEqual({ outer: true, nested: true });
+    });
+  }, 60_000);
+
+  it("never repeats a credentialed package source in the built CLI's retry fields", async () => {
+    await withTempPmPath(async (context) => {
+      const refused = context.runCli(["package", "--catalog", "--install", "npm:https:\\user:fake-secret@example.invalid/pkg.tgz", "--output-limit", "2", "--json"]);
+      expect(refused.code).toBe(2);
+      const body = JSON.parse(refused.stdout || refused.stderr) as { code: string; recovery?: { suggested_retry?: string; suggested_retry_args?: string[] } };
+      expect(body.code).toBe(CODE);
+      expect(body.recovery?.suggested_retry).toBeUndefined();
+      expect(body.recovery?.suggested_retry_args).toBeUndefined();
     });
   }, 60_000);
 

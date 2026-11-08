@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: agent-ux,packages,privacy,recovery,security
 created_at: "2026-11-08T17:01:33.697Z"
-updated_at: "2026-11-08T17:01:47.779Z"
+updated_at: "2026-11-08T17:32:56.017Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Every CLI recovery representation (attempted_command, normalized_args, provided_fields, suggested_retry and suggested_retry_args) removes URL userinfo from every token, or withholds an executable retry when removing it would change the command's meaning; a spec drives an unknown_option refusal and a read_output_mutation_conflict refusal with a credentialed package source and asserts that no secret appears in stdout or stderr; history redact keeps its existing flag-value redaction"
@@ -18,4 +18,6 @@ actual_result: "attempted_command and normalized_args repeat https://u:fake-secr
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-m0fh,related,"2026-11-08T17:01:33.697Z","harness:claude-code","cli:create:dep",detected
   pm-rrwh2o,discovered_from,"2026-11-08T17:01:33.697Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-08T17:32:56.016Z","harness:claude-code","Scope note from the PR 1688 Codex review: removing userinfo must cover every spelling the URL parser normalizes, not only the literal '//user:secret@'. A backslash authority behind a wrapper, such as npm:https:\\user:secret@host, parses to the same credentials. pm-rrwh2o's carriesUrlCredentials, which parses each URL-scheme suffix with new URL, is the detection this item can reuse for redaction."
 body: ""

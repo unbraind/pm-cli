@@ -26,6 +26,25 @@ const SHAPING_CONTROL_FLAGS: ReadonlySet<string> = new Set(READ_OUTPUT_SHAPING_C
 /** A URL authority carrying userinfo (`scheme://user:secret@host`), as in a credentialed package source. */
 const URL_USERINFO = /\/\/[^/?#\s]*@/u;
 
+/** Every position in a token where a URL scheme could start, so wrappers such as `npm:` or `git+` are looked through. */
+const URL_SCHEME_START = /[a-z][a-z\d+.-]*:/giu;
+
+/**
+ * Whether a token carries URL credentials in any spelling the URL parser
+ * accepts, including backslash-normalized authorities (`https:\\user:secret@host`)
+ * behind a wrapper (`npm:https:...`), which the literal `//` pattern misses.
+ */
+function carriesUrlCredentials(token: string): boolean {
+  if (URL_USERINFO.test(token)) return true;
+  for (const match of token.matchAll(URL_SCHEME_START)) {
+    const candidate = token.slice(match.index);
+    if (!URL.canParse(candidate)) continue;
+    const url = new URL(candidate);
+    if (url.username !== "" || url.password !== "") return true;
+  }
+  return false;
+}
+
 /**
  * The command path whose flags the argv carries: the namespaced two-token
  * path (`item comments`, the form the error path records) when one declares
@@ -78,7 +97,7 @@ export function repairReadOutputMutationRecovery(
   const withheld = recovery === undefined ? undefined : { ...recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const commandPath = invocationCommandPath(argv);
   const options = scanOptionTokens(argv, commandPath);
-  if (options === undefined || scopePrefix === null || argv.some((token) => URL_USERINFO.test(token)) || revisionGuarded()) return withheld;
+  if (options === undefined || scopePrefix === null || argv.some(carriesUrlCredentials) || revisionGuarded()) return withheld;
   const removed = controlTokenIndexes(argv, options, valueTakingFlags(commandPath));
   if (removed === undefined || removed.size === 0) return withheld;
   const retry = [...scopePrefix, ...argv.filter((_, index) => !removed.has(index))];
