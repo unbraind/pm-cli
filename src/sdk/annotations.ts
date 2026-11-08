@@ -645,10 +645,11 @@ function assertExpectedAnnotationEntry(
   expectAt: string | undefined,
 ): void {
   if (expectAt === undefined) return;
-  const actual = entries[arrayIndex]!.created_at;
+  // A malformed stored entry (pm-30tjoh) may be null or not an object.
+  const actual = (entries[arrayIndex] as Partial<AnnotationEntry> | null)?.created_at ?? null;
   if (actual === expectAt) return;
   const matchingIndexes = entries.flatMap((entry, position) =>
-    entry.created_at === expectAt ? [position + 1] : [],
+    (entry as Partial<AnnotationEntry> | null)?.created_at === expectAt ? [position + 1] : [],
   );
   const noun = config.collectionKey.replace(/s$/, "");
   const action = config.input.mode === "delete" ? "--delete" : "--edit";
@@ -660,7 +661,7 @@ function assertExpectedAnnotationEntry(
         ? ` ${matchingIndexes.length} ${config.collectionKey} were created at ${expectAt}: indexes ${matchingIndexes.join(", ")}.`
         : ` No ${noun} on ${id} was created at ${expectAt}.`;
   throw new PmCliError(
-    `${noun.charAt(0).toUpperCase()}${noun.slice(1)} ${entryIndex} on ${id} was created at ${actual}, not ${expectAt}; refusing ${action} of an entry the caller did not read. Nothing was written.${retarget}`,
+    `${noun.charAt(0).toUpperCase()}${noun.slice(1)} ${entryIndex} on ${id} was created at ${actual ?? "an unrecorded time (malformed entry)"}, not ${expectAt}; refusing ${action} of an entry the caller did not read. Nothing was written.${retarget}`,
     EXIT_CODE.CONFLICT,
     {
       code: "annotation_entry_mismatch",

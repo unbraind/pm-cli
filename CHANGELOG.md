@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- A malformed comments, notes or learnings entry in an item document crashes annotation reads with unknown_error (sortLogValues calls localeCompare on a missing text) ([pm-30tjoh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-30tjoh.toon))
 - MCP annotation and linked-artifact tools silently read when add is passed at the top level: the strict schema declares add/text but dispatch only hoists ifAbsent ([pm-wsqxwb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wsqxwb.toon))
 - pm comments --edit/--delete take an absolute index while a budget-truncated listing reports count as the page size and shows no row index, so 'edit the last comment' by count rewrites an older comment ([pm-hka7ep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hka7ep.toon))
 - Bare pm comments / pm notes reads keep the oldest page when output must be bounded, withholding the newest entries (GH-1605 fixed this for history only) ([pm-8s53lj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8s53lj.toon))

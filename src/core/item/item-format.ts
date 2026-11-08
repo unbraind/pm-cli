@@ -817,13 +817,27 @@ function sortDependencies(
 /** Annotation collections the store keeps in {@link compareLogValues} order; any other collection keeps write order. */
 export const CANONICALLY_ORDERED_LOG_COLLECTIONS: ReadonlySet<string> = new Set(["comments", "notes", "learnings"]);
 
+/**
+ * The sort fields of a stored annotation entry, read defensively (pm-30tjoh):
+ * a malformed entry that is not an object, or lacks a field, sorts by empty
+ * strings instead of crashing every read of its item with a TypeError.
+ */
+function logSortFields(entry: unknown): { created_at: string; text: string; author: string } {
+  const record: Record<string, unknown> =
+    Object.prototype.toString.call(entry) === "[object Object]" ? (entry as Record<string, unknown>) : {};
+  const field = (key: string): string => (typeof record[key] === "string" ? (record[key] as string) : "");
+  return { created_at: field("created_at"), text: field("text"), author: field("author") };
+}
+
 /** The canonical stored order of annotation entries: created_at, then text, then author (a stable sort keeps ties in write order). */
 export function compareLogValues(a: Comment | LogNote, b: Comment | LogNote): number {
-  const byCreated = compareTimestampStrings(a.created_at, b.created_at);
+  const left = logSortFields(a);
+  const right = logSortFields(b);
+  const byCreated = compareTimestampStrings(left.created_at, right.created_at);
   if (byCreated !== 0) return byCreated;
-  const byText = a.text.localeCompare(b.text);
+  const byText = left.text.localeCompare(right.text);
   if (byText !== 0) return byText;
-  return a.author.localeCompare(b.author);
+  return left.author.localeCompare(right.author);
 }
 
 function sortLogValues<T extends Comment | LogNote>(
