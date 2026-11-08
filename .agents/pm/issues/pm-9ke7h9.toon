@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: agent-ux,contracts,discoverability,files
 created_at: "2026-11-08T14:40:50.944Z"
-updated_at: "2026-11-08T15:30:13.393Z"
+updated_at: "2026-11-08T18:17:52.826Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: pm contracts --command 'files discover' --flags-only --json lists every flag files discover --help --json reports; a census over the Commander tree fails when an executable subcommand has no contract entry; the read_output_mutation_conflict repair suggests a retry for 'pm files discover <id> --apply --output-limit 3'
@@ -20,4 +20,6 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2bqgs7,related,"2026-11-08T14:41:25.369Z","harness:claude-code","cli:update:dep",detected
   pm-6vk110,related,"2026-11-08T14:41:25.369Z","harness:claude-code","cli:update:dep",detected
   pm-ya7x55,related,"2026-11-08T14:41:25.369Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-08T18:17:52.825Z","harness:claude-code","Scope note from the CodeRabbit review of PR 1688. 'pm files discover <id> --note \"context\" --output-limit 5' is a read-only preview without --apply, yet read_output_mutation_conflict refuses it. HYBRID_READ_MUTATION_KEYS has listed note as a files mutation key since before PR 1688, and discover mode is not distinguished. Once files discover has its own contract entry, the guard can treat note as a mutation only together with --apply."
 body: ""

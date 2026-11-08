@@ -154,8 +154,11 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
       "git+https:\\token@example.invalid/repo.git",
       "npm:git+https:\\user:fake-secret@example.invalid/repo.git",
       "npm:https://user:pw@example.invalid/x.tgz",
-      // Deeper than the bounded candidate walk: judged conservatively by its @.
-      "a:b:c:d:e:f@example.invalid",
+      // Greptile and Codex round 6 of PR #1688: an inline option value.
+      "--add=https:user:fake-secret@example.invalid/pkg.tgz",
+      "--add=https:\\user:secret@example.invalid/x",
+      // More candidate schemes than the bounded scan parses: judged conservatively by its @.
+      "a:b:c:d:e:f:g:h:i:j@example.invalid",
     ]) {
       expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", source, "--output-limit", "2"], CODE, producer)).toEqual(withheld);
     }
@@ -163,6 +166,15 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     const started = performance.now();
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "a".repeat(200_000), "--output-limit", "2"], CODE, undefined)?.suggested_retry_args?.length).toBe(4);
     expect(performance.now() - started).toBeLessThan(2_000);
+    // An @ beside a colon that does not parse as a credentialed URL keeps the retry.
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "mail me@ http:", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
+      "comments",
+      "pm-one",
+      "--add",
+      "mail me@ http:",
+    ]);
+    // CodeRabbit round 6: a control right after a value-taking option is withheld, never kept in the retry.
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "x", "--limit", "--output-session", "{}", "5", "--output-limit", "2"], CODE, producer)).toEqual(withheld);
     // Text that only looks like a scheme (an unparseable "http:") is not a credential either.
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "see http:", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
       "comments",
@@ -246,8 +258,13 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
   it("never repeats a credentialed package source in the built CLI's retry fields", async () => {
     await withTempPmPath(async (context) => {
       // Codex review rounds 4 and 5 of PR #1688: a backslash authority, and one behind npm:git+.
-      for (const source of ["npm:https:\\user:fake-secret@example.invalid/pkg.tgz", "npm:git+https:\\user:fake-secret@example.invalid/repo.git"]) {
-        const refused = context.runCli(["--no-extensions", "package", "--catalog", "--install", source, "--output-limit", "2", "--json"]);
+      const inlineId = createTestItemId(context, { title: "Inline credential" });
+      for (const argv of [
+        ["package", "--catalog", "--install", "npm:https:\\user:fake-secret@example.invalid/pkg.tgz"],
+        ["package", "--catalog", "--install", "npm:git+https:\\user:fake-secret@example.invalid/repo.git"],
+        ["comments", inlineId, "--add=https:user:fake-secret@example.invalid/pkg.tgz"],
+      ]) {
+        const refused = context.runCli(["--no-extensions", ...argv, "--output-limit", "2", "--json"]);
         expect(refused.code).toBe(2);
         const body = JSON.parse(refused.stdout || refused.stderr) as { code: string; recovery?: { suggested_retry?: string; suggested_retry_args?: string[] } };
         expect(body.code).toBe(CODE);

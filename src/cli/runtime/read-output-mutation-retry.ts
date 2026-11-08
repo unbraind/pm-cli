@@ -26,34 +26,55 @@ const SHAPING_CONTROL_FLAGS: ReadonlySet<string> = new Set(READ_OUTPUT_SHAPING_C
 /** A URL authority carrying userinfo (`scheme://user:secret@host`), as in a credentialed package source. */
 const URL_USERINFO = /\/\/[^/?#\s]*@/u;
 
-/** Wrapper scheme chains such as `npm:git+https:` are rarely deeper than this; deeper tokens are judged conservatively. */
-const MAX_URL_CANDIDATES = 4;
+/** More candidate URL starts than this in one token are judged conservatively instead of parsed. */
+const MAX_URL_CANDIDATES = 8;
+
+/** Characters a URL scheme may contain after its first letter. */
+const SCHEME_CHARACTERS = /^[A-Za-z0-9+.-]$/u;
+
+/**
+ * Every position where a URL scheme could start in a token, in one linear
+ * pass: for each `:`, the run of scheme characters before it, and each
+ * letter in that run that follows its start or a `+`, `.` or `-`, so an inline
+ * option value (`--add=https:...`) and a wrapper chain (`npm:git+https:...`)
+ * both yield the inner scheme. Undefined when there are more than
+ * {@link MAX_URL_CANDIDATES}.
+ */
+function urlCandidateStarts(token: string): number[] | undefined {
+  const starts: number[] = [];
+  for (let colon = token.indexOf(":"); colon !== -1; colon = token.indexOf(":", colon + 1)) {
+    let runStart = colon;
+    while (runStart > 0 && SCHEME_CHARACTERS.test(token[runStart - 1]!)) runStart -= 1;
+    for (let position = runStart; position < colon; position += 1) {
+      const startsScheme = /^[A-Za-z]$/u.test(token[position]!) && (position === runStart || "+.-".includes(token[position - 1]!));
+      if (!startsScheme) continue;
+      starts.push(position);
+      if (starts.length > MAX_URL_CANDIDATES) return undefined;
+    }
+  }
+  return starts;
+}
 
 /**
  * Whether a token carries URL credentials in any spelling the URL parser
- * accepts, including backslash-normalized authorities (`https:\\user:secret@host`)
- * behind a wrapper (`npm:https:...`, `git+https:...`), which the literal `//`
- * pattern misses. Candidates are the token and each suffix after a `:` or `+`
- * separator, at most {@link MAX_URL_CANDIDATES} of them, so the work stays
- * linear in the token; a token with more nested separators that contains
- * an `@` counts as credentialed.
+ * accepts: backslash-normalized authorities (`https:\\user:secret@host`),
+ * wrapper chains (`npm:git+https:...`) and inline option values
+ * (`--add=https:user:secret@host`), which the literal `//` pattern misses.
+ * A token with too many candidate schemes that contains an `@` counts as
+ * credentialed.
  */
 function carriesUrlCredentials(token: string): boolean {
   // Userinfo always ends at an @, so text without one needs no parsing at all.
   if (!token.includes("@")) return false;
   if (URL_USERINFO.test(token)) return true;
-  let start = 0;
-  for (let candidates = 0; candidates < MAX_URL_CANDIDATES; candidates += 1) {
+  const starts = urlCandidateStarts(token);
+  if (starts === undefined) return true;
+  return starts.some((start) => {
     const candidate = token.slice(start);
-    if (URL.canParse(candidate)) {
-      const url = new URL(candidate);
-      if (url.username !== "" || url.password !== "") return true;
-    }
-    const separator = [token.indexOf(":", start), token.indexOf("+", start)].filter((index) => index !== -1);
-    if (separator.length === 0) return false;
-    start = Math.min(...separator) + 1;
-  }
-  return true;
+    if (!URL.canParse(candidate)) return false;
+    const url = new URL(candidate);
+    return url.username !== "" || url.password !== "";
+  });
 }
 
 /**
@@ -118,7 +139,8 @@ export function repairReadOutputMutationRecovery(
 /**
  * Indexes of every control token and the value it consumed, or undefined when
  * the parse around a control is ambiguous: the control took a flag-like token
- * as its value, or it follows a value-taking option that may own it.
+ * as its value, it follows a value-taking option that may own it, or a control
+ * spelling would be left in the retry.
  */
 function controlTokenIndexes(
   argv: readonly string[],
@@ -134,5 +156,8 @@ function controlTokenIndexes(
     removed.add(index);
     if (consumesValue) removed.add(index + 1);
   }
-  return removed;
+  // A control the scanner took as another option's value (`--limit --output-session ...`) would stay in
+  // the retry and reproduce the conflict, so any control spelling left over withholds the retry.
+  const leftover = argv.some((token, index) => !removed.has(index) && SHAPING_CONTROL_FLAGS.has(token.split("=", 1)[0]!));
+  return leftover ? undefined : removed;
 }

@@ -52,7 +52,9 @@ describe("MCP pm_comments continuations reach the oldest comment (pm-sbqn4h)", (
         await runComments(id, { add: `comment ${index} ${"x".repeat(300)}` }, { path: context.pmPath });
       }
       const seen: number[] = [];
-      let page = await callComments(context, { id });
+      // An explicit budget keeps the walk paging however the default budget is tuned.
+      const budget = "1500";
+      let page = await callComments(context, { id, outputBudget: budget });
       expect(page.comments.at(-1)?.index).toBe(ENTRIES);
       expect(page.total_count).toBe(ENTRIES);
       // The default budget must withhold older comments, so the walk really follows a cursor.
@@ -61,7 +63,7 @@ describe("MCP pm_comments continuations reach the oldest comment (pm-sbqn4h)", (
         seen.unshift(...page.comments.map(({ index }) => index));
         expect(page.has_more).toBe(typeof page.next_cursor === "string");
         if (typeof page.next_cursor !== "string") break;
-        page = await callComments(context, { id, outputCursor: page.next_cursor });
+        page = await callComments(context, { id, outputBudget: budget, outputCursor: page.next_cursor });
       }
       expect(seen).toEqual(Array.from({ length: ENTRIES }, (_entry, offset) => offset + 1));
       // The walk ended on a page that offers no cursor and reports nothing more.
