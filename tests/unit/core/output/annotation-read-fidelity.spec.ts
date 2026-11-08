@@ -139,6 +139,14 @@ describe("pm-fkhdy8 TOON get --fields keeps nested empty collections", () => {
     expect(formatBuiltInOutput({ item: { id: "pm-a" }, claim_state: { assignee: null }, receipts: { rows: [] } }, "toon", false, preserve)).toBe(
       'item:\n  id: "pm-a"\n',
     );
+    // CodeRabbit review of PR #1688: inside a row object the policy keeps nulls and empties, so a
+    // re-derived row must inherit that state or later cells shift (an override may carry undefined).
+    const overridden = formatBuiltInOutput({ item: { id: "pm-a", rows: [{ cells: [null, [], undefined, "x"] }] } }, "toon", false, preserve);
+    expect(overridden).toContain("cells[3]:");
+    expect(overridden).toMatch(/- null\n.*- \[0\]:\n.*- x\n/su);
+    // A selection whose output projection removed item still restores its selected facets.
+    expect(formatBuiltInOutput({ linked: { tests: [] }, omission_receipt: complete }, "toon", false, preserve)).toBe("linked:\n  tests: []\nomission_receipt: complete\n");
+    expect(formatBuiltInOutput({ linked: { tests: [] } }, "toon")).toBe("{}\n");
     // A non-empty array the policy reduced to nothing keeps the policy's verdict.
     expect(formatBuiltInOutput({ item: { id: "pm-a", tags: [null] } }, "toon", false, preserve)).toBe('item:\n  id: "pm-a"\n');
   });

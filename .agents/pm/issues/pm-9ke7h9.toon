@@ -1,0 +1,21 @@
+id: pm-9ke7h9
+title: "pm contracts has no entry for the files discover subcommand, so its --apply, --note and --append-stable flags are invisible to contract consumers and recovery scanners"
+description: "Found 2026-11-08 during the CodeRabbit review of PR 1688. pm files discover <id> is an executable Commander subcommand: files discover --help --json lists --append-stable, --apply, --author, --force, --message and --note. The runtime contract surface does not know it. pm contracts --command 'files discover' --flags-only --json refuses with unknown_command, pm contracts --command files lists --migrate but not --apply, and hasSubcommandFlagContractsForCommand returns false for both 'files discover' and 'item files discover'. Consumers that resolve flags from the contracts therefore cannot see the subcommand's options. One example is the read_output_mutation_conflict retry repair from pm-rrwh2o: for 'pm files discover <id> --apply --output-limit 3' it withholds the suggested retry because --apply has no declared arity, although the refusal itself is correct. Expected: files discover (and every other executable subcommand without a contract entry) publishes its flag contracts, so pm contracts, completion and argv-repair scanners resolve them. Duplicate check: searched contracts flags subcommand discover vocabulary missing. pm-ya7x55 and pm-2bqgs7 are closed and covered declared commands and options; pm-6vk110 (open) covers inherited host flags, not missing subcommands."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,contracts,discoverability,files
+created_at: "2026-11-08T14:40:50.944Z"
+updated_at: "2026-11-08T14:41:26.181Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: pm contracts --command 'files discover' --flags-only --json lists every flag files discover --help --json reports; a census over the Commander tree fails when an executable subcommand has no contract entry; the read_output_mutation_conflict repair suggests a retry for 'pm files discover <id> --apply --output-limit 3'
+parent: pm-doxj
+risk: low
+confidence: high
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rrwh2o,discovered_from,"2026-11-08T14:40:50.944Z","harness:claude-code","cli:create:dep",detected
+  pm-2bqgs7,related,"2026-11-08T14:41:25.369Z","harness:claude-code","cli:update:dep",detected
+  pm-6vk110,related,"2026-11-08T14:41:25.369Z","harness:claude-code","cli:update:dep",detected
+  pm-ya7x55,related,"2026-11-08T14:41:25.369Z","harness:claude-code","cli:update:dep",detected
+body: ""

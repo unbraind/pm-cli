@@ -619,8 +619,8 @@ const RAW_TOOLS: ToolDefinition[] = [
     name: "pm_comments",
     description:
       "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. " +
-      "List calls return the newest comments that fit the output budget, with total_count/has_more metadata and a next_cursor that pages back to older comments through outputCursor. " +
-      "Pass options.limit=N for only the newest N comments, options.limit=0 for summary-only metadata, or options.full=true for full history. " +
+      "List calls return the newest comments that fit the output budget, with total_count/has_more metadata and a next_cursor that pages back to older comments through outputCursor; outputBudget \"unbounded\" returns the complete listing at once. " +
+      "Pass options.limit=N for only the newest N comments (has_more then reports older comments without a cursor) or options.limit=0 for summary-only metadata; options.full=true returns the complete history after a write. " +
       "Rows carry their absolute index; pair edit/delete with options.expectAt to refuse a different entry.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, [
       "id",

@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[3]: agent-ux,read-output,toon
 created_at: "2026-11-07T05:21:58.835Z"
-updated_at: "2026-11-08T13:45:02.820Z"
+updated_at: "2026-11-08T14:41:07.559Z"
 closed_at: "2026-11-08T13:44:52.039Z"
 completed_at: "2026-11-08T13:44:52.039Z"
 author: "harness:claude-code"
@@ -20,8 +20,9 @@ expected_result: "TOON get --fields renders every empty collection inside select
 actual_result: "pm get <id> --fields id,linked renders linked.tests: [] and linked.docs: [], and --fields id,schedule renders reminders: [] and events: []; the spec covers nested scalar-plus-empty-array fields with a negative control"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-sj66lm,discovered_from,"2026-11-07T05:21:58.835Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-08T13:07:47.782Z","harness:claude-code","Implementation evidence, branch fix/annotation-read-fidelity. Reproduced on main dbe6be164 with the built CLI. pm get <id> --fields id,linked rendered linked.files but dropped linked.tests: [] and linked.docs: []; --fields id,schedule dropped schedule.reminders: [] and schedule.events: []; JSON kept all four. The cause: restoreRequestedEmptyItemCollections restored only top-level keys of item, while linked, schedule, claim_state, children and blockers are envelope facets beside item. Fix: the facet roots moved from src/sdk/query/get.ts into src/sdk/query/get-facet-roots.ts, an import-free module the core renderer can read without loading the get command. restoreRequestedEmptyCollections now restores recursively inside item and every selected facet. restoreEmptyCollections re-inserts every source-empty array or object at any depth around what the sparse policy kept. Array rows align by position when the policy kept every row; when it dropped some, the dropped rows are re-derived from the same policy. Nulls stay dropped, as the existing sj66lm spec pins for top-level item fields. Non-facet envelope keys keep the sparse policy. JSON, SDK and MCP output are unchanged; only the TOON renderer changed. The spec covers a nested scalar-plus-empty-array field (plan_scope.paths, nested.more), facets, array-of-array rows and a negative control without the selection flag."
+  "2026-11-08T14:41:07.558Z","harness:claude-code","CodeRabbit review of PR 1688, both fixed. (1) Row re-derivation now carries the preserveEmpty state the sparse policy inherited at that depth. Inside a row object the policy keeps nulls and empties, so an output_format override returning item.rows [{cells: [null, [], undefined, 'x']}] used to shift 'x' onto the null slot; it now renders null, [] and x. (2) A get --fields selection whose output projection removed item ('--fields linked.tests --output-include linked') now still restores its selected facets: restoreRequestedEmptyCollections no longer requires item to be present. Both have specs in tests/unit/core/output/annotation-read-fidelity.spec.ts."
 files[4]{path,scope}:
   src/core/output/output.ts,project
   src/sdk/query/get-facet-roots.ts,project

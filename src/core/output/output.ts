@@ -657,18 +657,21 @@ const TOON_COMPACTION_POLICY: OutputCompactionPolicy = {
  * Re-insert every empty collection a selected value carries, at any depth,
  * around what the sparse policy kept. Nulls and other dropped scalars stay
  * dropped. Array rows align by position when the policy kept every row;
- * otherwise the rows it dropped are re-derived from the same policy.
+ * otherwise the rows it dropped are re-derived from the same policy, with
+ * the `preserveEmpty` state the policy inherited at that depth (a row object
+ * keeps its own nulls and empties).
  */
-function restoreEmptyCollections(source: unknown, compacted: unknown): unknown {
+function restoreEmptyCollections(source: unknown, compacted: unknown, preserveEmpty = false): unknown {
   if (Array.isArray(source)) {
     if (source.length === 0) return [];
     const kept = Array.isArray(compacted) ? compacted : [];
     const aligned = kept.length === source.length;
     let next = 0;
     const rows = source.flatMap((row) => {
+      const rowPreservesEmpty = preserveEmpty || isPlainObject(row);
       const dropped =
-        !aligned && compactToonValue(row, TOON_COMPACTION_POLICY, isPlainObject(row)) === undefined;
-      const restored = restoreEmptyCollections(row, dropped ? undefined : kept[next++]);
+        !aligned && compactToonValue(row, TOON_COMPACTION_POLICY, rowPreservesEmpty) === undefined;
+      const restored = restoreEmptyCollections(row, dropped ? undefined : kept[next++], rowPreservesEmpty);
       return restored === undefined ? [] : [restored];
     });
     return rows.length > 0 ? rows : compacted;
@@ -676,7 +679,7 @@ function restoreEmptyCollections(source: unknown, compacted: unknown): unknown {
   if (!isPlainObject(source)) return compacted;
   const kept = isPlainObject(compacted) ? compacted : {};
   const entries = Object.entries(source).flatMap(([key, value]): Array<[string, unknown]> => {
-    const restored = restoreEmptyCollections(value, Object.hasOwn(kept, key) ? kept[key] : undefined);
+    const restored = restoreEmptyCollections(value, Object.hasOwn(kept, key) ? kept[key] : undefined, preserveEmpty);
     return restored === undefined ? [] : [[key, restored]];
   });
   return entries.length > 0 || Object.keys(source).length === 0
@@ -687,15 +690,15 @@ function restoreEmptyCollections(source: unknown, compacted: unknown): unknown {
 /**
  * Re-insert the empty collections an explicit get selection requested, inside
  * the item and every derived facet it selected, keeping the envelope's order.
+ * A selection whose output projection removed `item` (`--fields linked.tests
+ * --output-include linked`) still restores its selected facets.
  */
 function restoreRequestedEmptyCollections(
   source: unknown,
   compacted: unknown,
   preserve: boolean,
 ): unknown {
-  if (!preserve || !isPlainObject(source) || !isPlainObject(source.item)) {
-    return compacted;
-  }
+  if (!preserve || !isPlainObject(source)) return compacted;
   // The sparse policy may drop an item (or the whole envelope) whose values are all empty.
   const base = isPlainObject(compacted) ? compacted : {};
   return Object.fromEntries(

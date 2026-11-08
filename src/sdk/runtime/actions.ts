@@ -271,7 +271,7 @@ async function runMcpUpdateAction(
   );
 }
 
-/** Normalize annotation transport options and bound comment listings to twenty entries unless full history or a limit is requested. */
+/** Normalize annotation transport options and report paging metadata on listings; an explicit limit selects the newest entries and the output budget bounds the rest. */
 function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
   const commentOptions = normalizeAnnotationTransportOptions(ctx.options);
   const isListing =

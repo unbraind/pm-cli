@@ -409,7 +409,10 @@ stayed true. A listing now reports `total_count` and `has_more` and leaves the
 bound to the output budget, exactly like `pm_notes`, `pm_learnings` and the
 CLI. Following `next_cursor` alone therefore reaches the oldest comment, and
 `has_more` is true only while a cursor continues. `options.limit=N` still
-selects the newest N comments.
+selects the newest N comments; there the caller chose the window, so
+`has_more` can report older comments without a `next_cursor`, and the caller
+raises or removes the limit to read them. `outputBudget: "unbounded"` returns
+the complete listing in one response.
 
 Health continuation fingerprints use a versioned nonvolatile-snapshot policy
 for the `checks` row. Command-lifecycle telemetry may refresh timestamps, queue
