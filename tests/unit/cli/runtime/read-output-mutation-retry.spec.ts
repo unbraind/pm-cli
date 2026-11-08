@@ -148,9 +148,21 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     const credentialed = ["package", "--catalog", "--install", "https://user:token@example.invalid/pkg.tgz", "--output-limit", "2"];
     expect(repairReadOutputMutationRecovery(credentialed, CODE, producer)).toEqual(withheld);
     // Codex review of PR #1688: spellings the URL parser normalizes, behind a wrapper, and a token-only userinfo.
-    for (const source of ["npm:https:\\user:secret@example.invalid/pkg.tgz", "git+https://token@example.invalid/repo.git", "npm:https://user:pw@example.invalid/x.tgz"]) {
+    for (const source of [
+      "npm:https:\\user:secret@example.invalid/pkg.tgz",
+      "git+https://token@example.invalid/repo.git",
+      "git+https:\\token@example.invalid/repo.git",
+      "npm:git+https:\\user:fake-secret@example.invalid/repo.git",
+      "npm:https://user:pw@example.invalid/x.tgz",
+      // Deeper than the bounded candidate walk: judged conservatively by its @.
+      "a:b:c:d:e:f@example.invalid",
+    ]) {
       expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", source, "--output-limit", "2"], CODE, producer)).toEqual(withheld);
     }
+    // CodeQL js/polynomial-redos on PR #1688: a long colon-free run is checked in linear time.
+    const started = performance.now();
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "a".repeat(200_000), "--output-limit", "2"], CODE, undefined)?.suggested_retry_args?.length).toBe(4);
+    expect(performance.now() - started).toBeLessThan(2_000);
     // Text that only looks like a scheme (an unparseable "http:") is not a credential either.
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "see http:", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
       "comments",
@@ -233,12 +245,21 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
 
   it("never repeats a credentialed package source in the built CLI's retry fields", async () => {
     await withTempPmPath(async (context) => {
-      const refused = context.runCli(["package", "--catalog", "--install", "npm:https:\\user:fake-secret@example.invalid/pkg.tgz", "--output-limit", "2", "--json"]);
-      expect(refused.code).toBe(2);
-      const body = JSON.parse(refused.stdout || refused.stderr) as { code: string; recovery?: { suggested_retry?: string; suggested_retry_args?: string[] } };
-      expect(body.code).toBe(CODE);
-      expect(body.recovery?.suggested_retry).toBeUndefined();
-      expect(body.recovery?.suggested_retry_args).toBeUndefined();
+      // Codex review rounds 4 and 5 of PR #1688: a backslash authority, and one behind npm:git+.
+      for (const source of ["npm:https:\\user:fake-secret@example.invalid/pkg.tgz", "npm:git+https:\\user:fake-secret@example.invalid/repo.git"]) {
+        const refused = context.runCli(["--no-extensions", "package", "--catalog", "--install", source, "--output-limit", "2", "--json"]);
+        expect(refused.code).toBe(2);
+        const body = JSON.parse(refused.stdout || refused.stderr) as { code: string; recovery?: { suggested_retry?: string; suggested_retry_args?: string[] } };
+        expect(body.code).toBe(CODE);
+        expect(body.recovery?.suggested_retry).toBeUndefined();
+        expect(body.recovery?.suggested_retry_args).toBeUndefined();
+      }
+      // Long ordinary text is refused promptly: without an @ nothing is parsed.
+      const started = performance.now();
+      const id = createTestItemId(context, { title: "Long text" });
+      const long = context.runCli(["comments", id, "--add", "a".repeat(80_000), "--output-limit", "2", "--json"]);
+      expect(long.code).toBe(2);
+      expect(performance.now() - started).toBeLessThan(10_000);
     });
   }, 60_000);
 

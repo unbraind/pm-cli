@@ -26,23 +26,34 @@ const SHAPING_CONTROL_FLAGS: ReadonlySet<string> = new Set(READ_OUTPUT_SHAPING_C
 /** A URL authority carrying userinfo (`scheme://user:secret@host`), as in a credentialed package source. */
 const URL_USERINFO = /\/\/[^/?#\s]*@/u;
 
-/** Every position in a token where a URL scheme could start, so wrappers such as `npm:` or `git+` are looked through. */
-const URL_SCHEME_START = /[a-z][a-z\d+.-]*:/giu;
+/** Wrapper scheme chains such as `npm:git+https:` are rarely deeper than this; deeper tokens are judged conservatively. */
+const MAX_URL_CANDIDATES = 4;
 
 /**
  * Whether a token carries URL credentials in any spelling the URL parser
  * accepts, including backslash-normalized authorities (`https:\\user:secret@host`)
- * behind a wrapper (`npm:https:...`), which the literal `//` pattern misses.
+ * behind a wrapper (`npm:https:...`, `git+https:...`), which the literal `//`
+ * pattern misses. Candidates are the token and each suffix after a `:` or `+`
+ * separator, at most {@link MAX_URL_CANDIDATES} of them, so the work stays
+ * linear in the token; a token with more nested separators that contains
+ * an `@` counts as credentialed.
  */
 function carriesUrlCredentials(token: string): boolean {
+  // Userinfo always ends at an @, so text without one needs no parsing at all.
+  if (!token.includes("@")) return false;
   if (URL_USERINFO.test(token)) return true;
-  for (const match of token.matchAll(URL_SCHEME_START)) {
-    const candidate = token.slice(match.index);
-    if (!URL.canParse(candidate)) continue;
-    const url = new URL(candidate);
-    if (url.username !== "" || url.password !== "") return true;
+  let start = 0;
+  for (let candidates = 0; candidates < MAX_URL_CANDIDATES; candidates += 1) {
+    const candidate = token.slice(start);
+    if (URL.canParse(candidate)) {
+      const url = new URL(candidate);
+      if (url.username !== "" || url.password !== "") return true;
+    }
+    const separator = [token.indexOf(":", start), token.indexOf("+", start)].filter((index) => index !== -1);
+    if (separator.length === 0) return false;
+    start = Math.min(...separator) + 1;
   }
-  return false;
+  return true;
 }
 
 /**
