@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-07T00:18:18.219Z"
+updated_at: "2026-11-08T02:02:43.913Z"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -19,7 +19,7 @@ risk: low
 confidence: high
 expected_result: "Real source and Sentry-injected distributions fit unchanged ceilings while retaining all first-party metadata values, runtime bytes, SDK/CLI entrypoints and install behavior; verify Sentry release symbolication against a real captured post-change error event before closing the original acceptance criteria."
 actual_result: "Lossless first-party JSON staging is implemented and verified: all 6378 archive paths, 69 parsed JSON values, 4731 runtime digests and 1578 other file bytes remain identical; 34690 bytes are saved in the paired original/candidate proof. Final current-source base 19971036 and real offline Sentry-injected 20212760 satisfy unchanged ceilings with the identical 4731-file/23334884-byte runtime closure. npm/Bun installs, Node24/26/Bun SDK clients, isolated init, npx and bunx pass. Original acceptance still requires real captured-event Sentry symbolication after this change. The CLI empty-query receipt covered unresolved issues only; an explicit resolved query returns four historical groups, latest October 7 in release 2026.10.6, whose inspected event retains seven invalid-location symbolicator diagnostics. These historical events neither establish current-candidate failure nor prove the required post-change symbolication. This broader item remains open and unclaimed; offline debug-ID injection is packaging evidence. Final connected source passes 10090 tests with exact 100/100/100/100 coverage across 776 source files. Already-published main-source recovery now skips remote Sentry release metadata, commits, maps and finalization; its real Bash regression preserves tag-source upload and upload-failure propagation. Final packed-archive proof uses real offline Sentry injection, verifies both original budgets and preserves the entire checkout. Current-candidate captured-error symbolication and fresh trace visibility remain unverified."
-dependencies[7]:
+dependencies[8]:
   - id: pm-feecbs
     kind: related
     created_at: "2026-07-25T07:11:55.544Z"
@@ -47,7 +47,13 @@ dependencies[7]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[52]:
+  - id: pm-dwy8kb
+    kind: related
+    created_at: "2026-11-08T02:02:42.920Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+comments[53]:
   - created_at: "2026-07-25T07:12:23.380Z"
     author: "harness:claude-code"
     text: "Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
@@ -206,6 +212,9 @@ comments[52]:
   - created_at: "2026-11-07T00:18:18.219Z"
     author: "harness:claude-code"
     text: "Correction to the previous comment: the typebox peer is not open. package.json declares only the optional @types/node peer, and the 2026-11-06 evidence comment already listed the remaining criteria without it. Still open are real captured-event Sentry symbolication after source maps left the tarball, and the tsc-emit entrypoint decision."
+  - created_at: "2026-11-08T02:02:43.913Z"
+    author: "harness:claude-code"
+    text: "Next tranche (2026-11-08) is the child pm-dwy8kb. Main 70c14d4a3 packed at 19,978,963 B (21,037 B headroom), and PR 1685 added about 32.5 KB of legitimate code, declarations and docs, so it failed at 20,011,469 B. Excluding the generated repository-only refusal-closure census (42,496 B) from the npm files list restores about 31 KB of headroom: the clean projection is 19,969,081 B, and the 20,000,000 B ceiling is unchanged. Each feature PR now adds roughly 30 KB across the tsc emit, both bundle chunk sets and declarations, so pruning one file per PR does not scale. The structural growth sources remain open here: CHANGELOG.md (526,799 B packed, growing with every release) and dist/sdk/public-surface.json (2,027,246 B, whose entrypoints repeat each signature per subpath and whose breaking_acknowledgements grow with every SDK change).\n"
 notes[2]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
   "2026-11-05T22:54:21.153Z","harness:claude-code","Next-tranche headroom census, 2026-11-05. Measured at the PR 1672 head on the npm packlist from package-distribution.mjs, excluding the bundled runtime.\n\nCurrent state: base 19,980,344 of 20,000,000 bytes (about 19.7 KB headroom) and 1,799 of 1,800 files. Headroom is one file, so the next change that ships one more emitted module or packaged doc fails the PR base gate.\n\nMeasured candidate groups (files, bytes):\n\n| Group | Files | Bytes |\n| --- | ---: | ---: |\n| dist tsc JavaScript under dist/sdk | 388 | 3,823,149 |\n| dist **/*.d.ts | 684 | 2,655,971 |\n| docs/*.md | 108 | 1,506,584 |\n| packages/pm-* | 85 | 387,014 |\n| .agents/skills | 27 | 77,198 |\n| plugins/ | 57 | 72,944 |\n| docs/examples | 27 | 46,155 |\n| repo-only community files (CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md) | 3 | 16,234 |\n\nThe community files are referenced only by the validate well-known-files list and by docs-skills and release-readiness specs, not by any runtime package read.\n\nEach of these is a user-visible packaging decision. It belongs in its own tranche with consumer proof (npx, bunx, the SDK entrypoints and extension installs), not in a release-blocker fix."

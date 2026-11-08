@@ -96,6 +96,7 @@
     "AGENTS.md",
     "docs/**",
     "!docs/ecosystem-review-*.json",
+    "!docs/generated/REFUSAL_CLOSURE_CENSUS.md",
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",

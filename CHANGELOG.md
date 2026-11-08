@@ -18,6 +18,7 @@
 
 ### Other
 
+- Restore package headroom by excluding the generated refusal-closure census from the npm tarball ([pm-dwy8kb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dwy8kb.toon))
 - Unknown-option refusals on extension commands with declared flags carry code unknown_option and list only the flags the command accepts ([pm-1du7s3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1du7s3.toon))
 
 ## 2026.11.7 - 2026-11-07
