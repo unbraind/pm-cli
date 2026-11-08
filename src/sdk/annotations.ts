@@ -28,7 +28,7 @@ import {
 } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import { compareLogValues } from "../core/item/item-format.js";
+import { CANONICALLY_ORDERED_LOG_COLLECTIONS, compareLogValues } from "../core/item/item-format.js";
 import type { ItemDocument } from "../types.js";
 
 /** Common persisted shape shared by comments, notes, and learnings. */
@@ -720,9 +720,12 @@ function appendAnnotationEntry<
  * even among identical duplicates.
  */
 function canonicalAnnotationAddress(
+  collectionKey: string,
   written: readonly AnnotationEntry[],
   position: number,
 ): number {
+  // A custom SDK collection is stored in write order, so its push position is its address.
+  if (!CANONICALLY_ORDERED_LOG_COLLECTIONS.has(collectionKey)) return position + 1;
   const order = written
     .map((_entry, index) => index)
     .sort((left, right) => compareLogValues(written[left]!, written[right]!) || left - right);
@@ -869,7 +872,7 @@ export async function runAnnotationCommand<
             text,
             edited_at: nowIso(),
           } as TEntry;
-          editedAddress = canonicalAnnotationAddress(entries, arrayIndex);
+          editedAddress = canonicalAnnotationAddress(config.collectionKey, entries, arrayIndex);
           document.metadata[config.collectionKey] = entries as never;
           return { changedFields: [config.collectionKey] };
         },
@@ -920,7 +923,7 @@ export async function runAnnotationCommand<
           options.ifAbsent === true,
           config.createEntry,
         );
-        entryIndex = canonicalAnnotationAddress(appended.written, appended.position);
+        entryIndex = canonicalAnnotationAddress(config.collectionKey, appended.written, appended.position);
         return { changedFields: appended.changedFields };
       },
     });

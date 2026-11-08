@@ -814,6 +814,9 @@ function sortDependencies(
     });
 }
 
+/** Annotation collections the store keeps in {@link compareLogValues} order; any other collection keeps write order. */
+export const CANONICALLY_ORDERED_LOG_COLLECTIONS: ReadonlySet<string> = new Set(["comments", "notes", "learnings"]);
+
 /** The canonical stored order of annotation entries: created_at, then text, then author (a stable sort keeps ties in write order). */
 export function compareLogValues(a: Comment | LogNote, b: Comment | LogNote): number {
   const byCreated = compareTimestampStrings(a.created_at, b.created_at);

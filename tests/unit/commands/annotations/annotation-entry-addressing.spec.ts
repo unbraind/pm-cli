@@ -2,6 +2,7 @@ import { appendFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
+import { runAnnotationCommand } from "../../../../src/sdk/annotations.js";
 import { runLearnings } from "../../../../src/cli/commands/annotations/learnings.js";
 import { runNotes } from "../../../../src/cli/commands/annotations/notes.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
@@ -102,6 +103,40 @@ describe("annotation entry addressing (pm-hka7ep)", () => {
       const edited = await runComments(id, { edit: 2, add: "z shared" }, { path: context.pmPath });
       expect(edited.mutation_receipt?.entry_index).toBe(3);
       expect(edited.comments).toEqual([expect.objectContaining({ index: 3, text: "z shared" })]);
+    });
+  });
+
+  it("keeps write-order addresses for a custom SDK collection the store does not sort", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Custom collection" });
+      type AuditEntry = { created_at: string; author: string; text: string };
+      const append = (text: string, ifAbsent = false) =>
+        runAnnotationCommand<"audits", AuditEntry>(
+          id,
+          { ifAbsent },
+          { path: context.pmPath },
+          {
+            collectionKey: "audits",
+            op: "comment_add",
+            parseText: (raw) => raw,
+            createEntry: (entry) => entry,
+            bypassOwnershipConflict: false,
+            conflictGuidance: { required: "required", examples: [], nextSteps: [] },
+            input: { mode: "add", value: text },
+          },
+        );
+      vi.useFakeTimers({ toFake: ["Date"], now: new Date("2099-01-01T00:00:00.000Z") });
+      try {
+        await append("future-dated audit");
+      } finally {
+        vi.useRealTimers();
+      }
+      const appended = await append("written now");
+      expect(appended.mutation_receipt?.entry_index).toBe(2);
+      expect(appended.audits).toEqual([expect.objectContaining({ index: 2, text: "written now" })]);
+      const retried = await append("written now", true);
+      expect(retried).toMatchObject({ changed: false, mutation_receipt: { entry_index: 2 } });
+      expect(retried.audits).toEqual([expect.objectContaining({ index: 2, text: "written now" })]);
     });
   });
 
