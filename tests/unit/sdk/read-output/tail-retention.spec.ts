@@ -138,9 +138,15 @@ describe("newest-tail retention for annotation reads (pm-8s53lj)", () => {
   });
 
   it("refuses universal output controls on a learnings mutation before it can write", () => {
-    for (const key of ["add", "stdin", "file", "edit", "delete"]) {
+    for (const key of ["add", "learning", "text", "stdin", "file", "edit", "delete"]) {
       expect(() => validateReadOutputOptions("learnings", { [key]: key === "stdin" ? true : 1, outputCursor: "cursor" })).toThrow(
         "Universal output controls cannot be combined with a learnings mutation.",
+      );
+    }
+    // Uncanonicalized text aliases are refused on every annotation surface.
+    for (const [command, alias] of [["comments", "comment"], ["comments", "text"], ["notes", "note"], ["notes", "text"]] as const) {
+      expect(() => validateReadOutputOptions(command, { [alias]: "x", outputBudget: 1 })).toThrow(
+        `Universal output controls cannot be combined with a ${command} mutation.`,
       );
     }
     expect(() => validateReadOutputOptions("learnings", { limit: "5", outputBudget: 500 })).not.toThrow();

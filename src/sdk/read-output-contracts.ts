@@ -509,9 +509,11 @@ const CANONICAL_OPTION_KEYS = [
 const HYBRID_READ_MUTATION_KEYS: Readonly<
   Partial<Record<PmReadOutputSurface, readonly string[]>>
 > = {
-  comments: ["add", "body", "stdin", "file", "edit", "delete"],
-  notes: ["add", "addJson", "stdin", "file", "edit", "delete"],
-  learnings: ["add", "stdin", "file", "edit", "delete"],
+  // Text aliases are listed too, so the guard holds even for a caller whose
+  // argv was not canonicalized to --add before parsing.
+  comments: ["add", "body", "comment", "text", "stdin", "file", "edit", "delete"],
+  notes: ["add", "note", "text", "addJson", "stdin", "file", "edit", "delete"],
+  learnings: ["add", "learning", "text", "stdin", "file", "edit", "delete"],
   files: ["add", "addGlob", "remove", "migrate", "apply", "note"],
   docs: ["add", "addGlob", "remove", "migrate", "note"],
   "package-catalog": [
