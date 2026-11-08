@@ -133,6 +133,17 @@ function parseSinceTimestamp(value: string | undefined): number | undefined {
 }
 
 /** Implements run notes for the public runtime surface of this module. */
+/**
+ * A stored note's fields, read defensively: a malformed stored entry that is
+ * not an object (typed refusal is pm-30tjoh) is delivered as stored and must
+ * not crash the event filters.
+ */
+function storedNoteFields(entry: unknown): Partial<LogNote> {
+  return Object.prototype.toString.call(entry) === "[object Object]"
+    ? (entry as Partial<LogNote>)
+    : {};
+}
+
 export async function runNotes(
   id: string,
   options: NotesCommandOptions,
@@ -216,14 +227,15 @@ export async function runNotes(
     },
   );
   const eventType = options.eventType?.trim();
-  const matching = result.notes.filter((note) => {
+  const matching = result.notes.filter((entry) => {
+    const note = storedNoteFields(entry);
     const isStructured = [
       note.format === "json",
       note.data !== undefined,
     ].every(Boolean);
     const matchesSince = [
       sinceTimestamp === undefined,
-      Date.parse(note.created_at) >=
+      Date.parse(note.created_at ?? "") >=
         (sinceTimestamp ?? Number.POSITIVE_INFINITY),
     ].includes(true);
     const matchesType = [!eventType, note.event_type === eventType].includes(
@@ -238,7 +250,7 @@ export async function runNotes(
     ? limitAnnotationEntries(matching, limit)
     : matching;
   const structuredEventCount = filtered.filter(
-    (note) => note.format === "json",
+    (entry) => storedNoteFields(entry).format === "json",
   ).length;
   return {
     ...result,

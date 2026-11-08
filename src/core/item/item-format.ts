@@ -814,17 +814,20 @@ function sortDependencies(
     });
 }
 
+/** The canonical stored order of annotation entries: created_at, then text, then author (a stable sort keeps ties in write order). */
+export function compareLogValues(a: Comment | LogNote, b: Comment | LogNote): number {
+  const byCreated = compareTimestampStrings(a.created_at, b.created_at);
+  if (byCreated !== 0) return byCreated;
+  const byText = a.text.localeCompare(b.text);
+  if (byText !== 0) return byText;
+  return a.author.localeCompare(b.author);
+}
+
 function sortLogValues<T extends Comment | LogNote>(
   values: T[] | undefined,
 ): T[] | undefined {
   if (!values || values.length === 0) return undefined;
-  return [...values].sort((a, b) => {
-    const byCreated = compareTimestampStrings(a.created_at, b.created_at);
-    if (byCreated !== 0) return byCreated;
-    const byText = a.text.localeCompare(b.text);
-    if (byText !== 0) return byText;
-    return a.author.localeCompare(b.author);
-  });
+  return [...values].sort(compareLogValues);
 }
 
 function sortReminders(values: Reminder[] | undefined): Reminder[] | undefined {

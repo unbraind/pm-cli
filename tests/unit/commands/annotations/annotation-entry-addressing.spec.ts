@@ -105,6 +105,42 @@ describe("annotation entry addressing (pm-hka7ep)", () => {
     });
   });
 
+  it("tracks the written occurrence among entries that become identical twins", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Identical twins" });
+      vi.useFakeTimers({ toFake: ["Date"], now: new Date("2097-01-01T00:00:00.000Z") });
+      try {
+        await runComments(id, { add: "b" }, { path: context.pmPath });
+        await runComments(id, { add: "c" }, { path: context.pmPath });
+        // Editing "b" to "c" makes two entries with the same created_at, author and text.
+        const edited = await runComments(id, { edit: 1, add: "c" }, { path: context.pmPath });
+        expect(edited.mutation_receipt?.entry_index).toBe(1);
+        expect(edited.comments).toEqual([expect.objectContaining({ index: 1, text: "c", edited_at: expect.any(String) })]);
+        const twin = await runComments(id, { add: "c" }, { path: context.pmPath });
+        expect(twin.mutation_receipt?.entry_index).toBe(3);
+      } finally {
+        vi.useRealTimers();
+      }
+      const stored = (await runComments(id, {}, { path: context.pmPath })).comments;
+      expect(stored.map((row) => [row.index, row.text, row.edited_at !== undefined])).toEqual([
+        [1, "c", true],
+        [2, "c", false],
+        [3, "c", false],
+      ]);
+    });
+  });
+
+  it("keeps note event filters safe when a malformed stored note is not an object", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Malformed note" });
+      await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), "notes[1]: null\n", "utf8");
+      const listed = await runNotes(id, {}, { path: context.pmPath });
+      expect(listed.notes).toEqual([null]);
+      const filtered = await runNotes(id, { eventType: "probe", since: "2026-01-01T00:00:00.000Z" }, { path: context.pmPath });
+      expect(filtered).toMatchObject({ notes: [], structured_event_count: 0 });
+    });
+  });
+
   it("delivers a malformed stored entry as stored instead of spreading it into indexed characters", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Malformed single entry" });

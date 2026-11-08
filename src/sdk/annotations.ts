@@ -28,6 +28,7 @@ import {
 } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
+import { compareLogValues } from "../core/item/item-format.js";
 import type { ItemDocument } from "../types.js";
 
 /** Common persisted shape shared by comments, notes, and learnings. */
@@ -692,7 +693,7 @@ function appendAnnotationEntry<
   text: string,
   ifAbsent: boolean,
   createEntry: AnnotationCommandConfig<TKey, TEntry>["createEntry"],
-): { changedFields: string[]; entry: TEntry } {
+): { changedFields: string[]; written: readonly TEntry[]; position: number } {
   const entries = readAnnotationEntries<TEntry>(
     document.metadata,
     collectionKey,
@@ -703,32 +704,29 @@ function appendAnnotationEntry<
       )
     : -1;
   if (existingIndex >= 0) {
-    return { changedFields: [], entry: entries[existingIndex]! };
+    return { changedFields: [], written: entries, position: existingIndex };
   }
-  const entry = createEntry({ created_at: nowIso(), author, text });
-  entries.push(entry);
+  entries.push(createEntry({ created_at: nowIso(), author, text }));
   document.metadata[collectionKey] = entries as never;
-  return { changedFields: [collectionKey], entry };
+  return { changedFields: [collectionKey], written: entries, position: entries.length - 1 };
 }
 
 /**
- * The one-based position of a written entry after the store's canonical
- * created_at ordering: an entry appended behind a later-stamped one (clock
- * skew, import) sorts before it, so its push position is not its address.
+ * The one-based address of the entry at `position` of the collection as
+ * written, after the store's canonical ordering (created_at, then text, then
+ * author, stable). An entry appended behind a later-stamped one, or an edit
+ * that changes text among entries sharing a created_at, moves; following the
+ * written position through the same stable sort tracks exactly that entry,
+ * even among identical duplicates.
  */
-function locateAnnotationEntry(
-  entries: readonly AnnotationEntry[],
-  target: AnnotationEntry,
+function canonicalAnnotationAddress(
+  written: readonly AnnotationEntry[],
+  position: number,
 ): number {
-  return entries.reduce(
-    (found, entry, position) =>
-      entry.created_at === target.created_at &&
-      entry.author === target.author &&
-      entry.text === target.text
-        ? position + 1
-        : found,
-    0,
-  );
+  const order = written
+    .map((_entry, index) => index)
+    .sort((left, right) => compareLogValues(written[left]!, written[right]!) || left - right);
+  return order.indexOf(position) + 1;
 }
 
 /** Implements run annotation command for the public runtime surface of this module. */
@@ -842,7 +840,7 @@ export async function runAnnotationCommand<
   if (config.input.mode === "edit") {
     const op = config.editOp ?? config.op;
     let result: Awaited<ReturnType<typeof mutateItem>>;
-    let edited: TEntry | undefined;
+    let editedAddress = 0;
     try {
       result = await mutateItem({
         pmRoot,
@@ -866,12 +864,12 @@ export async function runAnnotationCommand<
           assertExpectedAnnotationEntry(id, entries, arrayIndex, config, options.expectAt);
           const existing = entries[arrayIndex];
           assertAnnotationEntryMutable(existing, "edited");
-          edited = {
+          entries[arrayIndex] = {
             ...existing,
             text,
             edited_at: nowIso(),
           } as TEntry;
-          entries[arrayIndex] = edited;
+          editedAddress = canonicalAnnotationAddress(entries, arrayIndex);
           document.metadata[config.collectionKey] = entries as never;
           return { changedFields: [config.collectionKey] };
         },
@@ -884,7 +882,7 @@ export async function runAnnotationCommand<
       config.collectionKey,
     );
     // An edit can reorder entries that share a created_at (the store orders by text next).
-    const editedIndex = locateAnnotationEntry(allEntries, edited!);
+    const editedIndex = editedAddress;
     return renderAnnotationResult(
       result.item.id,
       config.collectionKey,
@@ -901,7 +899,7 @@ export async function runAnnotationCommand<
   }
 
   let result: Awaited<ReturnType<typeof mutateItem>>;
-  let written: TEntry | undefined;
+  let entryIndex = 0;
   try {
     result = await mutateItem({
       pmRoot,
@@ -922,7 +920,7 @@ export async function runAnnotationCommand<
           options.ifAbsent === true,
           config.createEntry,
         );
-        written = appended.entry;
+        entryIndex = canonicalAnnotationAddress(appended.written, appended.position);
         return { changedFields: appended.changedFields };
       },
     });
@@ -934,7 +932,6 @@ export async function runAnnotationCommand<
     result.item,
     config.collectionKey,
   );
-  const entryIndex = locateAnnotationEntry(allEntries, written!);
   return renderAnnotationResult(
     result.item.id,
     config.collectionKey,
