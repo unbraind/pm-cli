@@ -1124,7 +1124,7 @@ printf '%s' "\${UNEXPECTED_PATHS}"
       "utf8",
     );
     expect(workflow).toContain(
-      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json',
+      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --npm-attempts 360 --json',
     );
     expect(workflow).toContain(
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',

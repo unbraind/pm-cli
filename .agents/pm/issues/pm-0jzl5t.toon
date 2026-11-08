@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:scripts",auto-release,ci,npm,release,reliability
 created_at: "2026-11-08T07:36:52.535Z"
-updated_at: "2026-11-08T08:41:13.151Z"
+updated_at: "2026-11-08T09:33:40.712Z"
 closed_at: "2026-11-08T07:42:08.759Z"
 completed_at: "2026-11-08T07:42:08.759Z"
 author: "harness:claude-code"
@@ -23,10 +23,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-29bwud,related,"2026-11-08T07:36:52.535Z","harness:claude-code","cli:create:dep",detected
   pm-e70zh5,related,"2026-11-08T07:36:52.535Z","harness:claude-code","cli:create:dep",detected
   pm-wzmbvn,discovered_from,"2026-11-08T07:36:52.535Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-08T08:03:24.007Z","harness:claude-code","Codex review of PR 1687 (P2, fixed): the first cut of the publication job checked out dispatch-time main on workflow_dispatch. Exact-tag recovery of an unpublished tag publishes from the tag, so the verifiers would have read a different package.json identity and bin contract than the one published; legacy tag v2026.8.5 lacks pm-mcp-http, for example. The release job now records the published source (git rev-parse after source selection, immediately before Publish to npm) as the source_sha output, and the publication job checks out that commit. The previous-release selector comes from a sparse checkout of the reviewed dispatch source, as before. registry-acceptance-workflow.spec.ts pins the order and wiring.\n"
   "2026-11-08T08:09:06.829Z","harness:claude-code","Measured: @unbrained/pm-cli@2026.11.8 became visible on the registry at 08:06:50Z, 55m22s after Publish to npm finished at 07:11:28Z (registry time field; anonymous no-cache probes every 45-60 s returned E404 until then). 2026.11.7 took 5m12s. The first cut of this fix waited about thirty minutes, which today's hold would still have exhausted, so the default is now 360 polls (about ninety minutes): verify step 95 minutes, publication job 110, Auto Release parent 290 (cap 300, inside the 360-minute hosted job limit). Runner minutes are free for this public repository, so the longer wait costs nothing but runner occupancy. Release run 42454411958 was re-run with --failed at 08:08Z; Publish to npm skips because the version is visible.\n"
   "2026-11-08T08:41:13.150Z","harness:claude-code","CodeRabbit review of PR 1687 (minor, fixed): exact-tag recovery checks out the recovered tag, so the publication job runs that tag's verifier, whose default npm wait may be the older 60 polls. The workflow now passes --npm-attempts 360 explicitly; the flag exists since 2026-05-14. registry-acceptance-workflow.spec.ts requires the explicit value to equal the reviewed DEFAULT_NPM_ATTEMPTS. The publication-only rerun guidance text is still only in the reviewed verifier; docs/RELEASING.md carries it for older tags.\n"
+  "2026-11-08T09:33:40.712Z","harness:claude-code","Codex review round 7 of PR 1687 (P1, fixed). tests/integration/release-automation-contract.spec.ts still pinned the verify command without --npm-attempts 360. The release workflow runs that spec in its mandatory coverage gate, so the next tag release would have failed before Publish to npm. The pin now includes the explicit wait. All 8 specs that read release.yml or auto-release.yml pass (134 tests).\n"
 files[5]{path,scope,note}:
   .github/workflows/auto-release.yml,project,Parent limit 180 to 230 minutes for the extra serial publication job
   .github/workflows/release.yml,project,"Post-publish verification moved into the publication job (50-minute limit, verify step 35 minutes); installed-acceptance and advertise read its outputs"
