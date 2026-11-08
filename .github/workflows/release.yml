@@ -509,8 +509,11 @@ jobs:
         # npm metadata propagation measured at 6-8 minutes after publish on
         # 2026-09-11/12 (pm-wzmbvn) and 55m22s under npm's publish-time scan on
         # 2026-11-08; the verifier polls for about ninety minutes (pm-0jzl5t).
+        # The wait is passed explicitly: exact-tag recovery runs the recovered
+        # tag's verifier, whose default may be lower (the flag exists since
+        # 2026-05-14).
         timeout-minutes: 95
-        run: node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json
+        run: node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --npm-attempts 360 --json
 
       - name: Accept exact installed package through npm and Bun agent sessions
         timeout-minutes: 12

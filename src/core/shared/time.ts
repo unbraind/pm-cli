@@ -98,6 +98,16 @@ function parseTimestampMsMemoized(value: string): number {
   return parsed;
 }
 
+/**
+ * Whether `Date.parse` yields a finite instant for the value (memoized like
+ * compareTimestampStrings). Callers that order mixed parseable and
+ * unparseable stamps group by this first, because compareTimestampStrings
+ * alone compares mixed pairs as text and is not transitive across groups.
+ */
+export function hasParseableTimestamp(value: string): boolean {
+  return Number.isFinite(parseTimestampMsMemoized(value));
+}
+
 /** Implements compare timestamp strings for the public runtime surface of this module. */
 export function compareTimestampStrings(left: string, right: string): number {
   const leftMs = parseTimestampMsMemoized(left);

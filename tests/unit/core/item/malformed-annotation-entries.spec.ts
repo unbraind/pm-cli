@@ -27,6 +27,20 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
     expect(compareLogValues(malformed[0]!, malformed[2]!)).toBe(0);
   });
 
+  it("orders unparseable created_at stamps before parseable ones so mixed stamps cannot form a cycle", () => {
+    // CodeRabbit review of PR #1687: by time A < B, but as text B < X < A.
+    const a = { created_at: "2026-11-08T00:30:00+01:00", author: "a", text: "a" } as Comment;
+    const b = { created_at: "2026-11-07T23:45:00Z", author: "b", text: "b" } as Comment;
+    const x = { created_at: "2026-11-07T99", author: "x", text: "x" } as Comment;
+    const permutations = [[a, b, x], [a, x, b], [b, a, x], [b, x, a], [x, a, b], [x, b, a]];
+    for (const order of permutations) {
+      expect([...order].sort(compareLogValues)).toEqual([x, a, b]);
+    }
+    expect(compareLogValues(a, b)).toBeLessThan(0);
+    expect(compareLogValues(x, a)).toBeLessThan(0);
+    expect(compareLogValues(x, b)).toBeLessThan(0);
+  });
+
   it("keeps malformed entries out of the search corpus instead of aborting search and reindexing", () => {
     // Codex review of PR #1687: once malformed entries load, the BM25 and
     // reindex corpus must not dereference their text.
@@ -108,6 +122,22 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
         details: { actual_created_at: null, matching_indexes: [] },
       });
       expect((error as PmCliError).message).toContain("an unrecorded time (malformed entry)");
+    });
+  });
+
+  it.each([
+    ['created_at: ""', ""],
+    ["created_at: 42", null],
+  ])("labels a stored %s as an unrecorded time in the guarded-edit refusal", async (field, reported) => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Guarded unstamped edit" });
+      await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), `comments[1]:\n  - ${field}\n    author: someone\n    text: stored\n`, "utf8");
+      const error = await runComments(id, { edit: 1, add: "replacement", expectAt: "2026-11-07T00:00:00.000Z" }, { path: context.pmPath }).then(
+        () => undefined,
+        (reason: unknown) => reason,
+      );
+      expect((error as PmCliError).context).toMatchObject({ code: "annotation_entry_mismatch", details: { actual_created_at: reported } });
+      expect((error as PmCliError).message).toContain("was created at an unrecorded time (malformed entry), not 2026-11-07T00:00:00.000Z");
     });
   });
 });

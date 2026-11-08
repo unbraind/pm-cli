@@ -1095,7 +1095,7 @@ describe("GitHub workflow contract", () => {
       "npm publish --dry-run --ignore-scripts --loglevel verbose --tag latest",
       'grep -Fq "oidc Successfully retrieved and set token"',
       "npm trusted publisher OIDC exchange failed before release gates.",
-      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json',
+      'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --npm-attempts 360 --json',
       'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
       "uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",

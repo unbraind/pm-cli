@@ -58,7 +58,7 @@ import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
-import { compareTimestampStrings, isRfc3339DateTime, isTimestampLiteral } from "../shared/time.js";
+import { compareTimestampStrings, hasParseableTimestamp, isRfc3339DateTime, isTimestampLiteral } from "../shared/time.js";
 import { coerceFiniteNumber } from "../shared/primitives.js";
 
 const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set([
@@ -829,10 +829,18 @@ function logSortFields(entry: unknown): { created_at: string; text: string; auth
   return { created_at: field("created_at"), text: field("text"), author: field("author") };
 }
 
-/** The canonical stored order of annotation entries: created_at, then text, then author (a stable sort keeps ties in write order). */
+/**
+ * The canonical stored order of annotation entries: created_at, then text,
+ * then author (a stable sort keeps ties in write order). Entries whose
+ * created_at does not parse (missing, empty or malformed) sort first, before
+ * every parseable stamp, so mixed valid and invalid stamps cannot form an
+ * ordering cycle.
+ */
 export function compareLogValues(a: Comment | LogNote, b: Comment | LogNote): number {
   const left = logSortFields(a);
   const right = logSortFields(b);
+  const byParseable = Number(hasParseableTimestamp(left.created_at)) - Number(hasParseableTimestamp(right.created_at));
+  if (byParseable !== 0) return byParseable;
   const byCreated = compareTimestampStrings(left.created_at, right.created_at);
   if (byCreated !== 0) return byCreated;
   const byText = left.text.localeCompare(right.text);

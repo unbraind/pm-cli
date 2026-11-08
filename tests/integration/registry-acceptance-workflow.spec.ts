@@ -132,6 +132,9 @@ it("verifies the publication in its own job whose budget covers the full npm met
     expect(workflow.jobs.release.steps.some((step) => step.name === name)).toBe(false);
   }
   const verify = publication.steps.find((step) => step.name === moved[0])!;
+  // Exact-tag recovery runs the recovered tag's verifier, so the workflow
+  // passes the reviewed wait explicitly instead of relying on that default.
+  expect(verify.run).toContain(`--npm-attempts ${attempts} `);
   const waitMinutes = (attempts * pollMs) / 60_000;
   // 2026.11.8 became visible 55m22s after publish under npm's publish-time scan.
   expect(waitMinutes).toBeGreaterThanOrEqual(60);
