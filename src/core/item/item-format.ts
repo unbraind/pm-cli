@@ -58,7 +58,7 @@ import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
 import { orderObject } from "../shared/serialization.js";
-import { compareTimestampStrings, hasParseableTimestamp, isRfc3339DateTime, isTimestampLiteral } from "../shared/time.js";
+import { compareTimestampStrings, isRfc3339DateTime, isTimestampLiteral } from "../shared/time.js";
 import { coerceFiniteNumber } from "../shared/primitives.js";
 
 const LINKED_TEST_PM_CONTEXT_MODE_VALUES = new Set([
@@ -818,29 +818,29 @@ function sortDependencies(
 export const CANONICALLY_ORDERED_LOG_COLLECTIONS: ReadonlySet<string> = new Set(["comments", "notes", "learnings"]);
 
 /**
- * The sort fields of a stored annotation entry, read defensively (pm-30tjoh):
- * a malformed entry that is not an object, or lacks a field, sorts by empty
- * strings instead of crashing every read of its item with a TypeError.
+ * The sort fields of a stored annotation entry (pm-30tjoh), coerced with
+ * String() exactly as the legacy comparator's Date.parse and
+ * String.prototype.localeCompare arguments were (a missing field reads
+ * "undefined"). Every document the legacy comparator could sort therefore
+ * keeps its order and its history hashes, and a malformed entry (null, a
+ * bare string, a non-string field) sorts instead of throwing a TypeError.
  */
 function logSortFields(entry: unknown): { created_at: string; text: string; author: string } {
-  const record: Record<string, unknown> =
-    Object.prototype.toString.call(entry) === "[object Object]" ? (entry as Record<string, unknown>) : {};
-  const field = (key: string): string => (typeof record[key] === "string" ? (record[key] as string) : "");
+  const field = (key: string): string =>
+    String(entry === null || entry === undefined ? undefined : (entry as Record<string, unknown>)[key]);
   return { created_at: field("created_at"), text: field("text"), author: field("author") };
 }
 
 /**
  * The canonical stored order of annotation entries: created_at, then text,
- * then author (a stable sort keeps ties in write order). Entries whose
- * created_at does not parse (missing, empty or malformed) sort first, before
- * every parseable stamp, so mixed valid and invalid stamps cannot form an
- * ordering cycle.
+ * then author (a stable sort keeps ties in write order). This order is
+ * hashed into item history, so it must not change for documents that sorted
+ * before; ordering mixed parseable and unparseable stamps transitively needs
+ * a versioned canonicalization transition (pm-yo46im).
  */
 export function compareLogValues(a: Comment | LogNote, b: Comment | LogNote): number {
   const left = logSortFields(a);
   const right = logSortFields(b);
-  const byParseable = Number(hasParseableTimestamp(left.created_at)) - Number(hasParseableTimestamp(right.created_at));
-  if (byParseable !== 0) return byParseable;
   const byCreated = compareTimestampStrings(left.created_at, right.created_at);
   if (byCreated !== 0) return byCreated;
   const byText = left.text.localeCompare(right.text);

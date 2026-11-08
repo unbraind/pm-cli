@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
 import { compareLogValues } from "../../../../src/core/item/item-format.js";
+import { compareTimestampStrings } from "../../../../src/core/shared/time.js";
 import { buildSearchCorpus, buildSemanticCorpusInput } from "../../../../src/core/search/corpus.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import type { Comment, ItemDocument } from "../../../../src/types/index.js";
@@ -21,24 +22,51 @@ const MALFORMED_COLLECTIONS = ["comments", "notes", "learnings"] as const;
 describe("malformed stored annotation entries (pm-30tjoh)", () => {
   it("orders malformed entries deterministically instead of throwing", () => {
     const valid = { created_at: "2026-11-08T00:00:00.000Z", author: "a", text: "valid" } as Comment;
-    const malformed = ["just-a-string", 42, null, { created_at: "2026-11-07T00:00:00.000Z", author: "b" }] as unknown as Comment[];
-    const sorted = [valid, ...malformed].sort(compareLogValues);
-    expect(sorted.at(-1)).toBe(valid);
+    const textless = { created_at: "2026-11-07T00:00:00.000Z", author: "b" } as unknown as Comment;
+    const malformed = ["just-a-string", 42, null] as unknown as Comment[];
+    const sorted = [valid, ...malformed, textless].sort(compareLogValues);
+    // Stamped entries keep their instant order; unstamped ones read "undefined".
+    expect(sorted.slice(0, 2)).toEqual([textless, valid]);
     expect(compareLogValues(malformed[0]!, malformed[2]!)).toBe(0);
   });
 
-  it("orders unparseable created_at stamps before parseable ones so mixed stamps cannot form a cycle", () => {
-    // CodeRabbit review of PR #1687: by time A < B, but as text B < X < A.
-    const a = { created_at: "2026-11-08T00:30:00+01:00", author: "a", text: "a" } as Comment;
-    const b = { created_at: "2026-11-07T23:45:00Z", author: "b", text: "b" } as Comment;
-    const x = { created_at: "2026-11-07T99", author: "x", text: "x" } as Comment;
-    const permutations = [[a, b, x], [a, x, b], [b, a, x], [b, x, a], [x, a, b], [x, b, a]];
-    for (const order of permutations) {
-      expect([...order].sort(compareLogValues)).toEqual([x, a, b]);
+  it("keeps the legacy order, and so existing history hashes, wherever the legacy comparator could sort", () => {
+    // Codex review round 4 of PR #1687: the canonical order is hashed into
+    // item history, so the crash fix must not reorder any document the legacy
+    // comparator sorted (pm-yo46im owns a versioned transitive order).
+    const legacy = (a: Comment, b: Comment): number => {
+      const byCreated = compareTimestampStrings(a.created_at, b.created_at);
+      if (byCreated !== 0) return byCreated;
+      const byText = a.text.localeCompare(b.text);
+      if (byText !== 0) return byText;
+      return a.author.localeCompare(b.author);
+    };
+    const pool = [
+      { created_at: "2026-11-08T00:30:00+01:00", author: "a", text: "a" },
+      { created_at: "2026-11-07T23:45:00Z", author: "b", text: "b" },
+      { created_at: "2026-11-07T99", author: "x", text: "x" },
+      { created_at: "zzzz", author: "z", text: "z" },
+      { created_at: "2026-11-07T23:45:00Z", author: "c" },
+      { created_at: "2026-11-07T23:45:00.000Z", author: "d", text: "b" },
+      { created_at: 42, author: "n", text: "n" },
+      { created_at: "2026-11-07T23:45:00Z", text: "b" },
+    ] as unknown as Comment[];
+    let compared = 0;
+    for (const a of pool) {
+      for (const b of pool) {
+        let expected: number;
+        try {
+          expected = legacy(a, b);
+        } catch {
+          continue;
+        }
+        compared += 1;
+        expect(Math.sign(compareLogValues(a, b))).toBe(Math.sign(expected));
+      }
     }
-    expect(compareLogValues(a, b)).toBeLessThan(0);
-    expect(compareLogValues(x, a)).toBeLessThan(0);
-    expect(compareLogValues(x, b)).toBeLessThan(0);
+    expect(compared).toBeGreaterThan(40);
+    const mixed = [pool[3]!, pool[1]!, pool[0]!];
+    expect([...mixed].sort(compareLogValues)).toEqual([...mixed].sort(legacy));
   });
 
   it("keeps malformed entries out of the search corpus instead of aborting search and reindexing", () => {
