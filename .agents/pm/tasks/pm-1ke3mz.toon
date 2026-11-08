@@ -1,0 +1,33 @@
+id: pm-1ke3mz
+title: Exclude the dated ecosystem planning review from the npm tarball to restore publication headroom
+description: "PR 1688 (annotation read fidelity) failed Gates (static) at the package artifact gate: unpacked_size 20,006,092 B against the 20,000,000 B base ceiling. The PR adds about 25 KB of legitimate code, declarations, bundle chunks and docs. pm-dwy8kb restored about 31 KB on 2026-11-08, and PRs 1685 and 1687 consumed most of it. docs/ECOSYSTEM_PLANNING_REVIEW.md (17,581 B) is a dated, repository-only all-status census from 2026-09-28. It belongs to the same class as the already excluded docs/ecosystem-review-*.json evidence: no runtime path, guide topic or packaged relative link needs it apart from one row in docs/README.md. Excluding it from the npm files list, as pm-dwy8kb did for the generated refusal-closure census, restores about 17.5 KB of base headroom. The ceiling stays unchanged. The structural growth sources recorded on pm-998juj (CHANGELOG.md and dist/sdk/public-surface.json) remain open there."
+type: Task
+status: closed
+priority: 2
+tags[4]: artifact,npm,package-size,release
+created_at: "2026-11-08T14:17:21.123Z"
+updated_at: "2026-11-08T14:21:18.480Z"
+closed_at: "2026-11-08T14:20:59.625Z"
+completed_at: "2026-11-08T14:20:59.625Z"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: "package.json files excludes docs/ECOSYSTEM_PLANNING_REVIEW.md and the 20,000,000 B base ceiling is unchanged; docs/README.md links the page by canonical GitHub URL and states the npm exclusion beside the link; scripts/release/docs-reachability-exceptions.json declares the page with its reason; the package artifact gate passes on the PR 1688 head in hosted CI"
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: "package.json files excludes docs/ECOSYSTEM_PLANNING_REVIEW.md, the 2026-09-28 dated planning census and the same class as the already excluded docs/ecosystem-review-*.json evidence. docs/README.md links it by canonical GitHub URL and states the npm exclusion beside the link. scripts/release/docs-reachability-exceptions.json declares it with its reason. The 20,000,000 B base ceiling is unchanged."
+expected_result: The PR 1688 head passes the package artifact gate without raising the ceiling
+actual_result: "A clean build measured by package-artifact-gate.mjs reports distribution_size 19,990,897 B (1,591 files, ok true), 9,103 B under the unchanged ceiling; docs-skills-gate passes"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dwy8kb,related,"2026-11-08T14:21:18.172Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-08T14:20:58.881Z","harness:claude-code","Evidence on branch fix/annotation-read-fidelity. Hosted Gates (static) for the PR 1688 head bfc2b67e6 failed the package artifact gate at unpacked_size 20,006,092 > 20,000,000. After this change, a clean local build (dist removed, pnpm build) measured with scripts/release/package-artifact-gate.mjs reports distribution_size 19,990,897 B over 1,591 files, ok true, so the base headroom is 9,103 B with the ceiling unchanged. Excluding the 17,581 B page saved its full size; the rest of the delta is the retry fix from the PR 1688 review. docs-skills-gate passes with the new reachability exception. Headroom is thin again. Each feature PR adds roughly 25-30 KB, so the structural sources on pm-998juj (CHANGELOG.md at 528,580 B packed, and dist/sdk/public-surface.json at 2,029,911 B, already minified) remain the real lever. docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md (38,076 B) is the next repository-only candidate, but packaged docs/CODEX_PLUGIN.md links it relatively, so excluding it needs a link decision."
+files[2]{path,scope}:
+  package.json,project
+  scripts/release/docs-reachability-exceptions.json,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/docs-skills-gate.mjs,project,600,"harness:claude-code","2026-11-08T14:20:57.776Z",local_mutation,fix/annotation-read-fidelity
+docs[1]{path,scope}:
+  docs/README.md,project
+close_reason: "Done: the dated ecosystem planning review no longer ships in the npm tarball"
+body: ""

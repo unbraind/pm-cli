@@ -73,8 +73,7 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     expect(repaired?.suggested_retry).toBe("pm --pm-path ../t/.agents/pm item comments pm-one --add 300 --message why --json");
     expect(repaired?.attempted_command).toBe("pm ...");
     expect(argv).toHaveLength(14);
-    // A global control takes a dash-led value, as Commander parses it, so both tokens go.
-    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "x", "--output-limit", "--output-budget"], CODE, undefined)?.suggested_retry_args).toEqual(["comments", "pm-one", "x"]);
+
   });
 
   it("binds an environment-selected tracker and resolves bare and namespaced command paths", () => {
@@ -103,10 +102,46 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     // A command path that is only flags, or a namespace whose next token is a flag.
     expect(repairReadOutputMutationRecovery(["--json"], CODE, producer)).toEqual(withheld);
     expect(repairReadOutputMutationRecovery(["comments", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual(["comments"]);
+    // Codex review of PR #1688: global normalization lets --output-limit swallow --pm-path, leaving the
+    // tracker path as the --message value. Rebuilding a retry would replay that misparse as a clean
+    // write to the environment tracker, so a control that took a flag-like token withholds the retry.
+    const misparsed = ["item", "comments", "pm-one", "--add", "kept", "--message", "--output-limit", "--pm-path", "/tmp/A", "--output-budget", "500", "--json"];
+    expect(repairReadOutputMutationRecovery(misparsed, CODE, producer)).toEqual(withheld);
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "x", "--output-limit", "--output-budget", "5"], CODE, producer)).toEqual(withheld);
+    // Greptile review of PR #1688: a control right after a value-taking option may be that option's value.
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--add", "x", "--message", "--output-budget=300", "--output-limit", "2"], CODE, producer)).toEqual(withheld);
+    expect(repairReadOutputMutationRecovery(["learnings", "pm-one", "--add", "--output-limit", "2"], CODE, producer)).toEqual(withheld);
+    // An inline value or a boolean flag before the control leaves no ambiguity.
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--message=why", "--add", "x", "--json", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
+      "comments",
+      "pm-one",
+      "--message=why",
+      "--add",
+      "x",
+      "--json",
+    ]);
+    // A control before the command, or last with nothing left to consume, is dropped alone.
+    expect(repairReadOutputMutationRecovery(["--output-limit", "2", "comments", "pm-one", "--add", "x"], CODE, undefined)?.suggested_retry_args).toEqual(["comments", "pm-one", "--add", "x"]);
+    expect(repairReadOutputMutationRecovery(["comments", "pm-one", "x", "--output-limit"], CODE, undefined)?.suggested_retry_args).toEqual(["comments", "pm-one", "x"]);
     // Other refusals are never touched.
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--output-limit", "2"], "other_code", producer)).toBe(producer);
     expect(READ_OUTPUT_SHAPING_CONTROL_FLAGS).not.toContain("--output-format");
   });
+
+  it("withholds the CLI retry for a misparsed two-tracker invocation and writes to neither tracker", async () => {
+    await withTempPmPath(async (environment) => {
+      await withTempPmPath(async (explicit) => {
+        const id = createTestItemId(environment, { title: "Environment tracker item" });
+        const refused = environment.runCli(["comments", id, "--add", "kept", "--message", "--output-limit", "--pm-path", explicit.pmPath, "--output-budget", "500", "--json"]);
+        expect(refused.code).toBe(2);
+        const body = JSON.parse(refused.stdout || refused.stderr) as { code: string; recovery?: { suggested_retry_args?: string[] } };
+        expect(body.code).toBe(CODE);
+        expect(body.recovery?.suggested_retry_args).toBeUndefined();
+        const listed = environment.runCli(["comments", id, "--json"], { expectJson: true }).json as { comments: unknown[] };
+        expect(listed.comments).toEqual([]);
+      });
+    });
+  }, 60_000);
 
   it("refuses through the CLI with the typed code and a retry that runs", async () => {
     await withTempPmPath(async (context) => {

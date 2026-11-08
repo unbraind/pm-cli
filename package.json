@@ -97,6 +97,7 @@
     "docs/**",
     "!docs/ecosystem-review-*.json",
     "!docs/generated/REFUSAL_CLOSURE_CENSUS.md",
+    "!docs/ECOSYSTEM_PLANNING_REVIEW.md",
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",

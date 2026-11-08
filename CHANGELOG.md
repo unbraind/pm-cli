@@ -11,6 +11,10 @@
 - Release verification shares the build job's timeout and waits fifteen minutes while npm's publish-time scan can hold a version longer: 2026.11.8 was published but the job was cancelled before acceptance ([pm-0jzl5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0jzl5t.toon))
 - A malformed comments, notes or learnings entry in an item document crashes annotation reads with unknown_error (sortLogValues calls localeCompare on a missing text) ([pm-30tjoh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-30tjoh.toon))
 
+### Other
+
+- Exclude the dated ecosystem planning review from the npm tarball to restore publication headroom ([pm-1ke3mz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-1ke3mz.toon))
+
 ## 2026.11.8 - 2026-11-08
 
 ### Fixed

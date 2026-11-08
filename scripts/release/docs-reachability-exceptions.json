@@ -1,3 +1,4 @@
 {
-  "docs/generated/REFUSAL_CLOSURE_CENSUS.md": "Generated repository-only gate evidence (pm-f05lsg refusal-closure census) excluded from the npm tarball by pm-dwy8kb; packaged pages link it by canonical GitHub URL, so no relative link reaches it."
+  "docs/generated/REFUSAL_CLOSURE_CENSUS.md": "Generated repository-only gate evidence (pm-f05lsg refusal-closure census) excluded from the npm tarball by pm-dwy8kb; packaged pages link it by canonical GitHub URL, so no relative link reaches it.",
+  "docs/ECOSYSTEM_PLANNING_REVIEW.md": "Dated repository-only planning census (2026-09-28), the same class as the excluded docs/ecosystem-review-*.json evidence, excluded from the npm tarball by pm-1ke3mz; docs/README.md links it by canonical GitHub URL, so no relative link reaches it."
 }
