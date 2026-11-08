@@ -511,6 +511,7 @@ const HYBRID_READ_MUTATION_KEYS: Readonly<
 > = {
   comments: ["add", "body", "stdin", "file", "edit", "delete"],
   notes: ["add", "addJson", "stdin", "file", "edit", "delete"],
+  learnings: ["add", "stdin", "file", "edit", "delete"],
   files: ["add", "addGlob", "remove", "migrate", "apply", "note"],
   docs: ["add", "addGlob", "remove", "migrate", "note"],
   "package-catalog": [
@@ -1760,6 +1761,7 @@ function canReturnReadOutputUnchanged(
 /**
  * Report the complete size of a withheld newest-tail collection beside its
  * page `count` (pm-hka7ep), so a caller never mistakes the page for the set.
+ * An existing producer total is kept, because it counts the whole collection.
  */
 function attachTailRetentionTotal(
   projected: Record<string, unknown>,
@@ -1770,7 +1772,9 @@ function attachTailRetentionTotal(
     ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]
     : undefined;
   const withheld = continuations.find((entry) => policy?.paths.includes(entry.path));
-  if (policy !== undefined && withheld !== undefined) {
+  // A producer total already counts the complete collection; a continuation
+  // total may describe only the producer's own page (MCP lists 20 by default).
+  if (policy !== undefined && withheld !== undefined && typeof projected[policy.total_key] !== "number") {
     projected[policy.total_key] = withheld.total_rows;
   }
 }

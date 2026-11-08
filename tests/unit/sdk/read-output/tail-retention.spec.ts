@@ -9,6 +9,7 @@ import {
   isReadOutputBudgetExceeded,
   readOutputCollectionFingerprint,
   readOutputRetainsTail,
+  validateReadOutputOptions,
   type PmReadOutputReceipt,
 } from "../../../../src/sdk/read-output-contracts.js";
 import { boundReadOutputRows, sliceReadOutputRowCollection } from "../../../../src/sdk/read-output-rows.js";
@@ -96,6 +97,53 @@ describe("newest-tail retention for annotation reads (pm-8s53lj)", () => {
     const list = applyReadOutputDimensions("list", { outputLimit: 2 }, { items: rows, count: 5 }) as Record<string, unknown>;
     expect((list.items as Row[]).map((row) => row.index)).toEqual([1, 2]);
     expect(list).not.toHaveProperty("total_count");
+  });
+
+  it("keeps a producer total that counts more than the producer page (MCP lists 20)", () => {
+    const page = annotationRows(20).map((row) => ({ ...row, index: row.index + 40 }));
+    const limited = bounded("comments", page, { outputLimit: 2 });
+    expect(limited).toMatchObject({ total_count: 20 });
+    const withTotal = applyReadOutputDimensions(
+      "comments",
+      { outputLimit: 2 },
+      { id: "pm-tail", comments: page, count: 20, total_count: 60, returned_count: 20 },
+    ) as Record<string, unknown>;
+    expect((withTotal.comments as Row[]).map((row) => row.index)).toEqual([59, 60]);
+    expect(withTotal).toMatchObject({ total_count: 60 });
+    const compacted = applyReadOutputDimensions(
+      "comments",
+      { outputBudget: 1500 },
+      { id: "pm-tail", comments: page, count: 20, total_count: 60, returned_count: 20 },
+    ) as Record<string, unknown>;
+    expect(compacted).toMatchObject({ total_count: 60, has_more: true });
+  });
+
+  it("reports the delivered page on a replay that needs no further compaction", () => {
+    const rows = annotationRows(40);
+    const first = bounded("learnings", rows, { outputBudget: 1500 });
+    const cursor = decodeReadOutputContinuationCursor(String(first.next_cursor));
+    const replay = applyReadOutputDimensions(
+      "learnings",
+      { outputBudget: "unbounded", outputCursor: first.next_cursor },
+      { id: "pm-tail", learnings: rows, count: 40, returned_count: 40 },
+    ) as Record<string, unknown>;
+    expect((replay.learnings as Row[]).length).toBe(cursor.offset);
+    expect(replay).toMatchObject({ count: cursor.offset, returned_count: cursor.offset });
+    const bare = applyReadOutputDimensions(
+      "learnings",
+      { outputBudget: "unbounded", outputCursor: first.next_cursor },
+      { id: "pm-tail", learnings: rows },
+    ) as Record<string, unknown>;
+    expect(bare).not.toHaveProperty("count");
+  });
+
+  it("refuses universal output controls on a learnings mutation before it can write", () => {
+    for (const key of ["add", "stdin", "file", "edit", "delete"]) {
+      expect(() => validateReadOutputOptions("learnings", { [key]: key === "stdin" ? true : 1, outputCursor: "cursor" })).toThrow(
+        "Universal output controls cannot be combined with a learnings mutation.",
+      );
+    }
+    expect(() => validateReadOutputOptions("learnings", { limit: "5", outputBudget: 500 })).not.toThrow();
   });
 
   it("refreshes a producer returned_count with the delivered page", () => {

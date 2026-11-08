@@ -325,7 +325,12 @@ export function applyReadOutputContinuation(
       { code: "read_output_cursor_stale" },
     );
   }
-  return backward
-    ? sliceReadOutputRowCollection(result, cursor.path, 0, cursor.offset)
-    : sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
+  if (!backward) return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
+  // A replayed annotation page reports the rows it delivers even when no
+  // further compaction runs to recount them.
+  const sliced = sliceReadOutputRowCollection(result, cursor.path, 0, cursor.offset);
+  for (const key of ["count", "returned_count"] as const) {
+    if (typeof sliced[key] === "number") sliced[key] = cursor.offset;
+  }
+  return sliced;
 }
