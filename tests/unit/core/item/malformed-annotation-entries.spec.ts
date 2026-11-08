@@ -2,6 +2,8 @@ import { appendFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
+import { runLearnings } from "../../../../src/cli/commands/annotations/learnings.js";
+import { runNotes } from "../../../../src/cli/commands/annotations/notes.js";
 import { encode as encodeToon } from "@toon-format/toon";
 import { compareLogValues, parseItemDocument } from "../../../../src/core/item/item-format.js";
 import { compareTimestampStrings } from "../../../../src/core/shared/time.js";
@@ -19,6 +21,7 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
  */
 
 const MALFORMED_COLLECTIONS = ["comments", "notes", "learnings"] as const;
+const RUNNERS = { comments: runComments, notes: runNotes, learnings: runLearnings } as const;
 
 describe("malformed stored annotation entries (pm-30tjoh)", () => {
   it("orders malformed entries deterministically instead of throwing", () => {
@@ -193,6 +196,30 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
         expect(entry).toMatchObject({ text: "repaired", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
         expect(Object.keys(entry)).not.toContain("0");
         expect(repaired).not.toContain("just-a-string");
+      });
+    },
+  );
+
+  it.each(MALFORMED_COLLECTIONS)(
+    "repairs a malformed %s entry and skips non-records for --if-absent in process",
+    async (collection) => {
+      // The CLI cases above run in a subprocess; these drive the same SDK
+      // branches in process (isAnnotationRecord false for dedup and edit).
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: `In-process ${collection}` });
+        await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), `${collection}[2]: null,just-a-string\n`, "utf8");
+        const run = RUNNERS[collection];
+        await run(id, { add: "only once", ifAbsent: true }, { path: context.pmPath });
+        await run(id, { add: "only once", ifAbsent: true }, { path: context.pmPath });
+        const listed = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, unknown[]>;
+        expect(listed[collection]!.filter((row) => (row as { text?: unknown } | null)?.text === "only once")).toHaveLength(1);
+        const stringIndex = listed[collection]!.indexOf("just-a-string") + 1;
+        expect(stringIndex).toBeGreaterThan(0);
+        await run(id, { edit: stringIndex, add: "repaired" }, { path: context.pmPath });
+        const after = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, unknown[]>;
+        const entry = after[collection]!.find((row) => (row as { text?: unknown } | null)?.text === "repaired") as Record<string, unknown>;
+        expect(entry).toMatchObject({ text: "repaired", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
+        expect(Object.keys(entry)).not.toContain("0");
       });
     },
   );
