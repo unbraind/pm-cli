@@ -10881,6 +10881,12 @@
           "signature": "(corpus: readonly ItemMetadata[]) => Map<string, string[]> | calls: (corpus: readonly ItemMetadata[]) => Map<string, string[]>"
         },
         {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "IndexedAnnotationEntry",
+          "signature": "export type IndexedAnnotationEntry<TEntry = AnnotationEntry> = { index: number; } & TEntry;"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "IndexedLinkedFileMatch",

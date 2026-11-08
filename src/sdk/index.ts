@@ -59,6 +59,7 @@ export {
   type AnnotationMutationReceipt,
   type AnnotationOmissionReceipt,
   type AnnotationSourceOptions,
+  type IndexedAnnotationEntry,
   type OwnershipConflictGuidance,
 } from "./annotations.js";
 export {

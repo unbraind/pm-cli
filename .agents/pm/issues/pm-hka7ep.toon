@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,collections,comments,safety
 created_at: "2026-11-06T06:59:42.442Z"
-updated_at: "2026-11-08T00:39:17.966Z"
+updated_at: "2026-11-08T00:56:42.669Z"
 closed_at: "2026-11-08T00:38:54.578Z"
 completed_at: "2026-11-08T00:38:54.578Z"
 author: "harness:claude-code"
@@ -31,7 +31,7 @@ comments[1]{created_at,author,text}:
   "2026-11-07T22:53:40.707Z","harness:claude-code","Implementation (2026-11-07, branch fix/annotation-collection-reads). Every comment, note and learning row in TOON, JSON, SDK and MCP now leads with index, its absolute one-based position in the stored collection. renderAnnotationResult (src/sdk/annotations.ts) indexes the stored collection before --limit, so the index survives limits, budget pages and the pm notes --since/--event-type filters. It also indexes add and edit receipts and full-history mutation output. The index is assigned first and then reasserted, so a stored field of the same name cannot override it. The SDK types advertise IndexedAnnotationEntry. A budget-truncated listing carries total_count beside count (see pm-8s53lj).\n\nNew guard: --expect-at <ts> (SDK and MCP expectAt; the first spelling --expect-created-at widened the Commander option column and cost about 130 help tokens per command, so the flag was shortened) on --edit and --delete for comments, notes and learnings. Inside the locked mutate, a different created_at at the addressed index is refused with exit 4 and annotation_entry_mismatch before anything is written. details carries the collection, entry_index, expected and actual created_at, and matching_indexes (every index whose entry has the expected created_at). The message and the retry example name the index when exactly one entry matches. The flag is refused without --edit/--delete (annotation_expectation_without_target), and an empty value is refused as annotation_expectation_empty. The MCP schema declares expectAt and treats it as mutually exclusive with ifAbsent.\n\nNegative control (tests/unit/commands/annotations/annotation-entry-addressing.spec.ts): on a 5-comment item a --limit 2 page reports count 2. Editing by that count with the newest row's created_at is refused with entry_index 2 and matching_indexes [5], and editing the row's own index 5 succeeds.\n"
 learnings[1]{created_at,author,text}:
   "2026-11-08T00:39:17.966Z","harness:claude-code","A page count is never an entry address: once output can be bounded, every row must carry its absolute position, and a write by position needs an expectation that proves the position still names what was read. Also measure the help cost of a new flag's spelling before committing to it: Commander aligns every option to the widest term, so one long flag (--expect-created-at <timestamp>) re-wrapped every description and cost about 130 help tokens per command, while --expect-at <ts> cost 18."
-files[21]{path,scope}:
+files[22]{path,scope}:
   docs/generated/FLAG_LEXICON_BUDGETS.md,project
   scripts/release/flag-help-baseline.json,project
   scripts/release/surface-replication-sets.json,project
@@ -48,6 +48,7 @@ files[21]{path,scope}:
   src/sdk/completion/zsh.ts,project
   src/sdk/generated/generated-error-code-catalog-part-1.ts,project
   src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  src/sdk/index.ts,project
   src/sdk/learnings.ts,project
   src/sdk/notes.ts,project
   tests/fixtures/contracts/full.json,project
