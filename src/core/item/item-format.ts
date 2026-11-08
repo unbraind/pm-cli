@@ -817,50 +817,41 @@ function sortDependencies(
 /** Annotation collections the store keeps in {@link compareLogValues} order; any other collection keeps write order. */
 export const CANONICALLY_ORDERED_LOG_COLLECTIONS: ReadonlySet<string> = new Set(["comments", "notes", "learnings"]);
 
+/** Sort key of an annotation field whose read or string conversion throws. */
+const UNCONVERTIBLE_LOG_SORT_KEY = "[unconvertible]";
+
 /**
- * The sort fields of a stored annotation entry (pm-30tjoh), coerced with
+ * One sort field of a stored annotation entry (pm-30tjoh), coerced with
  * String() exactly as the legacy comparator's Date.parse and
  * String.prototype.localeCompare arguments were (a missing field reads
  * "undefined"). Every document the legacy comparator could sort therefore
- * keeps its order and its history hashes, and a malformed entry (null, a
- * bare string, a non-string field) sorts instead of throwing a TypeError.
+ * keeps its order and its history hashes. A read or conversion that throws
+ * (null entry, {"toString": null}, a throwing SDK getter) yields a fixed key
+ * instead of invoking another caller-controlled conversion.
  */
-function logSortFields(entry: unknown): { created_at: string; text: string; author: string } {
-  const field = (key: string): string =>
-    logSortKeyString(entry === null || entry === undefined ? undefined : (entry as Record<string, unknown>)[key]);
-  return { created_at: field("created_at"), text: field("text"), author: field("author") };
-}
-
-/**
- * String() of a sort field, falling back to its Object.prototype.toString
- * tag when conversion throws (a stored object such as {"toString": 42}).
- * Fields are converted eagerly, so a field the legacy comparator never read
- * (text, when created_at already differs) must not throw; where String()
- * succeeds it is the same ToString the legacy comparator applied.
- */
-function logSortKeyString(value: unknown): string {
+function logSortField(entry: unknown, key: "created_at" | "text" | "author"): string {
   try {
-    return String(value);
+    return String(entry === null || entry === undefined ? undefined : (entry as Record<string, unknown>)[key]);
   } catch {
-    return Object.prototype.toString.call(value);
+    return UNCONVERTIBLE_LOG_SORT_KEY;
   }
 }
 
 /**
  * The canonical stored order of annotation entries: created_at, then text,
- * then author (a stable sort keeps ties in write order). This order is
- * hashed into item history, so it must not change for documents that sorted
- * before; ordering mixed parseable and unparseable stamps transitively needs
- * a versioned canonicalization transition (pm-yo46im).
+ * then author (a stable sort keeps ties in write order). Fields are read in
+ * the legacy order and only when the previous key ties, so a field the
+ * legacy comparator never read is never converted. This order is hashed into
+ * item history, so it must not change for documents that sorted before;
+ * ordering mixed parseable and unparseable stamps transitively needs a
+ * versioned canonicalization transition (pm-yo46im).
  */
 export function compareLogValues(a: Comment | LogNote, b: Comment | LogNote): number {
-  const left = logSortFields(a);
-  const right = logSortFields(b);
-  const byCreated = compareTimestampStrings(left.created_at, right.created_at);
+  const byCreated = compareTimestampStrings(logSortField(a, "created_at"), logSortField(b, "created_at"));
   if (byCreated !== 0) return byCreated;
-  const byText = left.text.localeCompare(right.text);
+  const byText = logSortField(a, "text").localeCompare(logSortField(b, "text"));
   if (byText !== 0) return byText;
-  return left.author.localeCompare(right.author);
+  return logSortField(a, "author").localeCompare(logSortField(b, "author"));
 }
 
 function sortLogValues<T extends Comment | LogNote>(

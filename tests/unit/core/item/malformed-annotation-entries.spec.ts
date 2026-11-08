@@ -75,6 +75,33 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
     expect([...mixed].sort(compareLogValues)).toEqual([...mixed].sort(legacy));
   });
 
+  it("reads text and author only on a created_at tie and never calls a conversion twice when one throws", () => {
+    // Codex review round 6 of PR #1687: SDK-supplied entries can carry
+    // getters; the legacy comparator never read text when created_at differed.
+    let textReads = 0;
+    const lazy = {
+      created_at: "2026-11-02T00:00:00.000Z",
+      author: "a",
+      get text(): string {
+        textReads += 1;
+        throw new Error("text must not be read");
+      },
+    } as unknown as Comment;
+    const later = { created_at: "2026-11-03T00:00:00.000Z", author: "b", text: "b" } as Comment;
+    expect([later, lazy].sort(compareLogValues)).toEqual([lazy, later]);
+    expect(textReads).toBe(0);
+    const hostile = {
+      toString: null,
+      get [Symbol.toStringTag](): string {
+        throw new Error("tag");
+      },
+    };
+    const tied = { created_at: "2026-11-02T00:00:00.000Z", author: "c", text: hostile } as unknown as Comment;
+    const plain = { created_at: "2026-11-02T00:00:00.000Z", author: "d", text: "plain" } as Comment;
+    expect(() => [plain, tied].sort(compareLogValues)).not.toThrow();
+    expect(compareLogValues(tied, tied)).toBe(0);
+  });
+
   it.each(["toon", "json_markdown"] as const)(
     "parses a %s item whose annotation fields cannot be converted to strings",
     (format) => {
