@@ -6,13 +6,15 @@ status: open
 priority: 3
 tags[4]: annotations,"area:core",history,integrity
 created_at: "2026-11-08T08:51:43.697Z"
-updated_at: "2026-11-08T08:51:43.697Z"
+updated_at: "2026-11-08T09:57:43.700Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "compareLogValues (or its successor) is a strict weak ordering over any mix of created_at stamps for items at the new canonicalization version; History streams written before the change keep verifying and replaying unchanged, proven by a committed mixed-stamp history fixture; pm validate reports annotation entries whose created_at does not parse, with the item id, collection and index"
 parent: pm-doxj
 risk: medium
 confidence: high
+expected_result: "Annotation entries with any mix of created_at stamps sort into one transitive order at the new canonicalization version, while history streams written under the legacy order keep verifying and replaying unchanged"
+actual_result: "compareLogValues stays legacy-exact: mixed parseable and unparseable created_at stamps can form an ordering cycle (A < B by instant, B < X < A as text), so the stored order depends on the input order the sort received"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-30tjoh,discovered_from,"2026-11-08T08:51:43.697Z","harness:claude-code","cli:create:dep",detected
 body: ""

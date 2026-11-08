@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:release",ci,observability,reliability,slo
 created_at: "2026-07-27T04:05:41.511Z"
-updated_at: "2026-11-08T09:03:48.325Z"
+updated_at: "2026-11-08T09:59:15.575Z"
 closed_at: "2026-09-24T13:32:42.761Z"
 completed_at: "2026-09-24T13:32:42.761Z"
 author: "harness:claude-code"
@@ -25,7 +25,7 @@ repro_steps: "Run: gh api \"repos/unbraind/pm-cli/actions/workflows/auto-release
 resolution: "Added secret-free attempt receipts, complete read-only GitHub collection, first-attempt preservation, outcome/stage classification, versioned thresholds and independent hosted reporting."
 expected_result: Recovery cannot conceal original schedule failures; publication and skip outcomes remain distinct where evidence exists.
 actual_result: "51 focused tests and exact changed-module coverage pass; linked tests, package authoring and packed npx/bunx checks pass. Live census reports 13 failures among 30 originals and explicitly unknown historical success outcomes. Candidate hosted review is pending; historical reliability is intentionally red."
-dependencies[13]:
+dependencies[14]:
   - id: pm-44u3wt
     kind: related
     created_at: "2026-07-27T04:05:41.511Z"
@@ -81,6 +81,12 @@ dependencies[13]:
     kind: related
     created_at: "2026-09-24T13:40:41.250Z"
     author: "harness:codex"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-30tjoh
+    kind: related
+    created_at: "2026-11-08T09:59:14.632Z"
+    author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
 comments[33]{created_at,author,text}:
