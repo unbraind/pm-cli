@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,collections,comments,safety
 created_at: "2026-11-06T06:59:42.442Z"
-updated_at: "2026-11-08T00:56:42.669Z"
+updated_at: "2026-11-08T01:12:28.057Z"
 closed_at: "2026-11-08T00:38:54.578Z"
 completed_at: "2026-11-08T00:38:54.578Z"
 author: "harness:claude-code"
@@ -72,4 +72,12 @@ docs[2]{path,scope}:
   docs/COMMANDS.md,project
   docs/SDK_CONTEXT_INTEGRITY.md,project
 close_reason: "Fixed: annotation rows carry their absolute index and --expect-at guards edit and delete"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-hka7ep
+  gate_id: annotation-entry-addressing
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/annotation-entry-addressing.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/annotation-entry-addressing.spec.ts tests/unit/sdk/read-contract-integrity.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""
