@@ -8,11 +8,6 @@ import type { PmErrorCodeCatalogRow } from "./error-code-catalog-rows.js";
 /** Generated partition 2 of the exhaustive error-code catalog, as compact rows. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
-    code: "merge_receipts_pending",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
     code: "merge_reconcile_receipt_evidence_untrusted",
     exit_code: 4,
     sources: ["sdk/history-repair.ts"],
@@ -349,6 +344,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     code: "read_output_cursor_stale",
     exit_code: 2,
     sources: ["sdk/read-output/continuation.ts"],
+  },
+  {
+    code: "read_output_mutation_conflict",
+    exit_code: 2,
+    sources: ["sdk/read-output-contracts.ts"],
   },
   {
     code: "recovery_kind_mismatch",

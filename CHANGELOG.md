@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- MCP pm_comments lists only the newest 20 comments by default: the backward output cursor stops at that producer page and the last page reports has_more without a continuation ([pm-sbqn4h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sbqn4h.toon))
+- Combining an annotation or linked-artifact mutation with a universal output control is refused untyped: code command_failed and pm --help examples instead of a stable code and a retry without the control ([pm-rrwh2o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rrwh2o.toon))
+- TOON get --fields drops an empty child collection nested inside a selected object field, while JSON keeps it ([pm-fkhdy8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fkhdy8.toon))
+- TOON annotation listings drop null rows while count reports them, so a malformed collection renders fewer rows than its count ([pm-e3hfv8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e3hfv8.toon))
 - Release verification shares the build job's timeout and waits fifteen minutes while npm's publish-time scan can hold a version longer: 2026.11.8 was published but the job was cancelled before acceptance ([pm-0jzl5t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0jzl5t.toon))
 - A malformed comments, notes or learnings entry in an item document crashes annotation reads with unknown_error (sortLogValues calls localeCompare on a missing text) ([pm-30tjoh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-30tjoh.toon))
 

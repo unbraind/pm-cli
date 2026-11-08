@@ -2,18 +2,42 @@ id: pm-fkhdy8
 title: "TOON get --fields drops an empty child collection nested inside a selected object field, while JSON keeps it"
 description: "CodeRabbit review of PR 1681 (deferred). restoreRequestedEmptyItemCollections restores the empty collections an explicit get --fields selection requested at the top level of item. When a selected object field contains a scalar and an empty child array, TOON compaction still drops the nested array while JSON keeps it, so absent vs empty differs by encoding inside selected objects."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,read-output,toon
 created_at: "2026-11-07T05:21:58.835Z"
-updated_at: "2026-11-07T05:59:44.015Z"
+updated_at: "2026-11-08T13:45:02.820Z"
+closed_at: "2026-11-08T13:44:52.039Z"
+completed_at: "2026-11-08T13:44:52.039Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "TOON get --fields renders every empty collection inside selected fields, recursively, exactly as JSON delivers it; JSON, SDK and MCP output are unchanged; a spec covers a nested scalar-plus-empty-array field with a negative control"
 parent: pm-5t33or
 risk: low
 confidence: high
-expected_result: TOON get --fields renders nested empty collections inside selected fields exactly as JSON does
+resolution: "The get facet roots moved into the import-free src/sdk/query/get-facet-roots.ts. restoreRequestedEmptyCollections in src/core/output/output.ts restores recursively inside item and every selected facet (linked, schedule, claim_state, children, blockers). restoreEmptyCollections re-inserts each source-empty array or object at any depth around what the sparse policy kept. Array rows align by position, and rows the policy dropped are re-derived from the same policy. Nulls stay dropped and non-facet envelope keys keep the sparse policy. JSON, SDK and MCP output are unchanged."
+expected_result: "TOON get --fields renders every empty collection inside selected fields, recursively, exactly as JSON delivers it"
+actual_result: "pm get <id> --fields id,linked renders linked.tests: [] and linked.docs: [], and --fields id,schedule renders reminders: [] and events: []; the spec covers nested scalar-plus-empty-array fields with a negative control"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-sj66lm,discovered_from,"2026-11-07T05:21:58.835Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-08T13:07:47.782Z","harness:claude-code","Implementation evidence, branch fix/annotation-read-fidelity. Reproduced on main dbe6be164 with the built CLI. pm get <id> --fields id,linked rendered linked.files but dropped linked.tests: [] and linked.docs: []; --fields id,schedule dropped schedule.reminders: [] and schedule.events: []; JSON kept all four. The cause: restoreRequestedEmptyItemCollections restored only top-level keys of item, while linked, schedule, claim_state, children and blockers are envelope facets beside item. Fix: the facet roots moved from src/sdk/query/get.ts into src/sdk/query/get-facet-roots.ts, an import-free module the core renderer can read without loading the get command. restoreRequestedEmptyCollections now restores recursively inside item and every selected facet. restoreEmptyCollections re-inserts every source-empty array or object at any depth around what the sparse policy kept. Array rows align by position when the policy kept every row; when it dropped some, the dropped rows are re-derived from the same policy. Nulls stay dropped, as the existing sj66lm spec pins for top-level item fields. Non-facet envelope keys keep the sparse policy. JSON, SDK and MCP output are unchanged; only the TOON renderer changed. The spec covers a nested scalar-plus-empty-array field (plan_scope.paths, nested.more), facets, array-of-array rows and a negative control without the selection flag."
+files[4]{path,scope}:
+  src/core/output/output.ts,project
+  src/sdk/query/get-facet-roots.ts,project
+  src/sdk/query/get.ts,project
+  tests/unit/core/output/annotation-read-fidelity.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/output/annotation-read-fidelity.spec.ts tests/unit/core/output/delivered-output-budget.spec.ts,project,300,"harness:claude-code","2026-11-08T13:07:17.752Z",local_mutation,fix/annotation-read-fidelity
+docs[1]{path,scope}:
+  docs/AGENT_OUTPUT_ENCODINGS.md,project
+close_reason: "Fixed: TOON get --fields renders empty collections nested inside selected fields and facets, as JSON does"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-fkhdy8
+  gate_id: toon-get-fields-nested-empties
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/output/annotation-read-fidelity.spec.ts tests/unit/core/output/delivered-output-budget.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/output/annotation-read-fidelity.spec.ts tests/unit/core/output/delivered-output-budget.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

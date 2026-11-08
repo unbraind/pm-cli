@@ -2,19 +2,42 @@ id: pm-e3hfv8
 title: "TOON annotation listings drop null rows while count reports them, so a malformed collection renders fewer rows than its count"
 description: "## Observed\nA malformed stored annotation collection such as comments with entries [object, null, 42] is delivered by `pm comments <id> --json` as all three rows. The default TOON output renders \"comments[2]\" (the object and 42) yet reports \"count: 3\", because TOON compaction drops null array elements. tests/unit/core/output/output.spec.ts pins that sparse-presentation contract for every TOON payload: arr_scalars drops null, and the spec asserts there is no \"- null\" line. A reader of the TOON listing therefore sees fewer rows than the count, and the row positions it can count no longer match the absolute index an edit or delete takes. Rows without an index field (non-objects) carry no address of their own.\n\n## Why it matters\nAnnotation rows are addressed by absolute 1-based index (--edit/--delete). A dropped null row shifts every visible non-object row's apparent position, while object rows still carry their own index field.\n\n## Fix direction\nKeep the general TOON null-dropping contract. For collections whose rows are addressed by position (comments, notes, learnings), render a malformed non-object row with its absolute index, or keep null rows, so the rendered length matches the count. Discovered during the CodeRabbit review of PR 1687."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: annotations,"area:output",toon,ux
 created_at: "2026-11-08T11:17:07.960Z"
-updated_at: "2026-11-08T11:17:07.960Z"
+updated_at: "2026-11-08T13:45:00.446Z"
+closed_at: "2026-11-08T13:44:49.085Z"
+completed_at: "2026-11-08T13:44:49.085Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "pm comments, notes and learnings in TOON render one row per stored entry, including null, or give every non-object row its absolute index; The general TOON null-dropping contract pinned in tests/unit/core/output/output.spec.ts stays unchanged for other payloads"
 parent: pm-doxj
 risk: low
 confidence: high
-expected_result: "The TOON annotation listing shows as many rows as its count, each addressable by its absolute index"
-actual_result: "comments[2] is rendered with count 3 when one stored entry is null"
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "src/sdk/read-output/positional-rows.ts declares PM_READ_OUTPUT_POSITIONAL_ROW_PATHS for the comments, notes and learnings listings, whose rows --edit and --delete address by absolute position. The core TOON renderer resolves the read surface, so the item namespace form resolves too. restorePositionalRows then re-delivers every row of a declared path, compacting each one as the sparse policy compacts a row object. It runs only when some row would be dropped, so a well-formed listing renders byte-for-byte as before, and the general TOON null-dropping contract is unchanged for every other payload. JSON is unchanged."
+expected_result: "A TOON comments, notes or learnings listing shows as many rows as its count, a null entry included"
+actual_result: "pm comments on [object, null, 42] renders comments[3] with '- null' and count 3; a negative control without the declaration still renders comments[2]; JSON delivers the same three rows"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-30tjoh,discovered_from,"2026-11-08T11:17:07.960Z","harness:claude-code","cli:create:dep",detected
+  pm-yo46im,related,"2026-11-08T13:20:25.383Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-08T13:07:46.848Z","harness:claude-code","Implementation evidence, branch fix/annotation-read-fidelity. Reproduced on main dbe6be164: a sandbox item with comments [object, null, 42] rendered comments[2] beside count 3 in TOON, while --json delivered all three rows. Fix: src/sdk/read-output/positional-rows.ts declares PM_READ_OUTPUT_POSITIONAL_ROW_PATHS (comments, notes and learnings, the collections --edit and --delete address by absolute index) and readOutputPositionalRowPaths(surface). nativeRenderer in src/core/output/output.ts resolves the read surface, so the item namespace form 'pm item comments' resolves too, and passes the paths to formatBuiltInOutput. There, restorePositionalRows re-delivers every row of a declared path, compacting each row as the sparse policy compacts a row object, so a null renders as '- null'. It runs only when some row would be dropped, so a well-formed listing renders byte-for-byte as before. The general TOON null-dropping contract is unchanged for every other payload: the spec's negative control shows the same listing without the declaration still renders comments[2]. JSON is unchanged. Verified with the built CLI: pm comments, pm item comments --limit 2 and --limit 1 render one row per delivered entry. A non-object row in a --limit page still carries no index field; its address is its position counted back from total_count. pm-yo46im's validate clause is the repair path."
+files[3]{path,scope}:
+  src/core/output/output.ts,project
+  src/sdk/read-output/positional-rows.ts,project
+  tests/unit/core/output/annotation-read-fidelity.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/core/output/annotation-read-fidelity.spec.ts,project,300,"harness:claude-code","2026-11-08T13:07:14.793Z",local_mutation,fix/annotation-read-fidelity
+docs[1]{path,scope}:
+  docs/AGENT_OUTPUT_ENCODINGS.md,project
+close_reason: "Fixed: TOON annotation listings render one row per stored entry, a malformed null included"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-e3hfv8
+  gate_id: toon-positional-annotation-rows
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/output/annotation-read-fidelity.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/output/annotation-read-fidelity.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

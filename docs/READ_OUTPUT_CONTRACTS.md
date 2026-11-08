@@ -360,6 +360,8 @@ from the exact active result passed to telemetry and after-command hooks.
 
 When rows are dropped to satisfy a ceiling, the result also carries `output_budget_truncation`, naming the binding budget and its source, any explicitly requested dimension the budget overrode, every compacted collection path, and executable CLI/SDK/MCP recovery options — a default ceiling can override an explicit `--output-limit unbounded`, and that override is reported rather than silent. If a producer supplied an opaque item-page cursor, compaction rebases it to the last row actually returned and reports `continuation_cursor_rebased: true`; following the cursor therefore cannot skip rows removed from the middle of a producer page. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result, a compact `{ outputBudget: "unbounded" }` recovery object, and `omitted_result_estimated_tokens`, the last useful-result estimate before omission; use `isReadOutputBudgetExceeded` before accessing result-specific fields. The encoding control `--output-format <toon|json>` also applies to mutation envelopes, including the mutation modes of `comments`, `notes`, `files`, and `docs`. Other universal read controls remain rejected before mutation execution. `--json` remains supported.
 
+That rejection is typed ([pm-rrwh2o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rrwh2o.toon); tracker record excluded from npm). A `comments`, `notes`, `learnings`, `files`, `docs` or package-catalog mutation given `--output-include`, `--output-limit`, `--output-budget`, `--output-session`, `--output-cursor` or `--output-row-contract` exits 2 with `read_output_mutation_conflict` before anything is written. `details.output_controls` names the offending flags, `details.output_option_keys` names the option keys the SDK or MCP caller supplied, and `details.mutation_options` names the mutation that made the call a write. The CLI recovery's `suggested_retry_args` is the caller's own invocation without those controls and their values; tracker scope, operands and every other option stay where they were. SDK and MCP callers drop the named keys. To bound or page the collection, read it with the controls in a separate call after the write. `READ_OUTPUT_MUTATION_CONFLICT_CODE` and `READ_OUTPUT_SHAPING_CONTROL_FLAGS` are exported for package authors.
+
 Cursor recovery carries the opaque value once in `recovery.cursor` and declares
 the accepting `cli`, `sdk`, and `mcp` binding beside it. This avoids
 serializing the same cursor once per transport while retaining an executable,
@@ -398,6 +400,16 @@ direction disagrees with the path's declared retention is refused as
 `read_output_cursor_stale`. A withheld tail also sets the policy's `total_key`
 (`total_count`) beside `count`, and a producer `returned_count` is refreshed to
 the delivered page.
+
+The MCP `pm_comments` listing applies no producer page of its own
+([pm-sbqn4h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sbqn4h.toon);
+tracker record excluded from npm). It used to return only the newest 20
+comments, so a backward cursor stopped at that page's edge while `has_more`
+stayed true. A listing now reports `total_count` and `has_more` and leaves the
+bound to the output budget, exactly like `pm_notes`, `pm_learnings` and the
+CLI. Following `next_cursor` alone therefore reaches the oldest comment, and
+`has_more` is true only while a cursor continues. `options.limit=N` still
+selects the newest N comments.
 
 Health continuation fingerprints use a versioned nonvolatile-snapshot policy
 for the `checks` row. Command-lifecycle telemetry may refresh timestamps, queue

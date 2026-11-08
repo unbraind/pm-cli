@@ -13,6 +13,7 @@ import { createExtensionCommandSdk } from "../sdk/extension-command-context.js";
 import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.js";
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
+import { repairReadOutputMutationRecovery } from "./runtime/read-output-mutation-retry.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
 import { annotationPositionalMutationOptions } from "./register-annotations.js";
@@ -423,10 +424,11 @@ function withContextRecovery(context: PmCliErrorContext | undefined, recovery: P
 function repairInvocationRecovery(argv: string[], context: PmCliErrorContext | undefined): PmCliErrorRecoveryPayload | undefined {
   if (context === undefined) return undefined;
   const recovery = repairSchemaFieldRecovery(argv, context.code, context.field, repairProjectionRecovery(argv, context.code, context.recovery));
-  // Both argv repairs bind an environment-selected tracker into the retry, so it acts on the same item anywhere.
+  // The mutation retries bind an environment-selected tracker into the retry, so it acts on the same item anywhere.
   const scopePrefix = closeRetryScopePrefix(argv);
   const annotationRecovery = repairAnnotationOptionRecovery(argv, context.code, context.field, recovery, scopePrefix);
-  return repairCloseFieldsRecovery(argv, context.code, annotationRecovery, scopePrefix);
+  const outputControlRecovery = repairReadOutputMutationRecovery(argv, context.code, annotationRecovery, scopePrefix);
+  return repairCloseFieldsRecovery(argv, context.code, outputControlRecovery, scopePrefix);
 }
 
 /** Stands in for an empty value so the bootstrap scanner keeps it; tracker resolution trims it back to empty. */

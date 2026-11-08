@@ -2,11 +2,13 @@ id: pm-sbqn4h
 title: "MCP pm_comments lists only the newest 20 comments by default: the backward output cursor stops at that producer page and the last page reports has_more without a continuation"
 description: "Found 2026-11-08 by the CodeRabbit review of PR 1685. A pm_comments MCP listing without limit or full is bounded by the producer to the newest 20 comments (runMcpCommentsAction sets limit 20 and includeMeta), with total_count and has_more true when more exist. A universal output cursor pages only within that producer page. On an item with more than 20 comments, following next_cursor backwards under a small outputBudget therefore stops after the 20th-newest comment. The last page still reports has_more true (from the producer) but carries no next_cursor, so an agent cannot tell how to reach older comments except by restarting with options.limit or options.full true, which the tool description mentions. Expected: when the producer page is exhausted, the envelope names the producer continuation, for example a cursor or a suggested limit for the next older window, so has_more true never arrives without an executable continuation. Duplicate check: searched MCP comments default 20 has_more continuation producer page. pm-gh1679 (open) owns a producer cursor for item history, which is the analogous design, and pm-8s53lj (closed) made the output cursor page backwards within the producer page."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[5]: agent-ux,annotations,continuation,mcp,read-output
 created_at: "2026-11-08T03:54:47.662Z"
-updated_at: "2026-11-08T03:54:47.662Z"
+updated_at: "2026-11-08T13:45:07.747Z"
+closed_at: "2026-11-08T13:44:58.261Z"
+completed_at: "2026-11-08T13:44:58.261Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "An MCP comments listing whose producer page is exhausted names a continuation to the next older window, or reports has_more only when a continuation is present; A spec drives tools/call on more than 20 comments and reaches the oldest comment by following continuations alone"
@@ -15,9 +17,31 @@ risk: low
 confidence: high
 severity: low
 repro_steps: "Through MCP tools/call, list pm_comments on an item with more than 20 comments with a small outputBudget and follow next_cursor until it disappears, then read has_more"
-expected_result: has_more true always comes with an executable continuation that reaches older comments beyond the producer page
-actual_result: After the newest 20 comments the page reports has_more true and no next_cursor; only restarting with options.limit or options.full reaches older comments
+resolution: "runMcpCommentsAction no longer sets an implicit limit of 20. A listing sets includeMeta for total_count and has_more and leaves the bound to the default output budget, whose ordered_suffix retention keeps the newest comments and issues a backward cursor, exactly like pm_notes, pm_learnings and the CLI. options.limit=N still selects the newest N. The pm_comments tool description, the contract snapshot and docs/READ_OUTPUT_CONTRACTS.md record the change."
+expected_result: "Following next_cursor alone reaches the oldest comment, and has_more is true only while a continuation is present"
+actual_result: "On 30 comments of about 310 characters, tools/call returned indexes 12-30 with has_more true and next_cursor, then 1-11 with has_more false and no cursor; the spec asserts has_more equals the presence of a cursor on every page"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-8s53lj,discovered_from,"2026-11-08T03:54:47.662Z","harness:claude-code","cli:create:dep",detected
   pm-gh1679,related,"2026-11-08T03:54:47.662Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-08T13:07:49.463Z","harness:claude-code","Implementation evidence, branch fix/annotation-read-fidelity. runMcpCommentsAction set an implicit producer limit of 20 on every listing. That predates the universal output budget. pm_notes and pm_learnings never had one, and neither does the CLI. Now a listing only sets includeMeta (total_count, has_more) and leaves the bound to the default output budget, whose ordered_suffix retention keeps the newest comments and issues a backward cursor. Keeping the implicit page was rejected: a cursor continuation cannot widen the producer page without changing the row fingerprint the cursor is bound to. Measured on a sandbox item with 30 comments of about 310 characters each through tools/call: page 1 returned indexes 12-30 with has_more true and next_cursor; page 2 returned 1-11 with has_more false and no cursor. Before the change the same walk stopped at index 11 of the 20-row page with has_more true and no cursor. options.limit=N still returns only the newest N, with total_count and has_more. The pm_comments tool description and the contract snapshot were updated, and docs/READ_OUTPUT_CONTRACTS.md records the change. The spec follows next_cursor alone from index 30 to index 1 and asserts has_more equals the presence of a cursor on every page."
+files[5]{path,scope}:
+  src/mcp/tool-definitions.ts,project
+  src/sdk/runtime/actions.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project
+  tests/unit/mcp/comments-continuation.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/mcp/comments-continuation.spec.ts,project,300,"harness:claude-code","2026-11-08T13:07:23.487Z",local_mutation,fix/annotation-read-fidelity
+docs[1]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+close_reason: "Fixed: MCP pm_comments listings apply no producer page, so following next_cursor alone reaches the oldest comment"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-sbqn4h
+  gate_id: mcp-comments-continuation
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/mcp/comments-continuation.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/mcp/comments-continuation.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

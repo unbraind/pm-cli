@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: annotations,"area:core",history,integrity
 created_at: "2026-11-08T08:51:43.697Z"
-updated_at: "2026-11-08T09:57:43.700Z"
+updated_at: "2026-11-08T13:07:50.355Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "compareLogValues (or its successor) is a strict weak ordering over any mix of created_at stamps for items at the new canonicalization version; History streams written before the change keep verifying and replaying unchanged, proven by a committed mixed-stamp history fixture; pm validate reports annotation entries whose created_at does not parse, with the item id, collection and index"
@@ -17,4 +17,6 @@ expected_result: "Annotation entries with any mix of created_at stamps sort into
 actual_result: "compareLogValues stays legacy-exact: mixed parseable and unparseable created_at stamps can form an ordering cycle (A < B by instant, B < X < A as text), so the stored order depends on the input order the sort received"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-30tjoh,discovered_from,"2026-11-08T08:51:43.697Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-08T13:07:50.355Z","harness:claude-code","Scope note from pm-e3hfv8 (branch fix/annotation-read-fidelity): pm validate reports nothing for a non-object annotation entry (null, a number or a string) either. TOON listings now render such rows one per stored entry, but in a --limit page a non-object row has no index field, so pm validate is the place that should name item id, collection and absolute index for repair (pm <collection> <id> --delete <index>). The validate clause of this item's AC should cover non-object entries beside unparseable created_at stamps."
 body: ""

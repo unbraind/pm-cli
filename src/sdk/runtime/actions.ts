@@ -280,15 +280,11 @@ function runMcpCommentsAction(ctx: McpActionDispatchContext): Promise<unknown> {
     commentOptions.file === undefined &&
     commentOptions.edit === undefined &&
     commentOptions.delete === undefined;
-  if (isListing) {
-    commentOptions.includeMeta = true;
-    if (
-      commentOptions.limit === undefined &&
-      commentOptions.fullHistory !== true
-    ) {
-      commentOptions.limit = "20";
-    }
-  }
+  // A listing reports total_count and has_more. It applies no producer page
+  // of its own: the default output budget keeps the newest comments and its
+  // backward cursor reaches the oldest, as for notes and learnings
+  // (pm-sbqn4h). An implicit page here stranded that cursor at its edge.
+  if (isListing) commentOptions.includeMeta = true;
   return runComments(requireMcpItemId(ctx), commentOptions, ctx.global);
 }
 

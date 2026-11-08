@@ -519,8 +519,11 @@ const CANONICAL_OPTION_KEYS = [
   "output_row_contract",
 ] as const;
 
+/** Read surfaces whose command also mutates when given one of its mutation options. */
+type HybridReadOutputSurface = "comments" | "notes" | "learnings" | "files" | "docs" | "package-catalog";
+
 const HYBRID_READ_MUTATION_KEYS: Readonly<
-  Partial<Record<PmReadOutputSurface, readonly string[]>>
+  Record<HybridReadOutputSurface, readonly string[]>
 > = {
   // Text aliases are listed too, so the guard holds even for a caller whose
   // argv was not canonicalized to --add before parsing.
@@ -592,6 +595,67 @@ const READ_OUTPUT_VALUE_VALIDATORS = [
   },
 ] as const;
 
+/** Stable code of the refusal for a hybrid read-and-mutate command given universal output controls (pm-rrwh2o). */
+export const READ_OUTPUT_MUTATION_CONFLICT_CODE = "read_output_mutation_conflict";
+
+/** Universal output controls that shape a read, by flag, with every option key spelling that selects them. */
+const READ_OUTPUT_SHAPING_CONTROLS: ReadonlyArray<{ flag: string; keys: readonly string[] }> = [
+  { flag: "--output-include", keys: ["outputInclude", "output_include"] },
+  { flag: "--output-limit", keys: ["outputLimit", "output_limit"] },
+  { flag: "--output-budget", keys: ["outputBudget", "output_budget"] },
+  { flag: "--output-session", keys: ["outputSession", "output_session"] },
+  { flag: "--output-cursor", keys: ["outputCursor", "output_cursor"] },
+  { flag: "--output-row-contract", keys: ["outputRowContract", "output_row_contract"] },
+];
+
+/** CLI flags of the universal output controls that shape a read, which a mutation retry must drop. */
+export const READ_OUTPUT_SHAPING_CONTROL_FLAGS: readonly string[] = READ_OUTPUT_SHAPING_CONTROLS.map(({ flag }) => flag);
+
+/**
+ * Refuse a mutation given universal output controls with a typed code that
+ * names the controls to drop, by CLI flag and by the option keys the caller
+ * supplied, so CLI, SDK and MCP callers can retry the write without them and
+ * read with them in a separate call. The CLI rewrites the retry from the
+ * caller's own argv.
+ */
+function readOutputMutationConflict(
+  surface: HybridReadOutputSurface,
+  options: Record<string, unknown>,
+  mutationOptions: readonly string[],
+): PmCliError {
+  const present = READ_OUTPUT_SHAPING_CONTROLS.filter(({ keys }) => keys.some((key) => options[key] !== undefined));
+  const flags = present.map(({ flag }) => flag);
+  const optionKeys = present.flatMap(({ keys }) => keys.filter((key) => options[key] !== undefined));
+  const listed = flags.join(", ");
+  return new PmCliError(
+    `Universal output controls (${listed}) cannot be combined with a ${surface} mutation; nothing was written.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "read_output_mutation_conflict",
+      field: flags[0],
+      details: {
+        surface,
+        output_controls: flags,
+        output_option_keys: optionKeys,
+        mutation_options: [...mutationOptions],
+      },
+      required: `Retry the ${surface} mutation without ${listed}. To bound or page the result, read it with those controls in a separate call after the write.`,
+      why: "Universal output controls shape a read. A mutation returns its own bounded receipt, so the controls have nothing to shape and the write is refused before it runs.",
+      examples: [...READ_OUTPUT_MUTATION_RETRY_EXAMPLES[surface]],
+    },
+  );
+}
+
+/** Example write and separate bounded read for each hybrid surface the refusal names. */
+const READ_OUTPUT_MUTATION_RETRY_EXAMPLES: Readonly<Record<HybridReadOutputSurface, readonly string[]>> = {
+  comments: ['pm comments <id> --add "<text>"', "pm comments <id> --output-limit 5"],
+  notes: ['pm notes <id> --add "<text>"', "pm notes <id> --output-limit 5"],
+  learnings: ['pm learnings <id> --add "<text>"', "pm learnings <id> --output-limit 5"],
+  files: ["pm files <id> --add path=<path>", "pm files <id> --output-limit 5"],
+  docs: ["pm docs <id> --add path=<path>", "pm docs <id> --output-limit 5"],
+  "package-catalog": ["pm package install <source> --project", "pm package catalog --output-limit 5"],
+};
+
 /** Reject malformed or mutation-scoped universal output controls before command execution. */
 export function validateReadOutputOptions(
   command: string,
@@ -612,15 +676,14 @@ export function validateReadOutputOptions(
       EXIT_CODE.USAGE,
     );
   }
-  if (
-    (HYBRID_READ_MUTATION_KEYS[normalizedCommand] ?? []).some(
+  if (Object.hasOwn(HYBRID_READ_MUTATION_KEYS, normalizedCommand)) {
+    const surface = normalizedCommand as HybridReadOutputSurface;
+    const mutationOptions = HYBRID_READ_MUTATION_KEYS[surface].filter(
       (key) => options[key] !== undefined && options[key] !== false,
-    )
-  ) {
-    throw new PmCliError(
-      `Universal output controls cannot be combined with a ${normalizedCommand} mutation.`,
-      EXIT_CODE.USAGE,
     );
+    if (mutationOptions.length > 0) {
+      throw readOutputMutationConflict(surface, options, mutationOptions);
+    }
   }
   for (const validator of READ_OUTPUT_VALUE_VALIDATORS) {
     const value = validator.keys

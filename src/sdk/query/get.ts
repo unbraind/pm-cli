@@ -50,6 +50,7 @@ import type {
 } from "../../types/index.js";
 import { runList } from "./list.js";
 import { registerOutputMaterialFieldGroups } from "../output-projection.js";
+import { GET_FACET_ROOTS, GET_NESTED_FACET_ROOTS } from "./get-facet-roots.js";
 import {
   GET_DEPTH_INPUT_VALUES,
   GET_DEPTH_VALUES,
@@ -460,9 +461,6 @@ function projectedMetadataValue(
   if (source[field] !== undefined) return source[field];
   return EMPTY_PROJECTED_COLLECTION_FIELDS.has(field) ? [] : undefined;
 }
-
-const GET_FACET_ROOTS: ReadonlySet<string> = new Set(["body", "item_hash", "linked", "claim_state", "children", "schedule", "blockers"]);
-const GET_NESTED_FACET_ROOTS: ReadonlySet<string> = new Set(["linked", "claim_state", "children", "schedule"]);
 
 /**
  * Whether a selector names a derived facet whose owner attaches it, rather than a
