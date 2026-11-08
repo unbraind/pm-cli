@@ -268,6 +268,25 @@ function resolveSingleAnnotationSources(
   };
 }
 
+/** Annotation commands whose second declared positional is the entry text. */
+const ANNOTATION_TEXT_COMMANDS: ReadonlySet<string> = new Set(["comments", "notes", "learnings"]);
+
+/**
+ * Expose positional annotation text as the `add` mutation key that read-output
+ * validation checks, so `pm learnings <id> "text" --output-budget 1` is refused
+ * before it writes, as `--add` already is, instead of appending and then
+ * failing the output budget.
+ */
+export function annotationPositionalMutationOptions(
+  commandPath: string,
+  processedArgs: readonly unknown[],
+): { add?: string } {
+  const text = processedArgs[1];
+  return ANNOTATION_TEXT_COMMANDS.has(commandPath) && typeof text === "string"
+    ? { add: text }
+    : {};
+}
+
 /** Options every annotation command forwards unchanged from its parsed flags. */
 function sharedAnnotationCommandOptions(options: Record<string, unknown>): {
   fullHistory: boolean;

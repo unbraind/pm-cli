@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,annotations,context-management,output-contract,token-efficiency
 created_at: "2026-11-01T11:19:29.712Z"
-updated_at: "2026-11-08T00:52:17.967Z"
+updated_at: "2026-11-08T01:03:49.427Z"
 closed_at: "2026-11-08T00:38:53.699Z"
 completed_at: "2026-11-08T00:38:53.699Z"
 author: "harness:claude-code"
@@ -23,23 +23,27 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1605,related,"2026-11-01T11:19:29.712Z","harness:claude-code","cli:create:dep",detected
   pm-7zs0,related,"2026-11-01T12:19:04.541Z","harness:claude-code","cli:update:dep",detected
   pm-doxj,related,"2026-11-01T12:19:04.541Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-01T11:19:35.934Z","harness:claude-code","Duplicate-check evidence: the strict duplicate guard flagged pm-gh1605 (closed). Its title, AC and resolution are scoped to pm history only ('Preserve newest compact/provenance history...'), so reopening it would widen a shipped item. This item covers the sibling annotation readers that did not receive the same tail-preserving default. Related closed precedent: pm-6vfg (MCP pm_comments default limit). Searched: pm search 'comments default page oldest latest bounded read'."
   "2026-11-07T22:53:39.958Z","harness:claude-code","Investigation and implementation (2026-11-07, branch fix/annotation-collection-reads). Root cause: the universal budget compaction (compactRowsToBudget in src/sdk/read-output-budget.ts) and the --output-limit bound (boundReadOutputRows in src/sdk/read-output-rows.ts) always retained the FIRST rows of a declared collection, while the annotation producer stores entries oldest first. So pm comments pm-7zs0 --json returned indexes 1..28 of 263, and --output-limit 2 returned the two oldest comments while --limit 2 returned the two newest. pm learnings was not a read-output surface at all, so its reads had no output ceiling.\n\nFix: PM_READ_OUTPUT_TAIL_RETENTION_POLICIES (src/sdk/read-output/continuation.ts) declares comments, notes and learnings as newest-tail paths, as data. Budget compaction and --output-limit retain the tail of those paths. Their continuation cursor carries direction backward: offset counts the older rows still withheld, and replay slices [0, offset) then keeps that slice's newest rows. A cursor whose direction disagrees with the path's declared retention is refused as read_output_cursor_stale. A withheld tail sets total_count beside count, and a producer returned_count is refreshed to the delivered page. learnings joined PM_READ_OUTPUT_SURFACES with --limit as its legacy amount alias.\n\nMeasured on this tracker with the built CLI: bare pm comments pm-7zs0 --json now returns indexes 238..263 (count 26, total_count 263), the cursor's next page returns 211..237, and --output-limit 2 returns 262 and 263.\n"
   "2026-11-08T00:52:17.967Z","harness:claude-code","Codex review round 1 (gpt-6.1-sol, xhigh) on PR 1685 found three issues, all verified and fixed. (P1) Adding learnings as a read-output surface without listing its mutation keys in HYBRID_READ_MUTATION_KEYS admitted pm learnings --add/--edit/--delete combined with universal output controls. Before the fix, pm learnings <id> --add x --output-budget 500 wrote the entry (exit 0), and with a stale --output-cursor the write would land before the cursor refusal. learnings now lists add, stdin, file, edit and delete, so the combination is refused before dispatch (exit 2). (P2) attachTailRetentionTotal overwrote a producer total_count with the continuation total. That total describes only the producer's own page (MCP lists 20 comments by default), so a 60-comment item reported total_count 20. An existing producer total is now kept. (P2) A backward replay that needs no further compaction kept the producer count (40 instead of the 26 delivered rows). applyReadOutputContinuation now sets count and returned_count to the delivered slice. Three regression specs in tests/unit/sdk/read-output/tail-retention.spec.ts fail with the two fixed files stashed and pass with them.\n"
+  "2026-11-08T01:03:47.180Z","harness:claude-code","Codex review round 2 (gpt-6.1-sol, xhigh) confirmed the round-1 fixes and found one more reachable P2, verified and fixed. Positional annotation text is a mutation that the read-output guard never saw, because it is not an option key. pm learnings <id> \"text\" --output-budget 1 appended the entry and then failed the output budget (exit 2), and a retry with the suggested budget appended again. The same bypass existed before this PR for pm comments and pm notes. The preAction validation in src/cli/main.ts now passes annotationPositionalMutationOptions (src/cli/register-annotations.ts), which exposes the text slot of comments, notes and learnings as add. Positional text combined with a universal output control is refused before dispatch for all three commands, through the pm item spelling and the --id form. Reads with an output budget and positional appends without controls are unchanged. tests/unit/cli/annotation-positional-output-controls.spec.ts fails for all three commands with the main.ts wiring stashed.\n"
 learnings[1]{created_at,author,text}:
   "2026-11-08T00:39:16.886Z","harness:claude-code","A universal compaction that always keeps the first rows silently inverts the meaning of a chronological collection: for an append-only log, the head is the least useful part, and the producer's own latest-N limit already disagreed with it. Declare retention per row path as data (PM_READ_OUTPUT_TAIL_RETENTION_POLICIES), make the continuation cursor carry its direction, and refuse a cursor whose direction disagrees with the path's declaration, so pages from the two directions can never be mixed."
-files[8]{path,scope}:
+files[10]{path,scope}:
   sdk/public-surface.json,project
+  src/cli/main.ts,project
   src/sdk/read-output-budget.ts,project
   src/sdk/read-output-contracts.ts,project
   src/sdk/read-output-rows.ts,project
   src/sdk/read-output/continuation.ts,project
   src/sdk/read-output/options.ts,project
   src/sdk/read-output/surfaces.ts,project
+  tests/unit/cli/annotation-positional-output-controls.spec.ts,project
   tests/unit/sdk/read-output/tail-retention.spec.ts,project
-tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/tail-retention.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,project,"harness:claude-code","2026-11-07T22:54:29.084Z",local_mutation,fix/annotation-collection-reads
+  node scripts/run-tests.mjs test -- tests/unit/cli/annotation-positional-output-controls.spec.ts,project,"harness:claude-code","2026-11-08T01:03:49.337Z",local_mutation,fix/annotation-collection-reads
 test_runs[1]:
   - run_id: test-local-mw73sax2-ktqigo
     kind: test

@@ -15,6 +15,7 @@ import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
+import { annotationPositionalMutationOptions } from "./register-annotations.js";
 import { CLOSE_FIELDS_REFUSAL_CODE, repairCloseFieldsRecovery } from "./runtime/close-fields-retry.js";
 import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { applyInvocationAuthorOverride } from "../sdk/invocation-author.js";
@@ -1592,6 +1593,7 @@ function attachProgramLifecycleHooks(rootProgram: Command, invocationArgv?: stri
     const runtimeExtensions = await loadRuntimeReadDeclarations(actionCommand);
     validateReadOutputOptions(commandPath, {
       ...commandOptions,
+      ...annotationPositionalMutationOptions(commandPath, actionCommand.processedArgs),
       outputInclude: rawGlobalOptions.outputInclude,
       outputLimit: rawGlobalOptions.outputLimit,
       outputBudget: rawGlobalOptions.outputBudget,
