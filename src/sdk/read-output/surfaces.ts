@@ -78,6 +78,7 @@ export const LEGACY_FLAGS_BY_COMMAND: Readonly<
   contracts: { include: ["--full", "--summary"] },
   comments: { amount: ["--limit"] },
   notes: { amount: ["--limit"] },
+  learnings: { amount: ["--limit"] },
   files: {
     amount: ["--limit", "--no-truncate", "--offset"],
   },

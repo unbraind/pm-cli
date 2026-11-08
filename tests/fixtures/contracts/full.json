@@ -3379,6 +3379,9 @@
           "flag": "--delete"
         },
         {
+          "flag": "--expect-at"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -5884,6 +5887,9 @@
           "flag": "--delete"
         },
         {
+          "flag": "--expect-at"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -6271,6 +6277,9 @@
           "flag": "--delete"
         },
         {
+          "flag": "--expect-at"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -6376,6 +6385,9 @@
         },
         {
           "flag": "--delete"
+        },
+        {
+          "flag": "--expect-at"
         },
         {
           "flag": "--limit"
@@ -6615,6 +6627,9 @@
         },
         {
           "flag": "--delete"
+        },
+        {
+          "flag": "--expect-at"
         },
         {
           "flag": "--limit"
@@ -7034,6 +7049,9 @@
         },
         {
           "flag": "--delete"
+        },
+        {
+          "flag": "--expect-at"
         },
         {
           "flag": "--limit"
@@ -21404,6 +21422,57 @@
     },
     {
       "aliases": [],
+      "canonical_code": "annotation_entry_mismatch",
+      "class": "conflict",
+      "code": "annotation_entry_mismatch",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Annotation entry mismatch condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "annotation_expectation_invalid",
+      "class": "usage",
+      "code": "annotation_expectation_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation expectation invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "annotation_expectation_without_target",
+      "class": "usage",
+      "code": "annotation_expectation_without_target",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation expectation without target condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "annotation_flag_like_value",
       "class": "usage",
       "code": "annotation_flag_like_value",
@@ -21452,6 +21521,23 @@
         "sdk/annotations.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "annotation_text_source_conflict",
+      "class": "usage",
+      "code": "annotation_text_source_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation text source conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "sources": [
+        "sdk/runtime-input.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [],
@@ -34561,7 +34647,7 @@
       ]
     },
     {
-      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
+      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history. Rows carry their absolute index; pair edit/delete with options.expectAt to refuse a different entry.",
       "input_schema": {
         "additionalProperties": true,
         "allOf": [
@@ -34577,6 +34663,14 @@
             "not": {
               "required": [
                 "delete",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "expectAt",
                 "ifAbsent"
               ]
             }
@@ -34607,6 +34701,14 @@
             "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
+          },
+          "expectAt": {
+            "description": "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at. It compares timestamps, not entry identities.",
+            "examples": [
+              "2026-11-06T06:02:01.768Z"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "expectHash": {
             "anyOf": [
@@ -38801,7 +38903,7 @@
       "required": []
     },
     {
-      "description": "List, add, edit, or delete learnings on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing learnings.",
+      "description": "List, add, edit, or delete learnings on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing learnings; rows carry their absolute index, and options.expectAt guards edit/delete.",
       "input_schema": {
         "additionalProperties": true,
         "allOf": [
@@ -38817,6 +38919,14 @@
             "not": {
               "required": [
                 "delete",
+                "ifAbsent"
+              ]
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "expectAt",
                 "ifAbsent"
               ]
             }
@@ -38847,6 +38957,14 @@
             "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
+          },
+          "expectAt": {
+            "description": "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at. It compares timestamps, not entry identities.",
+            "examples": [
+              "2026-11-06T06:02:01.768Z"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "expectHash": {
             "anyOf": [
@@ -38912,6 +39030,123 @@
           },
           "options": {
             "type": "object"
+          },
+          "outputBudget": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
+            "examples": [
+              600,
+              1200,
+              "unbounded"
+            ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "maxItems": 10000,
+                    "type": "array"
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
           },
           "path": {
             "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
@@ -40009,7 +40244,7 @@
       "required": []
     },
     {
-      "description": "List, add, edit, or delete structured notes on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing notes.",
+      "description": "List, add, edit, or delete structured notes on a pm item. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. Omit mutation options to list existing notes; rows carry their absolute index, and options.expectAt guards edit/delete.",
       "input_schema": {
         "additionalProperties": true,
         "allOf": [
@@ -40068,6 +40303,14 @@
                 "ifAbsent"
               ]
             }
+          },
+          {
+            "not": {
+              "required": [
+                "expectAt",
+                "ifAbsent"
+              ]
+            }
           }
         ],
         "properties": {
@@ -40117,6 +40360,14 @@
           },
           "eventType": {
             "description": "For notes action, return structured context events whose top-level type matches this value.",
+            "type": "string"
+          },
+          "expectAt": {
+            "description": "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at. It compares timestamps, not entry identities.",
+            "examples": [
+              "2026-11-06T06:02:01.768Z"
+            ],
+            "minLength": 1,
             "type": "string"
           },
           "expectHash": {
@@ -44398,7 +44649,15 @@
         "modes": []
       },
       {
+        "command": "item learnings",
+        "modes": []
+      },
+      {
         "command": "item notes",
+        "modes": []
+      },
+      {
+        "command": "learnings",
         "modes": []
       },
       {
@@ -45477,7 +45736,7 @@
       ]
     },
     {
-      "budget_retention_policy": "ordered_prefix",
+      "budget_retention_policy": "ordered_suffix",
       "command": "comments",
       "dimensions": {
         "amount": {
@@ -45525,8 +45784,56 @@
       "projection_modes": []
     },
     {
-      "budget_retention_policy": "ordered_prefix",
+      "budget_retention_policy": "ordered_suffix",
       "command": "notes",
+      "dimensions": {
+        "amount": {
+          "applicable": true,
+          "canonical_option": "--output-limit",
+          "dimension": "amount",
+          "inapplicable_reason": null,
+          "legacy_aliases": [
+            {
+              "flag": "--limit",
+              "migration_hint": "--limit is a compatibility alias; prefer --output-limit <n>.",
+              "semantics": "replacement",
+              "visibility": "hidden_alias"
+            }
+          ]
+        },
+        "cost": {
+          "applicable": true,
+          "canonical_option": "--output-budget",
+          "dimension": "cost",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "encoding": {
+          "applicable": true,
+          "canonical_option": "--output-format",
+          "dimension": "encoding",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        },
+        "include": {
+          "applicable": true,
+          "canonical_option": "--output-include",
+          "dimension": "include",
+          "inapplicable_reason": null,
+          "legacy_aliases": []
+        }
+      },
+      "precedence": [
+        "canonical",
+        "legacy",
+        "intent",
+        "default"
+      ],
+      "projection_modes": []
+    },
+    {
+      "budget_retention_policy": "ordered_suffix",
+      "command": "learnings",
       "dimensions": {
         "amount": {
           "applicable": true,
@@ -59353,6 +59660,14 @@
                 "ifAbsent"
               ]
             }
+          },
+          {
+            "not": {
+              "required": [
+                "expectAt",
+                "ifAbsent"
+              ]
+            }
           }
         ],
         "properties": {
@@ -59380,6 +59695,14 @@
             "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
+          },
+          "expectAt": {
+            "description": "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at. It compares timestamps, not entry identities.",
+            "examples": [
+              "2026-11-06T06:02:01.768Z"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "expectHash": {
             "anyOf": [
@@ -59671,6 +59994,14 @@
                 "ifAbsent"
               ]
             }
+          },
+          {
+            "not": {
+              "required": [
+                "expectAt",
+                "ifAbsent"
+              ]
+            }
           }
         ],
         "properties": {
@@ -59720,6 +60051,14 @@
           },
           "eventType": {
             "description": "For notes action, return structured context events whose top-level type matches this value.",
+            "type": "string"
+          },
+          "expectAt": {
+            "description": "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at. It compares timestamps, not entry identities.",
+            "examples": [
+              "2026-11-06T06:02:01.768Z"
+            ],
+            "minLength": 1,
             "type": "string"
           },
           "expectHash": {
@@ -59984,6 +60323,14 @@
                 "ifAbsent"
               ]
             }
+          },
+          {
+            "not": {
+              "required": [
+                "expectAt",
+                "ifAbsent"
+              ]
+            }
           }
         ],
         "properties": {
@@ -60011,6 +60358,14 @@
             "description": "For comments, notes, and learnings actions, replace the annotation at this 1-based index with supplied replacement text.",
             "minimum": 1,
             "type": "integer"
+          },
+          "expectAt": {
+            "description": "For annotation edit or delete, the created_at of the entry read at that index; the write is refused with annotation_entry_mismatch when the addressed entry has a different created_at. It compares timestamps, not entry identities.",
+            "examples": [
+              "2026-11-06T06:02:01.768Z"
+            ],
+            "minLength": 1,
+            "type": "string"
           },
           "expectHash": {
             "anyOf": [
@@ -60076,6 +60431,123 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "outputBudget": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal estimated-token ceiling for a read result, or unbounded to disable the shared ceiling.",
+            "examples": [
+              600,
+              1200,
+              "unbounded"
+            ]
+          },
+          "outputCursor": {
+            "description": "Opaque continuation cursor returned when a declared row collection is compacted by the output budget.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputFormat": {
+            "description": "Universal read-result encoding selector.",
+            "enum": [
+              "json",
+              "toon"
+            ],
+            "examples": [
+              "toon",
+              "json"
+            ],
+            "type": "string"
+          },
+          "outputInclude": {
+            "description": "Comma-separated fields or sections retained by any built-in read action.",
+            "examples": [
+              "id,title,status",
+              "summary,counts"
+            ],
+            "minLength": 1,
+            "type": "string"
+          },
+          "outputLimit": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "const": "unbounded"
+              }
+            ],
+            "description": "Universal read row ceiling, or unbounded to disable the shared ceiling.",
+            "examples": [
+              10,
+              "unbounded"
+            ]
+          },
+          "outputRowContract": {
+            "description": "Include the row selector and TOON row-encoding contract on a read result.",
+            "type": "boolean"
+          },
+          "outputSession": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+                    "type": "string"
+                  },
+                  "seen_item_ids": {
+                    "items": {
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+                      "type": "string"
+                    },
+                    "maxItems": 10000,
+                    "type": "array"
+                  },
+                  "spent_tokens": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "token_budget": {
+                    "minimum": 256,
+                    "type": "integer"
+                  },
+                  "version": {
+                    "const": 1
+                  }
+                },
+                "required": [
+                  "version",
+                  "id",
+                  "token_budget",
+                  "spent_tokens",
+                  "seen_item_ids"
+                ],
+                "type": "object"
+              }
+            ],
+            "description": "Caller-carried JSON session state that enforces a token ceiling across read calls and replaces repeated item facts with resolvable context references.",
+            "examples": [
+              {
+                "id": "orientation",
+                "seen_item_ids": [],
+                "spent_tokens": 0,
+                "token_budget": 4000,
+                "version": 1
+              }
+            ]
           },
           "path": {
             "description": "Optional PM data root override for this invocation.",

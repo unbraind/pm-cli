@@ -882,6 +882,7 @@ complete -c pm -n '__fish_seen_subcommand_from notes' -l file -d 'Read entry tex
 complete -c pm -n '__fish_seen_subcommand_from notes' -l edit -d 'Replace the entry at a 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from notes' -l delete -d 'Delete the entry at a 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
+complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l expect-at -d 'Edit/delete only if the entry created_at matches' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l full-history -d 'Return complete post-mutation history'
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r

@@ -1,0 +1,25 @@
+id: pm-30tjoh
+title: "A malformed comments, notes or learnings entry in an item document crashes annotation reads with unknown_error (sortLogValues calls localeCompare on a missing text)"
+description: "Found 2026-11-08 while verifying a CodeRabbit finding on PR 1685. An item document whose comments (or notes or learnings) array holds an entry that is not an object, or an object without text, is unreadable. sortLogValues in src/core/item/item-format.ts (line 824) sorts annotation entries by created_at, then text, then author, and calls a.text.localeCompare without a guard. So pm comments <id> on such an item fails with exit 1, code unknown_error, title Unhandled error and detail \"Cannot read properties of undefined (reading 'localeCompare')\" instead of a typed item-document refusal. Reproduced on main 70c14d4a3 and on the PR head: append the line comments[2]: just-a-string,42 to a task's TOON file in a sandbox tracker, then run pm comments <id> --json. pm get <id> --json silently reports no comments for the same item, so the two read surfaces disagree on the same document. pm-b9y1 (closed) added defensive localeCompare fallbacks for missing sort fields elsewhere, but this comparator was not covered. An unknown_error is also an unclassified fault for crash reporting. Duplicate check: searched malformed comment entry localeCompare unknown_error, annotation entries not objects crash, item document comments array invalid entry. pm-b9y1, pm-qeu1 and pm-0pvk are closed and did not cover document-read normalization of annotation arrays."
+type: Issue
+status: open
+priority: 2
+tags[5]: annotations,item-format,refusals,robustness,telemetry
+created_at: "2026-11-08T02:51:36.130Z"
+updated_at: "2026-11-08T02:51:36.130Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "sortLogValues and annotation reads tolerate or refuse non-object and text-less entries with a typed error, never an unhandled TypeError; pm comments, pm notes, pm learnings and pm get agree on how a malformed annotation entry is reported; A regression spec seeds a malformed entry for each collection and asserts the typed outcome"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: medium
+repro_steps: "In a sandbox tracker, append the line comments[2]: just-a-string,42 to a task TOON file, then run pm comments <id> --json and pm get <id> --json"
+expected_result: "Annotation reads of a document with a malformed annotation entry refuse with a typed item-document error naming the item and the collection, or skip the entry with a receipt, consistently across pm comments and pm get"
+actual_result: "pm comments exits 1 with unknown_error (Cannot read properties of undefined, reading localeCompare) while pm get reports no comments"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0pvk,related,"2026-11-08T02:51:36.130Z","harness:claude-code","cli:create:dep",detected
+  pm-b9y1,related,"2026-11-08T02:51:36.130Z","harness:claude-code","cli:create:dep",detected
+  pm-hka7ep,discovered_from,"2026-11-08T02:51:36.130Z","harness:claude-code","cli:create:dep",detected
+  pm-qeu1,related,"2026-11-08T02:51:36.130Z","harness:claude-code","cli:create:dep",detected
+body: ""

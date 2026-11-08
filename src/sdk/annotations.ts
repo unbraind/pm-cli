@@ -28,6 +28,7 @@ import {
 } from "../core/store/item-store.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
+import { CANONICALLY_ORDERED_LOG_COLLECTIONS, compareLogValues } from "../core/item/item-format.js";
 import type { ItemDocument } from "../types.js";
 
 /** Common persisted shape shared by comments, notes, and learnings. */
@@ -58,7 +59,20 @@ export interface AnnotationCommandOptions {
   fullHistory?: boolean;
   /** Append only when no entry has the same resolved author and text. */
   ifAbsent?: boolean;
+  /**
+   * For `--edit`/`--delete`: the `created_at` of the entry the caller read at
+   * that index. The write is refused when the addressed entry has a different
+   * `created_at`; this compares timestamps, not entry identities.
+   */
+  expectAt?: string;
 }
+
+/**
+ * One listed annotation entry carrying its absolute one-based position in the
+ * stored collection: the address `--edit` and `--delete` accept, whatever
+ * page, limit or filter delivered the row (pm-hka7ep).
+ */
+export type IndexedAnnotationEntry<TEntry = AnnotationEntry> = { index: number } & TEntry;
 
 /** Identifies the single annotation mutation represented by a bounded response. */
 export interface AnnotationMutationReceipt {
@@ -202,7 +216,7 @@ export type AnnotationCommandResult<
 > = {
   id: string;
   count: number;
-} & Record<TKey, TEntry[]> & {
+} & Record<TKey, Array<IndexedAnnotationEntry<TEntry>>> & {
     total_count?: number;
     returned_count?: number;
     has_more?: boolean;
@@ -570,6 +584,7 @@ function assertAnnotationMessageHasTextSource(
       },
     );
   }
+  assertAnnotationExpectationTargetsEntry(config, options);
   if (config.input.mode !== "list" || options.message === undefined) {
     return;
   }
@@ -588,6 +603,85 @@ function assertAnnotationMessageHasTextSource(
   );
 }
 
+/** Refuse an entry expectation that has no addressed entry to compare against. */
+function assertAnnotationExpectationTargetsEntry(
+  config: AnnotationCommandConfig<string, AnnotationEntry>,
+  options: AnnotationCommandOptions,
+): void {
+  if (options.expectAt === undefined) return;
+  if (config.input.mode !== "edit" && config.input.mode !== "delete") {
+    throw new PmCliError(
+      `--expect-at guards an --edit or --delete of one ${config.collectionKey.replace(/s$/, "")}`,
+      EXIT_CODE.USAGE,
+      {
+        code: "annotation_expectation_without_target",
+        required:
+          "Combine --expect-at with --edit <index> or --delete <index>; omit it for list and append operations.",
+        examples: [
+          `pm ${config.collectionKey} <id> --edit <index> --expect-at <created_at> --add "<text>"`,
+          `pm ${config.collectionKey} <id> --delete <index> --expect-at <created_at>`,
+        ],
+      },
+    );
+  }
+  if (typeof options.expectAt !== "string" || options.expectAt.trim().length === 0) {
+    throw new PmCliError("--expect-at must be the non-empty created_at timestamp of the entry you read", EXIT_CODE.USAGE, {
+      code: "annotation_expectation_invalid",
+      required: "Pass the created_at value of the row you read at that index, as a string.",
+    });
+  }
+}
+
+/**
+ * Refuse an edit or delete whose addressed entry is not the one the caller
+ * read (pm-hka7ep). The refusal names every index whose entry carries the
+ * expected timestamp, so the caller can retarget without re-listing.
+ */
+function assertExpectedAnnotationEntry(
+  id: string,
+  entries: readonly AnnotationEntry[],
+  arrayIndex: number,
+  config: AnnotationCommandConfig<string, AnnotationEntry>,
+  expectAt: string | undefined,
+): void {
+  if (expectAt === undefined) return;
+  const actual = entries[arrayIndex]!.created_at;
+  if (actual === expectAt) return;
+  const matchingIndexes = entries.flatMap((entry, position) =>
+    entry.created_at === expectAt ? [position + 1] : [],
+  );
+  const noun = config.collectionKey.replace(/s$/, "");
+  const action = config.input.mode === "delete" ? "--delete" : "--edit";
+  const entryIndex = arrayIndex + 1;
+  const retarget =
+    matchingIndexes.length === 1
+      ? ` The ${noun} created at ${expectAt} is at index ${matchingIndexes[0]}.`
+      : matchingIndexes.length > 1
+        ? ` ${matchingIndexes.length} ${config.collectionKey} were created at ${expectAt}: indexes ${matchingIndexes.join(", ")}.`
+        : ` No ${noun} on ${id} was created at ${expectAt}.`;
+  throw new PmCliError(
+    `${noun.charAt(0).toUpperCase()}${noun.slice(1)} ${entryIndex} on ${id} was created at ${actual}, not ${expectAt}; refusing ${action} of an entry the caller did not read. Nothing was written.${retarget}`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "annotation_entry_mismatch",
+      item_id: id,
+      details: {
+        collection: config.collectionKey,
+        entry_index: entryIndex,
+        expected_created_at: expectAt,
+        actual_created_at: actual,
+        matching_indexes: matchingIndexes,
+      },
+      required: `Address the ${noun} by the index its listing row reports and keep --expect-at set to that row's created_at. When several indexes share the timestamp, inspect those rows before retrying, because the guard compares timestamps, not entry identities.`,
+      why: "A listing page's position or count is not an entry address; only the row's index is, and the expectation checks that the entry at that index still carries the created_at that was read.",
+      examples: [
+        `pm ${config.collectionKey} ${id} --limit 5`,
+        `pm ${config.collectionKey} ${id} ${action} ${matchingIndexes.length === 1 ? matchingIndexes[0] : "<index>"} --expect-at ${expectAt}${action === "--edit" ? ' --add "<text>"' : ""}`,
+      ],
+    },
+  );
+}
+
 /** Append one annotation entry or return the matching entry for an idempotent retry. */
 function appendAnnotationEntry<
   TKey extends string,
@@ -599,7 +693,7 @@ function appendAnnotationEntry<
   text: string,
   ifAbsent: boolean,
   createEntry: AnnotationCommandConfig<TKey, TEntry>["createEntry"],
-): { changedFields: string[]; entryIndex: number } {
+): { changedFields: string[]; written: readonly TEntry[]; position: number } {
   const entries = readAnnotationEntries<TEntry>(
     document.metadata,
     collectionKey,
@@ -610,11 +704,32 @@ function appendAnnotationEntry<
       )
     : -1;
   if (existingIndex >= 0) {
-    return { changedFields: [], entryIndex: existingIndex + 1 };
+    return { changedFields: [], written: entries, position: existingIndex };
   }
   entries.push(createEntry({ created_at: nowIso(), author, text }));
   document.metadata[collectionKey] = entries as never;
-  return { changedFields: [collectionKey], entryIndex: entries.length };
+  return { changedFields: [collectionKey], written: entries, position: entries.length - 1 };
+}
+
+/**
+ * The one-based address of the entry at `position` of the collection as
+ * written, after the store's canonical ordering (created_at, then text, then
+ * author, stable). An entry appended behind a later-stamped one, or an edit
+ * that changes text among entries sharing a created_at, moves; following the
+ * written position through the same stable sort tracks exactly that entry,
+ * even among identical duplicates.
+ */
+function canonicalAnnotationAddress(
+  collectionKey: string,
+  written: readonly AnnotationEntry[],
+  position: number,
+): number {
+  // A custom SDK collection is stored in write order, so its push position is its address.
+  if (!CANONICALLY_ORDERED_LOG_COLLECTIONS.has(collectionKey)) return position + 1;
+  const order = written
+    .map((_entry, index) => index)
+    .sort((left, right) => compareLogValues(written[left]!, written[right]!) || left - right);
+  return order.indexOf(position) + 1;
 }
 
 /** Implements run annotation command for the public runtime surface of this module. */
@@ -687,6 +802,7 @@ export async function runAnnotationCommand<
             entries.length,
             config.collectionKey,
           );
+          assertExpectedAnnotationEntry(id, entries, arrayIndex, config, options.expectAt);
           assertAnnotationEntryMutable(entries[arrayIndex], "deleted");
           entries.splice(arrayIndex, 1);
           document.metadata[config.collectionKey] = entries as never;
@@ -727,6 +843,7 @@ export async function runAnnotationCommand<
   if (config.input.mode === "edit") {
     const op = config.editOp ?? config.op;
     let result: Awaited<ReturnType<typeof mutateItem>>;
+    let editedAddress = 0;
     try {
       result = await mutateItem({
         pmRoot,
@@ -747,6 +864,7 @@ export async function runAnnotationCommand<
             entries.length,
             config.collectionKey,
           );
+          assertExpectedAnnotationEntry(id, entries, arrayIndex, config, options.expectAt);
           const existing = entries[arrayIndex];
           assertAnnotationEntryMutable(existing, "edited");
           entries[arrayIndex] = {
@@ -754,6 +872,7 @@ export async function runAnnotationCommand<
             text,
             edited_at: nowIso(),
           } as TEntry;
+          editedAddress = canonicalAnnotationAddress(config.collectionKey, entries, arrayIndex);
           document.metadata[config.collectionKey] = entries as never;
           return { changedFields: [config.collectionKey] };
         },
@@ -765,6 +884,8 @@ export async function runAnnotationCommand<
       result.item,
       config.collectionKey,
     );
+    // An edit can reorder entries that share a created_at (the store orders by text next).
+    const editedIndex = editedAddress;
     return renderAnnotationResult(
       result.item.id,
       config.collectionKey,
@@ -773,8 +894,8 @@ export async function runAnnotationCommand<
       options.includeMeta === true,
       {
         action: "edit",
-        entryIndex: config.input.index as number,
-        entry: allEntries[(config.input.index as number) - 1],
+        entryIndex: editedIndex,
+        entry: allEntries[editedIndex - 1],
       },
       options.fullHistory === true,
     );
@@ -802,7 +923,7 @@ export async function runAnnotationCommand<
           options.ifAbsent === true,
           config.createEntry,
         );
-        entryIndex = appended.entryIndex;
+        entryIndex = canonicalAnnotationAddress(config.collectionKey, appended.written, appended.position);
         return { changedFields: appended.changedFields };
       },
     });
@@ -900,6 +1021,34 @@ function renderAnnotationMutationReceipts<TEntry extends AnnotationEntry>(
   };
 }
 
+/** Attach the absolute position first, so it leads every row and no stored field can override it. */
+function indexAnnotationEntry<TEntry>(
+  entry: TEntry,
+  index: number,
+): IndexedAnnotationEntry<TEntry> {
+  // A malformed stored entry (not an object) is delivered as stored, never
+  // spread into character-numbered keys; typed refusal is pm-30tjoh.
+  if (Object.prototype.toString.call(entry) !== "[object Object]") {
+    return entry as IndexedAnnotationEntry<TEntry>;
+  }
+  const indexed = { index, ...entry };
+  indexed.index = index;
+  return indexed;
+}
+
+/**
+ * Index only the retained newest-tail slice, numbering each row by its
+ * position in the complete collection, so a short page of a long history
+ * clones only what it delivers.
+ */
+function indexRetainedAnnotationEntries<TEntry>(
+  allEntries: readonly TEntry[],
+  retained: readonly TEntry[],
+): Array<IndexedAnnotationEntry<TEntry>> {
+  const offset = allEntries.length - retained.length;
+  return retained.map((entry, position) => indexAnnotationEntry(entry, offset + position + 1));
+}
+
 function renderAnnotationResult<
   TKey extends string,
   TEntry extends AnnotationEntry,
@@ -914,13 +1063,16 @@ function renderAnnotationResult<
 ): AnnotationCommandResult<TKey, TEntry> {
   const entries =
     mutation === undefined || fullHistory
-      ? limitAnnotationEntries(
+      ? indexRetainedAnnotationEntries(
           allEntries,
-          mutation !== undefined && fullHistory ? undefined : limit,
+          limitAnnotationEntries(
+            allEntries,
+            mutation !== undefined && fullHistory ? undefined : limit,
+          ),
         )
       : mutation.entry === undefined
         ? []
-        : [mutation.entry];
+        : [indexAnnotationEntry(mutation.entry, mutation.entryIndex)];
   const historyOmitted =
     mutation !== undefined && entries.length < allEntries.length;
   return {

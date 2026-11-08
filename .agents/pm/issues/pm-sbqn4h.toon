@@ -1,0 +1,23 @@
+id: pm-sbqn4h
+title: "MCP pm_comments lists only the newest 20 comments by default: the backward output cursor stops at that producer page and the last page reports has_more without a continuation"
+description: "Found 2026-11-08 by the CodeRabbit review of PR 1685. A pm_comments MCP listing without limit or full is bounded by the producer to the newest 20 comments (runMcpCommentsAction sets limit 20 and includeMeta), with total_count and has_more true when more exist. A universal output cursor pages only within that producer page. On an item with more than 20 comments, following next_cursor backwards under a small outputBudget therefore stops after the 20th-newest comment. The last page still reports has_more true (from the producer) but carries no next_cursor, so an agent cannot tell how to reach older comments except by restarting with options.limit or options.full true, which the tool description mentions. Expected: when the producer page is exhausted, the envelope names the producer continuation, for example a cursor or a suggested limit for the next older window, so has_more true never arrives without an executable continuation. Duplicate check: searched MCP comments default 20 has_more continuation producer page. pm-gh1679 (open) owns a producer cursor for item history, which is the analogous design, and pm-8s53lj (closed) made the output cursor page backwards within the producer page."
+type: Issue
+status: open
+priority: 3
+tags[5]: agent-ux,annotations,continuation,mcp,read-output
+created_at: "2026-11-08T03:54:47.662Z"
+updated_at: "2026-11-08T03:54:47.662Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "An MCP comments listing whose producer page is exhausted names a continuation to the next older window, or reports has_more only when a continuation is present; A spec drives tools/call on more than 20 comments and reaches the oldest comment by following continuations alone"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: low
+repro_steps: "Through MCP tools/call, list pm_comments on an item with more than 20 comments with a small outputBudget and follow next_cursor until it disappears, then read has_more"
+expected_result: has_more true always comes with an executable continuation that reaches older comments beyond the producer page
+actual_result: After the newest 20 comments the page reports has_more true and no next_cursor; only restarting with options.limit or options.full reaches older comments
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8s53lj,discovered_from,"2026-11-08T03:54:47.662Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1679,related,"2026-11-08T03:54:47.662Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -279,9 +279,10 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   "close-many": 72,
   delete: 24,
   append: 25,
-  comments: 31,
-  notes: 35,
-  learnings: 31,
+  // pm-hka7ep: one --expect-at entry guard for --edit/--delete; no spare allowance.
+  comments: 32,
+  notes: 36,
+  learnings: 32,
   files: 39,
   docs: 30,
   deps: 32,

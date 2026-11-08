@@ -82,17 +82,18 @@ export function sliceReadOutputRowCollection(
   result: Record<string, unknown>,
   rowPath: string,
   offset: number,
+  end?: number,
 ): Record<string, unknown> {
   const collection = readOutputContinuationRowCollections(result).find(
     (entry) => entry.path === rowPath,
   );
   if (!collection) return result;
   const replacement = Array.isArray(collection.value)
-    ? collection.value.slice(offset)
-    : Object.fromEntries(Object.entries(collection.value).slice(offset));
+    ? collection.value.slice(offset, end)
+    : Object.fromEntries(Object.entries(collection.value).slice(offset, end));
   const sliced = replaceValueAtPath(result, rowPath, replacement);
   if (isRecord(sliced.summary) && isRecord(sliced.summary.focus_row_states) && typeof sliced.summary.focus_row_states[rowPath] === "string") {
-    sliced.summary = { ...sliced.summary, focus_row_states: { ...sliced.summary.focus_row_states, [rowPath]: sliced.summary.focus_row_states[rowPath].slice(offset) } };
+    sliced.summary = { ...sliced.summary, focus_row_states: { ...sliced.summary.focus_row_states, [rowPath]: sliced.summary.focus_row_states[rowPath].slice(offset, end) } };
   }
   refreshReadOutputDeliveredCounts(sliced);
   return sliced;
@@ -222,10 +223,15 @@ export function mapReadOutputRows(
   return projected;
 }
 
-/** Bound every declared row collection independently and report truncation. */
+/**
+ * Bound every declared row collection independently and report truncation.
+ * A path named by `retainsTail` keeps its newest (last) rows instead of its
+ * first rows, matching the producer's own latest-N `--limit`.
+ */
 export function boundReadOutputRows(
   result: Record<string, unknown>,
   amount: number,
+  retainsTail: (path: string) => boolean = () => false,
 ): { result: Record<string, unknown>; truncated: boolean } {
   let projected = result;
   let truncated = false;
@@ -235,9 +241,11 @@ export function boundReadOutputRows(
       : Object.entries(collection.value);
     if (entries.length <= amount) continue;
     truncated = true;
+    const start = retainsTail(collection.path) ? entries.length - amount : 0;
+    const kept = entries.slice(start, start + amount);
     const replacement = Array.isArray(collection.value)
-      ? entries.slice(0, amount)
-      : Object.fromEntries(entries.slice(0, amount) as [string, unknown][]);
+      ? kept
+      : Object.fromEntries(kept as [string, unknown][]);
     projected = replaceValueAtPath(projected, collection.path, replacement);
   }
   return { result: projected, truncated };

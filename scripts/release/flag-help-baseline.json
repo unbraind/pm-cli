@@ -267,21 +267,21 @@
     },
     {
       "command": "comments",
-      "help_bytes": 1084,
-      "estimated_tokens": 271,
-      "maximum_tokens": 271
+      "help_bytes": 1156,
+      "estimated_tokens": 289,
+      "maximum_tokens": 289
     },
     {
       "command": "notes",
-      "help_bytes": 1213,
-      "estimated_tokens": 304,
-      "maximum_tokens": 304
+      "help_bytes": 1288,
+      "estimated_tokens": 322,
+      "maximum_tokens": 322
     },
     {
       "command": "learnings",
-      "help_bytes": 1033,
-      "estimated_tokens": 259,
-      "maximum_tokens": 259
+      "help_bytes": 1105,
+      "estimated_tokens": 277,
+      "maximum_tokens": 277
     },
     {
       "command": "files",

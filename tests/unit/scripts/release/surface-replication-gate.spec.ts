@@ -796,6 +796,61 @@ describe("surface replication gate", () => {
     expect(report.applied_waivers).toHaveLength(1);
   });
 
+  it("applies a scoped waiver only to the check it names", async () => {
+    const root = await fixtureRoot();
+    await writeFile(
+      path.join(root, "src/sdk/a.ts"),
+      "sharedContract\n",
+      "utf8",
+    );
+    await writeFile(path.join(root, "src/cli/b.ts"), "drifted\n", "utf8");
+    const waived = (scope: "unchanged" | "missing") => {
+      const config = declaration();
+      config.waivers.push({
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        scope,
+        pm_item: "pm-waiver",
+        reason: "Temporary fixture waiver scoped to one check.",
+        expires_on: "2026-08-08",
+      });
+      return validateSurfaceReplication(config, {
+        repoRoot: root,
+        changedFiles: ["src/sdk/a.ts"],
+        today: "2026-08-07",
+      });
+    };
+
+    const unchangedOnly = await waived("unchanged");
+    expect(unchangedOnly.ok).toBe(false);
+    expect(unchangedOnly.violations).toEqual([
+      expect.stringMatching(/^set:fixture-surface:member:src\/cli\/b\.ts:missing:/u),
+    ]);
+    const missingOnly = await waived("missing");
+    expect(missingOnly.ok).toBe(false);
+    expect(missingOnly.violations).toEqual(["set:fixture-surface:member:src/cli/b.ts:unchanged"]);
+
+    // Two scoped waivers with the same owner and expiry are both reported.
+    const config = declaration();
+    for (const scope of ["unchanged", "missing"] as const) {
+      config.waivers.push({
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        scope,
+        pm_item: "pm-waiver",
+        reason: "Temporary fixture waiver scoped to one check.",
+        expires_on: "2026-08-08",
+      });
+    }
+    const both = await validateSurfaceReplication(config, {
+      repoRoot: root,
+      changedFiles: ["src/sdk/a.ts"],
+      today: "2026-08-07",
+    });
+    expect(both.ok).toBe(true);
+    expect(both.applied_waivers.map((waiver: { scope?: string }) => waiver.scope).sort()).toEqual(["missing", "unchanged"]);
+  });
+
   it("fails when one refusal surface changes its shared code alone", async () => {
     const root = await fixtureRoot();
     await writeFile(

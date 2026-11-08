@@ -15,6 +15,7 @@ import {
 import type { Comment } from "../types/index.js";
 import {
   type AnnotationMutationReceipt,
+  type IndexedAnnotationEntry,
   type AnnotationOmissionReceipt,
   assertAnnotationStdinTransportAvailable,
   isErrnoError,
@@ -42,6 +43,8 @@ export interface CommentsCommandOptions {
   fullHistory?: boolean;
   /** Append only when no comment has the same resolved author and text. */
   ifAbsent?: boolean;
+  /** For edit/delete: the created_at of the comment read at that index. Compares timestamps, not identities: an entry with a different created_at is refused, one sharing the timestamp is not. */
+  expectAt?: string;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -55,7 +58,7 @@ export interface CommentsResult {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports comments for this contract. */
-  comments: Comment[];
+  comments: Array<IndexedAnnotationEntry<Comment>>;
   /** Value that configures or reports count for this contract. */
   count: number;
   /** Number of total entries represented by this result. */

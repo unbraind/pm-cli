@@ -20,6 +20,11 @@ import {
   sliceReadOutputRowCollection,
 } from "../read-output-rows.js";
 
+import {
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
+  readOutputRetainsTail,
+} from "./tail-retention.js";
+
 const MAX_READ_OUTPUT_CURSOR_LENGTH = 4096;
 
 const HEALTH_TELEMETRY_VOLATILE_DETAIL_FIELDS = Object.freeze([
@@ -72,6 +77,37 @@ export const PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES: Readonly<
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Recount a tail-retention surface's declared delivered-row counters from the
+ * rows actually delivered (notes report structured_event_count for the
+ * returned projection). Delivered rows are a contiguous newest tail ending at
+ * `end` of the producer's rows, so the unprojected producer rows are counted:
+ * they keep the classification fields that a field projection may drop.
+ */
+export function refreshReadOutputDeliveredRowCounters(
+  result: Record<string, unknown>,
+  command: PmReadOutputSurface,
+  producer: Record<string, unknown> = result,
+  end?: number,
+): void {
+  const policy = Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
+    ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]
+    : undefined;
+  if (policy?.delivered_row_counters === undefined) return;
+  const path = policy.paths[0]!;
+  const rows = result[path];
+  const producerRows = producer[path];
+  if (!Array.isArray(rows) || !Array.isArray(producerRows)) return;
+  const stop = end ?? producerRows.length;
+  const delivered = producerRows.slice(Math.max(0, stop - rows.length), stop);
+  for (const counter of policy.delivered_row_counters) {
+    if (typeof result[counter.key] !== "number") continue;
+    result[counter.key] = delivered.filter(
+      (row) => isRecord(row) && row[counter.field] === counter.equals,
+    ).length;
+  }
 }
 
 function normalizeReadOutputFingerprintValue(value: unknown): unknown {
@@ -166,6 +202,7 @@ export function encodeReadOutputContinuationCursor(
       o: cursor.offset,
       n: cursor.total_rows,
       f: cursor.fingerprint,
+      ...(cursor.direction === "backward" ? { d: "b" } : {}),
     }),
     "utf8",
   ).toString("base64url");
@@ -174,6 +211,11 @@ export function encodeReadOutputContinuationCursor(
 /** Validate command identities without requiring an extension to be activated merely to decode a cursor. */
 function isReadOutputCursorCommand(value: unknown): boolean {
   return typeof value === "string" && (resolveReadOutputSurface(value) === value || /^extension:\S(?:[^\r\n]*\S)?$/u.test(value));
+}
+
+/** A cursor is forward when it carries no direction, and backward only as `b`. */
+function isReadOutputCursorDirection(value: unknown): boolean {
+  return value === undefined || value === "b";
 }
 
 /** Decode and validate one universal declared-row continuation cursor. */
@@ -204,7 +246,8 @@ export function decodeReadOutputContinuationCursor(
     !Number.isSafeInteger(candidate.n) ||
     (candidate.n as number) < 1 ||
     typeof candidate.f !== "string" ||
-    candidate.f.length === 0
+    candidate.f.length === 0 ||
+    !isReadOutputCursorDirection(candidate.d)
   ) {
     throw new PmCliError(
       "The read-output continuation cursor is malformed or unsupported.",
@@ -219,6 +262,7 @@ export function decodeReadOutputContinuationCursor(
     offset: candidate.o as number,
     total_rows: candidate.n as number,
     fingerprint: candidate.f as string,
+    ...(candidate.d === "b" ? { direction: "backward" as const } : {}),
   };
 }
 
@@ -267,10 +311,14 @@ export function applyReadOutputContinuation(
       ? collection.value.length
       : Object.keys(collection.value).length
     : 0;
+  // A cursor issued under the other retention direction would page the wrong
+  // end of the collection, so it is as stale as a changed snapshot.
+  const backward = readOutputRetainsTail(command, cursor.path);
   if (
     !collection ||
     totalRows !== cursor.total_rows ||
     cursor.offset > totalRows ||
+    backward !== (cursor.direction === "backward") ||
     readOutputCollectionFingerprint(cursor.path, collection.value, command) !==
       cursor.fingerprint
   ) {
@@ -280,5 +328,16 @@ export function applyReadOutputContinuation(
       { code: "read_output_cursor_stale" },
     );
   }
-  return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
+  if (!backward) return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
+  // A replayed annotation page reports the rows it delivers even when no
+  // further compaction runs to recount them.
+  const sliced = sliceReadOutputRowCollection(result, cursor.path, 0, cursor.offset);
+  for (const key of ["count", "returned_count"] as const) {
+    if (typeof sliced[key] === "number") sliced[key] = cursor.offset;
+  }
+  // An older page still reports the complete collection beside its count; a
+  // producer total already counts it, otherwise the cursor's snapshot does.
+  const totalKey = PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]!.total_key;
+  if (typeof sliced[totalKey] !== "number") sliced[totalKey] = cursor.total_rows;
+  return sliced;
 }

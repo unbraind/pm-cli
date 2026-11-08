@@ -1,0 +1,36 @@
+id: pm-dwy8kb
+title: Restore package headroom by excluding the generated refusal-closure census from the npm tarball
+description: "Found 2026-11-08 when PR 1685 failed Gates (static) at the package artifact gate: unpacked_size 20,011,469 > 20,000,000. A clean packlist projection of main 70c14d4a3 is 19,978,963 B, so main had 21,037 B of headroom left. The PR's legitimate additions (indexed annotation rows, newest-tail retention, the --expect-at guard, docs and the SDK surface acknowledgment) add about 32.5 KB across the tsc emit, both bundle chunk sets, declarations and docs. The ceiling has never been raised since it was introduced on 2026-08-03, and both earlier tranches (pm-dg68kr and the source-map exclusion) restored headroom by pruning shipped content consumers do not need. The largest such remaining file is docs/generated/REFUSAL_CLOSURE_CENSUS.md (42,496 B packed). It is generated maintainer gate evidence (the refusal-closure census of pm-f05lsg, written by scripts/generate-agent-capability-surfaces.mjs and read only by repository gates), the same class as the docs/ecosystem-review-*.json data already excluded from npm. Structural growth sources stay with pm-998juj: CHANGELOG.md (526,799 B, growing with every release) and dist/sdk/public-surface.json (2,027,246 B, whose entrypoints repeat signatures per subpath and whose breaking_acknowledgements grow with every SDK change). Duplicate check: searched package size headroom, artifact ceiling, unpacked size. pm-998juj is the open owner and pm-dg68kr the closed previous tranche."
+type: Task
+status: closed
+priority: 1
+tags[4]: artifact,npm,package-size,release
+created_at: "2026-11-08T01:56:43.025Z"
+updated_at: "2026-11-08T02:02:54.293Z"
+closed_at: "2026-11-08T02:02:53.600Z"
+completed_at: "2026-11-08T02:02:53.600Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "docs/generated/REFUSAL_CLOSURE_CENSUS.md is excluded from the npm files list and the packaged pages link to it by canonical GitHub URL with the exclusion stated beside the link; The package artifact gate passes on the PR 1685 head with the 20,000,000 B ceiling unchanged, and the restored headroom is recorded; The docs reachability exception for the census names its reason, and the docs gate passes"
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: "package.json files now excludes docs/generated/REFUSAL_CLOSURE_CENSUS.md, the generated repository-only refusal-closure gate evidence, the same class as the already-excluded docs/ecosystem-review-*.json. docs/README.md and docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md link it by canonical GitHub URL and state the exclusion beside the link, as AGENTS.md prescribes for packaged pages. scripts/release/docs-reachability-exceptions.json declares the census with its reason, because no relative link reaches it any more. The 20,000,000 B base ceiling is unchanged."
+expected_result: "The package artifact gate passes on the PR 1685 head with the ceiling unchanged, and the docs gate passes"
+actual_result: "The clean packlist projection measures 19,969,081 B against 20,000,000 B (the failing head measured 20,011,469 B in CI), and package-artifact-gate reports ok. docs-skills-gate passes. The docs-skills-gate, refusal-closure-gate, generate-agent-capability-surfaces, package-distribution and release-readiness-runtime specs pass (181 tests)."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-8s53lj,discovered_from,"2026-11-08T01:56:43.025Z","harness:claude-code","cli:create:dep",detected
+  pm-998juj,implements,"2026-11-08T01:56:43.025Z","harness:claude-code","cli:create:dep",detected
+  pm-dg68kr,related,"2026-11-08T01:56:43.025Z","harness:claude-code","cli:create:dep",detected
+  pm-f05lsg,related,"2026-11-08T01:56:43.025Z","harness:claude-code","cli:create:dep",detected
+files[4]{path,scope}:
+  docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
+  docs/README.md,project
+  package.json,project
+  scripts/release/docs-reachability-exceptions.json,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts tests/unit/scripts/package-distribution.spec.ts,project,"harness:claude-code","2026-11-08T02:02:42.208Z",local_mutation,fix/annotation-collection-reads
+docs[1]{path,scope}:
+  docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
+close_reason: "Done: excluded the generated refusal-closure census from the npm tarball, restoring about 31 KB of package headroom with the ceiling unchanged"
+body: ""

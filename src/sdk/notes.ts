@@ -17,6 +17,7 @@ import type {
 } from "../types/index.js";
 import {
   type AnnotationMutationReceipt,
+  type IndexedAnnotationEntry,
   type AnnotationOmissionReceipt,
   limitAnnotationEntries,
   parseAnnotationTextInput,
@@ -50,6 +51,8 @@ export interface NotesCommandOptions {
   fullHistory?: boolean;
   /** Append only when no note has the same resolved author and text. */
   ifAbsent?: boolean;
+  /** For edit/delete: the created_at of the note read at that index. Compares timestamps, not identities: an entry with a different created_at is refused, one sharing the timestamp is not. */
+  expectAt?: string;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -63,7 +66,7 @@ export interface NotesResult {
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports notes for this contract. */
-  notes: LogNote[];
+  notes: Array<IndexedAnnotationEntry<LogNote>>;
   /** Value that configures or reports count for this contract. */
   count: number;
   /** Total entries before limit and structured-event filters. */
@@ -127,6 +130,17 @@ function parseSinceTimestamp(value: string | undefined): number | undefined {
     );
   }
   return timestamp;
+}
+
+/**
+ * A stored note's fields, read defensively: a malformed stored entry that is
+ * not an object (typed refusal is pm-30tjoh) is delivered as stored and must
+ * not crash the event filters.
+ */
+function storedNoteFields(entry: unknown): Partial<LogNote> {
+  return Object.prototype.toString.call(entry) === "[object Object]"
+    ? (entry as Partial<LogNote>)
+    : {};
 }
 
 /** Implements run notes for the public runtime surface of this module. */
@@ -213,14 +227,15 @@ export async function runNotes(
     },
   );
   const eventType = options.eventType?.trim();
-  const matching = result.notes.filter((note) => {
+  const matching = result.notes.filter((entry) => {
+    const note = storedNoteFields(entry);
     const isStructured = [
       note.format === "json",
       note.data !== undefined,
     ].every(Boolean);
     const matchesSince = [
       sinceTimestamp === undefined,
-      Date.parse(note.created_at) >=
+      Date.parse(note.created_at ?? "") >=
         (sinceTimestamp ?? Number.POSITIVE_INFINITY),
     ].includes(true);
     const matchesType = [!eventType, note.event_type === eventType].includes(
@@ -235,7 +250,7 @@ export async function runNotes(
     ? limitAnnotationEntries(matching, limit)
     : matching;
   const structuredEventCount = filtered.filter(
-    (note) => note.format === "json",
+    (entry) => storedNoteFields(entry).format === "json",
   ).length;
   return {
     ...result,

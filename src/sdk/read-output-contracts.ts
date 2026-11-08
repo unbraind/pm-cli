@@ -53,14 +53,27 @@ import {
   encodeReadOutputContinuationCursor,
   prioritizeAssuranceAssertions,
   readOutputCollectionFingerprint,
+  refreshReadOutputDeliveredRowCounters,
 } from "./read-output/continuation.js";
+import {
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
+  readOutputRetainsTail,
+} from "./read-output/tail-retention.js";
 export {
   decodeReadOutputContinuationCursor,
   encodeReadOutputContinuationCursor,
   PM_READ_OUTPUT_CONTINUATION_FINGERPRINT_POLICIES,
   readOutputCollectionFingerprint,
 } from "./read-output/continuation.js";
+export {
+  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
+  readOutputRetainsTail,
+} from "./read-output/tail-retention.js";
 export type { PmReadOutputContinuationFingerprintPolicy } from "./read-output/continuation.js";
+export type {
+  PmReadOutputDeliveredRowCounter,
+  PmReadOutputTailRetentionPolicy,
+} from "./read-output/tail-retention.js";
 import {
   applyReadOutputSessionReferences,
   attachReadOutputSessionReceipt,
@@ -148,8 +161,11 @@ export interface PmReadOutputSurfaceContract {
   dimensions: Record<PmReadOutputDimension, PmReadOutputDimensionContract>;
   /** Deterministic precedence from strongest caller declaration to fallback. */
   precedence: readonly ["canonical", "legacy", "intent", "default"];
-  /** Stable policy used before budget compaction selects retained rows. */
-  budget_retention_policy: "ordered_prefix" | "verdict_priority";
+  /**
+   * Stable policy used before budget compaction selects retained rows:
+   * `ordered_suffix` surfaces keep their newest (last) rows and page backwards.
+   */
+  budget_retention_policy: "ordered_prefix" | "ordered_suffix" | "verdict_priority";
   /** Exact command-local whole-result modes accepted by `outputInclude`. */
   projection_modes?: readonly string[];
 }
@@ -294,12 +310,17 @@ export interface PmReadOutputCursorEnvelope {
   command: PmReadOutputSurface;
   /** Dot-delimited declared row path being continued. */
   path: string;
-  /** Zero-based index of the first withheld row. */
+  /**
+   * Forward: zero-based index of the first withheld row. Backward: number of
+   * older rows still withheld, so the next page ends just before this index.
+   */
   offset: number;
   /** Stable pre-projection denominator for the row collection. */
   total_rows: number;
   /** Stable identity fingerprint used to refuse stale continuation. */
   fingerprint: string;
+  /** `backward` for a newest-tail collection whose next page holds older rows; absent means forward. */
+  direction?: "backward";
 }
 
 /** Result returned when the requested cost ceiling cannot fit useful content. */
@@ -446,7 +467,11 @@ function buildSurfaceContract(
     dimensions,
     precedence: READ_OUTPUT_PRECEDENCE,
     budget_retention_policy:
-      command === "assurance" ? "verdict_priority" : "ordered_prefix",
+      command === "assurance"
+        ? "verdict_priority"
+        : Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
+          ? "ordered_suffix"
+          : "ordered_prefix",
     projection_modes: Object.freeze([
       ...readOutputIncludeModeOptionsForSurface(command).keys(),
     ]),
@@ -497,8 +522,11 @@ const CANONICAL_OPTION_KEYS = [
 const HYBRID_READ_MUTATION_KEYS: Readonly<
   Partial<Record<PmReadOutputSurface, readonly string[]>>
 > = {
-  comments: ["add", "body", "stdin", "file", "edit", "delete"],
-  notes: ["add", "addJson", "stdin", "file", "edit", "delete"],
+  // Text aliases are listed too, so the guard holds even for a caller whose
+  // argv was not canonicalized to --add before parsing.
+  comments: ["add", "body", "comment", "text", "stdin", "file", "edit", "delete"],
+  notes: ["add", "note", "text", "addJson", "stdin", "file", "edit", "delete"],
+  learnings: ["add", "learning", "text", "stdin", "file", "edit", "delete"],
   files: ["add", "addGlob", "remove", "migrate", "apply", "note"],
   docs: ["add", "addGlob", "remove", "migrate", "note"],
   "package-catalog": [
@@ -1256,12 +1284,27 @@ function applyIncludeProjection(
 function applyAmountBound(
   result: Record<string, unknown>,
   amount: number | "unbounded",
+  command: PmReadOutputSurface,
+  collectionsBeforeBound: ReadonlyMap<string, ReadOutputCollectionBeforeBudget>,
 ): Record<string, unknown> {
   if (amount === "unbounded") return result;
-  const { result: bounded, truncated } = boundReadOutputRows(result, amount);
+  const { result: bounded, truncated } = boundReadOutputRows(
+    result,
+    amount,
+    (path) => readOutputRetainsTail(command, path),
+  );
   if (!truncated) return bounded;
   bounded.has_more = true;
   bounded.truncated = true;
+  // Totals come from the captured snapshot, so a replayed slice still reports
+  // the complete collection rather than the slice it was cut from.
+  attachTailRetentionTotal(
+    bounded,
+    command,
+    [...collectionsBeforeBound.entries()].flatMap(([path, before]) =>
+      before.rows > amount ? [{ path, total_rows: before.totalRows }] : [],
+    ),
+  );
   if (typeof bounded.count === "number") {
     const activeRowKey = isRecord(bounded.projection)
       ? bounded.projection.row_key
@@ -1270,6 +1313,11 @@ function applyAmountBound(
       typeof activeRowKey === "string" && Array.isArray(bounded[activeRowKey])
         ? bounded[activeRowKey].length
         : countReadOutputRows(bounded);
+  }
+  // A producer page counter (annotation includeMeta, aggregate groups) must
+  // describe the rows actually delivered, as count does.
+  if (typeof bounded.returned_count === "number") {
+    bounded.returned_count = countReadOutputRows(bounded);
   }
   bounded.applied_bound = {
     kind: "output_limit",
@@ -1484,7 +1532,12 @@ function projectReadOutputRows(
     options,
   );
   if (resolved.amount?.source === "canonical") {
-    projected = applyAmountBound(projected, resolved.amount.value);
+    projected = applyAmountBound(
+      projected,
+      resolved.amount.value,
+      resolved.command,
+      continuationState.collectionsBeforeBudget,
+    );
     // Explicit terminal caps remain deliberate partial reads. An advertised
     // producer cursor, however, must never jump past rows removed here.
     if (continuationState.cursorContinuesExistingPage) {
@@ -1498,6 +1551,7 @@ function projectReadOutputRows(
     }
   }
   refreshReadOutputDeliveredCounts(projected, continuationSource);
+  refreshTailRetentionRowCounters(projected, resolved.command, continuationState);
   return {
     projected:
       session === undefined
@@ -1726,6 +1780,91 @@ function canReturnReadOutputUnchanged(
 }
 
 /**
+ * Report the complete size of a withheld newest-tail collection beside its
+ * page `count` (pm-hka7ep), so a caller never mistakes the page for the set.
+ * An existing producer total is kept, because it counts the whole collection.
+ */
+function attachTailRetentionTotal(
+  projected: Record<string, unknown>,
+  command: PmReadOutputSurface,
+  continuations: readonly { path: string; total_rows: number }[],
+): void {
+  const policy = Object.hasOwn(PM_READ_OUTPUT_TAIL_RETENTION_POLICIES, command)
+    ? PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]
+    : undefined;
+  const withheld = continuations.find((entry) => policy?.paths.includes(entry.path));
+  // A producer total already counts the complete collection; a continuation
+  // total may describe only the producer's own page (MCP lists 20 by default).
+  if (policy !== undefined && withheld !== undefined && typeof projected[policy.total_key] !== "number") {
+    projected[policy.total_key] = withheld.total_rows;
+  }
+}
+
+/**
+ * Recount delivered-row counters against the unprojected producer rows. The
+ * captured pre-budget row count is where the delivered newest tail ends: the
+ * full collection, or the older slice a backward cursor replays.
+ */
+function refreshTailRetentionRowCounters(
+  delivered: Record<string, unknown>,
+  command: PmReadOutputSurface,
+  continuationState: ReadOutputContinuationState,
+): void {
+  const path = PM_READ_OUTPUT_TAIL_RETENTION_POLICIES[command]?.paths[0];
+  if (path === undefined) return;
+  refreshReadOutputDeliveredRowCounters(
+    delivered,
+    command,
+    continuationState.producer,
+    continuationState.collectionsBeforeBudget.get(path)?.rows,
+  );
+}
+
+/** Pre-budget coordinates of one declared row collection, used to resume what compaction withholds. */
+interface ReadOutputCollectionBeforeBudget {
+  /** Rows present before budget compaction (a replay counts only its slice). */
+  rows: number;
+  /** Rows in the complete stable snapshot. */
+  totalRows: number;
+  /** Absolute index of the first present row on a forward replay; zero otherwise. */
+  baseOffset: number;
+  /** Snapshot fingerprint the continuation is bound to. */
+  fingerprint: string;
+  /** Whether the collection keeps its newest tail and pages backwards. */
+  backward: boolean;
+}
+
+/**
+ * Build the resumable continuation for one compacted collection. A newest-tail
+ * page withholds the rows before it, so its cursor counts the older rows still
+ * to read; a forward page withholds the rows after it.
+ */
+function buildReadOutputContinuation(
+  command: PmReadOutputSurface,
+  path: string,
+  before: ReadOutputCollectionBeforeBudget,
+  retainedRows: number,
+): PmReadOutputContinuation {
+  const offset = before.backward
+    ? before.rows - retainedRows
+    : before.baseOffset + retainedRows;
+  return {
+    path,
+    cursor: encodeReadOutputContinuationCursor({
+      command,
+      path,
+      offset,
+      total_rows: before.totalRows,
+      fingerprint: before.fingerprint,
+      ...(before.backward ? { direction: "backward" as const } : {}),
+    }),
+    retained_rows: retainedRows,
+    remaining_rows: before.backward ? offset : before.totalRows - offset,
+    total_rows: before.totalRows,
+  };
+}
+
+/**
  * Disclose a budget-driven row drop in the envelope that carries it.
  *
  * `has_more` and `truncated` say that rows were withheld but not why, by what,
@@ -1745,7 +1884,7 @@ function attachReadOutputTruncationDisclosure(
   measuredResultTokens: number,
   collectionsBeforeBudget: ReadonlyMap<
     string,
-    { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
+    ReadOutputCollectionBeforeBudget
   >,
 ): void {
   if (!receipt.rows_compacted) return;
@@ -1764,26 +1903,13 @@ function attachReadOutputTruncationDisclosure(
       // Budget compaction preserves every declared collection and shortens its
       // contents, so each pre-budget path has a post-budget cardinality.
       const retainedRows = afterByPath.get(path)!;
-      if (retainedRows >= before.rows) return [];
-      const offset = before.baseOffset + retainedRows;
-      return [
-        {
-          path,
-          cursor: encodeReadOutputContinuationCursor({
-            command: resolved.command,
-            path,
-            offset,
-            total_rows: before.totalRows,
-            fingerprint: before.fingerprint,
-          }),
-          retained_rows: retainedRows,
-          remaining_rows: before.totalRows - offset,
-          total_rows: before.totalRows,
-        },
-      ];
+      return retainedRows >= before.rows
+        ? []
+        : [buildReadOutputContinuation(resolved.command, path, before, retainedRows)];
     },
   );
   const primary = continuations[0];
+  attachTailRetentionTotal(projected, resolved.command, continuations);
   const continuationHint = primary ? "; page --output-cursor" : "";
   const budgetHint =
     bindingBudget.source === "session"
@@ -1885,7 +2011,7 @@ interface ReadOutputContinuationState {
   /** Per-collection identity and suffix offset for output-cursor replay. */
   collectionsBeforeBudget: ReadonlyMap<
     string,
-    { rows: number; totalRows: number; baseOffset: number; fingerprint: string }
+    ReadOutputCollectionBeforeBudget
   >;
   /** Unprojected rows in this replay suffix, retaining identities privately through field and row projection. */
   originalItems: readonly unknown[];
@@ -1895,6 +2021,8 @@ interface ReadOutputContinuationState {
   cursorContinuesExistingPage: boolean;
   /** Original producer cursor, or incoming boundary for a terminal page. */
   cursorSource: unknown;
+  /** The unprojected producer result, whose rows keep fields a projection drops. */
+  producer: Record<string, unknown>;
 }
 
 /** Bind replay fingerprints and positional fallback to the uncapped selected producer page. */
@@ -1911,12 +2039,14 @@ function captureReadOutputContinuationState(
         ? collection.value.length
         : Object.keys(collection.value).length;
       const continued = cursor?.path === collection.path;
+      const backward = readOutputRetainsTail(command, collection.path);
       return [
         collection.path,
         {
           rows,
           totalRows: continued ? cursor.total_rows : rows,
-          baseOffset: continued ? cursor.offset : 0,
+          baseOffset: continued && !backward ? cursor.offset : 0,
+          backward,
           fingerprint: continued
             ? cursor.fingerprint
             : readOutputCollectionFingerprint(
@@ -1942,6 +2072,7 @@ function captureReadOutputContinuationState(
     cursorSource: cursorContinuesExistingPage
       ? projected.next_cursor
       : options.after,
+    producer: source,
   };
 }
 
@@ -1989,6 +2120,7 @@ function compactReadOutputProjection(
     format,
     (compacted) => {
       refreshReadOutputDeliveredCounts(compacted, deliveredSource);
+      refreshTailRetentionRowCounters(compacted, resolved.command, continuationState);
       const continuationCursorRebased = rebaseCompactedProducerCursor(
         compacted,
         continuationState.originalItems,
@@ -2023,6 +2155,7 @@ function compactReadOutputProjection(
       }
     },
     resolved.command === "history" && Array.isArray(projected.diff),
+    (path) => readOutputRetainsTail(resolved.command, path),
   );
 }
 

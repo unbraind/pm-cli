@@ -385,6 +385,20 @@ an unbounded multi-megabyte response;
 `recovery_budget_multiplier: 1` declares that each next page retains the same
 useful-result ceiling.
 
+Chronological annotation collections keep their newest rows instead
+([pm-8s53lj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8s53lj.toon);
+tracker record excluded from npm). `PM_READ_OUTPUT_TAIL_RETENTION_POLICIES`
+declares the `comments`, `notes` and `learnings` row paths, and
+`readOutputRetainsTail(command, path)` answers for one path. Budget compaction
+and `--output-limit` retain the tail of those paths, matching the producer's own
+latest-N `--limit`. Their continuation cursor carries `direction: "backward"`:
+`offset` counts the older rows still withheld, `remaining_rows` equals it, and
+replaying the cursor delivers the newest rows before that offset. A cursor whose
+direction disagrees with the path's declared retention is refused as
+`read_output_cursor_stale`. A withheld tail also sets the policy's `total_key`
+(`total_count`) beside `count`, and a producer `returned_count` is refreshed to
+the delivered page.
+
 Health continuation fingerprints use a versioned nonvolatile-snapshot policy
 for the `checks` row. Command-lifecycle telemetry may refresh timestamps, queue
 counters, and pending spans between pages, so the policy excludes only those
@@ -407,6 +421,10 @@ uses `unbounded` explicitly. `resolveReadOutputRecoveryBudget()` exposes the
 versioned pure calculation to package authors; there is no hard-coded smaller
 retry and no recovery cycle.
 
+Comments, notes and learnings declare `budget_retention_policy: ordered_suffix`:
+budget compaction keeps their newest rows and their continuation pages
+backwards (see the tail retention policy above). Every other surface except
+assurance declares `ordered_prefix`.
 Assurance declares `budget_retention_policy: verdict_priority`: failing block,
 warn, and observe rows precede retired and passing rows while preserving order
 within each class. `assertions_total` remains the pre-projection denominator,
