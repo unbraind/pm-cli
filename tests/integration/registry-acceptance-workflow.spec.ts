@@ -64,11 +64,13 @@ it("executes preserved reviewed artifact controls with their transitive imports 
 interface Job {
   needs?: string | string[];
   "timeout-minutes"?: number;
+  outputs?: Record<string, string>;
+  env?: Record<string, string>;
   strategy?: {
     "fail-fast": boolean;
     matrix: { os: string[]; install: string[] };
   };
-  steps: Array<{ name: string; run?: string; "timeout-minutes"?: number }>;
+  steps: Array<{ name: string; id?: string; run?: string; "timeout-minutes"?: number; with?: Record<string, unknown> }>;
 }
 
 it("blocks advertisement until every registry platform and manager accepted candidate and previous release", async () => {
@@ -136,6 +138,35 @@ it("verifies the publication in its own job whose budget covers the full npm met
   expect(verify["timeout-minutes"]).toBeGreaterThanOrEqual(waitMinutes + 5);
   const stepBudget = publication.steps.reduce((total, step) => total + (step["timeout-minutes"] ?? 0), 0);
   expect(publication["timeout-minutes"]).toBeGreaterThanOrEqual(stepBudget + 3);
+});
+
+it("verifies the exact source the release job published, with the reviewed release control (Codex review of PR #1687)", async () => {
+  const workflow = parse(
+    await readFile(".github/workflows/release.yml", "utf8"),
+  ) as { jobs: Record<string, Job> };
+  const release = workflow.jobs.release;
+  const names = release.steps.map((step) => step.name);
+  const record = release.steps.find((step) => step.name === "Record published source");
+  expect(record?.id).toBe("published-source");
+  expect(record?.run).toContain("git rev-parse --verify 'HEAD^{commit}'");
+  // Recorded after exact-tag source selection and immediately before publication.
+  expect(names.indexOf("Select exact-tag recovery source")).toBeLessThan(names.indexOf("Record published source"));
+  expect(names.indexOf("Record published source") + 1).toBe(names.indexOf("Publish to npm"));
+  expect(release.outputs?.source_sha).toBe("${{ steps.published-source.outputs.sha }}");
+
+  const publication = workflow.jobs.publication;
+  const [source, control] = publication.steps;
+  expect(source).toMatchObject({ name: "Checkout published source", with: { ref: "${{ needs.release.outputs.source_sha }}" } });
+  expect(source?.with?.path).toBeUndefined();
+  expect(control).toMatchObject({
+    name: "Checkout reviewed release control",
+    with: {
+      ref: "${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}",
+      path: ".reviewed-release-control",
+      "sparse-checkout": "scripts/release/release-control.mjs",
+    },
+  });
+  expect(publication.env?.RELEASE_CONTROL).toBe(".reviewed-release-control/scripts/release/release-control.mjs");
 });
 
 it.each(["npm", "npm-global", "bun"])(

@@ -38,6 +38,8 @@ jobs:
     # verification runs in the publication job so its registry wait never
     # spends this budget (pm-0jzl5t).
     timeout-minutes: 60
+    outputs:
+      source_sha: ${{ steps.published-source.outputs.sha }}
     permissions:
       contents: write
       id-token: write
@@ -393,6 +395,12 @@ jobs:
           path: ${{ runner.temp }}/release-notes.md
           if-no-files-found: error
 
+      - name: Record published source
+        # Exact-tag recovery may have switched this checkout to the immutable
+        # tag; the publication job verifies against this same package.json.
+        id: published-source
+        run: echo "sha=$(git rev-parse --verify 'HEAD^{commit}')" >> "${GITHUB_OUTPUT}"
+
       - name: Publish to npm
         timeout-minutes: 5
         env:
@@ -466,13 +474,26 @@ jobs:
       contents: read
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-      RELEASE_CONTROL: scripts/release/release-control.mjs
+      RELEASE_CONTROL: .reviewed-release-control/scripts/release/release-control.mjs
     steps:
-      - name: Checkout verification harness
+      - name: Checkout published source
+        # The verifiers read package identity and bins from the exact source
+        # the release job published, including a recovered immutable tag.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.release.outputs.source_sha }}
+
+      - name: Checkout reviewed release control
+        # Previous-release selection stays on the reviewed dispatch source;
+        # a recovered legacy tag may predate the selector.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.ref }}
+          path: .reviewed-release-control
+          sparse-checkout: scripts/release/release-control.mjs
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

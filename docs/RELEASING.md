@@ -617,7 +617,11 @@ never move a published tag or mint a second automatic version for the same UTC d
   (2026.11.8 stayed invisible for more than twenty minutes); the verifier
   polls for about thirty minutes, and an exhausted wait names the version, the
   scan and the publication-only re-run
-  ([pm-0jzl5t](../.agents/pm/issues/pm-0jzl5t.toon)). The verifier runs
+  ([pm-0jzl5t](../.agents/pm/issues/pm-0jzl5t.toon)). The job checks out
+  the exact commit the release job published (recorded after exact-tag source
+  selection), so the verifiers read the same `package.json` identity as the
+  publish guard; previous-release selection keeps the reviewed dispatch-source
+  selector. The verifier runs
   `scripts/release/verify-published-release.mjs`, using isolated empty npm and
   Bun caches plus an empty npm user config so maintainer credentials and cached
   metadata cannot mask a public-registry outage. The verifier dispatches a real

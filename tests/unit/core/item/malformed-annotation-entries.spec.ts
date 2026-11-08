@@ -3,8 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
 import { compareLogValues } from "../../../../src/core/item/item-format.js";
+import { buildSearchCorpus, buildSemanticCorpusInput } from "../../../../src/core/search/corpus.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
-import type { Comment } from "../../../../src/types/index.js";
+import type { Comment, ItemDocument } from "../../../../src/types/index.js";
 import { createTestItemId } from "../../../helpers/itemFactory.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
@@ -24,6 +25,20 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
     const sorted = [valid, ...malformed].sort(compareLogValues);
     expect(sorted.at(-1)).toBe(valid);
     expect(compareLogValues(malformed[0]!, malformed[2]!)).toBe(0);
+  });
+
+  it("keeps malformed entries out of the search corpus instead of aborting search and reindexing", () => {
+    // Codex review of PR #1687: once malformed entries load, the BM25 and
+    // reindex corpus must not dereference their text.
+    const malformed = [null, 42, "just-a-string", { created_at: "2026-11-07T00:00:00.000Z", author: "b" }, { text: 7 }];
+    const valid = { created_at: "2026-11-08T00:00:00.000Z", author: "a", text: "valid zebra" };
+    const document = {
+      metadata: { id: "pm-x", title: "t", comments: [...malformed, valid], notes: malformed, learnings: [valid, null] },
+      body: "",
+    } as unknown as ItemDocument;
+    const fields = ["comments", "notes", "learnings"];
+    expect(buildSearchCorpus(document, { fields })).toEqual({ comments: ["valid zebra"], notes: [], learnings: ["valid zebra"] });
+    expect(buildSemanticCorpusInput(document, { fields })).toContain("valid zebra");
   });
 
   it.each(MALFORMED_COLLECTIONS)("reads, appends to and guards a %s collection holding malformed entries", async (collection) => {
