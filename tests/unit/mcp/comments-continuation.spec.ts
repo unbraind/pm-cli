@@ -64,12 +64,18 @@ describe("MCP pm_comments continuations reach the oldest comment (pm-sbqn4h)", (
         page = await callComments(context, { id, outputCursor: page.next_cursor });
       }
       expect(seen).toEqual(Array.from({ length: ENTRIES }, (_entry, offset) => offset + 1));
+      // The walk ended on a page that offers no cursor and reports nothing more.
+      expect(page.next_cursor ?? undefined).toBeUndefined();
+      expect(page.has_more).toBe(false);
       // An explicit producer page still returns exactly the newest N comments.
       const newest = await callComments(context, { id, options: { limit: "5" } });
       expect(newest.comments.map(({ index }) => index)).toEqual([26, 27, 28, 29, 30]);
       expect(newest).toMatchObject({ total_count: ENTRIES, has_more: true });
       // The caller chose this window: older comments are reported by has_more, never by a cursor.
       expect(newest.next_cursor ?? undefined).toBeUndefined();
+      // A numeric zero limit is summary-only metadata.
+      const summary = await callComments(context, { id, options: { limit: 0 } });
+      expect(summary).toMatchObject({ comments: [], count: 0, total_count: ENTRIES, has_more: true });
     });
   }, 120_000);
 });

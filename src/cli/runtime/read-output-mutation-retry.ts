@@ -23,6 +23,9 @@ import { scanOptionTokens, type ScannedOptionToken } from "./projection-retry.js
 
 const SHAPING_CONTROL_FLAGS: ReadonlySet<string> = new Set(READ_OUTPUT_SHAPING_CONTROL_FLAGS);
 
+/** A URL authority carrying userinfo (`scheme://user:secret@host`), as in a credentialed package source. */
+const URL_USERINFO = /\/\/[^/?#\s]*@/u;
+
 /**
  * The command path whose flags the argv carries: the namespaced two-token
  * path (`item comments`, the form the error path records) when one declares
@@ -60,7 +63,9 @@ function valueTakingFlags(commandPath: string | undefined): ReadonlySet<string> 
  * rebuilt from such an argv would replay the misparse as a clean write.
  * `revisionGuarded` reports an enclosing SDK revision scope (an embedded CLI
  * run): its guards never reached argv, so a retry run on its own would write
- * unguarded and is withheld too.
+ * unguarded and is withheld too. An argv carrying URL credentials (a package
+ * source such as `https://user:token@host/pkg.tgz`) gets no executable retry
+ * either, so the recovery never repeats the secret in one more field.
  */
 export function repairReadOutputMutationRecovery(
   argv: readonly string[],
@@ -73,7 +78,7 @@ export function repairReadOutputMutationRecovery(
   const withheld = recovery === undefined ? undefined : { ...recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const commandPath = invocationCommandPath(argv);
   const options = scanOptionTokens(argv, commandPath);
-  if (options === undefined || scopePrefix === null || revisionGuarded()) return withheld;
+  if (options === undefined || scopePrefix === null || argv.some((token) => URL_USERINFO.test(token)) || revisionGuarded()) return withheld;
   const removed = controlTokenIndexes(argv, options, valueTakingFlags(commandPath));
   if (removed === undefined || removed.size === 0) return withheld;
   const retry = [...scopePrefix, ...argv.filter((_, index) => !removed.has(index))];

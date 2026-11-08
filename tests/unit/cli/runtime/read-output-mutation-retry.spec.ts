@@ -3,6 +3,8 @@
  * controls is refused with a stable typed code that names the controls, and
  * the CLI retries the caller's own invocation without them.
  */
+import { existsSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { repairReadOutputMutationRecovery } from "../../../../src/cli/runtime/read-output-mutation-retry.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
@@ -17,6 +19,16 @@ import { createTestItemId } from "../../../helpers/itemFactory.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const CODE = READ_OUTPUT_MUTATION_CONFLICT_CODE;
+
+/** Every item and history file under a tracker with its size, so any write shows up. */
+function trackerFileSizes(pmPath: string): Record<string, number> {
+  return Object.fromEntries(
+    ["tasks", "history"].flatMap((folder) => {
+      const directory = path.join(pmPath, folder);
+      return existsSync(directory) ? readdirSync(directory).map((name) => [`${folder}/${name}`, statSync(path.join(directory, name)).size] as const) : [];
+    }),
+  );
+}
 
 function refusal(command: string, options: Record<string, unknown>): PmCliError {
   try {
@@ -132,6 +144,15 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     // A control before the command, or last with nothing left to consume, is dropped alone.
     expect(repairReadOutputMutationRecovery(["--output-limit", "2", "comments", "pm-one", "--add", "x"], CODE, undefined)?.suggested_retry_args).toEqual(["comments", "pm-one", "--add", "x"]);
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "x", "--output-limit"], CODE, undefined)?.suggested_retry_args).toEqual(["comments", "pm-one", "x"]);
+    // CodeRabbit review of PR #1688: a credentialed package source never reaches another recovery field.
+    const credentialed = ["package", "--catalog", "--install", "https://user:token@example.invalid/pkg.tgz", "--output-limit", "2"];
+    expect(repairReadOutputMutationRecovery(credentialed, CODE, producer)).toEqual(withheld);
+    expect(repairReadOutputMutationRecovery(["package", "--catalog", "--install", "https://example.invalid/pkg.tgz", "--output-limit", "2"], CODE, undefined)?.suggested_retry_args).toEqual([
+      "package",
+      "--catalog",
+      "--install",
+      "https://example.invalid/pkg.tgz",
+    ]);
     // Other refusals are never touched.
     expect(repairReadOutputMutationRecovery(["comments", "pm-one", "--output-limit", "2"], "other_code", producer)).toBe(producer);
     expect(READ_OUTPUT_SHAPING_CONTROL_FLAGS).not.toContain("--output-format");
@@ -141,6 +162,8 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
     await withTempPmPath(async (environment) => {
       await withTempPmPath(async (explicit) => {
         const id = createTestItemId(environment, { title: "Environment tracker item" });
+        createTestItemId(explicit, { title: "Explicit tracker item" });
+        const explicitBefore = trackerFileSizes(explicit.pmPath);
         const refused = environment.runCli(["comments", id, "--add", "kept", "--message", "--output-limit", "--pm-path", explicit.pmPath, "--output-budget", "500", "--json"]);
         expect(refused.code).toBe(2);
         const body = JSON.parse(refused.stdout || refused.stderr) as { code: string; recovery?: { suggested_retry_args?: string[] } };
@@ -148,6 +171,8 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
         expect(body.recovery?.suggested_retry_args).toBeUndefined();
         const listed = environment.runCli(["comments", id, "--json"], { expectJson: true }).json as { comments: unknown[] };
         expect(listed.comments).toEqual([]);
+        // CodeRabbit review of PR #1688: the explicit tracker is checked too, byte for byte.
+        expect(trackerFileSizes(explicit.pmPath)).toEqual(explicitBefore);
       });
     });
   }, 60_000);

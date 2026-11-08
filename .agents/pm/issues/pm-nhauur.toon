@@ -1,0 +1,21 @@
+id: pm-nhauur
+title: "Refusal recovery bundles echo URL credentials verbatim: attempted_command and normalized_args repeat a credentialed package source on stdout and in logs"
+description: "Found 2026-11-08 during the CodeRabbit review of PR 1688. redactSensitiveCommandArgs (src/sdk/command-line.ts) redacts only history redact invocations. Every other refusal copies the raw argv into recovery.attempted_command and recovery.normalized_args, so a package source carrying URL credentials is repeated verbatim in the structured error on stdout, in CI logs and in any agent transcript. Reproduced with the built CLI and a fake credential. 'pm package install https://u:fake-secret@example.invalid/x.tgz --project --dry-run --bogus-flag --json' fails with unknown_option, and its attempted_command contains u:fake-secret. 'pm package --catalog --install <same> --output-limit 2' fails with read_output_mutation_conflict and shows the same echo. PR 1688 already withholds that refusal's executable retry for such an argv (pm-rrwh2o), so its recovery adds no further copy; the general echo predates that change. Telemetry already strips URL userinfo through stripUrlCredentials and redactUrlsInText in src/core/telemetry/policy.ts, but the CLI recovery path does not use them. Duplicate check: searched recovery attempted_command credentials url secret redact package source; pm-m0fh (closed) covered tracked files, not runtime refusal output."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,packages,privacy,recovery,security
+created_at: "2026-11-08T17:01:33.697Z"
+updated_at: "2026-11-08T17:01:47.779Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Every CLI recovery representation (attempted_command, normalized_args, provided_fields, suggested_retry and suggested_retry_args) removes URL userinfo from every token, or withholds an executable retry when removing it would change the command's meaning; a spec drives an unknown_option refusal and a read_output_mutation_conflict refusal with a credentialed package source and asserts that no secret appears in stdout or stderr; history redact keeps its existing flag-value redaction"
+parent: pm-doxj
+risk: medium
+confidence: high
+expected_result: "Refusal recovery output names a credentialed package source without its userinfo, and no secret appears in stdout or stderr"
+actual_result: "attempted_command and normalized_args repeat https://u:fake-secret@example.invalid/x.tgz verbatim for unknown_option and read_output_mutation_conflict refusals"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-m0fh,related,"2026-11-08T17:01:33.697Z","harness:claude-code","cli:create:dep",detected
+  pm-rrwh2o,discovered_from,"2026-11-08T17:01:33.697Z","harness:claude-code","cli:create:dep",detected
+body: ""

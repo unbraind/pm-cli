@@ -87,6 +87,11 @@ describe("pm-e3hfv8 TOON position-addressed annotation rows", () => {
       expect(toon.stdout).toContain(`${collection}[3]:`);
       expect(toon.stdout).toContain("\n  - null\n  - 42\n");
       expect(toon.stdout).toContain("count: 3\n");
+      // A limited page keeps its retained rows, the null one included, in stored order.
+      const limited = context.runCli([collection, id, "--limit", "2"]);
+      expect(limited.code, limited.stderr).toBe(0);
+      expect(limited.stdout).toContain(`${collection}[2]: null,42\n`);
+      expect(limited.stdout).toContain("count: 2\n");
     });
   }, 60_000);
 });

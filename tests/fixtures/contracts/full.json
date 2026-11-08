@@ -21274,7 +21274,7 @@
       "exit_code": 2,
       "meaning": "Acceptance criteria mutation conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update.ts"
       ],
@@ -21292,7 +21292,7 @@
       "exit_code": 3,
       "meaning": "Acceptance criteria remove unmatched condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update-many.ts",
         "sdk/lifecycle/update.ts"
@@ -21310,7 +21310,7 @@
       "exit_code": 2,
       "meaning": "Acceptance criteria semicolon forbidden condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/item/parse.ts"
       ],
@@ -21327,7 +21327,7 @@
       "exit_code": 1,
       "meaning": "Accepted rejected value condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -21344,7 +21344,7 @@
       "exit_code": 1,
       "meaning": "Alias collision condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -21361,7 +21361,7 @@
       "exit_code": 1,
       "meaning": "Alias target missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -21378,7 +21378,7 @@
       "exit_code": 4,
       "meaning": "Already claimed by condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/claim.ts"
       ],
@@ -21396,7 +21396,7 @@
       "exit_code": 2,
       "meaning": "Ambiguous option combination condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/claim.ts",
         "sdk/lifecycle/plan.ts"
@@ -21414,7 +21414,7 @@
       "exit_code": 2,
       "meaning": "Annotation alias conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-annotations.ts"
       ],
@@ -21431,7 +21431,7 @@
       "exit_code": 4,
       "meaning": "Annotation entry mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -21448,7 +21448,7 @@
       "exit_code": 2,
       "meaning": "Annotation expectation invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -21465,7 +21465,7 @@
       "exit_code": 2,
       "meaning": "Annotation expectation without target condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -21482,7 +21482,7 @@
       "exit_code": 2,
       "meaning": "Annotation flag like value condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -21499,7 +21499,7 @@
       "exit_code": 2,
       "meaning": "Annotation if absent without append condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -21516,7 +21516,7 @@
       "exit_code": 2,
       "meaning": "Annotation message without text condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -21533,7 +21533,7 @@
       "exit_code": 2,
       "meaning": "Annotation text source conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/runtime-input.ts"
       ],
@@ -21550,7 +21550,7 @@
       "exit_code": 2,
       "meaning": "Annotation transposed subcommand condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-annotations.ts"
       ],
@@ -21567,7 +21567,7 @@
       "exit_code": 2,
       "meaning": "Append empty body condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/append.ts"
       ],
@@ -21584,7 +21584,7 @@
       "exit_code": 1,
       "meaning": "Assurance registry invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/governance/assurance.ts"
       ],
@@ -21601,7 +21601,7 @@
       "exit_code": 2,
       "meaning": "Bare comma entry ambiguous condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/item/parse.ts"
       ],
@@ -21618,7 +21618,7 @@
       "exit_code": 1,
       "meaning": "Blocker identity read failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/query/declared-blockers.ts"
       ],
@@ -21635,7 +21635,7 @@
       "exit_code": 2,
       "meaning": "Body file conflicts with body condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/io/body-file.ts"
       ],
@@ -21652,7 +21652,7 @@
       "exit_code": 2,
       "meaning": "Body file missing path condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/io/body-file.ts"
       ],
@@ -21669,7 +21669,7 @@
       "exit_code": 3,
       "meaning": "Body file unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/io/body-file.ts"
       ],
@@ -21686,7 +21686,7 @@
       "exit_code": 1,
       "meaning": "Budget exceeded condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -21703,7 +21703,7 @@
       "exit_code": 2,
       "meaning": "Bulk create route condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-mutation.ts"
       ],
@@ -21729,7 +21729,7 @@
           "state": "bulk_ids_stdin_contains_no_nonempty_ids"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/io/bulk-ids-input.ts",
         "sdk/history-compact.ts",
@@ -21757,7 +21757,7 @@
           "state": "bulk_ids_file_token_omits_its_path"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/io/bulk-ids-input.ts"
       ],
@@ -21783,7 +21783,7 @@
           "state": "bulk_ids_file_path_cannot_be_read"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/io/bulk-ids-input.ts"
       ],
@@ -21800,7 +21800,7 @@
       "exit_code": 1,
       "meaning": "Bundle integrity torn install condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/bundle-integrity.ts"
       ],
@@ -21817,7 +21817,7 @@
       "exit_code": 1,
       "meaning": "Capability undeclared condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/compose.ts"
       ],
@@ -21834,7 +21834,7 @@
       "exit_code": 1,
       "meaning": "Capability unused condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/compose.ts"
       ],
@@ -21851,7 +21851,7 @@
       "exit_code": 1,
       "meaning": "Child projection item bound exceeded condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-children.ts"
       ],
@@ -21869,7 +21869,7 @@
       "exit_code": 2,
       "meaning": "Close reason required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle-policy.ts",
         "sdk/lifecycle/close-many.ts"
@@ -21887,7 +21887,7 @@
       "exit_code": 1,
       "meaning": "Close through update condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/telemetry/observability.ts"
       ],
@@ -21904,7 +21904,7 @@
       "exit_code": 2,
       "meaning": "Close validation missing fields condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/close.ts"
       ],
@@ -21921,7 +21921,7 @@
       "exit_code": 1,
       "meaning": "Collected zero items condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution-receipts.ts"
       ],
@@ -21938,7 +21938,7 @@
       "exit_code": 2,
       "meaning": "Collection transposed subcommand condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -21955,7 +21955,7 @@
       "exit_code": 1,
       "meaning": "Command failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -21972,7 +21972,7 @@
       "exit_code": 2,
       "meaning": "Command namespace condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/runtime-contracts.ts"
       ],
@@ -21989,7 +21989,7 @@
       "exit_code": 4,
       "meaning": "Command override conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/compose.ts"
       ],
@@ -22006,7 +22006,7 @@
       "exit_code": 1,
       "meaning": "Config duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -22023,7 +22023,7 @@
       "exit_code": 2,
       "meaning": "Config key unknown condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -22040,7 +22040,7 @@
       "exit_code": 2,
       "meaning": "Config value invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -22057,7 +22057,7 @@
       "exit_code": 2,
       "meaning": "Conflicting lifecycle owner condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-operations.ts"
       ],
@@ -22074,7 +22074,7 @@
       "exit_code": 2,
       "meaning": "Context evaluation read incomplete condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/context-relevance.ts"
       ],
@@ -22091,7 +22091,7 @@
       "exit_code": 2,
       "meaning": "Context signal store invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/context-signal-store.ts"
       ],
@@ -22108,7 +22108,7 @@
       "exit_code": 1,
       "meaning": "Context signal store stale condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/context-signal-store.ts"
       ],
@@ -22125,7 +22125,7 @@
       "exit_code": 1,
       "meaning": "Context signal store write failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/context-signal-store.ts"
       ],
@@ -22142,7 +22142,7 @@
       "exit_code": 1,
       "meaning": "Context takes no item argument condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -22159,7 +22159,7 @@
       "exit_code": 2,
       "meaning": "Core item field requires dedicated flag condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/item-fields.ts"
       ],
@@ -22176,7 +22176,7 @@
       "exit_code": 2,
       "meaning": "Create positional type without title condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-mutation.ts"
       ],
@@ -22193,7 +22193,7 @@
       "exit_code": 2,
       "meaning": "Dependency cardinality created condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/graph/cardinality-integrity.ts"
       ],
@@ -22210,7 +22210,7 @@
       "exit_code": 2,
       "meaning": "Dependency edge not allowed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/dependency-flag-validation.ts"
       ],
@@ -22227,7 +22227,7 @@
       "exit_code": 2,
       "meaning": "Dependency flag value invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/dependency-flag-validation.ts"
       ],
@@ -22244,7 +22244,7 @@
       "exit_code": 3,
       "meaning": "Dependency remove no match condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update.ts"
       ],
@@ -22261,7 +22261,7 @@
       "exit_code": 3,
       "meaning": "Dependency target not found condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/dependency-flag-validation.ts"
       ],
@@ -22278,7 +22278,7 @@
       "exit_code": 2,
       "meaning": "Dependency temporal order invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/dependency-flag-validation.ts"
       ],
@@ -22295,7 +22295,7 @@
       "exit_code": 1,
       "meaning": "Duplicate canonical flag condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -22312,7 +22312,7 @@
       "exit_code": 1,
       "meaning": "Duplicate command condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/compose.ts"
       ],
@@ -22329,7 +22329,7 @@
       "exit_code": 1,
       "meaning": "Duplicate destination condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -22346,7 +22346,7 @@
       "exit_code": 1,
       "meaning": "Duplicate edge condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/graph/remediation.ts"
       ],
@@ -22363,7 +22363,7 @@
       "exit_code": 1,
       "meaning": "Duplicate observation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/flag-invocation-contracts.ts"
       ],
@@ -22380,7 +22380,7 @@
       "exit_code": 1,
       "meaning": "Duplicate probe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -22397,7 +22397,7 @@
       "exit_code": 4,
       "meaning": "Duplicate sweep cost limit condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/query/duplicate-candidates.ts"
       ],
@@ -22414,7 +22414,7 @@
       "exit_code": 2,
       "meaning": "Duplicate target circular condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/close.ts"
       ],
@@ -22431,7 +22431,7 @@
       "exit_code": 2,
       "meaning": "Duplicate target is duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/close.ts"
       ],
@@ -22448,7 +22448,7 @@
       "exit_code": 2,
       "meaning": "Duplicate target missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/close.ts"
       ],
@@ -22465,7 +22465,7 @@
       "exit_code": 2,
       "meaning": "Duplicate target self condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/close.ts"
       ],
@@ -22482,7 +22482,7 @@
       "exit_code": 1,
       "meaning": "Empty corpus condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -22499,7 +22499,7 @@
       "exit_code": 1,
       "meaning": "Empty surface condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/compose.ts"
       ],
@@ -22516,7 +22516,7 @@
       "exit_code": 1,
       "meaning": "Error code mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts",
         "sdk/agent/tracker-preflight-contracts.ts"
@@ -22534,7 +22534,7 @@
       "exit_code": 2,
       "meaning": "Event cursor query mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-events.ts"
       ],
@@ -22551,7 +22551,7 @@
       "exit_code": 1,
       "meaning": "Event history integrity failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/event-index.ts"
       ],
@@ -22568,7 +22568,7 @@
       "exit_code": 1,
       "meaning": "Event index unavailable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-events.ts"
       ],
@@ -22585,7 +22585,7 @@
       "exit_code": 1,
       "meaning": "Exit code mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/tracker-preflight-contracts.ts"
       ],
@@ -22602,7 +22602,7 @@
       "exit_code": 2,
       "meaning": "Expect hash background unsupported condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/item-revision.ts"
       ],
@@ -22619,7 +22619,7 @@
       "exit_code": 2,
       "meaning": "Expect hash invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/item-revision.ts"
       ],
@@ -22636,7 +22636,7 @@
       "exit_code": 2,
       "meaning": "Expect hash invocation rewritten condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/item-revision.ts"
       ],
@@ -22653,7 +22653,7 @@
       "exit_code": 2,
       "meaning": "Expect hash requires mutation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/item-revision.ts"
       ],
@@ -22670,7 +22670,7 @@
       "exit_code": 2,
       "meaning": "Expect hash target required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/item-revision.ts"
       ],
@@ -22687,7 +22687,7 @@
       "exit_code": 2,
       "meaning": "Expected revision duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/item-mutation-precondition.ts"
       ],
@@ -22704,7 +22704,7 @@
       "exit_code": 2,
       "meaning": "Expected revision scope conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/item-mutation-precondition.ts"
       ],
@@ -22721,7 +22721,7 @@
       "exit_code": 1,
       "meaning": "Extension command activation failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/commander-usage.ts"
       ],
@@ -22738,7 +22738,7 @@
       "exit_code": 2,
       "meaning": "Extension dependency name unsafe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -22755,7 +22755,7 @@
       "exit_code": 2,
       "meaning": "Extension dependency spec invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -22772,7 +22772,7 @@
       "exit_code": 2,
       "meaning": "Extension dependency version unsafe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -22789,7 +22789,7 @@
       "exit_code": 2,
       "meaning": "Extension flag value invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/command-options.ts"
       ],
@@ -22806,7 +22806,7 @@
       "exit_code": 2,
       "meaning": "Extension install incomplete source scan condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-plan.ts"
       ],
@@ -22823,7 +22823,7 @@
       "exit_code": 1,
       "meaning": "Extension install rollback failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-snapshot.ts"
       ],
@@ -22840,7 +22840,7 @@
       "exit_code": 1,
       "meaning": "Extension install soft failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-setup.ts"
       ],
@@ -22857,7 +22857,7 @@
       "exit_code": 2,
       "meaning": "Extension install source contains destination condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-runtime.ts"
       ],
@@ -22874,7 +22874,7 @@
       "exit_code": 2,
       "meaning": "Extension item field reserved condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/item-fields.ts"
       ],
@@ -22891,7 +22891,7 @@
       "exit_code": 2,
       "meaning": "Extension item field type conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/item-fields.ts"
       ],
@@ -22908,7 +22908,7 @@
       "exit_code": 2,
       "meaning": "Extension item field unknown condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/item-fields.ts"
       ],
@@ -22925,7 +22925,7 @@
       "exit_code": 4,
       "meaning": "Extension mutation guard failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
       ],
@@ -22942,7 +22942,7 @@
       "exit_code": 4,
       "meaning": "Extension mutation guard invalid decision condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
       ],
@@ -22959,7 +22959,7 @@
       "exit_code": 4,
       "meaning": "Extension mutation guard invalid denial condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
       ],
@@ -22976,7 +22976,7 @@
       "exit_code": 4,
       "meaning": "Extension mutation guard timed out condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/extension-hook-runtime.ts"
       ],
@@ -22993,7 +22993,7 @@
       "exit_code": 2,
       "meaning": "Extension option spelling conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/command-options.ts"
       ],
@@ -23010,7 +23010,7 @@
       "exit_code": 2,
       "meaning": "Extension read output invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/read-output/extension.ts"
       ],
@@ -23027,7 +23027,7 @@
       "exit_code": 1,
       "meaning": "Extension update health partial coverage condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23044,7 +23044,7 @@
       "exit_code": 1,
       "meaning": "Extensions unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/static-inventory.ts"
       ],
@@ -23061,7 +23061,7 @@
       "exit_code": 1,
       "meaning": "Field duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -23078,7 +23078,7 @@
       "exit_code": 2,
       "meaning": "Field invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -23095,7 +23095,7 @@
       "exit_code": 1,
       "meaning": "Field mcp input collision condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -23112,7 +23112,7 @@
       "exit_code": 2,
       "meaning": "Github source entry unbuilt condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/shared.ts"
       ],
@@ -23129,7 +23129,7 @@
       "exit_code": 4,
       "meaning": "Hierarchy cardinality created condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/graph/hierarchy-integrity.ts"
       ],
@@ -23146,7 +23146,7 @@
       "exit_code": 4,
       "meaning": "Hierarchy cycle created condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/graph/hierarchy-integrity.ts"
       ],
@@ -23163,7 +23163,7 @@
       "exit_code": 4,
       "meaning": "Hierarchy parent divergence created condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/graph/hierarchy-integrity.ts"
       ],
@@ -23180,7 +23180,7 @@
       "exit_code": 4,
       "meaning": "History author acknowledge plan conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23197,7 +23197,7 @@
       "exit_code": 2,
       "meaning": "History author acknowledge plan fingerprint required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23214,7 +23214,7 @@
       "exit_code": 2,
       "meaning": "History author acknowledge preview limit invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23231,7 +23231,7 @@
       "exit_code": 2,
       "meaning": "History author acknowledge required values missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23248,7 +23248,7 @@
       "exit_code": 2,
       "meaning": "History author acknowledge selector conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23265,7 +23265,7 @@
       "exit_code": 2,
       "meaning": "History author acknowledge selector required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23282,7 +23282,7 @@
       "exit_code": 2,
       "meaning": "History author acknowledge target not actionable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23299,7 +23299,7 @@
       "exit_code": 2,
       "meaning": "History author acknowledge target unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/author-attribution.ts"
       ],
@@ -23316,7 +23316,7 @@
       "exit_code": 1,
       "meaning": "History baseline unavailable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/projection.ts"
       ],
@@ -23335,7 +23335,7 @@
       "exit_code": 1,
       "meaning": "History drift chain mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23354,7 +23354,7 @@
       "exit_code": 1,
       "meaning": "History drift hash mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23371,7 +23371,7 @@
       "exit_code": 1,
       "meaning": "History drift merge receipt condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23390,7 +23390,7 @@
       "exit_code": 1,
       "meaning": "History drift missing stream condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23409,7 +23409,7 @@
       "exit_code": 1,
       "meaning": "History drift unreadable stream condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23428,7 +23428,7 @@
       "exit_code": 1,
       "meaning": "History drift version skew condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23445,7 +23445,7 @@
       "exit_code": 1,
       "meaning": "History json invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/read.ts"
       ],
@@ -23462,7 +23462,7 @@
       "exit_code": 1,
       "meaning": "History merge conflict markers detected condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/read.ts"
       ],
@@ -23479,7 +23479,7 @@
       "exit_code": 1,
       "meaning": "History replay invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/projection.ts",
         "core/history/tombstone.ts"
@@ -23497,7 +23497,7 @@
       "exit_code": 4,
       "meaning": "History salvage refused condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/history/salvage.ts"
       ],
@@ -23514,7 +23514,7 @@
       "exit_code": 1,
       "meaning": "History stream over compact threshold condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23531,7 +23531,7 @@
       "exit_code": 1,
       "meaning": "History target out of range condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/projection.ts"
       ],
@@ -23548,7 +23548,7 @@
       "exit_code": 1,
       "meaning": "History timestamp invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/event-index.ts",
         "core/history/history.ts"
@@ -23566,7 +23566,7 @@
       "exit_code": 4,
       "meaning": "History union rebase conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/merge/history-scalar-rebase.ts"
       ],
@@ -23585,7 +23585,7 @@
       "exit_code": 2,
       "meaning": "History unknown author events condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23602,7 +23602,7 @@
       "exit_code": 2,
       "meaning": "History version mapping unavailable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/version-address.ts"
       ],
@@ -23619,7 +23619,7 @@
       "exit_code": 2,
       "meaning": "History version pruned condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/projection.ts"
       ],
@@ -23636,7 +23636,7 @@
       "exit_code": 1,
       "meaning": "Host environment capacity fault condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/fs/host-environment-errors.ts"
       ],
@@ -23653,7 +23653,7 @@
       "exit_code": 2,
       "meaning": "Host environment operation invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/fs/host-environment-errors.ts"
       ],
@@ -23670,7 +23670,7 @@
       "exit_code": 1,
       "meaning": "Host environment permission fault condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/fs/host-environment-errors.ts"
       ],
@@ -23687,7 +23687,7 @@
       "exit_code": 1,
       "meaning": "Host environment resource fault condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/fs/host-environment-errors.ts"
       ],
@@ -23704,7 +23704,7 @@
       "exit_code": 4,
       "meaning": "Improvement metric contract conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/improvement-ledger.ts"
       ],
@@ -23721,7 +23721,7 @@
       "exit_code": 4,
       "meaning": "Improvement observation conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/improvement-ledger.ts"
       ],
@@ -23738,7 +23738,7 @@
       "exit_code": 1,
       "meaning": "Incomplete allowed values condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -23755,7 +23755,7 @@
       "exit_code": 1,
       "meaning": "Inconsistent concept kind condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -23772,7 +23772,7 @@
       "exit_code": 2,
       "meaning": "Init existing settings requires force condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/init.ts"
       ],
@@ -23789,7 +23789,7 @@
       "exit_code": 1,
       "meaning": "Init gitignore unwritable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace.ts"
       ],
@@ -23806,7 +23806,7 @@
       "exit_code": 2,
       "meaning": "Init id prefix conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/init.ts"
       ],
@@ -23823,7 +23823,7 @@
       "exit_code": 2,
       "meaning": "Init id prefix path like condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/init.ts"
       ],
@@ -23842,7 +23842,7 @@
       "exit_code": 4,
       "meaning": "Integrity history conflict marker condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23859,7 +23859,7 @@
       "exit_code": 2,
       "meaning": "Integrity history invalid json condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23876,7 +23876,7 @@
       "exit_code": 1,
       "meaning": "Integrity history unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23895,7 +23895,7 @@
       "exit_code": 1,
       "meaning": "Integrity item ahead format version condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23912,7 +23912,7 @@
       "exit_code": 4,
       "meaning": "Integrity item conflict marker condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23931,7 +23931,7 @@
       "exit_code": 1,
       "meaning": "Integrity item outdated format version condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23948,7 +23948,7 @@
       "exit_code": 1,
       "meaning": "Integrity item parse failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23965,7 +23965,7 @@
       "exit_code": 1,
       "meaning": "Integrity item unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -23987,7 +23987,7 @@
       "exit_code": 2,
       "meaning": "Invalid argument value condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/item/priority.ts",
@@ -24020,7 +24020,7 @@
       "exit_code": 2,
       "meaning": "Invalid command usage condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts"
@@ -24038,7 +24038,7 @@
       "exit_code": 2,
       "meaning": "Invalid event cursor condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-events.ts"
       ],
@@ -24055,7 +24055,7 @@
       "exit_code": 2,
       "meaning": "Invalid event cursor mode condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-list-query.ts",
         "sdk/mutation-events.ts",
@@ -24074,7 +24074,7 @@
       "exit_code": 2,
       "meaning": "Invalid event follow interval condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-events.ts"
       ],
@@ -24091,7 +24091,7 @@
       "exit_code": 2,
       "meaning": "Invalid event limit condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-events.ts"
       ],
@@ -24108,7 +24108,7 @@
       "exit_code": 2,
       "meaning": "Invalid event since condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-events.ts"
       ],
@@ -24125,7 +24125,7 @@
       "exit_code": 2,
       "meaning": "Invalid history analytics limit condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/history-analytics.ts"
       ],
@@ -24142,7 +24142,7 @@
       "exit_code": 2,
       "meaning": "Invalid history analytics minimum sample condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/history-analytics.ts"
       ],
@@ -24159,7 +24159,7 @@
       "exit_code": 2,
       "meaning": "Invalid history analytics since condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/history-analytics.ts"
       ],
@@ -24176,7 +24176,7 @@
       "exit_code": 1,
       "meaning": "Invalid improvement ledger condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/improvement-ledger-validation.ts"
       ],
@@ -24193,7 +24193,7 @@
       "exit_code": 2,
       "meaning": "Invalid improvement metric condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/improvement-ledger.ts"
       ],
@@ -24210,7 +24210,7 @@
       "exit_code": 2,
       "meaning": "Invalid improvement observation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/improvement-ledger.ts"
       ],
@@ -24227,7 +24227,7 @@
       "exit_code": 2,
       "meaning": "Invalid improvement observation limit condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/improvement-ledger.ts"
       ],
@@ -24244,7 +24244,7 @@
       "exit_code": 2,
       "meaning": "Invalid improvement observation timestamp condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/improvement-ledger.ts"
       ],
@@ -24261,7 +24261,7 @@
       "exit_code": 2,
       "meaning": "Invalid provenance predicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/history-provenance.ts"
       ],
@@ -24278,7 +24278,7 @@
       "exit_code": 2,
       "meaning": "Invalid query cursor condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/pagination.ts",
         "sdk/query/window-pagination.ts"
@@ -24296,7 +24296,7 @@
       "exit_code": 2,
       "meaning": "Invalid read output session condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/read-output-session.ts"
       ],
@@ -24313,7 +24313,7 @@
       "exit_code": 2,
       "meaning": "Invalid reproducible process environment condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/reproducibility/process.ts"
       ],
@@ -24330,7 +24330,7 @@
       "exit_code": 2,
       "meaning": "Invalid workspace snapshot target condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -24347,7 +24347,7 @@
       "exit_code": 4,
       "meaning": "Item already active condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update.ts"
       ],
@@ -24364,7 +24364,7 @@
       "exit_code": 4,
       "meaning": "Item already exists condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/create.ts"
       ],
@@ -24381,7 +24381,7 @@
       "exit_code": 3,
       "meaning": "Item deleted condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/tombstone.ts"
       ],
@@ -24398,7 +24398,7 @@
       "exit_code": 4,
       "meaning": "Item document encoding invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/item-store.ts"
       ],
@@ -24415,7 +24415,7 @@
       "exit_code": 1,
       "meaning": "Item document invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/item/item-format.ts"
       ],
@@ -24432,7 +24432,7 @@
       "exit_code": 1,
       "meaning": "Item document roundtrip failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/item/item-format.ts"
       ],
@@ -24449,7 +24449,7 @@
       "exit_code": 4,
       "meaning": "Item format version unsupported condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/item/item-format.ts"
       ],
@@ -24466,7 +24466,7 @@
       "exit_code": 4,
       "meaning": "Item id collision condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/copy.ts"
       ],
@@ -24483,7 +24483,7 @@
       "exit_code": 4,
       "meaning": "Item identity ambiguous condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/item-store.ts"
       ],
@@ -24500,7 +24500,7 @@
       "exit_code": 4,
       "meaning": "Item identity conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/governance/validate-history-drift.ts",
         "sdk/lifecycle/item-revision.ts",
@@ -24520,7 +24520,7 @@
       "exit_code": 4,
       "meaning": "Item identity reserved condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/history.ts"
       ],
@@ -24537,7 +24537,7 @@
       "exit_code": 3,
       "meaning": "Item not found condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/store/item-store.ts",
@@ -24557,7 +24557,7 @@
       "exit_code": 4,
       "meaning": "Item revision conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/item-mutation-precondition.ts"
       ],
@@ -24574,7 +24574,7 @@
       "exit_code": 4,
       "meaning": "Likely duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/similarity.ts"
       ],
@@ -24591,7 +24591,7 @@
       "exit_code": 2,
       "meaning": "Linked artifact mutation conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/linked-artifacts.ts"
       ],
@@ -24608,7 +24608,7 @@
       "exit_code": 2,
       "meaning": "Linked resource positional value condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -24625,7 +24625,7 @@
       "exit_code": 2,
       "meaning": "Linked test command immutable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/update.ts"
       ],
@@ -24642,7 +24642,7 @@
       "exit_code": 2,
       "meaning": "Linked test command not executable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/entry.ts"
       ],
@@ -24659,7 +24659,7 @@
       "exit_code": 2,
       "meaning": "Linked test context invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/entry.ts"
       ],
@@ -24676,7 +24676,7 @@
       "exit_code": 2,
       "meaning": "Linked test patch fields unsupported condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/update.ts"
       ],
@@ -24693,7 +24693,7 @@
       "exit_code": 3,
       "meaning": "Linked test remove no match condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution.ts"
       ],
@@ -24710,7 +24710,7 @@
       "exit_code": 2,
       "meaning": "Linked test update ambiguous condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/update.ts"
       ],
@@ -24727,7 +24727,7 @@
       "exit_code": 3,
       "meaning": "Linked test update no match condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/update.ts"
       ],
@@ -24744,7 +24744,7 @@
       "exit_code": 1,
       "meaning": "Linked test value not quoted condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -24761,7 +24761,7 @@
       "exit_code": 1,
       "meaning": "List source incomplete condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/query/list.ts"
       ],
@@ -24778,7 +24778,7 @@
       "exit_code": 2,
       "meaning": "Local package archive unsafe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -24795,7 +24795,7 @@
       "exit_code": 3,
       "meaning": "Local source not found bare name condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -24812,7 +24812,7 @@
       "exit_code": 4,
       "meaning": "Lock conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/lock/lock.ts",
@@ -24831,7 +24831,7 @@
       "exit_code": 4,
       "meaning": "Lock lost condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/lock/lock.ts"
       ],
@@ -24848,7 +24848,7 @@
       "exit_code": 4,
       "meaning": "Lock path unsafe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/lock/lock-confinement.ts"
       ],
@@ -24865,7 +24865,7 @@
       "exit_code": 1,
       "meaning": "Locks stale count condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -24882,7 +24882,7 @@
       "exit_code": 1,
       "meaning": "Locks unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -24899,7 +24899,7 @@
       "exit_code": 2,
       "meaning": "Malformed plan step evidence condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/plan.ts"
       ],
@@ -24916,7 +24916,7 @@
       "exit_code": 2,
       "meaning": "Managed state invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/static-inventory.ts"
       ],
@@ -24933,7 +24933,7 @@
       "exit_code": 1,
       "meaning": "Managed state unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/static-inventory.ts"
       ],
@@ -24950,7 +24950,7 @@
       "exit_code": 1,
       "meaning": "Manifest capabilities absent condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/compose.ts"
       ],
@@ -24967,7 +24967,7 @@
       "exit_code": 2,
       "meaning": "Manifest invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/static-inventory.ts"
       ],
@@ -24993,7 +24993,7 @@
           "state": "author_workspace_manifest_declares_an_unknown_top_level_key"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/manifest-schema.ts"
       ],
@@ -25010,7 +25010,7 @@
       "exit_code": 1,
       "meaning": "Manifest unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/static-inventory.ts"
       ],
@@ -25027,7 +25027,7 @@
       "exit_code": 2,
       "meaning": "Mcp annotation file unavailable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/runtime-input.ts"
       ],
@@ -25044,7 +25044,7 @@
       "exit_code": 2,
       "meaning": "Mcp stdin unavailable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -25061,7 +25061,7 @@
       "exit_code": 3,
       "meaning": "Mcp task not found or not authorized condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mcp/tasks.ts"
       ],
@@ -25078,7 +25078,7 @@
       "exit_code": 1,
       "meaning": "Merge artifacts ignored condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25095,7 +25095,7 @@
       "exit_code": 5,
       "meaning": "Merge bun launcher unavailable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/merge/install.ts"
       ],
@@ -25114,7 +25114,7 @@
       "exit_code": 1,
       "meaning": "Merge conflict markers detected condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/item/item-format.ts"
       ],
@@ -25131,7 +25131,7 @@
       "exit_code": 1,
       "meaning": "Merge decisions unreviewed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25148,7 +25148,7 @@
       "exit_code": 1,
       "meaning": "Merge driver configuration drift condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25165,7 +25165,7 @@
       "exit_code": 1,
       "meaning": "Merge driver configuration missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25182,7 +25182,7 @@
       "exit_code": 1,
       "meaning": "Merge fence drift condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25199,7 +25199,7 @@
       "exit_code": 1,
       "meaning": "Merge fence missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25216,7 +25216,7 @@
       "exit_code": 5,
       "meaning": "Merge git config unwritable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/merge/install.ts"
       ],
@@ -25233,7 +25233,7 @@
       "exit_code": 4,
       "meaning": "Merge receipt evidence invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts",
         "sdk/merge/reconcile.ts"
@@ -25251,7 +25251,7 @@
       "exit_code": 1,
       "meaning": "Merge receipt history reference missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25268,7 +25268,7 @@
       "exit_code": 4,
       "meaning": "Merge receipt not portable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/merge/receipts.ts"
       ],
@@ -25285,7 +25285,7 @@
       "exit_code": 1,
       "meaning": "Merge receipts pending condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25302,7 +25302,7 @@
       "exit_code": 4,
       "meaning": "Merge reconcile receipt evidence untrusted condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/history-repair.ts"
       ],
@@ -25319,7 +25319,7 @@
       "exit_code": 3,
       "meaning": "Merge root not found condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/merge/install.ts"
       ],
@@ -25336,7 +25336,7 @@
       "exit_code": 4,
       "meaning": "Merge settlement hook conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/merge/settlement-hook.ts"
       ],
@@ -25353,7 +25353,7 @@
       "exit_code": 4,
       "meaning": "Merge settlement review required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/merge/ignored-artifacts.ts",
         "sdk/merge/reconcile.ts",
@@ -25372,7 +25372,7 @@
       "exit_code": 1,
       "meaning": "Missing allowed values condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -25389,7 +25389,7 @@
       "exit_code": 1,
       "meaning": "Missing budget condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -25406,7 +25406,7 @@
       "exit_code": 1,
       "meaning": "Missing cli flag condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/tool-option-contracts.ts"
       ],
@@ -25423,7 +25423,7 @@
       "exit_code": 1,
       "meaning": "Missing destination condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -25440,7 +25440,7 @@
       "exit_code": 1,
       "meaning": "Missing directory condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -25457,7 +25457,7 @@
       "exit_code": 1,
       "meaning": "Missing init recovery condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/tracker-preflight-contracts.ts"
       ],
@@ -25474,7 +25474,7 @@
       "exit_code": 2,
       "meaning": "Missing lifecycle target condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension.ts"
       ],
@@ -25491,7 +25491,7 @@
       "exit_code": 1,
       "meaning": "Missing observation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/flag-invocation-contracts.ts"
       ],
@@ -25508,7 +25508,7 @@
       "exit_code": 1,
       "meaning": "Missing observed signature condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -25525,7 +25525,7 @@
       "exit_code": 1,
       "meaning": "Missing parameter alias condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/tool-option-contracts.ts"
       ],
@@ -25542,7 +25542,7 @@
       "exit_code": 1,
       "meaning": "Missing positive execution receipt condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution.ts"
       ],
@@ -25559,7 +25559,7 @@
       "exit_code": 1,
       "meaning": "Missing probe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/tracker-preflight-contracts.ts"
       ],
@@ -25577,7 +25577,7 @@
       "exit_code": 2,
       "meaning": "Missing required argument condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "cli/main.ts",
@@ -25604,7 +25604,7 @@
       "exit_code": 2,
       "meaning": "Missing required option condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts",
@@ -25625,7 +25625,7 @@
       "exit_code": 1,
       "meaning": "Missing suggested retry condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -25642,7 +25642,7 @@
       "exit_code": 1,
       "meaning": "Missing suggested retry args condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -25659,7 +25659,7 @@
       "exit_code": 1,
       "meaning": "Module import failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -25676,7 +25676,7 @@
       "exit_code": 2,
       "meaning": "Multi target github install ambiguous condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-setup.ts"
       ],
@@ -25693,7 +25693,7 @@
       "exit_code": 2,
       "meaning": "Mutation author required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-guard.ts"
       ],
@@ -25710,7 +25710,7 @@
       "exit_code": 2,
       "meaning": "Mutation document unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/register-structured-mutation.ts"
       ],
@@ -25727,7 +25727,7 @@
       "exit_code": 2,
       "meaning": "Mutation option value invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/mutation-option-validation.ts"
       ],
@@ -25744,7 +25744,7 @@
       "exit_code": 4,
       "meaning": "Mutation secret guard blocked condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/mutation-guard.ts"
       ],
@@ -25761,7 +25761,7 @@
       "exit_code": 1,
       "meaning": "No matching tests condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution-receipts.ts"
       ],
@@ -25778,7 +25778,7 @@
       "exit_code": 1,
       "meaning": "No projects matched filters condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution-receipts.ts"
       ],
@@ -25795,7 +25795,7 @@
       "exit_code": 1,
       "meaning": "No test files found condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution-receipts.ts"
       ],
@@ -25812,7 +25812,7 @@
       "exit_code": 1,
       "meaning": "No tests found condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution-receipts.ts"
       ],
@@ -25829,7 +25829,7 @@
       "exit_code": 1,
       "meaning": "No update fields condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts"
@@ -25856,7 +25856,7 @@
           "state": "author_workspace_manifest_omits_canonical_pm_version_bounds"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/manifest-schema.ts"
       ],
@@ -25873,7 +25873,7 @@
       "exit_code": 1,
       "meaning": "Non refusal exit condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -25890,7 +25890,7 @@
       "exit_code": 1,
       "meaning": "Npm pack json shape unsupported condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -25907,7 +25907,7 @@
       "exit_code": 1,
       "meaning": "Npm package archive missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -25924,7 +25924,7 @@
       "exit_code": 1,
       "meaning": "Npm package archive unsafe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -25941,7 +25941,7 @@
       "exit_code": 3,
       "meaning": "Npm package not found condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/install-sources.ts"
       ],
@@ -25958,7 +25958,7 @@
       "exit_code": 4,
       "meaning": "Ownership conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts",
@@ -25977,7 +25977,7 @@
       "exit_code": 1,
       "meaning": "Ownership dependency bypass restricted options condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update.ts"
       ],
@@ -25994,7 +25994,7 @@
       "exit_code": 1,
       "meaning": "Ownership metadata bypass restricted options condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update.ts"
       ],
@@ -26011,7 +26011,7 @@
       "exit_code": 1,
       "meaning": "Package spec empty condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -26028,7 +26028,7 @@
       "exit_code": 2,
       "meaning": "Package upgrade modes mutually exclusive condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/governance/upgrade.ts"
       ],
@@ -26045,7 +26045,7 @@
       "exit_code": 1,
       "meaning": "Positional shape budget exceeded condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -26062,7 +26062,7 @@
       "exit_code": 1,
       "meaning": "Positional signature mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -26079,7 +26079,7 @@
       "exit_code": 1,
       "meaning": "Profile name empty condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -26096,7 +26096,7 @@
       "exit_code": 1,
       "meaning": "Profile name not normalized condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -26113,7 +26113,7 @@
       "exit_code": 1,
       "meaning": "Profile summary empty condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -26130,7 +26130,7 @@
       "exit_code": 1,
       "meaning": "Profile title empty condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -26147,7 +26147,7 @@
       "exit_code": 4,
       "meaning": "Project runtime history epoch incompatible condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/environment/project-runtime-compatibility.ts"
       ],
@@ -26164,7 +26164,7 @@
       "exit_code": 4,
       "meaning": "Project runtime item format incompatible condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/environment/project-runtime-compatibility.ts"
       ],
@@ -26181,7 +26181,7 @@
       "exit_code": 4,
       "meaning": "Project runtime stale mutation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/environment/project-runtime-compatibility.ts"
       ],
@@ -26198,7 +26198,7 @@
       "exit_code": 1,
       "meaning": "Project runtime stale read condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/environment/project-runtime-compatibility.ts"
       ],
@@ -26215,7 +26215,7 @@
       "exit_code": 2,
       "meaning": "Project schema field requires declared flag condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/extensions/item-fields.ts"
       ],
@@ -26234,7 +26234,7 @@
       "exit_code": 2,
       "meaning": "Projection options mutually exclusive condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/query/get.ts",
         "sdk/query/list.ts",
@@ -26253,7 +26253,7 @@
       "exit_code": 2,
       "meaning": "Provenance value domain invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -26270,7 +26270,7 @@
       "exit_code": 2,
       "meaning": "Read output cursor command mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/read-output/continuation.ts"
       ],
@@ -26287,7 +26287,7 @@
       "exit_code": 2,
       "meaning": "Read output cursor invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/read-output/continuation.ts"
       ],
@@ -26304,7 +26304,7 @@
       "exit_code": 2,
       "meaning": "Read output cursor stale condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/read-output/continuation.ts"
       ],
@@ -26321,7 +26321,7 @@
       "exit_code": 2,
       "meaning": "Read output mutation conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/read-output-contracts.ts"
       ],
@@ -26338,7 +26338,7 @@
       "exit_code": 1,
       "meaning": "Recovery kind mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/tracker-preflight-contracts.ts"
       ],
@@ -26355,7 +26355,7 @@
       "exit_code": 1,
       "meaning": "Redundant edge condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/graph/remediation.ts"
       ],
@@ -26372,7 +26372,7 @@
       "exit_code": 1,
       "meaning": "Refusal allowed values mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-corpus-contracts.ts"
       ],
@@ -26389,7 +26389,7 @@
       "exit_code": 1,
       "meaning": "Refusal error code mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-corpus-contracts.ts"
       ],
@@ -26406,7 +26406,7 @@
       "exit_code": 1,
       "meaning": "Refusal exit code mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-corpus-contracts.ts"
       ],
@@ -26423,7 +26423,7 @@
       "exit_code": 1,
       "meaning": "Refusal mutated state condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-corpus-contracts.ts"
       ],
@@ -26440,7 +26440,7 @@
       "exit_code": 1,
       "meaning": "Refusal probe missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-corpus-contracts.ts"
       ],
@@ -26457,7 +26457,7 @@
       "exit_code": 1,
       "meaning": "Refusal recovery failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-corpus-contracts.ts"
       ],
@@ -26474,7 +26474,7 @@
       "exit_code": 4,
       "meaning": "Reindex already running condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/governance/reindex.ts"
       ],
@@ -26491,7 +26491,7 @@
       "exit_code": 1,
       "meaning": "Removed canonical spelling condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -26508,7 +26508,7 @@
       "exit_code": 1,
       "meaning": "Removed compatibility spelling condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -26525,7 +26525,7 @@
       "exit_code": 2,
       "meaning": "Reopen reason required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/reopen.ts"
       ],
@@ -26542,7 +26542,7 @@
       "exit_code": 1,
       "meaning": "Reopen receipt missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update.ts"
       ],
@@ -26559,7 +26559,7 @@
       "exit_code": 2,
       "meaning": "Reopen target status invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/reopen.ts"
       ],
@@ -26576,7 +26576,7 @@
       "exit_code": 1,
       "meaning": "Reported zero passes condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution-receipts.ts"
       ],
@@ -26593,7 +26593,7 @@
       "exit_code": 1,
       "meaning": "Reported zero tests condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/execution-receipts.ts"
       ],
@@ -26610,7 +26610,7 @@
       "exit_code": 1,
       "meaning": "Reserved item field condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/compose.ts"
       ],
@@ -26627,7 +26627,7 @@
       "exit_code": 1,
       "meaning": "Retry failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts",
         "sdk/agent/tracker-preflight-contracts.ts"
@@ -26645,7 +26645,7 @@
       "exit_code": 2,
       "meaning": "Schema migration input required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/migration-gates.ts"
       ],
@@ -26662,7 +26662,7 @@
       "exit_code": 1,
       "meaning": "Semantic spelling collision condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -26679,7 +26679,7 @@
       "exit_code": 2,
       "meaning": "Settings invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/static-inventory.ts"
       ],
@@ -26696,7 +26696,7 @@
       "exit_code": 1,
       "meaning": "Settings read fs error condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -26713,7 +26713,7 @@
       "exit_code": 2,
       "meaning": "Settings read invalid json condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -26730,7 +26730,7 @@
       "exit_code": 2,
       "meaning": "Settings read invalid schema condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -26747,7 +26747,7 @@
       "exit_code": 1,
       "meaning": "Settings read merge failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -26764,7 +26764,7 @@
       "exit_code": 2,
       "meaning": "Settings section document malformed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings-sections.ts"
       ],
@@ -26781,7 +26781,7 @@
       "exit_code": 3,
       "meaning": "Settings section document missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings-sections.ts"
       ],
@@ -26798,7 +26798,7 @@
       "exit_code": 2,
       "meaning": "Settings section invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings-sections.ts"
       ],
@@ -26815,7 +26815,7 @@
       "exit_code": 2,
       "meaning": "Settings section name invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings-sections.ts"
       ],
@@ -26832,7 +26832,7 @@
       "exit_code": 2,
       "meaning": "Settings section reserved condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings-sections.ts"
       ],
@@ -26849,7 +26849,7 @@
       "exit_code": 4,
       "meaning": "Settings section revision conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings-sections.ts"
       ],
@@ -26866,7 +26866,7 @@
       "exit_code": 1,
       "meaning": "Settings unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/extension/static-inventory.ts"
       ],
@@ -26883,7 +26883,7 @@
       "exit_code": 2,
       "meaning": "Settings write assigned path invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings.ts"
       ],
@@ -26900,7 +26900,7 @@
       "exit_code": 2,
       "meaning": "Settings write invalid existing json condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings.ts"
       ],
@@ -26917,7 +26917,7 @@
       "exit_code": 2,
       "meaning": "Settings write invalid existing schema condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/settings.ts"
       ],
@@ -26934,7 +26934,7 @@
       "exit_code": 1,
       "meaning": "Stale budget condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/flag-lexicon-contracts.ts"
       ],
@@ -26951,7 +26951,7 @@
       "exit_code": 1,
       "meaning": "Stale destination condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -26968,7 +26968,7 @@
       "exit_code": 1,
       "meaning": "Stale observed signature condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -26985,7 +26985,7 @@
       "exit_code": 4,
       "meaning": "Stale revision condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/item-store.ts"
       ],
@@ -27004,7 +27004,7 @@
       "exit_code": 4,
       "meaning": "Start blocked by open dependency condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/start-blockers.ts"
       ],
@@ -27021,7 +27021,7 @@
       "exit_code": 1,
       "meaning": "Status duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -27038,7 +27038,7 @@
       "exit_code": 2,
       "meaning": "Status invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -27055,7 +27055,7 @@
       "exit_code": 2,
       "meaning": "Status lifecycle role required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/schema.ts"
       ],
@@ -27072,7 +27072,7 @@
       "exit_code": 2,
       "meaning": "Stdin json invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/structured-mutations.ts"
       ],
@@ -27089,7 +27089,7 @@
       "exit_code": 2,
       "meaning": "Stdin json persisted annotation changed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/update.ts"
       ],
@@ -27106,7 +27106,7 @@
       "exit_code": 2,
       "meaning": "Stdin json unknown key condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/structured-mutations.ts"
       ],
@@ -27123,7 +27123,7 @@
       "exit_code": 2,
       "meaning": "Structured event immutable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/annotations.ts"
       ],
@@ -27140,7 +27140,7 @@
       "exit_code": 2,
       "meaning": "Structured event input conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/notes.ts"
       ],
@@ -27157,7 +27157,7 @@
       "exit_code": 2,
       "meaning": "Structured event json empty condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/notes.ts"
       ],
@@ -27174,7 +27174,7 @@
       "exit_code": 2,
       "meaning": "Structured event json invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/notes.ts"
       ],
@@ -27191,7 +27191,7 @@
       "exit_code": 2,
       "meaning": "Structured event since invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/notes.ts"
       ],
@@ -27208,7 +27208,7 @@
       "exit_code": 1,
       "meaning": "Suggested retry args mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-closure.ts"
       ],
@@ -27225,7 +27225,7 @@
       "exit_code": 1,
       "meaning": "Telemetry endpoint probe failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27242,7 +27242,7 @@
       "exit_code": 1,
       "meaning": "Telemetry endpoint probe http status condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27259,7 +27259,7 @@
       "exit_code": 1,
       "meaning": "Telemetry otel export failing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27276,7 +27276,7 @@
       "exit_code": 1,
       "meaning": "Telemetry queue high retries condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27293,7 +27293,7 @@
       "exit_code": 2,
       "meaning": "Telemetry queue invalid rows condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27310,7 +27310,7 @@
       "exit_code": 1,
       "meaning": "Telemetry queue pending condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27327,7 +27327,7 @@
       "exit_code": 1,
       "meaning": "Telemetry schema version behind condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27344,7 +27344,7 @@
       "exit_code": 2,
       "meaning": "Telemetry state invalid json condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27361,7 +27361,7 @@
       "exit_code": 2,
       "meaning": "Template type unknown condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -27378,7 +27378,7 @@
       "exit_code": 4,
       "meaning": "Terminal plan mutation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/plan.ts"
       ],
@@ -27396,7 +27396,7 @@
       "exit_code": 4,
       "meaning": "Terminal state conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/telemetry/observability.ts",
         "sdk/lifecycle/claim.ts"
@@ -27414,7 +27414,7 @@
       "exit_code": 2,
       "meaning": "Test measure requires execution condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/prerequisites.ts"
       ],
@@ -27431,7 +27431,7 @@
       "exit_code": 2,
       "meaning": "Test measure requires run condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/test/prerequisites.ts"
       ],
@@ -27448,7 +27448,7 @@
       "exit_code": 2,
       "meaning": "Text unpaired surrogate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/item/item-format.ts",
         "core/shared/output-unicode.ts"
@@ -27468,7 +27468,7 @@
       "exit_code": 1,
       "meaning": "Tracked runtime cache files condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -27494,7 +27494,7 @@
           "state": "selected_tracker_root_exists_without_settings"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/store/tracker-preflight.ts",
@@ -27522,7 +27522,7 @@
           "state": "selected_tracker_root_does_not_exist"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/tracker-preflight.ts"
       ],
@@ -27548,7 +27548,7 @@
           "state": "selected_tracker_root_is_a_regular_file"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/tracker-preflight.ts"
       ],
@@ -27574,7 +27574,7 @@
           "state": "selected_tracker_root_is_not_readable"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/store/tracker-preflight.ts"
       ],
@@ -27591,7 +27591,7 @@
       "exit_code": 4,
       "meaning": "Transaction abandoned condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-transaction.ts"
       ],
@@ -27608,7 +27608,7 @@
       "exit_code": 4,
       "meaning": "Transaction committed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-transaction.ts"
       ],
@@ -27625,7 +27625,7 @@
       "exit_code": 4,
       "meaning": "Transaction create compensated condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts"
       ],
@@ -27642,7 +27642,7 @@
       "exit_code": 4,
       "meaning": "Transaction journal invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-transaction.ts"
       ],
@@ -27659,7 +27659,7 @@
       "exit_code": 4,
       "meaning": "Transaction partial mutation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts"
       ],
@@ -27676,7 +27676,7 @@
       "exit_code": 4,
       "meaning": "Transaction plan mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-transaction.ts"
       ],
@@ -27693,7 +27693,7 @@
       "exit_code": 2,
       "meaning": "Transaction preview external schema condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts"
       ],
@@ -27710,7 +27710,7 @@
       "exit_code": 2,
       "meaning": "Transaction preview non regular file condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/fs/fs-utils.ts"
       ],
@@ -27727,7 +27727,7 @@
       "exit_code": 4,
       "meaning": "Transaction preview snapshot changed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts"
       ],
@@ -27744,7 +27744,7 @@
       "exit_code": 4,
       "meaning": "Transaction recovery plan missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts"
       ],
@@ -27761,7 +27761,7 @@
       "exit_code": 1,
       "meaning": "Type duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -27778,7 +27778,7 @@
       "exit_code": 2,
       "meaning": "Type invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -27795,7 +27795,7 @@
       "exit_code": 1,
       "meaning": "Undeclared observation condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/flag-invocation-contracts.ts"
       ],
@@ -27812,7 +27812,7 @@
       "exit_code": 1,
       "meaning": "Unexpected refusal probe condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/refusal-corpus-contracts.ts"
       ],
@@ -27829,7 +27829,7 @@
       "exit_code": 2,
       "meaning": "Unknown command condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts",
@@ -27848,7 +27848,7 @@
       "exit_code": 2,
       "meaning": "Unknown context intent condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/context-intent-contracts.ts"
       ],
@@ -27865,7 +27865,7 @@
       "exit_code": 1,
       "meaning": "Unknown error condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -27882,7 +27882,7 @@
       "exit_code": 3,
       "meaning": "Unknown field condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/schema.ts"
       ],
@@ -27901,7 +27901,7 @@
       "exit_code": 2,
       "meaning": "Unknown field projection condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/query/get.ts",
         "sdk/query/list.ts",
@@ -27920,7 +27920,7 @@
       "exit_code": 3,
       "meaning": "Unknown item type condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/schema.ts"
       ],
@@ -27937,7 +27937,7 @@
       "exit_code": 2,
       "meaning": "Unknown lifecycle action condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/subcommand-recovery.ts"
       ],
@@ -27954,7 +27954,7 @@
       "exit_code": 2,
       "meaning": "Unknown noun condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -27980,7 +27980,7 @@
           "state": "declared_option_is_rejected_on_the_selected_command_path"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "cli/runtime/invocation-options.ts",
@@ -28000,7 +28000,7 @@
       "exit_code": 2,
       "meaning": "Unknown plan template condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/plan.ts"
       ],
@@ -28017,7 +28017,7 @@
       "exit_code": 2,
       "meaning": "Unknown provenance dimension condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/history-provenance.ts"
       ],
@@ -28034,7 +28034,7 @@
       "exit_code": 3,
       "meaning": "Unknown status condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/schema.ts"
       ],
@@ -28086,7 +28086,7 @@
           "state": "package_lifecycle_token_is_not_declared"
         }
       ],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts",
         "sdk/agent/subcommand-recovery.ts"
@@ -28104,7 +28104,7 @@
       "exit_code": 1,
       "meaning": "Unsafe init recovery condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/agent/tracker-preflight-contracts.ts"
       ],
@@ -28121,7 +28121,7 @@
       "exit_code": 1,
       "meaning": "Unsupported update option condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "cli/error-guidance.ts"
       ],
@@ -28138,7 +28138,7 @@
       "exit_code": 4,
       "meaning": "Upsert key ambiguous condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/structured-mutations.ts"
       ],
@@ -28155,7 +28155,7 @@
       "exit_code": 4,
       "meaning": "Upsert key conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts"
       ],
@@ -28172,7 +28172,7 @@
       "exit_code": 2,
       "meaning": "Upsert key duplicate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts",
         "sdk/structured-mutations.ts"
@@ -28190,7 +28190,7 @@
       "exit_code": 2,
       "meaning": "Upsert key missing condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/structured-mutations.ts"
       ],
@@ -28207,7 +28207,7 @@
       "exit_code": 4,
       "meaning": "Upsert match changed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/item-transaction.ts"
       ],
@@ -28224,7 +28224,7 @@
       "exit_code": 1,
       "meaning": "Validate command references stale pm ids condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28241,7 +28241,7 @@
       "exit_code": 1,
       "meaning": "Validate files missing linked paths condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28258,7 +28258,7 @@
       "exit_code": 1,
       "meaning": "Validate files orphaned paths condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28275,7 +28275,7 @@
       "exit_code": 1,
       "meaning": "Validate files tracked all strict forces pm internals condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28292,7 +28292,7 @@
       "exit_code": 1,
       "meaning": "Validate format version ahead items condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28309,7 +28309,7 @@
       "exit_code": 1,
       "meaning": "Validate format version outdated items condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28326,7 +28326,7 @@
       "exit_code": 1,
       "meaning": "Validate hierarchy parent cycle condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28343,7 +28343,7 @@
       "exit_code": 1,
       "meaning": "Validate hierarchy parent cycle error condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28360,7 +28360,7 @@
       "exit_code": 1,
       "meaning": "Validate history drift chain mismatches condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28377,7 +28377,7 @@
       "exit_code": 1,
       "meaning": "Validate history drift hash mismatches condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28394,7 +28394,7 @@
       "exit_code": 1,
       "meaning": "Validate history drift missing streams condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28411,7 +28411,7 @@
       "exit_code": 1,
       "meaning": "Validate history drift unreadable streams condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28428,7 +28428,7 @@
       "exit_code": 1,
       "meaning": "Validate history drift version skews condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28445,7 +28445,7 @@
       "exit_code": 2,
       "meaning": "Validate history unknown author events condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28462,7 +28462,7 @@
       "exit_code": 1,
       "meaning": "Validate lifecycle active closure like metadata condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28479,7 +28479,7 @@
       "exit_code": 1,
       "meaning": "Validate lifecycle active terminal parent condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28496,7 +28496,7 @@
       "exit_code": 1,
       "meaning": "Validate lifecycle dependency cycles condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28513,7 +28513,7 @@
       "exit_code": 1,
       "meaning": "Validate lifecycle dependency cycles error condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28530,7 +28530,7 @@
       "exit_code": 1,
       "meaning": "Validate lifecycle stale blockers condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28547,7 +28547,7 @@
       "exit_code": 1,
       "meaning": "Validate merge decisions unreviewed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28564,7 +28564,7 @@
       "exit_code": 1,
       "meaning": "Validate merge driver configuration condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28581,7 +28581,7 @@
       "exit_code": 1,
       "meaning": "Validate merge fence drift condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28598,7 +28598,7 @@
       "exit_code": 2,
       "meaning": "Validate metadata custom profile missing required fields condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28615,7 +28615,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata duplicate issue codes condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28632,7 +28632,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing acceptance criteria condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28649,7 +28649,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing close reason condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28666,7 +28666,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing closed at condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28683,7 +28683,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing confidence condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28700,7 +28700,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing estimate condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28717,7 +28717,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing release condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28734,7 +28734,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing reviewer condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28751,7 +28751,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing risk condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28768,7 +28768,7 @@
       "exit_code": 1,
       "meaning": "Validate metadata missing sprint condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28785,7 +28785,7 @@
       "exit_code": 1,
       "meaning": "Validate resolution missing fields condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28802,7 +28802,7 @@
       "exit_code": 1,
       "meaning": "Validate storage duplicate item ids condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28819,7 +28819,7 @@
       "exit_code": 4,
       "meaning": "Validate storage history conflict markers condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28836,7 +28836,7 @@
       "exit_code": 1,
       "meaning": "Validate storage resurrected items condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28853,7 +28853,7 @@
       "exit_code": 1,
       "meaning": "Validate storage tracked runtime cache files condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28870,7 +28870,7 @@
       "exit_code": 1,
       "meaning": "Validate storage unparseable config condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28887,7 +28887,7 @@
       "exit_code": 1,
       "meaning": "Validate storage unparseable history condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28904,7 +28904,7 @@
       "exit_code": 1,
       "meaning": "Validate storage unreadable items condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28921,7 +28921,7 @@
       "exit_code": 1,
       "meaning": "Vectorization embedding identity changed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28938,7 +28938,7 @@
       "exit_code": 1,
       "meaning": "Vectorization stale items remaining condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/diagnostics/remediation.ts"
       ],
@@ -28955,7 +28955,7 @@
       "exit_code": 1,
       "meaning": "Visible surface ceiling exceeded condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
       ],
@@ -28972,7 +28972,7 @@
       "exit_code": 1,
       "meaning": "Workflow duplicate type condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -28989,7 +28989,7 @@
       "exit_code": 4,
       "meaning": "Workflow policy approval history invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/policy/workflow-policy-store.ts"
       ],
@@ -29006,7 +29006,7 @@
       "exit_code": 4,
       "meaning": "Workflow policy audit failed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/policy/workflow-policy-store.ts"
       ],
@@ -29023,7 +29023,7 @@
       "exit_code": 4,
       "meaning": "Workflow policy input unreadable condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/policy/workflow-policy-store.ts"
       ],
@@ -29040,7 +29040,7 @@
       "exit_code": 2,
       "meaning": "Workflow policy invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/policy/workflow-policy.ts"
       ],
@@ -29057,7 +29057,7 @@
       "exit_code": 4,
       "meaning": "Workflow policy refused condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/policy/workflow-policy-store.ts"
       ],
@@ -29074,7 +29074,7 @@
       "exit_code": 4,
       "meaning": "Workflow policy registry invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/policy/workflow-policy-store.ts"
       ],
@@ -29091,7 +29091,7 @@
       "exit_code": 2,
       "meaning": "Workflow status unknown condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -29108,7 +29108,7 @@
       "exit_code": 1,
       "meaning": "Workflow transition malformed condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -29125,7 +29125,7 @@
       "exit_code": 1,
       "meaning": "Workflow type empty condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -29142,7 +29142,7 @@
       "exit_code": 2,
       "meaning": "Workflow type unknown condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/profile/profile-lint.ts"
       ],
@@ -29159,7 +29159,7 @@
       "exit_code": 4,
       "meaning": "Workspace history chain invalid condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/workspace-history.ts"
       ],
@@ -29176,7 +29176,7 @@
       "exit_code": 4,
       "meaning": "Workspace history state conflict condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/workspace-history.ts"
       ],
@@ -29193,7 +29193,7 @@
       "exit_code": 2,
       "meaning": "Workspace root pm path condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/init.ts"
       ],
@@ -29210,7 +29210,7 @@
       "exit_code": 2,
       "meaning": "Workspace snapshot force required condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -29227,7 +29227,7 @@
       "exit_code": 4,
       "meaning": "Workspace snapshot manifest mismatch condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -29244,7 +29244,7 @@
       "exit_code": 2,
       "meaning": "Workspace snapshot name reserved fingerprint condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -29261,7 +29261,7 @@
       "exit_code": 3,
       "meaning": "Workspace snapshot not found condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -29278,7 +29278,7 @@
       "exit_code": 1,
       "meaning": "Workspace snapshot permission denied condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -29295,7 +29295,7 @@
       "exit_code": 1,
       "meaning": "Workspace snapshot resource exhausted condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -29312,7 +29312,7 @@
       "exit_code": 1,
       "meaning": "Workspace snapshot storage exhausted condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/workspace-snapshot.ts"
       ],
@@ -29329,7 +29329,7 @@
       "exit_code": 2,
       "meaning": "Wrong item type condition.",
       "owned_states": [],
-      "recovery": "Inspect the structured error guidance and retry the suggested command.",
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/lifecycle/plan.ts"
       ],
@@ -34664,7 +34664,7 @@
       ]
     },
     {
-      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. List calls return the newest comments that fit the output budget, with total_count/has_more metadata and a next_cursor that pages back to older comments through outputCursor; outputBudget \"unbounded\" returns the complete listing at once. Pass options.limit=N for only the newest N comments (has_more then reports older comments without a cursor) or options.limit=0 for summary-only metadata; options.full=true returns the complete history after a write. Rows carry their absolute index; pair edit/delete with options.expectAt to refuse a different entry.",
+      "description": "List, add, edit, or delete comments on a pm item. Use options.add to append, options.edit=<1-based index> with replacement text to fix a comment, or options.delete=<1-based index> to remove one. options.ifAbsent applies only to options.add for retry-safe author-and-text deduplication and cannot combine with options.edit or options.delete. List calls return the newest comments that fit the output budget, with total_count/has_more metadata and a next_cursor that pages back to older comments through outputCursor; without options.limit, outputBudget \"unbounded\" returns the complete listing at once. Pass options.limit=N for only the newest N comments (has_more then reports older comments without a cursor) or options.limit=0 for summary-only metadata; options.full=true returns the complete history after a write. Rows carry their absolute index; pair edit/delete with options.expectAt to refuse a different entry.",
       "input_schema": {
         "additionalProperties": true,
         "allOf": [
