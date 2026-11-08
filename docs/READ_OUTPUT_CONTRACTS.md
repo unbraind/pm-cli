@@ -413,8 +413,12 @@ selects the newest N comments; there the caller chose the window, so
 `has_more` can report older comments without a `next_cursor`, and the caller
 raises or removes the limit to read them. The same holds for `outputLimit`:
 a universal row limit truncates without a cursor, so `has_more` reports the
-older comments and the caller raises or removes it. Without either limit,
-`outputBudget: "unbounded"` returns the complete listing in one response.
+older comments and the caller raises or removes it. Inside such a window, a
+`next_cursor` still pages through the rows the budget trimmed. Without either
+limit, `outputBudget: "unbounded"` returns the complete listing in one
+response. A budget too small for even one comment omits the listing
+(`output_budget_exceeded`, no `next_cursor`); retry with `outputBudget:
+"unbounded"`, keeping any `outputCursor` already being followed.
 
 Health continuation fingerprints use a versioned nonvolatile-snapshot policy
 for the `checks` row. Command-lifecycle telemetry may refresh timestamps, queue

@@ -3,7 +3,7 @@
  * controls is refused with a stable typed code that names the controls, and
  * the CLI retries the caller's own invocation without them.
  */
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { repairReadOutputMutationRecovery } from "../../../../src/cli/runtime/read-output-mutation-retry.js";
@@ -20,12 +20,12 @@ import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 
 const CODE = READ_OUTPUT_MUTATION_CONFLICT_CODE;
 
-/** Every item and history file under a tracker with its size, so any write shows up. */
-function trackerFileSizes(pmPath: string): Record<string, number> {
+/** Every item and history file under a tracker with its content, so any write shows up. */
+function trackerFileSizes(pmPath: string): Record<string, string> {
   return Object.fromEntries(
     ["tasks", "history"].flatMap((folder) => {
       const directory = path.join(pmPath, folder);
-      return existsSync(directory) ? readdirSync(directory).map((name) => [`${folder}/${name}`, statSync(path.join(directory, name)).size] as const) : [];
+      return existsSync(directory) ? readdirSync(directory).map((name) => [`${folder}/${name}`, readFileSync(path.join(directory, name), "utf8")] as const) : [];
     }),
   );
 }
@@ -204,7 +204,7 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
         expect(body.recovery?.suggested_retry_args).toBeUndefined();
         const listed = environment.runCli(["comments", id, "--json"], { expectJson: true }).json as { comments: unknown[] };
         expect(listed.comments).toEqual([]);
-        // CodeRabbit review of PR #1688: the explicit tracker is checked too, byte for byte.
+        // CodeRabbit review of PR #1688: the explicit tracker is checked too, content for content.
         expect(trackerFileSizes(explicit.pmPath)).toEqual(explicitBefore);
       });
     });
@@ -263,10 +263,11 @@ describe("pm-rrwh2o CLI retry replays the caller's invocation without the contro
         expect(body.recovery?.suggested_retry).toBeUndefined();
         expect(body.recovery?.suggested_retry_args).toBeUndefined();
       }
-      // Long ordinary text is refused promptly: without an @ nothing is parsed.
+      // Long ordinary text is refused promptly. 20,000 characters stays under the Windows command-line limit
+      // when the runner spawns a subprocess; the unit case above covers 200,000 in process.
       const started = performance.now();
       const id = createTestItemId(context, { title: "Long text" });
-      const long = context.runCli(["comments", id, "--add", "a".repeat(80_000), "--output-limit", "2", "--json"]);
+      const long = context.runCli(["comments", id, "--add", "a".repeat(20_000), "--output-limit", "2", "--json"]);
       expect(long.code).toBe(2);
       expect(performance.now() - started).toBeLessThan(10_000);
     });

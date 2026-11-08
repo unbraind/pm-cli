@@ -75,6 +75,16 @@ describe("MCP pm_comments continuations reach the oldest comment (pm-sbqn4h)", (
       expect(newest).toMatchObject({ total_count: ENTRIES, has_more: true });
       // The caller chose this window: older comments are reported by has_more, never by a cursor.
       expect(newest.next_cursor ?? undefined).toBeUndefined();
+      // Inside an explicit window, a budget-trimmed page still offers a cursor through the rest of that window.
+      const windowed: number[] = [];
+      let windowPage = await callComments(context, { id, options: { limit: 10 }, outputBudget: "700" });
+      expect(typeof windowPage.next_cursor).toBe("string");
+      for (let step = 0; step < 10; step += 1) {
+        windowed.unshift(...windowPage.comments.map(({ index }) => index));
+        if (typeof windowPage.next_cursor !== "string") break;
+        windowPage = await callComments(context, { id, options: { limit: 10 }, outputBudget: "700", outputCursor: windowPage.next_cursor });
+      }
+      expect(windowed).toEqual(Array.from({ length: 10 }, (_entry, offset) => ENTRIES - 9 + offset));
       // A numeric zero limit is summary-only metadata.
       const summary = await callComments(context, { id, options: { limit: 0 } });
       expect(summary).toMatchObject({ comments: [], count: 0, total_count: ENTRIES, has_more: true });
