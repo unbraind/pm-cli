@@ -25,15 +25,6 @@ import {
   readOutputRetainsTail,
 } from "./tail-retention.js";
 
-export {
-  PM_READ_OUTPUT_TAIL_RETENTION_POLICIES,
-  readOutputRetainsTail,
-} from "./tail-retention.js";
-export type {
-  PmReadOutputDeliveredRowCounter,
-  PmReadOutputTailRetentionPolicy,
-} from "./tail-retention.js";
-
 const MAX_READ_OUTPUT_CURSOR_LENGTH = 4096;
 
 const HEALTH_TELEMETRY_VOLATILE_DETAIL_FIELDS = Object.freeze([
