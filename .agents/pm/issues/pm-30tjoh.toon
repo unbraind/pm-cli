@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: annotations,item-format,refusals,robustness,telemetry
 created_at: "2026-11-08T02:51:36.130Z"
-updated_at: "2026-11-08T09:23:27.358Z"
+updated_at: "2026-11-08T11:19:43.055Z"
 closed_at: "2026-11-08T05:48:56.565Z"
 completed_at: "2026-11-08T05:48:56.565Z"
 author: "harness:claude-code"
@@ -17,7 +17,7 @@ risk: low
 confidence: high
 severity: medium
 repro_steps: "In a sandbox tracker, append the line comments[2]: just-a-string,42 to a task TOON file, then run pm comments <id> --json and pm get <id> --json"
-resolution: "compareLogValues, the store's canonical annotation order in src/core/item/item-format.ts, now reads created_at, text and author defensively (logSortFields). A stored entry that is not an object, or lacks a field, sorts by empty strings instead of throwing, so pm comments, pm notes, pm learnings and pm get read such a document. Malformed entries are delivered as stored (PR 1685 stopped spreading them into indexed characters), appends still work and keep them, and the --expect-at guard reads a null entry safely: it refuses with annotation_entry_mismatch, reporting actual_created_at null and an unrecorded-time message, instead of throwing a TypeError. Tolerating rather than refusing keeps a whole item readable when one entry is damaged."
+resolution: "compareLogValues, the store's canonical annotation order in src/core/item/item-format.ts, stays legacy-exact because the order is hashed into item history. logSortField reads created_at first, then text only on a created_at tie and author only on a text tie, and coerces each with String() as the legacy Date.parse and localeCompare arguments were, so a missing field reads \"undefined\", not an empty string. A read or conversion that throws yields the fixed key [unconvertible]. Every document the legacy comparator could sort keeps its order and history hashes, and documents that made it throw now sort. pm comments, notes, learnings, get and search read such items; malformed entries are delivered as stored, kept out of the search corpus, skipped by the --if-absent duplicate check and repaired on edit (a non-object gains a well-formed entry; a record gains a missing created_at or author). The --expect-at guard refuses with annotation_entry_mismatch and labels a missing, empty or non-string created_at as an unrecorded time. The transitive order for mixed stamps is pm-yo46im; TOON null-row rendering is pm-e3hfv8."
 expected_result: "A malformed annotation entry never produces an unhandled TypeError: reads, appends and guarded edits complete or refuse with a typed error, and the read surfaces agree"
 actual_result: "tests/unit/core/item/malformed-annotation-entries.spec.ts seeds a string, a number and a text-less object into comments, notes and learnings. pm <collection> and pm get --json exit 0 through the built CLI, an append keeps all entries, and a guarded edit of a null entry refuses with annotation_entry_mismatch. The comparator spec fails with the item-format.ts fix stashed. The 557 annotation and item specs pass, and every added line is covered."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:

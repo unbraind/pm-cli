@@ -1,0 +1,20 @@
+id: pm-e3hfv8
+title: "TOON annotation listings drop null rows while count reports them, so a malformed collection renders fewer rows than its count"
+description: "## Observed\nA malformed stored annotation collection such as comments with entries [object, null, 42] is delivered by `pm comments <id> --json` as all three rows. The default TOON output renders \"comments[2]\" (the object and 42) yet reports \"count: 3\", because TOON compaction drops null array elements. tests/unit/core/output/output.spec.ts pins that sparse-presentation contract for every TOON payload: arr_scalars drops null, and the spec asserts there is no \"- null\" line. A reader of the TOON listing therefore sees fewer rows than the count, and the row positions it can count no longer match the absolute index an edit or delete takes. Rows without an index field (non-objects) carry no address of their own.\n\n## Why it matters\nAnnotation rows are addressed by absolute 1-based index (--edit/--delete). A dropped null row shifts every visible non-object row's apparent position, while object rows still carry their own index field.\n\n## Fix direction\nKeep the general TOON null-dropping contract. For collections whose rows are addressed by position (comments, notes, learnings), render a malformed non-object row with its absolute index, or keep null rows, so the rendered length matches the count. Discovered during the CodeRabbit review of PR 1687."
+type: Issue
+status: open
+priority: 3
+tags[4]: annotations,"area:output",toon,ux
+created_at: "2026-11-08T11:17:07.960Z"
+updated_at: "2026-11-08T11:17:07.960Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "pm comments, notes and learnings in TOON render one row per stored entry, including null, or give every non-object row its absolute index; The general TOON null-dropping contract pinned in tests/unit/core/output/output.spec.ts stays unchanged for other payloads"
+parent: pm-doxj
+risk: low
+confidence: high
+expected_result: "The TOON annotation listing shows as many rows as its count, each addressable by its absolute index"
+actual_result: "comments[2] is rendered with count 3 when one stored entry is null"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-30tjoh,discovered_from,"2026-11-08T11:17:07.960Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -666,19 +666,33 @@ function verifyMissingBinControl(label, args, tempRoot, publicRegistryEnv) {
   return { ok: true, observed_nonzero_status: result.status };
 }
 
+/** Reasons for metadata npm returned but the verifier rejected (not a visibility delay). */
+const NPM_METADATA_REJECTION = /^npm_(?:metadata_shape_unsupported|version_mismatch:|json_parse_failed:)/u;
+
 /**
- * Explain an exhausted npm metadata wait: the exact version, the poll budget
- * spent, npm's publish-time scan as the usual cause, and the recovery that
- * re-runs only the failed publication job instead of rebuilding (pm-0jzl5t).
+ * Explain an exhausted npm metadata wait (pm-0jzl5t). A version npm does not
+ * show yet is usually held by npm's publish-time scan, so the message gives
+ * the publication-only re-run; metadata npm returns but the verifier rejects
+ * is not a propagation delay, so it points at diagnosis instead of another
+ * full wait.
  */
 function npmMetadataFailureMessage(version, attempts, reason, runId = process.env.GITHUB_RUN_ID) {
   const minutes = Math.round((attempts * NPM_METADATA_POLL_MS) / 60_000);
+  const budget = `${attempts} polls (about ${minutes} minute${minutes === 1 ? "" : "s"})`;
+  const spec = `${NPM_PACKAGE}@${version}`;
+  if (NPM_METADATA_REJECTION.test(reason)) {
+    return [
+      `npm metadata verification failed: ${reason}.`,
+      `npm returned metadata for ${spec} that the verifier rejected on every one of ${budget}.`,
+      `This is not a propagation delay: inspect \`npm view ${spec} --json\` before re-running, because a re-run repeats the full wait.`,
+    ].join(" ");
+  }
   const rerun = runId ? `gh run rerun ${runId} --failed` : "gh run rerun <run-id> --failed";
   return [
     `npm metadata verification failed: ${reason}.`,
-    `${NPM_PACKAGE}@${version} was not visible after ${attempts} polls (about ${minutes} minute${minutes === 1 ? "" : "s"}).`,
+    `${spec} was not visible after ${budget}.`,
     "npm holds a new version for its publish-time malware scan before it becomes installable;",
-    `once \`npm view ${NPM_PACKAGE}@${version} version\` succeeds, re-run only the failed publication job: ${rerun}`,
+    `once \`npm view ${spec} version\` succeeds, re-run only the failed publication job: ${rerun}`,
   ].join(" ");
 }
 

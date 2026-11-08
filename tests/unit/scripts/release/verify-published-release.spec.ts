@@ -727,6 +727,11 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
           : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("npm_version_mismatch:2026.6.13");
+    // CodeRabbit review of PR #1687: rejected metadata is not a scan hold, so
+    // the message points at diagnosis instead of another full wait.
+    expect(String(failure ?? "")).toContain("rejected on every one of 1 polls (about 0 minutes)");
+    expect(String(failure ?? "")).toContain("This is not a propagation delay: inspect `npm view @unbrained/pm-cli@2026.6.14 --json`");
+    expect(String(failure ?? "")).not.toContain("publish-time malware scan");
   });
 
   it.each(["[]", '[{"version":"2026.6.14"},{"version":"2026.6.14"}]', "null", '"scalar"', "[null]", "[[]]"])("refuses ambiguous or non-object npm metadata %s", async (stdout) => {

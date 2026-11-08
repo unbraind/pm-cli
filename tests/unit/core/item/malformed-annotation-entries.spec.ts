@@ -164,7 +164,10 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
       const rows = (listed.json as Record<string, unknown[]>)[collection]!;
       expect(rows).toHaveLength(3);
       expect(rows).toEqual(expect.arrayContaining(["just-a-string", 42]));
-      expect(context.runCli(["get", id, "--json"], { expectJson: true }).code).toBe(0);
+      const fetched = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
+      expect(fetched.code).toBe(0);
+      // CodeRabbit review of PR #1687: get must deliver every stored entry.
+      expect((fetched.json as { item: Record<string, unknown[]> }).item[collection]).toHaveLength(3);
       const appended = context.runCli([collection, id, "a valid entry", "--json"], { expectJson: true });
       expect(appended.code).toBe(0);
       const after = context.runCli([collection, id, "--json"], { expectJson: true }).json as Record<string, unknown[]>;
@@ -220,6 +223,37 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
         const entry = after[collection]!.find((row) => (row as { text?: unknown } | null)?.text === "repaired") as Record<string, unknown>;
         expect(entry).toMatchObject({ text: "repaired", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
         expect(Object.keys(entry)).not.toContain("0");
+      });
+    },
+  );
+
+  it.each(MALFORMED_COLLECTIONS)(
+    "stamps a %s record missing created_at and author on edit so it can be guarded afterwards",
+    async (collection) => {
+      // CodeRabbit review of PR #1687: an unstamped record stayed unguardable.
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: `Unstamped ${collection}` });
+        await appendFile(
+          path.join(context.pmPath, "tasks", `${id}.toon`),
+          `${collection}[2]:\n  - text: stored\n    extra: kept\n  - created_at: ""\n    author: ""\n    text: blank\n`,
+          "utf8",
+        );
+        const run = RUNNERS[collection];
+        const indexOf = async (text: string): Promise<number> =>
+          ((await run(id, {}, { path: context.pmPath })) as unknown as Record<string, Array<Record<string, unknown>>>)[collection]!.find(
+            (row) => row.text === text,
+          )!.index as number;
+        await run(id, { edit: await indexOf("stored"), add: "repaired" }, { path: context.pmPath });
+        await run(id, { edit: await indexOf("blank"), add: "restamped" }, { path: context.pmPath });
+        const after = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, Array<Record<string, unknown>>>;
+        const entry = after[collection]!.find((row) => row.text === "repaired")!;
+        expect(entry).toMatchObject({ extra: "kept", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
+        const restamped = after[collection]!.find((row) => row.text === "restamped")!;
+        expect(restamped.created_at).not.toBe("");
+        expect(restamped.author).not.toBe("");
+        await run(id, { edit: entry.index as number, add: "guarded", expectAt: entry.created_at as string }, { path: context.pmPath });
+        const guarded = (await run(id, {}, { path: context.pmPath })) as unknown as Record<string, Array<Record<string, unknown>>>;
+        expect(guarded[collection]!.some((row) => row.text === "guarded" && row.created_at === entry.created_at)).toBe(true);
       });
     },
   );

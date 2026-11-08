@@ -147,6 +147,9 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          # Never restore a cached Bun: a poisoned cache entry would run inside
+          # release and publication checks.
+          no-cache: true
 
       - name: Verify npm trusted publisher exchange
         timeout-minutes: 2
@@ -504,6 +507,9 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          # Never restore a cached Bun: a poisoned cache entry would run inside
+          # release and publication checks.
+          no-cache: true
 
       - name: Verify published package on npm, npx, and bunx
         # npm metadata propagation measured at 6-8 minutes after publish on
@@ -553,6 +559,9 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          # Never restore a cached Bun: a poisoned cache entry would run inside
+          # release and publication checks.
+          no-cache: true
       - name: Accept candidate and previous release
         shell: bash
         env:

@@ -237,3 +237,14 @@ it.each(["npm", "npm-global", "bun"])(
     }
   },
 );
+
+it("never restores a cached Bun in release, publication or acceptance jobs (CodeRabbit review of PR #1687)", async () => {
+  const workflow = parse(
+    await readFile(".github/workflows/release.yml", "utf8"),
+  ) as { jobs: Record<string, Job & { steps: Array<{ uses?: string }> }> };
+  const bunSteps = Object.entries(workflow.jobs).flatMap(([job, definition]) =>
+    definition.steps.filter((step) => step.uses?.startsWith("oven-sh/setup-bun@")).map((step) => ({ job, step })),
+  );
+  expect(bunSteps.map(({ job }) => job).sort()).toEqual(["installed-acceptance", "publication", "release"]);
+  for (const { step } of bunSteps) expect(step.with?.["no-cache"]).toBe(true);
+});

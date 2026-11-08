@@ -202,7 +202,9 @@ function isAnnotationRecord(entry: unknown): entry is Partial<AnnotationEntry> {
 /**
  * The entry an edit writes: the stored record with new text, or, for a
  * malformed stored entry, a well-formed replacement instead of a spread of a
- * string into character keys.
+ * string into character keys. A record missing a usable created_at or author
+ * gains them, keeping every other stored field, so the repaired row can be
+ * guarded with --expect-at afterwards.
  */
 function editedAnnotationEntry<TEntry extends AnnotationEntry>(
   existing: unknown,
@@ -210,8 +212,18 @@ function editedAnnotationEntry<TEntry extends AnnotationEntry>(
   author: string,
   createEntry: (input: { created_at: string; author: string; text: string }) => TEntry,
 ): TEntry {
-  const base = isAnnotationRecord(existing) ? existing : createEntry({ created_at: nowIso(), author, text });
-  return { ...base, text, edited_at: nowIso() } as TEntry;
+  const now = nowIso();
+  if (!isAnnotationRecord(existing)) {
+    return { ...createEntry({ created_at: now, author, text }), text, edited_at: now };
+  }
+  const usable = (value: unknown): boolean => typeof value === "string" && value !== "";
+  return {
+    ...existing,
+    ...(usable(existing.created_at) ? {} : { created_at: now }),
+    ...(usable(existing.author) ? {} : { author }),
+    text,
+    edited_at: now,
+  } as TEntry;
 }
 
 /** Reject mutation of canonical structured events while allowing ordinary annotations. */
