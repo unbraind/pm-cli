@@ -65,7 +65,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/annotations.ts"],
   },
   {
-    code: "annotation_expectation_empty",
+    code: "annotation_expectation_invalid",
     exit_code: 2,
     sources: ["sdk/annotations.ts"],
   },

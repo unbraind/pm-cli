@@ -25,7 +25,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `ambiguous_option_combination` | `ambiguous_option_combination` | uncovered | none | 0 |
 | `annotation_alias_conflict` | `annotation_alias_conflict` | uncovered | none | 0 |
 | `annotation_entry_mismatch` | `annotation_entry_mismatch` | uncovered | none | 0 |
-| `annotation_expectation_empty` | `annotation_expectation_empty` | uncovered | none | 0 |
+| `annotation_expectation_invalid` | `annotation_expectation_invalid` | uncovered | none | 0 |
 | `annotation_expectation_without_target` | `annotation_expectation_without_target` | uncovered | none | 0 |
 | `annotation_flag_like_value` | `annotation_flag_like_value` | uncovered | none | 0 |
 | `annotation_if_absent_without_append` | `annotation_if_absent_without_append` | uncovered | none | 0 |

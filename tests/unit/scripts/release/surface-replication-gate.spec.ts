@@ -829,6 +829,26 @@ describe("surface replication gate", () => {
     const missingOnly = await waived("missing");
     expect(missingOnly.ok).toBe(false);
     expect(missingOnly.violations).toEqual(["set:fixture-surface:member:src/cli/b.ts:unchanged"]);
+
+    // Two scoped waivers with the same owner and expiry are both reported.
+    const config = declaration();
+    for (const scope of ["unchanged", "missing"] as const) {
+      config.waivers.push({
+        set_id: "fixture-surface",
+        member_path: "src/cli/b.ts",
+        scope,
+        pm_item: "pm-waiver",
+        reason: "Temporary fixture waiver scoped to one check.",
+        expires_on: "2026-08-08",
+      });
+    }
+    const both = await validateSurfaceReplication(config, {
+      repoRoot: root,
+      changedFiles: ["src/sdk/a.ts"],
+      today: "2026-08-07",
+    });
+    expect(both.ok).toBe(true);
+    expect(both.applied_waivers.map((waiver: { scope?: string }) => waiver.scope).sort()).toEqual(["missing", "unchanged"]);
   });
 
   it("fails when one refusal surface changes its shared code alone", async () => {

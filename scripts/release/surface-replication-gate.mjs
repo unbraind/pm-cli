@@ -764,6 +764,7 @@ export async function validateSurfaceReplication(config, options = {}) {
           [
             waiver.set_id,
             waiver.member_path,
+            waiver.scope ?? "all",
             waiver.pm_item,
             waiver.expires_on,
           ].join(":"),

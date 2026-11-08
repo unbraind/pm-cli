@@ -3181,7 +3181,14 @@
         "signature ./sdk/runtime:PmReadOutputSurfaceContract"
       ],
       "package_version": "2026.11.7",
-      "reason": "pm-8s53lj review follow-up. Before: PmReadOutputSurfaceContract.budget_retention_policy was ordered_prefix or verdict_priority, and PmReadOutputTailRetentionPolicy declared only paths and total_key. After: comments, notes and learnings declare ordered_suffix (they keep their newest rows and page backwards), and a tail policy may declare delivered_row_counters (notes recount structured_event_count from the delivered rows). Migrate: treat ordered_suffix as newest-first retention, and accept the optional delivered_row_counters field when reading tail policies."
+      "reason": "pm-8s53lj review follow-up. Before: PmReadOutputSurfaceContract.budget_retention_policy was ordered_prefix or verdict_priority, and PmReadOutputTailRetentionPolicy declared only paths and total_key. After: comments, notes and learnings declare ordered_suffix (they keep their newest rows and page backwards), and a tail policy may declare delivered_row_counters (notes recount structured_event_count from the delivered rows). Migrate: treat ordered_suffix as retaining the newest rows, still listed oldest to newest within each page, and accept the optional delivered_row_counters field when reading tail policies."
+    },
+    {
+      "changes": [
+        "error code annotation_expectation_empty removed"
+      ],
+      "package_version": "2026.11.7",
+      "reason": "pm-hka7ep review follow-up: annotation_expectation_empty was introduced earlier on this unreleased branch (main and every published release never carried it) and is replaced by annotation_expectation_invalid, which refuses an empty or non-string expectAt (MCP callers can send numbers or null). Migrate: none for released consumers; match annotation_expectation_invalid."
     }
   ],
   "entrypoints": {
@@ -39773,7 +39780,7 @@
     "ambiguous_option_combination",
     "annotation_alias_conflict",
     "annotation_entry_mismatch",
-    "annotation_expectation_empty",
+    "annotation_expectation_invalid",
     "annotation_expectation_without_target",
     "annotation_flag_like_value",
     "annotation_if_absent_without_append",

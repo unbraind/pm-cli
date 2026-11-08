@@ -21439,14 +21439,14 @@
     },
     {
       "aliases": [],
-      "canonical_code": "annotation_expectation_empty",
+      "canonical_code": "annotation_expectation_invalid",
       "class": "usage",
-      "code": "annotation_expectation_empty",
+      "code": "annotation_expectation_invalid",
       "emitting_commands": [
         "*"
       ],
       "exit_code": 2,
-      "meaning": "Annotation expectation empty condition.",
+      "meaning": "Annotation expectation invalid condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance and retry the suggested command.",
       "sources": [

@@ -624,10 +624,10 @@ function assertAnnotationExpectationTargetsEntry(
       },
     );
   }
-  if (options.expectAt.trim().length === 0) {
-    throw new PmCliError("--expect-at cannot be empty", EXIT_CODE.USAGE, {
-      code: "annotation_expectation_empty",
-      required: "Pass the created_at value of the row you read at that index.",
+  if (typeof options.expectAt !== "string" || options.expectAt.trim().length === 0) {
+    throw new PmCliError("--expect-at must be the non-empty created_at timestamp of the entry you read", EXIT_CODE.USAGE, {
+      code: "annotation_expectation_invalid",
+      required: "Pass the created_at value of the row you read at that index, as a string.",
     });
   }
 }
@@ -672,8 +672,8 @@ function assertExpectedAnnotationEntry(
         actual_created_at: actual,
         matching_indexes: matchingIndexes,
       },
-      required: `Address the ${noun} by the index its listing row reports, and keep --expect-at set to that row's created_at.`,
-      why: "A listing page's position or count is not an entry address; only the row's index is, and the expectation proves the index still names the entry that was read.",
+      required: `Address the ${noun} by the index its listing row reports and keep --expect-at set to that row's created_at. When several indexes share the timestamp, inspect those rows before retrying, because the guard compares timestamps, not entry identities.`,
+      why: "A listing page's position or count is not an entry address; only the row's index is, and the expectation checks that the entry at that index still carries the created_at that was read.",
       examples: [
         `pm ${config.collectionKey} ${id} --limit 5`,
         `pm ${config.collectionKey} ${id} ${action} ${matchingIndexes.length === 1 ? matchingIndexes[0] : "<index>"} --expect-at ${expectAt}${action === "--edit" ? ' --add "<text>"' : ""}`,

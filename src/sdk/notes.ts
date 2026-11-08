@@ -132,7 +132,6 @@ function parseSinceTimestamp(value: string | undefined): number | undefined {
   return timestamp;
 }
 
-/** Implements run notes for the public runtime surface of this module. */
 /**
  * A stored note's fields, read defensively: a malformed stored entry that is
  * not an object (typed refusal is pm-30tjoh) is delivered as stored and must
@@ -144,6 +143,7 @@ function storedNoteFields(entry: unknown): Partial<LogNote> {
     : {};
 }
 
+/** Implements run notes for the public runtime surface of this module. */
 export async function runNotes(
   id: string,
   options: NotesCommandOptions,

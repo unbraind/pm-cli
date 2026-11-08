@@ -294,7 +294,14 @@ describe("annotation entry addressing (pm-hka7ep)", () => {
         runComments(id, { delete: 1, expectAt: "  " }, { path: context.pmPath }),
       );
       expect(empty.exitCode).toBe(EXIT_CODE.USAGE);
-      expect(empty.context).toMatchObject({ code: "annotation_expectation_empty" });
+      expect(empty.context).toMatchObject({ code: "annotation_expectation_invalid" });
+      // MCP callers can send a non-string value; it is refused, never trimmed.
+      for (const value of [42, null]) {
+        const nonString = await refusal(
+          runComments(id, { delete: 1, expectAt: value as unknown as string }, { path: context.pmPath }),
+        );
+        expect(nonString.context).toMatchObject({ code: "annotation_expectation_invalid" });
+      }
     });
   });
 

@@ -72,7 +72,10 @@ describe("MCP annotation tools read every declared flat parameter (pm-wsqxwb)", 
     expect(both).toMatchObject({ expectAt: "camel", ifAbsent: true });
     expect(both).not.toHaveProperty("expect_at");
     expect(both).not.toHaveProperty("if_absent");
-    expect(optionsWithAuthor({ options: { add_glob: "src/*.ts" } }, "files")).toHaveProperty("add_glob");
+    const glob = optionsWithAuthor({ addGlob: "flat/*.ts", options: { add_glob: "nested/*.ts" } }, "files");
+    expect(glob).toMatchObject({ addGlob: ["nested/*.ts"] });
+    expect(glob).not.toHaveProperty("add_glob");
+    expect(optionsWithAuthor({ options: { token_budget: 400 } }, "context")).toHaveProperty("token_budget");
   });
 
   it("writes through the tools/call path for every annotation action given top-level add or text", async () => {
@@ -122,8 +125,15 @@ describe("MCP annotation tools read every declared flat parameter (pm-wsqxwb)", 
   it("guards an MCP edit with a flat expectAt", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Flat guarded edit" });
-      await callTool(context, "pm_comments", { id, add: "first" });
-      await callTool(context, "pm_comments", { id, add: "second" });
+      // Distinct, controlled timestamps: the guard compares created_at values.
+      vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-11-08T01:00:00.000Z") });
+      try {
+        await callTool(context, "pm_comments", { id, add: "first" });
+        vi.setSystemTime(new Date("2026-11-08T02:00:00.000Z"));
+        await callTool(context, "pm_comments", { id, add: "second" });
+      } finally {
+        vi.useRealTimers();
+      }
       const listed = (await callTool(context, "pm_comments", { id })).result as {
         comments: Array<{ index: number; created_at: string }>;
       };

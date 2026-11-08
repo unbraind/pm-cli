@@ -386,16 +386,27 @@ function declaredContractActionOptionKeys(action: string): readonly string[] {
     : [];
 }
 
+/** Annotation, linked-artifact and linked-test actions whose handlers read only camelCase option keys. */
+const CAMEL_CASE_NORMALIZED_ACTIONS: ReadonlySet<string> = new Set([
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "docs",
+  "test",
+]);
+
 /**
  * Rename a nested snake_case spelling of a declared parameter (expect_at,
- * if_absent) to the camelCase key the SDK reads. Hoisting already lets either
+ * if_absent, add_glob) to the camelCase key the handler reads. Hoisting already lets either
  * nested spelling win over the flat argument, so without this a nested
  * expect_at would silently drop the guard. An explicit camelCase key wins.
  */
 function camelCaseDeclaredOptions(
-  action: string,
+  action: string | undefined,
   options: Record<string, unknown>,
 ): Record<string, unknown> {
+  if (!CAMEL_CASE_NORMALIZED_ACTIONS.has(action ?? "")) return options;
   const renamed: Record<string, unknown> = { ...options };
   for (const key of PM_TOOL_ACTION_PARAMETER_CONTRACTS[action as PmToolAction].optional!) {
     const snakeKey = key.replace(/[A-Z]/gu, (letter) => `_${letter.toLowerCase()}`);
@@ -417,7 +428,7 @@ function foldAnnotationTextOperand(
   normalized: Record<string, unknown>,
 ): Record<string, unknown> {
   if (!SCALAR_ANNOTATION_SOURCE_ACTIONS.has(action ?? "")) return normalized;
-  const options = camelCaseDeclaredOptions(action!, normalized);
+  const options = normalized;
   const text = options.text ?? args.text;
   if (text === undefined) return options;
   if (options.add !== undefined && options.add !== text) {
@@ -658,7 +669,10 @@ export function optionsWithAuthor(
   const options = foldAnnotationTextOperand(
     action,
     args,
-    normalizedActionOptions(args, action, hoistedTopLevel, baseOptions),
+    camelCaseDeclaredOptions(
+      action,
+      normalizedActionOptions(args, action, hoistedTopLevel, baseOptions),
+    ),
   );
   if (action === "history-attest" && isMcpMutationTransportInput(args)) {
     if (options.output !== undefined || typeof options.verify === "string") {
