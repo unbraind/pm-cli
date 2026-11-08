@@ -1287,7 +1287,7 @@ describe("GitHub workflow contract", () => {
     expect(releaseTimeout).toBe(60);
     // pm-0jzl5t: post-publish verification owns its budget, so npm's
     // publish-time scan cannot be cut short by a slow build phase.
-    expect(publicationTimeout).toBe(50);
+    expect(publicationTimeout).toBe(110);
     expect(acceptanceTimeout).toBe(15);
     expect(advertisementTimeout).toBe(5);
     const preparationReserve = 60;
@@ -1296,7 +1296,8 @@ describe("GitHub workflow contract", () => {
     expect(autoReleaseTimeout).toBeGreaterThanOrEqual(
       releaseTimeout + publicationTimeout + acceptanceTimeout + advertisementTimeout + preparationReserve + runnerQueueReserve + orchestrationReserve,
     );
-    expect(autoReleaseTimeout).toBeLessThanOrEqual(240);
+    // GitHub-hosted jobs stop at 360 minutes; keep the parent well inside it.
+    expect(autoReleaseTimeout).toBeLessThanOrEqual(300);
   });
 
   it("rejects the unclaimed npm scope from production workflows, scripts, and source", async () => {

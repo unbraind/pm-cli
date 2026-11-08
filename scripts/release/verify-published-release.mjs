@@ -68,8 +68,8 @@ const MCP_DISCOVER_TIMEOUT_MS = 60_000;
 const MCP_HTTP_READY_TIMEOUT_MS = 15_000;
 const MCP_HTTP_EXECUTOR_TIMEOUT_MS = 20_000;
 const MCP_HTTP_EXECUTOR_MAX_ATTEMPTS = 2;
-/** Default npm metadata polls at 15s each: about thirty minutes of propagation budget. */
-const DEFAULT_NPM_ATTEMPTS = 120;
+/** Default npm metadata polls at 15s each: about ninety minutes of propagation budget. */
+const DEFAULT_NPM_ATTEMPTS = 360;
 const NPM_METADATA_POLL_MS = 15_000;
 const MCP_HTTP_SHUTDOWN_GRACE_MS = 2_000;
 const MCP_HTTP_EXECUTOR_SCRIPT = String.raw`
@@ -323,7 +323,7 @@ function usage() {
   node scripts/release/verify-published-release.mjs --version <YYYY.M.D[-N]> [--json]
     [--skip-package]
     [--skip-github-release]
-    [--npm-attempts 120]
+    [--npm-attempts 360]
     [--executor-attempts 10]
 
 Verifies the public release surfaces after publish:
@@ -965,8 +965,9 @@ function main() {
   // previous 20x15s (5 min) ceiling recorded both correct publications as
   // failed releases (pm-wzmbvn). npm's publish-time malware scan (GitHub
   // changelog 2026-07-28) now holds a new version for about five minutes and
-  // "up to 15 minutes or more"; 2026.11.8 outlasted the 60x15s ceiling
-  // (pm-0jzl5t). 120x15s waits about thirty minutes.
+  // "up to 15 minutes or more"; 2026.11.8 became visible 55m22s after publish
+  // and outlasted the 60x15s ceiling (pm-0jzl5t). 360x15s waits about ninety
+  // minutes; a longer hold is recovered by re-running the publication job.
   const npmAttempts = parsePositiveInteger(flags, "npm-attempts", DEFAULT_NPM_ATTEMPTS);
   const executorAttempts = parsePositiveInteger(flags, "executor-attempts", 10);
   const version = parseVersionFromFlags(flags);

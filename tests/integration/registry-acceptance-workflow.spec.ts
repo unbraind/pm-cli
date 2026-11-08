@@ -133,7 +133,8 @@ it("verifies the publication in its own job whose budget covers the full npm met
   }
   const verify = publication.steps.find((step) => step.name === moved[0])!;
   const waitMinutes = (attempts * pollMs) / 60_000;
-  expect(waitMinutes).toBeGreaterThanOrEqual(30);
+  // 2026.11.8 became visible 55m22s after publish under npm's publish-time scan.
+  expect(waitMinutes).toBeGreaterThanOrEqual(60);
   // The verifier still has to run npx/bunx journeys after the registry wait.
   expect(verify["timeout-minutes"]).toBeGreaterThanOrEqual(waitMinutes + 5);
   const stepBudget = publication.steps.reduce((total, step) => total + (step["timeout-minutes"] ?? 0), 0);

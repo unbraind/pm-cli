@@ -63,6 +63,33 @@ describe("malformed stored annotation entries (pm-30tjoh)", () => {
     });
   });
 
+  it.each(MALFORMED_COLLECTIONS)(
+    "appends idempotently to a %s collection of null entries and repairs a malformed entry on edit",
+    async (collection) => {
+      // Codex review of PR #1687: --if-absent dereferenced entry.author, and
+      // an edit spread a bare string into character keys.
+      await withTempPmPath(async (context) => {
+        const id = createTestItemId(context, { title: `Idempotent ${collection}` });
+        await appendFile(path.join(context.pmPath, "tasks", `${id}.toon`), `${collection}[3]: null,null,just-a-string\n`, "utf8");
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          const appended = context.runCli([collection, id, "--add", "only once", "--if-absent", "--json"], { expectJson: true });
+          expect(appended.code).toBe(0);
+        }
+        const listed = (context.runCli([collection, id, "--json"], { expectJson: true }).json as Record<string, unknown[]>)[collection]!;
+        expect(listed).toHaveLength(4);
+        expect(listed.filter((row) => (row as { text?: unknown } | null)?.text === "only once")).toHaveLength(1);
+        const stringIndex = listed.indexOf("just-a-string") + 1;
+        expect(stringIndex).toBeGreaterThan(0);
+        expect(context.runCli([collection, id, "--edit", String(stringIndex), "repaired", "--json"], { expectJson: true }).code).toBe(0);
+        const repaired = (context.runCli([collection, id, "--json"], { expectJson: true }).json as Record<string, unknown[]>)[collection]!;
+        const entry = repaired.find((row) => (row as { text?: unknown } | null)?.text === "repaired") as Record<string, unknown>;
+        expect(entry).toMatchObject({ text: "repaired", author: expect.any(String), created_at: expect.any(String), edited_at: expect.any(String) });
+        expect(Object.keys(entry)).not.toContain("0");
+        expect(repaired).not.toContain("just-a-string");
+      });
+    },
+  );
+
   it("refuses a guarded edit of a malformed entry with the typed mismatch, not a TypeError", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Guarded malformed edit" });

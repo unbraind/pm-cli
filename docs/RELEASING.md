@@ -611,12 +611,12 @@ never move a published tag or mint a second automatic version for the same UTC d
   explicit stable dist-tag also preserves
   correct `latest` behavior when rerunning historical ordinal tags.
 - post-publish npm/npx/bunx verification in the separate `publication` job,
-  which needs the publishing job and owns a 50-minute limit, so a slow build
+  which needs the publishing job and owns a 110-minute limit, so a slow build
   phase can no longer cut the registry wait short. npm's publish-time malware
   scan holds a new version for about five minutes and sometimes far longer
-  (2026.11.8 stayed invisible for more than twenty minutes); the verifier
-  polls for about thirty minutes, and an exhausted wait names the version, the
-  scan and the publication-only re-run
+  (2026.11.8 became visible 55m22s after publish); the verifier polls for
+  about ninety minutes, and an exhausted wait names the version, the scan and
+  the publication-only re-run
   ([pm-0jzl5t](../.agents/pm/issues/pm-0jzl5t.toon)). The job checks out
   the exact commit the release job published (recorded after exact-tag source
   selection), so the verifiers read the same `package.json` identity as the
@@ -647,9 +647,9 @@ never move a published tag or mint a second automatic version for the same UTC d
 - GitHub Release creation
 - GitHub Release metadata verification through the same local verification script
 
-The Auto Release parent has a 230-minute orchestration limit: 60 minutes for
+The Auto Release parent has a 290-minute orchestration limit: 60 minutes for
 preparation and gates, 30 for aggregate runner queue delays, the serial
-60-minute build-and-publish, 50-minute publication verification, 15-minute
+60-minute build-and-publish, 110-minute publication verification, 15-minute
 acceptance and 5-minute advertisement job limits, and 10 minutes for
 orchestration overhead. Runner queue time consumes
 the waiting parent's wall time even when no child job is executing. The

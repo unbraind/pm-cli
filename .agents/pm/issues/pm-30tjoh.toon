@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: annotations,item-format,refusals,robustness,telemetry
 created_at: "2026-11-08T02:51:36.130Z"
-updated_at: "2026-11-08T08:03:23.346Z"
+updated_at: "2026-11-08T08:20:57.470Z"
 closed_at: "2026-11-08T05:48:56.565Z"
 completed_at: "2026-11-08T05:48:56.565Z"
 author: "harness:claude-code"
@@ -25,9 +25,10 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-b9y1,related,"2026-11-08T02:51:36.130Z","harness:claude-code","cli:create:dep",detected
   pm-hka7ep,discovered_from,"2026-11-08T02:51:36.130Z","harness:claude-code","cli:create:dep",detected
   pm-qeu1,related,"2026-11-08T02:51:36.130Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-08T05:48:45.518Z","harness:claude-code","Release impact (2026-11-08): the deliberate sandbox reproduction of this defect during the PR 1685 review ran with telemetry enabled. Its 4 events (02:37Z, environment automation, commands comments and get) became Sentry PM-CLI-3Y, an unexpected_fault TypeError, and the sentry-telemetry-gate blocked the 03:45Z morning-dispatcher Auto Release (blocker GitHub issue 1686). PM-CLI-3Y was annotated with the cause and resolved, the gate passed locally, and closing 1686 fired the blocker retry. pm get crashes on the same document too, not only pm comments. Lesson for reproductions: set PM_TELEMETRY_DISABLED=1 when deliberately triggering a crash, because a sandboxed PM_PATH does not suppress delivery.\n"
   "2026-11-08T08:03:22.635Z","harness:claude-code","Codex review of PR 1687 (P2, fixed): once malformed entries load, buildSearchCorpus in src/core/search/corpus.ts still mapped every comments/notes/learnings entry to entry.text. A null entry threw a TypeError in the BM25/semantic corpus and in the reindex corpus, aborting search for every item, where main had skipped the damaged item with a warning. annotationTexts now keeps only plain-object entries with string text. The spec adds a corpus case, and that case fails against the previous corpus.ts. A built-CLI sweep over list, search, get, context, comments, notes, learnings, validate, stats, health, activity and graph impact showed the damaged item and its healthy neighbour both delivered with exit 0.\n"
+  "2026-11-08T08:20:57.470Z","harness:claude-code","Codex review round 2 of PR 1687 (P2, fixed). A stored comments[2]: null,null loaded, but --if-absent then crashed. appendAnnotationEntry dereferenced entry.author in its duplicate predicate, on the CLI, MCP and SDK ifAbsent paths for all three collections. The same review surfaced a second case: an edit of a malformed entry spread a bare string into character keys (0, 1, 2 and so on).\n\nThe fix routes both through isAnnotationRecord. The duplicate check skips non-record entries. editedAnnotationEntry replaces a malformed entry with a well-formed collection entry via the collection's createEntry, so an edit repairs it. The spec covers an idempotent append twice plus a repair-by-edit for comments, notes and learnings, and the three cases fail against the previous annotations.ts.\n"
 files[4]:
   - path: src/core/item/item-format.ts
     scope: project

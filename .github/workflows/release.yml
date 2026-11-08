@@ -462,11 +462,11 @@ jobs:
     runs-on: ubuntu-latest
     # npm's publish-time malware scan holds a new version for about five
     # minutes and "up to 15 minutes or more" (GitHub changelog 2026-07-28);
-    # 2026.11.8 stayed invisible for more than twenty. The verifier waits about
-    # thirty minutes in this job of its own, so a slow build cannot spend that
+    # 2026.11.8 became visible 55m22s after publish. The verifier waits about
+    # ninety minutes in this job of its own, so a slow build cannot spend that
     # wait, and `gh run rerun <run-id> --failed` recovers a longer hold without
     # rebuilding or republishing (pm-0jzl5t).
-    timeout-minutes: 50
+    timeout-minutes: 110
     outputs:
       version: ${{ steps.control.outputs.version }}
       previous: ${{ steps.control.outputs.previous }}
@@ -507,10 +507,9 @@ jobs:
 
       - name: Verify published package on npm, npx, and bunx
         # npm metadata propagation measured at 6-8 minutes after publish on
-        # 2026-09-11/12 (pm-wzmbvn) and over twenty minutes under npm's
-        # publish-time scan on 2026-11-08; the verifier polls for about thirty
-        # minutes (pm-0jzl5t).
-        timeout-minutes: 35
+        # 2026-09-11/12 (pm-wzmbvn) and 55m22s under npm's publish-time scan on
+        # 2026-11-08; the verifier polls for about ninety minutes (pm-0jzl5t).
+        timeout-minutes: 95
         run: node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --json
 
       - name: Accept exact installed package through npm and Bun agent sessions

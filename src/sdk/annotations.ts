@@ -190,6 +190,30 @@ export interface AnnotationCommandConfig<
   }) => TEntry;
 }
 
+/**
+ * Whether a stored annotation entry is a plain record. Malformed entries (a
+ * bare string, a number, null) load and are delivered as stored (pm-30tjoh),
+ * so field reads and spreads go through this check.
+ */
+function isAnnotationRecord(entry: unknown): entry is Partial<AnnotationEntry> {
+  return Object.prototype.toString.call(entry) === "[object Object]";
+}
+
+/**
+ * The entry an edit writes: the stored record with new text, or, for a
+ * malformed stored entry, a well-formed replacement instead of a spread of a
+ * string into character keys.
+ */
+function editedAnnotationEntry<TEntry extends AnnotationEntry>(
+  existing: unknown,
+  text: string,
+  author: string,
+  createEntry: (input: { created_at: string; author: string; text: string }) => TEntry,
+): TEntry {
+  const base = isAnnotationRecord(existing) ? existing : createEntry({ created_at: nowIso(), author, text });
+  return { ...base, text, edited_at: nowIso() } as TEntry;
+}
+
 /** Reject mutation of canonical structured events while allowing ordinary annotations. */
 function assertAnnotationEntryMutable(
   entry: unknown,
@@ -701,7 +725,7 @@ function appendAnnotationEntry<
   );
   const existingIndex = ifAbsent
     ? entries.findIndex(
-        (entry) => entry.author === author && entry.text === text,
+        (entry) => isAnnotationRecord(entry) && entry.author === author && entry.text === text,
       )
     : -1;
   if (existingIndex >= 0) {
@@ -868,11 +892,7 @@ export async function runAnnotationCommand<
           assertExpectedAnnotationEntry(id, entries, arrayIndex, config, options.expectAt);
           const existing = entries[arrayIndex];
           assertAnnotationEntryMutable(existing, "edited");
-          entries[arrayIndex] = {
-            ...existing,
-            text,
-            edited_at: nowIso(),
-          } as TEntry;
+          entries[arrayIndex] = editedAnnotationEntry(existing, text, author, config.createEntry);
           editedAddress = canonicalAnnotationAddress(config.collectionKey, entries, arrayIndex);
           document.metadata[config.collectionKey] = entries as never;
           return { changedFields: [config.collectionKey] };

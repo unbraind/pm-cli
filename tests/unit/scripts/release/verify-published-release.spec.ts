@@ -636,7 +636,7 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
     );
   });
 
-  it("waits about thirty minutes of npm metadata propagation by default (120 polls)", async () => {
+  it("waits about ninety minutes of npm metadata propagation by default (360 polls)", async () => {
     let npmViews = 0;
     const { json, errors } = await runVerify({
       argv: ["--version", "2026.11.8", "--json", "--skip-github-release", "--executor-attempts", "1"],
@@ -644,10 +644,9 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
       runCommand: (command, args) => {
         if (command === "npm" && args[0] === "view") {
           npmViews += 1;
-          // npm's publish-time scan held 2026.11.8 for more than twenty
-          // minutes (pm-0jzl5t); the default must outlast the documented
-          // "15 minutes or more", so only the 120th poll succeeds.
-          return npmViews < 120
+          // npm's publish-time scan held 2026.11.8 for 55m22s (pm-0jzl5t);
+          // the default must outlast that, so only the 360th poll succeeds.
+          return npmViews < 360
             ? { status: 1, stdout: "", stderr: "npm error code E404" }
             : npmViewResult("2026.11.8");
         }
@@ -658,9 +657,9 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
       },
     });
     expect(json.ok).toBe(true);
-    expect(json.package.npm.attempts).toBe(120);
+    expect(json.package.npm.attempts).toBe(360);
     expect(errors.join("\n")).toContain(
-      "Waiting for npm metadata propagation (attempt 119/120)",
+      "Waiting for npm metadata propagation (attempt 359/360)",
     );
   });
 
