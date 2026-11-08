@@ -24,6 +24,7 @@ import {
   retainItemRevisionRefusalTracker,
   itemRevisionScopeReceipt,
   runWithItemRevisionScope,
+  activeItemRevisionExpectations,
   type ItemRevisionRecoveryInvocation,
   type ItemRevisionScope,
 } from "../../core/store/item-mutation-precondition.js";
@@ -422,6 +423,16 @@ export async function bindExpectedItemRevisions(
 }
 
 export { bindItemRevisionScope, createItemRevisionScope, itemRevisionScopeReceipt, runWithItemRevisionScope };
+
+/**
+ * Whether an active revision scope guards writes to this tracker. An enclosing
+ * SDK scope (an embedded CLI run) carries revisions the invocation's argv never
+ * spelled, so a retry rebuilt from argv alone would drop them (PR #1688 review).
+ */
+export function isTrackerRevisionGuarded(pmRoot: string): boolean {
+  const expectations = activeItemRevisionExpectations(pmRoot);
+  return expectations === undefined || expectations.length > 0;
+}
 
 /** Warning recorded when an expectation's item was never written by the action. */
 export function itemRevisionUncheckedWarning(id: string): string {

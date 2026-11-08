@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2116,
+    "covered_symbols": 2118,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2117
+    "required_symbols": 2119
   },
   "breaking_acknowledgements": [
     {
@@ -17014,6 +17014,18 @@
           "signature": "export interface RankedContextCandidate<TItem> extends ContextRelevanceCandidate<TItem> { baseline_rank: number; rank: number; score: number; contributions: ContextRelevanceContributions; }"
         },
         {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "READ_OUTPUT_MUTATION_CONFLICT_CODE",
+          "signature": "\"read_output_mutation_conflict\""
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "READ_OUTPUT_SHAPING_CONTROL_FLAGS",
+          "signature": "readonly string[]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "readAnnotationEntries",
@@ -27296,6 +27308,18 @@
           "kind": "function",
           "name": "projectPmDiagnosticText",
           "signature": "(output: string, correctiveAction: string, options?: { diagnosticClass?: PmDiagnosticOutputClass; maxEstimatedTokens?: number; }) => PmProjectedTextDiagnostic | calls: (output: string, correctiveAction: string, options?: { diagnosticClass?: PmDiagnosticOutputClass; maxEstimatedTokens?: number; }) => PmProjectedTextDiagnostic"
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "READ_OUTPUT_MUTATION_CONFLICT_CODE",
+          "signature": "\"read_output_mutation_conflict\""
+        },
+        {
+          "classification": "contract_data",
+          "kind": "value",
+          "name": "READ_OUTPUT_SHAPING_CONTROL_FLAGS",
+          "signature": "readonly string[]"
         },
         {
           "classification": "contract_data",
@@ -40060,6 +40084,7 @@
     "read_output_cursor_command_mismatch",
     "read_output_cursor_invalid",
     "read_output_cursor_stale",
+    "read_output_mutation_conflict",
     "recovery_kind_mismatch",
     "redundant_edge",
     "refusal_allowed_values_mismatch",
@@ -40243,7 +40268,7 @@
     },
     "./sdk": {
       "checked_functions": 1322,
-      "checked_values": 391,
+      "checked_values": 393,
       "exempt_test_seams": 15,
       "referenced_types": 1034
     },
@@ -40255,7 +40280,7 @@
     },
     "./sdk/contracts": {
       "checked_functions": 102,
-      "checked_values": 185,
+      "checked_values": 187,
       "exempt_test_seams": 1,
       "referenced_types": 72
     },

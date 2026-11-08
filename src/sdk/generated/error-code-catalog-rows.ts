@@ -13,7 +13,7 @@ import {
 
 /** Recovery guidance shared by every generated catalog row. */
 const GENERATED_ERROR_CODE_RECOVERY =
-  "Inspect the structured error guidance and retry the suggested command.";
+  "Inspect the structured error guidance, then retry the suggested command when one is present.";
 
 const CLASS_BY_EXIT_CODE: ReadonlyMap<number, PmErrorCodeClass> = new Map(
   PM_ERROR_CODE_EXIT_CLASS_CONTRACTS.map(

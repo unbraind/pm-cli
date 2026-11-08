@@ -1334,4 +1334,9 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 4,
     sources: ["sdk/merge/receipts.ts"],
   },
+  {
+    code: "merge_receipts_pending",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
 ];

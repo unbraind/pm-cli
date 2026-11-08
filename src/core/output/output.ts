@@ -19,7 +19,10 @@ import { propagateContextUsageServingReceipt } from "../../sdk/context-usage.js"
 import {
   isReadResultOmittedForBudget,
   resolveReadOutputEncoding,
+  resolveReadOutputSurface,
 } from "../../sdk/read-output-contracts.js";
+import { readOutputPositionalRowPaths } from "../../sdk/read-output/positional-rows.js";
+import { GET_FACET_ROOTS } from "../../sdk/query/get-facet-roots.js";
 import { withDeliveredOutputRenderer } from "../../sdk/read-output-budget.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
 import { encodePmTableRows } from "../../sdk/output/table-rows.js";
@@ -608,15 +611,19 @@ export function formatBuiltInOutput(
       result.projection.mode === "brief" && Array.isArray(result.items);
     return `${JSON.stringify(value, null, briefList ? undefined : 2)}\n`;
   }
-  const compactedToon = restoreRequestedEmptyItemCollections(
+  const compactedToon = restorePositionalRows(
     result,
-    compactToonValue(
-      projectEmptyCheckDetails(
-        projectPmBriefSearchEnvelope(projectPmBriefListEnvelope(result)),
+    restoreRequestedEmptyCollections(
+      result,
+      compactToonValue(
+        projectEmptyCheckDetails(
+          projectPmBriefSearchEnvelope(projectPmBriefListEnvelope(result)),
+        ),
+        TOON_COMPACTION_POLICY,
       ),
-      { omitDuplicateCountAliases: true, preserveRowFacts: true },
+      toon.preserveEmptyItemCollections === true,
     ),
-    toon.preserveEmptyItemCollections === true,
+    toon.positionalRowPaths ?? [],
   );
   return compactedToon === undefined
     ? "{}\n"
@@ -627,34 +634,125 @@ export function formatBuiltInOutput(
 export interface BuiltInToonOptions {
   /**
    * The result is an explicit `get --fields` selection: every collection its
-   * item carries was requested, so an empty one renders as `key: []` instead
-   * of being dropped by the sparse policy (pm-sj66lm).
+   * item and selected facets carry was requested, so an empty one renders as
+   * `key: []` at any depth instead of being dropped by the sparse policy
+   * (pm-sj66lm, pm-fkhdy8).
    */
   preserveEmptyItemCollections?: boolean;
+  /**
+   * Top-level row collections addressed by absolute position: every stored
+   * row renders, a null one included, so the rendered length matches the
+   * count and each row's position matches its address (pm-e3hfv8).
+   */
+  positionalRowPaths?: readonly string[];
 }
 
-/** Re-insert the empty collections an explicit item selection requested, in their original order. */
-function restoreRequestedEmptyItemCollections(
+/** The sparse TOON presentation policy every built-in rendering compacts with. */
+const TOON_COMPACTION_POLICY: OutputCompactionPolicy = {
+  omitDuplicateCountAliases: true,
+  preserveRowFacts: true,
+};
+
+/**
+ * Re-insert every empty collection a selected value carries, at any depth,
+ * around what the sparse policy kept. Nulls and other dropped scalars stay
+ * dropped. Array rows align by position when the policy kept every row;
+ * otherwise the rows it dropped are re-derived from the same policy, with
+ * the `preserveEmpty` state the policy inherited at that depth (a row object
+ * keeps its own nulls and empties).
+ */
+function restoreEmptyCollections(source: unknown, compacted: unknown, preserveEmpty = false): unknown {
+  if (Array.isArray(source)) {
+    if (source.length === 0) return [];
+    const kept = Array.isArray(compacted) ? compacted : [];
+    const aligned = kept.length === source.length;
+    let next = 0;
+    const rows = source.flatMap((row) => {
+      const rowPreservesEmpty = preserveEmpty || isPlainObject(row);
+      const dropped =
+        !aligned && compactToonValue(row, TOON_COMPACTION_POLICY, rowPreservesEmpty) === undefined;
+      const restored = restoreEmptyCollections(row, dropped ? undefined : kept[next++], rowPreservesEmpty);
+      return restored === undefined ? [] : [restored];
+    });
+    return rows.length > 0 ? rows : compacted;
+  }
+  if (!isPlainObject(source)) return compacted;
+  const kept = isPlainObject(compacted) ? compacted : {};
+  const entries = Object.entries(source).flatMap(([key, value]): Array<[string, unknown]> => {
+    const restored = restoreEmptyCollections(value, Object.hasOwn(kept, key) ? kept[key] : undefined, preserveEmpty);
+    return restored === undefined ? [] : [[key, restored]];
+  });
+  return entries.length > 0 || Object.keys(source).length === 0
+    ? Object.fromEntries(entries)
+    : compacted;
+}
+
+/**
+ * Re-insert the empty collections an explicit get selection requested, inside
+ * the item and every derived facet it selected, keeping the envelope's order.
+ * A selection whose output projection removed `item` (`--fields linked.tests
+ * --output-include linked`) still restores its selected facets.
+ */
+function restoreRequestedEmptyCollections(
   source: unknown,
   compacted: unknown,
   preserve: boolean,
 ): unknown {
-  if (!preserve || !isPlainObject(source) || !isPlainObject(source.item)) {
-    return compacted;
-  }
+  if (!preserve || !isPlainObject(source)) return compacted;
   // The sparse policy may drop an item (or the whole envelope) whose values are all empty.
   const base = isPlainObject(compacted) ? compacted : {};
-  const compactedItem = isPlainObject(base.item) ? base.item : {};
-  const item = Object.fromEntries(
-    Object.entries(source.item).flatMap(([key, value]): Array<[string, unknown]> => {
-      if (Object.hasOwn(compactedItem, key)) return [[key, compactedItem[key]]];
-      if (Array.isArray(value) && value.length === 0) return [[key, []]];
-      return isPlainObject(value) && Object.keys(value).length === 0
-        ? [[key, {}]]
-        : [];
-    }),
+  const restored = new Map(
+    Object.keys(source)
+      .filter((key) => key === "item" || GET_FACET_ROOTS.has(key))
+      .map((key) => [key, restoreEmptyCollections(source[key], base[key])] as const),
   );
-  return Object.hasOwn(base, "item") ? { ...base, item } : { item, ...base };
+  return mergeRestoredEntries(source, base, restored);
+}
+
+/**
+ * Rebuild a compacted envelope around restored values in the compacted key
+ * order, so keys a presentation projection added stay. A restored key the
+ * sparse policy dropped returns before the first kept key that follows it in
+ * the source; a dropped key whose restoration is undefined stays dropped.
+ */
+function mergeRestoredEntries(
+  source: Record<string, unknown>,
+  base: Record<string, unknown>,
+  restored: ReadonlyMap<string, unknown>,
+): Record<string, unknown> {
+  // A key the policy kept always restores to a value: restoration only adds around what was kept.
+  const entries = Object.entries(base).map(([key, value]): [string, unknown] => [key, restored.has(key) ? restored.get(key) : value]);
+  const sourceKeys = Object.keys(source);
+  for (const [key, value] of restored) {
+    if (Object.hasOwn(base, key) || value === undefined) continue;
+    const later = new Set(sourceKeys.slice(sourceKeys.indexOf(key) + 1));
+    const position = entries.findIndex(([entryKey]) => later.has(entryKey));
+    entries.splice(position === -1 ? entries.length : position, 0, [key, value]);
+  }
+  return Object.fromEntries(entries);
+}
+
+/**
+ * Re-deliver every row of a position-addressed collection, a null row
+ * included, compacting each row as the sparse policy compacts a row object.
+ * A listing without such a row renders exactly as before.
+ */
+function restorePositionalRows(
+  source: unknown,
+  compacted: unknown,
+  paths: readonly string[],
+): unknown {
+  if (!isPlainObject(source)) return compacted;
+  const restorable = paths.filter((path) => {
+    const rows = source[path];
+    return Array.isArray(rows) && rows.some((row) => compactToonValue(row, TOON_COMPACTION_POLICY, isPlainObject(row)) === undefined);
+  });
+  if (restorable.length === 0) return compacted;
+  const base = isPlainObject(compacted) ? compacted : {};
+  const restored = new Map(
+    restorable.map((path) => [path, (source[path] as unknown[]).map((row) => compactToonValue(row, TOON_COMPACTION_POLICY, true))] as const),
+  );
+  return mergeRestoredEntries(source, base, restored);
 }
 
 const COMPLETE_OMISSION_RECEIPT = JSON.stringify({
@@ -830,7 +928,10 @@ function nativeRenderer(
   const selectedFields = commandOptions.fields;
   const preserveEmptyItemCollections =
     command === "get" && typeof selectedFields === "string" && selectedFields.trim().length > 0;
-  return (value) => formatBuiltInOutput(value, "toon", false, { preserveEmptyItemCollections });
+  const positionalRowPaths = readOutputPositionalRowPaths(
+    command === undefined ? undefined : resolveReadOutputSurface(command, commandOptions),
+  );
+  return (value) => formatBuiltInOutput(value, "toon", false, { preserveEmptyItemCollections, positionalRowPaths });
 }
 
 /**

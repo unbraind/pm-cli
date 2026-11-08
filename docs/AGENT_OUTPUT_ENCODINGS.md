@@ -40,6 +40,22 @@ Explicit codec calls construct a dense grid proportional to row count times
 distinct-column count; package authors must budget that allocation for sparse
 inputs. This public codec does not impose a row cap or silently change encoding.
 
+Two read shapes keep values the sparse policy would otherwise drop
+([pm-e3hfv8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e3hfv8.toon),
+[pm-fkhdy8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fkhdy8.toon);
+tracker records excluded from npm):
+
+- Rows addressed by absolute position. `PM_READ_OUTPUT_POSITIONAL_ROW_PATHS`
+  declares the `comments`, `notes` and `learnings` listings, whose rows
+  `--edit <index>` and `--delete <index>` address. Their TOON listing renders
+  every stored row, a malformed `null` entry included, so the rendered length
+  matches `count` and a row's position matches its address. A listing with no
+  such row renders exactly as before.
+- An explicit `get --fields` selection renders every empty collection inside
+  the selected item fields and derived facets (`linked`, `schedule`,
+  `claim_state`, `children`, `blockers`) at any depth, as JSON delivers it,
+  for example `linked.tests: []`. Nulls inside those values stay dropped.
+
 The TOON presentation of an item prints `collection_counts.notes` and
 `collection_counts.tests` once, suppressing `notes_count` or `tests_count` only
 when the alias equals its canonical count. Zero counts and differing values stay

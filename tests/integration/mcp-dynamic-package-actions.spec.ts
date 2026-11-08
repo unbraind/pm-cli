@@ -676,12 +676,23 @@ describe("MCP dynamic package actions", () => {
           limit?: number;
         };
       } | undefined)?.result;
-      expect(commentsResult?.count).toBe(20);
-      expect(commentsResult?.returned_count).toBe(20);
+      // pm-sbqn4h: a listing applies no producer page of its own; the default
+      // output budget bounds it, and these short comments all fit.
+      expect(commentsResult?.count).toBe(27);
+      expect(commentsResult?.returned_count).toBe(27);
       expect(commentsResult?.total_count).toBe(27);
-      expect(commentsResult?.has_more).toBe(true);
-      expect(commentsResult?.limit).toBe(20);
-      expect(commentsResult?.comments?.[0]?.text).toBe("mcp comment 5");
+      expect(commentsResult?.has_more).toBe(false);
+      expect(commentsResult).not.toHaveProperty("limit");
+      expect(commentsResult?.comments?.at(-1)?.text).toBe("mcp comment 24");
+      const paged = await handleRequest({
+        jsonrpc: "2.0",
+        id: 5,
+        method: "tools/call",
+        params: { name: "pm_comments", arguments: { path: context.pmPath, id, options: { limit: 20 } } },
+      });
+      const pagedResult = (paged?.structuredContent as { result?: typeof commentsResult } | undefined)?.result;
+      expect(pagedResult).toMatchObject({ count: 20, returned_count: 20, total_count: 27, has_more: true, limit: 20 });
+      expect(pagedResult?.comments?.[0]?.text).toBe("mcp comment 5");
     });
   }, 60_000);
 

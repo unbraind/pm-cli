@@ -220,7 +220,7 @@ describe("expandPmErrorCodeCatalogRows", () => {
         stability: "provisional",
         exit_code: 4,
         class: "conflict",
-        recovery: "Inspect the structured error guidance and retry the suggested command.",
+        recovery: "Inspect the structured error guidance, then retry the suggested command when one is present.",
         sources: ["core/lock/lock-confinement.ts"],
         emitting_commands: ["*"],
         canonical_code: "lock_path_unsafe",
