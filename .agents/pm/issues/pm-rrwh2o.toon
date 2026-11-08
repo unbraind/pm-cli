@@ -1,0 +1,24 @@
+id: pm-rrwh2o
+title: "Combining an annotation or linked-artifact mutation with a universal output control is refused untyped: code command_failed and pm --help examples instead of a stable code and a retry without the control"
+description: "Found 2026-11-08 while verifying PR 1685 review findings. validateReadOutputOptions (src/sdk/read-output-contracts.ts) refuses a comments, notes, learnings, files, docs or package-catalog mutation combined with a universal output control (--output-budget, --output-cursor, --output-limit, --output-include, --output-session) with the message \"Universal output controls cannot be combined with a <command> mutation.\" The refusal carries no typed code. pm learnings <id> --add x --output-cursor bad --json reports code command_failed, required \"Adjust command input or tracker state and retry.\" and examples \"pm --help\" and \"pm <command> --help\". So an agent cannot key its recovery on the refusal, and the guidance never says what to do: run the mutation without the output control, or read with the output control after the write. Measured on the PR 1685 head with the built CLI in a sandbox tracker. Expected: a stable code (for example read_output_mutation_conflict), the offending output flags, and a suggested retry without them, through CLI, SDK and MCP. The refusal-closure census should count the new code. Duplicate check: searched universal output controls mutation refusal code. pm-479ggz (closed) rejected the controls for package manage diagnostics, and pm-f05lsg (open) measures recovery closure in general. Neither types this refusal."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,read-output,recovery,refusals
+created_at: "2026-11-08T01:16:13.804Z"
+updated_at: "2026-11-08T01:16:13.804Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "The mutation and output-control refusal carries a stable typed code that the error catalog and refusal-closure census include; The refusal names the offending output flags and suggests a retry of the mutation without them through CLI, SDK and MCP"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: low
+repro_steps: "In a sandbox tracker run pm learnings <id> --add x --output-cursor bad --json and read the code, required and examples fields"
+expected_result: "The refusal carries a stable code, names the offending output flags and suggests the mutation retry without them"
+actual_result: "code command_failed, generic required text and pm --help examples"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-479ggz,related,"2026-11-08T01:16:13.804Z","harness:claude-code","cli:create:dep",detected
+  pm-8s53lj,discovered_from,"2026-11-08T01:16:13.804Z","harness:claude-code","cli:create:dep",detected
+  pm-f05lsg,related,"2026-11-08T01:16:13.804Z","harness:claude-code","cli:create:dep",detected
+body: ""
