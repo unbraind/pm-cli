@@ -113,6 +113,10 @@ export interface ParsedSettings {
       hierarchy?: boolean;
       activity?: boolean;
       progress?: boolean;
+      /** Include recently created items in context output. */
+      recently_created?: boolean;
+      /** Include unparented items in context output. */
+      unparented?: boolean;
       blockers?: boolean;
       files?: boolean;
       workload?: boolean;

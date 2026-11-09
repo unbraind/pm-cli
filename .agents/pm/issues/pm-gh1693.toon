@@ -6,24 +6,24 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1693",output
 created_at: "2026-11-09T07:32:16.381Z"
-updated_at: "2026-11-09T17:54:22.469Z"
-closed_at: "2026-11-09T17:54:21.096Z"
-completed_at: "2026-11-09T17:54:21.096Z"
+updated_at: "2026-11-09T19:13:08.104Z"
+closed_at: "2026-11-09T19:13:07.109Z"
+completed_at: "2026-11-09T19:13:07.109Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Strict close refusal headline remains bounded and never contains a partial flag token; Default output suppresses generic explanatory filler while structured recovery retains full missing fields and retry arguments; CLI regression verifies no mutation on refusal and actionable close recovery
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: "Preserve exact and actionable close guidance, producer-domain precedence, truthful incomplete-domain warnings and original omission counts. Keep an explicit producer or SDK retry route under text bounds. Document that retained refusal domains are complete while a whole refusal object may be omitted under the fixed JSON ceiling, with bounded omission metadata and atomic retry argv."
-expected_result: SDK and CLI consumers can distinguish retained complete domains from omitted diagnostics and do not assume JSON restores every field beyond its budget.
-actual_result: "The prior final instrumented cohort passes 398 tests across sixteen files with all linked owner commands, typechecks/lint and zero SDK surface changes. This documentation-only follow-up passes build and a focused contract/content/link check. The contract now explains whole-refusal omission, independent SDK context, bounded omission receipts and Unicode code-point identity limits. Hosted exact-head full coverage/static/native admission remains required."
+resolution: Preserved bounded incomplete-domain evidence and whole usable choices during ordinary and close text compaction.
+expected_result: Incomplete producer domains stay explicitly partial under the fixed 768-token text ceiling without mutating the producer context.
+actual_result: All four new regression cases and all 433 instrumented cohort assertions pass; both linked commands pass. No text or JSON budget changed.
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1676,related,"2026-11-09T09:01:50.450Z","harness:codex","cli:update:dep",detected
   pm-cha95z,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
   pm-qmb6h8,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
   pm-v1kspa,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-11-09T07:32:16.381Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:23.639Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T09:53:13.984Z","harness:codex","PR #1696 review remediation: the concise strict-close headline is independent of optional package recovery data. The immediate retry is explicitly labeled a template requiring real evidence. The existing guidance test now asserts direct placement and exactly one retry, and the real CLI preserves history on refusal."
@@ -38,6 +38,7 @@ comments[14]{created_at,author,text}:
   "2026-11-09T15:28:12.326Z","harness:codex","Review controls reproduce separator/newline ambiguity, inferred complete domains over malformed producer metadata and missing compact-close fallback. Legal values are quoted/escaped unless they are simple tokens; incomplete structured metadata suppresses inferred complete domains while retaining partial next steps. When compaction drops a long close retry it retains the update-then-repeat procedure, without overwriting SDK-only recovery or inventing a missing fallback. The general text omission notice now correctly says JSON recovery has its own budget. Seven intended pre-fix assertions failed; the first repaired cohort passes 279 tests. Focused lint passes after extracting the recovery merge rather than relaxing complexity."
   "2026-11-09T15:40:28.531Z","harness:codex","Final verification: all 355 instrumented assertions across thirteen files pass, and changed source lines/branches have no uncovered markers. Additional final controls preserve a short close retry under compaction, optional-recovery headlines and SDK-only instructions. Source/package/example typechecks, ESLint without suppression changes, zero-change SDK surface, contracts/catalog, actionlint and credential scanning pass. Full source coverage is still a required hosted gate; the local selected-owner coverage report correctly refuses unselected-source thresholds."
   "2026-11-09T17:02:00.216Z","harness:codex","The full-review regressions reproduced ten failures before repair, then all 138 focused and 396 expanded instrumented assertions passed. Additional direct formatter controls show that valid and empty explicitly supplied domains also need precedence over prose-derived brief/full choices and retries. Apply that same producer-precedence rule instead of limiting the fix to malformed arrays. The host will retain a truthful SDK-context route for a retry-only overflow, not invent a command or promise unlimited CLI JSON; broader CLI restoration remains under pm-v1kspa."
+  "2026-11-09T19:13:06.354Z","harness:codex","Review compaction repair: four new failing-before cases reproduced lost partial-domain evidence or oversized legal-choice echoes. Guidance now retains the incomplete-domain notice through ordinary next-step slicing and compact close fallback. Whole JSON-quoted choices share a 400-byte preview budget; oversized choices are omitted with truthful counts, never shortened into different legal tokens. All 433 assertions in the 17-file source-instrumented cohort and both linked guidance/enrichment commands pass. Whole-repository exact coverage remains a required hosted check; the selected cohort correctly exits at the full-source denominator gate. Typechecks, ESLint, contracts/catalog and SDK surface (zero changes) pass."
 learnings[1]{created_at,author,text}:
   "2026-11-09T10:03:50.434Z","harness:codex",A concise refusal must keep a complete headline and place its retry once at the top. Label placeholder retries as templates and do not promise optional recovery fields or an ineffective diagnostic budget override.
 files[5]{path,scope}:
@@ -49,7 +50,7 @@ files[5]{path,scope}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:32.348Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
   node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts,project,600,"harness:codex","2026-11-09T16:53:30.785Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
-test_runs[10]:
+test_runs[11]:
   - run_id: test-local-mw8ziie5-0st84j
     kind: test
     status: passed
@@ -161,12 +162,24 @@ test_runs[10]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9mzv0n-g962fo
+    kind: test
+    status: passed
+    started_at: "2026-11-09T19:10:00.157Z"
+    finished_at: "2026-11-09T19:11:05.158Z"
+    recorded_at: "2026-11-09T19:11:05.158Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope}:
   docs/COMMANDS.md,project
   docs/CONFIGURATION.md,project
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
   docs/SDK.md,project
-close_reason: Align bounded recovery behavior and its shared diagnostic contract
+close_reason: Implemented and verified the actionable review correction; final PR delivery gates remain required.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

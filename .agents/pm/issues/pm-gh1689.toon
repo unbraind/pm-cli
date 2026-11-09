@@ -6,27 +6,28 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"gh:1689",history,sdk
 created_at: "2026-11-09T07:32:09.358Z"
-updated_at: "2026-11-09T17:13:08.839Z"
-closed_at: "2026-11-09T17:13:08.046Z"
-completed_at: "2026-11-09T17:13:08.046Z"
+updated_at: "2026-11-09T19:13:13.871Z"
+closed_at: "2026-11-09T19:13:13.007Z"
+completed_at: "2026-11-09T19:13:13.007Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Leading-slash raw regex sources work alongside valid slash-delimited literals and existing flag behavior; Invalid patterns identify their one-based matcher index without echoing sensitive material; Dry run preserves bytes and actual redaction verifies the history chain
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: "Distinguish leading-slash raw sources from valid slash-delimited literals, retain JavaScript flags and escape parity, and reject malformed matchers by original index without sensitive-value echoes or writes. Integrity regressions now assert actual dry-run mode, changed preview and positive entry/replacement counts before checking unchanged history bytes and verified post-commit chains."
-expected_result: "Regex spelling determines the intended matcher, invalid inputs preserve item/history bytes, and dry-run tests cannot pass with a zero-impact preview."
-actual_result: "Both linked history command/integrity checks and all 398 instrumented cohort tests pass, including raw, escaped-trailing-slash and documented literal preview impact plus chain/hash verification. No matcher execution-budget change is claimed; pre-existing trusted-operator regex hardening remains separately tracked by pm-zzw8bi. Hosted candidate gates remain required."
+resolution: Clarified history redaction raw-source and literal classification in built CLI help.
+expected_result: CLI help describes both accepted input forms and the final-unescaped-slash classification rule.
+actual_result: Isolated built CLI help contains the raw example and exact classification rule; linked history checks and all 433 cohort assertions pass.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-y3w0ld,related,"2026-11-09T09:01:56.645Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-11-09T07:32:09.358Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:21.580Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T09:41:52.079Z","harness:codex","Greptile review identified two valid residuals on PR1696: empty slash literals had no matcher index and the documented single-quoted regex contained doubled backslashes. Added same-harness regressions for empty literals, whitespace matchers and the literal copied directly from COMMANDS.md: all3 fail on the pre-fix source, with48 existing passes. The implementation now routes every invalid matcher through one disclosure-safe indexed refusal and rejects supplied whitespace patterns before any write. The documentation literal is corrected and its actual bytes are consumed by the SDK integrity regression."
   "2026-11-09T10:02:54.161Z","harness:codex","Final review regressions pass: empty and whitespace regex arguments are indexed before any write; escaped trailing slashes remain raw sources; the documented regex bytes run through the SDK; materialized item content and record-hash fields are checked after redaction. Combined review cohort passed 199 tests in 7 files; every active item linked-test command passed again. Sticky-flag documentation now explains why y does not search later positions."
   "2026-11-09T13:59:57.989Z","harness:codex","Review scope counterevidence: the baseline and candidate use the identical applyRegexRule matching/replacement sink. A one-second isolated engine probe timed out equally for a previously supported escaped raw source and its newly accepted leading-slash spelling; a linear control completed. Historical security triage records history regexes as explicit authorized operator arguments. No new untrusted input boundary or vulnerability is established by the parser change. Predictable isolated execution budgeting for long-lived SDK embeddings is a distinct open enhancement in pm-zzw8bi and is not claimed implemented; source parsing/privacy regression scope remains unchanged."
   "2026-11-09T15:28:13.961Z","harness:codex","Strengthened the existing parser boundary with explicit odd/even backslash delimiter controls: an odd count keeps the raw leading-slash source and an even count recognizes the literal delimiter and flags. Both pass without changing the already-correct parser implementation or adding a production test seam."
+  "2026-11-09T19:13:12.097Z","harness:codex","Review help repair: --regex now explicitly accepts raw RegExp source, with a leading-slash raw example, and /pattern/flags. The help states that leading-slash input is interpreted as a literal only when the final unescaped slash is followed by supported JavaScript flag letters or nothing. A built CLI help invocation in isolated PM_PATH and PM_GLOBAL_PATH confirms the published wording. Both linked history command/integrity checks and all 433 instrumented cohort assertions pass. Matcher execution budgeting remains separately tracked in pm-zzw8bi; no matcher/replacement behavior changes in this follow-up."
 learnings[1]{created_at,author,text}:
   "2026-11-09T10:03:49.415Z","harness:codex",A slash is a literal delimiter only when it is unescaped and followed by recognized flags. Preserve original argument positions before deduplication; validate every supplied matcher before mutation and never retain its sensitive source in recovery.
 files[4]{path,scope}:
@@ -36,7 +37,7 @@ files[4]{path,scope}:
   tests/unit/commands/history/history-activity-command.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:25.551Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
-test_runs[4]:
+test_runs[5]:
   - run_id: test-local-mw91y4qy-uenfa2
     kind: test
     status: passed
@@ -81,9 +82,20 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9n1dsd-ybreom
+    kind: test
+    status: passed
+    started_at: "2026-11-09T19:12:00.137Z"
+    finished_at: "2026-11-09T19:12:16.141Z"
+    recorded_at: "2026-11-09T19:12:16.141Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
-close_reason: Complete private indexed regex parsing and assert actual dry-run impact
+close_reason: Implemented and verified the actionable review correction; final PR delivery gates remain required.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

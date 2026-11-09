@@ -68,6 +68,8 @@ interface GuidanceMessage {
   why?: string;
   examples?: string[];
   nextSteps?: string[];
+  /** Host-only domain fault evidence retained during text compaction, never serialized as a new field. */
+  partialLegalDomainNotice?: string;
   verificationErrors?: string[];
   flag?: string;
   value?: string;
@@ -874,9 +876,10 @@ function compactCloseRecoverySteps(message: GuidanceMessage, compact: GuidanceMe
   if (message.code !== "close_validation_missing_fields" || !message.recovery?.suggested_retry || compact.recovery?.suggested_retry) {
     return compact.nextSteps;
   }
-  return compact.recovery?.next_best_command
+  const nextSteps = compact.recovery?.next_best_command
     ? ["Run recovery.next_best_command with real evidence, then repeat the original close."]
     : [...(compact.nextSteps ?? []), "Retrieve the complete retry from SDK error.context.recovery.suggested_retry; replace placeholders with real evidence before executing it."];
+  return appendIfMissing(nextSteps, message.partialLegalDomainNotice);
 }
 
 /**
@@ -895,11 +898,15 @@ function renderBoundedGuidanceMessage(
     estimatePmOutputTokens(Buffer.byteLength(text, "utf8")) <= budget;
   if (fits(full)) return full;
   const withoutExplanation: GuidanceMessage = { ...message, why: undefined };
+  const limitedNextSteps = appendIfMissing(
+    message.nextSteps?.slice(0, 1) ?? [],
+    message.partialLegalDomainNotice,
+  );
   const limitedCollections: GuidanceMessage = {
     ...withoutExplanation,
     details: undefined,
     examples: message.examples?.slice(0, 1),
-    nextSteps: message.nextSteps?.slice(0, 1),
+    nextSteps: limitedNextSteps,
     verificationErrors: message.verificationErrors?.slice(0, 3),
   };
   const compactRecovery: GuidanceMessage = {
@@ -1309,14 +1316,27 @@ function resolveGuidanceDetails(context: PmCliErrorContext): Pick<GuidanceMessag
   return "details" in projected ? { details: projected.details } : { detailsOmitted: projected.details_omitted };
 }
 
+const PARTIAL_LEGAL_DOMAIN_PREVIEW_MAX_BYTES = 400;
+
+/** Render whole choices within a bounded preview without shortening a legal value into another token. */
+function previewLegalDomainChoices(values: readonly string[]): string[] {
+  const shown: string[] = [];
+  for (const value of values.slice(0, 8)) {
+    const rendered = JSON.stringify(value);
+    if (Buffer.byteLength([...shown, rendered].join(", "), "utf8") <= PARTIAL_LEGAL_DOMAIN_PREVIEW_MAX_BYTES) shown.push(rendered);
+  }
+  return shown;
+}
+
 /** Retain usable strings from malformed producer metadata without claiming a complete typed legal domain. */
 function partialLegalDomainGuidance(recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
   const domain = recovery?.allowed_values;
   if (domain === undefined || (Array.isArray(domain) && domain.every((value) => typeof value === "string"))) return undefined;
   const usable = Array.isArray(domain) ? domain.filter((value): value is string => typeof value === "string") : [];
-  const visible = usable.slice(0, 8).map((value) => JSON.stringify(value)).join(", ") || "none";
-  const omitted = usable.length > 8 ? ` (${usable.length - 8} additional valid choices omitted)` : "";
-  return `Incomplete legal domain from malformed producer metadata. Usable choices: ${visible}${omitted}. Correct the producer metadata before relying on a complete domain.`;
+  const shown = previewLegalDomainChoices(usable);
+  const visible = shown.join(", ") || "none shown";
+  const omitted = usable.length > shown.length ? ` (${usable.length - shown.length} additional valid choices omitted)` : "";
+  return `Incomplete legal domain from malformed producer metadata. Usable choices shown: ${visible}${omitted}. Correct the producer metadata before relying on a complete domain.`;
 }
 
 /** Merge producer recovery while refusing a complete prose domain after malformed structured metadata. */
@@ -1369,6 +1389,7 @@ function applyPmCliErrorContext(
     why: normalizeContextValue(context.why, guidance.why),
     examples,
     nextSteps,
+    partialLegalDomainNotice: partialDomain,
     verificationErrors,
     policyViolations: context.policy_violations,
     policyViolationCount: context.policy_violation_count,

@@ -88,6 +88,32 @@ describe("pm cli error guidance context plumbing", () => {
     expect(guided.next_steps).toEqual(["Inspect the package profile", expect.stringContaining("Incomplete legal domain")]);
   });
 
+  it.each([false, true])("retains partial-domain evidence when producer steps and text are compacted (close=%s)", (close) => {
+    const context = {
+      ...(close ? { code: "close_validation_missing_fields" } : {}),
+      nextSteps: ["Inspect the package profile"],
+      recovery: { allowed_values: ["valid-choice", null] as never, ...(close ? { suggested_retry: "pm close " + "x".repeat(5_000), next_best_command: "pm update pm-demo --resolution value" } : {}) },
+    };
+    const text = formatPmCliErrorForDisplay("Producer failure " + "x".repeat(5_000), context, { lean: true });
+    expect(text).toContain("Incomplete legal domain");
+    expect(text).toContain('"valid-choice"');
+    expect(text).toContain(close ? "pm update pm-demo --resolution value" : "Inspect the package profile");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+    expect(context.nextSteps).toEqual(["Inspect the package profile"]);
+    expect(context.recovery.allowed_values).toEqual(["valid-choice", null]);
+  });
+
+  it.each([{ label: "long token", large: "x".repeat(5_000) }, { label: "escaped controls", large: "\n".repeat(250) }])("retains a bounded partial-domain notice without shortening choices ($label)", ({ large }) => {
+    const context = { recovery: { allowed_values: [large, "short", null] as never } };
+    const text = formatPmCliErrorForDisplay("Producer failure " + "x".repeat(5_000), context, { lean: true });
+    expect(text).toContain("Incomplete legal domain");
+    expect(text).toContain('"short"');
+    expect(text).toContain("1 additional valid choices omitted");
+    expect(text).not.toContain(JSON.stringify(large));
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+    expect(context.recovery.allowed_values).toEqual([large, "short", null]);
+  });
+
   it.each([undefined, "pm config list --json"])("does not infer a complete prose domain over malformed producer choices (%s)", (nextBest) => {
     const context = { recovery: { normalized_args: ["context", "--depth", "invalid"], provided_fields: ["--depth"], allowed_values: ["valid-choice", null] as never, ...(nextBest ? { next_best_command: nextBest } : {}) } };
     const envelope = formatPmCliErrorForJson("Value must be one of brief|full", 2, context);

@@ -6,22 +6,22 @@ status: closed
 priority: 2
 tags[4]: agent-ux,config,"gh:1695",sdk
 created_at: "2026-11-09T07:32:05.563Z"
-updated_at: "2026-11-09T17:13:05.309Z"
-closed_at: "2026-11-09T17:13:04.336Z"
-completed_at: "2026-11-09T17:13:04.336Z"
+updated_at: "2026-11-09T19:13:11.093Z"
+closed_at: "2026-11-09T19:13:10.009Z"
+completed_at: "2026-11-09T19:13:10.009Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Accept every supported settings path as an alias in SDK-backed config get/set without bypassing validation; Unknown keys offer at most three nearest legal keys and a working config-list inspection command; Preserve complete legal keys in structured recovery and reject unknown keys without settings writes
 parent: pm-8jdc
 risk: medium
 confidence: high
-resolution: "Validated dotted configuration aliases and scalar context leaves, strict shared decimal grammar, case-normalized context depth matching grouped setters, bounded nearest-key suggestions and complete scoped SDK domains. Preserve selected tracker and extension isolation in executable native JSON inventory commands, with exact independent inventory coverage and a guarded two-tracker shell replay."
-expected_result: "Supported setting paths use existing validators, context depth aliases match grouped normalization, unrelated string rules remain stable, and unknown keys do not write settings or redirect inspection to another tracker."
-actual_result: "All three linked command/profile/inventory test commands pass. Final instrumented cohort passes 398 tests in sixteen files, including real CLI mixed-case depth persistence, other-string negative controls, exact sixty-leaf inventory and selected 11 versus ambient 22 replay. Lint/typechecks, contract/catalog checks and SDK zero classified changes pass; required hosted delivery gates remain pending."
+resolution: Aligned ParsedSettings context section typing with both runtime-preserved optional section toggles.
+expected_result: "Typed settings validation consumers can read recently_created and unparented without casts, preserving optional absence."
+actual_result: "Failing-before consumer typetest now passes; validator round-trip, all linked owner commands, full typechecks and 433 cohort assertions pass."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4zpq71,related,"2026-11-09T09:01:45.656Z","harness:codex","cli:update:dep",detected
   pm-gh1693,related,"2026-11-09T12:23:22.291Z","harness:codex","cli:update:dep",detected
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-11-09T07:32:05.563Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:19.904Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T08:30:38.246Z","harness:codex","Completeness review extended the same descriptor-owned configuration surface to the context scalar leaves previously available only through grouped context flags: default depth, activity limit, staleness threshold and the eight existing section toggles. The shared descriptor validators enforce the canonical depth domain, positive safe integers and booleans; real CLI tests check persisted values and byte preservation on invalid depth, zero and unsafe-integer assignments. Existing grouped flags remain supported and help now distinguishes group and leaf writes."
@@ -38,12 +38,13 @@ comments[16]{created_at,author,text}:
   "2026-11-09T16:11:29.744Z","harness:codex","Final scoped recovery evidence: both linked test commands pass, including the real shell replay against two isolated trackers (selected activity_limit 11, ambient negative-control 22) and preserved extension isolation. The initial missing-selector control failed as expected; executing the repaired command also caught and removed unsupported universal --output-budget from config list. SDK surface check reports zero classified changes; contracts/catalog and source/package/example typechecks pass. This corrects earlier evidence wording that described an unbounded flag: completeness comes from the native config JSON inventory, without a universal-output flag."
   "2026-11-09T16:13:19.137Z","harness:codex","Hosted shard-4 repair: the independent complete-inventory fixture now explicitly enumerates the thirteen supported context aliases and verifies their paths, preserving exact key/count assertions instead of weakening them or deriving expectations from production descriptors. All three linked commands pass after this repair. The source-instrumented review cohort passes 356 tests across thirteen files; whole-repository hosted exact-100% coverage remains mandatory, with no threshold or denominator change."
   "2026-11-09T16:30:55.225Z","harness:codex","DeepScan exact-head report for 66885b171: NULL_POINTER at config-positional-cli.integration.spec.ts:65, defect 240635101. GitHub exposes only the count; Chrome Computer Use host is unavailable. Read-only public provider API confirms the uninitialized refusal access. Replace non-null assertions with optional access and a real runtime guard; retain the real selected-tracker and negative-control replay. No production behavior or analyzer settings change."
+  "2026-11-09T19:13:09.183Z","harness:codex","Review typing repair: the runtime-preserved recently_created and unparented context section booleans now appear as optional fields in ParsedSettings. A consumer typetest reproduced two TS2339 failures before repair and compiles after repair without casts. The existing validator round-trip asserts both true and false values. All four linked owner commands and the 433-test instrumented cohort pass. Full typecheck, ESLint and generated contracts/catalog checks pass; SDK surface classification remains zero changes because this parsed internal shape is outside the published SDK export surface."
 notes[1]{created_at,author,text}:
   "2026-11-09T15:15:30.252Z","harness:codex","Contract decision for the proposed required.supported_keys path: the published SDK/CLI error envelope declares required as a remediation string shared by all commands. Preserve that governed shape and expose the complete scoped key domain through the existing recovery.allowed_values primitive rather than creating a command-specific object or duplicate domain. The scoped unbounded inventory command and complete SDK error context provide retrieval when CLI diagnostic budgeting binds. This is an explicit compatibility decision rather than a claim that the proposed field was added."
 learnings[2]{created_at,author,text}:
   "2026-11-09T10:03:47.802Z","harness:codex","Settings paths must resolve through the existing SDK validators and scope rules rather than becoming a parallel write path. Test refusal preservation and consent scope with real settings bytes, including typo suggestions and non-decimal integers."
   "2026-11-09T10:27:53.376Z","harness:codex","CLI subprocess acceptance and direct SDK persistence tests prove different risks: bundled child execution does not instrument the source owner. Source coverage exposed full-depth read rejection and unexercised multi-candidate ranking; meaningful round-trip and ordering cases now cover those contracts before closure."
-files[14]{path,scope}:
+files[16]{path,scope}:
   sdk/public-surface.json,project
   src/cli/error-guidance.ts,project
   src/cli/register-setup.ts,project
@@ -52,13 +53,15 @@ files[14]{path,scope}:
   src/core/store/settings-validator.ts,project
   src/sdk/config.ts,project
   tests/integration/config-positional-cli.integration.spec.ts,project
+  tests/types/settings-validation.test-d.ts,project
   tests/unit/commands/workspace/config-command.spec.ts,project
   tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project
   tests/unit/core/config/config-positional-value.spec.ts,project
   tests/unit/core/config/nested-settings.spec.ts,project
   tests/unit/core/profile/profile-lint.spec.ts,project
   tests/unit/core/profile/profile-plan.spec.ts,project
-tests[3]:
+  tests/unit/core/store/settings-validator.spec.ts,project
+tests[4]:
   - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts
     scope: project
     timeout_seconds: 600
@@ -82,7 +85,15 @@ tests[3]:
       created_at: "2026-11-09T16:12:09.339Z"
       source_kind: local_mutation
       source_ref: fix/sdk-configuration-and-redaction-recovery
-test_runs[13]:
+  - command: pnpm exec tsc --noEmit -p tsconfig.typetests.json
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-11-09T18:59:18.926Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-configuration-and-redaction-recovery
+test_runs[14]:
   - run_id: test-local-mw91xt83-rj3zym
     kind: test
     status: passed
@@ -238,9 +249,23 @@ test_runs[13]:
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9n10or-o510c1
+    kind: test
+    status: passed
+    started_at: "2026-11-09T19:11:06.032Z"
+    finished_at: "2026-11-09T19:11:59.163Z"
+    recorded_at: "2026-11-09T19:11:59.163Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
+      pnpm exec tsc --noEmit -p tsconfig.typetests.json,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: Complete validated settings paths and grouped/dotted context parity
+close_reason: Implemented and verified the actionable review correction; final PR delivery gates remain required.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

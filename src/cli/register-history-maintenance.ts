@@ -219,7 +219,7 @@ export function registerHistoryMaintenanceCommands(
     )
     .option(
       "--regex <value>",
-      "Regex (repeatable): /pattern/flags or '/var/[a-z]+'",
+      "Raw RegExp source (repeatable; e.g. /var/[a-z]+) or /pattern/flags. Leading-slash input is a literal only when the final unescaped slash is followed by supported JavaScript flag letters or nothing.",
       collect,
     )
     .option(
