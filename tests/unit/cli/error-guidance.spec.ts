@@ -52,6 +52,44 @@ describe("pm cli error guidance context plumbing", () => {
     expect(context.recovery.allowed_values).toEqual(values);
   });
 
+  it.each([
+    { domain: ["valid-choice", null], visible: '"valid-choice"' },
+    { domain: ["", null], visible: '""' },
+    { domain: [null], visible: "none" },
+    { domain: [...Array.from({ length: 10 }, (_, index) => `value-${index}`), null], visible: "(2 additional valid choices omitted)" },
+  ])("retains partial guidance without advertising a malformed legal domain as complete ($visible)", ({ domain, visible }) => {
+    const context = { code: "package_value_invalid", recovery: { allowed_values: domain as never } };
+    const envelope = formatPmCliErrorForJson("Invalid package value", 2, context);
+    expect(envelope.next_steps?.join(" ")).toContain("Incomplete legal domain");
+    expect(envelope.next_steps?.join(" ")).toContain(visible);
+    expect(envelope.recovery?.allowed_values).toBeUndefined();
+    expect(envelope.refusal.legal_domain).toBeUndefined();
+    const text = formatPmCliErrorForDisplay("Invalid package value", context, { lean: true });
+    expect(text).toContain("Incomplete legal domain");
+    expect(text).toContain(visible);
+    expect(text).not.toContain("value-8");
+    expect(context.recovery.allowed_values).toEqual(domain);
+  });
+
+  it("adds partial legal choices to a plain producer failure without losing explicit next steps", () => {
+    const domain = ["valid-choice", null] as never;
+    const plain = formatPmCliErrorForJson("Producer failure", 2, { recovery: { allowed_values: domain } });
+    expect(plain.next_steps).toEqual([expect.stringContaining("Incomplete legal domain")]);
+    const guided = formatPmCliErrorForJson("Producer failure", 2, { nextSteps: ["Inspect the package profile"], recovery: { allowed_values: domain } });
+    expect(guided.next_steps).toEqual(["Inspect the package profile", expect.stringContaining("Incomplete legal domain")]);
+  });
+
+  it("retains the complete refusal domain when duplicated recovery values exceed the JSON ceiling", () => {
+    const values = Array.from({ length: 180 }, (_, index) => `custom_field_${index}`);
+    const context = { code: "package_value_invalid", recovery: { allowed_values: values } };
+    const envelope = formatPmCliErrorForJson("Invalid package value", 2, context);
+    expect(envelope.diagnostic_output).toMatchObject({ truncated: true, budget: 2_000 });
+    expect(envelope.recovery?.allowed_values).not.toEqual(values);
+    expect(envelope.refusal.legal_domain).toEqual(values);
+    expect(Math.ceil(Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8") / 4)).toBeLessThanOrEqual(2_000);
+    expect(context.recovery.allowed_values).toEqual(values);
+  });
+
   it("discloses a budgeted custom-field diagnostic while preserving the complete SDK error context", () => {
     const values = Array.from({ length: 1_000 }, (_, index) => `custom_field_${index}`);
     const error = new PmCliError("Unknown custom projection field", 2, {

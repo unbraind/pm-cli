@@ -1286,6 +1286,16 @@ function resolveGuidanceDetails(context: PmCliErrorContext): Pick<GuidanceMessag
   return "details" in projected ? { details: projected.details } : { detailsOmitted: projected.details_omitted };
 }
 
+/** Retain usable strings from malformed producer metadata without claiming a complete typed legal domain. */
+function partialLegalDomainGuidance(recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
+  const domain = recovery?.allowed_values;
+  if (!Array.isArray(domain) || domain.every((value) => typeof value === "string")) return undefined;
+  const usable = domain.filter((value): value is string => typeof value === "string");
+  const visible = usable.slice(0, 8).map((value) => JSON.stringify(value)).join(", ") || "none";
+  const omitted = usable.length > 8 ? ` (${usable.length - 8} additional valid choices omitted)` : "";
+  return `Incomplete legal domain from malformed producer metadata. Usable choices: ${visible}${omitted}. Correct the producer metadata before relying on a complete domain.`;
+}
+
 /** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
 /** Merge typed SDK context into guidance without inferring mutation outcomes. */
 function applyPmCliErrorContext(
@@ -1300,8 +1310,9 @@ function applyPmCliErrorContext(
   const code = normalizeContextValue(context.code, guidance.code);
   const type = normalizeContextValue(context.type, errorType(code));
   const examples = normalizeContextList(context.examples) ?? guidance.examples;
-  const nextSteps =
-    normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
+  const producerNextSteps = normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
+  const partialDomain = partialLegalDomainGuidance(context.recovery);
+  const nextSteps = partialDomain ? [...(producerNextSteps ?? []), partialDomain] : producerNextSteps;
   const verificationErrors =
     normalizeContextList(context.verification_errors) ??
     guidance.verificationErrors;

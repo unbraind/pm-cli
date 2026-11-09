@@ -1,3 +1,5 @@
+import { spawnSync } from "node:child_process";
+import { quoteCommandArg } from "../../src/core/shared/command-line.js";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -35,8 +37,14 @@ describe("config positional CLI parser", () => {
       expect(refused.stderr).toContain("--actual-result");
       expect(refused.stderr).not.toContain("pm enforces explicit, deterministic contracts");
       expect(await readFile(historyPath, "utf8")).toBe(history);
-      const closed = context.runCli(["close", id, "done", "--resolution", "Delivered", "--expected", "Evidence required", "--actual", "Evidence recorded", "--json"], { expectJson: true });
-      expect(closed.code, closed.stderr).toBe(0);
+      const retry = refused.stderr.split("\n").find((line) => line.startsWith("Run: "))!.slice(5);
+      expect(retry).toMatch(/^pm .*close /u);
+      const evidence = "Verified evidence from displayed retry";
+      const command = retry.replaceAll(/<[^>]+>/gu, evidence).replace(/^pm /u, `${quoteCommandArg(process.execPath)} ${quoteCommandArg(path.resolve("dist/cli.js"))} `);
+      const closed = spawnSync(command, { shell: true, env: context.env, cwd: process.cwd(), encoding: "utf8", timeout: 15_000 });
+      expect(closed.status, closed.stderr).toBe(0);
+      const item = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(item.json).toMatchObject({ item: { status: "closed", resolution: evidence, expected_result: evidence, actual_result: evidence } });
     });
   });
 

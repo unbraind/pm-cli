@@ -4270,8 +4270,19 @@ the declared flag domain (`<off|warn|strict>` for enum values and no placeholder
 for booleans). It is emitted only from structured recovery metadata or flags
 declared on the invoked command; prose that merely mentions another flag is not
 interpreted as a missing input. Strict close validation reports missing
-resolution fields first and suggests a targeted `pm update` before retrying the
-original close invocation.
+resolution fields first and, when replay is possible, displays the same close
+with evidence placeholders. Replace those placeholders with actual evidence so
+one write records both the evidence and closure.
+
+`recovery.allowed_values` declares a complete string domain, including empty or
+whitespace-bearing choices. The text renderer quotes those choices visibly.
+If an untyped producer supplies malformed entries, the host reports usable
+strings in `next_steps` with an explicit incomplete-domain notice; it does not
+advertise that malformed array as a complete domain. Package authors must fix
+the producer metadata. Budgeted CLI JSON can compact duplicate recovery values
+while retaining `refusal.legal_domain` when the complete domain fits once. Larger
+domains remain available in the original SDK error context; the CLI diagnostic
+ceiling is independent of the ordinary command output budget.
 
 Recovery help examples resolve their command through
 `resolveRecoveryCommandName`, which uses the same bootstrap grammar as the CLI.

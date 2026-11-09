@@ -1091,7 +1091,7 @@ function parsePositiveContextInteger(rawValue: string, option: "--activity-limit
     return parsed.parsed.value as number;
   }
   throw new PmCliError(
-    `Context ${option} must be a positive integer (decimal digits only)`,
+    `Context ${option} must be a positive integer (decimal digits only, maximum ${Number.MAX_SAFE_INTEGER})`,
     EXIT_CODE.USAGE,
   );
 }
