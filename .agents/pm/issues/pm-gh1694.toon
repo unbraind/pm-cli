@@ -6,18 +6,18 @@ status: closed
 priority: 1
 tags[4]: ci,"gh:1694",release,transport
 created_at: "2026-11-09T07:50:38.300Z"
-updated_at: "2026-11-09T15:40:36.266Z"
-closed_at: "2026-11-09T15:40:34.733Z"
-completed_at: "2026-11-09T15:40:34.733Z"
+updated_at: "2026-11-09T17:13:06.920Z"
+closed_at: "2026-11-09T17:13:06.088Z"
+completed_at: "2026-11-09T17:13:06.088Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "macOS registry acceptance installs the same pinned Bun release through an official verified transport; Required Codecov uploads retain fail-closed checksum verification before execution; Focused workflow tests and hosted exact-head checks pass without ignoring mandatory failures; Exact-tag recovery keeps the existing tag and npm identity, with the live publication acceptance outcome tracked by pm-7zs0"
 parent: pm-u9d0
 risk: medium
 confidence: high
-resolution: "Use the official uncached pinned Mac Bun route and checksum-verified authenticated Codecov asset. Release Build/Test/Publish now depends on mandatory macOS/Windows Bun bootstrap and exact-version checks, retaining separate installed-package acceptance and immutable existing-tag recovery."
-expected_result: A failed native Bun download or wrong version blocks npm publication; recover existing v2026.11.9 without changing its tag or package and close the production blocker only after advertisement succeeds.
-actual_result: Workflow dependency assertions fail before and pass after the change. The actual version-check script accepts pinned CRLF output and rejects a mismatch. All 355 instrumented cohort assertions and linked workflow checks pass. Real final-head hosted gates are PENDING. Existing-tag child 42601586640 is preserved with producer/public-consumer success and queued native acceptance; advertisement is PENDING. Redundant parent watcher was canceled without canceling the child or relabeling historical failure evidence.
+resolution: "Pinned official macOS Bun download recovery and checksum-verified Codecov API asset download; uncached exact-version macOS/Windows Bun admission before npm publication, retaining later public-package acceptance. The existing independent Bun job inventory now includes prepublication-bun and enforces cache bypass on every setup step."
+expected_result: "Native bootstrap download/version failures block immutable npm publication, and every Bun setup job retains the verified cache and pin policy."
+actual_result: "All linked release/registry workflow commands and the 398-test instrumented cohort pass, including the legacy job inventory that failed before repair and direct execution of the version guard with CRLF-success/mismatch-failure controls. Production v2026.11.9 has six successful macOS/Windows acceptance jobs and three Ubuntu jobs still queued at the last 16:44 UTC read; advertisement is not yet verified. Preserve the existing child and immutable identity, keep GitHub blocker 1694 open and require final hosted candidate gates."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2x67z9,discovered_from,"2026-11-09T07:50:38.300Z","harness:codex","cli:create:dep",detected
   pm-7zs0,related,"2026-11-09T07:50:38.300Z","harness:codex","cli:create:dep",detected
@@ -34,14 +34,16 @@ comments[10]{created_at,author,text}:
   "2026-11-09T15:40:27.777Z","harness:codex","Final prepublication controls execute the actual version-check script with a mocked native executable result: pinned 1.4.0 with Windows CRLF succeeds and 1.4.1 fails with the expected diagnostic. Together with the required release needs edge, two native OS rows, exact approved action/asset inputs and fail-closed step flags, this prevents runtime-bootstrap failure from occurring only after npm publication. All 355 instrumented cohort tests pass; real hosted checks for the final revision remain pending."
 learnings[1]{created_at,author,text}:
   "2026-11-09T10:03:51.702Z","harness:codex","When a pinned official asset route fails, keep the version and byte-integrity controls. Exercise the selected transport on its native platform before publication and keep recovery of an existing tag distinct from creating another daily release."
-files[4]{path,scope}:
+files[5]{path,scope}:
   .github/workflows/ci.yml,project
   .github/workflows/release.yml,project
+  tests/integration/registry-acceptance-workflow.spec.ts,project
   tests/integration/release/codecov-verified-upload.integration.spec.ts,project
   tests/unit/scripts/release/extension-flag-acceptance.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts,project,600,"harness:codex","2026-11-09T07:51:20.885Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
-test_runs[7]:
+  node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,project,600,"harness:codex","2026-11-09T16:51:39.016Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+test_runs[8]:
   - run_id: test-local-mw91ybvx-0l507l
     kind: test
     status: passed
@@ -119,9 +121,21 @@ test_runs[7]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9ilstb-l6ns7x
+    kind: test
+    status: passed
+    started_at: "2026-11-09T17:07:50.392Z"
+    finished_at: "2026-11-09T17:08:10.655Z"
+    recorded_at: "2026-11-09T17:08:10.655Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/integration/registry-acceptance-workflow.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/RELEASING.md,project
-close_reason: Implemented pinned downloads and native Bun admission before npm publication in PR #1696; hosted and production acceptance pending.
+close_reason: Complete native prepublication admission and independent Bun workflow coverage
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

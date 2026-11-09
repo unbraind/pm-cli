@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[4]: agent-ux,config,"gh:1695",sdk
 created_at: "2026-11-09T07:32:05.563Z"
-updated_at: "2026-11-09T16:33:00.607Z"
-closed_at: "2026-11-09T16:32:59.789Z"
-completed_at: "2026-11-09T16:32:59.789Z"
+updated_at: "2026-11-09T17:13:05.309Z"
+closed_at: "2026-11-09T17:13:04.336Z"
+completed_at: "2026-11-09T17:13:04.336Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Accept every supported settings path as an alias in SDK-backed config get/set without bypassing validation; Unknown keys offer at most three nearest legal keys and a working config-list inspection command; Preserve complete legal keys in structured recovery and reject unknown keys without settings writes
 parent: pm-8jdc
 risk: medium
 confidence: high
-resolution: Validated dotted settings aliases and scalar context leaves; bounded key suggestions with complete SDK domains; executable tracker-scoped JSON inventory preserving extension isolation; exact independent inventory coverage and an explicit missing-refusal guard in the shell replay.
-expected_result: "Supported configuration paths round-trip safely, inspection stays in the selected tracker, inventory coverage remains exact, and absent SDK refusals fail clearly without undefined property access."
-actual_result: "All three linked test commands pass after the DeepScan repair; the two-tracker replay retains selected 11 versus ambient 22 and all 60 independently expected inventory leaves. The thirteen-file instrumented source cohort previously passed 356 tests; no runtime source, API signature, analyzer settings, performance budget or coverage threshold changed in this test-only follow-up. Next-head hosted DeepScan and complete CI admission remain required."
+resolution: "Validated dotted configuration aliases and scalar context leaves, strict shared decimal grammar, case-normalized context depth matching grouped setters, bounded nearest-key suggestions and complete scoped SDK domains. Preserve selected tracker and extension isolation in executable native JSON inventory commands, with exact independent inventory coverage and a guarded two-tracker shell replay."
+expected_result: "Supported setting paths use existing validators, context depth aliases match grouped normalization, unrelated string rules remain stable, and unknown keys do not write settings or redirect inspection to another tracker."
+actual_result: "All three linked command/profile/inventory test commands pass. Final instrumented cohort passes 398 tests in sixteen files, including real CLI mixed-case depth persistence, other-string negative controls, exact sixty-leaf inventory and selected 11 versus ambient 22 replay. Lint/typechecks, contract/catalog checks and SDK zero classified changes pass; required hosted delivery gates remain pending."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4zpq71,related,"2026-11-09T09:01:45.656Z","harness:codex","cli:update:dep",detected
   pm-gh1693,related,"2026-11-09T12:23:22.291Z","harness:codex","cli:update:dep",detected
@@ -82,7 +82,7 @@ tests[3]:
       created_at: "2026-11-09T16:12:09.339Z"
       source_kind: local_mutation
       source_ref: fix/sdk-configuration-and-redaction-recovery
-test_runs[12]:
+test_runs[13]:
   - run_id: test-local-mw91xt83-rj3zym
     kind: test
     status: passed
@@ -225,9 +225,22 @@ test_runs[12]:
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9ilco0-835cw7
+    kind: test
+    status: passed
+    started_at: "2026-11-09T17:07:21.073Z"
+    finished_at: "2026-11-09T17:07:49.727Z"
+    recorded_at: "2026-11-09T17:07:49.727Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: Finish settings-path discovery and protect the real SDK recovery replay
+close_reason: Complete validated settings paths and grouped/dotted context parity
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

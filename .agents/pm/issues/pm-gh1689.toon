@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"gh:1689",history,sdk
 created_at: "2026-11-09T07:32:09.358Z"
-updated_at: "2026-11-09T15:40:38.313Z"
-closed_at: "2026-11-09T15:40:37.369Z"
-completed_at: "2026-11-09T15:40:37.369Z"
+updated_at: "2026-11-09T17:13:08.839Z"
+closed_at: "2026-11-09T17:13:08.046Z"
+completed_at: "2026-11-09T17:13:08.046Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Leading-slash raw regex sources work alongside valid slash-delimited literals and existing flag behavior; Invalid patterns identify their one-based matcher index without echoing sensitive material; Dry run preserves bytes and actual redaction verifies the history chain
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: "Distinguish leading-slash raw sources from valid regex literals, preserve JavaScript flags and escaped-delimiter parity, and refuse invalid matchers by original index without echoing secrets or writing history."
-expected_result: "Both raw and literal patterns behave predictably, odd/even escape counts preserve source semantics, and invalid matchers leave item/history bytes unchanged."
-actual_result: "History-linked command/integrity checks and all 355 instrumented cohort assertions pass, including direct odd/even delimiter controls and existing privacy/no-write cases. The regex execution sink is unchanged from baseline; separate trusted-operator execution-budget hardening remains open and unclaimed. Final hosted source-head gates and reviewer acceptance remain PENDING."
+resolution: "Distinguish leading-slash raw sources from valid slash-delimited literals, retain JavaScript flags and escape parity, and reject malformed matchers by original index without sensitive-value echoes or writes. Integrity regressions now assert actual dry-run mode, changed preview and positive entry/replacement counts before checking unchanged history bytes and verified post-commit chains."
+expected_result: "Regex spelling determines the intended matcher, invalid inputs preserve item/history bytes, and dry-run tests cannot pass with a zero-impact preview."
+actual_result: "Both linked history command/integrity checks and all 398 instrumented cohort tests pass, including raw, escaped-trailing-slash and documented literal preview impact plus chain/hash verification. No matcher execution-budget change is claimed; pre-existing trusted-operator regex hardening remains separately tracked by pm-zzw8bi. Hosted candidate gates remain required."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-y3w0ld,related,"2026-11-09T09:01:56.645Z","harness:codex","cli:update:dep",detected
 comments[6]{created_at,author,text}:
@@ -36,7 +36,7 @@ files[4]{path,scope}:
   tests/unit/commands/history/history-activity-command.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:25.551Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
-test_runs[3]:
+test_runs[4]:
   - run_id: test-local-mw91y4qy-uenfa2
     kind: test
     status: passed
@@ -70,9 +70,20 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9im4ah-j0skqn
+    kind: test
+    status: passed
+    started_at: "2026-11-09T17:08:11.341Z"
+    finished_at: "2026-11-09T17:08:25.529Z"
+    recorded_at: "2026-11-09T17:08:25.529Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
-close_reason: Implemented private indexed regex parsing and verified delimiter parity in PR #1696; final hosted delivery acceptance pending.
+close_reason: Complete private indexed regex parsing and assert actual dry-run impact
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

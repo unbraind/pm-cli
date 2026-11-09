@@ -59,6 +59,12 @@ describe("nested-settings helpers (pm-7ilo)", () => {
   });
 
   describe("parseNestedSettingValue", () => {
+    it("normalizes context depth like the grouped setter while preserving other string rules", () => {
+      const descriptor = resolveNestedSettingDescriptor("context.default_depth")!;
+      expect(parseNestedSettingValue(descriptor, " DeEp ")).toMatchObject({ ok: true, parsed: { value: "deep" } });
+      expect(parseNestedSettingValue(STRING_DESCRIPTOR, " Ollama ")).toMatchObject({ ok: true, parsed: { value: "Ollama" } });
+      expect(parseNestedSettingValue(CHOICE_DESCRIPTOR, "SEMANTIC_CONFIGURED").ok).toBe(false);
+    });
     it("trims whitespace for string kinds and returns the trimmed value", () => {
       const result = parseNestedSettingValue(STRING_DESCRIPTOR, "  ollama  ");
       expect(result.ok).toBe(true);

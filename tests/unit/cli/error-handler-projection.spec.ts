@@ -2,8 +2,20 @@ import { describe, expect, it, vi } from "vitest";
 import { _testOnly } from "../../../src/cli/main.js";
 import { EXIT_CODE, PmCliError } from "../../../src/sdk/runtime-primitives.js";
 import { wrapThrownErrorForSentry } from "../../../src/sdk/error-runtime.js";
+import { formatPmCliErrorForDisplay, formatPmCliErrorForJson } from "../../../src/cli/error-guidance.js";
 
 describe("CLI known error projection", () => {
+  it.each([null, "brief|full", { choices: ["brief", "full"] }])("preserves malformed non-array domains through enrichment for a truthful refusal (%j)", (domain) => {
+    const context = { recovery: { allowed_values: domain as never } };
+    const enriched = _testOnly.buildPmCliRecoveryContext(context, ["probe", "run"], "Producer failure");
+    expect(enriched.recovery?.allowed_values).toEqual(domain);
+    const envelope = formatPmCliErrorForJson("Producer failure", 2, enriched);
+    expect(envelope.next_steps?.join(" ")).toContain("Incomplete legal domain");
+    expect(envelope.recovery?.allowed_values).toBeUndefined();
+    expect(envelope.refusal.legal_domain).toBeUndefined();
+    expect(formatPmCliErrorForDisplay("Producer failure", enriched, { lean: true })).toContain("Incomplete legal domain");
+    expect(context.recovery.allowed_values).toEqual(domain);
+  });
   it("wraps primitive failures without inventing an exit code", () => {
     const wrapped = wrapThrownErrorForSentry("failure", "wrapped") as Error & {
       exitCode?: number;

@@ -14,7 +14,7 @@ describe("config positional CLI parser", () => {
         const result = context.runCli(["config", "set", key, "strict", "--json"], { expectJson: true });
         expect(result.code, result.stderr).toBe(0);
       }
-      for (const [key, value] of [["context.default_depth", "deep"], ["context.activity_limit", "17"], ["context.stale_threshold_days", "7"], ["context.sections.activity", "false"]]) {
+      for (const [key, value] of [["context.default_depth", "Deep"], ["context.activity_limit", "17"], ["context.stale_threshold_days", "7"], ["context.sections.activity", "false"]]) {
         const result = context.runCli(["config", "set", key, value, "--json"], { expectJson: true });
         expect(result.code, result.stderr).toBe(0);
       }

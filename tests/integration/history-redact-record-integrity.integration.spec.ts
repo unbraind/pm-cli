@@ -24,7 +24,11 @@ describe("history redaction record integrity", () => {
       const id = (created.json as { item: { id: string } }).item.id;
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       const before = await readFile(historyPath, "utf8");
-      await runHistoryRedact(id, { regex, dryRun: true }, { path: context.pmPath });
+      const preview = await runHistoryRedact(id, { regex, dryRun: true }, { path: context.pmPath });
+      expect(preview.dry_run).toBe(true);
+      expect(preview.changed).toBe(true);
+      expect(preview.history.entries_changed).toBeGreaterThan(0);
+      expect(preview.history.replacements).toBeGreaterThan(0);
       expect(await readFile(historyPath, "utf8")).toBe(before);
       const result = await runHistoryRedact(id, { regex, replacement: "[removed]" }, { path: context.pmPath });
       expect(result.changed).toBe(true);

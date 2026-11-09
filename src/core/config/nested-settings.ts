@@ -489,6 +489,7 @@ function parseNestedStringValue(
   rawValue: string,
   trimmed: string,
 ): NestedSettingParseResult {
+  if (descriptor.key === "context_default_depth") trimmed = trimmed.toLowerCase();
   if (descriptor.non_empty === true && trimmed.length === 0) {
     return {
       ok: false,

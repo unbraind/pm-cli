@@ -1,0 +1,31 @@
+id: pm-s1fw0x
+title: Bind enum recovery examples to the refused operand before rewriting argv
+description: "The generic enum guidance fallback uses the first provided value flag to build an example from message prose. With argv --pm-path /selected context --depth invalid, provided flags --pm-path and --depth, and message Value must be one of brief|full, the displayed example becomes pm --pm-path brief context --depth invalid. Bind substitutions to a verified refused flag or omit the speculative retry. PR #1696 now withholds prose-derived choices/retries whenever a producer domain is supplied; the no-domain legacy branch needs its own operand provenance fix."
+type: Issue
+status: open
+priority: 2
+tags[4]: context,recovery,sdk,ux
+created_at: "2026-11-09T17:08:57.119Z"
+updated_at: "2026-11-09T17:20:57.408Z"
+author: "harness:codex"
+estimated_minutes: 45
+acceptance_criteria: An enum example rewrites only a verified refused value operand while preserving tracker selectors and all unrelated arguments; A missing or ambiguous refused-operand binding withholds a speculative retry and keeps usable contract inspection guidance; A regression reproduces the first-global-flag corruption before repair and verifies an executable scoped retry or explicit withheld-retry result afterward
+parent: pm-f05lsg
+risk: medium
+confidence: high
+expected_result: "An enum example changes only the verified refused operand, preserves tracker and extension selectors, and is withheld when the operand cannot be bound safely."
+actual_result: "Direct formatter control without a declared recovery domain rewrites --pm-path to brief instead of changing --depth, using the first provided value flag. The declared-domain counterpart is covered by the active PR repair."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1693,related,"2026-11-09T17:08:57.119Z","harness:codex","cli:create:dep",detected
+  pm-ikv6m0,discovered_from,"2026-11-09T17:08:57.119Z","harness:codex","cli:create:dep",detected
+  pm-qi7v2j,related,"2026-11-09T17:20:55.341Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-09T17:08:57.119Z","harness:codex","Duplicate check: live searches enum retry, recovery refused flag and buildAllowedValueRetryCommand plus open/in-progress inventories and full pm-ikv6m0 / pm-qi7v2j lineage reads. The shipped missing-option provenance and linked-test admission fixes remain intact. This distinct follow-up concerns generic enum example substitution when no explicit recovery domain is supplied; reuse open parent pm-f05lsg and link the historical provenance owner instead of reopening its shipped scope fix."
+  "2026-11-09T17:10:31.571Z","harness:codex","Confirmed direct formatter reproduction after the declared-domain repair: no-domain normalized argv --pm-path /selected context --depth invalid and fields --pm-path,--depth still produce example pm --pm-path brief context --depth invalid. This owner remains open and unclaimed; no fix to that legacy branch is claimed in PR #1696. The active PR prevents the equivalent inference whenever complete or malformed producer domain metadata is supplied."
+files[2]{path,scope}:
+  src/cli/error-guidance.ts,project
+  tests/unit/cli/error-guidance.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,project,600,"harness:codex","2026-11-09T17:08:57.119Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+escape_class: production_defect
+body: ""

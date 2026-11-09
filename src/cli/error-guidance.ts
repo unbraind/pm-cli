@@ -624,17 +624,18 @@ function appendRecoveryListLine(
 }
 
 /** Bound text legal domains while leaving their complete machine representation intact. */
-function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined): void {
-  const visible = values?.slice(0, 8).map((value) => /^[\p{L}\p{N}._:/@=-]+$/u.test(value) ? value : JSON.stringify(value));
+function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined, limit: number): void {
+  const visible = values?.slice(0, limit).map((value) => /^[\p{L}\p{N}._:/@=-]+$/u.test(value) ? value : JSON.stringify(value));
   appendRecoveryListLine(lines, "allowed_values", visible, ", ");
-  if (values && values.length > 8) {
-    lines.push(`  allowed_values_omitted: ${values.length - 8} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
+  if (values && values.length > limit) {
+    lines.push(`  allowed_values_omitted: ${values.length - limit} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
   }
 }
 
 /** Render normalized recovery fields and verified budget evidence as human guidance. */
 function renderRecoveryBundle(
   recovery: PmCliErrorRecoveryPayload | undefined,
+  allowedValuesLimit: number,
 ): string[] {
   const normalized = normalizeRecoveryPayload(recovery);
   if (!normalized) {
@@ -687,7 +688,7 @@ function renderRecoveryBundle(
     normalized.suggested_flags,
     ", ",
   );
-  appendRecoveryAllowedValues(lines, normalized.allowed_values);
+  appendRecoveryAllowedValues(lines, normalized.allowed_values, allowedValuesLimit);
   appendRecoveryListLine(
     lines,
     "candidate_commands",
@@ -813,6 +814,15 @@ export function renderGuidanceMessage(
   message: GuidanceMessage,
   options: RenderGuidanceOptions = {},
 ): string {
+  return renderGuidanceMessageWithRecoveryLimit(message, options, 8);
+}
+
+/** Project legal choices only while rendering so every compact view keeps the original omission count. */
+function renderGuidanceMessageWithRecoveryLimit(
+  message: GuidanceMessage,
+  options: RenderGuidanceOptions,
+  allowedValuesLimit: number,
+): string {
   const lean = options.lean === true;
   const lines = [
     ...renderGuidanceLead(message, lean),
@@ -823,6 +833,7 @@ export function renderGuidanceMessage(
     : message.recovery;
   const recoveryLines = renderRecoveryBundle(
     lean ? projectLeanRecoveryPayload(recovery) : recovery,
+    allowedValuesLimit,
   );
   if (recoveryLines.length > 0) {
     lines.push("");
@@ -849,12 +860,23 @@ function compactTextRecovery(
   ) {
     compact.suggested_retry = normalized.suggested_retry;
   }
-  for (const key of ["missing", "missing_required_fields", "allowed_values"] as const) {
+  for (const key of ["missing", "missing_required_fields"] as const) {
     const values = normalized[key];
     if (values && values.length > 0) compact[key] = values.slice(0, 3);
   }
+  if (normalized.allowed_values) compact.allowed_values = normalized.allowed_values;
   if (normalized.next_best_command) compact.next_best_command = normalized.next_best_command;
   return Object.keys(compact).length > 0 ? compact : undefined;
+}
+
+/** Keep a truthful producer or SDK route after a close retry exceeds the text budget. */
+function compactCloseRecoverySteps(message: GuidanceMessage, compact: GuidanceMessage): string[] | undefined {
+  if (message.code !== "close_validation_missing_fields" || !message.recovery?.suggested_retry || compact.recovery?.suggested_retry) {
+    return compact.nextSteps;
+  }
+  return compact.recovery?.next_best_command
+    ? ["Run recovery.next_best_command with real evidence, then repeat the original close."]
+    : [...(compact.nextSteps ?? []), "Retrieve the complete retry from SDK error.context.recovery.suggested_retry; replace placeholders with real evidence before executing it."];
 }
 
 /**
@@ -884,10 +906,7 @@ function renderBoundedGuidanceMessage(
     ...limitedCollections,
     recovery: compactTextRecovery(message.recovery),
   };
-  if (message.code === "close_validation_missing_fields" && message.recovery?.suggested_retry &&
-      !compactRecovery.recovery?.suggested_retry && compactRecovery.recovery?.next_best_command) {
-    compactRecovery.nextSteps = ["Run recovery.next_best_command with real evidence, then repeat the original close."];
-  }
+  compactRecovery.nextSteps = compactCloseRecoverySteps(message, compactRecovery);
   const happenedCodePoints = Array.from(message.happened);
   const boundedHappened: GuidanceMessage = {
     ...compactRecovery,
@@ -897,8 +916,8 @@ function renderBoundedGuidanceMessage(
         ? `${happenedCodePoints.slice(0, TEXT_HAPPENED_MAX_CODE_POINTS).join("")}...`
         : message.happened,
   };
-  for (const candidate of [withoutExplanation, limitedCollections, compactRecovery, boundedHappened]) {
-    const text = `${renderGuidanceMessage(candidate, options)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
+  for (const [candidate, limit] of [[withoutExplanation, 8], [limitedCollections, 8], [compactRecovery, 3], [boundedHappened, 3]] as const) {
+    const text = `${renderGuidanceMessageWithRecoveryLimit(candidate, options, limit)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
     if (fits(text)) return text;
   }
   return full;
@@ -1293,8 +1312,8 @@ function resolveGuidanceDetails(context: PmCliErrorContext): Pick<GuidanceMessag
 /** Retain usable strings from malformed producer metadata without claiming a complete typed legal domain. */
 function partialLegalDomainGuidance(recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
   const domain = recovery?.allowed_values;
-  if (!Array.isArray(domain) || domain.every((value) => typeof value === "string")) return undefined;
-  const usable = domain.filter((value): value is string => typeof value === "string");
+  if (domain === undefined || (Array.isArray(domain) && domain.every((value) => typeof value === "string"))) return undefined;
+  const usable = Array.isArray(domain) ? domain.filter((value): value is string => typeof value === "string") : [];
   const visible = usable.slice(0, 8).map((value) => JSON.stringify(value)).join(", ") || "none";
   const omitted = usable.length > 8 ? ` (${usable.length - 8} additional valid choices omitted)` : "";
   return `Incomplete legal domain from malformed producer metadata. Usable choices: ${visible}${omitted}. Correct the producer metadata before relying on a complete domain.`;
@@ -1630,7 +1649,7 @@ function buildInvalidArgumentGuidance(
   const helpExample = commandName
     ? `pm ${commandName} --help`
     : "pm <command> --help";
-  const allowedValues = context?.allowed ?? inferAllowedValuesFromMessage(message);
+  const allowedValues = context?.recovery?.allowed_values !== undefined ? [] : (context?.allowed ?? inferAllowedValuesFromMessage(message));
   const enrichedRecovery = normalizeRecoveryPayload({
     ...recovery,
     allowed_values: recovery?.allowed_values ?? allowedValues,

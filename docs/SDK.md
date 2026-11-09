@@ -4276,10 +4276,14 @@ one write records both the evidence and closure.
 
 `recovery.allowed_values` declares a complete string domain, including empty or
 whitespace-bearing choices. The text renderer quotes empty, whitespace-bearing or separator-containing choices and escapes embedded control characters.
-If an untyped producer supplies malformed entries, the host reports usable
+If an untyped producer supplies malformed entries or a non-array domain, the host reports usable
 strings in `next_steps` with an explicit incomplete-domain notice; it does not
-advertise that malformed array as a complete domain. Package authors must fix
-the producer metadata. Budgeted CLI JSON can compact duplicate recovery values
+advertise that malformed domain as complete. Package authors must fix
+the producer metadata. Inferred choices and retries from message prose are
+withheld whenever the producer already declares its domain. Text compaction retains the original domain
+count when rendering fewer choices. A close retry too large for text keeps the
+producer's bounded fallback or identifies the complete original SDK retry;
+the host does not invent an equivalent command. Budgeted CLI JSON can compact duplicate recovery values
 while retaining `refusal.legal_domain` when the complete domain fits once. Larger
 domains remain available in the original SDK error context; the CLI diagnostic
 ceiling is independent of the ordinary command output budget.
