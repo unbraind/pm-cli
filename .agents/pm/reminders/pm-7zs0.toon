@@ -6,9 +6,9 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-11-09T11:26:16.319Z"
+updated_at: "2026-11-09T12:49:39.002Z"
 reminders[1]{at,text}:
-  "2026-11-10T07:00:00.000Z","Verify the next daily cut: unique UTC-day tag; npm latest; GitHub advertisement; npm/npx/Bun/bunx acceptance; recent Sentry and telemetry; preserve historical reliability evidence and schedule the following check."
+  "2026-11-09T14:00:00.000Z",After PR #1696 merges with all required checks passing recover existing tag v2026.11.9 and verify its GitHub Release advertisement even if the UTC day has advanced. First inspect automatic blocker recovery to avoid duplicate dispatch; otherwise dispatch release.yml on reviewed main with tag=v2026.11.9 and trigger_origin=operator. Preserve the immutable tag and npm identity; verify npm/npx/Bun/bunx consumers and retain the original failed-run reliability evidence.
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results"

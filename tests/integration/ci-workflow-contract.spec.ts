@@ -1663,7 +1663,7 @@ describe("GitHub workflow contract", () => {
     expect(scanners.length).toBeGreaterThan(0);
     for (const scanner of scanners) {
       expect(scanner.uses).toBe("trufflesecurity/trufflehog@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb");
-      expect(scanner.with?.version).toBe("3.99.7");
+      expect(scanner.with?.version).toBe("3.99.8");
     }
     const trivyStep = securitySteps.find(({ name }) => name === "Trivy repository scan");
     expect(trivyStep?.env).toEqual({ TRIVY_INCLUDE_DEV_DEPS: "true" });

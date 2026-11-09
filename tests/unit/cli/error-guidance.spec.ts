@@ -41,6 +41,17 @@ describe("pm cli error guidance context plumbing", () => {
     expect(formatPmCliErrorForJson("Unknown key", 2, context).recovery?.allowed_values).toEqual(values);
   });
 
+  it("preserves empty and whitespace legal values before bounding human recovery", () => {
+    const values = ["", "  ", " padded ", ...Array.from({ length: 6 }, (_, index) => `value-${index}`)];
+    const context = { code: "package_value_invalid", recovery: { allowed_values: values } };
+    const display = formatPmCliErrorForDisplay("Invalid package value", context, { lean: true });
+    expect(display).toContain('allowed_values: "", "  ", " padded ", value-0, value-1, value-2, value-3, value-4');
+    expect(display).toContain("allowed_values_omitted: 1");
+    expect(display).not.toContain("value-5");
+    expect(formatPmCliErrorForJson("Invalid package value", 2, context).recovery?.allowed_values).toEqual(values);
+    expect(context.recovery.allowed_values).toEqual(values);
+  });
+
   it("discloses a budgeted custom-field diagnostic while preserving the complete SDK error context", () => {
     const values = Array.from({ length: 1_000 }, (_, index) => `custom_field_${index}`);
     const error = new PmCliError("Unknown custom projection field", 2, {

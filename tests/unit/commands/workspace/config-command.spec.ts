@@ -2090,6 +2090,11 @@ describe("runConfig", () => {
         expect((await runConfig("project", "get", key, {}, globalOptions)).nested_setting?.value).toBe(value);
       }
       const beforeRefusal = await fs.readFile(getSettingsPath(pmRoot), "utf8");
+      for (const option of ["activityLimit", "staleThresholdDays"]) {
+        await expect(runConfig("project", "set", "context", { [option]: "1e2" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining("decimal digits only") });
+        expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
+      }
+
       for (const key of ["context.activity_limit", "context.stale_threshold_days"]) {
         for (const value of ["1e2", "0x10", "0"]) {
           await expect(runConfig("project", "set", key, {}, globalOptions, value)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
@@ -2883,6 +2888,7 @@ describe("runConfig", () => {
         expect(message).toContain("pm config project list --json --output-budget unbounded");
         expect((caught as PmCliError).context.recovery?.allowed_values).toContain("governance-preset");
         expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry-tracking");
+        expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry.enabled");
         // The message no longer repeats the complete domain or its aliases.
         expect(message).not.toContain("telemetry-tracking");
         expect(message).not.toContain("telemetry_tracking");

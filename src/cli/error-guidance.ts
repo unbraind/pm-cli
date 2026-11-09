@@ -427,7 +427,7 @@ function assignRecoveryString(
   }
 }
 
-/** Preserve executable argument strings exactly; malformed vectors cannot be repaired by deleting tokens. */
+/** Preserve exact argument and legal-domain strings; malformed vectors cannot be repaired by deleting tokens. */
 function normalizeRecoveryArgs(value: unknown): string[] | undefined {
   return Array.isArray(value) && value.length > 0 && value.every((entry) => typeof entry === "string")
     ? [...value] as string[] : undefined;
@@ -447,7 +447,7 @@ function assignRecoveryCollection(
     | "candidate_commands",
   value: unknown,
 ): void {
-  if (key === "normalized_args" || key === "suggested_retry_args") {
+  if (key === "normalized_args" || key === "suggested_retry_args" || key === "allowed_values") {
     const args = normalizeRecoveryArgs(value);
     if (args) normalized[key] = args;
     return;
@@ -625,7 +625,8 @@ function appendRecoveryListLine(
 
 /** Bound text legal domains while leaving their complete machine representation intact. */
 function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined): void {
-  appendRecoveryListLine(lines, "allowed_values", values?.slice(0, 8), ", ");
+  const visible = values?.slice(0, 8).map((value) => value.length > 0 && value === value.trim() ? value : JSON.stringify(value));
+  appendRecoveryListLine(lines, "allowed_values", visible, ", ");
   if (values && values.length > 8) {
     lines.push(`  allowed_values_omitted: ${values.length - 8} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
   }
