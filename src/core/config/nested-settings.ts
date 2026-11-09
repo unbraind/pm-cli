@@ -508,11 +508,23 @@ function parseNestedStringValue(
   return { ok: true, parsed: { descriptor, value: trimmed } };
 }
 
+/** State the strict grammar with exactly the bounds declared by the setting. */
+function strictDecimalIntegerError(descriptor: NestedSettingDescriptor, rawValue: string): NestedSettingParseError {
+  const bounds = [
+    descriptor.min === undefined ? "" : `minimum ${descriptor.min}`,
+    descriptor.max === undefined ? "" : `maximum ${descriptor.max}`,
+  ].filter(Boolean).join(", ");
+  return { message: `Config set ${descriptor.key} requires non-empty decimal integer digits${bounds ? ` (${bounds})` : ""}, got "${rawValue}"` };
+}
+
 function parseFiniteNestedNumber(
   descriptor: NestedSettingDescriptor,
   rawValue: string,
   trimmed: string,
 ): { ok: true; value: number } | { ok: false; error: NestedSettingParseError } {
+  if (descriptor.decimal_only && !/^\d+$/u.test(trimmed)) {
+    return { ok: false, error: strictDecimalIntegerError(descriptor, rawValue) };
+  }
   if (trimmed.length === 0) {
     return {
       ok: false,
@@ -525,7 +537,7 @@ function parseFiniteNestedNumber(
   if (!Number.isFinite(parsed)) {
     return {
       ok: false,
-      error: {
+      error: descriptor.decimal_only ? strictDecimalIntegerError(descriptor, rawValue) : {
         message: `Config set ${descriptor.key} requires a finite number, got "${rawValue}"`,
       },
     };
@@ -538,9 +550,6 @@ function parseNestedIntegerValue(
   rawValue: string,
   value: number,
 ): NestedSettingParseResult {
-  if (descriptor.decimal_only && !/^\d+$/u.test(rawValue.trim())) {
-    return { ok: false, error: { message: `Config set ${descriptor.key} requires decimal integer digits, got "${rawValue}"` } };
-  }
   if (!Number.isInteger(value) || value < 0) {
     return {
       ok: false,

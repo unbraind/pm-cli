@@ -74,9 +74,27 @@ const EXPECTED_GENERAL_ALIASES: Record<string, string> = {
   agent_identity_probes_enabled: "agent_identity.probes_enabled",
 };
 
+// pm-gh1695: independently enumerate the context leaves added to the public inventory.
+const EXPECTED_CONTEXT_ALIASES: Record<string, string> = {
+  context_default_depth: "context.default_depth",
+  context_activity_limit: "context.activity_limit",
+  context_stale_threshold_days: "context.stale_threshold_days",
+  context_sections_hierarchy: "context.sections.hierarchy",
+  context_sections_activity: "context.sections.activity",
+  context_sections_progress: "context.sections.progress",
+  context_sections_recently_created: "context.sections.recently_created",
+  context_sections_unparented: "context.sections.unparented",
+  context_sections_blockers: "context.sections.blockers",
+  context_sections_files: "context.sections.files",
+  context_sections_workload: "context.sections.workload",
+  context_sections_staleness: "context.sections.staleness",
+  context_sections_tests: "context.sections.tests",
+};
+
 const ALL_EXPECTED_ALIASES: Record<string, string> = {
   ...EXPECTED_ALIASES,
   ...EXPECTED_GENERAL_ALIASES,
+  ...EXPECTED_CONTEXT_ALIASES,
 };
 
 describe("config nested-setting aliases (pm-7ilo)", () => {
@@ -270,6 +288,9 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       expect(result.nested_settings).toHaveLength(Object.keys(ALL_EXPECTED_ALIASES).length);
       const keys = (result.nested_settings ?? []).map((entry) => entry.key).sort();
       expect(keys).toEqual(Object.keys(ALL_EXPECTED_ALIASES).sort());
+      for (const [key, expectedPath] of Object.entries(EXPECTED_CONTEXT_ALIASES)) {
+        expect(result.nested_settings?.find((entry) => entry.key === key)).toMatchObject({ path: expectedPath });
+      }
       expect(
         result.nested_settings?.find(
           (entry) => entry.key === "mutation_guard_secret_guard",

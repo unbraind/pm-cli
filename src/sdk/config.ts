@@ -29,6 +29,7 @@ import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
+import { renderPmCommand, resolvePmCommandScopeArgs } from "./command-line.js";
 import {
   planAgentIdentityVocabularyMutation,
   summarizeAgentIdentityVocabulary,
@@ -498,7 +499,7 @@ function normalizeAction(value: string): ConfigAction {
   });
 }
 
-function normalizeKey(value: string, scope: ConfigScope = "global"): ConfigKey {
+function normalizeKey(value: string, scope: ConfigScope = "global", global?: GlobalOptions): ConfigKey {
   const key = Object.hasOwn(CONFIG_KEY_BY_ALIAS, value) ? CONFIG_KEY_BY_ALIAS[value] : undefined;
   if (key) {
     return key;
@@ -514,7 +515,8 @@ function normalizeKey(value: string, scope: ConfigScope = "global"): ConfigKey {
   })).filter(({ distance }) => Number.isFinite(distance))
     .sort((left, right) => left.distance - right.distance || left.key.localeCompare(right.key))
     .slice(0, 3).map(({ key: candidate }) => candidate);
-  const inventoryCommand = `pm config ${scope} list --json --output-budget unbounded`;
+  const commandScope = global ? resolvePmCommandScopeArgs(global) : [];
+  const inventoryCommand = renderPmCommand([...commandScope, "config", scope, "list", "--json"]);
   const hint = suggestions.length > 0 ? ` Did you mean ${suggestions.map((candidate) => candidate === "telemetry-tracking" && scope === "project" ? `${candidate} (global only)` : candidate).join(", ")}?` : "";
   throw new PmCliError(
     `Invalid config key "${value}".${hint} Inspect keys and aliases with ${inventoryCommand}.`,
@@ -525,7 +527,7 @@ function normalizeKey(value: string, scope: ConfigScope = "global"): ConfigKey {
       examples: [inventoryCommand],
       recovery: {
         allowed_values: [...new Set([...configKeysForScope(scope).flatMap((key) => CONFIG_KEY_ALIASES[key]), ...NESTED_SETTING_DESCRIPTORS.flatMap((descriptor) => [descriptor.key, descriptor.key.replaceAll("_", "-"), descriptor.path])])],
-        candidate_commands: suggestions.map((candidate) => `pm config ${candidate === "telemetry-tracking" ? "global" : scope} get ${candidate} --json`),
+        candidate_commands: suggestions.map((candidate) => renderPmCommand([...commandScope, "config", candidate === "telemetry-tracking" ? "global" : scope, "get", candidate, "--json"])),
         next_best_command: inventoryCommand,
       },
     },
@@ -935,6 +937,7 @@ function normalizeKeyForAction(
   action: ConfigAction,
   value: string | undefined,
   scope: ConfigScope,
+  global: GlobalOptions,
 ): ConfigKey | undefined {
   if (action === "list" || action === "export") {
     if (typeof value === "string" && value.trim().length > 0) {
@@ -951,7 +954,7 @@ function normalizeKeyForAction(
       EXIT_CODE.USAGE,
     );
   }
-  return normalizeKey(value, scope);
+  return normalizeKey(value, scope, global);
 }
 
 /** Narrows the `ConfigKey | undefined` carried into the get/set branches back to a concrete `ConfigKey`. By the time those branches run, `normalizeKeyForAction` has already thrown on a missing key and nested settings have returned earlier, so the `undefined` case is unreachable at runtime — the throw is a defensive type-narrowing guard only. */
@@ -2351,7 +2354,7 @@ export async function runConfig(
       : undefined;
   const key = nestedSetting
     ? undefined
-    : normalizeKeyForAction(action, keyValue, scope);
+    : normalizeKeyForAction(action, keyValue, scope, global);
   const routedOptions = applyPositionalValue(
     action,
     keyValue,

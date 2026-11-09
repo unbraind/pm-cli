@@ -625,7 +625,7 @@ function appendRecoveryListLine(
 
 /** Bound text legal domains while leaving their complete machine representation intact. */
 function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined): void {
-  const visible = values?.slice(0, 8).map((value) => value.length > 0 && value === value.trim() ? value : JSON.stringify(value));
+  const visible = values?.slice(0, 8).map((value) => /^[\p{L}\p{N}._:/@=-]+$/u.test(value) ? value : JSON.stringify(value));
   appendRecoveryListLine(lines, "allowed_values", visible, ", ");
   if (values && values.length > 8) {
     lines.push(`  allowed_values_omitted: ${values.length - 8} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
@@ -832,7 +832,7 @@ export function renderGuidanceMessage(
 }
 
 const TEXT_DIAGNOSTIC_OMISSION_NOTICE =
-  "Some guidance was omitted to fit the diagnostic token ceiling; rerun with --json for the full recovery envelope.";
+  "Some guidance was omitted to fit the diagnostic token ceiling; rerun with --json for structured recovery within its own budget.";
 const TEXT_RECOVERY_RETRY_MAX_BYTES = 400;
 const TEXT_HAPPENED_MAX_CODE_POINTS = 320;
 
@@ -884,6 +884,10 @@ function renderBoundedGuidanceMessage(
     ...limitedCollections,
     recovery: compactTextRecovery(message.recovery),
   };
+  if (message.code === "close_validation_missing_fields" && message.recovery?.suggested_retry &&
+      !compactRecovery.recovery?.suggested_retry && compactRecovery.recovery?.next_best_command) {
+    compactRecovery.nextSteps = ["Run recovery.next_best_command with real evidence, then repeat the original close."];
+  }
   const happenedCodePoints = Array.from(message.happened);
   const boundedHappened: GuidanceMessage = {
     ...compactRecovery,
@@ -1296,7 +1300,21 @@ function partialLegalDomainGuidance(recovery: PmCliErrorRecoveryPayload | undefi
   return `Incomplete legal domain from malformed producer metadata. Usable choices: ${visible}${omitted}. Correct the producer metadata before relying on a complete domain.`;
 }
 
-/** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
+/** Merge producer recovery while refusing a complete prose domain after malformed structured metadata. */
+function mergeGuidanceRecovery(
+  guidance: PmCliErrorRecoveryPayload | undefined,
+  context: PmCliErrorRecoveryPayload | undefined,
+  incompleteDomain: boolean,
+): PmCliErrorRecoveryPayload | undefined {
+  const normalized = normalizeRecoveryPayload(context);
+  const merged = normalized && guidance
+    ? normalizeRecoveryPayload({ ...guidance, ...normalized })
+    : (normalized ?? guidance);
+  if (!incompleteDomain || !merged?.allowed_values) return merged;
+  const { allowed_values: _untrustedDomain, ...retained } = merged;
+  return Object.keys(retained).length > 0 ? retained : undefined;
+}
+
 /** Merge typed SDK context into guidance without inferring mutation outcomes. */
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
@@ -1316,11 +1334,7 @@ function applyPmCliErrorContext(
   const verificationErrors =
     normalizeContextList(context.verification_errors) ??
     guidance.verificationErrors;
-  const contextRecovery = normalizeRecoveryPayload(context.recovery);
-  const recovery =
-    contextRecovery && guidance.recovery
-      ? normalizeRecoveryPayload({ ...guidance.recovery, ...contextRecovery })
-      : (contextRecovery ?? guidance.recovery);
+  const recovery = mergeGuidanceRecovery(guidance.recovery, context.recovery, partialDomain !== undefined);
   return {
     ...guidance,
     code,

@@ -1,3 +1,4 @@
+import { runInNewContext } from "node:vm";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -41,6 +42,33 @@ it("keeps pinned uncached Bun acceptance while selecting the official macOS asse
   expect(setup.with["no-cache"]).toBe(true);
   expect(setup.with["bun-download-url"]).toBe("${{ runner.os == 'macOS' && format('https://github.com/oven-sh/bun/releases/download/bun-v1.4.0/bun-darwin-{0}.zip?download=1', runner.arch == 'ARM64' && 'aarch64' || 'x64') || '' }}");
   expect(setup["continue-on-error"]).toBeUndefined();
+  expect(workflow.jobs.release.needs).toContain("prepublication-bun");
+  const preflight = workflow.jobs["prepublication-bun"];
+  expect(preflight.strategy.matrix.os).toEqual(["macos-latest", "windows-latest"]);
+  expect(preflight["continue-on-error"]).toBeUndefined();
+  const nativeSetup = preflight.steps.find((step: { name: string }) => step.name === "Setup Bun");
+  expect(nativeSetup.uses).toBe(setup.uses);
+  expect(nativeSetup.with).toEqual(setup.with);
+  expect(nativeSetup["continue-on-error"]).toBeUndefined();
+  const nativeVersion = preflight.steps.find((step: { name: string }) => step.name === "Verify pinned Bun runtime");
+  expect(nativeVersion.run).toContain('execFileSync("bun", ["--version"], { encoding: "utf8" }).trim()');
+  expect(nativeVersion.run).toContain('version !== "1.4.0"');
+  expect(nativeVersion["continue-on-error"]).toBeUndefined();
+  expect(nativeVersion.if).toBeUndefined();
+  expect(workflow.jobs.release.if).toBeUndefined();
+  const versionScript = nativeVersion.run.trim().match(/^node -e '([\s\S]+)'$/u)![1];
+  const executeVersionCheck = (version: string) => runInNewContext(versionScript, {
+    require: (specifier: string) => {
+      expect(specifier).toBe("node:child_process");
+      return { execFileSync: (command: string, args: string[], options: { encoding: string }) => {
+        expect([command, args, options]).toEqual(["bun", ["--version"], { encoding: "utf8" }]);
+        return version;
+      } };
+    },
+    console: { log: vi.fn() },
+  }, { timeout: 1_000 });
+  expect(() => executeVersionCheck("1.4.0\r\n")).not.toThrow();
+  expect(() => executeVersionCheck("1.4.1\n")).toThrow("Expected Bun 1.4.0 before publication");
   const ci = parse(readFileSync(path.resolve(".github/workflows/ci.yml"), "utf8"));
   const prepublication = ci.jobs["build-test"].steps.find((step: { name: string }) => step.name === "Verify pinned macOS Bun download");
   expect(prepublication).toMatchObject({ if: "matrix.os == 'macos-latest'", uses: setup.uses, with: { "bun-version": "1.4.0", "no-cache": true } });

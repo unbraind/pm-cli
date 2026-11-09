@@ -4275,7 +4275,7 @@ with evidence placeholders. Replace those placeholders with actual evidence so
 one write records both the evidence and closure.
 
 `recovery.allowed_values` declares a complete string domain, including empty or
-whitespace-bearing choices. The text renderer quotes those choices visibly.
+whitespace-bearing choices. The text renderer quotes empty, whitespace-bearing or separator-containing choices and escapes embedded control characters.
 If an untyped producer supplies malformed entries, the host reports usable
 strings in `next_steps` with an explicit incomplete-domain notice; it does not
 advertise that malformed array as a complete domain. Package authors must fix

@@ -6,22 +6,22 @@ status: closed
 priority: 2
 tags[4]: agent-ux,config,"gh:1695",sdk
 created_at: "2026-11-09T07:32:05.563Z"
-updated_at: "2026-11-09T14:08:48.269Z"
-closed_at: "2026-11-09T14:08:46.209Z"
-completed_at: "2026-11-09T14:08:46.209Z"
+updated_at: "2026-11-09T16:13:23.045Z"
+closed_at: "2026-11-09T16:13:22.219Z"
+completed_at: "2026-11-09T16:13:22.219Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Accept every supported settings path as an alias in SDK-backed config get/set without bypassing validation; Unknown keys offer at most three nearest legal keys and a working config-list inspection command; Preserve complete legal keys in structured recovery and reject unknown keys without settings writes
 parent: pm-8jdc
 risk: medium
 confidence: high
-resolution: Supported aliases and scalar context leaves use shared descriptor/profile validation with full-depth persistence. Unknown-key recovery retains complete scoped domains. Grouped integer errors disclose decimal syntax and the maximum safe integer.
-expected_result: Configuration/profile writes share validation and refusal guidance identifies a legal correction without settings mutation.
-actual_result: Both linked configuration/profile commands and all 272 instrumented cohort assertions pass. Grouped scientific/overflow refusals expose grammar/bounds and preserve bytes; the pre-fix overflow assertions failed. Public SDK surface remains unchanged. Final pushed-head hosted quality/native checks and review acceptance remain PENDING.
+resolution: Validated dotted settings aliases and scalar context leaves; bounded key suggestions and complete SDK domains; executable tracker-scoped JSON inventory preserving extension isolation; exact independent inventory expectation includes thirteen new context leaves.
+expected_result: "Configuration paths and supported aliases round-trip safely, recovery commands execute in the selected tracker, and the existing complete-inventory regression accepts every supported public leaf without relaxing coverage."
+actual_result: "All three linked test commands pass, including exact inventory/path assertions and two-tracker shell replay with an ambient negative control. Instrumented review cohort passes 356 tests across thirteen files; typechecks, lint, SDK zero classified changes and contract/catalog checks pass. Hosted full coverage and static checks remain required."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4zpq71,related,"2026-11-09T09:01:45.656Z","harness:codex","cli:update:dep",detected
   pm-gh1693,related,"2026-11-09T12:23:22.291Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-11-09T07:32:05.563Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:19.904Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T08:30:38.246Z","harness:codex","Completeness review extended the same descriptor-owned configuration surface to the context scalar leaves previously available only through grouped context flags: default depth, activity limit, staleness threshold and the eight existing section toggles. The shared descriptor validators enforce the canonical depth domain, positive safe integers and booleans; real CLI tests check persisted values and byte preservation on invalid depth, zero and unsafe-integer assignments. Existing grouped flags remain supported and help now distinguishes group and leaf writes."
@@ -32,10 +32,17 @@ comments[10]{created_at,author,text}:
   "2026-11-09T11:55:37.095Z","harness:codex","Final public SDK surface verification reports zero classified changes after keeping numeric-format discovery in the existing metadata fields. Configuration/profile and release/guidance cohorts pass 232 tests; source instrumentation covers the changed strict-integer parser, key recovery and grouped-context parser branches. The optional metadata-only inventory enhancement is separately tracked open/unclaimed in pm-8txeqe."
   "2026-11-09T12:51:18.111Z","harness:codex","Second full-review repair: grouped context integer refusals name the decimal-digits-only grammar. Both grouped numeric options reject scientific notation with that actionable message and preserve settings bytes; project allowed-values regression now excludes both telemetry-tracking and telemetry.enabled. The pre-fix grouped grammar test failed as intended; all 168 focused tests pass."
   "2026-11-09T14:00:02.690Z","harness:codex",Grouped context integer errors now state the shared maximum safe integer as well as decimal-digit syntax. Both grouped numeric options reject overflow with that bound and preserve the settings bytes. The overflow message assertions failed before the wording repair and pass afterward.
+  "2026-11-09T15:28:13.110Z","harness:codex","Strict decimal grammar now runs before Number conversion. Dotted invalid values such as 10days and fractions report decimal syntax and actual declared bounds, including finite-overflow strings; generic numeric settings retain their previous Number syntax. The descriptor unit and real SDK settings-byte assertions fail before and pass after the change. Grouped flag guidance still exposes its positive safe-integer domain. The separate requested required.supported_keys field is intentionally mapped to governed recovery.allowed_values to preserve the published required string contract."
+  "2026-11-09T15:59:08.393Z","harness:codex",Final source inspection found that new recovery commands retain project/global scope but omit GlobalOptions tracker/extension selection. Reuse this canonical working-inventory owner. Add a two-tracker replay with an ambient-tracker negative control and render coordinates through the existing SDK command-scope and command-line primitives; do not add a separate path parser or duplicate PM item.
+  "2026-11-09T16:09:03.502Z","harness:codex","The two-tracker SDK replay exposed a second concrete defect in the original inventory suggestion: config list is not a universal read-output surface, so --output-budget unbounded makes the emitted command refuse before execution. Remove that unsupported flag; config list --json already returns its complete typed inventory. Preserve selected --pm-path and --no-extensions using the existing SDK scope primitive. The real CLI replay must read selected tracker value 11 and, only after removing its selector, ambient value 22."
+  "2026-11-09T16:11:29.744Z","harness:codex","Final scoped recovery evidence: both linked test commands pass, including the real shell replay against two isolated trackers (selected activity_limit 11, ambient negative-control 22) and preserved extension isolation. The initial missing-selector control failed as expected; executing the repaired command also caught and removed unsupported universal --output-budget from config list. SDK surface check reports zero classified changes; contracts/catalog and source/package/example typechecks pass. This corrects earlier evidence wording that described an unbounded flag: completeness comes from the native config JSON inventory, without a universal-output flag."
+  "2026-11-09T16:13:19.137Z","harness:codex","Hosted shard-4 repair: the independent complete-inventory fixture now explicitly enumerates the thirteen supported context aliases and verifies their paths, preserving exact key/count assertions instead of weakening them or deriving expectations from production descriptors. All three linked commands pass after this repair. The source-instrumented review cohort passes 356 tests across thirteen files; whole-repository hosted exact-100% coverage remains mandatory, with no threshold or denominator change."
+notes[1]{created_at,author,text}:
+  "2026-11-09T15:15:30.252Z","harness:codex","Contract decision for the proposed required.supported_keys path: the published SDK/CLI error envelope declares required as a remediation string shared by all commands. Preserve that governed shape and expose the complete scoped key domain through the existing recovery.allowed_values primitive rather than creating a command-specific object or duplicate domain. The scoped unbounded inventory command and complete SDK error context provide retrieval when CLI diagnostic budgeting binds. This is an explicit compatibility decision rather than a claim that the proposed field was added."
 learnings[2]{created_at,author,text}:
   "2026-11-09T10:03:47.802Z","harness:codex","Settings paths must resolve through the existing SDK validators and scope rules rather than becoming a parallel write path. Test refusal preservation and consent scope with real settings bytes, including typo suggestions and non-decimal integers."
   "2026-11-09T10:27:53.376Z","harness:codex","CLI subprocess acceptance and direct SDK persistence tests prove different risks: bundled child execution does not instrument the source owner. Source coverage exposed full-depth read rejection and unexercised multi-candidate ranking; meaningful round-trip and ordering cases now cover those contracts before closure."
-files[13]{path,scope}:
+files[14]{path,scope}:
   sdk/public-surface.json,project
   src/cli/error-guidance.ts,project
   src/cli/register-setup.ts,project
@@ -45,11 +52,12 @@ files[13]{path,scope}:
   src/sdk/config.ts,project
   tests/integration/config-positional-cli.integration.spec.ts,project
   tests/unit/commands/workspace/config-command.spec.ts,project
+  tests/unit/commands/workspace/config-key-aliases-search.spec.ts,project
   tests/unit/core/config/config-positional-value.spec.ts,project
   tests/unit/core/config/nested-settings.spec.ts,project
   tests/unit/core/profile/profile-lint.spec.ts,project
   tests/unit/core/profile/profile-plan.spec.ts,project
-tests[2]:
+tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts
     scope: project
     timeout_seconds: 600
@@ -65,7 +73,15 @@ tests[2]:
       created_at: "2026-11-09T11:32:47.693Z"
       source_kind: local_mutation
       source_ref: fix/sdk-configuration-and-redaction-recovery
-test_runs[8]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-11-09T16:12:09.339Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-configuration-and-redaction-recovery
+test_runs[11]:
   - run_id: test-local-mw91xt83-rj3zym
     kind: test
     status: passed
@@ -158,9 +174,46 @@ test_runs[8]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9f1yyc-tw509k
+    kind: test
+    status: passed
+    started_at: "2026-11-09T15:28:27.424Z"
+    finished_at: "2026-11-09T15:28:46.644Z"
+    recorded_at: "2026-11-09T15:28:46.644Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9gjfno-1ie19r
+    kind: test
+    status: passed
+    started_at: "2026-11-09T16:09:40.099Z"
+    finished_at: "2026-11-09T16:10:21.059Z"
+    recorded_at: "2026-11-09T16:10:21.059Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9gmm8l-hu10me
+    kind: test
+    status: passed
+    started_at: "2026-11-09T16:12:21.629Z"
+    finished_at: "2026-11-09T16:12:49.557Z"
+    recorded_at: "2026-11-09T16:12:49.557Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: Implemented scoped SDK configuration recovery and complete numeric guidance in PR #1696; final hosted acceptance pending.
+close_reason: Complete settings-path discovery and align the independent public inventory regression
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

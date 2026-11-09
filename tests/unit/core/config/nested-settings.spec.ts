@@ -20,6 +20,22 @@ const DEPRECATION_HINT_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find(
 )!;
 
 describe("nested-settings helpers (pm-7ilo)", () => {
+  it("states strict decimal syntax and declared bounds before numeric conversion", () => {
+    const descriptor = resolveNestedSettingDescriptor("context_activity_limit")!;
+    for (const value of ["10days", "1.5", "1e2", "0x10", "", "9".repeat(400)]) {
+      const result = parseNestedSettingValue(descriptor, value);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toContain("decimal integer");
+        expect(result.error.message).toContain(`minimum ${descriptor.min}`);
+        expect(result.error.message).toContain(`maximum ${descriptor.max}`);
+      }
+    }
+    const unbounded = parseNestedSettingValue({ ...descriptor, min: undefined, max: undefined }, "10days");
+    expect(unbounded.ok).toBe(false);
+    if (!unbounded.ok) expect(unbounded.error.message).not.toContain("undefined");
+  });
+
   describe("resolveNestedSettingDescriptor", () => {
     it("returns undefined for non-string inputs", () => {
       expect(resolveNestedSettingDescriptor(undefined)).toBeUndefined();

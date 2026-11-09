@@ -1,3 +1,5 @@
+import { runConfig } from "../../src/sdk/config.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { spawnSync } from "node:child_process";
 import { quoteCommandArg } from "../../src/core/shared/command-line.js";
 import { describe, expect, it } from "vitest";
@@ -45,6 +47,35 @@ describe("config positional CLI parser", () => {
       expect(closed.status, closed.stderr).toBe(0);
       const item = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(item.json).toMatchObject({ item: { status: "closed", resolution: evidence, expected_result: evidence, actual_result: evidence } });
+    });
+  });
+
+  it("replays SDK configuration inventory in the selected tracker with an ambient negative control", async () => {
+    await withTempPmPath(async (selected) => {
+      expect(selected.runCli(["config", "set", "context.activity_limit", "11"]).code).toBe(0);
+      await withTempPmPath(async (ambient) => {
+        expect(ambient.runCli(["config", "set", "context.activity_limit", "22"]).code).toBe(0);
+        let refusal: PmCliError | undefined;
+        try {
+          await runConfig("project", "get", "governance.presett", {}, { path: selected.pmPath, noExtensions: true, json: true, quiet: false, profile: false });
+        } catch (error) {
+          expect(error).toBeInstanceOf(PmCliError);
+          refusal = error as PmCliError;
+        }
+        const retry = refusal!.context.recovery!.next_best_command!;
+        expect(retry).toContain("--pm-path");
+        expect(retry).toContain("--no-extensions");
+        const execute = (command: string) => {
+          const qualified = command.replace(/^pm /u, `${quoteCommandArg(process.execPath)} ${quoteCommandArg(path.resolve("dist/cli.js"))} `);
+          const result = spawnSync(qualified, { shell: true, env: ambient.env, cwd: process.cwd(), encoding: "utf8", timeout: 15_000 });
+          expect(result.status, result.stderr).toBe(0);
+          return JSON.parse(result.stdout) as { nested_settings: Array<{ path: string; value: unknown }> };
+        };
+        expect(execute(retry).nested_settings).toContainEqual(expect.objectContaining({ path: "context.activity_limit", value: 11 }));
+        const unselected = retry.replace(`--pm-path ${quoteCommandArg(selected.pmPath)} `, "");
+        expect(unselected).not.toBe(retry);
+        expect(execute(unselected).nested_settings).toContainEqual(expect.objectContaining({ path: "context.activity_limit", value: 22 }));
+      });
     });
   });
 

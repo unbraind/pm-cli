@@ -45,7 +45,7 @@ describe("config command helper coverage", () => {
     expect(() => _testOnlyConfigCommand.normalizeKey("governance.presett")).toThrow(
       expect.objectContaining({ context: expect.objectContaining({
         code: "config_key_unknown", changed: false,
-        recovery: expect.objectContaining({ allowed_values: expect.arrayContaining(["governance-preset", "governance.preset", "context.default_depth", "context_default_depth"]), next_best_command: "pm config global list --json --output-budget unbounded" }),
+        recovery: expect.objectContaining({ allowed_values: expect.arrayContaining(["governance-preset", "governance.preset", "context.default_depth", "context_default_depth"]), next_best_command: "pm config global list --json" }),
       }) }),
     );
     for (const key of ["toString", "__proto__", "constructor"]) {
@@ -2097,6 +2097,8 @@ describe("runConfig", () => {
       }
 
       for (const key of ["context.activity_limit", "context.stale_threshold_days"]) {
+        await expect(runConfig("project", "set", key, {}, globalOptions, "10days")).rejects.toMatchObject({ message: expect.stringContaining("decimal integer") });
+        expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
         for (const value of ["1e2", "0x10", "0"]) {
           await expect(runConfig("project", "set", key, {}, globalOptions, value)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
           expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
@@ -2886,7 +2888,8 @@ describe("runConfig", () => {
         }
         expect(caught).toBeInstanceOf(PmCliError);
         const message = (caught as PmCliError).message;
-        expect(message).toContain("pm config project list --json --output-budget unbounded");
+        expect(message).toContain("config project list --json");
+        expect((caught as PmCliError).context.recovery?.next_best_command).toContain("--pm-path");
         expect((caught as PmCliError).context.recovery?.allowed_values).toContain("governance-preset");
         expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry-tracking");
         expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry.enabled");

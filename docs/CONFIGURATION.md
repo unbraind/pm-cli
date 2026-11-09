@@ -47,7 +47,7 @@ Settings paths are aliases for their existing validated setters: for example,
 `pm config set governance.preset strict` and
 `pm config set validation.metadata_profile strict`. Scalar context settings also
 accept paths such as `context.default_depth` and `context.sections.activity`.
-`pm config project list --json --output-budget unbounded` lists the project
+`pm config project list --json` lists the project
 inventory; use `global list` for global keys. Both include declared aliases and
 nested paths, including `context.sections.recently_created` and
 `context.sections.unparented`. Context integer leaves use decimal digits in both

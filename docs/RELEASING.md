@@ -125,7 +125,12 @@ configuration belong in private operator documentation.
 
 Pinned tool downloads retain their existing versions and mandatory acceptance
 checks. Codecov CLI v11.3.1 uses its immutable GitHub release asset API endpoint,
-with the reviewed SHA-256 verified before execution. macOS Bun acceptance uses
+with the reviewed SHA-256 verified before execution. The Release workflow first
+requires uncached pinned Bun bootstrap and exact version checks on native macOS
+and Windows runners. Both must pass before the Build, Test, Publish job can run;
+a failed download or mismatched runtime therefore blocks npm publication. The
+later installed-package acceptance remains a separate check of the published
+artifact. macOS Bun acceptance uses
 the official pinned asset URL with `?download=1` after repeated HTTP 504s on the
 ordinary route; binary caching stays disabled. A failed download still fails the
 job. Recover an incomplete release against its existing tag after reviewed

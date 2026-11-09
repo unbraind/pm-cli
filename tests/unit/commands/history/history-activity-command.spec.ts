@@ -128,6 +128,9 @@ describe("runHistory and runActivity", () => {
     for (const source of ["/var/[a-z]+", "/var/private", "/plain/z", "/"]) {
       expect(historyRedactInternals.parseRegexRule(source)).toEqual({ kind: "regex", source, flags: "g" });
     }
+    const oddDelimiter = String.raw`/foo\/`;
+    expect(historyRedactInternals.parseRegexRule(oddDelimiter)).toEqual({ kind: "regex", source: oddDelimiter, flags: "g" });
+    expect(historyRedactInternals.parseRegexRule(String.raw`/foo\\/i`)).toEqual({ kind: "regex", source: String.raw`foo\\`, flags: "ig" });
     expect(() => historyRedactInternals.parseRegexRule(" ")).toThrow(
       PmCliError,
     );
