@@ -12,6 +12,7 @@ import {
   formatUnknownErrorForJson,
   projectLeanErrorEnvelope,
 } from "../../../src/cli/error-guidance.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import { projectLeanRecoveryPayload } from "../../../src/sdk/cli-contracts/agent-output-contracts.js";
 
 describe("pm cli error guidance context plumbing", () => {
@@ -38,6 +39,21 @@ describe("pm cli error guidance context plumbing", () => {
     expect(display).toContain("allowed_values_omitted: 12");
     expect(display).toContain("SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted");
     expect(formatPmCliErrorForJson("Unknown key", 2, context).recovery?.allowed_values).toEqual(values);
+  });
+
+  it("discloses a budgeted custom-field diagnostic while preserving the complete SDK error context", () => {
+    const values = Array.from({ length: 1_000 }, (_, index) => `custom_field_${index}`);
+    const error = new PmCliError("Unknown custom projection field", 2, {
+      code: "unknown_field_projection", changed: false,
+      recovery: { allowed_values: values, next_best_command: "pm schema list-fields --json" },
+    });
+    const envelope = formatPmCliErrorForJson(error.message, error.exitCode, error.context);
+    expect(envelope.diagnostic_output).toMatchObject({ truncated: true, budget: 2_000 });
+    expect(envelope.recovery?.allowed_values).not.toEqual(values);
+    expect(Math.ceil(Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8") / 4)).toBeLessThanOrEqual(2_000);
+    expect(error.context.recovery?.allowed_values).toEqual(values);
+    expect(error.context.recovery?.allowed_values?.at(-1)).toBe("custom_field_999");
+    expect(formatPmCliErrorForDisplay(error.message, error.context, { lean: true })).toContain("SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted");
   });
 
   it("preserves verified no-change evidence without inferring it for execution failures", () => {

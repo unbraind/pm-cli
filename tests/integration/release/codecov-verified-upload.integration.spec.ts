@@ -59,6 +59,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
     await withTempDir("pm-codecov-verification-", async (root) => {
       // Isolate only download bytes; the workflow's checksum, shell failure and real chmod execute unchanged.
       const boundary = `curl() {
+        printf '%s\\n' "$@" > "\${RUNNER_TEMP}/curl-args"
         while [ "$#" -gt 0 ]; do
           if [ "$1" = "--output" ]; then printf '%s' "$PM_CODECOV_PAYLOAD" > "$2"; return; fi
           shift
@@ -72,6 +73,10 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
         env: { ...process.env, GH_TOKEN: "fixture-only-token", RUNNER_TEMP: root.replaceAll("\\", "/"), PM_CODECOV_PAYLOAD: approved ? approvedPayload : "corrupt uploader bytes\n" },
       });
       expect(result.error).toBeUndefined();
+      const argv = (await readFile(path.join(root, "curl-args"), "utf8")).trim().split("\n");
+      const headers = argv.flatMap((argument, index) => argument === "--header" ? [argv[index + 1]] : []);
+      expect(argv).toContain(assetUrl);
+      expect(headers).toEqual(expect.arrayContaining(["Accept: application/octet-stream", "Authorization: Bearer fixture-only-token"]));
       if (approved) expect(result.status, result.stderr).toBe(0);
       else expect(result.status).not.toBe(0);
       expect((await readdir(root)).includes("chmod-ran")).toBe(approved);

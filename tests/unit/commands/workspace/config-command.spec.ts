@@ -45,7 +45,7 @@ describe("config command helper coverage", () => {
     expect(() => _testOnlyConfigCommand.normalizeKey("governance.presett")).toThrow(
       expect.objectContaining({ context: expect.objectContaining({
         code: "config_key_unknown", changed: false,
-        recovery: expect.objectContaining({ allowed_values: expect.arrayContaining(["governance-preset"]), next_best_command: "pm config list --json" }),
+        recovery: expect.objectContaining({ allowed_values: expect.arrayContaining(["governance-preset", "governance.preset", "context.default_depth", "context_default_depth"]), next_best_command: "pm config global list --json --output-budget unbounded" }),
       }) }),
     );
     for (const key of ["toString", "__proto__", "constructor"]) {
@@ -487,6 +487,9 @@ describe("runConfig", () => {
       );
       expect(result.changed).toBe(false);
       expect(result.count).toBe(26); // project scope omits the global-only telemetry-tracking key (GH-1660)
+      for (const path of ["context.activity_limit", "context.stale_threshold_days"]) {
+        expect(result.nested_settings?.find((entry) => entry.path === path)).toMatchObject({ min: 1, max: Number.MAX_SAFE_INTEGER, summary: expect.stringContaining("decimal integer") });
+      }
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -2079,6 +2082,8 @@ describe("runConfig", () => {
         ["context.activity_limit", "17", 17],
         ["context.stale_threshold_days", "7", 7],
         ["context.sections.activity", "false", false],
+        ["context.sections.recently_created", "false", false],
+        ["context.sections.unparented", "false", false],
       ] as const) {
         const result = await runConfig("project", "set", key, {}, globalOptions, input);
         expect(result.nested_setting).toMatchObject({ path: key, value });
@@ -2875,7 +2880,7 @@ describe("runConfig", () => {
         }
         expect(caught).toBeInstanceOf(PmCliError);
         const message = (caught as PmCliError).message;
-        expect(message).toContain("pm config list --json");
+        expect(message).toContain("pm config project list --json --output-budget unbounded");
         expect((caught as PmCliError).context.recovery?.allowed_values).toContain("governance-preset");
         expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry-tracking");
         // The message no longer repeats the complete domain or its aliases.

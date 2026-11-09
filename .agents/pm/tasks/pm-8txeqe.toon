@@ -1,0 +1,24 @@
+id: pm-8txeqe
+title: Offer compact metadata-only configuration discovery for recovery and package authoring
+description: "Configuration inventory currently includes current values alongside keys and validation metadata. Recovery and package authors usually need names, aliases, paths, kinds and constraints. Provide a supported metadata-only discovery projection that avoids carrying unrelated configured values into agent context while preserving explicit value-query compatibility."
+type: Task
+status: open
+priority: 3
+tags: []
+created_at: "2026-11-09T11:50:40.305Z"
+updated_at: "2026-11-09T11:55:36.073Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Provide CLI SDK and MCP discovery parity; cover project/global consent scope and complete declared aliases/paths; exclude synthetic credential and large-value canaries from metadata-only output; preserve explicit get/export value semantics and truthful budget receipts; route recovery through the compact discovery path
+parent: pm-8jdc
+risk: medium
+confidence: 90
+expected_result: Agents and package authors can discover scoped configuration keys and constraints without receiving unrelated configured values.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1695,discovered_from,"2026-11-09T11:50:40.305Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-09T11:50:40.305Z","harness:codex","Duplicate check: request-specific search plus the complete 3250-item all-status strict corpus and live open/in-progress lists found no dedicated metadata-only configuration discovery owner. Current source evidence is buildConfigListResult in src/sdk/config.ts, which reads each nested value. This additive context-efficiency enhancement is separate from the existing settings-path bug fix and remains open/unclaimed."
+files[2]{path,scope}:
+  docs/CONFIGURATION.md,project
+  src/sdk/config.ts,project
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-11-09T09:53:12.337Z"
+updated_at: "2026-11-09T12:24:39.606Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -23,7 +23,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
   pm-euqm7x,related,"2026-11-01T08:44:16.451Z","harness:claude-code","cli:update:dep",detected
-comments[133]:
+comments[135]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -425,6 +425,12 @@ comments[133]:
   - created_at: "2026-11-09T09:53:12.336Z"
     author: "harness:codex"
     text: "Review qualification: the unchanged published npm 2026.11.9 artifact was extracted into an isolated temporary directory and measured with the unchanged current SDK keeper/budgets on this Node 26 host. It also fails qualified product admission: authoring 209ms >164ms, governance496ms >327ms, merge231ms >226ms; bare Node medians38/41ms remain qualified. Current-head recheck previously failed authoring214ms/merge244ms. This comparison does not waive the ratchet or establish a passing result; hosted Node24 exact-head static admission remains required. Published-baseline receipt retained locally; no budget/denominator changes."
+  - created_at: "2026-11-09T12:12:52.270Z"
+    author: "harness:codex"
+    text: "Final fourth-batch local static run passed the preceding contracts/quality/assurance/context/registry and zero-change public SDK surface checks, then retained a qualified authoring-import failure: median183ms >164ms; bare Node40/41ms <=106ms control ceiling. The previously isolated published npm9 baseline also failed this unchanged ratchet on the same host. No budget or denominator changed; exact-head hosted Node24 static admission remains required. Completing the downstream graph/integrity/mutation checks independently does not turn this static result into a pass."
+  - created_at: "2026-11-09T12:24:39.605Z"
+    author: "harness:codex"
+    text: "Post-review remaining gates: graph composition and record integrity pass; mutation admission passes with 345 killed and seven catalogued equivalents out of 352 mutants. The unchanged local CLI transport-floor gate also refuses this host (get 391>362ms, context 455>433ms, next 678>440ms, create 583>398ms, claim 591>415ms; bare Node control 68<=106ms). This was measured concurrently with mutation, so it is retained as a failed local observation rather than isolated performance proof. Required hosted exact-head static and coverage admission remain mandatory; no ratchet or denominator changed."
 files[12]:
   - path: .github/workflows/ci.yml
     scope: project

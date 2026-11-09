@@ -6,31 +6,35 @@ status: closed
 priority: 2
 tags[4]: agent-ux,config,"gh:1695",sdk
 created_at: "2026-11-09T07:32:05.563Z"
-updated_at: "2026-11-09T10:27:55.690Z"
-closed_at: "2026-11-09T10:27:54.354Z"
-completed_at: "2026-11-09T10:27:54.354Z"
+updated_at: "2026-11-09T12:23:24.852Z"
+closed_at: "2026-11-09T11:57:32.176Z"
+completed_at: "2026-11-09T11:57:32.176Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Accept every supported settings path as an alias in SDK-backed config get/set without bypassing validation; Unknown keys offer at most three nearest legal keys and a working config-list inspection command; Preserve complete legal keys in structured recovery and reject unknown keys without settings writes
 parent: pm-8jdc
 risk: medium
 confidence: high
-resolution: "Supported settings paths reuse canonical SDK validation and scope; context leaves round-trip through the shared read/write depth domain including full. Unknown-key recovery is bounded, scope-aware and deterministic for both equal- and unequal-distance candidate sets."
-expected_result: "Dotted/canonical keys share validated persistence and scope, and multi-candidate recovery orders by distance then canonical key without writes on invalid input."
-actual_result: The full-depth SDK round-trip failed before the settings validator fix and passes afterward. The 171-test settings/guidance/parser cohort and final 168-test instrumented owner cohort pass; changed config suggestion/leaf and human-domain branches have no uncovered markers. Focused instrumentation intentionally fails whole-source thresholds outside its selected files; required complete CI coverage remains unwaived. Linked configuration tests pass again.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "Supported settings paths and all ten context section leaves use the SDK configuration surface. Grouped and dotted context integer setters plus profile lint/planning share the descriptor rule. Full depth round-trips, and unknown-key SDK errors include declared scoped aliases and paths with a complete inventory retry."
+expected_result: Configuration and profiles share validation and persistence; every supported scoped key/path is discoverable without an oversized human refusal.
+actual_result: Four intended pre-fix review failures are repaired. All 232 tests across eight files and both linked configuration/profile commands pass; original full-depth failing-before control remains. Typechecks and packed npm/npx/Bun/bunx consumers pass; public SDK surface verifies zero classified changes. Changed parser/recovery branches are instrumented without gaps. Complete exact-head CI coverage/static and re-review remain delivery gates; metadata-only discovery is separately tracked open in pm-8txeqe.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4zpq71,related,"2026-11-09T09:01:45.656Z","harness:codex","cli:update:dep",detected
-comments[6]{created_at,author,text}:
+  pm-gh1693,related,"2026-11-09T12:23:22.291Z","harness:codex","cli:update:dep",detected
+comments[8]{created_at,author,text}:
   "2026-11-09T07:32:05.563Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:19.904Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T08:30:38.246Z","harness:codex","Completeness review extended the same descriptor-owned configuration surface to the context scalar leaves previously available only through grouped context flags: default depth, activity limit, staleness threshold and the eight existing section toggles. The shared descriptor validators enforce the canonical depth domain, positive safe integers and booleans; real CLI tests check persisted values and byte preservation on invalid depth, zero and unsafe-integer assignments. Existing grouped flags remain supported and help now distinguishes group and leaf writes."
   "2026-11-09T09:53:13.176Z","harness:codex","PR #1696 review remediation: unknown-key inspections retain requested project/global scope; telemetry typo suggestions explicitly identify global-only consent. Dotted context integer leaves reuse the existing complete positive-decimal validator, refusing scientific/hex notation before writes; --default-depth help now includes full. Focused regression and real parser persistence checks are included with the review batch."
   "2026-11-09T10:22:43.102Z","harness:codex","The new direct SDK round-trip regression caught a real persistence mismatch: context.default_depth=full was accepted by the SDK but the settings read validator admitted only brief/standard/deep and returned fallback settings on the next get. The same public CONTEXT_DEPTH_VALUES domain must govern settings reads. This is fixed under the existing configuration owner, with the failing SDK round-trip retained as the negative control."
   "2026-11-09T10:24:42.667Z","harness:codex","Direct SDK regression strengthened the existing nested-leaf owner with context depth/activity/staleness/section round-trips and exact settings-byte preservation for non-decimal/zero refusals. It failed before the full-depth read-validator fix (full resolved as brief), then passed with shared CONTEXT_DEPTH_VALUES. The combined settings/guidance/parser cohort passes 171 tests. Only this configuration owner and pm-gh1693 were reclaimed for these edits."
+  "2026-11-09T11:41:56.128Z","harness:codex","Review batch regression control: four intended failures (missing context toggles, incomplete declared recovery aliases, and scientific-number acceptance by profile lint) preceded the shared descriptor fix. All 232 tests across eight files then passed under source instrumentation. Decimal-only context validation is declared internally and reused by profile lint/planning plus grouped/dotted setters; generic integer knobs preserve existing Number syntax. Inventory uses existing summary/min/max fields, avoiding an unnecessary public result-shape extension flagged by the SDK signature gate."
+  "2026-11-09T11:55:37.095Z","harness:codex","Final public SDK surface verification reports zero classified changes after keeping numeric-format discovery in the existing metadata fields. Configuration/profile and release/guidance cohorts pass 232 tests; source instrumentation covers the changed strict-integer parser, key recovery and grouped-context parser branches. The optional metadata-only inventory enhancement is separately tracked open/unclaimed in pm-8txeqe."
 learnings[2]{created_at,author,text}:
   "2026-11-09T10:03:47.802Z","harness:codex","Settings paths must resolve through the existing SDK validators and scope rules rather than becoming a parallel write path. Test refusal preservation and consent scope with real settings bytes, including typo suggestions and non-decimal integers."
   "2026-11-09T10:27:53.376Z","harness:codex","CLI subprocess acceptance and direct SDK persistence tests prove different risks: bundled child execution does not instrument the source owner. Source coverage exposed full-depth read rejection and unexercised multi-candidate ranking; meaningful round-trip and ordering cases now cover those contracts before closure."
-files[10]{path,scope}:
+files[13]{path,scope}:
+  sdk/public-surface.json,project
   src/cli/error-guidance.ts,project
   src/cli/register-setup.ts,project
   src/core/config/nested-settings.ts,project
@@ -41,9 +45,25 @@ files[10]{path,scope}:
   tests/unit/commands/workspace/config-command.spec.ts,project
   tests/unit/core/config/config-positional-value.spec.ts,project
   tests/unit/core/config/nested-settings.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
-  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:04.748Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
-test_runs[4]:
+  tests/unit/core/profile/profile-lint.spec.ts,project
+  tests/unit/core/profile/profile-plan.spec.ts,project
+tests[2]:
+  - command: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts
+    scope: project
+    timeout_seconds: 600
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-11-09T07:39:04.748Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-configuration-and-redaction-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-11-09T11:32:47.693Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-configuration-and-redaction-recovery
+test_runs[6]:
   - run_id: test-local-mw91xt83-rj3zym
     kind: test
     status: passed
@@ -88,9 +108,33 @@ test_runs[4]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw96s1jo-9tb53u
+    kind: test
+    status: passed
+    started_at: "2026-11-09T11:36:47.017Z"
+    finished_at: "2026-11-09T11:37:06.516Z"
+    recorded_at: "2026-11-09T11:37:06.516Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw97c3mo-zjog6m
+    kind: test
+    status: passed
+    started_at: "2026-11-09T11:52:07.042Z"
+    finished_at: "2026-11-09T11:52:42.335Z"
+    recorded_at: "2026-11-09T11:52:42.335Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: "Completed settings paths, full-depth persistence and deterministic recovery proof in PR #1696."
+close_reason: Completed scoped configuration recovery and shared profile validation in PR #1696.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

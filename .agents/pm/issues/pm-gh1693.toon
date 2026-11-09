@@ -6,26 +6,30 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1693",output
 created_at: "2026-11-09T07:32:16.381Z"
-updated_at: "2026-11-09T10:24:51.847Z"
-closed_at: "2026-11-09T10:24:50.604Z"
-completed_at: "2026-11-09T10:24:50.604Z"
+updated_at: "2026-11-09T12:23:21.683Z"
+closed_at: "2026-11-09T11:57:35.291Z"
+completed_at: "2026-11-09T11:57:35.291Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Strict close refusal headline remains bounded and never contains a partial flag token; Default output suppresses generic explanatory filler while structured recovery retains full missing fields and retry arguments; CLI regression verifies no mutation on refusal and actionable close recovery
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: "Strict-close output has a complete recovery-independent headline, one immediate retry labeled as a real-evidence template, and bounded human legal domains with truthful complete-SDK discovery and JSON budget disclosure."
-expected_result: "Refusals preserve complete flag tokens, one actionable template and honest bounded-domain recovery without generic duplication."
-actual_result: "All 73 guidance tests pass, including a direct 20-value legal-domain regression, exactly-once retry placement and missing optional package recovery. Linked tests passed again; the real parser preserves history on strict-close refusal. Larger CLI diagnostic restore and runner coverage-verdict attribution remain open in pm-v1kspa and pm-qmb6h8."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: Close refusals use a complete headline and one immediate evidence template. Human domains disclose omissions and the complete SDK context route; JSON budgeting retains truthful receipts without mutating that SDK context.
+expected_result: Agents get an actionable concise refusal and accurate recovery when large machine diagnostics reach their declared ceiling.
+actual_result: All 74 guidance tests and linked real parser tests pass. A 1000-field diagnostic binds the unchanged 2000-token ceiling while preserving every SDK context value. Retry placement/uniqueness and optional package recovery remain covered. Larger CLI domain restoration remains open in pm-v1kspa; complete CI/re-review is required before merge.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1676,related,"2026-11-09T09:01:50.450Z","harness:codex","cli:update:dep",detected
-comments[5]{created_at,author,text}:
+  pm-cha95z,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
+  pm-qmb6h8,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
+  pm-v1kspa,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
+comments[6]{created_at,author,text}:
   "2026-11-09T07:32:16.381Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:23.639Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T09:53:13.984Z","harness:codex","PR #1696 review remediation: the concise strict-close headline is independent of optional package recovery data. The immediate retry is explicitly labeled a template requiring real evidence. The existing guidance test now asserts direct placement and exactly one retry, and the real CLI preserves history on refusal."
   "2026-11-09T10:02:53.394Z","harness:codex","Large-domain review outcome: the SDK error context retains complete recovery.allowed_values, while the existing fixed JSON diagnostic ceiling can compact very large custom schemas. Text now explicitly names the complete SDK route and discloses JSON budgeting; it no longer promises that normal --output-budget controls diagnostic ceilings. A dedicated additive CLI restore contract is tracked open/unclaimed in pm-v1kspa under recovery closure, discovered from completed pm-cha95z. Default diagnostic ratchets remain intact."
   "2026-11-09T10:24:43.764Z","harness:codex","The human legal-domain formatter now has direct coverage for a 20-value domain: eight visible values, explicit 12-value omission, complete SDK discovery route and budget caveat, while the fitting JSON domain remains complete. Focused source instrumentation passes all assertions but correctly refuses whole-repository coverage because it runs only owner files; its misleading combined exit wording is separately tracked open/unclaimed in pm-qmb6h8."
+  "2026-11-09T11:52:04.094Z","harness:codex","The 1000-field diagnostic regression binds the unchanged 2000-token JSON ceiling, asserts its truncation receipt, and verifies the typed SDK error context still contains every field through custom_field_999. Fitting-domain and bounded human-discovery tests remain. No diagnostic ceiling or projection contract changed."
 learnings[1]{created_at,author,text}:
   "2026-11-09T10:03:50.434Z","harness:codex",A concise refusal must keep a complete headline and place its retry once at the top. Label placeholder retries as templates and do not promise optional recovery fields or an ineffective diagnostic budget override.
 files[3]{path,scope}:
@@ -34,7 +38,7 @@ files[3]{path,scope}:
   tests/unit/cli/error-guidance.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:32.348Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
-test_runs[3]:
+test_runs[5]:
   - run_id: test-local-mw8ziie5-0st84j
     kind: test
     status: passed
@@ -68,10 +72,32 @@ test_runs[3]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw96sa39-edj359
+    kind: test
+    status: passed
+    started_at: "2026-11-09T11:37:07.251Z"
+    finished_at: "2026-11-09T11:37:17.589Z"
+    recorded_at: "2026-11-09T11:37:17.589Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw97cfyf-ess9hm
+    kind: test
+    status: passed
+    started_at: "2026-11-09T11:52:44.007Z"
+    finished_at: "2026-11-09T11:52:58.311Z"
+    recorded_at: "2026-11-09T11:52:58.311Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
 docs[2]{path,scope}:
   docs/COMMANDS.md,project
   docs/CONFIGURATION.md,project
-close_reason: Completed concise close recovery and direct legal-domain rendering proof in PR #1696.
+close_reason: Completed concise and budget-honest refusal recovery in PR #1696.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

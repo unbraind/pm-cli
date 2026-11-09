@@ -46,6 +46,8 @@ export interface NestedSettingDescriptor {
   choices?: readonly string[];
   /** Require a non-empty trimmed string value for string settings. */
   non_empty?: boolean;
+  /** Require decimal digits, rather than scientific or hexadecimal notation, for integer inputs. */
+  decimal_only?: boolean;
   /** Optional minimum value for `integer` / `number` kinds. When set, `parseNestedSettingValue` rejects values strictly below `min`. Useful for settings where 0 would be silently ignored by the runtime (batch sizes, timeouts, max-results limits). */
   min?: number;
   /** Optional maximum value for `integer` / `number` kinds. When set, `parseNestedSettingValue` rejects values strictly above `max` (bounded knobs like `ids.token_length`). */
@@ -60,13 +62,13 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
   },
   {
     key: "context_activity_limit", path: "context.activity_limit", kind: "integer",
-    min: 1, max: Number.MAX_SAFE_INTEGER, summary: "Default context activity row limit.",
+    min: 1, max: Number.MAX_SAFE_INTEGER, decimal_only: true, summary: "Default context activity row limit; positive decimal integer.",
   },
   {
     key: "context_stale_threshold_days", path: "context.stale_threshold_days", kind: "integer",
-    min: 1, max: Number.MAX_SAFE_INTEGER, summary: "Days before context marks an item stale.",
+    min: 1, max: Number.MAX_SAFE_INTEGER, decimal_only: true, summary: "Days before context marks an item stale; positive decimal integer.",
   },
-  ...["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"].map((section) => ({
+  ...["hierarchy", "activity", "progress", "recently_created", "unparented", "blockers", "files", "workload", "staleness", "tests"].map((section) => ({
     key: `context_sections_${section}`, path: `context.sections.${section}`, kind: "boolean" as const,
     summary: `Include ${section} in default context output.`,
   })),
@@ -536,6 +538,9 @@ function parseNestedIntegerValue(
   rawValue: string,
   value: number,
 ): NestedSettingParseResult {
+  if (descriptor.decimal_only && !/^\d+$/u.test(rawValue.trim())) {
+    return { ok: false, error: { message: `Config set ${descriptor.key} requires decimal integer digits, got "${rawValue}"` } };
+  }
   if (!Number.isInteger(value) || value < 0) {
     return {
       ok: false,

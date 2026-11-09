@@ -514,18 +514,19 @@ function normalizeKey(value: string, scope: ConfigScope = "global"): ConfigKey {
   })).filter(({ distance }) => Number.isFinite(distance))
     .sort((left, right) => left.distance - right.distance || left.key.localeCompare(right.key))
     .slice(0, 3).map(({ key: candidate }) => candidate);
+  const inventoryCommand = `pm config ${scope} list --json --output-budget unbounded`;
   const hint = suggestions.length > 0 ? ` Did you mean ${suggestions.map((candidate) => candidate === "telemetry-tracking" && scope === "project" ? `${candidate} (global only)` : candidate).join(", ")}?` : "";
   throw new PmCliError(
-    `Invalid config key "${value}".${hint} Inspect keys and aliases with pm config list --json.`,
+    `Invalid config key "${value}".${hint} Inspect keys and aliases with ${inventoryCommand}.`,
     EXIT_CODE.USAGE,
     {
       code: "config_key_unknown", changed: false,
-      required: "Use a key or settings path from pm config list --json.",
-      examples: ["pm config list --json"],
+      required: `Use a key or settings path from ${inventoryCommand}.`,
+      examples: [inventoryCommand],
       recovery: {
-        allowed_values: [...configKeysForScope(scope).map((key) => CONFIG_KEY_ALIASES[key][0]), ...NESTED_SETTING_DESCRIPTORS.map((descriptor) => descriptor.key.replaceAll("_", "-"))],
+        allowed_values: [...new Set([...configKeysForScope(scope).flatMap((key) => CONFIG_KEY_ALIASES[key]), ...NESTED_SETTING_DESCRIPTORS.flatMap((descriptor) => [descriptor.key, descriptor.key.replaceAll("_", "-"), descriptor.path])])],
         candidate_commands: suggestions.map((candidate) => `pm config ${candidate === "telemetry-tracking" ? "global" : scope} get ${candidate} --json`),
-        next_best_command: "pm config list --json",
+        next_best_command: inventoryCommand,
       },
     },
   );
@@ -1083,11 +1084,11 @@ function parseSectionToggle(raw: string | undefined): boolean | undefined {
 }
 
 /** Parse a complete positive integer used by context configuration options. */
-function parsePositiveContextInteger(rawValue: string, option: string): number {
-  const raw = rawValue.trim();
-  const parsed = Number(raw);
-  if (/^\d+$/u.test(raw) && Number.isSafeInteger(parsed) && parsed > 0) {
-    return parsed;
+function parsePositiveContextInteger(rawValue: string, option: "--activity-limit" | "--stale-threshold-days"): number {
+  const descriptor = resolveNestedSettingDescriptor(option === "--activity-limit" ? "context_activity_limit" : "context_stale_threshold_days")!;
+  const parsed = parseNestedSettingValue(descriptor, rawValue);
+  if (parsed.ok) {
+    return parsed.parsed.value as number;
   }
   throw new PmCliError(
     `Context ${option} must be a positive integer`,
@@ -1452,9 +1453,6 @@ async function buildNestedSettingResult(
       `Config set ${nestedSetting.key} requires a value. Pass it positionally (\`pm config ${context.scope} set ${nestedSetting.key} <value>\`) or via --value.`,
       EXIT_CODE.USAGE,
     );
-  }
-  if (nestedSetting.path === "context.activity_limit" || nestedSetting.path === "context.stale_threshold_days") {
-    parsePositiveContextInteger(rawValue, nestedSetting.path);
   }
   const parsed = parseNestedSettingValue(nestedSetting, rawValue);
   if (!parsed.ok) {
