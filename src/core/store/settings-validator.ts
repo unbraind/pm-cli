@@ -12,6 +12,7 @@
  * byte-identical to the previous implementation.
  */
 import {
+  CONTEXT_DEPTH_VALUES,
   GOVERNANCE_PRESET_VALUES,
   RUNTIME_FIELD_COMMAND_VALUES,
   RUNTIME_FIELD_TYPE_VALUES,
@@ -20,6 +21,7 @@ import {
 } from "../../types.js";
 import type {
   AgentGuidanceSettings,
+  ContextDepth,
   ExtensionPolicySettings,
   GovernanceSettings,
   ItemTypeDefinition,
@@ -103,7 +105,7 @@ export interface ParsedSettings {
   schema?: Partial<RuntimeSchemaSettings>;
   /** Value that configures or reports context for this contract. */
   context?: {
-    default_depth?: "brief" | "standard" | "deep";
+    default_depth?: ContextDepth;
     activity_limit?: number;
     stale_threshold_days?: number;
     next_ranking_policy?: "priority_floor" | "weighted";
@@ -622,7 +624,7 @@ const SETTINGS_SHAPE: Record<string, Check<unknown>> = {
   schema: runtimeSchemaSettings,
   context: vOptional(
     vObject({
-      default_depth: vOptional(vLiteral("brief", "standard", "deep")),
+      default_depth: vOptional(vLiteral(...CONTEXT_DEPTH_VALUES)),
       activity_limit: vOptional(vNumber({ int: true, positive: true })),
       stale_threshold_days: vOptional(vNumber({ int: true, positive: true })),
       next_ranking_policy: vOptional(vLiteral("priority_floor", "weighted")),

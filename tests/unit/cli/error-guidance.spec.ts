@@ -29,6 +29,17 @@ describe("pm cli error guidance context plumbing", () => {
     expect(formatPmCliErrorForJson(message, 2, { code: context.code }).title).toBe(envelope.title);
   });
 
+  it("bounds human legal domains with an explicit omission while preserving the machine domain", () => {
+    const values = Array.from({ length: 20 }, (_, index) => `value-${index}`);
+    const context = { code: "config_key_unknown", recovery: { allowed_values: values } };
+    const display = formatPmCliErrorForDisplay("Unknown key", context, { lean: true });
+    expect(display).toContain(`allowed_values: ${values.slice(0, 8).join(", ")}`);
+    expect(display).not.toContain("value-8");
+    expect(display).toContain("allowed_values_omitted: 12");
+    expect(display).toContain("SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted");
+    expect(formatPmCliErrorForJson("Unknown key", 2, context).recovery?.allowed_values).toEqual(values);
+  });
+
   it("preserves verified no-change evidence without inferring it for execution failures", () => {
     const context = { code: "invalid_argument_value", changed: false as const };
     expect(formatPmCliErrorForJson("Refused before mutation", 2, context)).toMatchObject({ changed: false });

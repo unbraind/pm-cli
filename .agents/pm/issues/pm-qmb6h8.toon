@@ -1,0 +1,21 @@
+id: pm-qmb6h8
+title: Distinguish Vitest coverage-threshold exits from test assertion failures in combined runner verdicts
+description: "A focused canonical coverage invocation reports seven test files and all 199 tests passed, but Vitest exits nonzero for the unchanged global coverage thresholds. run-tests.mjs treats that exit as a test-execution failure, combines it with the exact-source coverage refusal, and prints Test execution and exact coverage both failed with exit3. Preserve fail-closed coverage while classifying assertion execution independently from Vitest threshold exit semantics."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-11-09T10:23:30.869Z"
+updated_at: "2026-11-09T10:23:30.869Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Reproduce all-pass focused tests plus coverage-only failure; retain nonzero exact coverage admission and unchanged full denominator; distinguish test-only coverage-only and combined failures without parsing fragile human log strings
+parent: pm-u9d0
+risk: medium
+confidence: 95
+expected_result: A coverage-only shortfall reports tests passed and coverage failed; actual test failures retain a distinct combined verdict.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2qqcgl,discovered_from,"2026-11-09T10:23:30.869Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-09T10:23:30.869Z","harness:codex","Duplicate check: all-status coverage combined verdict search found completed pm-2qqcgl, which correctly made exact coverage fail closed, but no owner for the Vitest threshold/runner attribution mismatch. Full predecessor data/history and live open/in-progress lists read before creation. Source evidence is scripts/run-tests.mjs runValidation; local focused receipt has 199/199 assertions passing and runner exit3. Follow-up remains open/unclaimed."
+body: ""

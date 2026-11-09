@@ -57,6 +57,17 @@ describe("config command helper coverage", () => {
     expect(() => _testOnlyConfigCommand.normalizeKey("telemetri-tracking", "project")).toThrow(
       expect.objectContaining({ message: expect.stringContaining("telemetry-tracking (global only)"), context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config global get telemetry-tracking --json"]) }) }) }),
     );
+    for (const [key, candidates] of [
+      ["search.bm25.k", ["search-bm25-b", "search-bm25-k1"]],
+      ["context.sections.fests", ["context-sections-tests", "context-sections-files"]],
+    ] as const) {
+      expect(() => _testOnlyConfigCommand.normalizeKey(key, "project")).toThrow(
+        expect.objectContaining({ context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: candidates.map((candidate) => `pm config project get ${candidate} --json`) }) }) }),
+      );
+    }
+    expect(() => _testOnlyConfigCommand.normalizeKey("telemetri-tracking", "global")).toThrow(
+      expect.objectContaining({ message: expect.not.stringContaining("global only"), context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config global get telemetry-tracking --json"]) }) }) }),
+    );
     expect(() => _testOnlyConfigCommand.normalizeKey("governance.presett", "project")).toThrow(
       expect.objectContaining({ context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config project get governance-preset --json"]) }) }) }),
     );
@@ -2062,6 +2073,24 @@ describe("runConfig", () => {
         globalOptions,
       );
       expect(setProviderAgain.changed).toBe(false);
+
+      for (const [key, input, value] of [
+        ["context.default_depth", "full", "full"],
+        ["context.activity_limit", "17", 17],
+        ["context.stale_threshold_days", "7", 7],
+        ["context.sections.activity", "false", false],
+      ] as const) {
+        const result = await runConfig("project", "set", key, {}, globalOptions, input);
+        expect(result.nested_setting).toMatchObject({ path: key, value });
+        expect((await runConfig("project", "get", key, {}, globalOptions)).nested_setting?.value).toBe(value);
+      }
+      const beforeRefusal = await fs.readFile(getSettingsPath(pmRoot), "utf8");
+      for (const key of ["context.activity_limit", "context.stale_threshold_days"]) {
+        for (const value of ["1e2", "0x10", "0"]) {
+          await expect(runConfig("project", "set", key, {}, globalOptions, value)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+          expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
+        }
+      }
 
       const setTopK = await runConfig(
         "project",
