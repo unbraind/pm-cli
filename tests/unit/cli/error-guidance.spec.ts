@@ -17,11 +17,16 @@ import { projectLeanRecoveryPayload } from "../../../src/sdk/cli-contracts/agent
 describe("pm cli error guidance context plumbing", () => {
   it("keeps close-evidence headlines actionable without cutting a flag (GH-1693)", () => {
     const message = "Cannot close pm-example: missing resolution (--resolution), expected_result (--expected-result), actual_result (--actual-result).";
-    const context = { code: "close_validation_missing_fields", recovery: { missing: ["--resolution", "--expected-result", "--actual-result"] } };
+    const retry = 'pm close pm-example " " --resolution " " --expected " " --actual " "';
+    const context = { code: "close_validation_missing_fields", recovery: { missing: ["--resolution", "--expected-result", "--actual-result"], suggested_retry: retry } };
     const envelope = formatPmCliErrorForJson(message, 2, context);
-    expect(envelope.title).toBe("Close is missing required evidence; see recovery.missing");
+    expect(envelope.title).toBe("Close is missing required evidence");
     expect(envelope.recovery?.missing).toEqual(context.recovery.missing);
-    expect(formatPmCliErrorForDisplay(message, context, { lean: true })).not.toContain("Why:");
+    const display = formatPmCliErrorForDisplay(message, context, { lean: true });
+    expect(display).not.toContain("Why:");
+    expect(display.split("\n").slice(0, 3)).toEqual([`Error: ${envelope.title}`, `Run: ${retry}`, "Template: replace every placeholder with real evidence before running."]);
+    expect(display.split(retry)).toHaveLength(2);
+    expect(formatPmCliErrorForJson(message, 2, { code: context.code }).title).toBe(envelope.title);
   });
 
   it("preserves verified no-change evidence without inferring it for execution failures", () => {

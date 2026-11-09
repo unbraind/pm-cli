@@ -342,12 +342,6 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   context: ["context"],
 };
 
-// Canonical kebab-case forms (first alias entry per key). Used for the invalid-key
-// hint so agents see ~21 keys instead of all ~45 kebab+snake variants; snake_case
-// forms stay fully accepted as input via CONFIG_KEY_ALIASES/normalizeKey.
-const CANONICAL_CONFIG_KEYS: readonly string[] = (
-  Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]
-).map((candidate) => CONFIG_KEY_ALIASES[candidate][0]);
 const CONFIG_KEY_BY_ALIAS: Readonly<Record<string, ConfigKey>> =
   Object.fromEntries(
     (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).flatMap((key) =>
@@ -504,7 +498,7 @@ function normalizeAction(value: string): ConfigAction {
   });
 }
 
-function normalizeKey(value: string): ConfigKey {
+function normalizeKey(value: string, scope: ConfigScope = "global"): ConfigKey {
   const key = Object.hasOwn(CONFIG_KEY_BY_ALIAS, value) ? CONFIG_KEY_BY_ALIAS[value] : undefined;
   if (key) {
     return key;
@@ -520,7 +514,7 @@ function normalizeKey(value: string): ConfigKey {
   })).filter(({ distance }) => Number.isFinite(distance))
     .sort((left, right) => left.distance - right.distance || left.key.localeCompare(right.key))
     .slice(0, 3).map(({ key: candidate }) => candidate);
-  const hint = suggestions.length > 0 ? ` Did you mean ${suggestions.join(", ")}?` : "";
+  const hint = suggestions.length > 0 ? ` Did you mean ${suggestions.map((candidate) => candidate === "telemetry-tracking" && scope === "project" ? `${candidate} (global only)` : candidate).join(", ")}?` : "";
   throw new PmCliError(
     `Invalid config key "${value}".${hint} Inspect keys and aliases with pm config list --json.`,
     EXIT_CODE.USAGE,
@@ -529,8 +523,8 @@ function normalizeKey(value: string): ConfigKey {
       required: "Use a key or settings path from pm config list --json.",
       examples: ["pm config list --json"],
       recovery: {
-        allowed_values: [...CANONICAL_CONFIG_KEYS, ...NESTED_SETTING_DESCRIPTORS.map((descriptor) => descriptor.key.replaceAll("_", "-"))],
-        candidate_commands: suggestions.map((candidate) => `pm config get ${candidate} --json`),
+        allowed_values: [...configKeysForScope(scope).map((key) => CONFIG_KEY_ALIASES[key][0]), ...NESTED_SETTING_DESCRIPTORS.map((descriptor) => descriptor.key.replaceAll("_", "-"))],
+        candidate_commands: suggestions.map((candidate) => `pm config ${candidate === "telemetry-tracking" ? "global" : scope} get ${candidate} --json`),
         next_best_command: "pm config list --json",
       },
     },
@@ -939,6 +933,7 @@ function normalizeWarnings(values: string[]): string[] {
 function normalizeKeyForAction(
   action: ConfigAction,
   value: string | undefined,
+  scope: ConfigScope,
 ): ConfigKey | undefined {
   if (action === "list" || action === "export") {
     if (typeof value === "string" && value.trim().length > 0) {
@@ -955,7 +950,7 @@ function normalizeKeyForAction(
       EXIT_CODE.USAGE,
     );
   }
-  return normalizeKey(value);
+  return normalizeKey(value, scope);
 }
 
 /** Narrows the `ConfigKey | undefined` carried into the get/set branches back to a concrete `ConfigKey`. By the time those branches run, `normalizeKeyForAction` has already thrown on a missing key and nested settings have returned earlier, so the `undefined` case is unreachable at runtime — the throw is a defensive type-narrowing guard only. */
@@ -1457,6 +1452,9 @@ async function buildNestedSettingResult(
       `Config set ${nestedSetting.key} requires a value. Pass it positionally (\`pm config ${context.scope} set ${nestedSetting.key} <value>\`) or via --value.`,
       EXIT_CODE.USAGE,
     );
+  }
+  if (nestedSetting.path === "context.activity_limit" || nestedSetting.path === "context.stale_threshold_days") {
+    parsePositiveContextInteger(rawValue, nestedSetting.path);
   }
   const parsed = parseNestedSettingValue(nestedSetting, rawValue);
   if (!parsed.ok) {
@@ -2355,7 +2353,7 @@ export async function runConfig(
       : undefined;
   const key = nestedSetting
     ? undefined
-    : normalizeKeyForAction(action, keyValue);
+    : normalizeKeyForAction(action, keyValue, scope);
   const routedOptions = applyPositionalValue(
     action,
     keyValue,

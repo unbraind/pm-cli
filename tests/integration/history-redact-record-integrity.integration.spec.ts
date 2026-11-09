@@ -14,7 +14,11 @@ import type { HistoryEntry } from "../../src/types.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("history redaction record integrity", () => {
-  it.each(["/var/[a-z]+", "/\\/var\\/[a-z]+/g"])("redacts path pattern %s with dry-run preservation and verified history", async (regex) => {
+  it.each(["raw source", "documented literal", "escaped trailing slash"])("redacts a path using %s with dry-run preservation and verified history", async (mode) => {
+    const documentation = await readFile("docs/COMMANDS.md", "utf8");
+    const documented = documentation.match(/`--regex '([^']+)'` to match the path/u);
+    expect(documented).not.toBeNull();
+    const regex = mode === "raw source" ? "/var/[a-z]+" : mode === "escaped trailing slash" ? "/var\\/" : documented![1];
     await withTempPmPath(async (context) => {
       const created = context.runCli(["create", "--title", "Path /var/private", "--description", "Regex recovery fixture", "--type", "Task", "--json"], { expectJson: true });
       const id = (created.json as { item: { id: string } }).item.id;
@@ -27,6 +31,10 @@ describe("history redaction record integrity", () => {
       const after = await readFile(historyPath, "utf8");
       expect(after).not.toContain("/var/private");
       const entries = after.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      const item = context.runCli(["get", id, "--json"], { expectJson: true }).json as { item: { title: string } };
+      expect(item.item.title).toContain("[removed]");
+      expect(item.item.title).not.toContain("/var/");
+      expect(entries.every((entry) => entry.record_hash_version !== undefined && entry.record_hash !== undefined)).toBe(true);
       expect(verifyHistoryChain(entries).ok).toBe(true);
       expect(entries.every((entry) => verifyHistoryRecordHash(entry).ok)).toBe(true);
     });

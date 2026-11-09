@@ -1,0 +1,21 @@
+id: pm-v1kspa
+title: Expose a contract-bound way to retrieve complete diagnostic legal domains from CLI refusals
+description: "PR #1696 review exposed an existing diagnostic limitation: --output-budget unbounded controls normal reads but does not override the fixed JSON diagnostic ceiling; large custom-schema legal domains can be compacted. The SDK error context retains the complete domain. Design an explicit declared diagnostic ceiling or separate domain discovery primitive without weakening default ceilings, dropping actionable recovery, or promising an ineffective retry."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-11-09T10:02:20.265Z"
+updated_at: "2026-11-09T10:02:20.265Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Demonstrate a custom schema whose legal domain exceeds the default diagnostic ceiling; provide a CLI-only complete discovery or explicitly bounded restore path; preserve default diagnostic budgets and truthful omission receipts; prove CLI SDK MCP parity where applicable
+parent: pm-f05lsg
+risk: medium
+confidence: 90
+expected_result: Agents can retrieve a complete large legal domain through a declared CLI contract while normal refusals remain bounded.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-cha95z,discovered_from,"2026-11-09T10:02:20.265Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-09T10:02:20.265Z","harness:codex","Duplicate check: current all-status searches for diagnostic budget/recovery domain and explicit diagnostic ceiling found closed pm-cha95z and open parent pm-f05lsg, but no dedicated complete-domain restore owner. Open/in-progress lists read before creation. First observed in PR #1696 CodeRabbit discussion_r4511255056; implementation batch corrects the misleading text and documents the complete SDK route while this additive CLI contract stays open/unclaimed."
+body: ""

@@ -1367,7 +1367,7 @@ export function registerSetupCommands(program: Command): void {
     )
     .option(
       "--default-depth <value>",
-      "Context default depth: brief|standard|deep",
+      "Context default depth: brief|standard|deep|full",
     )
     .option("--activity-limit <n>", "Context default activity limit")
     .option("--stale-threshold-days <n>", "Context staleness cutoff in days")

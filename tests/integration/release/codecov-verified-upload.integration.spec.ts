@@ -18,6 +18,7 @@ interface UploadStep {
   if?: string;
   "continue-on-error"?: boolean;
   with?: Record<string, unknown>;
+  env?: Record<string, unknown>;
 }
 
 describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
@@ -32,6 +33,8 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
     expect(bootstrap.run).toContain(assetUrl);
     expect(bootstrap.run).toContain("Accept: application/octet-stream");
     expect(bootstrap.run).toContain(assetDigest);
+    expect(bootstrap.env).toEqual({ GH_TOKEN: "${{ github.token }}" });
+    expect(bootstrap.run).toContain('Authorization: Bearer ${GH_TOKEN}');
     expect(bootstrap.run).toContain("--fail --show-error --silent --location --proto '=https' --tlsv1.2");
     expect(bootstrap.run).toContain('node --input-type=module - "${codecov_binary}"');
     expect(bootstrap.run).not.toMatch(/--insecure|curl\s+-k\b/);
@@ -66,7 +69,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
       `;
       const result = spawnSync("bash", ["-euo", "pipefail", "-s"], {
         cwd: root, input: boundary + script!.replace(assetDigest, fixtureDigest), encoding: "utf8", timeout: 10_000,
-        env: { ...process.env, RUNNER_TEMP: root.replaceAll("\\", "/"), PM_CODECOV_PAYLOAD: approved ? approvedPayload : "corrupt uploader bytes\n" },
+        env: { ...process.env, GH_TOKEN: "fixture-only-token", RUNNER_TEMP: root.replaceAll("\\", "/"), PM_CODECOV_PAYLOAD: approved ? approvedPayload : "corrupt uploader bytes\n" },
       });
       expect(result.error).toBeUndefined();
       if (approved) expect(result.status, result.stderr).toBe(0);

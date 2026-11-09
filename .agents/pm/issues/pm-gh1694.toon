@@ -2,28 +2,33 @@ id: pm-gh1694
 title: "GH-1694: recover pinned Bun and verified uploader downloads after GitHub asset gateway failures"
 description: "Release42560970081 published npm2026.11.9 but macOS Bun acceptance repeatedly fails before execution because the official Bun1.4.0 darwin-aarch64 asset URL returns HTTP504. The same exact URL with download=1 returns bytes matching the GitHub-published SHA256. Dependabot PR1691 likewise passed full exact coverage and failed only the pinned Codecov CLI asset download. Preserve versions, immutable release identity, no-cache policy, uploader checksum and required checks while making these external-download boundaries recoverable."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: ci,"gh:1694",release,transport
 created_at: "2026-11-09T07:50:38.300Z"
-updated_at: "2026-11-09T08:48:40.489Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#d7370db3a31ff43794b121a0"
+updated_at: "2026-11-09T10:04:09.014Z"
+closed_at: "2026-11-09T10:04:07.422Z"
+completed_at: "2026-11-09T10:04:07.422Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: "macOS registry acceptance installs the same pinned Bun release through an official verified transport; Required Codecov uploads retain fail-closed checksum verification before execution; Focused workflow tests and hosted exact-head checks pass without ignoring mandatory failures; Exact-tag recovery keeps the existing tag and npm identity, with the live publication acceptance outcome tracked by pm-7zs0"
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: Pinned release tools download through authenticated official routes and required acceptance can recover the existing immutable publication without creating another automatic version.
+resolution: "Pinned Codecov bytes use the authenticated immutable asset API and mandatory reviewed SHA256 before execution. Pinned uncached macOS Bun acceptance uses the verified official alternate asset route, exercised by required prepublication native CI."
+expected_result: "Required uploader and Bun acceptance survive the observed gateway route failures while preserving exact artifacts, checksums, fail-closed publication and one automatic production tag per UTC day."
+actual_result: "Linked release/workflow and executable checksum positive/corrupt controls pass. Official Bun and Codecov alternate-route bytes independently match pinned digests; actionlint passes. Existing npm 2026.11.9/npx/bunx consumers verify; same-tag GitHub advertisement recovery still awaits reviewed main, tracked by standing pm-7zs0. No second daily tag was created; historical reliability remains red."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2x67z9,discovered_from,"2026-11-09T07:50:38.300Z","harness:codex","cli:create:dep",detected
   pm-7zs0,related,"2026-11-09T07:50:38.300Z","harness:codex","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-11-09T07:50:38.300Z","harness:codex","Duplicate check: complete all-status corpus plus keyword AND searches for Bun setup asset release download and download gateway Codecov Bun found only the standing release reminder and unrelated broad quality owner. Reuse closed uploader-security lineage as discovered_from and the daily health reminder as related."
   "2026-11-09T07:52:12.327Z","harness:codex","Independent transport proof: official Bun1.4.0 macOS ARM64 bytes downloaded through download=1 match GitHub asset SHA256 c669e97f6164e1c96e0701748db98dfa77492908cbd8394c7557134a735de381. Official Codecov asset470877726 via GitHub release asset API matches the unchanged reviewed SHA256 ca1d64196d2d34771084afe76ea657d581bf628e31d993ff8e52ea09cc88a56d. Both ordinary URLs reproduced HTTP504. The new workflow transport assertions fail before mutation. Keep fail-closed corrupt-byte tests, no-cache Bun, mandatory uploads, and existing immutable release identity."
   "2026-11-09T08:00:02.476Z","harness:codex","Local regression acceptance: both new workflow transport assertions failed on the old workflow, while existing approved/corrupt-byte controls remained meaningful. Updated workflows plus close-guidance tests now pass80 tests. Reviewed exact-tag recovery will use the current main control scripts, preserve the existing npm identity and keep all nine registry acceptance rows mandatory. The live publication outcome remains recorded by the standing daily release-health owner pm-7zs0."
   "2026-11-09T08:08:46.571Z","harness:codex","Workflow authoring cross-check: GitHub Actions contexts reference confirms runner.os=macOS and runner.arch=ARM64 or X64 for the selected asset mapping. Primary reference: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context . The action metadata at the pinned setup-bun commit explicitly supports bun-download-url; the override is confined to macOS registry acceptance and preserves the unchanged pinned version and no-cache=true."
+  "2026-11-09T09:53:14.974Z","harness:codex","PR #1696 review remediation: the immutable Codecov asset API request uses the step-scoped GitHub credential while retaining the mandatory SHA256 gate and fail-closed uploads. The required packed macOS PR check now runs the exact pinned uncached Bun download override and verifies runtime version before merge/publication. This tests the selected transport directly; no dynamic fallback logic or extra paid runner has been introduced."
+learnings[1]{created_at,author,text}:
+  "2026-11-09T10:03:51.702Z","harness:codex","When a pinned official asset route fails, keep the version and byte-integrity controls. Exercise the selected transport on its native platform before publication and keep recovery of an existing tag distinct from creating another daily release."
 files[4]{path,scope}:
   .github/workflows/ci.yml,project
   .github/workflows/release.yml,project
@@ -31,8 +36,32 @@ files[4]{path,scope}:
   tests/unit/scripts/release/extension-flag-acceptance.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts,project,600,"harness:codex","2026-11-09T07:51:20.885Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+test_runs[2]:
+  - run_id: test-local-mw91ybvx-0l507l
+    kind: test
+    status: passed
+    started_at: "2026-11-09T09:21:53.235Z"
+    finished_at: "2026-11-09T09:22:01.773Z"
+    recorded_at: "2026-11-09T09:22:01.773Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw93521c-tc3xxv
+    kind: test
+    status: passed
+    started_at: "2026-11-09T09:55:06.330Z"
+    finished_at: "2026-11-09T09:55:15.216Z"
+    recorded_at: "2026-11-09T09:55:15.216Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/release/codecov-verified-upload.integration.spec.ts tests/unit/scripts/release/extension-flag-acceptance.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/RELEASING.md,project
+close_reason: Implemented reviewed release asset transport recovery in PR #1696.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

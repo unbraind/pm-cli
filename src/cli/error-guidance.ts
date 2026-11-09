@@ -627,7 +627,7 @@ function appendRecoveryListLine(
 function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined): void {
   appendRecoveryListLine(lines, "allowed_values", values?.slice(0, 8), ", ");
   if (values && values.length > 8) {
-    lines.push(`  allowed_values_omitted: ${values.length - 8} (complete domain in --json recovery.allowed_values)`);
+    lines.push(`  allowed_values_omitted: ${values.length - 8} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
   }
 }
 
@@ -749,7 +749,7 @@ function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
 function renderGuidanceLead(message: GuidanceMessage, lean: boolean): string[] {
   const lines: string[] = [`Error: ${message.title}`];
   if (message.code === "close_validation_missing_fields" && message.recovery?.suggested_retry) {
-    lines.push(`Run: ${message.recovery.suggested_retry}`);
+    lines.push(`Run: ${message.recovery.suggested_retry}`, "Template: replace every placeholder with real evidence before running.");
   }
   if (!lean || !isGenericRefusalRequired(message.required)) {
     lines.push("", "What is required:", `  ${message.required}`);
@@ -1269,7 +1269,7 @@ function resolveTypedRefusalTitle(
   normalizedRawMessage: string,
 ): string {
   if (code === "close_validation_missing_fields") {
-    return "Close is missing required evidence; see recovery.missing";
+    return "Close is missing required evidence";
   }
   const generic =
     guidance.code === "command_failed" ||

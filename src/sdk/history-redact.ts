@@ -184,40 +184,40 @@ function normalizeRegexFlags(flags: string): string {
   return unique.join("");
 }
 
+/** Identify an invalid matcher without retaining its sensitive source or engine error. */
+function invalidRegexRule(index: number, reason: string): PmCliError {
+  return new PmCliError(
+    `Invalid --regex value at --regex #${index}: ${reason}`,
+    EXIT_CODE.USAGE,
+    { code: "invalid_argument_value", field: "regex", reason: "invalid_regex", changed: false,
+      required: `Correct --regex #${index}: use a non-empty raw source or /pattern/flags with valid JavaScript flags.` },
+  );
+}
+
 function parseRegexRule(spec: string, index = 1): RegexRule {
   const trimmed = spec.trim();
   if (trimmed.length === 0) {
-    throw new PmCliError(
-      "history-redact --regex requires a non-empty pattern.",
-      EXIT_CODE.USAGE,
-    );
+    throw invalidRegexRule(index, "provide a non-empty pattern.");
   }
 
   let source = trimmed;
   let flags = "g";
   if (trimmed.startsWith("/") && trimmed.length > 1) {
     const slashIndex = trimmed.lastIndexOf("/");
-    // Only a valid flag suffix declares literal syntax; a path is a raw source.
-    if (slashIndex > 0 && /^[dgimsuvy]*$/u.test(trimmed.slice(slashIndex + 1))) {
+    // An escaped slash belongs to the raw source, not the literal delimiter.
+    const backslashes = trimmed.slice(0, slashIndex).match(/\\*$/u)![0].length;
+    if (slashIndex > 0 && backslashes % 2 === 0 && /^[dgimsuvy]*$/u.test(trimmed.slice(slashIndex + 1))) {
       source = trimmed.slice(1, slashIndex);
       flags = normalizeRegexFlags(trimmed.slice(slashIndex + 1));
     }
   }
   if (source.length === 0) {
-    throw new PmCliError(
-      "history-redact --regex cannot use an empty pattern.",
-      EXIT_CODE.USAGE,
-    );
+    throw invalidRegexRule(index, "an empty pattern is not allowed.");
   }
   try {
     new RegExp(source, flags);
   } catch {
-    throw new PmCliError(
-      `Invalid --regex value at --regex #${index}; provide a valid JavaScript regular expression.`,
-      EXIT_CODE.USAGE,
-      { code: "invalid_argument_value", field: "regex", reason: "invalid_regex", changed: false,
-        required: `Correct --regex #${index}: use a raw source or /pattern/flags with valid JavaScript flags.` },
-    );
+    throw invalidRegexRule(index, "provide a valid JavaScript regular expression.");
   }
 
   return {
@@ -244,7 +244,7 @@ function buildRedactionRules(
   const seen = new Set<string>();
   const regexRules = normalizeStringArrayInput(regexInput).flatMap((entry, index) => {
     const spec = entry.trim();
-    if (spec.length === 0 || seen.has(spec)) return [];
+    if (seen.has(spec)) return [];
     seen.add(spec);
     return [parseRegexRule(spec, index + 1)];
   });

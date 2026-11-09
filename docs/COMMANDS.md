@@ -1485,9 +1485,10 @@ For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` bloc
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied. Its result reports only `literal_count`, `regex_count`, `total_count`, and whether the default replacement was selected; literal values, regex source text, and replacement text are never echoed in CLI, SDK, MCP, recovery, profile, or telemetry output. Treat regex text as sensitive input because it can contain the exact material being removed.
 `--regex '/var/[a-z]+'` accepts a leading-slash raw source. A slash-delimited value
 with a valid JavaScript flag suffix retains literal semantics, so use
-`--regex '/\\/var\\//g'` to match the path `/var/` including its final slash.
+`--regex '/\/var\//g'` to match the path `/var/` including its final slash.
 Invalid patterns identify the original one-based `--regex` index without echoing
-the value. All expressions apply globally. Tracked by
+the value. Expressions receive the global (`g`) flag; sticky (`y`) expressions
+still match only at the current position. Omit `y` to search later positions. Tracked by
 [pm-gh1689](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1689.toon)
 (repository-only tracker record, excluded from npm).
 `history-compact` rewrites long streams into a synthetic checkpoint baseline plus a retained tail (`--before` accepts a 1-based version or ISO timestamp), re-anchors hashes, verifies integrity, and appends an auditable `history_compact` marker when applied.

@@ -130,7 +130,8 @@ the official pinned asset URL with `?download=1` after repeated HTTP 504s on the
 ordinary route; binary caching stays disabled. A failed download still fails the
 job. Recover an incomplete release against its existing tag after reviewed
 transport changes land; a download failure does not authorize another automatic
-version. Tracked by [pm-gh1694](../.agents/pm/issues/pm-gh1694.toon).
+version. Tracked by [pm-gh1694](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1694.toon)
+(repository-only tracker record, excluded from npm).
 
 - release only when commits exist after the latest release tag
 - ignore tracker-governance-only commits for publish eligibility: `.agents/pm/**` and the mechanically generated `CHANGELOG.md` projection do not create a package release by themselves, while any product, test, documentation, workflow, or other changed path remains release-relevant

@@ -2,20 +2,22 @@ id: pm-ogzvx6
 title: Adopt the next mature tooling maintenance cohort after registry cooldown
 description: "Live October27 registry census finds SentryCLI3.8.2, marked18.1.2, TypeScriptESLint8.72.1, Stryker core/runner10.1.1, Knip6.43.0 and Unicorn79.0.0 newer than this checkout. All are younger than the enforced seven-day cooldown: about5.47,1.31,1.22,4.13,3.58 and4.24days respectively. Preserve the completed finite October20 owner pm-wb25c1. Recheck package ages and supported Node/compiler/peer contracts before adoption; keep Stryker pins synchronized and treat Unicorn79 as a reviewed major. No current advisory or open Dependabot PR requires bypassing cooldown. Separate Vitest5/CodSpeed6, Sentry11, TypeScript7 and npm-package-arg14 migrations retain their canonical owners."
 type: Chore
-status: in_progress
+status: closed
 priority: 3
 tags: []
 created_at: "2026-10-27T22:24:28.217Z"
-updated_at: "2026-11-09T08:14:55.826Z"
-assignee: "harness:codex"
-claim_principal: "harness:codex#d7370db3a31ff43794b121a0"
+updated_at: "2026-11-09T10:04:11.601Z"
+closed_at: "2026-11-09T10:04:10.332Z"
+completed_at: "2026-11-09T10:04:10.332Z"
 author: "harness:codex"
 estimated_minutes: 180
 acceptance_criteria: "Recheck primary registry ages and adopt only versions eligible under project cooldown; Preserve supported Node versions and matching Stryker/peer/runtime locks; Run sandboxed coverage, static, package and hosted gates with reviewed changelog and no advisory regressions"
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: "Adopt only cooldown-eligible and contract-compatible tooling versions with synchronized lockfiles, zero advisories, and complete local and hosted validation."
+resolution: "Adopted the mature dev-tool patch cohort and CodSpeed/TruffleHog action pins from dependency PRs #1690/#1691, with lockfile and workflow contract alignment."
+expected_result: "Current compatible tooling remains installable, typed, audit-clean and supported by unchanged package/runtime/security gates."
+actual_result: "Linked tooling/workflow regressions, source/package/example typechecks, actionlint, version check, security scan and packed npm/npx/Bun/bunx/SDK/MCP consumers passed. All 552 locked package versions are advisory-clean. Exact-head static/full coverage remains required before merge; local import ratchet also fails against unchanged published baseline. Sentry 11 migration stays separate in pm-t3jxjj."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-wb25c1,related,"2026-10-27T22:24:28.217Z","harness:codex","cli:create:dep",detected
   pm-do5b,related,"2026-10-28T00:06:33.019Z","harness:codex","cli:update:dep",detected
@@ -34,10 +36,38 @@ comments[9]{created_at,author,text}:
   "2026-11-02T08:29:23.143Z","harness:claude-code","Correction (2026-11-02): the 2026-11-01 registry census comment states its time as ~21:50Z, but the comment itself was recorded at 21:07:04Z. The npm view time queries that produced it ran at 2026-11-01T20:28:57Z, so the census time is ~20:29Z. The eligibility instants listed there are publish time plus the seven-day cooldown and are unaffected."
   "2026-11-09T07:33:17.876Z","harness:codex","Fresh intake: adopting the mature maintenance cohort proposed by Dependabot PRs 1690 and 1691 in the combined SDK-recovery PR. PR 1691 previously passed all tests with 100 percent coverage but failed the external Codecov binary download with HTTP 504. Preserve cooldown, runtime budget, exact coverage and analyzer requirements."
   "2026-11-09T07:59:55.560Z","harness:codex","Current maintenance cohort: ext-apps2.0.4, Node types26.6.6, ESLint10.14.0, Greptile3.8.0, Knip6.44.1, Marked18.1.2, parse5 8.1.0, typescript-eslint8.72.1, CodSpeed5.6.1 and TruffleHog3.99.8. Exact registry timestamps were checked: all npm candidates are older than seven days. pnpm install with frozen lockfile passed and audit reports zero known vulnerabilities across552 resolved dependencies. Latest pm-changelog2026.11.7 installs and activates without failures. Sentry11 PR1692 remains deferred under its canonical owner after exact-head compilation failure; no ignore or cooldown exceptions were introduced."
+learnings[1]{created_at,author,text}:
+  "2026-11-09T10:03:53.181Z","harness:codex",Batch compatible mature tooling changes while preserving the runtime lock and benchmark ratchets. A local benchmark comparison against published bytes identifies baseline limitations but never converts failed admission into a pass.
 files[5]{path,scope}:
   .github/workflows/codspeed.yml,project
   .github/workflows/security.yml,project
   package.json,project
   pnpm-lock.yaml,project
   tests/integration/ci-workflow-contract.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,project,600,"harness:codex","2026-11-09T09:21:23.671Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+test_runs[2]:
+  - run_id: test-local-mw91ylhg-h0h6fa
+    kind: test
+    status: passed
+    started_at: "2026-11-09T09:22:02.474Z"
+    finished_at: "2026-11-09T09:22:14.212Z"
+    recorded_at: "2026-11-09T09:22:14.212Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw935b9y-m73pqi
+    kind: test
+    status: passed
+    started_at: "2026-11-09T09:55:15.956Z"
+    finished_at: "2026-11-09T09:55:27.190Z"
+    recorded_at: "2026-11-09T09:55:27.190Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,schema,schema,source,local_source_ref
+close_reason: Integrated mature compatible tooling and workflow pin updates in PR #1696.
 body: ""

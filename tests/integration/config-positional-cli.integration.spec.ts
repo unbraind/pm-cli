@@ -17,7 +17,7 @@ describe("config positional CLI parser", () => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = await readFile(settingsPath, "utf8");
       expect(JSON.parse(settings).context).toMatchObject({ default_depth: "deep", activity_limit: 17, stale_threshold_days: 7, sections: { activity: false } });
-      for (const [key, value] of [["context.default_depth", "unknown"], ["context.activity_limit", "0"], ["context.stale_threshold_days", "9007199254740992"]]) {
+      for (const [key, value] of [["context.default_depth", "unknown"], ["context.activity_limit", "0"], ["context.activity_limit", "1e2"], ["context.stale_threshold_days", "0x10"], ["context.stale_threshold_days", "9007199254740992"]]) {
         expect(context.runCli(["config", "set", key, value]).code).toBe(2);
         expect(await readFile(settingsPath, "utf8")).toBe(settings);
       }
@@ -31,7 +31,7 @@ describe("config positional CLI parser", () => {
       const history = await readFile(historyPath, "utf8");
       const refused = context.runCli(["close", id, "done"]);
       expect(refused.code).toBe(2);
-      expect(refused.stderr.split("\n")[0]).toBe("Error: Close is missing required evidence; see recovery.missing");
+      expect(refused.stderr.split("\n")[0]).toBe("Error: Close is missing required evidence");
       expect(refused.stderr).toContain("--actual-result");
       expect(refused.stderr).not.toContain("pm enforces explicit, deterministic contracts");
       expect(await readFile(historyPath, "utf8")).toBe(history);

@@ -41,6 +41,12 @@ it("keeps pinned uncached Bun acceptance while selecting the official macOS asse
   expect(setup.with["no-cache"]).toBe(true);
   expect(setup.with["bun-download-url"]).toBe("${{ runner.os == 'macOS' && format('https://github.com/oven-sh/bun/releases/download/bun-v1.4.0/bun-darwin-{0}.zip?download=1', runner.arch == 'ARM64' && 'aarch64' || 'x64') || '' }}");
   expect(setup["continue-on-error"]).toBeUndefined();
+  const ci = parse(readFileSync(path.resolve(".github/workflows/ci.yml"), "utf8"));
+  const prepublication = ci.jobs["build-test"].steps.find((step: { name: string }) => step.name === "Verify pinned macOS Bun download");
+  expect(prepublication).toMatchObject({ if: "matrix.os == 'macos-latest'", uses: setup.uses, with: { "bun-version": "1.4.0", "no-cache": true } });
+  expect(prepublication.with["bun-download-url"]).toContain("bun-darwin-{0}.zip?download=1");
+  expect(prepublication["continue-on-error"]).toBeUndefined();
+  expect(ci.jobs["build-test"].steps.find((step: { name: string }) => step.name === "Verify pinned macOS Bun runtime").run).toContain('bun --version');
 });
 
 it("requires executed cases, isolates inherited state and binds the exact candidate bytes", async () => {

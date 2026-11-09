@@ -1172,6 +1172,19 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it.each(["//", " "])("indexes empty matcher %j before any history write", async (empty) => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Indexed empty matcher");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const before = await readFile(historyPath, "utf8");
+      await expect(runHistoryRedact(id, { regex: ["plain", empty] }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: { field: "regex", reason: "invalid_regex", changed: false, required: expect.stringContaining("--regex #2") },
+      });
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+    });
+  });
+
   it("rejects invalid redaction patterns and item-id rewrites", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "History Redact Invalid Pattern");

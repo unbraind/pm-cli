@@ -53,6 +53,15 @@ describe("config command helper coverage", () => {
     }
   });
 
+  it("keeps typo inspections in the requested scope and identifies global telemetry consent", () => {
+    expect(() => _testOnlyConfigCommand.normalizeKey("telemetri-tracking", "project")).toThrow(
+      expect.objectContaining({ message: expect.stringContaining("telemetry-tracking (global only)"), context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config global get telemetry-tracking --json"]) }) }) }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeKey("governance.presett", "project")).toThrow(
+      expect.objectContaining({ context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config project get governance-preset --json"]) }) }) }),
+    );
+  });
+
   it("normalizes policy values and rejects unsupported variants", () => {
     expect(_testOnlyConfigCommand.normalizeAction("get")).toBe("get");
     expect(() => _testOnlyConfigCommand.normalizeAction("delete")).toThrow(
@@ -2838,7 +2847,8 @@ describe("runConfig", () => {
         expect(caught).toBeInstanceOf(PmCliError);
         const message = (caught as PmCliError).message;
         expect(message).toContain("pm config list --json");
-        expect((caught as PmCliError).context.recovery?.allowed_values).toContain("telemetry-tracking");
+        expect((caught as PmCliError).context.recovery?.allowed_values).toContain("governance-preset");
+        expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry-tracking");
         // The message no longer repeats the complete domain or its aliases.
         expect(message).not.toContain("telemetry-tracking");
         expect(message).not.toContain("telemetry_tracking");
