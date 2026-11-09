@@ -6,18 +6,18 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1693",output
 created_at: "2026-11-09T07:32:16.381Z"
-updated_at: "2026-11-09T17:13:03.460Z"
-closed_at: "2026-11-09T17:13:02.704Z"
-completed_at: "2026-11-09T17:13:02.704Z"
+updated_at: "2026-11-09T17:54:22.469Z"
+closed_at: "2026-11-09T17:54:21.096Z"
+completed_at: "2026-11-09T17:54:21.096Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Strict close refusal headline remains bounded and never contains a partial flag token; Default output suppresses generic explanatory filler while structured recovery retains full missing fields and retry arguments; CLI regression verifies no mutation on refusal and actionable close recovery
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: "Preserve full close headlines and immediate templates; quote exact legal choices, retain original omission counts under three-choice compaction, report malformed arrays and non-array domains through CLI enrichment, and withhold prose choices/retries whenever a producer declares a domain. Oversized close retries keep their bounded producer fallback or identify the complete original SDK retry without inventing a command."
-expected_result: "Agents can distinguish complete and partial domains, trust producer metadata over prose, and follow an honest recovery route within fixed text/JSON budgets."
-actual_result: "Ten new regression failures reproduced before repair. All linked guidance/enrichment commands and the final 398-test instrumented cohort across sixteen files pass, including null/string/object domain enrichment, inferred-example suppression, exact omission counts, no-fallback SDK retry pointers and unchanged original contexts. Lint/typechecks and generated contracts/catalog pass; SDK surface has zero classified changes. Hosted full coverage remains required. Legacy no-domain operand binding is separately open as pm-s1fw0x."
+resolution: "Preserve exact and actionable close guidance, producer-domain precedence, truthful incomplete-domain warnings and original omission counts. Keep an explicit producer or SDK retry route under text bounds. Document that retained refusal domains are complete while a whole refusal object may be omitted under the fixed JSON ceiling, with bounded omission metadata and atomic retry argv."
+expected_result: SDK and CLI consumers can distinguish retained complete domains from omitted diagnostics and do not assume JSON restores every field beyond its budget.
+actual_result: "The prior final instrumented cohort passes 398 tests across sixteen files with all linked owner commands, typechecks/lint and zero SDK surface changes. This documentation-only follow-up passes build and a focused contract/content/link check. The contract now explains whole-refusal omission, independent SDK context, bounded omission receipts and Unicode code-point identity limits. Hosted exact-head full coverage/static/native admission remains required."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1676,related,"2026-11-09T09:01:50.450Z","harness:codex","cli:update:dep",detected
   pm-cha95z,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
@@ -161,11 +161,12 @@ test_runs[10]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts,schema,schema,source,local_source_ref
-docs[3]{path,scope}:
+docs[4]{path,scope}:
   docs/COMMANDS.md,project
   docs/CONFIGURATION.md,project
+  docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
   docs/SDK.md,project
-close_reason: Complete truthful bounded refusal recovery and producer-domain precedence
+close_reason: Align bounded recovery behavior and its shared diagnostic contract
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
