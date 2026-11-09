@@ -43,6 +43,17 @@ pm config set governance-preset strict        # same as --policy strict
 pm config set definition-of-done "Tests pass" # same as --criterion "Tests pass"
 ```
 
+Settings paths are aliases for their existing validated setters: for example,
+`pm config set governance.preset strict` and
+`pm config set validation.metadata_profile strict`. Scalar context settings also
+accept paths such as `context.default_depth` and `context.sections.activity`.
+`pm config list --json`
+lists accepted aliases and nested settings paths. Unknown keys offer up to three
+nearest keys and that inspection command. Text bounds long legal domains;
+JSON preserves the complete domain in `recovery.allowed_values`.
+Tracked by [pm-gh1695](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1695.toon)
+(repository-only tracker record, excluded from npm).
+
 The `context` key has no single value and still uses `--default-depth`,
 `--activity-limit`, `--stale-threshold-days`, and `--section-<name>` flags. Use
 `--criterion` (repeatable) to set more than one criteria-list value at once.

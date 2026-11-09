@@ -623,6 +623,14 @@ function appendRecoveryListLine(
   }
 }
 
+/** Bound text legal domains while leaving their complete machine representation intact. */
+function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined): void {
+  appendRecoveryListLine(lines, "allowed_values", values?.slice(0, 8), ", ");
+  if (values && values.length > 8) {
+    lines.push(`  allowed_values_omitted: ${values.length - 8} (complete domain in --json recovery.allowed_values)`);
+  }
+}
+
 /** Render normalized recovery fields and verified budget evidence as human guidance. */
 function renderRecoveryBundle(
   recovery: PmCliErrorRecoveryPayload | undefined,
@@ -678,12 +686,7 @@ function renderRecoveryBundle(
     normalized.suggested_flags,
     ", ",
   );
-  appendRecoveryListLine(
-    lines,
-    "allowed_values",
-    normalized.allowed_values,
-    ", ",
-  );
+  appendRecoveryAllowedValues(lines, normalized.allowed_values);
   appendRecoveryListLine(
     lines,
     "candidate_commands",
@@ -745,6 +748,9 @@ function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
 /** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */
 function renderGuidanceLead(message: GuidanceMessage, lean: boolean): string[] {
   const lines: string[] = [`Error: ${message.title}`];
+  if (message.code === "close_validation_missing_fields" && message.recovery?.suggested_retry) {
+    lines.push(`Run: ${message.recovery.suggested_retry}`);
+  }
   if (!lean || !isGenericRefusalRequired(message.required)) {
     lines.push("", "What is required:", `  ${message.required}`);
   }
@@ -809,10 +815,13 @@ export function renderGuidanceMessage(
   const lean = options.lean === true;
   const lines = [
     ...renderGuidanceLead(message, lean),
-    ...renderGuidanceExplanation(message, lean),
+    ...renderGuidanceExplanation(message, lean || message.code === "close_validation_missing_fields"),
   ];
+  const recovery = message.code === "close_validation_missing_fields" && message.recovery
+    ? { ...message.recovery, suggested_retry: undefined }
+    : message.recovery;
   const recoveryLines = renderRecoveryBundle(
-    lean ? projectLeanRecoveryPayload(message.recovery) : message.recovery,
+    lean ? projectLeanRecoveryPayload(recovery) : recovery,
   );
   if (recoveryLines.length > 0) {
     lines.push("");
@@ -1259,6 +1268,9 @@ function resolveTypedRefusalTitle(
   context: PmCliErrorContext,
   normalizedRawMessage: string,
 ): string {
+  if (code === "close_validation_missing_fields") {
+    return "Close is missing required evidence; see recovery.missing";
+  }
   const generic =
     guidance.code === "command_failed" ||
     (guidance.code === "invalid_argument_value" && code !== guidance.code);

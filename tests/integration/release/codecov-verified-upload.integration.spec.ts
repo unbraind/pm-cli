@@ -7,7 +7,7 @@ import { parse } from "yaml";
 import { withTempDir } from "../../helpers/temp.js";
 
 const assetDigest = "ca1d64196d2d34771084afe76ea657d581bf628e31d993ff8e52ea09cc88a56d";
-const assetUrl = "https://github.com/codecov/codecov-cli/releases/download/v11.3.1/codecovcli_linux";
+const assetUrl = "https://api.github.com/repos/codecov/codecov-cli/releases/assets/470877726";
 
 /** Relevant workflow fields for the required uploader bootstrap and consumers. */
 interface UploadStep {
@@ -30,6 +30,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
     expect(bootstrap).toMatchObject({ id: "codecov_cli", shell: "bash", if: "${{ !cancelled() && steps.shard_admission.outcome == 'success' }}" });
     expect(bootstrap["continue-on-error"]).toBeUndefined();
     expect(bootstrap.run).toContain(assetUrl);
+    expect(bootstrap.run).toContain("Accept: application/octet-stream");
     expect(bootstrap.run).toContain(assetDigest);
     expect(bootstrap.run).toContain("--fail --show-error --silent --location --proto '=https' --tlsv1.2");
     expect(bootstrap.run).toContain('node --input-type=module - "${codecov_binary}"');

@@ -1,0 +1,21 @@
+id: pm-th6voj
+title: Bound Vitest transform-cache retention and make oversized-cache startup diagnosable
+description: A focused run spent minutes pruning the local Vitest cache before reporting any tests. The directory held approximately 75 MB of directory entries while four filesystem worker threads waited on unlink or writeback. The run was stopped and the cache preserved by a same-filesystem rename before retry. Add bounded retention or actionable startup diagnostics with preservation-first recovery.
+type: Chore
+status: open
+priority: 3
+tags[3]: cache,performance,testing
+created_at: "2026-11-09T07:47:55.491Z"
+updated_at: "2026-11-09T08:48:41.338Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Measure transform-cache growth and startup cost on a representative long-lived checkout; Provide bounded cache lifecycle or explicit actionable diagnostics without deleting user data; Keep canonical coverage and test isolation unchanged
+parent: pm-u9d0
+risk: low
+confidence: medium
+expected_result: "Long-lived checkouts retain bounded cache startup cost or receive actionable preservation-first diagnostics without changing test coverage, isolation or deadlines."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-ogzvx6,discovered_from,"2026-11-09T07:47:55.491Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-09T07:47:55.491Z","harness:codex","Duplicate check: full strict all-status corpus and keyword AND search for Vitest cache pruning found only unrelated historical general remediation and quality containers. No dedicated cache lifecycle owner exists."
+body: ""

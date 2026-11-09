@@ -25,6 +25,7 @@ import {
 import { buildInvalidTypeError } from "../core/schema/item-types-file.js";
 import { resolveItemTypesFilePath } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
+import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { createUnknownSubcommandError } from "./agent/subcommand-recovery.js";
@@ -228,94 +229,115 @@ export interface ConfigResult {
 }
 
 const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
-  definition_of_done: ["definition-of-done", "definition_of_done"],
+  definition_of_done: ["definition-of-done", "definition_of_done", "workflow.definition_of_done"],
   item_format: ["item-format", "item_format"],
   history_missing_stream_policy: [
     "history-missing-stream-policy",
     "history_missing_stream_policy",
+    "history.missing_stream",
   ],
   sprint_release_format_policy: [
     "sprint-release-format-policy",
     "sprint_release_format_policy",
+    "validation.sprint_release_format",
   ],
   parent_reference_policy: [
     "parent-reference-policy",
     "parent_reference_policy",
+    "validation.parent_reference",
   ],
   metadata_validation_profile: [
     "metadata-validation-profile",
     "metadata_validation_profile",
+    "validation.metadata_profile",
   ],
   metadata_required_fields: [
     "metadata-required-fields",
     "metadata_required_fields",
+    "validation.metadata_required_fields",
   ],
   lifecycle_stale_blocker_reason_patterns: [
     "lifecycle-stale-blocker-reason-patterns",
     "lifecycle_stale_blocker_reason_patterns",
+    "validation.lifecycle_stale_blocker_reason_patterns",
   ],
   lifecycle_closure_like_blocked_reason_patterns: [
     "lifecycle-closure-like-blocked-reason-patterns",
     "lifecycle_closure_like_blocked_reason_patterns",
+    "validation.lifecycle_closure_like_blocked_reason_patterns",
   ],
   lifecycle_closure_like_resolution_patterns: [
     "lifecycle-closure-like-resolution-patterns",
     "lifecycle_closure_like_resolution_patterns",
+    "validation.lifecycle_closure_like_resolution_patterns",
   ],
   lifecycle_closure_like_actual_result_patterns: [
     "lifecycle-closure-like-actual-result-patterns",
     "lifecycle_closure_like_actual_result_patterns",
+    "validation.lifecycle_closure_like_actual_result_patterns",
   ],
-  governance_preset: ["governance-preset", "governance_preset"],
+  governance_preset: ["governance-preset", "governance_preset", "governance.preset"],
   governance_ownership_enforcement: [
     "governance-ownership-enforcement",
     "governance_ownership_enforcement",
+    "governance.ownership_enforcement",
   ],
   governance_create_mode_default: [
     "governance-create-mode-default",
     "governance_create_mode_default",
+    "governance.create_mode_default",
   ],
   governance_close_validation_default: [
     "governance-close-validation-default",
     "governance_close_validation_default",
+    "governance.close_validation_default",
   ],
   governance_require_close_reason: [
     "governance-require-close-reason",
     "governance_require_close_reason",
+    "governance.require_close_reason",
   ],
   governance_create_default_type: [
     "governance-create-default-type",
     "governance_create_default_type",
+    "governance.create_default_type",
   ],
   governance_workflow_enforcement: [
     "governance-workflow-enforcement",
     "governance_workflow_enforcement",
+    "governance.workflow_enforcement",
   ],
   governance_start_blocker_enforcement: [
     "governance-start-blocker-enforcement",
     "governance_start_blocker_enforcement",
+    "governance.start_blocker_enforcement",
   ],
   governance_parent_reference_policy: [
     "governance-parent-reference-policy",
     "governance_parent_reference_policy",
+    "governance.parent_reference",
   ],
   governance_metadata_validation_profile: [
     "governance-metadata-validation-profile",
     "governance_metadata_validation_profile",
+    "governance.metadata_profile",
   ],
   governance_force_required_for_stale_lock: [
     "governance-force-required-for-stale-lock",
     "governance_force_required_for_stale_lock",
+    "governance.force_required_for_stale_lock",
   ],
-  test_result_tracking: ["test-result-tracking", "test_result_tracking"],
+  test_result_tracking: ["test-result-tracking", "test_result_tracking", "testing.record_results_to_items"],
   untrusted_linked_test_execution: [
     "untrusted-linked-test-execution",
     "untrusted_linked_test_execution",
+    "testing.allow_untrusted_linked_tests",
   ],
-  telemetry_tracking: ["telemetry-tracking", "telemetry_tracking"],
+  telemetry_tracking: ["telemetry-tracking", "telemetry_tracking", "telemetry.enabled"],
   agent_identity_vocabulary: [
     "agent-identity-vocabulary",
     "agent_identity_vocabulary",
+    "agent_identity.identity_vocabulary",
   ],
   context: ["context"],
 };
@@ -483,16 +505,35 @@ function normalizeAction(value: string): ConfigAction {
 }
 
 function normalizeKey(value: string): ConfigKey {
-  const key = CONFIG_KEY_BY_ALIAS[value];
+  const key = Object.hasOwn(CONFIG_KEY_BY_ALIAS, value) ? CONFIG_KEY_BY_ALIAS[value] : undefined;
   if (key) {
     return key;
   }
-  const nestedKeys = NESTED_SETTING_DESCRIPTORS.map(
-    (descriptor) => descriptor.key,
-  ).join(", ");
+  const candidates = [
+    ...Object.values(CONFIG_KEY_ALIASES),
+    ...NESTED_SETTING_DESCRIPTORS.map((descriptor) => [descriptor.key.replaceAll("_", "-"), descriptor.path]),
+  ];
+  const normalized = value.toLowerCase().replaceAll(/[_.]/gu, "-");
+  const suggestions = candidates.map((aliases) => ({
+    key: aliases[0],
+    distance: Math.min(...aliases.map((alias) => levenshteinDistanceWithinLimit(normalized, alias.replaceAll(/[_.]/gu, "-"), 3) ?? Infinity)),
+  })).filter(({ distance }) => Number.isFinite(distance))
+    .sort((left, right) => left.distance - right.distance || left.key.localeCompare(right.key))
+    .slice(0, 3).map(({ key: candidate }) => candidate);
+  const hint = suggestions.length > 0 ? ` Did you mean ${suggestions.join(", ")}?` : "";
   throw new PmCliError(
-    `Invalid config key "${value}". Supported: ${CANONICAL_CONFIG_KEYS.join(", ")} (underscore variants also accepted). Nested leaf settings: ${nestedKeys}.`,
+    `Invalid config key "${value}".${hint} Inspect keys and aliases with pm config list --json.`,
     EXIT_CODE.USAGE,
+    {
+      code: "config_key_unknown", changed: false,
+      required: "Use a key or settings path from pm config list --json.",
+      examples: ["pm config list --json"],
+      recovery: {
+        allowed_values: [...CANONICAL_CONFIG_KEYS, ...NESTED_SETTING_DESCRIPTORS.map((descriptor) => descriptor.key.replaceAll("_", "-"))],
+        candidate_commands: suggestions.map((candidate) => `pm config get ${candidate} --json`),
+        next_best_command: "pm config list --json",
+      },
+    },
   );
 }
 

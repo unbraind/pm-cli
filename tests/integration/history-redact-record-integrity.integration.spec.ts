@@ -14,6 +14,24 @@ import type { HistoryEntry } from "../../src/types.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("history redaction record integrity", () => {
+  it.each(["/var/[a-z]+", "/\\/var\\/[a-z]+/g"])("redacts path pattern %s with dry-run preservation and verified history", async (regex) => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Path /var/private", "--description", "Regex recovery fixture", "--type", "Task", "--json"], { expectJson: true });
+      const id = (created.json as { item: { id: string } }).item.id;
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const before = await readFile(historyPath, "utf8");
+      await runHistoryRedact(id, { regex, dryRun: true }, { path: context.pmPath });
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+      const result = await runHistoryRedact(id, { regex, replacement: "[removed]" }, { path: context.pmPath });
+      expect(result.changed).toBe(true);
+      const after = await readFile(historyPath, "utf8");
+      expect(after).not.toContain("/var/private");
+      const entries = after.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(verifyHistoryChain(entries).ok).toBe(true);
+      expect(entries.every((entry) => verifyHistoryRecordHash(entry).ok)).toBe(true);
+    });
+  });
+
   it("reseals rewritten records and retains only digest evidence for sensitive patches", async () => {
     await withTempPmPath(async (context) => {
       const secret = "private-redaction-probe";

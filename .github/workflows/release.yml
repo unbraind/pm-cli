@@ -559,6 +559,10 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          # pm-gh1694: the ordinary macOS asset route repeatedly returned 504.
+          # This official route returns the same pinned bytes; other platforms
+          # retain setup-bun's architecture and CPU-feature selection.
+          bun-download-url: ${{ runner.os == 'macOS' && format('https://github.com/oven-sh/bun/releases/download/bun-v1.4.0/bun-darwin-{0}.zip?download=1', runner.arch == 'ARM64' && 'aarch64' || 'x64') || '' }}
           # Never restore a cached Bun: a poisoned cache entry would run inside
           # release and publication checks.
           no-cache: true

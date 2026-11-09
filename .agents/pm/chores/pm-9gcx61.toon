@@ -1,0 +1,21 @@
+id: pm-9gcx61
+title: Preserve bounded transport refusal details in dependency advisory collection receipts
+description: "The advisory collector correctly refused unavailable registry and OSV evidence, but replaced both underlying errors with status unavailable and a timestamp. Diagnosing this required invoking private feed adapters to discover empty registry output and UND_ERR_CONNECT_TIMEOUT. The same exact queries pass with temporary IPv4-first execution and network family auto-selection disabled. Preserve safe reason codes and bounded transport classification without recording response bodies, credentials or weakening completeness."
+type: Chore
+status: open
+priority: 2
+tags[3]: agent-ux,diagnostics,security
+created_at: "2026-11-09T08:31:50.013Z"
+updated_at: "2026-11-09T08:48:42.162Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Unavailable feeds expose bounded safe reason codes and transport categories for actionable recovery; Raw request and response data and credentials are never persisted; Positive and negative controls preserve all-version independent feed coverage and fail-closed decisions
+parent: pm-u9d0
+risk: low
+confidence: high
+expected_result: An unavailable advisory source produces safe actionable transport reasons while independent coverage and fail-closed security decisions remain intact.
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-eqxjzl,discovered_from,"2026-11-09T08:31:50.013Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-09T08:31:50.013Z","harness:codex","Duplicate check: full strict all-status corpus plus keyword AND search for advisory feeds unavailable registry timeout OSV found only closed pm-eqxjzl. This is a diagnostic follow-up, not a reopened advisory implementation or permission to pass unavailable evidence."
+body: ""

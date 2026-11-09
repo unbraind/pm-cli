@@ -1,0 +1,47 @@
+id: pm-gh1695
+title: "GH-1695: accept settings paths and provide bounded config-key recovery"
+description: "Canonical intake for https://github.com/unbraind/pm-cli/issues/1695. Implement the reported SDK and CLI recovery contract after current-source reproduction, preserving deterministic validation, privacy and no-write refusal behavior."
+type: Issue
+status: in_progress
+priority: 2
+tags[4]: agent-ux,config,"gh:1695",sdk
+created_at: "2026-11-09T07:32:05.563Z"
+updated_at: "2026-11-09T09:01:46.293Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#d7370db3a31ff43794b121a0"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Accept every supported settings path as an alias in SDK-backed config get/set without bypassing validation; Unknown keys offer at most three nearest legal keys and a working config-list inspection command; Preserve complete legal keys in structured recovery and reject unknown keys without settings writes
+parent: pm-8jdc
+risk: medium
+confidence: high
+expected_result: "Agents can read a supported settings path and write it through the SDK-backed config command with the same value validation, while unknown keys provide bounded executable recovery."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4zpq71,related,"2026-11-09T09:01:45.656Z","harness:codex","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-11-09T07:32:05.563Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
+  "2026-11-09T07:48:19.904Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
+  "2026-11-09T08:30:38.246Z","harness:codex","Completeness review extended the same descriptor-owned configuration surface to the context scalar leaves previously available only through grouped context flags: default depth, activity limit, staleness threshold and the eight existing section toggles. The shared descriptor validators enforce the canonical depth domain, positive safe integers and booleans; real CLI tests check persisted values and byte preservation on invalid depth, zero and unsafe-integer assignments. Existing grouped flags remain supported and help now distinguishes group and leaf writes."
+files[9]{path,scope}:
+  src/cli/error-guidance.ts,project
+  src/cli/register-setup.ts,project
+  src/core/config/nested-settings.ts,project
+  src/core/config/positional-value.ts,project
+  src/sdk/config.ts,project
+  tests/integration/config-positional-cli.integration.spec.ts,project
+  tests/unit/commands/workspace/config-command.spec.ts,project
+  tests/unit/core/config/config-positional-value.spec.ts,project
+  tests/unit/core/config/nested-settings.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:04.748Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+docs[1]{path,scope}:
+  docs/CONFIGURATION.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1695
+  gate_id: sdk-recovery-regressions
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

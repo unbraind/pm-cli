@@ -120,6 +120,7 @@ describe("defaultConfigScope (GH-1660)", () => {
   it("sends scope-less telemetry-tracking to the global profile and everything else to the project", () => {
     expect(defaultConfigScope("telemetry-tracking")).toBe("global");
     expect(defaultConfigScope("telemetry_tracking")).toBe("global");
+    expect(defaultConfigScope("telemetry.enabled")).toBe("global");
     expect(defaultConfigScope("test-result-tracking")).toBe("project");
     expect(defaultConfigScope(undefined)).toBe("project");
   });

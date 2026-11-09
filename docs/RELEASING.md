@@ -123,6 +123,15 @@ configuration belong in private operator documentation.
 
 ### Hosted release policy
 
+Pinned tool downloads retain their existing versions and mandatory acceptance
+checks. Codecov CLI v11.3.1 uses its immutable GitHub release asset API endpoint,
+with the reviewed SHA-256 verified before execution. macOS Bun acceptance uses
+the official pinned asset URL with `?download=1` after repeated HTTP 504s on the
+ordinary route; binary caching stays disabled. A failed download still fails the
+job. Recover an incomplete release against its existing tag after reviewed
+transport changes land; a download failure does not authorize another automatic
+version. Tracked by [pm-gh1694](../.agents/pm/issues/pm-gh1694.toon).
+
 - release only when commits exist after the latest release tag
 - ignore tracker-governance-only commits for publish eligibility: `.agents/pm/**` and the mechanically generated `CHANGELOG.md` projection do not create a package release by themselves, while any product, test, documentation, workflow, or other changed path remains release-relevant
 - create at most one production tag and npm version per UTC day; if no tag was

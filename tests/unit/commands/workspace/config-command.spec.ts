@@ -31,6 +31,28 @@ const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
 };
 
 describe("config command helper coverage", () => {
+  it("resolves settings paths through the existing validated config keys (GH-1695)", () => {
+    for (const [settingsPath, key] of [
+      ["governance.preset", "governance_preset"],
+      ["validation.metadata_profile", "metadata_validation_profile"],
+      ["validation.parent_reference", "parent_reference_policy"],
+      ["workflow.definition_of_done", "definition_of_done"],
+      ["testing.record_results_to_items", "test_result_tracking"],
+      ["telemetry.enabled", "telemetry_tracking"],
+    ]) {
+      expect(_testOnlyConfigCommand.normalizeKey(settingsPath)).toBe(key);
+    }
+    expect(() => _testOnlyConfigCommand.normalizeKey("governance.presett")).toThrow(
+      expect.objectContaining({ context: expect.objectContaining({
+        code: "config_key_unknown", changed: false,
+        recovery: expect.objectContaining({ allowed_values: expect.arrayContaining(["governance-preset"]), next_best_command: "pm config list --json" }),
+      }) }),
+    );
+    for (const key of ["toString", "__proto__", "constructor"]) {
+      expect(() => _testOnlyConfigCommand.normalizeKey(key)).toThrow(PmCliError);
+    }
+  });
+
   it("normalizes policy values and rejects unsupported variants", () => {
     expect(_testOnlyConfigCommand.normalizeAction("get")).toBe("get");
     expect(() => _testOnlyConfigCommand.normalizeAction("delete")).toThrow(
@@ -2796,7 +2818,7 @@ describe("runConfig", () => {
       });
     });
 
-    it("shows a shortened invalid-key error listing canonical kebab forms", async () => {
+    it("routes unknown config keys to the complete structured inventory", async () => {
       await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
         const pmRoot = path.join(tempRoot, ".agents", "pm");
         await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
@@ -2815,9 +2837,10 @@ describe("runConfig", () => {
         }
         expect(caught).toBeInstanceOf(PmCliError);
         const message = (caught as PmCliError).message;
-        expect(message).toContain("underscore variants also accepted");
-        expect(message).toContain("telemetry-tracking");
-        // The shortened list must NOT include the snake_case duplicates.
+        expect(message).toContain("pm config list --json");
+        expect((caught as PmCliError).context.recovery?.allowed_values).toContain("telemetry-tracking");
+        // The message no longer repeats the complete domain or its aliases.
+        expect(message).not.toContain("telemetry-tracking");
         expect(message).not.toContain("telemetry_tracking");
       });
     });

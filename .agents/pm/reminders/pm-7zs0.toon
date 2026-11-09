@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-11-06T10:02:48.999Z"
+updated_at: "2026-11-09T07:44:14.845Z"
 reminders[1]{at,text}:
   "2026-11-07T06:00:00.000Z",Verify the 2026-11-07 daily cut (the first after PR #1675) against npm latest; GitHub Release; npm/npx/Bun/bunx consumers and fresh Sentry/telemetry; record any scheduled failure stage
 author: maintainer-agent
@@ -96,7 +96,7 @@ dependencies[15]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[263]:
+comments[264]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -890,6 +890,9 @@ comments[263]:
     author: "harness:claude-code"
     text: "Release-health change, 2026-11-06: back to the healthy primary path. The morning_dispatcher Auto Release run 42158412412 (03:45Z) cut v2026.11.6 at 04:25Z on its first attempt, and tag Release run 42162429452 published it. Verified before this comment was written (it is timestamped 06:02Z): npm latest 2026.11.6, GitHub Latest v2026.11.6, and npx @latest and bunx @latest both print 2026.11.6. One automatic release per day held: the v2026.11.5 publication earlier on 11-06 was the operator exact-tag recovery of the 11-05 tag, and the two blocker_retry runs after #1668 closed skipped with same_day_window_expired. The pre-tag package-artifact steps from PR 1672 passed on this cut."
     edited_at: "2026-11-06T06:59:14.423Z"
+  - created_at: "2026-11-09T07:44:14.844Z"
+    author: "harness:codex"
+    text: "Fresh November9 health evidence: npm latest 2026.11.9 exists, while GitHub Release advertisement is withheld because Release42560970081 has not completed acceptance. Original Bun asset downloads failed with HTTP504 on macOS and Windows. Failed-job retry completed Windows acceptance but macOS still fails the same official Bun1.4.0 asset with HTTP504, reproduced independently against the exact public URL. Preserve the one existing tag/version and do not mint a replacement. Required Sentry/telemetry gate currently passes with zero critical/high blockers,4.38 percent seven-day finish errors and zero missing-code rows. Historical Release Reliability42571590195 still records6/30 original native-schedule failures plus dispatch_window and missing_scheduled_run; current recovery cannot erase original history."
 notes[11]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent

@@ -1,0 +1,53 @@
+id: pm-gh1693
+title: "GH-1693: preserve complete flag tokens in bounded close-refusal headlines"
+description: "Canonical intake for https://github.com/unbraind/pm-cli/issues/1693. Implement the reported SDK and CLI recovery contract after current-source reproduction, preserving deterministic validation, privacy and no-write refusal behavior."
+type: Issue
+status: in_progress
+priority: 2
+tags[3]: agent-ux,"gh:1693",output
+created_at: "2026-11-09T07:32:16.381Z"
+updated_at: "2026-11-09T09:01:51.114Z"
+assignee: "harness:codex"
+claim_principal: "harness:codex#d7370db3a31ff43794b121a0"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Strict close refusal headline remains bounded and never contains a partial flag token; Default output suppresses generic explanatory filler while structured recovery retains full missing fields and retry arguments; CLI regression verifies no mutation on refusal and actionable close recovery
+parent: pm-f05lsg
+risk: medium
+confidence: high
+expected_result: "A strict close refusal preserves complete evidence flag names, presents its executable recovery first and retains full machine-readable retry fields."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1676,related,"2026-11-09T09:01:50.450Z","harness:codex","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-09T07:32:16.381Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
+  "2026-11-09T07:48:23.639Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
+files[3]{path,scope}:
+  src/cli/error-guidance.ts,project
+  tests/integration/config-positional-cli.integration.spec.ts,project
+  tests/unit/cli/error-guidance.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:32.348Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+test_runs[1]:
+  - run_id: test-local-mw8ziie5-0st84j
+    kind: test
+    status: passed
+    started_at: "2026-11-09T08:13:25.646Z"
+    finished_at: "2026-11-09T08:13:44.476Z"
+    recorded_at: "2026-11-09T08:13:44.476Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/CONFIGURATION.md,project
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1693
+  gate_id: sdk-recovery-regressions
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts,node scripts/run-tests.mjs coverage,"pnpm quality:static"
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

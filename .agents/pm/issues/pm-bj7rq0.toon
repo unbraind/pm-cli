@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-11-01T08:44:16.662Z"
+updated_at: "2026-11-09T08:31:55.787Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -23,7 +23,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
   pm-euqm7x,related,"2026-11-01T08:44:16.451Z","harness:claude-code","cli:update:dep",detected
-comments[128]:
+comments[131]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -410,6 +410,15 @@ comments[128]:
   - created_at: "2026-11-01T08:44:15.897Z"
     author: "harness:claude-code"
     text: "Runner-qualification evidence, 2026-11-01, PR 1646 head b5dace523 (no change to the verifier or its test): Windows scripts cohort 2/2 failed tests/unit/scripts/release/verify-published-release.spec.ts 'kills a nested server after invalid discovery within the production readiness budget (native)' on Node 24.22.1 after one retry (about 30.6 s): the nested published HTTP bin did not become reachable within the production readiness budget, so the invalid-discovery branch was never reached. Re-running the failed jobs on the identical head passed, and the two earlier heads of the same PR passed this cohort. Same family as the readiness-ordering flake fixed in pm-euqm7x, but now the startup itself overran on a loaded runner rather than the outer timeout preempting cleanup; no timeout was relaxed."
+  - created_at: "2026-11-09T08:15:01.995Z"
+    author: "harness:codex"
+    text: "November9 canonical full-source coverage attempt was retained as a failed/incomplete receipt: it reached the20-minute command bound with multiple30-second test timeouts, a120-second calibration entrypoint wait and slow TypeScript declaration fixtures under eight-worker host load. nproc=8, load averages17/26/27 and32 GiB swap in use were observed. It also exposed independent stale action-pin assertions and help-budget drift, repaired under the active owners. Next reproduction keeps deadlines and every assertion, limits workers to2, and exposes the installed Homebrew npm root through NODE_PATH as this owner already documented. No coverage pass or runner qualification is inferred from the interrupted run."
+  - created_at: "2026-11-09T08:20:27.415Z"
+    author: "harness:codex"
+    text: "Bounded reproduction result: all8 previously failing owner files now pass together with two workers and the actual Homebrew npm root visible through NODE_PATH. This includes context retry bounds, composed continuation, extension activation, typed close/tracker recovery, the real calibration entrypoint and TypeScript public-surface checks. The only source adjustments in that reproduction were the active maintenance pin assertions and shorter regex help, both independently detected by their original contract tests. Preserve the interrupted full run separately; this focused pass is not a canonical coverage receipt."
+  - created_at: "2026-11-09T08:31:55.787Z"
+    author: "harness:codex"
+    text: "The independent advisory gate also exposed a host transport qualification condition: default Node26 connections timed out, while the same native feed queries completed with temporary NODE_OPTIONS disabling network family auto-selection and selecting IPv4 first. Both registry and independent OSV now pass across the exact locked inventory, with unchanged completeness and zero-vulnerability assertions. These are per-command verification settings only; no host configuration, source gate, threshold or receipt was bypassed."
 files[12]:
   - path: .github/workflows/ci.yml
     scope: project

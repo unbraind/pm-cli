@@ -15,6 +15,15 @@ import {
 import { projectLeanRecoveryPayload } from "../../../src/sdk/cli-contracts/agent-output-contracts.js";
 
 describe("pm cli error guidance context plumbing", () => {
+  it("keeps close-evidence headlines actionable without cutting a flag (GH-1693)", () => {
+    const message = "Cannot close pm-example: missing resolution (--resolution), expected_result (--expected-result), actual_result (--actual-result).";
+    const context = { code: "close_validation_missing_fields", recovery: { missing: ["--resolution", "--expected-result", "--actual-result"] } };
+    const envelope = formatPmCliErrorForJson(message, 2, context);
+    expect(envelope.title).toBe("Close is missing required evidence; see recovery.missing");
+    expect(envelope.recovery?.missing).toEqual(context.recovery.missing);
+    expect(formatPmCliErrorForDisplay(message, context, { lean: true })).not.toContain("Why:");
+  });
+
   it("preserves verified no-change evidence without inferring it for execution failures", () => {
     const context = { code: "invalid_argument_value", changed: false as const };
     expect(formatPmCliErrorForJson("Refused before mutation", 2, context)).toMatchObject({ changed: false });

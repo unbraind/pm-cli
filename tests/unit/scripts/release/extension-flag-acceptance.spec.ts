@@ -34,6 +34,15 @@ it("keeps exact-artifact acceptance before publication and preserves the reviewe
   expect(steps[retained]!.with!.path).toBe("${{ runner.temp }}/extension-flag-acceptance.json");
 });
 
+it("keeps pinned uncached Bun acceptance while selecting the official macOS asset transport (GH-1694)", () => {
+  const workflow = parse(readFileSync(path.resolve(".github/workflows/release.yml"), "utf8"));
+  const setup = workflow.jobs["installed-acceptance"].steps.find((step: { name: string }) => step.name === "Setup Bun");
+  expect(setup.with["bun-version"]).toBe("1.4.0");
+  expect(setup.with["no-cache"]).toBe(true);
+  expect(setup.with["bun-download-url"]).toBe("${{ runner.os == 'macOS' && format('https://github.com/oven-sh/bun/releases/download/bun-v1.4.0/bun-darwin-{0}.zip?download=1', runner.arch == 'ARM64' && 'aarch64' || 'x64') || '' }}");
+  expect(setup["continue-on-error"]).toBeUndefined();
+});
+
 it("requires executed cases, isolates inherited state and binds the exact candidate bytes", async () => {
   const module = await harness.importModule<typeof import("../../../../scripts/release/extension-flag-acceptance.mjs")>(script);
   const root = mkdtempSync(path.join(tmpdir(), "pm-flag-receipt-")); roots.push(root);

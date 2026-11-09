@@ -184,7 +184,7 @@ function normalizeRegexFlags(flags: string): string {
   return unique.join("");
 }
 
-function parseRegexRule(spec: string): RegexRule {
+function parseRegexRule(spec: string, index = 1): RegexRule {
   const trimmed = spec.trim();
   if (trimmed.length === 0) {
     throw new PmCliError(
@@ -196,13 +196,12 @@ function parseRegexRule(spec: string): RegexRule {
   let source = trimmed;
   let flags = "g";
   if (trimmed.startsWith("/") && trimmed.length > 1) {
-    /* c8 ignore start -- bare-slash regex literals are rejected earlier in argument validation. */
     const slashIndex = trimmed.lastIndexOf("/");
-    if (slashIndex > 0) {
+    // Only a valid flag suffix declares literal syntax; a path is a raw source.
+    if (slashIndex > 0 && /^[dgimsuvy]*$/u.test(trimmed.slice(slashIndex + 1))) {
       source = trimmed.slice(1, slashIndex);
       flags = normalizeRegexFlags(trimmed.slice(slashIndex + 1));
     }
-    /* c8 ignore stop */
   }
   if (source.length === 0) {
     throw new PmCliError(
@@ -213,12 +212,12 @@ function parseRegexRule(spec: string): RegexRule {
   try {
     new RegExp(source, flags);
   } catch {
-    /* c8 ignore start -- RegExp constructor failures are normalized in higher-level parser tests. */
     throw new PmCliError(
-      "Invalid --regex value; provide a valid JavaScript regular expression.",
+      `Invalid --regex value at --regex #${index}; provide a valid JavaScript regular expression.`,
       EXIT_CODE.USAGE,
+      { code: "invalid_argument_value", field: "regex", reason: "invalid_regex", changed: false,
+        required: `Correct --regex #${index}: use a raw source or /pattern/flags with valid JavaScript flags.` },
     );
-    /* c8 ignore stop */
   }
 
   return {
@@ -242,13 +241,13 @@ function buildRedactionRules(
       kind: "literal",
       value: entry,
     }));
-  const regexRules = [
-    ...new Set(
-      normalizeStringArrayInput(regexInput).map((entry) => entry.trim()),
-    ),
-  ]
-    .filter((entry) => entry.length > 0)
-    .map(parseRegexRule);
+  const seen = new Set<string>();
+  const regexRules = normalizeStringArrayInput(regexInput).flatMap((entry, index) => {
+    const spec = entry.trim();
+    if (spec.length === 0 || seen.has(spec)) return [];
+    seen.add(spec);
+    return [parseRegexRule(spec, index + 1)];
+  });
 
   const rules = [...literalRules, ...regexRules];
   if (rules.length === 0) {

@@ -1345,7 +1345,7 @@ export function registerSetupCommands(program: Command): void {
     )
     .argument(
       "[value]",
-      'Optional value for set: routed to the right typed flag by key (e.g. config set telemetry-tracking off, config set item-format toon, config set definition-of-done "Tests pass"). Equivalent to --policy/--format/--criterion. context keys still require --default-depth/--section-* flags.',
+      'Value for set, validated by key. Dotted leaves accept values (e.g. context.default_depth deep); the context group takes --default-depth/--section-* flags.',
     )
     .option(
       "--criterion <text>",

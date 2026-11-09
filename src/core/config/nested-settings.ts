@@ -22,6 +22,7 @@
  * with no other code changes — the dispatcher walks the dotted path on the
  * already-validated PmSettings shape.
  */
+import { CONTEXT_DEPTH_VALUES } from "../../types/index.js";
 
 /** Supported coercion shapes for nested settings exposed through `pm config`. */
 export type NestedSettingKind =
@@ -51,8 +52,24 @@ export interface NestedSettingDescriptor {
   max?: number;
 }
 
-/** Search/provider/vector-store leaves. Order is the display order in `pm config list` and in error hints. */
+/** Scalar settings leaves in their `pm config list` display order. */
 export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
+  {
+    key: "context_default_depth", path: "context.default_depth", kind: "string",
+    choices: CONTEXT_DEPTH_VALUES, summary: "Default context depth.",
+  },
+  {
+    key: "context_activity_limit", path: "context.activity_limit", kind: "integer",
+    min: 1, max: Number.MAX_SAFE_INTEGER, summary: "Default context activity row limit.",
+  },
+  {
+    key: "context_stale_threshold_days", path: "context.stale_threshold_days", kind: "integer",
+    min: 1, max: Number.MAX_SAFE_INTEGER, summary: "Days before context marks an item stale.",
+  },
+  ...["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"].map((section) => ({
+    key: `context_sections_${section}`, path: `context.sections.${section}`, kind: "boolean" as const,
+    summary: `Include ${section} in default context output.`,
+  })),
   {
     key: "context_next_ranking_policy",
     path: "context.next_ranking_policy",

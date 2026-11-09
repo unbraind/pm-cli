@@ -219,7 +219,7 @@ export function registerHistoryMaintenanceCommands(
     )
     .option(
       "--regex <value>",
-      "Regex pattern to redact (repeatable; accepts /pattern/flags or raw pattern)",
+      "Regex (repeatable): /pattern/flags or '/var/[a-z]+'",
       collect,
     )
     .option(

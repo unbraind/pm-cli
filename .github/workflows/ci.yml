@@ -610,7 +610,8 @@ jobs:
           path: coverage
           if-no-files-found: ignore
 
-      # pm-2x67z9: authenticate the immutable official asset before execution;
+      # pm-2x67z9, pm-gh1694: fetch the pinned v11.3.1 asset through the API
+      # transport and authenticate its bytes before execution;
       # keep reports after coverage-threshold failure when every shard succeeded.
       - name: Verify pinned Codecov CLI
         id: codecov_cli
@@ -621,7 +622,8 @@ jobs:
           codecov_binary="${RUNNER_TEMP}/pm-codecov/codecov"
           mkdir -p "${RUNNER_TEMP}/pm-codecov"
           curl --fail --show-error --silent --location --proto '=https' --tlsv1.2 --proto-redir '=https' --max-time 60 --max-filesize 67108864 \
-            --output "${codecov_binary}" https://github.com/codecov/codecov-cli/releases/download/v11.3.1/codecovcli_linux
+            --header "Accept: application/octet-stream" --output "${codecov_binary}" \
+            https://api.github.com/repos/codecov/codecov-cli/releases/assets/470877726
           node --input-type=module - "${codecov_binary}" 'ca1d64196d2d34771084afe76ea657d581bf628e31d993ff8e52ea09cc88a56d' <<'VERIFY'
           import assert from "node:assert/strict";
           import { createHash } from "node:crypto";

@@ -200,5 +200,5 @@ export function resolveConfigPositionalValue(
  * documented `pm config set telemetry-tracking off` opts out (GH-1660).
  */
 export function defaultConfigScope(key: string | undefined): "project" | "global" {
-  return /^telemetry[-_]tracking$/u.test(key ?? "") ? "global" : "project";
+  return key === "telemetry.enabled" || /^telemetry[-_]tracking$/u.test(key ?? "") ? "global" : "project";
 }
