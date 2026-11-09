@@ -15,10 +15,13 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("history redaction record integrity", () => {
   it.each(["raw source", "documented literal", "escaped trailing slash"])("redacts a path using %s with dry-run preservation and verified history", async (mode) => {
-    const documentation = await readFile("docs/COMMANDS.md", "utf8");
+    const documentation = await readFile(new URL("../../docs/COMMANDS.md", import.meta.url), "utf8");
     const documented = documentation.match(/`--regex '([^']+)'` to match the path/u);
-    expect(documented).not.toBeNull();
-    const regex = mode === "raw source" ? "/var/[a-z]+" : mode === "escaped trailing slash" ? "/var\\/" : documented![1];
+    const documentedRegex = documented?.[1];
+    if (!documentedRegex) {
+      throw new Error("The path-matching --regex example is missing from docs/COMMANDS.md; keep the executable fixture aligned with that documented example.");
+    }
+    const regex = mode === "raw source" ? "/var/[a-z]+" : mode === "escaped trailing slash" ? "/var\\/" : documentedRegex;
     await withTempPmPath(async (context) => {
       const created = context.runCli(["create", "--title", "Path /var/private", "--description", "Regex recovery fixture", "--type", "Task", "--json"], { expectJson: true });
       const id = (created.json as { item: { id: string } }).item.id;

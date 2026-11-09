@@ -72,6 +72,10 @@ metadata described above. An absent `refusal` therefore
 does not prove that the producer supplied no legal domain. The original SDK
 error context retains the producer's complete domain; CLI JSON has its own
 ceiling and is not an unlimited restoration channel.
+For malformed producer domains, text prioritizes the incomplete-domain notice
+and a bounded preview of whole usable choices even when producer next steps,
+verification errors, or recovery coordinates are oversized. An oversized close
+retry still points to the original SDK recovery metadata.
 `recovery.suggested_retry_args` is atomic: the projector retains the complete
 argv or omits it rather than shortening it into a different command.
 Tracked by [pm-gh1693](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1693.toon)
@@ -112,11 +116,14 @@ The deterministic ladder is:
 
 Human diagnostics lead with `What is required` and next steps before explaining
 what happened. If their declared ceiling binds, the compact text still begins
-with the required action, retains the first identifying line (up to 320 Unicode
-code points), and points to structured JSON for the bounded recovery envelope. The
-first line should name the specific failure, such as `Error: Unknown option
+with the required action, retains the first identifying line (up to 320 UTF-8
+bytes, including an omission suffix), and points to structured JSON for the
+bounded recovery envelope. The first line should name the specific failure, such as `Error: Unknown option
 --label`. Oversized caller-input echoes are discarded before this identity;
 the retained identity and corrective action share the binding byte budget.
+The CLI recovery renderer separately retains up to 320 Unicode code points of
+its `What happened` text, followed by an omission suffix when needed, before
+the shared byte-budget projector runs.
 The text projector strips terminal escape sequences and replaces remaining
 control characters before measuring output, including short diagnostics that
 fit the budget. Line breaks and ordinary indentation are preserved.

@@ -924,7 +924,18 @@ function renderBoundedGuidanceMessage(
         ? `${happenedCodePoints.slice(0, TEXT_HAPPENED_MAX_CODE_POINTS).join("")}...`
         : message.happened,
   };
-  for (const [candidate, limit] of [[withoutExplanation, 8], [limitedCollections, 8], [compactRecovery, 3], [boundedHappened, 3]] as const) {
+  // Isolate the domain fault when oversized producer collections or recovery
+  // coordinates would otherwise displace it in the final shared projection.
+  const essentialDomainGuidance: GuidanceMessage = {
+    code: message.code,
+    type: message.type,
+    title: message.title,
+    happened: boundedHappened.happened,
+    required: "Correct the producer metadata before relying on a complete legal domain.",
+    nextSteps: appendIfMissing([], message.partialLegalDomainNotice),
+  };
+  essentialDomainGuidance.nextSteps = compactCloseRecoverySteps(message, essentialDomainGuidance);
+  for (const [candidate, limit] of [[withoutExplanation, 8], [limitedCollections, 8], [compactRecovery, 3], [boundedHappened, 3], ...(message.partialLegalDomainNotice ? [[essentialDomainGuidance, 3] as const] : [])] as const) {
     const text = `${renderGuidanceMessageWithRecoveryLimit(candidate, options, limit)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
     if (fits(text)) return text;
   }

@@ -114,6 +114,30 @@ describe("pm cli error guidance context plumbing", () => {
     expect(context.recovery.allowed_values).toEqual([large, "short", null]);
   });
 
+  it.each(["next step", "verification error", "close recovery"])("prioritizes partial-domain evidence over an oversized producer %s", (kind) => {
+    const close = kind === "close recovery";
+    const oversized = "x".repeat(5_000);
+    const context = {
+      nextSteps: [kind === "next step" ? oversized : "Inspect the profile"],
+      ...(kind === "verification error" ? { verification_errors: [oversized] } : {}),
+      ...(close ? { code: "close_validation_missing_fields", required: oversized } : {}),
+      recovery: { allowed_values: ["valid-choice", null] as never, ...(close ? { suggested_retry: `pm close ${oversized}`, next_best_command: `pm update ${oversized}` } : {}) },
+    };
+    const original = structuredClone(context);
+    for (const lean of [false, true]) {
+      const text = formatPmCliErrorForDisplay(`Producer failure ${oversized}`, context, { lean });
+      expect(text).toContain("Incomplete legal domain");
+      expect(text).toContain('"valid-choice"');
+      expect(text).toContain("Some guidance was omitted");
+      if (close) {
+        expect(text).toContain("Error: Close is missing required evidence");
+        expect(text).toContain("SDK error.context.recovery.suggested_retry");
+      }
+      expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+    }
+    expect(context).toEqual(original);
+  });
+
   it.each([undefined, "pm config list --json"])("does not infer a complete prose domain over malformed producer choices (%s)", (nextBest) => {
     const context = { recovery: { normalized_args: ["context", "--depth", "invalid"], provided_fields: ["--depth"], allowed_values: ["valid-choice", null] as never, ...(nextBest ? { next_best_command: nextBest } : {}) } };
     const envelope = formatPmCliErrorForJson("Value must be one of brief|full", 2, context);

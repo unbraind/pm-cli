@@ -1088,15 +1088,16 @@ function parseSectionToggle(raw: string | undefined): boolean | undefined {
   );
 }
 
-/** Parse a complete positive integer used by context configuration options. */
+/** Parse a context integer through its shared descriptor, preserving the precise grammar or bound refusal. */
 function parsePositiveContextInteger(rawValue: string, option: "--activity-limit" | "--stale-threshold-days"): number {
+  // Both typed option spellings name descriptors declared in the shared settings registry.
   const descriptor = resolveNestedSettingDescriptor(option === "--activity-limit" ? "context_activity_limit" : "context_stale_threshold_days")!;
   const parsed = parseNestedSettingValue(descriptor, rawValue);
   if (parsed.ok) {
     return parsed.parsed.value as number;
   }
   throw new PmCliError(
-    `Context ${option} must be a positive integer (decimal digits only, maximum ${Number.MAX_SAFE_INTEGER})`,
+    `Context ${option}: ${parsed.error.message}`,
     EXIT_CODE.USAGE,
   );
 }

@@ -2091,8 +2091,9 @@ describe("runConfig", () => {
       }
       const beforeRefusal = await fs.readFile(getSettingsPath(pmRoot), "utf8");
       for (const option of ["activityLimit", "staleThresholdDays"]) {
-        await expect(runConfig("project", "set", "context", { [option]: "1e2" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining("decimal digits only") });
+        await expect(runConfig("project", "set", "context", { [option]: "1e2" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringMatching(/decimal (?:integer )?digits/u) });
         await expect(runConfig("project", "set", "context", { [option]: "9007199254740992" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining(String(Number.MAX_SAFE_INTEGER)) });
+        await expect(runConfig("project", "set", "context", { [option]: "0" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining(">= 1") });
         expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
       }
 
