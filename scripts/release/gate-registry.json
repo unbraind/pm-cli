@@ -441,6 +441,10 @@
     ],
     "hosted_only": [
       {
+        "gate": "prepublication-bun-bootstrap",
+        "reason": "Requires clean native macOS and Windows runners to download and verify the pinned Bun runtime before publication."
+      },
+      {
         "gate": "scheduled-release-reliability",
         "reason": "Measures the original scheduled GitHub attempts over a rolling window; historical operational debt must not block publication of its repair."
       },
@@ -861,6 +865,25 @@
       "negative_control": {
         "test": "tests/unit/scripts/smoke-npx-from-pack.spec.ts",
         "assertion": "fails when the packed TypeScript consumer typecheck rejects (GH-602)"
+      }
+    },
+    {
+      "id": "prepublication-bun-bootstrap",
+      "owner": "pm-gh1694",
+      "pipelines": [
+        "release.yml#prepublication-bun"
+      ],
+      "failure_taxonomy": [
+        "runtime_download_failed",
+        "runtime_version_mismatch"
+      ],
+      "bypass": {
+        "allowed": false,
+        "audit": "Pinned Bun bootstrap and exact runtime version must pass on macOS and Windows before npm publication."
+      },
+      "negative_control": {
+        "test": "tests/unit/scripts/release/extension-flag-acceptance.spec.ts",
+        "assertion": "Expected Bun 1.4.0 before publication"
       }
     },
     {

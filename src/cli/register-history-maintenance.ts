@@ -214,7 +214,7 @@ export function registerHistoryMaintenanceCommands(
     .argument("<id>", "Item id")
     .option(
       "--literal <value>",
-      "Literal string to redact (repeatable)",
+      "Literal; repeatable",
       collect,
     )
     .option(
@@ -224,20 +224,20 @@ export function registerHistoryMaintenanceCommands(
     )
     .option(
       "--replacement <value>",
-      'Replacement string (default: "[redacted]")',
+      'Default: "[redacted]"',
     )
     .option(
       "--dry-run",
-      "Preview redaction impact without writing item/history files",
+      "Preview; no item/history edits",
     )
-    .option("--author <value>", "Mutation author")
+    .option("--author <value>", "Author")
     .option(
       "--message <value>",
-      "Audit history message for the redaction marker entry",
+      "Audit marker message",
     )
-    .option("--force", "Force ownership/lock override")
+    .option("--force", "Override owner/lock")
     .description(
-      "Redact sensitive literals/patterns from an item history stream and recompute hashes.",
+      "Redact and reseal item history.",
     )
     .action(
       async (id: string, options: Record<string, unknown>, command) => {

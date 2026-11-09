@@ -123,7 +123,9 @@ bounded recovery envelope. The first line should name the specific failure, such
 the retained identity and corrective action share the binding byte budget.
 The CLI recovery renderer separately retains up to 320 Unicode code points of
 its `What happened` text, followed by an omission suffix when needed, before
-the shared byte-budget projector runs.
+the shared byte-budget projector runs. With malformed legal-domain metadata,
+the final CLI fallback preserves the producer's required action alongside the
+partial-domain notice whenever they fit, dropping repeated detail first.
 The text projector strips terminal escape sequences and replaces remaining
 control characters before measuring output, including short diagnostics that
 fit the budget. Line breaks and ordinary indentation are preserved.

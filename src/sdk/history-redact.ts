@@ -206,7 +206,10 @@ function parseRegexRule(spec: string, index = 1): RegexRule {
   if (trimmed.startsWith("/") && trimmed.length > 1) {
     const slashIndex = trimmed.lastIndexOf("/");
     // An escaped slash belongs to the raw source, not the literal delimiter.
-    const backslashes = trimmed.slice(0, slashIndex).match(/\\*$/u)![0].length;
+    let backslashes = 0;
+    for (let index = slashIndex - 1; index >= 0 && trimmed[index] === "\\"; index--) {
+      backslashes++;
+    }
     if (slashIndex > 0 && backslashes % 2 === 0 && /^[dgimsuvy]*$/u.test(trimmed.slice(slashIndex + 1))) {
       source = trimmed.slice(1, slashIndex);
       flags = normalizeRegexFlags(trimmed.slice(slashIndex + 1));

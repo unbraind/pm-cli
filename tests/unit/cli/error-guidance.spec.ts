@@ -114,21 +114,25 @@ describe("pm cli error guidance context plumbing", () => {
     expect(context.recovery.allowed_values).toEqual([large, "short", null]);
   });
 
-  it.each(["next step", "verification error", "close recovery"])("prioritizes partial-domain evidence over an oversized producer %s", (kind) => {
+  it.each(["next step", "verification error", "repair priority", "close recovery"])("prioritizes partial-domain evidence over an oversized producer %s", (kind) => {
     const close = kind === "close recovery";
+    const unicode = kind === "repair priority";
     const oversized = "x".repeat(5_000);
+    const repair = "Set context.activity_limit to a positive integer before retrying." + (unicode ? "界".repeat(400) : "");
     const context = {
       nextSteps: [kind === "next step" ? oversized : "Inspect the profile"],
-      ...(kind === "verification error" ? { verification_errors: [oversized] } : {}),
+      ...(kind === "verification error" || unicode ? { verification_errors: [oversized], required: repair } : {}),
+      ...(unicode ? { code: "producer_repair_required" } : {}),
       ...(close ? { code: "close_validation_missing_fields", required: oversized } : {}),
       recovery: { allowed_values: ["valid-choice", null] as never, ...(close ? { suggested_retry: `pm close ${oversized}`, next_best_command: `pm update ${oversized}` } : {}) },
     };
     const original = structuredClone(context);
     for (const lean of [false, true]) {
-      const text = formatPmCliErrorForDisplay(`Producer failure ${oversized}`, context, { lean });
+      const text = formatPmCliErrorForDisplay(unicode ? "🔎".repeat(5_000) : `Producer failure ${oversized}`, context, { lean });
       expect(text).toContain("Incomplete legal domain");
       expect(text).toContain('"valid-choice"');
       expect(text).toContain("Some guidance was omitted");
+      if (kind === "verification error" || unicode) expect(text).toContain(repair);
       if (close) {
         expect(text).toContain("Error: Close is missing required evidence");
         expect(text).toContain("SDK error.context.recovery.suggested_retry");

@@ -931,11 +931,15 @@ function renderBoundedGuidanceMessage(
     type: message.type,
     title: message.title,
     happened: boundedHappened.happened,
-    required: "Correct the producer metadata before relying on a complete legal domain.",
+    required: message.required,
     nextSteps: appendIfMissing([], message.partialLegalDomainNotice),
   };
   essentialDomainGuidance.nextSteps = compactCloseRecoverySteps(message, essentialDomainGuidance);
-  for (const [candidate, limit] of [[withoutExplanation, 8], [limitedCollections, 8], [compactRecovery, 3], [boundedHappened, 3], ...(message.partialLegalDomainNotice ? [[essentialDomainGuidance, 3] as const] : [])] as const) {
+  for (const [candidate, limit] of [[withoutExplanation, 8], [limitedCollections, 8], [compactRecovery, 3], [boundedHappened, 3], ...(message.partialLegalDomainNotice ? [
+    [essentialDomainGuidance, 3] as const,
+    [{ ...essentialDomainGuidance, happened: message.title }, 3] as const,
+    [{ ...essentialDomainGuidance, required: "Correct the producer metadata before relying on a complete legal domain." }, 3] as const,
+  ] : [])] as const) {
     const text = `${renderGuidanceMessageWithRecoveryLimit(candidate, options, limit)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
     if (fits(text)) return text;
   }
