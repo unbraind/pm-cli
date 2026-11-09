@@ -518,6 +518,13 @@ Build finalization removes redundant indentation from emitted `.d.ts` files
 contents, comments, JSDoc, symbols and module boundaries retain their original
 tokens. Source declarations remain readable, and packed TypeScript consumers
 verify the emitted surface before publication. Artifact ceilings remain unchanged.
+Whitespace after explicit declaration delimiters is also compacted, while
+newlines that may supply automatic semicolons are retained. Literal contents
+and documentation remain intact; the publication-weight owner is
+[pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon)
+and this delimiter-compaction tranche is
+[pm-5aze0q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5aze0q.toon)
+(repository-only tracker records excluded from npm).
 
 The generated error-code catalog ships as compact rows
 ([pm-998juj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-998juj.toon), a repository-only tracker record excluded from npm).

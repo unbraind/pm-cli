@@ -40,14 +40,14 @@ describe("finalize-build", () => {
     expect(await readFile(declarationPath, "utf8")).toBe(compact);
   });
 
-  it("reduces already unindented declaration payloads without changing directives or type content", async () => {
+  it("compacts declarations without changing directives, ASI boundaries or type content", async () => {
     const root = await harness.createTempRoot("pm-declaration-pack-");
     await mkdir(path.join(root, "sdk"));
     await mkdir(path.join(root, "dist", "sdk"), { recursive: true });
     await writeFile(path.join(root, "sdk", "public-surface.json"), "{}");
     const directive = '/// <reference path="./peer.d.ts" />';
     const jsdoc = "/** Keep punctuation: space, comma, space and documentation bytes. */";
-    const declaration = `${directive}\n${jsdoc}\nexport interface Payload { values: [string, number, boolean]; literal: "a, b: c"; }\nexport declare function send(left: string, right: number): Payload;\n`;
+    const declaration = `${directive}\n${jsdoc}\nexport interface Payload {\n /** Values retain their member documentation. */\n values: [string, number, boolean];\n /** Literal member documentation also stays attached. */\n literal: "a, b: c";\n}\nexport type Selected =\n | { key: string; }\n | { alternate: "x"; };\nexport declare const first: number\nexport declare const second: number\nexport declare function send(left: string, right: number): Payload;\n`;
     const file = path.join(root, "dist", "sdk", "index.d.ts");
     await writeFile(file, declaration);
     const mod = await harness.importModule<FinalizeBuildModule>("scripts/finalize-build.mjs");

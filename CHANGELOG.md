@@ -4,13 +4,14 @@
 
 ### Fixed
 
-- GH-1694: recover pinned Bun and verified uploader downloads after GitHub asset gateway failures ([pm-gh1694](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1694.toon))
 - GH-1689: redact leading-slash regex sources with indexed safe refusals ([pm-gh1689](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1689.toon))
+- GH-1694: recover pinned Bun and verified uploader downloads after GitHub asset gateway failures ([pm-gh1694](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1694.toon))
 - GH-1693: preserve complete flag tokens in bounded close-refusal headlines ([pm-gh1693](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1693.toon))
 - GH-1695: accept settings paths and provide bounded config-key recovery ([pm-gh1695](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1695.toon))
 
 ### Other
 
+- Restore publication headroom with lossless declaration delimiter compaction ([pm-5aze0q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5aze0q.toon))
 - Adopt the next mature tooling maintenance cohort after registry cooldown ([pm-ogzvx6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ogzvx6.toon))
 
 ## 2026.11.9 - 2026-11-09

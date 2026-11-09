@@ -6,21 +6,21 @@ status: closed
 priority: 2
 tags[4]: agent-ux,"gh:1689",history,sdk
 created_at: "2026-11-09T07:32:09.358Z"
-updated_at: "2026-11-09T22:40:50.926Z"
-closed_at: "2026-11-09T22:40:49.847Z"
-completed_at: "2026-11-09T22:40:49.847Z"
+updated_at: "2026-11-09T23:28:06.103Z"
+closed_at: "2026-11-09T23:28:05.225Z"
+completed_at: "2026-11-09T23:28:05.225Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Leading-slash raw regex sources work alongside valid slash-delimited literals and existing flag behavior; Invalid patterns identify their one-based matcher index without echoing sensitive material; Dry run preserves bytes and actual redaction verifies the history chain
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: Kept the complete raw/literal grammar within the existing help ceiling and replaced quadratic delimiter suffix matching with adjacent-backslash scanning.
-expected_result: "Preserve raw-source and literal semantics, private rejection errors, history integrity and the unchanged 193-token help maximum."
-actual_result: "History-redact help measures 187 tokens; flag-lexicon tests and gate pass; raw-root/raw-source/escaped-slash/documented-literal replays preserve dry-run and sealed history; equivalent scan controls and manual timing confirm removal of quadratic suffix behavior. All 455 cohort tests, seven linked commands and nine packed consumers pass."
+resolution: "Support leading-slash raw regex sources and documented literals with indexed private refusals and linear delimiter escape scanning. Keep complete help grammar at 187 tokens against unchanged 193, and align the existing runtime-help integration while retaining every flag assertion."
+expected_result: "Preserve raw and literal matching, dry-run and sealed history, private errors, and bounded accurate help with passing current runtime contracts."
+actual_result: "All three linked redaction commands pass. All 495 tests across 22 instrumented files, typechecks, lint, runtime contracts, zero-change SDK surface and nine packed consumers pass. Base and simulated Sentry-injected package gates pass without budget changes; hosted whole-source exact coverage remains required for reviewed delivery."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-y3w0ld,related,"2026-11-09T09:01:56.645Z","harness:codex","cli:update:dep",detected
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-11-09T07:32:09.358Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:21.580Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T09:41:52.079Z","harness:codex","Greptile review identified two valid residuals on PR1696: empty slash literals had no matcher index and the documented single-quoted regex contained doubled backslashes. Added same-harness regressions for empty literals, whitespace matchers and the literal copied directly from COMMANDS.md: all3 fail on the pre-fix source, with48 existing passes. The implementation now routes every invalid matcher through one disclosure-safe indexed refusal and rejects supplied whitespace patterns before any write. The documentation literal is corrected and its actual bytes are consumed by the SDK integrity regression."
@@ -31,15 +31,17 @@ comments[10]{created_at,author,text}:
   "2026-11-09T19:55:44.866Z","harness:codex","Documented raw/literal regex classification and private matcher validation, plus matcher deduplication with original indexed refusal positions and the empty-set refusal. This addresses the verified review docstring warning: nine touched helpers lacked JSDoc. Build, repository docstring quality, ESLint, SDK surface and contracts/catalog checks pass. Independent before/after TypeScript emission is byte-identical with comments removed across all five changed source files. The prior 433-test instrumented runtime cohort remains applicable; no runtime assertions are repeated for this documentation-only change. The proposed required.supported_keys object conflicts with the governed string required field; the complete scoped SDK domain already uses recovery.allowed_values. The combined release/maintenance scope follows the explicit multi-item delivery request and linked PM owners."
   "2026-11-09T21:23:05.483Z","harness:codex","The executable documentation fixture resolves docs/COMMANDS.md from import.meta.url, making it independent of process cwd. A checked extracted matcher now fails with a clear alignment message when the documented example is missing, replacing the test non-null assertion. The actual raw, documented-literal and escaped-slash dry runs still demonstrate positive impact and unchanged history, followed by sealed/hash/chain verification. Final source verification reports 436 tests passing across 17 instrumented files, all seven linked command entries across the three owners, full typechecks, ESLint, contracts/catalog, zero classified SDK surface changes, and all nine packed consumers. Full-source coverage correctly refuses the selected cohort denominator; hosted whole-repository coverage and current-head admission remain required. No coverage, performance or diagnostic budget is relaxed."
   "2026-11-09T22:39:14.954Z","harness:codex","CI remediation: Windows scripts cohort and hosted coverage shard 3 reproduced history-redact help at 236 tokens against its unchanged 193-token maximum. Concise surrounding descriptions preserve the full literal-classification grammar and raw leading-slash example while measuring 187 tokens; the live flag-help gate passes without a baseline change. Replaced the quadratic suffix regex with an adjacent-backslash scan, preserving seven manually compared boundary cases and public raw-root, raw-source, escaped-slash and documented-literal SDK integration semantics. On this host, rejected-delimiter suffix scans of 10k/20k/40k earlier backslashes took approximately 215/751/3697 ms before versus below 0.02 ms after. This is parser classification only; pre-existing regex execution budgeting remains owned by pm-zzw8bi. The 455-test instrumented cohort and nine packed consumers pass."
+  "2026-11-09T23:20:46.977Z","harness:codex",CodeRabbit correctly identified the sandboxed release-readiness help test still expecting the former description. Its failing-before replay now follows Redact and reseal item history while retaining every redaction flag assertion. The 40 build/runtime/help tests pass; the 193-token help ceiling and all source budgets remain unchanged. Optional bounded rejected-key suggestion hoisting requests no functional correction and is not included.
 learnings[1]{created_at,author,text}:
   "2026-11-09T10:03:49.415Z","harness:codex",A slash is a literal delimiter only when it is unescaped and followed by recognized flags. Preserve original argument positions before deduplication; validate every supplied matcher before mutation and never retain its sensitive source in recovery.
-files[5]{path,scope}:
+files[6]{path,scope}:
   src/cli/register-history-maintenance.ts,project
   src/sdk/history-redact.ts,project
   tests/integration/history-redact-record-integrity.integration.spec.ts,project
+  tests/integration/release-readiness-runtime.spec.ts,project
   tests/unit/commands/history/history-activity-command.spec.ts,project
   tests/unit/scripts/flag-lexicon-gate.spec.ts,project
-tests[2]:
+tests[3]:
   - command: node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts
     scope: project
     timeout_seconds: 600
@@ -55,7 +57,14 @@ tests[2]:
       created_at: "2026-11-09T22:30:33.720Z"
       source_kind: local_mutation
       source_ref: fix/sdk-configuration-and-redaction-recovery
-test_runs[7]:
+  - command: node scripts/run-tests.mjs test tests/integration/release-readiness-runtime.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-11-09T23:20:45.510Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-configuration-and-redaction-recovery
+test_runs[8]:
   - run_id: test-local-mw91y4qy-uenfa2
     kind: test
     status: passed
@@ -134,9 +143,22 @@ test_runs[7]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/scripts/flag-lexicon-gate.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9w69z7-6qvuxd
+    kind: test
+    status: passed
+    started_at: "2026-11-09T23:27:19.791Z"
+    finished_at: "2026-11-09T23:28:01.027Z"
+    recorded_at: "2026-11-09T23:28:01.027Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/history/history-activity-command.spec.ts tests/integration/history-redact-record-integrity.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/scripts/flag-lexicon-gate.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test tests/integration/release-readiness-runtime.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
-close_reason: Implemented and locally verified review/CI remediation; reviewed delivery remains gated by PR 1696.
+close_reason: "Implemented redaction semantics, private refusals, bounded help and the current runtime-help regression in PR1696."
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

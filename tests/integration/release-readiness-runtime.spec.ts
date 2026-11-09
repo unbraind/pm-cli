@@ -1228,9 +1228,8 @@ describe("release readiness runtime coverage", () => {
         "Usage: pm history-redact [options] <id>",
       );
       expect(historyRedactHelp.stdout).toContain(
-        "Redact sensitive literals/patterns from an item history stream",
+        "Redact and reseal item history.",
       );
-      expect(historyRedactHelp.stdout).toMatch(/recompute\s+hashes\./);
       for (const flag of REQUIRED_HISTORY_REDACT_FLAGS) {
         expect(historyRedactHelp.stdout).toContain(flag);
       }

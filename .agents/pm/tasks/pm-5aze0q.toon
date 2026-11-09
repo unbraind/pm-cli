@@ -1,0 +1,49 @@
+id: pm-5aze0q
+title: Restore publication headroom with lossless declaration delimiter compaction
+description: Current SDK and maintenance additions exceed the unchanged base artifact ceiling by 17713 bytes. Extend the shipped colon/comma declaration compactor with safe delimiter whitespace reduction while preserving automatic semicolons and JSDoc attachment. This is a finite new tranche under pm-998juj; the completed colon/comma implementation pm-chw71s remains shipped and closed.
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-11-09T23:34:48.426Z"
+updated_at: "2026-11-09T23:37:57.343Z"
+closed_at: "2026-11-09T23:37:56.564Z"
+completed_at: "2026-11-09T23:37:56.564Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Every retained declaration preserves parsed type meaning and member JSDoc bytes and attachment; Potential automatic-semicolon boundaries and literal or template contents remain unchanged; Actual base and simulated Sentry-injected distribution gates pass unchanged byte and file-count ceilings; Current packed npm npx Bun bunx SDK and MCP consumers pass
+parent: pm-998juj
+risk: medium
+confidence: high
+resolution: "Compact redundant horizontal declaration punctuation spacing and delimiter continuations while protecting automatic semicolons, literal contents and JSDoc attachment. Document the exact distribution behavior and retain the original readable source."
+expected_result: Actual base and injected artifacts pass unchanged limits while every retained type and documentation contract and all installed consumers remain valid.
+actual_result: "All 475 retained declarations have equivalent type ASTs, original comments and identical parsed JSDoc text and attachment coordinates versus fresh TypeScript emission, saving 26,911 bytes. The complete 495-test selected cohort, linked build tests and real package gate pass. Nine current packed npm/npx/Bun/bunx/SDK/MCP consumers and actual simulated Sentry injection pass. No file selector, runtime minification option or artifact ceiling changes; hosted full coverage remains required."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-chw71s,related,"2026-11-09T23:34:48.426Z","harness:codex","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-09T23:34:48.426Z","harness:codex","Duplicate check: the complete strict all-status corpus and live declaration delimiter search identify the broad open publication-weight owner pm-998juj and completed predecessor pm-chw71s. No open finite owner implements this additional delimiter and comment-boundary tranche. Preserve the predecessor as shipped rather than reopening its historical result; parent ownership covered implementation before this finite closure record."
+  "2026-11-09T23:37:11.254Z","harness:codex","Implementation first belonged to claimed parent pm-998juj. The actual hosted artifact failure was 20,017,713 > 20,000,000 bytes. Preserve the successful historical predecessor pm-chw71s rather than relabeling it outstanding. Additional safe delimiter whitespace compaction retains ASI boundaries and newlines before comments; a real full-declaration replay caught the first local JSDoc attachment error and the strengthened fixture reproduces it before the fix. Fresh TypeScript emission verifies all 475 shipped declaration ASTs plus comment bytes and parsed JSDoc text/attachment coordinates unchanged. Final declaration saving is 26,911 bytes. All 495 instrumented cohort tests and nine packed consumers pass; base and simulated injected limits stay unchanged. Whole-source exact hosted coverage remains required."
+files[3]{path,scope}:
+  scripts/finalize-build.mjs,project
+  tests/unit/scripts/finalize-build.spec.ts,project
+  tests/unit/scripts/runtime-compaction.spec.ts,project
+tests[2]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/scripts/finalize-build.spec.ts tests/unit/scripts/runtime-compaction.spec.ts,project,"harness:codex","2026-11-09T23:37:09.402Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+  node scripts/release/package-artifact-gate.mjs,project,"harness:codex","2026-11-09T23:37:10.362Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
+test_runs[1]:
+  - run_id: test-local-mw9wj0vx-asu8wf
+    kind: test
+    status: passed
+    started_at: "2026-11-09T23:37:12.196Z"
+    finished_at: "2026-11-09T23:37:55.773Z"
+    recorded_at: "2026-11-09T23:37:55.773Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/scripts/finalize-build.spec.ts tests/unit/scripts/runtime-compaction.spec.ts,schema,schema,source,local_source_ref
+      node scripts/release/package-artifact-gate.mjs,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/RELEASING.md,project
+close_reason: Completed finite declaration-compaction repair with preserved public contracts and unchanged publication budgets.
+body: ""
