@@ -499,6 +499,7 @@ function normalizeAction(value: string): ConfigAction {
   });
 }
 
+/** Resolve owned aliases or refuse with bounded typo suggestions, a complete scoped SDK domain, and a tracker-preserving inventory command. */
 function normalizeKey(value: string, scope: ConfigScope = "global", global?: GlobalOptions): ConfigKey {
   const key = Object.hasOwn(CONFIG_KEY_BY_ALIAS, value) ? CONFIG_KEY_BY_ALIAS[value] : undefined;
   if (key) {
@@ -933,6 +934,7 @@ function normalizeWarnings(values: string[]): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+/** Reject keys on inventory/export actions and require a normalized key on actions that address one setting. */
 function normalizeKeyForAction(
   action: ConfigAction,
   value: string | undefined,

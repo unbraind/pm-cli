@@ -370,6 +370,7 @@ function resolveRecoverySuggestedRetry(
   return suggestedRetry === attemptedCommand ? undefined : suggestedRetry;
 }
 
+/** Retain whitelisted producer recovery, including malformed domains that the guidance layer must explicitly identify. */
 function projectExistingRecoveryOptionalFields(existingRecovery: PmCliErrorRecoveryPayload | undefined): Partial<PmCliErrorRecoveryPayload> {
   if (!existingRecovery) {
     return {};

@@ -194,6 +194,7 @@ function invalidRegexRule(index: number, reason: string): PmCliError {
   );
 }
 
+/** Distinguish literals by their final unescaped delimiter and flag spelling, then validate without echoing sensitive matcher input. */
 function parseRegexRule(spec: string, index = 1): RegexRule {
   const trimmed = spec.trim();
   if (trimmed.length === 0) {
@@ -227,6 +228,7 @@ function parseRegexRule(spec: string, index = 1): RegexRule {
   };
 }
 
+/** Deduplicate matchers while preserving original regex positions in validation failures, and refuse an empty matcher set. */
 function buildRedactionRules(
   literalInput: string[] | string | undefined,
   regexInput: string[] | string | undefined,

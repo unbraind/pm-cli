@@ -435,6 +435,7 @@ function normalizeRecoveryArgs(value: unknown): string[] | undefined {
     ? [...value] as string[] : undefined;
 }
 
+/** Normalize recovery collections while preserving exact argv and domain strings and refusing malformed vectors. */
 function assignRecoveryCollection(
   normalized: PmCliErrorRecoveryPayload,
   key:
@@ -1318,7 +1319,7 @@ function resolveGuidanceDetails(context: PmCliErrorContext): Pick<GuidanceMessag
 
 const PARTIAL_LEGAL_DOMAIN_PREVIEW_MAX_BYTES = 400;
 
-/** Render whole choices within a bounded preview without shortening a legal value into another token. */
+/** Select whole fitting choices in producer order; skip oversized choices so later usable values remain discoverable. */
 function previewLegalDomainChoices(values: readonly string[]): string[] {
   const shown: string[] = [];
   for (const value of values.slice(0, 8)) {
@@ -1657,6 +1658,7 @@ function isInvalidArgumentMessage(
   return code === undefined || code === "invalid_argument_value" || context?.allowed !== undefined;
 }
 
+/** Build argument recovery from declared producer metadata, using prose-derived choices only when no domain was declared. */
 function buildInvalidArgumentGuidance(
   rawMessage: string,
   message: string,

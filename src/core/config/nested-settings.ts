@@ -484,6 +484,7 @@ function parseNestedBooleanValue(
   };
 }
 
+/** Enforce declared string choices and emptiness rules; context depth alone accepts case-insensitive input. */
 function parseNestedStringValue(
   descriptor: NestedSettingDescriptor,
   rawValue: string,
@@ -518,6 +519,7 @@ function strictDecimalIntegerError(descriptor: NestedSettingDescriptor, rawValue
   return { message: `Config set ${descriptor.key} requires non-empty decimal integer digits${bounds ? ` (${bounds})` : ""}, got "${rawValue}"` };
 }
 
+/** Parse finite numbers, applying decimal-only grammar where the setting opts out of other JavaScript number spellings. */
 function parseFiniteNestedNumber(
   descriptor: NestedSettingDescriptor,
   rawValue: string,
