@@ -62,7 +62,8 @@ describe("config positional CLI parser", () => {
           expect(error).toBeInstanceOf(PmCliError);
           refusal = error as PmCliError;
         }
-        const retry = refusal!.context.recovery!.next_best_command!;
+        const retry = refusal?.context.recovery?.next_best_command;
+        if (!retry) throw new Error("Expected SDK configuration refusal with an inventory recovery command");
         expect(retry).toContain("--pm-path");
         expect(retry).toContain("--no-extensions");
         const execute = (command: string) => {

@@ -6,22 +6,22 @@ status: closed
 priority: 2
 tags[4]: agent-ux,config,"gh:1695",sdk
 created_at: "2026-11-09T07:32:05.563Z"
-updated_at: "2026-11-09T16:13:23.045Z"
-closed_at: "2026-11-09T16:13:22.219Z"
-completed_at: "2026-11-09T16:13:22.219Z"
+updated_at: "2026-11-09T16:33:00.607Z"
+closed_at: "2026-11-09T16:32:59.789Z"
+completed_at: "2026-11-09T16:32:59.789Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Accept every supported settings path as an alias in SDK-backed config get/set without bypassing validation; Unknown keys offer at most three nearest legal keys and a working config-list inspection command; Preserve complete legal keys in structured recovery and reject unknown keys without settings writes
 parent: pm-8jdc
 risk: medium
 confidence: high
-resolution: Validated dotted settings aliases and scalar context leaves; bounded key suggestions and complete SDK domains; executable tracker-scoped JSON inventory preserving extension isolation; exact independent inventory expectation includes thirteen new context leaves.
-expected_result: "Configuration paths and supported aliases round-trip safely, recovery commands execute in the selected tracker, and the existing complete-inventory regression accepts every supported public leaf without relaxing coverage."
-actual_result: "All three linked test commands pass, including exact inventory/path assertions and two-tracker shell replay with an ambient negative control. Instrumented review cohort passes 356 tests across thirteen files; typechecks, lint, SDK zero classified changes and contract/catalog checks pass. Hosted full coverage and static checks remain required."
+resolution: Validated dotted settings aliases and scalar context leaves; bounded key suggestions with complete SDK domains; executable tracker-scoped JSON inventory preserving extension isolation; exact independent inventory coverage and an explicit missing-refusal guard in the shell replay.
+expected_result: "Supported configuration paths round-trip safely, inspection stays in the selected tracker, inventory coverage remains exact, and absent SDK refusals fail clearly without undefined property access."
+actual_result: "All three linked test commands pass after the DeepScan repair; the two-tracker replay retains selected 11 versus ambient 22 and all 60 independently expected inventory leaves. The thirteen-file instrumented source cohort previously passed 356 tests; no runtime source, API signature, analyzer settings, performance budget or coverage threshold changed in this test-only follow-up. Next-head hosted DeepScan and complete CI admission remain required."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4zpq71,related,"2026-11-09T09:01:45.656Z","harness:codex","cli:update:dep",detected
   pm-gh1693,related,"2026-11-09T12:23:22.291Z","harness:codex","cli:update:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-11-09T07:32:05.563Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:19.904Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T08:30:38.246Z","harness:codex","Completeness review extended the same descriptor-owned configuration surface to the context scalar leaves previously available only through grouped context flags: default depth, activity limit, staleness threshold and the eight existing section toggles. The shared descriptor validators enforce the canonical depth domain, positive safe integers and booleans; real CLI tests check persisted values and byte preservation on invalid depth, zero and unsafe-integer assignments. Existing grouped flags remain supported and help now distinguishes group and leaf writes."
@@ -37,6 +37,7 @@ comments[15]{created_at,author,text}:
   "2026-11-09T16:09:03.502Z","harness:codex","The two-tracker SDK replay exposed a second concrete defect in the original inventory suggestion: config list is not a universal read-output surface, so --output-budget unbounded makes the emitted command refuse before execution. Remove that unsupported flag; config list --json already returns its complete typed inventory. Preserve selected --pm-path and --no-extensions using the existing SDK scope primitive. The real CLI replay must read selected tracker value 11 and, only after removing its selector, ambient value 22."
   "2026-11-09T16:11:29.744Z","harness:codex","Final scoped recovery evidence: both linked test commands pass, including the real shell replay against two isolated trackers (selected activity_limit 11, ambient negative-control 22) and preserved extension isolation. The initial missing-selector control failed as expected; executing the repaired command also caught and removed unsupported universal --output-budget from config list. SDK surface check reports zero classified changes; contracts/catalog and source/package/example typechecks pass. This corrects earlier evidence wording that described an unbounded flag: completeness comes from the native config JSON inventory, without a universal-output flag."
   "2026-11-09T16:13:19.137Z","harness:codex","Hosted shard-4 repair: the independent complete-inventory fixture now explicitly enumerates the thirteen supported context aliases and verifies their paths, preserving exact key/count assertions instead of weakening them or deriving expectations from production descriptors. All three linked commands pass after this repair. The source-instrumented review cohort passes 356 tests across thirteen files; whole-repository hosted exact-100% coverage remains mandatory, with no threshold or denominator change."
+  "2026-11-09T16:30:55.225Z","harness:codex","DeepScan exact-head report for 66885b171: NULL_POINTER at config-positional-cli.integration.spec.ts:65, defect 240635101. GitHub exposes only the count; Chrome Computer Use host is unavailable. Read-only public provider API confirms the uninitialized refusal access. Replace non-null assertions with optional access and a real runtime guard; retain the real selected-tracker and negative-control replay. No production behavior or analyzer settings change."
 notes[1]{created_at,author,text}:
   "2026-11-09T15:15:30.252Z","harness:codex","Contract decision for the proposed required.supported_keys path: the published SDK/CLI error envelope declares required as a remediation string shared by all commands. Preserve that governed shape and expose the complete scoped key domain through the existing recovery.allowed_values primitive rather than creating a command-specific object or duplicate domain. The scoped unbounded inventory command and complete SDK error context provide retrieval when CLI diagnostic budgeting binds. This is an explicit compatibility decision rather than a claim that the proposed field was added."
 learnings[2]{created_at,author,text}:
@@ -81,7 +82,7 @@ tests[3]:
       created_at: "2026-11-09T16:12:09.339Z"
       source_kind: local_mutation
       source_ref: fix/sdk-configuration-and-redaction-recovery
-test_runs[11]:
+test_runs[12]:
   - run_id: test-local-mw91xt83-rj3zym
     kind: test
     status: passed
@@ -211,9 +212,22 @@ test_runs[11]:
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9hakn8-rv5l6f
+    kind: test
+    status: passed
+    started_at: "2026-11-09T16:30:59.578Z"
+    finished_at: "2026-11-09T16:31:27.236Z"
+    recorded_at: "2026-11-09T16:31:27.236Z"
+    passed: 3
+    failed: 0
+    skipped: 0
+    executions[3]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: Complete settings-path discovery and align the independent public inventory regression
+close_reason: Finish settings-path discovery and protect the real SDK recovery replay
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
