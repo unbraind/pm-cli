@@ -112,7 +112,7 @@ function describeInvocation(argv: readonly string[]): InvocationCredentials {
   const spellings = [...unique];
   // Fragments start every `stride` positions and are at least `stride` wide, so
   // consecutive matches still chain across any echoed run. A run then exposes
-  // at most 2 * fragmentLength - 2 characters, which is 5 for stride 1.
+  // at most fragmentLength + stride - 2 characters, which is 5 for stride 1.
   const positions = spellings.reduce((total, spelling) => total + Math.max(0, spelling.length - MIN_FRAGMENT_LENGTH + 1), 0);
   const stride = Math.max(1, Math.ceil(positions / MAX_REGISTERED_FRAGMENTS));
   const fragmentLength = Math.max(MIN_FRAGMENT_LENGTH, stride);
@@ -166,7 +166,9 @@ function removeRegisteredFragments(text: string, invocation: InvocationCredentia
  * rule also removes every run of text that shares a six-character fragment
  * with a registered secret (the password, or a bare token's whole userinfo)
  * or its shell or JSON escaping. Whatever a producer does, at most five
- * consecutive secret characters can survive.
+ * consecutive secret characters can survive while the invocation's secrets
+ * fit the fragment budget; beyond it the bound widens to
+ * fragmentLength + stride - 2.
  * The registration is invisible outside the scope.
  */
 export function runWithUrlCredentialInvocation<T>(argv: readonly string[], run: () => T): T {

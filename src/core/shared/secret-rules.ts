@@ -329,7 +329,8 @@ function decodeQuotedLiteral(literal: string, terminated: boolean): string {
   const quote = literal[0]!;
   const body = literal.slice(1, terminated ? -1 : undefined).replaceAll(ESCAPE_SEQUENCE, (sequence) => {
     const kind = sequence[1]!;
-    if (kind === "u" || kind === "x") return String.fromCharCode(Number.parseInt(sequence.slice(2), 16));
+    // An incomplete `\\u` or `\\x` (too few hex digits) falls back to its letter below.
+    if ((kind === "u" || kind === "x") && sequence.length > 2) return String.fromCharCode(Number.parseInt(sequence.slice(2), 16));
     // Python octal escapes; `\\0` alone is the NUL character as in JSON5 and C.
     if (/^[0-7]$/u.test(kind)) return String.fromCharCode(Number.parseInt(sequence.slice(1), 8));
     if (kind === "U" && sequence.length === 10) {
@@ -390,7 +391,12 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     const literal = content.slice(at, end);
     if (!literal.includes("\\")) return undefined;
     // A raw line break is a host-language artifact before any escape is decoded.
-    return LINE_BREAK.test(literal) ? null : valueMatch(decodeQuotedLiteral(literal, terminated), 0);
+    if (LINE_BREAK.test(literal)) return null;
+    const decoded = valueMatch(decodeQuotedLiteral(literal, terminated), 0);
+    // Every common format decodes escapes in double quotes. In single quotes,
+    // TOML and YAML keep backslashes literally while Python and JavaScript
+    // decode them, so a single-quoted value counts under either reading.
+    return decoded ?? (content[at] === "'" ? valueMatch(literal, 0) : null);
   };
   const valueAt = (at: number): RegExpExecArray | null => {
     const escaped = escapedMatch(at);
@@ -436,8 +442,9 @@ function scalarFinds(judge: ValueJudge, accepts: (at: number) => boolean, quote:
 /**
  * Linear structured pass. The flat rule already owns unquoted keys with scalar
  * values, so this pass judges only quoted keys and container values. Keys
- * nested inside a walked container still get their scalar check, but a
- * container is walked only once.
+ * nested inside a walked container still get their scalar check, and each
+ * container is walked at most twice: once for an exact key and once for a
+ * prefixed key.
  */
 function* findStructuredSpellingMatches(
   rule: SecretRule,

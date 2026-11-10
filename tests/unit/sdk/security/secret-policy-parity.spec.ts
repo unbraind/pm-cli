@@ -190,7 +190,17 @@ describe("structured credential spellings (GH-1699)", () => {
   it("decodes Python octal escapes before judging a value", () => {
     const octal = [...entropy].map((character) => `\\${character.charCodeAt(0).toString(8).padStart(3, "0")}`).join("");
     expect(scanMutationSecrets({ description: `{'token':'${octal}'}` }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
-    expect(scanMutationSecrets({ description: ["{'pass", "word':'\\101\\102\\103'}"].join("") })).toEqual([]);
+    expect(scanMutationSecrets({ description: ['{"pass', 'word":"\\101\\102\\103"}'].join("") })).toEqual([]);
+  });
+
+  it("counts a single-quoted literal under both its TOML/YAML and its Python reading", () => {
+    expect(scanMutationSecrets({ description: ['"pass', "word\" = '\\101\\102\\103'"].join("") }).map(({ rule }) => rule)).toContain("password_assignment");
+    expect(scanMutationSecrets({ description: ["{'pass", "word':'ab\\'", "cdefghijk'}"].join("") }).map(({ rule }) => rule)).toContain("password_assignment");
+  });
+
+  it("decodes an incomplete escape as its letter, not as NUL", () => {
+    const token = `${entropy.slice(0, 12)}\\x${entropy.slice(12)}`;
+    expect(scanMutationSecrets({ description: `{"token":"${token}"}` }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
   });
 
   it("keeps the entropy predicate for structured high-entropy values", () => {

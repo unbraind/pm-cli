@@ -101,9 +101,12 @@ spellings are covered:
 - a quoted key followed by `:` or `=` (JSON, YAML flow, Python dict, TOML);
 - every quoted string in value position inside an array or object under the
   key, at any depth;
-- for password assignments, `<password>…</password>` element content.
+- for password assignments, `<password>…</password>` element content. Element
+  content is judged like a quoted value of an exact key: at least eight
+  characters after trimming, with the `${…}` and `$(…)` placeholder
+  exclusions.
 
-Each candidate value is judged by the rule's own value grammar. The
+Each candidate key/value is judged by the rule's own value grammar. The
 eight-character minimum, the `<…`, `${…}` and `$(…)` placeholder exclusions
 and the high-entropy predicate therefore carry over. Bare tokens inside a
 container are never judged, so `password=[scrubbed]` stays clean. A
@@ -155,7 +158,7 @@ included in a recovery bundle.
 CLI refusals do not echo URL credentials from the invocation either
 ([pm-nhauur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nhauur.toon);
 tracker record excluded from npm). This applies to typed refusals, Commander
-usage errors and bootstrap JSON help, in both JSON and text. Three mechanisms
+usage errors and bootstrap JSON help, in both JSON and text. Four rules
 combine:
 
 - Every refusal builder receives the invocation with each token already
@@ -172,7 +175,9 @@ combine:
   the password, or the whole userinfo of a bare token. The registration also
   holds the secret's shell and JSON escaping, and it removes every run of
   text that shares a six-character fragment with any of them. This bounds
-  what any producer can expose to five consecutive secret characters. The
+  what any producer can expose to five consecutive secret characters. A
+  secret too long for the 65,536-fragment budget is registered at aligned
+  positions instead, and the bound widens to `fragmentLength + stride - 2`. The
   registry lives in an AsyncLocalStorage scope, so overlapping in-process
   invocations never share it. It protects telemetry and Sentry as well.
 - The rule is conservative. Prose shaped like `Reminder: ping @bob` counts

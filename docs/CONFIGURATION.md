@@ -440,7 +440,8 @@ covered. A scoped package name after a colon is hidden too. The CLI also
 registers each secret of the running invocation, including its shell and
 JSON escaping. Any echoed run that shares a six-character fragment with one
 of them is removed, so a split, truncated or re-cased echo exposes at most
-five consecutive characters. The command taxonomy of an unknown
+five consecutive characters (more only for a secret beyond the 65,536-fragment
+budget). The command taxonomy of an unknown
 command is derived from the already-redacted token.
 
 The separate local event and OTLP queues retain their existing formats. Turning
