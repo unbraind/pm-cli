@@ -221,8 +221,9 @@ function publicationJobCandidates(pages, runId) {
   return candidates;
 }
 
-/** Require a known publication stage with complete step status and terminal conclusions. */
+/** Accept an explicitly skipped empty job; otherwise require a known publication stage with complete step evidence. */
 function validPublicationSteps(job) {
+  if (job.status === "completed" && job.conclusion === "skipped" && Array.isArray(job.steps) && job.steps.length === 0) return true;
   return Array.isArray(job.steps) && job.steps.some((step) => step?.name === "Publish to npm") &&
     job.steps.every((step) => step && text(step.name) !== "" &&
       ["queued", "in_progress", "completed"].includes(step.status) &&

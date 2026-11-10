@@ -31,6 +31,16 @@ describe("accepted publication admission", () => {
     expect(() => assertNoAcceptedPublication([run({})], options, () => jobs("failure"))).not.toThrow();
   });
 
+  it("allows recovery after bootstrap skipped the publisher while retaining accepted attempts", () => {
+    const skipped = { ...jobs("skipped")[0]!.jobs[0], status: "completed", conclusion: "skipped", steps: [] };
+    const accepted = { ...jobs("success", 11)[0]!.jobs[0], run_attempt: 2 };
+    expect(() => assertNoAcceptedPublication([run({})], options, () => [{ total_count: 1, jobs: [skipped] }])).not.toThrow();
+    for (const attempts of [[skipped, accepted], [accepted, skipped]]) {
+      expect(() => assertNoAcceptedPublication([run({})], options, () => [{ total_count: 2, jobs: attempts }])).toThrow("previously accepted");
+    }
+    expect(() => assertNoAcceptedPublication([run({})], options, () => [{ total_count: 1, jobs: [{ ...accepted, conclusion: "skipped" }] }])).toThrow("previously accepted");
+  });
+
   it("matches exact tag and source identity without treating another release as accepted", () => {
     const load = vi.fn(() => jobs("success"));
     expect(() => assertNoAcceptedPublication([
@@ -63,6 +73,13 @@ describe("accepted publication admission", () => {
       singleJob(null), singleJob({ id: 10, name: "Build, Test, Publish" }),
       singleJob({ id: 10, name: "another job" }),
       singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [] }),
+      ...[
+        { status: "in_progress", conclusion: "skipped", steps: [] },
+        { status: "completed", conclusion: "failure", steps: [] },
+        { status: "completed", conclusion: "skipped" },
+        { status: "completed", conclusion: "skipped", steps: null },
+        { status: "completed", conclusion: "skipped", steps: {} },
+      ].map((shape) => singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, ...shape })),
       singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [null, { name: "Publish to npm" }] }),
       singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed" }] }),
       singleJob({ id: 10, name: "Build, Test, Publish", run_id: 1, run_attempt: 1, steps: [{ name: "Publish to npm", status: "completed", conclusion: "unrecognized" }] }),

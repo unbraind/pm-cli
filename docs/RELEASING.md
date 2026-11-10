@@ -135,7 +135,10 @@ the official pinned asset URL with `?download=1` after repeated HTTP 504s on the
 ordinary route; binary caching stays disabled. A failed download still fails the
 job. Recover an incomplete release against its existing tag after reviewed
 transport changes land; a download failure does not authorize another automatic
-version. Tracked by [pm-gh1694](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1694.toon)
+version. A completed, explicitly skipped publication job with an empty step list
+remains eligible for first-publication recovery. Missing job evidence is still
+refused, and accepted publication in any other attempt still blocks a second
+publication. Tracked by [pm-gh1694](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1694.toon)
 (repository-only tracker record, excluded from npm).
 
 - release only when commits exist after the latest release tag
