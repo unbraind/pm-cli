@@ -20,6 +20,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["inline option value", "--install=https://u:s3cr3t@host/x", "--install=https://[redacted]@host/x"],
     ["whitespace inside userinfo", "https://u:my pass@host/x", "https://[redacted]@host/x"],
     ["several at signs", "https://u:a@b@host/x", "https://[redacted]@host/x"],
+    ["backslashes as non-special userinfo", `git+ssh://${"\\".repeat(8)}@localhost/x`, "git+ssh://[redacted]@localhost/x"],
+    ["slashes beyond the two authority delimiters", "file:///@x", "file://[redacted]@x"],
   ])("removes every possible userinfo span: %s", (_label, token, expected) => {
     expect(redactUrlCredentialsInToken(token)).toBe(expected);
     expect(redactUrlCredentialsInToken(expected)).toBe(expected);
@@ -30,7 +32,6 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["no colon", "@scope/package@1.2.3"],
     ["colon after the last at sign", "git@github.com:org/repo.git"],
     ["empty userinfo", "https://@host/x"],
-    ["empty userinfo after slashes only", "file:///@x"],
   ])("leaves a token without a userinfo span unchanged: %s", (_label, token) => {
     expect(redactUrlCredentialsInToken(token)).toBe(token);
   });
@@ -102,14 +103,16 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     });
   });
 
-  it("falls back to the whole-string rule when too many fragments were registered", () => {
+  it("keeps bounded protection for a secret longer than the fragment budget", () => {
     let state = 1;
     const secret = Array.from({ length: 70_000 }, () => {
       state = (state * 48_271) % 2_147_483_647;
-      return String.fromCharCode(0x4e00 + (state % 20_000));
+      return "abcdefghijklmnopqrstuvwxyz0123456789"[state % 36];
     }).join("");
-    runWithUrlCredentialInvocation([`https://u:${secret}@h/x`], () => {
-      expect(redactUrlCredentialsInText("Error: https://u:short pass@h7/x and more")).toBe("Error:[redacted]@h7/x and more");
+    runWithUrlCredentialInvocation([`https://u:Synthetic,${secret}@h/x`], () => {
+      const echo = secret.slice(30_000, 30_040);
+      const redacted = redactUrlCredentialsInText(`revision ${echo} refused`);
+      for (let index = 0; index + 7 <= echo.length; index += 1) expect(redacted).not.toContain(echo.slice(index, index + 7));
       expect(redactUrlCredentialsInText("no userinfo here")).toBe("no userinfo here");
     });
   });

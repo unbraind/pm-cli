@@ -78,6 +78,23 @@ describe("refusal credential redaction (pm-nhauur)", () => {
     expect(safe.details.self).toBe(safe.details);
   });
 
+  it("redacts credential-bearing dictionary keys and numbers colliding keys", () => {
+    const safe = redactGuidanceCredentials({ details: { [SOURCE]: "unavailable", [SAFE_SOURCE]: "kept", other: 1 } });
+    expect(safe.details).toEqual({ [SAFE_SOURCE]: "unavailable", [`${SAFE_SOURCE} (2)`]: "kept", other: 1 });
+    expect(JSON.stringify(safe)).not.toContain("fake-secret");
+  });
+
+  it("never rewrites fixed contract fields with a secret's fragments", () => {
+    const safe = runWithUrlCredentialInvocation(["https://u:unknown_option@localhost/x"], () => redactGuidanceCredentials({
+      code: "unknown_option",
+      recovery: { option_scope: "declared_nowhere", recovery_mode: "compact" },
+      detail: "unknown_option refused for https://u:unknown_option@localhost/x",
+    }));
+    expect(safe.code).toBe("unknown_option");
+    expect(safe.recovery).toEqual(expect.objectContaining({ option_scope: "declared_nowhere", recovery_mode: "compact" }));
+    expect(safe.detail).not.toContain("u:unknown_option@");
+  });
+
   it("keeps non-string values and redacts camel-case usage token fields", () => {
     const safe = redactGuidanceCredentials({
       count: 2, ok: true, missing: null, normalizedInvocationArgs: ["package", SOURCE], suggestedRetryArgs: [SOURCE], providedOptionFlags: ["--x"],

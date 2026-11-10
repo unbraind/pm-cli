@@ -162,6 +162,7 @@ describe("structured credential spellings (GH-1699)", () => {
     ["underscore-prefixed key, as in the flat rule", '{"db_password": "S3cr3tValue!"}'],
     ["closing key quote with no opening quote", [`${"label ".repeat(11)}pass`, 'word": ', value].join("")],
     ["closing key quote after a line break", ["[\n  pass", 'word": "', value, '"]'].join("")],
+    ["escaped literal that spans a raw line break", ['{"pass', 'word": "ab\\"c\n', value, '"}'].join("")],
   ])("allows the %s in both consumers", async (_label, content) => {
     expect(await scanBoth(content, "password-assignment", "password_assignment")).toEqual({ gate: false, mutation: false });
   });
@@ -177,6 +178,13 @@ describe("structured credential spellings (GH-1699)", () => {
   it("judges a fully unicode-escaped high-entropy value in its decoded form", () => {
     const escaped = [...entropy].map((character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`).join("");
     expect(scanMutationSecrets({ description: `{"token":"${escaped}"}` }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
+  });
+
+  it("decodes eight-digit unicode escapes before judging a value", () => {
+    const escaped = [...entropy].map((character) => `\\U${character.charCodeAt(0).toString(16).padStart(8, "0")}`).join("");
+    expect(scanMutationSecrets({ description: `{"token":"${escaped}"}` }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
+    expect(scanMutationSecrets({ description: ['{"pass', 'word":"\\U00000061\\U00000062"}'].join("") })).toEqual([]);
+    expect(scanMutationSecrets({ description: ['{"pass', 'word":"\\Uffffffff"}'].join("") })).toEqual([]);
   });
 
   it("keeps the entropy predicate for structured high-entropy values", () => {

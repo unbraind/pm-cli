@@ -15,8 +15,11 @@ function userinfoBounds(token: string): readonly [start: number, end: number] | 
   const at = token.lastIndexOf("@");
   const colon = token.indexOf(":");
   if (at < 0 || colon < 0 || colon > at) return undefined;
+  // Skip at most the two authority delimiters. A non-special scheme accepts
+  // further backslashes as userinfo, and extra slashes after a special scheme
+  // are only over-redacted.
   let start = colon + 1;
-  while (start < at && (token[start] === "/" || token[start] === "\\")) start += 1;
+  while (start < at && start < colon + 3 && (token[start] === "/" || token[start] === "\\")) start += 1;
   return start === at ? undefined : [start, at];
 }
 
@@ -39,25 +42,30 @@ export function redactUrlCredentialsInToken(token: string): string {
 }
 
 /**
- * Length of the secret fragments the registry matches. A producer that cuts
- * a secret into pieces (at a comma, at whitespace, by truncation) can expose
- * at most this many minus one consecutive characters of it. Six keeps
- * ordinary guidance words from colliding with dictionary-like passwords.
+ * Shortest secret fragment the registry matches. A producer that cuts a
+ * secret into pieces (at a comma, at whitespace, by truncation) can expose at
+ * most this many minus one consecutive characters of it. Six keeps ordinary
+ * guidance words from colliding with dictionary-like passwords.
  */
-const FRAGMENT_LENGTH = 6;
-/** Beyond this many fragments the text rule falls back to its whole-string form. */
+const MIN_FRAGMENT_LENGTH = 6;
+/**
+ * Upper bound on registered fragments. A longer secret is registered at
+ * aligned positions with a wider fragment instead, so its protection
+ * degrades by a bounded number of characters rather than being dropped.
+ */
 const MAX_REGISTERED_FRAGMENTS = 65_536;
 
 interface InvocationCredentials {
   carried: boolean;
   /** Lower-cased fragments of every userinfo secret and its escaped spellings. */
   fragments: ReadonlySet<string>;
+  /** Width of every registered fragment and of the matching window. */
+  fragmentLength: number;
   /** Secrets shorter than one fragment that the word rule cannot reach because they contain whitespace. */
   shortSpellings: readonly string[];
-  overflow: boolean;
 }
 
-const NO_INVOCATION: InvocationCredentials = { carried: false, fragments: new Set(), shortSpellings: [], overflow: false };
+const NO_INVOCATION: InvocationCredentials = { carried: false, fragments: new Set(), fragmentLength: MIN_FRAGMENT_LENGTH, shortSpellings: [] };
 // Overlapping in-process invocations each keep their own registration.
 const invocations = new AsyncLocalStorage<InvocationCredentials>();
 
@@ -90,33 +98,38 @@ function userinfoSecret(userinfo: string): string {
   return colon >= 0 && colon < userinfo.length - 1 ? userinfo.slice(colon + 1) : userinfo;
 }
 
-/** Record one spelling's fragments, or the whole spelling when it is shorter than one fragment. */
-function registerSpelling(spelling: string, fragments: Set<string>, shortSpellings: Set<string>): void {
-  const lowered = lowerPreservingLength(spelling);
-  if (lowered.length >= FRAGMENT_LENGTH) {
-    for (let index = 0; index + FRAGMENT_LENGTH <= lowered.length; index += 1) {
-      fragments.add(lowered.slice(index, index + FRAGMENT_LENGTH));
-    }
-  } else if (/\s/u.test(lowered)) {
-    // A short whitespace-free secret is whole inside one word, where the word rule removes it.
-    shortSpellings.add(lowered);
-  }
-}
-
 function describeInvocation(argv: readonly string[]): InvocationCredentials {
-  const fragments = new Set<string>();
-  const shortSpellings = new Set<string>();
+  const unique = new Set<string>();
   let carried = false;
   for (const token of argv) {
     const bounds = userinfoBounds(token);
     if (!bounds) continue;
     carried = true;
     for (const spelling of spanSpellings(userinfoSecret(token.slice(bounds[0], bounds[1])))) {
-      registerSpelling(spelling, fragments, shortSpellings);
+      unique.add(lowerPreservingLength(spelling));
     }
   }
-  const overflow = fragments.size > MAX_REGISTERED_FRAGMENTS;
-  return { carried, fragments: overflow ? new Set() : fragments, shortSpellings: [...shortSpellings], overflow };
+  const spellings = [...unique];
+  // Fragments start every `stride` positions and are at least `stride` wide, so
+  // consecutive matches still chain across any echoed run. A run then exposes
+  // at most 2 * fragmentLength - 2 characters, which is 5 for stride 1.
+  const positions = spellings.reduce((total, spelling) => total + Math.max(0, spelling.length - MIN_FRAGMENT_LENGTH + 1), 0);
+  const stride = Math.max(1, Math.ceil(positions / MAX_REGISTERED_FRAGMENTS));
+  const fragmentLength = Math.max(MIN_FRAGMENT_LENGTH, stride);
+  const fragments = new Set<string>();
+  const shortSpellings = new Set<string>();
+  for (const spelling of spellings) {
+    if (spelling.length < fragmentLength) {
+      // A short whitespace-free secret is whole inside one word, where the word rule removes it.
+      if (/\s/u.test(spelling)) shortSpellings.add(spelling);
+      continue;
+    }
+    for (let index = 0; index + fragmentLength <= spelling.length; index += stride) {
+      fragments.add(spelling.slice(index, index + fragmentLength));
+    }
+    fragments.add(spelling.slice(-fragmentLength));
+  }
+  return { carried, fragments, fragmentLength, shortSpellings: [...shortSpellings] };
 }
 
 /** Replace every maximal run covered by a registered fragment or short spelling with the placeholder. */
@@ -124,9 +137,10 @@ function removeRegisteredFragments(text: string, invocation: InvocationCredentia
   const lowered = lowerPreservingLength(text);
   const covered = new Uint8Array(text.length);
   let found = false;
-  for (let index = 0; index + FRAGMENT_LENGTH <= lowered.length; index += 1) {
-    if (invocation.fragments.has(lowered.slice(index, index + FRAGMENT_LENGTH))) {
-      covered.fill(1, index, index + FRAGMENT_LENGTH);
+  const width = invocation.fragmentLength;
+  for (let index = 0; index + width <= lowered.length; index += 1) {
+    if (invocation.fragments.has(lowered.slice(index, index + width))) {
+      covered.fill(1, index, index + width);
       found = true;
     }
   }
@@ -167,18 +181,10 @@ export function invocationCarriesUrlCredentials(): boolean {
 /**
  * Apply {@link redactUrlCredentialsInToken} to every whitespace-delimited word
  * of free text, after removing the running invocation's registered
- * fragments. When more fragments were registered than the bound allows, any
- * text with a `:` before an `@` loses the whole span between its first `:`
- * and last `@` instead, which over-redacts but cannot miss a whole one.
+ * fragments.
  */
 export function redactUrlCredentialsInText(text: string): string {
   const invocation = invocations.getStore() ?? NO_INVOCATION;
-  let redacted = text;
-  if (invocation.overflow) {
-    const bounds = userinfoBounds(redacted);
-    if (bounds) redacted = `${redacted.slice(0, bounds[0])}${URL_CREDENTIAL_PLACEHOLDER}${redacted.slice(bounds[1])}`;
-  } else if (invocation.carried) {
-    redacted = removeRegisteredFragments(redacted, invocation);
-  }
+  const redacted = invocation.carried ? removeRegisteredFragments(text, invocation) : text;
   return redacted.includes("@") ? redacted.replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
 }

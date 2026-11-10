@@ -26,6 +26,20 @@ const ARGV_TOKEN_FIELDS: ReadonlySet<string> = new Set([
   "suggestedRetryArgs",
 ]);
 
+/**
+ * Contract fields the CLI itself fills from a closed vocabulary. They never
+ * echo caller input, and a secret's fragments must not rewrite them: a
+ * client dispatches on `code` (Greptile review on PR #1701).
+ */
+const FIXED_CONTRACT_FIELDS: ReadonlySet<string> = new Set([
+  "code",
+  "original_code",
+  "type",
+  "recovery_mode",
+  "option_scope",
+  "diagnostic_class",
+]);
+
 /** Final guidance step whenever an invocation's URL credentials were removed. */
 export const RESTORE_CREDENTIALS_STEP =
   `URL credentials in this invocation were replaced with ${URL_CREDENTIAL_PLACEHOLDER}; restore them before replaying any command shown here.`;
@@ -39,6 +53,16 @@ interface RedactionPass {
   /** Shared or cyclic references map to one redacted copy, so no alias keeps the raw value. */
   copies: Map<object, unknown>;
   changed: boolean;
+}
+
+/** Producers may key diagnostics by a source URL; a redacted key that collides gets a numbered suffix. */
+function redactKey(key: string, copy: Record<string, unknown>, pass: RedactionPass): string {
+  const safe = redactUrlCredentialsInText(key);
+  if (safe !== key) pass.changed = true;
+  // Original keys are unique, so only a key a redacted one already took can collide.
+  let candidate = safe;
+  for (let suffix = 2; Object.hasOwn(copy, candidate); suffix += 1) candidate = `${safe} (${suffix})`;
+  return candidate;
 }
 
 function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean): unknown {
@@ -62,7 +86,11 @@ function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean): 
   const copy: Record<string, unknown> = {};
   pass.copies.set(value, copy);
   for (const [key, entry] of Object.entries(value)) {
-    copy[key] = redactValue(entry, pass, tokenField || ARGV_TOKEN_FIELDS.has(key));
+    if (FIXED_CONTRACT_FIELDS.has(key) && typeof entry === "string") {
+      copy[key] = entry;
+      continue;
+    }
+    copy[redactKey(key, copy, pass)] = redactValue(entry, pass, tokenField || ARGV_TOKEN_FIELDS.has(key));
   }
   return copy;
 }

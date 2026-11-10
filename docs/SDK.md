@@ -3292,7 +3292,10 @@ a token's first `:` and its last `@` with `URL_CREDENTIAL_PLACEHOLDER`
 (`[redacted]`). The token rule is complete for every spelling a URL parser
 normalizes, and it is idempotent. The text rule sees only whitespace-delimited
 words, so a URL whose userinfo contains whitespace is complete only when you
-redact the original token before interpolating it into text. When a retry
+redact the original token before interpolating it into text. Do not echo a
+value you extracted from a raw token, such as a parsed password or a
+fragment cut at a delimiter. Build diagnostics from redacted tokens, or omit
+the extracted value. When a retry
 would lose credentials this way, withhold the retry instead of emitting one
 that runs a different command.
 

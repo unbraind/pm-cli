@@ -315,20 +315,26 @@ function walkContainer(content: string, start: number, accepts: (at: number) => 
 }
 
 /** One complete escape sequence in a JSON, Python or YAML string literal. */
-const ESCAPE_SEQUENCE = /\\(?:u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/gu;
+const ESCAPE_SEQUENCE = /\\(?:U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/gu;
 const SIMPLE_ESCAPES: Readonly<Record<string, string>> = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v", "0": "\0" };
 
 /**
- * Decode a quoted literal so the value grammar judges what it represents:
+ * Decode a quoted literal (JSON, YAML and Python escapes, including
+ * eight-digit `\\U` code points) so the value grammar judges what it represents:
  * its length, whitespace, placeholder prefix and entropy. A decoded quote of
- * the literal's own kind becomes the other quote, and a decoded line break a
- * space, so the grammar's delimiters and its raw line-break check are kept.
+ * the literal's own kind becomes the other quote, and a line break produced
+ * by an escape becomes a space. The caller rejects raw line breaks first.
  */
 function decodeQuotedLiteral(literal: string, terminated: boolean): string {
   const quote = literal[0]!;
   const body = literal.slice(1, terminated ? -1 : undefined).replaceAll(ESCAPE_SEQUENCE, (sequence) => {
     const kind = sequence[1]!;
     if (kind === "u" || kind === "x") return String.fromCharCode(Number.parseInt(sequence.slice(2), 16));
+    if (kind === "U" && sequence.length === 10) {
+      // YAML and Python eight-digit escapes; an out-of-range code point stays one opaque character.
+      const codePoint = Number.parseInt(sequence.slice(2), 16);
+      return codePoint <= 0x10_ffff ? String.fromCodePoint(codePoint) : "\ufffd";
+    }
     return SIMPLE_ESCAPES[kind] ?? kind;
   });
   const neutral = body.replaceAll(quote, quote === "\"" ? "'" : "\"").replaceAll(/[\r\n\u2028\u2029]/gu, " ");
@@ -380,7 +386,9 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     if (content[at] !== "\"" && content[at] !== "'") return undefined;
     const { end, terminated } = scanQuoted(content, at);
     const literal = content.slice(at, end);
-    return literal.includes("\\") ? valueMatch(decodeQuotedLiteral(literal, terminated), 0) : undefined;
+    if (!literal.includes("\\")) return undefined;
+    // A raw line break is a host-language artifact before any escape is decoded.
+    return LINE_BREAK.test(literal) ? null : valueMatch(decodeQuotedLiteral(literal, terminated), 0);
   };
   const valueAt = (at: number): RegExpExecArray | null => {
     const escaped = escapedMatch(at);
