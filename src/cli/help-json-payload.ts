@@ -68,7 +68,7 @@ import {
   type PmCommandCapabilityFamily,
   type PmCommandVisibilityTier,
 } from "../sdk/agent-capability-contracts.js";
-import { redactRefusalArgv, redactRefusalEnvelopeCredentials } from "./runtime/refusal-credential-redaction.js";
+import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
 
 /** Documents the help argument summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpArgumentSummary {
@@ -776,7 +776,7 @@ export async function maybeRenderBootstrapJsonHelp(
         extensionDescriptors,
         safeArgv,
       );
-      const envelope = redactRefusalEnvelopeCredentials(argv, formatCommanderErrorForJson(
+      const envelope = formatCommanderErrorForJson(
         unknownMessage,
         "help",
         BUILTIN_TYPE_HELP_VALUES,
@@ -787,7 +787,7 @@ export async function maybeRenderBootstrapJsonHelp(
           normalizedInvocationArgs: [...safeArgv],
           providedOptionFlags: extractProvidedOptionFlags(safeArgv),
         },
-      ));
+      );
       const output = bootstrapGlobal.tokenAccounting
         ? attachOutputTokenAccounting(
             envelope,

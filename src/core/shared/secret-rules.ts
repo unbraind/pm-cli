@@ -310,6 +310,80 @@ function walkContainer(content: string, start: number, accepts: (at: number) => 
   return { found: false, end: content.length };
 }
 
+/** One complete escape sequence in a JSON, Python or YAML string literal. */
+const ESCAPE_SEQUENCE = /\\(?:u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/gu;
+/** Longest prefix scanned back to the opening quote of a prefixed quoted key. */
+const MAX_KEY_PREFIX = 64;
+
+/**
+ * Classify the key that ends at `index`: `exact` when the key word is the
+ * whole key, `prefixed` when other key text precedes it (`db_password`,
+ * `"reset-password"`), and `malformed` for a closing quote with no opening
+ * quote on the same line within a bounded prefix.
+ */
+function keyShape(content: string, index: number, quote: string): "exact" | "prefixed" | "malformed" {
+  const previous = content[index - 1];
+  if (!quote) return previous !== undefined && /[\p{L}\p{N}_.-]/u.test(previous) ? "prefixed" : "exact";
+  if (previous === quote) return "exact";
+  const floor = Math.max(0, index - MAX_KEY_PREFIX);
+  for (let cursor = index - 1; cursor >= floor; cursor -= 1) {
+    const character = content[cursor];
+    if (character === quote) return "prefixed";
+    if (character === "\n" || character === "\r" || character === "\"" || character === "'") return "malformed";
+  }
+  return "malformed";
+}
+
+interface ValueJudge {
+  /** The flat grammar matches at `at`; for an unquoted key that is the flat rule's finding. */
+  direct(at: number): boolean;
+  /** A literal with escapes at `at` matches in its decoded length. */
+  escaped(at: number): boolean;
+  /** Judge one value; a prefixed key's value must also be whitespace-free. */
+  accepts(compact: boolean): (at: number) => boolean;
+}
+
+/** Bind a rule's value grammar to one content string. */
+function createValueJudge(rule: SecretRule, value: RegExp, content: string): ValueJudge {
+  // A JSON, Python or YAML-flow string literal never spans a raw line break, so
+  // a structured value that does is a host-language artifact, not a credential.
+  const valueMatch = (text: string, at: number): RegExpExecArray | null => {
+    value.lastIndex = at;
+    const match = value.exec(text);
+    return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match) ? match : null;
+  };
+  // The value grammar is quote-blind, so a literal with escapes is judged in
+  // its decoded length: each complete escape sequence is one character.
+  const escapedMatch = (at: number): RegExpExecArray | null | undefined => {
+    if (content[at] !== "\"" && content[at] !== "'") return undefined;
+    const literal = content.slice(at, endOfQuoted(content, at));
+    return literal.includes("\\") ? valueMatch(literal.replaceAll(ESCAPE_SEQUENCE, "x"), 0) : undefined;
+  };
+  const valueAt = (at: number): RegExpExecArray | null => {
+    const escaped = escapedMatch(at);
+    return escaped === undefined ? valueMatch(content, at) : escaped;
+  };
+  return {
+    direct: (at) => valueMatch(content, at) !== null,
+    escaped: (at) => Boolean(escapedMatch(at)),
+    // A prefixed key (`reset-password`, `"New password"`) labels prose as often
+    // as it holds a credential, so only a whitespace-free value counts for it.
+    accepts: (compact) => (at) => {
+      const match = valueAt(at);
+      return match !== null && !(compact && /\s/u.test(match[0]));
+    },
+  };
+}
+
+/** Element content such as `<password>value</password>`, judged by length and placeholder shape. */
+function* elementMatches(element: RegExp, content: string): Generator<SecretRuleMatch> {
+  element.lastIndex = 0;
+  for (const match of content.matchAll(element)) {
+    const value = match[1].trim();
+    if (value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(")) yield { index: match.index! };
+  }
+}
+
 /**
  * Linear structured pass. The flat rule already owns unquoted keys with scalar
  * values, so this pass judges only quoted keys and container values. Keys
@@ -322,26 +396,16 @@ function* findStructuredSpellingMatches(
   content: string,
 ): Generator<SecretRuleMatch> {
   const compiled = compileSpelling(spelling);
-  // A JSON, Python or YAML-flow string literal never spans a raw line break, so
-  // a structured value that does is a host-language artifact, not a credential.
-  const judge = (text: string, at: number): boolean => {
-    compiled.value.lastIndex = at;
-    const match = compiled.value.exec(text);
-    return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match);
-  };
-  // The value grammar is quote-blind, so a literal with escapes is judged once
-  // more with each escape sequence counted as one ordinary character.
-  const judgeEscaped = (at: number): boolean => {
-    if (content[at] !== "\"" && content[at] !== "'") return false;
-    const literal = content.slice(at, endOfQuoted(content, at));
-    return literal.includes("\\") && judge(literal.replaceAll(/\\[\s\S]/gu, "x"), 0);
-  };
-  const accepts = (at: number): boolean => judge(content, at) || judgeEscaped(at);
+  const judge = createValueJudge(rule, compiled.value, content);
   // The key cursor survives each yield, so every scan owns its own copy; the
   // value pattern is used synchronously between yields and stays shared.
   const key = new RegExp(compiled.key);
   let walkedEnd = 0;
   for (let match = key.exec(content); match; match = key.exec(content)) {
+    const quote = match[1];
+    const shape = keyShape(content, match.index, quote);
+    if (shape === "malformed") continue;
+    const accepts = judge.accepts(shape === "prefixed");
     const valueStart = match.index + match[0].length;
     const opener = content[valueStart];
     if (opener === "[" || opener === "{") {
@@ -349,17 +413,12 @@ function* findStructuredSpellingMatches(
       const walked = walkContainer(content, valueStart, accepts);
       walkedEnd = walked.end;
       if (walked.found) yield { index: match.index };
-    } else if (match[1] ? accepts(valueStart) : !judge(content, valueStart) && judgeEscaped(valueStart)) {
+    } else if (quote ? accepts(valueStart) : !judge.direct(valueStart) && judge.escaped(valueStart) && accepts(valueStart)) {
       // An unquoted key's directly matching value is the flat rule's finding.
       yield { index: match.index };
     }
   }
-  if (!compiled.element) return;
-  compiled.element.lastIndex = 0;
-  for (const match of content.matchAll(compiled.element)) {
-    const value = match[1].trim();
-    if (value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(")) yield { index: match.index! };
-  }
+  if (compiled.element) yield* elementMatches(compiled.element, content);
 }
 
 /** Accept a pattern match, applying the declared entropy predicate when present. */

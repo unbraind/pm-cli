@@ -35,6 +35,7 @@ import {
   findPmNamespacedCommand,
   resolvePmCommandAlias,
 } from "../sdk/cli-contracts/command-aliases.js";
+import { redactGuidanceCredentials } from "./runtime/refusal-credential-redaction.js";
 
 interface GuidanceMessage {
   sideEffects?: PmCliErrorContext["side_effects"];
@@ -1139,9 +1140,11 @@ function guidanceToJsonEnvelope(
 }
 
 function projectJsonErrorGuidance(
-  guidance: GuidanceMessage,
+  rawGuidance: GuidanceMessage,
   exitCode: number,
 ): ProjectedJsonErrorEnvelope {
+  // Redact before the envelope and its diagnostic budget exist (pm-nhauur).
+  const guidance = redactGuidanceCredentials(rawGuidance);
   const recovery = guidance.recovery;
   const hasActionableRecovery =
     Boolean(recovery?.suggested_retry) ||
@@ -2623,9 +2626,11 @@ export function formatPmCliErrorForDisplay(
  * code-specific why: lean output never prints more than the default.
  */
 function renderBoundedGuidanceText(
-  guidance: GuidanceMessage,
+  rawGuidance: GuidanceMessage,
   options: RenderGuidanceOptions,
 ): string {
+  // Text refusals render from the same redacted guidance as JSON (pm-nhauur).
+  const guidance = redactGuidanceCredentials(rawGuidance);
   const render = (renderOptions: RenderGuidanceOptions): string =>
     projectPmDiagnosticText(
       renderBoundedGuidanceMessage(guidance, renderOptions),

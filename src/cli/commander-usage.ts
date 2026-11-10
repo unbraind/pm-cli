@@ -50,7 +50,7 @@ import { isCompatibleRecoveryFlag, renderMissingOptionRetry, resolveLifecycleVer
 import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
-import { redactRefusalArgv, redactRefusalEnvelopeCredentials, redactRefusalTextCredentials } from "./runtime/refusal-credential-redaction.js";
+import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
 import { redactUrlCredentialsInText } from "../sdk/command-line.js";
 
 /** Supported values accepted by the builtin type help contract. */
@@ -1125,11 +1125,7 @@ export async function formatCommanderUsageMessage(
   const { message, commandName, allowedTypes, ...guidance } = usageContext;
   // Usage refusals honour --lean like every other text refusal (GH-1610).
   const lean = parseBootstrapGlobalOptions(usageContext.normalizedInvocationArgs).lean;
-  // Guidance echoes the raw argv; remove URL credentials before any override or output sees it (pm-nhauur).
-  const formatted = redactRefusalTextCredentials(
-    [...invocationArgs, ...usageContext.normalizedInvocationArgs],
-    formatCommanderErrorForDisplay(message, commandName, allowedTypes, guidance, { lean }),
-  );
+  const formatted = formatCommanderErrorForDisplay(message, commandName, allowedTypes, guidance, { lean });
   const serviceOverride = await runActiveServiceOverride("help_format", {
     message: formatted,
     command: commandName,
@@ -1157,16 +1153,12 @@ export async function formatCommanderUsageJson(
     guidanceOverrides,
     invocationArgs,
   );
-  // Redact before lean projection and output accounting, so the receipt measures the delivered bytes.
-  const envelope = redactRefusalEnvelopeCredentials(
-    [...invocationArgs, ...usageContext.normalizedInvocationArgs],
-    formatCommanderErrorForJson(
-      usageContext.message,
-      usageContext.commandName,
-      usageContext.allowedTypes,
-      EXIT_CODE.USAGE,
-      usageContext,
-    ),
+  const envelope = formatCommanderErrorForJson(
+    usageContext.message,
+    usageContext.commandName,
+    usageContext.allowedTypes,
+    EXIT_CODE.USAGE,
+    usageContext,
   );
   const projected = lean ? projectLeanErrorEnvelope(envelope) : envelope;
   const accountingRequested = parseBootstrapGlobalOptions(

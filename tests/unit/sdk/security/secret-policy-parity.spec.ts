@@ -121,6 +121,9 @@ describe("structured credential spellings (GH-1699)", () => {
     ["escaped quote early in a JSON value", ['{"pass', 'word":"ab\\"', value, '"}'].join("")],
     ["escaped quote in a nested array value", ['{"pass', 'word": ["ab\\"', value, '"]}'].join("")],
     ["escaped quote under an unquoted key", ['pass', 'word: "ab\\"', value, '"'].join("")],
+    ["prefixed key with a compact value", `{"admin-password": "${value}"}`],
+    ["prefixed key with a compact nested value", `smtp.password: ["${value}"]`],
+    ["exact key with a passphrase", ['{"pass', 'word": "correct horse ', value, '"}'].join("")],
     ["nested quoted JSON key with a bare value", `{"password": {"note": "short", "password": ${value}}}`],
     ["XML element", `<password>${value}</password>`],
     ["XML element with attributes", `<password type="text">${value}</password>`],
@@ -149,6 +152,13 @@ describe("structured credential spellings (GH-1699)", () => {
     ["value after the container closes", `{"password": ["short"]} "${value}"`],
     ["key at the end of input", '{"password": '],
     ["short value made only of escapes", ['"pass', 'word": "\\"\\""'].join("")],
+    ["escaped line breaks counted once each", ['{"pass', 'word":"\\n\\n\\n\\n"}'].join("")],
+    ["unicode escapes counted once each", ['{"pass', 'word":"\\u0061\\u0062"}'].join("")],
+    ["prefixed localization key with a prose value", '{"reset-password":"Reset password"}'],
+    ["spaced localization key with a prose value", '{"New password": "Enter a new password"}'],
+    ["underscore-prefixed key, as in the flat rule", '{"db_password": "S3cr3tValue!"}'],
+    ["closing key quote with no opening quote", [`${"label ".repeat(11)}pass`, 'word": ', value].join("")],
+    ["closing key quote after a line break", ["[\n  pass", 'word": "', value, '"]'].join("")],
   ])("allows the %s in both consumers", async (_label, content) => {
     expect(await scanBoth(content, "password-assignment", "password_assignment")).toEqual({ gate: false, mutation: false });
   });

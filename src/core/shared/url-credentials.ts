@@ -4,6 +4,7 @@
  * refusal envelopes, telemetry events and Sentry payloads (pm-nhauur,
  * pm-5htunt).
  */
+import { AsyncLocalStorage } from "node:async_hooks";
 import { quoteWindowsCommandArg } from "./command-line.js";
 
 /** Written where a possible userinfo span was removed. */
@@ -35,29 +36,33 @@ export function redactUrlCredentialsInToken(token: string): string {
   return bounds ? `${token.slice(0, bounds[0])}${URL_CREDENTIAL_PLACEHOLDER}${token.slice(bounds[1])}` : token;
 }
 
-/** Shorter whitespace-bearing spans are left to the word rule; matching them as text would erase ordinary words. */
-const MIN_REGISTERED_SPAN_LENGTH = 4;
-/** Beyond this many spans the text rule falls back to its whole-string form instead of scanning each span. */
-const MAX_REGISTERED_SPANS = 32;
+/** Beyond this many spellings the text rule falls back to its whole-string form instead of scanning each one. */
+const MAX_REGISTERED_SPELLINGS = 32;
 
 interface InvocationCredentials {
   carried: boolean;
-  /** Case-insensitive alternation of every registered span and its shell-escaped spellings, longest first. */
+  /** Case-insensitive alternation of every registered span and its escaped spellings, longest first. */
   pattern: RegExp | undefined;
   overflow: boolean;
 }
 
-let invocation: InvocationCredentials = { carried: false, pattern: undefined, overflow: false };
+const NO_INVOCATION: InvocationCredentials = { carried: false, pattern: undefined, overflow: false };
+// Overlapping in-process invocations each keep their own registration.
+const invocations = new AsyncLocalStorage<InvocationCredentials>();
 
-/**
- * Record the running invocation's URL userinfo. A host process runs one
- * invocation at a time, and each registration replaces the last. A span that
- * contains whitespace splits into several words, which the word rule cannot
- * reassemble, so the text rule also removes each such span, case-insensitively
- * and in both shells' escaping, wherever a producer echoed it.
- */
-export function registerUrlCredentialInvocation(argv: readonly string[]): void {
-  const spans = new Set<string>();
+/** Every spelling a span takes in raw text, in both shells' quoting and in a JSON string. */
+function spanSpellings(span: string): string[] {
+  return [
+    span,
+    span.replaceAll(/(["\\$`])/gu, "\\$1"),
+    // A span always precedes the token's `@`, so no trailing backslash doubling applies.
+    quoteWindowsCommandArg(`${span}@`).slice(1, -2),
+    JSON.stringify(span).slice(1, -1),
+  ];
+}
+
+function describeInvocation(argv: readonly string[]): InvocationCredentials {
+  const spellings = new Set<string>();
   let carried = false;
   for (const token of argv) {
     const bounds = userinfoBounds(token);
@@ -65,33 +70,42 @@ export function registerUrlCredentialInvocation(argv: readonly string[]): void {
     carried = true;
     const span = token.slice(bounds[0], bounds[1]);
     // The word rule already removes a whitespace-free span in every word layout.
-    if (span.length < MIN_REGISTERED_SPAN_LENGTH || !/\s/u.test(span)) continue;
-    // Both shells' escaping of a span that a non-quote, non-final character follows.
-    for (const spelling of [span, span.replaceAll(/(["\\$`])/gu, "\\$1"), quoteWindowsCommandArg(`${span}@`).slice(1, -2)]) {
-      spans.add(spelling);
-    }
+    if (!/\s/u.test(span)) continue;
+    for (const spelling of spanSpellings(span)) spellings.add(spelling);
   }
-  const overflow = spans.size > MAX_REGISTERED_SPANS;
-  const ordered = [...spans].sort((left, right) => right.length - left.length);
+  const overflow = spellings.size > MAX_REGISTERED_SPELLINGS;
+  const ordered = [...spellings].sort((left, right) => right.length - left.length);
   const pattern = overflow || ordered.length === 0
     ? undefined
     : new RegExp(ordered.map((spelling) => spelling.replaceAll(/[\\^$.*+?()[\]{}|/-]/gu, "\\$&")).join("|"), "gi");
-  invocation = { carried, pattern, overflow };
+  return { carried, pattern, overflow };
 }
 
-/** Whether the registered invocation carried any possible URL userinfo. */
+/**
+ * Run one invocation with its URL userinfo registered. A span that contains
+ * whitespace splits into several words, which the word rule cannot
+ * reassemble, so inside this scope the text rule also removes each such span,
+ * case-insensitively and in its shell and JSON escaping, wherever a producer
+ * echoed it. The registration is invisible outside the scope.
+ */
+export function runWithUrlCredentialInvocation<T>(argv: readonly string[], run: () => T): T {
+  return invocations.run(describeInvocation(argv), run);
+}
+
+/** Whether the running invocation carried any possible URL userinfo. */
 export function invocationCarriesUrlCredentials(): boolean {
-  return invocation.carried;
+  return (invocations.getStore() ?? NO_INVOCATION).carried;
 }
 
 /**
  * Apply {@link redactUrlCredentialsInToken} to every whitespace-delimited word
- * of free text, after removing the registered invocation's spans. When more
- * spans were registered than the bounded scan allows, any text with a `:`
+ * of free text, after removing the running invocation's registered spans.
+ * When more spellings were registered than the bounded scan allows, any text with a `:`
  * before an `@` loses the whole span between its first `:` and last `@`,
  * which over-redacts but cannot miss one.
  */
 export function redactUrlCredentialsInText(text: string): string {
+  const invocation = invocations.getStore() ?? NO_INVOCATION;
   let redacted = text;
   if (invocation.overflow) {
     const bounds = userinfoBounds(redacted);

@@ -15,7 +15,7 @@ export {
   invocationCarriesUrlCredentials,
   redactUrlCredentialsInText,
   redactUrlCredentialsInToken,
-  registerUrlCredentialInvocation,
+  runWithUrlCredentialInvocation,
 } from "../core/shared/url-credentials.js";
 
 /** Tracker selection a rendered recovery command must preserve: the requested path and extension isolation. */

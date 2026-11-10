@@ -23,7 +23,7 @@ import {
 } from "../../../../src/core/telemetry/runtime.js";
 import { itOnPosix } from "../../../helpers/platform.js";
 import { withTempGlobalRoot as withTempGlobalRootHelper } from "../../../helpers/temp.js";
-import { registerUrlCredentialInvocation } from "../../../../src/core/shared/url-credentials.js";
+import { runWithUrlCredentialInvocation } from "../../../../src/core/shared/url-credentials.js";
 
 const originalGlobalPath = process.env.PM_GLOBAL_PATH;
 const originalFetch = globalThis.fetch;
@@ -2947,14 +2947,11 @@ describe("core/telemetry/runtime", () => {
     }
     expect(_testOnly.sanitizeStringRedacted("fetch https://u:p@registry:8080/x failed")).toBe("fetch https://[redacted]@registry:8080/x failed");
     expect(_testOnly.sanitizeStringMax("fetch https://tok3n@localhost/x failed")).toBe("fetch https://[redacted]@localhost/x failed");
-    registerUrlCredentialInvocation(["https://u:my pass@localhost/x"]);
-    try {
+    runWithUrlCredentialInvocation(["https://u:my pass@localhost/x"], () => {
       for (const sanitize of [_testOnly.sanitizeStringRedacted, _testOnly.sanitizeStringMax]) {
         expect(sanitize("unknown command 'https://U:my pass@localhost/x'")).not.toMatch(/my pass/iu);
       }
-    } finally {
-      registerUrlCredentialInvocation([]);
-    }
+    });
   });
 
   it("covers telemetry helper fallback branches for sanitization and parsing", async () => {

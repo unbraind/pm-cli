@@ -159,18 +159,19 @@ combine:
   redacted. Anything a builder derives from it is therefore safe by
   construction, even when it lower-cases, truncates, re-quotes or wraps the
   value.
-- At emission, values that a producer echoed from the raw invocation pass the
-  token rule (argv-token fields) or the word rule (free text). A userinfo that
-  contains whitespace splits into several words, which the word rule cannot
-  reassemble. Such a span is also registered for the running invocation and
-  removed in any case and in both shells' escaping. The same registry also
-  protects telemetry and Sentry.
-- When the invocation carried credentials, the JSON envelope withholds
-  `suggested_retry` and `suggested_retry_args`. Formatters regenerate retries
-  from the recovery arguments, so withholding runs on the formatted envelope,
-  before lean projection and output-token accounting. A final next step tells
-  the caller to restore the credentials. Text output shows the placeholder and
-  carries the same note.
+- Every JSON and text refusal is rendered from one guidance object, and that
+  object is redacted before its envelope, its diagnostic budget and its
+  output accounting exist, so receipts measure the delivered bytes. Values a
+  producer echoed from the raw invocation pass the token rule (argv-token
+  fields) or the word rule (free text). A userinfo that contains whitespace
+  splits into several words, which the word rule cannot reassemble. Such a
+  span is also registered in an invocation-scoped registry and removed in any
+  case and in its shell and JSON escaping. The registry is held in an
+  AsyncLocalStorage scope, so overlapping in-process invocations never share
+  it. The same registry also protects telemetry and Sentry.
+- When the invocation carried credentials, the guidance withholds
+  `suggested_retry` and `suggested_retry_args` and gains a final next step
+  telling the caller to restore them. JSON and text output therefore agree.
 
 ### Executable mutation inventory
 

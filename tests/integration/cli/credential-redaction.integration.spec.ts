@@ -74,3 +74,28 @@ it("covers the spellings and paths the first review round reproduced (pm-nhauur)
   });
 }, 120_000);
 
+
+it("covers the second review round's reproductions (pm-nhauur)", async () => {
+  await withTempPmPath(async (context) => {
+    const created = context.runCli(["create", "--type", "Task", "--title", "probe", "--json"], { expectJson: true });
+    const id = (created.json as { id?: string; item?: { id?: string } }).id ?? (created.json as { item: { id: string } }).item.id;
+    const echoes = [
+      // The value is JSON-stringified into the title and detail.
+      ["--no-extensions", "update", id, "--title", "ok", "--message", "ok", "--expect-hash", `https://u:${SECRET} pass\tmore@localhost/x`, "--json"],
+      // A three-character whitespace-bearing username.
+      ["--no-extensions", `https://${SECRET.slice(0, 1)} ${SECRET.slice(1, 2)}@localhost/x`, "--json"],
+    ];
+    for (const args of echoes) {
+      const refused = context.runCli(args);
+      expect(refused.code, args.join(" ")).not.toBe(0);
+      const output = `${refused.stdout}${refused.stderr}`;
+      expect(output, args.join(" ")).not.toContain(`${SECRET} pass`);
+      expect(output, args.join(" ")).not.toContain(`${SECRET.slice(0, 1)} ${SECRET.slice(1, 2)}@`);
+      expect(output, args.join(" ")).toMatch(/restore them before replaying/u);
+    }
+    // Redaction happens before the diagnostic budget, so its receipt measures the delivered envelope.
+    const long = context.runCli(["--no-extensions", `https://u:p@localhost/${"x".repeat(1382)}`, "--json"]);
+    const envelope = JSON.parse(long.stderr) as { diagnostic_output?: { budget: number; estimated_tokens: number } };
+    expect(envelope.diagnostic_output?.estimated_tokens).toBeLessThanOrEqual(envelope.diagnostic_output?.budget ?? 0);
+  });
+}, 120_000);

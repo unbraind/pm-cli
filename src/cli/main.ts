@@ -14,8 +14,8 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairReadOutputMutationRecovery } from "./runtime/read-output-mutation-retry.js";
-import { redactRefusalArgv, redactRefusalCredentials, redactRefusalEnvelopeCredentials, redactRefusalTextCredentials } from "./runtime/refusal-credential-redaction.js";
-import { redactUrlCredentialsInText, registerUrlCredentialInvocation } from "../sdk/command-line.js";
+import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
+import { redactUrlCredentialsInText, runWithUrlCredentialInvocation } from "../sdk/command-line.js";
 import { isTrackerRevisionGuarded } from "../sdk/lifecycle/item-revision.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
@@ -1956,21 +1956,19 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   const errorMessage = redactUrlCredentialsInText(describeUnknownError(context.error));
   const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
   const rawContext = context.error instanceof PmCliError || isPmCliExpectedError(context.error) ? context.error.context : undefined;
-  const enrichedContext = redactRefusalCredentials(
-    context.invocationArgv,
-    buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage),
-  );
+  // The formatters redact their guidance before rendering, so the context only needs credential-free argv.
+  const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
   const classification = classifyPmCliError(errorMessage, enrichedContext);
-  // Formatters regenerate retries from the recovery arguments, so withholding runs on the envelope itself.
-  const jsonEnvelope = redactRefusalEnvelopeCredentials(context.invocationArgv, formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext));
-  const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean ? projectLeanErrorEnvelope(jsonEnvelope) : jsonEnvelope);
+  const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean
+    ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))
+    : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext));
   const renderedError = context.jsonErrors
     ? JSON.stringify(
         context.bootstrapGlobal.tokenAccounting ? attachOutputTokenAccounting(jsonErrorPayload, (value) => `${JSON.stringify(value, null, 2)}\n`) : jsonErrorPayload,
         null,
         2,
       )
-    : redactRefusalTextCredentials(context.invocationArgv, formatPmCliErrorForDisplay(errorMessage, enrichedContext, { lean: context.bootstrapGlobal.lean === true }));
+    : formatPmCliErrorForDisplay(errorMessage, enrichedContext, { lean: context.bootstrapGlobal.lean === true });
   if (context.jsonErrors) writeStderr(`${renderedError}\n`);
   else printError(renderedError);
   const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
@@ -2349,12 +2347,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   try { invocationArgv = normalizeBootstrapInvocation(rawArgv).argv; }
   catch { /* Report normalization failures through the normal invocation path inside the selected settings scope. */ }
   // Every sanitizer (refusals, telemetry, Sentry) removes this invocation's URL userinfo, whatever word layout echoes it.
-  registerUrlCredentialInvocation([...rawArgv, ...invocationArgv]);
-  try {
-    await runPmCliInvocation(rawArgv, invocationArgv);
-  } finally {
-    registerUrlCredentialInvocation([]);
-  }
+  await runWithUrlCredentialInvocation([...rawArgv, ...invocationArgv], () => runPmCliInvocation(rawArgv, invocationArgv));
 }
 
 async function runPmCliInvocation(rawArgv: string[], invocationArgv: string[]): Promise<void> {
