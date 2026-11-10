@@ -6,22 +6,22 @@ status: closed
 priority: 2
 tags[4]: agent-ux,config,"gh:1695",sdk
 created_at: "2026-11-09T07:32:05.563Z"
-updated_at: "2026-11-09T21:23:04.543Z"
-closed_at: "2026-11-09T21:23:03.546Z"
-completed_at: "2026-11-09T21:23:03.546Z"
+updated_at: "2026-11-10T00:11:14.208Z"
+closed_at: "2026-11-10T00:11:13.312Z"
+completed_at: "2026-11-10T00:11:13.312Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Accept every supported settings path as an alias in SDK-backed config get/set without bypassing validation; Unknown keys offer at most three nearest legal keys and a working config-list inspection command; Preserve complete legal keys in structured recovery and reject unknown keys without settings writes
 parent: pm-8jdc
 risk: medium
 confidence: high
-resolution: "Preserved the shared descriptor parser reason for grouped context integer refusals, including the minimum for zero."
-expected_result: Grouped and dotted validation expose consistent precise grammar and bound failures without writing invalid settings.
-actual_result: "A zero grouped context value reproduced the missing lower-bound explanation before repair. Grouped integer refusals now reuse the shared descriptor parser error, retaining its precise grammar and minimum/maximum reason. The existing regression checks zero for both context knobs and confirms settings remain unchanged. The typed option union maps only to declared shared-registry entries; the internal non-null lookup expresses that invariant. No defensive runtime branch or production test seam was added. Typo ranking remains bounded on the refusal path and the complete machine domain is retained as required. Final source verification reports 436 tests passing across 17 instrumented files, all seven linked command entries across the three owners, full typechecks, ESLint, contracts/catalog, zero classified SDK surface changes, and all nine packed consumers. Full-source coverage correctly refuses the selected cohort denominator; hosted whole-repository coverage and current-head admission remain required. No coverage, performance or diagnostic budget is relaxed."
+resolution: "Accept validated settings-path aliases and all scalar context leaves through shared SDK setters; preserve full context depth and consistent strict integer grammar and bounds in grouped/dotted writes and profiles. Return bounded suggestions and a complete scoped SDK key domain with an executable tracker-preserving inventory command. Preserve optional typed section toggles, grouped minimum explanations and uniform depth normalization. Consolidate the real integration imports without changing assertions."
+expected_result: "Declared configuration aliases and paths use shared validation, invalid inputs preserve settings, scoped SDK recovery remains complete, and real CLI replay preserves the selected tracker."
+actual_result: "All four linked command entries pass, including config and selected-tracker integration, profile lint/application, key discovery and public typetests. Final four integration cases and ESLint pass after import consolidation. The preceding production-identical head passed 495 instrumented tests, nine packed consumers, all 475 declaration equivalence checks and unchanged artifact budgets. Whole-source hosted exact coverage and current-head review remain required for PR1696."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4zpq71,related,"2026-11-09T09:01:45.656Z","harness:codex","cli:update:dep",detected
   pm-gh1693,related,"2026-11-09T12:23:22.291Z","harness:codex","cli:update:dep",detected
-comments[19]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-11-09T07:32:05.563Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:19.904Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T08:30:38.246Z","harness:codex","Completeness review extended the same descriptor-owned configuration surface to the context scalar leaves previously available only through grouped context flags: default depth, activity limit, staleness threshold and the eight existing section toggles. The shared descriptor validators enforce the canonical depth domain, positive safe integers and booleans; real CLI tests check persisted values and byte preservation on invalid depth, zero and unsafe-integer assignments. Existing grouped flags remain supported and help now distinguishes group and leaf writes."
@@ -41,6 +41,7 @@ comments[19]{created_at,author,text}:
   "2026-11-09T19:13:09.183Z","harness:codex","Review typing repair: the runtime-preserved recently_created and unparented context section booleans now appear as optional fields in ParsedSettings. A consumer typetest reproduced two TS2339 failures before repair and compiles after repair without casts. The existing validator round-trip asserts both true and false values. All four linked owner commands and the 433-test instrumented cohort pass. Full typecheck, ESLint and generated contracts/catalog checks pass; SDK surface classification remains zero changes because this parsed internal shape is outside the published SDK export surface."
   "2026-11-09T19:55:39.696Z","harness:codex","Documented string-choice and case normalization, opt-in finite decimal parsing, alias discovery and scoped SDK recovery, and key requirements by configuration action. These comments explain the shared configuration contract rather than changing its behavior. This addresses the verified review docstring warning: nine touched helpers lacked JSDoc. Build, repository docstring quality, ESLint, SDK surface and contracts/catalog checks pass. Independent before/after TypeScript emission is byte-identical with comments removed across all five changed source files. The prior 433-test instrumented runtime cohort remains applicable; no runtime assertions are repeated for this documentation-only change. The proposed required.supported_keys object conflicts with the governed string required field; the complete scoped SDK domain already uses recovery.allowed_values. The combined release/maintenance scope follows the explicit multi-item delivery request and linked PM owners."
   "2026-11-09T21:23:02.674Z","harness:codex","A zero grouped context value reproduced the missing lower-bound explanation before repair. Grouped integer refusals now reuse the shared descriptor parser error, retaining its precise grammar and minimum/maximum reason. The existing regression checks zero for both context knobs and confirms settings remain unchanged. The typed option union maps only to declared shared-registry entries; the internal non-null lookup expresses that invariant. No defensive runtime branch or production test seam was added. Typo ranking remains bounded on the refusal path and the complete machine domain is retained as required. Final source verification reports 436 tests passing across 17 instrumented files, all seven linked command entries across the three owners, full typechecks, ESLint, contracts/catalog, zero classified SDK surface changes, and all nine packed consumers. Full-source coverage correctly refuses the selected cohort denominator; hosted whole-repository coverage and current-head admission remain required. No coverage, performance or diagnostic budget is relaxed."
+  "2026-11-10T00:10:34.611Z","harness:codex","Completed full review 6c3eece8b found no new functional defect. Its additional unverified import-placement note was verified against the file: readFile/path imports followed describe. Consolidated all imports at the module top without changing assertions or production code. Existing four real CLI integration tests and ESLint pass. Preserve the requested combined SDK/release cohort rather than applying the unrelated scope-splitting suggestion; all affected work has canonical PM ownership."
 notes[1]{created_at,author,text}:
   "2026-11-09T15:15:30.252Z","harness:codex","Contract decision for the proposed required.supported_keys path: the published SDK/CLI error envelope declares required as a remediation string shared by all commands. Preserve that governed shape and expose the complete scoped key domain through the existing recovery.allowed_values primitive rather than creating a command-specific object or duplicate domain. The scoped unbounded inventory command and complete SDK error context provide retrieval when CLI diagnostic budgeting binds. This is an explicit compatibility decision rather than a claim that the proposed field was added."
 learnings[2]{created_at,author,text}:
@@ -95,7 +96,7 @@ tests[4]:
       created_at: "2026-11-09T18:59:18.926Z"
       source_kind: local_mutation
       source_ref: fix/sdk-configuration-and-redaction-recovery
-test_runs[15]:
+test_runs[16]:
   - run_id: test-local-mw91xt83-rj3zym
     kind: test
     status: passed
@@ -279,9 +280,23 @@ test_runs[15]:
       node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
       pnpm exec tsc --noEmit -p tsconfig.typetests.json,schema,schema,source,local_source_ref
+  - run_id: test-local-mw9xptjx-6c14gg
+    kind: test
+    status: passed
+    started_at: "2026-11-10T00:10:35.271Z"
+    finished_at: "2026-11-10T00:11:12.477Z"
+    recorded_at: "2026-11-10T00:11:12.477Z"
+    passed: 4
+    failed: 0
+    skipped: 0
+    executions[4]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/core/profile/profile-lint.spec.ts tests/unit/core/profile/profile-plan.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/commands/workspace/config-key-aliases-search.spec.ts,schema,schema,source,local_source_ref
+      pnpm exec tsc --noEmit -p tsconfig.typetests.json,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/CONFIGURATION.md,project
-close_reason: Completed and verified the current review corrections.
+close_reason: Completed configuration recovery and final integration review cleanup in PR1696; hosted delivery remains required.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

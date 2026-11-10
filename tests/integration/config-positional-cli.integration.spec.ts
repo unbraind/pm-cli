@@ -1,8 +1,10 @@
-import { runConfig } from "../../src/sdk/config.js";
-import { PmCliError } from "../../src/core/shared/errors.js";
 import { spawnSync } from "node:child_process";
-import { quoteCommandArg } from "../../src/core/shared/command-line.js";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { quoteCommandArg } from "../../src/core/shared/command-line.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
+import { runConfig } from "../../src/sdk/config.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("config positional CLI parser", () => {
@@ -112,5 +114,3 @@ describe("config positional CLI parser", () => {
     });
   });
 });
-import { readFile } from "node:fs/promises";
-import path from "node:path";
