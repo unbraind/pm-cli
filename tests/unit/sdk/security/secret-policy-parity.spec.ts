@@ -118,6 +118,9 @@ describe("structured credential spellings (GH-1699)", () => {
     ["unquoted key with an array", `password: ["${value}"]`],
     ["bare nested key", `{"password": {value: "${value}"}}`],
     ["nested quoted key with a bare YAML value", `password: {x: 'short', 'password': ${value}}`],
+    ["escaped quote early in a JSON value", ['{"pass', 'word":"ab\\"', value, '"}'].join("")],
+    ["escaped quote in a nested array value", ['{"pass', 'word": ["ab\\"', value, '"]}'].join("")],
+    ["escaped quote under an unquoted key", ['pass', 'word: "ab\\"', value, '"'].join("")],
     ["nested quoted JSON key with a bare value", `{"password": {"note": "short", "password": ${value}}}`],
     ["XML element", `<password>${value}</password>`],
     ["XML element with attributes", `<password type="text">${value}</password>`],
@@ -145,6 +148,7 @@ describe("structured credential spellings (GH-1699)", () => {
     ["mismatched container", '{"password": ["short"}'],
     ["value after the container closes", `{"password": ["short"]} "${value}"`],
     ["key at the end of input", '{"password": '],
+    ["short value made only of escapes", ['"pass', 'word": "\\"\\""'].join("")],
   ])("allows the %s in both consumers", async (_label, content) => {
     expect(await scanBoth(content, "password-assignment", "password_assignment")).toEqual({ gate: false, mutation: false });
   });

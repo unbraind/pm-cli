@@ -324,11 +324,19 @@ function* findStructuredSpellingMatches(
   const compiled = compileSpelling(spelling);
   // A JSON, Python or YAML-flow string literal never spans a raw line break, so
   // a structured value that does is a host-language artifact, not a credential.
-  const accepts = (at: number): boolean => {
+  const judge = (text: string, at: number): boolean => {
     compiled.value.lastIndex = at;
-    const match = compiled.value.exec(content);
+    const match = compiled.value.exec(text);
     return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match);
   };
+  // The value grammar is quote-blind, so a literal with escapes is judged once
+  // more with each escape sequence counted as one ordinary character.
+  const judgeEscaped = (at: number): boolean => {
+    if (content[at] !== "\"" && content[at] !== "'") return false;
+    const literal = content.slice(at, endOfQuoted(content, at));
+    return literal.includes("\\") && judge(literal.replaceAll(/\\[\s\S]/gu, "x"), 0);
+  };
+  const accepts = (at: number): boolean => judge(content, at) || judgeEscaped(at);
   // The key cursor survives each yield, so every scan owns its own copy; the
   // value pattern is used synchronously between yields and stays shared.
   const key = new RegExp(compiled.key);
@@ -341,7 +349,8 @@ function* findStructuredSpellingMatches(
       const walked = walkContainer(content, valueStart, accepts);
       walkedEnd = walked.end;
       if (walked.found) yield { index: match.index };
-    } else if (match[1] && accepts(valueStart)) {
+    } else if (match[1] ? accepts(valueStart) : !judge(content, valueStart) && judgeEscaped(valueStart)) {
+      // An unquoted key's directly matching value is the flat rule's finding.
       yield { index: match.index };
     }
   }
