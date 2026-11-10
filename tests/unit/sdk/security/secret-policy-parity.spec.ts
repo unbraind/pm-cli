@@ -199,6 +199,10 @@ describe("structured credential spellings (GH-1699)", () => {
     expect(scanMutationSecrets({ description: ["{'pass", "word':'ab\\'", "cdefghijk'}"].join("") }).map(({ rule }) => rule)).toContain("password_assignment");
   });
 
+  it("applies the compact-key check to each reading of a single-quoted literal", () => {
+    expect(scanMutationSecrets({ description: ['"admin-pass', "word\": 'A9b\\nC2dE'"].join("") }).map(({ rule }) => rule)).toContain("password_assignment");
+  });
+
   it("decodes an incomplete escape as its letter, not as NUL", () => {
     const token = `${entropy.slice(0, 12)}\\x${entropy.slice(12)}`;
     expect(scanMutationSecrets({ description: `{"token":"${token}"}` }).map(({ rule }) => rule)).toContain("high_entropy_assignment");

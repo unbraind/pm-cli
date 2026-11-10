@@ -384,33 +384,32 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match) ? match : null;
   };
   // The value grammar is quote-blind, so a literal with escapes is judged in
-  // its decoded form.
-  const escapedMatch = (at: number): RegExpExecArray | null | undefined => {
+  // its decoded form. Every common format decodes escapes in double quotes; in
+  // single quotes TOML and YAML keep backslashes literally while Python and
+  // JavaScript decode them, so a single-quoted value is judged under both
+  // readings. Undefined means no escaped literal starts here.
+  const escapedMatches = (at: number): RegExpExecArray[] | undefined => {
     if (content[at] !== "\"" && content[at] !== "'") return undefined;
     const { end, terminated } = scanQuoted(content, at);
     const literal = content.slice(at, end);
     if (!literal.includes("\\")) return undefined;
     // A raw line break is a host-language artifact before any escape is decoded.
-    if (LINE_BREAK.test(literal)) return null;
-    const decoded = valueMatch(decodeQuotedLiteral(literal, terminated), 0);
-    // Every common format decodes escapes in double quotes. In single quotes,
-    // TOML and YAML keep backslashes literally while Python and JavaScript
-    // decode them, so a single-quoted value counts under either reading.
-    return decoded ?? (content[at] === "'" ? valueMatch(literal, 0) : null);
+    if (LINE_BREAK.test(literal)) return [];
+    const readings = content[at] === "'" ? [decodeQuotedLiteral(literal, terminated), literal] : [decodeQuotedLiteral(literal, terminated)];
+    return readings.map((reading) => valueMatch(reading, 0)).filter((match): match is RegExpExecArray => match !== null);
   };
-  const valueAt = (at: number): RegExpExecArray | null => {
-    const escaped = escapedMatch(at);
-    return escaped === undefined ? valueMatch(content, at) : escaped;
+  const valuesAt = (at: number): RegExpExecArray[] => {
+    const escaped = escapedMatches(at);
+    if (escaped !== undefined) return escaped;
+    const match = valueMatch(content, at);
+    return match === null ? [] : [match];
   };
   return {
     direct: (at) => valueMatch(content, at) !== null,
-    escaped: (at) => Boolean(escapedMatch(at)),
+    escaped: (at) => (escapedMatches(at)?.length ?? 0) > 0,
     // A prefixed key (`reset-password`, `"New password"`) labels prose as often
-    // as it holds a credential, so only a whitespace-free value counts for it.
-    accepts: (compact) => (at) => {
-      const match = valueAt(at);
-      return match !== null && !(compact && /\s/u.test(match[0]));
-    },
+    // as it holds a credential, so only a whitespace-free reading counts for it.
+    accepts: (compact) => (at) => valuesAt(at).some((match) => !(compact && /\s/u.test(match[0]))),
   };
 }
 

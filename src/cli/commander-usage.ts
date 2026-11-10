@@ -167,11 +167,19 @@ export interface CommanderExtensionFailure {
 export function appendCommanderExtensionFailures(
   renderedUsage: string,
   json: boolean,
-  failures: CommanderExtensionFailure[],
+  rawFailures: CommanderExtensionFailure[],
 ): string {
-  if (failures.length === 0) {
+  if (rawFailures.length === 0) {
     return renderedUsage;
   }
+  // Failures are appended after the guidance was redacted, and they can name a
+  // credential-bearing tracker path, so they pass the same text rule (pm-nhauur).
+  const failures = rawFailures.map((entry) => ({
+    ...entry,
+    name: redactUrlCredentialsInText(entry.name),
+    error: redactUrlCredentialsInText(entry.error),
+    ...(entry.recovery_commands ? { recovery_commands: entry.recovery_commands.map(redactUrlCredentialsInText) } : {}),
+  }));
   if (json) {
     const primaryFailure = failures.find(
       (entry) => entry.declared_command_match === true,

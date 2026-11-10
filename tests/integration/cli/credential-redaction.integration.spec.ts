@@ -135,3 +135,14 @@ it("keeps the restore warning in bounded text output (pm-nhauur)", async () => {
   });
 }, 120_000);
 
+it("redacts extension-recovery failures appended after the guidance (pm-nhauur)", async () => {
+  await withTempPmPath(async (context) => {
+    const tracker = path.join(context.tempRoot, `https://u:${SECRET}@localhost`, "tracker");
+    for (const format of [["--json"], []]) {
+      const refused = context.runCli(["--no-extensions", "--pm-path", tracker, "listt", ...format]);
+      expect(refused.code).not.toBe(0);
+      expect(`${refused.stdout}${refused.stderr}`).not.toContain(SECRET);
+    }
+  });
+}, 120_000);
+
