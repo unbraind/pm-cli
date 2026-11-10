@@ -163,6 +163,7 @@ describe("structured credential spellings (GH-1699)", () => {
     ["closing key quote with no opening quote", [`${"label ".repeat(11)}pass`, 'word": ', value].join("")],
     ["closing key quote after a line break", ["[\n  pass", 'word": "', value, '"]'].join("")],
     ["escaped literal that spans a raw line break", ['{"pass', 'word": "ab\\"c\n', value, '"}'].join("")],
+    ["unterminated escaped literal", ['{"pass', 'word": "ab\\"', value].join("")],
   ])("allows the %s in both consumers", async (_label, content) => {
     expect(await scanBoth(content, "password-assignment", "password_assignment")).toEqual({ gate: false, mutation: false });
   });

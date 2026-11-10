@@ -103,6 +103,12 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     });
   });
 
+  it("keeps fragment offsets aligned when lower-casing changes a character's length", () => {
+    runWithUrlCredentialInvocation(["https://u:\u0130stanbulSecret9@h/x"], () => {
+      expect(redactUrlCredentialsInText("echo \u0130STANBULSECRET9 done")).toBe("echo [redacted] done");
+    });
+  });
+
   it("keeps bounded protection for a secret longer than the fragment budget", () => {
     let state = 1;
     const secret = Array.from({ length: 70_000 }, () => {

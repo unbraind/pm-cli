@@ -1045,12 +1045,12 @@ export async function resolveCommanderUsageContext(
     typeof error === "object" && error !== null
       ? (error as { message?: string }).message
       : undefined;
-  // Guidance is derived only from credential-free text and tokens (pm-nhauur).
+  // Guidance is derived only from credential-free text and tokens (pm-nhauur);
+  // options such as the tracker path are still read from the caller's tokens.
   const message = redactUrlCredentialsInText(rawMessage ?? "Invalid command usage");
-  const invocationArgv = redactRefusalArgv(normalizeBootstrapInvocation(
-    [...invocationArgs],
-  ).argv);
-  const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
+  const normalizedArgv = normalizeBootstrapInvocation([...invocationArgs]).argv;
+  const invocationArgv = redactRefusalArgv(normalizedArgv);
+  const bootstrapGlobal = parseBootstrapGlobalOptions(normalizedArgv);
   const commandName = resolveRecoveryCommandName(message, invocationArgv, rootProgram, extensionDescriptors);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);

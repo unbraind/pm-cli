@@ -64,6 +64,19 @@ async function captureError(run: () => Promise<unknown>): Promise<PmCliError> {
 }
 
 describe("pm-gh1576 expected-revision token grammar", () => {
+  it("echoes a piece of a credential-bearing revision argument only as the placeholder (pm-nhauur)", () => {
+    for (const value of ["https://u:abc,rest@localhost/x", "=https://u:abc@localhost/x"]) {
+      try {
+        parseExpectHashSpecs(value);
+        expect.unreachable();
+      } catch (error) {
+        expect((error as PmCliError).message).not.toContain("u:abc");
+        expect((error as PmCliError).context?.value).toBe("[redacted]");
+      }
+    }
+    expect(() => parseExpectHashSpecs("not-a-hash")).toThrow(/"not-a-hash"/u);
+  });
+
   it("parses bare, targeted and comma-separated tokens and normalizes case", () => {
     expect(parseExpectHashSpecs(undefined)).toEqual([]);
     expect(parseExpectHashSpecs([])).toEqual([]);

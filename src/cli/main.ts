@@ -1844,7 +1844,10 @@ type TelemetryCommandErrorEmitter = (params: {
 
 interface RunPmCliErrorContext {
   error: unknown;
+  /** Credential-free tokens for every guidance builder (pm-nhauur). */
   invocationArgv: string[];
+  /** The caller's own tokens, for resolvers that read options such as the tracker path; they redact what they echo. */
+  rawInvocationArgv: string[];
   bootstrapGlobal: GlobalOptions;
   jsonErrors: boolean;
   bootstrapPmRoot: string;
@@ -2020,7 +2023,7 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
   const failedExtensions = context.bootstrapGlobal.noExtensions
     ? []
     : await loadExtensionRecoveryFailures(pmRoot, {}, collectActivationCommandCandidates(recoveryProbe));
-  const usageContext = await resolveCommanderUsageContext({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.invocationArgv);
+  const usageContext = await resolveCommanderUsageContext({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.rawInvocationArgv);
   const classification = classifyCommanderError(usageContext.message, usageContext.commandName, usageContext.allowedTypes, {
     unknownCommandExamples: usageContext.unknownCommandExamples,
     unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
@@ -2052,8 +2055,8 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     resolution_stage: "parse",
   }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
-    ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors, context.bootstrapGlobal.lean === true, { failedExtensions }, context.invocationArgv)
-    : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.invocationArgv);
+    ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors, context.bootstrapGlobal.lean === true, { failedExtensions }, context.rawInvocationArgv)
+    : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.rawInvocationArgv);
   const renderedUsage = appendCommanderExtensionFailures(baseRenderedUsage, context.jsonErrors, failedExtensions);
   await finishRunPmCliFailure({
     errorMessage: unknownMessage,
@@ -2086,7 +2089,7 @@ async function handleRunPmCliHelpDisplayError(context: RunPmCliErrorContext, cod
 }
 
 async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, code: string): Promise<void> {
-  const usageContext = await resolveCommanderUsageContext(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.invocationArgv);
+  const usageContext = await resolveCommanderUsageContext(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.rawInvocationArgv);
   const classification = classifyCommanderError(usageContext.message, usageContext.commandName, usageContext.allowedTypes, {
     unknownCommandExamples: usageContext.unknownCommandExamples,
     unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
@@ -2118,8 +2121,8 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     source_context: activeTelemetryCommandContext?.source_context,
   }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
-    ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors, context.bootstrapGlobal.lean === true, {}, context.invocationArgv)
-    : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.invocationArgv);
+    ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors, context.bootstrapGlobal.lean === true, {}, context.rawInvocationArgv)
+    : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.rawInvocationArgv);
   const recoveryFailures = await loadUnknownCommandRecoveryFailures(
     classification.code,
     context.bootstrapPmRoot,
@@ -2176,6 +2179,7 @@ async function handleRunPmCliError(params: { error: unknown; invocationArgv: str
   const context: RunPmCliErrorContext = {
     error: params.error,
     invocationArgv: safeInvocationArgv,
+    rawInvocationArgv: params.invocationArgv,
     bootstrapGlobal,
     jsonErrors: bootstrapGlobal.json,
     bootstrapPmRoot,

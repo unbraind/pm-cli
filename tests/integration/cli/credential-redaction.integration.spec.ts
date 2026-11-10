@@ -108,6 +108,8 @@ it("covers the third review round's reproductions (pm-nhauur)", async () => {
       // The revision parser splits the value at its comma before echoing a fragment.
       ["--no-extensions", "package", "--catalog", "--expect-hash", `https://u:${secret},rest@localhost/x`, "--json"],
       ["--no-extensions", "package", "--catalog", "--expect-hash", `https://u:${secret},rest@localhost/x`],
+      // A short credential piece cut before its comma carries no `@` and no full fragment.
+      ["--no-extensions", "package", "--catalog", "--expect-hash", `https://u:${SECRET.slice(0, 3)},rest@localhost/x`, "--json"],
       // The concise tracker-initialization text renders its retry directly.
       ["--no-extensions", "--pm-path", path.join(context.tempRoot, "absent", `https://u:${secret}@localhost/x`), "list"],
     ];
@@ -116,6 +118,7 @@ it("covers the third review round's reproductions (pm-nhauur)", async () => {
       expect(refused.code, args.join(" ")).not.toBe(0);
       const output = `${refused.stdout}${refused.stderr}`;
       expect(output, args.join(" ")).not.toMatch(new RegExp(SECRET, "iu"));
+      expect(output, args.join(" ")).not.toContain(`u:${SECRET.slice(0, 3)}`);
       expect(output, args.join(" ")).toMatch(/restore them before replaying/u);
       expect(output.match(/restore them before replaying/gu)?.length, args.join(" ")).toBe(1);
     }
