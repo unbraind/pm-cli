@@ -1,0 +1,25 @@
+id: pm-evci7c
+title: Show bounded file and function coordinates in static-quality failure summaries
+description: "The hosted repository-assurance refusal exposed only codefactor_complexity violations: 1. The underlying --json report identified scripts/finalize-build.mjs compactDeclaration at complexity20 versus16. Preserve a bounded sample of actionable coordinates and observed/bound values in the text failure and assurance contributor projection, with an explicit whole-report restore command. This improves operator context without changing enforcement."
+type: Task
+status: open
+priority: 2
+tags: []
+created_at: "2026-11-10T01:42:43.586Z"
+updated_at: "2026-11-10T01:42:46.521Z"
+author: "harness:codex"
+estimated_minutes: 60
+acceptance_criteria: Text refusal includes bounded file/function and observed/limit coordinates with an omission count; Whole structured JSON remains available through a declared restore command; CI/assurance contributors preserve the actionable sample without raw private logs; Thresholds and nonzero failure status remain unchanged and a negative control proves the diagnostic
+parent: pm-92if
+risk: low
+confidence: high
+expected_result: A failed static-quality gate identifies actionable targets in bounded text and retains the complete machine report without another discovery run.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-5aze0q,discovered_from,"2026-11-10T01:42:43.586Z","harness:codex","cli:create:dep",detected
+  pm-cha95z,related,"2026-11-10T01:42:43.586Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-10T01:42:43.586Z","harness:codex","Duplicate check: complete strict all-status inventory plus live quality-diagnostic search and open/in-progress lists. Reuse open CodeFactor epic pm-92if; completed diagnostic-budget owner pm-cha95z addresses ceilings rather than violation coordinates. No finite open owner for this count-only static summary was found. Evidence is CI job129536580878 and the matching local structured report; implementation remains future open work."
+files[2]{path,scope}:
+  scripts/release/repository-assurance.mjs,project
+  scripts/release/static-quality-gate.mts,project
+body: ""

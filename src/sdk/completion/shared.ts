@@ -259,7 +259,7 @@ const COMMAND_COMPLETION_DESCRIPTIONS = [
   ],
   [
     "history-redact",
-    "Redact sensitive literals/patterns and recompute history hashes",
+    "Redact and reseal item history.",
   ],
   [
     "history-repair",

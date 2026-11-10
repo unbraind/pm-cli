@@ -24,6 +24,24 @@ const DECLARATION_PUNCTUATION = new Set([
   ts.SyntaxKind.CloseBracketToken,
 ]);
 
+/** Peek past spacing without consuming the next declaration token. */
+function peekNextDeclarationToken(scanner) {
+  return scanner.lookAhead(() => {
+    let next = scanner.scan();
+    while (next === ts.SyntaxKind.WhitespaceTrivia || next === ts.SyntaxKind.NewLineTrivia) next = scanner.scan();
+    return next;
+  });
+}
+
+/** Preserve possible automatic semicolons and JSDoc attachment while removing delimiter spacing. */
+function canCompactDeclarationWhitespace(kind, previousKind, nextKind, lineStart) {
+  if (kind === ts.SyntaxKind.WhitespaceTrivia) {
+    return lineStart || DECLARATION_PUNCTUATION.has(previousKind) || DECLARATION_PUNCTUATION.has(nextKind);
+  }
+  return kind === ts.SyntaxKind.NewLineTrivia && DECLARATION_CONTINUATION_DELIMITERS.has(previousKind) &&
+    nextKind !== ts.SyntaxKind.SingleLineCommentTrivia && nextKind !== ts.SyntaxKind.MultiLineCommentTrivia;
+}
+
 /** Remove declaration indentation and delimiter whitespace, retaining type tokens, ASI boundaries, literals and JSDoc bytes. */
 function compactDeclaration(source) {
   const file = ts.createSourceFile("declaration.d.ts", source, ts.ScriptTarget.Latest, true);
@@ -45,18 +63,8 @@ function compactDeclaration(source) {
     const end = literals.get(start) ?? scanner.getTextPos();
     const text = source.slice(start, end);
     const whitespace = kind === ts.SyntaxKind.WhitespaceTrivia || kind === ts.SyntaxKind.NewLineTrivia;
-    const nextKind = whitespace ? scanner.lookAhead(() => {
-      let next = scanner.scan();
-      while (next === ts.SyntaxKind.WhitespaceTrivia || next === ts.SyntaxKind.NewLineTrivia) next = scanner.scan();
-      return next;
-    }) : undefined;
-    // These delimiters already terminate or require a continuation; a newline
-    // after any other token may be an automatic semicolon. Keep comment line
-    // boundaries too, so TypeScript still attaches each JSDoc to its member.
-    const removableWhitespace = (kind === ts.SyntaxKind.WhitespaceTrivia &&
-      (lineStart || DECLARATION_PUNCTUATION.has(previousKind) || DECLARATION_PUNCTUATION.has(nextKind))) ||
-      (kind === ts.SyntaxKind.NewLineTrivia && DECLARATION_CONTINUATION_DELIMITERS.has(previousKind) &&
-        nextKind !== ts.SyntaxKind.SingleLineCommentTrivia && nextKind !== ts.SyntaxKind.MultiLineCommentTrivia);
+    const nextKind = whitespace ? peekNextDeclarationToken(scanner) : undefined;
+    const removableWhitespace = canCompactDeclarationWhitespace(kind, previousKind, nextKind, lineStart);
     if (!removableWhitespace) parts.push(text);
     if (kind !== ts.SyntaxKind.WhitespaceTrivia) {
       lineStart = /[\r\n]$/u.test(text);

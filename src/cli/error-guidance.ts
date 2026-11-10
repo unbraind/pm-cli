@@ -872,14 +872,17 @@ function compactTextRecovery(
   return Object.keys(compact).length > 0 ? compact : undefined;
 }
 
+/** Budgeted projections always carry a concrete steps collection, including an empty one. */
+type CompactGuidanceMessage = GuidanceMessage & { nextSteps: string[] };
+
 /** Keep a truthful producer or SDK route after a close retry exceeds the text budget. */
-function compactCloseRecoverySteps(message: GuidanceMessage, compact: GuidanceMessage): string[] | undefined {
+function compactCloseRecoverySteps(message: GuidanceMessage, compact: CompactGuidanceMessage): string[] {
   if (message.code !== "close_validation_missing_fields" || !message.recovery?.suggested_retry || compact.recovery?.suggested_retry) {
     return compact.nextSteps;
   }
   const nextSteps = compact.recovery?.next_best_command
     ? ["Run recovery.next_best_command with real evidence, then repeat the original close."]
-    : [...(compact.nextSteps ?? []), "Retrieve the complete retry from SDK error.context.recovery.suggested_retry; replace placeholders with real evidence before executing it."];
+    : [...compact.nextSteps, "Retrieve the complete retry from SDK error.context.recovery.suggested_retry; replace placeholders with real evidence before executing it."];
   return appendIfMissing(nextSteps, message.partialLegalDomainNotice);
 }
 
@@ -903,14 +906,14 @@ function renderBoundedGuidanceMessage(
     message.nextSteps?.slice(0, 1) ?? [],
     message.partialLegalDomainNotice,
   );
-  const limitedCollections: GuidanceMessage = {
+  const limitedCollections: CompactGuidanceMessage = {
     ...withoutExplanation,
     details: undefined,
     examples: message.examples?.slice(0, 1),
     nextSteps: limitedNextSteps,
     verificationErrors: message.verificationErrors?.slice(0, 3),
   };
-  const compactRecovery: GuidanceMessage = {
+  const compactRecovery: CompactGuidanceMessage = {
     ...limitedCollections,
     recovery: compactTextRecovery(message.recovery),
   };
@@ -926,7 +929,7 @@ function renderBoundedGuidanceMessage(
   };
   // Isolate the domain fault when oversized producer collections or recovery
   // coordinates would otherwise displace it in the final shared projection.
-  const essentialDomainGuidance: GuidanceMessage = {
+  const essentialDomainGuidance: CompactGuidanceMessage = {
     code: message.code,
     type: message.type,
     title: message.title,
@@ -1365,8 +1368,8 @@ function mergeGuidanceRecovery(
   const merged = normalized && guidance
     ? normalizeRecoveryPayload({ ...guidance, ...normalized })
     : (normalized ?? guidance);
-  if (!incompleteDomain || !merged?.allowed_values) return merged;
-  const { allowed_values: _untrustedDomain, ...retained } = merged;
+  if (!incompleteDomain) return merged;
+  const { allowed_values: _untrustedDomain, ...retained } = merged ?? {};
   return Object.keys(retained).length > 0 ? retained : undefined;
 }
 

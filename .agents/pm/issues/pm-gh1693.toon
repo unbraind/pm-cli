@@ -6,24 +6,24 @@ status: closed
 priority: 2
 tags[3]: agent-ux,"gh:1693",output
 created_at: "2026-11-09T07:32:16.381Z"
-updated_at: "2026-11-09T22:40:49.000Z"
-closed_at: "2026-11-09T22:40:48.287Z"
-completed_at: "2026-11-09T22:40:48.287Z"
+updated_at: "2026-11-10T02:12:18.567Z"
+closed_at: "2026-11-10T02:12:17.682Z"
+completed_at: "2026-11-10T02:12:17.682Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Strict close refusal headline remains bounded and never contains a partial flag token; Default output suppresses generic explanatory filler while structured recovery retains full missing fields and retry arguments; CLI regression verifies no mutation on refusal and actionable close recovery
 parent: pm-f05lsg
 risk: medium
 confidence: high
-resolution: "Preserved fitting producer repair instructions in essential partial-domain fallback, removing repeated detail before the action and retaining an explicit incomplete-domain notice."
-expected_result: "Normal and lean compact guidance preserve whole repair actions whenever they fit, without changing producer context or token ceilings."
-actual_result: Two failing-before repair cases now pass; all four stress variants preserve notices and whole choices; 455 tests across 19 instrumented files and seven linked commands pass; nine packed consumers pass. Hosted full coverage and exact-head admission remain required for PR 1696.
+resolution: "Preserve complete close-refusal headlines and action-first retries with explicit evidence placeholders. Keep whole legal choices, exact omission counts, fitting producer repair instructions and truthful partial-domain notices under unchanged text/JSON ceilings. Enforce concrete steps arrays in compact projections and strip malformed legal-domain metadata while preserving independent recovery fields."
+expected_result: "Required flags and legal choices remain intact, incomplete domains never masquerade as complete, scoped recovery remains usable, and the existing exact coverage policy passes without exceptions."
+actual_result: "All linked owner commands pass. Existing103 recovery contract cases cover both changed helpers without uncovered lines/branches; all257 current recovery/completion/help/build tests across7 files, full typechecks, ESLint, direct static quality, contracts and zero-change SDK surface pass. Fresh same-source emission preserves475 declaration type and documentation contracts. Focused whole-source coverage remains incomplete; the complete hosted100/100/100/100 gate and exact-head review remain mandatory."
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1676,related,"2026-11-09T09:01:50.450Z","harness:codex","cli:update:dep",detected
   pm-cha95z,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
   pm-qmb6h8,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
   pm-v1kspa,related,"2026-11-09T12:23:21.261Z","harness:codex","cli:update:dep",detected
-comments[19]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-11-09T07:32:16.381Z","harness:codex","Duplicate check: complete strict all-status corpus of 3242 items including 2923 closed items and request-specific keyword search reviewed. No matching owner for this GitHub report. Reuse the existing parent capability and preserve closed recovery/configuration lineage."
   "2026-11-09T07:48:23.639Z","harness:codex","Negative-control evidence: new regression assertions ran against unchanged production source before the fix. The focused run failed exactly the settings-path, leading-slash source, matcher-index and strict-close-headline assertions: 4 failures and176 existing passes. Production repair preserves existing validators and sensitive input redaction."
   "2026-11-09T09:53:13.984Z","harness:codex","PR #1696 review remediation: the concise strict-close headline is independent of optional package recovery data. The immediate retry is explicitly labeled a template requiring real evidence. The existing guidance test now asserts direct placement and exactly one retry, and the real CLI preserves history on refusal."
@@ -43,6 +43,7 @@ comments[19]{created_at,author,text}:
   "2026-11-09T20:56:52.891Z","harness:codex","Stress regression reproduced three failures before repair: oversized producer next steps, verification errors, and close recovery coordinates/required text displaced the incomplete-domain warning. A final essential-domain projection now drops those oversized fields while retaining the warning, bounded whole usable choices, the original headline and a truthful SDK close-retry route. Original producer context is unchanged. All 436 assertions in 17 instrumented files pass; the three regressions run in both normal and lean modes. Both linked owner commands, all typechecks, focused ESLint, contracts/catalog, zero-change SDK surface and all nine packed consumers pass. The selected instrumented cohort still correctly refuses whole-source exact coverage; hosted full coverage and current-head CI remain required. Diagnostic budgets and public structured fields are unchanged. The diagnostic contract documents the priority and recovery boundary."
   "2026-11-09T21:22:59.510Z","harness:codex","The shared projector identifying line is bounded to 320 UTF-8 bytes including an omission suffix; the earlier CLI recovery renderer independently retains a 320-code-point What happened prefix plus a suffix. The documentation now distinguishes both limits. The final essential-domain fallback retains the partial-domain warning, whole choices, complete close headline and SDK retry route when producer collections overflow. Three failing-before cases pass in normal and lean modes. Final source verification reports 436 tests passing across 17 instrumented files, all seven linked command entries across the three owners, full typechecks, ESLint, contracts/catalog, zero classified SDK surface changes, and all nine packed consumers. Full-source coverage correctly refuses the selected cohort denominator; hosted whole-repository coverage and current-head admission remain required. No coverage, performance or diagnostic budget is relaxed."
   "2026-11-09T22:39:13.832Z","harness:codex","Review remediation: Greptile correctly reproduced loss of a fitting producer required action when malformed legal-domain metadata coincided with an oversized verification error. Two failing-before cases now retain the whole repair instruction in normal and lean text, including UTF-8 pressure that requires dropping repeated detail first. Four stress variants preserve the partial-domain notice, whole usable choices, immutable original context and unchanged 768-token ceiling. Source instrumentation cohort: 455 tests / 19 files pass; selected whole-repository coverage exits 3 and is not claimed as complete coverage. Build, all typechecks, ESLint, runtime contracts, capability snapshots and SDK surface (zero classified changes) pass; all nine packed consumers pass."
+  "2026-11-10T02:11:55.840Z","harness:codex","Full hosted coverage on523ce2337 passed every test but reported exactly2 uncovered lines and4 branches, all in recovery projection: lines700/702, statements759/761, branches780/784, functions140/140. Both compact callers already construct a steps array, so express that invariant in a private type and remove the unreachable nullish fallback. Malformed-domain merging now strips the domain regardless of other retained fields, keeping the empty and populated recovery cases directly testable. The existing103 recovery contract tests pass; focused instrumentation shows zero uncovered lines/branches in both changed helpers. All257 current recovery/completion/help/build tests across7 files, full typechecks, ESLint, direct static quality, contracts and zero-change SDK surface pass. No coverage policy or test-only seam changed; complete current-head hosted coverage remains required."
 learnings[1]{created_at,author,text}:
   "2026-11-09T10:03:50.434Z","harness:codex",A concise refusal must keep a complete headline and place its retry once at the top. Label placeholder retries as templates and do not promise optional recovery fields or an ineffective diagnostic budget override.
 files[5]{path,scope}:
@@ -54,7 +55,7 @@ files[5]{path,scope}:
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,project,600,"harness:codex","2026-11-09T07:39:32.348Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
   node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts,project,600,"harness:codex","2026-11-09T16:53:30.785Z",local_mutation,fix/sdk-configuration-and-redaction-recovery
-test_runs[14]:
+test_runs[15]:
   - run_id: test-local-mw8ziie5-0st84j
     kind: test
     status: passed
@@ -214,12 +215,24 @@ test_runs[14]:
     executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
       node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mwa21hfn-xz7wbh
+    kind: test
+    status: passed
+    started_at: "2026-11-10T02:11:56.498Z"
+    finished_at: "2026-11-10T02:12:15.107Z"
+    recorded_at: "2026-11-10T02:12:15.107Z"
+    passed: 2
+    failed: 0
+    skipped: 0
+    executions[2]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-guidance.spec.ts tests/integration/config-positional-cli.integration.spec.ts,schema,schema,source,local_source_ref
+      node scripts/run-tests.mjs test -- tests/unit/cli/error-handler-projection.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope}:
   docs/COMMANDS.md,project
   docs/CONFIGURATION.md,project
   docs/DIAGNOSTIC_OUTPUT_CONTRACTS.md,project
   docs/SDK.md,project
-close_reason: Implemented and locally verified review/CI remediation; reviewed delivery remains gated by PR 1696.
+close_reason: Completed bounded refusal recovery and private projection coverage remediation in PR1696; hosted delivery remains required.
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
