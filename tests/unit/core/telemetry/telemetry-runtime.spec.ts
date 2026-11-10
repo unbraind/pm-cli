@@ -2935,6 +2935,19 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("removes URL userinfo that the email heuristic keeps (pm-5htunt)", () => {
+    for (const level of ["redacted", "max"] as const) {
+      expect(
+        _testOnly.sanitizeCommandArgs(
+          ["package", "install", "https://tok3n@localhost/x.tgz", "https://u:p!ss@registry:8080/x", "https://u:my pass@h/x", String.raw`https:\\u:s3cr3t@h/x`],
+          level,
+        ),
+      ).toEqual(["package", "install", "https://[redacted]@localhost/x.tgz", "https://[redacted]@registry:8080/x", "https://[redacted]@h/x", String.raw`https:\\[redacted]@h/x`]);
+    }
+    expect(_testOnly.sanitizeStringRedacted("fetch https://u:p@registry:8080/x failed")).toBe("fetch https://[redacted]@registry:8080/x failed");
+    expect(_testOnly.sanitizeStringMax("fetch https://tok3n@localhost/x failed")).toBe("fetch https://[redacted]@localhost/x failed");
+  });
+
   it("covers telemetry helper fallback branches for sanitization and parsing", async () => {
     expect(_testOnly.parseBooleanTrueLike(undefined)).toBe(false);
     expect(_testOnly.isEmailLocalCharacter(undefined)).toBe(false);

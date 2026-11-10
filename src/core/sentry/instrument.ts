@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import type * as SentryModuleTypes from "@sentry/node";
 import { resolvePmCliVersion } from "../packages/root.js";
 import { resolveTelemetryEnvironmentPolicy, resolveTelemetrySourceAttribution } from "../telemetry/policy.js";
+import { redactUrlCredentialsInText } from "../shared/url-credentials.js";
 import { isPmCliExpectedError } from "../../sdk/errors.js";
 import { crashReportErrorContext, omitEmbeddedPmCliErrorDetails } from "../shared/error-details.js";
 import { scrubInlineSensitiveAssignments, SENSITIVE_KEY_PATTERN } from "./sensitive-assignments.js";
@@ -85,7 +86,7 @@ function scrubString(value: string, keyHint?: string): string {
   ) {
     return "[scrubbed_path]";
   }
-  const scrubbed = scrubInlineSensitiveAssignments(value)
+  const scrubbed = scrubInlineSensitiveAssignments(redactUrlCredentialsInText(value))
     .replaceAll(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[scrubbed_email]")
     .replaceAll(/bearer\s+[a-z0-9._=-]+/giu, "bearer [scrubbed]")
     .replaceAll(/sntr[ysu]_[A-Za-z0-9_-]+/g, "[scrubbed_sentry_token]")

@@ -14,6 +14,8 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairReadOutputMutationRecovery } from "./runtime/read-output-mutation-retry.js";
+import { redactRefusalCredentials } from "./runtime/refusal-credential-redaction.js";
+import { redactUrlCredentialsInText } from "../sdk/command-line.js";
 import { isTrackerRevisionGuarded } from "../sdk/lifecycle/item-revision.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
@@ -607,7 +609,7 @@ async function handleGenericRunPmCliError(params: {
     commandResolution: TelemetryCommandResolution;
   }>;
 }): Promise<void> {
-  const message = describeUnknownError(params.error);
+  const message = redactUrlCredentialsInText(describeUnknownError(params.error));
   const classification = classifyUnknownError(message);
   if (params.bootstrapGlobal.json) {
     printError(JSON.stringify(attachPreflightWarnings(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE)), null, 2));
@@ -1950,10 +1952,15 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   if (!(context.error instanceof PmCliError) && (isCommanderError(context.error) || !hasExplicitExitCode)) {
     return false;
   }
-  const errorMessage = describeUnknownError(context.error);
+  const rawErrorMessage = describeUnknownError(context.error);
   const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
   const rawContext = context.error instanceof PmCliError || isPmCliExpectedError(context.error) ? context.error.context : undefined;
-  const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
+  // Producers echo the raw argv, so URL credentials are removed once here, from every field that is printed or reported.
+  const { message: errorMessage, context: enrichedContext } = redactRefusalCredentials(
+    context.invocationArgv,
+    rawErrorMessage,
+    buildPmCliRecoveryContext(rawContext, context.invocationArgv, rawErrorMessage),
+  );
   const classification = classifyPmCliError(errorMessage, enrichedContext);
   const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean
     ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))

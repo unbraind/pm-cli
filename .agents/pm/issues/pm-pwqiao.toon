@@ -1,0 +1,22 @@
+id: pm-pwqiao
+title: "files/docs --add refusal does not name the note segment it misread as a key, nor offer the standalone --note flag"
+description: "Found 2026-11-10 while linking evidence for pm-5htunt. 'pm files <id> --add \"path=a.txt,scope=project,note=Single-label host, host:port, whitespace\"' exits with invalid_argument. The message says only 'Expected key=value entries separated by commas'. The cause is the deliberate pm-fr10t8 / GH-258 boundary: after a comma, the identifier-shaped segment 'host:port' is read as a new markdown-style key 'host', and an unknown key is refused strictly. Commas alone are accepted as note continuation ('a, b and c'), so an agent cannot tell from the refusal which segment broke the entry. The refusal also does not mention the standalone --note flag (pm-pfnx, GH-170), which takes free text with no parsing. Reproduced with the built CLI in a sandbox tracker. Duplicate check: searched 'files --add note colon comma csv key value parse'; pm-fr10t8 (closed) fixed non-identifier candidate keys and keeps this identifier case strict by design; pm-0v9k (closed) introduced strict rejection."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,files,parser,recovery
+created_at: "2026-11-10T14:07:56.498Z"
+updated_at: "2026-11-10T14:07:56.498Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "A files/docs --add refusal caused by an unknown key from a continuation segment names that segment and key in details and in the message; The recovery offers the same link with the prose moved to the standalone --note flag (or a quoting form the parser accepts), and executing it links the file with the full note text; GH-258 strict rejection of identifier-shaped typo keys such as lable=main is unchanged"
+parent: pm-f05lsg
+risk: low
+confidence: high
+expected_result: "The invalid_argument refusal names the segment and the unknown key it produced (here 'host' from ' host:port'), and offers an executable retry using --note for the free text."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0v9k,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
+  pm-5htunt,discovered_from,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
+  pm-fr10t8,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
+  pm-pfnx,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
+body: ""

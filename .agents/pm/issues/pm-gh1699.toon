@@ -1,0 +1,55 @@
+id: pm-gh1699
+title: "GH-1699: secret guard recognises quoted keys, nested JSON values and XML elements"
+description: "GitHub issue 1699 (reported against 2026.11.10): scanMutationSecrets and the CLI mutation guard flag password: value and password=value but miss the same credential when the key is quoted. JSON, Python-dict and XML spellings get no finding, and neither does a credential nested in an array or object under the key. Reproduced on main with the built SDK: {\"password\":\"<8+ chars>\"}, 'password':'<8+ chars>', a nested array, a nested object and <password>...</password> all return []. The high_entropy_assignment rule has the same gap for quoted keys. Root cause: both assignment regexes require the separator to follow the key word directly (\\b(?:password|passphrase)\\s*[:=]), so the key's closing quote defeats them, and neither rule descends into containers. The same SECRET_RULES inventory feeds the repository secret scan (scripts/check-secrets-lib.mjs), so a widened rule must stay clean over all tracked files. Extensions (pm-memory) currently hand-write mixed-content parsers to close these gaps; one structural rule in the SDK replaces them. Duplicate check: searched 'secret guard quoted keys', 'secret', 'credential redact' (open + closed). pm-pim7 (closed) introduced the guard and pm-fhhhlk (closed) added npm/Slack shapes; neither covered key quoting or nesting."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"gh:1699",sdk,secret-guard,security
+created_at: "2026-11-10T12:43:16.829Z"
+updated_at: "2026-11-10T14:35:40.558Z"
+closed_at: "2026-11-10T14:35:36.829Z"
+completed_at: "2026-11-10T14:35:36.829Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "A must-refuse corpus covers the quoted-key (JSON, single-quoted), nested-array, nested-object and XML-element forms from GH-1699 for password_assignment, plus quoted-key high_entropy_assignment; A must-allow corpus keeps \"password\": \"\", \"password\": \"${BUILD_PASSWORD}\", \"password_policy\": \"rotate monthly\", placeholder container tokens such as password=[scrubbed], and prose such as 'the password field' finding-free; The CLI guard (built CLI, real create) and scanMutationSecrets return the same findings for both corpora, and the repository scan reports the same rule for the shared corpus; The structural pass is linear: a pathological input (deep nesting, unterminated strings, many repeated keys) completes within a bounded-time control; node scripts/check-secrets.mjs stays clean over every tracked file"
+parent: pm-qwoy
+risk: medium
+confidence: high
+resolution: "secret-rules.ts declares a SecretStructuredSpelling on password_assignment (with element content) and high_entropy_assignment. The flat regexes are composed from KEY + VALUE constants and stay byte-identical to main. A linear structured pass judges a quoted key's scalar value and every quoted string in value position inside arrays/objects with the rule's own sticky value grammar. Structured values may not span a raw line break, and bare container tokens are never judged. The key cursor is cloned per scan."
+expected_result: "The GH-1699 must-refuse corpus is detected and the must-allow corpus is clean in the SDK scanner, the CLI guard and the repository scan; check-secrets stays clean; pathological inputs stay linear."
+actual_result: "secret-policy-parity: 83 tests pass, covering 16 refuse and 18 allow spellings in both consumers, high-entropy quoted keys, re-entrancy and a 9-input pathological control. A real create through the built CLI matches scanMutationSecrets for both corpora. node scripts/check-secrets.mjs is clean over all tracked files. The structured pass costs about 190 ms per 196 MB scan."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fhhhlk,related,"2026-11-10T12:43:16.829Z","harness:claude-code","cli:create:dep",detected
+  pm-pim7,related,"2026-11-10T12:43:16.829Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-10T12:59:45.637Z","harness:claude-code","Implementation (branch fix/credential-shape-coverage): src/core/shared/secret-rules.ts gains a declared SecretStructuredSpelling on password_assignment (keys password|passphrase, element content) and high_entropy_assignment (quoted keys). The flat regexes are now composed from KEY + VALUE constants; a scratch comparison against HEAD confirmed all 20 rule sources and flags are byte-identical, so flat semantics cannot drift. The structured pass judges a quoted key's scalar value and every quoted string in value position inside an array/object under any key spelling, using the rule's own sticky value grammar (so the 8-char minimum and the <, ${, $( placeholder exclusions carry over). Bare tokens inside containers are never judged, which keeps password=[scrubbed] clean. First repo-wide scan found one false positive: tests/fixtures/telemetry/diagnostic-privacy.mjs:47 ('{\"password\": ', safe: true }) because the flat grammar's quoted alternatives cross line breaks; structured values are now bounded to one line (JSON/Python/YAML-flow literals never contain a raw line break). After that, node scripts/check-secrets.mjs is clean over all tracked files. Cost: the structured pass adds about 190 ms to a 196 MB / 24.5 s full-rule scan. The key cursor is cloned per scan because generator yields would otherwise share lastIndex between interleaved scans."
+files[3]{path,scope,note}:
+  src/core/shared/secret-rules.ts,project,Declared structured spellings and the linear structured pass for the assignment rules
+  tests/integration/cli/credential-redaction.integration.spec.ts,project,Real create through the built CLI matches scanMutationSecrets for both corpora
+  tests/unit/sdk/security/secret-policy-parity.spec.ts,project,GH-1699 must-refuse/must-allow corpora in both consumers plus linear-time and re-entrancy controls
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts,project,900,"harness:claude-code","2026-11-10T14:08:13.554Z",local_mutation,fix/credential-shape-coverage
+test_runs[1]:
+  - run_id: test-local-mwarmwwg-g0icid
+    kind: test
+    status: passed
+    started_at: "2026-11-10T14:08:30.724Z"
+    finished_at: "2026-11-10T14:08:45.328Z"
+    recorded_at: "2026-11-10T14:08:45.328Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/MUTATION_INTEGRITY.md,project,Structured spellings section
+close_reason: "Quoted-key, nested-container and XML-element credential spellings are detected by the shared rule inventory in both consumers"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1699
+  gate_id: secret-policy-parity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts,node scripts/check-secrets.mjs
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

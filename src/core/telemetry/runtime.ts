@@ -24,6 +24,7 @@ import {
   resolveTelemetrySourceAttribution,
   telemetryRuntimeFileName,
 } from "./policy.js";
+import { redactUrlCredentialsInText, redactUrlCredentialsInToken } from "../shared/url-credentials.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import {
@@ -552,7 +553,8 @@ function redactEmailTokens(input: string): string {
 }
 
 function sanitizeCommonSensitiveTokens(input: string): string {
-  const withoutEmails = redactEmailTokens(input);
+  // URL userinfo first: the email heuristic below keeps credentials whose host has no dot (pm-5htunt).
+  const withoutEmails = redactEmailTokens(redactUrlCredentialsInText(input));
   const withoutBearer = withoutEmails.replaceAll(
     BEARER_TOKEN_PATTERN,
     "bearer [redacted_token]",
@@ -646,7 +648,8 @@ function sanitizeCommandArgs(
   const sanitized: string[] = [];
   let nextIsSensitiveValue = false;
   for (const rawArg of args) {
-    const arg = sanitizeString(rawArg, captureLevel);
+    // A whole argument is one token even when its userinfo contains whitespace.
+    const arg = sanitizeString(redactUrlCredentialsInToken(rawArg), captureLevel);
     if (nextIsSensitiveValue) {
       sanitized.push("[redacted]");
       nextIsSensitiveValue = false;

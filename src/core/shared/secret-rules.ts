@@ -121,6 +121,22 @@ export function* findPrivateHomePathMatches(content: string, regex: RegExp): Gen
   }
 }
 
+/**
+ * Structured spellings of a key/value rule: a quoted key (JSON, YAML flow,
+ * Python dict), every quoted string nested in an array or object under the
+ * key, and optionally `<key>value</key>` element content. Each candidate value
+ * is judged by the rule's own value grammar, so quoting the key or nesting the
+ * value never changes the verdict.
+ */
+export interface SecretStructuredSpelling {
+  /** Case-insensitive key alternation (regular-expression source). */
+  keys: string;
+  /** Value grammar (regular-expression source) applied at each candidate value start. */
+  value: string;
+  /** Also inspect element content such as `<password>value</password>`. */
+  element?: true;
+}
+
 /** One detector and any explicit repository-only scope exception. */
 export interface SecretRule {
   /** Repository diagnostic identifier. */
@@ -137,7 +153,19 @@ export interface SecretRule {
   mutationOnlyReason?: string;
   /** Minimum Shannon entropy of the first capture group, when applicable. */
   minimumEntropy?: number;
+  /** Quoted-key, nested-container and element spellings judged by the same value grammar. */
+  structured?: SecretStructuredSpelling;
 }
+
+const PASSWORD_KEYS = "password|passphrase";
+// Unquoted configuration reads with an empty fallback contain no literal
+// credential only when they end the expression, including bounded trailing
+// comments. A block comment cannot consume code beyond its first closing
+// delimiter; composed, continued and nonempty fallbacks remain detectable.
+const PASSWORD_VALUE =
+  /(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/;
+const HIGH_ENTROPY_KEYS = "token|secret|password|passwd|api[_-]?key";
+const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
 export const SECRET_RULES = [
@@ -171,12 +199,8 @@ export const SECRET_RULES = [
   { name: "sshpass-inline-password", mutationRule: "sshpass_inline_password", regex: /\bsshpass\s+-p\s+["'][^"']{6,}["']/g },
   {
     name: "password-assignment", mutationRule: "password_assignment",
-    // Unquoted configuration reads with an empty fallback contain no literal
-    // credential only when they end the expression, including bounded trailing
-    // comments. A block comment cannot consume code beyond its first closing
-    // delimiter; composed, continued and nonempty fallbacks remain detectable.
-    regex:
-      /\b(?:password|passphrase)\s*[:=]\s*(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/gi,
+    regex: new RegExp(String.raw`\b(?:${PASSWORD_KEYS})\s*[:=]\s*` + PASSWORD_VALUE.source, "gi"),
+    structured: { keys: PASSWORD_KEYS, value: PASSWORD_VALUE.source, element: true },
   },
   {
     name: "absolute-home-path", mutationRule: "absolute_home_path",
@@ -191,7 +215,8 @@ export const SECRET_RULES = [
   },
   {
     name: "high-entropy-assignment", mutationRule: "high_entropy_assignment",
-    regex: /\b(?:token|secret|password|passwd|api[_-]?key)\s*[:=]\s*["']?([A-Za-z0-9+/=_-]{24,})/gi,
+    regex: new RegExp(String.raw`\b(?:${HIGH_ENTROPY_KEYS})\s*[:=]\s*` + HIGH_ENTROPY_VALUE.source, "gi"),
+    structured: { keys: HIGH_ENTROPY_KEYS, value: HIGH_ENTROPY_VALUE.source },
     mutationOnlyReason: "Generic assignments in source code are not credentials; preserve the existing mutation heuristic without treating source identifiers as secrets.",
     minimumEntropy: 3.5,
   },
@@ -206,6 +231,122 @@ export function* findSecretRuleMatches(rule: SecretRule, content: string): Gener
   rule.regex.lastIndex = 0;
   for (const match of content.matchAll(rule.regex)) {
     if (acceptsSecretMatch(rule, match)) yield { index: match.index! };
+  }
+  if (rule.structured) yield* findStructuredSpellingMatches(rule, rule.structured, content);
+}
+
+interface CompiledSpelling {
+  key: RegExp;
+  value: RegExp;
+  element?: RegExp;
+}
+
+const compiledSpellings = new Map<string, CompiledSpelling>();
+const LINE_BREAK = /[\r\n\u2028\u2029]/u;
+
+/** Compile once per distinct spelling; repository scans clone rules but share spellings. */
+function compileSpelling(spelling: SecretStructuredSpelling): CompiledSpelling {
+  const cacheKey = `${spelling.keys}\u0000${spelling.value}\u0000${spelling.element === true}`;
+  let compiled = compiledSpellings.get(cacheKey);
+  if (!compiled) {
+    compiled = {
+      key: new RegExp(String.raw`\b(?:${spelling.keys})(["']?)\s*[:=]\s*`, "gi"),
+      value: new RegExp(spelling.value, "iy"),
+      ...(spelling.element
+        ? { element: new RegExp(String.raw`<(?:${spelling.keys})(?:\s[^<>]*)?>([^<]*)<\/(?:${spelling.keys})\s*>`, "gi") }
+        : {}),
+    };
+    compiledSpellings.set(cacheKey, compiled);
+  }
+  return compiled;
+}
+
+/** Return the index after a quoted string, honoring backslash escapes; unterminated strings end the input. */
+function endOfQuoted(content: string, start: number): number {
+  const quote = content[start];
+  for (let index = start + 1; index < content.length; index += 1) {
+    const character = content[index];
+    if (character === "\\") index += 1;
+    else if (character === quote) return index + 1;
+  }
+  return content.length;
+}
+
+/**
+ * Walk one array/object once, testing every quoted string in value position.
+ * Keys, bare tokens and placeholders such as `[scrubbed]` are never judged.
+ */
+function walkContainer(content: string, start: number, accepts: (at: number) => boolean): { found: boolean; end: number } {
+  const closers: string[] = [];
+  let expectKey = false;
+  for (let index = start; index < content.length; index += 1) {
+    const character = content[index];
+    switch (character) {
+      case "[":
+      case "{":
+        closers.push(character === "[" ? "]" : "}");
+        expectKey = character === "{";
+        break;
+      case "]":
+      case "}":
+        if (closers.pop() !== character || closers.length === 0) return { found: false, end: index + 1 };
+        expectKey = false;
+        break;
+      case ",":
+        expectKey = closers.at(-1) === "}";
+        break;
+      case ":":
+        expectKey = false;
+        break;
+      case "\"":
+      case "'":
+        if (!expectKey && accepts(index)) return { found: true, end: index };
+        index = endOfQuoted(content, index) - 1;
+        break;
+      default:
+        break;
+    }
+  }
+  return { found: false, end: content.length };
+}
+
+/**
+ * Linear structured pass. The flat rule already owns unquoted keys with scalar
+ * values, so this pass judges only quoted keys and container values; a walked
+ * container is never rescanned for nested keys.
+ */
+function* findStructuredSpellingMatches(
+  rule: SecretRule,
+  spelling: SecretStructuredSpelling,
+  content: string,
+): Generator<SecretRuleMatch> {
+  const compiled = compileSpelling(spelling);
+  // A JSON, Python or YAML-flow string literal never spans a raw line break, so
+  // a structured value that does is a host-language artifact, not a credential.
+  const accepts = (at: number): boolean => {
+    compiled.value.lastIndex = at;
+    const match = compiled.value.exec(content);
+    return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match);
+  };
+  // The key cursor survives each yield, so every scan owns its own copy; the
+  // value pattern is used synchronously between yields and stays shared.
+  const key = new RegExp(compiled.key);
+  for (let match = key.exec(content); match; match = key.exec(content)) {
+    const valueStart = match.index + match[0].length;
+    const opener = content[valueStart];
+    if (opener === "[" || opener === "{") {
+      const walked = walkContainer(content, valueStart, accepts);
+      if (walked.found) yield { index: match.index };
+      key.lastIndex = walked.end;
+    } else if (match[1] && accepts(valueStart)) {
+      yield { index: match.index };
+    }
+  }
+  if (!compiled.element) return;
+  compiled.element.lastIndex = 0;
+  for (const match of content.matchAll(compiled.element)) {
+    const value = match[1].trim();
+    if (value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(")) yield { index: match.index! };
   }
 }
 

@@ -92,6 +92,25 @@ so that heuristic does not run over repository source text. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
+Assignment rules also recognize structured spellings
+([pm-gh1699](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1699.toon);
+tracker record excluded from npm). Each rule declares its structured key
+vocabulary as data, so quoting the key never changes the verdict. These
+spellings are covered:
+
+- a quoted key followed by `:` or `=` (JSON, YAML flow, Python dict, TOML);
+- every quoted string in value position inside an array or object under the
+  key, at any depth;
+- for password assignments, `<password>…</password>` element content.
+
+Each candidate value is judged by the rule's own value grammar. The
+eight-character minimum, the `<…`, `${…}` and `$(…)` placeholder exclusions
+and the high-entropy predicate therefore carry over. Bare tokens inside a
+container are never judged, so `password=[scrubbed]` stays clean. A
+structured string literal that spans a raw line break is a host-language
+artifact, not a credential. The pass is linear: each container is walked
+once and never rescanned for nested keys.
+
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals
 with references or explicitly review a force override. CLI routing paths and
@@ -129,6 +148,19 @@ path segments before changing any object, create local containers for inherited
 values, and define own data properties without invoking inherited setters. Findings expose only the stable rule
 name and object path. Matched credential text is never returned, logged, or
 included in a recovery bundle.
+
+CLI refusals do not echo URL credentials from the invocation either
+([pm-nhauur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nhauur.toon);
+tracker record excluded from npm). Many recovery producers copy the raw argv,
+so the CLI redacts once, at emission. This covers typed refusals and
+Commander usage errors, in both JSON and text, before lean projection and
+output-token accounting. Every exact raw and shell-quoted spelling of a
+credential-bearing token or inline option value is replaced, which covers a
+userinfo containing spaces. Argv-token fields and free text then get the same
+conservative token rule that telemetry uses. When the executable retry
+changes, `suggested_retry` and `suggested_retry_args` are withheld rather than
+replaying a command without its credentials, and a final next step tells the
+caller to restore them.
 
 ### Executable mutation inventory
 

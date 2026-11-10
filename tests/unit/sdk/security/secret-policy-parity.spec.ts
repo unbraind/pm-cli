@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { scanMutationSecrets, evaluateMutationGuard } from "../../../../src/sdk/mutation-guard.js";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
 
-import { SECRET_RULES } from "../../../../src/core/shared/secret-rules.js";
+import { SECRET_RULES, findSecretRuleMatches } from "../../../../src/core/shared/secret-rules.js";
 
 const harness = createScriptHarness();
 const samples = [
@@ -85,5 +85,112 @@ describe("shared mutation and repository secret policy", () => {
       author: "agent", payload: {description: value},
       settings: {require_attributed_author: false, secret_guard: "block", stale_in_progress_hours: 72},
     })).toThrow(/Mutation blocked by secret guard/);
+  });
+});
+
+describe("structured credential spellings (GH-1699)", () => {
+  // Built at runtime so this file stays clean under the repository scan it exercises.
+  const value = ["Synthetic", "Only123!"].join("");
+  const entropy = ["aB3dE5fG7hJ9k", "L1mN3pQ5rS7tU9vW"].join("");
+  const gateHarness = createScriptHarness();
+  const scanBoth = async (content: string, gateRule: string, mutationRule: string) => {
+    const gate = await gateHarness.importModule<{
+      scanContent(file: string, content: string): Array<{ rule: string }>;
+    }>("scripts/check-secrets-lib.mjs");
+    return {
+      gate: gate.scanContent("patches/dependency.patch", content).some(({ rule }) => rule === gateRule),
+      mutation: scanMutationSecrets({ description: content }).some(({ rule }) => rule === mutationRule),
+    };
+  };
+
+  it.each([
+    ["JSON key", `{"password":"${value}"}`],
+    ["spaced JSON key", `"password": "${value}"`],
+    ["single-quoted key", `'password':'${value}'`],
+    ["passphrase key", `{"passphrase": "${value}"}`],
+    ["quoted key with an unquoted YAML value", `'password': ${value}`],
+    ["TOML quoted key", `"password" = "${value}"`],
+    ["multi-line JSON", `{\n  "password":\n    "${value}"\n}`],
+    ["nested array", `Config: {"password":["${value}"]}`],
+    ["nested object", `Config: {"password":{"value":"${value}"}}`],
+    ["later nested value", `{"password": ["", {"note": [true, 7]}, "${value}"]}`],
+    ["value after an escaped quote", ['{"pass', 'word": ["a\\"b", "', value, '"]}'].join("")],
+    ["unquoted key with an array", `password: ["${value}"]`],
+    ["bare nested key", `{"password": {value: "${value}"}}`],
+    ["XML element", `<password>${value}</password>`],
+    ["XML element with attributes", `<password type="text">${value}</password>`],
+    ["multi-line XML element", ["<pass", "phrase>\n  ", value, "\n</passphrase>"].join("")],
+  ])("refuses the %s spelling in both consumers", async (_label, content) => {
+    expect(await scanBoth(content, "password-assignment", "password_assignment")).toEqual({ gate: true, mutation: true });
+  });
+
+  it.each([
+    ["empty value", '"password": ""'],
+    ["environment placeholder", '"password": "${BUILD_PASSWORD}"'],
+    ["command placeholder", '"password": "$(op read pw)"'],
+    ["angle placeholder", '"password": "<your-password>"'],
+    ["suffixed key", '"password_policy": "rotate monthly"'],
+    ["prose", "the password field"],
+    ["bare container token", "password=[scrubbed]"],
+    ["nested keys only", '{"password": {"type": "str"}}'],
+    ["short nested value", '{"password": ["short"]}'],
+    ["string literal that spans a line break", ["{ input: '{\"password\": ', safe: true },", "  { id: 'next' }"].join("\n")],
+    ["empty element", "<password></password>"],
+    ["placeholder element", "<password>${X}</password>"],
+    ["command element", "<password>$(cat pw)</password>"],
+    ["short element", "<password>short</password>"],
+    ["unterminated container", '{"password": ["short"'],
+    ["mismatched container", '{"password": ["short"}'],
+    ["value after the container closes", `{"password": ["short"]} "${value}"`],
+    ["key at the end of input", '{"password": '],
+  ])("allows the %s in both consumers", async (_label, content) => {
+    expect(await scanBoth(content, "password-assignment", "password_assignment")).toEqual({ gate: false, mutation: false });
+  });
+
+  it.each([
+    ["quoted key", `{"token": "${entropy}"}`],
+    ["nested array", `{'api_key': ['${entropy}']}`],
+    ["nested object", `{"secret": {"value": "${entropy}"}}`],
+  ])("detects a high-entropy %s in mutation payloads only", (_label, content) => {
+    expect(scanMutationSecrets({ description: content }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
+  });
+
+  it("keeps the entropy predicate for structured high-entropy values", () => {
+    expect(scanMutationSecrets({ description: `{"token": "${"a".repeat(28)}"}` })).toEqual([]);
+  });
+
+  it("returns the same verdict through the blocking guard the CLI uses", () => {
+    expect(() => evaluateMutationGuard({
+      author: "agent", payload: { description: `{"password":["${value}"]}` },
+      settings: { require_attributed_author: false, secret_guard: "block", stale_in_progress_hours: 72 },
+    })).toThrow(/Mutation blocked by secret guard \(password_assignment\)/);
+  });
+
+  it("keeps interleaved scans of one rule independent", () => {
+    const rule = SECRET_RULES.find(({ mutationRule }) => mutationRule === "password_assignment")!;
+    const first = findSecretRuleMatches(rule, `{"password":"${value}"} {"password":"${value}"}`);
+    const second = findSecretRuleMatches(rule, `{"password":"${value}"}`);
+    expect(first.next().done).toBe(false);
+    expect([...second]).toHaveLength(1);
+    expect([...first]).toHaveLength(1);
+  });
+
+  it("finishes pathological structured inputs in linear time", () => {
+    const rule = SECRET_RULES.find(({ mutationRule }) => mutationRule === "password_assignment")!;
+    const inputs = [
+      `{"password": ${"[".repeat(200_000)}`,
+      `"password": ["${"a".repeat(400_000)}`,
+      `password: [${'"a", '.repeat(80_000)}]`,
+      '{"password": '.repeat(40_000),
+      '"password":"'.repeat(40_000),
+      `<password>${"x".repeat(400_000)}`,
+      `<password ${"a".repeat(400_000)}`,
+      "<password ".repeat(40_000),
+      `${'{"password": '.repeat(20_000)}"${"a".repeat(400_000)}"`,
+    ];
+    const started = performance.now();
+    const counts = inputs.map((input) => Array.from(findSecretRuleMatches(rule, input)).length);
+    expect(performance.now() - started).toBeLessThan(5_000);
+    expect(counts).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 1]);
   });
 });

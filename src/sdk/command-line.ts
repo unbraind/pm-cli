@@ -10,6 +10,7 @@ import { resolveImplicitPmRoot, resolvePmRoot, resolveWorkspaceRoot } from "../c
 import { isPathWithinDirectory } from "../core/fs/path-utils.js";
 
 export { quoteWindowsCommandArg, quoteCommandArg, renderPmCommand } from "../core/shared/command-line.js";
+export { URL_CREDENTIAL_PLACEHOLDER, redactUrlCredentialsInText, redactUrlCredentialsInToken } from "../core/shared/url-credentials.js";
 
 /** Tracker selection a rendered recovery command must preserve: the requested path and extension isolation. */
 export type CommandScope = Pick<GlobalOptions, "path" | "noExtensions">;

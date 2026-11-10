@@ -3283,6 +3283,16 @@ SDK extension actions and delegated template reads retain the same failure kind.
 
 ## Expected CLI Errors
 
+A package that echoes caller input in its own refusals or recovery commands
+should remove URL credentials with the rule that the CLI and telemetry use
+([pm-nhauur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nhauur.toon); tracker record excluded from npm).
+Apply `redactUrlCredentialsInToken(token)` to each argv token. Apply
+`redactUrlCredentialsInText(text)` to free text. Both replace the span between
+a token's first `:` and its last `@` with `URL_CREDENTIAL_PLACEHOLDER`
+(`[redacted]`). The rule is complete for every spelling a URL parser
+normalizes, and it is idempotent. When a retry would lose credentials this
+way, withhold the retry instead of emitting one that runs a different command.
+
 `resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument
 templates and next steps for unsupported `block` and `unblock` verbs. It checks
 the SDK's update flag contracts and declines installed verbs, unknown paths,
