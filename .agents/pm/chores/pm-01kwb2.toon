@@ -1,0 +1,47 @@
+id: pm-01kwb2
+title: Stabilize alias clear/prune race verification under monolithic release coverage
+description: "Operator release 42759813393 on merged baf182d564 passed all 12365 assertions but exact coverage missed the return at src/sdk/telemetry.ts:567. The competing-clear fixture holds the telemetry lock while coordinating the peer; the permitted 250 ms SDK lock refusal can bypass the re-read branch under whole-suite load while every assertion still passes. Coordinate the peer state transition before real SDK lock admission so the guard is tested deterministically without changing production behavior or lock budgets."
+type: Chore
+status: closed
+priority: 1
+tags: []
+created_at: "2026-11-10T05:50:52.473Z"
+updated_at: "2026-11-10T07:12:30.714Z"
+closed_at: "2026-11-10T07:12:29.424Z"
+completed_at: "2026-11-10T07:12:29.424Z"
+author: "harness:codex"
+estimated_minutes: 90
+acceptance_criteria: Use real filesystem and mutex behavior with deterministic peer ordering rather than elapsed-time admission; A removed clear guard fails the behavioral regression and the real guard branch is covered under unchanged global thresholds; Keep the 250 ms production wait and shipped SDK behavior unchanged
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: Replaced timing-dependent held-lock scheduling with real mutex-backed peer transitions and an explicit locked-operation admission assertion. Kept SDK production code and lock budgets unchanged.
+expected_result: Both cleared and already-pruned peer states exercise the locked re-read; removing the clear-safe guard must recreate a cleared file and fail the test.
+actual_result: "All 31 linked telemetry tests pass; a removed-guard isolated control fails the cleared-file case as intended. Complete monolithic coverage covers every line, statement, function and branch across 843 source files with zero deficits, including the previously missing SDK guard."
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0mox,discovered_from,"2026-11-10T05:50:52.473Z","harness:codex","cli:create:dep",detected
+  pm-qmb6h8,related,"2026-11-10T05:50:52.473Z","harness:codex","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-11-10T05:50:52.473Z","harness:codex","Duplicate check: complete strict all-status corpus of 3255 items has no unreadable records or omissions. Request-specific searches and live open/in-progress inventories found pm-qmb6h8 for verdict attribution and closed pm-0mox for shipped clear-safe alias pruning. Full closed predecessor data and comments plus verified history confirm its implementation is complete. No finite owner exists for the timing-dependent race fixture. Keep the shipped predecessor closed and create this test-only reliability follow-up."
+  "2026-11-10T06:21:55.720Z","harness:codex","Confirmed the old fixture could pass both clear/prune assertions after an allowed 250 ms mutation-lock refusal without entering the critical re-read: an isolated 500 ms peer hold left src/sdk/telemetry.ts line 567 uncovered. The replacement schedules actual peer filesystem transitions through the existing real queue mutex before delegating SDK admission, and asserts that the locked operation ran once. Removing only the clear-safe SDK guard in an isolated copy then causes the intended cleared-file recreation failure. SDK production behavior and lock budgets remain unchanged; closed predecessor pm-0mox stays closed. Full monolithic coverage remains required separately from focused or sharded proof."
+  "2026-11-10T07:12:23.040Z","harness:codex","Complete monolithic linked coverage passed through the related verdict owner: 70204/70204 lines, 74671/74671 statements, 15552/15552 functions and 57904/57904 branches, zero uncovered counts across all 843 source files. The corrected fixture thus exercises the SDK clear-safe guard under the full run as well as focused execution. All 31 linked telemetry assertions passed. Delayed-peer pre-fix and removed-guard negative controls establish sensitivity; SDK production source and its 250 ms admission budget are unchanged."
+learnings[1]{created_at,author,text}:
+  "2026-11-10T07:12:24.244Z","harness:codex","A race fixture can pass after an allowed bounded-lock refusal without reaching the intended critical section. Coordinate the competing filesystem transition through the existing mutex, assert actual admission, and retain a removed-guard behavior control. Sharded coverage is a distinct claim from complete monolithic release coverage."
+files[1]{path,scope}:
+  tests/unit/commands/governance/telemetry-command.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/telemetry-command.spec.ts,project,240,"harness:codex","2026-11-10T06:21:56.337Z",local_mutation,fix/release-test-verdict-and-alias-race
+test_runs[1]:
+  - run_id: test-local-mwab0f4m-xodq2p
+    kind: test
+    status: passed
+    started_at: "2026-11-10T06:23:12.819Z"
+    finished_at: "2026-11-10T06:23:22.006Z"
+    recorded_at: "2026-11-10T06:23:22.006Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/governance/telemetry-command.spec.ts,schema,schema,source,local_source_ref
+close_reason: Deterministic peer ordering restores meaningful full-run alias-clear race coverage.
+body: ""

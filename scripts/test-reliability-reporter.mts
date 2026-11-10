@@ -10,7 +10,7 @@
 import { appendFile, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { Reporter, TestCase } from "vitest/reporters";
+import type { Reporter, TestCase } from "vitest/node";
 
 /** Default per-test timeout retained by the repository test policy. */
 export const TEST_TIMEOUT_MS = 30_000;

@@ -6,7 +6,6 @@ import { recordDeprecatedAliasUsage } from "../../../../src/sdk/telemetry.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { acquireLock } from "../../../../src/core/lock/lock.js";
-import * as files from "../../../../src/core/fs/fs-utils.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import * as telemetryRuntime from "../../../../src/core/telemetry/runtime.js";
 import { withTempGlobalRoot } from "../../../helpers/temp.js";
@@ -255,22 +254,24 @@ describe("runTelemetry", () => {
       await fs.writeFile(statePath(globalRoot), JSON.stringify({ alias_usage: {
         "list-open": { canonical: "list", days: { [oldDay]: { count: 3, last_seen: `${oldDay}T00:00:00.000Z` } } },
       } }), "utf8");
-      const release = await acquireLock(globalRoot, "telemetry-queue", 60, "alias-clear-race-test");
-      let observeRead = () => {};
-      const readObserved = new Promise<void>((resolve) => { observeRead = resolve; });
-      const realReadFileIfExists = files.readFileIfExists;
-      const spy = vi.spyOn(files, "readFileIfExists").mockImplementation(async (target) => {
-        const value = await realReadFileIfExists(target);
-        if (target === statePath(globalRoot)) observeRead();
-        return value;
+      const realMutation = telemetryRuntime.withTelemetryQueueMutation;
+      let lockedReads = 0;
+      // Commit the peer transition after the initial read and before SDK lock
+      // admission. Holding its lock across scheduling would let the permitted
+      // foreground timeout pass this test without exercising the re-read.
+      const spy = vi.spyOn(telemetryRuntime, "withTelemetryQueueMutation").mockImplementation(async <T>(operation: () => Promise<T>, root?: string, waitMs?: number): Promise<T> => {
+        await realMutation(async () => {
+          if (peerState === "cleared") await fs.rm(statePath(globalRoot));
+          else await fs.writeFile(statePath(globalRoot), JSON.stringify({ alias_usage: {} }), "utf8");
+        }, root);
+        return realMutation(async () => {
+          lockedReads += 1;
+          return operation();
+        }, root, waitMs);
       });
       try {
-        const statsPromise = runTelemetry({ subcommand: "stats" }, {});
-        await readObserved;
-        if (peerState === "cleared") await fs.rm(statePath(globalRoot));
-        else await fs.writeFile(statePath(globalRoot), JSON.stringify({ alias_usage: {} }), "utf8");
-        await release();
-        const result = await statsPromise;
+        const result = await runTelemetry({ subcommand: "stats" }, {});
+        expect(lockedReads).toBe(1);
         expect(result.zero_use_aliases).toContain("list-open");
         if (peerState === "cleared") await expect(fs.stat(statePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
         else expect(JSON.parse(await fs.readFile(statePath(globalRoot), "utf8"))).toEqual({ alias_usage: {} });

@@ -58,6 +58,17 @@ node scripts/run-tests.mjs test
 node scripts/run-tests.mjs coverage
 ```
 
+Coverage mode records assertion results in a fresh, private runner workspace.
+Its verdict distinguishes those results from Vitest's process exit and the
+independent exact-count coverage gate. Vitest can exit nonzero for coverage or
+reporter failures even when assertions passed. Missing or malformed receipts
+never establish a passing assertion result. Exit codes retain their existing
+meaning: `1` for a Vitest refusal, `2` for an exact-gate refusal, and `3` when
+both processes refuse admission. No coverage threshold or source denominator
+is reduced. This behavior is tracked by
+[pm-qmb6h8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qmb6h8.toon)
+(repository-only tracker record, excluded from npm).
+
 The Linux killed-owner integration suite always exercises Node. Its additional
 Bun case runs locally when `bun --version` succeeds; CI requires Bun and retains
 the case even when the executable is missing, so a broken CI setup fails visibly.

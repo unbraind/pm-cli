@@ -280,6 +280,7 @@ describe("run-tests", () => {
     process.env.PM_SENTRY_DISABLED = "0";
     process.env.PM_SOURCE_PM_PATH = "/outer/tracker/.agents/pm";
     process.env.PM_SOURCE_WORKSPACE_ROOT = "/outer/workspace";
+    process.env.PM_RUN_TESTS_EXECUTION_REPORT = "/outer/stale-assertions.json";
     process.argv = [
       "node",
       "scripts/run-tests.mjs",
@@ -312,6 +313,7 @@ describe("run-tests", () => {
     expect(childEnvironment).not.toHaveProperty("PM_SOURCE_PM_PATH");
     expect(childEnvironment).not.toHaveProperty("PM_SOURCE_WORKSPACE_ROOT");
     expect(childEnvironment).toHaveProperty("PM_SENTRY_DISABLED", "1");
+    expect(childEnvironment).toHaveProperty("PM_RUN_TESTS_EXECUTION_REPORT", path.join("/tmp/pm-run-tests-spec", "test-execution.json"));
     expect(process.exitCode).toBe(0);
   });
 
@@ -348,6 +350,7 @@ describe("run-tests", () => {
     vi.doMock("node:child_process", () => ({ spawn }));
     mockFsPromises();
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.env.PM_RUN_TESTS_EXECUTION_REPORT = "/outer/stale-assertions.json";
     process.argv = [
       "node",
       "scripts/run-tests.mjs",
@@ -358,6 +361,7 @@ describe("run-tests", () => {
     const vitestArgs = spawn.mock.calls.at(0)?.[1] as string[];
     expect(vitestArgs).toContain("tests/unit/example.spec.ts");
     expect(vitestArgs).not.toContain("--coverage");
+    expect(spawn.mock.calls[0]?.[2]?.env).not.toHaveProperty("PM_RUN_TESTS_EXECUTION_REPORT");
   });
 
   it("surfaces a spawn error, stringifying the failure and cleaning up the temp root", async () => {
@@ -472,7 +476,7 @@ describe("run-tests", () => {
     );
   });
 
-  it("uses a combined exit code when tests and exact coverage both fail", async () => {
+  it("retains a combined refusal without claiming assertions failed when their receipt is missing", async () => {
     process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const spawn = vi
@@ -485,8 +489,38 @@ describe("run-tests", () => {
     await harness.importModule("scripts/run-tests.mjs");
     expect(process.exitCode).toBe(3);
     expect(String(errorSpy.mock.calls.at(-1)?.[0] ?? "")).toContain(
-      "combined verdict",
+      "Test assertion outcome unavailable; Vitest process exited 1; exact coverage failed (combined process verdict)",
     );
+  });
+
+  it.each([
+    [JSON.stringify({ version: 1, passed_tests: 1, failed_tests: 0, failed_modules: 0, unhandled_errors: 0, interrupted: false }), "Test assertions passed"],
+    [JSON.stringify({ version: 1, passed_tests: 0, failed_tests: 1, failed_modules: 0, unhandled_errors: 0, interrupted: false }), "Tests failed"],
+    [JSON.stringify({ version: 1, passed_tests: 0, failed_tests: 0, failed_modules: 1, unhandled_errors: 0, interrupted: false }), "Tests failed"],
+    [JSON.stringify({ version: 1, passed_tests: 1, failed_tests: 0, failed_modules: 0, unhandled_errors: 1, interrupted: false }), "Tests failed"],
+    [JSON.stringify({ version: 1, passed_tests: 1, failed_tests: 0, failed_modules: 0, unhandled_errors: 0, interrupted: true }), "Test execution interrupted"],
+    [JSON.stringify({ version: 1, passed_tests: 0, failed_tests: 0, failed_modules: 0, unhandled_errors: 0, interrupted: false }), "Test assertion outcome unavailable"],
+    [JSON.stringify({ version: 2, passed_tests: 1, failed_tests: 0, failed_modules: 0, unhandled_errors: 0, interrupted: false }), "Test assertion outcome unavailable"],
+    ["null", "Test assertion outcome unavailable"],
+    [JSON.stringify({ version: 1, passed_tests: 1, failed_tests: -1, failed_modules: 0, unhandled_errors: 0, interrupted: false }), "Test assertion outcome unavailable"],
+    [JSON.stringify({ version: 1, passed_tests: "1", failed_tests: 0, failed_modules: 0, unhandled_errors: 0, interrupted: false }), "Test assertion outcome unavailable"],
+    [JSON.stringify({ version: 1, passed_tests: 1, failed_tests: 0, failed_modules: 0, unhandled_errors: 0 }), "Test assertion outcome unavailable"],
+    ["malformed receipt", "Test assertion outcome unavailable"],
+  ])("attributes assertion evidence independently of process refusal: %s", async (receipt, verdict) => {
+    const root = await harness.createTempRoot("pm-runner-assertions-");
+    await writeFile(path.join(root, "test-execution.json"), receipt);
+    mkdtempMock.mockResolvedValueOnce(root);
+    mockFsPromises();
+    process.env.PM_RUN_TESTS_SKIP_BUILD = "1";
+    process.argv = ["node", "scripts/run-tests.mjs", "coverage", "--", "--reporter=default"];
+    const spawn = vi.fn(() => closeChild(1));
+    vi.doMock("node:child_process", () => ({ spawn }));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    await harness.importModule("scripts/run-tests.mjs");
+    expect(process.exitCode).toBe(3);
+    expect(spawn.mock.calls[0]?.[1]).toContain(`--reporter=${path.join(process.cwd(), "scripts", "test-execution-reporter.mts")}`);
+    expect(spawn.mock.calls[0]?.[2]?.env).toHaveProperty("PM_RUN_TESTS_EXECUTION_REPORT", path.join(root, "test-execution.json"));
+    expect(errorSpy).toHaveBeenLastCalledWith(`${verdict}; Vitest process exited 1; exact coverage failed (combined process verdict).`);
   });
 
   it("defaults to test mode when no mode argument is provided", async () => {

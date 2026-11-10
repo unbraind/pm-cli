@@ -1,6 +1,5 @@
 /** Reject MCP option drift in repository tests while preserving production warnings. */
-import type { Vitest } from "vitest/node";
-import type { Reporter } from "vitest/reporters";
+import type { Reporter, Vitest } from "vitest/node";
 
 /** Deliberate negative cases may exercise only these exact warning identities. */
 export const MCP_OPTION_WARNING_ALLOWLIST = [{
@@ -25,8 +24,8 @@ export default class McpContractReporter implements Reporter {
   /** Classify every warning in a batched console event without exposing option values. */
   onUserConsoleLog(log: Parameters<NonNullable<Reporter["onUserConsoleLog"]>>[0]): void {
     const entity = log.taskId === undefined ? undefined : this.#vitest.state.getReportedEntityById(log.taskId);
-    const file = entity?.module?.relativeModuleId.replaceAll("\\", "/") ?? "<unknown>";
-    const test = entity?.fullName ?? "<unknown>";
+    const file = entity && "module" in entity ? entity.module.relativeModuleId.replaceAll("\\", "/") : "<unknown>";
+    const test = entity && "fullName" in entity ? entity.fullName : "<unknown>";
     for (const match of log.content.matchAll(/\[pm-mcp\] Unknown option "([^"]+)" for (\S+) action "([^"]+)"/g)) {
       const identity = `${match[1]}:${match[2]}:${match[3]}`;
       const allowed = MCP_OPTION_WARNING_ALLOWLIST.some((entry) => entry.file === file && entry.test === test && (entry.warnings as readonly string[]).includes(identity));
