@@ -114,6 +114,21 @@ function assertExternalTemporaryDirectory() {
   }
 }
 
+/** Read only this invocation's structured assertion evidence; absent or invalid evidence stays unknown. */
+function readAssertionVerdict(reportPath) {
+  try {
+    const report = JSON.parse(readFileSync(reportPath, "utf8"));
+    if (report?.version !== 1 || typeof report.interrupted !== "boolean") return "Test assertion outcome unavailable";
+    const counts = [report.passed_tests, report.failed_tests, report.failed_modules, report.unhandled_errors];
+    if (!counts.every((value) => Number.isSafeInteger(value) && value >= 0)) return "Test assertion outcome unavailable";
+    if (report.interrupted) return "Test execution interrupted";
+    if (report.failed_tests > 0 || report.failed_modules > 0 || report.unhandled_errors > 0) return "Tests failed";
+    return report.passed_tests > 0 ? "Test assertions passed" : "Test assertion outcome unavailable";
+  } catch {
+    return "Test assertion outcome unavailable";
+  }
+}
+
 /** Execute validation while its caller retains the build lease and isolated tracker environment. */
 async function runValidation(mode, normalizedVitestArgs, env, vitestEntry) {
   if (existsSync(path.join(process.cwd(), ".cache", "build-incomplete"))) {
@@ -157,11 +172,11 @@ async function runValidation(mode, normalizedVitestArgs, env, vitestEntry) {
   );
   if (vitestExitCode !== 0 && coverageGateExitCode !== 0) {
     console.error(
-      "Test execution and exact coverage both failed (combined verdict).",
+      `${readAssertionVerdict(env.PM_RUN_TESTS_EXECUTION_REPORT)}; Vitest process exited ${vitestExitCode}; exact coverage failed (combined process verdict).`,
     );
     process.exitCode = 3;
   } else if (vitestExitCode !== 0) {
-    console.error("Test execution failed; exact coverage still passed.");
+    console.error(`${readAssertionVerdict(env.PM_RUN_TESTS_EXECUTION_REPORT)}; Vitest process exited ${vitestExitCode}; exact coverage still passed.`);
     process.exitCode = 1;
   } else if (coverageGateExitCode !== 0) {
     console.error("Tests passed; exact coverage failed.");
@@ -213,6 +228,7 @@ async function run() {
   // shards), so retain the contract gate beside every explicitly chosen reporter.
   if (normalizedVitestArgs.some((arg) => arg === "--reporter" || arg.startsWith("--reporter="))) {
     normalizedVitestArgs.push(`--reporter=${path.join(process.cwd(), "scripts", "mcp-contract-reporter.mts")}`);
+    if (resolved.mode === "coverage") normalizedVitestArgs.push(`--reporter=${path.join(process.cwd(), "scripts", "test-execution-reporter.mts")}`);
   }
   const skipBuild = resolved.prebuilt || process.env.PM_RUN_TESTS_SKIP_BUILD === "1";
 
@@ -227,6 +243,7 @@ async function run() {
     delete baseEnv.PM_CLI_PACKAGE_ROOT;
     delete baseEnv.PM_SOURCE_PM_PATH;
     delete baseEnv.PM_SOURCE_WORKSPACE_ROOT;
+    delete baseEnv.PM_RUN_TESTS_EXECUTION_REPORT;
 
     if (!skipBuild) {
       const buildExitCode = await runChild(process.execPath, [path.join(process.cwd(), "scripts", "build.mjs")], baseEnv);
@@ -238,7 +255,10 @@ async function run() {
     }
 
     await withBuildLease(process.cwd(), (lease) => runValidation(
-      resolved.mode, normalizedVitestArgs, { ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease, PM_BUILD_CONSUMER_LEASE_ROOT: process.cwd() }, vitestEntry,
+      resolved.mode, normalizedVitestArgs, {
+        ...baseEnv, PM_BUILD_CONSUMER_LEASE: lease, PM_BUILD_CONSUMER_LEASE_ROOT: process.cwd(),
+        ...(resolved.mode === "coverage" ? { PM_RUN_TESTS_EXECUTION_REPORT: path.join(tempRoot, "test-execution.json") } : {}),
+      }, vitestEntry,
     ), { inherited: process.env.PM_BUILD_CONSUMER_LEASE });
 
   } catch (error) {
