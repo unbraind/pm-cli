@@ -1388,7 +1388,9 @@ function applyPmCliErrorContext(
   const examples = normalizeContextList(context.examples) ?? guidance.examples;
   const producerNextSteps = normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
   const partialDomain = partialLegalDomainGuidance(context.recovery);
-  const nextSteps = partialDomain ? [...(producerNextSteps ?? []), partialDomain] : producerNextSteps;
+  const nextSteps = partialDomain
+    ? [...(producerNextSteps?.slice(0, 1) ?? []), partialDomain, ...(producerNextSteps?.slice(1) ?? [])]
+    : producerNextSteps;
   const verificationErrors =
     normalizeContextList(context.verification_errors) ??
     guidance.verificationErrors;

@@ -80,12 +80,23 @@ describe("pm cli error guidance context plumbing", () => {
     expect(context.recovery.allowed_values).toEqual(domain);
   });
 
-  it("adds partial legal choices to a plain producer failure without losing explicit next steps", () => {
+  it.each([
+    { label: "plain failure", steps: [] },
+    { label: "producer action", steps: ["Inspect the package profile"] },
+    { label: "bounded producer collection", steps: ["Inspect the package profile", "Check its schema", "Read its documentation", "x".repeat(10_000)] },
+  ])("retains partial legal choices and the first action for a $label", ({ steps }) => {
     const domain = ["valid-choice", null] as never;
-    const plain = formatPmCliErrorForJson("Producer failure", 2, { recovery: { allowed_values: domain } });
-    expect(plain.next_steps).toEqual([expect.stringContaining("Incomplete legal domain")]);
-    const guided = formatPmCliErrorForJson("Producer failure", 2, { nextSteps: ["Inspect the package profile"], recovery: { allowed_values: domain } });
-    expect(guided.next_steps).toEqual(["Inspect the package profile", expect.stringContaining("Incomplete legal domain")]);
+    const context = { nextSteps: steps, recovery: { allowed_values: domain } };
+    const original = structuredClone(context);
+    const envelope = formatPmCliErrorForJson("Producer failure", 2, context);
+    expect(envelope.next_steps).toContainEqual(expect.stringContaining("Incomplete legal domain"));
+    expect(envelope.next_steps?.join(" ")).toContain('"valid-choice"');
+    if (steps.length > 0) expect(envelope.next_steps?.[0]).toBe(steps[0]);
+    if (steps.length > 3) expect(envelope.diagnostic_output?.degradation_steps).toContain("limit_collections");
+    expect(envelope.recovery?.allowed_values).toBeUndefined();
+    expect(envelope.refusal.legal_domain).toBeUndefined();
+    expect(Math.ceil(Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8") / 4)).toBeLessThanOrEqual(2_000);
+    expect(context).toEqual(original);
   });
 
   it.each([false, true])("retains partial-domain evidence when producer steps and text are compacted (close=%s)", (close) => {
