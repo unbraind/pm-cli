@@ -1,6 +1,8 @@
 # Diagnostic Output Contracts
 
-Tracker references: [pm-cha95z](../.agents/pm/tasks/pm-cha95z.toon), [pm-5t33or](../.agents/pm/features/pm-5t33or.toon), [pm-f05lsg](../.agents/pm/features/pm-f05lsg.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), and [pm-m4uyyj](../.agents/pm/issues/pm-m4uyyj.toon).
+Tracker references: [pm-cha95z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-cha95z.toon), [pm-5t33or](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-5t33or.toon), [pm-f05lsg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f05lsg.toon), [pm-h8tpeh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h8tpeh.toon), and [pm-m4uyyj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4uyyj.toon).
+
+The linked tracker records are repository-only evidence and are excluded from npm.
 
 ## Agent Quick Context
 
@@ -62,10 +64,22 @@ Structured CLI refusals also include a compact `refusal` identity with the
 failing command/flag/operand surface, rejected scalar when observable, complete
 legal domain when one exists, and the process exit code. Recovery-bearing
 errors use the `recovery_bundle` diagnostic class. Collection degradation may
-compact explanatory domains inside `recovery`, but `refusal.legal_domain`
-remains complete and `recovery.suggested_retry_args` is atomic: the projector
-either retains the executable argv or removes the recovery rather than slicing
-it into a dead command.
+compact explanatory domains inside `recovery`. When `refusal.legal_domain`
+is retained, it remains complete. If that object cannot fit the fixed JSON
+budget, the projector may omit the entire `refusal` object; the
+`diagnostic_output` receipt reports degradation with the bounded omission
+metadata described above. An absent `refusal` therefore
+does not prove that the producer supplied no legal domain. The original SDK
+error context retains the producer's complete domain; CLI JSON has its own
+ceiling and is not an unlimited restoration channel.
+For malformed producer domains, text prioritizes the incomplete-domain notice
+and a bounded preview of whole usable choices even when producer next steps,
+verification errors, or recovery coordinates are oversized. An oversized close
+retry still points to the original SDK recovery metadata.
+`recovery.suggested_retry_args` is atomic: the projector retains the complete
+argv or omits it rather than shortening it into a different command.
+Tracked by [pm-gh1693](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1693.toon)
+(repository-only tracker record, excluded from npm).
 
 Enum, date, get-depth, and minimum intent-budget validation producers attach the failed metadata
 `field` and supplied `value` to `PmCliError.context`; closed domains also attach
@@ -79,7 +93,7 @@ identify their flag without inventing a rejected scalar. Missing items identify
 the `id` operand.
 When the producer cannot identify a field or value, the diagnostic retains the
 command surface and omits the unknown scalar. Policy evidence takes precedence
-over syntactic attribution. Tracked by [pm-gh1365](../.agents/pm/issues/pm-gh1365.toon).
+over syntactic attribution. Tracked by [pm-gh1365](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1365.toon).
 
 `--json` and `--output-format json` (including `--output-format=json`) select
 JSON on stderr for parser and execution errors as well as successful output.
@@ -90,7 +104,7 @@ same SDK selector, including repeated formats and the `--` terminator. A JSON
 stale-read warning is emitted after successful dispatch; a failed read emits its
 typed error alone so stderr remains one JSON value. Text warnings retain their
 pre-dispatch presentation.
-Tracked by [pm-gh1366](../.agents/pm/issues/pm-gh1366.toon).
+Tracked by [pm-gh1366](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1366.toon).
 
 The deterministic ladder is:
 
@@ -103,10 +117,15 @@ The deterministic ladder is:
 Human diagnostics lead with `What is required` and next steps before explaining
 what happened. If their declared ceiling binds, the compact text still begins
 with the required action, retains the first identifying line (up to 320 UTF-8
-bytes), and points to structured JSON for the bounded recovery envelope. The
-first line should name the specific failure, such as `Error: Unknown option
+bytes, including an omission suffix), and points to structured JSON for the
+bounded recovery envelope. The first line should name the specific failure, such as `Error: Unknown option
 --label`. Oversized caller-input echoes are discarded before this identity;
 the retained identity and corrective action share the binding byte budget.
+The CLI recovery renderer separately retains up to 320 Unicode code points of
+its `What happened` text, followed by an omission suffix when needed, before
+the shared byte-budget projector runs. With malformed legal-domain metadata,
+the final CLI fallback preserves the producer's required action alongside the
+partial-domain notice whenever they fit, dropping repeated detail first.
 The text projector strips terminal escape sequences and replaces remaining
 control characters before measuring output, including short diagnostics that
 fit the budget. Line breaks and ordinary indentation are preserved.

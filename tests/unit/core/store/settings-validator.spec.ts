@@ -243,7 +243,7 @@ describe("core/store/settings-validator", () => {
       ],
     };
     raw.schema = { version: 2, statuses: [{ id: "in_review", roles: ["active"] }] };
-    raw.context = { default_depth: "deep", sections: { hierarchy: true } };
+    raw.context = { default_depth: "deep", sections: { hierarchy: true, recently_created: true, unparented: false } };
     const result = validateSettings(raw);
     expect(result.success).toBe(true);
     if (result.success) {
@@ -253,6 +253,8 @@ describe("core/store/settings-validator", () => {
       // definitions behave identically to schema/types.json (config-driven).
       expect(result.data.item_types?.definitions[0]?.description).toBe("Time-boxed investigation");
       expect(result.data.item_types?.definitions[0]?.default_status).toBe("in_progress");
+      expect(result.data.context?.sections?.recently_created).toBe(true);
+      expect(result.data.context?.sections?.unparented).toBe(false);
     }
   });
 

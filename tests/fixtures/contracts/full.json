@@ -22025,7 +22025,8 @@
       "owned_states": [],
       "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
-        "core/profile/profile-lint.ts"
+        "core/profile/profile-lint.ts",
+        "sdk/config.ts"
       ],
       "stability": "stable"
     },
@@ -23996,6 +23997,7 @@
         "sdk/context-intent-contracts.ts",
         "sdk/dependencies.ts",
         "sdk/governance/assurance-mutation-error.ts",
+        "sdk/history-redact.ts",
         "sdk/lifecycle/create.ts",
         "sdk/lifecycle/task-composition.ts",
         "sdk/lifecycle/update-many.ts",

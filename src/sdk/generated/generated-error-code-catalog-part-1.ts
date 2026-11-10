@@ -258,7 +258,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "config_key_unknown",
     exit_code: 2,
     stable: true,
-    sources: ["core/profile/profile-lint.ts"],
+    sources: ["core/profile/profile-lint.ts", "sdk/config.ts"],
   },
   {
     code: "config_value_invalid",
@@ -909,6 +909,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
       "sdk/context-intent-contracts.ts",
       "sdk/dependencies.ts",
       "sdk/governance/assurance-mutation-error.ts",
+      "sdk/history-redact.ts",
       "sdk/lifecycle/create.ts",
       "sdk/lifecycle/task-composition.ts",
       "sdk/lifecycle/update-many.ts",

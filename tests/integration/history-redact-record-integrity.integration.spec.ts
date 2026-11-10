@@ -14,6 +14,39 @@ import type { HistoryEntry } from "../../src/types.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("history redaction record integrity", () => {
+  it.each(["raw source", "raw root", "documented literal", "escaped trailing slash"])("redacts a path using %s with dry-run preservation and verified history", async (mode) => {
+    const documentation = await readFile(new URL("../../docs/COMMANDS.md", import.meta.url), "utf8");
+    const documented = documentation.match(/`--regex '([^']+)'` to match the path/u);
+    const documentedRegex = documented?.[1];
+    if (!documentedRegex) {
+      throw new Error("The path-matching --regex example is missing from docs/COMMANDS.md; keep the executable fixture aligned with that documented example.");
+    }
+    const regex = mode === "raw source" ? "/var/[a-z]+" : mode === "raw root" ? "/var" : mode === "escaped trailing slash" ? "/var\\/" : documentedRegex;
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Path /var/private", "--description", "Regex recovery fixture", "--type", "Task", "--json"], { expectJson: true });
+      const id = (created.json as { item: { id: string } }).item.id;
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const before = await readFile(historyPath, "utf8");
+      const preview = await runHistoryRedact(id, { regex, dryRun: true }, { path: context.pmPath });
+      expect(preview.dry_run).toBe(true);
+      expect(preview.changed).toBe(true);
+      expect(preview.history.entries_changed).toBeGreaterThan(0);
+      expect(preview.history.replacements).toBeGreaterThan(0);
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+      const result = await runHistoryRedact(id, { regex, replacement: "[removed]" }, { path: context.pmPath });
+      expect(result.changed).toBe(true);
+      const after = await readFile(historyPath, "utf8");
+      expect(after).not.toContain("/var/private");
+      const entries = after.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      const item = context.runCli(["get", id, "--json"], { expectJson: true }).json as { item: { title: string } };
+      expect(item.item.title).toContain("[removed]");
+      expect(item.item.title).not.toContain("/var/");
+      expect(entries.every((entry) => entry.record_hash_version !== undefined && entry.record_hash !== undefined)).toBe(true);
+      expect(verifyHistoryChain(entries).ok).toBe(true);
+      expect(entries.every((entry) => verifyHistoryRecordHash(entry).ok)).toBe(true);
+    });
+  });
+
   it("reseals rewritten records and retains only digest evidence for sensitive patches", async () => {
     await withTempPmPath(async (context) => {
       const secret = "private-redaction-probe";

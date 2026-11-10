@@ -192,7 +192,7 @@ describe("GitHub workflow contract", () => {
     expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
     expect(setupNodeStep?.with).toMatchObject({ "node-version": 24 });
     expect(codSpeedStep?.uses).toBe(
-      "CodSpeedHQ/action@78102a468f96d8e0ccb92d0ec49425753fc42062",
+      "CodSpeedHQ/action@61efe07e57e55bedeab750c434504de272a56e8c",
     );
     expect(codSpeedOptions).toMatchObject({
       mode: "simulation",
@@ -1636,7 +1636,7 @@ describe("GitHub workflow contract", () => {
       "trivyignores: .trivyignore",
       "skip-dirs: node_modules,dist,coverage,.pnpm-store",
       "extra_args: --results=verified --fail-on-scan-errors --exclude-paths=.trufflehog-exclude-paths.txt",
-      "uses: trufflesecurity/trufflehog@31ce31ee1abbcc7dc8eee5764c17121c3044c8b2 # v3.99.7",
+      "uses: trufflesecurity/trufflehog@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb # v3.99.8",
       "shellcheck --version",
       "shellcheck --severity=style",
       "$moduleVersion = '1.24.0'",
@@ -1662,8 +1662,8 @@ describe("GitHub workflow contract", () => {
     const scanners = securitySteps.filter(({ uses }) => uses?.startsWith("trufflesecurity/trufflehog@"));
     expect(scanners.length).toBeGreaterThan(0);
     for (const scanner of scanners) {
-      expect(scanner.uses).toBe("trufflesecurity/trufflehog@31ce31ee1abbcc7dc8eee5764c17121c3044c8b2");
-      expect(scanner.with?.version).toBe("3.99.7");
+      expect(scanner.uses).toBe("trufflesecurity/trufflehog@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb");
+      expect(scanner.with?.version).toBe("3.99.8");
     }
     const trivyStep = securitySteps.find(({ name }) => name === "Trivy repository scan");
     expect(trivyStep?.env).toEqual({ TRIVY_INCLUDE_DEV_DEPS: "true" });

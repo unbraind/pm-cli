@@ -68,6 +68,8 @@ interface GuidanceMessage {
   why?: string;
   examples?: string[];
   nextSteps?: string[];
+  /** Host-only domain fault evidence retained during text compaction, never serialized as a new field. */
+  partialLegalDomainNotice?: string;
   verificationErrors?: string[];
   flag?: string;
   value?: string;
@@ -427,12 +429,13 @@ function assignRecoveryString(
   }
 }
 
-/** Preserve executable argument strings exactly; malformed vectors cannot be repaired by deleting tokens. */
+/** Preserve exact argument and legal-domain strings; malformed vectors cannot be repaired by deleting tokens. */
 function normalizeRecoveryArgs(value: unknown): string[] | undefined {
   return Array.isArray(value) && value.length > 0 && value.every((entry) => typeof entry === "string")
     ? [...value] as string[] : undefined;
 }
 
+/** Normalize recovery collections while preserving exact argv and domain strings and refusing malformed vectors. */
 function assignRecoveryCollection(
   normalized: PmCliErrorRecoveryPayload,
   key:
@@ -447,7 +450,7 @@ function assignRecoveryCollection(
     | "candidate_commands",
   value: unknown,
 ): void {
-  if (key === "normalized_args" || key === "suggested_retry_args") {
+  if (key === "normalized_args" || key === "suggested_retry_args" || key === "allowed_values") {
     const args = normalizeRecoveryArgs(value);
     if (args) normalized[key] = args;
     return;
@@ -623,9 +626,19 @@ function appendRecoveryListLine(
   }
 }
 
+/** Bound text legal domains while leaving their complete machine representation intact. */
+function appendRecoveryAllowedValues(lines: string[], values: string[] | undefined, limit: number): void {
+  const visible = values?.slice(0, limit).map((value) => /^[\p{L}\p{N}._:/@=-]+$/u.test(value) ? value : JSON.stringify(value));
+  appendRecoveryListLine(lines, "allowed_values", visible, ", ");
+  if (values && values.length > limit) {
+    lines.push(`  allowed_values_omitted: ${values.length - limit} (complete domain via SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted)`);
+  }
+}
+
 /** Render normalized recovery fields and verified budget evidence as human guidance. */
 function renderRecoveryBundle(
   recovery: PmCliErrorRecoveryPayload | undefined,
+  allowedValuesLimit: number,
 ): string[] {
   const normalized = normalizeRecoveryPayload(recovery);
   if (!normalized) {
@@ -678,12 +691,7 @@ function renderRecoveryBundle(
     normalized.suggested_flags,
     ", ",
   );
-  appendRecoveryListLine(
-    lines,
-    "allowed_values",
-    normalized.allowed_values,
-    ", ",
-  );
+  appendRecoveryAllowedValues(lines, normalized.allowed_values, allowedValuesLimit);
   appendRecoveryListLine(
     lines,
     "candidate_commands",
@@ -745,6 +753,9 @@ function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
 /** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */
 function renderGuidanceLead(message: GuidanceMessage, lean: boolean): string[] {
   const lines: string[] = [`Error: ${message.title}`];
+  if (message.code === "close_validation_missing_fields" && message.recovery?.suggested_retry) {
+    lines.push(`Run: ${message.recovery.suggested_retry}`, "Template: replace every placeholder with real evidence before running.");
+  }
   if (!lean || !isGenericRefusalRequired(message.required)) {
     lines.push("", "What is required:", `  ${message.required}`);
   }
@@ -806,13 +817,26 @@ export function renderGuidanceMessage(
   message: GuidanceMessage,
   options: RenderGuidanceOptions = {},
 ): string {
+  return renderGuidanceMessageWithRecoveryLimit(message, options, 8);
+}
+
+/** Project legal choices only while rendering so every compact view keeps the original omission count. */
+function renderGuidanceMessageWithRecoveryLimit(
+  message: GuidanceMessage,
+  options: RenderGuidanceOptions,
+  allowedValuesLimit: number,
+): string {
   const lean = options.lean === true;
   const lines = [
     ...renderGuidanceLead(message, lean),
-    ...renderGuidanceExplanation(message, lean),
+    ...renderGuidanceExplanation(message, lean || message.code === "close_validation_missing_fields"),
   ];
+  const recovery = message.code === "close_validation_missing_fields" && message.recovery
+    ? { ...message.recovery, suggested_retry: undefined }
+    : message.recovery;
   const recoveryLines = renderRecoveryBundle(
-    lean ? projectLeanRecoveryPayload(message.recovery) : message.recovery,
+    lean ? projectLeanRecoveryPayload(recovery) : recovery,
+    allowedValuesLimit,
   );
   if (recoveryLines.length > 0) {
     lines.push("");
@@ -822,7 +846,7 @@ export function renderGuidanceMessage(
 }
 
 const TEXT_DIAGNOSTIC_OMISSION_NOTICE =
-  "Some guidance was omitted to fit the diagnostic token ceiling; rerun with --json for the full recovery envelope.";
+  "Some guidance was omitted to fit the diagnostic token ceiling; rerun with --json for structured recovery within its own budget.";
 const TEXT_RECOVERY_RETRY_MAX_BYTES = 400;
 const TEXT_HAPPENED_MAX_CODE_POINTS = 320;
 
@@ -839,12 +863,27 @@ function compactTextRecovery(
   ) {
     compact.suggested_retry = normalized.suggested_retry;
   }
-  for (const key of ["missing", "missing_required_fields", "allowed_values"] as const) {
+  for (const key of ["missing", "missing_required_fields"] as const) {
     const values = normalized[key];
     if (values && values.length > 0) compact[key] = values.slice(0, 3);
   }
+  if (normalized.allowed_values) compact.allowed_values = normalized.allowed_values;
   if (normalized.next_best_command) compact.next_best_command = normalized.next_best_command;
   return Object.keys(compact).length > 0 ? compact : undefined;
+}
+
+/** Budgeted projections always carry a concrete steps collection, including an empty one. */
+type CompactGuidanceMessage = GuidanceMessage & { nextSteps: string[] };
+
+/** Keep a truthful producer or SDK route after a close retry exceeds the text budget. */
+function compactCloseRecoverySteps(message: GuidanceMessage, compact: CompactGuidanceMessage): string[] {
+  if (message.code !== "close_validation_missing_fields" || !message.recovery?.suggested_retry || compact.recovery?.suggested_retry) {
+    return compact.nextSteps;
+  }
+  const nextSteps = compact.recovery?.next_best_command
+    ? ["Run recovery.next_best_command with real evidence, then repeat the original close."]
+    : [...compact.nextSteps, "Retrieve the complete retry from SDK error.context.recovery.suggested_retry; replace placeholders with real evidence before executing it."];
+  return appendIfMissing(nextSteps, message.partialLegalDomainNotice);
 }
 
 /**
@@ -863,17 +902,22 @@ function renderBoundedGuidanceMessage(
     estimatePmOutputTokens(Buffer.byteLength(text, "utf8")) <= budget;
   if (fits(full)) return full;
   const withoutExplanation: GuidanceMessage = { ...message, why: undefined };
-  const limitedCollections: GuidanceMessage = {
+  const limitedNextSteps = appendIfMissing(
+    message.nextSteps?.slice(0, 1) ?? [],
+    message.partialLegalDomainNotice,
+  );
+  const limitedCollections: CompactGuidanceMessage = {
     ...withoutExplanation,
     details: undefined,
     examples: message.examples?.slice(0, 1),
-    nextSteps: message.nextSteps?.slice(0, 1),
+    nextSteps: limitedNextSteps,
     verificationErrors: message.verificationErrors?.slice(0, 3),
   };
-  const compactRecovery: GuidanceMessage = {
+  const compactRecovery: CompactGuidanceMessage = {
     ...limitedCollections,
     recovery: compactTextRecovery(message.recovery),
   };
+  compactRecovery.nextSteps = compactCloseRecoverySteps(message, compactRecovery);
   const happenedCodePoints = Array.from(message.happened);
   const boundedHappened: GuidanceMessage = {
     ...compactRecovery,
@@ -883,8 +927,23 @@ function renderBoundedGuidanceMessage(
         ? `${happenedCodePoints.slice(0, TEXT_HAPPENED_MAX_CODE_POINTS).join("")}...`
         : message.happened,
   };
-  for (const candidate of [withoutExplanation, limitedCollections, compactRecovery, boundedHappened]) {
-    const text = `${renderGuidanceMessage(candidate, options)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
+  // Isolate the domain fault when oversized producer collections or recovery
+  // coordinates would otherwise displace it in the final shared projection.
+  const essentialDomainGuidance: CompactGuidanceMessage = {
+    code: message.code,
+    type: message.type,
+    title: message.title,
+    happened: boundedHappened.happened,
+    required: message.required,
+    nextSteps: appendIfMissing([], message.partialLegalDomainNotice),
+  };
+  essentialDomainGuidance.nextSteps = compactCloseRecoverySteps(message, essentialDomainGuidance);
+  for (const [candidate, limit] of [[withoutExplanation, 8], [limitedCollections, 8], [compactRecovery, 3], [boundedHappened, 3], ...(message.partialLegalDomainNotice ? [
+    [essentialDomainGuidance, 3] as const,
+    [{ ...essentialDomainGuidance, happened: message.title }, 3] as const,
+    [{ ...essentialDomainGuidance, required: "Correct the producer metadata before relying on a complete legal domain." }, 3] as const,
+  ] : [])] as const) {
+    const text = `${renderGuidanceMessageWithRecoveryLimit(candidate, options, limit)}\n\n${TEXT_DIAGNOSTIC_OMISSION_NOTICE}`;
     if (fits(text)) return text;
   }
   return full;
@@ -1259,6 +1318,9 @@ function resolveTypedRefusalTitle(
   context: PmCliErrorContext,
   normalizedRawMessage: string,
 ): string {
+  if (code === "close_validation_missing_fields") {
+    return "Close is missing required evidence";
+  }
   const generic =
     guidance.code === "command_failed" ||
     (guidance.code === "invalid_argument_value" && code !== guidance.code);
@@ -1273,7 +1335,44 @@ function resolveGuidanceDetails(context: PmCliErrorContext): Pick<GuidanceMessag
   return "details" in projected ? { details: projected.details } : { detailsOmitted: projected.details_omitted };
 }
 
-/** Merge SDK error evidence with CLI fallback guidance without discarding typed recovery or policy diagnostics. */
+const PARTIAL_LEGAL_DOMAIN_PREVIEW_MAX_BYTES = 400;
+
+/** Select whole fitting choices in producer order; skip oversized choices so later usable values remain discoverable. */
+function previewLegalDomainChoices(values: readonly string[]): string[] {
+  const shown: string[] = [];
+  for (const value of values.slice(0, 8)) {
+    const rendered = JSON.stringify(value);
+    if (Buffer.byteLength([...shown, rendered].join(", "), "utf8") <= PARTIAL_LEGAL_DOMAIN_PREVIEW_MAX_BYTES) shown.push(rendered);
+  }
+  return shown;
+}
+
+/** Retain usable strings from malformed producer metadata without claiming a complete typed legal domain. */
+function partialLegalDomainGuidance(recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
+  const domain = recovery?.allowed_values;
+  if (domain === undefined || (Array.isArray(domain) && domain.every((value) => typeof value === "string"))) return undefined;
+  const usable = Array.isArray(domain) ? domain.filter((value): value is string => typeof value === "string") : [];
+  const shown = previewLegalDomainChoices(usable);
+  const visible = shown.join(", ") || "none shown";
+  const omitted = usable.length > shown.length ? ` (${usable.length - shown.length} additional valid choices omitted)` : "";
+  return `Incomplete legal domain from malformed producer metadata. Usable choices shown: ${visible}${omitted}. Correct the producer metadata before relying on a complete domain.`;
+}
+
+/** Merge producer recovery while refusing a complete prose domain after malformed structured metadata. */
+function mergeGuidanceRecovery(
+  guidance: PmCliErrorRecoveryPayload | undefined,
+  context: PmCliErrorRecoveryPayload | undefined,
+  incompleteDomain: boolean,
+): PmCliErrorRecoveryPayload | undefined {
+  const normalized = normalizeRecoveryPayload(context);
+  const merged = normalized && guidance
+    ? normalizeRecoveryPayload({ ...guidance, ...normalized })
+    : (normalized ?? guidance);
+  if (!incompleteDomain) return merged;
+  const { allowed_values: _untrustedDomain, ...retained } = merged ?? {};
+  return Object.keys(retained).length > 0 ? retained : undefined;
+}
+
 /** Merge typed SDK context into guidance without inferring mutation outcomes. */
 function applyPmCliErrorContext(
   guidance: GuidanceMessage,
@@ -1287,16 +1386,15 @@ function applyPmCliErrorContext(
   const code = normalizeContextValue(context.code, guidance.code);
   const type = normalizeContextValue(context.type, errorType(code));
   const examples = normalizeContextList(context.examples) ?? guidance.examples;
-  const nextSteps =
-    normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
+  const producerNextSteps = normalizeContextList(context.nextSteps) ?? guidance.nextSteps;
+  const partialDomain = partialLegalDomainGuidance(context.recovery);
+  const nextSteps = partialDomain
+    ? [...(producerNextSteps?.slice(0, 1) ?? []), partialDomain, ...(producerNextSteps?.slice(1) ?? [])]
+    : producerNextSteps;
   const verificationErrors =
     normalizeContextList(context.verification_errors) ??
     guidance.verificationErrors;
-  const contextRecovery = normalizeRecoveryPayload(context.recovery);
-  const recovery =
-    contextRecovery && guidance.recovery
-      ? normalizeRecoveryPayload({ ...guidance.recovery, ...contextRecovery })
-      : (contextRecovery ?? guidance.recovery);
+  const recovery = mergeGuidanceRecovery(guidance.recovery, context.recovery, partialDomain !== undefined);
   return {
     ...guidance,
     code,
@@ -1312,6 +1410,7 @@ function applyPmCliErrorContext(
     why: normalizeContextValue(context.why, guidance.why),
     examples,
     nextSteps,
+    partialLegalDomainNotice: partialDomain,
     verificationErrors,
     policyViolations: context.policy_violations,
     policyViolationCount: context.policy_violation_count,
@@ -1579,6 +1678,7 @@ function isInvalidArgumentMessage(
   return code === undefined || code === "invalid_argument_value" || context?.allowed !== undefined;
 }
 
+/** Build argument recovery from declared producer metadata, using prose-derived choices only when no domain was declared. */
 function buildInvalidArgumentGuidance(
   rawMessage: string,
   message: string,
@@ -1592,7 +1692,7 @@ function buildInvalidArgumentGuidance(
   const helpExample = commandName
     ? `pm ${commandName} --help`
     : "pm <command> --help";
-  const allowedValues = context?.allowed ?? inferAllowedValuesFromMessage(message);
+  const allowedValues = context?.recovery?.allowed_values !== undefined ? [] : (context?.allowed ?? inferAllowedValuesFromMessage(message));
   const enrichedRecovery = normalizeRecoveryPayload({
     ...recovery,
     allowed_values: recovery?.allowed_values ?? allowedValues,

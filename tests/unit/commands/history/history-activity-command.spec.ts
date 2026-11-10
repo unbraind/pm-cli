@@ -125,6 +125,12 @@ describe("runHistory and runActivity", () => {
       source: "plain",
       flags: "ig",
     });
+    for (const source of ["/var/[a-z]+", "/var/private", "/plain/z", "/"]) {
+      expect(historyRedactInternals.parseRegexRule(source)).toEqual({ kind: "regex", source, flags: "g" });
+    }
+    const oddDelimiter = String.raw`/foo\/`;
+    expect(historyRedactInternals.parseRegexRule(oddDelimiter)).toEqual({ kind: "regex", source: oddDelimiter, flags: "g" });
+    expect(historyRedactInternals.parseRegexRule(String.raw`/foo\\/i`)).toEqual({ kind: "regex", source: String.raw`foo\\`, flags: "ig" });
     expect(() => historyRedactInternals.parseRegexRule(" ")).toThrow(
       PmCliError,
     );
@@ -1169,14 +1175,28 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it.each(["//", " "])("indexes empty matcher %j before any history write", async (empty) => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Indexed empty matcher");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const before = await readFile(historyPath, "utf8");
+      await expect(runHistoryRedact(id, { regex: ["plain", empty] }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        context: { field: "regex", reason: "invalid_regex", changed: false, required: expect.stringContaining("--regex #2") },
+      });
+      expect(await readFile(historyPath, "utf8")).toBe(before);
+    });
+  });
+
   it("rejects invalid redaction patterns and item-id rewrites", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "History Redact Invalid Pattern");
       await expect(
-        runHistoryRedact(id, { regex: "/[/" }, { path: context.pmPath }),
+        runHistoryRedact(id, { regex: ["plain", "plain", "/[/"] }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining("Invalid --regex value"),
+        context: expect.objectContaining({ field: "regex", reason: "invalid_regex", required: expect.stringContaining("--regex #3") }),
       });
 
       const sensitiveInvalidRegex = "canary-sensitive-regex-[";

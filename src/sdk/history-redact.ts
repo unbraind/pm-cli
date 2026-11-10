@@ -184,41 +184,44 @@ function normalizeRegexFlags(flags: string): string {
   return unique.join("");
 }
 
-function parseRegexRule(spec: string): RegexRule {
+/** Identify an invalid matcher without retaining its sensitive source or engine error. */
+function invalidRegexRule(index: number, reason: string): PmCliError {
+  return new PmCliError(
+    `Invalid --regex value at --regex #${index}: ${reason}`,
+    EXIT_CODE.USAGE,
+    { code: "invalid_argument_value", field: "regex", reason: "invalid_regex", changed: false,
+      required: `Correct --regex #${index}: use a non-empty raw source or /pattern/flags with valid JavaScript flags.` },
+  );
+}
+
+/** Distinguish literals by their final unescaped delimiter and flag spelling, then validate without echoing sensitive matcher input. */
+function parseRegexRule(spec: string, index = 1): RegexRule {
   const trimmed = spec.trim();
   if (trimmed.length === 0) {
-    throw new PmCliError(
-      "history-redact --regex requires a non-empty pattern.",
-      EXIT_CODE.USAGE,
-    );
+    throw invalidRegexRule(index, "provide a non-empty pattern.");
   }
 
   let source = trimmed;
   let flags = "g";
   if (trimmed.startsWith("/") && trimmed.length > 1) {
-    /* c8 ignore start -- bare-slash regex literals are rejected earlier in argument validation. */
     const slashIndex = trimmed.lastIndexOf("/");
-    if (slashIndex > 0) {
+    // An escaped slash belongs to the raw source, not the literal delimiter.
+    let backslashes = 0;
+    for (let index = slashIndex - 1; index >= 0 && trimmed[index] === "\\"; index--) {
+      backslashes++;
+    }
+    if (slashIndex > 0 && backslashes % 2 === 0 && /^[dgimsuvy]*$/u.test(trimmed.slice(slashIndex + 1))) {
       source = trimmed.slice(1, slashIndex);
       flags = normalizeRegexFlags(trimmed.slice(slashIndex + 1));
     }
-    /* c8 ignore stop */
   }
   if (source.length === 0) {
-    throw new PmCliError(
-      "history-redact --regex cannot use an empty pattern.",
-      EXIT_CODE.USAGE,
-    );
+    throw invalidRegexRule(index, "an empty pattern is not allowed.");
   }
   try {
     new RegExp(source, flags);
   } catch {
-    /* c8 ignore start -- RegExp constructor failures are normalized in higher-level parser tests. */
-    throw new PmCliError(
-      "Invalid --regex value; provide a valid JavaScript regular expression.",
-      EXIT_CODE.USAGE,
-    );
-    /* c8 ignore stop */
+    throw invalidRegexRule(index, "provide a valid JavaScript regular expression.");
   }
 
   return {
@@ -228,6 +231,7 @@ function parseRegexRule(spec: string): RegexRule {
   };
 }
 
+/** Deduplicate matchers while preserving original regex positions in validation failures, and refuse an empty matcher set. */
 function buildRedactionRules(
   literalInput: string[] | string | undefined,
   regexInput: string[] | string | undefined,
@@ -242,13 +246,13 @@ function buildRedactionRules(
       kind: "literal",
       value: entry,
     }));
-  const regexRules = [
-    ...new Set(
-      normalizeStringArrayInput(regexInput).map((entry) => entry.trim()),
-    ),
-  ]
-    .filter((entry) => entry.length > 0)
-    .map(parseRegexRule);
+  const seen = new Set<string>();
+  const regexRules = normalizeStringArrayInput(regexInput).flatMap((entry, index) => {
+    const spec = entry.trim();
+    if (seen.has(spec)) return [];
+    seen.add(spec);
+    return [parseRegexRule(spec, index + 1)];
+  });
 
   const rules = [...literalRules, ...regexRules];
   if (rules.length === 0) {

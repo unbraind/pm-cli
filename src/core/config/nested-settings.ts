@@ -22,6 +22,7 @@
  * with no other code changes — the dispatcher walks the dotted path on the
  * already-validated PmSettings shape.
  */
+import { CONTEXT_DEPTH_VALUES } from "../../types/index.js";
 
 /** Supported coercion shapes for nested settings exposed through `pm config`. */
 export type NestedSettingKind =
@@ -45,14 +46,32 @@ export interface NestedSettingDescriptor {
   choices?: readonly string[];
   /** Require a non-empty trimmed string value for string settings. */
   non_empty?: boolean;
+  /** Require decimal digits, rather than scientific or hexadecimal notation, for integer inputs. */
+  decimal_only?: boolean;
   /** Optional minimum value for `integer` / `number` kinds. When set, `parseNestedSettingValue` rejects values strictly below `min`. Useful for settings where 0 would be silently ignored by the runtime (batch sizes, timeouts, max-results limits). */
   min?: number;
   /** Optional maximum value for `integer` / `number` kinds. When set, `parseNestedSettingValue` rejects values strictly above `max` (bounded knobs like `ids.token_length`). */
   max?: number;
 }
 
-/** Search/provider/vector-store leaves. Order is the display order in `pm config list` and in error hints. */
+/** Scalar settings leaves in their `pm config list` display order. */
 export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
+  {
+    key: "context_default_depth", path: "context.default_depth", kind: "string",
+    choices: CONTEXT_DEPTH_VALUES, summary: "Default context depth.",
+  },
+  {
+    key: "context_activity_limit", path: "context.activity_limit", kind: "integer",
+    min: 1, max: Number.MAX_SAFE_INTEGER, decimal_only: true, summary: "Default context activity row limit; positive decimal integer.",
+  },
+  {
+    key: "context_stale_threshold_days", path: "context.stale_threshold_days", kind: "integer",
+    min: 1, max: Number.MAX_SAFE_INTEGER, decimal_only: true, summary: "Days before context marks an item stale; positive decimal integer.",
+  },
+  ...["hierarchy", "activity", "progress", "recently_created", "unparented", "blockers", "files", "workload", "staleness", "tests"].map((section) => ({
+    key: `context_sections_${section}`, path: `context.sections.${section}`, kind: "boolean" as const,
+    summary: `Include ${section} in default context output.`,
+  })),
   {
     key: "context_next_ranking_policy",
     path: "context.next_ranking_policy",
@@ -465,11 +484,13 @@ function parseNestedBooleanValue(
   };
 }
 
+/** Enforce declared string choices and emptiness rules; context depth alone accepts case-insensitive input. */
 function parseNestedStringValue(
   descriptor: NestedSettingDescriptor,
   rawValue: string,
   trimmed: string,
 ): NestedSettingParseResult {
+  if (descriptor.key === "context_default_depth") trimmed = trimmed.toLowerCase();
   if (descriptor.non_empty === true && trimmed.length === 0) {
     return {
       ok: false,
@@ -489,11 +510,24 @@ function parseNestedStringValue(
   return { ok: true, parsed: { descriptor, value: trimmed } };
 }
 
+/** State the strict grammar with exactly the bounds declared by the setting. */
+function strictDecimalIntegerError(descriptor: NestedSettingDescriptor, rawValue: string): NestedSettingParseError {
+  const bounds = [
+    descriptor.min === undefined ? "" : `minimum ${descriptor.min}`,
+    descriptor.max === undefined ? "" : `maximum ${descriptor.max}`,
+  ].filter(Boolean).join(", ");
+  return { message: `Config set ${descriptor.key} requires non-empty decimal integer digits${bounds ? ` (${bounds})` : ""}, got "${rawValue}"` };
+}
+
+/** Parse finite numbers, applying decimal-only grammar where the setting opts out of other JavaScript number spellings. */
 function parseFiniteNestedNumber(
   descriptor: NestedSettingDescriptor,
   rawValue: string,
   trimmed: string,
 ): { ok: true; value: number } | { ok: false; error: NestedSettingParseError } {
+  if (descriptor.decimal_only && !/^\d+$/u.test(trimmed)) {
+    return { ok: false, error: strictDecimalIntegerError(descriptor, rawValue) };
+  }
   if (trimmed.length === 0) {
     return {
       ok: false,
@@ -506,7 +540,7 @@ function parseFiniteNestedNumber(
   if (!Number.isFinite(parsed)) {
     return {
       ok: false,
-      error: {
+      error: descriptor.decimal_only ? strictDecimalIntegerError(descriptor, rawValue) : {
         message: `Config set ${descriptor.key} requires a finite number, got "${rawValue}"`,
       },
     };

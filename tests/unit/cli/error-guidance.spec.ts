@@ -12,9 +12,242 @@ import {
   formatUnknownErrorForJson,
   projectLeanErrorEnvelope,
 } from "../../../src/cli/error-guidance.js";
+import { PmCliError } from "../../../src/core/shared/errors.js";
 import { projectLeanRecoveryPayload } from "../../../src/sdk/cli-contracts/agent-output-contracts.js";
 
 describe("pm cli error guidance context plumbing", () => {
+  it("keeps close-evidence headlines actionable without cutting a flag (GH-1693)", () => {
+    const message = "Cannot close pm-example: missing resolution (--resolution), expected_result (--expected-result), actual_result (--actual-result).";
+    const retry = 'pm close pm-example " " --resolution " " --expected " " --actual " "';
+    const context = { code: "close_validation_missing_fields", recovery: { missing: ["--resolution", "--expected-result", "--actual-result"], suggested_retry: retry } };
+    const envelope = formatPmCliErrorForJson(message, 2, context);
+    expect(envelope.title).toBe("Close is missing required evidence");
+    expect(envelope.recovery?.missing).toEqual(context.recovery.missing);
+    const display = formatPmCliErrorForDisplay(message, context, { lean: true });
+    expect(display).not.toContain("Why:");
+    expect(display.split("\n").slice(0, 3)).toEqual([`Error: ${envelope.title}`, `Run: ${retry}`, "Template: replace every placeholder with real evidence before running."]);
+    expect(display.split(retry)).toHaveLength(2);
+    expect(formatPmCliErrorForJson(message, 2, { code: context.code }).title).toBe(envelope.title);
+  });
+
+  it("bounds human legal domains with an explicit omission while preserving the machine domain", () => {
+    const values = Array.from({ length: 20 }, (_, index) => `value-${index}`);
+    const context = { code: "config_key_unknown", recovery: { allowed_values: values } };
+    const display = formatPmCliErrorForDisplay("Unknown key", context, { lean: true });
+    expect(display).toContain(`allowed_values: ${values.slice(0, 8).join(", ")}`);
+    expect(display).not.toContain("value-8");
+    expect(display).toContain("allowed_values_omitted: 12");
+    expect(display).toContain("SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted");
+    expect(formatPmCliErrorForJson("Unknown key", 2, context).recovery?.allowed_values).toEqual(values);
+  });
+
+  it("quotes separator and control characters without splitting one legal choice", () => {
+    const values = ["a, b", "line\nbreak", "tab\tvalue", "plain"];
+    const context = { recovery: { allowed_values: values } };
+    const display = formatPmCliErrorForDisplay("Invalid package value", context, { lean: true });
+    expect(display).toContain('allowed_values: "a, b", "line\\nbreak", "tab\\tvalue", plain');
+    expect(display.split("\n").filter((line) => line.includes("allowed_values:"))).toHaveLength(1);
+    expect(formatPmCliErrorForJson("Invalid package value", 2, context).refusal.legal_domain).toEqual(values);
+  });
+
+  it("preserves empty and whitespace legal values before bounding human recovery", () => {
+    const values = ["", "  ", " padded ", ...Array.from({ length: 6 }, (_, index) => `value-${index}`)];
+    const context = { code: "package_value_invalid", recovery: { allowed_values: values } };
+    const display = formatPmCliErrorForDisplay("Invalid package value", context, { lean: true });
+    expect(display).toContain('allowed_values: "", "  ", " padded ", value-0, value-1, value-2, value-3, value-4');
+    expect(display).toContain("allowed_values_omitted: 1");
+    expect(display).not.toContain("value-5");
+    expect(formatPmCliErrorForJson("Invalid package value", 2, context).recovery?.allowed_values).toEqual(values);
+    expect(context.recovery.allowed_values).toEqual(values);
+  });
+
+  it.each([
+    { domain: ["valid-choice", null], visible: '"valid-choice"' },
+    { domain: ["", null], visible: '""' },
+    { domain: [null], visible: "none" },
+    { domain: [...Array.from({ length: 10 }, (_, index) => `value-${index}`), null], visible: "(2 additional valid choices omitted)" },
+  ])("retains partial guidance without advertising a malformed legal domain as complete ($visible)", ({ domain, visible }) => {
+    const context = { code: "package_value_invalid", recovery: { allowed_values: domain as never } };
+    const envelope = formatPmCliErrorForJson("Invalid package value", 2, context);
+    expect(envelope.next_steps?.join(" ")).toContain("Incomplete legal domain");
+    expect(envelope.next_steps?.join(" ")).toContain(visible);
+    expect(envelope.recovery?.allowed_values).toBeUndefined();
+    expect(envelope.refusal.legal_domain).toBeUndefined();
+    const text = formatPmCliErrorForDisplay("Invalid package value", context, { lean: true });
+    expect(text).toContain("Incomplete legal domain");
+    expect(text).toContain(visible);
+    expect(text).not.toContain("value-8");
+    expect(context.recovery.allowed_values).toEqual(domain);
+  });
+
+  it.each([
+    { label: "plain failure", steps: [] },
+    { label: "producer action", steps: ["Inspect the package profile"] },
+    { label: "bounded producer collection", steps: ["Inspect the package profile", "Check its schema", "Read its documentation", "x".repeat(10_000)] },
+  ])("retains partial legal choices and the first action for a $label", ({ steps }) => {
+    const domain = ["valid-choice", null] as never;
+    const context = { nextSteps: steps, recovery: { allowed_values: domain } };
+    const original = structuredClone(context);
+    const envelope = formatPmCliErrorForJson("Producer failure", 2, context);
+    expect(envelope.next_steps).toContainEqual(expect.stringContaining("Incomplete legal domain"));
+    expect(envelope.next_steps?.join(" ")).toContain('"valid-choice"');
+    if (steps.length > 0) expect(envelope.next_steps?.[0]).toBe(steps[0]);
+    if (steps.length > 3) expect(envelope.diagnostic_output?.degradation_steps).toContain("limit_collections");
+    expect(envelope.recovery?.allowed_values).toBeUndefined();
+    expect(envelope.refusal.legal_domain).toBeUndefined();
+    expect(Math.ceil(Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8") / 4)).toBeLessThanOrEqual(2_000);
+    expect(context).toEqual(original);
+  });
+
+  it.each([false, true])("retains partial-domain evidence when producer steps and text are compacted (close=%s)", (close) => {
+    const context = {
+      ...(close ? { code: "close_validation_missing_fields" } : {}),
+      nextSteps: ["Inspect the package profile"],
+      recovery: { allowed_values: ["valid-choice", null] as never, ...(close ? { suggested_retry: "pm close " + "x".repeat(5_000), next_best_command: "pm update pm-demo --resolution value" } : {}) },
+    };
+    const text = formatPmCliErrorForDisplay("Producer failure " + "x".repeat(5_000), context, { lean: true });
+    expect(text).toContain("Incomplete legal domain");
+    expect(text).toContain('"valid-choice"');
+    expect(text).toContain(close ? "pm update pm-demo --resolution value" : "Inspect the package profile");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+    expect(context.nextSteps).toEqual(["Inspect the package profile"]);
+    expect(context.recovery.allowed_values).toEqual(["valid-choice", null]);
+  });
+
+  it.each([{ label: "long token", large: "x".repeat(5_000) }, { label: "escaped controls", large: "\n".repeat(250) }])("retains a bounded partial-domain notice without shortening choices ($label)", ({ large }) => {
+    const context = { recovery: { allowed_values: [large, "short", null] as never } };
+    const text = formatPmCliErrorForDisplay("Producer failure " + "x".repeat(5_000), context, { lean: true });
+    expect(text).toContain("Incomplete legal domain");
+    expect(text).toContain('"short"');
+    expect(text).toContain("1 additional valid choices omitted");
+    expect(text).not.toContain(JSON.stringify(large));
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+    expect(context.recovery.allowed_values).toEqual([large, "short", null]);
+  });
+
+  it.each(["next step", "verification error", "repair priority", "close recovery"])("prioritizes partial-domain evidence over an oversized producer %s", (kind) => {
+    const close = kind === "close recovery";
+    const unicode = kind === "repair priority";
+    const oversized = "x".repeat(5_000);
+    const repair = "Set context.activity_limit to a positive integer before retrying." + (unicode ? "界".repeat(400) : "");
+    const context = {
+      nextSteps: [kind === "next step" ? oversized : "Inspect the profile"],
+      ...(kind === "verification error" || unicode ? { verification_errors: [oversized], required: repair } : {}),
+      ...(unicode ? { code: "producer_repair_required" } : {}),
+      ...(close ? { code: "close_validation_missing_fields", required: oversized } : {}),
+      recovery: { allowed_values: ["valid-choice", null] as never, ...(close ? { suggested_retry: `pm close ${oversized}`, next_best_command: `pm update ${oversized}` } : {}) },
+    };
+    const original = structuredClone(context);
+    for (const lean of [false, true]) {
+      const text = formatPmCliErrorForDisplay(unicode ? "🔎".repeat(5_000) : `Producer failure ${oversized}`, context, { lean });
+      expect(text).toContain("Incomplete legal domain");
+      expect(text).toContain('"valid-choice"');
+      expect(text).toContain("Some guidance was omitted");
+      if (kind === "verification error" || unicode) expect(text).toContain(repair);
+      if (close) {
+        expect(text).toContain("Error: Close is missing required evidence");
+        expect(text).toContain("SDK error.context.recovery.suggested_retry");
+      }
+      expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+    }
+    expect(context).toEqual(original);
+  });
+
+  it.each([undefined, "pm config list --json"])("does not infer a complete prose domain over malformed producer choices (%s)", (nextBest) => {
+    const context = { recovery: { normalized_args: ["context", "--depth", "invalid"], provided_fields: ["--depth"], allowed_values: ["valid-choice", null] as never, ...(nextBest ? { next_best_command: nextBest } : {}) } };
+    const envelope = formatPmCliErrorForJson("Value must be one of brief|full", 2, context);
+    expect(envelope.next_steps?.join(" ")).toContain("Incomplete legal domain");
+    expect(envelope.next_steps?.join(" ")).not.toContain("Allowed values: brief|full");
+    expect(envelope.examples?.join(" ")).not.toContain("pm context --depth brief");
+    const text = formatPmCliErrorForDisplay("Value must be one of brief|full", context, { lean: true });
+    expect(text).not.toContain("Allowed values: brief|full");
+    expect(text).not.toContain("pm context --depth brief");
+    expect(envelope.recovery?.allowed_values).toBeUndefined();
+    expect(envelope.refusal.legal_domain).toBeUndefined();
+    if (nextBest) expect(envelope.recovery?.next_best_command).toBe(nextBest);
+  });
+
+  it.each([{ domain: [] }, { domain: ["custom"] }])("does not derive prose retries over a declared complete domain ($domain)", ({ domain }) => {
+    const context = { recovery: { normalized_args: ["--pm-path", "/selected", "context", "--depth", "invalid"], provided_fields: ["--pm-path", "--depth"], allowed_values: domain } };
+    const envelope = formatPmCliErrorForJson("Value must be one of brief|full", 2, context);
+    expect(envelope.next_steps?.join(" ")).not.toContain("Allowed values: brief|full");
+    expect(envelope.next_steps?.join(" ")).not.toContain("Incomplete legal domain");
+    expect(envelope.examples?.join(" ")).not.toContain("--pm-path brief");
+    expect(envelope.examples?.join(" ")).not.toContain("--pm-path custom");
+    if (domain.length > 0) expect(envelope.refusal.legal_domain).toEqual(domain);
+    expect(context.recovery.allowed_values).toEqual(domain);
+  });
+
+  it("retains the fallback procedure when a close retry is too large for text", () => {
+    const fallback = 'pm update pm-demo --resolution "<value>"';
+    const context = { code: "close_validation_missing_fields", required: "Supply the missing completion evidence.", nextSteps: ["Use recovery.suggested_retry when present", "Otherwise update missing evidence and repeat the original close"], recovery: { suggested_retry: `pm close pm-demo "${"x".repeat(5_000)}"`, next_best_command: fallback } };
+    const display = formatPmCliErrorForDisplay("Missing close evidence", context, { lean: true });
+    expect(display).not.toContain("x".repeat(401));
+    expect(display).toContain("Run recovery.next_best_command with real evidence, then repeat the original close.");
+    expect(display).toContain(fallback);
+    expect(Math.ceil(Buffer.byteLength(display, "utf8") / 4)).toBeLessThanOrEqual(768);
+  });
+
+  it("counts the complete domain when compaction renders only three choices", () => {
+    const values = Array.from({ length: 20 }, (_, index) => `choice-${index}`);
+    const context = { recovery: { attempted_command: "pm probe " + "x".repeat(5_000), allowed_values: values } };
+    const text = formatPmCliErrorForDisplay("Invalid package value", context);
+    expect(text).toContain("allowed_values: choice-0, choice-1, choice-2");
+    expect(text).toContain("allowed_values_omitted: 17");
+    expect(text).not.toContain("choice-3");
+    expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
+    expect(formatPmCliErrorForJson("Invalid package value", 2, context).refusal.legal_domain).toEqual(values);
+    expect(context.recovery.allowed_values).toEqual(values);
+  });
+
+  it("keeps appropriate close recovery when text compaction is required", () => {
+    const sdk = formatPmCliErrorForDisplay("Missing evidence " + "x".repeat(5_000), { code: "close_validation_missing_fields", nextSteps: ["Retry the same SDK close with its lifecycle override"], recovery: { next_best_command: "pm update pm-demo --resolution <value>" } }, { lean: true });
+    expect(sdk).toContain("Retry the same SDK close with its lifecycle override");
+    expect(sdk).not.toContain("then repeat the original close");
+    const missing = formatPmCliErrorForDisplay("Missing evidence", { code: "close_validation_missing_fields", nextSteps: ["Inspect the policy inputs"], recovery: { suggested_retry: "pm close " + "x".repeat(5_000) } }, { lean: true });
+    expect(missing).toContain("Inspect the policy inputs");
+    expect(missing).toContain("SDK error.context.recovery.suggested_retry");
+    expect(missing).not.toContain("Run recovery.next_best_command");
+    const retryOnlyContext = { code: "close_validation_missing_fields", recovery: { suggested_retry: "pm close " + "x".repeat(5_000) } };
+    const retryOnly = formatPmCliErrorForDisplay("Missing evidence", retryOnlyContext, { lean: true });
+    expect(retryOnly).toContain("SDK error.context.recovery.suggested_retry");
+    expect(retryOnly).not.toContain("Run recovery.next_best_command");
+    expect(retryOnlyContext.recovery.suggested_retry).toBe("pm close " + "x".repeat(5_000));
+    const bare = formatPmCliErrorForDisplay("Missing evidence " + "x".repeat(5_000), { code: "close_validation_missing_fields" }, { lean: true });
+    expect(bare).toContain("Error: Close is missing required evidence");
+    expect(bare).not.toContain("Run:");
+    const short = "pm close pm-demo --resolution value";
+    const retained = formatPmCliErrorForDisplay("Missing evidence " + "x".repeat(5_000), { code: "close_validation_missing_fields", recovery: { suggested_retry: short, next_best_command: "pm update pm-demo" } }, { lean: true });
+    expect(retained).toContain(`Run: ${short}`);
+    expect(retained).not.toContain("Run recovery.next_best_command");
+  });
+
+  it("retains the complete refusal domain when duplicated recovery values exceed the JSON ceiling", () => {
+    const values = Array.from({ length: 180 }, (_, index) => `custom_field_${index}`);
+    const context = { code: "package_value_invalid", recovery: { allowed_values: values } };
+    const envelope = formatPmCliErrorForJson("Invalid package value", 2, context);
+    expect(envelope.diagnostic_output).toMatchObject({ truncated: true, budget: 2_000 });
+    expect(envelope.recovery?.allowed_values).not.toEqual(values);
+    expect(envelope.refusal.legal_domain).toEqual(values);
+    expect(Math.ceil(Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8") / 4)).toBeLessThanOrEqual(2_000);
+    expect(context.recovery.allowed_values).toEqual(values);
+  });
+
+  it("discloses a budgeted custom-field diagnostic while preserving the complete SDK error context", () => {
+    const values = Array.from({ length: 1_000 }, (_, index) => `custom_field_${index}`);
+    const error = new PmCliError("Unknown custom projection field", 2, {
+      code: "unknown_field_projection", changed: false,
+      recovery: { allowed_values: values, next_best_command: "pm schema list-fields --json" },
+    });
+    const envelope = formatPmCliErrorForJson(error.message, error.exitCode, error.context);
+    expect(envelope.diagnostic_output).toMatchObject({ truncated: true, budget: 2_000 });
+    expect(envelope.recovery?.allowed_values).not.toEqual(values);
+    expect(Math.ceil(Buffer.byteLength(JSON.stringify(envelope, null, 2), "utf8") / 4)).toBeLessThanOrEqual(2_000);
+    expect(error.context.recovery?.allowed_values).toEqual(values);
+    expect(error.context.recovery?.allowed_values?.at(-1)).toBe("custom_field_999");
+    expect(formatPmCliErrorForDisplay(error.message, error.context, { lean: true })).toContain("SDK error.context.recovery.allowed_values; JSON diagnostics may be budgeted");
+  });
+
   it("preserves verified no-change evidence without inferring it for execution failures", () => {
     const context = { code: "invalid_argument_value", changed: false as const };
     expect(formatPmCliErrorForJson("Refused before mutation", 2, context)).toMatchObject({ changed: false });
@@ -522,7 +755,7 @@ describe("pm cli error guidance context plumbing", () => {
     const noisy = { code: "probe", details: { rows: Array.from({ length: 60 }, (_, index) => ({ index, label: `row-${index}-label` })) }, nextSteps: Array.from({ length: 30 }, (_, index) => `Step ${index}: ${"y".repeat(60)}`) };
     const bounded = formatPmCliErrorForDisplay("Noisy refusal", noisy);
     expect(bounded).not.toContain("Details:");
-    expect(bounded).toContain("rerun with --json for the full recovery envelope");
+    expect(bounded).toContain("rerun with --json for structured recovery within its own budget");
   });
 
   it("uses attempted command context for allowed-value retry guidance", () => {
@@ -770,7 +1003,7 @@ describe("pm cli error guidance context plumbing", () => {
     expect(text).toContain(detail);
     expect(text).toContain("missing: --assignee");
     expect(text).not.toContain("attempted_command:");
-    expect(text).toContain("rerun with --json for the full recovery envelope");
+    expect(text).toContain("rerun with --json for structured recovery within its own budget");
     expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
   });
 
@@ -791,8 +1024,9 @@ describe("pm cli error guidance context plumbing", () => {
     expect(text).toContain("suggested_retry: pm update pm-1 --assignee <value>");
     expect(text).toContain("allowed_values: assignee, parent, priority");
     expect(text).not.toContain("allowed_values: assignee, parent, priority, status");
+    expect(text).toContain("allowed_values_omitted: 2");
     expect(text).not.toContain("attempted_command:");
-    expect(text).toContain("rerun with --json for the full recovery envelope");
+    expect(text).toContain("rerun with --json for structured recovery within its own budget");
     expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
   });
 
@@ -807,7 +1041,7 @@ describe("pm cli error guidance context plumbing", () => {
     });
     expect(withNextBest).toContain("next_best_command: pm install --project github.com/unbraind/pm-brief");
     expect(withNextBest).not.toContain("attempted_command:");
-    expect(withNextBest).toContain("rerun with --json for the full recovery envelope");
+    expect(withNextBest).toContain("rerun with --json for structured recovery within its own budget");
 
     const echoOnly = formatPmCliErrorForDisplay("Value rejected for --description", {
       code: "invalid_argument_value",
@@ -815,7 +1049,7 @@ describe("pm cli error guidance context plumbing", () => {
     });
     expect(echoOnly).toContain("Value rejected for --description");
     expect(echoOnly).not.toContain("Recovery bundle:");
-    expect(echoOnly).toContain("rerun with --json for the full recovery envelope");
+    expect(echoOnly).toContain("rerun with --json for structured recovery within its own budget");
   });
 
   it("advertises no dash-leading value retry when a positional follows the value", () => {
@@ -850,7 +1084,7 @@ describe("pm cli error guidance context plumbing", () => {
     expect(text).toContain("What is required:");
     expect(text).toContain("Error: Value rejected");
     expect(text).not.toContain("inspect every declared option");
-    expect(text).not.toContain("rerun with --json for the full recovery envelope");
+    expect(text).not.toContain("rerun with --json for structured recovery within its own budget");
     expect(text).toContain("exceeded its declared 768-token ceiling");
     expect(Math.ceil(Buffer.byteLength(text, "utf8") / 4)).toBeLessThanOrEqual(768);
   });

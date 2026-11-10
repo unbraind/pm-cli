@@ -30,8 +30,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Fail native runtime bootstrap before any immutable npm publication.
+  prepublication-bun:
+    name: Prepublication Bun bootstrap (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: "1.4.0"
+          no-cache: true
+          bun-download-url: "${{ runner.os == 'macOS' && format('https://github.com/oven-sh/bun/releases/download/bun-v1.4.0/bun-darwin-{0}.zip?download=1', runner.arch == 'ARM64' && 'aarch64' || 'x64') || '' }}"
+      - name: Verify pinned Bun runtime
+        shell: bash
+        run: |
+          node -e 'const { execFileSync } = require("node:child_process"); const version = execFileSync("bun", ["--version"], { encoding: "utf8" }).trim(); if (version !== "1.4.0") throw new Error("Expected Bun 1.4.0 before publication; got " + version); console.log("Verified Bun " + version + " before npm publication.");'
+
   release:
     name: Build, Test, Publish
+    needs: [prepublication-bun]
     runs-on: ubuntu-latest
     # Build, test, gates and the immutable npm publish. The pre-publish phase
     # took 26 minutes on 2026-11-07 and 45 on 2026-11-08; post-publish
@@ -559,6 +581,10 @@ jobs:
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.4.0
+          # pm-gh1694: the ordinary macOS asset route repeatedly returned 504.
+          # This official route returns the same pinned bytes; other platforms
+          # retain setup-bun's architecture and CPU-feature selection.
+          bun-download-url: ${{ runner.os == 'macOS' && format('https://github.com/oven-sh/bun/releases/download/bun-v1.4.0/bun-darwin-{0}.zip?download=1', runner.arch == 'ARM64' && 'aarch64' || 'x64') || '' }}
           # Never restore a cached Bun: a poisoned cache entry would run inside
           # release and publication checks.
           no-cache: true

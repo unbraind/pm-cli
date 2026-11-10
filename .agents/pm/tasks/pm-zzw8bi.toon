@@ -1,0 +1,30 @@
+id: pm-zzw8bi
+title: Bound history-redaction regex cost for SDK embeddings without narrowing JavaScript pattern semantics
+description: "Explicit operator-provided history regexes can consume unbounded matching/replacement time in the SDK host. This behavior predates PR #1696: the unchanged sink accepts the equivalent escaped source on main and the leading-slash raw form after the parser repair. Existing scanner triage treats history patterns as authorized operator inputs; no new untrusted boundary or security vulnerability is established by this patch. Add an explicit isolated execution budget as resilience hardening for long-lived SDK embeddings while preserving JavaScript regex semantics and private refusals."
+type: Task
+status: open
+priority: 2
+tags[4]: hardening,history,performance,sdk
+created_at: "2026-11-09T13:58:39.780Z"
+updated_at: "2026-11-09T14:01:07.638Z"
+author: "harness:codex"
+estimated_minutes: 180
+acceptance_criteria: Define an execution budget covering matching and replacement and document its host/runtime semantics; A pathological caller-selected pattern cannot monopolize the SDK host event loop and timeout refuses before history/item writes or locks; Preserve supported JavaScript regex flags and replacement behavior with Node and Bun coverage; Retain bounded isolated-process negative controls for pathological existing and leading-slash forms plus a normal-pattern control
+parent: pm-qwoy
+risk: medium
+confidence: high
+expected_result: SDK embeddings can apply trusted regex redaction with predictable resource bounds and truthful no-write timeout recovery.
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1689,discovered_from,"2026-11-09T13:58:39.780Z","harness:codex","cli:create:dep",detected
+  pm-oz8u,related,"2026-11-09T13:58:39.780Z","harness:codex","cli:create:dep",detected
+  pm-xk39,related,"2026-11-09T13:58:39.780Z","harness:codex","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-09T13:58:39.780Z","harness:codex","Duplicate check: live regex timeout/redaction and history-redaction searches found the existing audited-redaction lineage and completed wildcard matcher work but no open history regex execution-budget owner. An isolated one-second probe timed out equally for the existing escaped form and the new leading-slash spelling; the linear control completed. This is a pre-existing trusted-caller resource-bound enhancement and is not claimed implemented or a newly confirmed vulnerability."
+files[3]{path,scope}:
+  src/sdk/history-redact.ts,project
+  tests/integration/history-redact-record-integrity.integration.spec.ts,project
+  tests/unit/commands/history/history-activity-command.spec.ts,project
+docs[2]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK.md,project
+body: ""

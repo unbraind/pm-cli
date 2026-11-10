@@ -6,7 +6,43 @@ import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
 import ts from "typescript";
 
-/** Remove declaration indentation and type punctuation spacing, retaining every semantic token and JSDoc byte. */
+const DECLARATION_CONTINUATION_DELIMITERS = new Set([
+  ts.SyntaxKind.ColonToken,
+  ts.SyntaxKind.CommaToken,
+  ts.SyntaxKind.SemicolonToken,
+  ts.SyntaxKind.OpenBraceToken,
+  ts.SyntaxKind.EqualsToken,
+  ts.SyntaxKind.BarToken,
+  ts.SyntaxKind.AmpersandToken,
+]);
+const DECLARATION_PUNCTUATION = new Set([
+  ...DECLARATION_CONTINUATION_DELIMITERS,
+  ts.SyntaxKind.CloseBraceToken,
+  ts.SyntaxKind.OpenParenToken,
+  ts.SyntaxKind.CloseParenToken,
+  ts.SyntaxKind.OpenBracketToken,
+  ts.SyntaxKind.CloseBracketToken,
+]);
+
+/** Peek past spacing without consuming the next declaration token. */
+function peekNextDeclarationToken(scanner) {
+  return scanner.lookAhead(() => {
+    let next = scanner.scan();
+    while (next === ts.SyntaxKind.WhitespaceTrivia || next === ts.SyntaxKind.NewLineTrivia) next = scanner.scan();
+    return next;
+  });
+}
+
+/** Preserve possible automatic semicolons and JSDoc attachment while removing delimiter spacing. */
+function canCompactDeclarationWhitespace(kind, previousKind, nextKind, lineStart) {
+  if (kind === ts.SyntaxKind.WhitespaceTrivia) {
+    return lineStart || DECLARATION_PUNCTUATION.has(previousKind) || DECLARATION_PUNCTUATION.has(nextKind);
+  }
+  return kind === ts.SyntaxKind.NewLineTrivia && DECLARATION_CONTINUATION_DELIMITERS.has(previousKind) &&
+    nextKind !== ts.SyntaxKind.SingleLineCommentTrivia && nextKind !== ts.SyntaxKind.MultiLineCommentTrivia;
+}
+
+/** Remove declaration indentation and delimiter whitespace, retaining type tokens, ASI boundaries, literals and JSDoc bytes. */
 function compactDeclaration(source) {
   const file = ts.createSourceFile("declaration.d.ts", source, ts.ScriptTarget.Latest, true);
   const literals = new Map();
@@ -26,13 +62,14 @@ function compactDeclaration(source) {
     const start = scanner.getTokenPos();
     const end = literals.get(start) ?? scanner.getTextPos();
     const text = source.slice(start, end);
-    const removableWhitespace = kind === ts.SyntaxKind.WhitespaceTrivia &&
-      (lineStart || previousKind === ts.SyntaxKind.ColonToken || previousKind === ts.SyntaxKind.CommaToken);
+    const whitespace = kind === ts.SyntaxKind.WhitespaceTrivia || kind === ts.SyntaxKind.NewLineTrivia;
+    const nextKind = whitespace ? peekNextDeclarationToken(scanner) : undefined;
+    const removableWhitespace = canCompactDeclarationWhitespace(kind, previousKind, nextKind, lineStart);
     if (!removableWhitespace) parts.push(text);
     if (kind !== ts.SyntaxKind.WhitespaceTrivia) {
       lineStart = /[\r\n]$/u.test(text);
-      previousKind = kind;
     }
+    if (!whitespace) previousKind = kind;
     scanner.setTextPos(end);
   }
   return parts.join("");

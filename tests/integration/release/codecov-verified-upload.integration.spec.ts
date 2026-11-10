@@ -7,7 +7,7 @@ import { parse } from "yaml";
 import { withTempDir } from "../../helpers/temp.js";
 
 const assetDigest = "ca1d64196d2d34771084afe76ea657d581bf628e31d993ff8e52ea09cc88a56d";
-const assetUrl = "https://github.com/codecov/codecov-cli/releases/download/v11.3.1/codecovcli_linux";
+const assetUrl = "https://api.github.com/repos/codecov/codecov-cli/releases/assets/470877726";
 
 /** Relevant workflow fields for the required uploader bootstrap and consumers. */
 interface UploadStep {
@@ -18,6 +18,7 @@ interface UploadStep {
   if?: string;
   "continue-on-error"?: boolean;
   with?: Record<string, unknown>;
+  env?: Record<string, unknown>;
 }
 
 describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
@@ -30,7 +31,10 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
     expect(bootstrap).toMatchObject({ id: "codecov_cli", shell: "bash", if: "${{ !cancelled() && steps.shard_admission.outcome == 'success' }}" });
     expect(bootstrap["continue-on-error"]).toBeUndefined();
     expect(bootstrap.run).toContain(assetUrl);
+    expect(bootstrap.run).toContain("Accept: application/octet-stream");
     expect(bootstrap.run).toContain(assetDigest);
+    expect(bootstrap.env).toEqual({ GH_TOKEN: "${{ github.token }}" });
+    expect(bootstrap.run).toContain('Authorization: Bearer ${GH_TOKEN}');
     expect(bootstrap.run).toContain("--fail --show-error --silent --location --proto '=https' --tlsv1.2");
     expect(bootstrap.run).toContain('node --input-type=module - "${codecov_binary}"');
     expect(bootstrap.run).not.toMatch(/--insecure|curl\s+-k\b/);
@@ -55,6 +59,7 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
     await withTempDir("pm-codecov-verification-", async (root) => {
       // Isolate only download bytes; the workflow's checksum, shell failure and real chmod execute unchanged.
       const boundary = `curl() {
+        printf '%s\\n' "$@" > "\${RUNNER_TEMP}/curl-args"
         while [ "$#" -gt 0 ]; do
           if [ "$1" = "--output" ]; then printf '%s' "$PM_CODECOV_PAYLOAD" > "$2"; return; fi
           shift
@@ -65,9 +70,13 @@ describe("verified Codecov upload bootstrap (pm-2x67z9)", () => {
       `;
       const result = spawnSync("bash", ["-euo", "pipefail", "-s"], {
         cwd: root, input: boundary + script!.replace(assetDigest, fixtureDigest), encoding: "utf8", timeout: 10_000,
-        env: { ...process.env, RUNNER_TEMP: root.replaceAll("\\", "/"), PM_CODECOV_PAYLOAD: approved ? approvedPayload : "corrupt uploader bytes\n" },
+        env: { ...process.env, GH_TOKEN: "fixture-only-token", RUNNER_TEMP: root.replaceAll("\\", "/"), PM_CODECOV_PAYLOAD: approved ? approvedPayload : "corrupt uploader bytes\n" },
       });
       expect(result.error).toBeUndefined();
+      const argv = (await readFile(path.join(root, "curl-args"), "utf8")).trim().split("\n");
+      const headers = argv.flatMap((argument, index) => argument === "--header" ? [argv[index + 1]] : []);
+      expect(argv).toContain(assetUrl);
+      expect(headers).toEqual(expect.arrayContaining(["Accept: application/octet-stream", "Authorization: Bearer fixture-only-token"]));
       if (approved) expect(result.status, result.stderr).toBe(0);
       else expect(result.status).not.toBe(0);
       expect((await readdir(root)).includes("chmod-ran")).toBe(approved);

@@ -20,6 +20,22 @@ const DEPRECATION_HINT_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find(
 )!;
 
 describe("nested-settings helpers (pm-7ilo)", () => {
+  it("states strict decimal syntax and declared bounds before numeric conversion", () => {
+    const descriptor = resolveNestedSettingDescriptor("context_activity_limit")!;
+    for (const value of ["10days", "1.5", "1e2", "0x10", "", "9".repeat(400)]) {
+      const result = parseNestedSettingValue(descriptor, value);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.message).toContain("decimal integer");
+        expect(result.error.message).toContain(`minimum ${descriptor.min}`);
+        expect(result.error.message).toContain(`maximum ${descriptor.max}`);
+      }
+    }
+    const unbounded = parseNestedSettingValue({ ...descriptor, min: undefined, max: undefined }, "10days");
+    expect(unbounded.ok).toBe(false);
+    if (!unbounded.ok) expect(unbounded.error.message).not.toContain("undefined");
+  });
+
   describe("resolveNestedSettingDescriptor", () => {
     it("returns undefined for non-string inputs", () => {
       expect(resolveNestedSettingDescriptor(undefined)).toBeUndefined();
@@ -43,6 +59,12 @@ describe("nested-settings helpers (pm-7ilo)", () => {
   });
 
   describe("parseNestedSettingValue", () => {
+    it("normalizes context depth like the grouped setter while preserving other string rules", () => {
+      const descriptor = resolveNestedSettingDescriptor("context.default_depth")!;
+      expect(parseNestedSettingValue(descriptor, " DeEp ")).toMatchObject({ ok: true, parsed: { value: "deep" } });
+      expect(parseNestedSettingValue(STRING_DESCRIPTOR, " Ollama ")).toMatchObject({ ok: true, parsed: { value: "Ollama" } });
+      expect(parseNestedSettingValue(CHOICE_DESCRIPTOR, "SEMANTIC_CONFIGURED").ok).toBe(false);
+    });
     it("trims whitespace for string kinds and returns the trimmed value", () => {
       const result = parseNestedSettingValue(STRING_DESCRIPTOR, "  ollama  ");
       expect(result.ok).toBe(true);
@@ -128,6 +150,8 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       const positive = parseNestedSettingValue(INTEGER_DESCRIPTOR, "32");
       expect(positive.ok).toBe(true);
       if (positive.ok) expect(positive.parsed.value).toBe(32);
+      // Decimal-only syntax is opt-in; existing non-context integer knobs retain Number syntax.
+      expect(parseNestedSettingValue(INTEGER_DESCRIPTOR, "1e2")).toMatchObject({ ok: true, parsed: { value: 100 } });
     });
 
     it("bounds ids_token_length to its 4..12 range (pm-pibw)", () => {

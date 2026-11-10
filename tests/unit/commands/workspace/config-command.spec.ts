@@ -31,6 +31,48 @@ const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
 };
 
 describe("config command helper coverage", () => {
+  it("resolves settings paths through the existing validated config keys (GH-1695)", () => {
+    for (const [settingsPath, key] of [
+      ["governance.preset", "governance_preset"],
+      ["validation.metadata_profile", "metadata_validation_profile"],
+      ["validation.parent_reference", "parent_reference_policy"],
+      ["workflow.definition_of_done", "definition_of_done"],
+      ["testing.record_results_to_items", "test_result_tracking"],
+      ["telemetry.enabled", "telemetry_tracking"],
+    ]) {
+      expect(_testOnlyConfigCommand.normalizeKey(settingsPath)).toBe(key);
+    }
+    expect(() => _testOnlyConfigCommand.normalizeKey("governance.presett")).toThrow(
+      expect.objectContaining({ context: expect.objectContaining({
+        code: "config_key_unknown", changed: false,
+        recovery: expect.objectContaining({ allowed_values: expect.arrayContaining(["governance-preset", "governance.preset", "context.default_depth", "context_default_depth"]), next_best_command: "pm config global list --json" }),
+      }) }),
+    );
+    for (const key of ["toString", "__proto__", "constructor"]) {
+      expect(() => _testOnlyConfigCommand.normalizeKey(key)).toThrow(PmCliError);
+    }
+  });
+
+  it("keeps typo inspections in the requested scope and identifies global telemetry consent", () => {
+    expect(() => _testOnlyConfigCommand.normalizeKey("telemetri-tracking", "project")).toThrow(
+      expect.objectContaining({ message: expect.stringContaining("telemetry-tracking (global only)"), context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config global get telemetry-tracking --json"]) }) }) }),
+    );
+    for (const [key, candidates] of [
+      ["search.bm25.k", ["search-bm25-b", "search-bm25-k1"]],
+      ["context.sections.fests", ["context-sections-tests", "context-sections-files"]],
+    ] as const) {
+      expect(() => _testOnlyConfigCommand.normalizeKey(key, "project")).toThrow(
+        expect.objectContaining({ context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: candidates.map((candidate) => `pm config project get ${candidate} --json`) }) }) }),
+      );
+    }
+    expect(() => _testOnlyConfigCommand.normalizeKey("telemetri-tracking", "global")).toThrow(
+      expect.objectContaining({ message: expect.not.stringContaining("global only"), context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config global get telemetry-tracking --json"]) }) }) }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeKey("governance.presett", "project")).toThrow(
+      expect.objectContaining({ context: expect.objectContaining({ recovery: expect.objectContaining({ candidate_commands: expect.arrayContaining(["pm config project get governance-preset --json"]) }) }) }),
+    );
+  });
+
   it("normalizes policy values and rejects unsupported variants", () => {
     expect(_testOnlyConfigCommand.normalizeAction("get")).toBe("get");
     expect(() => _testOnlyConfigCommand.normalizeAction("delete")).toThrow(
@@ -445,6 +487,9 @@ describe("runConfig", () => {
       );
       expect(result.changed).toBe(false);
       expect(result.count).toBe(26); // project scope omits the global-only telemetry-tracking key (GH-1660)
+      for (const path of ["context.activity_limit", "context.stale_threshold_days"]) {
+        expect(result.nested_settings?.find((entry) => entry.path === path)).toMatchObject({ min: 1, max: Number.MAX_SAFE_INTEGER, summary: expect.stringContaining("decimal integer") });
+      }
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -2032,6 +2077,35 @@ describe("runConfig", () => {
       );
       expect(setProviderAgain.changed).toBe(false);
 
+      for (const [key, input, value] of [
+        ["context.default_depth", "full", "full"],
+        ["context.activity_limit", "17", 17],
+        ["context.stale_threshold_days", "7", 7],
+        ["context.sections.activity", "false", false],
+        ["context.sections.recently_created", "false", false],
+        ["context.sections.unparented", "false", false],
+      ] as const) {
+        const result = await runConfig("project", "set", key, {}, globalOptions, input);
+        expect(result.nested_setting).toMatchObject({ path: key, value });
+        expect((await runConfig("project", "get", key, {}, globalOptions)).nested_setting?.value).toBe(value);
+      }
+      const beforeRefusal = await fs.readFile(getSettingsPath(pmRoot), "utf8");
+      for (const option of ["activityLimit", "staleThresholdDays"]) {
+        await expect(runConfig("project", "set", "context", { [option]: "1e2" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringMatching(/decimal (?:integer )?digits/u) });
+        await expect(runConfig("project", "set", "context", { [option]: "9007199254740992" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining(String(Number.MAX_SAFE_INTEGER)) });
+        await expect(runConfig("project", "set", "context", { [option]: "0" }, globalOptions)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE, message: expect.stringContaining(">= 1") });
+        expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
+      }
+
+      for (const key of ["context.activity_limit", "context.stale_threshold_days"]) {
+        await expect(runConfig("project", "set", key, {}, globalOptions, "10days")).rejects.toMatchObject({ message: expect.stringContaining("decimal integer") });
+        expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
+        for (const value of ["1e2", "0x10", "0"]) {
+          await expect(runConfig("project", "set", key, {}, globalOptions, value)).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+          expect(await fs.readFile(getSettingsPath(pmRoot), "utf8")).toBe(beforeRefusal);
+        }
+      }
+
       const setTopK = await runConfig(
         "project",
         "set",
@@ -2796,7 +2870,7 @@ describe("runConfig", () => {
       });
     });
 
-    it("shows a shortened invalid-key error listing canonical kebab forms", async () => {
+    it("routes unknown config keys to the complete structured inventory", async () => {
       await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
         const pmRoot = path.join(tempRoot, ".agents", "pm");
         await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
@@ -2815,9 +2889,13 @@ describe("runConfig", () => {
         }
         expect(caught).toBeInstanceOf(PmCliError);
         const message = (caught as PmCliError).message;
-        expect(message).toContain("underscore variants also accepted");
-        expect(message).toContain("telemetry-tracking");
-        // The shortened list must NOT include the snake_case duplicates.
+        expect(message).toContain("config project list --json");
+        expect((caught as PmCliError).context.recovery?.next_best_command).toContain("--pm-path");
+        expect((caught as PmCliError).context.recovery?.allowed_values).toContain("governance-preset");
+        expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry-tracking");
+        expect((caught as PmCliError).context.recovery?.allowed_values).not.toContain("telemetry.enabled");
+        // The message no longer repeats the complete domain or its aliases.
+        expect(message).not.toContain("telemetry-tracking");
         expect(message).not.toContain("telemetry_tracking");
       });
     });

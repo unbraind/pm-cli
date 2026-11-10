@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-09-28T06:20:35.648Z"
-updated_at: "2026-11-01T08:44:16.662Z"
+updated_at: "2026-11-09T18:00:16.540Z"
 author: "harness:codex"
 estimated_minutes: 240
 acceptance_criteria: Reproduce with recorded runtime and runner-pressure evidence on an isolated supported environment and compare the unchanged base revision; Classify runner qualification separately from product admission without treating failed or unavailable measurements as passes; Fix only the demonstrated cause and preserve every latency and RSS ratchet unless an explicitly reviewed platform correction is supported; Add positive and negative regression controls proving real command regressions still fail and any runner refusal is explicit
@@ -14,7 +14,7 @@ parent: pm-o87av6
 risk: medium
 confidence: medium
 expected_result: "A qualified runner passes unchanged supported-runtime startup budgets, and genuine command regressions remain fail-closed with attributable evidence."
-actual_result: Two transport-floor runs failed fixed latency ceilings across changing commands; independent SDK import rerun passed. The broad static invocation therefore cannot be reported all green.
+actual_result: "The older isolated SDK rerun pass remains a historical observation, not current admission. On 2026-11-09 the local static pipeline failed the unchanged SDK import-cost ratchet after its preceding checks passed. An independently measured unchanged published 2026.11.9 baseline also failed on qualified Node 26.13.0: authoring median 209 ms versus 164 ms, governance 496 versus 327 and merge 231 versus 226. A separate local Node 24 qualification also failed governance at 341 versus 327. These are failed admissions and do not establish source regression causation. Two local monolithic coverage attempts exceeded the twenty-minute bound. A transport-floor run failed get/context/next/create during concurrent mutation work and is not isolated regression proof. The focused final cohort passes 398 tests across sixteen instrumented files. Exact-head hosted Node 24 static, full exact-100-percent coverage and native consumer admission remain required; no latency, memory, coverage or timeout ratchet was relaxed. This diagnostic owner remains open."
 dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-o87av6,implements,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
   pm-p9a4,discovered_from,"2026-09-28T06:20:35.648Z","harness:codex","cli:create:dep",detected
@@ -23,7 +23,7 @@ dependencies[7]{id,kind,created_at,author,source_kind,author_source}:
   pm-58zon0,related,"2026-10-19T14:07:58.070Z","harness:codex","cli:update:dep",detected
   pm-2zjs0g,related,"2026-10-20T16:26:25.937Z","harness:codex","cli:update:dep",detected
   pm-euqm7x,related,"2026-11-01T08:44:16.451Z","harness:claude-code","cli:update:dep",detected
-comments[128]:
+comments[135]:
   - created_at: "2026-09-28T06:20:35.648Z"
     author: "harness:codex"
     text: "text: Duplicate check 2026-09-28: inspected the complete all-status corpus for startup, latency, entrypoint and benchmark owners and ran the live all-status CLI startup budget search. The completed transport-floor owner pm-yse5dt remains closed: its ten-sample implementation is present. The completed SDK cold-cache sampling fix is a different admission boundary and does not establish this failure mechanism. No active individual issue owns the repeated transport admission failures observed in this review. The existing scale outcome pm-o87av6 remains the parent."
@@ -410,6 +410,27 @@ comments[128]:
   - created_at: "2026-11-01T08:44:15.897Z"
     author: "harness:claude-code"
     text: "Runner-qualification evidence, 2026-11-01, PR 1646 head b5dace523 (no change to the verifier or its test): Windows scripts cohort 2/2 failed tests/unit/scripts/release/verify-published-release.spec.ts 'kills a nested server after invalid discovery within the production readiness budget (native)' on Node 24.22.1 after one retry (about 30.6 s): the nested published HTTP bin did not become reachable within the production readiness budget, so the invalid-discovery branch was never reached. Re-running the failed jobs on the identical head passed, and the two earlier heads of the same PR passed this cohort. Same family as the readiness-ordering flake fixed in pm-euqm7x, but now the startup itself overran on a loaded runner rather than the outer timeout preempting cleanup; no timeout was relaxed."
+  - created_at: "2026-11-09T08:15:01.995Z"
+    author: "harness:codex"
+    text: "November9 canonical full-source coverage attempt was retained as a failed/incomplete receipt: it reached the20-minute command bound with multiple30-second test timeouts, a120-second calibration entrypoint wait and slow TypeScript declaration fixtures under eight-worker host load. nproc=8, load averages17/26/27 and32 GiB swap in use were observed. It also exposed independent stale action-pin assertions and help-budget drift, repaired under the active owners. Next reproduction keeps deadlines and every assertion, limits workers to2, and exposes the installed Homebrew npm root through NODE_PATH as this owner already documented. No coverage pass or runner qualification is inferred from the interrupted run."
+  - created_at: "2026-11-09T08:20:27.415Z"
+    author: "harness:codex"
+    text: "Bounded reproduction result: all8 previously failing owner files now pass together with two workers and the actual Homebrew npm root visible through NODE_PATH. This includes context retry bounds, composed continuation, extension activation, typed close/tracker recovery, the real calibration entrypoint and TypeScript public-surface checks. The only source adjustments in that reproduction were the active maintenance pin assertions and shorter regex help, both independently detected by their original contract tests. Preserve the interrupted full run separately; this focused pass is not a canonical coverage receipt."
+  - created_at: "2026-11-09T08:31:55.787Z"
+    author: "harness:codex"
+    text: "The independent advisory gate also exposed a host transport qualification condition: default Node26 connections timed out, while the same native feed queries completed with temporary NODE_OPTIONS disabling network family auto-selection and selecting IPv4 first. Both registry and independent OSV now pass across the exact locked inventory, with unchanged completeness and zero-vulnerability assertions. These are per-command verification settings only; no host configuration, source gate, threshold or receipt was bypassed."
+  - created_at: "2026-11-09T09:41:53.001Z"
+    author: "harness:codex"
+    text: "First PR-head local static run cleared dependency, lint, duplicate, schema, grammar, recovery, context-quality, gate-registry and SDK-surface checks, then refused the SDK authoring import keeper at183ms against164ms. Bare Node control45ms qualified the runner, so this remains a recorded product-admission failure, not an unqualified-runner waiver. Reproduce the unchanged keeper in isolation after review remediation, retaining all ceilings."
+  - created_at: "2026-11-09T09:53:12.336Z"
+    author: "harness:codex"
+    text: "Review qualification: the unchanged published npm 2026.11.9 artifact was extracted into an isolated temporary directory and measured with the unchanged current SDK keeper/budgets on this Node 26 host. It also fails qualified product admission: authoring 209ms >164ms, governance496ms >327ms, merge231ms >226ms; bare Node medians38/41ms remain qualified. Current-head recheck previously failed authoring214ms/merge244ms. This comparison does not waive the ratchet or establish a passing result; hosted Node24 exact-head static admission remains required. Published-baseline receipt retained locally; no budget/denominator changes."
+  - created_at: "2026-11-09T12:12:52.270Z"
+    author: "harness:codex"
+    text: "Final fourth-batch local static run passed the preceding contracts/quality/assurance/context/registry and zero-change public SDK surface checks, then retained a qualified authoring-import failure: median183ms >164ms; bare Node40/41ms <=106ms control ceiling. The previously isolated published npm9 baseline also failed this unchanged ratchet on the same host. No budget or denominator changed; exact-head hosted Node24 static admission remains required. Completing the downstream graph/integrity/mutation checks independently does not turn this static result into a pass."
+  - created_at: "2026-11-09T12:24:39.605Z"
+    author: "harness:codex"
+    text: "Post-review remaining gates: graph composition and record integrity pass; mutation admission passes with 345 killed and seven catalogued equivalents out of 352 mutants. The unchanged local CLI transport-floor gate also refuses this host (get 391>362ms, context 455>433ms, next 678>440ms, create 583>398ms, claim 591>415ms; bare Node control 68<=106ms). This was measured concurrently with mutation, so it is retained as a failed local observation rather than isolated performance proof. Required hosted exact-head static and coverage admission remain mandatory; no ratchet or denominator changed."
 files[12]:
   - path: .github/workflows/ci.yml
     scope: project

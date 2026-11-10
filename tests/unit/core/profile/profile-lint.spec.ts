@@ -275,6 +275,14 @@ describe("lintProjectProfile", () => {
   });
 
   describe("config", () => {
+    it.each(["context_activity_limit", "context_stale_threshold_days"])("shares strict decimal validation for profile knob %s", (key) => {
+      for (const [value, valid] of [["17", true], [" 17 ", true], ["1e2", false], ["0x10", false], ["0", false], ["9007199254740992", false]] as const) {
+        const report = lintProjectProfile(makeProfile({ config: [{ key, value, summary: "Context profile knob" }] }));
+        expect(report.ok, `${key}=${value}`).toBe(valid);
+        if (!valid) expect(report.findings).toEqual([expect.objectContaining({ code: "config_value_invalid", target: key })]);
+      }
+    });
+
     it("errors on an unknown config key", () => {
       const report = lintProjectProfile(
         makeProfile({ config: [{ key: "not_a_key", value: "x", summary: "" }] }),

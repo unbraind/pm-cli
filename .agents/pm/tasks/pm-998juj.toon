@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-08T02:02:43.913Z"
+updated_at: "2026-11-09T23:28:04.160Z"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -53,7 +53,7 @@ dependencies[8]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[53]:
+comments[56]:
   - created_at: "2026-07-25T07:12:23.380Z"
     author: "harness:claude-code"
     text: "Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
@@ -215,13 +215,22 @@ comments[53]:
   - created_at: "2026-11-08T02:02:43.913Z"
     author: "harness:claude-code"
     text: "Next tranche (2026-11-08) is the child pm-dwy8kb. Main 70c14d4a3 packed at 19,978,963 B (21,037 B headroom), and PR 1685 added about 32.5 KB of legitimate code, declarations and docs, so it failed at 20,011,469 B. Excluding the generated repository-only refusal-closure census (42,496 B) from the npm files list restores about 31 KB of headroom: the clean projection is 19,969,081 B, and the 20,000,000 B ceiling is unchanged. Each feature PR now adds roughly 30 KB across the tsc emit, both bundle chunk sets and declarations, so pruning one file per PR does not scale. The structural growth sources remain open here: CHANGELOG.md (526,799 B packed, growing with every release) and dist/sdk/public-surface.json (2,027,246 B, whose entrypoints repeat each signature per subpath and whose breaking_acknowledgements grow with every SDK change).\n"
+  - created_at: "2026-11-09T23:05:21.802Z"
+    author: "harness:codex"
+    text: "Current PR1696 exact-head static gate refused distribution_size 20,017,713 > unchanged 20,000,000 bytes. Reused this canonical publication-weight owner after complete all-status lineage, open/in-progress and full owner/comment/history reads. Investigating lossless declaration whitespace compaction, preserving every type token, JSDoc byte, exported surface, runtime file and existing size/file-count budget. This is a finite headroom repair; broader outstanding acceptance will not be declared complete without evidence."
+  - created_at: "2026-11-09T23:20:46.175Z"
+    author: "harness:codex"
+    text: "Full declaration replay exposed a JSDoc attachment loss in the first local newline-compaction candidate; that candidate was not committed. Retain newline boundaries before line/block comments, protect potential automatic semicolons, and compact safe delimiter horizontal spacing as well. The strengthened member-documentation fixture fails before the fix and passes after. Fresh TypeScript emission compared all 475 retained declarations: zero syntax differences, zero parser diagnostics, byte-identical comments and identical JSDoc attachment at every AST coordinate. Final packed declaration payload saves 26,911 bytes. Base distribution is 19,992,628 bytes versus unchanged 20,000,000; complete runtime remains 23,402,553 versus 25,000,000; all files, exports and type literals remain. Broader publication-weight acceptance remains open."
+  - created_at: "2026-11-09T23:28:02.514Z"
+    author: "harness:codex"
+    text: "Final finite-tranche verification: all 495 tests across 22 instrumented files pass; selected whole-source coverage remains incomplete and required in hosted CI. Fresh source/package/example/typetest checks, ESLint, contracts, capability surfaces and zero-change SDK surface pass. All nine packed npm/npx/Bun/bunx/SDK/MCP consumers pass after the JSDoc-boundary fix. The existing 20MB base and derived simulated-injection gates pass with all 475 retained declaration ASTs, documentation bytes, parsed JSDoc text and attachment coordinates equivalent to fresh TypeScript emission. Restore this broader item to open/released: its original acceptance is not fully evidenced by this finite headroom repair. No artifact budget, package file selector or runtime minification option changed."
 notes[2]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
   "2026-11-05T22:54:21.153Z","harness:claude-code","Next-tranche headroom census, 2026-11-05. Measured at the PR 1672 head on the npm packlist from package-distribution.mjs, excluding the bundled runtime.\n\nCurrent state: base 19,980,344 of 20,000,000 bytes (about 19.7 KB headroom) and 1,799 of 1,800 files. Headroom is one file, so the next change that ships one more emitted module or packaged doc fails the PR base gate.\n\nMeasured candidate groups (files, bytes):\n\n| Group | Files | Bytes |\n| --- | ---: | ---: |\n| dist tsc JavaScript under dist/sdk | 388 | 3,823,149 |\n| dist **/*.d.ts | 684 | 2,655,971 |\n| docs/*.md | 108 | 1,506,584 |\n| packages/pm-* | 85 | 387,014 |\n| .agents/skills | 27 | 77,198 |\n| plugins/ | 57 | 72,944 |\n| docs/examples | 27 | 46,155 |\n| repo-only community files (CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md) | 3 | 16,234 |\n\nThe community files are referenced only by the validate well-known-files list and by docs-skills and release-readiness specs, not by any runtime package read.\n\nEach of these is a user-visible packaging decision. It belongs in its own tranche with consumer proof (npx, bunx, the SDK entrypoints and extension installs), not in a release-blocker fix."
 learnings[2]{created_at,author,text}:
   "2026-10-10T06:04:52.512Z","harness:codex","Compact first-party machine metadata in the publication staging copy, verify the serialized values before writing, and preserve third-party bytes. The artifact budget should reject new weight rather than grow. Real archive comparisons must retain the complete copied helper import closure; module-loading setup failures are not negative-control evidence."
   "2026-10-16T05:26:36.181Z","harness:codex","Bind package measurements to the packing pipeline, source tree or patch, and archive hash. Keep raw checkout bytes, staged compact JSON, first-party distribution size, and bundled-runtime totals distinct; only a controlled same-candidate comparison proves an exclusion delta."
-files[20]:
+files[21]:
   - path: .github/workflows/ci.yml
     scope: project
     note: mandatory PR artifact gate
@@ -279,7 +288,9 @@ files[20]:
   - path: tests/unit/scripts/release/sentry-injection-allowance.spec.ts
     scope: project
     note: Binds the per-file injection allowance to the installed sentry-cli
-tests[6]:
+  - path: tests/unit/scripts/runtime-compaction.spec.ts
+    scope: project
+tests[7]:
   - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts
     scope: project
     timeout_seconds: 240
@@ -326,6 +337,13 @@ tests[6]:
       created_at: "2026-11-05T20:48:27.695Z"
       source_kind: local_mutation
       source_ref: fix/release-artifact-preflight
+  - command: node scripts/run-tests.mjs test tests/unit/scripts/finalize-build.spec.ts tests/unit/scripts/runtime-compaction.spec.ts
+    scope: project
+    provenance:
+      author: "harness:codex"
+      created_at: "2026-11-09T23:20:43.287Z"
+      source_kind: local_mutation
+      source_ref: fix/sdk-configuration-and-redaction-recovery
 test_runs[5]:
   - run_id: test-local-msdbz6wt-4n92fd
     kind: test

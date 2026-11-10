@@ -163,6 +163,16 @@ describe("planProfileApplication", () => {
     expect(() => planProfileApplication(bad, emptyState())).toThrow(/unknown config key "definitely_not_a_knob"/);
   });
 
+  it.each(["context_activity_limit", "context_stale_threshold_days"])("stages decimal profile knob %s and refuses alternative numeric syntax", (key) => {
+    const current = emptyState();
+    const profile = (value: string): ProjectProfileDefinition => ({ ...PROFILE, config: [{ key, value, summary: "Context limit" }] });
+    expect(planProfileApplication(profile("17"), current).config.changes).toEqual([
+      { key, path: key === "context_activity_limit" ? "context.activity_limit" : "context.stale_threshold_days", value: 17, status: "add" },
+    ]);
+    for (const value of ["1e2", "0x10"]) expect(() => planProfileApplication(profile(value), current)).toThrow(`config ${key}`);
+    expect(current.settings).toEqual({});
+  });
+
   it("throws on an invalid config value", () => {
     const bad: ProjectProfileDefinition = {
       ...PROFILE,

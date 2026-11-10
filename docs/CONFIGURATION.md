@@ -43,6 +43,23 @@ pm config set governance-preset strict        # same as --policy strict
 pm config set definition-of-done "Tests pass" # same as --criterion "Tests pass"
 ```
 
+Settings paths are aliases for their existing validated setters: for example,
+`pm config set governance.preset strict` and
+`pm config set validation.metadata_profile strict`. Scalar context settings also
+accept paths such as `context.default_depth` and `context.sections.activity`.
+Context depth values normalize case just like `context --default-depth`; other
+string settings retain their own validation rules.
+`pm config project list --json` lists the project
+inventory; use `global list` for global keys. Both include declared aliases and
+nested paths, including `context.sections.recently_created` and
+`context.sections.unparented`. Context integer leaves use decimal digits in both
+configuration commands and package profiles; the inventory includes this syntax
+in its summaries alongside numeric bounds. Unknown keys offer up to three
+nearest keys and that inspection command. Text bounds long legal domains. The SDK error retains declared aliases and paths
+in `error.context.recovery.allowed_values`; CLI JSON diagnostics may be budgeted.
+Tracked by [pm-gh1695](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1695.toon)
+(repository-only tracker record, excluded from npm).
+
 The `context` key has no single value and still uses `--default-depth`,
 `--activity-limit`, `--stale-threshold-days`, and `--section-<name>` flags. Use
 `--criterion` (repeatable) to set more than one criteria-list value at once.
