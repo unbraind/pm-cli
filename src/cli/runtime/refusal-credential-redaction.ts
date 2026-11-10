@@ -1,65 +1,47 @@
 /**
  * @module cli/runtime/refusal-credential-redaction
  * Removes URL credentials from every representation a CLI refusal prints on
- * stdout or stderr (pm-nhauur). Recovery guidance is built from the raw argv
- * in many producers, so the redaction runs once, at emission, over the whole
- * envelope instead of at each producer.
+ * stdout or stderr (pm-nhauur). Recovery builders receive the invocation with
+ * each token already redacted, so anything they derive from it (lower-cased,
+ * truncated, re-quoted or wrapped) is safe by construction. What a producer
+ * echoed from the raw invocation is removed at emission. When the invocation
+ * carried credentials, every executable retry is withheld from the formatted
+ * envelope, because formatters regenerate retries from the recovery arguments.
  */
 import type { PmCliErrorContext } from "../../sdk/runtime-primitives.js";
 import {
   URL_CREDENTIAL_PLACEHOLDER,
-  quoteCommandArg,
+  invocationCarriesUrlCredentials,
   redactUrlCredentialsInText,
   redactUrlCredentialsInToken,
 } from "../../sdk/command-line.js";
 
-/** Context fields holding one argv token per entry, so whitespace inside a userinfo never splits it. */
+/** Context and envelope fields holding one argv token per entry. */
 const ARGV_TOKEN_FIELDS: ReadonlySet<string> = new Set([
   "normalized_args",
   "suggested_retry_args",
   "provided_fields",
   "parsed_positionals",
+  "normalizedInvocationArgs",
+  "providedOptionFlags",
+  "suggestedRetryArgs",
 ]);
 
-const RESTORE_CREDENTIALS_STEP =
+/** Final guidance step whenever an invocation's URL credentials were removed. */
+export const RESTORE_CREDENTIALS_STEP =
   `URL credentials in this invocation were replaced with ${URL_CREDENTIAL_PLACEHOLDER}; restore them before replaying any command shown here.`;
 
-type Spelling = readonly [raw: string, safe: string];
-
-/**
- * Every exact spelling of a credential-bearing argv token and inline option
- * value, raw and as both shells render it, longest first. These catch a
- * userinfo that contains whitespace or shell-escaped characters wherever a
- * producer echoed the token.
- */
-function knownCredentialSpellings(argv: readonly string[]): Spelling[] {
-  const spellings = new Map<string, string>();
-  for (const token of argv) {
-    const equals = token.indexOf("=");
-    for (const value of token.startsWith("-") && equals > 0 ? [token, token.slice(equals + 1)] : [token]) {
-      const safe = redactUrlCredentialsInToken(value);
-      if (safe === value) continue;
-      spellings.set(value, safe);
-      for (const platform of ["linux", "win32"] as const) {
-        // A token that needs no quoting renders as itself; keep its raw replacement.
-        const rendered = quoteCommandArg(value, platform);
-        if (rendered !== value) spellings.set(rendered, quoteCommandArg(safe, platform));
-      }
-    }
-  }
-  return [...spellings].sort(([left], [right]) => right.length - left.length);
+/** Redact each token, so builders derive guidance only from credential-free arguments. */
+export function redactRefusalArgv(argv: readonly string[]): string[] {
+  return argv.map(redactUrlCredentialsInToken);
 }
 
-function redactText(text: string, spellings: readonly Spelling[]): string {
-  let redacted = text;
-  for (const [raw, safe] of spellings) {
-    if (redacted.includes(raw)) redacted = redacted.replaceAll(raw, safe);
-  }
-  return redactUrlCredentialsInText(redacted);
+/** Whether the running invocation, or the given argv, carried possible URL userinfo. */
+function carriesCredentials(argv: readonly string[]): boolean {
+  return invocationCarriesUrlCredentials() || argv.some((token) => redactUrlCredentialsInToken(token) !== token);
 }
 
 interface RedactionPass {
-  spellings: readonly Spelling[];
   /** Shared or cyclic references map to one redacted copy, so no alias keeps the raw value. */
   copies: Map<object, unknown>;
   changed: boolean;
@@ -67,7 +49,8 @@ interface RedactionPass {
 
 function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean): unknown {
   if (typeof value === "string") {
-    const redacted = redactText(tokenField ? redactUrlCredentialsInToken(value) : value, pass.spellings);
+    // An argv token is redacted whole, even when its userinfo contains whitespace.
+    const redacted = tokenField ? redactUrlCredentialsInToken(value) : redactUrlCredentialsInText(value);
     if (redacted !== value) pass.changed = true;
     return redacted;
   }
@@ -91,48 +74,35 @@ function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean): 
 type RecoveryShape = { suggested_retry?: string; suggested_retry_args?: string[] };
 
 /**
- * Redact one refusal payload (an error context or a rendered envelope). A
- * retry whose text changed would now run a different command, one without
- * its credentials, so the executable retry is withheld and the guidance says
- * what to restore. Returns the original object when nothing changed.
+ * Redact one refusal payload (an error context or a rendered envelope). When
+ * anything was removed or the invocation carried credentials, the executable
+ * retry is withheld, since it would run a different command, and the
+ * guidance gains one restore step. Returns the original object otherwise.
  */
-function redactPayload<T extends { recovery?: RecoveryShape }>(pass: RedactionPass, payload: T, nextStepsKey: "nextSteps" | "next_steps"): T {
+function redactPayload<T extends { recovery?: RecoveryShape }>(argv: readonly string[], payload: T, nextStepsKey: "nextSteps" | "next_steps"): T {
+  const pass: RedactionPass = { copies: new Map(), changed: false };
   const safe = redactValue(payload, pass, false) as T;
-  if (!pass.changed) return payload;
-  const original = payload.recovery;
-  if (original && safe.recovery
-    && (original.suggested_retry !== safe.recovery.suggested_retry
-      || JSON.stringify(original.suggested_retry_args) !== JSON.stringify(safe.recovery.suggested_retry_args))) {
-    safe.recovery = { ...safe.recovery, suggested_retry: undefined, suggested_retry_args: undefined };
-  }
+  if (!pass.changed && !carriesCredentials(argv)) return payload;
+  if (safe.recovery) safe.recovery = { ...safe.recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const record = safe as Record<string, unknown>;
-  const steps = record[nextStepsKey];
-  record[nextStepsKey] = [...(Array.isArray(steps) ? steps : []), RESTORE_CREDENTIALS_STEP];
+  const steps = Array.isArray(record[nextStepsKey]) ? (record[nextStepsKey] as unknown[]) : [];
+  if (!steps.includes(RESTORE_CREDENTIALS_STEP)) record[nextStepsKey] = [...steps, RESTORE_CREDENTIALS_STEP];
   return safe;
 }
 
-function newPass(argv: readonly string[]): RedactionPass {
-  return { spellings: knownCredentialSpellings(argv), copies: new Map(), changed: false };
+/** Redact a typed refusal's context before it is formatted, reported or measured. */
+export function redactRefusalCredentials(argv: readonly string[], context: PmCliErrorContext | undefined): PmCliErrorContext | undefined {
+  return context === undefined ? undefined : redactPayload(argv, context, "nextSteps");
 }
 
-/** Redact a typed refusal's message and context before it is formatted, reported or measured. */
-export function redactRefusalCredentials(
-  argv: readonly string[],
-  message: string,
-  context: PmCliErrorContext | undefined,
-): { message: string; context: PmCliErrorContext | undefined } {
-  const pass = newPass(argv);
-  const safeMessage = redactValue(message, pass, false) as string;
-  return { message: safeMessage, context: context === undefined ? undefined : redactPayload(pass, context, "nextSteps") };
-}
-
-/** Redact a rendered JSON refusal envelope (Commander usage errors) before output accounting measures it. */
+/** Redact and withhold on a formatted JSON envelope, before lean projection and output accounting measure it. */
 export function redactRefusalEnvelopeCredentials<T extends object>(argv: readonly string[], envelope: T): T {
-  return redactPayload(newPass(argv), envelope as T & { recovery?: RecoveryShape }, "next_steps");
+  return redactPayload(argv, envelope as T & { recovery?: RecoveryShape }, "next_steps");
 }
 
-/** Redact a rendered text refusal; text has no executable retry field to withhold, so it gains the restore note. */
+/** Redact a rendered text refusal; text has no retry field to withhold, so it carries the restore note instead. */
 export function redactRefusalTextCredentials(argv: readonly string[], text: string): string {
-  const redacted = redactText(text, knownCredentialSpellings(argv));
-  return redacted === text ? text : `${redacted}\n\n${RESTORE_CREDENTIALS_STEP}`;
+  const redacted = redactUrlCredentialsInText(text);
+  if ((redacted === text && !carriesCredentials(argv)) || redacted.includes(RESTORE_CREDENTIALS_STEP)) return redacted;
+  return `${redacted}\n\n${RESTORE_CREDENTIALS_STEP}`;
 }

@@ -312,8 +312,9 @@ function walkContainer(content: string, start: number, accepts: (at: number) => 
 
 /**
  * Linear structured pass. The flat rule already owns unquoted keys with scalar
- * values, so this pass judges only quoted keys and container values; a walked
- * container is never rescanned for nested keys.
+ * values, so this pass judges only quoted keys and container values. Keys
+ * nested inside a walked container still get their scalar check, but a
+ * container is walked only once.
  */
 function* findStructuredSpellingMatches(
   rule: SecretRule,
@@ -331,13 +332,15 @@ function* findStructuredSpellingMatches(
   // The key cursor survives each yield, so every scan owns its own copy; the
   // value pattern is used synchronously between yields and stays shared.
   const key = new RegExp(compiled.key);
+  let walkedEnd = 0;
   for (let match = key.exec(content); match; match = key.exec(content)) {
     const valueStart = match.index + match[0].length;
     const opener = content[valueStart];
     if (opener === "[" || opener === "{") {
+      if (valueStart < walkedEnd) continue;
       const walked = walkContainer(content, valueStart, accepts);
+      walkedEnd = walked.end;
       if (walked.found) yield { index: match.index };
-      key.lastIndex = walked.end;
     } else if (match[1] && accepts(valueStart)) {
       yield { index: match.index };
     }

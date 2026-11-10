@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: privacy,redaction,security,sentry,telemetry
 created_at: "2026-11-10T12:54:03.603Z"
-updated_at: "2026-11-10T14:35:42.216Z"
+updated_at: "2026-11-10T15:06:49.670Z"
 closed_at: "2026-11-10T14:35:38.558Z"
 completed_at: "2026-11-10T14:35:38.558Z"
 author: "harness:claude-code"
@@ -20,8 +20,9 @@ expected_result: "No queued telemetry event or Sentry string carries URL userinf
 actual_result: "A re-run of the queued-event reproduction against the new build (isolated global root, unreachable endpoint, Sentry disabled) shows zero secret bytes, with attempted_args showing https://[redacted]@... The telemetry-runtime and sentry-helpers specs pass with the new dotless-host, port, whitespace and backslash cases at both capture levels (121 tests in the linked command)."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-nhauur,discovered_from,"2026-11-10T12:54:03.603Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-10T12:59:53.333Z","harness:claude-code","Implementation (same branch): sanitizeCommandArgs applies redactUrlCredentialsInToken to each whole argument before sanitizeString, so whitespace inside a userinfo cannot split it. sanitizeCommonSensitiveTokens (both capture levels) applies redactUrlCredentialsInText before the email heuristic. Sentry scrubString applies the text rule before scrubInlineSensitiveAssignments. Re-ran the queued-event reproduction against the new build (isolated PM_GLOBAL_PATH, unreachable PM_TELEMETRY_ENDPOINT, Sentry disabled): three credentialed sources (registry:8080, localhost, and a password containing a space) queue zero secret bytes, and attempted_args show https://[redacted]@..."
+  "2026-11-10T15:06:49.668Z","harness:claude-code","Review follow-up on PR 1701: telemetry and Sentry text now use the per-invocation registry of whitespace-bearing userinfo spans (see pm-nhauur), so an error message such as unknown command 'https://U:a b@host' is redacted at every capture level including minimal. Verification also found command_taxonomy (command_path, command_root, command_leaf) splitting an unknown-command token at whitespace after lower-casing it; no text rule can reassemble that, so handleRunPmCliError now derives attemptedCommand from the redacted argv. Queued-event reproduction with four credentialed invocations: 0 secret bytes."
 files[5]{path,scope,note}:
   src/core/sentry/instrument.ts,project,scrubString applies the text rule first
   src/core/shared/url-credentials.ts,project,Shared conservative rule

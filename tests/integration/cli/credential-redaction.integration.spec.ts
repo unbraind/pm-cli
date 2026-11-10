@@ -51,3 +51,26 @@ it("never prints URL credentials in unknown_option or read_output_mutation_confl
     }
   });
 }, 120_000);
+
+it("covers the spellings and paths the first review round reproduced (pm-nhauur)", async () => {
+  await withTempPmPath(async (context) => {
+    const spaced = `https://U:${SECRET} pass@localhost/x`;
+    const invocations: Array<{ args: string[]; code: number }> = [
+      // A retained `$&` must stay literal instead of re-inserting the credential-bearing match.
+      { args: ["package", "install", `https://u:${SECRET} pass@localhost/$&`, "--bogus-flag", "--json"], code: 2 },
+      // Recovery command-name resolution lower-cases an unknown command.
+      { args: ["--no-extensions", spaced, "--json"], code: 2 },
+      { args: ["--no-extensions", spaced], code: 2 },
+      // Bootstrap JSON help renders its own unknown-command envelope.
+      { args: ["--no-extensions", "help", `https://u:${SECRET}@localhost/x`, "--json"], code: 2 },
+    ];
+    for (const { args, code } of invocations) {
+      const refused = context.runCli(args);
+      expect(refused.code, args.join(" ")).toBe(code);
+      const output = `${refused.stdout}${refused.stderr}`;
+      expect(output, args.join(" ")).not.toMatch(new RegExp(SECRET, "iu"));
+      expect(output, args.join(" ")).toMatch(/restore them before replaying/u);
+    }
+  });
+}, 120_000);
+

@@ -151,16 +151,26 @@ included in a recovery bundle.
 
 CLI refusals do not echo URL credentials from the invocation either
 ([pm-nhauur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nhauur.toon);
-tracker record excluded from npm). Many recovery producers copy the raw argv,
-so the CLI redacts once, at emission. This covers typed refusals and
-Commander usage errors, in both JSON and text, before lean projection and
-output-token accounting. Every exact raw and shell-quoted spelling of a
-credential-bearing token or inline option value is replaced, which covers a
-userinfo containing spaces. Argv-token fields and free text then get the same
-conservative token rule that telemetry uses. When the executable retry
-changes, `suggested_retry` and `suggested_retry_args` are withheld rather than
-replaying a command without its credentials, and a final next step tells the
-caller to restore them.
+tracker record excluded from npm). This applies to typed refusals, Commander
+usage errors and bootstrap JSON help, in both JSON and text. Three mechanisms
+combine:
+
+- Every refusal builder receives the invocation with each token already
+  redacted. Anything a builder derives from it is therefore safe by
+  construction, even when it lower-cases, truncates, re-quotes or wraps the
+  value.
+- At emission, values that a producer echoed from the raw invocation pass the
+  token rule (argv-token fields) or the word rule (free text). A userinfo that
+  contains whitespace splits into several words, which the word rule cannot
+  reassemble. Such a span is also registered for the running invocation and
+  removed in any case and in both shells' escaping. The same registry also
+  protects telemetry and Sentry.
+- When the invocation carried credentials, the JSON envelope withholds
+  `suggested_retry` and `suggested_retry_args`. Formatters regenerate retries
+  from the recovery arguments, so withholding runs on the formatted envelope,
+  before lean projection and output-token accounting. A final next step tells
+  the caller to restore the credentials. Text output shows the placeholder and
+  carries the same note.
 
 ### Executable mutation inventory
 

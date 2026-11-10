@@ -436,7 +436,10 @@ whitespace-delimited words. In every such token, the span between the first
 `:` and the last `@` is replaced with `[redacted]`, and any scheme slashes
 are kept. The rule is conservative so that it is complete: a single-label
 host, `host:port`, a backslash authority or a password with any characters is
-covered. A scoped package name after a colon is hidden too.
+covered. A scoped package name after a colon is hidden too. A userinfo that
+contains whitespace is also removed wherever it is echoed, because the CLI
+registers it for the running invocation. The command taxonomy of an unknown
+command is derived from the already-redacted token.
 
 The separate local event and OTLP queues retain their existing formats. Turning
 off command tracing does not require deleting or rewriting those queues.

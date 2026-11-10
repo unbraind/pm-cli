@@ -117,6 +117,8 @@ describe("structured credential spellings (GH-1699)", () => {
     ["value after an escaped quote", ['{"pass', 'word": ["a\\"b", "', value, '"]}'].join("")],
     ["unquoted key with an array", `password: ["${value}"]`],
     ["bare nested key", `{"password": {value: "${value}"}}`],
+    ["nested quoted key with a bare YAML value", `password: {x: 'short', 'password': ${value}}`],
+    ["nested quoted JSON key with a bare value", `{"password": {"note": "short", "password": ${value}}}`],
     ["XML element", `<password>${value}</password>`],
     ["XML element with attributes", `<password type="text">${value}</password>`],
     ["multi-line XML element", ["<pass", "phrase>\n  ", value, "\n</passphrase>"].join("")],
@@ -191,6 +193,6 @@ describe("structured credential spellings (GH-1699)", () => {
     const started = performance.now();
     const counts = inputs.map((input) => Array.from(findSecretRuleMatches(rule, input)).length);
     expect(performance.now() - started).toBeLessThan(5_000);
-    expect(counts).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 1]);
+    expect(counts).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 2]);
   });
 });

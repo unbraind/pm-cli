@@ -14,8 +14,8 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairReadOutputMutationRecovery } from "./runtime/read-output-mutation-retry.js";
-import { redactRefusalCredentials } from "./runtime/refusal-credential-redaction.js";
-import { redactUrlCredentialsInText } from "../sdk/command-line.js";
+import { redactRefusalArgv, redactRefusalCredentials, redactRefusalEnvelopeCredentials, redactRefusalTextCredentials } from "./runtime/refusal-credential-redaction.js";
+import { redactUrlCredentialsInText, registerUrlCredentialInvocation } from "../sdk/command-line.js";
 import { isTrackerRevisionGuarded } from "../sdk/lifecycle/item-revision.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
@@ -1952,26 +1952,25 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   if (!(context.error instanceof PmCliError) && (isCommanderError(context.error) || !hasExplicitExitCode)) {
     return false;
   }
-  const rawErrorMessage = describeUnknownError(context.error);
+  // Producers may echo the raw invocation, so URL credentials are removed here from every printed or reported field.
+  const errorMessage = redactUrlCredentialsInText(describeUnknownError(context.error));
   const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
   const rawContext = context.error instanceof PmCliError || isPmCliExpectedError(context.error) ? context.error.context : undefined;
-  // Producers echo the raw argv, so URL credentials are removed once here, from every field that is printed or reported.
-  const { message: errorMessage, context: enrichedContext } = redactRefusalCredentials(
+  const enrichedContext = redactRefusalCredentials(
     context.invocationArgv,
-    rawErrorMessage,
-    buildPmCliRecoveryContext(rawContext, context.invocationArgv, rawErrorMessage),
+    buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage),
   );
   const classification = classifyPmCliError(errorMessage, enrichedContext);
-  const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean
-    ? projectLeanErrorEnvelope(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext))
-    : formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext));
+  // Formatters regenerate retries from the recovery arguments, so withholding runs on the envelope itself.
+  const jsonEnvelope = redactRefusalEnvelopeCredentials(context.invocationArgv, formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext));
+  const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean ? projectLeanErrorEnvelope(jsonEnvelope) : jsonEnvelope);
   const renderedError = context.jsonErrors
     ? JSON.stringify(
         context.bootstrapGlobal.tokenAccounting ? attachOutputTokenAccounting(jsonErrorPayload, (value) => `${JSON.stringify(value, null, 2)}\n`) : jsonErrorPayload,
         null,
         2,
       )
-    : formatPmCliErrorForDisplay(errorMessage, enrichedContext, { lean: context.bootstrapGlobal.lean === true });
+    : redactRefusalTextCredentials(context.invocationArgv, formatPmCliErrorForDisplay(errorMessage, enrichedContext, { lean: context.bootstrapGlobal.lean === true }));
   if (context.jsonErrors) writeStderr(`${renderedError}\n`);
   else printError(renderedError);
   const { errorCategory, commandResolution } = await context.emitTelemetryCommandError({
@@ -2174,15 +2173,17 @@ async function handleRunPmCliCommanderError(context: RunPmCliErrorContext): Prom
 async function handleRunPmCliError(params: { error: unknown; invocationArgv: string[] }): Promise<void> {
   const bootstrapGlobal = parseBootstrapGlobalOptions(params.invocationArgv);
   const bootstrapPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+  // Every refusal builder, and the telemetry taxonomy of an unknown command, derive from credential-free tokens (pm-nhauur).
+  const safeInvocationArgv = redactRefusalArgv(params.invocationArgv);
   const context: RunPmCliErrorContext = {
     error: params.error,
-    invocationArgv: params.invocationArgv,
+    invocationArgv: safeInvocationArgv,
     bootstrapGlobal,
     jsonErrors: bootstrapGlobal.json,
     bootstrapPmRoot,
-    attemptedCommand: parseBootstrapCommandName(params.invocationArgv) ?? "<unknown>",
+    attemptedCommand: parseBootstrapCommandName(safeInvocationArgv) ?? "<unknown>",
     emitTelemetryCommandError: createTelemetryCommandErrorEmitter({
-      invocationArgv: params.invocationArgv,
+      invocationArgv: safeInvocationArgv,
       bootstrapGlobal,
       bootstrapPmRoot,
     }),
@@ -2347,6 +2348,16 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   let invocationArgv = rawArgv;
   try { invocationArgv = normalizeBootstrapInvocation(rawArgv).argv; }
   catch { /* Report normalization failures through the normal invocation path inside the selected settings scope. */ }
+  // Every sanitizer (refusals, telemetry, Sentry) removes this invocation's URL userinfo, whatever word layout echoes it.
+  registerUrlCredentialInvocation([...rawArgv, ...invocationArgv]);
+  try {
+    await runPmCliInvocation(rawArgv, invocationArgv);
+  } finally {
+    registerUrlCredentialInvocation([]);
+  }
+}
+
+async function runPmCliInvocation(rawArgv: string[], invocationArgv: string[]): Promise<void> {
   const preview = resolveStructuredMutationPreviewInvocation(invocationArgv);
   const settingsPolicy = { configurationOnly: preview !== undefined };
   const isConfigurationOnly = (): boolean => settingsPolicy.configurationOnly;

@@ -50,7 +50,8 @@ import { isCompatibleRecoveryFlag, renderMissingOptionRetry, resolveLifecycleVer
 import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
-import { redactRefusalEnvelopeCredentials, redactRefusalTextCredentials } from "./runtime/refusal-credential-redaction.js";
+import { redactRefusalArgv, redactRefusalEnvelopeCredentials, redactRefusalTextCredentials } from "./runtime/refusal-credential-redaction.js";
+import { redactUrlCredentialsInText } from "../sdk/command-line.js";
 
 /** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -1044,10 +1045,11 @@ export async function resolveCommanderUsageContext(
     typeof error === "object" && error !== null
       ? (error as { message?: string }).message
       : undefined;
-  const message = rawMessage ?? "Invalid command usage";
-  const invocationArgv = normalizeBootstrapInvocation(
+  // Guidance is derived only from credential-free text and tokens (pm-nhauur).
+  const message = redactUrlCredentialsInText(rawMessage ?? "Invalid command usage");
+  const invocationArgv = redactRefusalArgv(normalizeBootstrapInvocation(
     [...invocationArgs],
-  ).argv;
+  ).argv);
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
   const commandName = resolveRecoveryCommandName(message, invocationArgv, rootProgram, extensionDescriptors);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
