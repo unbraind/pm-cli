@@ -1,3 +1,4 @@
+import path from "node:path";
 import { expect, it } from "vitest";
 import { scanMutationSecrets } from "../../../src/sdk/mutation-guard.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -99,3 +100,25 @@ it("covers the second review round's reproductions (pm-nhauur)", async () => {
     expect(envelope.diagnostic_output?.estimated_tokens).toBeLessThanOrEqual(envelope.diagnostic_output?.budget ?? 0);
   });
 }, 120_000);
+
+it("covers the third review round's reproductions (pm-nhauur)", async () => {
+  await withTempPmPath(async (context) => {
+    const secret = `${SECRET} pass`;
+    const invocations = [
+      // The revision parser splits the value at its comma before echoing a fragment.
+      ["--no-extensions", "package", "--catalog", "--expect-hash", `https://u:${secret},rest@localhost/x`, "--json"],
+      ["--no-extensions", "package", "--catalog", "--expect-hash", `https://u:${secret},rest@localhost/x`],
+      // The concise tracker-initialization text renders its retry directly.
+      ["--no-extensions", "--pm-path", path.join(context.tempRoot, "absent", `https://u:${secret}@localhost/x`), "list"],
+    ];
+    for (const args of invocations) {
+      const refused = context.runCli(args);
+      expect(refused.code, args.join(" ")).not.toBe(0);
+      const output = `${refused.stdout}${refused.stderr}`;
+      expect(output, args.join(" ")).not.toMatch(new RegExp(SECRET, "iu"));
+      expect(output, args.join(" ")).toMatch(/restore them before replaying/u);
+      expect(output.match(/restore them before replaying/gu)?.length, args.join(" ")).toBe(1);
+    }
+  });
+}, 120_000);
+

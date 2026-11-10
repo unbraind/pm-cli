@@ -124,6 +124,7 @@ describe("structured credential spellings (GH-1699)", () => {
     ["prefixed key with a compact value", `{"admin-password": "${value}"}`],
     ["prefixed key with a compact nested value", `smtp.password: ["${value}"]`],
     ["exact key with a passphrase", ['{"pass', 'word": "correct horse ', value, '"}'].join("")],
+    ["exact nested key with a passphrase under a prefixed key", ['{"admin-pass', 'word":{"pass', 'word":["correct horse ', value, '"]}}'].join("")],
     ["nested quoted JSON key with a bare value", `{"password": {"note": "short", "password": ${value}}}`],
     ["XML element", `<password>${value}</password>`],
     ["XML element with attributes", `<password type="text">${value}</password>`],
@@ -155,6 +156,8 @@ describe("structured credential spellings (GH-1699)", () => {
     ["escaped line breaks counted once each", ['{"pass', 'word":"\\n\\n\\n\\n"}'].join("")],
     ["unicode escapes counted once each", ['{"pass', 'word":"\\u0061\\u0062"}'].join("")],
     ["prefixed localization key with a prose value", '{"reset-password":"Reset password"}'],
+    ["prefixed localization key with an escaped space", ['{"reset-pass', 'word":"Reset\\u0020password"}'].join("")],
+    ["escaped backslash closing a short value", ['{"pass', 'word":"abc\\\\"}'].join("")],
     ["spaced localization key with a prose value", '{"New password": "Enter a new password"}'],
     ["underscore-prefixed key, as in the flat rule", '{"db_password": "S3cr3tValue!"}'],
     ["closing key quote with no opening quote", [`${"label ".repeat(11)}pass`, 'word": ', value].join("")],
@@ -169,6 +172,11 @@ describe("structured credential spellings (GH-1699)", () => {
     ["nested object", `{"secret": {"value": "${entropy}"}}`],
   ])("detects a high-entropy %s in mutation payloads only", (_label, content) => {
     expect(scanMutationSecrets({ description: content }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
+  });
+
+  it("judges a fully unicode-escaped high-entropy value in its decoded form", () => {
+    const escaped = [...entropy].map((character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`).join("");
+    expect(scanMutationSecrets({ description: `{"token":"${escaped}"}` }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
   });
 
   it("keeps the entropy predicate for structured high-entropy values", () => {
@@ -203,10 +211,11 @@ describe("structured credential spellings (GH-1699)", () => {
       `<password ${"a".repeat(400_000)}`,
       "<password ".repeat(40_000),
       `${'{"password": '.repeat(20_000)}"${"a".repeat(400_000)}"`,
+      "password=".repeat(80_000),
     ];
     const started = performance.now();
     const counts = inputs.map((input) => Array.from(findSecretRuleMatches(rule, input)).length);
     expect(performance.now() - started).toBeLessThan(5_000);
-    expect(counts).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 2]);
+    expect(counts).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 2, 1]);
   });
 });

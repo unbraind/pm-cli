@@ -87,9 +87,29 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(await first).toBe("echo https://[redacted]@localhost/x");
   });
 
-  it("falls back to the whole-string rule when too many spellings were registered", () => {
-    runWithUrlCredentialInvocation(Array.from({ length: 40 }, (_, index) => `https://u:pass word ${index}@h${index}/x`), () => {
-      expect(redactUrlCredentialsInText("Error: https://u:pass word 7@h7/x and more")).toBe("Error:[redacted]@h7/x and more");
+  it("removes split, truncated and re-cased echoes of a registered secret, leaving at most five characters", () => {
+    runWithUrlCredentialInvocation(["--expect-hash", "https://git:Tok3nSecretValue,rest@localhost/x"], () => {
+      for (const echo of [
+        'Invalid expected revision "https://git:Tok3nSecretValue"',
+        "rest@localhost/x is not a revision",
+        "truncated TOK3NSECR",
+        "split tok3n secretvalue",
+      ]) {
+        expect(redactUrlCredentialsInText(echo)).not.toMatch(/tok3nse|secretv|cretva/iu);
+      }
+      // The username is not the secret, and ordinary words stay readable.
+      expect(redactUrlCredentialsInText("git restores the token")).toBe("git restores the token");
+    });
+  });
+
+  it("falls back to the whole-string rule when too many fragments were registered", () => {
+    let state = 1;
+    const secret = Array.from({ length: 70_000 }, () => {
+      state = (state * 48_271) % 2_147_483_647;
+      return String.fromCharCode(0x4e00 + (state % 20_000));
+    }).join("");
+    runWithUrlCredentialInvocation([`https://u:${secret}@h/x`], () => {
+      expect(redactUrlCredentialsInText("Error: https://u:short pass@h7/x and more")).toBe("Error:[redacted]@h7/x and more");
       expect(redactUrlCredentialsInText("no userinfo here")).toBe("no userinfo here");
     });
   });

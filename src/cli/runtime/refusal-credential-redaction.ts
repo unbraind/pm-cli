@@ -42,6 +42,8 @@ interface RedactionPass {
 }
 
 function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean): unknown {
+  // The restore step is this module's own text; redacting it again would garble and duplicate it.
+  if (value === RESTORE_CREDENTIALS_STEP) return value;
   if (typeof value === "string") {
     // An argv token is redacted whole, even when its userinfo contains whitespace.
     const redacted = tokenField ? redactUrlCredentialsInToken(value) : redactUrlCredentialsInText(value);

@@ -3289,9 +3289,12 @@ should remove URL credentials with the rule that the CLI and telemetry use
 Apply `redactUrlCredentialsInToken(token)` to each argv token. Apply
 `redactUrlCredentialsInText(text)` to free text. Both replace the span between
 a token's first `:` and its last `@` with `URL_CREDENTIAL_PLACEHOLDER`
-(`[redacted]`). The rule is complete for every spelling a URL parser
-normalizes, and it is idempotent. When a retry would lose credentials this
-way, withhold the retry instead of emitting one that runs a different command.
+(`[redacted]`). The token rule is complete for every spelling a URL parser
+normalizes, and it is idempotent. The text rule sees only whitespace-delimited
+words, so a URL whose userinfo contains whitespace is complete only when you
+redact the original token before interpolating it into text. When a retry
+would lose credentials this way, withhold the retry instead of emitting one
+that runs a different command.
 
 `resolveLifecycleVerbRecovery(verb, availablePaths)` returns explicit argument
 templates and next steps for unsupported `block` and `unblock` verbs. It checks

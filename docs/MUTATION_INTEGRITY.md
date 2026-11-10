@@ -108,8 +108,11 @@ eight-character minimum, the `<…`, `${…}` and `$(…)` placeholder exclusion
 and the high-entropy predicate therefore carry over. Bare tokens inside a
 container are never judged, so `password=[scrubbed]` stays clean. A
 structured string literal that spans a raw line break is a host-language
-artifact, not a credential. The pass is linear: each container is walked
-once and never rescanned for nested keys.
+artifact, not a credential. The pass is linear. Nested keys inside a
+walked container still get their own scalar check. Each container is walked
+at most twice: once for an exact key, whose lenient walk covers everything
+inside it, and once for a prefixed key, whose compact walk covers only
+other prefixed keys.
 
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals
@@ -163,12 +166,18 @@ combine:
   object is redacted before its envelope, its diagnostic budget and its
   output accounting exist, so receipts measure the delivered bytes. Values a
   producer echoed from the raw invocation pass the token rule (argv-token
-  fields) or the word rule (free text). A userinfo that contains whitespace
-  splits into several words, which the word rule cannot reassemble. Such a
-  span is also registered in an invocation-scoped registry and removed in any
-  case and in its shell and JSON escaping. The registry is held in an
-  AsyncLocalStorage scope, so overlapping in-process invocations never share
-  it. The same registry also protects telemetry and Sentry.
+  fields) or the word rule (free text). A producer may also split a value at
+  whitespace or a comma, truncate it, re-case it or escape it before echoing
+  it. The CLI therefore registers each secret for the running invocation:
+  the password, or the whole userinfo of a bare token. The registration also
+  holds the secret's shell and JSON escaping, and it removes every run of
+  text that shares a six-character fragment with any of them. This bounds
+  what any producer can expose to five consecutive secret characters. The
+  registry lives in an AsyncLocalStorage scope, so overlapping in-process
+  invocations never share it. It protects telemetry and Sentry as well.
+- The rule is conservative. Prose shaped like `Reminder: ping @bob` counts
+  as possible userinfo too: it is redacted in refusal output, and that
+  invocation's refusals withhold executable retries.
 - When the invocation carried credentials, the guidance withholds
   `suggested_retry` and `suggested_retry_args` and gains a final next step
   telling the caller to restore them. JSON and text output therefore agree.

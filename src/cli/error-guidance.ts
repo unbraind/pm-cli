@@ -2604,7 +2604,8 @@ export function formatPmCliErrorForDisplay(
   context?: PmCliErrorContext,
   options: RenderGuidanceOptions = {},
 ): string {
-  const guidance = buildPmCliErrorGuidance(rawMessage, context);
+  // The concise branch renders its retry directly, so it must see redacted guidance too (pm-nhauur).
+  const guidance = redactGuidanceCredentials(buildPmCliErrorGuidance(rawMessage, context));
   if (
     (context?.code === "tracker_root_missing" ||
       context?.code === "tracker_not_initialized") &&

@@ -261,15 +261,19 @@ function compileSpelling(spelling: SecretStructuredSpelling): CompiledSpelling {
   return compiled;
 }
 
-/** Return the index after a quoted string, honoring backslash escapes; unterminated strings end the input. */
-function endOfQuoted(content: string, start: number): number {
+/** The index after a quoted string, honoring backslash escapes; an unterminated string ends the input. */
+function scanQuoted(content: string, start: number): { end: number; terminated: boolean } {
   const quote = content[start];
   for (let index = start + 1; index < content.length; index += 1) {
     const character = content[index];
     if (character === "\\") index += 1;
-    else if (character === quote) return index + 1;
+    else if (character === quote) return { end: index + 1, terminated: true };
   }
-  return content.length;
+  return { end: content.length, terminated: false };
+}
+
+function endOfQuoted(content: string, start: number): number {
+  return scanQuoted(content, start).end;
 }
 
 /**
@@ -312,6 +316,24 @@ function walkContainer(content: string, start: number, accepts: (at: number) => 
 
 /** One complete escape sequence in a JSON, Python or YAML string literal. */
 const ESCAPE_SEQUENCE = /\\(?:u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/gu;
+const SIMPLE_ESCAPES: Readonly<Record<string, string>> = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v", "0": "\0" };
+
+/**
+ * Decode a quoted literal so the value grammar judges what it represents:
+ * its length, whitespace, placeholder prefix and entropy. A decoded quote of
+ * the literal's own kind becomes the other quote, and a decoded line break a
+ * space, so the grammar's delimiters and its raw line-break check are kept.
+ */
+function decodeQuotedLiteral(literal: string, terminated: boolean): string {
+  const quote = literal[0]!;
+  const body = literal.slice(1, terminated ? -1 : undefined).replaceAll(ESCAPE_SEQUENCE, (sequence) => {
+    const kind = sequence[1]!;
+    if (kind === "u" || kind === "x") return String.fromCharCode(Number.parseInt(sequence.slice(2), 16));
+    return SIMPLE_ESCAPES[kind] ?? kind;
+  });
+  const neutral = body.replaceAll(quote, quote === "\"" ? "'" : "\"").replaceAll(/[\r\n\u2028\u2029]/gu, " ");
+  return `${quote}${neutral}${terminated ? quote : ""}`;
+}
 /** Longest prefix scanned back to the opening quote of a prefixed quoted key. */
 const MAX_KEY_PREFIX = 64;
 
@@ -353,11 +375,12 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match) ? match : null;
   };
   // The value grammar is quote-blind, so a literal with escapes is judged in
-  // its decoded length: each complete escape sequence is one character.
+  // its decoded form.
   const escapedMatch = (at: number): RegExpExecArray | null | undefined => {
     if (content[at] !== "\"" && content[at] !== "'") return undefined;
-    const literal = content.slice(at, endOfQuoted(content, at));
-    return literal.includes("\\") ? valueMatch(literal.replaceAll(ESCAPE_SEQUENCE, "x"), 0) : undefined;
+    const { end, terminated } = scanQuoted(content, at);
+    const literal = content.slice(at, end);
+    return literal.includes("\\") ? valueMatch(decodeQuotedLiteral(literal, terminated), 0) : undefined;
   };
   const valueAt = (at: number): RegExpExecArray | null => {
     const escaped = escapedMatch(at);
@@ -384,6 +407,22 @@ function* elementMatches(element: RegExp, content: string): Generator<SecretRule
   }
 }
 
+/** An exact key's walk covers everything inside it; a prefixed key's compact walk covers only prefixed keys. */
+function alreadyWalked(walkedEnd: { exact: number; compact: number }, valueStart: number, compact: boolean): boolean {
+  return valueStart < walkedEnd.exact || (compact && valueStart < walkedEnd.compact);
+}
+
+/**
+ * Judge a scalar value. An unquoted key's directly matching value is the flat
+ * rule's finding. Its escape check runs first because that check is constant
+ * time unless a quoted literal starts here, so repeated bare keys never
+ * rescan the remaining text.
+ */
+function scalarFinds(judge: ValueJudge, accepts: (at: number) => boolean, quote: string, valueStart: number): boolean {
+  if (quote) return accepts(valueStart);
+  return judge.escaped(valueStart) && !judge.direct(valueStart) && accepts(valueStart);
+}
+
 /**
  * Linear structured pass. The flat rule already owns unquoted keys with scalar
  * values, so this pass judges only quoted keys and container values. Keys
@@ -400,21 +439,24 @@ function* findStructuredSpellingMatches(
   // The key cursor survives each yield, so every scan owns its own copy; the
   // value pattern is used synchronously between yields and stays shared.
   const key = new RegExp(compiled.key);
-  let walkedEnd = 0;
+  // An exact key's walk judges every string leniently, which covers a nested
+  // prefixed key too; a prefixed key's compact walk covers only prefixed keys.
+  // Each character is therefore walked at most twice.
+  const walkedEnd = { exact: 0, compact: 0 };
   for (let match = key.exec(content); match; match = key.exec(content)) {
     const quote = match[1];
     const shape = keyShape(content, match.index, quote);
     if (shape === "malformed") continue;
-    const accepts = judge.accepts(shape === "prefixed");
+    const compact = shape === "prefixed";
+    const accepts = judge.accepts(compact);
     const valueStart = match.index + match[0].length;
     const opener = content[valueStart];
     if (opener === "[" || opener === "{") {
-      if (valueStart < walkedEnd) continue;
+      if (alreadyWalked(walkedEnd, valueStart, compact)) continue;
       const walked = walkContainer(content, valueStart, accepts);
-      walkedEnd = walked.end;
+      walkedEnd[compact ? "compact" : "exact"] = walked.end;
       if (walked.found) yield { index: match.index };
-    } else if (quote ? accepts(valueStart) : !judge.direct(valueStart) && judge.escaped(valueStart) && accepts(valueStart)) {
-      // An unquoted key's directly matching value is the flat rule's finding.
+    } else if (scalarFinds(judge, accepts, quote, valueStart)) {
       yield { index: match.index };
     }
   }
