@@ -38,7 +38,7 @@ describe("refusal credential redaction (pm-nhauur)", () => {
     expect(safe.recovery.suggested_retry_args).toBeUndefined();
     expect(safe.recovery.normalized_args).toEqual(["package", "install", SAFE_SOURCE, "--bogus"]);
     expect(safe.recovery.parsed_positionals).toEqual([{ role: "source", value: SAFE_SOURCE }]);
-    expect(safe.nextSteps.at(-1)).toBe(RESTORE_CREDENTIALS_STEP);
+    expect(safe.nextSteps[0]).toBe(RESTORE_CREDENTIALS_STEP);
     expect(guidance.recovery.suggested_retry).toContain("fake-secret");
   });
 
@@ -51,7 +51,7 @@ describe("refusal credential redaction (pm-nhauur)", () => {
 
   it("adds the restore step once", () => {
     const guidance = { nextSteps: ["first", RESTORE_CREDENTIALS_STEP], detail: SOURCE };
-    expect(redactGuidanceCredentials(guidance).nextSteps).toEqual(["first", RESTORE_CREDENTIALS_STEP]);
+    expect(redactGuidanceCredentials(guidance).nextSteps).toEqual([RESTORE_CREDENTIALS_STEP, "first"]);
   });
 
   it("redacts a whitespace-bearing userinfo whole in token fields and through the registry in text", () => {
@@ -120,6 +120,15 @@ describe("refusal credential redaction (pm-nhauur)", () => {
       expect(keyed.required).toBe("Use a flag");
       expect(Object.keys(keyed.details)).toEqual(["[redacted]"]);
     });
+  });
+
+  it("keeps keys of typed recovery descendants while redacting their values", () => {
+    const safe = runWithUrlCredentialInvocation(["--ref", "https://u:commandCenter2026@localhost/x"], () => redactGuidanceCredentials({
+      recovery: { fallback_candidates: [{ source: "catalog", command: "pm package install --ref https://u:commandCenter2026@localhost/x", reason: "nearest" }] },
+      sideEffects: [{ path: "x", op: "write" }],
+    }));
+    expect(safe.recovery.fallback_candidates[0]).toEqual({ source: "catalog", command: "pm package install --ref https://[redacted]@localhost/x", reason: "nearest" });
+    expect(safe.sideEffects).toEqual([{ path: "x", op: "write" }]);
   });
 
   it("keeps non-string values and redacts camel-case usage token fields", () => {

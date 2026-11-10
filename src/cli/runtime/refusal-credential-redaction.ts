@@ -55,18 +55,21 @@ interface RedactionPass {
   changed: boolean;
 }
 
-/** Producers may key diagnostics by a source URL; a redacted key that collides gets a numbered suffix. */
 /**
  * Where a value sits decides what may change. `schema` objects (the guidance
- * and its recovery payload) are host-owned: their keys and fixed contract
- * fields stay intact. Every other object is `producer`-owned (diagnostic
- * details, side effects, any nested dictionary): its keys and all of its
- * strings are redacted, whatever their names.
+ * and its recovery payload) keep their keys and their fixed contract fields.
+ * `typed` objects (every other host-declared structure, such as recovery
+ * candidates or side effects) keep their keys, and only their values are
+ * redacted. `producer` dictionaries (diagnostic `details`, at any depth) are
+ * arbitrary, so their keys and all of their strings are redacted, whatever
+ * their names.
  */
-type Position = "schema" | "producer";
+type Position = "schema" | "typed" | "producer";
 
-/** Host-owned objects nested directly under a schema object. */
-const SCHEMA_CHILDREN: ReadonlySet<string> = new Set(["recovery"]);
+function childPosition(position: Position, key: string): Position {
+  if (position === "producer" || key === "details") return "producer";
+  return position === "schema" && key === "recovery" ? "schema" : "typed";
+}
 
 /** Producers may key diagnostics by a source URL; a redacted key that collides gets a numbered suffix. */
 function redactKey(key: string, copy: Record<string, unknown>, pass: RedactionPass): string {
@@ -106,9 +109,8 @@ function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean, p
       copy[key] = entry;
       continue;
     }
-    const childPosition: Position = position === "schema" && SCHEMA_CHILDREN.has(key) ? "schema" : "producer";
-    const safeKey = position === "schema" ? key : redactKey(key, copy, pass);
-    copy[safeKey] = redactValue(entry, pass, tokenField || ARGV_TOKEN_FIELDS.has(key), childPosition);
+    const safeKey = position === "producer" ? redactKey(key, copy, pass) : key;
+    copy[safeKey] = redactValue(entry, pass, tokenField || ARGV_TOKEN_FIELDS.has(key), childPosition(position, key));
   }
   return copy;
 }
@@ -120,14 +122,15 @@ type RecoveryShape = { suggested_retry?: string; suggested_retry_args?: string[]
  * so the diagnostic budget and output accounting measure what is delivered.
  * When anything was removed or the invocation carried credentials, the
  * executable retry is withheld, since it would run a different command, and
- * the guidance gains one restore step. Returns the original object otherwise.
+ * the guidance gains one leading restore step. Returns the original object otherwise.
  */
 export function redactGuidanceCredentials<T extends { recovery?: RecoveryShape; nextSteps?: string[] }>(guidance: T): T {
   const pass: RedactionPass = { copies: new Map(), changed: false };
   const safe = redactValue(guidance, pass, false, "schema") as T;
   if (!pass.changed && !invocationCarriesUrlCredentials()) return guidance;
   if (safe.recovery) safe.recovery = { ...safe.recovery, suggested_retry: undefined, suggested_retry_args: undefined };
-  const steps = safe.nextSteps ?? [];
-  if (!steps.includes(RESTORE_CREDENTIALS_STEP)) safe.nextSteps = [...steps, RESTORE_CREDENTIALS_STEP];
+  // First, so a bounded rendering that drops trailing steps keeps it.
+  const steps = (safe.nextSteps ?? []).filter((step) => step !== RESTORE_CREDENTIALS_STEP);
+  safe.nextSteps = [RESTORE_CREDENTIALS_STEP, ...steps];
   return safe;
 }

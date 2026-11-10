@@ -122,3 +122,13 @@ it("covers the third review round's reproductions (pm-nhauur)", async () => {
   });
 }, 120_000);
 
+it("keeps the restore warning in bounded text output (pm-nhauur)", async () => {
+  await withTempPmPath(async (context) => {
+    const refused = context.runCli(["--no-extensions", "package", "install", `https://u:${SECRET}@localhost/${"x".repeat(800)}`, "--bogus-flag"]);
+    expect(refused.code).toBe(2);
+    const output = `${refused.stdout}${refused.stderr}`;
+    expect(output).not.toContain(SECRET);
+    expect(output).toMatch(/restore them before replaying/u);
+  });
+}, 120_000);
+
