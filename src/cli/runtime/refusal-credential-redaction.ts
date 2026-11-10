@@ -56,6 +56,19 @@ interface RedactionPass {
 }
 
 /** Producers may key diagnostics by a source URL; a redacted key that collides gets a numbered suffix. */
+/**
+ * Where a value sits decides what may change. `schema` objects (the guidance
+ * and its recovery payload) are host-owned: their keys and fixed contract
+ * fields stay intact. Every other object is `producer`-owned (diagnostic
+ * details, side effects, any nested dictionary): its keys and all of its
+ * strings are redacted, whatever their names.
+ */
+type Position = "schema" | "producer";
+
+/** Host-owned objects nested directly under a schema object. */
+const SCHEMA_CHILDREN: ReadonlySet<string> = new Set(["recovery"]);
+
+/** Producers may key diagnostics by a source URL; a redacted key that collides gets a numbered suffix. */
 function redactKey(key: string, copy: Record<string, unknown>, pass: RedactionPass): string {
   const safe = redactUrlCredentialsInText(key);
   if (safe !== key) pass.changed = true;
@@ -65,32 +78,37 @@ function redactKey(key: string, copy: Record<string, unknown>, pass: RedactionPa
   return candidate;
 }
 
-function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean): unknown {
+function redactString(value: string, pass: RedactionPass, tokenField: boolean): string {
+  // A whole argv token loses its userinfo even when it contains whitespace; the
+  // fragment rule then also catches a token a producer cut before its `@`.
+  const redacted = redactUrlCredentialsInText(tokenField ? redactUrlCredentialsInToken(value) : value);
+  if (redacted !== value) pass.changed = true;
+  return redacted;
+}
+
+function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean, position: Position): unknown {
   // The restore step is this module's own text; redacting it again would garble and duplicate it.
   if (value === RESTORE_CREDENTIALS_STEP) return value;
-  if (typeof value === "string") {
-    // An argv token is redacted whole, even when its userinfo contains whitespace.
-    const redacted = tokenField ? redactUrlCredentialsInToken(value) : redactUrlCredentialsInText(value);
-    if (redacted !== value) pass.changed = true;
-    return redacted;
-  }
+  if (typeof value === "string") return redactString(value, pass, tokenField);
   if (typeof value !== "object" || value === null) return value;
   const existing = pass.copies.get(value);
   if (existing !== undefined) return existing;
   if (Array.isArray(value)) {
     const copy: unknown[] = [];
     pass.copies.set(value, copy);
-    for (const entry of value) copy.push(redactValue(entry, pass, tokenField));
+    for (const entry of value) copy.push(redactValue(entry, pass, tokenField, position));
     return copy;
   }
   const copy: Record<string, unknown> = {};
   pass.copies.set(value, copy);
   for (const [key, entry] of Object.entries(value)) {
-    if (FIXED_CONTRACT_FIELDS.has(key) && typeof entry === "string") {
+    if (position === "schema" && FIXED_CONTRACT_FIELDS.has(key) && typeof entry === "string") {
       copy[key] = entry;
       continue;
     }
-    copy[redactKey(key, copy, pass)] = redactValue(entry, pass, tokenField || ARGV_TOKEN_FIELDS.has(key));
+    const childPosition: Position = position === "schema" && SCHEMA_CHILDREN.has(key) ? "schema" : "producer";
+    const safeKey = position === "schema" ? key : redactKey(key, copy, pass);
+    copy[safeKey] = redactValue(entry, pass, tokenField || ARGV_TOKEN_FIELDS.has(key), childPosition);
   }
   return copy;
 }
@@ -106,7 +124,7 @@ type RecoveryShape = { suggested_retry?: string; suggested_retry_args?: string[]
  */
 export function redactGuidanceCredentials<T extends { recovery?: RecoveryShape; nextSteps?: string[] }>(guidance: T): T {
   const pass: RedactionPass = { copies: new Map(), changed: false };
-  const safe = redactValue(guidance, pass, false) as T;
+  const safe = redactValue(guidance, pass, false, "schema") as T;
   if (!pass.changed && !invocationCarriesUrlCredentials()) return guidance;
   if (safe.recovery) safe.recovery = { ...safe.recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   const steps = safe.nextSteps ?? [];

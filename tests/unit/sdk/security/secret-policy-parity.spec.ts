@@ -187,6 +187,12 @@ describe("structured credential spellings (GH-1699)", () => {
     expect(scanMutationSecrets({ description: ['{"pass', 'word":"\\Uffffffff"}'].join("") })).toEqual([]);
   });
 
+  it("decodes Python octal escapes before judging a value", () => {
+    const octal = [...entropy].map((character) => `\\${character.charCodeAt(0).toString(8).padStart(3, "0")}`).join("");
+    expect(scanMutationSecrets({ description: `{'token':'${octal}'}` }).map(({ rule }) => rule)).toContain("high_entropy_assignment");
+    expect(scanMutationSecrets({ description: ["{'pass", "word':'\\101\\102\\103'}"].join("") })).toEqual([]);
+  });
+
   it("keeps the entropy predicate for structured high-entropy values", () => {
     expect(scanMutationSecrets({ description: `{"token": "${"a".repeat(28)}"}` })).toEqual([]);
   });

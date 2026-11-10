@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runWithUrlCredentialInvocation } from "../../../../src/core/shared/url-credentials.js";
+import { formatPmCliErrorForDisplay, formatPmCliErrorForJson } from "../../../../src/cli/error-guidance.js";
 import {
   RESTORE_CREDENTIALS_STEP,
   redactGuidanceCredentials,
@@ -93,6 +94,32 @@ describe("refusal credential redaction (pm-nhauur)", () => {
     expect(safe.code).toBe("unknown_option");
     expect(safe.recovery).toEqual(expect.objectContaining({ option_scope: "declared_nowhere", recovery_mode: "compact" }));
     expect(safe.detail).not.toContain("u:unknown_option@");
+  });
+
+  it("applies the fragment rule to a token a producer cut before its at sign", () => {
+    const safe = runWithUrlCredentialInvocation(["--field", "https://u:SecretValue=rest@localhost/x"], () =>
+      redactGuidanceCredentials({ recovery: { provided_fields: ["https://u:SecretValue"] } }));
+    expect(JSON.stringify(safe)).not.toContain("SecretValue");
+  });
+
+  it("exempts fixed fields only in schema positions and redacts producer dictionaries fully", () => {
+    const url = "https://u:private-secret@host/x";
+    const envelope = runWithUrlCredentialInvocation([url], () =>
+      formatPmCliErrorForJson("bad", 2, { code: "invalid_argument_value", details: { code: url, type: url } }));
+    expect(JSON.stringify(envelope)).not.toContain("private-secret");
+    expect(envelope).toEqual(expect.objectContaining({ code: "invalid_argument_value" }));
+  });
+
+  it("keeps host-owned guidance keys when a secret matches their names", () => {
+    runWithUrlCredentialInvocation(["https://u:required@localhost/x"], () => {
+      const text = formatPmCliErrorForDisplay("bad", { code: "invalid_command_usage" });
+      expect(text).toContain("bad");
+      const envelope = formatPmCliErrorForJson("bad", 2, { code: "invalid_command_usage" }) as Record<string, unknown>;
+      expect(Object.keys(envelope)).toContain("required");
+      const keyed = redactGuidanceCredentials({ required: "Use a flag", details: { required: "x" } });
+      expect(keyed.required).toBe("Use a flag");
+      expect(Object.keys(keyed.details)).toEqual(["[redacted]"]);
+    });
   });
 
   it("keeps non-string values and redacts camel-case usage token fields", () => {

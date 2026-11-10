@@ -315,12 +315,12 @@ function walkContainer(content: string, start: number, accepts: (at: number) => 
 }
 
 /** One complete escape sequence in a JSON, Python or YAML string literal. */
-const ESCAPE_SEQUENCE = /\\(?:U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[\s\S])/gu;
-const SIMPLE_ESCAPES: Readonly<Record<string, string>> = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v", "0": "\0" };
+const ESCAPE_SEQUENCE = /\\(?:U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[0-7]{1,3}|[\s\S])/gu;
+const SIMPLE_ESCAPES: Readonly<Record<string, string>> = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v" };
 
 /**
  * Decode a quoted literal (JSON, YAML and Python escapes, including
- * eight-digit `\\U` code points) so the value grammar judges what it represents:
+ * eight-digit `\\U` code points and octal escapes) so the value grammar judges what it represents:
  * its length, whitespace, placeholder prefix and entropy. A decoded quote of
  * the literal's own kind becomes the other quote, and a line break produced
  * by an escape becomes a space. The caller rejects raw line breaks first.
@@ -330,6 +330,8 @@ function decodeQuotedLiteral(literal: string, terminated: boolean): string {
   const body = literal.slice(1, terminated ? -1 : undefined).replaceAll(ESCAPE_SEQUENCE, (sequence) => {
     const kind = sequence[1]!;
     if (kind === "u" || kind === "x") return String.fromCharCode(Number.parseInt(sequence.slice(2), 16));
+    // Python octal escapes; `\\0` alone is the NUL character as in JSON5 and C.
+    if (/^[0-7]$/u.test(kind)) return String.fromCharCode(Number.parseInt(sequence.slice(1), 8));
     if (kind === "U" && sequence.length === 10) {
       // YAML and Python eight-digit escapes; an out-of-range code point stays one opaque character.
       const codePoint = Number.parseInt(sequence.slice(2), 16);
