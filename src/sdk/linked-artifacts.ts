@@ -35,6 +35,7 @@ import { resolveAuthor } from "../core/shared/author.js";
 import type { LinkScope } from "../types/index.js";
 import type { AnnotationOmissionReceipt } from "./annotations.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "./command-line.js";
+import { activeItemRevisionExpectations } from "../core/store/item-mutation-precondition.js";
 
 /** Restricts linked artifact values accepted by command, SDK, and storage contracts. */
 export type LinkedArtifact = {
@@ -137,27 +138,6 @@ export function writtenLinkedEntries<TEntry>(
     if (index >= 0) unmatched.splice(index, 1);
     return index < 0;
   });
-}
-
-/**
- * The stored entries that are the written drafts, in stored order, matched by
- * persisted value rather than position because storage may reorder a
- * collection (pm-gh1700); a draft storage rewrote is reported in its
- * persisted form.
- */
-export function persistedLinkedEntries<TEntry>(
-  written: readonly TEntry[],
-  stored: readonly TEntry[],
-): TEntry[] {
-  const matched = new Set<number>();
-  const unmatched: TEntry[] = [];
-  for (const draft of written) {
-    const persisted = persistedLinkedForm(draft);
-    const index = stored.findIndex((entry, position) => !matched.has(position) && stableValueEquals(entry, persisted));
-    if (index < 0) unmatched.push(persisted);
-    else matched.add(index);
-  }
-  return [...stored.filter((_entry, position) => matched.has(position)), ...unmatched];
 }
 
 /**
@@ -874,7 +854,7 @@ export function findMisreadNoteSegment(
   const segments = /[\n\r]|^\s*[-*+`]/u.test(entry) ? [] : splitStructuredEntrySegments(entry);
   const noteIndex = segments.findIndex((segment) => segment.key?.toLowerCase() === "note");
   if (noteIndex < 0) return undefined;
-  const fields = segments.slice(0, noteIndex).map((segment) => segment.text.trim());
+  const fields = segments.slice(0, noteIndex).map((segment) => segment.raw.trim());
   const keys = new Set(segments.slice(0, noteIndex).map((segment) => segment.key?.toLowerCase()));
   const prose = [segments[noteIndex]!.value!];
   let misread: { segment: string; key: string } | undefined;
@@ -882,7 +862,7 @@ export function findMisreadNoteSegment(
     const key = segment.key?.toLowerCase();
     if (key === "path" || key === "scope") {
       if (!keys.has(key)) {
-        fields.push(segment.text.trim());
+        fields.push(segment.raw.trim());
         keys.add(key);
         continue;
       }
@@ -932,10 +912,13 @@ function noteRecoveryRetryArgs(params: {
   options: LinkedArtifactCommandOptions;
   global: GlobalOptions;
   config: LinkedArtifactKindConfig;
+  guards: readonly string[];
 }): string[] {
   const { options } = params;
   return [
     ...resolvePmCommandScopeArgs(params.global),
+    // The refused write changed nothing, so the revision guards it ran under still hold for the retry.
+    ...params.guards.map((guard) => `--expect-hash=${guard}`),
     params.config.metadataKey,
     params.id,
     ...repeatFlag("--add", params.entries.map((entry, index) => (index === params.position - 1 ? params.rewritten : entry))),
@@ -966,6 +949,7 @@ function misreadKeyHint(key: string): string {
  */
 function parseAddEntriesWithNoteRecovery(params: {
   id: string;
+  pmRoot: string;
   entries: string[] | undefined;
   resolved: { addGlob?: string[]; remove?: string[]; migrate?: string[] };
   options: LinkedArtifactCommandOptions;
@@ -981,7 +965,9 @@ function parseAddEntriesWithNoteRecovery(params: {
     const position = firstRefusedAddEntry(entries, params.config.bareNoun);
     const misread = findMisreadNoteSegment(entries[position - 1]!, params.config.bareNoun);
     if (misread === undefined) throw error;
-    const retryArgs = noteRecoveryRetryArgs({ ...params, entries, position, rewritten: misread.entry });
+    // An SDK or MCP guard never reaches argv; guards that cannot be spelled as one invocation withhold the retry.
+    const guards = activeItemRevisionExpectations(params.pmRoot);
+    const retryArgs = guards === undefined ? undefined : noteRecoveryRetryArgs({ ...params, entries, position, rewritten: misread.entry, guards });
     throw new PmCliError(
       `--add read the note segment "${misread.segment}" as a new key "${misread.key}", so the ${params.config.bareNoun} link was refused (${cause.message})`,
       EXIT_CODE.USAGE,
@@ -989,9 +975,9 @@ function parseAddEntriesWithNoteRecovery(params: {
         code: "linked_artifact_note_key_misread",
         flag: "--add",
         value: entries[position - 1],
-        required: `Retry with the note quoted so its commas stay prose (recovery.suggested_retry_args replays the whole invocation that way), or pass the prose through --note in a single-entry call. ${misreadKeyHint(misread.key)}`,
+        required: `Retry with the note quoted so its commas stay prose (${retryArgs === undefined ? `as ${misread.entry}; its revision guards cannot be replayed as typed, so no executable retry is offered` : "recovery.suggested_retry_args replays the whole invocation that way"}), or pass the prose through --note in a single-entry call. ${misreadKeyHint(misread.key)}`,
         why: "After a comma, an identifier followed by = or : opens a new key, so that a typo such as lable=main is refused instead of being stored as note text (GH-258).",
-        nextSteps: [renderPmCommand(retryArgs)],
+        ...(retryArgs === undefined ? {} : { nextSteps: [renderPmCommand(retryArgs)] }),
         details: {
           entry_index: position,
           misread_segment: misread.segment,
@@ -1000,7 +986,9 @@ function parseAddEntriesWithNoteRecovery(params: {
           rewritten_entry: misread.entry,
           cause: cause.context.code ?? "invalid_argument_value",
         },
-        recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs },
+        ...(retryArgs === undefined
+          ? {}
+          : { recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs } }),
       },
     );
   }
@@ -1029,6 +1017,52 @@ export function linkedCollectionMutationFields(
       omission_receipt: mutation.omission_receipt,
     },
   };
+}
+
+/** Read an item's linked collection, as a listing or as the zero-change receipt of a write that resolved to nothing. */
+async function readLinkedArtifacts(params: {
+  id: string;
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+  options: LinkedArtifactCommandOptions;
+  workspaceRoot: string;
+  config: LinkedArtifactKindConfig;
+  writeRequested: boolean;
+}): Promise<LinkedArtifactResult> {
+  const { settings, config } = params;
+  const located = await locateItem(
+    params.pmRoot,
+    params.id,
+    settings.id_prefix,
+    settings.item_format,
+    params.typeToFolder,
+  );
+  if (!located) {
+    throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
+  }
+  const loaded = await readLocatedItem(located, { schema: settings.schema });
+  const artifacts =
+    ((loaded.document.metadata as Record<string, unknown>)[config.metadataKey] as
+      | LinkedArtifact[]
+      | undefined) ?? [];
+  const mutation = params.writeRequested
+    ? projectLinkedCollectionMutation({
+        collectionKey: config.metadataKey,
+        stored: artifacts,
+        written: [],
+        removedCount: 0,
+        fullHistory: params.options.fullHistory === true,
+      })
+    : undefined;
+  return buildLinkedArtifactResult({
+    id: located.id,
+    artifacts,
+    changed: false,
+    options: params.options,
+    workspaceRoot: params.workspaceRoot,
+    mutation,
+  });
 }
 
 /** Shared linked-artifact list/mutate command core used by runFiles and runDocs. The kind config selects metadata key, op, bare-path noun, and whether append-stable ordering is honored, preserving each twin's exact semantics. */
@@ -1064,6 +1098,7 @@ export async function runLinkedArtifacts(
   );
   const parsedAdds = parseAddEntriesWithNoteRecovery({
     id,
+    pmRoot,
     entries: resolvedAdds,
     resolved: {
       addGlob: resolvedAddGlobs,
@@ -1097,32 +1132,21 @@ export async function runLinkedArtifacts(
     adds.length > 0 || removes.length > 0 || migrations.length > 0;
 
   if (!shouldMutate) {
-    const located = await locateItem(
-      pmRoot,
+    return readLinkedArtifacts({
       id,
-      settings.id_prefix,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-    );
-    if (!located) {
-      throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
-    }
-    const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const artifacts =
-      ((loaded.document.metadata as Record<string, unknown>)[metadataKey] as
-        | LinkedArtifact[]
-        | undefined) ?? [];
-    return buildLinkedArtifactResult({
-      id: located.id,
-      artifacts,
-      changed: false,
+      pmRoot,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
       options,
       workspaceRoot,
+      config,
+      // A glob that matched nothing is still a write request: it gets a zero-change receipt, not the full listing.
+      writeRequested: addGlobs.length > 0,
     });
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
-  let written: LinkedArtifact[] = [];
+  let before: LinkedArtifact[] = [];
   let removedCount = 0;
   const result = await mutateItem({
     pmRoot,
@@ -1156,7 +1180,7 @@ export async function runLinkedArtifacts(
         delete metadata[metadataKey];
       }
       const changed = !stableValueEquals(current, normalized);
-      written = writtenLinkedEntries(current, normalized);
+      before = current;
       removedCount = countRemovedLinkedArtifacts(current, normalized, migrations);
       return {
         changedFields: changed ? [metadataKey] : [],
@@ -1188,8 +1212,8 @@ export async function runLinkedArtifacts(
     mutation: projectLinkedCollectionMutation({
       collectionKey: metadataKey,
       stored: artifacts,
-      // Report the persisted entries, not the in-memory drafts, so the receipt matches a later read.
-      written: persistedLinkedEntries(written, artifacts),
+      // Diff the persisted collection before and after the write, so the receipt reports what storage saved.
+      written: writtenLinkedEntries(before, artifacts),
       removedCount,
       fullHistory: options.fullHistory === true,
     }),

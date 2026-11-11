@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../../../src/sdk/docs.js";
 import { runFiles } from "../../../../src/sdk/files.js";
 import {
-  persistedLinkedEntries,
   projectLinkedCollectionMutation,
   writtenLinkedEntries,
 } from "../../../../src/sdk/linked-artifacts.js";
@@ -86,6 +85,17 @@ describe("pm-gh1700 linked-test mutation receipts", () => {
       // Only the stored count's digits differ between a 3-test and a 27-test item.
       expect(Math.abs(strip(largeReceipt).length - strip(smallReceipt).length)).toBeLessThanOrEqual(1);
       expect(largeReceipt).not.toHaveProperty("failure_categories");
+    });
+  });
+
+  it("reports the linked test as storage saved it, not the submitted spelling", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "normalized linked test" });
+      const added = await runTest(id, { addJson: [JSON.stringify({ command: "node -e 1", path: "tests\\a.mjs", scope: "project" })] }, { path: context.pmPath });
+      expect(added.tests).toEqual([expect.objectContaining({ command: "node -e 1", path: "tests/a.mjs" })]);
+      // The returned path is the stored one, so removing by it matches.
+      const removed = await runTest(id, { remove: [`path=${added.tests[0]!.path}`] }, { path: context.pmPath });
+      expect(removed).toMatchObject({ removed: 1, total_count: 0 });
     });
   });
 
@@ -206,6 +216,22 @@ describe("pm-gh1700 linked file and doc mutation receipts", () => {
     });
   });
 
+  it("answers a glob that matches nothing with a zero-change receipt, not the full listing", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "empty glob" });
+      await runFiles(id, { add: ["path=a.ts,scope=project", "path=b.ts,scope=project"] }, { path: context.pmPath });
+      for (const run of [runFiles, runDocs] as const) {
+        const empty = await run(id, { addGlob: ["__no_matches__/*.ts"] }, { path: context.pmPath });
+        expect(empty).toMatchObject({ changed: false, count: 0, mutation_receipt: { changed_count: 0, removed_count: 0 } });
+        expect(empty.validation).toBeUndefined();
+      }
+      const files = await runFiles(id, { addGlob: ["__no_matches__/*.ts"] }, { path: context.pmPath });
+      expect(files).toMatchObject({ files: [], total_count: 2, has_more: true, omission_receipt: { has_omissions: true } });
+      const full = await runFiles(id, { addGlob: ["__no_matches__/*.ts"], fullHistory: true }, { path: context.pmPath });
+      expect(full).toMatchObject({ count: 2, total_count: 2, mutation_receipt: { full_history_included: true } });
+    });
+  });
+
   it("bounds doc writes with the same receipt and marks a complete response", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "bounded doc receipts" });
@@ -278,13 +304,6 @@ describe("pm-gh1700 linked-collection receipt primitives", () => {
     expect(writtenLinkedEntries([], [a])).toEqual([a]);
     // An undefined-valued key is absent once persisted, so it does not make an entry new.
     expect(writtenLinkedEntries([a], [{ ...a, note: undefined }])).toEqual([]);
-  });
-
-  it("reports written drafts as their persisted twins, in stored order, falling back to the persisted draft", () => {
-    const stored = [{ path: "z", scope: "global" }, { path: "a", scope: "project" }];
-    expect(persistedLinkedEntries([{ path: "a", scope: "project", note: undefined }], stored)).toEqual([{ path: "a", scope: "project" }]);
-    expect(persistedLinkedEntries([stored[1], stored[0]], stored)).toEqual(stored);
-    expect(persistedLinkedEntries([{ path: "rewritten", scope: "project", note: undefined }], stored)).toEqual([{ path: "rewritten", scope: "project" }]);
   });
 
   it("names the restore selector only when entries were withheld", () => {

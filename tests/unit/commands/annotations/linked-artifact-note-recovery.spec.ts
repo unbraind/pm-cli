@@ -110,6 +110,10 @@ describe("pm-pwqiao misread note recovery", () => {
         ['path="a,note=literal.txt",note=see, host:port', 'path="a,note=literal.txt",note="see, host:port"', { path: "a,note=literal.txt", scope: "project", note: "see, host:port" }],
         ["path=b.txt,note=see,scope=global,host:port", 'path=b.txt,scope=global,note="see,host:port"', { path: "b.txt", scope: "global", note: "see,host:port" }],
         ['path=c.txt,note=say "hi", host:port', 'path=c.txt,note="say \\"hi\\", host:port"', { path: "c.txt", scope: "project", note: 'say "hi", host:port' }],
+        // An already-quoted note value is decoded as the parser decodes it before the continuation joins it.
+        ['path=f.txt,note="see, x", host:port', 'path=f.txt,note="see, x, host:port"', { path: "f.txt", scope: "project", note: "see, x, host:port" }],
+        // An escaped comma in a link field keeps its escape, so the rebuilt entry still names the same file.
+        ["path=d\\,e.txt,note=see,host:port", 'path=d\\,e.txt,note="see,host:port"', { path: "d,e.txt", scope: "project", note: "see,host:port" }],
       ] as const) {
         const error = await refusal(runFiles(id, { add: [entry] }, { path: context.pmPath }));
         expect(error.context.details).toMatchObject({ rewritten_entry: rewritten });
@@ -117,6 +121,24 @@ describe("pm-pwqiao misread note recovery", () => {
         expect(executed.code, executed.stderr).toBe(0);
         expect((await runFiles(id, {}, { path: context.pmPath })).files).toEqual(expect.arrayContaining([stored]));
       }
+    });
+  });
+
+  it("replays the revision guards the refused write ran under, and withholds a retry it cannot guard", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "guarded misread note" });
+      const { readItemRevision, withExpectedItemRevisions } = await import("../../../../src/sdk/lifecycle/item-revision.js");
+      const hash = (await readItemRevision(id, { pmRoot: context.pmPath })).item_hash;
+      const add = () => runFiles(id, { add: ["path=a.txt,note=see, host:port"] }, { path: context.pmPath });
+      const guarded = await refusal(withExpectedItemRevisions([{ id, itemHash: hash }], add, { pmRoot: context.pmPath }));
+      expect(guarded.context.recovery?.suggested_retry_args).toContain(`--expect-hash=${id}=${hash}`);
+      // Nested scopes expecting different revisions of one item cannot be spelled as one invocation's guards.
+      const nested = await refusal(withExpectedItemRevisions([{ id, itemHash: hash }], () =>
+        withExpectedItemRevisions([{ id, itemHash: "b".repeat(64) }], add, { pmRoot: context.pmPath }), { pmRoot: context.pmPath }));
+      expect(nested.context.code).toBe("linked_artifact_note_key_misread");
+      expect(nested.context.recovery).toBeUndefined();
+      expect(nested.context.nextSteps).toBeUndefined();
+      expect(nested.context.required).toContain('as path=a.txt,note="see, host:port"; its revision guards cannot be replayed as typed');
     });
   });
 

@@ -111,7 +111,6 @@ import { withHostEnvironmentBoundary } from "../environment/host-environment-err
 import {
   linkedCollectionMutationFields,
   projectLinkedCollectionMutation,
-  persistedLinkedEntries,
   writtenLinkedEntries,
   type LinkedCollectionMutationReceipt,
 } from "../linked-artifacts.js";
@@ -3118,7 +3117,7 @@ async function resolveLinkedTestItem(params: {
     return readLinkedTestItem({ id, pmRoot, settings, typeToFolder });
   }
   let removed = 0;
-  let written: LinkedTest[] = [];
+  let before: LinkedTest[] = [];
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -3158,7 +3157,7 @@ async function resolveLinkedTestItem(params: {
         );
       }
       document.metadata.tests = mutation.tests;
-      written = writtenLinkedEntries(previous, mutation.tests);
+      before = previous;
       return {
         changedFields: stableValueEquals(previous, mutation.tests)
           ? []
@@ -3173,8 +3172,8 @@ async function resolveLinkedTestItem(params: {
     testRuns: result.item.test_runs ?? [],
     changed: result.changedFields.length > 0,
     removed,
-    // The persisted entries, not the in-memory drafts, so the receipt matches a later read.
-    written: result.changedFields.length > 0 ? persistedLinkedEntries(written, tests) : [],
+    // Diff the persisted lists before and after the write, so the receipt reports what storage saved.
+    written: result.changedFields.length > 0 ? writtenLinkedEntries(before, tests) : [],
   };
 }
 
