@@ -276,11 +276,24 @@ function endOfQuoted(content: string, start: number): number {
   return scanQuoted(content, start).end;
 }
 
+/** An object member's value takes the member judgment; an array element the element judgment. */
+function judgeFor(closers: readonly string[], accepts: (at: number) => boolean, acceptsMember: (at: number) => boolean): (at: number) => boolean {
+  return closers.at(-1) === "}" ? acceptsMember : accepts;
+}
+
 /**
  * Walk one array/object once, testing every quoted string in value position.
  * Keys, bare tokens and placeholders such as `[scrubbed]` are never judged.
+ * An array element is judged by `accepts`. An object member's value is judged
+ * by `acceptsMember`, because a member such as `"description"` in a JSON
+ * Schema holds prose, not a credential.
  */
-function walkContainer(content: string, start: number, accepts: (at: number) => boolean): { found: boolean; end: number } {
+function walkContainer(
+  content: string,
+  start: number,
+  accepts: (at: number) => boolean,
+  acceptsMember: (at: number) => boolean = accepts,
+): { found: boolean; end: number } {
   const closers: string[] = [];
   let expectKey = false;
   for (let index = start; index < content.length; index += 1) {
@@ -304,7 +317,7 @@ function walkContainer(content: string, start: number, accepts: (at: number) => 
         break;
       case "\"":
       case "'":
-        if (!expectKey && accepts(index)) return { found: true, end: index };
+        if (!expectKey && judgeFor(closers, accepts, acceptsMember)(index)) return { found: true, end: index };
         index = endOfQuoted(content, index) - 1;
         break;
       default:
@@ -469,7 +482,7 @@ function* findStructuredSpellingMatches(
     const opener = content[valueStart];
     if (opener === "[" || opener === "{") {
       if (alreadyWalked(walkedEnd, valueStart, compact)) continue;
-      const walked = walkContainer(content, valueStart, accepts);
+      const walked = walkContainer(content, valueStart, accepts, judge.accepts(true));
       walkedEnd[compact ? "compact" : "exact"] = walked.end;
       if (walked.found) yield { index: match.index };
     } else if (scalarFinds(judge, accepts, quote, valueStart)) {

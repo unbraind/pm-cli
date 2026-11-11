@@ -146,3 +146,14 @@ it("redacts extension-recovery failures appended after the guidance (pm-nhauur)"
   });
 }, 120_000);
 
+it("classifies Commander's message before any secret fragment can rewrite it (pm-nhauur)", async () => {
+  await withTempPmPath(async (context) => {
+    const refused = context.runCli(["package", "install", "https://u:unknownOption1@localhost/x", "--bogus-flag", "--json"]);
+    expect(refused.code).toBe(2);
+    const envelope = JSON.parse(refused.stderr) as { code?: string; recovery?: { option_scope?: string } };
+    expect(envelope.code).toBe("unknown_option");
+    expect(envelope.recovery?.option_scope).toBe("declared_nowhere");
+    expect(refused.stderr).not.toContain("unknownOption1");
+  });
+}, 120_000);
+

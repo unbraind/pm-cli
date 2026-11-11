@@ -103,6 +103,17 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     });
   });
 
+  it("still matches a short secret whole after a long one widened the fragments", () => {
+    let state = 7;
+    const long = Array.from({ length: 460_000 }, () => {
+      state = (state * 48_271) % 2_147_483_647;
+      return "abcdefghijklmnopqrstuvwxyz0123456789"[state % 36];
+    }).join("");
+    runWithUrlCredentialInvocation([`https://u:${long}@h/x`, "https://u:Sh0rtS@h/y"], () => {
+      expect(redactUrlCredentialsInText("cut xSh0rtSx refused")).toBe("cut x[redacted]x refused");
+    });
+  });
+
   it("keeps fragment offsets aligned when lower-casing changes a character's length", () => {
     runWithUrlCredentialInvocation(["https://u:\u0130stanbulSecret9@h/x"], () => {
       expect(redactUrlCredentialsInText("echo \u0130STANBULSECRET9 done")).toBe("echo [redacted] done");

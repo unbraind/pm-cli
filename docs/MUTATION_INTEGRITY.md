@@ -106,6 +106,14 @@ spellings are covered:
   characters after trimming, with the `${…}` and `$(…)` placeholder
   exclusions.
 
+An *exact* key is the key word alone (`"password"`, `<password>`). A
+*prefixed* key has other key text before the word, such as `reset-password`,
+`smtp.password` or `"New password"`. A quoted key whose opening quote is
+missing on the same line is skipped. A prefixed key's value, and an object
+member's value inside a container, count only when they contain no
+whitespace, because labels and JSON Schema descriptions are prose. Array
+elements under an exact key keep passphrases.
+
 Each candidate key/value is judged by the rule's own value grammar. The
 eight-character minimum, the `<…`, `${…}` and `$(…)` placeholder exclusions
 and the high-entropy predicate therefore carry over. Bare tokens inside a

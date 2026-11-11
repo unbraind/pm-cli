@@ -113,15 +113,18 @@ function describeInvocation(argv: readonly string[]): InvocationCredentials {
   // Fragments start every `stride` positions and are at least `stride` wide, so
   // consecutive matches still chain across any echoed run. A run then exposes
   // at most fragmentLength + stride - 2 characters, which is 5 for stride 1.
-  const positions = spellings.reduce((total, spelling) => total + Math.max(0, spelling.length - MIN_FRAGMENT_LENGTH + 1), 0);
+  // Each spelling also adds one tail fragment, counted so the cap holds exactly.
+  const positions = spellings.reduce((total, spelling) => total + Math.max(0, spelling.length - MIN_FRAGMENT_LENGTH + 1) + 1, 0);
   const stride = Math.max(1, Math.ceil(positions / MAX_REGISTERED_FRAGMENTS));
   const fragmentLength = Math.max(MIN_FRAGMENT_LENGTH, stride);
   const fragments = new Set<string>();
   const shortSpellings = new Set<string>();
   for (const spelling of spellings) {
     if (spelling.length < fragmentLength) {
-      // A short whitespace-free secret is whole inside one word, where the word rule removes it.
-      if (/\s/u.test(spelling)) shortSpellings.add(spelling);
+      // A secret shorter than MIN_FRAGMENT_LENGTH without whitespace is whole inside
+      // one word, where the word rule removes it; anything longer, or containing
+      // whitespace, is matched whole even after the stride widened the fragments.
+      if (spelling.length >= MIN_FRAGMENT_LENGTH || /\s/u.test(spelling)) shortSpellings.add(spelling);
       continue;
     }
     for (let index = 0; index + fragmentLength <= spelling.length; index += stride) {
