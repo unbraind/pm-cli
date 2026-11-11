@@ -121,6 +121,22 @@ export function* findPrivateHomePathMatches(content: string, regex: RegExp): Gen
   }
 }
 
+/**
+ * Structured spellings of a key/value rule: a quoted key (JSON, YAML flow,
+ * Python dict), every quoted string nested in an array or object under the
+ * key, and optionally `<key>value</key>` element content. Each candidate value
+ * is judged by the rule's own value grammar, so quoting the key or nesting the
+ * value never changes the verdict.
+ */
+export interface SecretStructuredSpelling {
+  /** Case-insensitive key alternation (regular-expression source). */
+  keys: string;
+  /** Value grammar (regular-expression source) applied at each candidate value start. */
+  value: string;
+  /** Also inspect element content such as `<password>value</password>`. */
+  element?: true;
+}
+
 /** One detector and any explicit repository-only scope exception. */
 export interface SecretRule {
   /** Repository diagnostic identifier. */
@@ -137,7 +153,19 @@ export interface SecretRule {
   mutationOnlyReason?: string;
   /** Minimum Shannon entropy of the first capture group, when applicable. */
   minimumEntropy?: number;
+  /** Quoted-key, nested-container and element spellings judged by the same value grammar. */
+  structured?: SecretStructuredSpelling;
 }
+
+const PASSWORD_KEYS = "password|passphrase";
+// Unquoted configuration reads with an empty fallback contain no literal
+// credential only when they end the expression, including bounded trailing
+// comments. A block comment cannot consume code beyond its first closing
+// delimiter; composed, continued and nonempty fallbacks remain detectable.
+const PASSWORD_VALUE =
+  /(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/;
+const HIGH_ENTROPY_KEYS = "token|secret|password|passwd|api[_-]?key";
+const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
 export const SECRET_RULES = [
@@ -171,12 +199,8 @@ export const SECRET_RULES = [
   { name: "sshpass-inline-password", mutationRule: "sshpass_inline_password", regex: /\bsshpass\s+-p\s+["'][^"']{6,}["']/g },
   {
     name: "password-assignment", mutationRule: "password_assignment",
-    // Unquoted configuration reads with an empty fallback contain no literal
-    // credential only when they end the expression, including bounded trailing
-    // comments. A block comment cannot consume code beyond its first closing
-    // delimiter; composed, continued and nonempty fallbacks remain detectable.
-    regex:
-      /\b(?:password|passphrase)\s*[:=]\s*(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/gi,
+    regex: new RegExp(String.raw`\b(?:${PASSWORD_KEYS})\s*[:=]\s*` + PASSWORD_VALUE.source, "gi"),
+    structured: { keys: PASSWORD_KEYS, value: PASSWORD_VALUE.source, element: true },
   },
   {
     name: "absolute-home-path", mutationRule: "absolute_home_path",
@@ -191,7 +215,8 @@ export const SECRET_RULES = [
   },
   {
     name: "high-entropy-assignment", mutationRule: "high_entropy_assignment",
-    regex: /\b(?:token|secret|password|passwd|api[_-]?key)\s*[:=]\s*["']?([A-Za-z0-9+/=_-]{24,})/gi,
+    regex: new RegExp(String.raw`\b(?:${HIGH_ENTROPY_KEYS})\s*[:=]\s*` + HIGH_ENTROPY_VALUE.source, "gi"),
+    structured: { keys: HIGH_ENTROPY_KEYS, value: HIGH_ENTROPY_VALUE.source },
     mutationOnlyReason: "Generic assignments in source code are not credentials; preserve the existing mutation heuristic without treating source identifiers as secrets.",
     minimumEntropy: 3.5,
   },
@@ -207,6 +232,264 @@ export function* findSecretRuleMatches(rule: SecretRule, content: string): Gener
   for (const match of content.matchAll(rule.regex)) {
     if (acceptsSecretMatch(rule, match)) yield { index: match.index! };
   }
+  if (rule.structured) yield* findStructuredSpellingMatches(rule, rule.structured, content);
+}
+
+interface CompiledSpelling {
+  key: RegExp;
+  value: RegExp;
+  element?: RegExp;
+}
+
+const compiledSpellings = new Map<string, CompiledSpelling>();
+const LINE_BREAK = /[\r\n\u2028\u2029]/u;
+
+/** Compile once per distinct spelling; repository scans clone rules but share spellings. */
+function compileSpelling(spelling: SecretStructuredSpelling): CompiledSpelling {
+  const cacheKey = `${spelling.keys}\u0000${spelling.value}\u0000${spelling.element === true}`;
+  let compiled = compiledSpellings.get(cacheKey);
+  if (!compiled) {
+    compiled = {
+      key: new RegExp(String.raw`\b(?:${spelling.keys})(["']?)\s*[:=]\s*`, "gi"),
+      value: new RegExp(spelling.value, "iy"),
+      ...(spelling.element
+        ? { element: new RegExp(String.raw`<(?:${spelling.keys})(?:\s[^<>]*)?>([^<]*)<\/(?:${spelling.keys})\s*>`, "gi") }
+        : {}),
+    };
+    compiledSpellings.set(cacheKey, compiled);
+  }
+  return compiled;
+}
+
+/** The index after a quoted string, honoring backslash escapes; an unterminated string ends the input. */
+function scanQuoted(content: string, start: number): { end: number; terminated: boolean } {
+  const quote = content[start];
+  for (let index = start + 1; index < content.length; index += 1) {
+    const character = content[index];
+    if (character === "\\") index += 1;
+    else if (character === quote) return { end: index + 1, terminated: true };
+  }
+  return { end: content.length, terminated: false };
+}
+
+function endOfQuoted(content: string, start: number): number {
+  return scanQuoted(content, start).end;
+}
+
+/** An object member's value takes the member judgment; an array element the element judgment. */
+function judgeFor(closers: readonly string[], accepts: (at: number) => boolean, acceptsMember: (at: number) => boolean): (at: number) => boolean {
+  return closers.at(-1) === "}" ? acceptsMember : accepts;
+}
+
+/**
+ * Walk one array/object once, testing every quoted string in value position.
+ * Keys, bare tokens and placeholders such as `[scrubbed]` are never judged.
+ * An array element is judged by `accepts`. An object member's value is judged
+ * by `acceptsMember`, because a member such as `"description"` in a JSON
+ * Schema holds prose, not a credential.
+ */
+function walkContainer(
+  content: string,
+  start: number,
+  accepts: (at: number) => boolean,
+  acceptsMember: (at: number) => boolean = accepts,
+): { found: boolean; end: number } {
+  const closers: string[] = [];
+  let expectKey = false;
+  for (let index = start; index < content.length; index += 1) {
+    const character = content[index];
+    switch (character) {
+      case "[":
+      case "{":
+        closers.push(character === "[" ? "]" : "}");
+        expectKey = character === "{";
+        break;
+      case "]":
+      case "}":
+        if (closers.pop() !== character || closers.length === 0) return { found: false, end: index + 1 };
+        expectKey = false;
+        break;
+      case ",":
+        expectKey = closers.at(-1) === "}";
+        break;
+      case ":":
+        expectKey = false;
+        break;
+      case "\"":
+      case "'":
+        if (!expectKey && judgeFor(closers, accepts, acceptsMember)(index)) return { found: true, end: index };
+        index = endOfQuoted(content, index) - 1;
+        break;
+      default:
+        break;
+    }
+  }
+  return { found: false, end: content.length };
+}
+
+/** One complete escape sequence in a JSON, Python or YAML string literal. */
+const ESCAPE_SEQUENCE = /\\(?:U[0-9a-fA-F]{8}|u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|[0-7]{1,3}|[\s\S])/gu;
+const SIMPLE_ESCAPES: Readonly<Record<string, string>> = { n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", v: "\v" };
+
+/**
+ * Decode a quoted literal (JSON, YAML and Python escapes, including
+ * eight-digit `\\U` code points and octal escapes) so the value grammar judges what it represents:
+ * its length, whitespace, placeholder prefix and entropy. A decoded quote of
+ * the literal's own kind becomes the other quote, and a line break produced
+ * by an escape becomes a space. The caller rejects raw line breaks first.
+ */
+function decodeQuotedLiteral(literal: string, terminated: boolean): string {
+  const quote = literal[0]!;
+  const body = literal.slice(1, terminated ? -1 : undefined).replaceAll(ESCAPE_SEQUENCE, (sequence) => {
+    const kind = sequence[1]!;
+    // An incomplete `\\u` or `\\x` (too few hex digits) falls back to its letter below.
+    if ((kind === "u" || kind === "x") && sequence.length > 2) return String.fromCharCode(Number.parseInt(sequence.slice(2), 16));
+    // Python octal escapes; `\\0` alone is the NUL character as in JSON5 and C.
+    if (/^[0-7]$/u.test(kind)) return String.fromCharCode(Number.parseInt(sequence.slice(1), 8));
+    if (kind === "U" && sequence.length === 10) {
+      // YAML and Python eight-digit escapes; an out-of-range code point stays one opaque character.
+      const codePoint = Number.parseInt(sequence.slice(2), 16);
+      return codePoint <= 0x10_ffff ? String.fromCodePoint(codePoint) : "\ufffd";
+    }
+    return SIMPLE_ESCAPES[kind] ?? kind;
+  });
+  const neutral = body.replaceAll(quote, quote === "\"" ? "'" : "\"").replaceAll(/[\r\n\u2028\u2029]/gu, " ");
+  return `${quote}${neutral}${terminated ? quote : ""}`;
+}
+/** Longest prefix scanned back to the opening quote of a prefixed quoted key. */
+const MAX_KEY_PREFIX = 64;
+
+/**
+ * Classify the key that ends at `index`: `exact` when the key word is the
+ * whole key, `prefixed` when other key text precedes it (`db_password`,
+ * `"reset-password"`), and `malformed` for a closing quote with no opening
+ * quote on the same line within a bounded prefix.
+ */
+function keyShape(content: string, index: number, quote: string): "exact" | "prefixed" | "malformed" {
+  const previous = content[index - 1];
+  if (!quote) return previous !== undefined && /[\p{L}\p{N}_.-]/u.test(previous) ? "prefixed" : "exact";
+  if (previous === quote) return "exact";
+  const floor = Math.max(0, index - MAX_KEY_PREFIX);
+  for (let cursor = index - 1; cursor >= floor; cursor -= 1) {
+    const character = content[cursor];
+    if (character === quote) return "prefixed";
+    if (character === "\n" || character === "\r" || character === "\"" || character === "'") return "malformed";
+  }
+  return "malformed";
+}
+
+interface ValueJudge {
+  /** The flat grammar matches at `at`; for an unquoted key that is the flat rule's finding. */
+  direct(at: number): boolean;
+  /** A literal with escapes at `at` matches in its decoded length. */
+  escaped(at: number): boolean;
+  /** Judge one value; a prefixed key's value must also be whitespace-free. */
+  accepts(compact: boolean): (at: number) => boolean;
+}
+
+/** Bind a rule's value grammar to one content string. */
+function createValueJudge(rule: SecretRule, value: RegExp, content: string): ValueJudge {
+  // A JSON, Python or YAML-flow string literal never spans a raw line break, so
+  // a structured value that does is a host-language artifact, not a credential.
+  const valueMatch = (text: string, at: number): RegExpExecArray | null => {
+    value.lastIndex = at;
+    const match = value.exec(text);
+    return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match) ? match : null;
+  };
+  // The value grammar is quote-blind, so a literal with escapes is judged in
+  // its decoded form. Every common format decodes escapes in double quotes; in
+  // single quotes TOML and YAML keep backslashes literally while Python and
+  // JavaScript decode them, so a single-quoted value is judged under both
+  // readings. Undefined means no escaped literal starts here.
+  const escapedMatches = (at: number): RegExpExecArray[] | undefined => {
+    if (content[at] !== "\"" && content[at] !== "'") return undefined;
+    const { end, terminated } = scanQuoted(content, at);
+    const literal = content.slice(at, end);
+    if (!literal.includes("\\")) return undefined;
+    // A raw line break is a host-language artifact before any escape is decoded.
+    if (LINE_BREAK.test(literal)) return [];
+    const readings = content[at] === "'" ? [decodeQuotedLiteral(literal, terminated), literal] : [decodeQuotedLiteral(literal, terminated)];
+    return readings.map((reading) => valueMatch(reading, 0)).filter((match): match is RegExpExecArray => match !== null);
+  };
+  const valuesAt = (at: number): RegExpExecArray[] => {
+    const escaped = escapedMatches(at);
+    if (escaped !== undefined) return escaped;
+    const match = valueMatch(content, at);
+    return match === null ? [] : [match];
+  };
+  return {
+    direct: (at) => valueMatch(content, at) !== null,
+    escaped: (at) => (escapedMatches(at)?.length ?? 0) > 0,
+    // A prefixed key (`reset-password`, `"New password"`) labels prose as often
+    // as it holds a credential, so only a whitespace-free reading counts for it.
+    accepts: (compact) => (at) => valuesAt(at).some((match) => !(compact && /\s/u.test(match[0]))),
+  };
+}
+
+/** Element content such as `<password>value</password>`, judged by length and placeholder shape. */
+function* elementMatches(element: RegExp, content: string): Generator<SecretRuleMatch> {
+  element.lastIndex = 0;
+  for (const match of content.matchAll(element)) {
+    const value = match[1].trim();
+    if (value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(")) yield { index: match.index! };
+  }
+}
+
+/** An exact key's walk covers everything inside it; a prefixed key's compact walk covers only prefixed keys. */
+function alreadyWalked(walkedEnd: { exact: number; compact: number }, valueStart: number, compact: boolean): boolean {
+  return valueStart < walkedEnd.exact || (compact && valueStart < walkedEnd.compact);
+}
+
+/**
+ * Judge a scalar value. An unquoted key's directly matching value is the flat
+ * rule's finding. Its escape check runs first because that check is constant
+ * time unless a quoted literal starts here, so repeated bare keys never
+ * rescan the remaining text.
+ */
+function scalarFinds(judge: ValueJudge, accepts: (at: number) => boolean, quote: string, valueStart: number): boolean {
+  if (quote) return accepts(valueStart);
+  return judge.escaped(valueStart) && !judge.direct(valueStart) && accepts(valueStart);
+}
+
+/**
+ * Linear structured pass. The flat rule already owns unquoted keys with scalar
+ * values, so this pass judges only quoted keys and container values. Keys
+ * nested inside a walked container still get their scalar check, and each
+ * container is walked at most twice: once for an exact key and once for a
+ * prefixed key.
+ */
+function* findStructuredSpellingMatches(
+  rule: SecretRule,
+  spelling: SecretStructuredSpelling,
+  content: string,
+): Generator<SecretRuleMatch> {
+  const compiled = compileSpelling(spelling);
+  const judge = createValueJudge(rule, compiled.value, content);
+  // The key cursor survives each yield, so every scan owns its own copy; the
+  // value pattern is used synchronously between yields and stays shared.
+  const key = new RegExp(compiled.key);
+  // An exact key's walk judges every string leniently, which covers a nested
+  // prefixed key too; a prefixed key's compact walk covers only prefixed keys.
+  // Each character is therefore walked at most twice.
+  const walkedEnd = { exact: 0, compact: 0 };
+  for (let match = key.exec(content); match; match = key.exec(content)) {
+    const quote = match[1];
+    const shape = keyShape(content, match.index, quote);
+    if (shape === "malformed") continue;
+    const compact = shape === "prefixed";
+    const accepts = judge.accepts(compact);
+    const valueStart = match.index + match[0].length;
+    const opener = content[valueStart];
+    if (opener === "[" || opener === "{") {
+      if (alreadyWalked(walkedEnd, valueStart, compact)) continue;
+      const walked = walkContainer(content, valueStart, accepts, judge.accepts(true));
+      walkedEnd[compact ? "compact" : "exact"] = walked.end;
+      if (walked.found) yield { index: match.index };
+    } else if (scalarFinds(judge, accepts, quote, valueStart)) {
+      yield { index: match.index };
+    }
+  }
+  if (compiled.element) yield* elementMatches(compiled.element, content);
 }
 
 /** Accept a pattern match, applying the declared entropy predicate when present. */

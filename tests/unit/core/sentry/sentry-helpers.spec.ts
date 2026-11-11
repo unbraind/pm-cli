@@ -31,6 +31,7 @@ import {
 } from "../../../../src/core/sentry/helpers.js";
 import { _testOnly, ensureSentryInit, getSentry } from "../../../../src/core/sentry/instrument.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { runWithUrlCredentialInvocation } from "../../../../src/core/shared/url-credentials.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 
 const {
@@ -265,6 +266,14 @@ describe("resolveTracesSampleRate", () => {
 });
 
 describe("scrubString", () => {
+  it("removes URL userinfo whose host has no dot (pm-5htunt)", () => {
+    const scrubbed = scrubString("install https://tok3n@localhost/x.tgz https://u:p!ss@registry:8080/x");
+    expect(scrubbed).toBe("install https://[redacted]@localhost/x.tgz https://[redacted]@registry:8080/x");
+    runWithUrlCredentialInvocation(["https://u:my pass@localhost/x"], () => {
+      expect(scrubString("unknown command 'https://U:my pass@localhost/x'")).not.toMatch(/my pass/iu);
+    });
+  });
+
   it("scrubs credentials, email addresses, private IPs, and absolute paths", () => {
     const scrubbed = scrubString(
       `token=secret user@example.com ${PRIVATE_TEST_IP} ${TEST_LOCAL_PATH} bearer abc.def`,

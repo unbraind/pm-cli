@@ -161,8 +161,11 @@ export {
 export {
   quoteCommandArg,
   quoteWindowsCommandArg,
+  redactUrlCredentialsInText,
+  redactUrlCredentialsInToken,
   renderPmCommand,
   resolvePmCommandScopeArgs,
+  URL_CREDENTIAL_PLACEHOLDER,
 } from "./command-line.js";
 export * from "./agent/command-recovery.js";
 export * from "./agent/linked-resource-recovery.js";

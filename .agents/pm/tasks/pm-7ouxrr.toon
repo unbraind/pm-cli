@@ -1,0 +1,49 @@
+id: pm-7ouxrr
+title: Exclude the dated Codex plugin research plan from the npm tarball to restore publication headroom
+description: "Next pm-998juj tranche, required before the credential-redaction bundle (pm-gh1699, pm-nhauur, pm-5htunt) can publish. On branch fix/credential-shape-coverage, a clean 'rm -rf dist && pnpm build' followed by scripts/release/package-artifact-gate.mjs fails with unpacked_size:20018916>20000000. The base profile was already within a few KB of the ceiling on main. docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md (38,076 B) is a dated research and implementation plan (research date 2026-07-11) that says it records no completed remediation. It is the same repository-only class as docs/ECOSYSTEM_PLANNING_REVIEW.md, which pm-1ke3mz excluded. Nothing in src, scripts, tests, plugins or packages reads it, and it is not a pm guide topic. Only docs/CODEX_PLUGIN.md and docs/README.md (twice) link it relatively. Duplicate check: pm-998juj children and the pm-1ke3mz approach; the memory-recorded next candidate was this file."
+type: Task
+status: closed
+priority: 1
+tags[4]: artifact,npm,package-size,release
+created_at: "2026-11-10T14:26:47.376Z"
+updated_at: "2026-11-10T14:36:24.185Z"
+closed_at: "2026-11-10T14:35:39.527Z"
+completed_at: "2026-11-10T14:35:39.527Z"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: package.json files excludes docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md and docs-reachability-exceptions.json records why; Every packaged link to it is a canonical GitHub URL with the repository-only exclusion stated beside it; A clean build passes scripts/release/package-artifact-gate.mjs with the credential-redaction bundle included
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: package.json files excludes docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md. docs-reachability-exceptions.json records the reason. docs/CODEX_PLUGIN.md and both docs/README.md links use the canonical GitHub URL with the repository-only exclusion stated.
+expected_result: A clean build passes the base and simulated Sentry-injected package artifact gates.
+actual_result: "Base: 19,981,167 / 20,000,000 B, down from 20,018,916. Sentry-injected simulation: 20,261,123 / 20,300,288 B. docs-skills-gate passes."
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1ke3mz,related,"2026-11-10T14:26:47.376Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1699,related,"2026-11-10T14:26:47.376Z","harness:claude-code","cli:create:dep",detected
+  pm-5htunt,related,"2026-11-10T14:36:23.860Z","harness:claude-code","cli:update:dep",detected
+  pm-nhauur,related,"2026-11-10T14:36:23.860Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-10T14:35:05.128Z","harness:claude-code","Measured on branch fix/credential-shape-coverage after rm -rf dist && pnpm build. Before this tranche: package-artifact-gate fails with unpacked_size:20018916>20000000. After excluding docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md: the base profile distribution_size is 19,981,167 / 20,000,000 (18,833 B headroom) and passes. --profile=sentry-injected --simulate-injection gives 20,261,123 / 20,300,288 and passes. docs-skills-gate passes (no relative link reaches the excluded file); docs-topology, package-manifest and package-artifact-gate specs pass (128 tests)."
+files[2]{path,scope,note}:
+  package.json,project,files excludes docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md
+  scripts/release/docs-reachability-exceptions.json,project,Records why the excluded research plan is unreachable by relative links
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts,project,900,"harness:claude-code","2026-11-10T14:34:46.453Z",local_mutation,fix/credential-shape-coverage
+test_runs[1]:
+  - run_id: test-local-mwaskr6t-8ovcfo
+    kind: test
+    status: passed
+    started_at: "2026-11-10T14:34:47.356Z"
+    finished_at: "2026-11-10T14:35:04.229Z"
+    recorded_at: "2026-11-10T14:35:04.229Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts tests/unit/scripts/release/package-artifact-gate.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/CODEX_PLUGIN.md,project,Links the research plan by canonical GitHub URL
+  docs/README.md,project,Both index links use the canonical URL with the exclusion stated
+close_reason: "The dated Codex plugin research plan is repository-only, and the package fits the base ceiling with the credential bundle included"
+body: ""

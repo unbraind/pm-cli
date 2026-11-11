@@ -92,6 +92,39 @@ so that heuristic does not run over repository source text. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
+Assignment rules also recognize structured spellings
+([pm-gh1699](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1699.toon);
+tracker record excluded from npm). Each rule declares its structured key
+vocabulary as data, so quoting the key never changes the verdict. These
+spellings are covered:
+
+- a quoted key followed by `:` or `=` (JSON, YAML flow, Python dict, TOML);
+- every quoted string in value position inside an array or object under the
+  key, at any depth;
+- for password assignments, `<password>…</password>` element content. Element
+  content is judged like a quoted value of an exact key: at least eight
+  characters after trimming, with the `${…}` and `$(…)` placeholder
+  exclusions.
+
+An *exact* key is the key word alone (`"password"`, `<password>`). A
+*prefixed* key has other key text before the word, such as `reset-password`,
+`smtp.password` or `"New password"`. A quoted key whose opening quote is
+missing on the same line is skipped. A prefixed key's value, and an object
+member's value inside a container, count only when they contain no
+whitespace, because labels and JSON Schema descriptions are prose. Array
+elements under an exact key keep passphrases.
+
+Each candidate key/value is judged by the rule's own value grammar. The
+eight-character minimum, the `<…`, `${…}` and `$(…)` placeholder exclusions
+and the high-entropy predicate therefore carry over. Bare tokens inside a
+container are never judged, so `password=[scrubbed]` stays clean. A
+structured string literal that spans a raw line break is a host-language
+artifact, not a credential. The pass is linear. Nested keys inside a
+walked container still get their own scalar check. Each container is walked
+at most twice: once for an exact key, whose lenient walk covers everything
+inside it, and once for a prefixed key, whose compact walk covers only
+other prefixed keys.
+
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals
 with references or explicitly review a force override. CLI routing paths and
@@ -129,6 +162,38 @@ path segments before changing any object, create local containers for inherited
 values, and define own data properties without invoking inherited setters. Findings expose only the stable rule
 name and object path. Matched credential text is never returned, logged, or
 included in a recovery bundle.
+
+CLI refusals do not echo URL credentials from the invocation either
+([pm-nhauur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nhauur.toon);
+tracker record excluded from npm). This applies to typed refusals, Commander
+usage errors and bootstrap JSON help, in both JSON and text. Four rules
+combine:
+
+- Every refusal builder receives the invocation with each token already
+  redacted. Anything a builder derives from it is therefore safe by
+  construction, even when it lower-cases, truncates, re-quotes or wraps the
+  value.
+- Every JSON and text refusal is rendered from one guidance object, and that
+  object is redacted before its envelope, its diagnostic budget and its
+  output accounting exist, so receipts measure the delivered bytes. Values a
+  producer echoed from the raw invocation pass the token rule (argv-token
+  fields) or the word rule (free text). A producer may also split a value at
+  whitespace or a comma, truncate it, re-case it or escape it before echoing
+  it. The CLI therefore registers each secret for the running invocation:
+  the password, or the whole userinfo of a bare token. The registration also
+  holds the secret's shell and JSON escaping, and it removes every run of
+  text that shares a six-character fragment with any of them. This bounds
+  what any producer can expose to five consecutive secret characters. A
+  secret too long for the 65,536-fragment budget is registered at aligned
+  positions instead, and the bound widens to `fragmentLength + stride - 2`. The
+  registry lives in an AsyncLocalStorage scope, so overlapping in-process
+  invocations never share it. It protects telemetry and Sentry as well.
+- The rule is conservative. Prose shaped like `Reminder: ping @bob` counts
+  as possible userinfo too: it is redacted in refusal output, and that
+  invocation's refusals withhold executable retries.
+- When the invocation carried credentials, the guidance withholds
+  `suggested_retry` and `suggested_retry_args` and gains a final next step
+  telling the caller to restore them. JSON and text output therefore agree.
 
 ### Executable mutation inventory
 

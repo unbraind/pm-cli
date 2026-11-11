@@ -14,6 +14,8 @@ import { isPmCliExpectedError, snapshotPmCliErrorContext } from "../sdk/errors.j
 import { runExtensionMigrations } from "../sdk/extension/migrations.js";
 import { repairProjectionRecovery } from "./runtime/projection-retry.js";
 import { repairReadOutputMutationRecovery } from "./runtime/read-output-mutation-retry.js";
+import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
+import { redactUrlCredentialsInText, runWithUrlCredentialInvocation } from "../sdk/command-line.js";
 import { isTrackerRevisionGuarded } from "../sdk/lifecycle/item-revision.js";
 import { repairSchemaFieldRecovery } from "./runtime/field-route-retry.js";
 import { ANNOTATION_OPTION_REFUSAL_CODE, repairAnnotationOptionRecovery } from "./runtime/annotation-option-retry.js";
@@ -607,7 +609,7 @@ async function handleGenericRunPmCliError(params: {
     commandResolution: TelemetryCommandResolution;
   }>;
 }): Promise<void> {
-  const message = describeUnknownError(params.error);
+  const message = redactUrlCredentialsInText(describeUnknownError(params.error));
   const classification = classifyUnknownError(message);
   if (params.bootstrapGlobal.json) {
     printError(JSON.stringify(attachPreflightWarnings(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE)), null, 2));
@@ -1842,12 +1844,20 @@ type TelemetryCommandErrorEmitter = (params: {
 
 interface RunPmCliErrorContext {
   error: unknown;
+  /** Credential-free tokens for every guidance builder (pm-nhauur). */
   invocationArgv: string[];
+  /** The caller's own tokens, for resolvers that read options such as the tracker path; they redact what they echo. */
+  rawInvocationArgv?: string[];
   bootstrapGlobal: GlobalOptions;
   jsonErrors: boolean;
   bootstrapPmRoot: string;
   attemptedCommand: string;
   emitTelemetryCommandError: TelemetryCommandErrorEmitter;
+}
+
+/** Usage resolvers read options from the caller's own tokens and redact what they echo; older callers supply only one argv. */
+function usageResolverArgv(context: RunPmCliErrorContext): string[] {
+  return context.rawInvocationArgv ?? context.invocationArgv;
 }
 
 function createTelemetryCommandErrorEmitter(params: { invocationArgv: string[]; bootstrapGlobal: GlobalOptions; bootstrapPmRoot: string }): TelemetryCommandErrorEmitter {
@@ -1950,9 +1960,11 @@ async function handleRunPmCliKnownError(context: RunPmCliErrorContext, numericEx
   if (!(context.error instanceof PmCliError) && (isCommanderError(context.error) || !hasExplicitExitCode)) {
     return false;
   }
-  const errorMessage = describeUnknownError(context.error);
+  // Producers may echo the raw invocation, so URL credentials are removed here from every printed or reported field.
+  const errorMessage = redactUrlCredentialsInText(describeUnknownError(context.error));
   const exitCode = context.error instanceof PmCliError ? context.error.exitCode : normalizeThrownExitCode(numericExitCode as number);
   const rawContext = context.error instanceof PmCliError || isPmCliExpectedError(context.error) ? context.error.context : undefined;
+  // The formatters redact their guidance before rendering, so the context only needs credential-free argv.
   const enrichedContext = buildPmCliRecoveryContext(rawContext, context.invocationArgv, errorMessage);
   const classification = classifyPmCliError(errorMessage, enrichedContext);
   const jsonErrorPayload = attachPreflightWarnings(context.bootstrapGlobal.lean
@@ -2016,7 +2028,7 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
   const failedExtensions = context.bootstrapGlobal.noExtensions
     ? []
     : await loadExtensionRecoveryFailures(pmRoot, {}, collectActivationCommandCandidates(recoveryProbe));
-  const usageContext = await resolveCommanderUsageContext({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.invocationArgv);
+  const usageContext = await resolveCommanderUsageContext({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, usageResolverArgv(context));
   const classification = classifyCommanderError(usageContext.message, usageContext.commandName, usageContext.allowedTypes, {
     unknownCommandExamples: usageContext.unknownCommandExamples,
     unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
@@ -2048,8 +2060,8 @@ async function handleUnknownHelpCommandError(context: RunPmCliErrorContext, code
     resolution_stage: "parse",
   }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
-    ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors, context.bootstrapGlobal.lean === true, { failedExtensions }, context.invocationArgv)
-    : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, context.invocationArgv);
+    ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors, context.bootstrapGlobal.lean === true, { failedExtensions }, usageResolverArgv(context))
+    : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors, { failedExtensions }, usageResolverArgv(context));
   const renderedUsage = appendCommanderExtensionFailures(baseRenderedUsage, context.jsonErrors, failedExtensions);
   await finishRunPmCliFailure({
     errorMessage: unknownMessage,
@@ -2082,7 +2094,7 @@ async function handleRunPmCliHelpDisplayError(context: RunPmCliErrorContext, cod
 }
 
 async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, code: string): Promise<void> {
-  const usageContext = await resolveCommanderUsageContext(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.invocationArgv);
+  const usageContext = await resolveCommanderUsageContext(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, usageResolverArgv(context));
   const classification = classifyCommanderError(usageContext.message, usageContext.commandName, usageContext.allowedTypes, {
     unknownCommandExamples: usageContext.unknownCommandExamples,
     unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
@@ -2114,8 +2126,8 @@ async function handleRunPmCliCommanderUsageError(context: RunPmCliErrorContext, 
     source_context: activeTelemetryCommandContext?.source_context,
   }, context.bootstrapGlobal);
   const baseRenderedUsage = context.jsonErrors
-    ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors, context.bootstrapGlobal.lean === true, {}, context.invocationArgv)
-    : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, context.invocationArgv);
+    ? await formatCommanderUsageJson(context.error, program, activeRuntimeExtensionCommandDescriptors, context.bootstrapGlobal.lean === true, {}, usageResolverArgv(context))
+    : await formatCommanderUsageMessage(context.error, program, activeRuntimeExtensionCommandDescriptors, {}, usageResolverArgv(context));
   const recoveryFailures = await loadUnknownCommandRecoveryFailures(
     classification.code,
     context.bootstrapPmRoot,
@@ -2167,15 +2179,18 @@ async function handleRunPmCliCommanderError(context: RunPmCliErrorContext): Prom
 async function handleRunPmCliError(params: { error: unknown; invocationArgv: string[] }): Promise<void> {
   const bootstrapGlobal = parseBootstrapGlobalOptions(params.invocationArgv);
   const bootstrapPmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
+  // Every refusal builder, and the telemetry taxonomy of an unknown command, derive from credential-free tokens (pm-nhauur).
+  const safeInvocationArgv = redactRefusalArgv(params.invocationArgv);
   const context: RunPmCliErrorContext = {
     error: params.error,
-    invocationArgv: params.invocationArgv,
+    invocationArgv: safeInvocationArgv,
+    rawInvocationArgv: params.invocationArgv,
     bootstrapGlobal,
     jsonErrors: bootstrapGlobal.json,
     bootstrapPmRoot,
-    attemptedCommand: parseBootstrapCommandName(params.invocationArgv) ?? "<unknown>",
+    attemptedCommand: parseBootstrapCommandName(safeInvocationArgv) ?? "<unknown>",
     emitTelemetryCommandError: createTelemetryCommandErrorEmitter({
-      invocationArgv: params.invocationArgv,
+      invocationArgv: safeInvocationArgv,
       bootstrapGlobal,
       bootstrapPmRoot,
     }),
@@ -2340,6 +2355,11 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   let invocationArgv = rawArgv;
   try { invocationArgv = normalizeBootstrapInvocation(rawArgv).argv; }
   catch { /* Report normalization failures through the normal invocation path inside the selected settings scope. */ }
+  // Every sanitizer (refusals, telemetry, Sentry) removes this invocation's URL userinfo, whatever word layout echoes it.
+  await runWithUrlCredentialInvocation([...rawArgv, ...invocationArgv], () => runPmCliInvocation(rawArgv, invocationArgv));
+}
+
+async function runPmCliInvocation(rawArgv: string[], invocationArgv: string[]): Promise<void> {
   const preview = resolveStructuredMutationPreviewInvocation(invocationArgv);
   const settingsPolicy = { configurationOnly: preview !== undefined };
   const isConfigurationOnly = (): boolean => settingsPolicy.configurationOnly;

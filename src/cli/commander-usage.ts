@@ -50,6 +50,8 @@ import { isCompatibleRecoveryFlag, renderMissingOptionRetry, resolveLifecycleVer
 import { resolvePmCommandScopeArgs } from "../sdk/command-line.js";
 import { attachOutputTokenAccounting } from "../sdk/output-token-accounting.js";
 import { findPmNamespacedCommand, resolvePmCommandAlias } from "../sdk/cli-contracts/command-aliases.js";
+import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
+import { redactUrlCredentialsInText } from "../sdk/command-line.js";
 
 /** Supported values accepted by the builtin type help contract. */
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
@@ -165,11 +167,19 @@ export interface CommanderExtensionFailure {
 export function appendCommanderExtensionFailures(
   renderedUsage: string,
   json: boolean,
-  failures: CommanderExtensionFailure[],
+  rawFailures: CommanderExtensionFailure[],
 ): string {
-  if (failures.length === 0) {
+  if (rawFailures.length === 0) {
     return renderedUsage;
   }
+  // Failures are appended after the guidance was redacted, and they can name a
+  // credential-bearing tracker path, so they pass the same text rule (pm-nhauur).
+  const failures = rawFailures.map((entry) => ({
+    ...entry,
+    name: redactUrlCredentialsInText(entry.name),
+    error: redactUrlCredentialsInText(entry.error),
+    ...(entry.recovery_commands ? { recovery_commands: entry.recovery_commands.map(redactUrlCredentialsInText) } : {}),
+  }));
   if (json) {
     const primaryFailure = failures.find(
       (entry) => entry.declared_command_match === true,
@@ -1043,11 +1053,14 @@ export async function resolveCommanderUsageContext(
     typeof error === "object" && error !== null
       ? (error as { message?: string }).message
       : undefined;
+  // Guidance is derived only from credential-free tokens (pm-nhauur); options such
+  // as the tracker path are still read from the caller's tokens. Commander's own
+  // message is classified as written (fragment redaction could rewrite words such
+  // as "option"), and every rendering of it passes the guidance choke point.
   const message = rawMessage ?? "Invalid command usage";
-  const invocationArgv = normalizeBootstrapInvocation(
-    [...invocationArgs],
-  ).argv;
-  const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
+  const normalizedArgv = normalizeBootstrapInvocation([...invocationArgs]).argv;
+  const invocationArgv = redactRefusalArgv(normalizedArgv);
+  const bootstrapGlobal = parseBootstrapGlobalOptions(normalizedArgv);
   const commandName = resolveRecoveryCommandName(message, invocationArgv, rootProgram, extensionDescriptors);
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
@@ -1122,13 +1135,7 @@ export async function formatCommanderUsageMessage(
   const { message, commandName, allowedTypes, ...guidance } = usageContext;
   // Usage refusals honour --lean like every other text refusal (GH-1610).
   const lean = parseBootstrapGlobalOptions(usageContext.normalizedInvocationArgs).lean;
-  const formatted = formatCommanderErrorForDisplay(
-    message,
-    commandName,
-    allowedTypes,
-    guidance,
-    { lean },
-  );
+  const formatted = formatCommanderErrorForDisplay(message, commandName, allowedTypes, guidance, { lean });
   const serviceOverride = await runActiveServiceOverride("help_format", {
     message: formatted,
     command: commandName,

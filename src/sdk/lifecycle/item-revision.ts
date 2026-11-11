@@ -9,6 +9,7 @@
  * by extension commands and bulk transactions.
  */
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { URL_CREDENTIAL_PLACEHOLDER, redactUrlCredentialsInToken } from "../../core/shared/url-credentials.js";
 import { hashDocument } from "../../core/history/history.js";
 import { readHistoryEntries } from "../../core/history/read.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -134,11 +135,18 @@ export function parseExpectHashSpecs(values: string | readonly string[] | undefi
     const parts = raw.split(",").map((token) => token.trim()).filter((token) => token.length > 0);
     // A supplied but empty value (for example an unset shell variable) must not silently drop the guard.
     if (parts.length === 0) throw invalidExpectHash(raw, "the value is empty");
+    // A piece cut from an argument that carries URL userinfo may hold part of the
+    // credential without its `@`, so it is echoed only as the placeholder (pm-nhauur).
+    const echo = (piece: string): string => (redactUrlCredentialsInToken(raw) === raw ? piece : URL_CREDENTIAL_PLACEHOLDER);
     return parts.map((token) => {
       const separator = token.lastIndexOf("=");
       const id = separator === -1 ? undefined : token.slice(0, separator).trim();
-      if (id !== undefined && id.length === 0) throw invalidExpectHash(token, "the item id before = is empty");
-      const itemHash = normalizeExpectedItemHash(separator === -1 ? token : token.slice(separator + 1));
+      if (id !== undefined && id.length === 0) throw invalidExpectHash(echo(token), "the item id before = is empty");
+      const candidate = separator === -1 ? token : token.slice(separator + 1);
+      if (!ITEM_HASH_PATTERN.test(candidate.trim().toLowerCase())) {
+        throw invalidExpectHash(echo(candidate), "the revision is not a 64-character hexadecimal item_hash");
+      }
+      const itemHash = normalizeExpectedItemHash(candidate);
       return id === undefined ? { itemHash } : { id, itemHash };
     });
   });

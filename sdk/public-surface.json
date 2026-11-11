@@ -17470,6 +17470,18 @@
           "signature": "export interface RecurrenceReceipt { reason: string; from_status: string; to_status: string; previous_terminal: PreviousTerminalEvidence; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "redactUrlCredentialsInText",
+          "signature": "(text: string) => string | calls: (text: string) => string"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "redactUrlCredentialsInToken",
+          "signature": "(token: string) => string | calls: (token: string) => string"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "RedundantRelationshipEdge",
@@ -22754,6 +22766,12 @@
           "kind": "interface",
           "name": "UpgradeResult",
           "signature": "export interface UpgradeResult { ok: boolean; action: \"upgrade\"; dry_run: boolean; scope: ExtensionScope; target?: string; cli: UpgradeCliResult; packages: UpgradePackageResult[]; summary: { requested_cli: boolean; requested_packages: boolean; planned: number; updated: number; skipped: number; failed: number; }; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "URL_CREDENTIAL_PLACEHOLDER",
+          "signature": "\"[redacted]\""
         },
         {
           "classification": "advanced_export",
@@ -40267,8 +40285,8 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1322,
-      "checked_values": 393,
+      "checked_functions": 1324,
+      "checked_values": 394,
       "exempt_test_seams": 15,
       "referenced_types": 1034
     },

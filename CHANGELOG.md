@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- Telemetry and Sentry scrubbers keep URL credentials whose host has no dot: attempted_args ships https://token@localhost and user:password@registry:8080 verbatim ([pm-5htunt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5htunt.toon))
+- Refusal recovery bundles echo URL credentials verbatim: attempted_command and normalized_args repeat a credentialed package source on stdout and in logs ([pm-nhauur](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nhauur.toon))
+- GH-1699: secret guard recognises quoted keys, nested JSON values and XML elements ([pm-gh1699](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1699.toon))
+
+### Other
+
+- Exclude the dated Codex plugin research plan from the npm tarball to restore publication headroom ([pm-7ouxrr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7ouxrr.toon))
+
 ## 2026.11.10 - 2026-11-10
 
 ### Fixed

@@ -428,6 +428,22 @@ argument slots, including text that resembles a flag. Automatic user, cookie, HT
 GraphQL, local-variable and source-context collection is explicitly
 disabled. Command taxonomy and outcome attributes remain available on spans.
 
+URL credentials never reach telemetry or Sentry, whatever the host looks like
+([pm-5htunt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5htunt.toon);
+tracker record excluded from npm). Before any other sanitizer runs, each
+command argument is treated as one token and each other string as
+whitespace-delimited words. In every such token, the span between the first
+`:` and the last `@` is replaced with `[redacted]`, and any scheme slashes
+are kept. The rule is conservative so that it is complete: a single-label
+host, `host:port`, a backslash authority or a password with any characters is
+covered. A scoped package name after a colon is hidden too. The CLI also
+registers each secret of the running invocation, including its shell and
+JSON escaping. Any echoed run that shares a six-character fragment with one
+of them is removed, so a split, truncated or re-cased echo exposes at most
+five consecutive characters (more only for a secret beyond the 65,536-fragment
+budget). The command taxonomy of an unknown
+command is derived from the already-redacted token.
+
 The separate local event and OTLP queues retain their existing formats. Turning
 off command tracing does not require deleting or rewriting those queues.
 

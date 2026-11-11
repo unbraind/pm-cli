@@ -68,6 +68,7 @@ import {
   type PmCommandCapabilityFamily,
   type PmCommandVisibilityTier,
 } from "../sdk/agent-capability-contracts.js";
+import { redactRefusalArgv } from "./runtime/refusal-credential-redaction.js";
 
 /** Documents the help argument summary payload exchanged by command, SDK, and package integrations. */
 export interface HelpArgumentSummary {
@@ -766,12 +767,14 @@ export async function maybeRenderBootstrapJsonHelp(
   );
   if (!targetCommand) {
     if (!bootstrapGlobal.quiet) {
-      const unknownMessage = `unknown command '${helpRequest.commandPathTokens.join(" ")}'`;
+      // The refusal echoes the invocation, so it is built from credential-free tokens (pm-nhauur).
+      const safeArgv = redactRefusalArgv(argv);
+      const unknownMessage = `unknown command '${redactRefusalArgv(helpRequest.commandPathTokens).join(" ")}'`;
       const runtimeContext = buildUnknownCommandGuidanceFromRuntime(
         unknownMessage,
         rootProgram,
         extensionDescriptors,
-        argv,
+        safeArgv,
       );
       const envelope = formatCommanderErrorForJson(
         unknownMessage,
@@ -780,9 +783,9 @@ export async function maybeRenderBootstrapJsonHelp(
         EXIT_CODE.USAGE,
         {
           ...runtimeContext,
-          attemptedCommand: renderAttemptedCommand(argv),
-          normalizedInvocationArgs: [...argv],
-          providedOptionFlags: extractProvidedOptionFlags(argv),
+          attemptedCommand: renderAttemptedCommand(safeArgv),
+          normalizedInvocationArgs: [...safeArgv],
+          providedOptionFlags: extractProvidedOptionFlags(safeArgv),
         },
       );
       const output = bootstrapGlobal.tokenAccounting

@@ -5,7 +5,8 @@ pm-cli ships a repo-local Codex plugin at [`plugins/pm-codex`](../plugins/pm-cod
 It is a real Codex plugin package: the repo marketplace installs it and Codex registers its skills and bundled
 MCP server. Its cached runtime installs the exact version declared by the plugin manifest and works offline after that first install. It is not yet an Apps SDK-backed ChatGPT app. The official-source
 audit, verified gaps, and phased remediation plan are documented in
-[Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md).
+[Native ChatGPT and Codex Plugin Implementation Plan](https://github.com/unbraind/pm-cli/blob/main/docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md)
+(repository-only research plan, excluded from npm).
 
 The portable package uses root `plugin.json` and `mcp.json`. The existing
 `.codex-plugin/plugin.json` and `.mcp.json` remain compatibility manifests for

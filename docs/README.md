@@ -24,7 +24,7 @@ pm guide release --json
 | Coding agent                        | [Agent Guide](AGENT_GUIDE.md)               | [Configuration](CONFIGURATION.md), then command help                                                                                                           |
 | Maintainer                          | [Contributing](../CONTRIBUTING.md)          | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md)                                                                              |
 | Package author                      | [Packages and Extensions](EXTENSIONS.md)    | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md)                                                                                       |
-| Codex or ChatGPT plugin implementer | [Codex Plugin](CODEX_PLUGIN.md)             | [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md)                                                                  |
+| Codex or ChatGPT plugin implementer | [Codex Plugin](CODEX_PLUGIN.md)             | [Native ChatGPT and Codex Plugin Implementation Plan](https://github.com/unbraind/pm-cli/blob/main/docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) (repository-only, excluded from npm)                                                                  |
 | Codex user                          | [Codex Plugin](CODEX_PLUGIN.md)             | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md)                                                                                           |
 | Claude Code user                    | [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md)                                                                                           |
 | Machine client                      | `pm contracts --json`                       | [CLI Scripting Contract](SCRIPTING.md), [Command Reference](COMMANDS.md#machine-contracts), optionally `pm install guide-shell --project && pm guide commands` |
@@ -106,7 +106,7 @@ pm guide release --json
 - [SDK execution and recovery contracts](SDK_EXECUTION_CONTRACTS.md): schema-driven scheduling, handoff, and command recovery.
 - [Multi-Branch Merge Safety](MERGE_SAFETY.md) - semantic tracker merge drivers, post-merge integrity gates, delete/modify policy, and recovery-receipt retention.
 - [Codex Plugin](CODEX_PLUGIN.md) - native MCP plugin install, tools, skills, and safety notes.
-- [Native ChatGPT and Codex Plugin Implementation Plan](CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) - official-source
+- [Native ChatGPT and Codex Plugin Implementation Plan](https://github.com/unbraind/pm-cli/blob/main/docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) (repository-only, excluded from npm) - official-source
   research, current-state audit, target architectures, security, testing, and phased remediation plan.
 - [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) - native Claude Code plugin architecture and install flow.
 - [CLI Simplification Migration](MIGRATION_CLI_SIMPLIFICATION.md) - root discovery (`--pm-path`), recovery bundles, and clear/unset semantics for automation maintainers.
