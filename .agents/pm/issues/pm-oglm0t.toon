@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,data-integrity,grammar,linked-artifacts,parser
 created_at: "2026-11-11T05:49:49.296Z"
-updated_at: "2026-11-11T08:02:19.610Z"
+updated_at: "2026-11-11T10:01:20.870Z"
 closed_at: "2026-11-11T08:02:15.082Z"
 completed_at: "2026-11-11T08:02:15.082Z"
 author: "harness:claude-code"
@@ -46,6 +46,11 @@ test_runs[1]:
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
 close_reason: A key repeated inside one structured entry is refused with structured_entry_key_repeated in both grammar branches instead of silently keeping the last value
+contract_change:
+  api: "Structured key/value entries (--add, --dep, --test, --file, --reminder, --event and the other structured flags)"
+  before: A key repeated inside one entry kept its last value
+  after: A repeated key is refused with structured_entry_key_repeated before anything is written
+  migrate: "Give each key once per entry, quote prose that contains a key-shaped word, or repeat the flag for another entry"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"area:dependencies",blocked-by,data-loss,graph-integrity
 created_at: "2026-11-02T15:39:10.262Z"
-updated_at: "2026-11-11T08:42:38.905Z"
+updated_at: "2026-11-11T10:01:19.867Z"
 closed_at: "2026-11-11T08:02:16.177Z"
 completed_at: "2026-11-11T08:02:16.177Z"
 author: "harness:claude-code"
@@ -68,6 +68,11 @@ docs[2]{path,scope}:
   docs/AGENT_UX_CONTRACTS.md,project
   docs/COMMANDS.md,project
 close_reason: "Clearing the blocked_by scalar removes only the rows naming its own target, kind=<kind> alone is the explicit kind-wide removal, and every dependency removal is named in a dependencies_removed warning"
+contract_change:
+  api: pm update --unset blocked_by / --blocked-by none
+  before: Clearing the scalar removed every blocked_by dependency edge
+  after: "Clearing the scalar removes only the rows naming its own target; independent blocked_by edges keep blocking, and removed rows are named in a dependencies_removed warning"
+  migrate: "Remove the remaining edges with --dep-remove kind=blocked_by, or one at a time with --dep-remove id=<id>,kind=blocked_by"
 escape_class: review_caught_late
 gate_evidence:
   disposition: gate_added

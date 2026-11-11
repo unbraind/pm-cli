@@ -6,12 +6,12 @@ status: closed
 priority: 1
 tags[4]: artifact,npm,package-size,release
 created_at: "2026-11-11T05:16:10.200Z"
-updated_at: "2026-11-11T08:05:44.924Z"
+updated_at: "2026-11-11T10:25:33.129Z"
 closed_at: "2026-11-11T08:02:17.078Z"
 completed_at: "2026-11-11T08:02:17.078Z"
 author: "harness:claude-code"
 estimated_minutes: 30
-acceptance_criteria: "package.json files excludes docs/DEVELOPMENT_DEPENDENCY_SECURITY.md and docs/CONTEXT_ALGORITHM_PORTFOLIO.md and docs-reachability-exceptions.json records why for each; Every packaged link to either doc is a canonical GitHub URL with the repository-only exclusion stated beside it; A clean build passes scripts/release/package-artifact-gate.mjs and the Sentry-injected simulation with the collection-mutation bundle included; package.json also excludes docs/RELEASE_RELIABILITY.md, docs/RELEASE_LEDGER_RECONCILIATION.md and docs/PR_REVIEW_LOOP.md with recorded reasons, and update.ts declares its removal selector locally so the dependency-removal declarations stay out of the packed declaration closure"
+acceptance_criteria: "package.json files excludes docs/DEVELOPMENT_DEPENDENCY_SECURITY.md and docs/CONTEXT_ALGORITHM_PORTFOLIO.md and docs-reachability-exceptions.json records why for each; Every packaged link to either doc is a canonical GitHub URL with the repository-only exclusion stated beside it; A clean build passes scripts/release/package-artifact-gate.mjs and the Sentry-injected simulation with the collection-mutation bundle included; package.json also excludes docs/RELEASE_RELIABILITY.md, docs/RELEASE_LEDGER_RECONCILIATION.md and docs/PR_REVIEW_LOOP.md with recorded reasons, and update.ts declares its removal selector locally so the dependency-removal declarations stay out of the packed declaration closure; package.json also excludes the generated docs/performance JSON benchmark reports, and docs/CORPUS_SHAPES.md links the comparison report by canonical URL"
 parent: pm-998juj
 risk: low
 confidence: high
@@ -24,10 +24,11 @@ dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-1ke3mz,related,"2026-11-11T05:16:22.325Z","harness:claude-code","cli:update:dep",detected
   pm-4yxzvd,related,"2026-11-11T05:16:22.325Z","harness:claude-code","cli:update:dep",detected
   pm-pwqiao,related,"2026-11-11T05:16:22.325Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-11T05:18:01.734Z","harness:claude-code","Measured 2026-11-11 after a clean rm -rf dist and pnpm build on branch fix/collection-mutation-receipts with only this tranche applied. scripts/release/package-artifact-gate.mjs passes the base profile at 19,967,440 of 20,000,000 bytes (32,560 B headroom, up from 949 B) across 1,591 distribution files. Both docs stay in the repository and remain reachable through canonical GitHub URLs."
   "2026-11-11T08:01:09.449Z","harness:claude-code","Extended 2026-11-11 after the bundle's first clean build failed the base gate at 20,014,847 of 20,000,000 bytes. A packlist diff against this tranche's first commit (ec494f69e) put the bundle's growth at 47,427 B: dist/sdk +23,731, dist/cli-bundle +17,584, docs +5,193. Three fixes followed. Three more repository-only docs are excluded: RELEASE_RELIABILITY.md and RELEASE_LEDGER_RECONCILIATION.md describe this repository's Release Reliability workflow, and PR_REVIEW_LOOP.md documents scripts/reviews/pr-review-loop.mjs, which the package does not ship. Next, update.ts declares its DependencyRemovalSelector locally and the test seam no longer re-exports the moved helpers, so dependency-removal.d.ts falls out of the packed declaration closure. The agent-task token corpus and baseline JSON stay packaged, because docs/AGENT_GUIDE.md calls the baseline published evidence. Result: base distribution 19,989,811 of 20,000,000 B (10,189 B headroom, 1,589 files), and the Sentry-injected simulation at 20,270,125 of 20,300,672 B."
   "2026-11-11T08:05:44.924Z","harness:claude-code","Correction to the close reason: this tranche excludes five docs, not six. They are DEVELOPMENT_DEPENDENCY_SECURITY.md, CONTEXT_ALGORITHM_PORTFOLIO.md, RELEASE_RELIABILITY.md, RELEASE_LEDGER_RECONCILIATION.md and PR_REVIEW_LOOP.md. The title now names the count. The previous title mentioned the dependency-security doc by name, and pm-changelog 2026.11.10 classified the entry under Security from that title word alone. That is a classifier precedence defect filed upstream as https://github.com/unbraind/pm-changelog/issues/340."
+  "2026-11-11T10:25:33.129Z","harness:claude-code","Extended again on 2026-11-11, during the PR 1705 review rounds. The fixes from rounds 1 and 2 and the contract_change changelog lines took base headroom down to 358 B (19,999,642 B). The generated benchmark reports in docs/performance are now excluded as well: scale-100k-report.json (10,184 B, read by nothing), latest-scale-report.json (10,111 B, written only by scripts/bench/run-scale-benchmarks.mjs) and corpus-shape-comparison.json (2,538 B, linked from docs/CORPUS_SHAPES.md, which now uses the canonical URL). The Markdown performance reports stay packaged, because PERFORMANCE.md, SDK.md and TESTING.md link them as published evidence. Result: the base distribution is 19,985,206 of 20,000,000 B (14,794 B headroom, 1,586 files), and the Sentry-injected simulation is 20,265,520 of 20,300,672 B."
 files[5]{path,scope}:
   .agents/skills/pm-test-audit/SKILL.md,project
   .agents/skills/pm-user/references/ECOSYSTEM_PLANNING.md,project
@@ -59,8 +60,9 @@ test_runs[2]:
     skipped: 0
     executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
       "pnpm quality:package-artifact",schema,schema,source,local_source_ref
-docs[4]{path,scope}:
+docs[5]{path,scope}:
   docs/AGENT_GUIDE.md,project
+  docs/CORPUS_SHAPES.md,project
   docs/README.md,project
   docs/RELEASING.md,project
   docs/TESTING.md,project

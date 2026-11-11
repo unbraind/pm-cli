@@ -966,7 +966,8 @@ function parseKindWideDependencyRemoval(
   const otherKeys = Object.keys(kv).filter(
     (key) => key !== "kind" && key !== "type",
   );
-  if (!kindRaw || otherKeys.length > 0) {
+  // kind and its input alias type together could name two kinds; never pick one silently.
+  if (!kindRaw || otherKeys.length > 0 || (kv.kind !== undefined && kv.type !== undefined)) {
     throw new PmCliError(
       "--dep-remove key/value form requires id=<value>, or kind=<kind> alone to remove every row of that kind",
       EXIT_CODE.USAGE,

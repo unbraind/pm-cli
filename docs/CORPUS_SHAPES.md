@@ -73,7 +73,7 @@ node scripts/bench/scale-workspace.mjs \
 
 `pnpm benchmark:corpus-shapes` generates both `scratch` and `representative`
 with the same count and seed, then measures the same public SDK operations. The
-committed [comparison report](performance/corpus-shape-comparison.json) keeps
+committed [comparison report](https://github.com/unbraind/pm-cli/blob/main/docs/performance/corpus-shape-comparison.json) (repository-only benchmark output, excluded from npm) keeps
 the measured shape profiles beside operation p95 values and classifies changes
 outside a 20 percent host-noise margin.
 

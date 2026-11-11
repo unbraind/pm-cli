@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,files,parser,recovery
 created_at: "2026-11-10T14:07:56.498Z"
-updated_at: "2026-11-11T09:27:49.378Z"
+updated_at: "2026-11-11T10:01:22.285Z"
 closed_at: "2026-11-11T08:02:13.936Z"
 completed_at: "2026-11-11T08:02:13.936Z"
 author: "harness:claude-code"
@@ -53,6 +53,11 @@ test_runs[1]:
 docs[1]{path,scope}:
   docs/COMMANDS.md,project
 close_reason: A files/docs --add refusal caused by note prose names the misread segment and key and offers the same link with the prose moved to --note
+contract_change:
+  api: pm files/docs --add refusals
+  before: Note prose misread as a key was refused with invalid_argument_value or a generic command failure
+  after: "It is refused with linked_artifact_note_key_misread, naming the segment and key, with a retry that quotes the note"
+  migrate: "Match the new code, or follow recovery.suggested_retry_args"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added

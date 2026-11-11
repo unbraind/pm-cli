@@ -4455,7 +4455,7 @@ describe("runUpdate", () => {
           });
         }
         // A row selector that forgot its id is never widened into a kind-wide removal.
-        for (const selector of ["kind=related,author=someone", "author=someone"]) {
+        for (const selector of ["kind=related,author=someone", "author=someone", "kind=related,type=blocked_by"]) {
           await expect(runUpdate(blockedId, { depRemove: [selector] }, { path: context.pmPath })).rejects.toMatchObject({
             message: expect.stringContaining("kind=<kind> alone"),
           });

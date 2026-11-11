@@ -229,7 +229,7 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
   // Model Sentry's issue search: `!environment:test` keeps an issue with any
   // non-test event, and `lastSeen` applies to the events left after that filter.
   const DAY_MS = 24 * 60 * 60 * 1000;
-  function environmentIssue(shortId: string, events: Array<[environment: string, ageDays: number]>) {
+  function environmentIssue(shortId: string, events: Array<[environment: string, ageDays: number, sourceContext?: string]>) {
     return {
       shortId, events, level: "error", logger: "node", isUnhandled: true,
       title: "Error: boom", metadata: { value: "boom", type: "Error" },
@@ -242,8 +242,10 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     return vi.fn(async (input: string | URL | Request) => {
       const query = new URL(String(input)).searchParams.get("query") ?? "";
       const windowDays = Number(/lastSeen:-(\d+)d/u.exec(query)?.[1] ?? Number.POSITIVE_INFINITY);
-      const visible = issues.filter((issue) => issue.events.some(([environment, ageDays]) =>
-        (!query.includes("!environment:test") || environment !== "test") && ageDays * DAY_MS <= windowDays * DAY_MS));
+      const visible = issues.filter((issue) => issue.events.some(([environment, ageDays, sourceContext]) =>
+        (!query.includes("!environment:test") || environment !== "test") &&
+        (!query.includes("!pm.source_context:test") || sourceContext !== "test") &&
+        ageDays * DAY_MS <= windowDays * DAY_MS));
       const header = link?.(query, String(input));
       return {
         ok: true, status: 200,
@@ -273,7 +275,22 @@ describe("scripts/release/sentry-telemetry-gate: recent-activity window", () => 
     expect(json.sentry.environment_listing_complete).toBe(true);
     expect(json.sentry.threshold_ok).toBe(false);
     const queries = fetchSpy.mock.calls.map(([input]) => new URL(String(input)).searchParams.get("query"));
-    expect(queries).toContain("is:unresolved level:[fatal,error] !environment:test");
+    expect(queries).toContain("is:unresolved level:[fatal,error] !environment:test !pm.source_context:test");
+  });
+
+  it("treats a test-context event in a non-test environment as test traffic, keeping mixed issues blocking (pm-usn5k2)", async () => {
+    const fetchSpy = sentrySearch([
+      environmentIssue("PM-CI-TEST-CONTEXT", [["ci", 0, "test"]]),
+      environmentIssue("PM-CI-AUTOMATION", [["ci", 0, "automation"]]),
+      environmentIssue("PM-MIXED-CONTEXT", [["ci", 0, "test"], ["production", 1, "user"]]),
+    ]);
+    const { json } = await runSentryGate({
+      argv: ["--json", "--telemetry-mode", "off", "--max-high", "0", "--max-critical", "0"],
+      env: { SENTRY_AUTH_TOKEN: "token-test" },
+      fetchImpl: fetchSpy as unknown as typeof fetch,
+    });
+    expect(json.sentry.blocking_short_ids).toEqual(["PM-CI-AUTOMATION", "PM-MIXED-CONTEXT"]);
+    expect(json.sentry.ignored_test_only_short_ids).toEqual(["PM-CI-TEST-CONTEXT"]);
   });
 
   it.each([
@@ -1566,7 +1583,7 @@ describe("scripts/release/sentry-telemetry-gate: sentry fetch fallbacks", () => 
     expect(sentryCalls[0]?.[2]).toMatchObject({ timeout: 120_000 });
     expect(sentryCalls[1]?.[2]).toMatchObject({ timeout: 120_000 });
     // The environment listing is a second, unenriched issue list.
-    expect(sentryCalls[2]?.[1]).toEqual(expect.arrayContaining(["issue", "list", "is:unresolved level:[fatal,error] !environment:test"]));
+    expect(sentryCalls[2]?.[1]).toEqual(expect.arrayContaining(["issue", "list", "is:unresolved level:[fatal,error] !environment:test !pm.source_context:test"]));
     expect(sentryCalls[2]?.[2]).toMatchObject({ timeout: 120_000 });
   });
 

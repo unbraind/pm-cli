@@ -302,9 +302,10 @@ semantic class is `usage`, `not_found`, or `conflict`. Message and title prose
 never participate. Unknown codes, missing or mismatched exits, unhandled
 events, and every `generic_failure` or `dependency_failed` remain blocking.
 This keeps rewording independent from release policy and makes stale or broad
-message allowlists impossible. The gate skips issues seen only in
-`environment=test` (opted-in CI tests); an issue with any other event counts
-whenever any of its events falls inside the activity window. Activity and
+message allowlists impossible. The gate skips issues whose events are all test
+traffic: `environment=test` (opted-in CI tests) or `pm.source_context=test` (a
+test child that delivers with another environment such as `ci`). An issue with
+any other event counts whenever any of its events falls inside the activity window. Activity and
 environment are separate Sentry queries, because Sentry applies `lastSeen` after
 an environment filter: a combined query would also skip an issue whose
 production event predates the window while a test event falls inside it. When

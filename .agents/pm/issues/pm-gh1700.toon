@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1700",linked-tests,receipts,token-efficiency
 created_at: "2026-11-10T14:43:04.434Z"
-updated_at: "2026-11-11T09:27:35.115Z"
+updated_at: "2026-11-11T10:01:18.810Z"
 closed_at: "2026-11-11T08:02:12.961Z"
 completed_at: "2026-11-11T08:02:12.961Z"
 author: "harness:claude-code"
@@ -73,6 +73,11 @@ docs[3]{path,scope}:
   docs/SDK_CONTEXT_INTEGRITY.md,project
   docs/SDK.md,project
 close_reason: "test, files and docs writes return only the entries they wrote with comments-style mutation and omission receipts, restorable with --full-history across CLI, SDK and MCP"
+contract_change:
+  api: "runTest, runFiles, runDocs and pm test/files/docs writes"
+  before: "A write returned the whole stored collection, count was the stored total, and failure_categories was always present"
+  after: "A write returns only the entries it added or rewrote, with count (returned), total_count, mutation_receipt and omission_receipt; failure_categories appears only when tests ran"
+  migrate: "Pass fullHistory (CLI --full-history, MCP full) to receive the whole collection after a write, read total_count for the stored total, and read failure_categories optionally"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
