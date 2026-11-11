@@ -22258,7 +22258,7 @@
       "class": "not_found",
       "code": "dependency_remove_no_match",
       "emitting_commands": [
-        "dependency-removal"
+        "update"
       ],
       "exit_code": 3,
       "meaning": "Dependency remove no match condition.",

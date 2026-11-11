@@ -60,6 +60,8 @@ const LIFECYCLE_EMITTING_COMMAND_BY_MODULE = new Map([
   // The --expect-hash host flag is global: any item-writing command can emit its refusals.
   ["item-revision", "*"],
   ["start-blockers", "update"],
+  // pm-4yxzvd: update's dependency-removal helpers emit refusals for the update command.
+  ["dependency-removal", "update"],
 ]);
 
 const GENERATED_CATALOG_PART_COUNT = 2;

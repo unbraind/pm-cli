@@ -44,7 +44,7 @@ describe("pm-pwqiao misread note recovery", () => {
         details: { entry_index: 1, misread_segment: segment, misread_key: key, note, cause },
       });
       const retry = error.context.recovery?.suggested_retry_args as string[];
-      expect(retry.slice(-6)).toEqual(["files", id, "--add", "path=a.txt,scope=project", "--note", note]);
+      expect(retry.slice(-4)).toEqual(["files", id, "--add", `path=a.txt,scope=project,note=${JSON.stringify(note)}`]);
       expect(error.context.nextSteps).toEqual([error.context.recovery?.suggested_retry]);
       // Nothing was written by the refused invocation.
       expect((await runFiles(id, {}, { path: context.pmPath })).files).toEqual([]);
@@ -55,32 +55,68 @@ describe("pm-pwqiao misread note recovery", () => {
     });
   });
 
-  it("carries the invocation's controls into the retry and warns that other entries were not written", async () => {
+  it("replays the whole invocation with every entry, operation and control, rewriting only the misread entry", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "misread note controls" });
+      await runFiles(id, { add: ["path=old/keep.txt", "path=gone.txt"] }, { path: context.pmPath });
+      const misread = "path=old/a.txt,note=see, host:port, x";
       const error = await refusal(
         runFiles(
           id,
-          { add: ["path=ok.txt", "path=a.txt,note=see, host:port, x"], appendStable: true, message: "link", force: true },
+          {
+            add: ["path=ok.txt", misread],
+            addGlob: ["nothing-matches/*.md"],
+            remove: ["gone.txt"],
+            migrate: ["from=old/,to=new/"],
+            note: "shared",
+            appendStable: true,
+            validatePaths: true,
+            fullHistory: true,
+            message: "link",
+            force: true,
+          },
           { path: context.pmPath },
         ),
       );
-      expect(error.context.details).toMatchObject({ entry_index: 2 });
-      expect(error.context.recovery?.suggested_retry_args).toEqual(
-        expect.arrayContaining(["--append-stable", "--message", "link", "--force"]),
-      );
-      expect(error.context.required).toContain("re-run its other entries too");
+      expect(error.context.details).toMatchObject({ entry_index: 2, rewritten_entry: 'path=old/a.txt,note="see, host:port, x"' });
+      const retry = error.context.recovery?.suggested_retry_args as string[];
+      expect(retry.slice(retry.indexOf("files"))).toEqual([
+        "files", id,
+        "--add", "path=ok.txt", "--add", 'path=old/a.txt,note="see, host:port, x"',
+        "--add-glob", "nothing-matches/*.md", "--remove", "gone.txt", "--migrate", "from=old/,to=new/",
+        "--note", "shared", "--append-stable", "--validate-paths", "--full-history", "--message", "link", "--force",
+      ]);
+      // Executing it performs every requested change, the migration and removal included.
+      const executed = context.runCli([...retry, "--json"], { expectJson: true, preserveDefaultMutationOutput: true });
+      expect(executed.code, executed.stderr).toBe(0);
+      expect((await runFiles(id, {}, { path: context.pmPath })).files).toEqual(expect.arrayContaining([
+        { path: "new/a.txt", scope: "project", note: "see, host:port, x" },
+        { path: "new/keep.txt", scope: "project" },
+        { path: "ok.txt", scope: "project", note: "shared" },
+      ]));
+      expect((await runFiles(id, {}, { path: context.pmPath })).files.map((file) => file.path)).not.toContain("gone.txt");
 
-      // A glob in the same refused invocation was not written either.
-      const withGlob = await refusal(runFiles(id, { add: ["path=a.txt,note=see, host:port, x"], addGlob: ["nothing-matches/*.md"] }, { path: context.pmPath }));
-      expect(withGlob.context.required).toContain("re-run its other entries too");
-      const single = await refusal(runFiles(id, { add: ["path=a.txt,note=see, host:port, x"], addGlob: [] }, { path: context.pmPath }));
-      expect(single.context.required).not.toContain("re-run its other entries too");
-
-      const docs = await refusal(runDocs(id, { add: ["path=README.md,note=see, host:port, x"], author: "someone" }, { path: context.pmPath }));
+      const docs = await refusal(runDocs(id, { add: ["path=README.md,note=see, host:port, x"], author: "someone", appendStable: true } as never, { path: context.pmPath }));
       expect(docs.context.recovery?.suggested_retry_args).toEqual(expect.arrayContaining(["docs", id, "--author", "someone"]));
       expect(docs.context.recovery?.suggested_retry_args).not.toContain("--append-stable");
       expect(docs.message).toContain("so the doc link was refused");
+    });
+  });
+
+  it("keeps quoted paths and later link keys as link fields when rewriting the note", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "parser-aligned rewrite" });
+      for (const [entry, rewritten, stored] of [
+        ['path="a,note=literal.txt",note=see, host:port', 'path="a,note=literal.txt",note="see, host:port"', { path: "a,note=literal.txt", scope: "project", note: "see, host:port" }],
+        ["path=b.txt,note=see,scope=global,host:port", 'path=b.txt,scope=global,note="see,host:port"', { path: "b.txt", scope: "global", note: "see,host:port" }],
+        ['path=c.txt,note=say "hi", host:port', 'path=c.txt,note="say \\"hi\\", host:port"', { path: "c.txt", scope: "project", note: 'say "hi", host:port' }],
+      ] as const) {
+        const error = await refusal(runFiles(id, { add: [entry] }, { path: context.pmPath }));
+        expect(error.context.details).toMatchObject({ rewritten_entry: rewritten });
+        const executed = context.runCli([...(error.context.recovery?.suggested_retry_args as string[]), "--json"], { expectJson: true, preserveDefaultMutationOutput: true });
+        expect(executed.code, executed.stderr).toBe(0);
+        expect((await runFiles(id, {}, { path: context.pmPath })).files).toEqual(expect.arrayContaining([stored]));
+      }
     });
   });
 
@@ -99,17 +135,24 @@ describe("pm-pwqiao misread note recovery", () => {
 
   it("finds the misread segment only for a note followed by a key-shaped segment", () => {
     expect(findMisreadNoteSegment("path=a.txt,note=see, host:port", "file")).toEqual({
-      link: "path=a.txt",
+      entry: 'path=a.txt,note="see, host:port"',
       note: "see, host:port",
       segment: "host:port",
       key: "host",
     });
+    // A repeated note key is prose too; a markdown-lines entry is never comma-split.
+    expect(findMisreadNoteSegment("path=a.txt,note=x, note: y", "file")).toMatchObject({ key: "note", note: "x, note: y" });
+    expect(findMisreadNoteSegment("- path: a.txt\n- note: see, host:port", "file")).toBeUndefined();
     // A key-shaped word inside a segment is prose; only a segment that opens with one is misread.
     expect(findMisreadNoteSegment("path=a.txt,note=see host:port, x", "file")).toBeUndefined();
     expect(findMisreadNoteSegment("note:see, host:port", "file")).toBeUndefined();
     expect(findMisreadNoteSegment("path=a.txt,note=", "file")).toBeUndefined();
     expect(findMisreadNoteSegment("path=a.txt,note=plain prose, more prose", "file")).toBeUndefined();
-    expect(findMisreadNoteSegment("path=a.txt,note=see, https://example.test/x", "file")).toBeUndefined();
+    // The parser also reads a URL after a comma as a key (https), so it gets the same quoted rewrite.
+    expect(findMisreadNoteSegment("path=a.txt,note=see, https://example.test/x", "file")).toMatchObject({
+      key: "https",
+      entry: 'path=a.txt,note="see, https://example.test/x"',
+    });
     expect(findMisreadNoteSegment("path=a.txt,lable=main", "file")).toBeUndefined();
     expect(findMisreadNoteSegment("path=a.txt,scope=bogus,note=x, host:port", "doc")).toBeUndefined();
   });

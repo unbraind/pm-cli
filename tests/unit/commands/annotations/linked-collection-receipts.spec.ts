@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../../../src/sdk/docs.js";
 import { runFiles } from "../../../../src/sdk/files.js";
 import {
+  persistedLinkedEntries,
   projectLinkedCollectionMutation,
   writtenLinkedEntries,
 } from "../../../../src/sdk/linked-artifacts.js";
@@ -192,6 +193,19 @@ describe("pm-gh1700 linked file and doc mutation receipts", () => {
     });
   });
 
+  it("returns the doc it wrote even when storage orders the collection differently from the draft", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "storage order" });
+      await runDocs(id, { add: ["path=z.md,scope=global"] }, { path: context.pmPath });
+      const added = await runDocs(id, { add: ["path=a.md,scope=project"] }, { path: context.pmPath });
+      expect(added.docs).toEqual([{ path: "a.md", scope: "project" }]);
+      expect(added.validation?.missing_paths).toEqual(["a.md"]);
+      const files = await runFiles(id, { add: ["path=z.ts,scope=global", "path=a.ts,scope=project,note=n"] }, { path: context.pmPath });
+      expect(files.files).toEqual(expect.arrayContaining([{ path: "z.ts", scope: "global" }, { path: "a.ts", scope: "project", note: "n" }]));
+      expect(files.files).toHaveLength(2);
+    });
+  });
+
   it("bounds doc writes with the same receipt and marks a complete response", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "bounded doc receipts" });
@@ -262,6 +276,15 @@ describe("pm-gh1700 linked-collection receipt primitives", () => {
     expect(writtenLinkedEntries([a], [a, { ...b, note: "n" }])).toEqual([{ ...b, note: "n" }]);
     expect(writtenLinkedEntries([a], [a, a])).toEqual([a]);
     expect(writtenLinkedEntries([], [a])).toEqual([a]);
+    // An undefined-valued key is absent once persisted, so it does not make an entry new.
+    expect(writtenLinkedEntries([a], [{ ...a, note: undefined }])).toEqual([]);
+  });
+
+  it("reports written drafts as their persisted twins, in stored order, falling back to the persisted draft", () => {
+    const stored = [{ path: "z", scope: "global" }, { path: "a", scope: "project" }];
+    expect(persistedLinkedEntries([{ path: "a", scope: "project", note: undefined }], stored)).toEqual([{ path: "a", scope: "project" }]);
+    expect(persistedLinkedEntries([stored[1], stored[0]], stored)).toEqual(stored);
+    expect(persistedLinkedEntries([{ path: "rewritten", scope: "project", note: undefined }], stored)).toEqual([{ path: "rewritten", scope: "project" }]);
   });
 
   it("names the restore selector only when entries were withheld", () => {

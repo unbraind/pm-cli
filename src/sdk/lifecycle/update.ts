@@ -903,8 +903,15 @@ function parseDependencyRemovals(
       const kv = parseCsvKv(trimmed, "--dep-remove");
       assertNoUnknownCsvKeys(kv, "--dep-remove", DEP_REMOVE_KEYS);
       const idRaw = kv.id?.trim();
-      if (!idRaw) {
+      // Only an absent id selects the kind-wide form; an empty one (an unset shell variable) is refused.
+      if (kv.id === undefined) {
         return parseKindWideDependencyRemoval(kv);
+      }
+      if (!idRaw) {
+        throw new PmCliError(
+          "--dep-remove key/value form requires a non-empty id=<value>",
+          EXIT_CODE.USAGE,
+        );
       }
       if (idRaw.toLowerCase() === "undefined") {
         throw new PmCliError(
@@ -957,7 +964,7 @@ function parseKindWideDependencyRemoval(
     parseOptionalDependencyString(kv.kind ?? kv.type),
   );
   const otherKeys = Object.keys(kv).filter(
-    (key) => key !== "kind" && key !== "type" && key !== "id",
+    (key) => key !== "kind" && key !== "type",
   );
   if (!kindRaw || otherKeys.length > 0) {
     throw new PmCliError(

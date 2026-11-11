@@ -24,8 +24,8 @@ shorthand as `--dep`, and a selector that matches nothing returns the typed
 rows can be retired by selecting `id`, `kind` (or its input-only `type` alias),
 `source_kind`, `author`, and `created_at`; omitted coordinates intentionally broaden the match.
 `kind=<kind>` with no other key is the explicit kind-wide selector: it removes
-every row of exactly that kind, and any other id-less selector is refused
-rather than widened. Every update that removes rows names them in a
+every row of exactly that kind. An empty `id=` (an unset shell variable) and
+any other id-less selector are refused rather than widened. Every update that removes rows names them in a
 `dependencies_removed:<item>:<id>/<kind>,...` warning, including the rows a
 `--unset blocked_by` scalar clear removes (only those naming the scalar's own
 target; pm-4yxzvd). Exact

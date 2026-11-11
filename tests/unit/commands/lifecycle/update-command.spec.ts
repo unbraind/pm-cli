@@ -4448,6 +4448,12 @@ describe("runUpdate", () => {
         await expect(runUpdate(blockedId, { depRemove: ["kind=blocked_by"] }, { path: context.pmPath })).rejects.toMatchObject({
           context: { code: "dependency_remove_no_match", unmatched_selectors: [{ id: "*", kind: "blocked_by" }] },
         });
+        // An empty id (an unset shell variable) is refused instead of widening to every row of the kind.
+        for (const selector of ["id=,kind=blocked_by", "id= ,kind=related"]) {
+          await expect(runUpdate(blockedId, { depRemove: [selector] }, { path: context.pmPath })).rejects.toMatchObject({
+            message: "--dep-remove key/value form requires a non-empty id=<value>",
+          });
+        }
         // A row selector that forgot its id is never widened into a kind-wide removal.
         for (const selector of ["kind=related,author=someone", "author=someone"]) {
           await expect(runUpdate(blockedId, { depRemove: [selector] }, { path: context.pmPath })).rejects.toMatchObject({

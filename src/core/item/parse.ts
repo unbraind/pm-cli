@@ -267,6 +267,25 @@ function splitCsvSegments(raw: string): string[] {
   return segments;
 }
 
+/** One comma segment of a structured entry, split by {@link parseCsvKv}'s own quote and escape rules (pm-pwqiao). */
+export interface StructuredEntrySegment {
+  /** The segment exactly as parsing split it. */
+  text: string;
+  /** The identifier-shaped key the segment opens, when it opens one. */
+  key?: string;
+  /** The raw text after the key's delimiter, when the segment opens a key. */
+  value?: string;
+}
+
+/** Split a single-line structured entry into segments the way parseCsvKv does, so a diagnosis reads the entry as the parser did. */
+export function splitStructuredEntrySegments(raw: string): StructuredEntrySegment[] {
+  return splitCsvSegments(raw.trim()).map((text) => {
+    const delimiterIndex = findKeyValueDelimiter(text);
+    const key = text.slice(0, Math.max(delimiterIndex, 0)).trim();
+    return CSV_KEY_PATTERN.test(key) ? { text, key, value: text.slice(delimiterIndex + 1) } : { text };
+  });
+}
+
 function unquoteValue(value: string): string {
   const trimmed = value.trim();
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {

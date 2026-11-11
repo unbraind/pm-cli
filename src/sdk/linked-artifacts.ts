@@ -15,6 +15,7 @@ import {
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   parseCsvKv,
+  splitStructuredEntrySegments,
 } from "../core/item/parse.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { isRemoteLinkedArtifactReference } from "../core/validate/linked-artifact-reference.js";
@@ -119,27 +120,44 @@ export interface LinkedCollectionMutationProjection<TEntry> {
   omission_receipt: AnnotationOmissionReceipt;
 }
 
-/** Positions in `after` whose stored value is new: added, note-revised or migrated (pm-gh1700). */
-export function writtenLinkedEntryIndexes<TEntry>(
-  before: readonly TEntry[],
-  after: readonly TEntry[],
-): number[] {
-  const unmatched = [...before];
-  const written: number[] = [];
-  after.forEach((entry, position) => {
-    const index = unmatched.findIndex((candidate) => stableValueEquals(candidate, entry));
-    if (index < 0) written.push(position);
-    else unmatched.splice(index, 1);
-  });
-  return written;
+/** An entry as storage writes it: JSON round-tripped, so keys holding undefined are gone. */
+function persistedLinkedForm<TEntry>(entry: TEntry): TEntry {
+  return JSON.parse(JSON.stringify(entry)) as TEntry;
 }
 
-/** Entries of `after` whose stored value is new: added, note-revised or migrated (pm-gh1700). */
+/** Entries of `after` whose persisted value is new: added, note-revised or migrated (pm-gh1700). */
 export function writtenLinkedEntries<TEntry>(
   before: readonly TEntry[],
   after: readonly TEntry[],
 ): TEntry[] {
-  return writtenLinkedEntryIndexes(before, after).map((position) => after[position]!);
+  const unmatched = before.map(persistedLinkedForm);
+  return after.filter((entry) => {
+    const persisted = persistedLinkedForm(entry);
+    const index = unmatched.findIndex((candidate) => stableValueEquals(candidate, persisted));
+    if (index >= 0) unmatched.splice(index, 1);
+    return index < 0;
+  });
+}
+
+/**
+ * The stored entries that are the written drafts, in stored order, matched by
+ * persisted value rather than position because storage may reorder a
+ * collection (pm-gh1700); a draft storage rewrote is reported in its
+ * persisted form.
+ */
+export function persistedLinkedEntries<TEntry>(
+  written: readonly TEntry[],
+  stored: readonly TEntry[],
+): TEntry[] {
+  const matched = new Set<number>();
+  const unmatched: TEntry[] = [];
+  for (const draft of written) {
+    const persisted = persistedLinkedForm(draft);
+    const index = stored.findIndex((entry, position) => !matched.has(position) && stableValueEquals(entry, persisted));
+    if (index < 0) unmatched.push(persisted);
+    else matched.add(index);
+  }
+  return [...stored.filter((_entry, position) => matched.has(position)), ...unmatched];
 }
 
 /**
@@ -830,8 +848,8 @@ function countRemovedLinkedArtifacts(
 
 /** Note prose of a refused `--add` entry and the key-shaped segment parsing misread inside it (pm-pwqiao). */
 interface MisreadNoteSegment {
-  /** The entry with the note removed: the link itself. */
-  link: string;
+  /** The entry rewritten with its note quoted, so the parser keeps the prose whole. */
+  entry: string;
   /** The intended note text, verbatim. */
   note: string;
   /** The comma segment read as a new key. */
@@ -841,34 +859,46 @@ interface MisreadNoteSegment {
 }
 
 /**
- * Find the note segment a refused `--add` entry misread as a key (pm-pwqiao).
- * After a comma, an identifier followed by `=` or `:` opens a new key, so
- * GH-258 can refuse typos such as `lable=main`; note prose such as
- * `host:port` trips the same rule. Returns undefined unless the entry carries
- * a note followed by such a segment and the link alone parses cleanly, so
- * every other refusal keeps its own message.
+ * Read a refused `--add` entry the way parseCsvKv split it and find the note
+ * segment it misread as a key (pm-pwqiao): after a comma, an identifier
+ * followed by `=` or `:` opens a key, so GH-258 can refuse typos such as
+ * `lable=main`, and note prose such as `host:port` trips the same rule. Link
+ * keys before the note, and a link key after it that is not a repeat, stay
+ * link fields; every other later segment is note prose. Returns undefined
+ * unless such a segment exists and the rewritten entry parses.
  */
 export function findMisreadNoteSegment(
   entry: string,
   bareNoun: "file" | "doc",
 ): MisreadNoteSegment | undefined {
-  const marker = /(^|,)\s*note\s*[=:]/iu.exec(entry);
-  if (marker === null) return undefined;
-  const link = entry.slice(0, marker.index).trim();
-  const note = entry.slice(marker.index + marker[0].length).trim();
-  if (link.length === 0 || note.length === 0) return undefined;
-  const misread = note
-    .split(",")
-    .slice(1)
-    .map((segment) => ({ segment: segment.trim(), match: /^([A-Za-z0-9_.-]+)\s*[=:](?!\/\/)/u.exec(segment.trim()) }))
-    .find((candidate) => candidate.match !== null);
+  const segments = /[\n\r]|^\s*[-*+`]/u.test(entry) ? [] : splitStructuredEntrySegments(entry);
+  const noteIndex = segments.findIndex((segment) => segment.key?.toLowerCase() === "note");
+  if (noteIndex < 0) return undefined;
+  const fields = segments.slice(0, noteIndex).map((segment) => segment.text.trim());
+  const keys = new Set(segments.slice(0, noteIndex).map((segment) => segment.key?.toLowerCase()));
+  const prose = [segments[noteIndex]!.value!];
+  let misread: { segment: string; key: string } | undefined;
+  for (const segment of segments.slice(noteIndex + 1)) {
+    const key = segment.key?.toLowerCase();
+    if (key === "path" || key === "scope") {
+      if (!keys.has(key)) {
+        fields.push(segment.text.trim());
+        keys.add(key);
+        continue;
+      }
+    }
+    misread ??= segment.key === undefined ? undefined : { segment: segment.text.trim(), key: segment.key };
+    prose.push(segment.text);
+  }
   if (misread === undefined) return undefined;
+  const note = prose.join(",").trim();
+  const rewritten = [...fields, `note=${JSON.stringify(note)}`].join(",");
   try {
-    parseAddEntries([link], bareNoun);
+    parseAddEntries([rewritten], bareNoun);
   } catch {
     return undefined;
   }
-  return { link, note, segment: misread.segment, key: misread.match![1]! };
+  return { entry: rewritten, note, ...misread };
 }
 
 /** One-based position of the first `--add` entry that refuses on its own; entries parse independently, so a refused batch always has one. */
@@ -883,10 +913,22 @@ function firstRefusedAddEntry(entries: readonly string[], bareNoun: "file" | "do
   }) + 1;
 }
 
-/** The single-entry retry that links the refused entry with its prose moved to `--note`, carrying the invocation's controls. */
+/** Repeat one flag per value, as the CLI received a repeatable option. */
+function repeatFlag(flag: string, values: readonly string[] | undefined): string[] {
+  return (values ?? []).flatMap((value) => [flag, value]);
+}
+
+/**
+ * The whole refused invocation replayed with the misread entry rewritten
+ * (its note quoted), from the already resolved values so stdin tokens are
+ * not replayed, carrying every other entry, operation and control.
+ */
 function noteRecoveryRetryArgs(params: {
   id: string;
-  misread: MisreadNoteSegment;
+  entries: readonly string[];
+  position: number;
+  rewritten: string;
+  resolved: { addGlob?: string[]; remove?: string[]; migrate?: string[] };
   options: LinkedArtifactCommandOptions;
   global: GlobalOptions;
   config: LinkedArtifactKindConfig;
@@ -896,11 +938,14 @@ function noteRecoveryRetryArgs(params: {
     ...resolvePmCommandScopeArgs(params.global),
     params.config.metadataKey,
     params.id,
-    "--add",
-    params.misread.link,
-    "--note",
-    params.misread.note,
+    ...repeatFlag("--add", params.entries.map((entry, index) => (index === params.position - 1 ? params.rewritten : entry))),
+    ...repeatFlag("--add-glob", params.resolved.addGlob),
+    ...repeatFlag("--remove", params.resolved.remove),
+    ...repeatFlag("--migrate", params.resolved.migrate),
+    ...(options.note === undefined ? [] : ["--note", options.note]),
     ...(params.config.supportsAppendStable && options.appendStable === true ? ["--append-stable"] : []),
+    ...(options.validatePaths === true ? ["--validate-paths"] : []),
+    ...(options.fullHistory === true ? ["--full-history"] : []),
     ...(options.author ? ["--author", options.author] : []),
     ...(options.message ? ["--message", options.message] : []),
     ...(options.force === true ? ["--force"] : []),
@@ -916,27 +961,27 @@ function misreadKeyHint(key: string): string {
 
 /**
  * Parse `--add` entries, turning a refusal caused by note prose into one that
- * names the misread segment and offers the same link with the note moved to
- * the standalone `--note` flag, which takes its text verbatim (pm-pwqiao).
+ * names the misread segment and offers the same invocation with that note
+ * quoted, so its commas stay prose (pm-pwqiao).
  */
 function parseAddEntriesWithNoteRecovery(params: {
   id: string;
   entries: string[] | undefined;
+  resolved: { addGlob?: string[]; remove?: string[]; migrate?: string[] };
   options: LinkedArtifactCommandOptions;
   global: GlobalOptions;
   config: LinkedArtifactKindConfig;
 }): LinkedArtifact[] {
-  const entries = params.entries ?? [];
   try {
-    return parseAddEntries(entries, params.config.bareNoun);
+    return parseAddEntries(params.entries, params.config.bareNoun);
   } catch (error: unknown) {
-    // parseAddEntries refuses only with PmCliError; any other failure has no misread note to explain.
+    // A refusal means at least one entry was given; parseAddEntries refuses only with PmCliError.
+    const entries = params.entries!;
     const cause = error as PmCliError;
     const position = firstRefusedAddEntry(entries, params.config.bareNoun);
     const misread = findMisreadNoteSegment(entries[position - 1]!, params.config.bareNoun);
     if (misread === undefined) throw error;
-    const retryArgs = noteRecoveryRetryArgs({ ...params, misread });
-    const others = entries.length > 1 || (params.options.addGlob?.length ?? 0) > 0;
+    const retryArgs = noteRecoveryRetryArgs({ ...params, entries, position, rewritten: misread.entry });
     throw new PmCliError(
       `--add read the note segment "${misread.segment}" as a new key "${misread.key}", so the ${params.config.bareNoun} link was refused (${cause.message})`,
       EXIT_CODE.USAGE,
@@ -944,7 +989,7 @@ function parseAddEntriesWithNoteRecovery(params: {
         code: "linked_artifact_note_key_misread",
         flag: "--add",
         value: entries[position - 1],
-        required: `Pass the note through --note, which takes its text verbatim, or quote the note value.${others ? " The refused invocation wrote nothing, so re-run its other entries too." : ""} ${misreadKeyHint(misread.key)}`,
+        required: `Retry with the note quoted so its commas stay prose (recovery.suggested_retry_args replays the whole invocation that way), or pass the prose through --note in a single-entry call. ${misreadKeyHint(misread.key)}`,
         why: "After a comma, an identifier followed by = or : opens a new key, so that a typo such as lable=main is refused instead of being stored as note text (GH-258).",
         nextSteps: [renderPmCommand(retryArgs)],
         details: {
@@ -952,6 +997,7 @@ function parseAddEntriesWithNoteRecovery(params: {
           misread_segment: misread.segment,
           misread_key: misread.key,
           note: misread.note,
+          rewritten_entry: misread.entry,
           cause: cause.context.code ?? "invalid_argument_value",
         },
         recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs },
@@ -1019,6 +1065,11 @@ export async function runLinkedArtifacts(
   const parsedAdds = parseAddEntriesWithNoteRecovery({
     id,
     entries: resolvedAdds,
+    resolved: {
+      addGlob: resolvedAddGlobs,
+      remove: resolvedRemoves,
+      migrate: resolvedMigrations,
+    },
     options,
     global,
     config,
@@ -1071,7 +1122,7 @@ export async function runLinkedArtifacts(
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
-  let writtenIndexes: number[] = [];
+  let written: LinkedArtifact[] = [];
   let removedCount = 0;
   const result = await mutateItem({
     pmRoot,
@@ -1105,7 +1156,7 @@ export async function runLinkedArtifacts(
         delete metadata[metadataKey];
       }
       const changed = !stableValueEquals(current, normalized);
-      writtenIndexes = writtenLinkedEntryIndexes(current, normalized);
+      written = writtenLinkedEntries(current, normalized);
       removedCount = countRemovedLinkedArtifacts(current, normalized, migrations);
       return {
         changedFields: changed ? [metadataKey] : [],
@@ -1138,7 +1189,7 @@ export async function runLinkedArtifacts(
       collectionKey: metadataKey,
       stored: artifacts,
       // Report the persisted entries, not the in-memory drafts, so the receipt matches a later read.
-      written: writtenIndexes.map((position) => artifacts[position]!),
+      written: persistedLinkedEntries(written, artifacts),
       removedCount,
       fullHistory: options.fullHistory === true,
     }),

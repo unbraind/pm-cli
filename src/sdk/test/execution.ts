@@ -111,7 +111,8 @@ import { withHostEnvironmentBoundary } from "../environment/host-environment-err
 import {
   linkedCollectionMutationFields,
   projectLinkedCollectionMutation,
-  writtenLinkedEntryIndexes,
+  persistedLinkedEntries,
+  writtenLinkedEntries,
   type LinkedCollectionMutationReceipt,
 } from "../linked-artifacts.js";
 import type { AnnotationOmissionReceipt } from "../annotations.js";
@@ -3117,7 +3118,7 @@ async function resolveLinkedTestItem(params: {
     return readLinkedTestItem({ id, pmRoot, settings, typeToFolder });
   }
   let removed = 0;
-  let writtenIndexes: number[] = [];
+  let written: LinkedTest[] = [];
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -3157,7 +3158,7 @@ async function resolveLinkedTestItem(params: {
         );
       }
       document.metadata.tests = mutation.tests;
-      writtenIndexes = writtenLinkedEntryIndexes(previous, mutation.tests);
+      written = writtenLinkedEntries(previous, mutation.tests);
       return {
         changedFields: stableValueEquals(previous, mutation.tests)
           ? []
@@ -3173,7 +3174,7 @@ async function resolveLinkedTestItem(params: {
     changed: result.changedFields.length > 0,
     removed,
     // The persisted entries, not the in-memory drafts, so the receipt matches a later read.
-    written: result.changedFields.length > 0 ? writtenIndexes.map((position) => tests[position]!) : [],
+    written: result.changedFields.length > 0 ? persistedLinkedEntries(written, tests) : [],
   };
 }
 

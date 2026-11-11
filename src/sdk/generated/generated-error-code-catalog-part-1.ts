@@ -330,7 +330,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "dependency_remove_no_match",
     exit_code: 3,
     sources: ["sdk/lifecycle/dependency-removal.ts"],
-    emitting_commands: ["dependency-removal"],
+    emitting_commands: ["update"],
   },
   {
     code: "dependency_target_not_found",
