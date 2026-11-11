@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,files,parser,recovery
 created_at: "2026-11-10T14:07:56.498Z"
-updated_at: "2026-11-11T11:04:31.391Z"
+updated_at: "2026-11-11T11:19:07.171Z"
 closed_at: "2026-11-11T08:02:13.936Z"
 completed_at: "2026-11-11T08:02:13.936Z"
 author: "harness:claude-code"
@@ -18,12 +18,13 @@ confidence: high
 resolution: "parseAddEntriesWithNoteRecovery in src/sdk/linked-artifacts.ts rethrows a note-caused refusal as linked_artifact_note_key_misread. The message and details name misread_segment, misread_key, note and the underlying cause. recovery.suggested_retry_args holds the single-entry link with --note plus the invocation's scope and controls. Other refusals, including GH-258 typo keys, keep their own messages."
 expected_result: The refusal names the misread note segment and offers an executable --note retry that links the full note
 actual_result: "All three variants (generic, unknown-key, repeated-key) name the segment, and executing the emitted retry links a.txt with the full note text"
-dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-0v9k,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
   pm-5htunt,discovered_from,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
   pm-fr10t8,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
   pm-pfnx,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
   pm-0ki1dv,related,"2026-11-11T11:04:30.927Z","harness:claude-code","cli:update:dep",detected
+  pm-gh1611,related,"2026-11-11T11:19:06.853Z","harness:claude-code","cli:update:dep",detected
 comments[3]:
   - created_at: "2026-11-11T08:42:37.973Z"
     author: "harness:claude-code"
