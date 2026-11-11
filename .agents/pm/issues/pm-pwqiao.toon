@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,files,parser,recovery
 created_at: "2026-11-10T14:07:56.498Z"
-updated_at: "2026-11-11T10:01:22.285Z"
+updated_at: "2026-11-11T11:04:31.391Z"
 closed_at: "2026-11-11T08:02:13.936Z"
 completed_at: "2026-11-11T08:02:13.936Z"
 author: "harness:claude-code"
@@ -18,12 +18,13 @@ confidence: high
 resolution: "parseAddEntriesWithNoteRecovery in src/sdk/linked-artifacts.ts rethrows a note-caused refusal as linked_artifact_note_key_misread. The message and details name misread_segment, misread_key, note and the underlying cause. recovery.suggested_retry_args holds the single-entry link with --note plus the invocation's scope and controls. Other refusals, including GH-258 typo keys, keep their own messages."
 expected_result: The refusal names the misread note segment and offers an executable --note retry that links the full note
 actual_result: "All three variants (generic, unknown-key, repeated-key) name the segment, and executing the emitted retry links a.txt with the full note text"
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-0v9k,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
   pm-5htunt,discovered_from,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
   pm-fr10t8,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
   pm-pfnx,related,"2026-11-10T14:07:56.498Z","harness:claude-code","cli:create:dep",detected
-comments[2]:
+  pm-0ki1dv,related,"2026-11-11T11:04:30.927Z","harness:claude-code","cli:update:dep",detected
+comments[3]:
   - created_at: "2026-11-11T08:42:37.973Z"
     author: "harness:claude-code"
     text: "PR 1705 review round 1 (Greptile P1 and Codex P2), fixed. The recovery used to rebuild one entry with a regex, which broke in two cases. A quoted path such as path=\"a,note=literal.txt\" was matched inside the quotes. A later link key such as scope=global was folded into the note. The retry also dropped --migrate, --remove and --add-glob. findMisreadNoteSegment now reads the entry with splitStructuredEntrySegments (src/core/item/parse.ts), which uses parseCsvKv's own quote and escape rules. Link keys before the note, and a non-repeated path or scope after it, stay link fields; every other later segment is note prose. The entry is rewritten with the note JSON-quoted (note=\"...\"). The retry replays the whole invocation from the resolved values: every --add, --add-glob, --remove, --migrate, --note, --append-stable, --validate-paths, --full-history, --author, --message and --force. Executing it was proven for the migration and removal case, a quoted path, a later scope key, embedded quotes and a URL in the prose."
@@ -31,6 +32,9 @@ comments[2]:
     author: "harness:claude-code"
     text: "PR 1705 review round 2 (Greptile P1 and P2, Codex P1 and P2), fixed. First, the retry dropped revision guards. It now replays activeItemRevisionExpectations as --expect-hash=<id>=<hash>, which covers CLI --expect-hash as well as SDK and MCP scopes, verified through the built CLI. When the guards cannot be spelled as one invocation (nested scopes expecting different revisions), the executable retry is withheld and required names the rewritten entry. Second, escaped commas in link fields were unescaped by the splitter. Segments now carry their raw source (splitCsvSegmentRanges backs both parseCsvKv and the diagnosis), so path=d\\,e.txt survives. Third, an already-quoted note value kept its quotes as data. The first note value is decoded with parseCsvKv's unquoteValue before continuations join it."
     edited_at: "2026-11-11T09:27:49.377Z"
+  - created_at: "2026-11-11T11:04:29.070Z"
+    author: "harness:claude-code"
+    text: "PR 1705 review round 3 (Codex P2), not fixed in this PR; filed as pm-0ki1dv. When runAction or an MCP call runs under its own cwd with a relative path, the retry keeps --pm-path . and a replay from the host's directory selects another tracker. That comes from the shared resolvePmCommandScopeArgs convention (portable relative spelling, pm-gh1611), which every pm recovery uses, so the fix belongs at that shared seam and not in this one producer."
 notes[1]{created_at,author,text}:
   "2026-11-11T06:43:25.190Z","harness:claude-code","Implementation on branch fix/collection-mutation-receipts (2026-11-11). runLinkedArtifacts parses --add entries through parseAddEntriesWithNoteRecovery. When parsing refuses, the first failing entry is located and findMisreadNoteSegment is asked three questions:\n- Does the entry carry note= or note: ?\n- Does a later comma segment open with an identifier followed by = or : (URLs excluded)?\n- Does the link alone, the text before note, parse cleanly?\n\nOnly then is the refusal rethrown as linked_artifact_note_key_misread. The message names the segment and key, and details carries entry_index, misread_segment, misread_key, note and cause. recovery.suggested_retry_args and nextSteps hold the same link with the prose moved to --note; --note takes it verbatim, and the retry is rendered with resolvePmCommandScopeArgs. The retry also carries --append-stable (files only), --author, --message and --force. required says that other entries of a refused multi-entry invocation were not written.\n\nEvery other refusal keeps its message: a typo key with no note (GH-258 lable=main), or an invalid link such as scope=bogus.\n\nEvidence. Executing the emitted retry against a sandbox tracker links a.txt with the full note text in all three variants:\n- the generic invalid-entry refusal ('host:port, whitespace');\n- the unknown-key refusal (note ending 'host:port');\n- the repeated-key refusal from pm-oglm0t ('path: b.txt').\n\nSpecs: tests/unit/sdk/linked-artifact-note-recovery.spec.ts."
 files[2]{path,scope}:

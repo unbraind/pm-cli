@@ -88,6 +88,17 @@ describe("pm-gh1700 linked-test mutation receipts", () => {
     });
   });
 
+  it("counts only stored tests as removed, not an addition removed in the same call", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "add and remove in one call" });
+      const transient = await runTest(id, { add: ["command=node --version"], remove: ["command=node --version"] }, { path: context.pmPath });
+      expect(transient).toMatchObject({ changed: false, total_count: 0, mutation_receipt: { changed_count: 0, removed_count: 0 } });
+      await linkTests(context, id, 1, 2);
+      const replaced = await runTest(id, { add: ["command=node -e 03,scope=project"], remove: ["command=node -e 01"] }, { path: context.pmPath });
+      expect(replaced).toMatchObject({ total_count: 2, mutation_receipt: { changed_count: 1, removed_count: 1 } });
+    });
+  });
+
   it("reports the linked test as storage saved it, not the submitted spelling", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "normalized linked test" });

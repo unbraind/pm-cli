@@ -2962,6 +2962,18 @@ interface ResolvedTestItem {
   removed: number;
   /** Present when the invocation mutated linked tests: the entries it added or rewrote. */
   written?: LinkedTest[];
+  /** Stored linked tests the write removed, counted against the persisted lists before and after it. */
+  storedRemoved?: number;
+}
+
+/** Stored linked tests with no same-identity entry left after a write (pm-gh1700), so an addition removed in the same call counts nothing. */
+function countRemovedStoredTests(before: readonly LinkedTest[], after: readonly LinkedTest[]): number {
+  const remaining = [...after];
+  return before.filter((entry) => {
+    const index = remaining.findIndex((candidate) => linkedTestsHaveSameIdentity(candidate, entry));
+    if (index >= 0) remaining.splice(index, 1);
+    return index < 0;
+  }).length;
 }
 
 interface ResolvedTestRunOptions {
@@ -3174,6 +3186,7 @@ async function resolveLinkedTestItem(params: {
     removed,
     // Diff the persisted lists before and after the write, so the receipt reports what storage saved.
     written: result.changedFields.length > 0 ? writtenLinkedEntries(before, tests) : [],
+    storedRemoved: countRemovedStoredTests(before, tests),
   };
 }
 
@@ -3544,7 +3557,8 @@ function projectLinkedTestMutation(
     collectionKey: "tests",
     stored: item.tests,
     written: item.written,
-    removedCount: item.removed,
+    // Set together with written on every write.
+    removedCount: item.storedRemoved!,
     fullHistory,
   });
 }

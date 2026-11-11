@@ -27,6 +27,13 @@ async function refusal(promise: Promise<unknown>): Promise<PmCliError> {
   return error as PmCliError;
 }
 
+/** The refusal's executable retry; a missing one fails the test instead of spreading undefined. */
+function retryArgsOf(error: PmCliError): string[] {
+  const args = error.context.recovery?.suggested_retry_args;
+  if (!Array.isArray(args)) throw new Error("expected an executable retry");
+  return args as string[];
+}
+
 describe("pm-pwqiao misread note recovery", () => {
   it.each([
     ["the generic invalid-entry refusal", "path=a.txt,scope=project,note=Single-label host, host:port, whitespace", "host:port", "host", "invalid_argument_value"],
@@ -43,7 +50,7 @@ describe("pm-pwqiao misread note recovery", () => {
         code: "linked_artifact_note_key_misread",
         details: { entry_index: 1, misread_segment: segment, misread_key: key, note, cause },
       });
-      const retry = error.context.recovery?.suggested_retry_args as string[];
+      const retry = retryArgsOf(error);
       expect(retry.slice(-4)).toEqual(["files", id, "--add", `path=a.txt,scope=project,note=${JSON.stringify(note)}`]);
       expect(error.context.nextSteps).toEqual([error.context.recovery?.suggested_retry]);
       // Nothing was written by the refused invocation.
@@ -79,7 +86,7 @@ describe("pm-pwqiao misread note recovery", () => {
         ),
       );
       expect(error.context.details).toMatchObject({ entry_index: 2, rewritten_entry: 'path=old/a.txt,note="see, host:port, x"' });
-      const retry = error.context.recovery?.suggested_retry_args as string[];
+      const retry = retryArgsOf(error);
       expect(retry.slice(retry.indexOf("files"))).toEqual([
         "files", id,
         "--add", "path=ok.txt", "--add", 'path=old/a.txt,note="see, host:port, x"',
@@ -117,7 +124,7 @@ describe("pm-pwqiao misread note recovery", () => {
       ] as const) {
         const error = await refusal(runFiles(id, { add: [entry] }, { path: context.pmPath }));
         expect(error.context.details).toMatchObject({ rewritten_entry: rewritten });
-        const executed = context.runCli([...(error.context.recovery?.suggested_retry_args as string[]), "--json"], { expectJson: true, preserveDefaultMutationOutput: true });
+        const executed = context.runCli([...retryArgsOf(error), "--json"], { expectJson: true, preserveDefaultMutationOutput: true });
         expect(executed.code, executed.stderr).toBe(0);
         expect((await runFiles(id, {}, { path: context.pmPath })).files).toEqual(expect.arrayContaining([stored]));
       }
