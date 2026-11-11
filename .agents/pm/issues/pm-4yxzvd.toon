@@ -2,13 +2,13 @@ id: pm-4yxzvd
 title: "pm update --unset blocked_by (or --blocked-by none) deletes every blocked_by edge, not only the scalar's: clearing blocker A silently drops an independent prerequisite B"
 description: "Reproduced on the feat/write-time-preconditions build (2026.11.2 source). An item with scalar blocked_by=A plus blocked_by edges to A and to an independent prerequisite B: pm update <id> --unset blocked_by leaves blocked_by unset and the dependency list EMPTY. Cause: applyBlockedByMutation clears the scalar and calls reconcileBlockedByDependency(current, undefined), which filters out every kind=blocked_by dependency. The edge to B was never the scalar's. The item then reads as unblocked: next selects it, start admission admits it, and validate no longer flags it, while B is still open. No warning names the dropped edges. Found by the Codex review of PR 1654: pm-urzubi's start refusal had advertised --unset blocked_by as its recovery command; that refusal now advertises it only when the scalar's blocker is the item's only blocked_by edge. Related: pm-scbr0s (the close-time blocker-clear warning names one of N deleted ordering edges) and pm-q6gx (--blocked-by overwrite)."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:dependencies",blocked-by,data-loss,graph-integrity
 created_at: "2026-11-02T15:39:10.262Z"
-updated_at: "2026-11-11T05:15:13.674Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#e6ba0f6f7044b066fe23d5ec"
+updated_at: "2026-11-11T08:02:20.581Z"
+closed_at: "2026-11-11T08:02:16.177Z"
+completed_at: "2026-11-11T08:02:16.177Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Clearing the blocked_by scalar removes at most the edge(s) that point at the scalar's own target, never an independent blocked_by edge; Removing every blocked_by edge requires an explicit, separately named operation (or --clear-deps-like flag) whose receipt lists the removed edges; Regression test: scalar A with edges A and B, unset scalar, B remains and the item stays blocked; The start_blocked_by_open_dependency recovery may then advertise the scalar clear again for multi-edge items"
@@ -16,6 +16,7 @@ parent: pm-33cw
 risk: medium
 confidence: high
 severity: high
+resolution: "scalarClearRemovesDependency (src/sdk/lifecycle/start-blockers.ts) scopes --unset blocked_by and --blocked-by none to blocked_by rows whose id is the scalar's literal text, or the canonical row a --blocked-by write derived (provenance cli:create|update:blocked_by). An independent prerequisite keeps blocking. --dep-remove kind=<kind> removes every row of that kind; zero matches are refused with id '*'. mutateUpdateDocument names removed rows as dependencies_removed:<item>:<id>/<kind>. The start refusal offers --unset blocked_by for multi-edge items. The close pending-unblock docs and the unblock recipe guidance describe the scoped clear. Removal helpers moved to src/sdk/lifecycle/dependency-removal.ts."
 expected_result: "pm update <id> --unset blocked_by clears the scalar and its own edge, keeping independent blocked_by prerequisites"
 actual_result: "All blocked_by edges are removed: dependencies goes from [B:blocked_by, A:blocked_by] to [] after --unset blocked_by"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
@@ -24,5 +25,54 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-urzubi,discovered_from,"2026-11-02T15:39:10.262Z","harness:claude-code","cli:create:dep",detected
 comments[1]{created_at,author,text}:
   "2026-11-02T18:07:32.596Z","harness:claude-code","Scope evidence from the Codex review round 3 of PR 1654: dependency removal cannot address legacy blocker rows either. --dep-remove normalizes its selector id through normalizeItemReference and compares kinds literally. So a row stored with a short id (missing, normalized to pm-missing), an alias kind (depends_on, which canonicalizes to blocked_by everywhere else) or an external locator without source_kind in the selector (gh:org/repo#12, normalized to pm-gh:org/repo#12) fails with dependency_remove_no_match. Combined with this item's --unset blocked_by data loss, some blockers have no safe single-command removal. pm-urzubi's refusal therefore offers 'pm get <id> --fields blocked_by,dependencies' for them. Fixing this item should make removal selectors canonical (id normalization plus resolveCanonicalRelationshipKind) so recovery can advertise an executable removal again."
-escape_class: production_defect
+notes[1]{created_at,author,text}:
+  "2026-11-11T05:32:47.384Z","harness:claude-code","Design on branch fix/collection-mutation-receipts (2026-11-11).\n\n1. Scoped scalar clear. A shared predicate, scalarClearRemovesDependency in src/sdk/lifecycle/start-blockers.ts, decides which rows a scalar clear removes. update.ts uses it for the write, and the start refusal uses it to decide whether to advertise --unset blocked_by. The scalar clear (--unset blocked_by, or --blocked-by none) removes a literal blocked_by row in two cases:\n   - its stored id is the scalar's own text, from any source;\n   - its stored id is the scalar's canonical id (normalizeItemId), and its source_kind is cli:create:blocked_by or cli:update:blocked_by, the rows a --blocked-by write derives.\n\n   The provenance condition keeps the existing conservative case. A short scalar 'a' beside a hand-added 'pm-a' row (via --dep) may name two distinct items, because locateItem resolves exact-first while the --blocked-by set path resolves canonical-first. The clear therefore keeps that row.\n\n2. Explicit kind-wide removal. --dep-remove kind=<kind> with no other key removes every row of that kind; this is AC 2's separately named operation. Zero matches give the usual dependency_remove_no_match refusal, with unmatched_selectors id '*' so the public PmCliErrorContext type keeps a string id. An id-less selector carrying any other key is still refused rather than widened.\n\n3. Removal receipt. mutateUpdateDocument diffs the stored rows before and after, as a multiset keyed by full stored identity. It emits dependencies_removed:<item>:<id>/<kind>,... whenever rows were removed by any path: scalar clear, --dep-remove, --clear-deps or --replace-deps. The flat CLI receipt and the SDK result both carry warnings.\n\n4. Recovery producers re-checked. Three places advertise --unset blocked_by:\n   - start-blockers now advertises it for multi-edge items (AC 4).\n   - The close.ts pending-unblock recovery becomes strictly safer, because a blocker added concurrently keeps its edge and validate reports it. The docs/COMMANDS.md sentence that claimed every edge is removed is corrected.\n   - The validate.ts dangling hint is unchanged: its source 'blocked_by' row is the scalar itself."
+files[9]{path,scope}:
+  src/sdk/agent/command-recovery.ts,project
+  src/sdk/cli-contracts/commander-mutation-options.ts,project
+  src/sdk/lifecycle/dependency-removal.ts,project
+  src/sdk/lifecycle/start-blockers.ts,project
+  src/sdk/lifecycle/update.ts,project
+  tests/unit/cli/lifecycle-verb-recovery.spec.ts,project
+  tests/unit/commands/lifecycle/update-command.spec.ts,project
+  tests/unit/sdk/lifecycle/dependency-removal.spec.ts,project
+  tests/unit/sdk/lifecycle/start-blockers.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/sdk/lifecycle/start-blockers.spec.ts tests/unit/commands/query/dependency-exact-removal-contract.spec.ts,project,600,"harness:claude-code","2026-11-11T06:43:44.662Z",local_mutation,fix/collection-mutation-receipts
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/dependency-removal.spec.ts tests/unit/cli/lifecycle-verb-recovery.spec.ts,project,300,"harness:claude-code","2026-11-11T07:32:41.946Z",local_mutation,fix/collection-mutation-receipts
+test_runs[2]:
+  - run_id: test-local-mwbsx8oy-q5d8vy
+    kind: test
+    status: passed
+    started_at: "2026-11-11T07:32:13.307Z"
+    finished_at: "2026-11-11T07:32:32.962Z"
+    recorded_at: "2026-11-11T07:32:32.962Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/sdk/lifecycle/start-blockers.spec.ts tests/unit/commands/query/dependency-exact-removal-contract.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mwbsxolb-8g56l6
+    kind: test
+    status: passed
+    started_at: "2026-11-11T07:32:42.629Z"
+    finished_at: "2026-11-11T07:32:53.567Z"
+    recorded_at: "2026-11-11T07:32:53.567Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/dependency-removal.spec.ts tests/unit/cli/lifecycle-verb-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope}:
+  docs/AGENT_UX_CONTRACTS.md,project
+  docs/COMMANDS.md,project
+close_reason: "Clearing the blocked_by scalar removes only the rows naming its own target, kind=<kind> alone is the explicit kind-wide removal, and every dependency removal is named in a dependencies_removed warning"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-4yxzvd
+  gate_id: scoped-blocked-by-scalar-clear
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/commands/lifecycle/update-command.spec.ts tests/unit/sdk/lifecycle/start-blockers.spec.ts tests/unit/commands/query/dependency-exact-removal-contract.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

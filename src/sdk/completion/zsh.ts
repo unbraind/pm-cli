@@ -1017,6 +1017,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--note[Linked-file note]:note' \\
             '--append-stable[Preserve stable append ordering]' \\
             '--validate-paths[Validate linked-file paths]' \\
+            '--full-history[Return every linked file after a write]' \\
             '--scope[Filter lookup by evidence scope]:(project global)' \\
             '--limit[Maximum lookup matches]:number' \\
             '--offset[Skip the first lookup matches]:number' \\
@@ -1076,6 +1077,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--match[Run linked tests whose command/path contains substring]:substring' \\
             '--only-index[Run one linked test by 1-based index]:number' \\
             '--only-last[Run the most recently added linked test]' \\
+            '--full-history[Return every linked test after a write]' \\
             '--background[Run linked tests in managed background mode]' \\
             '--timeout[Default timeout seconds]:seconds' \\
             '--progress[Emit linked-test progress to stderr]' \\

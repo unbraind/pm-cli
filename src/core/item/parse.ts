@@ -336,8 +336,39 @@ function buildInvalidKvMessage(raw: string, optionName: string): string {
   );
 }
 
+/**
+ * Refuse a key that one structured entry already set (pm-oglm0t). An entry
+ * stores one value per key, so a repeat would silently replace the earlier
+ * value: prose such as `note=moved here, path: b.txt` would relink b.txt.
+ * Keys compare case-insensitively, matching how readers normalize them.
+ */
+function assertKeyNotRepeated(
+  result: Record<string, string>,
+  key: string,
+  raw: string,
+  optionName: string,
+): void {
+  const repeated = Object.keys(result).find(
+    (existing) => existing.toLowerCase() === key.toLowerCase(),
+  );
+  if (repeated === undefined) return;
+  throw new PmCliError(
+    `${optionName} sets key "${key}" more than once in one entry, so the later value would silently replace the earlier one.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "structured_entry_key_repeated",
+      flag: optionName,
+      value: raw,
+      required: `Give each key once per ${optionName} entry. Repeat ${optionName} for another entry; if the repeated key belongs to prose, quote that value or pass it through its standalone flag.`,
+      why: "A structured entry keeps one value per key, so accepting a repeat would store data the author did not intend without any refusal.",
+      details: { repeated_key: key, first_key: repeated },
+    },
+  );
+}
+
 function parseMarkdownKeyValueLines(
   raw: string,
+  optionName: string,
 ): Record<string, string> | null {
   const normalized = stripCodeFenceEnvelope(raw).trim();
   if (normalized.length === 0) {
@@ -363,6 +394,7 @@ function parseMarkdownKeyValueLines(
     const match = line.match(/^(?:[-*+]\s+)?([a-zA-Z0-9_.-]+)\s*(=|:)\s*(.*)$/);
     if (match) {
       const key = match[1].trim();
+      assertKeyNotRepeated(result, key, raw, optionName);
       result[key] = unquoteValue(match[3].trim());
       activeKey = key;
       continue;
@@ -387,7 +419,7 @@ export function parseCsvKv(
     throw new PmCliError(`${optionName} cannot be empty`, EXIT_CODE.USAGE);
   }
 
-  const markdownStyle = parseMarkdownKeyValueLines(trimmed);
+  const markdownStyle = parseMarkdownKeyValueLines(trimmed, optionName);
   if (markdownStyle) {
     return markdownStyle;
   }
@@ -420,6 +452,7 @@ export function parseCsvKv(
         );
       }
       const value = unquoteValue(segment.slice(delimiterIndex + 1).trim());
+      assertKeyNotRepeated(result, key, raw, optionName);
       result[key] = value;
       activeKey = key;
       continue;

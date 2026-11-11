@@ -108,6 +108,13 @@ import {
   type TestRunMeasurementDiff,
 } from "./measurements.js";
 import { withHostEnvironmentBoundary } from "../environment/host-environment-errors.js";
+import {
+  linkedCollectionMutationFields,
+  projectLinkedCollectionMutation,
+  writtenLinkedEntryIndexes,
+  type LinkedCollectionMutationReceipt,
+} from "../linked-artifacts.js";
+import type { AnnotationOmissionReceipt } from "../annotations.js";
 import { SOURCE_CONTEXT_ACCESS_ENV } from "../environment/source-context.js";
 import {
   assertTestMeasurementExecution,
@@ -267,6 +274,8 @@ export interface TestCommandOptions {
   setJson?: string;
   /** Value that configures or reports list for this contract. */
   list?: boolean;
+  /** Return every linked test after a write instead of the bounded mutation receipt (pm-gh1700). */
+  fullHistory?: boolean;
   /** Value that configures or reports run for this contract. */
   run?: boolean;
   /** Value that configures or reports match for this contract. */
@@ -391,8 +400,8 @@ export interface TestResult {
   tests: LinkedTest[];
   /** Executes the results operation through the package runtime. */
   run_results: TestRunResult[];
-  /** Value that configures or reports failure categories for this contract. */
-  failure_categories: Record<LinkedTestFailureCategory, number>;
+  /** Failure counts by category; present only when the invocation ran linked tests (pm-gh1700). */
+  failure_categories?: Record<LinkedTestFailureCategory, number>;
   /** Value that configures or reports selection for this contract. */
   selection?: Omit<LinkedTestRunSelection, "selected">;
   /** Present when a run selector narrowed `tests` to the selected entries; counts the stored tests left out and names the read that restores them. */
@@ -418,6 +427,16 @@ export interface TestResult {
   count: number;
   /** Number of linked-test entries removed by this mutation. */
   removed?: number;
+  /** Mutations only: linked tests stored after the write (pm-gh1700). */
+  total_count?: number;
+  /** Mutations only: linked tests this response carries. */
+  returned_count?: number;
+  /** Mutations only: whether stored linked tests exist beyond the ones returned. */
+  has_more?: boolean;
+  /** Mutations only: what the write changed. */
+  mutation_receipt?: LinkedCollectionMutationReceipt;
+  /** Mutations only: withheld linked tests and the selector that restores them. */
+  omission_receipt?: AnnotationOmissionReceipt;
   /** One-based position selected by an explicit linked-test metadata edit. */
   updated_index?: number;
   /** Normalized metadata fields changed by an explicit edit. */
@@ -2941,6 +2960,8 @@ interface ResolvedTestItem {
   testRuns: ItemTestRunSummary[];
   changed: boolean;
   removed: number;
+  /** Present when the invocation mutated linked tests: the entries it added or rewrote. */
+  written?: LinkedTest[];
 }
 
 interface ResolvedTestRunOptions {
@@ -3096,6 +3117,7 @@ async function resolveLinkedTestItem(params: {
     return readLinkedTestItem({ id, pmRoot, settings, typeToFolder });
   }
   let removed = 0;
+  let writtenIndexes: number[] = [];
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -3135,6 +3157,7 @@ async function resolveLinkedTestItem(params: {
         );
       }
       document.metadata.tests = mutation.tests;
+      writtenIndexes = writtenLinkedEntryIndexes(previous, mutation.tests);
       return {
         changedFields: stableValueEquals(previous, mutation.tests)
           ? []
@@ -3142,12 +3165,15 @@ async function resolveLinkedTestItem(params: {
       };
     },
   });
+  const tests = result.item.tests ?? [];
   return {
     itemId: result.item.id,
-    tests: result.item.tests ?? [],
+    tests,
     testRuns: result.item.test_runs ?? [],
     changed: result.changedFields.length > 0,
     removed,
+    // The persisted entries, not the in-memory drafts, so the receipt matches a later read.
+    written: result.changedFields.length > 0 ? writtenIndexes.map((position) => tests[position]!) : [],
   };
 }
 
@@ -3432,6 +3458,10 @@ function projectTestResult(input: {
   measurementProjection: ReturnType<typeof buildTestMeasurementProjection>;
   /** Tracker and extension scope of the invocation, so the restore command reproduces it. */
   restoreScope: LinkedTestRestoreScope;
+  /** Whether the invocation ran linked tests, so failure counts are meaningful. */
+  ran: boolean;
+  /** Return every linked test after a write instead of the bounded receipt. */
+  fullHistory: boolean;
 }): TestResult {
   const {
     item,
@@ -3444,17 +3474,18 @@ function projectTestResult(input: {
     measurementProjection,
     restoreScope,
   } = input;
-  const narrowed = runSelection !== undefined && runSelection.selector !== null && runSelection.skipped_count > 0;
-  const restoreWith = renderLinkedTestRestoreCommand(item.itemId, restoreScope);
+  const mutation = projectLinkedTestMutation(item, input.fullHistory);
+  const returned = selectReturnedLinkedTests(item, runSelection, mutation, restoreScope);
+  const { counts, receipts } = linkedCollectionMutationFields(mutation);
   return {
     ok:
       runResults.every((entry) => entry.status !== "failed" && entry.status !== "refused") &&
       failOnSkippedTriggered !== true,
     id: item.itemId,
-    tests: narrowed ? runSelection.selected : item.tests,
-    ...(narrowed ? { tests_omitted: { count: item.tests.length - runSelection.selected.length, restore_with: restoreWith } } : {}),
+    tests: returned.tests,
+    ...returned.omitted,
     run_results: runResults,
-    failure_categories: failureCategories,
+    ...(input.ran ? { failure_categories: failureCategories } : {}),
     selection: runSelection
       ? {
           selector: runSelection.selector,
@@ -3468,9 +3499,77 @@ function projectTestResult(input: {
     warnings: warnings.length > 0 ? warnings : undefined,
     changed: item.changed || recording?.receipt.recorded === true,
     ...(recording ? { evidence_recording: recording.receipt } : {}),
-    count: item.tests.length,
+    count: returned.count,
     ...(item.removed > 0 ? { removed: item.removed } : {}),
+    ...counts,
     ...measurementProjection,
+    ...receipts,
+  };
+}
+
+/**
+ * The linked tests a result carries: a write's bounded entries (pm-gh1700), a
+ * run selector's selected entries with the restore command for the rest, or
+ * every stored test.
+ */
+function selectReturnedLinkedTests(
+  item: Awaited<ReturnType<typeof resolveLinkedTestItem>>,
+  runSelection: ReturnType<typeof resolveTestRunOptions>["runSelection"],
+  mutation: ReturnType<typeof projectLinkedTestMutation>,
+  restoreScope: LinkedTestRestoreScope,
+): { tests: LinkedTest[]; count: number; omitted: Pick<TestResult, "tests_omitted"> } {
+  // A write's count is the entries it returns; a read's count stays the stored total, even when a run selector narrows it.
+  if (mutation !== undefined) return { tests: mutation.entries, count: mutation.returned_count, omitted: {} };
+  const narrowed = runSelection !== undefined && runSelection.selector !== null && runSelection.skipped_count > 0;
+  if (!narrowed) return { tests: item.tests, count: item.tests.length, omitted: {} };
+  return {
+    tests: runSelection.selected,
+    count: item.tests.length,
+    omitted: {
+      tests_omitted: {
+        count: item.tests.length - runSelection.selected.length,
+        restore_with: renderLinkedTestRestoreCommand(item.itemId, restoreScope),
+      },
+    },
+  };
+}
+
+/** pm-gh1700: a write returns the linked tests it added or rewrote, never the whole stored list. */
+function projectLinkedTestMutation(
+  item: Awaited<ReturnType<typeof resolveLinkedTestItem>>,
+  fullHistory: boolean,
+): ReturnType<typeof projectLinkedCollectionMutation<LinkedTest>> | undefined {
+  if (item.written === undefined) return undefined;
+  return projectLinkedCollectionMutation({
+    collectionKey: "tests",
+    stored: item.tests,
+    written: item.written,
+    removedCount: item.removed,
+    fullHistory,
+  });
+}
+
+/** Bound an explicit linked-test edit to the entry it rewrote (pm-gh1700); `fullHistory` returns every linked test. */
+function projectLinkedTestEdit(
+  result: Awaited<ReturnType<typeof updateLinkedTest>>,
+  fullHistory: boolean,
+): TestResult {
+  const edited = result.tests[result.updated_index - 1];
+  const mutation = projectLinkedCollectionMutation({
+    collectionKey: "tests",
+    stored: result.tests,
+    written: result.changed && edited !== undefined ? [edited] : [],
+    removedCount: 0,
+    fullHistory,
+  });
+  const { counts, receipts } = linkedCollectionMutationFields(mutation);
+  return {
+    ...result,
+    tests: mutation.entries,
+    run_results: [],
+    count: mutation.returned_count,
+    ...counts,
+    ...receipts,
   };
 }
 
@@ -3486,7 +3585,7 @@ export async function runTest(
     assertTestRunFlagUsage(options);
     assertTestMeasurementRun(id, options, global, resolvePmRoot(process.cwd(), global.path));
     const result = await updateLinkedTest(id, { ...edit, author: options.author, message: options.message, force: options.force }, global);
-    return { ...result, run_results: [], failure_categories: countFailureCategories([]) };
+    return projectLinkedTestEdit(result, options.fullHistory === true);
   }
   const stdinResolver = createStdinTokenResolver();
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -3585,6 +3684,8 @@ export async function runTest(
     recording,
     measurementProjection,
     restoreScope: resolveLinkedTestRestoreScope(global, pmRoot),
+    ran: options.run === true,
+    fullHistory: options.fullHistory === true,
   });
 }
 /* c8 ignore stop */

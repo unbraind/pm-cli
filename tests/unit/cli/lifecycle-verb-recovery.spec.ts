@@ -47,7 +47,16 @@ describe("unsupported lifecycle verb recovery", () => {
       expect(recovered.item.blocked_by).toBeUndefined();
       expect(recovered.item.blocked_reason).toBeUndefined();
       expect(recovered.item.unblock_note).toBe("ready");
-      expect(recovered.item.dependencies).toEqual([expect.objectContaining({ id: blocker, kind: "related" })]);
+      // pm-4yxzvd: the template clears the current blocker; the earlier blocker is an independent prerequisite.
+      expect(recovered.item.dependencies).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: blocker, kind: "blocked_by" }),
+        expect.objectContaining({ id: blocker, kind: "related" }),
+      ]));
+      expect(recovered.item.dependencies).toHaveLength(2);
+      expect(unblock.nextSteps[0]).toContain("--dep-remove kind=blocked_by");
+      expect(context.runCli(["update", id, "--dep-remove", "kind=blocked_by"]).code).toBe(0);
+      const cleared = await runGet(id, { path: context.pmPath }, { full: true });
+      expect(cleared.item.dependencies).toEqual([expect.objectContaining({ id: blocker, kind: "related" })]);
     });
   });
 

@@ -3189,6 +3189,36 @@
       ],
       "package_version": "2026.11.7",
       "reason": "pm-hka7ep review follow-up: annotation_expectation_empty was introduced earlier on this unreleased branch (main and every published release never carried it) and is replaced by annotation_expectation_invalid, which refuses an empty or non-string expectAt (MCP callers can send numbers or null). Migrate: none for released consumers; match annotation_expectation_invalid."
+    },
+    {
+      "changes": [
+        "signature ./sdk:DocsCommandOptions",
+        "signature ./sdk:DocsResult",
+        "signature ./sdk:FilesCommandOptions",
+        "signature ./sdk:FilesResult",
+        "signature ./sdk:LinkedArtifactCommandOptions",
+        "signature ./sdk:LinkedArtifactResult",
+        "signature ./sdk:TestCommandOptions",
+        "signature ./sdk:TestResult",
+        "signature ./sdk/core:DocsCommandOptions",
+        "signature ./sdk/core:DocsResult",
+        "signature ./sdk/core:FilesCommandOptions",
+        "signature ./sdk/core:FilesResult",
+        "signature ./sdk/runtime:DocsCommandOptions",
+        "signature ./sdk/runtime:DocsResult",
+        "signature ./sdk/runtime:FilesCommandOptions",
+        "signature ./sdk/runtime:FilesResult"
+      ],
+      "package_version": "2026.11.11",
+      "reason": "pm-gh1700 bounds runTest/runFiles/runDocs write results to the written entries with total_count, mutation_receipt and omission_receipt; fullHistory (CLI --full-history, MCP full) restores the whole collection; TestResult.failure_categories is present only for runs. Option and result types gain optional fields only. Migration guidance in docs/SDK.md; the released fleet reads lists only from list calls."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.11.11",
+      "reason": "pm-gh1700 versions the additive full parameter on the files, docs and test tool actions as strict schema 4.24.0; the provider flat schema is unchanged at 1.12.0 and no parameter or export is removed."
     }
   ],
   "entrypoints": {
@@ -7873,13 +7903,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DocsCommandOptions",
-          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DocsResult",
-          "signature": "export interface DocsResult { id: string; docs: LinkedDoc[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+          "signature": "export interface DocsResult { id: string; docs: LinkedDoc[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -9313,7 +9343,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesCommandOptions",
-          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9373,7 +9403,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesResult",
-          "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+          "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -11779,7 +11809,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedArtifactCommandOptions",
-          "signature": "export interface LinkedArtifactCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LinkedArtifactCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -11791,7 +11821,19 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedArtifactResult",
-          "signature": "export interface LinkedArtifactResult { id: string; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; artifacts: LinkedArtifact[]; }"
+          "signature": "export interface LinkedArtifactResult { id: string; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; artifacts: LinkedArtifact[]; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LinkedCollectionMutationProjection",
+          "signature": "export interface LinkedCollectionMutationProjection<TEntry> { entries: TEntry[]; total_count: number; returned_count: number; has_more: boolean; mutation_receipt: LinkedCollectionMutationReceipt; omission_receipt: AnnotationOmissionReceipt; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LinkedCollectionMutationReceipt",
+          "signature": "export interface LinkedCollectionMutationReceipt { changed_count: number; removed_count: number; full_history_included: boolean; }"
         },
         {
           "classification": "advanced_export",
@@ -14809,7 +14851,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.23.0\""
+          "signature": "\"4.24.0\""
         },
         {
           "classification": "contract_data",
@@ -16754,6 +16796,12 @@
           "kind": "function",
           "name": "projectLeanRecoveryPayload",
           "signature": "<Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined | calls: <Recovery extends Partial<Record<(typeof PM_RECOVERY_ECHO_FIELDS)[number], unknown>>>(recovery: Recovery | undefined) => Omit<Recovery, (typeof PM_RECOVERY_ECHO_FIELDS)[number]> | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "projectLinkedCollectionMutation",
+          "signature": "<TEntry>(params: { collectionKey: \"docs\" | \"files\" | \"tests\"; stored: readonly TEntry[]; written: readonly TEntry[]; removedCount: number; fullHistory: boolean; }) => LinkedCollectionMutationProjection<TEntry> | calls: <TEntry>(params: { collectionKey: \"files\" | \"docs\" | \"tests\"; stored: readonly TEntry[]; written: readonly TEntry[]; removedCount: number; fullHistory: boolean; }) => LinkedCollectionMutationProjection<TEntry>"
         },
         {
           "classification": "advanced_export",
@@ -22165,7 +22213,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestCommandOptions",
-          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; removeIndex?: Array<string | number>; update?: string; updateIndex?: string | number; setJson?: string; list?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; workspaceContext?: string; overrideLinkedWorkspaceContext?: boolean; allowUntrustedLinkedTests?: boolean; acknowledgeLinkedTests?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
+          "signature": "export interface TestCommandOptions { add?: string[]; addJson?: string[]; remove?: string[]; removeIndex?: Array<string | number>; update?: string; updateIndex?: string | number; setJson?: string; list?: boolean; fullHistory?: boolean; run?: boolean; match?: string; onlyIndex?: string | number; onlyLast?: boolean; timeout?: string; progress?: boolean; envSet?: string[]; envClear?: string[]; sharedHostSafe?: boolean; pmContext?: string; overrideLinkedPmContext?: boolean; workspaceContext?: string; overrideLinkedWorkspaceContext?: boolean; allowUntrustedLinkedTests?: boolean; acknowledgeLinkedTests?: boolean; failOnContextMismatch?: boolean; failOnSkipped?: boolean; failOnEmptyTestRun?: boolean; requireAssertionsForPm?: boolean; checkContext?: boolean; autoPmContext?: boolean; author?: string; message?: string; force?: boolean; measure?: string[]; metricBelow?: string; metricDiff?: string; }"
         },
         {
           "classification": "supported",
@@ -22177,7 +22225,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "TestResult",
-          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; tests_omitted?: { count: number; restore_with: string; }; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; evidence_recording?: { recorded: boolean; reason: \"recorded\" | \"tracking_disabled\" | \"write_failed\"; run_id: string; recovery_command?: string; }; count: number; removed?: number; updated_index?: number; updated_fields?: string[]; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
+          "signature": "export interface TestResult { ok: boolean; id: string; tests: LinkedTest[]; run_results: TestRunResult[]; failure_categories?: Record<LinkedTestFailureCategory, number>; selection?: Omit<LinkedTestRunSelection, \"selected\">; tests_omitted?: { count: number; restore_with: string; }; fail_on_skipped_triggered?: boolean; warnings?: string[]; changed: boolean; evidence_recording?: { recorded: boolean; reason: \"recorded\" | \"tracking_disabled\" | \"write_failed\"; run_id: string; recovery_command?: string; }; count: number; removed?: number; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; updated_index?: number; updated_fields?: string[]; measurements?: TestRunMeasurement[]; metric_below?: Array<TestRunMeasurement & { run_id: string; }>; metric_diff?: TestRunMeasurementDiff; }"
         },
         {
           "classification": "advanced_export",
@@ -23762,6 +23810,12 @@
           "kind": "function",
           "name": "writeWorkspaceJsonWithHistory",
           "signature": "(params: WorkspaceJsonWriteOptions) => Promise<boolean> | calls: (params: WorkspaceJsonWriteOptions) => Promise<boolean>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "writtenLinkedEntries",
+          "signature": "<TEntry>(before: readonly TEntry[], after: readonly TEntry[]) => TEntry[] | calls: <TEntry>(before: readonly TEntry[], after: readonly TEntry[]) => TEntry[]"
         }
       ],
       "types": "dist/sdk/index.d.ts"
@@ -26557,7 +26611,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.23.0\""
+          "signature": "\"4.24.0\""
         },
         {
           "classification": "contract_data",
@@ -28393,13 +28447,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DocsCommandOptions",
-          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DocsResult",
-          "signature": "export interface DocsResult { id: string; docs: LinkedDoc[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+          "signature": "export interface DocsResult { id: string; docs: LinkedDoc[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -28447,7 +28501,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesCommandOptions",
-          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -28471,7 +28525,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesResult",
-          "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+          "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -36067,13 +36121,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DocsCommandOptions",
-          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "DocsResult",
-          "signature": "export interface DocsResult { id: string; docs: LinkedDoc[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+          "signature": "export interface DocsResult { id: string; docs: LinkedDoc[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "advanced_export",
@@ -36193,7 +36247,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesCommandOptions",
-          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -36235,7 +36289,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesResult",
-          "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; }"
+          "signature": "export interface FilesResult { id: string; files: LinkedFile[]; changed: boolean; count: number; migrations_applied?: number; validation?: LinkedPathValidation; total_count?: number; returned_count?: number; has_more?: boolean; mutation_receipt?: LinkedCollectionMutationReceipt; omission_receipt?: AnnotationOmissionReceipt; }"
         },
         {
           "classification": "supported",
@@ -40004,6 +40058,7 @@
     "item_revision_conflict",
     "likely_duplicate",
     "linked_artifact_mutation_conflict",
+    "linked_artifact_note_key_misread",
     "linked_resource_positional_value",
     "linked_test_command_immutable",
     "linked_test_command_not_executable",
@@ -40149,6 +40204,7 @@
     "stdin_json_invalid",
     "stdin_json_persisted_annotation_changed",
     "stdin_json_unknown_key",
+    "structured_entry_key_repeated",
     "structured_event_immutable",
     "structured_event_input_conflict",
     "structured_event_json_empty",
@@ -40285,10 +40341,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1324,
+      "checked_functions": 1326,
       "checked_values": 394,
       "exempt_test_seams": 15,
-      "referenced_types": 1034
+      "referenced_types": 1035
     },
     "./sdk/authoring": {
       "checked_functions": 54,

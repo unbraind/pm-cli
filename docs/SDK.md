@@ -184,6 +184,24 @@ becomes `Partial`, because project-scope `list` and `export` omit the global-onl
 `telemetry_tracking` key: treat that key as possibly absent, and read consent
 from a global-scope export. No data migration or new dependency bounds are needed.
 
+The collection-mutation receipt update (pm-gh1700) records a breaking
+acknowledgement for `runTest`, `runFiles`, `runDocs` and their option and result
+types. A write (`add`, `addJson`, `addGlob`, `remove`, `removeIndex`, `migrate`,
+or a linked-test edit) now returns only the entries it added or rewrote:
+`count` equals the entries returned, `total_count` the entries stored, and
+`mutation_receipt` (`changed_count`, `removed_count`, `full_history_included`)
+plus the annotation-style `omission_receipt` describe the rest. Pass
+`fullHistory: true` (CLI `--full-history`, MCP `full`) to receive the whole
+collection after a write, or read it with a call that has no mutation options;
+list reads are unchanged. `TestResult.failure_categories` is present only when
+the call ran linked tests, so read it as `result.failure_categories?.timeout`.
+The implicit post-write path validation covers the returned entries, while
+`validatePaths: true` still checks every stored path. No data migration or new
+dependency bounds are needed: on 2026-11-11 the released pm-vcs and pm-web read
+stored lists only from list calls. `projectLinkedCollectionMutation` and
+`writtenLinkedEntries` are exported so a package can bound its own collection
+writes the same way.
+
 Validation refusals for item status and priority carry producer-owned
 `code: "invalid_argument_value"` and `context.field`, `context.value` and
 `context.allowed`. The allowed spellings come from the active status schema or

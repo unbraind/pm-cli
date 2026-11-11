@@ -116,7 +116,7 @@ silently change an unattended service.
 Keep dispatcher output in the service journal: `dispatch_accepted` proves only
 API acceptance. Verify the hosted run, GitHub Release and exact npm version
 separately. These runs remain `workflow_dispatch`; they do not improve or erase
-the native `schedule` denominator in [Release Reliability](RELEASE_RELIABILITY.md).
+the native `schedule` denominator in [Release Reliability](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASE_RELIABILITY.md) (repository-only, excluded from npm).
 Disable the independent timer to roll back; the original hosted schedule and
 publication path continue unchanged. Host-specific unit files and authentication
 configuration belong in private operator documentation.
@@ -711,7 +711,7 @@ download fixtures; a failed check must prevent executable permission and uploads
 
 ## Post-Release Verification
 
-Use the [rolling reliability report](RELEASE_RELIABILITY.md) as well as the
+Use the [rolling reliability report](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASE_RELIABILITY.md) (repository-only, excluded from npm) as well as the
 latest release result. Its first-attempt denominator, explicit outcome receipts,
 and UTC dispatch policy preserve failures even after a recovery succeeds.
 

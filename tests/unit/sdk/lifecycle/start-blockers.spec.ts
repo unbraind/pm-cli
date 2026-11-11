@@ -271,6 +271,11 @@ describe("pm-urzubi explicit start composition", () => {
       // A short scalar beside a prefixed edge may name two distinct items (a and pm-a), so clearing is not offered.
       expect(await nextSteps({ ...base, blocked_by: "missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }] } as ItemMetadata))
         .toContain('pm get pm-x --fields "blocked_by,dependencies"');
+      // pm-4yxzvd: the canonical row a short scalar write derived is the scalar's own, so the clear removes it.
+      for (const source_kind of ["cli:update:blocked_by", "cli:create:blocked_by"]) {
+        expect(await nextSteps({ ...base, blocked_by: "missing", dependencies: [{ id: "pm-missing", kind: "blocked_by", source_kind }] } as ItemMetadata))
+          .toContain("pm update pm-x --unset blocked_by");
+      }
       // Removal selectors normalize ids and compare kinds literally: legacy rows get an inspection step.
       expect(await nextSteps({ ...base, dependencies: [{ id: "missing", kind: "blocked_by" }] } as ItemMetadata))
         .toContain('pm get pm-x --fields "blocked_by,dependencies"');
@@ -281,9 +286,10 @@ describe("pm-urzubi explicit start composition", () => {
       // Two rows naming one blocker (pm-missing and a legacy short missing) cannot both go with one selector.
       expect(await nextSteps({ ...base, dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "missing", kind: "blocked_by" }] } as ItemMetadata))
         .toContain('pm get pm-x --fields "blocked_by,dependencies"');
-      // Clearing the scalar would also drop the independent edge, so only an inspection step is offered.
-      expect(await nextSteps({ ...base, blocked_by: "pm-missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "pm-other", kind: "blocked_by" }] } as ItemMetadata))
-        .toContain('pm get pm-x --fields "blocked_by,dependencies"');
+      // pm-4yxzvd: the scalar clear keeps the independent edge, so it is offered for multi-edge items too.
+      const multiEdge = await nextSteps({ ...base, blocked_by: "pm-missing", dependencies: [{ id: "pm-missing", kind: "blocked_by" }, { id: "pm-other", kind: "blocked_by" }] } as ItemMetadata);
+      expect(multiEdge).toContain("pm update pm-x --unset blocked_by");
+      expect(multiEdge).not.toContain('pm get pm-x --fields "blocked_by,dependencies"');
     });
   });
 });

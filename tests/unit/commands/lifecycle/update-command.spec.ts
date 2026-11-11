@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { describeRemovedDependencies, matchesDependencySelector } from "../../../../src/sdk/lifecycle/dependency-removal.js";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -11,6 +12,7 @@ import { applyRepeatedTerminalStateUpdate } from "../../../../src/sdk/lifecycle/
 import type { CloseRouteContext } from "../../../../src/sdk/lifecycle/update.js";
 import { runGet } from "../../../../src/cli/commands/query/get.js";
 import { runDeps } from "../../../../src/cli/commands/query/deps.js";
+import { admitStartWithOpenBlockers } from "../../../../src/sdk/lifecycle/start-blockers.js";
 import { preserveMutationStdinTokenLiterals } from "../../../../src/sdk/runtime-primitives.js";
 import { setActiveExtensionRegistrations } from "../../../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../../../src/core/extensions/loader.js";
@@ -445,25 +447,25 @@ describe("update command helper coverage", () => {
     ]);
 
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
         { id: "pm-b" },
       ),
     ).toBe(false);
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
         { id: "pm-a", kind: "blocked_by" },
       ),
     ).toBe(false);
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
         { id: "pm-a", source_kind: "manual" },
       ),
     ).toBe(false);
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
         { id: "pm-a", kind: "related", source_kind: "import" },
       ),
@@ -486,8 +488,25 @@ describe("update command helper coverage", () => {
         undefined,
         "2026-01-01T00:00:00.000Z",
         "agent",
+        { value: "pm-a", idPrefix: "pm-" },
       ),
     ).toEqual({ changed: true, dependencies: undefined });
+    // pm-4yxzvd: the removal receipt names removed rows as a multiset and skips malformed legacy rows.
+    const row = { id: "pm-a", kind: "blocked_by", created_at: "2026-01-01T00:00:00.000Z" };
+    expect(describeRemovedDependencies([row, row, "legacy", null, { kind: "related" }], [row, 7])).toBe("pm-a/blocked_by");
+    expect(describeRemovedDependencies([row], undefined)).toBe("pm-a/blocked_by");
+    expect(describeRemovedDependencies([row], [row])).toBeUndefined();
+    expect(describeRemovedDependencies(undefined, [row])).toBeUndefined();
+    expect(describeRemovedDependencies([], [])).toBeUndefined();
+    // pm-4yxzvd: without the cleared scalar no row names its target, so nothing is removed.
+    expect(
+      _testOnlyUpdateCommand.reconcileBlockedByDependency(
+        [{ id: "pm-a", kind: "blocked_by", created_at: "old" }],
+        undefined,
+        "2026-01-01T00:00:00.000Z",
+        "agent",
+      ),
+    ).toEqual({ changed: false, dependencies: [{ id: "pm-a", kind: "blocked_by", created_at: "old" }] });
   });
 });
 
@@ -2539,6 +2558,7 @@ describe("runUpdate", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
 
+      // pm-4yxzvd: kind alone is the explicit kind-wide selector; matching nothing it is refused as not found.
       await expect(
         runUpdate(
           id,
@@ -2547,7 +2567,7 @@ describe("runUpdate", () => {
           },
           { path: context.pmPath },
         ),
-      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.NOT_FOUND });
 
       await expect(
         runUpdate(
@@ -4349,6 +4369,112 @@ describe("runUpdate", () => {
 
         const graph = await runDeps(blockedId, { format: "graph" }, { path: context.pmPath });
         expect(graph.edge_count).toBe(0);
+      });
+    });
+
+    // pm-4yxzvd: clearing the scalar removes only the rows naming the scalar's own target.
+    it("clears only the scalar's own edge and keeps an independent prerequisite blocking", async () => {
+      await withTempPmPath(async (context) => {
+        const blockerA = createTask(context, "4yxzvd-blocker-a");
+        const prerequisiteB = createTask(context, "4yxzvd-prerequisite-b");
+        for (const clear of [{ unset: ["blocked_by"] }, { unset: ["blocked-by"] }] as const) {
+          const blockedId = createTask(context, "4yxzvd-blocked");
+          await runUpdate(blockedId, { blockedBy: blockerA }, { path: context.pmPath });
+          await runUpdate(blockedId, { dep: [`id=${prerequisiteB},kind=blocked_by`] }, { path: context.pmPath });
+
+          const cleared = await runUpdate(blockedId, { ...clear, message: "A no longer applies" }, { path: context.pmPath });
+
+          const item = cleared.item as { blocked_by?: string; dependencies?: { id: string; kind: string }[] };
+          expect(item.blocked_by).toBeUndefined();
+          expect(item.dependencies).toEqual([expect.objectContaining({ id: prerequisiteB, kind: "blocked_by" })]);
+          expect(cleared.warnings).toContain(`dependencies_removed:${blockedId}:${blockerA}/blocked_by`);
+          // The item stays blocked: starting it is refused on B, with B's exact removal as the recovery.
+          const settings = await readSettings(context.pmPath);
+          const refusal = await admitStartWithOpenBlockers({ pmRoot: context.pmPath, settings, metadata: item as unknown as ItemMetadata })
+            .catch((error: PmCliError) => error);
+          expect(refusal).toBeInstanceOf(PmCliError);
+          expect((refusal as PmCliError).context.details).toMatchObject({ open_blockers: [{ id: prerequisiteB }] });
+          expect((refusal as PmCliError).context.nextSteps).toContain(
+            `pm update ${blockedId} --dep-remove "id=${prerequisiteB},kind=blocked_by"`,
+          );
+        }
+      });
+    });
+
+    it("clears a short scalar's derived canonical edge but never a hand-added edge it could also name", async () => {
+      await withTempPmPath(async (context) => {
+        const blocker = createTask(context, "4yxzvd-short-blocker");
+        const shortForm = blocker.replace(/^pm-/u, "");
+        const derived = createTask(context, "4yxzvd-short-derived");
+        await runUpdate(derived, { blockedBy: shortForm }, { path: context.pmPath });
+        const derivedCleared = await runUpdate(derived, { unset: ["blocked_by"] }, { path: context.pmPath });
+        expect((derivedCleared.item as { dependencies?: unknown[] }).dependencies).toBeUndefined();
+        expect(derivedCleared.warnings).toContain(`dependencies_removed:${derived}:${blocker}/blocked_by`);
+
+        // Negative control: the same canonical id recorded by --dep is independent of the short scalar.
+        const handAdded = createTask(context, "4yxzvd-short-hand-added");
+        await runUpdate(handAdded, { dep: [`id=${blocker},kind=blocked_by`] }, { path: context.pmPath });
+        // The short scalar dedupes onto the existing row, so no scalar-derived row is written.
+        await runUpdate(handAdded, { blockedBy: shortForm }, { path: context.pmPath });
+        const kept = await runUpdate(handAdded, { unset: ["blocked_by"] }, { path: context.pmPath });
+        expect((kept.item as { dependencies?: { id: string }[] }).dependencies).toEqual([
+          expect.objectContaining({ id: blocker, kind: "blocked_by" }),
+        ]);
+        expect(kept.warnings.some((warning) => warning.startsWith("dependencies_removed:"))).toBe(false);
+      });
+    });
+
+    it("removes every row of one kind only through the explicit kind-wide --dep-remove and names them", async () => {
+      await withTempPmPath(async (context) => {
+        const first = createTask(context, "4yxzvd-kind-first");
+        const second = createTask(context, "4yxzvd-kind-second");
+        const blockedId = createTask(context, "4yxzvd-kind-blocked");
+        await runUpdate(
+          blockedId,
+          { dep: [`id=${first},kind=blocked_by`, `id=${second},kind=blocked_by`, `id=${first},kind=related`] },
+          { path: context.pmPath },
+        );
+
+        const removed = await runUpdate(blockedId, { depRemove: ["kind=blocked_by"] }, { path: context.pmPath });
+
+        expect((removed.item as { dependencies?: { id: string; kind: string }[] }).dependencies).toEqual([
+          expect.objectContaining({ id: first, kind: "related" }),
+        ]);
+        const receipt = removed.warnings.find((warning) => warning.startsWith(`dependencies_removed:${blockedId}:`));
+        expect(receipt?.slice(`dependencies_removed:${blockedId}:`.length).split(",").sort()).toEqual(
+          [`${first}/blocked_by`, `${second}/blocked_by`].sort(),
+        );
+        // A kind-wide selector that matches nothing is refused like any zero-match removal.
+        await expect(runUpdate(blockedId, { depRemove: ["kind=blocked_by"] }, { path: context.pmPath })).rejects.toMatchObject({
+          context: { code: "dependency_remove_no_match", unmatched_selectors: [{ id: "*", kind: "blocked_by" }] },
+        });
+        // A row selector that forgot its id is never widened into a kind-wide removal.
+        for (const selector of ["kind=related,author=someone", "author=someone"]) {
+          await expect(runUpdate(blockedId, { depRemove: [selector] }, { path: context.pmPath })).rejects.toMatchObject({
+            message: expect.stringContaining("kind=<kind> alone"),
+          });
+        }
+      });
+    });
+
+    it("clears through the CLI --blocked-by none spelling with the same scoped removal", async () => {
+      await withTempPmPath(async (context) => {
+        const blockerA = createTask(context, "4yxzvd-cli-a");
+        const prerequisiteB = createTask(context, "4yxzvd-cli-b");
+        const blockedId = createTask(context, "4yxzvd-cli-blocked");
+        await runUpdate(blockedId, { blockedBy: blockerA, dep: [`id=${prerequisiteB},kind=blocked_by`] }, { path: context.pmPath });
+
+        const result = context.runCli(["update", blockedId, "--blocked-by", "none", "--json"], {
+          expectJson: true,
+          preserveDefaultMutationOutput: true,
+        });
+
+        expect(result.code).toBe(0);
+        expect(result.json).toMatchObject({ warnings: [`dependencies_removed:${blockedId}:${blockerA}/blocked_by`] });
+        const after = await runGet(blockedId, {}, { path: context.pmPath });
+        expect((after.item as { dependencies?: { id: string }[] }).dependencies).toEqual([
+          expect.objectContaining({ id: prerequisiteB, kind: "blocked_by" }),
+        ]);
       });
     });
 

@@ -1,0 +1,23 @@
+id: pm-mza19c
+title: "zsh and fish completions have no docs block, so no pm docs flag ever completes in those shells"
+description: "Found 2026-11-11 while adding --full-history to the files, docs and test completions (pm-gh1700). src/sdk/completion/bash.ts has a docs) case listing --add, --add-glob, --remove, --migrate, --note, --validate-paths and --full-history. src/sdk/completion/zsh.ts and src/sdk/completion/fish.ts have no docs block at all, so in those shells pm docs completes no flag, while pm files, its twin, completes every flag. The completions are hand-written per shell, so nothing checks one shell's flag set against another's or against DOCS_FLAG_CONTRACTS. Duplicate check: completion searches; pm-xhot (closed) planned contract-generated completion flags, and pm-6qi8 and pm-mthy (closed) fixed single drifts."
+type: Chore
+status: open
+priority: 3
+tags[4]: agent-ux,cli,completion,docs
+created_at: "2026-11-11T06:47:40.953Z"
+updated_at: "2026-11-11T06:47:40.953Z"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: zsh and fish complete every pm docs flag that bash completes; A spec compares each shell's files and docs completion flags with FILES_FLAG_CONTRACTS and DOCS_FLAG_CONTRACTS so the next drift fails
+parent: pm-mpbb
+risk: low
+confidence: high
+expected_result: "pm docs <TAB> lists the docs flags in bash, zsh and fish alike"
+actual_result: Only bash completes pm docs flags; zsh and fish complete none
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6qi8,related,"2026-11-11T06:47:40.953Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1700,discovered_from,"2026-11-11T06:47:40.953Z","harness:claude-code","cli:create:dep",detected
+  pm-mthy,related,"2026-11-11T06:47:40.953Z","harness:claude-code","cli:create:dep",detected
+  pm-xhot,related,"2026-11-11T06:47:40.953Z","harness:claude-code","cli:create:dep",detected
+body: ""

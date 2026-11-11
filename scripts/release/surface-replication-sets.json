@@ -400,6 +400,110 @@
           ]
         }
       ]
+    },
+    {
+      "id": "linked-collection-mutation-receipts",
+      "owner": "pm-gh1700",
+      "description": "Replicate bounded linked-collection write receipts and the explicit full-history escape hatch across files, docs and test on every transport.",
+      "triggers": [
+        {
+          "path": "src/sdk/linked-artifacts.ts",
+          "changed_lines_contain_any": [
+            "projectLinkedCollectionMutation",
+            "linkedCollectionMutationFields",
+            "LinkedCollectionMutationReceipt",
+            "writtenLinkedEntries",
+            "fullHistory"
+          ]
+        },
+        {
+          "path": "src/sdk/test/execution.ts",
+          "changed_lines_contain_any": [
+            "projectLinkedCollectionMutation",
+            "linkedCollectionMutationFields",
+            "fullHistory"
+          ]
+        },
+        {
+          "path": "src/sdk/files.ts",
+          "changed_lines_contain_any": ["fullHistory", "LinkedCollectionMutationReceipt"]
+        },
+        {
+          "path": "src/sdk/docs.ts",
+          "changed_lines_contain_any": ["fullHistory", "LinkedCollectionMutationReceipt"]
+        }
+      ],
+      "required_changed_members": [
+        "src/sdk/linked-artifacts.ts",
+        "src/sdk/test/execution.ts",
+        "tests/unit/commands/annotations/linked-collection-receipts.spec.ts",
+        "docs/SDK_CONTEXT_INTEGRITY.md"
+      ],
+      "members": [
+        {
+          "path": "src/sdk/linked-artifacts.ts",
+          "contains_all": [
+            "projectLinkedCollectionMutation",
+            "linkedCollectionMutationFields",
+            "fullHistory",
+            "omission_receipt"
+          ]
+        },
+        {
+          "path": "src/sdk/test/execution.ts",
+          "contains_all": [
+            "projectLinkedCollectionMutation",
+            "linkedCollectionMutationFields",
+            "fullHistory"
+          ]
+        },
+        {
+          "path": "src/sdk/files.ts",
+          "contains_all": ["fullHistory", "LinkedCollectionMutationReceipt"]
+        },
+        {
+          "path": "src/sdk/docs.ts",
+          "contains_all": ["fullHistory", "LinkedCollectionMutationReceipt"]
+        },
+        {
+          "path": "src/cli/register-mutation.ts",
+          "contains_all": ["--full-history", "fullHistory: options.fullHistory === true"]
+        },
+        {
+          "path": "src/cli/register-operations.ts",
+          "contains_all": ["--full-history", "fullHistory: options.fullHistory === true"]
+        },
+        {
+          "path": "src/sdk/test/command-args.ts",
+          "contains_all": ["--full-history"]
+        },
+        {
+          "path": "src/sdk/cli-contracts/flag-contracts.ts",
+          "contains_all": ["{ flag: \"--full-history\" }"]
+        },
+        {
+          "path": "src/sdk/cli-contracts/completeness.ts",
+          "contains_all": ["test: { \"--full-history\": \"full\" }"]
+        },
+        {
+          "path": "src/sdk/runtime/actions.ts",
+          "contains_all": [
+            "runTest(requireMcpItemId(ctx), normalizeAnnotationTransportOptions(ctx.options)"
+          ]
+        },
+        {
+          "path": "src/sdk/completion/zsh.ts",
+          "contains_all": ["--full-history[Return every linked test after a write]"]
+        },
+        {
+          "path": "tests/unit/commands/annotations/linked-collection-receipts.spec.ts",
+          "contains_all": ["full_history_included", "fullHistory: true", "full: true"]
+        },
+        {
+          "path": "docs/SDK_CONTEXT_INTEGRITY.md",
+          "contains_all": ["Linked files, docs and tests follow the same rule", "full_history"]
+        }
+      ]
     }
   ],
   "waivers": [
@@ -578,6 +682,62 @@
       "pm_item": "pm-yh8r",
       "reason": "Mechanical extraction relocates the unchanged shell template and SDK action handlers. Existing annotation receipt contracts, tests and documentation remain valid; full suite and byte-identical completion parity verify preservation.",
       "expires_on": "2026-10-03"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/annotations.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-gh1700",
+      "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
+      "expires_on": "2026-11-25"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/comments.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-gh1700",
+      "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
+      "expires_on": "2026-11-25"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/notes.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-gh1700",
+      "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
+      "expires_on": "2026-11-25"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/learnings.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-gh1700",
+      "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
+      "expires_on": "2026-11-25"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/cli/register-annotations.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-gh1700",
+      "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
+      "expires_on": "2026-11-25"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/tool-parameter-tables.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-gh1700",
+      "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
+      "expires_on": "2026-11-25"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "tests/unit/sdk/read-contract-integrity.spec.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-gh1700",
+      "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
+      "expires_on": "2026-11-25"
     }
   ],
   "cli_refusal_dispositions": [

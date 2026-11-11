@@ -1713,7 +1713,12 @@ describe("release readiness runtime coverage", () => {
         "files",
         "changed",
         "count",
+        "total_count",
+        "returned_count",
+        "has_more",
         "validation",
+        "mutation_receipt",
+        "omission_receipt",
       ]);
 
       const docsResult = context.runCli(
@@ -1732,7 +1737,12 @@ describe("release readiness runtime coverage", () => {
         "docs",
         "changed",
         "count",
+        "total_count",
+        "returned_count",
+        "has_more",
         "validation",
+        "mutation_receipt",
+        "omission_receipt",
       ]);
 
       const depsTreeResult = context.runCli(["deps", createdId, "--json"], {
@@ -1805,7 +1815,7 @@ describe("release readiness runtime coverage", () => {
         "id",
         "tests",
         "run_results",
-        "failure_categories",
+        // pm-gh1700: failure_categories is reported only when linked tests ran.
         "changed",
         "count",
       ]);

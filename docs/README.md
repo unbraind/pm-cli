@@ -117,7 +117,7 @@ Additional SDK, operations, and generated contracts:
 
 - [Item Read Projections](ITEM_READ_PROJECTIONS.md) - identity, projections, and read completeness.
 - [MCP Capability Surfaces](MCP_CAPABILITY_SURFACES.md) - negotiated MCP discovery contracts.
-- [PR Review Loop](PR_REVIEW_LOOP.md) - complete review inventories and feedback acknowledgment.
+- [PR Review Loop](https://github.com/unbraind/pm-cli/blob/main/docs/PR_REVIEW_LOOP.md) (repository-only, excluded from npm) - complete review inventories and feedback acknowledgment.
 - [Lifecycle Commands and Ownership](LIFECYCLE_COMMANDS.md) - canonical bulk commands, ownership compositions, and SDK/MCP migration.
 - [SDK Lifecycle](SDK_LIFECYCLE.md) - lifecycle primitives and package integration.
 - [SDK Runtime Boundaries](SDK_RUNTIME_BOUNDARIES.md) - runtime ownership and import boundaries.

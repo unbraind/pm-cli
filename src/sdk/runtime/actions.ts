@@ -312,7 +312,7 @@ function runMcpFilesAction(ctx: McpActionDispatchContext): Promise<unknown> {
         withFilesDiscoveryOptions(ctx.options),
         ctx.global,
       )
-    : runFiles(fileId, withAddNoteOption(ctx.options), ctx.global);
+    : runFiles(fileId, withAddNoteOption(normalizeAnnotationTransportOptions(ctx.options)), ctx.global);
 }
 
 /** Resolve telemetry subcommand and limit precedence before calling the shared SDK telemetry handler. */
@@ -668,8 +668,8 @@ const SDK_ACTION_HANDLERS: Record<string, McpActionHandler> = {
     ),
   files: runMcpFilesAction,
   docs: (ctx) =>
-    runDocs(requireMcpItemId(ctx), withAddNoteOption(ctx.options), ctx.global),
-  test: (ctx) => runTest(requireMcpItemId(ctx), ctx.options, ctx.global),
+    runDocs(requireMcpItemId(ctx), withAddNoteOption(normalizeAnnotationTransportOptions(ctx.options)), ctx.global),
+  test: (ctx) => runTest(requireMcpItemId(ctx), normalizeAnnotationTransportOptions(ctx.options), ctx.global),
   "test-all": (ctx) => runTestAll(ctx.options, ctx.global),
   telemetry: runMcpTelemetryAction,
   validate: (ctx) =>

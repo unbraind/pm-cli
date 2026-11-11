@@ -22,7 +22,13 @@ Dependency removal is lossless. `--dep-remove` rejects the same malformed
 shorthand as `--dep`, and a selector that matches nothing returns the typed
 `dependency_remove_no_match` refusal instead of a successful no-op. Exact
 rows can be retired by selecting `id`, `kind` (or its input-only `type` alias),
-`source_kind`, `author`, and `created_at`; omitted coordinates intentionally broaden the match. Exact
+`source_kind`, `author`, and `created_at`; omitted coordinates intentionally broaden the match.
+`kind=<kind>` with no other key is the explicit kind-wide selector: it removes
+every row of exactly that kind, and any other id-less selector is refused
+rather than widened. Every update that removes rows names them in a
+`dependencies_removed:<item>:<id>/<kind>,...` warning, including the rows a
+`--unset blocked_by` scalar clear removes (only those naming the scalar's own
+target; pm-4yxzvd). Exact
 duplicate rows can still be normalized without delete-then-add risk by
 re-adding the same identity; the mutation keeps one canonical row and never
 removes the logical edge. Identity comparison includes normalized `id`, `kind`,

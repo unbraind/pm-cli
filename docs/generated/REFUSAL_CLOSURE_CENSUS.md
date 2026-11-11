@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 461
+- Catalog error codes: 463
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 442
-- Coverage fraction: 0.041215
+- Uncovered error codes: 444
+- Coverage fraction: 0.041037
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -206,6 +206,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `item_revision_conflict` | `item_revision_conflict` | uncovered | none | 0 |
 | `likely_duplicate` | `likely_duplicate` | uncovered | none | 0 |
 | `linked_artifact_mutation_conflict` | `linked_artifact_mutation_conflict` | uncovered | none | 0 |
+| `linked_artifact_note_key_misread` | `linked_artifact_note_key_misread` | uncovered | none | 0 |
 | `linked_resource_positional_value` | `linked_resource_positional_value` | uncovered | none | 0 |
 | `linked_test_command_immutable` | `linked_test_command_immutable` | uncovered | none | 0 |
 | `linked_test_command_not_executable` | `linked_test_command_not_executable` | uncovered | none | 0 |
@@ -351,6 +352,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `stdin_json_invalid` | `stdin_json_invalid` | uncovered | none | 0 |
 | `stdin_json_persisted_annotation_changed` | `stdin_json_persisted_annotation_changed` | uncovered | none | 0 |
 | `stdin_json_unknown_key` | `stdin_json_unknown_key` | uncovered | none | 0 |
+| `structured_entry_key_repeated` | `structured_entry_key_repeated` | uncovered | none | 0 |
 | `structured_event_immutable` | `structured_event_immutable` | uncovered | none | 0 |
 | `structured_event_input_conflict` | `structured_event_input_conflict` | uncovered | none | 0 |
 | `structured_event_json_empty` | `structured_event_json_empty` | uncovered | none | 0 |

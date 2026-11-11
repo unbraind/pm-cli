@@ -269,7 +269,7 @@ run `inventory` once more to catch new or edited feedback, and require all
 findings to have an explicit disposition. Compare each artifact's `revision`
 and pass it as `--revision` when acknowledging feedback, so edited bodies get
 fresh decisions and retrying a handled revision adds no duplicate reply.
-See [Review Loop](PR_REVIEW_LOOP.md) for the revision and reply contracts.
+See [Review Loop](https://github.com/unbraind/pm-cli/blob/main/docs/PR_REVIEW_LOOP.md) (repository-only, excluded from npm) for the revision and reply contracts.
 
 ## Documentation Rules for Agents
 

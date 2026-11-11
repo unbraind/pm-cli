@@ -92,7 +92,8 @@ results, and limitations. Reuse canonical follow-up items for product defects;
 never delete a failing regression merely to make the suite green. Close with
 structured evidence and release the claim, or return paused work to an appropriate
 non-active state. Delivery and review follow the user's authorized scope and
-[review loop](../../../docs/PR_REVIEW_LOOP.md).
+[review loop](https://github.com/unbraind/pm-cli/blob/main/docs/PR_REVIEW_LOOP.md)
+(repository-only, excluded from npm).
 
 For current command flags use command-specific help/contracts. Optional deeper
 workflow guidance is available after installing guide-shell:
