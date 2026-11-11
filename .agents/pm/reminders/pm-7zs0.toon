@@ -6,10 +6,9 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-11-09T23:39:04.137Z"
-reminders[2]{at,text}:
-  "2026-11-10T07:00:00.000Z","Independently verify today's scheduled Auto Release attempt or guarded no-change skip, the latest merged delivery, at most one automatic UTC-day tag, npm latest, GitHub advertisement, npm/npx/Bun/bunx acceptance and fresh Sentry/telemetry. The November 9 same-tag recovery is complete; preserve its immutable tag and receipt rather than repeating it. Before any new recovery inspect and preserve that day's active child to avoid duplicates. Triage a new stalled publication and always schedule the next daily check even when an older recovery remains unresolved. Keep original release reliability evidence separate from a later successful recovery."
-  "2026-11-11T07:00:00.000Z",Independently verify the current UTC-day automatic release or guarded skip and the latest merged delivery. Require at most one automatic daily identity while allowing explicit manual triggers. Check npm latest and GitHub advertisement plus npm/npx/Bun/bunx and fresh Sentry/telemetry. Inspect and preserve any active publication child before recovery; older successful recoveries do not prove today's release. Retain original reliability failures and schedule the following daily check even when this occurrence cannot complete.
+updated_at: "2026-11-11T19:05:21.392Z"
+reminders[1]{at,text}:
+  "2026-11-12T07:00:00.000Z",Independently verify the current UTC-day automatic release or guarded skip and the latest merged delivery. Require at most one automatic daily identity while allowing explicit manual triggers. Check npm latest and GitHub advertisement plus npm/npx/Bun/bunx and fresh Sentry/telemetry. Inspect and preserve any active publication child before recovery; older successful recoveries do not prove today's release. Retain original reliability failures and schedule the following daily check even when this occurrence cannot complete.
 author: maintainer-agent
 estimated_minutes: 15
 acceptance_criteria: "After each merge to main, the next daily release tags vYYYY.M.D and npm latest advances; any discrepancy is triaged the same day.; Every daily check distinguishes scheduled or guarded dispatch attempts, failed original runs, same-version recovery, immutable publication identity and all supported consumer acceptance results; Every next daily reminder retains explicit v2026.11.9 recovery until its GitHub Release advertisement is verified; Current-day release verification and scheduling the following daily reminder proceed independently of every older recovery"
@@ -97,7 +96,7 @@ dependencies[15]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[269]:
+comments[270]:
   - created_at: "2026-06-10T14:44:30.277Z"
     author: maintainer-agent
     text: "2026-06-10 daily auto-release (scheduled run 27258655654, 06:50Z) FAILED at sentry-telemetry-gate: PM-CLI-1J 'CommandError: {' — a CommandError whose message was the raw guided-error JSON envelope (code tracker_not_initialized) thrown by an ephemeral temp-dir script (readPmItemsForUpsert, source no longer on disk; 2 events 2026-06-09T21:34Z). Gate classifier fix already landed in PR #197 (fba75fb0, merged 11:34Z, adds 'tracker_not_initialized' to KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS) but AFTER the scheduled run. Recovery: resolved PM-CLI-1J in Sentry + re-dispatched auto-release.yml with push=true (run 27284359777). Will verify v2026.6.10 npm publish before closing."
@@ -909,6 +908,10 @@ comments[269]:
   - created_at: "2026-11-09T23:39:02.576Z"
     author: "harness:codex"
     text: "Scheduled 23:30 UTC verification recorded late at 2026-11-09T23:39:02.082115+00:00. Current UTC-day identity remains solely 2026.11.9 and its tag object 4bcc6fe0e88051eded262aa183f07c6e63546515 is unchanged. Preserved Release child42601586640 is successful across all12jobs. The fresh full public verifier passes GitHub advertisement and npm metadata plus named/default npx and bunx CLI, all four bins, stdio/HTTP MCP and expected nonzero controls with one attempt. Daily workflow remains active; no tag/version/child was created or redispatched. Required fresh observability passes: production Sentry critical/high/active zero; configured7day telemetry rate 5.16 percent; missing codes zero. PR1696 SDK additions are still unmerged and absent from the immutable9 artifact. Retire this elapsed occurrence without claiming on-time execution; independently retain November10 and November11 07:00UTC checks, each for its own UTC-day target. Original failure history remains unchanged."
+  - created_at: "2026-11-11T18:17:12.558Z"
+    author: "harness:claude-code"
+    text: "Release health on 2026-11-11 (UTC), verified live at 18:17Z. The 03:45Z dispatcher run 42954784065 cut v2026.11.11 on its first try, after 2026-11-10's dispatcher had failed the coverage gate. Release run 42959300153 (tag push) published it: npm latest and GitHub Latest are 2026.11.11 (GitHub release at 05:43Z). npx and bunx both resolved 2026.11.11 when checked earlier that day. The 09:46Z scheduled run 42998055542 succeeded as the same-day no-op, and the 18:16Z issues-event run 43076188420 was skipped. One automatic release for the day held."
+    edited_at: "2026-11-11T19:05:21.391Z"
 notes[12]:
   - created_at: "2026-07-02T06:41:55.766Z"
     author: claude-code-agent
