@@ -1,0 +1,26 @@
+id: pm-vo4p8i
+title: "CI's shell-completion gate installs fish and zsh through apt at run time, so an Ubuntu mirror DNS outage fails a required check for every pull request"
+description: "Observed 2026-11-11 on PR 1705. The Gates (smokes) step 'Verify native shell completion boundaries' (.github/workflows/ci.yml) runs sudo apt-get update and then sudo apt-get install --yes fish zsh before tests/acceptance/shell-completion.mjs. Three consecutive attempts (14:49Z, 16:03Z, 16:33Z) failed with exit 100: the ubuntu-26.04 runner (image 20261101.186.1) could not resolve azure.archive.ubuntu.com, archive.ubuntu.com or security.ubuntu.com ('Temporary failure resolving'), while packages.microsoft.com resolved. The same image had installed both shells at 08:14Z. The acceptance check itself passes locally, but one mirror outage makes a required check red and blocks every merge. Each retry also waits behind the account's shared 20-job runner pool. Duplicate check: searched apt, mirror, DNS and the shell-completion CI step; the completion items (pm-7hx6, pm-6qi8, pm-mthy, pm-q4zx) cover completion content, not the gate's provisioning."
+type: Issue
+status: open
+priority: 2
+tags[4]: ci,flaky-infra,github-actions,shell-completion
+created_at: "2026-11-11T16:44:27.983Z"
+updated_at: "2026-11-11T18:17:14.386Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "The shell-completion gate obtains fish and zsh without depending on one apt mirror lookup: apt retries with Acquire::Retries and a fallback source (Homebrew bottles or a cached package), or a runner image that ships both; A provisioning failure is reported as an infrastructure error distinct from a completion-boundary failure; The acceptance script still runs against real fish and zsh binaries"
+parent: pm-u9d0
+risk: low
+confidence: high
+severity: medium
+expected_result: A transient Ubuntu mirror outage does not fail the required shell-completion gate
+actual_result: "Three attempts in two hours failed apt-get with exit 100 on DNS, blocking PR 1705's merge"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6qi8,related,"2026-11-11T16:44:27.983Z","harness:claude-code","cli:create:dep",detected
+  pm-7hx6,related,"2026-11-11T16:44:27.983Z","harness:claude-code","cli:create:dep",detected
+  pm-mthy,related,"2026-11-11T16:44:27.983Z","harness:claude-code","cli:create:dep",detected
+  pm-q4zx,related,"2026-11-11T16:44:27.983Z","harness:claude-code","cli:create:dep",detected
+files[1]{path,scope}:
+  .github/workflows/ci.yml,project
+body: ""
