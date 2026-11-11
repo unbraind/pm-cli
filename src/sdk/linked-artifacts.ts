@@ -15,6 +15,7 @@ import {
   createStdinTokenResolver,
   looksLikeGenericKeyValueEntry,
   parseCsvKv,
+  splitStructuredEntrySegments,
 } from "../core/item/parse.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { isRemoteLinkedArtifactReference } from "../core/validate/linked-artifact-reference.js";
@@ -32,6 +33,9 @@ import { readSettings } from "../core/store/settings.js";
 import { SCOPE_VALUES } from "../types/index.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import type { LinkScope } from "../types/index.js";
+import type { AnnotationOmissionReceipt } from "./annotations.js";
+import { renderPmCommand, resolvePmCommandScopeArgs } from "./command-line.js";
+import { activeItemRevisionExpectations } from "../core/store/item-mutation-precondition.js";
 
 /** Restricts linked artifact values accepted by command, SDK, and storage contracts. */
 export type LinkedArtifact = {
@@ -81,12 +85,105 @@ export interface LinkedArtifactCommandOptions {
   appendStable?: boolean;
   /** Value that configures or reports validate paths for this contract. */
   validatePaths?: boolean;
+  /** Return the complete linked collection after a write instead of the bounded mutation receipt (pm-gh1700). */
+  fullHistory?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
   /** Value that configures or reports force for this contract. */
   force?: boolean;
+}
+
+/** Describes the linked-collection entries one bounded mutation response carries (pm-gh1700). */
+export interface LinkedCollectionMutationReceipt {
+  /** Entries this mutation added or rewrote; a bounded response returns exactly these. */
+  changed_count: number;
+  /** Stored entries this mutation removed. */
+  removed_count: number;
+  /** Whether the response includes the complete post-mutation collection. */
+  full_history_included: boolean;
+}
+
+/** Counts and receipts a linked-collection mutation response carries beside its entries. */
+export interface LinkedCollectionMutationProjection<TEntry> {
+  /** The written entries, or the whole collection when full history was requested. */
+  entries: TEntry[];
+  /** Number of entries stored after the mutation. */
+  total_count: number;
+  /** Number of entries this response carries. */
+  returned_count: number;
+  /** Whether stored entries exist beyond the ones returned. */
+  has_more: boolean;
+  /** What the mutation changed. */
+  mutation_receipt: LinkedCollectionMutationReceipt;
+  /** Stored entries withheld from this response and the selector that restores them. */
+  omission_receipt: AnnotationOmissionReceipt;
+}
+
+/** An entry as storage writes it: JSON round-tripped, so keys holding undefined are gone. */
+function persistedLinkedForm<TEntry>(entry: TEntry): TEntry {
+  return JSON.parse(JSON.stringify(entry)) as TEntry;
+}
+
+/** Entries of `after` whose persisted value is new: added, note-revised or migrated (pm-gh1700). */
+export function writtenLinkedEntries<TEntry>(
+  before: readonly TEntry[],
+  after: readonly TEntry[],
+): TEntry[] {
+  const unmatched = before.map(persistedLinkedForm);
+  return after.filter((entry) => {
+    const persisted = persistedLinkedForm(entry);
+    const index = unmatched.findIndex((candidate) => stableValueEquals(candidate, persisted));
+    if (index >= 0) unmatched.splice(index, 1);
+    return index < 0;
+  });
+}
+
+/**
+ * Bound a linked-collection mutation response to the entries it wrote
+ * (pm-gh1700), as comments, notes and learnings bound theirs: the response
+ * no longer grows with the stored list. `fullHistory` (CLI `--full-history`,
+ * MCP `full`) returns the whole collection, and the omission receipt names
+ * that selector whenever stored entries were withheld.
+ */
+export function projectLinkedCollectionMutation<TEntry>(params: {
+  collectionKey: "files" | "docs" | "tests";
+  stored: readonly TEntry[];
+  written: readonly TEntry[];
+  removedCount: number;
+  fullHistory: boolean;
+}): LinkedCollectionMutationProjection<TEntry> {
+  const entries = params.fullHistory ? [...params.stored] : [...params.written];
+  const withheld = entries.length < params.stored.length;
+  return {
+    entries,
+    total_count: params.stored.length,
+    returned_count: entries.length,
+    has_more: withheld,
+    mutation_receipt: {
+      changed_count: params.written.length,
+      removed_count: params.removedCount,
+      full_history_included: !withheld,
+    },
+    omission_receipt: {
+      has_omissions: withheld,
+      omitted_field_group_count: withheld ? 1 : 0,
+      omitted_field_groups: withheld
+        ? [
+            {
+              name: `${params.collectionKey}_history`,
+              restore_with: {
+                selector: "full_history",
+                cli_flag: "--full-history",
+                sdk_option: "fullHistory",
+                mcp_option: "full",
+              },
+            },
+          ]
+        : [],
+    },
+  };
 }
 
 /** Documents the path migration payload exchanged by command, SDK, and package integrations. */
@@ -135,6 +232,16 @@ export interface LinkedArtifactResult {
   validation?: LinkedPathValidation;
   /** Value that configures or reports artifacts for this contract. */
   artifacts: LinkedArtifact[];
+  /** Mutations only: entries stored after the write (pm-gh1700). */
+  total_count?: number;
+  /** Mutations only: entries this response carries. */
+  returned_count?: number;
+  /** Mutations only: whether stored entries exist beyond the ones returned. */
+  has_more?: boolean;
+  /** Mutations only: what the write changed. */
+  mutation_receipt?: LinkedCollectionMutationReceipt;
+  /** Mutations only: withheld entries and the selector that restores them. */
+  omission_receipt?: AnnotationOmissionReceipt;
 }
 
 /** Replaces the generic artifacts field with a resource-specific result key while retaining the remaining result contract. */
@@ -674,22 +781,288 @@ async function buildLinkedArtifactResult(params: {
   migrationsApplied?: number;
   options: LinkedArtifactCommandOptions;
   workspaceRoot: string;
+  mutation?: LinkedCollectionMutationProjection<LinkedArtifact>;
 }): Promise<LinkedArtifactResult> {
-  const paths = params.artifacts.map((entry) => entry.path);
+  const returned = params.mutation?.entries ?? params.artifacts;
+  // --validate-paths judges the whole stored list; the implicit post-write check judges what this response returns.
+  const validated = params.options.validatePaths ? params.artifacts : returned;
+  const { counts, receipts } = linkedCollectionMutationFields(params.mutation);
   return {
     id: params.id,
-    artifacts: params.artifacts,
+    artifacts: returned,
     changed: params.changed,
-    count: params.artifacts.length,
+    count: returned.length,
+    ...counts,
     migrations_applied:
       params.migrationsApplied && params.migrationsApplied > 0
         ? params.migrationsApplied
         : undefined,
     validation:
-      params.options.validatePaths || params.changed
-        ? await validateLinkedPaths(paths, params.workspaceRoot)
+      params.options.validatePaths || (params.changed && validated.length > 0)
+        ? await validateLinkedPaths(validated.map((entry) => entry.path), params.workspaceRoot)
         : undefined,
+    ...receipts,
   };
+}
+
+/** Stored entries a write removed: each prior entry, after its path migration, that no stored entry still carries. */
+function countRemovedLinkedArtifacts(
+  before: readonly LinkedArtifact[],
+  after: readonly LinkedArtifact[],
+  migrations: PathMigration[],
+): number {
+  const remaining = new Map<string, number>();
+  for (const entry of after) {
+    const key = artifactKey(entry);
+    remaining.set(key, (remaining.get(key) ?? 0) + 1);
+  }
+  let removed = 0;
+  for (const entry of before) {
+    const key = artifactKey({ ...entry, path: applyPathMigrations(entry.path, migrations) });
+    const left = remaining.get(key) ?? 0;
+    if (left > 0) remaining.set(key, left - 1);
+    else removed += 1;
+  }
+  return removed;
+}
+
+/** Note prose of a refused `--add` entry and the key-shaped segment parsing misread inside it (pm-pwqiao). */
+interface MisreadNoteSegment {
+  /** The entry rewritten with its note quoted, so the parser keeps the prose whole. */
+  entry: string;
+  /** The intended note text, verbatim. */
+  note: string;
+  /** The comma segment read as a new key. */
+  segment: string;
+  /** The key that segment opened. */
+  key: string;
+}
+
+/**
+ * Read a refused `--add` entry the way parseCsvKv split it and find the note
+ * segment it misread as a key (pm-pwqiao): after a comma, an identifier
+ * followed by `=` or `:` opens a key, so GH-258 can refuse typos such as
+ * `lable=main`, and note prose such as `host:port` trips the same rule. Link
+ * keys before the note, and a link key after it that is not a repeat, stay
+ * link fields; every other later segment is note prose. Returns undefined
+ * unless such a segment exists and the rewritten entry parses.
+ */
+export function findMisreadNoteSegment(
+  entry: string,
+  bareNoun: "file" | "doc",
+): MisreadNoteSegment | undefined {
+  const segments = /[\n\r]|^\s*[-*+`]/u.test(entry) ? [] : splitStructuredEntrySegments(entry);
+  const noteIndex = segments.findIndex((segment) => segment.key?.toLowerCase() === "note");
+  if (noteIndex < 0) return undefined;
+  const fields = segments.slice(0, noteIndex).map((segment) => segment.raw.trim());
+  const keys = new Set(segments.slice(0, noteIndex).map((segment) => segment.key?.toLowerCase()));
+  const prose = [segments[noteIndex]!.value!];
+  let misread: { segment: string; key: string } | undefined;
+  for (const segment of segments.slice(noteIndex + 1)) {
+    const key = segment.key?.toLowerCase();
+    if (key === "path" || key === "scope") {
+      if (!keys.has(key)) {
+        fields.push(segment.raw.trim());
+        keys.add(key);
+        continue;
+      }
+    }
+    misread ??= segment.key === undefined ? undefined : { segment: segment.text.trim(), key: segment.key };
+    prose.push(segment.text);
+  }
+  if (misread === undefined) return undefined;
+  const note = prose.join(",").trim();
+  const rewritten = [...fields, `note=${JSON.stringify(note)}`].join(",");
+  try {
+    parseAddEntries([rewritten], bareNoun);
+  } catch {
+    return undefined;
+  }
+  return { entry: rewritten, note, ...misread };
+}
+
+/** One-based position of the first `--add` entry that refuses on its own; entries parse independently, so a refused batch always has one. */
+function firstRefusedAddEntry(entries: readonly string[], bareNoun: "file" | "doc"): number {
+  return entries.findIndex((entry) => {
+    try {
+      parseAddEntries([entry], bareNoun);
+      return false;
+    } catch {
+      return true;
+    }
+  }) + 1;
+}
+
+/** Repeat one flag per value, as the CLI received a repeatable option. */
+function repeatFlag(flag: string, values: readonly string[] | undefined): string[] {
+  return (values ?? []).flatMap((value) => [flag, value]);
+}
+
+/**
+ * The whole refused invocation replayed with the misread entry rewritten
+ * (its note quoted), from the already resolved values so stdin tokens are
+ * not replayed, carrying every other entry, operation and control.
+ */
+function noteRecoveryRetryArgs(params: {
+  id: string;
+  entries: readonly string[];
+  position: number;
+  rewritten: string;
+  resolved: { addGlob?: string[]; remove?: string[]; migrate?: string[] };
+  options: LinkedArtifactCommandOptions;
+  global: GlobalOptions;
+  config: LinkedArtifactKindConfig;
+  guards: readonly string[];
+}): string[] {
+  const { options } = params;
+  return [
+    ...resolvePmCommandScopeArgs(params.global),
+    // The refused write changed nothing, so the revision guards it ran under still hold for the retry.
+    ...params.guards.map((guard) => `--expect-hash=${guard}`),
+    params.config.metadataKey,
+    params.id,
+    ...repeatFlag("--add", params.entries.map((entry, index) => (index === params.position - 1 ? params.rewritten : entry))),
+    ...repeatFlag("--add-glob", params.resolved.addGlob),
+    ...repeatFlag("--remove", params.resolved.remove),
+    ...repeatFlag("--migrate", params.resolved.migrate),
+    ...(options.note === undefined ? [] : ["--note", options.note]),
+    ...(params.config.supportsAppendStable && options.appendStable === true ? ["--append-stable"] : []),
+    ...(options.validatePaths === true ? ["--validate-paths"] : []),
+    ...(options.fullHistory === true ? ["--full-history"] : []),
+    ...(options.author ? ["--author", options.author] : []),
+    ...(options.message ? ["--message", options.message] : []),
+    ...(options.force === true ? ["--force"] : []),
+  ];
+}
+
+/** What to do about the misread key if it really was meant as one: it is either unknown or repeated. */
+function misreadKeyHint(key: string): string {
+  return LINKED_ARTIFACT_ADD_KEYS.some((allowed) => allowed === key.toLowerCase())
+    ? `If "${key}" was meant as a key, give it once per entry.`
+    : `If "${key}" was meant as a key, it is not one of: ${LINKED_ARTIFACT_ADD_KEYS.join(", ")}.`;
+}
+
+/**
+ * Parse `--add` entries, turning a refusal caused by note prose into one that
+ * names the misread segment and offers the same invocation with that note
+ * quoted, so its commas stay prose (pm-pwqiao).
+ */
+function parseAddEntriesWithNoteRecovery(params: {
+  id: string;
+  pmRoot: string;
+  entries: string[] | undefined;
+  resolved: { addGlob?: string[]; remove?: string[]; migrate?: string[] };
+  options: LinkedArtifactCommandOptions;
+  global: GlobalOptions;
+  config: LinkedArtifactKindConfig;
+}): LinkedArtifact[] {
+  try {
+    return parseAddEntries(params.entries, params.config.bareNoun);
+  } catch (error: unknown) {
+    // A refusal means at least one entry was given; parseAddEntries refuses only with PmCliError.
+    const entries = params.entries!;
+    const cause = error as PmCliError;
+    const position = firstRefusedAddEntry(entries, params.config.bareNoun);
+    const misread = findMisreadNoteSegment(entries[position - 1]!, params.config.bareNoun);
+    if (misread === undefined) throw error;
+    // An SDK or MCP guard never reaches argv; guards that cannot be spelled as one invocation withhold the retry.
+    const guards = activeItemRevisionExpectations(params.pmRoot);
+    const retryArgs = guards === undefined ? undefined : noteRecoveryRetryArgs({ ...params, entries, position, rewritten: misread.entry, guards });
+    throw new PmCliError(
+      `--add read the note segment "${misread.segment}" as a new key "${misread.key}", so the ${params.config.bareNoun} link was refused (${cause.message})`,
+      EXIT_CODE.USAGE,
+      {
+        code: "linked_artifact_note_key_misread",
+        flag: "--add",
+        value: entries[position - 1],
+        required: `Retry with the note quoted so its commas stay prose (${retryArgs === undefined ? `as ${misread.entry}; its revision guards cannot be replayed as typed, so no executable retry is offered` : "recovery.suggested_retry_args replays the whole invocation that way"}), or pass the prose through --note in a single-entry call. ${misreadKeyHint(misread.key)}`,
+        why: "After a comma, an identifier followed by = or : opens a new key, so that a typo such as lable=main is refused instead of being stored as note text (GH-258).",
+        ...(retryArgs === undefined ? {} : { nextSteps: [renderPmCommand(retryArgs)] }),
+        details: {
+          entry_index: position,
+          misread_segment: misread.segment,
+          misread_key: misread.key,
+          note: misread.note,
+          rewritten_entry: misread.entry,
+          cause: cause.context.code ?? "invalid_argument_value",
+        },
+        ...(retryArgs === undefined
+          ? {}
+          : { recovery: { suggested_retry: renderPmCommand(retryArgs), suggested_retry_args: retryArgs } }),
+      },
+    );
+  }
+}
+
+/**
+ * Split a linked-collection mutation projection into the count fields that
+ * follow `count` and the receipts that close the result, or nothing for a
+ * list read (pm-gh1700). Shared by the files, docs and test result builders.
+ */
+export function linkedCollectionMutationFields(
+  mutation: LinkedCollectionMutationProjection<unknown> | undefined,
+): {
+  counts: Partial<Pick<LinkedCollectionMutationProjection<unknown>, "total_count" | "returned_count" | "has_more">>;
+  receipts: Partial<Pick<LinkedCollectionMutationProjection<unknown>, "mutation_receipt" | "omission_receipt">>;
+} {
+  if (mutation === undefined) return { counts: {}, receipts: {} };
+  return {
+    counts: {
+      total_count: mutation.total_count,
+      returned_count: mutation.returned_count,
+      has_more: mutation.has_more,
+    },
+    receipts: {
+      mutation_receipt: mutation.mutation_receipt,
+      omission_receipt: mutation.omission_receipt,
+    },
+  };
+}
+
+/** Read an item's linked collection, as a listing or as the zero-change receipt of a write that resolved to nothing. */
+async function readLinkedArtifacts(params: {
+  id: string;
+  pmRoot: string;
+  settings: Awaited<ReturnType<typeof readSettings>>;
+  typeToFolder: Record<string, string>;
+  options: LinkedArtifactCommandOptions;
+  workspaceRoot: string;
+  config: LinkedArtifactKindConfig;
+  writeRequested: boolean;
+}): Promise<LinkedArtifactResult> {
+  const { settings, config } = params;
+  const located = await locateItem(
+    params.pmRoot,
+    params.id,
+    settings.id_prefix,
+    settings.item_format,
+    params.typeToFolder,
+  );
+  if (!located) {
+    throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
+  }
+  const loaded = await readLocatedItem(located, { schema: settings.schema });
+  const artifacts =
+    ((loaded.document.metadata as Record<string, unknown>)[config.metadataKey] as
+      | LinkedArtifact[]
+      | undefined) ?? [];
+  const mutation = params.writeRequested
+    ? projectLinkedCollectionMutation({
+        collectionKey: config.metadataKey,
+        stored: artifacts,
+        written: [],
+        removedCount: 0,
+        fullHistory: params.options.fullHistory === true,
+      })
+    : undefined;
+  return buildLinkedArtifactResult({
+    id: located.id,
+    artifacts,
+    changed: false,
+    options: params.options,
+    workspaceRoot: params.workspaceRoot,
+    mutation,
+  });
 }
 
 /** Shared linked-artifact list/mutate command core used by runFiles and runDocs. The kind config selects metadata key, op, bare-path noun, and whether append-stable ordering is honored, preserving each twin's exact semantics. */
@@ -723,12 +1096,22 @@ export async function runLinkedArtifacts(
     options.migrate,
     "--migrate",
   );
-  const parsedAdds = parseAddEntries(resolvedAdds, config.bareNoun).map(
-    (entry) => ({
-      ...entry,
-      path: anchorLinkedPath(entry.path, workspaceRoot, invocationRoot),
-    }),
-  );
+  const parsedAdds = parseAddEntriesWithNoteRecovery({
+    id,
+    pmRoot,
+    entries: resolvedAdds,
+    resolved: {
+      addGlob: resolvedAddGlobs,
+      remove: resolvedRemoves,
+      migrate: resolvedMigrations,
+    },
+    options,
+    global,
+    config,
+  }).map((entry) => ({
+    ...entry,
+    path: anchorLinkedPath(entry.path, workspaceRoot, invocationRoot),
+  }));
   const addGlobs = parseAddGlobEntries(resolvedAddGlobs);
   const expandedGlobAdds = await expandAddGlobEntries(
     addGlobs,
@@ -749,31 +1132,22 @@ export async function runLinkedArtifacts(
     adds.length > 0 || removes.length > 0 || migrations.length > 0;
 
   if (!shouldMutate) {
-    const located = await locateItem(
-      pmRoot,
+    return readLinkedArtifacts({
       id,
-      settings.id_prefix,
-      settings.item_format,
-      typeRegistry.type_to_folder,
-    );
-    if (!located) {
-      throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
-    }
-    const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const artifacts =
-      ((loaded.document.metadata as Record<string, unknown>)[metadataKey] as
-        | LinkedArtifact[]
-        | undefined) ?? [];
-    return buildLinkedArtifactResult({
-      id: located.id,
-      artifacts,
-      changed: false,
+      pmRoot,
+      settings,
+      typeToFolder: typeRegistry.type_to_folder,
       options,
       workspaceRoot,
+      config,
+      // A glob that matched nothing is still a write request: it gets a zero-change receipt, not the full listing.
+      writeRequested: addGlobs.length > 0,
     });
   }
 
   const author = resolveAuthor(options.author, settings.author_default);
+  let before: LinkedArtifact[] = [];
+  let removedCount = 0;
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -806,6 +1180,8 @@ export async function runLinkedArtifacts(
         delete metadata[metadataKey];
       }
       const changed = !stableValueEquals(current, normalized);
+      before = current;
+      removedCount = countRemovedLinkedArtifacts(current, normalized, migrations);
       return {
         changedFields: changed ? [metadataKey] : [],
         warnings:
@@ -833,6 +1209,14 @@ export async function runLinkedArtifacts(
     migrationsApplied: migrationCount,
     options,
     workspaceRoot,
+    mutation: projectLinkedCollectionMutation({
+      collectionKey: metadataKey,
+      stored: artifacts,
+      // Diff the persisted collection before and after the write, so the receipt reports what storage saved.
+      written: writtenLinkedEntries(before, artifacts),
+      removedCount,
+      fullHistory: options.fullHistory === true,
+    }),
   });
 }
 

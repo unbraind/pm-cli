@@ -232,9 +232,11 @@ function stripCodeFenceEnvelope(value: string): string {
   return lines.slice(1, -1).join("\n");
 }
 
-function splitCsvSegments(raw: string): string[] {
-  const segments: string[] = [];
+/** Split a comma entry into segments, each with its parsed text and the raw source it came from. */
+function splitCsvSegmentRanges(raw: string): Array<{ text: string; raw: string }> {
+  const segments: Array<{ text: string; raw: string }> = [];
   let current = "";
+  let start = 0;
   let inQuotes = false;
 
   for (let index = 0; index < raw.length; index += 1) {
@@ -255,16 +257,44 @@ function splitCsvSegments(raw: string): string[] {
       continue;
     }
     if (char === "," && !inQuotes) {
-      segments.push(current);
+      segments.push({ text: current, raw: raw.slice(start, index) });
       current = "";
+      start = index + 1;
       continue;
     }
     current += char;
   }
   if (current.trim()) {
-    segments.push(current);
+    segments.push({ text: current, raw: raw.slice(start) });
   }
   return segments;
+}
+
+function splitCsvSegments(raw: string): string[] {
+  return splitCsvSegmentRanges(raw).map((segment) => segment.text);
+}
+
+/** One comma segment of a structured entry, split by {@link parseCsvKv}'s own quote and escape rules (pm-pwqiao). */
+export interface StructuredEntrySegment {
+  /** The segment as parsing read it, with escaped commas unescaped. */
+  text: string;
+  /** The segment's raw source text, escapes kept, for rebuilding an entry the parser reads identically. */
+  raw: string;
+  /** The identifier-shaped key the segment opens, when it opens one. */
+  key?: string;
+  /** The key's value as parseCsvKv decodes it (trimmed and unquoted), when the segment opens a key. */
+  value?: string;
+}
+
+/** Split a single-line structured entry into segments the way parseCsvKv does, so a diagnosis reads the entry as the parser did. */
+export function splitStructuredEntrySegments(raw: string): StructuredEntrySegment[] {
+  return splitCsvSegmentRanges(raw.trim()).map(({ text, raw: source }) => {
+    const delimiterIndex = findKeyValueDelimiter(text);
+    const key = text.slice(0, Math.max(delimiterIndex, 0)).trim();
+    return CSV_KEY_PATTERN.test(key)
+      ? { text, raw: source, key, value: unquoteValue(text.slice(delimiterIndex + 1).trim()) }
+      : { text, raw: source };
+  });
 }
 
 function unquoteValue(value: string): string {
@@ -336,8 +366,39 @@ function buildInvalidKvMessage(raw: string, optionName: string): string {
   );
 }
 
+/**
+ * Refuse a key that one structured entry already set (pm-oglm0t). An entry
+ * stores one value per key, so a repeat would silently replace the earlier
+ * value: prose such as `note=moved here, path: b.txt` would relink b.txt.
+ * Keys compare case-insensitively, matching how readers normalize them.
+ */
+function assertKeyNotRepeated(
+  result: Record<string, string>,
+  key: string,
+  raw: string,
+  optionName: string,
+): void {
+  const repeated = Object.keys(result).find(
+    (existing) => existing.toLowerCase() === key.toLowerCase(),
+  );
+  if (repeated === undefined) return;
+  throw new PmCliError(
+    `${optionName} sets key "${key}" more than once in one entry, so the later value would silently replace the earlier one.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "structured_entry_key_repeated",
+      flag: optionName,
+      value: raw,
+      required: `Give each key once per ${optionName} entry. Repeat ${optionName} for another entry; if the repeated key belongs to prose, quote that value or pass it through its standalone flag.`,
+      why: "A structured entry keeps one value per key, so accepting a repeat would store data the author did not intend without any refusal.",
+      details: { repeated_key: key, first_key: repeated },
+    },
+  );
+}
+
 function parseMarkdownKeyValueLines(
   raw: string,
+  optionName: string,
 ): Record<string, string> | null {
   const normalized = stripCodeFenceEnvelope(raw).trim();
   if (normalized.length === 0) {
@@ -363,6 +424,7 @@ function parseMarkdownKeyValueLines(
     const match = line.match(/^(?:[-*+]\s+)?([a-zA-Z0-9_.-]+)\s*(=|:)\s*(.*)$/);
     if (match) {
       const key = match[1].trim();
+      assertKeyNotRepeated(result, key, raw, optionName);
       result[key] = unquoteValue(match[3].trim());
       activeKey = key;
       continue;
@@ -387,7 +449,7 @@ export function parseCsvKv(
     throw new PmCliError(`${optionName} cannot be empty`, EXIT_CODE.USAGE);
   }
 
-  const markdownStyle = parseMarkdownKeyValueLines(trimmed);
+  const markdownStyle = parseMarkdownKeyValueLines(trimmed, optionName);
   if (markdownStyle) {
     return markdownStyle;
   }
@@ -420,6 +482,7 @@ export function parseCsvKv(
         );
       }
       const value = unquoteValue(segment.slice(delimiterIndex + 1).trim());
+      assertKeyNotRepeated(result, key, raw, optionName);
       result[key] = value;
       activeKey = key;
       continue;

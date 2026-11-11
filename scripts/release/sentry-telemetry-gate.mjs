@@ -273,7 +273,9 @@ function parseSentryProject(project) {
 
 const SENTRY_GATE_BASE_QUERY = "is:unresolved level:[fatal,error]";
 /** Unresolved issues with at least one event outside environment=test, at any time. */
-const SENTRY_NON_TEST_QUERY = `${SENTRY_GATE_BASE_QUERY} !environment:test`;
+// pm-usn5k2: an event is test traffic when its environment is test or its pm.source_context is test
+// (a test child delivering with SENTRY_ENVIRONMENT=ci), so an issue with only such events never blocks.
+const SENTRY_NON_TEST_QUERY = `${SENTRY_GATE_BASE_QUERY} !environment:test !pm.source_context:test`;
 
 function buildSentryGateQuery(windowDays) {
   if (windowDays <= 0) {

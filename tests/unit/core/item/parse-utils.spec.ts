@@ -30,6 +30,7 @@ import {
   parseType,
 } from "../../../../src/sdk/query/parsers.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -266,6 +267,27 @@ describe("core/item/parse", () => {
     // An identifier-shaped token still opens a key, so typos stay detectable.
     expect(parseCsvKv("path=a.ts,lable=main", "--add")).toEqual({ path: "a.ts", lable: "main" });
     expect(parseCsvKv("path=a.ts, b) c: d", "--add").path).toBe("a.ts");
+  });
+
+  it("refuses a key repeated inside one entry in both grammars instead of keeping the last value (pm-oglm0t)", () => {
+    const refusal = (raw: string, option = "--add") => {
+      try {
+        parseCsvKv(raw, option);
+      } catch (error: unknown) {
+        return error as PmCliError;
+      }
+      throw new Error(`expected ${raw} to be refused`);
+    };
+    for (const raw of ["path=d.txt,path=e.txt", "path=a.txt,Path=b.txt", "path=a.txt,note=moved here, path: b.txt", "- path: a.txt\n- path: b.txt"]) {
+      const error = refusal(raw);
+      expect(error.exitCode).toBe(EXIT_CODE.USAGE);
+      expect(error.context).toMatchObject({ code: "structured_entry_key_repeated", flag: "--add", details: { repeated_key: expect.stringMatching(/^path$/iu) } });
+      expect(error.message).toContain("more than once in one entry");
+    }
+    expect(refusal("id=pm-a,kind=blocks,kind=related", "--dep").context).toMatchObject({ details: { repeated_key: "kind", first_key: "kind" } });
+    // Prose continuation and distinct keys are unaffected.
+    expect(parseCsvKv("note=see x, the fix (y): z,path=a.ts", "--add")).toEqual({ note: "see x, the fix (y): z", path: "a.ts" });
+    expect(parseCsvKv("- path: a.txt\n- note: one\n  more", "--add")).toEqual({ path: "a.txt", note: "one\nmore" });
   });
 
   it("assertNoUnknownCsvKeys accepts known keys and is case-insensitive (GH-258)", () => {

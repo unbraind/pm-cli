@@ -598,6 +598,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/structured-mutations.ts"],
   },
   {
+    code: "structured_entry_key_repeated",
+    exit_code: 2,
+    sources: ["core/item/parse.ts"],
+  },
+  {
     code: "structured_event_immutable",
     exit_code: 2,
     stable: true,

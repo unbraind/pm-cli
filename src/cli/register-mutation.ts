@@ -1440,6 +1440,7 @@ async function runFilesAction(
       list: Boolean(options.list),
       appendStable: Boolean(options.appendStable),
       validatePaths: Boolean(options.validatePaths),
+      fullHistory: options.fullHistory === true,
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       force: Boolean(options.force),
@@ -1527,6 +1528,7 @@ async function runDocsAction(
       note: readOptionString(options, "note"),
       list: Boolean(options.list),
       validatePaths: Boolean(options.validatePaths),
+      fullHistory: options.fullHistory === true,
       author: readOptionString(options, "author"),
       message: readOptionString(options, "message"),
       force: Boolean(options.force),
@@ -2542,6 +2544,10 @@ export function registerMutationCommands(
       "--validate-paths",
       "Validate linked file paths for existence and file shape",
     )
+    .option(
+      "--full-history",
+      "Return all linked files after a write",
+    )
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
@@ -2597,6 +2603,10 @@ export function registerMutationCommands(
     .option(
       "--validate-paths",
       "Validate linked doc paths for existence and file shape",
+    )
+    .option(
+      "--full-history",
+      "Return all linked docs after a write",
     )
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")

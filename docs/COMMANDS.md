@@ -702,7 +702,7 @@ Every transition into a terminal status stamps two distinct ISO timestamps: `clo
 
 `--unset` on `pm create`, `pm update` and `pm update many` clears scalar metadata fields by name. It is repeatable and also accepts a comma-separated list, so `--unset deadline,assignee --unset release` is the same as three separate flags. Each name is validated on its own: an unknown or empty part is refused by name before anything is written, including in `update many` dry runs. Field keys cannot contain commas, so the split is never ambiguous, and `pm schema add-field` refuses comma keys and flags ([pm-gh1633](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1633.toon); repository-only tracker record excluded from npm).
 
-`pm create --blocked-by <id>` and `pm update --blocked-by <id>` keep the scalar `blocked_by` field as the latest/primary blocker for compatibility. When the value resolves to a real item, the command also appends a `blocked_by` dependency edge so `pm deps` and reverse dependency scans see the full blocker graph. Repeating `pm update --blocked-by` with a different blocker preserves the prior blocker edge and appends the new one; repeating the same blocker is deduplicated. Use `pm update <id> --unset blocked-by` to clear the scalar and all `blocked_by` dependency edges.
+`pm create --blocked-by <id>` and `pm update --blocked-by <id>` keep the scalar `blocked_by` field as the latest/primary blocker for compatibility. When the value resolves to a real item, the command also appends a `blocked_by` dependency edge so `pm deps` and reverse dependency scans see the full blocker graph. Repeating `pm update --blocked-by` with a different blocker preserves the prior blocker edge and appends the new one; repeating the same blocker is deduplicated. `pm update <id> --unset blocked-by` (or `--blocked-by none`) clears the scalar and only the `blocked_by` rows that name its target: a row whose id is the scalar's own text, or the canonical row a `--blocked-by` write derived for a short scalar. An independent prerequisite keeps its own edge and keeps blocking ([pm-4yxzvd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4yxzvd.toon); tracker record excluded from npm). To retire every `blocked_by` edge, use the explicit kind-wide selector `pm update <id> --dep-remove kind=blocked_by`. An update that removes dependency rows, by any of these flags or by `--clear-deps`/`--replace-deps`, names each removed row in a `dependencies_removed:<item>:<id>/<kind>,...` warning.
 
 Unsupported `pm block` and `pm unblock` invocations return usage errors with
 `pm update --help` and these explicit mutation templates
@@ -714,8 +714,9 @@ pm update <item-id> --unset blocked-by --unset blocked-reason --unblock-note "re
 ```
 
 Inspect the actual blockers before applying either template. The unblock recipe
-clears all `blocked_by` relationships and stale blocker metadata while preserving
-other relationship kinds. `--unblock-note` alone only records a note.
+clears the scalar blocker, the rows naming it, and stale blocker metadata while
+preserving other relationship kinds; independent `blocked_by` edges stay and
+are removed with `--dep-remove "id=<id>,kind=blocked_by"` or `--dep-remove kind=blocked_by`. `--unblock-note` alone only records a note.
 The help retry and mutation examples preserve an explicit `--pm-path` and
 `--no-extensions` from the failed invocation
 ([pm-lifecycle-example-scope](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lifecycle-example-scope.toon); tracker record excluded from npm).
@@ -985,9 +986,9 @@ release cannot run, the claim stays and the refusal's `why` reports the partial
 completion. The
 refusal lists the open blockers in `details.open_blockers` and suggests the
 exact `pm update` that drops the edge. When no single command can do that
-safely (clearing the `blocked_by` scalar would also drop an independent
-`blocked_by` edge, or a legacy row's short id, alias kind or external locator
-would not match a removal selector; see
+safely (a row naming the blocker that clearing the scalar keeps, such as a
+hand-added prefixed row beside a short scalar, or a legacy row's short id, alias
+kind or external locator that would not match a removal selector; see
 [pm-4yxzvd](../.agents/pm/issues/pm-4yxzvd.toon)), it suggests inspecting the
 item instead. The check uses the effective start status, including the
 registered `in_progress` fallback when the workflow names `open`.
@@ -1051,8 +1052,10 @@ only the remaining step for each refused guarded dependent
 resolved, then run the scoped unblock `nextSteps` lists (`pm update <dependent>
 --status <open-status> --unset blocked_by --unset blocked_reason --expect-hash
 <dependent>=<item_hash>`, carrying the configured open status and tracker
-scope). `--unset blocked_by` removes every `blocked_by` edge, including one a
-concurrent change added, so skipping the check can reopen a still-blocked item.
+scope). `--unset blocked_by` removes only the scalar and the rows naming its
+target, so edges to the other resolved blockers stay as resolved history and a
+blocker a concurrent change added keeps its edge; skipping the check can still
+reopen a still-blocked item, which validate then reports.
 Dependents whose unblock failed for another reason are in
 `details.auto_unblock_failed` with that reason; fix the cause first. Each list
 names at most 10 ids and counts the rest in `*_omitted`, keeping the details
@@ -1116,7 +1119,11 @@ pm deps <id> --format context --direction both --kind blocked_by,parent --token-
 
 Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. Tree and graph formats are bounded by depth, node, edge, and estimated-token budgets (safe defaults: depth 32, 200 nodes, 400 edges, 16,000 tokens); pass `--max-depth`, `--node-limit`, `--edge-limit`, or `--token-budget` to tighten them. A bounded result carries deterministic `truncation.reasons`, effective limits, full unique-node/edge totals, and omitted counts. The estimate is calculated from the emitted JSON or TOON representation, including its accounting envelope. `--format context` returns one bounded, explainable relationship packet: a counts-first summary, per-node `role`/`via`/`reasons`, root evidence pointers, enumerated `missing_references` with active-versus-legacy classification, `meta.completeness`, exact rendered `meta.usedTokens`, and cursor continuation; `--direction`, repeatable or comma-separated `--kind`, and `--cursor` further control that traversal (see [Relationship Graph](RELATIONSHIP_GRAPH.md)). `--edge-limit` caps both returned graph edges and enumerated `missing_references`; `missing_reference_count` retains the total when rows are omitted. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
 
-Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; create/update `--dep` accepts `id,kind,type,author,created_at,source_kind`; `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. Set `source_kind=global` for a dependency owned by another workspace: pm preserves its id verbatim, materializes it as an external graph endpoint, and excludes it from dangling-local-reference findings. Explicit remote locators also retain their spelling; other dependency and parent references share local `id_prefix` normalization, including uppercase and `#` shorthand. Bare values (`--add src/cli/main.ts`) skip key validation.
+A `files`, `docs` or `test` write (`--add`, `--add-json`, `--add-glob`, `--remove`, `--remove-index`, `--migrate`, or a linked-test `--update`/`--update-index` edit) returns only the entries it added or rewrote, so its reply no longer grows with the stored list ([pm-gh1700](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1700.toon); tracker record excluded from npm). `count` is the number of entries returned and `total_count` the number stored. `mutation_receipt` reports `changed_count`, `removed_count` and `full_history_included`, and `omission_receipt` names the `full_history` selector when stored entries were withheld, exactly as for comments. A retried identical add, or an `--add-glob` that matches nothing, returns no entries and `changed_count: 0`; the receipt reports entries as storage saved them (normalized paths included). Pass `--full-history` (SDK `fullHistory`, MCP `full`) to receive the whole collection after a write. The implicit post-write path check validates the returned links; `--validate-paths` validates every stored path. `failure_categories` appears only when `pm test` ran linked tests.
+
+When note prose in an `--add` entry is misread as a new key (`note=see, host:port` opens a key `host` after the comma), the refusal is `linked_artifact_note_key_misread`. It names the segment and key in the message and in `details` (`misread_segment`, `misread_key`, `note`, the underlying `cause`), and `recovery.suggested_retry_args` replays the whole invocation (every entry, `--add-glob`, `--remove`, `--migrate` and control) with that entry's note quoted as `note="…"`, so its commas stay prose; passing the prose through the standalone `--note` flag in a single-entry call works too ([pm-pwqiao](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pwqiao.toon); tracker record excluded from npm). Every other refusal, including a typo key with no note, keeps its own message.
+
+Structured key/value forms reject unrecognized keys with an `Allowed keys: …` error (matching `test --add`), so a typoed key (`lable=` instead of `label=`) fails fast instead of being silently dropped: `--add`/`--file`/`--doc` accept `path,scope,note`; `--add-glob` accepts `pattern,glob,path,scope,note`; `--remove` accepts `path`; `--migrate` accepts `from,to`; create/update `--dep` accepts `id,kind,type,author,created_at,source_kind`; `--reminder` accepts `at,date,text,title`; `--event` accepts `start,date,end,duration,title,description,location,timezone,all_day` and the `recur_*` recurrence keys. A key set twice in one entry (`path=a.txt,path=b.txt`, or note prose such as `note=moved here, path: b.txt`) is refused with `structured_entry_key_repeated` instead of silently keeping the last value ([pm-oglm0t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oglm0t.toon); tracker record excluded from npm); the comment, note and learning seed fallbacks store such prose verbatim. Set `source_kind=global` for a dependency owned by another workspace: pm preserves its id verbatim, materializes it as an external graph endpoint, and excludes it from dangling-local-reference findings. Explicit remote locators also retain their spelling; other dependency and parent references share local `id_prefix` normalization, including uppercase and `#` shorthand. Bare values (`--add src/cli/main.ts`) skip key validation.
 
 Context `meta.usedTokens` measures the selected built-in JSON or TOON emission,
 including its newline, alias counts, omission receipt and optional discovery or

@@ -403,10 +403,10 @@ describe("runTest", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "numeric-measurement-recovery");
       const commands = ["node -e \"console.log('first')\"", "node -e \"console.log('second')\""];
-      await runTest(id, { addJson: commands.map((command) => JSON.stringify({ command, scope: "project" })) }, { path: context.pmPath });
+      await runTest(id, { fullHistory: true, addJson: commands.map((command) => JSON.stringify({ command, scope: "project" })) }, { path: context.pmPath });
       let before = await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8");
       for (const options of [{ onlyIndex: 2 }, { removeIndex: [2] }, { onlyIndex: Number.NaN }]) {
-        const error = await runTest(id, { ...options, measure: ["coverage=100"] }, { path: context.pmPath }).catch((error: unknown) => error) as {
+        const error = await runTest(id, { fullHistory: true, ...options, measure: ["coverage=100"] }, { path: context.pmPath }).catch((error: unknown) => error) as {
           context: { recovery: { suggested_retry_args: string[] } };
         };
         expect(await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).toBe(before);
@@ -1813,7 +1813,7 @@ describe("runTest", () => {
 
       const acceptedDirectRunners = await runTest(
         directRunnerId,
-        { add: directRunnerCommands },
+        { fullHistory: true, add: directRunnerCommands },
         { path: context.pmPath },
       );
       expect(acceptedDirectRunners.count).toBe(directRunnerCommands.length);
@@ -1831,7 +1831,7 @@ describe("runTest", () => {
 
       const safeWithRunner = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,scope=project",
           ],
@@ -1842,7 +1842,7 @@ describe("runTest", () => {
 
       const safeWithExplicitEnv = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm test -- --runInBand,scope=project",
           ],
@@ -1853,7 +1853,7 @@ describe("runTest", () => {
 
       const safeRunScriptWithExplicitEnv = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global npm run test -- --runInBand,scope=project",
           ],
@@ -1864,7 +1864,7 @@ describe("runTest", () => {
 
       const safeFlaggedWithExplicitEnv = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm --dir /tmp test -- --runInBand,scope=project",
           ],
@@ -1875,7 +1875,7 @@ describe("runTest", () => {
 
       const safeChainedWithExplicitEnv = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=node scripts/run-tests.mjs test && PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm test -- --runInBand,scope=project",
           ],
@@ -1886,7 +1886,7 @@ describe("runTest", () => {
 
       const safeEachRunnerSegmentSandboxed = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm test -- --runInBand && PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global pnpm test:coverage,scope=project",
           ],
@@ -1911,71 +1911,71 @@ describe("runTest", () => {
       ];
       const packageScripts = await runTest(
         id,
-        { add: safePackageScriptEntries },
+        { fullHistory: true, add: safePackageScriptEntries },
         { path: context.pmPath },
       );
       expect(packageScripts.count).toBe(18);
 
       const nonRunnerCommand = await runTest(
         id,
-        { add: ["command=pnpm build,scope=project"] },
+        { fullHistory: true, add: ["command=pnpm build,scope=project"] },
         { path: context.pmPath },
       );
       expect(nonRunnerCommand.count).toBe(19);
 
-      await expect(runTest(id, {
+      await expect(runTest(id, { fullHistory: true,
         add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global,scope=project"],
       }, { path: context.pmPath })).rejects.toMatchObject({ code: "linked_test_command_not_executable" });
-      const envCommand = await runTest(id, {
+      const envCommand = await runTest(id, { fullHistory: true,
         add: ["command=PM_PATH=/tmp/pm-safe PM_GLOBAL_PATH=/tmp/pm-global node --version,scope=project"],
       }, { path: context.pmPath });
       expect(envCommand.count).toBe(20);
 
       const npxFlagOnlyCommand = await runTest(
         id,
-        { add: ["command=npx --yes,scope=project"] },
+        { fullHistory: true, add: ["command=npx --yes,scope=project"] },
         { path: context.pmPath },
       );
       expect(npxFlagOnlyCommand.count).toBe(21);
 
       const pmFlagsOnlyCommand = await runTest(
         id,
-        { add: ["command=pm --json,scope=project"] },
+        { fullHistory: true, add: ["command=pm --json,scope=project"] },
         { path: context.pmPath },
       );
       expect(pmFlagsOnlyCommand.count).toBe(22);
 
       const npxNonPmCommand = await runTest(
         id,
-        { add: ["command=npx cowsay hello,scope=project"] },
+        { fullHistory: true, add: ["command=npx cowsay hello,scope=project"] },
         { path: context.pmPath },
       );
       expect(npxNonPmCommand.count).toBe(23);
 
       const npxScopedNonPmCommand = await runTest(
         id,
-        { add: ["command=npx @scope hello,scope=project"] },
+        { fullHistory: true, add: ["command=npx @scope hello,scope=project"] },
         { path: context.pmPath },
       );
       expect(npxScopedNonPmCommand.count).toBe(24);
 
       const pnpmDlxNonPmCommand = await runTest(
         id,
-        { add: ["command=pnpm dlx cowsay hello,scope=project"] },
+        { fullHistory: true, add: ["command=pnpm dlx cowsay hello,scope=project"] },
         { path: context.pmPath },
       );
       expect(pnpmDlxNonPmCommand.count).toBe(25);
 
       const npmExecNonPmCommand = await runTest(
         id,
-        { add: ["command=npm exec -- cowsay hello,scope=project"] },
+        { fullHistory: true, add: ["command=npm exec -- cowsay hello,scope=project"] },
         { path: context.pmPath },
       );
       expect(npmExecNonPmCommand.count).toBe(26);
 
       const pnpmFlagsOnlyCommand = await runTest(
         id,
-        { add: ["command=pnpm --config=/tmp/pm-safe,scope=project"] },
+        { fullHistory: true, add: ["command=pnpm --config=/tmp/pm-safe,scope=project"] },
         { path: context.pmPath },
       );
       expect(pnpmFlagsOnlyCommand.count).toBe(27);
@@ -2004,7 +2004,7 @@ describe("runTest", () => {
       const id = createTask(context, "mutate-tests");
       const added = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=node --version,timeout=2.9,note=implicit project scope",
             "command=node --version,scope=project,timeout_seconds=2,note=duplicate",
@@ -2042,7 +2042,7 @@ describe("runTest", () => {
         .split("\n").length;
       const duplicateOnly = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=node --version,scope=project,timeout_seconds=2,note=duplicate only",
           ],
@@ -2060,7 +2060,7 @@ describe("runTest", () => {
       await expect(
         runTest(
           id,
-          {
+          { fullHistory: true,
             remove: ["path=tests/does-not-exist.spec.ts"],
             message: "attempt non-matching remove",
           },
@@ -2073,7 +2073,7 @@ describe("runTest", () => {
 
       const removed = await runTest(
         id,
-        {
+        { fullHistory: true,
           remove: [
             "path=tests/example.spec.ts",
             "command=node --version",
@@ -2095,7 +2095,7 @@ describe("runTest", () => {
       const command = `node -e "console.log('left=right,still-command')"`;
       const added = await runTest(
         id,
-        {
+        { fullHistory: true,
           addJson: [JSON.stringify({ command, scope: "project" })],
           add: ["command=node --version,scope=project"],
         },
@@ -2108,7 +2108,7 @@ describe("runTest", () => {
 
       const removedByCommand = await runTest(
         id,
-        { remove: [`command=${command}`] },
+        { fullHistory: true, remove: [`command=${command}`] },
         { path: context.pmPath },
       );
       expect(removedByCommand).toMatchObject({ count: 1, removed: 1 });
@@ -2116,24 +2116,24 @@ describe("runTest", () => {
 
       const removedByIndex = await runTest(
         id,
-        { removeIndex: [1] },
+        { fullHistory: true, removeIndex: [1] },
         { path: context.pmPath },
       );
       expect(removedByIndex).toMatchObject({ count: 0, removed: 1 });
       await expect(
-        runTest(id, { removeIndex: [1] }, { path: context.pmPath }),
+        runTest(id, { fullHistory: true, removeIndex: [1] }, { path: context.pmPath }),
       ).rejects.toMatchObject({ code: "linked_test_remove_no_match" });
       await expect(
-        runTest(id, { removeIndex: ["1.5"] }, { path: context.pmPath }),
+        runTest(id, { fullHistory: true, removeIndex: ["1.5"] }, { path: context.pmPath }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       await expect(
-        runTest(id, { remove: ["owner=value"] }, { path: context.pmPath }),
+        runTest(id, { fullHistory: true, remove: ["owner=value"] }, { path: context.pmPath }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       await expect(
-        runTest(id, { remove: ["path="] }, { path: context.pmPath }),
+        runTest(id, { fullHistory: true, remove: ["path="] }, { path: context.pmPath }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       await expect(
-        runTest(id, { remove: ["path:"] }, { path: context.pmPath }),
+        runTest(id, { fullHistory: true, remove: ["path:"] }, { path: context.pmPath }),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });
   });
@@ -2143,7 +2143,7 @@ describe("runTest", () => {
       const id = createTask(context, "strict-history-noop-tests");
       const added = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: ["command=node --version,scope=project,timeout_seconds=2"],
           message: "add linked test before strict history no-op",
         },
@@ -2170,7 +2170,7 @@ describe("runTest", () => {
 
       const duplicateOnly = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command=node --version,scope=project,timeout_seconds=2,note=duplicate only",
           ],
@@ -2390,14 +2390,14 @@ describe("runTest", () => {
       stdinSpy.mockReturnValue(addStdin as unknown as NodeJS.ReadStream);
       const addedFromStdin = await runTest(
         id,
-        { add: ["-"] },
+        { fullHistory: true, add: ["-"] },
         { path: context.pmPath },
       );
       expect(addedFromStdin.count).toBe(1);
 
       const addedMarkdown = await runTest(
         id,
-        {
+        { fullHistory: true,
           add: [
             "command:node --help,path:tests/markdown-test.spec.ts,scope:project,timeout:5",
           ],
@@ -2408,7 +2408,7 @@ describe("runTest", () => {
 
       const removedMarkdown = await runTest(
         id,
-        { remove: ["path: tests/markdown-test.spec.ts"] },
+        { fullHistory: true, remove: ["path: tests/markdown-test.spec.ts"] },
         { path: context.pmPath },
       );
       expect(removedMarkdown.count).toBe(1);
@@ -2422,7 +2422,7 @@ describe("runTest", () => {
       stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
       const removedFromStdin = await runTest(
         id,
-        { remove: ["-"] },
+        { fullHistory: true, remove: ["-"] },
         { path: context.pmPath },
       );
       expect(removedFromStdin.count).toBe(0);

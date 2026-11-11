@@ -66,6 +66,8 @@ export function buildBackgroundTestCommandArgs(
   pushOptionalValueFlag(args, "--match", options.match);
   pushOptionalValueFlag(args, "--only-index", typeof options.onlyIndex === "number" ? String(options.onlyIndex) : options.onlyIndex);
   pushOptionalBooleanFlag(args, "--only-last", options.onlyLast);
+  // A replayed write keeps the caller's receipt shape (pm-gh1700).
+  pushOptionalBooleanFlag(args, "--full-history", options.fullHistory);
   pushRepeatableValueFlag(args, "--measure", options.measure);
   pushOptionalValueFlag(args, "--metric-below", options.metricBelow);
   pushOptionalValueFlag(args, "--metric-diff", options.metricDiff);

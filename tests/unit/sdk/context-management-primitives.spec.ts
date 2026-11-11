@@ -136,7 +136,8 @@ describe("context-management SDK primitives", () => {
       );
 
       expect(first.changed).toBe(true);
-      expect(repeated).toMatchObject({ changed: false, count: 1 });
+      // pm-gh1700: a write returns only what it wrote; total_count reports the stored link.
+      expect(repeated).toMatchObject({ changed: false, count: 0, total_count: 1, mutation_receipt: { changed_count: 0 } });
       expect(await historyEntries(context.pmPath, id)).toBe(historyBefore);
     });
   });

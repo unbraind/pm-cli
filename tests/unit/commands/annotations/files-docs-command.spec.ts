@@ -416,7 +416,7 @@ describe("runFiles", () => {
 
       const added = await runFiles(
         id,
-        {
+        { fullHistory: true,
           add: [
             "path=README.md,scope=project,note=readme reference",
             "path=README.md,scope=project,note=duplicate should be ignored",
@@ -436,7 +436,7 @@ describe("runFiles", () => {
 
       const partiallyRemoved = await runFiles(
         id,
-        {
+        { fullHistory: true,
           remove: ["path=README.md", "docs/reference/not-present.md"],
           message: "remove one file and keep non-matching entries",
         },
@@ -447,7 +447,7 @@ describe("runFiles", () => {
 
       const removed = await runFiles(
         id,
-        {
+        { fullHistory: true,
           remove: ["path=docs/reference/architecture.md", "docs/reference/implicit-scope-file.md"],
           message: "remove remaining linked files",
         },
@@ -613,20 +613,20 @@ describe("runFiles", () => {
       Object.defineProperty(addStdin, "isTTY", { value: false, configurable: true });
       stdinSpy.mockReturnValue(addStdin as unknown as NodeJS.ReadStream);
 
-      const addedFromStdin = await runFiles(id, { add: ["-"] }, { path: context.pmPath });
+      const addedFromStdin = await runFiles(id, { fullHistory: true, add: ["-"] }, { path: context.pmPath });
       expect(addedFromStdin.count).toBe(1);
 
-      const addedMarkdown = await runFiles(id, { add: ["path:docs/inline-file.md,scope:project"] }, { path: context.pmPath });
+      const addedMarkdown = await runFiles(id, { fullHistory: true, add: ["path:docs/inline-file.md,scope:project"] }, { path: context.pmPath });
       expect(addedMarkdown.count).toBe(2);
 
-      const removedMarkdown = await runFiles(id, { remove: ["path: docs/pipe-file.md"] }, { path: context.pmPath });
+      const removedMarkdown = await runFiles(id, { fullHistory: true, remove: ["path: docs/pipe-file.md"] }, { path: context.pmPath });
       expect(removedMarkdown.count).toBe(1);
 
       const removeStdin = new PassThrough();
       removeStdin.end("path: docs/inline-file.md\n");
       Object.defineProperty(removeStdin, "isTTY", { value: false, configurable: true });
       stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
-      const removedFromStdin = await runFiles(id, { remove: ["-"] }, { path: context.pmPath });
+      const removedFromStdin = await runFiles(id, { fullHistory: true, remove: ["-"] }, { path: context.pmPath });
       expect(removedFromStdin.count).toBe(0);
     });
   });
@@ -638,7 +638,7 @@ describe("runFiles", () => {
 
       await runFiles(
         sourceId,
-        {
+        { fullHistory: true,
           add: ["path=docs/old/file-one.md,scope=project", "path=README.md,scope=project"],
           message: "seed source linked files",
         },
@@ -646,7 +646,7 @@ describe("runFiles", () => {
       );
       await runFiles(
         peerId,
-        {
+        { fullHistory: true,
           add: ["path=docs/new/file-one.md,scope=project"],
           message: "seed peer linked file for audit",
         },
@@ -655,7 +655,7 @@ describe("runFiles", () => {
 
       const migrated = await runFiles(
         sourceId,
-        {
+        { fullHistory: true,
           migrate: ["from=docs/old/,to=docs/new/"],
           validatePaths: true,
           message: "migrate and validate linked files",
@@ -669,7 +669,7 @@ describe("runFiles", () => {
 
       const readOnlyInspection = await runFiles(
         sourceId,
-        {
+        { fullHistory: true,
           list: true,
           validatePaths: true,
         },
@@ -680,7 +680,7 @@ describe("runFiles", () => {
 
       const rerun = await runFiles(
         sourceId,
-        {
+        { fullHistory: true,
           migrate: ["from=docs/old/,to=docs/new/"],
           message: "repeat migration to prove idempotence",
         },
@@ -691,7 +691,7 @@ describe("runFiles", () => {
 
       const migratedAdd = await runFiles(
         sourceId,
-        {
+        { fullHistory: true,
           add: ["path=docs/old/added-later.md,scope=project"],
           migrate: ["from=docs/old/,to=docs/new/"],
           message: "migrate newly added linked file",
@@ -703,7 +703,7 @@ describe("runFiles", () => {
 
       const deduplicatedMigration = await runFiles(
         sourceId,
-        {
+        { fullHistory: true,
           add: ["path=docs/old/added-later.md,scope=project"],
           migrate: ["from=docs/old/,to=docs/new/"],
           message: "suppress migration receipt when dedupe preserves metadata",
@@ -754,7 +754,7 @@ describe("runFiles", () => {
       const id = createTask(context, "files-append-stable");
       const seeded = await runFiles(
         id,
-        {
+        { fullHistory: true,
           add: ["path=docs/c.md,scope=project", "path=docs/a.md,scope=project"],
           appendStable: true,
           message: "seed append-stable ordering",
@@ -765,7 +765,7 @@ describe("runFiles", () => {
 
       const appended = await runFiles(
         id,
-        {
+        { fullHistory: true,
           add: ["path=docs/b.md,scope=project"],
           appendStable: true,
           message: "append with stable ordering",
@@ -776,7 +776,7 @@ describe("runFiles", () => {
 
       const defaultSorted = await runFiles(
         id,
-        {
+        { fullHistory: true,
           add: ["path=docs/d.md,scope=project"],
           message: "default ordering remains sorted",
         },
@@ -804,7 +804,7 @@ describe("runFiles", () => {
       const tsGlob = normalizeLinkedPath(path.join(fixtureRoot, "src", "**", "*.ts"));
       const fromGlob = await runFiles(
         id,
-        {
+        { fullHistory: true,
           addGlob: [tsGlob, tsGlob],
           message: "add linked files from repeated glob",
         },
@@ -820,7 +820,7 @@ describe("runFiles", () => {
 
       const asGlobal = await runFiles(
         id,
-        {
+        { fullHistory: true,
           addGlob: [`pattern=${tsGlob},scope=global,note=from glob`],
           message: "add same linked files with global scope",
         },
@@ -1186,7 +1186,7 @@ describe("runDocs", () => {
 
       const added = await runDocs(
         id,
-        {
+        { fullHistory: true,
           add: [
             "path=README.md,scope=project,note=readme doc",
             "path=README.md,scope=project,note=duplicate should be ignored",
@@ -1206,7 +1206,7 @@ describe("runDocs", () => {
 
       const partiallyRemoved = await runDocs(
         id,
-        {
+        { fullHistory: true,
           remove: ["path=README.md", "docs/reference/not-present.md"],
           message: "remove one doc and keep non-matching entries",
         },
@@ -1217,7 +1217,7 @@ describe("runDocs", () => {
 
       const removed = await runDocs(
         id,
-        {
+        { fullHistory: true,
           remove: ["path=docs/reference/architecture.md", "docs/reference/implicit-scope-doc.md"],
           message: "remove remaining linked docs",
         },
@@ -1340,20 +1340,20 @@ describe("runDocs", () => {
       Object.defineProperty(addStdin, "isTTY", { value: false, configurable: true });
       stdinSpy.mockReturnValue(addStdin as unknown as NodeJS.ReadStream);
 
-      const addedFromStdin = await runDocs(id, { add: ["-"] }, { path: context.pmPath });
+      const addedFromStdin = await runDocs(id, { fullHistory: true, add: ["-"] }, { path: context.pmPath });
       expect(addedFromStdin.count).toBe(1);
 
-      const addedMarkdown = await runDocs(id, { add: ["path:docs/inline-doc.md,scope:project"] }, { path: context.pmPath });
+      const addedMarkdown = await runDocs(id, { fullHistory: true, add: ["path:docs/inline-doc.md,scope:project"] }, { path: context.pmPath });
       expect(addedMarkdown.count).toBe(2);
 
-      const removedMarkdown = await runDocs(id, { remove: ["path: docs/pipe-doc.md"] }, { path: context.pmPath });
+      const removedMarkdown = await runDocs(id, { fullHistory: true, remove: ["path: docs/pipe-doc.md"] }, { path: context.pmPath });
       expect(removedMarkdown.count).toBe(1);
 
       const removeStdin = new PassThrough();
       removeStdin.end("path: docs/inline-doc.md\n");
       Object.defineProperty(removeStdin, "isTTY", { value: false, configurable: true });
       stdinSpy.mockReturnValue(removeStdin as unknown as NodeJS.ReadStream);
-      const removedFromStdin = await runDocs(id, { remove: ["-"] }, { path: context.pmPath });
+      const removedFromStdin = await runDocs(id, { fullHistory: true, remove: ["-"] }, { path: context.pmPath });
       expect(removedFromStdin.count).toBe(0);
     });
   });
@@ -1365,7 +1365,7 @@ describe("runDocs", () => {
 
       await runDocs(
         sourceId,
-        {
+        { fullHistory: true,
           add: ["path=docs/old/doc-one.md,scope=project", "path=README.md,scope=project"],
           message: "seed source linked docs",
         },
@@ -1373,7 +1373,7 @@ describe("runDocs", () => {
       );
       await runDocs(
         peerId,
-        {
+        { fullHistory: true,
           add: ["path=docs/new/doc-one.md,scope=project"],
           message: "seed peer linked doc for audit",
         },
@@ -1382,7 +1382,7 @@ describe("runDocs", () => {
 
       const migrated = await runDocs(
         sourceId,
-        {
+        { fullHistory: true,
           migrate: ["from=docs/old/,to=docs/new/"],
           validatePaths: true,
           message: "migrate and validate linked docs",
@@ -1396,7 +1396,7 @@ describe("runDocs", () => {
 
       const readOnlyInspection = await runDocs(
         sourceId,
-        {
+        { fullHistory: true,
           validatePaths: true,
         },
         { path: context.pmPath },
@@ -1406,7 +1406,7 @@ describe("runDocs", () => {
 
       const rerun = await runDocs(
         sourceId,
-        {
+        { fullHistory: true,
           migrate: ["from=docs/old/,to=docs/new/"],
           message: "repeat migration to prove idempotence",
         },
@@ -1435,7 +1435,7 @@ describe("runDocs", () => {
       const mdGlob = normalizeLinkedPath(path.join(fixtureRoot, "docs", "**", "*.md"));
       const fromGlob = await runDocs(
         id,
-        {
+        { fullHistory: true,
           addGlob: [mdGlob, mdGlob],
           message: "add linked docs from repeated glob",
         },
@@ -1451,7 +1451,7 @@ describe("runDocs", () => {
 
       const asGlobal = await runDocs(
         id,
-        {
+        { fullHistory: true,
           addGlob: [`pattern=${mdGlob},scope=global,note=from glob`],
           message: "add same linked docs with global scope",
         },

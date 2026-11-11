@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- pm update --unset blocked_by (or --blocked-by none) deletes every blocked_by edge, not only the scalar's: clearing blocker A silently drops an independent prerequisite B: Clearing the scalar removed every blocked_by dependency edge → Clearing the scalar removes only the rows naming its own target; independent blocked_by edges keep blocking, and removed rows are named in a dependencies_removed warning. Migrate: Remove the remaining edges with --dep-remove kind=blocked_by, or one at a time with --dep-remove id=<id\>,kind=blocked_by ([pm-4yxzvd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4yxzvd.toon))
+- A key repeated inside one structured entry silently replaces the earlier value, so note prose such as ', path: b.txt' relinks a different file: A key repeated inside one entry kept its last value → A repeated key is refused with structured_entry_key_repeated before anything is written. Migrate: Give each key once per entry, quote prose that contains a key-shaped word, or repeat the flag for another entry ([pm-oglm0t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oglm0t.toon))
+- files/docs --add refusal does not name the note segment it misread as a key, nor offer the standalone --note flag: Note prose misread as a key was refused with invalid_argument_value or a generic command failure → It is refused with linked_artifact_note_key_misread, naming the segment and key, with a retry that quotes the note. Migrate: Match the new code, or follow recovery.suggested_retry_args ([pm-pwqiao](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pwqiao.toon))
+- GH-1700: pm test --add returns only the changed linked test, like pm comments --add: A write returned the whole stored collection, count was the stored total, and failure_categories was always present → A write returns only the entries it added or rewrote, with count (returned), total_count, mutation_receipt and omission_receipt; failure_categories appears only when tests ran. Migrate: Pass fullHistory (CLI --full-history, MCP full) to receive the whole collection after a write, read total_count for the stored total, and read failure_categories optionally ([pm-gh1700](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1700.toon))
+
+### Fixed
+
+- The release Sentry gate counts environment=test issues, so a downstream extension's CI test run blocks the daily pm-cli release ([pm-usn5k2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-usn5k2.toon))
+
+### Other
+
+- Exclude five repository-only docs from the npm tarball to restore publication headroom for the collection-mutation bundle ([pm-tuxw1i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tuxw1i.toon))
+
 ## 2026.11.11 - 2026-11-11
 
 ### Security

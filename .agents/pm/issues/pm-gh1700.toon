@@ -2,20 +2,89 @@ id: pm-gh1700
 title: "GH-1700: pm test --add returns only the changed linked test, like pm comments --add"
 description: "GitHub issue 1700 (reported against 2026.11.10): every 'pm test <id> --add' echoes the item's whole linked-test list with provenance, plus a failure_categories block of nine zero counters. 'pm comments <id> --add' returns only the new entry, count/total_count/has_more, a mutation_receipt and an omission_receipt. The issue measures 485 B for a comment add on an item with 7 comments, 369 B for a test add with 2 linked tests and 3,335 B for a test add with 26 linked tests. Agents link 20-40 tests per item over a PR's life, so each add re-sends a list that grows linearly. Expected: one collection-mutation receipt shape across comments, files, docs and test. --add/--remove return only the changed entries, the counts and a mutation_receipt. failure_categories appears only for --run. The full list remains reachable through the omission_receipt restore flag. Observed in this session too: linking one test to pm-gh1699 echoed the full receipt. Duplicate check: searched 'test --add echoes linked tests receipt failure_categories' and 'collection mutation receipt files docs test add only changed entries'. pm-covpax (closed) compacted zero failure categories only on lean --run receipts, and pm-gh1630 (closed) bounded selective --run receipts. Neither covers the add/remove mutation receipt."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1700",linked-tests,receipts,token-efficiency
 created_at: "2026-11-10T14:43:04.434Z"
-updated_at: "2026-11-10T14:43:15.434Z"
+updated_at: "2026-11-11T11:04:27.659Z"
+closed_at: "2026-11-11T08:02:12.961Z"
+completed_at: "2026-11-11T08:02:12.961Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A test --add on an item with 26 linked tests returns a receipt whose size does not grow with the existing list, matching the comments --add shape; failure_categories is absent from add/remove receipts and unchanged on --run receipts; The omission_receipt names the flag or command that restores the full linked-test list, and executing it returns every linked test; files and docs --add are measured and follow the same shape when they share the code path; CLI, SDK and MCP receipts stay in parity"
 parent: pm-5t33or
 risk: low
 confidence: high
-expected_result: "pm test --add/--remove (and files/docs if they share the path) return only the changed entries plus count/total_count/has_more, a mutation_receipt and an omission_receipt; failure_categories appears only on --run."
+resolution: "projectLinkedCollectionMutation (src/sdk/linked-artifacts.ts) bounds every test, files and docs write to the persisted entries it added or rewrote. A write reports count (returned entries), total_count, returned_count, has_more, mutation_receipt (changed_count, removed_count, full_history_included) and the annotation omission_receipt with the full_history selector. --full-history (SDK fullHistory, MCP full) returns the whole collection. failure_categories appears only when tests ran. The implicit post-write path check covers returned links. Measurement-refusal retries replay --full-history. Flag contracts, completions, MCP schema 4.24.0, a new replication set and docs carry the contract, and the SDK surface records the breaking acknowledgement with migration guidance."
+expected_result: "A test --add on an item with 26 linked tests returns a receipt that does not grow with the existing list, and the full list stays reachable"
+actual_result: "The receipt is 900 B as JSON (the issue measured 3,335 B); 3-test and 27-test items differ by at most one byte; --full-history returns every entry on CLI, SDK and MCP"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-covpax,related,"2026-11-10T14:43:04.434Z","harness:claude-code","cli:create:dep",detected
   pm-gh1630,related,"2026-11-10T14:43:04.434Z","harness:claude-code","cli:create:dep",detected
   pm-gh1699,related,"2026-11-10T14:43:15.115Z","harness:claude-code","cli:update:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-11-11T08:42:40.107Z","harness:claude-code","PR 1705 review round 1 (Greptile P1), fixed. Doc and file writes could return an unchanged entry, because storage orders a collection by scope and then path while the draft sorts by path, and the receipt took the persisted entry at the draft's position. Written entries are now matched to the persisted collection by persisted value: persistedLinkedEntries and writtenLinkedEntries compare JSON round-tripped forms, so keys holding undefined do not count. The receipt returns them in stored order. A regression spec covers an existing global z.md plus a newly added project a.md."
+  "2026-11-11T09:27:35.115Z","harness:claude-code","PR 1705 review round 2 (Greptile P2 and Codex P2), fixed. Matching drafts to stored entries could still return an unsaved spelling, because storage canonicalizes more than undefined keys: linked-test paths go from backslashes to slashes, assertion arrays are sorted, and booleans are normalized. The receipt now diffs the persisted collection before the write (read under the lock) against the persisted collection after it, so no draft is ever reported. A spec adds a test with a backslash path through --add-json and checks that the receipt returns tests/a.mjs and that removing by that path matches. Also (Codex P2): an --add-glob that matches nothing used to fall into list mode and return the whole collection. Write intent now comes from the flags, so it returns a zero-change receipt; fullHistory still returns everything."
+  "2026-11-11T11:04:27.659Z","harness:claude-code","PR 1705 review round 3 (Codex P2), fixed. mutation_receipt.removed_count for linked tests counted removals from the intermediate list. So an add and a remove of the same command in one call, on an item with no tests, reported removed_count 1 although nothing was ever stored. The receipt now counts stored tests with no same-identity entry left after the write (countRemovedStoredTests, using linkedTestsHaveSameIdentity on the persisted before and after lists). The legacy removed field keeps its meaning, and the zero-match removal refusal still relies on it. Spec: 'counts only stored tests as removed'. DeepScan's one new finding (NULL_POINTER, a spread of an optional retry array in linked-artifact-note-recovery.spec.ts) is fixed with a guarded retryArgsOf helper."
+notes[1]{created_at,author,text}:
+  "2026-11-11T06:43:24.513Z","harness:claude-code","Implementation on branch fix/collection-mutation-receipts (2026-11-11).\n\nShape. The shared projectLinkedCollectionMutation in src/sdk/linked-artifacts.ts is exported from the SDK. Any test, files or docs write returns only the entries it added or rewrote. That covers add, addJson, addGlob, remove, removeIndex, migrate and a linked-test --update/--update-index edit. writtenLinkedEntries computes the written entries as a multiset diff by full stored value, so note revisions and migrations count as written. count is the number of returned entries and total_count the number stored, as in comments. mutation_receipt carries changed_count, removed_count and full_history_included. omission_receipt reuses AnnotationOmissionReceipt with the group name <collection>_history and the full_history selector (CLI --full-history, SDK fullHistory, MCP full). List reads are unchanged.\n\nRun-only fields. failure_categories is now optional and present only when the call ran tests. The implicit post-write validation covers the returned entries, and is omitted when none are returned. --validate-paths still checks every stored path. Internally the run path keeps the full list; only the projection is bounded.\n\nTransport wiring:\n- CLI: --full-history on files, docs and test (register-mutation.ts, register-operations.ts).\n- Flag contracts.\n- MCP completeness map ('--full-history' to 'full').\n- MCP tool-schema optional 'full'.\n- MCP actions map full to fullHistory through normalizeAnnotationTransportOptions.\n\nMeasured. pm test --add on an item with 26 linked tests now returns 900 B as JSON. The issue measured 3,335 B. The size is independent of the list: the spec compares a 3-test item with a 27-test one and they differ by at most one byte.\n\nSeam fixed. A measurement refusal's recovery rebuilds the invocation through buildBackgroundTestCommandArgs, which dropped --full-history. It now carries the flag, so a replayed write keeps the caller's receipt shape.\n\nCensus before tightening the contract. pm-vcs reads .tests only from list reads and run_results from runs. pm-web's client ignores the POST body and re-reads lists, and its contract test reads 'pm test <id>'. GitHub code search found no other consumer.\n\nSDK surface: acknowledged breaking (signature) with migration guidance in docs/SDK.md."
+files[26]{path,scope}:
+  scripts/release/flag-help-baseline.json,project
+  scripts/release/surface-replication-sets.json,project
+  sdk/public-surface.json,project
+  src/cli/register-mutation.ts,project
+  src/cli/register-operations.ts,project
+  src/sdk/cli-contracts/completeness.ts,project
+  src/sdk/cli-contracts/flag-contracts.ts,project
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
+  src/sdk/cli-contracts/tool-schema.ts,project
+  src/sdk/completion/bash.ts,project
+  src/sdk/completion/fish.ts,project
+  src/sdk/completion/zsh.ts,project
+  src/sdk/docs.ts,project
+  src/sdk/files.ts,project
+  src/sdk/index.ts,project
+  src/sdk/linked-artifacts.ts,project
+  src/sdk/runtime/actions.ts,project
+  src/sdk/test/command-args.ts,project
+  src/sdk/test/execution.ts,project
+  tests/integration/linked-tests/linked-test-editing.integration.spec.ts,project
+  tests/integration/release-readiness-runtime.spec.ts,project
+  tests/unit/commands/annotations/files-docs-command.spec.ts,project
+  tests/unit/commands/annotations/linked-collection-receipts.spec.ts,project
+  tests/unit/commands/test/test-command.spec.ts,project
+  tests/unit/sdk/action-schema-parity.spec.ts,project
+  tests/unit/sdk/context-management-primitives.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-collection-receipts.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/commands/test/test-command.spec.ts,project,600,"harness:claude-code","2026-11-11T06:43:42.421Z",local_mutation,fix/collection-mutation-receipts
+test_runs[1]:
+  - run_id: test-local-mwbsw9e2-z7x69k
+    kind: test
+    status: passed
+    started_at: "2026-11-11T07:31:05.418Z"
+    finished_at: "2026-11-11T07:31:47.210Z"
+    recorded_at: "2026-11-11T07:31:47.210Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-collection-receipts.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/commands/test/test-command.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/SDK_CONTEXT_INTEGRITY.md,project
+  docs/SDK.md,project
+close_reason: "test, files and docs writes return only the entries they wrote with comments-style mutation and omission receipts, restorable with --full-history across CLI, SDK and MCP"
+contract_change:
+  api: "runTest, runFiles, runDocs and pm test/files/docs writes"
+  before: "A write returned the whole stored collection, count was the stored total, and failure_categories was always present"
+  after: "A write returns only the entries it added or rewrote, with count (returned), total_count, mutation_receipt and omission_receipt; failure_categories appears only when tests ran"
+  migrate: "Pass fullHistory (CLI --full-history, MCP full) to receive the whole collection after a write, read total_count for the stored total, and read failure_categories optionally"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1700
+  gate_id: linked-collection-mutation-receipts
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-collection-receipts.spec.ts
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-collection-receipts.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts tests/unit/commands/test/test-command.spec.ts,node scripts/release/surface-replication-gate.mjs
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

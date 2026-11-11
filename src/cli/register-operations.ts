@@ -196,6 +196,7 @@ function buildRunTestOptions(
     removeIndex: values.removeIndexValues,
     ...buildTestEditOptions(options),
     list: Boolean(options.list),
+    fullHistory: options.fullHistory === true,
     run: Boolean(options.run),
     match: typeof options.match === "string" ? options.match : undefined,
     onlyIndex:
@@ -983,7 +984,11 @@ export function registerOperationCommands(program: Command): void {
       "--only-index <n>",
       "Run 1-based --list position",
     )
-    .option("--only-last", "Run most recently added test");
+    .option("--only-last", "Run most recently added test")
+    .option(
+      "--full-history",
+      "Return all linked tests after a write",
+    );
   testCommand.option(
     "--acknowledge-linked-tests",
     "Trust current commands in this clone without execution",

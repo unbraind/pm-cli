@@ -49,12 +49,35 @@ function sameBlocker(reference: string, blockerId: string, idPrefix: string): bo
   return canonical(reference) === canonical(blockerId);
 }
 
+/** Source kinds of the blocked_by rows a `--blocked-by` scalar write derives (create and update). */
+const SCALAR_DERIVED_BLOCKED_BY_SOURCE_KINDS: ReadonlySet<string> = new Set(["cli:create:blocked_by", "cli:update:blocked_by"]);
+
+/**
+ * Whether clearing the blocked_by scalar removes this dependency row (pm-4yxzvd).
+ * It removes a literal blocked_by row whose stored id is the scalar's own text,
+ * or the canonical id a scalar write derived for it (`--blocked-by a` stores the
+ * row `pm-a` with a blocked_by source kind). An independent prerequisite, even
+ * one whose prefixed id a short scalar could name, keeps its own edge, because
+ * prefix canonicalization alone cannot prove `a` and `pm-a` are one item.
+ */
+export function scalarClearRemovesDependency(
+  dependency: { id: string; kind: string; source_kind?: string },
+  scalar: unknown,
+  idPrefix: string,
+): boolean {
+  if (dependency.kind !== "blocked_by" || typeof scalar !== "string" || scalar.trim().length === 0) return false;
+  const stored = dependency.id.trim().toLowerCase();
+  if (stored === scalar.trim().toLowerCase()) return true;
+  return stored === normalizeItemId(scalar.trim(), idPrefix).toLowerCase()
+    && SCALAR_DERIVED_BLOCKED_BY_SOURCE_KINDS.has(dependency.source_kind?.trim().toLowerCase() ?? "");
+}
+
 /**
  * The exact command that drops one declared blocker, or an inspection step when
- * no single command can. `--unset blocked_by` clears every literal blocked_by
- * edge, so it is advertised only when every such edge is textually the scalar
- * itself: prefix canonicalization cannot prove `a` and `pm-a` are one item,
- * because a tracker may hold both.
+ * no single command can. `--unset blocked_by` removes only the rows
+ * {@link scalarClearRemovesDependency} accepts, so it is advertised when every
+ * literal blocked_by row naming this blocker is one of them; independent
+ * prerequisites keep blocking and get their own step on the next refusal.
  */
 function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: string): string {
   const dependencies = metadata.dependencies ?? [];
@@ -74,8 +97,9 @@ function unblockCommand(metadata: ItemMetadata, blockerId: string, idPrefix: str
       ? renderPmCommand(["update", metadata.id, "--dep-remove", `id=${matching[0]!.id},kind=blocked_by`])
       : renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"]);
   }
-  const literal = (value: string) => value.trim().toLowerCase();
-  return edges.every((dependency) => literal(dependency.id) === literal(String(metadata.blocked_by)))
+  return edges
+    .filter((dependency) => sameBlocker(dependency.id, blockerId, idPrefix))
+    .every((dependency) => scalarClearRemovesDependency(dependency, metadata.blocked_by, idPrefix))
     ? renderPmCommand(["update", metadata.id, "--unset", "blocked_by"])
     : renderPmCommand(["get", metadata.id, "--fields", "blocked_by,dependencies"]);
 }

@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
+import { matchesDependencySelector } from "../../../../src/sdk/lifecycle/dependency-removal.js";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -33,7 +34,7 @@ describe("exact dependency removal contract", () => {
       },
     ]);
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         {
           id: "pm-target",
           kind: "related",
@@ -51,7 +52,7 @@ describe("exact dependency removal contract", () => {
       ),
     ).toBe(true);
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         {
           id: "pm-target",
           kind: "related",
@@ -65,7 +66,7 @@ describe("exact dependency removal contract", () => {
       ),
     ).toBe(true);
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         {
           id: "pm-target",
           kind: "related",
@@ -79,7 +80,7 @@ describe("exact dependency removal contract", () => {
       ),
     ).toBe(false);
     expect(
-      _testOnlyUpdateCommand.matchesDependencySelector(
+      matchesDependencySelector(
         {
           id: "pm-target",
           kind: "related",

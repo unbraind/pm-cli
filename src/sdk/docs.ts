@@ -9,8 +9,10 @@ import {
   renameArtifactsResultKey,
   runLinkedArtifacts,
   type LinkedArtifactResult,
+  type LinkedCollectionMutationReceipt,
   type LinkedPathValidation,
 } from "./linked-artifacts.js";
+import type { AnnotationOmissionReceipt } from "./annotations.js";
 
 /** Documents the docs command options payload exchanged by command, SDK, and package integrations. */
 export interface DocsCommandOptions {
@@ -28,6 +30,8 @@ export interface DocsCommandOptions {
   list?: boolean;
   /** Value that configures or reports validate paths for this contract. */
   validatePaths?: boolean;
+  /** Return the complete linked collection after a write instead of the bounded mutation receipt (pm-gh1700). */
+  fullHistory?: boolean;
   /** Value that configures or reports author for this contract. */
   author?: string;
   /** Human-readable explanation suitable for logs and agent-facing output. */
@@ -50,6 +54,16 @@ export interface DocsResult {
   migrations_applied?: number;
   /** Value that configures or reports validation for this contract. */
   validation?: LinkedPathValidation;
+  /** Mutations only: entries stored after the write (pm-gh1700). */
+  total_count?: number;
+  /** Mutations only: entries this response carries. */
+  returned_count?: number;
+  /** Mutations only: whether stored entries exist beyond the ones returned. */
+  has_more?: boolean;
+  /** Mutations only: what the write changed. */
+  mutation_receipt?: LinkedCollectionMutationReceipt;
+  /** Mutations only: withheld entries and the selector that restores them. */
+  omission_receipt?: AnnotationOmissionReceipt;
 }
 
 /** Implements run docs for the public runtime surface of this module. */

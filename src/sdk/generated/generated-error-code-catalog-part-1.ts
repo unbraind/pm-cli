@@ -329,7 +329,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   {
     code: "dependency_remove_no_match",
     exit_code: 3,
-    sources: ["sdk/lifecycle/update.ts"],
+    sources: ["sdk/lifecycle/dependency-removal.ts"],
     emitting_commands: ["update"],
   },
   {
@@ -1120,6 +1120,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   },
   {
     code: "linked_artifact_mutation_conflict",
+    exit_code: 2,
+    sources: ["sdk/linked-artifacts.ts"],
+  },
+  {
+    code: "linked_artifact_note_key_misread",
     exit_code: 2,
     sources: ["sdk/linked-artifacts.ts"],
   },

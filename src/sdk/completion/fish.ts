@@ -524,6 +524,7 @@ complete -c pm -n '__fish_seen_subcommand_from files' -l apply -d 'Apply discove
 complete -c pm -n '__fish_seen_subcommand_from files' -l note -d 'Linked-file note' -r
 complete -c pm -n '__fish_seen_subcommand_from files' -l append-stable -d 'Preserve stable append ordering'
 complete -c pm -n '__fish_seen_subcommand_from files' -l validate-paths -d 'Validate linked-file paths'
+complete -c pm -n '__fish_seen_subcommand_from files' -l full-history -d 'Return every linked file after a write'
 complete -c pm -n '__fish_seen_subcommand_from files' -l scope -d 'Filter lookup by evidence scope' -r -a 'project global'
 complete -c pm -n '__fish_seen_subcommand_from files' -l limit -d 'Maximum lookup matches' -r
 complete -c pm -n '__fish_seen_subcommand_from files' -l offset -d 'Skip the first lookup matches' -r
@@ -898,6 +899,7 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l run -d 'Run linked tests
 complete -c pm -n '__fish_seen_subcommand_from test' -l match -d 'Run linked tests whose command/path contains substring' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l only-index -d 'Run one linked test by 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l only-last -d 'Run the most recently added linked test'
+complete -c pm -n '__fish_seen_subcommand_from test' -l full-history -d 'Return every linked test after a write'
 complete -c pm -n '__fish_seen_subcommand_from test' -l background -d 'Run linked tests in managed background mode'
 complete -c pm -n '__fish_seen_subcommand_from test' -l timeout -d 'Default timeout seconds' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l progress -d 'Emit linked-test progress to stderr'

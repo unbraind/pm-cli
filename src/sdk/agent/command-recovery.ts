@@ -30,7 +30,7 @@ export function resolveLifecycleVerbRecovery(
     nextSteps: ["Choose the actual item and blocker identifiers before running update. --blocked-by records the blocker field and its blocked_by relationship."],
   } : {
     examples: [["update", "<item-id>", "--unset", "blocked-by", "--unset", "blocked-reason", "--unblock-note", "<note>"]],
-    nextSteps: ["Inspect the item's blockers before running update. --unset blocked-by removes the blocker field and all blocked_by relationships; --unset blocked-reason clears the stale reason. --unblock-note alone records a note and does not unblock the item.", "If your project also uses a blocked lifecycle status, choose its appropriate next status separately with update --status."],
+    nextSteps: ["Inspect the item's blockers before running update. --unset blocked-by removes the blocker field and the blocked_by rows naming it; other blocked_by relationships stay, so remove one with --dep-remove \"id=<id>,kind=blocked_by\" or all with --dep-remove kind=blocked_by. --unset blocked-reason clears the stale reason. --unblock-note alone records a note and does not unblock the item.", "If your project also uses a blocked lifecycle status, choose its appropriate next status separately with update --status."],
   };
 }
 

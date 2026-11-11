@@ -72,7 +72,26 @@ import {
 import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 import { runClose } from "./close.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
-import { admitStartTransition } from "./start-blockers.js";
+import { admitStartTransition, scalarClearRemovesDependency } from "./start-blockers.js";
+import {
+  assertDependencyRemovalSelectorsMatch,
+  describeRemovedDependencies,
+  matchesDependencySelector,
+  storedDependencyIdentityKey,
+} from "./dependency-removal.js";
+
+/**
+ * Structural twin of dependency-removal's selector, declared locally so the
+ * emitted update declarations never import that internal module (its
+ * declarations stay out of the published package, pm-998juj).
+ */
+interface DependencyRemovalSelector {
+  id?: string;
+  kind?: string;
+  source_kind?: string;
+  author?: string;
+  created_at?: string;
+}
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -735,14 +754,6 @@ interface ParsedDependencyUpdates {
   additions: Dependency[];
 }
 
-interface DependencyRemovalSelector {
-  id: string;
-  kind?: string;
-  source_kind?: string;
-  author?: string;
-  created_at?: string;
-}
-
 function parseDependencyCreatedAt(
   value: string | undefined,
   currentIso: string,
@@ -892,9 +903,13 @@ function parseDependencyRemovals(
       const kv = parseCsvKv(trimmed, "--dep-remove");
       assertNoUnknownCsvKeys(kv, "--dep-remove", DEP_REMOVE_KEYS);
       const idRaw = kv.id?.trim();
+      // Only an absent id selects the kind-wide form; an empty one (an unset shell variable) is refused.
+      if (kv.id === undefined) {
+        return parseKindWideDependencyRemoval(kv);
+      }
       if (!idRaw) {
         throw new PmCliError(
-          "--dep-remove key/value form requires id=<value>",
+          "--dep-remove key/value form requires a non-empty id=<value>",
           EXIT_CODE.USAGE,
         );
       }
@@ -936,34 +951,36 @@ function parseDependencyRemovals(
   });
 }
 
+/**
+ * The explicit kind-wide removal `--dep-remove kind=<kind>` (pm-4yxzvd): every
+ * stored row of exactly that kind, named in the dependencies_removed receipt.
+ * No other key may accompany it, so a row-identifying selector that merely
+ * forgot its id is still refused instead of widening silently.
+ */
+function parseKindWideDependencyRemoval(
+  kv: Record<string, string | undefined>,
+): DependencyRemovalSelector {
+  const kindRaw = normalizeDependencyKindInput(
+    parseOptionalDependencyString(kv.kind ?? kv.type),
+  );
+  const otherKeys = Object.keys(kv).filter(
+    (key) => key !== "kind" && key !== "type",
+  );
+  // kind and its input alias type together could name two kinds; never pick one silently.
+  if (!kindRaw || otherKeys.length > 0 || (kv.kind !== undefined && kv.type !== undefined)) {
+    throw new PmCliError(
+      "--dep-remove key/value form requires id=<value>, or kind=<kind> alone to remove every row of that kind",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { kind: requireDependencyKind(kindRaw) };
+}
+
 function dependencyKey(
   value: Pick<Dependency, "id" | "kind" | "source_kind">,
 ): string {
   const sourceKind = value.source_kind?.trim().toLowerCase() ?? "";
   return [value.id.trim().toLowerCase(), value.kind, sourceKind].join("\u0000");
-}
-
-/** Return the complete normalized identity of one stored dependency row. */
-function storedDependencyIdentityKey(
-  value: Pick<
-    Dependency,
-    "id" | "kind" | "source_kind" | "author" | "created_at"
-  >,
-): string {
-  const sourceKind = value.source_kind?.trim().toLowerCase() ?? "";
-  const author = value.author?.trim().toLowerCase() ?? "";
-  const rawCreatedAt = value.created_at?.trim() ?? "";
-  const parsedCreatedAt = Date.parse(rawCreatedAt);
-  const createdAt = Number.isFinite(parsedCreatedAt)
-    ? new Date(parsedCreatedAt).toISOString()
-    : rawCreatedAt;
-  return [
-    value.id.trim().toLowerCase(),
-    value.kind,
-    sourceKind,
-    author,
-    createdAt,
-  ].join("\u0000");
 }
 
 // pm-kyd6: `--blocked-by` writes the `blocked_by` scalar, but the dependency
@@ -972,17 +989,24 @@ function storedDependencyIdentityKey(
 // resolvable blocker also gets a `blocked_by` dependency edge. Repeated
 // `--blocked-by` updates preserve prior blocker edges because the graph is the
 // full dependency record; the scalar remains the latest primary blocker for
-// backward compatibility. Clearing the scalar removes all derived blocker edges.
+// backward compatibility. Clearing the scalar removes only the blocked_by rows
+// that name the scalar's own target (pm-4yxzvd, scalarClearRemovesDependency):
+// an independent prerequisite recorded as its own blocked_by edge keeps blocking.
 function reconcileBlockedByDependency(
   current: Dependency[] | undefined,
   nextBlockedById: string | undefined,
   nowIsoValue: string,
   author: string,
+  clearedScalar?: { value: unknown; idPrefix: string },
 ): { dependencies: Dependency[] | undefined; changed: boolean } {
   let next = [...(current ?? [])];
   let changed = false;
   if (nextBlockedById === undefined) {
-    const filtered = next.filter((dep) => dep.kind !== "blocked_by");
+    const filtered = next.filter(
+      (dep) =>
+        clearedScalar === undefined ||
+        !scalarClearRemovesDependency(dep, clearedScalar.value, clearedScalar.idPrefix),
+    );
     if (filtered.length !== next.length) {
       next = filtered;
       changed = true;
@@ -1051,12 +1075,14 @@ function applyBlockedByDependencyEdge(
   nowIsoValue: string,
   author: string,
   changedFields: string[],
+  clearedScalar?: { value: unknown; idPrefix: string },
 ): void {
   const reconciled = reconcileBlockedByDependency(
     metadata.dependencies,
     resolvedBlockedById,
     nowIsoValue,
     author,
+    clearedScalar,
   );
   if (!reconciled.changed) {
     return;
@@ -1086,41 +1112,6 @@ function testKey(
   >,
 ): string {
   return `${value.command}::${value.path ?? ""}::${value.scope}::${value.pm_context_mode ?? ""}::${value.workspace_context_mode ?? ""}`;
-}
-
-function matchesDependencySelector(
-  value: Dependency,
-  selector: DependencyRemovalSelector,
-): boolean {
-  if (value.id.trim().toLowerCase() !== selector.id.trim().toLowerCase()) {
-    return false;
-  }
-  if (selector.kind && value.kind !== selector.kind) {
-    return false;
-  }
-  if (
-    selector.source_kind !== undefined &&
-    value.source_kind?.trim().toLowerCase() !==
-      selector.source_kind.trim().toLowerCase()
-  ) {
-    return false;
-  }
-  if (
-    selector.author !== undefined &&
-    value.author?.trim().toLowerCase() !== selector.author.trim().toLowerCase()
-  ) {
-    return false;
-  }
-  if (
-    selector.created_at !== undefined &&
-    (value.created_at === undefined ||
-      !Number.isFinite(Date.parse(value.created_at)) ||
-      new Date(Date.parse(value.created_at)).toISOString() !==
-        selector.created_at)
-  ) {
-    return false;
-  }
-  return true;
 }
 
 function normalizeUpdatePolicyOptionKey(raw: string, typeName: string): string {
@@ -2437,42 +2428,6 @@ function normalizeTouchedDependencyIdentities(
   });
 }
 
-/** Refuse lossless removals unless every selector resolves against stored edges. */
-function assertDependencyRemovalSelectorsMatch(
-  current: readonly Dependency[],
-  selectors: readonly DependencyRemovalSelector[],
-  itemId: string,
-): void {
-  const unmatchedSelectors = selectors.filter(
-    (selector) =>
-      !current.some((entry) => matchesDependencySelector(entry, selector)),
-  );
-  if (unmatchedSelectors.length === 0) {
-    return;
-  }
-  throw new PmCliError(
-    `Dependency removal did not match ${unmatchedSelectors.length === 1 ? "a stored edge" : "stored edges"}.`,
-    EXIT_CODE.NOT_FOUND,
-    {
-      code: "dependency_remove_no_match",
-      reason: "selector_not_found",
-      unmatched_selectors: unmatchedSelectors,
-      available_dependencies: current.map((entry) => ({
-        id: entry.id,
-        kind: entry.kind,
-        source_kind: entry.source_kind,
-        author: entry.author,
-        created_at: entry.created_at,
-      })),
-      why: "Failing on a zero-match selector prevents a mistyped dependency removal from being reported as successful.",
-      nextSteps: [
-        `Inspect the current item with: pm get ${itemId} --full`,
-        "Retry --dep-remove with the exact id plus any kind, source_kind, author, or created_at selectors needed to identify one stored row.",
-      ],
-    },
-  );
-}
-
 function applyDependencyMutations(
   document: ItemDocument,
   context: UpdateMutationContext,
@@ -2924,6 +2879,9 @@ function applyBlockedByMutation(
   ) {
     return;
   }
+  const clearedScalar = context.clearItemMetadataKeys.has("blocked_by")
+    ? document.metadata.blocked_by
+    : undefined;
   if (context.clearItemMetadataKeys.has("blocked_by")) {
     delete document.metadata.blocked_by;
   } else {
@@ -2940,6 +2898,7 @@ function applyBlockedByMutation(
       context.nowIso,
       context.author,
       changedFields,
+      { value: clearedScalar, idPrefix: context.settings.id_prefix },
     );
   }
 }
@@ -3194,6 +3153,15 @@ function mutateUpdateDocument(
       ? document.body !== beforeBody
       : !stableValueEquals(beforeMetadata[field], afterMetadata[field]),
   );
+  const removedDependencies = describeRemovedDependencies(
+    beforeMetadata.dependencies,
+    afterMetadata.dependencies,
+  );
+  if (removedDependencies !== undefined) {
+    warnings.push(
+      `dependencies_removed:${document.metadata.id}:${removedDependencies}`,
+    );
+  }
   if (
     context.options.acceptanceCriteria !== undefined &&
     actualChangedFields.includes("acceptance_criteria")
@@ -3633,7 +3601,6 @@ export const _testOnlyUpdateCommand = {
   buildOwnershipBypassRestrictedOptionsError,
   enforceOwnershipBypassScope,
   enforceTypeWorkflowTransition,
-  matchesDependencySelector,
   normalizeLegacyNoneUpdateOptions,
   normalizeUpdatePolicyOptionKey,
   parseDependencyAdditions,

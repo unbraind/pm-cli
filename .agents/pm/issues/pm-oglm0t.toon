@@ -1,0 +1,62 @@
+id: pm-oglm0t
+title: "A key repeated inside one structured entry silently replaces the earlier value, so note prose such as ', path: b.txt' relinks a different file"
+description: "Found 2026-11-11 while implementing pm-pwqiao on branch fix/collection-mutation-receipts. parseCsvKv in src/core/item/parse.ts stores one value per key, so a key that appears twice in one structured entry keeps only the last value, and the write succeeds. Reproduced on 2026.11.11:\n- pm files <id> --add \"path=a.txt,scope=project,note=moved here, path: b.txt\" links b.txt with note \"moved here\". The prose \", path: b.txt\" opened a second path key, which replaced a.txt; nothing was refused.\n- pm files <id> --add \"path=c.txt,note=keep, scope: global\" links c.txt with scope global.\n- pm files <id> --add \"path=d.txt,path=e.txt\" links only e.txt.\n\nThe markdown-lines branch (parseMarkdownKeyValueLines) has the same last-wins rule. Every structured flag shares this grammar: --dep, --file, --doc, --test, --reminder, --event, --type-option, --comment, --note and --learning seeds, and files, docs and test --add. A repeated key is never meaningful, because only one value survives, so the only effect of last-wins is silent data loss. The pm-pwqiao note recovery cannot help here, since nothing is refused. Duplicate check: searched for repeated keys, last-wins, silent overwrite and parseCsvKv. Neighbours pm-fr10t8 (colon prose in continuable values) and pm-0v9k (GH-258 unknown keys) are closed and do not cover repeats. The case-normalization collision in assertNoUnknownCsvKeys covers only Path versus path."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,data-integrity,grammar,linked-artifacts,parser
+created_at: "2026-11-11T05:49:49.296Z"
+updated_at: "2026-11-11T10:01:20.870Z"
+closed_at: "2026-11-11T08:02:15.082Z"
+completed_at: "2026-11-11T08:02:15.082Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "parseCsvKv refuses a structured entry that sets the same key twice, compared case-insensitively, in both the comma and markdown-lines branches, with a typed code naming the key; The annotation plaintext fallback still stores such prose verbatim as text; Every structured flag that previously kept the last value now refuses, with regression tests for files --add, --dep and --test; A files or docs --add refusal caused by a repeated key inside note prose offers the pm-pwqiao standalone --note recovery"
+parent: pm-f05lsg
+risk: medium
+confidence: high
+severity: high
+resolution: "assertKeyNotRepeated in src/core/item/parse.ts runs in the comma and markdown-lines branches of parseCsvKv, comparing keys case-insensitively. Every structured flag now refuses a repeat before writing. Annotation and seed plaintext fallbacks store such prose verbatim, and a files/docs repeat inside note prose gets the pm-pwqiao --note recovery."
+expected_result: A repeated key in one entry is refused before anything is written
+actual_result: "The last value wins silently: note prose containing ', path: b.txt' links b.txt instead of a.txt"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0v9k,related,"2026-11-11T05:49:49.296Z","harness:claude-code","cli:create:dep",detected
+  pm-fr10t8,related,"2026-11-11T05:49:49.296Z","harness:claude-code","cli:create:dep",detected
+  pm-pwqiao,related,"2026-11-11T05:49:49.296Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-11T06:43:26.102Z","harness:claude-code","Implementation on branch fix/collection-mutation-receipts (2026-11-11). assertKeyNotRepeated in src/core/item/parse.ts runs in both the comma branch of parseCsvKv and parseMarkdownKeyValueLines. A key that one entry already set, compared case-insensitively, is refused with code structured_entry_key_repeated, flag, value and details {repeated_key, first_key}. Continuation prose is unaffected, because only an identifier-shaped segment with a delimiter reaches the check.\n\nCallers that fall back to plaintext keep working: the --comment, --note and --learning seeds and the annotation --add path catch the refusal. Before this change, 'text=a, text=b' stored only 'b' and lost 'a, '. It now stores the raw entry verbatim, which loses nothing. The leftover 'text=' prefix in that fallback is pm-fr10t8's territory.\n\nRegression specs: parse-utils.spec.ts covers both grammars and Path/path; linked-artifact-note-recovery.spec.ts covers files --add, --dep and test --add."
+files[3]{path,scope}:
+  src/core/item/parse.ts,project
+  tests/unit/commands/annotations/linked-artifact-note-recovery.spec.ts,project
+  tests/unit/core/item/parse-utils.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/annotations/linked-artifact-note-recovery.spec.ts,project,300,"harness:claude-code","2026-11-11T06:43:43.882Z",local_mutation,fix/collection-mutation-receipts
+test_runs[1]:
+  - run_id: test-local-mwbswsxy-aekw7l
+    kind: test
+    status: passed
+    started_at: "2026-11-11T07:31:59.779Z"
+    finished_at: "2026-11-11T07:32:12.550Z"
+    recorded_at: "2026-11-11T07:32:12.550Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/annotations/linked-artifact-note-recovery.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: A key repeated inside one structured entry is refused with structured_entry_key_repeated in both grammar branches instead of silently keeping the last value
+contract_change:
+  api: "Structured key/value entries (--add, --dep, --test, --file, --reminder, --event and the other structured flags)"
+  before: A key repeated inside one entry kept its last value
+  after: A repeated key is refused with structured_entry_key_repeated before anything is written
+  migrate: "Give each key once per entry, quote prose that contains a key-shaped word, or repeat the flag for another entry"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-oglm0t
+  gate_id: structured-entry-key-repeated
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/item/parse-utils.spec.ts tests/unit/commands/annotations/linked-artifact-note-recovery.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

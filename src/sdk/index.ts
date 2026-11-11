@@ -756,8 +756,12 @@ export {
   type LinkedArtifactCommandOptions,
   type LinkedArtifactKindConfig,
   type LinkedArtifactResult,
+  type LinkedCollectionMutationProjection,
+  type LinkedCollectionMutationReceipt,
   type LinkedPathValidation,
   type PathMigration,
+  projectLinkedCollectionMutation,
+  writtenLinkedEntries,
 } from "./linked-artifacts.js";
 export * from "./pagination.js";
 export * from "./query/item-filter-options.js";
