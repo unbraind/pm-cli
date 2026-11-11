@@ -2,11 +2,13 @@ id: pm-4yxzvd
 title: "pm update --unset blocked_by (or --blocked-by none) deletes every blocked_by edge, not only the scalar's: clearing blocker A silently drops an independent prerequisite B"
 description: "Reproduced on the feat/write-time-preconditions build (2026.11.2 source). An item with scalar blocked_by=A plus blocked_by edges to A and to an independent prerequisite B: pm update <id> --unset blocked_by leaves blocked_by unset and the dependency list EMPTY. Cause: applyBlockedByMutation clears the scalar and calls reconcileBlockedByDependency(current, undefined), which filters out every kind=blocked_by dependency. The edge to B was never the scalar's. The item then reads as unblocked: next selects it, start admission admits it, and validate no longer flags it, while B is still open. No warning names the dropped edges. Found by the Codex review of PR 1654: pm-urzubi's start refusal had advertised --unset blocked_by as its recovery command; that refusal now advertises it only when the scalar's blocker is the item's only blocked_by edge. Related: pm-scbr0s (the close-time blocker-clear warning names one of N deleted ordering edges) and pm-q6gx (--blocked-by overwrite)."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[5]: agent-ux,"area:dependencies",blocked-by,data-loss,graph-integrity
 created_at: "2026-11-02T15:39:10.262Z"
-updated_at: "2026-11-02T18:07:32.596Z"
+updated_at: "2026-11-11T05:15:13.674Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#e6ba0f6f7044b066fe23d5ec"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "Clearing the blocked_by scalar removes at most the edge(s) that point at the scalar's own target, never an independent blocked_by edge; Removing every blocked_by edge requires an explicit, separately named operation (or --clear-deps-like flag) whose receipt lists the removed edges; Regression test: scalar A with edges A and B, unset scalar, B remains and the item stays blocked; The start_blocked_by_open_dependency recovery may then advertise the scalar clear again for multi-edge items"

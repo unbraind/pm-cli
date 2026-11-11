@@ -99,6 +99,8 @@
     "!docs/generated/REFUSAL_CLOSURE_CENSUS.md",
     "!docs/ECOSYSTEM_PLANNING_REVIEW.md",
     "!docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md",
+    "!docs/DEVELOPMENT_DEPENDENCY_SECURITY.md",
+    "!docs/CONTEXT_ALGORITHM_PORTFOLIO.md",
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",

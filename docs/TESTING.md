@@ -475,7 +475,7 @@ control and fails if `pm eval --fail-under` stops returning a non-zero exit.
 Refresh the baseline only with `pnpm quality:retrieval-eval:update` after
 reviewing query-level ranking changes.
 
-Development tools must also pass the [development dependency security gate](DEVELOPMENT_DEPENDENCY_SECURITY.md), including the full audit and installed bundle integrity policy.
+Development tools must also pass the [development dependency security gate](https://github.com/unbraind/pm-cli/blob/main/docs/DEVELOPMENT_DEPENDENCY_SECURITY.md) (repository-only, excluded from npm), including the full audit and installed bundle integrity policy.
 
 ## Context Quality Evaluation
 

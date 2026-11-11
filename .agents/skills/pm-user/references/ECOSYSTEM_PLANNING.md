@@ -90,7 +90,8 @@ Read each unfamiliar command's help first. Record adopt/cover/waive decisions
 for capabilities that would otherwise require artificial production data.
 
 For this repository's algorithm and cognitive proposals, consult the
-[portfolio index](../../../../docs/CONTEXT_ALGORITHM_PORTFOLIO.md), then read
+[portfolio index](https://github.com/unbraind/pm-cli/blob/main/docs/CONTEXT_ALGORITHM_PORTFOLIO.md)
+(repository-only, excluded from npm), then read
 the individual owner. Historical ordinal references require their source-note
 timestamp; a closed substrate does not prove its proposed extensions shipped.
 

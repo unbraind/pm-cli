@@ -2,11 +2,13 @@ id: pm-gh1700
 title: "GH-1700: pm test --add returns only the changed linked test, like pm comments --add"
 description: "GitHub issue 1700 (reported against 2026.11.10): every 'pm test <id> --add' echoes the item's whole linked-test list with provenance, plus a failure_categories block of nine zero counters. 'pm comments <id> --add' returns only the new entry, count/total_count/has_more, a mutation_receipt and an omission_receipt. The issue measures 485 B for a comment add on an item with 7 comments, 369 B for a test add with 2 linked tests and 3,335 B for a test add with 26 linked tests. Agents link 20-40 tests per item over a PR's life, so each add re-sends a list that grows linearly. Expected: one collection-mutation receipt shape across comments, files, docs and test. --add/--remove return only the changed entries, the counts and a mutation_receipt. failure_categories appears only for --run. The full list remains reachable through the omission_receipt restore flag. Observed in this session too: linking one test to pm-gh1699 echoed the full receipt. Duplicate check: searched 'test --add echoes linked tests receipt failure_categories' and 'collection mutation receipt files docs test add only changed entries'. pm-covpax (closed) compacted zero failure categories only on lean --run receipts, and pm-gh1630 (closed) bounded selective --run receipts. Neither covers the add/remove mutation receipt."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: agent-ux,"gh:1700",linked-tests,receipts,token-efficiency
 created_at: "2026-11-10T14:43:04.434Z"
-updated_at: "2026-11-10T14:43:15.434Z"
+updated_at: "2026-11-11T05:15:07.273Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#e6ba0f6f7044b066fe23d5ec"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A test --add on an item with 26 linked tests returns a receipt whose size does not grow with the existing list, matching the comments --add shape; failure_categories is absent from add/remove receipts and unchanged on --run receipts; The omission_receipt names the flag or command that restores the full linked-test list, and executing it returns every linked test; files and docs --add are measured and follow the same shape when they share the code path; CLI, SDK and MCP receipts stay in parity"

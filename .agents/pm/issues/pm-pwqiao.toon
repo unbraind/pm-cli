@@ -2,11 +2,13 @@ id: pm-pwqiao
 title: "files/docs --add refusal does not name the note segment it misread as a key, nor offer the standalone --note flag"
 description: "Found 2026-11-10 while linking evidence for pm-5htunt. 'pm files <id> --add \"path=a.txt,scope=project,note=Single-label host, host:port, whitespace\"' exits with invalid_argument and the message says only 'Expected key=value entries separated by commas'. Cause (src/core/item/parse.ts parseCsvKv; corrected after review on PR 1701): after a comma, the identifier-shaped segment 'host:port' opens a new markdown-style key 'host' (the pm-fr10t8 / GH-258 boundary keeps identifier-shaped keys strict). The next segment ' whitespace' has no delimiter, and 'host' is not a continuable key, so parseCsvKv throws the generic invalid-entry refusal; the unknown-key check (assertNoUnknownCsvKeys) is never reached. If the note ends with 'host:port' instead, the entry reaches the unknown-key refusal. Commas alone are accepted as note continuation ('a, b and c'), so an agent cannot tell from either refusal which segment broke the entry. Neither refusal mentions the standalone --note flag (pm-pfnx, GH-170), which takes free text with no parsing. Reproduced with the built CLI in a sandbox tracker. Duplicate check: searched 'files --add note colon comma csv key value parse'; pm-fr10t8 (closed) fixed non-identifier candidate keys and deliberately keeps the identifier case strict; pm-0v9k (closed) introduced strict rejection."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags[4]: agent-ux,files,parser,recovery
 created_at: "2026-11-10T14:07:56.498Z"
-updated_at: "2026-11-10T16:58:21.477Z"
+updated_at: "2026-11-11T05:15:11.476Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#e6ba0f6f7044b066fe23d5ec"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "A files/docs --add refusal caused by an unknown key from a continuation segment names that segment and key in details and in the message; The recovery offers the same link with the prose moved to the standalone --note flag (or a quoting form the parser accepts), and executing it links the file with the full note text; GH-258 strict rejection of identifier-shaped typo keys such as lable=main is unchanged; Both refusal paths are covered, with tests for each variant: the generic invalid-entry refusal raised in parseCsvKv when a later segment follows a non-continuable key (the recorded example), and the unknown-key refusal when the note ends with the key-shaped segment (note=... host:port)"
