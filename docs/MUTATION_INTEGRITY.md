@@ -101,7 +101,8 @@ including `--token=…`. The value must be at least eight whitespace-free
 characters (a quoted value must be whitespace-free up to its closing quote)
 with a Shannon entropy of at least 3 bits per character. It must not be a
 placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
-filesystem path, a letters-only word, a dotted member path or a call; a whole
+filesystem path, a URL, a letters-only word, a dotted member path or a call
+(`?`, `:` and `|` count as value characters); a whole
 element body must satisfy the same grammar. `token_budget`, `max_tokens`, numeric
 counts, masks such as `********` and prose stay clean. A key starts only at the
 beginning of an identifier, so the scan stays linear. Plain and hyphenated
@@ -223,11 +224,13 @@ combine:
   telling the caller to restore them. JSON and text output therefore agree.
 
 Identities never carry credentials. URL userinfo in an asserted or configured
-author (`--author`, `PM_AUTHOR`, `default_author`) and in `--assignee` on
-create and update is replaced with `[redacted]` before anything is stored, so
-the claim principal derived from it is clean too. A holder stored by an older
-version still reads unchanged; ownership refusals, assignee conflicts and claim
-or release envelopes (`claimed_by`, `previous_assignee` and the
+author (`--author`, `PM_AUTHOR`, `default_author`), in `--assignee` on create
+and update, and in identity fields set through runtime or registered field
+values is replaced with `[redacted]` before anything is stored, so the claim
+principal derived from it is clean too. A holder stored by an older version
+still reads unchanged. Ownership checks compare it in its redacted form, so its
+owner keeps access, and ownership refusals, warn-mode ownership warnings and
+claim or release envelopes (`claimed_by`, `previous_assignee` and the
 `claim_skipped_held_by` and `claim_takeover` warnings) redact it as one whole
 value, so whitespace inside its userinfo cannot split it. Rewrite such a holder
 with `pm update <id> --assignee <name>` or a fresh claim.

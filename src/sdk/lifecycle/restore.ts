@@ -63,7 +63,7 @@ import type {
   ItemDocument,
   ItemMetadata,
 } from "../../types/index.js";
-import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
+import { redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 interface ResolvedRestoreSubject {
   id: string;
@@ -229,7 +229,8 @@ function collectRestoreOwnershipWarnings(params: {
   enforcement: "strict" | "warn" | "none";
   resolvedId: string;
 }): string[] {
-  const assigned = params.document.metadata.assignee?.trim();
+  // Redacted like the resolved author, so a legacy holder matches its owner and is never echoed (GH-1707).
+  const assigned = redactOptionalIdentityCredentials(params.document.metadata.assignee?.trim());
   const hasOwnershipConflict =
     assigned && assigned !== params.author && !params.force;
   if (!hasOwnershipConflict) {
@@ -237,7 +238,7 @@ function collectRestoreOwnershipWarnings(params: {
   }
   if (params.enforcement === "strict") {
     throw new PmCliError(
-      `Item ${params.resolvedId} is assigned to ${redactIdentityCredentials(assigned)}. Use --force to override.`,
+      `Item ${params.resolvedId} is assigned to ${assigned}. Use --force to override.`,
       EXIT_CODE.CONFLICT,
     );
   }

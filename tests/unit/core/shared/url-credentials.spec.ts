@@ -4,6 +4,7 @@ import {
   URL_CREDENTIAL_PLACEHOLDER,
   invocationCarriesUrlCredentials,
   redactIdentityCredentials,
+  redactIdentityFields,
   redactOptionalIdentityCredentials,
   redactUrlCredentialsInText,
   redactUrlCredentialsInToken,
@@ -64,6 +65,16 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(redactOptionalIdentityCredentials("https://u:p@h")).toBe("https://[redacted]@h");
     expect(redactOptionalIdentityCredentials(undefined)).toBeUndefined();
     expect(redactOptionalIdentityCredentials(null)).toBeNull();
+  });
+
+  it("redacts every string identity field a runtime or registered field value sets (GH-1707)", () => {
+    const values = { author: "https://a:p@h", assignee: "https://b:q@h", claim_principal: "https://c:r@h", reviewer: "https://d:s@h", count: 3 };
+    expect(redactIdentityFields(values)).toEqual({
+      author: "https://[redacted]@h", assignee: "https://[redacted]@h", claim_principal: "https://[redacted]@h",
+      reviewer: "https://d:s@h", count: 3,
+    });
+    expect(values.author).toBe("https://a:p@h");
+    expect(redactIdentityFields({ assignee: 7 })).toEqual({ assignee: 7 });
   });
 
   it("redacts each whitespace-delimited word of free text and skips text without an at sign", () => {

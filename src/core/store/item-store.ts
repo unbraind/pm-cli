@@ -63,7 +63,7 @@ import type {
   PmSettings,
   RuntimeSchemaSettings,
 } from "../../types/index.js";
-import { redactIdentityCredentials } from "../shared/url-credentials.js";
+import { redactOptionalIdentityCredentials } from "../shared/url-credentials.js";
 
 /** Documents the located item payload exchanged by command, SDK, and package integrations. */
 export interface LocatedItem {
@@ -533,9 +533,12 @@ async function prepareLockedItem(params: {
       warnings,
     });
 
-    const assigned = document.metadata.assignee?.trim();
+    // Compare and echo the stored holder in its redacted form: the caller's
+    // identity is redacted at resolution, so a legacy holder still matches its
+    // owner and never reaches a refusal or warning (GH-1707).
+    const assigned = redactOptionalIdentityCredentials(document.metadata.assignee?.trim());
     const assignedPrincipal =
-      document.metadata.claim_principal?.trim() || assigned;
+      redactOptionalIdentityCredentials(document.metadata.claim_principal?.trim()) || assigned;
     const callerPrincipal = resolveClaimPrincipal(params.author);
     const governance = resolveGovernanceKnobs(params.settings);
     const hasOwnershipConflict =
@@ -546,7 +549,7 @@ async function prepareLockedItem(params: {
     if (hasOwnershipConflict) {
       if (governance.ownership_enforcement === "strict") {
         throw new PmCliError(
-          `Item ${located.id} is assigned to ${redactIdentityCredentials(assigned)}. Use --force to override.`,
+          `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
           EXIT_CODE.CONFLICT,
         );
       }

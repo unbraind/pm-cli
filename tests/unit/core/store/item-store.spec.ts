@@ -417,6 +417,43 @@ describe("core/store/item-store", () => {
     });
   });
 
+  it("compares and echoes a legacy credential-bearing holder only in redacted form (GH-1707)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const secret = ["legacy", "secret"].join("-");
+      const holder = `https://bot:${secret} word@registry.example.invalid`;
+      const id = "pm-item-store-legacy-holder";
+      await writeTaskItem(pmPath, id, { assignee: holder });
+      const settings = await readSettings(pmPath);
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "warn";
+      const warned = await mutateItem({
+        pmRoot: pmPath, settings, id, op: "update", author: "unit-author",
+        mutate: (document) => {
+          document.metadata.description = "warned";
+          return { changedFields: ["description"] };
+        },
+      });
+      expect(JSON.stringify(warned.warnings)).not.toContain(secret);
+      expect(warned.warnings).toEqual(expect.arrayContaining([
+        `ownership_warning:assignee_conflict:${id}:https://[redacted]@registry.example.invalid`,
+      ]));
+      settings.governance.ownership_enforcement = "strict";
+      // The owner's identity is redacted at resolution, so it still matches its own legacy holder.
+      const owned = await mutateItem({
+        pmRoot: pmPath, settings, id, op: "update", author: "https://[redacted]@registry.example.invalid",
+        mutate: (document) => {
+          document.metadata.description = "owner";
+          return { changedFields: ["description"] };
+        },
+      });
+      expect(owned.item.description).toBe("owner");
+      await expect(mutateItem({
+        pmRoot: pmPath, settings, id, op: "update", author: "unit-author",
+        mutate: () => ({ changedFields: [] }),
+      })).rejects.toSatisfy((error: PmCliError) => error.exitCode === EXIT_CODE.CONFLICT && !error.message.includes(secret));
+    });
+  });
+
   it("blocks strict assignee conflicts but allows explicit bypass operations", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-item-store-strict-assignee";

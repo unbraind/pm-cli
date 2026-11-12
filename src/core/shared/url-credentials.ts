@@ -73,6 +73,18 @@ export function redactIdentityCredentials(identity: string): string {
   return redactUrlCredentialsInToken(identity);
 }
 
+/** Identity fields a write may set from runtime or registered field values. */
+const IDENTITY_FIELDS = ["author", "assignee", "claim_principal"] as const;
+
+/** Return a copy of field values with every string identity field redacted, so no field path can store URL userinfo. */
+export function redactIdentityFields<T extends Record<string, unknown>>(values: T): T {
+  const redacted: Record<string, unknown> = { ...values };
+  for (const field of IDENTITY_FIELDS) {
+    if (typeof redacted[field] === "string") redacted[field] = redactIdentityCredentials(redacted[field]);
+  }
+  return redacted as T;
+}
+
 /** Apply {@link redactIdentityCredentials} to a string option and pass any other value through unchanged. */
 export function redactOptionalIdentityCredentials<T>(value: T): T {
   return (typeof value === "string" ? redactIdentityCredentials(value) : value) as T;

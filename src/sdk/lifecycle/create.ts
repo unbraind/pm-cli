@@ -186,7 +186,7 @@ import {
   SCOPE_VALUES,
 } from "../../types/index.js";
 import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
-import { redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
+import { redactIdentityFields, redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 /** Documents the create command options payload exchanged by command, SDK, and package integrations. */
 export interface CreateCommandOptions
@@ -3259,8 +3259,8 @@ export async function runCreate(
     docs: docs.values,
     reminders: reminders.values,
     events: events.values,
-    ...registeredItemFieldValues,
-    ...runtimeCreateFieldValues.values,
+    ...redactIdentityFields(registeredItemFieldValues),
+    ...redactIdentityFields(runtimeCreateFieldValues.values),
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
