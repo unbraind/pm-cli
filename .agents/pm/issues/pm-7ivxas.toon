@@ -2,11 +2,13 @@ id: pm-7ivxas
 title: "Identity refusal table omits linked-test updated_by and plan step owner, so those identity locations still accept URL userinfo"
 description: "Found by the Codex review of PR 1714 (final round). After pm-ziv9yb, the URL-userinfo identity refusal judges the top-level author, assignee and claim_principal and a declared table of nested identity paths (comments, notes, learnings, dependencies, plan_decisions and plan_discoveries author, and the linked-test provenance author). Two identity locations in src/types.ts are not in the table: a linked test's updated_by (the author of its most recent metadata edit) and a plan step's owner. Both were unchecked before PR 1714 as well, so this is a gap in coverage rather than a regression. A runtime or registered field mapped onto tests or plan_steps can therefore store one of those identities with URL userinfo. Fix: add both entry paths to the declared table and pin them in the url-credentials spec."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: identity,redaction,runtime-fields,security
 created_at: "2026-11-12T21:14:03.364Z"
-updated_at: "2026-11-12T21:14:03.364Z"
+updated_at: "2026-11-12T23:24:19.593Z"
+closed_at: "2026-11-12T23:24:19.561Z"
+completed_at: "2026-11-12T23:24:19.561Z"
 author: "harness:claude-code"
 estimated_minutes: 30
 acceptance_criteria: A tests entry updated_by or a plan_steps entry owner carrying URL userinfo is refused naming its entry path; The url-credentials spec pins both paths next to the existing declared paths
@@ -14,8 +16,22 @@ parent: pm-qwoy
 risk: low
 confidence: high
 severity: low
+resolution: "The declared identity table now includes plan_steps owner and the linked-test updated_by, so a runtime or registered field mapped onto plan_steps or tests cannot store either identity with URL userinfo; the refusal names the entry path, such as tests[1].updated_by."
 expected_result: Every identity location in the item types is judged
-actual_result: tests updated_by and plan_steps owner are not judged
+actual_result: url-credentials spec pins both new paths beside the existing ones; 57 related tests pass
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-ziv9yb,discovered_from,"2026-11-12T21:14:03.364Z","harness:claude-code","cli:create:dep",detected
+files[1]{path,scope}:
+  src/core/shared/url-credentials.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts,project,600,"harness:claude-code","2026-11-12T22:59:41.268Z",local_mutation,fix/compaction-round-trip-tokens
+close_reason: Identity refusal judges the linked-test updated_by and plan step owner paths too
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-7ivxas
+  gate_id: credential-redaction
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts (the plan_steps owner and tests updated_by cases fail without the two table rows)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

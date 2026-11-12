@@ -133,7 +133,9 @@ const NESTED_IDENTITY_PATHS: readonly (readonly [string, ...string[]])[] = [
   ["dependencies", "author"],
   ["plan_decisions", "author"],
   ["plan_discoveries", "author"],
+  ["plan_steps", "owner"],
   ["tests", "provenance", "author"],
+  ["tests", "updated_by"],
 ];
 
 /** Deepest nesting walked inside a non-string value stored at an identity location. */
