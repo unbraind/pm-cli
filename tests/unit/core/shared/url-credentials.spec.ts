@@ -40,6 +40,7 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["only a percent-encoded at sign", "ssh://secret123%40host/repo", "ssh://[redacted]%40host/repo"],
     ["SSH userinfo holding a slash", "ssh://Zq8vN3k/LmP0wXy7Ab@host.invalid", "ssh://[redacted]@host.invalid"],
     ["scheme-relative credential URL in a query", "https://public.example/?next=//Zq8vN3kLmP0wXy7Ab@host.invalid/repo", "https://[redacted]@host.invalid/repo"],
+    ["slash-backslash credential URL in a query", String.raw`https://public.example/?next=/\Zq8vN3kLmP0wXy7Ab@host.invalid/repo`, "https://[redacted]@host.invalid/repo"],
   ])("removes every possible userinfo span: %s", (_label, token, expected) => {
     expect(redactUrlCredentialsInToken(token)).toBe(expected);
     expect(redactUrlCredentialsInToken(expected)).toBe(expected);

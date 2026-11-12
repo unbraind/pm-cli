@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1704",sdk,secret-guard,security
 created_at: "2026-11-12T05:13:22.718Z"
-updated_at: "2026-11-12T14:21:15.825Z"
+updated_at: "2026-11-12T14:41:37.581Z"
 closed_at: "2026-11-12T08:56:29.386Z"
 completed_at: "2026-11-12T08:56:29.386Z"
 author: "harness:claude-code"
@@ -21,7 +21,7 @@ expected_result: Every row of the GH-1704 table flags in all three spellings plu
 actual_result: "secret-policy-parity: 17 keys x 3 spellings plus XML flag credential_key_assignment; 19 must-allow cases stay clean; block mode refuses; 422 secret-guard tests pass and every changed line is covered"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,related,"2026-11-12T05:13:22.718Z","harness:claude-code","cli:create:dep",detected
-comments[15]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-11-12T09:36:14.397Z","harness:claude-code","Pre-push Codex review (three P2s), fixed before the PR opened. (1) Element content went through the generic length check, so <token>********</token> and <secret>[scrubbed]</secret> were flagged; the spelling now declares elementValue and element content is judged by the value grammar and entropy predicate. (2) A quoted value matched its first word, so client_secret: \"Configure this in the settings page\" and {\"token\":\"authentication failed\"} were flagged; a quoted value must now be whitespace-free up to its closing quote, and letters-only words are excluded. (3) A word boundary after each hyphen let the compound-key prefix restart inside one identifier, which is quadratic on a hyphen run; a lookbehind now starts a key only at the beginning of an identifier and still allows --token=. The credential rule scans 32 KB hyphen runs in under 20 ms. The remaining second of cost on that input belongs to the pre-existing user_at_private_host rule, filed as pm-3627y1.\n"
   "2026-11-12T09:54:06.403Z","harness:claude-code","Pre-push Codex review round 2 (P2), fixed before the PR opened: element content matched the value grammar on a prefix, so <client_secret>not-configured in this environment</client_secret> was flagged and blocked in block mode, while the equivalent quoted JSON value stayed clean. The whole trimmed element body must now be one value. The case is in the must-allow corpus.\n"
   "2026-11-12T10:48:34.319Z","harness:claude-code","PR 1712 review (Greptile, CodeRabbit), fixed in this PR. (1) Greptile: the credential value class left out ?, : and |, so client_secret: \"q7!A?9#z\" passed in every spelling; they now count as value characters, and URL values are excluded so token: https://… stays clean.\n"
@@ -37,6 +37,7 @@ comments[15]{created_at,author,text}:
   "2026-11-12T13:51:59.285Z","harness:claude-code","PR 1712 Codex (P2 escape), fixed in this PR: a quoted credential containing ;, comma or ( (\"q7!A;9#z\") stopped short of eight characters. A quoted value or element body is now captured whole up to its closing quote; the unquoted code-safe alphabet is unchanged.\n"
   "2026-11-12T14:07:06.717Z","harness:claude-code","PR 1712 Codex (two P2 escapes), fixed in this PR. Once quoted values were captured whole, the letters-only exclusion still rejected the prefix before a semicolon (\"ZqvnKr;LmP0wXy7Ab\"), and an apostrophe inside a double-quoted value ended the capture. The quoted word, member-path and key-file exclusions now require the whole literal up to its matching quote, and the capture ends only at the quote that opened it. Both shapes are covered for client_secret JSON and a DB_PASSWORD element.\n"
   "2026-11-12T14:21:15.824Z","harness:claude-code","PR 1712 CodeRabbit (Major) and Codex, fixed in this PR: an element body containing a double quote (<client_secret>q7!A\"9#z</client_secret>) ended the synthetic quoted literal early and escaped. The body's own double quotes are now neutralized before it is judged as one value. Declined with reason (CodeRabbit Minor): unquoted values after a colon or a spaced equals sign containing ? : |, such as client_secret: q7!A?9#z. In those positions such punctuation reads as code ({ token: options?.token }), the same trade-off as before. Quoted, JSON, XML and direct env (KEY=value) forms are detected.\n"
+  "2026-11-12T14:41:37.580Z","harness:claude-code","PR 1712 final Codex round, fixed in this PR. (1) A slash-backslash pair in a public URL's query (?next=/\\token@host) forms a network-path URL; any two-character slash or backslash combination now disqualifies the public exemption. (2) Element entropy was measured on the quote-neutralized body, so <client_secret>q7!A\"9'z</client_secret> fell below the threshold; the grammar judges the neutralized body, and entropy and reference checks judge the original. (3) Entropy divided code-point counts by UTF-16 length, understating astral characters; both now use code points. The review loop is stopped here: further adversarial spellings, and the known residuals, are owned by pm-jcz7qz.\n"
 files[1]{path,scope}:
   src/core/shared/secret-rules.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

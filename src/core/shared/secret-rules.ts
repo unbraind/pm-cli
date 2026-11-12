@@ -554,7 +554,10 @@ function elementValueJudge(
     const neutral = value.replaceAll("\"", "'");
     compiled.value.lastIndex = 0;
     const match = compiled.value.exec(`"${neutral}"`);
-    return match !== null && match[1] === neutral && acceptsSecretMatch(rule, match);
+    if (match === null || match[1] !== neutral) return false;
+    // The grammar judged the neutralized body; entropy and references judge the original.
+    match[1] = value;
+    return acceptsSecretMatch(rule, match);
   };
 }
 
@@ -572,14 +575,15 @@ export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): b
   if (rule.rejectValue?.test(match[1]) === true) return false;
   if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;
-  const value = match[1];
+  // Count and divide by code points alike, so astral characters are not undercounted.
+  const characters = [...match[1]];
   const counts = new Map<string, number>();
-  for (const character of value) {
+  for (const character of characters) {
     counts.set(character, (counts.get(character) ?? 0) + 1);
   }
   let entropy = 0;
   for (const count of counts.values()) {
-    const probability = count / value.length;
+    const probability = count / characters.length;
     entropy -= probability * Math.log2(probability);
   }
   return entropy >= rule.minimumEntropy;

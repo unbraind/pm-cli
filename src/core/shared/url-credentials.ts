@@ -36,7 +36,7 @@ function provablyWithoutUserinfo(token: string, colon: number): boolean {
   // A percent escape may decode to `@` or `:` (Git decodes `%40`), so it is never provably public.
   // The rest must hold no nested URL: no scheme (`:`), no scheme-relative
   // authority (`//`) and no percent escape that could decode to either.
-  return !/[:@%]/u.test(token.slice(authority, authorityEnd)) && !/[:%]|\/\//u.test(token.slice(authorityEnd));
+  return !/[:@%]/u.test(token.slice(authority, authorityEnd)) && !/[:%]|[/\\][/\\]/u.test(token.slice(authorityEnd));
 }
 
 /** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
