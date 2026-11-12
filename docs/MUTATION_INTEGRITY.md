@@ -240,8 +240,9 @@ takeover) or by rewriting it. Ownership refusals, warn-mode ownership warnings
 and claim or release envelopes (`claimed_by`, `previous_assignee`, the
 `claim_skipped_held_by` and `claim_takeover` warnings, and the returned item
 copy) redact it as one whole value, so whitespace inside its userinfo cannot
-split it. Rewrite such a holder with `pm update <id> --assignee <name>` or a
-fresh claim.
+split it. Rewrite such a holder with `pm update <id> --assignee <name> --force`
+or `pm claim <id> --force`; both refuse without `--force`, because the holder
+never matches a caller.
 
 ### Executable mutation inventory
 

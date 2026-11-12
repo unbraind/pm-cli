@@ -140,6 +140,8 @@ describe("credential-key assignments (GH-1704)", () => {
     expect(rulesFor(`CLIENT_SECRET=${punctuated}`)).toEqual(["credential_key_assignment"]);
     const mixed = ["Zqvnkr_", "LmPwxyAb"].join("");
     expect(rulesFor(`CLIENT_SECRET=${mixed};`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`CLIENT_SECRET="${letters};"`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`{"client_secret":"${letters};"}`)).toEqual(["credential_key_assignment"]);
   });
 
   it("flags option and hyphenated key spellings", () => {
@@ -196,6 +198,7 @@ describe("credential-key assignments (GH-1704)", () => {
     ["long optional chain", "const token = configuration?.token;"],
     ["unquoted hyphenated prose", "client_secret: not-configured in this environment"],
     ["constant reference", "const token = DEFAULT_TOKEN;"],
+    ["spaced constant reference", "const token = DEFAULT_TOKEN ;"],
     ["extensionless SSH key file", '{"private_key":"keys/id_ed25519"}'],
     ["SSH key file element", "<private_key>.ssh/id_rsa</private_key>"],
     ["quoted hyphenated word", 'api_key: "not-yet-provisioned"'],

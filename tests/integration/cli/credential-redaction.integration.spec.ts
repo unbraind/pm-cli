@@ -199,9 +199,25 @@ it("refuses URL userinfo in asserted identities and never echoes a stored one (G
     ] as const) {
       const result = context.runCli([...args, "--author", "other"], { preserveDefaultMutationOutput: preserve });
       const output = `${result.stdout}${result.stderr}`;
+      // Ownership holds: a plain claim is refused and --if-available skips.
+      if (args.includes("--if-available")) {
+        expect(result.code, output).toBe(0);
+        expect(output).toMatch(/skipped/u);
+      } else {
+        expect(result.code, output).toBe(4);
+      }
       expect(output, args.join(" ")).not.toContain(SECRET);
       expect(output, args.join(" ")).toContain("https://[redacted]@registry.example.invalid");
     }
+    const stored = await readFile(itemFile, "utf8");
+    expect(stored).toContain(`assignee: ${JSON.stringify(credentialIdentity)}`);
+    expect(stored).toContain(`claim_principal: ${JSON.stringify(credentialIdentity)}`);
+
+    // An author asserted inside a structured seed is refused too.
+    const seeded = context.runCli(["create", "--type", "Task", "--title", "seed", "--description", "d", "--acceptance-criteria", "a",
+      "--comment", `author=https://u:${SECRET}@host.invalid,text=note`, "--json"]);
+    expect(seeded.code, seeded.stderr).toBe(2);
+    expect(`${seeded.stdout}${seeded.stderr}`).not.toContain(SECRET);
   });
 }, 120_000);
 

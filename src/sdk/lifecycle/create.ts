@@ -186,7 +186,7 @@ import {
   SCOPE_VALUES,
 } from "../../types/index.js";
 import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
-import { assertIdentityFieldsWithoutUrlCredentials } from "../../core/shared/url-credentials.js";
+import { assertIdentityFieldsWithoutUrlCredentials, parseIdentityOption } from "../../core/shared/url-credentials.js";
 
 /** Documents the create command options payload exchanged by command, SDK, and package integrations. */
 export interface CreateCommandOptions
@@ -487,7 +487,7 @@ function parseDependencies(
     const sourceKind = normalizeDependencySourceKind(
       parseOptionalString(kv.source_kind),
     );
-    const explicitAuthor = parseOptionalString(kv.author);
+    const explicitAuthor = parseIdentityOption(kv.author, "--dep author");
     return {
       id: normalizeDependencySeedId(id, prefix, sourceKind),
       kind: requireDependencyKind(kind),
@@ -574,7 +574,7 @@ export function parseLogSeed(
     if (unsupportedKeys.length > 0) {
       return {
         created_at: parseCreatedAt(kv.created_at, nowValue),
-        author: parseOptionalString(kv.author) ?? fallbackAuthor,
+        author: parseIdentityOption(kv.author, `${optionName} author`) ?? fallbackAuthor,
         text: trimmedEntry,
       };
     }
@@ -587,7 +587,7 @@ export function parseLogSeed(
     }
     return {
       created_at: parseCreatedAt(kv.created_at, nowValue),
-      author: parseOptionalString(kv.author) ?? fallbackAuthor,
+      author: parseIdentityOption(kv.author, `${optionName} author`) ?? fallbackAuthor,
       text,
     };
   });

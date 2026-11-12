@@ -557,8 +557,11 @@ function elementValueJudge(
 
 /** An unquoted captured value matching the reference shape whose statement a `;` ends. */
 function isStatementReference(shape: RegExp, match: RegExpMatchArray): boolean {
-  // Every match handed to a judge comes from exec or matchAll, so index and input are set.
-  return match.input![match.index! + match[0].length] === ";" && !/^["']/u.test(match[0]) && shape.test(match[1]);
+  // Every match handed to a judge comes from exec or matchAll, so index and input
+  // are set; the value capture always ends the match, so it starts `length` back.
+  const end = match.index! + match[0].length;
+  const opener = match.input![end - match[1].length - 1];
+  return /^[ \t]*;/u.test(match.input!.slice(end, end + 64)) && opener !== "\"" && opener !== "'" && shape.test(match[1]);
 }
 
 /** Accept a pattern match, applying the declared entropy predicate when present. */

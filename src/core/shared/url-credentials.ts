@@ -36,7 +36,8 @@ function provablyWithoutUserinfo(token: string, colon: number): boolean {
 
 /** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
 function userinfoBounds(token: string): readonly [start: number, end: number] | undefined {
-  const at = token.lastIndexOf("@");
+  // Git decodes `%40` in an authority, so an encoded at sign ends userinfo too.
+  const at = Math.max(token.lastIndexOf("@"), token.toLowerCase().lastIndexOf("%40"));
   const colon = token.indexOf(":");
   if (at < 0 || colon < 0 || colon > at) return undefined;
   // Skip at most the two authority delimiters. A non-special scheme accepts
@@ -106,6 +107,12 @@ export function assertIdentityWithoutUrlCredentials(identity: unknown, source: s
       nextSteps: [`Rerun with ${source} set to a plain name.`],
     },
   );
+}
+
+/** Parse an identity a structured entry asserts (`author=` in a seed), refusing URL userinfo. */
+export function parseIdentityOption(value: string | undefined, source: string): string | undefined {
+  assertIdentityWithoutUrlCredentials(value, source);
+  return value;
 }
 
 /** Refuse URL userinfo in every identity field of runtime or registered field values. */

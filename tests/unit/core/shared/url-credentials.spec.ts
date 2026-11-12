@@ -37,6 +37,7 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["SSH userinfo holding a question mark", "ssh://Zq8vN3k?LmP0wXy7Ab@github.com/repo", "ssh://[redacted]@github.com/repo"],
     ["SSH userinfo holding a hash", "ssh://Zq8vN3k#LmP0wXy7Ab@github.com/repo", "ssh://[redacted]@github.com/repo"],
     ["percent-encoded at sign in the authority", "ssh://Zq8vN3kLmP0wXy7Ab%40github.com/repo@v1", "ssh://[redacted]@v1"],
+    ["only a percent-encoded at sign", "ssh://secret123%40host/repo", "ssh://[redacted]%40host/repo"],
   ])("removes every possible userinfo span: %s", (_label, token, expected) => {
     expect(redactUrlCredentialsInToken(token)).toBe(expected);
     expect(redactUrlCredentialsInToken(expected)).toBe(expected);
@@ -84,6 +85,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(() => assertIdentityWithoutUrlCredentials("https://u:hunter2@h", "--assignee")).toThrow(/--assignee must not carry URL credentials/u);
     expect(() => assertIdentityWithoutUrlCredentials("https://u:hunter2@h", "--assignee")).not.toThrow(/hunter2/u);
     expect(() => assertIdentityWithoutUrlCredentials("alice@example.com", "--assignee")).not.toThrow();
+    expect(() => assertIdentityWithoutUrlCredentials("ssh://secret123%40host/repo", "--author")).toThrow(/--author must not/u);
+    expect(() => assertIdentityWithoutUrlCredentials("https://example.com/a%40b", "--author")).not.toThrow();
     expect(() => assertIdentityWithoutUrlCredentials(undefined, "--assignee")).not.toThrow();
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ assignee: "https://t@h", note: "https://u:p@h" })).toThrow(/assignee must not/u);
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ note: "https://u:p@h" })).not.toThrow();
