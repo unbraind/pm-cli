@@ -41,6 +41,24 @@ describe("continuation tokens survive string compaction (GH-1710)", () => {
     expect(readCompactionMarker(intent.items[0]!.title)).toBe(1761);
   });
 
+  it("keeps the omitted count when a second budget stage compacts an intent-compacted page", () => {
+    const rows = {
+      items: Array.from({ length: 8 }, (_, index) => ({ id: `pm-${index}`, title: `${"T".repeat(2000)}${index}`, status: "open" })),
+      count: 8,
+      total: 20,
+      has_more: true,
+      next_cursor: cursor,
+    };
+    const intent = attachContextIntentReceipt("list", { for: "triage", tokenBudget: 4000 }, rows);
+    expect(readCompactionMarker(intent.items[0]!.title)).toBe(1761);
+    for (const format of ["json", "toon"] as const) {
+      const bounded = applyReadOutputDimensions("list", { outputFormat: format, outputBudget: 800 }, intent);
+      expect(bounded.read_output).toMatchObject({ strings_compacted: true, rows_compacted: true, result_omitted: false });
+      expect(bounded.items.length).toBeLessThan(8);
+      expect(bounded.items.map((item) => readCompactionMarker(item.title))).toEqual(bounded.items.map(() => 1761));
+    }
+  });
+
   it("still compacts a non-string value stored under a cursor key", () => {
     const bounded = applyReadOutputDimensions("list", { outputBudget: 2000 }, { ...page(), cursor: { label: "L".repeat(600) } });
     expect(readCompactionMarker(bounded.cursor.label)).toBe(360);

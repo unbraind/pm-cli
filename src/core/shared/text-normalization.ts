@@ -28,9 +28,14 @@ const COMPACTION_MARKER_PATTERN = /\u2026\[\+([1-9]\d*) chars\]$/u;
  * Shorten an explanatory string the way budgeted reads do: a Unicode-safe
  * prefix followed by a marker naming how many code units were omitted, so a
  * write path can recognise text copied from a compacted read (pm-n98pir).
+ * Compaction is idempotent: a string that already ends with a marker right
+ * after its kept prefix is returned unchanged, so a later budget stage never
+ * counts the marker as omitted source text.
  */
 export function compactExplanatoryString(value: string): string {
   if (value.length <= COMPACTED_STRING_LENGTH) return value;
+  const marker = COMPACTION_MARKER_PATTERN.exec(value);
+  if (marker !== null && marker.index <= COMPACTED_STRING_LENGTH) return value;
   const prefix = unicodeSafePrefix(value, COMPACTED_STRING_LENGTH);
   return `${prefix}\u2026[+${value.length - prefix.length} chars]`;
 }

@@ -5,7 +5,7 @@
  * read-output contract without expanding its public declaration module.
  */
 import { formatBuiltInOutput } from "../core/output/output.js";
-import { compactExplanatoryString, isContinuationTokenKey } from "../core/shared/text-normalization.js";
+import { COMPACTED_STRING_LENGTH, compactExplanatoryString, isContinuationTokenKey } from "../core/shared/text-normalization.js";
 import type { PmReadOutputReceipt } from "./read-output-contracts.js";
 import {
   countReadOutputRows,
@@ -231,9 +231,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function compactStrings(value: unknown, state: StringCompactionState, preserveStrings = false): unknown {
   if (typeof value === "string") {
     if (preserveStrings) return value;
-    const compacted = compactExplanatoryString(value);
-    if (compacted !== value) state.compacted = true;
-    return compacted;
+    // Longer than the cutoff means shown compacted, including a string an
+    // earlier budget stage already compacted (its marker keeps it long).
+    if (value.length > COMPACTED_STRING_LENGTH) state.compacted = true;
+    return compactExplanatoryString(value);
   }
   if (Array.isArray(value)) {
     return value.map((entry) => compactStrings(entry, state, preserveStrings));

@@ -32,6 +32,12 @@ describe("read-output compaction marker and continuation tokens (pm-n98pir, GH-1
     const astral = compactExplanatoryString(`${"a".repeat(239)}😀${"z".repeat(10)}`);
     expect(astral).toBe(`${"a".repeat(239)}…[+12 chars]`);
     expect(readCompactionMarker(astral)).toBe(12);
+    // Codex on the batch PR: a second budget stage keeps the first stage's count.
+    expect(compactExplanatoryString(compacted)).toBe(compacted);
+    expect(compactExplanatoryString(astral)).toBe(astral);
+    // A marker past the kept prefix is source text, so the string still compacts.
+    const late = `${"b".repeat(300)}…[+5 chars]`;
+    expect(compactExplanatoryString(late)).toBe(`${"b".repeat(240)}…[+71 chars]`);
   });
 
   it("recognises only a trailing marker, tolerating trailing whitespace", () => {
