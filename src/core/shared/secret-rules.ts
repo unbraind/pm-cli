@@ -548,11 +548,13 @@ function elementValueJudge(
 ): ((value: string) => boolean) | undefined {
   if (!spelling.elementValue) return undefined;
   // The whole trimmed body must be one value, so element prose never counts. It
-  // is judged as a quoted literal: an element body has no code to confuse it with.
+  // is judged as a double-quoted literal: an element body has no code to confuse
+  // it with, and its own `"` characters become `'` so they cannot end it early.
   return (value) => {
+    const neutral = value.replaceAll("\"", "'");
     compiled.value.lastIndex = 0;
-    const match = compiled.value.exec(`"${value}"`);
-    return match !== null && match[1] === value && acceptsSecretMatch(rule, match);
+    const match = compiled.value.exec(`"${neutral}"`);
+    return match !== null && match[1] === neutral && acceptsSecretMatch(rule, match);
   };
 }
 

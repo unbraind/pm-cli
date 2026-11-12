@@ -150,6 +150,9 @@ describe("credential-key assignments (GH-1704)", () => {
       expect(rulesFor(`{"client_secret":"${embedded}"}`), embedded).toEqual(["credential_key_assignment"]);
       expect(rulesFor(`<DB_PASSWORD>${embedded}</DB_PASSWORD>`), embedded).toEqual(["credential_key_assignment"]);
     }
+    for (const quoted of [["q7!A", '"9#z'], ["Zq8v", '"N3kLm', "'P0wXy7Ab"]].map((parts) => parts.join(""))) {
+      expect(rulesFor(`<client_secret>${quoted}</client_secret>`), quoted).toEqual(["credential_key_assignment"]);
+    }
   });
 
   it("flags option and hyphenated key spellings", () => {

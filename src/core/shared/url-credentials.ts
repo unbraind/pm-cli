@@ -34,7 +34,9 @@ function provablyWithoutUserinfo(token: string, colon: number): boolean {
   if (delimiter < 0) return false;
   const authorityEnd = authority + delimiter;
   // A percent escape may decode to `@` or `:` (Git decodes `%40`), so it is never provably public.
-  return !/[:@%]/u.test(token.slice(authority, authorityEnd)) && !token.slice(authorityEnd).includes(":");
+  // The rest must hold no nested URL: no scheme (`:`), no scheme-relative
+  // authority (`//`) and no percent escape that could decode to either.
+  return !/[:@%]/u.test(token.slice(authority, authorityEnd)) && !/[:%]|\/\//u.test(token.slice(authorityEnd));
 }
 
 /** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
@@ -280,5 +282,5 @@ export function invocationCarriesUrlCredentials(): boolean {
 export function redactUrlCredentialsInText(text: string): string {
   const invocation = invocations.getStore() ?? NO_INVOCATION;
   const redacted = invocation.carried ? removeRegisteredFragments(text, invocation) : text;
-  return redacted.includes("@") ? redacted.replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
+  return /@|%40/iu.test(redacted) ? redacted.replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
 }

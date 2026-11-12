@@ -39,6 +39,7 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["percent-encoded at sign in the authority", "ssh://Zq8vN3kLmP0wXy7Ab%40github.com/repo@v1", "ssh://[redacted]@v1"],
     ["only a percent-encoded at sign", "ssh://secret123%40host/repo", "ssh://[redacted]%40host/repo"],
     ["SSH userinfo holding a slash", "ssh://Zq8vN3k/LmP0wXy7Ab@host.invalid", "ssh://[redacted]@host.invalid"],
+    ["scheme-relative credential URL in a query", "https://public.example/?next=//Zq8vN3kLmP0wXy7Ab@host.invalid/repo", "https://[redacted]@host.invalid/repo"],
   ])("removes every possible userinfo span: %s", (_label, token, expected) => {
     expect(redactUrlCredentialsInToken(token)).toBe(expected);
     expect(redactUrlCredentialsInToken(expected)).toBe(expected);
@@ -87,7 +88,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(() => assertIdentityWithoutUrlCredentials("https://u:hunter2@h", "--assignee")).not.toThrow(/hunter2/u);
     expect(() => assertIdentityWithoutUrlCredentials("alice@example.com", "--assignee")).not.toThrow();
     expect(() => assertIdentityWithoutUrlCredentials("ssh://secret123%40host/repo", "--author")).toThrow(/--author must not/u);
-    expect(() => assertIdentityWithoutUrlCredentials("https://example.com/a%40b", "--author")).not.toThrow();
+    // A percent escape is never provably public, so an encoded at sign is refused conservatively.
+    expect(() => assertIdentityWithoutUrlCredentials("https://example.com/a%40b", "--author")).toThrow(/--author must not/u);
     expect(() => assertIdentityWithoutUrlCredentials(undefined, "--assignee")).not.toThrow();
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ assignee: "https://t@h", note: "https://u:p@h" })).toThrow(/assignee must not/u);
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ note: "https://u:p@h" })).not.toThrow();
@@ -97,6 +99,7 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(redactUrlCredentialsInText("fetch https://u:p@registry:8080/x failed; mail me@example.com"))
       .toBe("fetch https://[redacted]@registry:8080/x failed; mail me@example.com");
     expect(redactUrlCredentialsInText("Error: nothing to see\n")).toBe("Error: nothing to see\n");
+    expect(redactUrlCredentialsInText("cloning ssh://secret123%40host/repo failed")).toBe("cloning ssh://[redacted]%40host/repo failed");
     expect(redactUrlCredentialsInText("one\thttps://t@h/x\ntwo")).toBe("one\thttps://[redacted]@h/x\ntwo");
   });
 

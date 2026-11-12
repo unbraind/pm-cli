@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1707",privacy,redaction,security
 created_at: "2026-11-12T05:13:26.310Z"
-updated_at: "2026-11-12T13:51:58.065Z"
+updated_at: "2026-11-12T14:21:14.776Z"
 closed_at: "2026-11-12T08:56:31.736Z"
 completed_at: "2026-11-12T08:56:31.736Z"
 author: "harness:claude-code"
@@ -22,7 +22,7 @@ actual_result: "url-credentials spec 36 cases pass, including the GH-1707 corpus
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
   pm-nhauur,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
-comments[8]{created_at,author,text}:
+comments[9]{created_at,author,text}:
   "2026-11-12T09:36:13.058Z","harness:claude-code","Pre-push Codex review (three P1s), fixed before the PR opened. The first narrowing scoped redaction to the authority and so leaked three shapes the old first-colon/last-at rule hid: a tab before the authority slashes (https:<TAB>//secret@host, which WHATWG parsers strip), a credential URL nested in a public URL's query (https://public.example/?next=https://u:secret@localhost), and a password holding both an @ and a / (https://u:ab@cd/efGHIJKL@localhost/x). The rule is now inverted: the old conservative span is the default, and a token is exempt only when it provably holds no userinfo. Its authority has neither : nor @, the rest has no : (no nested URL), and it has no tab or line break. All three shapes are must-redact cases in the spec, and the scoped npm alias went back to the documented conservative cost.\n"
   "2026-11-12T09:54:05.211Z","harness:claude-code","Pre-push Codex review round 2 (P2), fixed before the PR opened: the provably-public exemption ended the authority at ?, # or /, but Git passes ssh://Zq8vN3k?LmP0wXy7Ab@github.com/repo to OpenSSH, which reads the part before the at sign as the username. A ? or # therefore no longer ends the authority; only / does. Both SSH shapes are must-redact cases in the spec.\n"
   "2026-11-12T10:48:35.095Z","harness:claude-code","PR 1712 review (Greptile, two CodeRabbit Majors, one CodeRabbit Minor), fixed in this PR. (1) Warn-mode ownership warnings in item-store, history-rewrite and restore still interpolated the raw stored assignee, and runRelease returned them unchanged. (2) Ownership checks compared the raw stored principal with the now-redacted caller, so under strict enforcement a legacy owner would have been locked out of its own item; claim's held-by check had the same mismatch. Every site now reads the stored holder in its redacted form for both comparison and echo. (3) A runtime or registered create field mapped to the author, assignee or claim_principal metadata keys replaced the sanitized value with raw input; both spreads now pass through redactIdentityFields. Unit tests cover warn and strict with a legacy holder, plus the field helper; every changed line is covered.\n"
@@ -31,6 +31,7 @@ comments[8]{created_at,author,text}:
   "2026-11-12T13:06:19.062Z","harness:claude-code","PR 1712 final Codex round 3 (P2), fixed in this PR. A percent-encoded at sign in the authority (ssh://Zq8vN3kLmP0wXy7Ab%40github.com/repo@v1) passed the provably-public exemption, but Git decodes the authority into token userinfo. Any percent escape in the authority now keeps the conservative span. The case is in the spec.\n"
   "2026-11-12T13:29:54.222Z","harness:claude-code","PR 1712 CodeRabbit full review on 3886f1b34 and Codex, addressed in this PR. (Major) An author asserted inside a structured seed (--comment/--note/--learning author=..., --dep author=...) bypassed the identity refusal; the seed parsers now go through parseIdentityOption. (Minor) A percent-encoded at sign with no literal one (ssh://secret123%40host/repo) escaped both the identity guard and redaction; %40 now ends userinfo like @. (Minor) The legacy-holder rewrite instructions now say --force. (Trivial) The legacy-holder integration loop asserts the refused claim, the --if-available skip and the unchanged stored ownership. Codex: the statement-reference check now reads the character before the captured value, so a quoted value containing a semicolon is never mistaken for a statement.\n"
   "2026-11-12T13:51:58.064Z","harness:claude-code","PR 1712 Codex (two P2 escapes), fixed in this PR. (1) OpenSSH reads ssh://Zq8vN3k/LmP0wXy7Ab@host.invalid as user Zq8vN3k/LmP0wXy7Ab, but the provably-public exemption ended the authority at the slash for every scheme. It now applies only to WHATWG special schemes with slash-delimited authorities (http, https, ws, wss, ftp), so ssh and other schemes keep the conservative span.\n"
+  "2026-11-12T14:21:14.776Z","harness:claude-code","PR 1712 CodeRabbit and Codex, fixed in this PR. (1) The contract_change migrate note now gives pm update <id> --assignee <name> --force or pm claim <id> --force for a legacy holder; the changelog was regenerated from it. (2) redactUrlCredentialsInText only ran the token redactor on text containing a literal at sign, so ssh://secret123%40host/repo passed through outside an invocation; %40 now triggers it as well. (3) A scheme-relative credential URL nested in a public URL's query (?next=//token@host) passed the public exemption; the rest of a public URL must now hold no scheme, no // and no percent escape.\n"
 files[9]{path,scope}:
   src/core/history/history-rewrite.ts,project
   src/core/shared/author.ts,project
@@ -49,8 +50,8 @@ close_reason: "Public URLs with an at sign in the path survive redaction, and id
 contract_change:
   api: "URL credential redaction in refusals and recoveries; author, assignee and claim identities"
   before: "A public URL with an @ in its path lost its host and path and withheld the retry; a credential-bearing PM_AUTHOR, --author or --assignee was stored and echoed verbatim in claim refusals"
-  after: "Only a token that provably holds no userinfo is left alone, so scoped-package and blob URLs keep an executable retry; an asserted or configured identity, --assignee, or an identity runtime field carrying URL userinfo is refused with invalid_argument_value, and refusals, warnings and claim envelopes redact a stored one"
-  migrate: "Use a plain name for PM_AUTHOR, --author, default_author and --assignee; rewrite a holder stored by an older version with pm update <id> --assignee <name>, or take it over with --force"
+  after: "Only an http(s), ws(s) or ftp URL that provably holds no userinfo is left alone, so scoped-package and blob URLs keep an executable retry; an asserted or configured identity, --assignee, a seed author or an identity runtime field carrying URL userinfo is refused with invalid_argument_value, and refusals, warnings and claim envelopes redact a stored one"
+  migrate: "Use a plain name for PM_AUTHOR, --author, default_author, --assignee and seed author= values; rewrite a holder stored by an older version with pm update <id> --assignee <name> --force, or take it over with pm claim <id> --force"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened
