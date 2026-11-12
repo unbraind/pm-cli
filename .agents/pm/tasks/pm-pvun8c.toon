@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: docs,packaging,publication-weight,release
 created_at: "2026-11-12T05:59:00.569Z"
-updated_at: "2026-11-12T06:24:49.152Z"
+updated_at: "2026-11-12T06:48:44.719Z"
 closed_at: "2026-11-12T06:24:48.443Z"
 completed_at: "2026-11-12T06:24:48.443Z"
 author: "harness:claude-code"
@@ -21,11 +21,16 @@ actual_result: "Distribution 19,942,799 B in 1,585 files against the 20,000,000 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-tuxw1i,related,"2026-11-12T05:59:00.569Z","harness:claude-code","cli:create:dep",detected
   pm-xcndcu,discovered_from,"2026-11-12T05:59:00.569Z","harness:claude-code","cli:create:dep",detected
-files[2]{path,scope}:
+comments[1]{created_at,author,text}:
+  "2026-11-12T06:48:41.698Z","harness:claude-code","PR 1711 Codex review (P2), fixed in this PR. The runtime guide catalogue in src/sdk/guide-topics.ts still listed docs/RELEASING.md as a required document of the release topic, so on an npm install pm guide release at standard or deep depth would warn 'Missing required guide document: docs/RELEASING.md'. The same topic already listed scripts/release/run-gates.mjs, which the package never shipped, so that warning predated this change. Both entries are now optional and say they exist only in a repository checkout. The docs-skills gate could not see the gap because it runs guides from the checkout. It now also applies package.json files in npm order (isPackagedPath) and fails when a required guide document is not shipped (validateGuideDocsPackaged); the spec covers a negated pattern, a dot-directory and the real repository.\n"
+files[4]{path,scope}:
   package.json,project
   scripts/release/docs-reachability-exceptions.json,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  scripts/release/docs-skills-gate.mjs,project
+  src/sdk/guide-topics.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/release/docs-skills-gate.mjs,project,300,"harness:claude-code","2026-11-12T06:02:10.330Z",local_mutation,fix/waiver-notice-window
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,project,600,"harness:claude-code","2026-11-12T06:48:44.581Z",local_mutation,fix/waiver-notice-window
 docs[7]{path,scope}:
   AGENTS.md,project
   CONTRIBUTING.md,project

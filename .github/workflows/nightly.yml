@@ -318,7 +318,11 @@ jobs:
         id: waiver_notice
         if: success() || failure()
         timeout-minutes: 6
-        run: node scripts/release/repository-assurance.mjs repository-waiver-notice --trigger scheduled
+        # The assurance verdict keeps only a 500-character excerpt of provider
+        # output, so print and keep the complete notice list first.
+        run: |
+          node scripts/release/defect-evidence-gate.mjs --waiver-notice | tee "${RUNNER_TEMP}/waiver-notice.txt" || true
+          node scripts/release/repository-assurance.mjs repository-waiver-notice --trigger scheduled
 
       - name: Alert on scheduled nightly failure
         if: failure() && github.event_name == 'schedule'
@@ -344,9 +348,12 @@ jobs:
 
           Investigate before trusting the next daily release."
           if [[ "${WAIVER_NOTICE_OUTCOME}" == "failure" ]]; then
+            notices="$(grep -E '^(Finding|Waiver notice:)' "${RUNNER_TEMP}/waiver-notice.txt" 2>/dev/null | sed 's/^/- /' || true)"
             body="${body}
 
-          The waiver notice window failed: renew or retire each waiver the step names (\`node scripts/release/defect-evidence-gate.mjs --waiver-notice\`) before its expiry blocks the daily release."
+          The waiver notice window failed: renew or retire each waiver below (\`node scripts/release/defect-evidence-gate.mjs --waiver-notice\`) before its expiry blocks the daily release.
+
+          ${notices}"
           fi
 
           if [[ -n "${existing_issue}" ]]; then

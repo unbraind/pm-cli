@@ -38,6 +38,14 @@ type DocsModule = {
     failures: string[],
   ) => void;
   runGuideChecks: (failures: string[]) => Promise<void>;
+  isPackagedPath: (relativePath: string, filePatterns: string[]) => boolean;
+  validateGuideDocsPackaged: (
+    failures: string[],
+    options?: {
+      topics?: { id: string; docs: { path: string; optional?: boolean }[] }[];
+      filePatterns?: string[];
+    },
+  ) => Promise<void>;
   validateRequiredGuideMentions: (failures: string[]) => Promise<void>;
   loadDeprecatedCommandSpellings: () => Promise<Map<string, string>>;
   mapDeprecatedCommandSpellings: (
@@ -134,6 +142,9 @@ function mockFsPromises(impl: Partial<typeof FsPromises>): void {
       ...actual, ...impl,
       readFile: vi.fn(async (...args: Parameters<typeof actual.readFile>) => {
         if (String(args[0]).endsWith("docs-reachability-exceptions.json")) return "{}";
+        if (String(args[0]).replaceAll("\\", "/").endsWith("/package.json")) {
+          return JSON.stringify({ files: ["**", ".*/**"] });
+        }
         return (impl.readFile ?? actual.readFile)(...args);
       }),
     };
@@ -458,6 +469,45 @@ describe("docs-skills-gate", () => {
         reachable,
       );
       expect(reachable).toEqual([]);
+    });
+
+    it("isPackagedPath applies package files patterns in npm order", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const files = ["dist/**", "!dist/**/*.map", "README.md", "docs/**", "!docs/RELEASING.md"];
+      expect(mod.isPackagedPath("README.md", files)).toBe(true);
+      expect(mod.isPackagedPath("docs/SDK.md", files)).toBe(true);
+      expect(mod.isPackagedPath("docs/RELEASING.md", files)).toBe(false);
+      expect(mod.isPackagedPath("dist/cli.js", files)).toBe(true);
+      expect(mod.isPackagedPath("dist/cli.js.map", files)).toBe(false);
+      expect(mod.isPackagedPath("scripts/release/run-gates.mjs", files)).toBe(false);
+      expect(mod.isPackagedPath("docs/RELEASING.md", [...files, "docs/RELEASING.md"])).toBe(true);
+    });
+
+    it("validateGuideDocsPackaged flags required guide docs the npm package does not ship", async () => {
+      mockUtils();
+      const mod = await harness.importModuleStable<DocsModule>(SCRIPT);
+      const failures: string[] = [];
+      await mod.validateGuideDocsPackaged(failures, {
+        filePatterns: ["docs/**", "!docs/RELEASING.md"],
+        topics: [
+          {
+            id: "release",
+            docs: [
+              { path: "docs/RELEASING.md" },
+              { path: "scripts/release/run-gates.mjs", optional: true },
+              { path: "docs/SDK.md" },
+            ],
+          },
+        ],
+      });
+      expect(failures).toEqual([
+        'Guide topic "release" requires docs/RELEASING.md, which the npm package does not ship; ship it or mark it optional',
+      ]);
+
+      const repositoryFailures: string[] = [];
+      await mod.validateGuideDocsPackaged(repositoryFailures);
+      expect(repositoryFailures).toEqual([]);
     });
 
     it("validateRequiredGuideMentions flags missing markers", async () => {

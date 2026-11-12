@@ -282,13 +282,16 @@ function reportsWithFindings(scope, boundaryReport, evidenceReport, recurrenceRe
   );
 }
 
-/** Expired waivers and waivers inside the notice window, the only failures of notice mode. */
+/** Findings that mean a waiver is expired or could not be evaluated for notice at all. */
+const NOTICE_FAILURE_KINDS = new Set(["expired_waiver", "invalid_registry", "invalid_waiver"]);
+
+/** Notice mode fails on waivers inside the window and on any waiver it could not evaluate, never vacuously. */
 function waiverNoticeChecks(boundaryReport, evidenceReport) {
   return [
     ["boundary", boundaryReport],
     ["defect_evidence", evidenceReport],
   ].map(([name, report]) => {
-    const findings = report.findings.filter((finding) => finding.kind === "expired_waiver");
+    const findings = report.findings.filter((finding) => NOTICE_FAILURE_KINDS.has(finding.kind));
     return { name, ok: findings.length === 0 && report.waiver_notices.length === 0, findings };
   });
 }

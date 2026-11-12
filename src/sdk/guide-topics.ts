@@ -426,14 +426,21 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       },
     ],
     docs: [
-      { path: "docs/RELEASING.md", purpose: "Release flow and safety checks." },
+      {
+        path: "docs/RELEASING.md",
+        purpose:
+          "Release flow and safety checks (repository checkout only; excluded from the npm package).",
+        optional: true,
+      },
       {
         path: "CHANGELOG.md",
         purpose: "Versioned release history and unreleased notes.",
       },
       {
         path: "scripts/release/run-gates.mjs",
-        purpose: "Source of truth for release gate ordering.",
+        purpose:
+          "Source of truth for release gate ordering (repository checkout only; not in the npm package).",
+        optional: true,
       },
     ],
     related: ["commands", "skills", "workflows"],

@@ -233,6 +233,46 @@ describe("defect evidence repository gate", () => {
     });
   });
 
+  it("fails notice mode closed when the boundary registry or a waiver cannot be evaluated", async () => {
+    await withTempDir("pm-waiver-notice-invalid-", async (tempRoot) => {
+      await mkdir(path.join(tempRoot, "config"));
+      const writeRegistry = (registry: object) =>
+        writeFile(path.join(tempRoot, "config/boundary-fixtures.json"), JSON.stringify(registry));
+      await writeFile(
+        path.join(tempRoot, "config/defect-recurrence-policy.json"),
+        JSON.stringify(policy),
+      );
+      const expired = {
+        id: "expired",
+        producer: "external",
+        consumer: "gate",
+        format: "JSON",
+        waiver_reason: "Capture pending.",
+        waiver_owner: "pm-owner",
+        waiver_expires_at: "2026-01-01T00:00:00.000Z",
+      };
+      for (const [registry, kind] of [
+        [{ version: 1, inventory_scope: "Bad window", waiver_notice_days: "14", boundaries: [expired] }, "invalid_registry"],
+        [{ version: 1, inventory_scope: "Bad waiver", boundaries: [{ ...expired, waiver_expires_at: "soon" }] }, "invalid_waiver"],
+      ] as const) {
+        await writeRegistry(registry);
+        const stdout: string[] = [];
+        await expect(
+          main(["--waiver-notice", "--json"], {
+            repositoryRoot: tempRoot,
+            context: completeContext,
+            writeStdout: (value: string) => stdout.push(value),
+          }),
+        ).resolves.toBe(1);
+        expect(JSON.parse(stdout.join("")).checks[0]).toMatchObject({
+          name: "boundary",
+          ok: false,
+          findings: [{ kind }],
+        });
+      }
+    });
+  });
+
   it("seeds a waiver inside the notice window under the notice negative control", async () => {
     const stdout: string[] = [];
     await expect(

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: defect-evidence,governance,quality-gate,release,reliability,waivers
 created_at: "2026-11-12T05:13:03.902Z"
-updated_at: "2026-11-12T06:24:42.349Z"
+updated_at: "2026-11-12T06:52:16.690Z"
 closed_at: "2026-11-12T06:24:41.616Z"
 completed_at: "2026-11-12T06:24:41.616Z"
 author: "harness:claude-code"
@@ -28,6 +28,9 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-m1tfmp,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
   pm-rtn5h6,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
   pm-xa1w84,related,"2026-11-12T05:31:33.275Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-12T06:48:42.571Z","harness:claude-code","PR 1711 Codex review (P2), fixed in this PR. The assurance wrapper keeps only a 500-character excerpt of provider output, so a cohort of eight waivers entering the window together (the 2027-02-10 renewals) would have dropped whole notices, among them pm-codeql49, pm-m1tfmp and the Windows boundary, from the nightly log. The nightly step now prints the gate's complete text and keeps it in a runner temp file before the assurance verdict runs, and the alert body lists every finding and notice line from that file. A local simulation of the alert script confirmed the list renders and a missing file degrades to an empty list.\n"
+  "2026-11-12T06:52:16.689Z","harness:claude-code","PR 1711 CodeRabbit review (Major), fixed in this PR. Notice mode kept only expired_waiver findings, so a boundary registry with an invalid waiver_notice_days (for example the string \"14\" or 367) returned invalid_registry with an empty notice list and no evaluated waivers, and --waiver-notice exited 0 even when a boundary waiver had already expired. Notice mode now also fails on invalid_registry and invalid_waiver, the two findings that mean a waiver could not be evaluated; other fixture findings stay excluded. The spec covers both cases. Greptile and CodeRabbit also flagged the release guide topic listing the excluded docs/RELEASING.md; that is the Codex finding recorded on pm-pvun8c.\n"
 files[8]{path,scope}:
   .github/workflows/nightly.yml,project
   config/boundary-fixtures.json,project
