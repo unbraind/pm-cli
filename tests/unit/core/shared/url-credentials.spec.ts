@@ -97,10 +97,30 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     // pm-ziv9yb: a runtime array field mapped onto a collection carries nested authors.
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ comments: [{ author: "https://u:p@h", text: "x" }] })).toThrow(/author must not/u);
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ comments: [{ author: "agent-a", text: "https://u:p@h" }] })).not.toThrow();
-    const deep = { a: { b: { c: { d: { e: { author: "https://u:p@h" } } } } } };
-    expect(() => assertIdentityFieldsWithoutUrlCredentials(deep)).not.toThrow();
+    for (const [collection, path] of [
+      ["notes", ["author"]],
+      ["learnings", ["author"]],
+      ["dependencies", ["author"]],
+      ["plan_decisions", ["author"]],
+      ["plan_discoveries", ["author"]],
+      ["tests", ["provenance", "author"]],
+    ] as const) {
+      const entry = path.reduceRight<unknown>((leaf, key) => ({ [key]: leaf }), "https://u:p@h");
+      expect(() => assertIdentityFieldsWithoutUrlCredentials({ [collection]: [{ id: "x" }, entry] })).toThrow(
+        new RegExp(`^${collection}\\[1\\]\\.${path.join("\\.")} must not`, "u"),
+      );
+    }
+    // Codex on PR 1714: an `author` key in a linked test's assertion map is test data, not an identity.
+    const assertionMap = { tests: [{ command: "node t.mjs", assert_json_field_equals: { author: "https://example.com:8443/profile/@alice" } }] };
+    expect(() => assertIdentityFieldsWithoutUrlCredentials(assertionMap)).not.toThrow();
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ audit_details: { author: "https://u:p@h" } })).not.toThrow();
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ tests: [{ provenance: "x" }, null], comments: {} })).not.toThrow();
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ note: null, count: 3, tags: ["a"] })).not.toThrow();
-    expect(() => assertIdentityFieldsWithoutUrlCredentials({ audit_details: { author: { author: "https://u:p@h" } } })).toThrow(/author must not/u);
+    // A container stored at an identity location is identity data throughout, to a bounded depth.
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ author: { author: "https://u:p@h" } })).toThrow(/^author must not/u);
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ assignee: [["https://u:p@h"]] })).toThrow(/^assignee must not/u);
+    const deep = { author: { a: { b: { c: { d: { e: "https://u:p@h" } } } } } };
+    expect(() => assertIdentityFieldsWithoutUrlCredentials(deep)).not.toThrow();
   });
 
   it("redacts each whitespace-delimited word of free text and skips text without an at sign", () => {

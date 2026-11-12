@@ -120,22 +120,60 @@ export function parseIdentityOption(value: string | undefined, source: string): 
   return value;
 }
 
-/** Deepest nesting walked for identity fields; item metadata and field values are shallow. */
-const IDENTITY_FIELD_DEPTH = 4;
-const IDENTITY_FIELD_NAMES: ReadonlySet<string> = new Set(IDENTITY_FIELDS);
+/**
+ * The identities item metadata records inside built-in collections, as
+ * collection key plus entry path (pm-ziv9yb). Only these locations are read as
+ * principals; an `author` key anywhere else, such as in a linked test's
+ * `assert_json_field_equals` map, is ordinary data and is never judged.
+ */
+const NESTED_IDENTITY_PATHS: readonly (readonly [string, ...string[]])[] = [
+  ["comments", "author"],
+  ["notes", "author"],
+  ["learnings", "author"],
+  ["dependencies", "author"],
+  ["plan_decisions", "author"],
+  ["plan_discoveries", "author"],
+  ["tests", "provenance", "author"],
+];
+
+/** Deepest nesting walked inside a non-string value stored at an identity location. */
+const IDENTITY_VALUE_DEPTH = 4;
+
+/** Judge an identity location; a container stored there is identity data throughout, to a bounded depth. */
+function assertIdentityValueWithoutUrlCredentials(value: unknown, source: string, depth = 0): void {
+  if (typeof value === "string") {
+    assertIdentityWithoutUrlCredentials(value, source);
+    return;
+  }
+  if (depth >= IDENTITY_VALUE_DEPTH || typeof value !== "object" || value === null) return;
+  for (const entry of Object.values(value)) assertIdentityValueWithoutUrlCredentials(entry, source, depth + 1);
+}
+
+/** Read one entry path, or undefined when any segment is absent or not a record. */
+function readEntryPath(entry: unknown, path: readonly string[]): unknown {
+  let node = entry;
+  for (const key of path) {
+    if (typeof node !== "object" || node === null || Array.isArray(node)) return undefined;
+    node = (node as Record<string, unknown>)[key];
+  }
+  return node;
+}
 
 /**
- * Refuse URL userinfo in every identity field of item metadata or runtime and
- * registered field values, including entries nested in collections such as a
- * runtime array field mapped onto `comments` (pm-ziv9yb).
+ * Refuse URL userinfo at every identity location of item metadata or runtime
+ * and registered field values: the top-level identity fields and the declared
+ * entry paths of built-in collections, such as a runtime array field mapped
+ * onto `comments` (pm-ziv9yb).
  */
-export function assertIdentityFieldsWithoutUrlCredentials(values: object, depth = 0): void {
-  for (const [key, value] of Object.entries(values)) {
-    if (IDENTITY_FIELD_NAMES.has(key)) assertIdentityWithoutUrlCredentials(value, key);
-    // Recurse into every container, even one stored under an identity key.
-    if (depth < IDENTITY_FIELD_DEPTH && typeof value === "object" && value !== null) {
-      assertIdentityFieldsWithoutUrlCredentials(value, depth + 1);
-    }
+export function assertIdentityFieldsWithoutUrlCredentials(values: object): void {
+  const record = values as Record<string, unknown>;
+  for (const field of IDENTITY_FIELDS) assertIdentityValueWithoutUrlCredentials(record[field], field);
+  for (const [collection, ...path] of NESTED_IDENTITY_PATHS) {
+    const entries = record[collection];
+    if (!Array.isArray(entries)) continue;
+    entries.forEach((entry, index) => {
+      assertIdentityValueWithoutUrlCredentials(readEntryPath(entry, path), `${collection}[${index}].${path.join(".")}`);
+    });
   }
 }
 
