@@ -38,6 +38,7 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["SSH userinfo holding a hash", "ssh://Zq8vN3k#LmP0wXy7Ab@github.com/repo", "ssh://[redacted]@github.com/repo"],
     ["percent-encoded at sign in the authority", "ssh://Zq8vN3kLmP0wXy7Ab%40github.com/repo@v1", "ssh://[redacted]@v1"],
     ["only a percent-encoded at sign", "ssh://secret123%40host/repo", "ssh://[redacted]%40host/repo"],
+    ["SSH userinfo holding a slash", "ssh://Zq8vN3k/LmP0wXy7Ab@host.invalid", "ssh://[redacted]@host.invalid"],
   ])("removes every possible userinfo span: %s", (_label, token, expected) => {
     expect(redactUrlCredentialsInToken(token)).toBe(expected);
     expect(redactUrlCredentialsInToken(expected)).toBe(expected);

@@ -104,9 +104,9 @@ placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
 filesystem path or SSH key-file name, a URL, a letters-only or hyphenated
 word, a CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`), a dotted
 member path or a call
-(in a quoted value, an element body or directly after `=`, `?`, `:` and `|`
-also count as value characters; elsewhere unquoted they read as code such as
-`options?.token`); a
+(a quoted value or an element body counts whole up to its closing quote;
+directly after `=`, `?`, `:` and `|` also count; elsewhere unquoted they read
+as code such as `options?.token`); a
 whole
 element body must satisfy the same grammar. `token_budget`, `max_tokens`, numeric
 counts, masks such as `********` and prose stay clean. A key starts only at the
@@ -213,7 +213,8 @@ combine:
   registry lives in an AsyncLocalStorage scope, so overlapping in-process
   invocations never share it. It protects telemetry and Sentry as well.
 - The rule is conservative. A token is left alone only when no parser can
-  read userinfo in it: its authority (the text between the slashes after the
+  read userinfo in it: it uses an `http`, `https`, `ws`, `wss` or `ftp`
+  scheme (OpenSSH reads `ssh://a/b@host` as user `a/b`), its authority (the text between the slashes after the
   first `:` and the next `/`; SSH-style parsers read userinfo across `?` and
   `#`) holds no `:`, `@` or percent escape, the rest
   of the token holds no `:` (so no nested URL), and it has no tab or line

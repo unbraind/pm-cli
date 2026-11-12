@@ -24,6 +24,9 @@ export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
  */
 function provablyWithoutUserinfo(token: string, colon: number): boolean {
   if (/[\t\n\r]/u.test(token)) return false;
+  // Only WHATWG special schemes end the authority at `/`; OpenSSH reads
+  // `ssh://a/b@host` as user `a/b`, so other schemes keep the conservative span.
+  if (!/(?:^|[^A-Za-z0-9+.-])(?:https?|wss?|ftp)$/iu.test(token.slice(0, colon))) return false;
   let authority = colon + 1;
   while (token[authority] === "/" || token[authority] === "\\") authority += 1;
   // Only `/` ends the authority here: Git and OpenSSH read userinfo across `?` and `#`.

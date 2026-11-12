@@ -142,6 +142,10 @@ describe("credential-key assignments (GH-1704)", () => {
     expect(rulesFor(`CLIENT_SECRET=${mixed};`)).toEqual(["credential_key_assignment"]);
     expect(rulesFor(`CLIENT_SECRET="${letters};"`)).toEqual(["credential_key_assignment"]);
     expect(rulesFor(`{"client_secret":"${letters};"}`)).toEqual(["credential_key_assignment"]);
+    for (const delimited of [["q7!A", ";9#z"], ["q7!A", ",9#z"], ["q7!A", "(9#z"]].map((parts) => parts.join(""))) {
+      expect(rulesFor(`{"client_secret":"${delimited}"}`), delimited).toEqual(["credential_key_assignment"]);
+      expect(rulesFor(`<client_secret>${delimited}</client_secret>`), delimited).toEqual(["credential_key_assignment"]);
+    }
   });
 
   it("flags option and hyphenated key spellings", () => {

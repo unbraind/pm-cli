@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1704",sdk,secret-guard,security
 created_at: "2026-11-12T05:13:22.718Z"
-updated_at: "2026-11-12T13:29:57.735Z"
+updated_at: "2026-11-12T13:51:59.289Z"
 closed_at: "2026-11-12T08:56:29.386Z"
 completed_at: "2026-11-12T08:56:29.386Z"
 author: "harness:claude-code"
@@ -21,7 +21,7 @@ expected_result: Every row of the GH-1704 table flags in all three spellings plu
 actual_result: "secret-policy-parity: 17 keys x 3 spellings plus XML flag credential_key_assignment; 19 must-allow cases stay clean; block mode refuses; 422 secret-guard tests pass and every changed line is covered"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,related,"2026-11-12T05:13:22.718Z","harness:claude-code","cli:create:dep",detected
-comments[12]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-11-12T09:36:14.397Z","harness:claude-code","Pre-push Codex review (three P2s), fixed before the PR opened. (1) Element content went through the generic length check, so <token>********</token> and <secret>[scrubbed]</secret> were flagged; the spelling now declares elementValue and element content is judged by the value grammar and entropy predicate. (2) A quoted value matched its first word, so client_secret: \"Configure this in the settings page\" and {\"token\":\"authentication failed\"} were flagged; a quoted value must now be whitespace-free up to its closing quote, and letters-only words are excluded. (3) A word boundary after each hyphen let the compound-key prefix restart inside one identifier, which is quadratic on a hyphen run; a lookbehind now starts a key only at the beginning of an identifier and still allows --token=. The credential rule scans 32 KB hyphen runs in under 20 ms. The remaining second of cost on that input belongs to the pre-existing user_at_private_host rule, filed as pm-3627y1.\n"
   "2026-11-12T09:54:06.403Z","harness:claude-code","Pre-push Codex review round 2 (P2), fixed before the PR opened: element content matched the value grammar on a prefix, so <client_secret>not-configured in this environment</client_secret> was flagged and blocked in block mode, while the equivalent quoted JSON value stayed clean. The whole trimmed element body must now be one value. The case is in the must-allow corpus.\n"
   "2026-11-12T10:48:34.319Z","harness:claude-code","PR 1712 review (Greptile, CodeRabbit), fixed in this PR. (1) Greptile: the credential value class left out ?, : and |, so client_secret: \"q7!A?9#z\" passed in every spelling; they now count as value characters, and URL values are excluded so token: https://… stays clean.\n"
@@ -34,6 +34,7 @@ comments[12]{created_at,author,text}:
   "2026-11-12T12:46:58.942Z","harness:claude-code","PR 1712 final Codex round 2 (two P2 escapes), fixed in this PR. (1) A digit-free uppercase literal such as ZQVNKR_LMPWXYAB still matched the CONSTANT_CASE exemption, because no value-only rule can tell a constant from a literal. The exemption is now contextual: only an unquoted CONSTANT_CASE name that ends a statement (= DEFAULT_TOKEN;) counts as a reference. Quoted, JSON, XML and env values always count. (2) CLIENT_SECRET=q7!A?9#z stopped at the question mark. Unquoted values directly after = now use the wide alphabet, and the member-path and word exclusions still catch code such as token=process.env.API_KEY||\"\".\n"
   "2026-11-12T13:06:18.199Z","harness:claude-code","PR 1712 final Codex round 3. Fixed: (1) The statement-constant exclusion inherited the detector's case-insensitive flag, so the mixed-case literal Zqvnkr_LmPwxyAb; escaped. It is now a declared, case-sensitive post-match check (rejectStatementReference), applied only to an unquoted value whose statement a semicolon ends. Declined with reason: (2) unquoted env values such as CLIENT_SECRET=AbCd?7x9, whose segment before ? is letters-only or a dotted path. Judging those exclusions with the wide alphabet re-flags code such as token=options?.token, a false positive an earlier round asked to fix, and the case-insensitive rule cannot tell the two apart. Quoted, JSON and XML forms are detected, and the residual is recorded for the measured corpus in pm-1l85at.\n"
   "2026-11-12T13:29:57.734Z","harness:claude-code","PR 1712 CodeRabbit (Minor), fixed in this PR: const token = DEFAULT_TOKEN ; (space before the semicolon) was flagged; the statement-reference check accepts horizontal whitespace before the semicolon. Codex (P2 escape), fixed: CLIENT_SECRET=\"ZQVNKR_LMPWXYAB;\" was exempted because the quote check looked at the start of the whole match; it now looks at the character before the captured value.\n"
+  "2026-11-12T13:51:59.285Z","harness:claude-code","PR 1712 Codex (P2 escape), fixed in this PR: a quoted credential containing ;, comma or ( (\"q7!A;9#z\") stopped short of eight characters. A quoted value or element body is now captured whole up to its closing quote; the unquoted code-safe alphabet is unchanged.\n"
 files[1]{path,scope}:
   src/core/shared/secret-rules.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

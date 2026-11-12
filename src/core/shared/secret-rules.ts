@@ -186,8 +186,9 @@ const CREDENTIAL_KEYS =
 // is not a placeholder (`<...>`, `${...}`, `$(...)`, `$VAR`, `%VAR%`,
 // `[scrubbed]`), a filesystem path (`pwd=/usr/local/bin`, `certs/client.key`,
 // `C:/keys/x.pem`), a URL, a
-// letters-only or hyphenated word (`not-configured`), a dotted member path or a call. Only a quoted value (or
-// an element body) may also hold `?`, `:` and `|`; unquoted, they read as code
+// letters-only or hyphenated word (`not-configured`), a dotted member path or a call. A quoted value (or
+// an element body) is captured whole up to its closing quote. Unquoted, `?`,
+// `:` and `|` read as code
 // such as `process.env.API_KEY||""` or `options?.token`, except directly after
 // `=` (`CLIENT_SECRET=q7!A?9#z`), where the exclusions below still catch code.
 // An unquoted CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`) is
@@ -195,7 +196,7 @@ const CREDENTIAL_KEYS =
 // member path only when the whole literal is one (`"process.env.TOKEN"`), so
 // `"svc.app:secretX09"` still counts. Entropy then rejects masks.
 const CREDENTIAL_VALUE =
-  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\()(?:(?<=["'=])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\()(?:(?<=["'])[^\s"']{8,}|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
