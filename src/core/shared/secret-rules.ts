@@ -157,6 +157,8 @@ export interface SecretRule {
   minimumEntropy?: number;
   /** Case-sensitive shape of a captured value that is a reference, never a credential. */
   rejectValue?: RegExp;
+  /** Case-sensitive shape of an unquoted captured value that is a reference when a `;` ends its statement. */
+  rejectStatementReference?: RegExp;
   /** Quoted-key, nested-container and element spellings judged by the same value grammar. */
   structured?: SecretStructuredSpelling;
 }
@@ -187,13 +189,13 @@ const CREDENTIAL_KEYS =
 // letters-only or hyphenated word (`not-configured`), a dotted member path or a call. Only a quoted value (or
 // an element body) may also hold `?`, `:` and `|`; unquoted, they read as code
 // such as `process.env.API_KEY||""` or `options?.token`, except directly after
-// `=` (`CLIENT_SECRET=q7!A?9#z`), where the exclusions below still catch code. An
-// unquoted CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`) is a
-// reference; anywhere else it may be a literal and counts. A quoted value is a
+// `=` (`CLIENT_SECRET=q7!A?9#z`), where the exclusions below still catch code.
+// An unquoted CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`) is
+// rejected afterwards by a case-sensitive check (rejectStatementReference). A quoted value is a
 // member path only when the whole literal is one (`"process.env.TOKEN"`), so
 // `"svc.app:secretX09"` still counts. Entropy then rejects masks.
 const CREDENTIAL_VALUE =
-  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\(|(?<!["'])[A-Z]+(?:_[A-Z]+)+;)(?:(?<=["'=])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\()(?:(?<=["'=])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
@@ -257,6 +259,8 @@ export const SECRET_RULES = [
     minimumEntropy: 3,
     // SSH key-file names (`keys/id_ed25519`) are references, never credentials.
     rejectValue: /^(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?$/u,
+    // `= DEFAULT_TOKEN;` names a constant; `"ZQVNKR_LMPWXYAB"` or `KEY=ZQVNKR_LMPWXYAB` may be a literal.
+    rejectStatementReference: /^[A-Z]+(?:_[A-Z]+)+$/u,
   },
 ] as const satisfies readonly SecretRule[];
 
@@ -551,9 +555,16 @@ function elementValueJudge(
   };
 }
 
+/** An unquoted captured value matching the reference shape whose statement a `;` ends. */
+function isStatementReference(shape: RegExp, match: RegExpMatchArray): boolean {
+  // Every match handed to a judge comes from exec or matchAll, so index and input are set.
+  return match.input![match.index! + match[0].length] === ";" && !/^["']/u.test(match[0]) && shape.test(match[1]);
+}
+
 /** Accept a pattern match, applying the declared entropy predicate when present. */
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
   if (rule.rejectValue?.test(match[1]) === true) return false;
+  if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;
   const value = match[1];
   const counts = new Map<string, number>();

@@ -30,7 +30,8 @@ function provablyWithoutUserinfo(token: string, colon: number): boolean {
   const delimiter = token.indexOf("/", authority) - authority;
   if (delimiter < 0) return false;
   const authorityEnd = authority + delimiter;
-  return !/[:@]/u.test(token.slice(authority, authorityEnd)) && !token.slice(authorityEnd).includes(":");
+  // A percent escape may decode to `@` or `:` (Git decodes `%40`), so it is never provably public.
+  return !/[:@%]/u.test(token.slice(authority, authorityEnd)) && !token.slice(authorityEnd).includes(":");
 }
 
 /** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */

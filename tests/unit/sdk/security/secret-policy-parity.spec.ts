@@ -138,6 +138,8 @@ describe("credential-key assignments (GH-1704)", () => {
     expect(rulesFor(`API_KEY=${letters}`)).toEqual(["credential_key_assignment"]);
     const punctuated = ["q7!A", "?9#z"].join("");
     expect(rulesFor(`CLIENT_SECRET=${punctuated}`)).toEqual(["credential_key_assignment"]);
+    const mixed = ["Zqvnkr_", "LmPwxyAb"].join("");
+    expect(rulesFor(`CLIENT_SECRET=${mixed};`)).toEqual(["credential_key_assignment"]);
   });
 
   it("flags option and hyphenated key spellings", () => {

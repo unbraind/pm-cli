@@ -215,7 +215,7 @@ combine:
 - The rule is conservative. A token is left alone only when no parser can
   read userinfo in it: its authority (the text between the slashes after the
   first `:` and the next `/`; SSH-style parsers read userinfo across `?` and
-  `#`) holds neither `:` nor `@`, the rest
+  `#`) holds no `:`, `@` or percent escape, the rest
   of the token holds no `:` (so no nested URL), and it has no tab or line
   break. `https://www.npmjs.com/package/@unbrained/pm-cli` and blob paths with
   an `@` therefore keep their host, path and executable retry
