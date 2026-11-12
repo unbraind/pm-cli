@@ -6,6 +6,8 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { quoteWindowsCommandArg } from "./command-line.js";
+import { EXIT_CODE } from "./constants.js";
+import { PmCliError } from "./errors.js";
 
 /** Written where a possible userinfo span was removed. */
 export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
@@ -76,13 +78,40 @@ export function redactIdentityCredentials(identity: string): string {
 /** Identity fields a write may set from runtime or registered field values. */
 const IDENTITY_FIELDS = ["author", "assignee", "claim_principal"] as const;
 
-/** Return a copy of field values with every string identity field redacted, so no field path can store URL userinfo. */
-export function redactIdentityFields<T extends Record<string, unknown>>(values: T): T {
-  const redacted: Record<string, unknown> = { ...values };
+/** Return a copy of a record with every string identity field redacted, for echoing data an older version stored. */
+export function redactIdentityFields<T extends object>(values: T): T {
+  const redacted: Record<string, unknown> = { ...(values as Record<string, unknown>) };
   for (const field of IDENTITY_FIELDS) {
     if (typeof redacted[field] === "string") redacted[field] = redactIdentityCredentials(redacted[field]);
   }
   return redacted as T;
+}
+
+/**
+ * Refuse an identity that carries URL userinfo before anything is stored
+ * (GH-1707). An identity never needs a credential, and stripping it would
+ * collapse distinct identities that differ only in userinfo into one
+ * principal. The refusal names the source but never echoes the value.
+ */
+export function assertIdentityWithoutUrlCredentials(identity: unknown, source: string): void {
+  if (typeof identity !== "string" || userinfoBounds(identity.trim()) === undefined) return;
+  throw new PmCliError(
+    `${source} must not carry URL credentials: an identity is a name, never a credential.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "invalid_argument_value",
+      field: source,
+      required: `Set ${source} to a plain name such as agent-a, without user:password@ or token@ userinfo.`,
+      nextSteps: [`Rerun with ${source} set to a plain name.`],
+    },
+  );
+}
+
+/** Refuse URL userinfo in every identity field of runtime or registered field values. */
+export function assertIdentityFieldsWithoutUrlCredentials(values: object): void {
+  for (const field of IDENTITY_FIELDS) {
+    assertIdentityWithoutUrlCredentials((values as Record<string, unknown>)[field], field);
+  }
 }
 
 /** Apply {@link redactIdentityCredentials} to a string option and pass any other value through unchanged. */

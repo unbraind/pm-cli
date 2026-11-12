@@ -13,6 +13,7 @@ import {
   type RuntimeFieldRegistry,
 } from "./runtime-schema.js";
 import type { RuntimeFieldCommand, RuntimeFieldValueSchema } from "../../types/index.js";
+import { assertIdentityFieldsWithoutUrlCredentials } from "../shared/url-credentials.js";
 
 const MAX_VALUE_SCHEMA_DEPTH = 16;
 
@@ -562,5 +563,7 @@ export function collectRuntimeUpdateFieldValues(
       rawValue,
     );
   }
+  // A runtime field mapped onto an identity key never stores URL userinfo (GH-1707).
+  assertIdentityFieldsWithoutUrlCredentials(values);
   return values;
 }

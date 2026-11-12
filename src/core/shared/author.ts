@@ -18,7 +18,7 @@ import {
   type AgentSemanticAttribution,
 } from "../session/session-state.js";
 import { isFileAbsentError } from "../fs/fs-utils.js";
-import { redactIdentityCredentials } from "./url-credentials.js";
+import { assertIdentityWithoutUrlCredentials } from "./url-credentials.js";
 
 /** Stable provenance categories recorded beside newly appended history authors. */
 export type AuthorSource = "asserted" | "configured" | "detected" | "unknown";
@@ -1725,22 +1725,25 @@ export function resolveAuthorIdentity(
   const effectiveSignals = effectiveHarnessDetectionSignals(signals);
   const detected = detectAgentIdentity(effectiveSignals);
   // An identity never needs a credential: URL userinfo in an asserted or
-  // configured author is stripped before it can be stored (GH-1707).
+  // configured author is refused before it can be stored (GH-1707).
   if (candidate !== undefined) {
     const explicit = nonBlank(candidate);
+    assertIdentityWithoutUrlCredentials(explicit, "--author");
     return explicit
-      ? { author: redactIdentityCredentials(explicit), source: "asserted", ...detected }
+      ? { author: explicit, source: "asserted", ...detected }
       : { author: "unknown", source: "unknown", ...detected };
   }
   if (effectiveSignals.env?.PM_AUTHOR !== undefined) {
     const environment = nonBlank(effectiveSignals.env.PM_AUTHOR);
+    assertIdentityWithoutUrlCredentials(environment, "PM_AUTHOR");
     return environment
-      ? { author: redactIdentityCredentials(environment), source: "asserted", ...detected }
+      ? { author: environment, source: "asserted", ...detected }
       : { author: "unknown", source: "unknown", ...detected };
   }
   const configured = nonBlank(fallback);
   if (configured) {
-    return { author: redactIdentityCredentials(configured), source: "configured", ...detected };
+    assertIdentityWithoutUrlCredentials(configured, "default_author");
+    return { author: configured, source: "configured", ...detected };
   }
   if (detected.harness) {
     return {

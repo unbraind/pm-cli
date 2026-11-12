@@ -1,0 +1,22 @@
+id: pm-3fbj1f
+title: "scanMutationSecrets drops object keys, so an SDK payload such as { api_key: \"<credential>\" } passes every key-based secret rule"
+description: "Found 2026-11-12 by the CodeRabbit review of PR 1712 (pm-gh1704). scanMutationSecrets in src/sdk/mutation-guard.ts collects string leaves and scans each value alone; the property name survives only in the reported path. Key-based rules (password_assignment, credential_key_assignment, high_entropy_assignment) need the key and its colon or equals sign in the same string, so a structured SDK or MCP payload whose property is named api_key, client_secret, token or DB_PASSWORD and whose value is a short credential produces no finding. CLI text fields are unaffected because their key appears inside the text. Fix direction: when a leaf's own property name matches a rule's key vocabulary, judge the leaf value with that rule's value grammar and entropy predicate (the structured-spelling data already declares both), reporting the same rule id and path; keep pm's own fields such as token_budget clean."
+type: Issue
+status: open
+priority: 2
+tags[4]: mutation-guard,sdk,secret-guard,security
+created_at: "2026-11-12T11:49:51.121Z"
+updated_at: "2026-11-12T12:00:40.640Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A payload leaf whose property name matches a key-based rule's vocabulary is judged by that rule's value grammar and entropy predicate; The finding reports the rule id and the leaf path, never the value; pm's own numeric and budget fields stay clean, and the must-allow corpus of pm-gh1704 holds for object payloads"
+parent: pm-qwoy
+risk: medium
+confidence: high
+severity: medium
+expected_result: Structured SDK and MCP payloads get the same credential-key protection as CLI text
+actual_result: Object payloads with credential-named properties pass the key-based rules
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1704,discovered_from,"2026-11-12T11:49:51.121Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1707,related,"2026-11-12T12:00:40.014Z","harness:claude-code","cli:update:dep",detected
+body: ""

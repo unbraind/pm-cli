@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { quoteCommandArg } from "../../../../src/core/shared/command-line.js";
 import {
   URL_CREDENTIAL_PLACEHOLDER,
+  assertIdentityFieldsWithoutUrlCredentials,
+  assertIdentityWithoutUrlCredentials,
   invocationCarriesUrlCredentials,
   redactIdentityCredentials,
   redactIdentityFields,
@@ -75,6 +77,15 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     });
     expect(values.author).toBe("https://a:p@h");
     expect(redactIdentityFields({ assignee: 7 })).toEqual({ assignee: 7 });
+  });
+
+  it("refuses an identity carrying URL userinfo and names only its source (GH-1707)", () => {
+    expect(() => assertIdentityWithoutUrlCredentials("https://u:hunter2@h", "--assignee")).toThrow(/--assignee must not carry URL credentials/u);
+    expect(() => assertIdentityWithoutUrlCredentials("https://u:hunter2@h", "--assignee")).not.toThrow(/hunter2/u);
+    expect(() => assertIdentityWithoutUrlCredentials("alice@example.com", "--assignee")).not.toThrow();
+    expect(() => assertIdentityWithoutUrlCredentials(undefined, "--assignee")).not.toThrow();
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ assignee: "https://t@h", note: "https://u:p@h" })).toThrow(/assignee must not/u);
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ note: "https://u:p@h" })).not.toThrow();
   });
 
   it("redacts each whitespace-delimited word of free text and skips text without an at sign", () => {

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1707",privacy,redaction,security
 created_at: "2026-11-12T05:13:26.310Z"
-updated_at: "2026-11-12T11:08:34.200Z"
+updated_at: "2026-11-12T11:50:21.389Z"
 closed_at: "2026-11-12T08:56:31.736Z"
 completed_at: "2026-11-12T08:56:31.736Z"
 author: "harness:claude-code"
@@ -16,17 +16,18 @@ parent: pm-qwoy
 risk: medium
 confidence: high
 severity: medium
-resolution: "userinfoBounds now scopes redaction to the URL authority. Userinfo ends at the last at sign inside it, and an authority holding a colon but no at sign still extends to the token's last at sign, so a password with an unencoded slash stays hidden. Scoped-package, blob, query and fragment at signs are left alone and keep an executable retry. resolveAuthorIdentity replaces URL userinfo in explicit, PM_AUTHOR and configured authors with [redacted], and create and update do the same for --assignee and create's --author, so claim principals are clean too. A holder stored by an older version still reads. Ownership refusals, the three is-assigned-to conflicts and the claim and release envelopes (claimed_by, previous_assignee and the claim_skipped_held_by and claim_takeover warnings) redact it as one whole value. Follow-up pm-oh24c5 reports such legacy records in validate."
+resolution: "URL redaction keeps the conservative first-colon/last-at span unless a token provably holds no userinfo. A token qualifies when its authority (up to the next slash) has neither colon nor at sign, the rest of the token has no colon, and it has no tab or line break. So scoped-package and blob URLs keep host, path and an executable retry, while nested URLs, SSH userinfo with ? or # and passwords containing @ and / stay hidden. URL userinfo is refused with invalid_argument_value, naming the source but never the value, wherever an identity is set: an asserted or configured identity (--author, PM_AUTHOR, default_author), --assignee on create and update, and identity runtime or registered field values. Refusal rather than stripping keeps distinct identities from collapsing into one principal. A holder stored by an older version still reads. Ownership compares it exactly, and refusals, warn-mode warnings and claim and release envelopes, including the returned item copy, echo it redacted. Follow-ups: pm-oh24c5 (validate reports legacy identities) and pm-3fbj1f (object-key payload scanning)."
 expected_result: "Must-allow URLs stay intact, must-redact URLs are hidden, and no stored or asserted credential reaches storage or a refusal"
 actual_result: "url-credentials spec 36 cases pass, including the GH-1707 corpus. The credential-redaction integration spec drives PM_AUTHOR, --author and --assignee and a legacy stored holder through claim, update and --if-available with no secret in any output. 3,339 tests over the changed modules pass and every changed line is covered."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
   pm-nhauur,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-11-12T09:36:13.058Z","harness:claude-code","Pre-push Codex review (three P1s), fixed before the PR opened. The first narrowing scoped redaction to the authority and so leaked three shapes the old first-colon/last-at rule hid: a tab before the authority slashes (https:<TAB>//secret@host, which WHATWG parsers strip), a credential URL nested in a public URL's query (https://public.example/?next=https://u:secret@localhost), and a password holding both an @ and a / (https://u:ab@cd/efGHIJKL@localhost/x). The rule is now inverted: the old conservative span is the default, and a token is exempt only when it provably holds no userinfo. Its authority has neither : nor @, the rest has no : (no nested URL), and it has no tab or line break. All three shapes are must-redact cases in the spec, and the scoped npm alias went back to the documented conservative cost.\n"
   "2026-11-12T09:54:05.211Z","harness:claude-code","Pre-push Codex review round 2 (P2), fixed before the PR opened: the provably-public exemption ended the authority at ?, # or /, but Git passes ssh://Zq8vN3k?LmP0wXy7Ab@github.com/repo to OpenSSH, which reads the part before the at sign as the username. A ? or # therefore no longer ends the authority; only / does. Both SSH shapes are must-redact cases in the spec.\n"
   "2026-11-12T10:48:35.095Z","harness:claude-code","PR 1712 review (Greptile, two CodeRabbit Majors, one CodeRabbit Minor), fixed in this PR. (1) Warn-mode ownership warnings in item-store, history-rewrite and restore still interpolated the raw stored assignee, and runRelease returned them unchanged. (2) Ownership checks compared the raw stored principal with the now-redacted caller, so under strict enforcement a legacy owner would have been locked out of its own item; claim's held-by check had the same mismatch. Every site now reads the stored holder in its redacted form for both comparison and echo. (3) A runtime or registered create field mapped to the author, assignee or claim_principal metadata keys replaced the sanitized value with raw input; both spreads now pass through redactIdentityFields. Unit tests cover warn and strict with a legacy holder, plus the field helper; every changed line is covered.\n"
   "2026-11-12T11:08:34.200Z","harness:claude-code","PR 1712 review round 2, fixed in this PR. (1) Greptile: comparing the stored holder in redacted form made distinct legacy holders on one host, such as https://alice:one@host and https://bob:two@host, compare equal, so one caller could claim or update the other's item without --force. That reverses the CodeRabbit Minor fix. A legacy owner being refused until --force or a rewrite is recoverable; one owner silently acting as another is not. Ownership is compared exactly again, and only the echo is redacted. The item-store spec now expects a redacted caller and a stranger to be refused under strict, and a forced takeover to succeed.\n"
+  "2026-11-12T11:50:21.388Z","harness:claude-code","PR 1712 CodeRabbit full review on aaf184261, addressed in this PR. (Outside diff, Major) Stripping userinfo collapsed distinct new identities, such as https://alice:x@host and https://bob:y@host, into one principal. Identities carrying URL userinfo are now refused with invalid_argument_value at every write point: resolveAuthorIdentity for --author, PM_AUTHOR and default_author; --assignee on create and update; and identity keys in create metadata and runtime update fields. This is the issue's own first option, and nothing credential-bearing or collapsed is stored. (Major) Claim and release results now return a redacted item copy. (Minor) Runtime update fields are covered by the same refusal inside collectRuntimeUpdateFieldValues. (Minor, heavy lift) Object-key payload scanning was filed as pm-3fbj1f.\n"
 files[9]{path,scope}:
   src/core/history/history-rewrite.ts,project
   src/core/shared/author.ts,project
@@ -43,10 +44,10 @@ docs[1]{path,scope}:
   docs/MUTATION_INTEGRITY.md,project
 close_reason: "Public URLs with an at sign in the path survive redaction, and identities can no longer store or echo URL credentials"
 contract_change:
-  api: "URL credential redaction in refusals and recoveries; stored author, assignee and claim_principal"
+  api: "URL credential redaction in refusals and recoveries; author, assignee and claim identities"
   before: "A public URL with an @ in its path lost its host and path and withheld the retry; a credential-bearing PM_AUTHOR, --author or --assignee was stored and echoed verbatim in claim refusals"
-  after: "Only userinfo inside the authority is redacted, so scoped-package and blob URLs stay intact with an executable retry; URL userinfo in an asserted or configured identity is replaced with [redacted] before storage, and refusals and claim envelopes redact a stored one"
-  migrate: No action for ordinary identities; rewrite a holder stored by an older version with pm update <id> --assignee <name>
+  after: "Only a token that provably holds no userinfo is left alone, so scoped-package and blob URLs keep an executable retry; an asserted or configured identity, --assignee, or an identity runtime field carrying URL userinfo is refused with invalid_argument_value, and refusals, warnings and claim envelopes redact a stored one"
+  migrate: "Use a plain name for PM_AUTHOR, --author, default_author and --assignee; rewrite a holder stored by an older version with pm update <id> --assignee <name>, or take it over with --force"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

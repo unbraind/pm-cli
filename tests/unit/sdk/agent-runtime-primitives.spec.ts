@@ -873,12 +873,19 @@ describe("agent runtime SDK primitives", () => {
     ).toEqual({});
   });
 
-  it("strips URL userinfo from asserted and configured identities (GH-1707)", () => {
-    const credential = "https://bot:pass word@registry.example.invalid";
-    const redacted = "https://[redacted]@registry.example.invalid";
-    expect(resolveAuthorIdentity(credential, undefined, { env: {} })).toEqual({ author: redacted, source: "asserted" });
-    expect(resolveAuthorIdentity(undefined, undefined, { env: { PM_AUTHOR: credential } })).toEqual({ author: redacted, source: "asserted" });
-    expect(resolveAuthorIdentity(undefined, credential, { env: {} })).toEqual({ author: redacted, source: "configured" });
+  it("refuses URL userinfo in asserted and configured identities without echoing it (GH-1707)", () => {
+    const secret = ["pass", "word"].join(" ");
+    const credential = `https://bot:${secret}@registry.example.invalid`;
+    for (const [call, source] of [
+      [() => resolveAuthorIdentity(credential, undefined, { env: {} }), "--author"],
+      [() => resolveAuthorIdentity(undefined, undefined, { env: { PM_AUTHOR: credential } }), "PM_AUTHOR"],
+      [() => resolveAuthorIdentity(undefined, credential, { env: {} }), "default_author"],
+    ] as const) {
+      let refusal: unknown;
+      try { call(); } catch (error: unknown) { refusal = error; }
+      expect(refusal).toMatchObject({ code: "invalid_argument_value", context: { field: source } });
+      expect(JSON.stringify(refusal) + String((refusal as Error).message)).not.toContain(secret);
+    }
     expect(resolveAuthorIdentity("alice@example.com", undefined, { env: {} })).toEqual({ author: "alice@example.com", source: "asserted" });
   });
 

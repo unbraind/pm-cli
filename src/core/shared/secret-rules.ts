@@ -182,13 +182,13 @@ const CREDENTIAL_KEYS =
 // is not a placeholder (`<...>`, `${...}`, `$(...)`, `$VAR`, `%VAR%`,
 // `[scrubbed]`), a filesystem path (`pwd=/usr/local/bin`, `certs/client.key`,
 // `C:/keys/x.pem`), a URL, a
-// letters-only word, a dotted member path or a call. Only a quoted value (or
+// letters-only or hyphenated word (`not-configured`), a dotted member path or a call. Only a quoted value (or
 // an element body) may also hold `?`, `:` and `|`; unquoted, they read as code
 // such as `process.env.API_KEY||""` or `options?.token`. A quoted value is a
 // member path only when the whole literal is one (`"process.env.TOKEN"`), so
 // `"svc.app:secretX09"` still counts. Entropy then rejects masks.
 const CREDENTIAL_VALUE =
-  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\()(?:(?<=["'])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\()(?:(?<=["'])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */

@@ -36,7 +36,7 @@ import {
   recordClaimSemanticAttribution,
   recordReleaseSemanticAttribution,
 } from "../context/semantic-session-attribution.js";
-import { redactIdentityCredentials, redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
+import { redactIdentityCredentials, redactIdentityFields, redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 /** Stable warning/error code for an exhausted atomic next-work walk. */
 export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
@@ -298,7 +298,8 @@ export async function runClaim(
   }
 
   return {
-    item: toItemRecord(result.item),
+    // Echo identities an older version stored only in redacted form (GH-1707).
+    item: redactIdentityFields(toItemRecord(result.item)),
     changed_fields: result.changedFields,
     claimed_by:
       skipped && previousAssignee !== null ? redactIdentityCredentials(previousAssignee) : author,
@@ -602,7 +603,7 @@ export async function runRelease(
   const stillInProgress = normalizeStatusForRegistry(result.item.status, statusRegistry) === normalizeStatusForRegistry(statusRegistry.in_progress_status, statusRegistry);
 
   return {
-    item: toItemRecord(result.item),
+    item: redactIdentityFields(toItemRecord(result.item)),
     released_by: author,
     changed_fields: result.changedFields,
     previous_assignee: previousAssignee === null ? null : redactIdentityCredentials(previousAssignee),

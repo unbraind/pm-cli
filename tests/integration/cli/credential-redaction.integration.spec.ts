@@ -158,7 +158,7 @@ it("classifies Commander's message before any secret fragment can rewrite it (pm
 }, 120_000);
 
 
-it("strips URL userinfo from asserted identities and never echoes a stored one (GH-1707)", async () => {
+it("refuses URL userinfo in asserted identities and never echoes a stored one (GH-1707)", async () => {
   await withTempPmPath(async (context) => {
     const { readFile, writeFile } = await import("node:fs/promises");
     const credentialIdentity = `https://bot:${SECRET} word@registry.example.invalid`;
@@ -167,30 +167,37 @@ it("strips URL userinfo from asserted identities and never echoes a stored one (
     const createdJson = JSON.parse(created.stdout) as { id?: string; item?: { id: string } };
     const id = createdJson.item?.id ?? createdJson.id!;
     const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
+    const before = await readFile(itemFile, "utf8");
     // PM_AUTHOR reaches the CLI only through a real process, so this call spawns one.
     const previousAuthor = context.env.PM_AUTHOR;
     context.env.PM_AUTHOR = credentialIdentity;
-    const claimed = context.runCli(["claim", id, "--json"], { cwd: context.tempRoot });
+    const envClaim = context.runCli(["claim", id, "--json"], { cwd: context.tempRoot });
     context.env.PM_AUTHOR = previousAuthor;
-    expect(claimed.code, claimed.stderr).toBe(0);
-    expect(`${claimed.stdout}${claimed.stderr}`).not.toContain(SECRET);
-    const stored = await readFile(itemFile, "utf8");
-    expect(stored).not.toContain(SECRET);
-    expect(stored).toContain('assignee: "https://[redacted]@registry.example.invalid"');
+    const refusals = [
+      envClaim,
+      context.runCli(["claim", id, "--author", credentialIdentity, "--json"]),
+      context.runCli(["update", id, "--assignee", `https://u:${SECRET}@host.invalid/x`, "--author", "other", "--json"]),
+    ];
+    for (const refused of refusals) {
+      expect(refused.code, refused.stderr).toBe(2);
+      expect(`${refused.stdout}${refused.stderr}`).not.toContain(SECRET);
+      expect(refused.stderr).toMatch(/must not carry URL credentials/u);
+    }
+    expect(await readFile(itemFile, "utf8")).toBe(before);
+    const plainClaim = context.runCli(["claim", id, "--author", "legacy-holder", "--json"]);
+    expect(plainClaim.code, plainClaim.stderr).toBe(0);
 
-    const reclaimed = context.runCli(["claim", id, "--author", credentialIdentity, "--force", "--json"]);
-    expect(reclaimed.code, reclaimed.stderr).toBe(0);
-    const assigned = context.runCli(["update", id, "--assignee", `https://u:${SECRET}@host.invalid/x`, "--author", "other", "--force", "--json"]);
-    expect(assigned.code, assigned.stderr).toBe(0);
-    expect(await readFile(itemFile, "utf8")).not.toContain(SECRET);
-
-    // A holder stored by an older version keeps reading, and refusals and claim envelopes redact it.
-    // Full item records are stored data, returned as stored like pm get.
+    // A holder stored by an older version keeps reading, and refusals and claim envelopes, including
+    // their item copies, redact it.
     await writeFile(itemFile, (await readFile(itemFile, "utf8"))
       .replace(/^assignee: .*$/mu, `assignee: ${JSON.stringify(credentialIdentity)}`)
       .replace(/^claim_principal: .*$/mu, `claim_principal: ${JSON.stringify(credentialIdentity)}`));
-    for (const args of [["claim", id], ["claim", id, "--json"], ["claim", id, "--if-available", "--json"]]) {
-      const result = context.runCli([...args, "--author", "other"], { preserveDefaultMutationOutput: true });
+    for (const [args, preserve] of [
+      [["claim", id], true], [["claim", id, "--json"], true], [["claim", id, "--if-available", "--json"], true],
+      // The full changed-fields form also carries the item record, redacted the same way.
+      [["claim", id, "--if-available", "--json"], false],
+    ] as const) {
+      const result = context.runCli([...args, "--author", "other"], { preserveDefaultMutationOutput: preserve });
       const output = `${result.stdout}${result.stderr}`;
       expect(output, args.join(" ")).not.toContain(SECRET);
       expect(output, args.join(" ")).toContain("https://[redacted]@registry.example.invalid");

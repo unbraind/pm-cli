@@ -179,6 +179,8 @@ describe("credential-key assignments (GH-1704)", () => {
     ["optional member chain", "token = config.auth?.token"],
     ["quoted member path", 'token: "process.env.GITHUB_TOKEN"'],
     ["long optional chain", "const token = configuration?.token;"],
+    ["unquoted hyphenated prose", "client_secret: not-configured in this environment"],
+    ["quoted hyphenated word", 'api_key: "not-yet-provisioned"'],
     ["relative key file", '{"private_key":"certs/client.key"}'],
     ["Windows key file", '{"private_key":"C:/ProgramData/keys/client.pem"}'],
     ["Windows backslash key file", "private_key: C:\\keys\\client.pem"],

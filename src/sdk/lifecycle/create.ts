@@ -186,7 +186,7 @@ import {
   SCOPE_VALUES,
 } from "../../types/index.js";
 import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
-import { redactIdentityFields, redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
+import { assertIdentityFieldsWithoutUrlCredentials } from "../../core/shared/url-credentials.js";
 
 /** Documents the create command options payload exchanged by command, SDK, and package integrations. */
 export interface CreateCommandOptions
@@ -2975,11 +2975,11 @@ export async function runCreate(
   const assignee = resolveUnsettableOptionalString(
     unsetKeys,
     "assignee",
-    redactOptionalIdentityCredentials(resolvedOptions.assignee),
+    resolvedOptions.assignee,
   );
   const authorValue = unsetKeys.has("author")
     ? undefined
-    : (parseOptionalString(redactOptionalIdentityCredentials(resolvedOptions.author)) ?? author);
+    : (parseOptionalString(resolvedOptions.author) ?? author);
   // GH-161 (pm-72xf): inherit the session-focused parent when no explicit
   // --parent was supplied and parent is not being unset; an explicit --parent
   // (including `--parent ""`) overrides focus. The inherited value flows through
@@ -3259,9 +3259,10 @@ export async function runCreate(
     docs: docs.values,
     reminders: reminders.values,
     events: events.values,
-    ...redactIdentityFields(registeredItemFieldValues),
-    ...redactIdentityFields(runtimeCreateFieldValues.values),
+    ...registeredItemFieldValues,
+    ...runtimeCreateFieldValues.values,
   });
+  assertIdentityFieldsWithoutUrlCredentials(itemMetadata);
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
       itemMetadata as unknown as Record<string, unknown>,

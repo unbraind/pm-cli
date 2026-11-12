@@ -101,7 +101,8 @@ including `--token=…`. The value must be at least eight whitespace-free
 characters (a quoted value must be whitespace-free up to its closing quote)
 with a Shannon entropy of at least 3 bits per character. It must not be a
 placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
-filesystem path, a URL, a letters-only word, a dotted member path or a call
+filesystem path, a URL, a letters-only or hyphenated word, a dotted member
+path or a call
 (in a quoted value or an element body, `?`, `:` and `|` also count as value
 characters; unquoted they read as code such as `process.env.API_KEY||""`); a
 whole
@@ -225,18 +226,20 @@ combine:
   `suggested_retry` and `suggested_retry_args` and gains a final next step
   telling the caller to restore them. JSON and text output therefore agree.
 
-Identities never carry credentials. URL userinfo in an asserted or configured
-author (`--author`, `PM_AUTHOR`, `default_author`), in `--assignee` on create
-and update, and in identity fields set through runtime or registered field
-values is replaced with `[redacted]` before anything is stored, so the claim
-principal derived from it is clean too. A holder stored by an older version
-still reads unchanged. Ownership checks still compare it exactly, so two
-holders that differ only in userinfo can never act as each other; its owner
-takes it back with `--force` (a coordinated takeover) or by rewriting it.
-Ownership refusals, warn-mode ownership warnings and claim or release envelopes (`claimed_by`, `previous_assignee` and the
-`claim_skipped_held_by` and `claim_takeover` warnings) redact it as one whole
-value, so whitespace inside its userinfo cannot split it. Rewrite such a holder
-with `pm update <id> --assignee <name>` or a fresh claim.
+Identities never carry credentials. An asserted or configured author
+(`--author`, `PM_AUTHOR`, `default_author`), `--assignee` on create and update,
+and identity fields set through runtime or registered field values are refused
+with `invalid_argument_value` when they carry URL userinfo. The refusal names
+the source but never the value. Refusing rather than stripping keeps two
+identities that differ only in userinfo from collapsing into one principal. A
+holder stored by an older version still reads unchanged, and ownership checks
+compare it exactly, so its owner takes it back with `--force` (a coordinated
+takeover) or by rewriting it. Ownership refusals, warn-mode ownership warnings
+and claim or release envelopes (`claimed_by`, `previous_assignee`, the
+`claim_skipped_held_by` and `claim_takeover` warnings, and the returned item
+copy) redact it as one whole value, so whitespace inside its userinfo cannot
+split it. Rewrite such a holder with `pm update <id> --assignee <name>` or a
+fresh claim.
 
 ### Executable mutation inventory
 
