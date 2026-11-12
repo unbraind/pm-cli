@@ -220,10 +220,9 @@ export async function runClaim(
     async mutate(document) {
       const currentAssignee = document.metadata.assignee;
       const currentAssigneeText = currentAssignee ?? "";
-      // Compared in its redacted form, like the resolved claimant (GH-1707).
-      const currentClaimPrincipal = redactIdentityCredentials(
-        document.metadata.claim_principal?.trim() || currentAssigneeText,
-      );
+      // Compared exactly so distinct legacy holders stay distinct; echoed redacted (GH-1707).
+      const currentClaimPrincipal =
+        document.metadata.claim_principal?.trim() || currentAssigneeText;
       previousAssignee =
         currentAssigneeText.trim().length > 0 ? currentAssigneeText : null;
       if (

@@ -115,9 +115,9 @@ describe("credential-key assignments (GH-1704)", () => {
     })).toThrow(/Mutation blocked by secret guard/);
   });
 
-  it("flags short credentials that use URL and query punctuation", () => {
+  it("flags quoted and element credentials that use URL and query punctuation", () => {
     const punctuated = ["q7!A", "?9#z"].join("");
-    for (const content of [`client_secret: "${punctuated}"`, `client_secret=${punctuated}`, `{"client_secret":"${punctuated}"}`, `<client_secret>${punctuated}</client_secret>`, `token: ab:cd|ef?12`]) {
+    for (const content of [`client_secret: "${punctuated}"`, `client_secret='${punctuated}'`, `{"client_secret":"${punctuated}"}`, `<client_secret>${punctuated}</client_secret>`, 'token: "ab:cd|ef?12"']) {
       expect(rulesFor(content), content).toEqual(["credential_key_assignment"]);
     }
   });
@@ -168,6 +168,10 @@ describe("credential-key assignments (GH-1704)", () => {
     ["scrubbed element", "<secret>[scrubbed]</secret>"],
     ["element prose", "<client_secret>not-configured in this environment</client_secret>"],
     ["URL value", "token: https://example.com/oauth/callback"],
+    ["empty fallback expression", 'token=process.env.API_KEY||""'],
+    ["nullish fallback expression", 'api_key=process.env.API_KEY??""'],
+    ["optional chain with fallback", "token = options?.token ?? fallback"],
+    ["optional member chain", "token = config.auth?.token"],
     ["registry URL", "api_key: https://vault.example/v1/secret"],
   ])("keeps %s clean", (_label, content) => {
     expect(rulesFor(content)).not.toContain("credential_key_assignment");

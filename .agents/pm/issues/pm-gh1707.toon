@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1707",privacy,redaction,security
 created_at: "2026-11-12T05:13:26.310Z"
-updated_at: "2026-11-12T10:48:35.096Z"
+updated_at: "2026-11-12T11:08:34.200Z"
 closed_at: "2026-11-12T08:56:31.736Z"
 completed_at: "2026-11-12T08:56:31.736Z"
 author: "harness:claude-code"
@@ -22,10 +22,11 @@ actual_result: "url-credentials spec 36 cases pass, including the GH-1707 corpus
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
   pm-nhauur,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-12T09:36:13.058Z","harness:claude-code","Pre-push Codex review (three P1s), fixed before the PR opened. The first narrowing scoped redaction to the authority and so leaked three shapes the old first-colon/last-at rule hid: a tab before the authority slashes (https:<TAB>//secret@host, which WHATWG parsers strip), a credential URL nested in a public URL's query (https://public.example/?next=https://u:secret@localhost), and a password holding both an @ and a / (https://u:ab@cd/efGHIJKL@localhost/x). The rule is now inverted: the old conservative span is the default, and a token is exempt only when it provably holds no userinfo. Its authority has neither : nor @, the rest has no : (no nested URL), and it has no tab or line break. All three shapes are must-redact cases in the spec, and the scoped npm alias went back to the documented conservative cost.\n"
   "2026-11-12T09:54:05.211Z","harness:claude-code","Pre-push Codex review round 2 (P2), fixed before the PR opened: the provably-public exemption ended the authority at ?, # or /, but Git passes ssh://Zq8vN3k?LmP0wXy7Ab@github.com/repo to OpenSSH, which reads the part before the at sign as the username. A ? or # therefore no longer ends the authority; only / does. Both SSH shapes are must-redact cases in the spec.\n"
   "2026-11-12T10:48:35.095Z","harness:claude-code","PR 1712 review (Greptile, two CodeRabbit Majors, one CodeRabbit Minor), fixed in this PR. (1) Warn-mode ownership warnings in item-store, history-rewrite and restore still interpolated the raw stored assignee, and runRelease returned them unchanged. (2) Ownership checks compared the raw stored principal with the now-redacted caller, so under strict enforcement a legacy owner would have been locked out of its own item; claim's held-by check had the same mismatch. Every site now reads the stored holder in its redacted form for both comparison and echo. (3) A runtime or registered create field mapped to the author, assignee or claim_principal metadata keys replaced the sanitized value with raw input; both spreads now pass through redactIdentityFields. Unit tests cover warn and strict with a legacy holder, plus the field helper; every changed line is covered.\n"
+  "2026-11-12T11:08:34.200Z","harness:claude-code","PR 1712 review round 2, fixed in this PR. (1) Greptile: comparing the stored holder in redacted form made distinct legacy holders on one host, such as https://alice:one@host and https://bob:two@host, compare equal, so one caller could claim or update the other's item without --force. That reverses the CodeRabbit Minor fix. A legacy owner being refused until --force or a rewrite is recoverable; one owner silently acting as another is not. Ownership is compared exactly again, and only the echo is redacted. The item-store spec now expects a redacted caller and a stranger to be refused under strict, and a forced takeover to succeed.\n"
 files[9]{path,scope}:
   src/core/history/history-rewrite.ts,project
   src/core/shared/author.ts,project

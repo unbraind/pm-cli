@@ -229,10 +229,11 @@ function collectRestoreOwnershipWarnings(params: {
   enforcement: "strict" | "warn" | "none";
   resolvedId: string;
 }): string[] {
-  // Redacted like the resolved author, so a legacy holder matches its owner and is never echoed (GH-1707).
-  const assigned = redactOptionalIdentityCredentials(params.document.metadata.assignee?.trim());
+  // Compared exactly, echoed only in redacted form (GH-1707).
+  const stored = params.document.metadata.assignee?.trim();
   const hasOwnershipConflict =
-    assigned && assigned !== params.author && !params.force;
+    stored && stored !== params.author && !params.force;
+  const assigned = redactOptionalIdentityCredentials(stored);
   if (!hasOwnershipConflict) {
     return [];
   }

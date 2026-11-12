@@ -438,19 +438,22 @@ describe("core/store/item-store", () => {
         `ownership_warning:assignee_conflict:${id}:https://[redacted]@registry.example.invalid`,
       ]));
       settings.governance.ownership_enforcement = "strict";
-      // The owner's identity is redacted at resolution, so it still matches its own legacy holder.
-      const owned = await mutateItem({
-        pmRoot: pmPath, settings, id, op: "update", author: "https://[redacted]@registry.example.invalid",
+      // Ownership compares exactly: a redacted caller is not the legacy holder, so
+      // two holders that differ only in userinfo can never act as each other.
+      for (const author of ["https://[redacted]@registry.example.invalid", "unit-author"]) {
+        await expect(mutateItem({
+          pmRoot: pmPath, settings, id, op: "update", author,
+          mutate: () => ({ changedFields: [] }),
+        })).rejects.toSatisfy((error: PmCliError) => error.exitCode === EXIT_CODE.CONFLICT && !error.message.includes(secret));
+      }
+      const forced = await mutateItem({
+        pmRoot: pmPath, settings, id, op: "update", author: "https://[redacted]@registry.example.invalid", force: true,
         mutate: (document) => {
-          document.metadata.description = "owner";
+          document.metadata.description = "coordinated takeover";
           return { changedFields: ["description"] };
         },
       });
-      expect(owned.item.description).toBe("owner");
-      await expect(mutateItem({
-        pmRoot: pmPath, settings, id, op: "update", author: "unit-author",
-        mutate: () => ({ changedFields: [] }),
-      })).rejects.toSatisfy((error: PmCliError) => error.exitCode === EXIT_CODE.CONFLICT && !error.message.includes(secret));
+      expect(forced.item.description).toBe("coordinated takeover");
     });
   });
 

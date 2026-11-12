@@ -49,9 +49,10 @@ export function checkHistoryRewriteOwnership(
   params: HistoryRewriteOwnershipParams,
 ): string[] {
   if (!params.itemDocument) return [];
-  // Redacted like the resolved author, so a legacy holder matches its owner and is never echoed (GH-1707).
-  const assigned = redactOptionalIdentityCredentials(params.itemDocument.metadata?.assignee?.trim());
-  if (!assigned || assigned === params.author || params.force) return [];
+  // Compared exactly, echoed only in redacted form (GH-1707).
+  const stored = params.itemDocument.metadata?.assignee?.trim();
+  if (!stored || stored === params.author || params.force) return [];
+  const assigned = redactOptionalIdentityCredentials(stored);
 
   const governance = resolveGovernanceKnobs(params.settings);
   if (governance.ownership_enforcement === "strict") {

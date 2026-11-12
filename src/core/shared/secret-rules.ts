@@ -181,9 +181,11 @@ const CREDENTIAL_KEYS =
 // whitespace-free up to its closing quote, so quoted prose never counts) that
 // is not a placeholder (`<...>`, `${...}`, `$(...)`, `$VAR`, `%VAR%`,
 // `[scrubbed]`), a filesystem path (`pwd=/usr/local/bin`), a URL, a
-// letters-only word, a dotted member path or a call. Entropy then rejects masks.
+// letters-only word, a dotted member path or a call. Only a quoted value (or
+// an element body) may also hold `?`, `:` and `|`; unquoted, they read as code
+// such as `process.env.API_KEY||""` or `options?.token`. Entropy then rejects masks.
 const CREDENTIAL_VALUE =
-  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]+(?![\w!@#$%^&*.+\-=/~?:|])|(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~?:|])|[\w$.]+\()[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,})/;
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]+(?![\w!@#$%^&*.+\-=/~?:|])|(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|[\w$.]+\()(?:(?<=["'])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
@@ -530,10 +532,11 @@ function elementValueJudge(
   compiled: CompiledSpelling,
 ): ((value: string) => boolean) | undefined {
   if (!spelling.elementValue) return undefined;
-  // The whole trimmed body must be one value, so element prose never counts.
+  // The whole trimmed body must be one value, so element prose never counts. It
+  // is judged as a quoted literal: an element body has no code to confuse it with.
   return (value) => {
     compiled.value.lastIndex = 0;
-    const match = compiled.value.exec(value);
+    const match = compiled.value.exec(`"${value}"`);
     return match !== null && match[1] === value && acceptsSecretMatch(rule, match);
   };
 }
