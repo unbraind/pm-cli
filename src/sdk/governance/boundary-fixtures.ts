@@ -59,8 +59,65 @@ export interface BoundaryFixtureRegistry {
   version: 1;
   /** Human-readable statement of what source surfaces were inventoried. */
   inventory_scope: string;
+  /**
+   * Whole days before expiry at which a live waiver is reported as a notice.
+   * Absent means zero: waivers are reported only once they have expired.
+   */
+  waiver_notice_days?: number;
   /** Captured or explicitly waived boundary records. */
   boundaries: BoundaryInventoryRecord[];
+}
+
+/** Largest accepted waiver notice window, in whole days. */
+export const MAX_WAIVER_NOTICE_DAYS = 366;
+
+/** A live time-bounded waiver that expires inside its declared notice window. */
+export interface WaiverNotice {
+  /** Waived boundary id or PM item id. */
+  subject_id: string;
+  /** Accountable owner recorded on the waiver. */
+  owner: string;
+  /** Recorded expiry instant. */
+  expires_at: string;
+  /** Whole days left before the waiver fails closed; 0 means under one day. */
+  days_remaining: number;
+}
+
+/** Return whether a declared notice window is a whole number of days within bounds. */
+export function isWaiverNoticeDays(value: unknown): value is number {
+  return (
+    Number.isSafeInteger(value) &&
+    (value as number) >= 0 &&
+    (value as number) <= MAX_WAIVER_NOTICE_DAYS
+  );
+}
+
+/** Build the notice for a live waiver expiring inside the window, or undefined when outside it. */
+export function waiverNoticeFor(
+  subjectId: string,
+  owner: string,
+  expiresAt: string,
+  nowMs: number,
+  noticeDays: number,
+): WaiverNotice | undefined {
+  const remainingMs = Date.parse(expiresAt) - nowMs;
+  if (!Number.isFinite(remainingMs) || remainingMs < 0) return undefined;
+  if (remainingMs >= noticeDays * 86_400_000) return undefined;
+  return {
+    subject_id: subjectId,
+    owner,
+    expires_at: expiresAt,
+    days_remaining: Math.floor(remainingMs / 86_400_000),
+  };
+}
+
+/** Order notices soonest expiry first, then by subject id. */
+export function sortWaiverNotices(notices: WaiverNotice[]): WaiverNotice[] {
+  return notices.sort(
+    (left, right) =>
+      Date.parse(left.expires_at) - Date.parse(right.expires_at) ||
+      left.subject_id.localeCompare(right.subject_id),
+  );
 }
 
 /** Required shape of a committed captured boundary sample. */
@@ -110,6 +167,8 @@ export interface BoundaryFixtureReport {
   captured_count: number;
   /** Boundaries carrying live explicit waivers. */
   waived_count: number;
+  /** Live waivers expiring inside the registry's notice window; never failures. */
+  waiver_notices: WaiverNotice[];
   /** Stable sorted failures. */
   findings: BoundaryFixtureFinding[];
 }
@@ -184,7 +243,8 @@ function validateSample(
 function evaluateBoundaryWaiver(
   boundary: WaivedBoundaryRecord,
   nowMs: number,
-): { captured: number; waived: number; findings: BoundaryFixtureFinding[] } {
+  noticeDays: number,
+): BoundaryRecordEvaluation {
   const expiresAt = Date.parse(boundary.waiver_expires_at);
   const validWaiver =
     nonEmpty(boundary.waiver_reason) &&
@@ -192,9 +252,19 @@ function evaluateBoundaryWaiver(
     boundary.waiver_expires_at.endsWith("Z") &&
     isRfc3339DateTime(boundary.waiver_expires_at) &&
     Number.isFinite(expiresAt);
+  const notice = validWaiver
+    ? waiverNoticeFor(
+        boundary.id,
+        boundary.waiver_owner,
+        boundary.waiver_expires_at,
+        nowMs,
+        noticeDays,
+      )
+    : undefined;
   return {
     captured: 0,
     waived: validWaiver && expiresAt >= nowMs ? 1 : 0,
+    ...(notice ? { notice } : {}),
     findings: !validWaiver
       ? [
           {
@@ -215,11 +285,20 @@ function evaluateBoundaryWaiver(
   };
 }
 
+/** Per-record contribution to the boundary report. */
+interface BoundaryRecordEvaluation {
+  captured: number;
+  waived: number;
+  notice?: WaiverNotice;
+  findings: BoundaryFixtureFinding[];
+}
+
 function evaluateBoundaryRecord(
   boundary: BoundaryInventoryRecord,
   fixtures: Readonly<Record<string, unknown>>,
   nowMs: number,
-): { captured: number; waived: number; findings: BoundaryFixtureFinding[] } {
+  noticeDays: number,
+): BoundaryRecordEvaluation {
   if (
     !nonEmpty(boundary.id) ||
     !nonEmpty(boundary.producer) ||
@@ -258,7 +337,38 @@ function evaluateBoundaryRecord(
       findings,
     };
   }
-  return evaluateBoundaryWaiver(boundary, nowMs);
+  return evaluateBoundaryWaiver(boundary, nowMs, noticeDays);
+}
+
+/** Return the fail-closed report for a registry whose top-level shape is invalid. */
+function invalidRegistryReport(
+  registry: BoundaryFixtureRegistry,
+): BoundaryFixtureReport | undefined {
+  const validNoticeWindow =
+    registry.waiver_notice_days === undefined ||
+    isWaiverNoticeDays(registry.waiver_notice_days);
+  if (
+    registry.version === 1 &&
+    nonEmpty(registry.inventory_scope) &&
+    Array.isArray(registry.boundaries) &&
+    validNoticeWindow
+  ) {
+    return undefined;
+  }
+  return {
+    ok: false,
+    boundary_count: 0,
+    captured_count: 0,
+    waived_count: 0,
+    waiver_notices: [],
+    findings: [
+      {
+        boundary_id: "registry",
+        kind: "invalid_registry",
+        detail: `Boundary registry requires version 1, inventory_scope, boundaries, and an optional whole-day waiver_notice_days from 0 to ${MAX_WAIVER_NOTICE_DAYS}.`,
+      },
+    ],
+  };
 }
 
 /** Validate an untrusted boundary registry and its already-loaded JSON samples. */
@@ -267,27 +377,11 @@ export function evaluateBoundaryFixtures(
   fixtures: Readonly<Record<string, unknown>>,
   now = new Date(),
 ): BoundaryFixtureReport {
+  const invalid = invalidRegistryReport(registry);
+  if (invalid) return invalid;
   const findings: BoundaryFixtureFinding[] = [];
-  if (
-    registry.version !== 1 ||
-    !nonEmpty(registry.inventory_scope) ||
-    !Array.isArray(registry.boundaries)
-  ) {
-    return {
-      ok: false,
-      boundary_count: 0,
-      captured_count: 0,
-      waived_count: 0,
-      findings: [
-        {
-          boundary_id: "registry",
-          kind: "invalid_registry",
-          detail:
-            "Boundary registry requires version 1, inventory_scope, and boundaries.",
-        },
-      ],
-    };
-  }
+  const noticeDays = registry.waiver_notice_days ?? 0;
+  const notices: WaiverNotice[] = [];
   const ids = new Set<string>();
   let capturedCount = 0;
   let waivedCount = 0;
@@ -315,9 +409,15 @@ export function evaluateBoundaryFixtures(
       continue;
     }
     if (boundaryId !== undefined) ids.add(boundaryId);
-    const evaluated = evaluateBoundaryRecord(boundary, fixtures, now.getTime());
+    const evaluated = evaluateBoundaryRecord(
+      boundary,
+      fixtures,
+      now.getTime(),
+      noticeDays,
+    );
     capturedCount += evaluated.captured;
     waivedCount += evaluated.waived;
+    if (evaluated.notice) notices.push(evaluated.notice);
     findings.push(...evaluated.findings);
   }
   findings.sort((left, right) =>
@@ -330,6 +430,7 @@ export function evaluateBoundaryFixtures(
     boundary_count: registry.boundaries.length,
     captured_count: capturedCount,
     waived_count: waivedCount,
+    waiver_notices: sortWaiverNotices(notices),
     findings,
   };
 }

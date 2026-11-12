@@ -169,7 +169,7 @@ Start with the [documentation index](docs/README.md). Focused pages:
 - [Testing](docs/TESTING.md) - sandbox-safe local and linked-test workflows.
 - [Architecture](docs/ARCHITECTURE.md) - source tree, storage, mutation contract, history, search, and extension host internals.
 - [Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) - extension lifecycle and public SDK.
-- [Releasing](docs/RELEASING.md) - maintainer release procedure.
+- [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm) - maintainer release procedure.
 
 ## Extension Development
 

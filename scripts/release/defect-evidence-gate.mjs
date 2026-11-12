@@ -4,6 +4,9 @@
  *
  * Enforces captured boundary evidence, versioned recurrence-family negative
  * controls, historical PM lineage, and structured evidence on new defects.
+ * `--waiver-notice` instead fails while any time-bounded waiver is inside its
+ * declared notice window or already expired, so a scheduled run can warn days
+ * before an expiry blocks a release.
  */
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
@@ -17,6 +20,7 @@ import {
   evaluateDefectGateEvidence,
   parseDefectRecurrencePolicy,
   resolvePmRoot,
+  sortWaiverNotices,
 } from "../../dist/sdk/index.js";
 
 function readScope(argv) {
@@ -27,6 +31,7 @@ function readScope(argv) {
     evidenceOnly: args.has("--evidence-only"),
     policyOnly: args.has("--policy-only"),
     negativeControl: args.has("--negative-control"),
+    waiverNotice: args.has("--waiver-notice"),
   };
 }
 
@@ -164,6 +169,19 @@ function selectedChecks(scope, boundaryReport, evidenceReport, recurrenceReport)
   ];
 }
 
+/** Name every finding and notice first: hosts keep only the head of failed output. */
+function detailLines(result) {
+  return [
+    ...result.checks.flatMap((check) =>
+      check.findings.map((finding) => `Finding [${check.name}] ${finding.detail}`),
+    ),
+    ...result.waiver_notices.map(
+      (notice) =>
+        `Waiver notice: ${notice.subject_id} expires ${notice.expires_at} (${notice.days_remaining} whole days left; owner ${notice.owner})`,
+    ),
+  ];
+}
+
 function renderResult(result, json) {
   if (json) return `${JSON.stringify(result, null, 2)}\n`;
   const findingCount = result.checks.reduce(
@@ -172,18 +190,20 @@ function renderResult(result, json) {
   );
   return (
     [
-      `Defect evidence gate: ${result.ok ? "PASS" : "FAIL"}`,
+      `${result.mode === "waiver_notice" ? "Waiver notice gate" : "Defect evidence gate"}: ${result.ok ? "PASS" : "FAIL"}`,
+      ...detailLines(result),
       `Captured boundaries: ${result.boundary.evaluated ? `${result.boundary.captured_count}/${result.boundary.boundary_count}` : "not evaluated"}`,
       `Live boundary waivers: ${result.boundary.evaluated ? result.boundary.waived_count : "not evaluated"}`,
       `Governed terminal defects: ${result.defect_evidence.evaluated ? result.defect_evidence.governed_item_count : "not evaluated"}`,
       `Recurrence families: ${result.recurrence_policy.evaluated ? result.recurrence_policy.family_count : "not evaluated"}`,
       `Findings: ${findingCount}`,
+      `Waiver notices: ${result.waiver_notices.length}`,
     ].join("\n") + "\n"
   );
 }
 
 /** Evaluate captured boundaries only when the selected gate scope includes them. */
-function boundaryReportForScope(scope, corpus) {
+function boundaryReportForScope(scope, corpus, now) {
   if (scope.evidenceOnly || scope.policyOnly) {
     return {
       ok: true,
@@ -191,6 +211,7 @@ function boundaryReportForScope(scope, corpus) {
       boundary_count: 0,
       captured_count: 0,
       waived_count: 0,
+      waiver_notices: [],
       findings: [],
     };
   }
@@ -198,13 +219,14 @@ function boundaryReportForScope(scope, corpus) {
     ...evaluateBoundaryFixtures(
       corpus.boundaryRegistry,
       boundaryFixtures(corpus.fixtureEntries, scope.negativeControl),
+      now,
     ),
     evaluated: true,
   };
 }
 
 /** Evaluate terminal defect evidence only when the selected scope includes it. */
-function evidenceReportForScope(scope, evidenceItems, recurrencePolicy, terminalStatuses) {
+function evidenceReportForScope(scope, evidenceItems, recurrencePolicy, terminalStatuses, now) {
   if (scope.boundaryOnly || scope.policyOnly) {
     return {
       ok: true,
@@ -213,6 +235,7 @@ function evidenceReportForScope(scope, evidenceItems, recurrencePolicy, terminal
       classified_item_count: 0,
       class_counts: {},
       evidence_disposition_counts: {},
+      waiver_notices: [],
       findings: [],
     };
   }
@@ -221,6 +244,7 @@ function evidenceReportForScope(scope, evidenceItems, recurrencePolicy, terminal
       evidenceItems,
       recurrencePolicy,
       terminalStatuses,
+      now,
     ),
     evaluated: true,
   };
@@ -228,7 +252,7 @@ function evidenceReportForScope(scope, evidenceItems, recurrencePolicy, terminal
 
 /** Evaluate recurrence lineage only when the selected scope includes it. */
 function recurrenceReportForScope(scope, recurrencePolicy, context) {
-  if (scope.boundaryOnly || scope.evidenceOnly) {
+  if (scope.boundaryOnly || scope.evidenceOnly || scope.waiverNotice) {
     return {
       ok: true,
       evaluated: false,
@@ -258,6 +282,55 @@ function reportsWithFindings(scope, boundaryReport, evidenceReport, recurrenceRe
   );
 }
 
+/** Expired waivers and waivers inside the notice window, the only failures of notice mode. */
+function waiverNoticeChecks(boundaryReport, evidenceReport) {
+  return [
+    ["boundary", boundaryReport],
+    ["defect_evidence", evidenceReport],
+  ].map(([name, report]) => {
+    const findings = report.findings.filter((finding) => finding.kind === "expired_waiver");
+    return { name, ok: findings.length === 0 && report.waiver_notices.length === 0, findings };
+  });
+}
+
+/** Seed one waiver inside each notice window so notice mode must fail. */
+function noticeNegativeControl(corpus, evidenceItems, now) {
+  const expiresAt = new Date(now.getTime() + 3_600_000).toISOString();
+  corpus.boundaryRegistry = {
+    ...corpus.boundaryRegistry,
+    waiver_notice_days: Math.max(corpus.boundaryRegistry.waiver_notice_days ?? 0, 1),
+    boundaries: [...corpus.boundaryRegistry.boundaries, {
+      id: "negative-control-waiver", producer: "negative control", consumer: "negative control",
+      format: "negative control", waiver_reason: "Seeded inside the notice window.",
+      waiver_owner: "pm-negative-control", waiver_expires_at: expiresAt,
+    }],
+  };
+  corpus.recurrencePolicy = {
+    ...corpus.recurrencePolicy,
+    waiver_notice_days: Math.max(corpus.recurrencePolicy.waiver_notice_days ?? 0, 1),
+  };
+  return evidenceItems.map((item) => item.id !== "pm-negative-control" ? item : {
+    ...item, escape_class: "production_defect",
+    gate_evidence: { disposition: "explicit_waiver", owner: "pm-negative-control",
+      waiver_reason: "Seeded inside the notice window.", waiver_expires_at: expiresAt },
+  });
+}
+
+/** Add the scope's seeded negative-control item, then its notice waivers when requested. */
+function evidenceItemsForScope(scope, corpus, context, now) {
+  if (!scope.negativeControl) return context.items;
+  const seededItems = [
+    ...context.items,
+    {
+      id: "pm-negative-control",
+      status: context.terminal_statuses?.[0] ?? "closed",
+      type: "Issue",
+      completed_at: new Date(Date.parse(corpus.recurrencePolicy.evidence_epoch) + 1).toISOString(),
+    },
+  ];
+  return scope.waiverNotice ? noticeNegativeControl(corpus, seededItems, now) : seededItems;
+}
+
 /** Execute the gate with injectable tracker context and output sinks for tests and hosts. */
 export async function main(argv = process.argv.slice(2), options = {}) {
   const repositoryRoot =
@@ -265,39 +338,43 @@ export async function main(argv = process.argv.slice(2), options = {}) {
   const writeStdout = options.writeStdout ?? ((value) => process.stdout.write(value));
   const writeStderr = options.writeStderr ?? ((value) => process.stderr.write(value));
   const scope = readScope(argv);
-  if ([scope.boundaryOnly, scope.evidenceOnly, scope.policyOnly].filter(Boolean).length > 1) {
-    writeStderr("Select at most one of --boundary-only, --evidence-only, or --policy-only.\n");
+  const now = options.now ?? new Date();
+  if (
+    [scope.boundaryOnly, scope.evidenceOnly, scope.policyOnly, scope.waiverNotice].filter(Boolean)
+      .length > 1
+  ) {
+    writeStderr(
+      "Select at most one of --boundary-only, --evidence-only, --policy-only, or --waiver-notice.\n",
+    );
     return 2;
   }
   const corpus = await readGateCorpus(repositoryRoot, options.recurrencePolicy);
-  const boundaryReport = boundaryReportForScope(scope, corpus);
   const context = await resolveContext(repositoryRoot, scope.boundaryOnly, options.context);
-  const evidenceItems = scope.negativeControl
-    ? [
-        ...context.items,
-        {
-          id: "pm-negative-control",
-          status: context.terminal_statuses?.[0] ?? "closed",
-          type: "Issue",
-          completed_at: new Date(
-            Date.parse(corpus.recurrencePolicy.evidence_epoch) + 1,
-          ).toISOString(),
-        },
-      ]
-    : context.items;
+  const evidenceItems = evidenceItemsForScope(scope, corpus, context, now);
+  const boundaryReport = boundaryReportForScope(
+    scope.waiverNotice ? { ...scope, negativeControl: false } : scope,
+    corpus,
+    now,
+  );
   const evidenceReport = evidenceReportForScope(
     scope,
     evidenceItems,
     corpus.recurrencePolicy,
     context.terminal_statuses ?? ["closed", "canceled"],
+    now,
   );
   const recurrenceReport = recurrenceReportForScope(scope, corpus.recurrencePolicy, context);
-  const selectedReports = reportsWithFindings(
-    scope, boundaryReport, evidenceReport, recurrenceReport,
-  );
+  const selectedReports = scope.waiverNotice
+    ? waiverNoticeChecks(boundaryReport, evidenceReport)
+    : reportsWithFindings(scope, boundaryReport, evidenceReport, recurrenceReport);
   const result = {
     ok: selectedReports.every((report) => report.ok),
+    mode: scope.waiverNotice ? "waiver_notice" : "evidence",
     checks: selectedReports,
+    waiver_notices: sortWaiverNotices([
+      ...boundaryReport.waiver_notices,
+      ...evidenceReport.waiver_notices,
+    ]),
     boundary: boundaryReport,
     defect_evidence: evidenceReport,
     recurrence_policy: recurrenceReport,

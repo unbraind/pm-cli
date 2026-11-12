@@ -104,6 +104,7 @@
     "!docs/RELEASE_RELIABILITY.md",
     "!docs/RELEASE_LEDGER_RECONCILIATION.md",
     "!docs/PR_REVIEW_LOOP.md",
+    "!docs/RELEASING.md",
     "!docs/performance/*.json",
     ".claude-plugin/**",
     "plugins/**",

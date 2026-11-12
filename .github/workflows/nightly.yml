@@ -312,6 +312,14 @@ jobs:
         timeout-minutes: 6
         run: node scripts/release/workspace-compatibility.mjs --json
 
+      # Early warning (pm-xcndcu): fails while a time-bounded waiver is inside its
+      # declared notice window, days before its expiry can block a release.
+      - name: Waiver notice window
+        id: waiver_notice
+        if: success() || failure()
+        timeout-minutes: 6
+        run: node scripts/release/repository-assurance.mjs repository-waiver-notice --trigger scheduled
+
       - name: Alert on scheduled nightly failure
         if: failure() && github.event_name == 'schedule'
         shell: bash
@@ -319,6 +327,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           NIGHTLY_OS: ubuntu-latest
           NIGHTLY_NODE: "24 quality"
+          WAIVER_NOTICE_OUTCOME: ${{ steps.waiver_notice.outcome }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           NIGHTLY_SHA: ${{ github.sha }}
         run: |
@@ -334,6 +343,11 @@ jobs:
           Family: nightly:${NIGHTLY_OS}:node:${NIGHTLY_NODE}
 
           Investigate before trusting the next daily release."
+          if [[ "${WAIVER_NOTICE_OUTCOME}" == "failure" ]]; then
+            body="${body}
+
+          The waiver notice window failed: renew or retire each waiver the step names (\`node scripts/release/defect-evidence-gate.mjs --waiver-notice\`) before its expiry blocks the daily release."
+          fi
 
           if [[ -n "${existing_issue}" ]]; then
             gh issue comment "${existing_issue}" --body "${body}"

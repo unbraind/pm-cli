@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2118,
+    "covered_symbols": 2123,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2119
+    "required_symbols": 2124
   },
   "breaking_acknowledgements": [
     {
@@ -3219,6 +3219,20 @@
       ],
       "package_version": "2026.11.11",
       "reason": "pm-gh1700 versions the additive full parameter on the files, docs and test tool actions as strict schema 4.24.0; the provider flat schema is unchanged at 1.12.0 and no parameter or export is removed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:BoundaryFixtureRegistry",
+        "signature ./sdk:BoundaryFixtureReport",
+        "signature ./sdk:DefectGateEvidenceReport",
+        "signature ./sdk:DefectRecurrencePolicy",
+        "signature ./sdk/governance:BoundaryFixtureRegistry",
+        "signature ./sdk/governance:BoundaryFixtureReport",
+        "signature ./sdk/governance:DefectGateEvidenceReport",
+        "signature ./sdk/governance:DefectRecurrencePolicy"
+      ],
+      "package_version": "2026.11.11",
+      "reason": "pm-xcndcu: BoundaryFixtureReport and DefectGateEvidenceReport gain a required waiver_notices array; BoundaryFixtureRegistry and DefectRecurrencePolicy gain an optional waiver_notice_days. Readers are unaffected; code that constructs these reports must add waiver_notices."
     }
   ],
   "entrypoints": {
@@ -4939,13 +4953,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BoundaryFixtureRegistry",
-          "signature": "export interface BoundaryFixtureRegistry { version: 1; inventory_scope: string; boundaries: BoundaryInventoryRecord[]; }"
+          "signature": "export interface BoundaryFixtureRegistry { version: 1; inventory_scope: string; waiver_notice_days?: number; boundaries: BoundaryInventoryRecord[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "BoundaryFixtureReport",
-          "signature": "export interface BoundaryFixtureReport { ok: boolean; boundary_count: number; captured_count: number; waived_count: number; findings: BoundaryFixtureFinding[]; }"
+          "signature": "export interface BoundaryFixtureReport { ok: boolean; boundary_count: number; captured_count: number; waived_count: number; waiver_notices: WaiverNotice[]; findings: BoundaryFixtureFinding[]; }"
         },
         {
           "classification": "supported",
@@ -7291,7 +7305,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectGateEvidenceReport",
-          "signature": "export interface DefectGateEvidenceReport { ok: boolean; governed_item_count: number; classified_item_count: number; class_counts: Record<DefectEscapeClass, number>; evidence_disposition_counts: Record<DefectGateEvidenceDisposition, number>; findings: DefectGateEvidenceFinding[]; }"
+          "signature": "export interface DefectGateEvidenceReport { ok: boolean; governed_item_count: number; classified_item_count: number; class_counts: Record<DefectEscapeClass, number>; evidence_disposition_counts: Record<DefectGateEvidenceDisposition, number>; waiver_notices: WaiverNotice[]; findings: DefectGateEvidenceFinding[]; }"
         },
         {
           "classification": "supported",
@@ -7345,7 +7359,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
-          "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+          "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; waiver_notice_days?: number; families: DefectRecurrenceFamily[]; }"
         },
         {
           "classification": "supported",
@@ -11416,6 +11430,12 @@
           "signature": "(input: string) => boolean | calls: (input: string) => boolean"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isWaiverNoticeDays",
+          "signature": "(value: unknown) => value is number | calls: (value: unknown) => value is number"
+        },
+        {
           "classification": "contract_data",
           "kind": "value",
           "name": "ITEM_COMPLETE_FLAG_CONTRACTS",
@@ -12440,6 +12460,12 @@
           "kind": "value",
           "name": "MAX_CHILD_PROJECTION_ITEMS",
           "signature": "1000000"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WAIVER_NOTICE_DAYS",
+          "signature": "366"
         },
         {
           "classification": "supported",
@@ -21604,6 +21630,12 @@
           "signature": "(artifacts: LinkedArtifact[]) => LinkedArtifact[] | calls: (artifacts: LinkedArtifact[]) => LinkedArtifact[]"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "sortWaiverNotices",
+          "signature": "(notices: WaiverNotice[]) => WaiverNotice[] | calls: (notices: WaiverNotice[]) => WaiverNotice[]"
+        },
+        {
           "classification": "advanced_export",
           "kind": "value",
           "name": "SOURCE_CONTEXT_ACCESS_ENV",
@@ -23234,6 +23266,18 @@
           "kind": "interface",
           "name": "WaivedBoundaryRecord",
           "signature": "export interface WaivedBoundaryRecord { id: string; producer: string; consumer: string; format: string; waiver_reason: string; waiver_owner: string; waiver_expires_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WaiverNotice",
+          "signature": "export interface WaiverNotice { subject_id: string; owner: string; expires_at: string; days_remaining: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "waiverNoticeFor",
+          "signature": "(subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined | calls: (subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined"
         },
         {
           "classification": "advanced_export",
@@ -29995,13 +30039,13 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BoundaryFixtureRegistry",
-          "signature": "export interface BoundaryFixtureRegistry { version: 1; inventory_scope: string; boundaries: BoundaryInventoryRecord[]; }"
+          "signature": "export interface BoundaryFixtureRegistry { version: 1; inventory_scope: string; waiver_notice_days?: number; boundaries: BoundaryInventoryRecord[]; }"
         },
         {
           "classification": "supported",
           "kind": "interface",
           "name": "BoundaryFixtureReport",
-          "signature": "export interface BoundaryFixtureReport { ok: boolean; boundary_count: number; captured_count: number; waived_count: number; findings: BoundaryFixtureFinding[]; }"
+          "signature": "export interface BoundaryFixtureReport { ok: boolean; boundary_count: number; captured_count: number; waived_count: number; waiver_notices: WaiverNotice[]; findings: BoundaryFixtureFinding[]; }"
         },
         {
           "classification": "supported",
@@ -30187,7 +30231,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectGateEvidenceReport",
-          "signature": "export interface DefectGateEvidenceReport { ok: boolean; governed_item_count: number; classified_item_count: number; class_counts: Record<DefectEscapeClass, number>; evidence_disposition_counts: Record<DefectGateEvidenceDisposition, number>; findings: DefectGateEvidenceFinding[]; }"
+          "signature": "export interface DefectGateEvidenceReport { ok: boolean; governed_item_count: number; classified_item_count: number; class_counts: Record<DefectEscapeClass, number>; evidence_disposition_counts: Record<DefectGateEvidenceDisposition, number>; waiver_notices: WaiverNotice[]; findings: DefectGateEvidenceFinding[]; }"
         },
         {
           "classification": "supported",
@@ -30241,7 +30285,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DefectRecurrencePolicy",
-          "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; families: DefectRecurrenceFamily[]; }"
+          "signature": "export interface DefectRecurrencePolicy { version: 1; evidence_epoch: string; waiver_notice_days?: number; families: DefectRecurrenceFamily[]; }"
         },
         {
           "classification": "supported",
@@ -30641,6 +30685,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "isWaiverNoticeDays",
+          "signature": "(value: unknown) => value is number | calls: (value: unknown) => value is number"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ItemDocument",
           "signature": "export interface ItemDocument { metadata: ItemMetadata; body: string; }"
@@ -30710,6 +30760,12 @@
           "kind": "interface",
           "name": "LoadedExtension",
           "signature": "export interface LoadedExtension extends EffectiveExtension { module: unknown; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "MAX_WAIVER_NOTICE_DAYS",
+          "signature": "366"
         },
         {
           "classification": "supported",
@@ -31181,6 +31237,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "sortWaiverNotices",
+          "signature": "(notices: WaiverNotice[]) => WaiverNotice[] | calls: (notices: WaiverNotice[]) => WaiverNotice[]"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "StaleInProgressItem",
           "signature": "export interface StaleInProgressItem { id: string; last_activity_at: string; age_hours: number; }"
@@ -31382,6 +31444,18 @@
           "kind": "interface",
           "name": "WaivedBoundaryRecord",
           "signature": "export interface WaivedBoundaryRecord { id: string; producer: string; consumer: string; format: string; waiver_reason: string; waiver_owner: string; waiver_expires_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WaiverNotice",
+          "signature": "export interface WaiverNotice { subject_id: string; owner: string; expires_at: string; days_remaining: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "waiverNoticeFor",
+          "signature": "(subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined | calls: (subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined"
         },
         {
           "classification": "supported",
@@ -40341,10 +40415,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1326,
-      "checked_values": 394,
+      "checked_functions": 1329,
+      "checked_values": 395,
       "exempt_test_seams": 15,
-      "referenced_types": 1035
+      "referenced_types": 1036
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -40365,10 +40439,10 @@
       "referenced_types": 103
     },
     "./sdk/governance": {
-      "checked_functions": 97,
-      "checked_values": 23,
+      "checked_functions": 100,
+      "checked_values": 24,
       "exempt_test_seams": 4,
-      "referenced_types": 113
+      "referenced_types": 114
     },
     "./sdk/graph": {
       "checked_functions": 76,

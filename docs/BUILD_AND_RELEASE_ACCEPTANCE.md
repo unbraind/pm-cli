@@ -51,4 +51,4 @@ npm run release:verify-installed-agent -- --version "$CANDIDATE" --previous-vers
 ```
 
 Set both versions. Windows `npm run` supplies npm's JavaScript entrypoint.
-See [packed first run](PACKED_FIRST_RUN.md) and [release policy](RELEASING.md).
+See [packed first run](PACKED_FIRST_RUN.md) and [release policy](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm).

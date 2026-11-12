@@ -11,7 +11,7 @@ This file is the low-context entrypoint for agents working in this repository. R
 | Sandbox-safe verification           | [Testing](docs/TESTING.md)                                        |
 | Settings, output, and environment   | [Configuration](docs/CONFIGURATION.md)                            |
 | Package or extension work           | [Packages and Extensions](docs/EXTENSIONS.md), [SDK](docs/SDK.md) |
-| Release work                        | [Releasing](docs/RELEASING.md)                                    |
+| Release work                        | [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm) |
 | Full docs map                       | [Documentation Index](docs/README.md)                             |
 
 Use runtime contracts for exact flags because packages and settings can change the active surface:
@@ -76,7 +76,7 @@ For real repository tracking, do not override `PM_PATH`. If a script must target
 - **Record:** use `pm comments`, `pm notes`, and `pm learnings` for progress, rationale, and durable lessons. Prefer append-style updates over rewriting item content.
 - **Verify:** use sandbox-safe commands. For documentation-only work, run at least `pnpm build` and a focused link/content check. For broader work, run linked tests, coverage, validation, and release gates as appropriate.
 - **Close:** add evidence first, then atomically include `--resolution`, `--expected`, and `--actual` on `pm close <id> "<reason>" --validate-close warn`, then `pm release <id>`. Structured evidence belongs in the immutable close event, not in a later backfill.
-- **Land closeout through review:** tracker evidence, item closure, and the generated changelog are part of the reviewed delivery. Never push post-merge closeout commits directly to `main`; if evidence depends on the merge SHA, carry it in a normal `main`-based follow-up PR so the new head retains analyzer provenance. See [Releasing](docs/RELEASING.md#reviewed-delivery-closeout).
+- **Land closeout through review:** tracker evidence, item closure, and the generated changelog are part of the reviewed delivery. Never push post-merge closeout commits directly to `main`; if evidence depends on the merge SHA, carry it in a normal `main`-based follow-up PR so the new head retains analyzer provenance. See [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md#reviewed-delivery-closeout) (repository-only, excluded from npm).
 
 ## Test Safety
 

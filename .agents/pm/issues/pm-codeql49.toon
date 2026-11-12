@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: changelog-exclude,codeql,security
 created_at: "2026-10-21T20:15:39.756Z"
-updated_at: "2026-10-21T20:15:50.727Z"
+updated_at: "2026-11-12T05:21:02.288Z"
 closed_at: "2026-10-21T20:15:49.629Z"
 completed_at: "2026-10-21T20:15:49.629Z"
 author: "harness:codex"
@@ -21,9 +21,10 @@ expected_result: The scanner finding has its own source-linked issue and an audi
 actual_result: Alert49 was independently traced on the reported exact main revision and dismissed as false positive. The static guard dominates sink790; evidence limits and the expiring no-new-gate waiver are recorded.
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-li2fj5,related,"2026-10-21T20:15:39.756Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-21T20:15:39.756Z","harness:codex","Duplicate check: full canonical epic and batch reads plus live CodeQL48/49 searches found only epic comments and no individual finding issue. Preserve the separate platform alert identity under the existing security lineage."
   "2026-10-21T20:15:46.510Z","harness:codex","Independent evidence for alert49: SARIF analysis1999462117 matches main29b4ab7e. Observation tier.fields flows through projectedState:799-804 and assignProjectedPath:777 into parseFieldPath:537-551. The synchronous Array.some guard throws for every empty or prototype-mutating segment before sink790; no later decoding restores such keys. Existing source regression declarations include __proto__.polluted and constructor.value. GitHub alert is dismissed as false positive. This is static triage; no exploit execution or new runtime security proof is claimed. The explicit governance waiver records why no new product gate is justified and expires November21 for review; existing scanner and coverage gates are unchanged."
+  "2026-11-12T05:21:02.287Z","harness:claude-code","Waiver renewed 2026-11-12 (pm-xcndcu) ahead of its 2026-11-21 expiry, which the new nightly waiver notice window would have flagged. Re-triage: CodeQL alerts 48 and 49 (js/prototype-polluting-assignment, src/sdk/environment/agent-environment.ts lines 781 and 790) remain dismissed as false positives. parseFieldPath still rejects empty, __proto__, prototype and constructor segments before both assignProjectedPath sinks, and the file is unchanged since 2026-09-03, before the waiver was set. New expiry 2027-02-10T00:00:00Z.\n"
 files[2]{path,scope}:
   src/sdk/environment/agent-environment.ts,project
   tests/unit/sdk/environment/agent-environment.spec.ts,project
@@ -34,6 +35,6 @@ escape_class: scanner_finding
 gate_evidence:
   disposition: explicit_waiver
   owner: pm-codeql49
-  waiver_reason: "Static false positive: every assigned path segment is synchronously validated by parseFieldPath before this sink. The guard rejects __proto__, prototype, constructor and empty segments. No product defect or new gate change is warranted; retain the current controls and re-triage if the guard or scanner path changes."
-  waiver_expires_at: "2026-11-21T00:00:00.000Z"
+  waiver_reason: "Static false positive: every assigned path segment is synchronously validated by parseFieldPath before this sink. The guard rejects __proto__, prototype, constructor and empty segments. No product defect or new gate change is warranted; retain the current controls and re-triage if the guard or scanner path changes. Re-triaged 2026-11-12 (pm-xcndcu): alerts 48 and 49 remain dismissed as false positives, and parseFieldPath and both assignProjectedPath sinks in src/sdk/environment/agent-environment.ts are unchanged since 2026-09-03, before this waiver was set."
+  waiver_expires_at: "2027-02-10T00:00:00.000Z"
 body: ""

@@ -1259,6 +1259,16 @@
         "key": "dependency-advisories"
       },
       "max_cost": 1
+    },
+    {
+      "id": "repository-waiver-notice-pass",
+      "description": "Pass receipt when no boundary-fixture or defect gate-evidence waiver is inside its declared notice window or already expired.",
+      "source": {
+        "kind": "provider",
+        "provider": "repository-quality",
+        "key": "defect-waiver-notice"
+      },
+      "max_cost": 1
     }
   ],
   "assertions": [
@@ -2696,6 +2706,29 @@
           }
         ]
       }
+    },
+    {
+      "id": "repository-waiver-notice-clear",
+      "measurement_id": "repository-waiver-notice-pass",
+      "owner_item_id": "pm-xcndcu",
+      "scope": {
+        "kind": "all"
+      },
+      "equals": 1,
+      "lifetime": "hold",
+      "enforcement": "block",
+      "negative_control": {
+        "cases": [
+          {
+            "observed": 1,
+            "expected": "pass"
+          },
+          {
+            "observed": 0,
+            "expected": "fail"
+          }
+        ]
+      }
     }
   ],
   "gates": [
@@ -2841,6 +2874,27 @@
             "allow_network": false
           },
           "pre-release": {
+            "max_cost_class": "high",
+            "allow_network": false
+          }
+        }
+      }
+    },
+    {
+      "id": "repository-waiver-notice",
+      "assertion_ids": [
+        "repository-waiver-notice-clear"
+      ],
+      "triggers": [
+        "scheduled"
+      ],
+      "description": "Scheduled early warning that fails while a time-bounded waiver is inside its declared notice window, days before its expiry can block a release.",
+      "provider_policy": {
+        "allowed_providers": [
+          "repository-quality"
+        ],
+        "triggers": {
+          "scheduled": {
             "max_cost_class": "high",
             "allow_network": false
           }

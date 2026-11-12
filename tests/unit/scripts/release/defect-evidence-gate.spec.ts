@@ -106,6 +106,185 @@ describe("defect evidence repository gate", () => {
     expect(report.recurrence_policy.findings[0].kind).toBe("unregistered_recurrence_item");
   });
 
+  it("fails while a boundary or defect waiver is inside its notice window and passes once every waiver is outside it", async () => {
+    const now = new Date("2026-11-12T06:00:00.000Z");
+    const boundaryExpiry = "2026-11-16T00:00:00.000Z";
+    const itemExpiry = "2026-11-21T00:00:00.000Z";
+    await withTempDir("pm-waiver-notice-", async (tempRoot) => {
+      await mkdir(path.join(tempRoot, "config"));
+      await Promise.all([
+        writeFile(
+          path.join(tempRoot, "config/boundary-fixtures.json"),
+          JSON.stringify({
+            version: 1,
+            inventory_scope: "Waiver notice control",
+            waiver_notice_days: 14,
+            boundaries: [
+              {
+                id: "soon",
+                producer: "external",
+                consumer: "gate",
+                format: "JSON",
+                waiver_reason: "Capture pending.",
+                waiver_owner: "pm-owner",
+                waiver_expires_at: boundaryExpiry,
+              },
+            ],
+          }),
+        ),
+        writeFile(
+          path.join(tempRoot, "config/defect-recurrence-policy.json"),
+          JSON.stringify({ ...policy, waiver_notice_days: 14 }),
+        ),
+      ]);
+      const context = {
+        items: [
+          ...completeContext.items,
+          {
+            id: "pm-waived",
+            status: "closed",
+            type: "Issue",
+            completed_at: "2026-10-01T00:00:00.000Z",
+            escape_class: "scanner_finding",
+            gate_evidence: {
+              disposition: "explicit_waiver",
+              owner: "pm-waived",
+              waiver_reason: "Static false positive.",
+              waiver_expires_at: itemExpiry,
+            },
+          },
+        ],
+        terminal_statuses: ["closed", "canceled"],
+      };
+      const failing: string[] = [];
+      await expect(
+        main(["--waiver-notice", "--json"], {
+          repositoryRoot: tempRoot,
+          context,
+          now,
+          writeStdout: (value: string) => failing.push(value),
+        }),
+      ).resolves.toBe(1);
+      expect(JSON.parse(failing.join(""))).toMatchObject({
+        ok: false,
+        mode: "waiver_notice",
+        checks: [
+          { name: "boundary", ok: false, findings: [] },
+          { name: "defect_evidence", ok: false, findings: [] },
+        ],
+        waiver_notices: [
+          { subject_id: "soon", owner: "pm-owner", expires_at: boundaryExpiry, days_remaining: 3 },
+          { subject_id: "pm-waived", owner: "pm-waived", expires_at: itemExpiry, days_remaining: 8 },
+        ],
+        recurrence_policy: { evaluated: false },
+      });
+
+      const human: string[] = [];
+      await expect(
+        main(["--waiver-notice"], {
+          repositoryRoot: tempRoot,
+          context,
+          now,
+          writeStdout: (value: string) => human.push(value),
+        }),
+      ).resolves.toBe(1);
+      expect(human.join("").split("\n").slice(0, 3)).toEqual([
+        "Waiver notice gate: FAIL",
+        `Waiver notice: soon expires ${boundaryExpiry} (3 whole days left; owner pm-owner)`,
+        `Waiver notice: pm-waived expires ${itemExpiry} (8 whole days left; owner pm-waived)`,
+      ]);
+
+      const evidenceGate: string[] = [];
+      await expect(
+        main(["--json"], {
+          repositoryRoot: tempRoot,
+          context,
+          now,
+          writeStdout: (value: string) => evidenceGate.push(value),
+        }),
+      ).resolves.toBe(0);
+      expect(JSON.parse(evidenceGate.join("")).waiver_notices).toHaveLength(2);
+
+      await expect(
+        main(["--waiver-notice"], {
+          repositoryRoot: tempRoot,
+          context,
+          now: new Date("2026-10-01T00:00:00.000Z"),
+          writeStdout: () => undefined,
+        }),
+      ).resolves.toBe(0);
+
+      const expired: string[] = [];
+      await expect(
+        main(["--waiver-notice", "--json"], {
+          repositoryRoot: tempRoot,
+          context,
+          now: new Date("2026-11-17T00:00:00.000Z"),
+          writeStdout: (value: string) => expired.push(value),
+        }),
+      ).resolves.toBe(1);
+      expect(JSON.parse(expired.join(""))).toMatchObject({
+        checks: [
+          { name: "boundary", findings: [{ boundary_id: "soon", kind: "expired_waiver" }] },
+          { name: "defect_evidence", findings: [] },
+        ],
+        waiver_notices: [{ subject_id: "pm-waived", days_remaining: 4 }],
+      });
+    });
+  });
+
+  it("seeds a waiver inside the notice window under the notice negative control", async () => {
+    const stdout: string[] = [];
+    await expect(
+      main(["--waiver-notice", "--negative-control", "--json"], {
+        repositoryRoot,
+        context: completeContext,
+        now: new Date("2026-11-12T06:00:00.000Z"),
+        writeStdout: (value: string) => stdout.push(value),
+      }),
+    ).resolves.toBe(1);
+    const report = JSON.parse(stdout.join(""));
+    expect(report.boundary.findings).toEqual([]);
+    expect(report.waiver_notices.map((notice: { subject_id: string }) => notice.subject_id)).toEqual([
+      "negative-control-waiver",
+      "pm-negative-control",
+    ]);
+
+    // Registries that declare no window still get a seeded one-day window.
+    await withTempDir("pm-waiver-notice-undeclared-", async (tempRoot) => {
+      await mkdir(path.join(tempRoot, "config"));
+      const { waiver_notice_days: _omitted, ...undeclaredPolicy } = policy;
+      await Promise.all([
+        writeFile(
+          path.join(tempRoot, "config/boundary-fixtures.json"),
+          JSON.stringify({ version: 1, inventory_scope: "No window declared", boundaries: [] }),
+        ),
+        writeFile(
+          path.join(tempRoot, "config/defect-recurrence-policy.json"),
+          JSON.stringify(undeclaredPolicy),
+        ),
+      ]);
+      const undeclared: string[] = [];
+      await expect(
+        main(["--waiver-notice", "--negative-control", "--json"], {
+          repositoryRoot: tempRoot,
+          context: completeContext,
+          writeStdout: (value: string) => undeclared.push(value),
+        }),
+      ).resolves.toBe(1);
+      expect(JSON.parse(undeclared.join("")).waiver_notices).toHaveLength(2);
+    });
+
+    const conflict: string[] = [];
+    await expect(
+      main(["--waiver-notice", "--boundary-only"], {
+        repositoryRoot,
+        writeStderr: (value: string) => conflict.push(value),
+      }),
+    ).resolves.toBe(2);
+    expect(conflict.join("")).toContain("--waiver-notice");
+  });
+
   it("rejects fixture paths that escape the repository root", async () => {
     await withTempDir("pm-boundary-traversal-", async (tempRoot) => {
       await mkdir(path.join(tempRoot, "config"));
@@ -264,6 +443,11 @@ describe("defect evidence repository gate", () => {
         writeStdout: (value: string) => humanFailure.push(value),
       }),
     ).resolves.toBe(1);
-    expect(humanFailure.join("")).toContain("FAIL");
+    expect(humanFailure.join("").split("\n").slice(0, 2)).toEqual([
+      "Defect evidence gate: FAIL",
+      expect.stringMatching(
+        /^Finding \[boundary\] tests\/fixtures\/boundaries\/.+ lacks captured provenance/u,
+      ),
+    ]);
   });
 });

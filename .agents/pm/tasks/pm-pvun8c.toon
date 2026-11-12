@@ -1,0 +1,38 @@
+id: pm-pvun8c
+title: Exclude the repository-only release runbook docs/RELEASING.md from the npm tarball to restore publication headroom
+description: "Found 2026-11-12 while landing pm-xcndcu: the packed distribution measured 19,998,975 B against the 20,000,000 B ceiling, 1,025 B of headroom, before the changelog lines that the closing items add. docs/RELEASING.md is 58,042 B and documents only how this repository releases @unbrained/pm-cli (the daily auto-release, morning dispatcher, release environment secrets, tag recovery and local parity). An installed package never runs that procedure, and every reader who can act on it has the repository checkout. Same treatment as the five repository-only docs pm-tuxw1i excluded: a package.json files exclusion, a reason in docs-reachability-exceptions.json, and canonical GitHub links marked repository-only in the packaged pages that point to it (AGENTS.md, README.md, CONTRIBUTING.md, docs/README.md, docs/AGENT_GUIDE.md, docs/ONBOARDING.md, docs/BUILD_AND_RELEASE_ACCEPTANCE.md)."
+type: Task
+status: closed
+priority: 1
+tags[4]: docs,packaging,publication-weight,release
+created_at: "2026-11-12T05:59:00.569Z"
+updated_at: "2026-11-12T06:24:49.152Z"
+closed_at: "2026-11-12T06:24:48.443Z"
+completed_at: "2026-11-12T06:24:48.443Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: npm pack no longer includes docs/RELEASING.md and the package artifact gate passes with at least 50 KB of headroom; Every packaged page that linked docs/RELEASING.md links its canonical GitHub URL and states that it is repository-only; The docs reachability gate records the exclusion with a reason
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: "package.json excludes docs/RELEASING.md, with a reason in docs-reachability-exceptions.json. The seven packaged pages that linked it (AGENTS.md, README.md, CONTRIBUTING.md, docs/README.md, docs/AGENT_GUIDE.md, docs/ONBOARDING.md, docs/BUILD_AND_RELEASE_ACCEPTANCE.md) now link its canonical GitHub URL and mark it repository-only."
+expected_result: At least 50 KB of publication headroom with no runtime file removed
+actual_result: "Distribution 19,942,799 B in 1,585 files against the 20,000,000 B ceiling (57,201 B headroom, up from 1,025 B); docs/skills gate passed"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-tuxw1i,related,"2026-11-12T05:59:00.569Z","harness:claude-code","cli:create:dep",detected
+  pm-xcndcu,discovered_from,"2026-11-12T05:59:00.569Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope}:
+  package.json,project
+  scripts/release/docs-reachability-exceptions.json,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/docs-skills-gate.mjs,project,300,"harness:claude-code","2026-11-12T06:02:10.330Z",local_mutation,fix/waiver-notice-window
+docs[7]{path,scope}:
+  AGENTS.md,project
+  CONTRIBUTING.md,project
+  docs/AGENT_GUIDE.md,project
+  docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project
+  docs/ONBOARDING.md,project
+  docs/README.md,project
+  README.md,project
+close_reason: docs/RELEASING.md is excluded from the npm tarball and every packaged link to it is a canonical repository-only URL
+body: ""

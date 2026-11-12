@@ -1,6 +1,7 @@
 {
   "version": 1,
   "evidence_epoch": "2026-08-17T00:00:00.000Z",
+  "waiver_notice_days": 14,
   "families": [
     {
       "id": "bounded-complete-nightly-execution",

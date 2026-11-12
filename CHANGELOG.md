@@ -4,6 +4,7 @@
 
 ### Changed (SDK contract)
 
+- A time-bounded gate waiver expires straight into a release block: no notice window, and the gate's text output names neither the item nor the expiry: Reports said nothing about an approaching expiry; a waiver stayed silent until it expired and failed the gate → Reports carry waiver_notices for valid live waivers inside the declared waiver_notice_days window, and ok is unchanged. Migrate: Code that constructs BoundaryFixtureReport or DefectGateEvidenceReport adds waiver_notices: \[\]; declare waiver_notice_days in the policy or registry to receive notices ([pm-xcndcu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xcndcu.toon))
 - pm update --unset blocked_by (or --blocked-by none) deletes every blocked_by edge, not only the scalar's: clearing blocker A silently drops an independent prerequisite B: Clearing the scalar removed every blocked_by dependency edge → Clearing the scalar removes only the rows naming its own target; independent blocked_by edges keep blocking, and removed rows are named in a dependencies_removed warning. Migrate: Remove the remaining edges with --dep-remove kind=blocked_by, or one at a time with --dep-remove id=<id\>,kind=blocked_by ([pm-4yxzvd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4yxzvd.toon))
 - A key repeated inside one structured entry silently replaces the earlier value, so note prose such as ', path: b.txt' relinks a different file: A key repeated inside one entry kept its last value → A repeated key is refused with structured_entry_key_repeated before anything is written. Migrate: Give each key once per entry, quote prose that contains a key-shaped word, or repeat the flag for another entry ([pm-oglm0t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-oglm0t.toon))
 - files/docs --add refusal does not name the note segment it misread as a key, nor offer the standalone --note flag: Note prose misread as a key was refused with invalid_argument_value or a generic command failure → It is refused with linked_artifact_note_key_misread, naming the segment and key, with a retry that quotes the note. Migrate: Match the new code, or follow recovery.suggested_retry_args ([pm-pwqiao](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-pwqiao.toon))
@@ -15,6 +16,7 @@
 
 ### Other
 
+- Exclude the repository-only release runbook docs/RELEASING.md from the npm tarball to restore publication headroom ([pm-pvun8c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pvun8c.toon))
 - Exclude five repository-only docs from the npm tarball to restore publication headroom for the collection-mutation bundle ([pm-tuxw1i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tuxw1i.toon))
 
 ## 2026.11.11 - 2026-11-11

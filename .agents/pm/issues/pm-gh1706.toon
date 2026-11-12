@@ -1,0 +1,21 @@
+id: pm-gh1706
+title: "GH-1706: a stale session-state lock makes pm release clear the claim and then exit 4, --force repeats the refusal, and claim only warns"
+description: "GH-1706 (filed 2026-11-11). A stale session-state lock (expired TTL from a crashed agent) makes claim and release disagree, and release reports failure after it has written. On a fresh tracker: pm claim exits 0 with the claim_semantic_attribution_unrecorded warning and records the claim; pm release exits 4 with 'Item session-state lock is stale; rerun with --force when supported for this command' but the claim is already removed; pm release --force exits 4 with the same text; pm health reports stale_lock_count 1 with remedy pm gc --scope locks. Four problems: a partial write reported as a failure, two policies for one condition, a recovery hint naming a flag that cannot succeed, and wording that attributes the lock to an item. Expected: release refuses before any mutation or succeeds with the same attribution warning claim uses; one policy for a stale session-state lock across claim, start, release and close (reclaiming an expired TTL automatically is simplest); the refusal or warning names pm gc --scope locks and the lock path and never recommends an unusable flag. pm-rust mirrors the published behaviour (pm-rust#165)."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,concurrency,"gh:1706",locking,recovery
+created_at: "2026-11-12T05:13:38.060Z"
+updated_at: "2026-11-12T05:13:38.060Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "release never mutates and then exits non-zero on a stale session-state lock; claim, start, release and close share one policy for a stale session-state lock; The refusal or warning names pm gc --scope locks and the lock path, never an unusable flag, and attributes the lock to session state"
+parent: pm-dj98
+risk: medium
+confidence: high
+severity: medium
+expected_result: One consistent outcome for a stale session-state lock with a working recovery
+actual_result: release removes the claim then exits 4; --force repeats the refusal
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-d70h,related,"2026-11-12T05:13:38.060Z","harness:claude-code","cli:create:dep",detected
+body: ""

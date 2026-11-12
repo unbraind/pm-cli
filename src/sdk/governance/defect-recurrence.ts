@@ -8,6 +8,13 @@ import { createHash } from "node:crypto";
 
 import { stableStringify } from "../../core/shared/serialization.js";
 import type { AssuranceItemRecord } from "./assurance.js";
+import {
+  isWaiverNoticeDays,
+  MAX_WAIVER_NOTICE_DAYS,
+  sortWaiverNotices,
+  type WaiverNotice,
+  waiverNoticeFor,
+} from "./boundary-fixtures.js";
 import { defectRecurrenceItemSignals } from "./defect-recurrence-signals.js";
 import {
   buildDefectRecurrenceGraph,
@@ -118,6 +125,11 @@ export interface DefectRecurrencePolicy {
   version: 1;
   /** ISO instant after which terminal defects require structured evidence. */
   evidence_epoch: string;
+  /**
+   * Whole days before expiry at which a live explicit waiver is reported as a
+   * notice. Absent means zero: waivers are reported only once expired.
+   */
+  waiver_notice_days?: number;
   /** Versioned recurrence families. */
   families: DefectRecurrenceFamily[];
 }
@@ -282,6 +294,8 @@ export interface DefectGateEvidenceReport {
   class_counts: Record<DefectEscapeClass, number>;
   /** Historical and epoch-governed counts by evidence disposition. */
   evidence_disposition_counts: Record<DefectGateEvidenceDisposition, number>;
+  /** Governed live waivers expiring inside the policy notice window; never failures. */
+  waiver_notices: WaiverNotice[];
   /** Stable sorted findings. */
   findings: DefectGateEvidenceFinding[];
 }
@@ -481,6 +495,14 @@ function validatePolicy(policy: DefectRecurrencePolicy): void {
   ) {
     throw new TypeError(
       "defect recurrence evidence_epoch must be an ISO timestamp",
+    );
+  }
+  if (
+    policy.waiver_notice_days !== undefined &&
+    !isWaiverNoticeDays(policy.waiver_notice_days)
+  ) {
+    throw new TypeError(
+      `defect recurrence waiver_notice_days must be a whole number of days from 0 to ${MAX_WAIVER_NOTICE_DAYS}`,
     );
   }
   const ids = new Set<string>();
@@ -984,6 +1006,38 @@ function validEvidence(
   };
 }
 
+/** Report a valid live explicit waiver that expires inside the notice window. */
+function liveWaiverNotice(
+  item: AssuranceItemRecord,
+  nowMs: number,
+  noticeDays: number,
+): WaiverNotice | undefined {
+  if (!validEvidence(item.gate_evidence, nowMs).valid) return undefined;
+  const evidence = item.gate_evidence as DefectGateEvidence;
+  if (evidence.disposition !== "explicit_waiver") return undefined;
+  return waiverNoticeFor(
+    item.id,
+    evidence.owner,
+    evidence.waiver_expires_at!,
+    nowMs,
+    noticeDays,
+  );
+}
+
+/** Collect the notices of every governed defect, soonest expiry first. */
+function governedWaiverNotices(
+  governed: readonly AssuranceItemRecord[],
+  nowMs: number,
+  noticeDays = 0,
+): WaiverNotice[] {
+  return sortWaiverNotices(
+    governed.flatMap((item) => {
+      const notice = liveWaiverNotice(item, nowMs, noticeDays);
+      return notice ? [notice] : [];
+    }),
+  );
+}
+
 function evidenceFindings(
   item: AssuranceItemRecord,
   nowMs: number,
@@ -1034,7 +1088,7 @@ function evidenceFindings(
       item_id: item.id,
       kind: result.expired ? "expired_waiver" : "invalid_gate_evidence",
       detail: result.expired
-        ? `${item.id} carries an expired gate-evidence waiver.`
+        ? `${item.id} carries a gate-evidence waiver that expired at ${String((item.gate_evidence as Partial<DefectGateEvidence>).waiver_expires_at)}.`
         : `${item.id} gate_evidence does not prove a gate or explicit waiver.`,
     });
   }
@@ -1103,6 +1157,11 @@ export function evaluateDefectGateEvidence(
   const findings = governed.flatMap((item) =>
     evidenceFindings(item, now.getTime()),
   );
+  const waiverNotices = governedWaiverNotices(
+    governed,
+    now.getTime(),
+    policy.waiver_notice_days,
+  );
   findings.sort((left, right) =>
     left.item_id !== right.item_id
       ? left.item_id.localeCompare(right.item_id)
@@ -1114,6 +1173,7 @@ export function evaluateDefectGateEvidence(
     classified_item_count: classified.length,
     class_counts: classCounts,
     evidence_disposition_counts: evidenceDispositionCounts,
+    waiver_notices: waiverNotices,
     findings,
   };
 }
