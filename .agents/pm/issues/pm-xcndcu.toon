@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: defect-evidence,governance,quality-gate,release,reliability,waivers
 created_at: "2026-11-12T05:13:03.902Z"
-updated_at: "2026-11-12T07:07:44.086Z"
+updated_at: "2026-11-12T07:42:54.923Z"
 closed_at: "2026-11-12T06:24:41.616Z"
 completed_at: "2026-11-12T06:24:41.616Z"
 author: "harness:claude-code"
@@ -28,10 +28,11 @@ dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
   pm-m1tfmp,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
   pm-rtn5h6,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
   pm-xa1w84,related,"2026-11-12T05:31:33.275Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-12T06:48:42.571Z","harness:claude-code","PR 1711 Codex review (P2), fixed in this PR. The assurance wrapper keeps only a 500-character excerpt of provider output, so a cohort of eight waivers entering the window together (the 2027-02-10 renewals) would have dropped whole notices, among them pm-codeql49, pm-m1tfmp and the Windows boundary, from the nightly log. The nightly step now prints the gate's complete text and keeps it in a runner temp file before the assurance verdict runs, and the alert body lists every finding and notice line from that file. A local simulation of the alert script confirmed the list renders and a missing file degrades to an empty list.\n"
   "2026-11-12T06:52:16.689Z","harness:claude-code","PR 1711 CodeRabbit review (Major), fixed in this PR. Notice mode kept only expired_waiver findings, so a boundary registry with an invalid waiver_notice_days (for example the string \"14\" or 367) returned invalid_registry with an empty notice list and no evaluated waivers, and --waiver-notice exited 0 even when a boundary waiver had already expired. Notice mode now also fails on invalid_registry and invalid_waiver, the two findings that mean a waiver could not be evaluated; other fixture findings stay excluded. The spec covers both cases. Greptile and CodeRabbit also flagged the release guide topic listing the excluded docs/RELEASING.md; that is the Codex finding recorded on pm-pvun8c.\n"
   "2026-11-12T07:07:44.085Z","harness:claude-code","PR 1711 Codex review round 2, fixed in this PR. (P2) Filtering notice-mode failures to expired, invalid_registry and invalid_waiver still let a malformed explicit waiver (invalid_gate_evidence), a producer-less boundary (invalid_boundary) or a skipped duplicate (duplicate_boundary) hide an expiry, so the warning passed with no notices. Notice mode now fails on every boundary or defect-evidence finding plus every notice; only recurrence-policy findings stay out. The spec covers all four record shapes. (P3, on pm-pvun8c's check) isPackagedPath used path.posix.matchesGlob, which skips dot-prefixed segments, while npm's packlist includes them, so plugins/pm-codex/.mcp.json under plugins/** read as unshipped. Leading-dot segments are now neutralized in both path and pattern before matching; the spec covers dot files and directories under a wildcard and an explicit dot pattern.\n"
+  "2026-11-12T07:42:54.923Z","harness:claude-code","PR 1711 CodeRabbit full review on 2f9697ccf (two minors), fixed in this PR. (1) The nightly alert told maintainers to renew or retire a waiver even when notice mode failed on a finding such as missing boundary provenance; the alert now lists waivers to renew or retire separately from findings to fix, and a local simulation renders both sections. (2) The Tracked-by line of the packaged docs/DEFECT_RECURRENCE.md linked .agents/pm records relatively although npm does not ship .agents/pm; the line now uses canonical GitHub URLs and states that the records are repository-only, as AGENTS.md prescribes.\n"
 files[8]{path,scope}:
   .github/workflows/nightly.yml,project
   config/boundary-fixtures.json,project

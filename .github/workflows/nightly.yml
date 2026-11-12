@@ -348,12 +348,25 @@ jobs:
 
           Investigate before trusting the next daily release."
           if [[ "${WAIVER_NOTICE_OUTCOME}" == "failure" ]]; then
-            notices="$(grep -E '^(Finding|Waiver notice:)' "${RUNNER_TEMP}/waiver-notice.txt" 2>/dev/null | sed 's/^/- /' || true)"
+            notices="$(grep -E '^Waiver notice:' "${RUNNER_TEMP}/waiver-notice.txt" 2>/dev/null | sed 's/^/- /' || true)"
+            findings="$(grep -E '^Finding ' "${RUNNER_TEMP}/waiver-notice.txt" 2>/dev/null | sed 's/^/- /' || true)"
             body="${body}
 
-          The waiver notice window failed: renew or retire each waiver below (\`node scripts/release/defect-evidence-gate.mjs --waiver-notice\`) before its expiry blocks the daily release.
+          The waiver notice window failed (\`node scripts/release/defect-evidence-gate.mjs --waiver-notice\`)."
+            if [[ -n "${notices}" ]]; then
+              body="${body}
+
+          Renew or retire each waiver before its expiry blocks the daily release:
 
           ${notices}"
+            fi
+            if [[ -n "${findings}" ]]; then
+              body="${body}
+
+          Fix each boundary or defect-evidence finding; these fail every gate, not only on a schedule:
+
+          ${findings}"
+            fi
           fi
 
           if [[ -n "${existing_issue}" ]]; then

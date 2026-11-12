@@ -1,6 +1,6 @@
 # Defect Recurrence and Boundary Evidence
 
-Tracked by [pm-1qkivy](../.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](../.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](../.agents/pm/tasks/pm-0pzgit.toon), [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), [pm-003j](../.agents/pm/tasks/pm-003j.toon), and [pm-xcndcu](../.agents/pm/issues/pm-xcndcu.toon).
+Tracked by [pm-1qkivy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0pzgit.toon), [pm-7c27ep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7c27ep.toon), [pm-h8tpeh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h8tpeh.toon), [pm-003j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-003j.toon), and [pm-xcndcu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xcndcu.toon). These tracker records are repository-only and excluded from npm.
 
 ## Agent Quick Context
 
