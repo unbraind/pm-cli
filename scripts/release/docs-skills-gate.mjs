@@ -584,13 +584,19 @@ export async function runGuideChecks(failures) {
   }
 }
 
+/** npm matches files patterns with dotfiles enabled; neutralize leading dots so `*` and `**` cross them. */
+function withoutLeadingDots(value) {
+  return value.replace(/(^|\/)\./gu, "$1\u0001");
+}
+
 /** Apply package.json files patterns in npm order: a later negation excludes what an earlier pattern included. */
 export function isPackagedPath(relativePath, filePatterns) {
+  const candidate = withoutLeadingDots(relativePath);
   let included = false;
   for (const pattern of filePatterns) {
     const negated = pattern.startsWith("!");
-    const glob = negated ? pattern.slice(1) : pattern;
-    if (relativePath === glob || path.posix.matchesGlob(relativePath, glob)) {
+    const glob = withoutLeadingDots(negated ? pattern.slice(1) : pattern);
+    if (candidate === glob || path.posix.matchesGlob(candidate, glob)) {
       included = !negated;
     }
   }

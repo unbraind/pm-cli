@@ -482,6 +482,11 @@ describe("docs-skills-gate", () => {
       expect(mod.isPackagedPath("dist/cli.js.map", files)).toBe(false);
       expect(mod.isPackagedPath("scripts/release/run-gates.mjs", files)).toBe(false);
       expect(mod.isPackagedPath("docs/RELEASING.md", [...files, "docs/RELEASING.md"])).toBe(true);
+      // npm includes dot-prefixed files and directories under a wildcard.
+      expect(mod.isPackagedPath("plugins/pm-codex/.mcp.json", ["plugins/**"])).toBe(true);
+      expect(mod.isPackagedPath("plugins/pm-codex/.codex-plugin/plugin.json", ["plugins/**"])).toBe(true);
+      expect(mod.isPackagedPath(".agents/skills/pm/SKILL.md", [".agents/skills/**"])).toBe(true);
+      expect(mod.isPackagedPath(".github/workflows/ci.yml", ["docs/**", ".agents/skills/**"])).toBe(false);
     });
 
     it("validateGuideDocsPackaged flags required guide docs the npm package does not ship", async () => {

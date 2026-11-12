@@ -233,7 +233,7 @@ describe("defect evidence repository gate", () => {
     });
   });
 
-  it("fails notice mode closed when the boundary registry or a waiver cannot be evaluated", async () => {
+  it("fails notice mode closed when any boundary or defect-evidence record cannot be evaluated", async () => {
     await withTempDir("pm-waiver-notice-invalid-", async (tempRoot) => {
       await mkdir(path.join(tempRoot, "config"));
       const writeRegistry = (registry: object) =>
@@ -251,9 +251,12 @@ describe("defect evidence repository gate", () => {
         waiver_owner: "pm-owner",
         waiver_expires_at: "2026-01-01T00:00:00.000Z",
       };
+      const { producer: _producer, ...producerless } = expired;
       for (const [registry, kind] of [
         [{ version: 1, inventory_scope: "Bad window", waiver_notice_days: "14", boundaries: [expired] }, "invalid_registry"],
         [{ version: 1, inventory_scope: "Bad waiver", boundaries: [{ ...expired, waiver_expires_at: "soon" }] }, "invalid_waiver"],
+        [{ version: 1, inventory_scope: "Bad boundary", boundaries: [producerless] }, "invalid_boundary"],
+        [{ version: 1, inventory_scope: "Duplicate", boundaries: [{ ...expired, waiver_expires_at: "2099-01-01T00:00:00.000Z" }, expired] }, "duplicate_boundary"],
       ] as const) {
         await writeRegistry(registry);
         const stdout: string[] = [];
@@ -270,6 +273,34 @@ describe("defect evidence repository gate", () => {
           findings: [{ kind }],
         });
       }
+
+      await writeRegistry({ version: 1, inventory_scope: "Clean", boundaries: [] });
+      const malformedWaiver: string[] = [];
+      await expect(
+        main(["--waiver-notice", "--json"], {
+          repositoryRoot: tempRoot,
+          context: {
+            ...completeContext,
+            items: [
+              ...completeContext.items,
+              {
+                id: "pm-malformed-waiver",
+                status: "closed",
+                type: "Issue",
+                completed_at: "2026-10-01T00:00:00.000Z",
+                escape_class: "scanner_finding",
+                gate_evidence: { disposition: "explicit_waiver", owner: "", waiver_reason: "x", waiver_expires_at: "soon" },
+              },
+            ],
+          },
+          writeStdout: (value: string) => malformedWaiver.push(value),
+        }),
+      ).resolves.toBe(1);
+      expect(JSON.parse(malformedWaiver.join("")).checks[1]).toMatchObject({
+        name: "defect_evidence",
+        ok: false,
+        findings: [{ item_id: "pm-malformed-waiver", kind: "invalid_gate_evidence" }],
+      });
     });
   });
 

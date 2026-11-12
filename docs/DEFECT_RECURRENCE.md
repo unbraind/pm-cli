@@ -215,7 +215,7 @@ node scripts/release/defect-evidence-gate.mjs --waiver-notice --negative-control
 node scripts/release/repository-assurance.mjs repository-waiver-notice --trigger scheduled
 ```
 
-`--waiver-notice` fails while any waiver is inside its window, already expired, or cannot be evaluated (an invalid registry or waiver); no other finding affects it. The negative control seeds one boundary waiver and one defect waiver an hour from expiry and must exit `1`. The `repository-waiver-notice` gate (assertion `repository-waiver-notice-clear`, trigger `scheduled`) runs this provider in the nightly quality job, so a scheduled run opens the nightly alert issue, listing every waiver it names, about two weeks before an expiry could block a release. Renew a waiver only after re-verifying its reason, and record that verification on the owning item.
+`--waiver-notice` fails while any waiver is inside its window and on every boundary or defect-evidence finding, because a malformed or duplicate record can hide an expiry; recurrence-policy findings do not affect it. The negative control seeds one boundary waiver and one defect waiver an hour from expiry and must exit `1`. The `repository-waiver-notice` gate (assertion `repository-waiver-notice-clear`, trigger `scheduled`) runs this provider in the nightly quality job, so a scheduled run opens the nightly alert issue, listing every waiver it names, about two weeks before an expiry could block a release. Renew a waiver only after re-verifying its reason, and record that verification on the owning item.
 
 ## Repository Gate
 
