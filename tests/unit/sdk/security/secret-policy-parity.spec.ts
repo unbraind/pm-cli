@@ -127,9 +127,12 @@ describe("credential-key assignments (GH-1704)", () => {
     }
   });
 
-  it("still flags lowercase underscore secrets such as provider live keys", () => {
+  it("still flags underscore secrets such as provider live keys and uppercase literals", () => {
     const live = ["sk_live_51Hx", "YZabc9Q2wE"].join("");
     expect(rulesFor(`client_secret=${live}`)).toEqual(["credential_key_assignment"]);
+    const upper = ["ZQ8VN3K_", "LMP0WXY7AB"].join("");
+    expect(rulesFor(`{"api_key":"${upper}"}`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`API_KEY=${upper}`)).toEqual(["credential_key_assignment"]);
   });
 
   it("flags option and hyphenated key spellings", () => {

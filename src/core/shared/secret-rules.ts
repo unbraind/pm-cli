@@ -252,9 +252,10 @@ export const SECRET_RULES = [
     structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true, elementValue: true },
     mutationOnlyReason: "Key-named assignments in source code and test fixtures are identifiers and synthetic data; repository scans keep the token-format rules, which recognize real credentials there.",
     minimumEntropy: 3,
-    // CONSTANT_CASE references (`= DEFAULT_TOKEN;`) and SSH key-file names
-    // (`keys/id_ed25519`). Case-sensitive, so `sk_live_...` keys still count.
-    rejectValue: /^(?:[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+|(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?)$/u,
+    // CONSTANT_CASE references made only of letters (`= DEFAULT_TOKEN;`) and SSH
+    // key-file names (`keys/id_ed25519`). Case-sensitive and digit-free, so
+    // `sk_live_...` keys and uppercase literals such as `ZQ8VN3K_LMP0` still count.
+    rejectValue: /^(?:[A-Z]+(?:_[A-Z]+)+|(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?)$/u,
   },
 ] as const satisfies readonly SecretRule[];
 
