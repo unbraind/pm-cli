@@ -186,11 +186,14 @@ const CREDENTIAL_KEYS =
 // `C:/keys/x.pem`), a URL, a
 // letters-only or hyphenated word (`not-configured`), a dotted member path or a call. Only a quoted value (or
 // an element body) may also hold `?`, `:` and `|`; unquoted, they read as code
-// such as `process.env.API_KEY||""` or `options?.token`. A quoted value is a
+// such as `process.env.API_KEY||""` or `options?.token`, except directly after
+// `=` (`CLIENT_SECRET=q7!A?9#z`), where the exclusions below still catch code. An
+// unquoted CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`) is a
+// reference; anywhere else it may be a literal and counts. A quoted value is a
 // member path only when the whole literal is one (`"process.env.TOKEN"`), so
 // `"svc.app:secretX09"` still counts. Entropy then rejects masks.
 const CREDENTIAL_VALUE =
-  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\()(?:(?<=["'])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~?:|])|[A-Za-z]:[\\/]|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=["'\s,;)}\]]|$)|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\(|(?<!["'])[A-Z]+(?:_[A-Z]+)+;)(?:(?<=["'=])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
@@ -252,10 +255,8 @@ export const SECRET_RULES = [
     structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true, elementValue: true },
     mutationOnlyReason: "Key-named assignments in source code and test fixtures are identifiers and synthetic data; repository scans keep the token-format rules, which recognize real credentials there.",
     minimumEntropy: 3,
-    // CONSTANT_CASE references made only of letters (`= DEFAULT_TOKEN;`) and SSH
-    // key-file names (`keys/id_ed25519`). Case-sensitive and digit-free, so
-    // `sk_live_...` keys and uppercase literals such as `ZQ8VN3K_LMP0` still count.
-    rejectValue: /^(?:[A-Z]+(?:_[A-Z]+)+|(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?)$/u,
+    // SSH key-file names (`keys/id_ed25519`) are references, never credentials.
+    rejectValue: /^(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?$/u,
   },
 ] as const satisfies readonly SecretRule[];
 

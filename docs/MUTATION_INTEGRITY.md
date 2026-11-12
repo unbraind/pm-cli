@@ -102,9 +102,11 @@ characters (a quoted value must be whitespace-free up to its closing quote)
 with a Shannon entropy of at least 3 bits per character. It must not be a
 placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
 filesystem path or SSH key-file name, a URL, a letters-only or hyphenated
-word, a CONSTANT_CASE reference, a dotted member path or a call
-(in a quoted value or an element body, `?`, `:` and `|` also count as value
-characters; unquoted they read as code such as `process.env.API_KEY||""`); a
+word, a CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`), a dotted
+member path or a call
+(in a quoted value, an element body or directly after `=`, `?`, `:` and `|`
+also count as value characters; elsewhere unquoted they read as code such as
+`options?.token`); a
 whole
 element body must satisfy the same grammar. `token_budget`, `max_tokens`, numeric
 counts, masks such as `********` and prose stay clean. A key starts only at the

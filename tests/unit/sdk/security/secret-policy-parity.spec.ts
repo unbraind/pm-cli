@@ -133,6 +133,11 @@ describe("credential-key assignments (GH-1704)", () => {
     const upper = ["ZQ8VN3K_", "LMP0WXY7AB"].join("");
     expect(rulesFor(`{"api_key":"${upper}"}`)).toEqual(["credential_key_assignment"]);
     expect(rulesFor(`API_KEY=${upper}`)).toEqual(["credential_key_assignment"]);
+    const letters = ["ZQVNKR_", "LMPWXYAB"].join("");
+    expect(rulesFor(`{"api_key":"${letters}"}`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`API_KEY=${letters}`)).toEqual(["credential_key_assignment"]);
+    const punctuated = ["q7!A", "?9#z"].join("");
+    expect(rulesFor(`CLIENT_SECRET=${punctuated}`)).toEqual(["credential_key_assignment"]);
   });
 
   it("flags option and hyphenated key spellings", () => {
@@ -189,7 +194,6 @@ describe("credential-key assignments (GH-1704)", () => {
     ["long optional chain", "const token = configuration?.token;"],
     ["unquoted hyphenated prose", "client_secret: not-configured in this environment"],
     ["constant reference", "const token = DEFAULT_TOKEN;"],
-    ["quoted constant reference", 'api_key: "API_KEY_FROM_ENV"'],
     ["extensionless SSH key file", '{"private_key":"keys/id_ed25519"}'],
     ["SSH key file element", "<private_key>.ssh/id_rsa</private_key>"],
     ["quoted hyphenated word", 'api_key: "not-yet-provisioned"'],
