@@ -530,10 +530,11 @@ function elementValueJudge(
   compiled: CompiledSpelling,
 ): ((value: string) => boolean) | undefined {
   if (!spelling.elementValue) return undefined;
+  // The whole trimmed body must be one value, so element prose never counts.
   return (value) => {
     compiled.value.lastIndex = 0;
     const match = compiled.value.exec(value);
-    return match !== null && acceptsSecretMatch(rule, match);
+    return match !== null && match[1] === value && acceptsSecretMatch(rule, match);
   };
 }
 

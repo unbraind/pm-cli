@@ -31,6 +31,8 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["tab before the authority slashes", "https:\t//secret123@localhost/x", "https:[redacted]@localhost/x"],
     ["credential URL nested in a public URL's query", "https://public.example/?next=https://u:secret123@localhost", "https://[redacted]@localhost"],
     ["password holding both an at sign and a slash", "https://u:ab@cd/efGHIJKL@localhost/x", "https://[redacted]@localhost/x"],
+    ["SSH userinfo holding a question mark", "ssh://Zq8vN3k?LmP0wXy7Ab@github.com/repo", "ssh://[redacted]@github.com/repo"],
+    ["SSH userinfo holding a hash", "ssh://Zq8vN3k#LmP0wXy7Ab@github.com/repo", "ssh://[redacted]@github.com/repo"],
   ])("removes every possible userinfo span: %s", (_label, token, expected) => {
     expect(redactUrlCredentialsInToken(token)).toBe(expected);
     expect(redactUrlCredentialsInToken(expected)).toBe(expected);

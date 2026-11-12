@@ -101,8 +101,8 @@ including `--token=…`. The value must be at least eight whitespace-free
 characters (a quoted value must be whitespace-free up to its closing quote)
 with a Shannon entropy of at least 3 bits per character. It must not be a
 placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
-filesystem path, a letters-only word, a dotted member path or a call; element
-content is judged by the same grammar. `token_budget`, `max_tokens`, numeric
+filesystem path, a letters-only word, a dotted member path or a call; a whole
+element body must satisfy the same grammar. `token_budget`, `max_tokens`, numeric
 counts, masks such as `********` and prose stay clean. A key starts only at the
 beginning of an identifier, so the scan stays linear. Plain and hyphenated
 password keys remain with the password rule, so each value is reported once. No rule is silently
@@ -208,7 +208,8 @@ combine:
   invocations never share it. It protects telemetry and Sentry as well.
 - The rule is conservative. A token is left alone only when no parser can
   read userinfo in it: its authority (the text between the slashes after the
-  first `:` and the next `/`, `?` or `#`) holds neither `:` nor `@`, the rest
+  first `:` and the next `/`; SSH-style parsers read userinfo across `?` and
+  `#`) holds neither `:` nor `@`, the rest
   of the token holds no `:` (so no nested URL), and it has no tab or line
   break. `https://www.npmjs.com/package/@unbrained/pm-cli` and blob paths with
   an `@` therefore keep their host, path and executable retry

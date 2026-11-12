@@ -159,6 +159,7 @@ describe("credential-key assignments (GH-1704)", () => {
     ["unquoted prose", "client_secret: Configure this"],
     ["masked element", "<token>********</token>"],
     ["scrubbed element", "<secret>[scrubbed]</secret>"],
+    ["element prose", "<client_secret>not-configured in this environment</client_secret>"],
   ])("keeps %s clean", (_label, content) => {
     expect(rulesFor(content)).not.toContain("credential_key_assignment");
   });

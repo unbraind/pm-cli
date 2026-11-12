@@ -12,8 +12,9 @@ export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
 
 /**
  * Whether no URL parser can read userinfo anywhere in the token (GH-1707).
- * The authority runs from the slashes after the first `:` to the first `/`,
- * `?` or `#`. Only an authority with neither `:` nor `@`, followed by text with
+ * The authority runs from the slashes after the first `:` to the next `/`
+ * (never `?` or `#`, which SSH-style parsers read as userinfo). Only an
+ * authority with neither `:` nor `@`, followed by text with
  * no `:` (no nested URL, no port before a path `@`) and a token without the
  * tabs and line breaks parsers ignore, is provably public. Anything else keeps
  * the conservative span, so this exemption can only ever reveal text that
@@ -23,7 +24,8 @@ function provablyWithoutUserinfo(token: string, colon: number): boolean {
   if (/[\t\n\r]/u.test(token)) return false;
   let authority = colon + 1;
   while (token[authority] === "/" || token[authority] === "\\") authority += 1;
-  const delimiter = token.slice(authority).search(/[/?#]/u);
+  // Only `/` ends the authority here: Git and OpenSSH read userinfo across `?` and `#`.
+  const delimiter = token.indexOf("/", authority) - authority;
   if (delimiter < 0) return false;
   const authorityEnd = authority + delimiter;
   return !/[:@]/u.test(token.slice(authority, authorityEnd)) && !token.slice(authorityEnd).includes(":");
