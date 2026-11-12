@@ -178,6 +178,10 @@ describe("credential-key assignments (GH-1704)", () => {
     ["optional chain with fallback", "token = options?.token ?? fallback"],
     ["optional member chain", "token = config.auth?.token"],
     ["quoted member path", 'token: "process.env.GITHUB_TOKEN"'],
+    ["long optional chain", "const token = configuration?.token;"],
+    ["relative key file", '{"private_key":"certs/client.key"}'],
+    ["Windows key file", '{"private_key":"C:/ProgramData/keys/client.pem"}'],
+    ["Windows backslash key file", "private_key: C:\\keys\\client.pem"],
     ["registry URL", "api_key: https://vault.example/v1/secret"],
   ])("keeps %s clean", (_label, content) => {
     expect(rulesFor(content)).not.toContain("credential_key_assignment");
