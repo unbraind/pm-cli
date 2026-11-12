@@ -873,6 +873,15 @@ describe("agent runtime SDK primitives", () => {
     ).toEqual({});
   });
 
+  it("strips URL userinfo from asserted and configured identities (GH-1707)", () => {
+    const credential = "https://bot:pass word@registry.example.invalid";
+    const redacted = "https://[redacted]@registry.example.invalid";
+    expect(resolveAuthorIdentity(credential, undefined, { env: {} })).toEqual({ author: redacted, source: "asserted" });
+    expect(resolveAuthorIdentity(undefined, undefined, { env: { PM_AUTHOR: credential } })).toEqual({ author: redacted, source: "asserted" });
+    expect(resolveAuthorIdentity(undefined, credential, { env: {} })).toEqual({ author: redacted, source: "configured" });
+    expect(resolveAuthorIdentity("alice@example.com", undefined, { env: {} })).toEqual({ author: "alice@example.com", source: "asserted" });
+  });
+
   it("resolves author precedence and records provenance on new history", () => {
     expect(
       resolveAuthorIdentity(" explicit ", "configured", {

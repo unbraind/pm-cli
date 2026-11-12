@@ -36,6 +36,7 @@ import {
   recordClaimSemanticAttribution,
   recordReleaseSemanticAttribution,
 } from "../context/semantic-session-attribution.js";
+import { redactIdentityCredentials, redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 /** Stable warning/error code for an exhausted atomic next-work walk. */
 export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
@@ -237,7 +238,7 @@ export async function runClaim(
       if (heldByOther) {
         if (options.ifAvailable === true) {
           skipped = true;
-          mutationWarnings.push(`claim_skipped_held_by:${previousAssignee}`);
+          mutationWarnings.push(`claim_skipped_held_by:${redactOptionalIdentityCredentials(previousAssignee)}`);
           return { changedFields: [] };
         }
         if (!force) {
@@ -264,7 +265,7 @@ export async function runClaim(
             },
           );
         }
-        mutationWarnings.push(`claim_takeover:${previousAssignee}->${author}`);
+        mutationWarnings.push(`claim_takeover:${redactOptionalIdentityCredentials(previousAssignee)}->${author}`);
       }
       const ownership = { assignee: author, claim_principal: claimPrincipal };
       const changedFields = (["assignee", "claim_principal"] as const).filter(
@@ -299,8 +300,8 @@ export async function runClaim(
     item: toItemRecord(result.item),
     changed_fields: result.changedFields,
     claimed_by:
-      skipped && previousAssignee !== null ? previousAssignee : author,
-    previous_assignee: previousAssignee,
+      skipped && previousAssignee !== null ? redactIdentityCredentials(previousAssignee) : author,
+    previous_assignee: previousAssignee === null ? null : redactIdentityCredentials(previousAssignee),
     forced: force,
     ...(skipped ? { skipped: true } : {}),
     ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
@@ -603,7 +604,7 @@ export async function runRelease(
     item: toItemRecord(result.item),
     released_by: author,
     changed_fields: result.changedFields,
-    previous_assignee: previousAssignee,
+    previous_assignee: previousAssignee === null ? null : redactIdentityCredentials(previousAssignee),
     forced: force,
     ...(handoff === undefined ? {} : { handoff }),
     ...(result.warnings.length > 0 || stillInProgress ? { warnings: [...result.warnings, ...(stillInProgress ? ["released_unclaimed_in_progress"] : [])] } : {}),

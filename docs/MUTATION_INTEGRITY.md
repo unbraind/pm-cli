@@ -86,9 +86,23 @@ against mutation string leaves in `advise` and `block` modes.
 
 Two repository fixture exemptions apply only to `tests/` and `examples/`:
 absolute home paths and user-at-private-host matches. They never exempt
-mutation content. The inventory explicitly records one mutation-only heuristic:
-high-entropy assignments. Source identifiers can resemble generic assignments,
-so that heuristic does not run over repository source text. No rule is silently
+mutation content. The inventory explicitly records two mutation-only
+heuristics: high-entropy assignments and credential-key assignments. Source
+identifiers and test fixtures can resemble generic assignments, so neither runs
+over repository source text.
+
+Credential-key assignments
+([pm-gh1704](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1704.toon);
+tracker record excluded from npm) flag a value under any key whose last word
+names a credential: `secret`, `token`, `api_key`, `secret_key`, `private_key`,
+`access_key`, `client_secret`, `passwd` and `pwd`, plus compound keys such as
+`DB_PASSWORD`, `aws_secret_access_key` or `GITHUB_TOKEN`, in any case. The
+value must be at least eight whitespace-free characters with a Shannon entropy
+of at least 3 bits per character. It must not be a placeholder (`<…>`, `${…}`,
+`$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a filesystem path, a dotted member path
+or a call. `token_budget`, `max_tokens`, numeric counts, masks such as
+`********` and prose stay clean. Plain and hyphenated password keys remain with
+the password rule, so each value is reported once. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
@@ -101,7 +115,8 @@ spellings are covered:
 - a quoted key followed by `:` or `=` (JSON, YAML flow, Python dict, TOML);
 - every quoted string in value position inside an array or object under the
   key, at any depth;
-- for password assignments, `<password>…</password>` element content. Element
+- for password and credential-key assignments, element content such as
+  `<password>…</password>` or `<client_secret>…</client_secret>`. Element
   content is judged like a quoted value of an exact key: at least eight
   characters after trimming, with the `${…}` and `$(…)` placeholder
   exclusions.
@@ -188,12 +203,29 @@ combine:
   positions instead, and the bound widens to `fragmentLength + stride - 2`. The
   registry lives in an AsyncLocalStorage scope, so overlapping in-process
   invocations never share it. It protects telemetry and Sentry as well.
-- The rule is conservative. Prose shaped like `Reminder: ping @bob` counts
-  as possible userinfo too: it is redacted in refusal output, and that
-  invocation's refusals withhold executable retries.
+- The rule is conservative inside an authority, the text between the slashes
+  after the first `:` and the next `/`, `?` or `#`. Userinfo ends at the last
+  `@` there. An authority with a `:` but no `@` may hold a password with an
+  unencoded `/`, so the span then runs to the token's last `@`. An `@` after
+  the authority, as in `https://www.npmjs.com/package/@unbrained/pm-cli` or a
+  blob path, is left alone, so the retry stays executable
+  ([pm-gh1707](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1707.toon);
+  tracker record excluded from npm). Prose shaped like `Reminder: ping @bob`
+  still counts as possible userinfo: it is redacted in refusal output, and
+  that invocation's refusals withhold executable retries.
 - When the invocation carried credentials, the guidance withholds
   `suggested_retry` and `suggested_retry_args` and gains a final next step
   telling the caller to restore them. JSON and text output therefore agree.
+
+Identities never carry credentials. URL userinfo in an asserted or configured
+author (`--author`, `PM_AUTHOR`, `default_author`) and in `--assignee` on
+create and update is replaced with `[redacted]` before anything is stored, so
+the claim principal derived from it is clean too. A holder stored by an older
+version still reads unchanged; ownership refusals, assignee conflicts and claim
+or release envelopes (`claimed_by`, `previous_assignee` and the
+`claim_skipped_held_by` and `claim_takeover` warnings) redact it as one whole
+value, so whitespace inside its userinfo cannot split it. Rewrite such a holder
+with `pm update <id> --assignee <name>` or a fresh claim.
 
 ### Executable mutation inventory
 

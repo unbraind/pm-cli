@@ -2,11 +2,13 @@ id: pm-gh1707
 title: "GH-1707: URL credential redaction strips host and path from public URLs with @ in the path, and a stored credential-bearing identity is echoed verbatim in claim refusals"
 description: "GH-1707 (filed 2026-11-11). Two gaps in the URL-credential redaction shipped by pm-nhauur. (1) Over-redaction: the rule replaces everything between a token's first colon and its last at-sign, so a public URL without userinfo but with an at-sign in the path loses its host and path; an npm scoped-package URL becomes https://[redacted]@unbrained/pm-cli and the retry command is useless. Proposal: treat a URL as carrying userinfo only when, after the double slash, an at-sign appears before the first slash, question mark or hash, or a colon appears before the first slash and an at-sign appears later; keep the conservative span for real userinfo, including a slash inside a base64 password. (2) Under-redaction of stored identities: PM_AUTHOR set to a credential URL with whitespace in the userinfo is accepted as author, assignee and claim_principal without any secret-guard advisory, persisted, and echoed verbatim three times in a later claim refusal, because the invocation-scoped registry only covers the current argv. Proposal: identity fields refuse or strip URL userinfo at write time, refusal builders redact stored identity values with the same rule as argv, and older data still reads. pm-rust mirrors the fixed behaviour already (pm-rust#165)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1707",privacy,redaction,security
 created_at: "2026-11-12T05:13:26.310Z"
-updated_at: "2026-11-12T05:13:26.310Z"
+updated_at: "2026-11-12T08:56:32.716Z"
+closed_at: "2026-11-12T08:56:31.736Z"
+completed_at: "2026-11-12T08:56:31.736Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "A URL is redacted only when it carries userinfo (an at-sign before the first slash, question mark or hash after the scheme, or a colon before the first slash and a later at-sign); npm scoped-package and GitHub blob URLs with an at-sign in the path survive intact; Real userinfo stays redacted, including a slash inside a base64 password, a bare token user and a multi-colon password; Identity fields (author, assignee, claim principal from flags or PM_AUTHOR) refuse or strip URL userinfo at write time; Refusal builders redact stored identity values with the argv rule, including whitespace inside userinfo; data written by older versions still reads"
@@ -14,9 +16,38 @@ parent: pm-qwoy
 risk: medium
 confidence: high
 severity: medium
-expected_result: Public URLs survive redaction and no stored credential reaches a refusal
-actual_result: Scoped-package URLs lose host and path; a credential identity is echoed three times
+resolution: "userinfoBounds now scopes redaction to the URL authority. Userinfo ends at the last at sign inside it, and an authority holding a colon but no at sign still extends to the token's last at sign, so a password with an unencoded slash stays hidden. Scoped-package, blob, query and fragment at signs are left alone and keep an executable retry. resolveAuthorIdentity replaces URL userinfo in explicit, PM_AUTHOR and configured authors with [redacted], and create and update do the same for --assignee and create's --author, so claim principals are clean too. A holder stored by an older version still reads. Ownership refusals, the three is-assigned-to conflicts and the claim and release envelopes (claimed_by, previous_assignee and the claim_skipped_held_by and claim_takeover warnings) redact it as one whole value. Follow-up pm-oh24c5 reports such legacy records in validate."
+expected_result: "Must-allow URLs stay intact, must-redact URLs are hidden, and no stored or asserted credential reaches storage or a refusal"
+actual_result: "url-credentials spec 36 cases pass, including the GH-1707 corpus. The credential-redaction integration spec drives PM_AUTHOR, --author and --assignee and a legacy stored holder through claim, update and --if-available with no secret in any output. 3,339 tests over the changed modules pass and every changed line is covered."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
   pm-nhauur,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
+files[9]{path,scope}:
+  src/core/history/history-rewrite.ts,project
+  src/core/shared/author.ts,project
+  src/core/shared/url-credentials.ts,project
+  src/core/store/item-store.ts,project
+  src/sdk/lifecycle/claim.ts,project
+  src/sdk/lifecycle/create.ts,project
+  src/sdk/lifecycle/restore.ts,project
+  src/sdk/lifecycle/update.ts,project
+  src/sdk/ownership-source.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,600,"harness:claude-code","2026-11-12T08:23:27.578Z",local_mutation,fix/credential-key-and-url-redaction
+docs[1]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+close_reason: "Public URLs with an at sign in the path survive redaction, and identities can no longer store or echo URL credentials"
+contract_change:
+  api: "URL credential redaction in refusals and recoveries; stored author, assignee and claim_principal"
+  before: "A public URL with an @ in its path lost its host and path and withheld the retry; a credential-bearing PM_AUTHOR, --author or --assignee was stored and echoed verbatim in claim refusals"
+  after: "Only userinfo inside the authority is redacted, so scoped-package and blob URLs stay intact with an executable retry; URL userinfo in an asserted or configured identity is replaced with [redacted] before storage, and refusals and claim envelopes redact a stored one"
+  migrate: No action for ordinary identities; rewrite a holder stored by an older version with pm update <id> --assignee <name>
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1707
+  gate_id: credential-redaction
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts (public-URL and stored-identity cases fail on the previous rule)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

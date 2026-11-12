@@ -2,11 +2,13 @@ id: pm-gh1704
 title: "GH-1704: secret guard flags short credential values only under password keys; api_key, client_secret, token and *_TOKEN/*_SECRET keys pass"
 description: "GH-1704 (filed 2026-11-11). On 2026.11.11 the secret guard flags a short credential value under password and passphrase keys only. A 17-character random value under api_key, client_secret, token, passwd, db_password, private_key, GITHUB_TOKEN, NPM_TOKEN or AWS_SECRET_ACCESS_KEY passes scanMutationSecrets and the default advise write path in the key: v, key=v and JSON spellings. The high_entropy_assignment rule covers token, secret, password, passwd and api_key only from 24 characters with entropy 3.5, and covers neither client_secret nor compound keys such as db_password. Agents paste env excerpts, CI logs and pasted configs into comments and descriptions, and that is exactly the shape that leaks. Packages cannot rely on the SDK scanner, so pm-memory keeps its own parser. Proposal from the issue: one credential-key rule that reuses the pm-gh1699 KEY plus VALUE composition, the structured JSON, Python-dict and XML pass, an 8-character minimum, whitespace-free values and the placeholder exclusions, with a must-allow corpus (token_budget, max_tokens, token_count, placeholders, prose, localization labels)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1704",sdk,secret-guard,security
 created_at: "2026-11-12T05:13:22.718Z"
-updated_at: "2026-11-12T05:13:22.718Z"
+updated_at: "2026-11-12T08:56:30.270Z"
+closed_at: "2026-11-12T08:56:29.386Z"
+completed_at: "2026-11-12T08:56:29.386Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "One credential-key rule flags 8+ character whitespace-free non-placeholder values under secret, token, api key, private key, access key, client secret, passwd, pwd and compound *_password/*_secret/*_token/*_api_key/*_private_key keys in any case, in key: v, key=v, JSON, Python-dict and XML spellings; A must-allow corpus stays clean: token_budget, max_tokens, output_token_budget, numeric token counts, placeholders, prose and localization labels; The SDK scanMutationSecrets and the CLI advise path agree on the corpus"
@@ -14,8 +16,29 @@ parent: pm-qwoy
 risk: medium
 confidence: high
 severity: medium
-expected_result: A credential value under any common credential key name raises secret_guard_detected
-actual_result: Only password and passphrase keys flag a 17-character value
+resolution: "New mutation-only secret rule credential_key_assignment in src/core/shared/secret-rules.ts. It covers keys whose last word names a credential (secret, token, api/secret/private/access key, client secret, passwd, pwd) and underscore compounds such as DB_PASSWORD, aws_secret_access_key and GITHUB_TOKEN, in key: v, key=v, JSON, Python-dict and XML-element spellings through the GH-1699 structured pass. Values need 8 or more whitespace-free characters and entropy of at least 3 bits per character, and must not be placeholders (<...>, ${...}, $(...), $VAR, %VAR%, [scrubbed]), paths, dotted member paths or calls. Plain and hyphenated password keys stay with password_assignment, so each value is reported once. The repository scan is unchanged because the rule is mutation-only."
+expected_result: Every row of the GH-1704 table flags in all three spellings plus XML; the must-allow corpus stays clean
+actual_result: "secret-policy-parity: 17 keys x 3 spellings plus XML flag credential_key_assignment; 19 must-allow cases stay clean; block mode refuses; 422 secret-guard tests pass and every changed line is covered"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,related,"2026-11-12T05:13:22.718Z","harness:claude-code","cli:create:dep",detected
+files[1]{path,scope}:
+  src/core/shared/secret-rules.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts,project,600,"harness:claude-code","2026-11-12T08:23:20.008Z",local_mutation,fix/credential-key-and-url-redaction
+docs[1]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+close_reason: "A short credential under any credential-named key is now flagged in every spelling while pm fields, placeholders and prose stay clean"
+contract_change:
+  api: scanMutationSecrets findings and the secret_guard_detected warning
+  before: "A short credential value under api_key, client_secret, token, secret_key, private_key, passwd, pwd or a compound key such as DB_PASSWORD or GITHUB_TOKEN produced no finding"
+  after: "Such a value produces a credential_key_assignment finding in advise mode and is refused in block mode; pm token budgets, counts, placeholders, masks, paths and prose stay clean"
+  migrate: "Accept the credential_key_assignment rule id wherever finding rules are matched; replace the literal with a placeholder or reference, or review a force override in block mode"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1704
+  gate_id: secret-policy-parity
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts (the GH-1704 must-flag corpus fails without credential_key_assignment)
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts,node scripts/check-secrets.mjs
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

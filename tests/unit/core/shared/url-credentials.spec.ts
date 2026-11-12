@@ -3,6 +3,8 @@ import { quoteCommandArg } from "../../../../src/core/shared/command-line.js";
 import {
   URL_CREDENTIAL_PLACEHOLDER,
   invocationCarriesUrlCredentials,
+  redactIdentityCredentials,
+  redactOptionalIdentityCredentials,
   redactUrlCredentialsInText,
   redactUrlCredentialsInToken,
   runWithUrlCredentialInvocation,
@@ -22,6 +24,10 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["several at signs", "https://u:a@b@host/x", "https://[redacted]@host/x"],
     ["backslashes as non-special userinfo", `git+ssh://${"\\".repeat(8)}@localhost/x`, "git+ssh://[redacted]@localhost/x"],
     ["slashes beyond the two authority delimiters", "file:///@x", "file://[redacted]@x"],
+    ["slash inside a base64 password (GH-1707)", "https://user:abc/def+gh==@host/x", "https://[redacted]@host/x"],
+    ["bare token userinfo (GH-1707)", "https://ghp_xxx@github.com/o/r", "https://[redacted]@github.com/o/r"],
+    ["several colons in the password (GH-1707)", "https://user:pa:ss@host", "https://[redacted]@host"],
+    ["query delimiter inside a password", "https://user:pa?ss@host/x", "https://[redacted]@host/x"],
   ])("removes every possible userinfo span: %s", (_label, token, expected) => {
     expect(redactUrlCredentialsInToken(token)).toBe(expected);
     expect(redactUrlCredentialsInToken(expected)).toBe(expected);
@@ -32,12 +38,27 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     ["no colon", "@scope/package@1.2.3"],
     ["colon after the last at sign", "git@github.com:org/repo.git"],
     ["empty userinfo", "https://@host/x"],
+    ["scoped package path (GH-1707)", "https://www.npmjs.com/package/@unbrained/pm-cli"],
+    ["at sign in a blob path (GH-1707)", "https://github.com/unbraind/pm-cli/blob/main/x@y.md"],
+    ["at sign in a query", "https://example.com/search?q=a@b"],
+    ["at sign in a fragment", "https://example.com/doc#@anchor"],
+    ["scoped npm alias", "alias@npm:@scope/pkg@1.0.0"],
   ])("leaves a token without a userinfo span unchanged: %s", (_label, token) => {
     expect(redactUrlCredentialsInToken(token)).toBe(token);
   });
 
-  it("documents the conservative cost: a scoped package after a colon is hidden too", () => {
-    expect(redactUrlCredentialsInToken("alias@npm:@scope/pkg@1.0.0")).toBe(`alias@npm:${URL_CREDENTIAL_PLACEHOLDER}@1.0.0`);
+  it("documents the remaining conservative cost: a port before a path at sign is hidden too", () => {
+    expect(redactUrlCredentialsInToken("https://host:8080/a@b")).toBe(`https://${URL_CREDENTIAL_PLACEHOLDER}@b`);
+    expect(redactUrlCredentialsInToken("Reminder: ping @bob")).toBe(`Reminder:${URL_CREDENTIAL_PLACEHOLDER}@bob`);
+  });
+
+  it("judges an identity as one value, so whitespace inside its userinfo cannot split it (GH-1707)", () => {
+    expect(redactIdentityCredentials("https://bot:pass word@registry.example.invalid")).toBe("https://[redacted]@registry.example.invalid");
+    expect(redactIdentityCredentials("harness:claude-code")).toBe("harness:claude-code");
+    expect(redactIdentityCredentials("alice@example.com")).toBe("alice@example.com");
+    expect(redactOptionalIdentityCredentials("https://u:p@h")).toBe("https://[redacted]@h");
+    expect(redactOptionalIdentityCredentials(undefined)).toBeUndefined();
+    expect(redactOptionalIdentityCredentials(null)).toBeNull();
   });
 
   it("redacts each whitespace-delimited word of free text and skips text without an at sign", () => {

@@ -63,6 +63,7 @@ import type {
   PmSettings,
   RuntimeSchemaSettings,
 } from "../../types/index.js";
+import { redactIdentityCredentials } from "../shared/url-credentials.js";
 
 /** Documents the located item payload exchanged by command, SDK, and package integrations. */
 export interface LocatedItem {
@@ -545,7 +546,7 @@ async function prepareLockedItem(params: {
     if (hasOwnershipConflict) {
       if (governance.ownership_enforcement === "strict") {
         throw new PmCliError(
-          `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
+          `Item ${located.id} is assigned to ${redactIdentityCredentials(assigned)}. Use --force to override.`,
           EXIT_CODE.CONFLICT,
         );
       }

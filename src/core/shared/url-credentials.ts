@@ -10,7 +10,14 @@ import { quoteWindowsCommandArg } from "./command-line.js";
 /** Written where a possible userinfo span was removed. */
 export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
 
-/** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
+/**
+ * Start and end (exclusive, at an `@`) of a token's possible userinfo span.
+ * The authority runs from the slashes after the first `:` to the first `/`,
+ * `?` or `#`. Userinfo ends at the last `@` inside it. When the authority has
+ * no `@` but holds a `:`, a password may contain an unencoded `/`, `?` or `#`,
+ * so the span extends to the token's last `@`. Otherwise an `@` belongs to the
+ * path or query (`/package/@scope/name`) and nothing is redacted (GH-1707).
+ */
 function userinfoBounds(token: string): readonly [start: number, end: number] | undefined {
   const at = token.lastIndexOf("@");
   const colon = token.indexOf(":");
@@ -20,7 +27,13 @@ function userinfoBounds(token: string): readonly [start: number, end: number] | 
   // are only over-redacted.
   let start = colon + 1;
   while (start < at && start < colon + 3 && (token[start] === "/" || token[start] === "\\")) start += 1;
-  return start === at ? undefined : [start, at];
+  let authority = colon + 1;
+  while (token[authority] === "/" || token[authority] === "\\") authority += 1;
+  const delimiter = token.slice(authority).search(/[/?#]/u);
+  const authorityEnd = delimiter < 0 ? token.length : authority + delimiter;
+  const userinfoAt = token.lastIndexOf("@", authorityEnd - 1);
+  const end = userinfoAt >= authority ? userinfoAt : token.slice(authority, authorityEnd).includes(":") ? at : -1;
+  return end <= start ? undefined : [start, end];
 }
 
 /**
@@ -30,15 +43,30 @@ function userinfoBounds(token: string): readonly [start: number, end: number] | 
  * `@`. Replacing that whole span (after any scheme slashes) is complete for
  * every spelling a parser normalizes: backslash authorities, tabs inside a
  * scheme, wrapper chains such as `git+https:` or `npm:`, inline `--flag=value`
- * tokens and single-label or `host:port` authorities. The cost is
- * deliberate: a scoped package name, or prose such as `Reminder: ping @bob`,
- * is treated as possible userinfo too. Such a token is redacted in refusal
- * output, and its invocation's refusals withhold executable retries. The
- * rule is idempotent.
+ * tokens and single-label or `host:port` authorities. An `@` after the
+ * authority, as in a scoped-package or blob URL, is left alone. The remaining
+ * cost is deliberate: prose such as `Reminder: ping @bob` is treated as
+ * possible userinfo. Such a token is redacted in refusal output, and its
+ * invocation's refusals withhold executable retries. The rule is idempotent.
  */
 export function redactUrlCredentialsInToken(token: string): string {
   const bounds = userinfoBounds(token);
   return bounds ? `${token.slice(0, bounds[0])}${URL_CREDENTIAL_PLACEHOLDER}${token.slice(bounds[1])}` : token;
+}
+
+/**
+ * Remove URL userinfo from one identity value (author, assignee, claim
+ * principal) judged as a whole, so whitespace inside the userinfo cannot split
+ * it into harmless-looking words. An identity never needs a credential
+ * (GH-1707).
+ */
+export function redactIdentityCredentials(identity: string): string {
+  return redactUrlCredentialsInToken(identity);
+}
+
+/** Apply {@link redactIdentityCredentials} to a string option and pass any other value through unchanged. */
+export function redactOptionalIdentityCredentials<T>(value: T): T {
+  return (typeof value === "string" ? redactIdentityCredentials(value) : value) as T;
 }
 
 /**

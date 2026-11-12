@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- GH-1707: URL credential redaction strips host and path from public URLs with @ in the path, and a stored credential-bearing identity is echoed verbatim in claim refusals: A public URL with an @ in its path lost its host and path and withheld the retry; a credential-bearing PM_AUTHOR, --author or --assignee was stored and echoed verbatim in claim refusals → Only userinfo inside the authority is redacted, so scoped-package and blob URLs stay intact with an executable retry; URL userinfo in an asserted or configured identity is replaced with \[redacted\] before storage, and refusals and claim envelopes redact a stored one. Migrate: No action for ordinary identities; rewrite a holder stored by an older version with pm update <id\> --assignee <name\> ([pm-gh1707](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1707.toon))
+- GH-1704: secret guard flags short credential values only under password keys; api_key, client_secret, token and \*\_TOKEN/\*\_SECRET keys pass: A short credential value under api_key, client_secret, token, secret_key, private_key, passwd, pwd or a compound key such as DB_PASSWORD or GITHUB_TOKEN produced no finding → Such a value produces a credential_key_assignment finding in advise mode and is refused in block mode; pm token budgets, counts, placeholders, masks, paths and prose stay clean. Migrate: Accept the credential_key_assignment rule id wherever finding rules are matched; replace the literal with a placeholder or reference, or review a force override in block mode ([pm-gh1704](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1704.toon))
+
 ## 2026.11.12 - 2026-11-12
 
 ### Changed (SDK contract)

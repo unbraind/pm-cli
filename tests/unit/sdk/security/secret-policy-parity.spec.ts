@@ -68,6 +68,7 @@ describe("shared mutation and repository secret policy", () => {
     expect(new Set(samples.map(([rule]) => rule))).toEqual(new Set(shared.map((rule) => rule.mutationRule)));
     expect(SECRET_RULES.filter((rule) => "mutationOnlyReason" in rule)).toEqual([
       expect.objectContaining({ mutationRule: "high_entropy_assignment", mutationOnlyReason: expect.stringMatching(/source/) }),
+      expect.objectContaining({ mutationRule: "credential_key_assignment", mutationOnlyReason: expect.stringMatching(/source/) }),
     ]);
   });
 
@@ -85,6 +86,62 @@ describe("shared mutation and repository secret policy", () => {
       author: "agent", payload: {description: value},
       settings: {require_attributed_author: false, secret_guard: "block", stale_in_progress_hours: 72},
     })).toThrow(/Mutation blocked by secret guard/);
+  });
+});
+
+describe("credential-key assignments (GH-1704)", () => {
+  // Built at runtime: a random-looking 17-character value with no token format.
+  const value = ["Zq8vN3k", "LmP0wXy7Ab"].join("");
+  const rulesFor = (content: string) => scanMutationSecrets({ description: content }).map(({ rule }) => rule);
+  const keys = [
+    "secret", "secret_key", "client_secret", "token", "access_token", "auth_token", "GITHUB_TOKEN",
+    "NPM_TOKEN", "api_key", "apikey", "api-key", "private_key", "AWS_SECRET_ACCESS_KEY",
+    "db_password", "DB_PASSWORD", "passwd", "pwd",
+  ];
+
+  it.each(keys.flatMap((key) => [
+    [key, `${key}: ${value}`],
+    [key, `${key}=${value}`],
+    [key, `{"${key}":"${value}"}`],
+  ]))("flags a credential under %s: %s", (_key, content) => {
+    expect(rulesFor(content)).toEqual(["credential_key_assignment"]);
+  });
+
+  it("flags element content and blocks through the CLI guard", () => {
+    expect(rulesFor(`<client_secret>${value}</client_secret>`)).toEqual(["credential_key_assignment"]);
+    expect(() => evaluateMutationGuard({
+      author: "agent", payload: { description: `api_key=${value}` },
+      settings: { require_attributed_author: false, secret_guard: "block", stale_in_progress_hours: 72 },
+    })).toThrow(/Mutation blocked by secret guard/);
+  });
+
+  it("keeps password keys with the password rule, so one value is reported once", () => {
+    expect(rulesFor(`password: ${value}`)).toEqual(["password_assignment"]);
+    expect(rulesFor(`reset-password: ${value}`)).toEqual(["password_assignment"]);
+  });
+
+  it.each([
+    ["pm token budget", "token_budget: 800"],
+    ["model token ceiling", "max_tokens: 4096"],
+    ["compound budget key", "output_token_budget: 3000"],
+    ["numeric count", "token_count: 12"],
+    ["short value", "tokens=3"],
+    ["environment placeholder", "api_key: ${API_KEY}"],
+    ["angle placeholder", "token: <your token>"],
+    ["scrubbed placeholder", "secret: [scrubbed]"],
+    ["prose", "the token expires after 5 minutes"],
+    ["localization label", '"Secret question": "Pick one"'],
+    ["mask", "token: ********"],
+    ["repeated placeholder", "secret: xxxxxxxxxxxx"],
+    ["dictionary word", "token: required"],
+    ["member path", "const token = process.env.GITHUB_TOKEN;"],
+    ["call expression", "token = getToken(options)"],
+    ["shell variable", "token: $GITHUB_TOKEN"],
+    ["Windows variable", "api_key: %API_KEY%"],
+    ["working directory", "pwd=/usr/local/bin"],
+    ["relative path", "token: ./build/output"],
+  ])("keeps %s clean", (_label, content) => {
+    expect(rulesFor(content)).not.toContain("credential_key_assignment");
   });
 });
 

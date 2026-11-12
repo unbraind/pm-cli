@@ -78,6 +78,8 @@ describe("SDK mutation guard", () => {
       { rule: "aws_access_key", path: "$.aws" },
       { rule: "private_key", path: "$.key" },
       { rule: "high_entropy_assignment", path: "$.nested.value" },
+      // Overlapping detectors both report, as npm_token and npm_auth_token_assignment do above.
+      { rule: "credential_key_assignment", path: "$.nested.value" },
     ]);
     expect(
       scanMutationSecrets({

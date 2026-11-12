@@ -165,6 +165,19 @@ const PASSWORD_KEYS = "password|passphrase";
 const PASSWORD_VALUE =
   /(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/;
 const HIGH_ENTROPY_KEYS = "token|secret|password|passwd|api[_-]?key";
+// GH-1704: any key whose last word names a credential, including compound
+// keys (`DB_PASSWORD`, `aws_secret_access_key`, `GITHUB_TOKEN`). A compound
+// key consumes its prefix from a word boundary, so `token_budget`,
+// `max_tokens` and `output_token_budget` never match. Plain and hyphenated
+// password keys stay with password_assignment, so one value is reported once.
+const CREDENTIAL_KEYS =
+  "(?:[a-z0-9]+_)+(?:password|passphrase)|(?:[a-z0-9]+[_-])*(?:secret|token|(?:api|secret|private|access)[_-]?key|client[_-]?secret|passwd|pwd)";
+// A whitespace-free value of eight or more characters that is not a
+// placeholder (`<...>`, `${...}`, `$(...)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
+// filesystem path (`pwd=/usr/local/bin`), a dotted member path or a call. Entropy
+// then rejects masks and words.
+const CREDENTIAL_VALUE =
+  /["']?((?![<[$/]|~\/|\.\.?\/|%[A-Za-z_]\w*%|(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|[\w$.]+\()[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
@@ -219,6 +232,13 @@ export const SECRET_RULES = [
     structured: { keys: HIGH_ENTROPY_KEYS, value: HIGH_ENTROPY_VALUE.source },
     mutationOnlyReason: "Generic assignments in source code are not credentials; preserve the existing mutation heuristic without treating source identifiers as secrets.",
     minimumEntropy: 3.5,
+  },
+  {
+    name: "credential-key-assignment", mutationRule: "credential_key_assignment",
+    regex: new RegExp(String.raw`\b(?:${CREDENTIAL_KEYS})\s*[:=]\s*` + CREDENTIAL_VALUE.source, "gi"),
+    structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true },
+    mutationOnlyReason: "Key-named assignments in source code and test fixtures are identifiers and synthetic data; repository scans keep the token-format rules, which recognize real credentials there.",
+    minimumEntropy: 3,
   },
 ] as const satisfies readonly SecretRule[];
 

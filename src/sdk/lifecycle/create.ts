@@ -186,6 +186,7 @@ import {
   SCOPE_VALUES,
 } from "../../types/index.js";
 import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
+import { redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 /** Documents the create command options payload exchanged by command, SDK, and package integrations. */
 export interface CreateCommandOptions
@@ -2974,11 +2975,11 @@ export async function runCreate(
   const assignee = resolveUnsettableOptionalString(
     unsetKeys,
     "assignee",
-    resolvedOptions.assignee,
+    redactOptionalIdentityCredentials(resolvedOptions.assignee),
   );
   const authorValue = unsetKeys.has("author")
     ? undefined
-    : (parseOptionalString(resolvedOptions.author) ?? author);
+    : (parseOptionalString(redactOptionalIdentityCredentials(resolvedOptions.author)) ?? author);
   // GH-161 (pm-72xf): inherit the session-focused parent when no explicit
   // --parent was supplied and parent is not being unset; an explicit --parent
   // (including `--parent ""`) overrides focus. The inherited value flows through

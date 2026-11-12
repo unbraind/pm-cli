@@ -167,6 +167,7 @@ import type {
   SharedLinkedResourceClearOptions,
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
+import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 /** Documents the update command options payload exchanged by command, SDK, and package integrations. */
 export interface UpdateCommandOptions
@@ -2816,7 +2817,7 @@ function applyAssigneeMutation(
         EXIT_CODE.USAGE,
       );
     }
-    document.metadata.assignee = assignee;
+    document.metadata.assignee = redactIdentityCredentials(assignee);
   }
   changedFields.push("assignee");
 }

@@ -14,6 +14,7 @@ import { advanceItemMutationPreconditions, assertItemMutationPreconditions, hasA
 import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
+import { redactIdentityCredentials } from "../shared/url-credentials.js";
 
 type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>> & {
   /** Whether the document was reconstructed while preserving unreadable source bytes. */
@@ -54,7 +55,7 @@ export function checkHistoryRewriteOwnership(
   const governance = resolveGovernanceKnobs(params.settings);
   if (governance.ownership_enforcement === "strict") {
     throw new PmCliError(
-      `Item ${params.subjectId} is assigned to ${assigned}. Use --force to override.`,
+      `Item ${params.subjectId} is assigned to ${redactIdentityCredentials(assigned)}. Use --force to override.`,
       EXIT_CODE.CONFLICT,
     );
   }

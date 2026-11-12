@@ -63,6 +63,7 @@ import type {
   ItemDocument,
   ItemMetadata,
 } from "../../types/index.js";
+import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 interface ResolvedRestoreSubject {
   id: string;
@@ -236,7 +237,7 @@ function collectRestoreOwnershipWarnings(params: {
   }
   if (params.enforcement === "strict") {
     throw new PmCliError(
-      `Item ${params.resolvedId} is assigned to ${assigned}. Use --force to override.`,
+      `Item ${params.resolvedId} is assigned to ${redactIdentityCredentials(assigned)}. Use --force to override.`,
       EXIT_CODE.CONFLICT,
     );
   }
