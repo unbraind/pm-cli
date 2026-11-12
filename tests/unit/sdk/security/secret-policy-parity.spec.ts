@@ -117,7 +117,12 @@ describe("credential-key assignments (GH-1704)", () => {
 
   it("flags quoted and element credentials that use URL and query punctuation", () => {
     const punctuated = ["q7!A", "?9#z"].join("");
-    for (const content of [`client_secret: "${punctuated}"`, `client_secret='${punctuated}'`, `{"client_secret":"${punctuated}"}`, `<client_secret>${punctuated}</client_secret>`, 'token: "ab:cd|ef?12"']) {
+    const dotted = ["svc.app.region:", "secretX09Ab"].join("");
+    for (const content of [
+      `client_secret: "${punctuated}"`, `client_secret='${punctuated}'`, `{"client_secret":"${punctuated}"}`,
+      `<client_secret>${punctuated}</client_secret>`, 'token: "ab:cd|ef?12"', 'client_secret: "a1.B2c?D3"',
+      `client_secret: "${dotted}"`, `{"client_secret":["${dotted}"]}`, `<client_secret>${dotted}</client_secret>`,
+    ]) {
       expect(rulesFor(content), content).toEqual(["credential_key_assignment"]);
     }
   });
@@ -172,6 +177,7 @@ describe("credential-key assignments (GH-1704)", () => {
     ["nullish fallback expression", 'api_key=process.env.API_KEY??""'],
     ["optional chain with fallback", "token = options?.token ?? fallback"],
     ["optional member chain", "token = config.auth?.token"],
+    ["quoted member path", 'token: "process.env.GITHUB_TOKEN"'],
     ["registry URL", "api_key: https://vault.example/v1/secret"],
   ])("keeps %s clean", (_label, content) => {
     expect(rulesFor(content)).not.toContain("credential_key_assignment");

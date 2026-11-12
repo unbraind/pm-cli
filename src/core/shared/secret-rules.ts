@@ -183,9 +183,11 @@ const CREDENTIAL_KEYS =
 // `[scrubbed]`), a filesystem path (`pwd=/usr/local/bin`), a URL, a
 // letters-only word, a dotted member path or a call. Only a quoted value (or
 // an element body) may also hold `?`, `:` and `|`; unquoted, they read as code
-// such as `process.env.API_KEY||""` or `options?.token`. Entropy then rejects masks.
+// such as `process.env.API_KEY||""` or `options?.token`. A quoted value is a
+// member path only when the whole literal is one (`"process.env.TOKEN"`), so
+// `"svc.app:secretX09"` still counts. Entropy then rejects masks.
 const CREDENTIAL_VALUE =
-  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]+(?![\w!@#$%^&*.+\-=/~?:|])|(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|[\w$.]+\()(?:(?<=["'])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]+(?![\w!@#$%^&*.+\-=/~?:|])|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<=["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*["']|(?<!["'])[\w$.]+\()(?:(?<=["'])[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
