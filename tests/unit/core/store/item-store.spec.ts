@@ -417,6 +417,46 @@ describe("core/store/item-store", () => {
     });
   });
 
+  it("compares and echoes a legacy credential-bearing holder only in redacted form (GH-1707)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const secret = ["legacy", "secret"].join("-");
+      const holder = `https://bot:${secret} word@registry.example.invalid`;
+      const id = "pm-item-store-legacy-holder";
+      await writeTaskItem(pmPath, id, { assignee: holder });
+      const settings = await readSettings(pmPath);
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "warn";
+      const warned = await mutateItem({
+        pmRoot: pmPath, settings, id, op: "update", author: "unit-author",
+        mutate: (document) => {
+          document.metadata.description = "warned";
+          return { changedFields: ["description"] };
+        },
+      });
+      expect(JSON.stringify(warned.warnings)).not.toContain(secret);
+      expect(warned.warnings).toEqual(expect.arrayContaining([
+        `ownership_warning:assignee_conflict:${id}:https://[redacted]@registry.example.invalid`,
+      ]));
+      settings.governance.ownership_enforcement = "strict";
+      // Ownership compares exactly: a redacted caller is not the legacy holder, so
+      // two holders that differ only in userinfo can never act as each other.
+      for (const author of ["https://[redacted]@registry.example.invalid", "unit-author"]) {
+        await expect(mutateItem({
+          pmRoot: pmPath, settings, id, op: "update", author,
+          mutate: () => ({ changedFields: [] }),
+        })).rejects.toSatisfy((error: PmCliError) => error.exitCode === EXIT_CODE.CONFLICT && !error.message.includes(secret));
+      }
+      const forced = await mutateItem({
+        pmRoot: pmPath, settings, id, op: "update", author: "https://[redacted]@registry.example.invalid", force: true,
+        mutate: (document) => {
+          document.metadata.description = "coordinated takeover";
+          return { changedFields: ["description"] };
+        },
+      });
+      expect(forced.item.description).toBe("coordinated takeover");
+    });
+  });
+
   it("blocks strict assignee conflicts but allows explicit bypass operations", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-item-store-strict-assignee";

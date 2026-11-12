@@ -873,6 +873,22 @@ describe("agent runtime SDK primitives", () => {
     ).toEqual({});
   });
 
+  it("refuses URL userinfo in asserted and configured identities without echoing it (GH-1707)", () => {
+    const secret = ["pass", "word"].join(" ");
+    const credential = `https://bot:${secret}@registry.example.invalid`;
+    for (const [call, source] of [
+      [() => resolveAuthorIdentity(credential, undefined, { env: {} }), "--author"],
+      [() => resolveAuthorIdentity(undefined, undefined, { env: { PM_AUTHOR: credential } }), "PM_AUTHOR"],
+      [() => resolveAuthorIdentity(undefined, credential, { env: {} }), "default_author"],
+    ] as const) {
+      let refusal: unknown;
+      try { call(); } catch (error: unknown) { refusal = error; }
+      expect(refusal).toMatchObject({ code: "invalid_argument_value", context: { field: source } });
+      expect(JSON.stringify(refusal) + String((refusal as Error).message)).not.toContain(secret);
+    }
+    expect(resolveAuthorIdentity("alice@example.com", undefined, { env: {} })).toEqual({ author: "alice@example.com", source: "asserted" });
+  });
+
   it("resolves author precedence and records provenance on new history", () => {
     expect(
       resolveAuthorIdentity(" explicit ", "configured", {

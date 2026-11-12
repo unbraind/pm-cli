@@ -5,6 +5,7 @@
  * claim or a general metadata assignment using the append-only history stream.
  */
 import { readHistoryEntries } from "../core/history/read.js";
+import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
 import { getHistoryPath } from "../core/store/paths.js";
 
 /** Typed holder evidence behind an `already_claimed_by` refusal (GH-1610). */
@@ -60,9 +61,11 @@ export async function resolveItemOwnershipConflict(
       ? latestOwnershipEntry
       : undefined;
   const source = classifyOwnershipSource(evidence?.op);
+  // A holder stored by an older version may carry URL userinfo; refusals never echo it (GH-1707).
+  const holder = redactIdentityCredentials(assignee);
   return {
-    phrase: source === "claim" ? `claimed by ${assignee}` : `assigned to ${assignee}`,
-    holder: assignee,
+    phrase: source === "claim" ? `claimed by ${holder}` : `assigned to ${holder}`,
+    holder,
     source,
     since: evidence?.ts ?? null,
   };

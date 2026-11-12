@@ -6,13 +6,43 @@
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import { quoteWindowsCommandArg } from "./command-line.js";
+import { EXIT_CODE } from "./constants.js";
+import { PmCliError } from "./errors.js";
 
 /** Written where a possible userinfo span was removed. */
 export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
 
+/**
+ * Whether no URL parser can read userinfo anywhere in the token (GH-1707).
+ * The authority runs from the slashes after the first `:` to the next `/`
+ * (never `?` or `#`, which SSH-style parsers read as userinfo). Only an
+ * authority with neither `:` nor `@`, followed by text with
+ * no `:` (no nested URL, no port before a path `@`) and a token without the
+ * tabs and line breaks parsers ignore, is provably public. Anything else keeps
+ * the conservative span, so this exemption can only ever reveal text that
+ * holds no credential, such as `/package/@scope/name` or a blob path.
+ */
+function provablyWithoutUserinfo(token: string, colon: number): boolean {
+  if (/[\t\n\r]/u.test(token)) return false;
+  // Only WHATWG special schemes end the authority at `/`; OpenSSH reads
+  // `ssh://a/b@host` as user `a/b`, so other schemes keep the conservative span.
+  if (!/(?:^|[^A-Za-z0-9+.-])(?:https?|wss?|ftp)$/iu.test(token.slice(0, colon))) return false;
+  let authority = colon + 1;
+  while (token[authority] === "/" || token[authority] === "\\") authority += 1;
+  // Only `/` ends the authority here: Git and OpenSSH read userinfo across `?` and `#`.
+  const delimiter = token.indexOf("/", authority) - authority;
+  if (delimiter < 0) return false;
+  const authorityEnd = authority + delimiter;
+  // A percent escape may decode to `@` or `:` (Git decodes `%40`), so it is never provably public.
+  // The rest must hold no nested URL: no scheme (`:`), no scheme-relative
+  // authority (`//`) and no percent escape that could decode to either.
+  return !/[:@%]/u.test(token.slice(authority, authorityEnd)) && !/[:%]|[/\\][/\\]/u.test(token.slice(authorityEnd));
+}
+
 /** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
 function userinfoBounds(token: string): readonly [start: number, end: number] | undefined {
-  const at = token.lastIndexOf("@");
+  // Git decodes `%40` in an authority, so an encoded at sign ends userinfo too.
+  const at = Math.max(token.lastIndexOf("@"), token.toLowerCase().lastIndexOf("%40"));
   const colon = token.indexOf(":");
   if (at < 0 || colon < 0 || colon > at) return undefined;
   // Skip at most the two authority delimiters. A non-special scheme accepts
@@ -20,7 +50,7 @@ function userinfoBounds(token: string): readonly [start: number, end: number] | 
   // are only over-redacted.
   let start = colon + 1;
   while (start < at && start < colon + 3 && (token[start] === "/" || token[start] === "\\")) start += 1;
-  return start === at ? undefined : [start, at];
+  return start === at || provablyWithoutUserinfo(token, colon) ? undefined : [start, at];
 }
 
 /**
@@ -30,15 +60,76 @@ function userinfoBounds(token: string): readonly [start: number, end: number] | 
  * `@`. Replacing that whole span (after any scheme slashes) is complete for
  * every spelling a parser normalizes: backslash authorities, tabs inside a
  * scheme, wrapper chains such as `git+https:` or `npm:`, inline `--flag=value`
- * tokens and single-label or `host:port` authorities. The cost is
- * deliberate: a scoped package name, or prose such as `Reminder: ping @bob`,
- * is treated as possible userinfo too. Such a token is redacted in refusal
- * output, and its invocation's refusals withhold executable retries. The
- * rule is idempotent.
+ * tokens and single-label or `host:port` authorities. Only a token that
+ * provably holds no userinfo is left alone, such as a scoped-package or blob
+ * URL. The remaining cost is deliberate: prose such as `Reminder: ping @bob`
+ * or `alias@npm:@scope/pkg@1.0.0` is treated as possible userinfo. Such a
+ * token is redacted in refusal output, and its invocation's refusals withhold
+ * executable retries. The rule is idempotent.
  */
 export function redactUrlCredentialsInToken(token: string): string {
   const bounds = userinfoBounds(token);
   return bounds ? `${token.slice(0, bounds[0])}${URL_CREDENTIAL_PLACEHOLDER}${token.slice(bounds[1])}` : token;
+}
+
+/**
+ * Remove URL userinfo from one identity value (author, assignee, claim
+ * principal) judged as a whole, so whitespace inside the userinfo cannot split
+ * it into harmless-looking words. An identity never needs a credential
+ * (GH-1707).
+ */
+export function redactIdentityCredentials(identity: string): string {
+  return redactUrlCredentialsInToken(identity);
+}
+
+/** Identity fields a write may set from runtime or registered field values. */
+const IDENTITY_FIELDS = ["author", "assignee", "claim_principal"] as const;
+
+/** Return a copy of a record with every string identity field redacted, for echoing data an older version stored. */
+export function redactIdentityFields<T extends object>(values: T): T {
+  const redacted: Record<string, unknown> = { ...(values as Record<string, unknown>) };
+  for (const field of IDENTITY_FIELDS) {
+    if (typeof redacted[field] === "string") redacted[field] = redactIdentityCredentials(redacted[field]);
+  }
+  return redacted as T;
+}
+
+/**
+ * Refuse an identity that carries URL userinfo before anything is stored
+ * (GH-1707). An identity never needs a credential, and stripping it would
+ * collapse distinct identities that differ only in userinfo into one
+ * principal. The refusal names the source but never echoes the value.
+ */
+export function assertIdentityWithoutUrlCredentials(identity: unknown, source: string): void {
+  if (typeof identity !== "string" || userinfoBounds(identity.trim()) === undefined) return;
+  throw new PmCliError(
+    `${source} must not carry URL credentials: an identity is a name, never a credential.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "invalid_argument_value",
+      field: source,
+      required: `Set ${source} to a plain name such as agent-a, without user:password@ or token@ userinfo.`,
+      nextSteps: [`Rerun with ${source} set to a plain name.`],
+    },
+  );
+}
+
+/** Parse an identity a structured entry asserts (`author=` in a seed), refusing URL userinfo. */
+export function parseIdentityOption(value: string | undefined, source: string): string | undefined {
+  assertIdentityWithoutUrlCredentials(value, source);
+  return value;
+}
+
+/** Refuse URL userinfo in every identity field of runtime or registered field values. */
+export function assertIdentityFieldsWithoutUrlCredentials(values: object): void {
+  for (const field of IDENTITY_FIELDS) {
+    assertIdentityWithoutUrlCredentials((values as Record<string, unknown>)[field], field);
+  }
+}
+
+/** Apply {@link redactIdentityCredentials} to a string option and pass any other value through unchanged. */
+export function redactOptionalIdentityCredentials<T>(value: T): T {
+  return (typeof value === "string" ? redactIdentityCredentials(value) : value) as T;
 }
 
 /**
@@ -191,5 +282,5 @@ export function invocationCarriesUrlCredentials(): boolean {
 export function redactUrlCredentialsInText(text: string): string {
   const invocation = invocations.getStore() ?? NO_INVOCATION;
   const redacted = invocation.carried ? removeRegisteredFragments(text, invocation) : text;
-  return redacted.includes("@") ? redacted.replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
+  return /@|%40/iu.test(redacted) ? redacted.replaceAll(/\S+/gu, redactUrlCredentialsInToken) : redacted;
 }

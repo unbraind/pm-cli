@@ -68,6 +68,7 @@ describe("shared mutation and repository secret policy", () => {
     expect(new Set(samples.map(([rule]) => rule))).toEqual(new Set(shared.map((rule) => rule.mutationRule)));
     expect(SECRET_RULES.filter((rule) => "mutationOnlyReason" in rule)).toEqual([
       expect.objectContaining({ mutationRule: "high_entropy_assignment", mutationOnlyReason: expect.stringMatching(/source/) }),
+      expect.objectContaining({ mutationRule: "credential_key_assignment", mutationOnlyReason: expect.stringMatching(/source/) }),
     ]);
   });
 
@@ -85,6 +86,144 @@ describe("shared mutation and repository secret policy", () => {
       author: "agent", payload: {description: value},
       settings: {require_attributed_author: false, secret_guard: "block", stale_in_progress_hours: 72},
     })).toThrow(/Mutation blocked by secret guard/);
+  });
+});
+
+describe("credential-key assignments (GH-1704)", () => {
+  // Built at runtime: a random-looking 17-character value with no token format.
+  const value = ["Zq8vN3k", "LmP0wXy7Ab"].join("");
+  const rulesFor = (content: string) => scanMutationSecrets({ description: content }).map(({ rule }) => rule);
+  const keys = [
+    "secret", "secret_key", "client_secret", "token", "access_token", "auth_token", "GITHUB_TOKEN",
+    "NPM_TOKEN", "api_key", "apikey", "api-key", "private_key", "AWS_SECRET_ACCESS_KEY",
+    "db_password", "DB_PASSWORD", "passwd", "pwd",
+  ];
+
+  it.each(keys.flatMap((key) => [
+    [key, `${key}: ${value}`],
+    [key, `${key}=${value}`],
+    [key, `{"${key}":"${value}"}`],
+  ]))("flags a credential under %s: %s", (_key, content) => {
+    expect(rulesFor(content)).toEqual(["credential_key_assignment"]);
+  });
+
+  it("flags element content and blocks through the CLI guard", () => {
+    expect(rulesFor(`<client_secret>${value}</client_secret>`)).toEqual(["credential_key_assignment"]);
+    expect(() => evaluateMutationGuard({
+      author: "agent", payload: { description: `api_key=${value}` },
+      settings: { require_attributed_author: false, secret_guard: "block", stale_in_progress_hours: 72 },
+    })).toThrow(/Mutation blocked by secret guard/);
+  });
+
+  it("flags quoted and element credentials that use URL and query punctuation", () => {
+    const punctuated = ["q7!A", "?9#z"].join("");
+    const dotted = ["svc.app.region:", "secretX09Ab"].join("");
+    for (const content of [
+      `client_secret: "${punctuated}"`, `client_secret='${punctuated}'`, `{"client_secret":"${punctuated}"}`,
+      `<client_secret>${punctuated}</client_secret>`, 'token: "ab:cd|ef?12"', 'client_secret: "a1.B2c?D3"',
+      `client_secret: "${dotted}"`, `{"client_secret":["${dotted}"]}`, `<client_secret>${dotted}</client_secret>`,
+    ]) {
+      expect(rulesFor(content), content).toEqual(["credential_key_assignment"]);
+    }
+  });
+
+  it("still flags underscore secrets such as provider live keys and uppercase literals", () => {
+    const live = ["sk_live_51Hx", "YZabc9Q2wE"].join("");
+    expect(rulesFor(`client_secret=${live}`)).toEqual(["credential_key_assignment"]);
+    const upper = ["ZQ8VN3K_", "LMP0WXY7AB"].join("");
+    expect(rulesFor(`{"api_key":"${upper}"}`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`API_KEY=${upper}`)).toEqual(["credential_key_assignment"]);
+    const letters = ["ZQVNKR_", "LMPWXYAB"].join("");
+    expect(rulesFor(`{"api_key":"${letters}"}`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`API_KEY=${letters}`)).toEqual(["credential_key_assignment"]);
+    const punctuated = ["q7!A", "?9#z"].join("");
+    expect(rulesFor(`CLIENT_SECRET=${punctuated}`)).toEqual(["credential_key_assignment"]);
+    const mixed = ["Zqvnkr_", "LmPwxyAb"].join("");
+    expect(rulesFor(`CLIENT_SECRET=${mixed};`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`CLIENT_SECRET="${letters};"`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`{"client_secret":"${letters};"}`)).toEqual(["credential_key_assignment"]);
+    for (const delimited of [["q7!A", ";9#z"], ["q7!A", ",9#z"], ["q7!A", "(9#z"]].map((parts) => parts.join(""))) {
+      expect(rulesFor(`{"client_secret":"${delimited}"}`), delimited).toEqual(["credential_key_assignment"]);
+      expect(rulesFor(`<client_secret>${delimited}</client_secret>`), delimited).toEqual(["credential_key_assignment"]);
+    }
+    for (const embedded of [["ZqvnKr", ";LmP0wXy7Ab"], ["Zq8v", "'N3kLmP0wXy7Ab"]].map((parts) => parts.join(""))) {
+      expect(rulesFor(`{"client_secret":"${embedded}"}`), embedded).toEqual(["credential_key_assignment"]);
+      expect(rulesFor(`<DB_PASSWORD>${embedded}</DB_PASSWORD>`), embedded).toEqual(["credential_key_assignment"]);
+    }
+    for (const quoted of [["q7!A", '"9#z'], ["Zq8v", '"N3kLm', "'P0wXy7Ab"], ["q7!A", `"9'z`]].map((parts) => parts.join(""))) {
+      expect(rulesFor(`<client_secret>${quoted}</client_secret>`), quoted).toEqual(["credential_key_assignment"]);
+    }
+  });
+
+  it("measures entropy in code points, so astral characters count once", () => {
+    const astral = ["a\u{1F600}b\u{1F601}", "c\u{1F602}d\u{1F603}"].join("");
+    expect(rulesFor(`{"DB_PASSWORD":"${astral}"}`)).toEqual(["credential_key_assignment"]);
+  });
+
+  it("flags option and hyphenated key spellings", () => {
+    expect(rulesFor(`--token=${value}`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`reset-token: ${value}`)).toEqual(["credential_key_assignment"]);
+  });
+
+  it("scans a long hyphenated identifier in linear time", () => {
+    const rule = SECRET_RULES.find((entry) => entry.mutationRule === "credential_key_assignment")!;
+    const started = performance.now();
+    for (const input of ["a-".repeat(16_000) + "z", "token-".repeat(8_000), "secret_".repeat(8_000)]) {
+      expect([...findSecretRuleMatches(rule, input)]).toEqual([]);
+    }
+    expect(performance.now() - started).toBeLessThan(1_000);
+  });
+
+  it("keeps password keys with the password rule, so one value is reported once", () => {
+    expect(rulesFor(`password: ${value}`)).toEqual(["password_assignment"]);
+    expect(rulesFor(`reset-password: ${value}`)).toEqual(["password_assignment"]);
+  });
+
+  it.each([
+    ["pm token budget", "token_budget: 800"],
+    ["model token ceiling", "max_tokens: 4096"],
+    ["compound budget key", "output_token_budget: 3000"],
+    ["numeric count", "token_count: 12"],
+    ["short value", "tokens=3"],
+    ["environment placeholder", "api_key: ${API_KEY}"],
+    ["angle placeholder", "token: <your token>"],
+    ["scrubbed placeholder", "secret: [scrubbed]"],
+    ["prose", "the token expires after 5 minutes"],
+    ["localization label", '"Secret question": "Pick one"'],
+    ["mask", "token: ********"],
+    ["repeated placeholder", "secret: xxxxxxxxxxxx"],
+    ["dictionary word", "token: required"],
+    ["member path", "const token = process.env.GITHUB_TOKEN;"],
+    ["call expression", "token = getToken(options)"],
+    ["shell variable", "token: $GITHUB_TOKEN"],
+    ["Windows variable", "api_key: %API_KEY%"],
+    ["working directory", "pwd=/usr/local/bin"],
+    ["relative path", "token: ./build/output"],
+    ["quoted prose", 'client_secret: "Configure this in the settings page"'],
+    ["quoted JSON prose", '{"token":"authentication failed"}'],
+    ["unquoted prose", "client_secret: Configure this"],
+    ["masked element", "<token>********</token>"],
+    ["scrubbed element", "<secret>[scrubbed]</secret>"],
+    ["element prose", "<client_secret>not-configured in this environment</client_secret>"],
+    ["URL value", "token: https://example.com/oauth/callback"],
+    ["empty fallback expression", 'token=process.env.API_KEY||""'],
+    ["nullish fallback expression", 'api_key=process.env.API_KEY??""'],
+    ["optional chain with fallback", "token = options?.token ?? fallback"],
+    ["optional member chain", "token = config.auth?.token"],
+    ["quoted member path", 'token: "process.env.GITHUB_TOKEN"'],
+    ["long optional chain", "const token = configuration?.token;"],
+    ["unquoted hyphenated prose", "client_secret: not-configured in this environment"],
+    ["constant reference", "const token = DEFAULT_TOKEN;"],
+    ["spaced constant reference", "const token = DEFAULT_TOKEN ;"],
+    ["extensionless SSH key file", '{"private_key":"keys/id_ed25519"}'],
+    ["SSH key file element", "<private_key>.ssh/id_rsa</private_key>"],
+    ["quoted hyphenated word", 'api_key: "not-yet-provisioned"'],
+    ["relative key file", '{"private_key":"certs/client.key"}'],
+    ["Windows key file", '{"private_key":"C:/ProgramData/keys/client.pem"}'],
+    ["Windows backslash key file", "private_key: C:\\keys\\client.pem"],
+    ["registry URL", "api_key: https://vault.example/v1/secret"],
+  ])("keeps %s clean", (_label, content) => {
+    expect(rulesFor(content)).not.toContain("credential_key_assignment");
   });
 });
 

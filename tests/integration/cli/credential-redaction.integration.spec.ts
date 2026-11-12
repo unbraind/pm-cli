@@ -157,3 +157,77 @@ it("classifies Commander's message before any secret fragment can rewrite it (pm
   });
 }, 120_000);
 
+
+it("refuses URL userinfo in asserted identities and never echoes a stored one (GH-1707)", async () => {
+  await withTempPmPath(async (context) => {
+    const { readFile, writeFile } = await import("node:fs/promises");
+    const credentialIdentity = `https://bot:${SECRET} word@registry.example.invalid`;
+    const created = context.runCli(["create", "--type", "Task", "--title", "probe", "--description", "d", "--acceptance-criteria", "a", "--json"]);
+    expect(created.code, created.stderr).toBe(0);
+    const createdJson = JSON.parse(created.stdout) as { id?: string; item?: { id: string } };
+    const id = createdJson.item?.id ?? createdJson.id!;
+    const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
+    const before = await readFile(itemFile, "utf8");
+    // PM_AUTHOR reaches the CLI only through a real process, so this call spawns one.
+    const previousAuthor = context.env.PM_AUTHOR;
+    context.env.PM_AUTHOR = credentialIdentity;
+    const envClaim = context.runCli(["claim", id, "--json"], { cwd: context.tempRoot });
+    context.env.PM_AUTHOR = previousAuthor;
+    const refusals = [
+      envClaim,
+      context.runCli(["claim", id, "--author", credentialIdentity, "--json"]),
+      context.runCli(["update", id, "--assignee", `https://u:${SECRET}@host.invalid/x`, "--author", "other", "--json"]),
+    ];
+    for (const refused of refusals) {
+      expect(refused.code, refused.stderr).toBe(2);
+      expect(`${refused.stdout}${refused.stderr}`).not.toContain(SECRET);
+      expect(refused.stderr).toMatch(/must not carry URL credentials/u);
+    }
+    expect(await readFile(itemFile, "utf8")).toBe(before);
+    const plainClaim = context.runCli(["claim", id, "--author", "legacy-holder", "--json"]);
+    expect(plainClaim.code, plainClaim.stderr).toBe(0);
+
+    // A holder stored by an older version keeps reading, and refusals and claim envelopes, including
+    // their item copies, redact it.
+    await writeFile(itemFile, (await readFile(itemFile, "utf8"))
+      .replace(/^assignee: .*$/mu, `assignee: ${JSON.stringify(credentialIdentity)}`)
+      .replace(/^claim_principal: .*$/mu, `claim_principal: ${JSON.stringify(credentialIdentity)}`));
+    for (const [args, preserve] of [
+      [["claim", id], true], [["claim", id, "--json"], true], [["claim", id, "--if-available", "--json"], true],
+      // The full changed-fields form also carries the item record, redacted the same way.
+      [["claim", id, "--if-available", "--json"], false],
+    ] as const) {
+      const result = context.runCli([...args, "--author", "other"], { preserveDefaultMutationOutput: preserve });
+      const output = `${result.stdout}${result.stderr}`;
+      // Ownership holds: a plain claim is refused and --if-available skips.
+      if (args.includes("--if-available")) {
+        expect(result.code, output).toBe(0);
+        expect(output).toMatch(/skipped/u);
+      } else {
+        expect(result.code, output).toBe(4);
+      }
+      expect(output, args.join(" ")).not.toContain(SECRET);
+      expect(output, args.join(" ")).toContain("https://[redacted]@registry.example.invalid");
+    }
+    const stored = await readFile(itemFile, "utf8");
+    expect(stored).toContain(`assignee: ${JSON.stringify(credentialIdentity)}`);
+    expect(stored).toContain(`claim_principal: ${JSON.stringify(credentialIdentity)}`);
+
+    // An author asserted inside a structured seed is refused too.
+    const seeded = context.runCli(["create", "--type", "Task", "--title", "seed", "--description", "d", "--acceptance-criteria", "a",
+      "--comment", `author=https://u:${SECRET}@host.invalid,text=note`, "--json"]);
+    expect(seeded.code, seeded.stderr).toBe(2);
+    expect(`${seeded.stdout}${seeded.stderr}`).not.toContain(SECRET);
+  });
+}, 120_000);
+
+it("keeps public URLs with an at sign in the path intact in refusals and retries (GH-1707)", async () => {
+  await withTempPmPath(async (context) => {
+    const publicUrl = "https://www.npmjs.com/package/@unbrained/pm-cli";
+    const refused = context.runCli(["create", "--type", "Task", "--title", `see ${publicUrl}`, "--description", "d", "--acceptance-criteria", "a", "--bogus-flag", "--json"]);
+    expect(refused.code).toBe(2);
+    expect(refused.stderr).toContain(publicUrl);
+    const recovery = (JSON.parse(refused.stderr) as { recovery?: { suggested_retry?: string } }).recovery ?? {};
+    expect(recovery.suggested_retry).toContain(publicUrl);
+  });
+}, 120_000);

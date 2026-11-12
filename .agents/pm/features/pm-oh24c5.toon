@@ -1,0 +1,20 @@
+id: pm-oh24c5
+title: "pm validate reports stored identities that carry URL userinfo, with a rewrite remediation"
+description: "Follow-up to pm-gh1707. New writes strip URL userinfo from author, assignee and claim principal, and refusals and claim envelopes redact a stored one, but a holder written by an older version stays in the item file and in full item reads (pm get, list, claim with full changed fields) as stored. Nothing tells a maintainer that such a record exists. pm validate (and pm health) should report each item whose author, assignee or claim_principal carries URL userinfo, by item id and field only, never the value, with the remediation pm update <id> --assignee <name> or a fresh claim, so a tracker can be cleaned deliberately instead of by accident."
+type: Feature
+status: open
+priority: 3
+tags[5]: agent-ux,privacy,redaction,security,validate
+created_at: "2026-11-12T08:23:44.023Z"
+updated_at: "2026-11-12T08:23:44.023Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "pm validate and pm health report items whose author, assignee or claim_principal carries URL userinfo, naming the item id and field but never the value; Each finding carries the rewrite remediation; A tracker without such records reports nothing"
+parent: pm-qwoy
+risk: low
+confidence: high
+expected_result: A maintainer learns about legacy credential-bearing identities and can rewrite them
+actual_result: Legacy identities with URL userinfo are invisible until echoed in full item reads
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1707,discovered_from,"2026-11-12T08:23:44.023Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -63,6 +63,7 @@ import type {
   ItemDocument,
   ItemMetadata,
 } from "../../types/index.js";
+import { redactOptionalIdentityCredentials } from "../../core/shared/url-credentials.js";
 
 interface ResolvedRestoreSubject {
   id: string;
@@ -228,9 +229,11 @@ function collectRestoreOwnershipWarnings(params: {
   enforcement: "strict" | "warn" | "none";
   resolvedId: string;
 }): string[] {
-  const assigned = params.document.metadata.assignee?.trim();
+  // Compared exactly, echoed only in redacted form (GH-1707).
+  const stored = params.document.metadata.assignee?.trim();
   const hasOwnershipConflict =
-    assigned && assigned !== params.author && !params.force;
+    stored && stored !== params.author && !params.force;
+  const assigned = redactOptionalIdentityCredentials(stored);
   if (!hasOwnershipConflict) {
     return [];
   }

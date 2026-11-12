@@ -1,0 +1,22 @@
+id: pm-jcz7qz
+title: Harden credential_key_assignment and URL-userinfo redaction against adversarial spellings found after PR 1712
+description: "PR 1712 (pm-gh1704, pm-gh1707) ran about fifteen adversarial review rounds (Codex, CodeRabbit, Greptile). Every reported escape inside the GH-1704 table and the GH-1707 shapes was fixed and pinned in the specs, but each round produced new, increasingly exotic spellings, so the loop was stopped with these known residuals. (1) Unquoted values after a colon or a spaced equals sign that contain ? : or | (client_secret: q7!A?9#z) are read as code, a deliberate trade-off with JavaScript optional chains. (2) The GH-1699 escaped-literal decoder swaps the literal's own quote kind for the other one before the entropy predicate runs, so an escaped JSON value holding both quote kinds can measure below the threshold. (3) Detection is heuristic by construction. Next steps: a declared adversarial corpus with a measured escape rate next to the false-positive corpus of pm-1l85at, an entropy predicate that judges the decoded original rather than the neutralized literal, and a case-sensitive context check for env-style lines (KEY: value with an all-caps key)."
+type: Task
+status: open
+priority: 2
+tags[5]: adversarial,assurance,redaction,secret-guard,security
+created_at: "2026-11-12T14:41:22.089Z"
+updated_at: "2026-11-12T14:41:22.089Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A declared adversarial corpus with a measured escape rate exists for credential_key_assignment and URL-userinfo redaction; Escaped JSON literals are judged for entropy on their decoded original value; Env-style lines with an all-caps key detect unquoted credentials holding ? : or | without re-flagging code"
+parent: pm-qwoy
+risk: medium
+confidence: medium
+expected_result: "New credential spellings are found by measurement, not by review rounds"
+actual_result: Each review round found a new exotic spelling
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1l85at,related,"2026-11-12T14:41:22.089Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1704,discovered_from,"2026-11-12T14:41:22.089Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1707,related,"2026-11-12T14:41:22.089Z","harness:claude-code","cli:create:dep",detected
+body: ""

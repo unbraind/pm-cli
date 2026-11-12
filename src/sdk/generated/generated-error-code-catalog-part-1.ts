@@ -904,6 +904,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: [
       "cli/error-guidance.ts",
       "core/item/priority.ts",
+      "core/shared/url-credentials.ts",
       "core/telemetry/observability.ts",
       "sdk/config.ts",
       "sdk/context-intent-contracts.ts",

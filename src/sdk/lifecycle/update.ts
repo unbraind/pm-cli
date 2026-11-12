@@ -167,6 +167,7 @@ import type {
   SharedLinkedResourceClearOptions,
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
+import { assertIdentityWithoutUrlCredentials } from "../../core/shared/url-credentials.js";
 
 /** Documents the update command options payload exchanged by command, SDK, and package integrations. */
 export interface UpdateCommandOptions
@@ -2816,6 +2817,7 @@ function applyAssigneeMutation(
         EXIT_CODE.USAGE,
       );
     }
+    assertIdentityWithoutUrlCredentials(assignee, "--assignee");
     document.metadata.assignee = assignee;
   }
   changedFields.push("assignee");

@@ -1,0 +1,20 @@
+id: pm-1l85at
+title: Measure credential_key_assignment false positives against a captured corpus of real agent text instead of review-by-review shapes
+description: "pm-gh1704 added the mutation-only credential_key_assignment rule. Its PR 1712 reviews surfaced about a dozen false-positive shapes one round at a time, all fixed and pinned in the secret-policy-parity must-allow corpus: quoted and unquoted prose, masks, placeholders, paths, key-file names, member paths, optional chains, fallback expressions and constant references. The tail is open-ended, and in the default advise mode a false positive costs one warning, while in block mode it refuses a write. Capture a redacted corpus of real pm descriptions, comments and notes (for example from this tracker's history), declare a false-positive-rate measurement over it as an assurance provider, and bound it with an assertion, so new shapes are found by measurement rather than by reviewers."
+type: Task
+status: open
+priority: 3
+tags[5]: assurance,false-positives,measurement,secret-guard,security
+created_at: "2026-11-12T12:19:58.221Z"
+updated_at: "2026-11-12T12:19:58.221Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A redacted corpus of real agent text is committed with capture provenance; An assurance measurement reports the credential_key_assignment false-positive rate over it, and an assertion bounds that rate; Each newly found false positive is added to the corpus with its fix"
+parent: pm-qwoy
+risk: low
+confidence: medium
+expected_result: False positives are found by measurement over representative text
+actual_result: False positives were found one review round at a time
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1704,discovered_from,"2026-11-12T12:19:58.221Z","harness:claude-code","cli:create:dep",detected
+body: ""

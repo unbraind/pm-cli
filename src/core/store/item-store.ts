@@ -63,6 +63,7 @@ import type {
   PmSettings,
   RuntimeSchemaSettings,
 } from "../../types/index.js";
+import { redactOptionalIdentityCredentials } from "../shared/url-credentials.js";
 
 /** Documents the located item payload exchanged by command, SDK, and package integrations. */
 export interface LocatedItem {
@@ -532,9 +533,13 @@ async function prepareLockedItem(params: {
       warnings,
     });
 
-    const assigned = document.metadata.assignee?.trim();
+    // Ownership compares the stored holder exactly: two legacy holders that
+    // differ only in URL userinfo must stay distinct principals. Refusals and
+    // warnings echo it only in redacted form (GH-1707).
+    const storedAssignee = document.metadata.assignee?.trim();
+    const assigned = redactOptionalIdentityCredentials(storedAssignee);
     const assignedPrincipal =
-      document.metadata.claim_principal?.trim() || assigned;
+      document.metadata.claim_principal?.trim() || storedAssignee;
     const callerPrincipal = resolveClaimPrincipal(params.author);
     const governance = resolveGovernanceKnobs(params.settings);
     const hasOwnershipConflict =

@@ -1,0 +1,21 @@
+id: pm-ziv9yb
+title: "Identity refusal reads only top-level fields, so a runtime field mapped onto comments, notes, learnings or dependencies can store a nested author with URL userinfo"
+description: "Found by the CodeRabbit review of PR 1712 (pm-gh1707). assertIdentityFieldsWithoutUrlCredentials checks the top-level author, assignee and claim_principal of create metadata and runtime update values. A runtime field definition may set metadata_key to a built-in collection such as comments, notes, learnings or dependencies, and an array field without a value_schema stores its JSON as-is, so a nested entry's author can carry URL userinfo past the guard. Fix: walk nested arrays and objects of the checked values (bounded depth) for identity keys, or reject built-in collection keys as runtime metadata_key during field normalization."
+type: Issue
+status: open
+priority: 2
+tags[4]: identity,redaction,runtime-fields,security
+created_at: "2026-11-12T16:08:56.108Z"
+updated_at: "2026-11-12T16:08:56.108Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "A runtime or registered field value whose nested entries carry an author, assignee or claim_principal with URL userinfo is refused like a top-level one; Ordinary nested collections without credentials are unaffected; A regression test covers a runtime array field mapped onto comments"
+parent: pm-qwoy
+risk: low
+confidence: high
+severity: medium
+expected_result: No field path can store an identity carrying URL userinfo
+actual_result: Nested authors in runtime collection fields bypass the identity refusal
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1707,discovered_from,"2026-11-12T16:08:56.108Z","harness:claude-code","cli:create:dep",detected
+body: ""

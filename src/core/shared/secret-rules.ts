@@ -135,6 +135,8 @@ export interface SecretStructuredSpelling {
   value: string;
   /** Also inspect element content such as `<password>value</password>`. */
   element?: true;
+  /** Judge element content with the value grammar and entropy predicate instead of length alone. */
+  elementValue?: true;
 }
 
 /** One detector and any explicit repository-only scope exception. */
@@ -153,6 +155,10 @@ export interface SecretRule {
   mutationOnlyReason?: string;
   /** Minimum Shannon entropy of the first capture group, when applicable. */
   minimumEntropy?: number;
+  /** Case-sensitive shape of a captured value that is a reference, never a credential. */
+  rejectValue?: RegExp;
+  /** Case-sensitive shape of an unquoted captured value that is a reference when a `;` ends its statement. */
+  rejectStatementReference?: RegExp;
   /** Quoted-key, nested-container and element spellings judged by the same value grammar. */
   structured?: SecretStructuredSpelling;
 }
@@ -165,6 +171,32 @@ const PASSWORD_KEYS = "password|passphrase";
 const PASSWORD_VALUE =
   /(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/;
 const HIGH_ENTROPY_KEYS = "token|secret|password|passwd|api[_-]?key";
+// GH-1704: any key whose last word names a credential, including compound
+// keys (`DB_PASSWORD`, `aws_secret_access_key`, `GITHUB_TOKEN`). A compound
+// key consumes its prefix from a word boundary, so `token_budget`,
+// `max_tokens` and `output_token_budget` never match. Plain and hyphenated
+// password keys stay with password_assignment, so one value is reported once.
+// The lookbehind starts a key only at the beginning of an identifier, never
+// after `word-`, so a long hyphenated run is scanned once (linear time) while
+// `--token=` still matches.
+const CREDENTIAL_KEYS =
+  "(?<![a-z0-9_]|[a-z0-9_]-)(?:(?:[a-z0-9]+_)+(?:password|passphrase)|(?:[a-z0-9]+[_-])*(?:secret|token|(?:api|secret|private|access)[_-]?key|client[_-]?secret|passwd|pwd))";
+// A whitespace-free value of eight or more characters (a quoted value must be
+// whitespace-free up to its closing quote, so quoted prose never counts) that
+// is not a placeholder (`<...>`, `${...}`, `$(...)`, `$VAR`, `%VAR%`,
+// `[scrubbed]`), a filesystem path (`pwd=/usr/local/bin`, `certs/client.key`,
+// `C:/keys/x.pem`), a URL, a
+// letters-only or hyphenated word (`not-configured`), a dotted member path or a call. A quoted value (or
+// an element body) is captured whole up to its closing quote. Unquoted, `?`,
+// `:` and `|` read as code
+// such as `process.env.API_KEY||""` or `options?.token`, except directly after
+// `=` (`CLIENT_SECRET=q7!A?9#z`), where the exclusions below still catch code.
+// An unquoted CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`) is
+// rejected afterwards by a case-sensitive check (rejectStatementReference). A quoted value is a
+// member path only when the whole literal is one (`"process.env.TOKEN"`), so
+// `"svc.app:secretX09"` still counts. Entropy then rejects masks.
+const CREDENTIAL_VALUE =
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+)*|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+)*|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8,}|(?<=')[^\s']{8,}|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,}))/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
@@ -219,6 +251,17 @@ export const SECRET_RULES = [
     structured: { keys: HIGH_ENTROPY_KEYS, value: HIGH_ENTROPY_VALUE.source },
     mutationOnlyReason: "Generic assignments in source code are not credentials; preserve the existing mutation heuristic without treating source identifiers as secrets.",
     minimumEntropy: 3.5,
+  },
+  {
+    name: "credential-key-assignment", mutationRule: "credential_key_assignment",
+    regex: new RegExp(String.raw`\b(?:${CREDENTIAL_KEYS})\s*[:=]\s*` + CREDENTIAL_VALUE.source, "gi"),
+    structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true, elementValue: true },
+    mutationOnlyReason: "Key-named assignments in source code and test fixtures are identifiers and synthetic data; repository scans keep the token-format rules, which recognize real credentials there.",
+    minimumEntropy: 3,
+    // SSH key-file names (`keys/id_ed25519`) are references, never credentials.
+    rejectValue: /^(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?$/u,
+    // `= DEFAULT_TOKEN;` names a constant; `"ZQVNKR_LMPWXYAB"` or `KEY=ZQVNKR_LMPWXYAB` may be a literal.
+    rejectStatementReference: /^[A-Z]+(?:_[A-Z]+)+$/u,
   },
 ] as const satisfies readonly SecretRule[];
 
@@ -426,12 +469,17 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
   };
 }
 
-/** Element content such as `<password>value</password>`, judged by length and placeholder shape. */
-function* elementMatches(element: RegExp, content: string): Generator<SecretRuleMatch> {
+/**
+ * Element content such as `<password>value</password>`, judged by length and
+ * placeholder shape, or by the rule's own value grammar and entropy predicate
+ * when the spelling declares `elementValue`.
+ */
+function* elementMatches(element: RegExp, content: string, judge?: (value: string) => boolean): Generator<SecretRuleMatch> {
   element.lastIndex = 0;
   for (const match of content.matchAll(element)) {
     const value = match[1].trim();
-    if (value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(")) yield { index: match.index! };
+    const accepted = judge ? judge(value) : value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(");
+    if (accepted) yield { index: match.index! };
   }
 }
 
@@ -489,20 +537,53 @@ function* findStructuredSpellingMatches(
       yield { index: match.index };
     }
   }
-  if (compiled.element) yield* elementMatches(compiled.element, content);
+  if (compiled.element) yield* elementMatches(compiled.element, content, elementValueJudge(rule, spelling, compiled));
+}
+
+/** The value-grammar judgment for element content when the spelling declares `elementValue`. */
+function elementValueJudge(
+  rule: SecretRule,
+  spelling: SecretStructuredSpelling,
+  compiled: CompiledSpelling,
+): ((value: string) => boolean) | undefined {
+  if (!spelling.elementValue) return undefined;
+  // The whole trimmed body must be one value, so element prose never counts. It
+  // is judged as a double-quoted literal: an element body has no code to confuse
+  // it with, and its own `"` characters become `'` so they cannot end it early.
+  return (value) => {
+    const neutral = value.replaceAll("\"", "'");
+    compiled.value.lastIndex = 0;
+    const match = compiled.value.exec(`"${neutral}"`);
+    if (match === null || match[1] !== neutral) return false;
+    // The grammar judged the neutralized body; entropy and references judge the original.
+    match[1] = value;
+    return acceptsSecretMatch(rule, match);
+  };
+}
+
+/** An unquoted captured value matching the reference shape whose statement a `;` ends. */
+function isStatementReference(shape: RegExp, match: RegExpMatchArray): boolean {
+  // Every match handed to a judge comes from exec or matchAll, so index and input
+  // are set; the value capture always ends the match, so it starts `length` back.
+  const end = match.index! + match[0].length;
+  const opener = match.input![end - match[1].length - 1];
+  return /^[ \t]*;/u.test(match.input!.slice(end, end + 64)) && opener !== "\"" && opener !== "'" && shape.test(match[1]);
 }
 
 /** Accept a pattern match, applying the declared entropy predicate when present. */
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
+  if (rule.rejectValue?.test(match[1]) === true) return false;
+  if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;
-  const value = match[1];
+  // Count and divide by code points alike, so astral characters are not undercounted.
+  const characters = [...match[1]];
   const counts = new Map<string, number>();
-  for (const character of value) {
+  for (const character of characters) {
     counts.set(character, (counts.get(character) ?? 0) + 1);
   }
   let entropy = 0;
   for (const count of counts.values()) {
-    const probability = count / value.length;
+    const probability = count / characters.length;
     entropy -= probability * Math.log2(probability);
   }
   return entropy >= rule.minimumEntropy;

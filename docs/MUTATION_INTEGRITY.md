@@ -86,9 +86,32 @@ against mutation string leaves in `advise` and `block` modes.
 
 Two repository fixture exemptions apply only to `tests/` and `examples/`:
 absolute home paths and user-at-private-host matches. They never exempt
-mutation content. The inventory explicitly records one mutation-only heuristic:
-high-entropy assignments. Source identifiers can resemble generic assignments,
-so that heuristic does not run over repository source text. No rule is silently
+mutation content. The inventory explicitly records two mutation-only
+heuristics: high-entropy assignments and credential-key assignments. Source
+identifiers and test fixtures can resemble generic assignments, so neither runs
+over repository source text.
+
+Credential-key assignments
+([pm-gh1704](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1704.toon);
+tracker record excluded from npm) flag a value under any key whose last word
+names a credential: `secret`, `token`, `api_key`, `secret_key`, `private_key`,
+`access_key`, `client_secret`, `passwd` and `pwd`, plus compound keys such as
+`DB_PASSWORD`, `aws_secret_access_key` or `GITHUB_TOKEN`, in any case,
+including `--token=…`. The value must be at least eight whitespace-free
+characters (a quoted value must be whitespace-free up to its closing quote)
+with a Shannon entropy of at least 3 bits per character. It must not be a
+placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
+filesystem path or SSH key-file name, a URL, a letters-only or hyphenated
+word, a CONSTANT_CASE name ending a statement (`= DEFAULT_TOKEN;`), a dotted
+member path or a call
+(a quoted value or an element body counts whole up to its closing quote;
+directly after `=`, `?`, `:` and `|` also count; elsewhere unquoted they read
+as code such as `options?.token`); a
+whole
+element body must satisfy the same grammar. `token_budget`, `max_tokens`, numeric
+counts, masks such as `********` and prose stay clean. A key starts only at the
+beginning of an identifier, so the scan stays linear. Plain and hyphenated
+password keys remain with the password rule, so each value is reported once. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
@@ -101,7 +124,8 @@ spellings are covered:
 - a quoted key followed by `:` or `=` (JSON, YAML flow, Python dict, TOML);
 - every quoted string in value position inside an array or object under the
   key, at any depth;
-- for password assignments, `<password>…</password>` element content. Element
+- for password and credential-key assignments, element content such as
+  `<password>…</password>` or `<client_secret>…</client_secret>`. Element
   content is judged like a quoted value of an exact key: at least eight
   characters after trimming, with the `${…}` and `$(…)` placeholder
   exclusions.
@@ -188,12 +212,38 @@ combine:
   positions instead, and the bound widens to `fragmentLength + stride - 2`. The
   registry lives in an AsyncLocalStorage scope, so overlapping in-process
   invocations never share it. It protects telemetry and Sentry as well.
-- The rule is conservative. Prose shaped like `Reminder: ping @bob` counts
-  as possible userinfo too: it is redacted in refusal output, and that
+- The rule is conservative. A token is left alone only when no parser can
+  read userinfo in it: it uses an `http`, `https`, `ws`, `wss` or `ftp`
+  scheme (OpenSSH reads `ssh://a/b@host` as user `a/b`), its authority (the text between the slashes after the
+  first `:` and the next `/`; SSH-style parsers read userinfo across `?` and
+  `#`) holds no `:`, `@` or percent escape, the rest
+  of the token holds no `:` (so no nested URL), and it has no tab or line
+  break. `https://www.npmjs.com/package/@unbrained/pm-cli` and blob paths with
+  an `@` therefore keep their host, path and executable retry
+  ([pm-gh1707](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1707.toon);
+  tracker record excluded from npm). Everything else keeps the span from the
+  first `:` to the last `@`, so prose shaped like `Reminder: ping @bob` or
+  `alias@npm:@scope/pkg@1.0.0` is redacted in refusal output, and that
   invocation's refusals withhold executable retries.
 - When the invocation carried credentials, the guidance withholds
   `suggested_retry` and `suggested_retry_args` and gains a final next step
   telling the caller to restore them. JSON and text output therefore agree.
+
+Identities never carry credentials. An asserted or configured author
+(`--author`, `PM_AUTHOR`, `default_author`), `--assignee` on create and update,
+and identity fields set through runtime or registered field values are refused
+with `invalid_argument_value` when they carry URL userinfo. The refusal names
+the source but never the value. Refusing rather than stripping keeps two
+identities that differ only in userinfo from collapsing into one principal. A
+holder stored by an older version still reads unchanged, and ownership checks
+compare it exactly, so its owner takes it back with `--force` (a coordinated
+takeover) or by rewriting it. Ownership refusals, warn-mode ownership warnings
+and claim or release envelopes (`claimed_by`, `previous_assignee`, the
+`claim_skipped_held_by` and `claim_takeover` warnings, and the returned item
+copy) redact it as one whole value, so whitespace inside its userinfo cannot
+split it. Rewrite such a holder with `pm update <id> --assignee <name> --force`
+or `pm claim <id> --force`; both refuse without `--force`, because the holder
+never matches a caller.
 
 ### Executable mutation inventory
 

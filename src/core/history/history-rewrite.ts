@@ -14,6 +14,7 @@ import { advanceItemMutationPreconditions, assertItemMutationPreconditions, hasA
 import { resolveGovernanceKnobs } from "../store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
 import { invalidateHistoryDriftCacheForPath } from "./drift-cache.js";
+import { redactOptionalIdentityCredentials } from "../shared/url-credentials.js";
 
 type LoadedItem = Awaited<ReturnType<typeof readLocatedItem>> & {
   /** Whether the document was reconstructed while preserving unreadable source bytes. */
@@ -48,8 +49,10 @@ export function checkHistoryRewriteOwnership(
   params: HistoryRewriteOwnershipParams,
 ): string[] {
   if (!params.itemDocument) return [];
-  const assigned = params.itemDocument.metadata?.assignee?.trim();
-  if (!assigned || assigned === params.author || params.force) return [];
+  // Compared exactly, echoed only in redacted form (GH-1707).
+  const stored = params.itemDocument.metadata?.assignee?.trim();
+  if (!stored || stored === params.author || params.force) return [];
+  const assigned = redactOptionalIdentityCredentials(stored);
 
   const governance = resolveGovernanceKnobs(params.settings);
   if (governance.ownership_enforcement === "strict") {
