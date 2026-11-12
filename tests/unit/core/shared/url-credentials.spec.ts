@@ -100,6 +100,7 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     const deep = { a: { b: { c: { d: { e: { author: "https://u:p@h" } } } } } };
     expect(() => assertIdentityFieldsWithoutUrlCredentials(deep)).not.toThrow();
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ note: null, count: 3, tags: ["a"] })).not.toThrow();
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ audit_details: { author: { author: "https://u:p@h" } } })).toThrow(/author must not/u);
   });
 
   it("redacts each whitespace-delimited word of free text and skips text without an at sign", () => {

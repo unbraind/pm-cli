@@ -132,7 +132,8 @@ const IDENTITY_FIELD_NAMES: ReadonlySet<string> = new Set(IDENTITY_FIELDS);
 export function assertIdentityFieldsWithoutUrlCredentials(values: object, depth = 0): void {
   for (const [key, value] of Object.entries(values)) {
     if (IDENTITY_FIELD_NAMES.has(key)) assertIdentityWithoutUrlCredentials(value, key);
-    else if (depth < IDENTITY_FIELD_DEPTH && typeof value === "object" && value !== null) {
+    // Recurse into every container, even one stored under an identity key.
+    if (depth < IDENTITY_FIELD_DEPTH && typeof value === "object" && value !== null) {
       assertIdentityFieldsWithoutUrlCredentials(value, depth + 1);
     }
   }
