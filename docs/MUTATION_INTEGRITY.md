@@ -101,8 +101,8 @@ including `--token=…`. The value must be at least eight whitespace-free
 characters (a quoted value must be whitespace-free up to its closing quote)
 with a Shannon entropy of at least 3 bits per character. It must not be a
 placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
-filesystem path, a URL, a letters-only or hyphenated word, a dotted member
-path or a call
+filesystem path or SSH key-file name, a URL, a letters-only or hyphenated
+word, a CONSTANT_CASE reference, a dotted member path or a call
 (in a quoted value or an element body, `?`, `:` and `|` also count as value
 characters; unquoted they read as code such as `process.env.API_KEY||""`); a
 whole

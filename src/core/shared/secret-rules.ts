@@ -155,6 +155,8 @@ export interface SecretRule {
   mutationOnlyReason?: string;
   /** Minimum Shannon entropy of the first capture group, when applicable. */
   minimumEntropy?: number;
+  /** Case-sensitive shape of a captured value that is a reference, never a credential. */
+  rejectValue?: RegExp;
   /** Quoted-key, nested-container and element spellings judged by the same value grammar. */
   structured?: SecretStructuredSpelling;
 }
@@ -250,6 +252,9 @@ export const SECRET_RULES = [
     structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true, elementValue: true },
     mutationOnlyReason: "Key-named assignments in source code and test fixtures are identifiers and synthetic data; repository scans keep the token-format rules, which recognize real credentials there.",
     minimumEntropy: 3,
+    // CONSTANT_CASE references (`= DEFAULT_TOKEN;`) and SSH key-file names
+    // (`keys/id_ed25519`). Case-sensitive, so `sk_live_...` keys still count.
+    rejectValue: /^(?:[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+|(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?)$/u,
   },
 ] as const satisfies readonly SecretRule[];
 
@@ -546,6 +551,7 @@ function elementValueJudge(
 
 /** Accept a pattern match, applying the declared entropy predicate when present. */
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
+  if (rule.rejectValue?.test(match[1]) === true) return false;
   if (rule.minimumEntropy === undefined) return true;
   const value = match[1];
   const counts = new Map<string, number>();

@@ -127,6 +127,11 @@ describe("credential-key assignments (GH-1704)", () => {
     }
   });
 
+  it("still flags lowercase underscore secrets such as provider live keys", () => {
+    const live = ["sk_live_51Hx", "YZabc9Q2wE"].join("");
+    expect(rulesFor(`client_secret=${live}`)).toEqual(["credential_key_assignment"]);
+  });
+
   it("flags option and hyphenated key spellings", () => {
     expect(rulesFor(`--token=${value}`)).toEqual(["credential_key_assignment"]);
     expect(rulesFor(`reset-token: ${value}`)).toEqual(["credential_key_assignment"]);
@@ -180,6 +185,10 @@ describe("credential-key assignments (GH-1704)", () => {
     ["quoted member path", 'token: "process.env.GITHUB_TOKEN"'],
     ["long optional chain", "const token = configuration?.token;"],
     ["unquoted hyphenated prose", "client_secret: not-configured in this environment"],
+    ["constant reference", "const token = DEFAULT_TOKEN;"],
+    ["quoted constant reference", 'api_key: "API_KEY_FROM_ENV"'],
+    ["extensionless SSH key file", '{"private_key":"keys/id_ed25519"}'],
+    ["SSH key file element", "<private_key>.ssh/id_rsa</private_key>"],
     ["quoted hyphenated word", 'api_key: "not-yet-provisioned"'],
     ["relative key file", '{"private_key":"certs/client.key"}'],
     ["Windows key file", '{"private_key":"C:/ProgramData/keys/client.pem"}'],
