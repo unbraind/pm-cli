@@ -96,13 +96,16 @@ Credential-key assignments
 tracker record excluded from npm) flag a value under any key whose last word
 names a credential: `secret`, `token`, `api_key`, `secret_key`, `private_key`,
 `access_key`, `client_secret`, `passwd` and `pwd`, plus compound keys such as
-`DB_PASSWORD`, `aws_secret_access_key` or `GITHUB_TOKEN`, in any case. The
-value must be at least eight whitespace-free characters with a Shannon entropy
-of at least 3 bits per character. It must not be a placeholder (`<…>`, `${…}`,
-`$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a filesystem path, a dotted member path
-or a call. `token_budget`, `max_tokens`, numeric counts, masks such as
-`********` and prose stay clean. Plain and hyphenated password keys remain with
-the password rule, so each value is reported once. No rule is silently
+`DB_PASSWORD`, `aws_secret_access_key` or `GITHUB_TOKEN`, in any case,
+including `--token=…`. The value must be at least eight whitespace-free
+characters (a quoted value must be whitespace-free up to its closing quote)
+with a Shannon entropy of at least 3 bits per character. It must not be a
+placeholder (`<…>`, `${…}`, `$(…)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
+filesystem path, a letters-only word, a dotted member path or a call; element
+content is judged by the same grammar. `token_budget`, `max_tokens`, numeric
+counts, masks such as `********` and prose stay clean. A key starts only at the
+beginning of an identifier, so the scan stays linear. Plain and hyphenated
+password keys remain with the password rule, so each value is reported once. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
@@ -203,16 +206,17 @@ combine:
   positions instead, and the bound widens to `fragmentLength + stride - 2`. The
   registry lives in an AsyncLocalStorage scope, so overlapping in-process
   invocations never share it. It protects telemetry and Sentry as well.
-- The rule is conservative inside an authority, the text between the slashes
-  after the first `:` and the next `/`, `?` or `#`. Userinfo ends at the last
-  `@` there. An authority with a `:` but no `@` may hold a password with an
-  unencoded `/`, so the span then runs to the token's last `@`. An `@` after
-  the authority, as in `https://www.npmjs.com/package/@unbrained/pm-cli` or a
-  blob path, is left alone, so the retry stays executable
+- The rule is conservative. A token is left alone only when no parser can
+  read userinfo in it: its authority (the text between the slashes after the
+  first `:` and the next `/`, `?` or `#`) holds neither `:` nor `@`, the rest
+  of the token holds no `:` (so no nested URL), and it has no tab or line
+  break. `https://www.npmjs.com/package/@unbrained/pm-cli` and blob paths with
+  an `@` therefore keep their host, path and executable retry
   ([pm-gh1707](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1707.toon);
-  tracker record excluded from npm). Prose shaped like `Reminder: ping @bob`
-  still counts as possible userinfo: it is redacted in refusal output, and
-  that invocation's refusals withhold executable retries.
+  tracker record excluded from npm). Everything else keeps the span from the
+  first `:` to the last `@`, so prose shaped like `Reminder: ping @bob` or
+  `alias@npm:@scope/pkg@1.0.0` is redacted in refusal output, and that
+  invocation's refusals withhold executable retries.
 - When the invocation carried credentials, the guidance withholds
   `suggested_retry` and `suggested_retry_args` and gains a final next step
   telling the caller to restore them. JSON and text output therefore agree.

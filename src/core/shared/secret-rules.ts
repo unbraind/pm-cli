@@ -135,6 +135,8 @@ export interface SecretStructuredSpelling {
   value: string;
   /** Also inspect element content such as `<password>value</password>`. */
   element?: true;
+  /** Judge element content with the value grammar and entropy predicate instead of length alone. */
+  elementValue?: true;
 }
 
 /** One detector and any explicit repository-only scope exception. */
@@ -170,14 +172,18 @@ const HIGH_ENTROPY_KEYS = "token|secret|password|passwd|api[_-]?key";
 // key consumes its prefix from a word boundary, so `token_budget`,
 // `max_tokens` and `output_token_budget` never match. Plain and hyphenated
 // password keys stay with password_assignment, so one value is reported once.
+// The lookbehind starts a key only at the beginning of an identifier, never
+// after `word-`, so a long hyphenated run is scanned once (linear time) while
+// `--token=` still matches.
 const CREDENTIAL_KEYS =
-  "(?:[a-z0-9]+_)+(?:password|passphrase)|(?:[a-z0-9]+[_-])*(?:secret|token|(?:api|secret|private|access)[_-]?key|client[_-]?secret|passwd|pwd)";
-// A whitespace-free value of eight or more characters that is not a
-// placeholder (`<...>`, `${...}`, `$(...)`, `$VAR`, `%VAR%`, `[scrubbed]`), a
-// filesystem path (`pwd=/usr/local/bin`), a dotted member path or a call. Entropy
-// then rejects masks and words.
+  "(?<![a-z0-9_]|[a-z0-9_]-)(?:(?:[a-z0-9]+_)+(?:password|passphrase)|(?:[a-z0-9]+[_-])*(?:secret|token|(?:api|secret|private|access)[_-]?key|client[_-]?secret|passwd|pwd))";
+// A whitespace-free value of eight or more characters (a quoted value must be
+// whitespace-free up to its closing quote, so quoted prose never counts) that
+// is not a placeholder (`<...>`, `${...}`, `$(...)`, `$VAR`, `%VAR%`,
+// `[scrubbed]`), a filesystem path (`pwd=/usr/local/bin`), a letters-only word,
+// a dotted member path or a call. Entropy then rejects masks.
 const CREDENTIAL_VALUE =
-  /["']?((?![<[$/]|~\/|\.\.?\/|%[A-Za-z_]\w*%|(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|[\w$.]+\()[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})/;
+  /(?:"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["']))((?![<[$/]|~\/|\.\.?\/|%[A-Za-z_]\w*%|[A-Za-z]+(?![\w!@#$%^&*.+\-=/~])|(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|[\w$.]+\()[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})/;
 const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
@@ -236,7 +242,7 @@ export const SECRET_RULES = [
   {
     name: "credential-key-assignment", mutationRule: "credential_key_assignment",
     regex: new RegExp(String.raw`\b(?:${CREDENTIAL_KEYS})\s*[:=]\s*` + CREDENTIAL_VALUE.source, "gi"),
-    structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true },
+    structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true, elementValue: true },
     mutationOnlyReason: "Key-named assignments in source code and test fixtures are identifiers and synthetic data; repository scans keep the token-format rules, which recognize real credentials there.",
     minimumEntropy: 3,
   },
@@ -446,12 +452,17 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
   };
 }
 
-/** Element content such as `<password>value</password>`, judged by length and placeholder shape. */
-function* elementMatches(element: RegExp, content: string): Generator<SecretRuleMatch> {
+/**
+ * Element content such as `<password>value</password>`, judged by length and
+ * placeholder shape, or by the rule's own value grammar and entropy predicate
+ * when the spelling declares `elementValue`.
+ */
+function* elementMatches(element: RegExp, content: string, judge?: (value: string) => boolean): Generator<SecretRuleMatch> {
   element.lastIndex = 0;
   for (const match of content.matchAll(element)) {
     const value = match[1].trim();
-    if (value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(")) yield { index: match.index! };
+    const accepted = judge ? judge(value) : value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(");
+    if (accepted) yield { index: match.index! };
   }
 }
 
@@ -509,7 +520,21 @@ function* findStructuredSpellingMatches(
       yield { index: match.index };
     }
   }
-  if (compiled.element) yield* elementMatches(compiled.element, content);
+  if (compiled.element) yield* elementMatches(compiled.element, content, elementValueJudge(rule, spelling, compiled));
+}
+
+/** The value-grammar judgment for element content when the spelling declares `elementValue`. */
+function elementValueJudge(
+  rule: SecretRule,
+  spelling: SecretStructuredSpelling,
+  compiled: CompiledSpelling,
+): ((value: string) => boolean) | undefined {
+  if (!spelling.elementValue) return undefined;
+  return (value) => {
+    compiled.value.lastIndex = 0;
+    const match = compiled.value.exec(value);
+    return match !== null && acceptsSecretMatch(rule, match);
+  };
 }
 
 /** Accept a pattern match, applying the declared entropy predicate when present. */

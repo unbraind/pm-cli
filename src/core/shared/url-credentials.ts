@@ -11,13 +11,25 @@ import { quoteWindowsCommandArg } from "./command-line.js";
 export const URL_CREDENTIAL_PLACEHOLDER = "[redacted]";
 
 /**
- * Start and end (exclusive, at an `@`) of a token's possible userinfo span.
+ * Whether no URL parser can read userinfo anywhere in the token (GH-1707).
  * The authority runs from the slashes after the first `:` to the first `/`,
- * `?` or `#`. Userinfo ends at the last `@` inside it. When the authority has
- * no `@` but holds a `:`, a password may contain an unencoded `/`, `?` or `#`,
- * so the span extends to the token's last `@`. Otherwise an `@` belongs to the
- * path or query (`/package/@scope/name`) and nothing is redacted (GH-1707).
+ * `?` or `#`. Only an authority with neither `:` nor `@`, followed by text with
+ * no `:` (no nested URL, no port before a path `@`) and a token without the
+ * tabs and line breaks parsers ignore, is provably public. Anything else keeps
+ * the conservative span, so this exemption can only ever reveal text that
+ * holds no credential, such as `/package/@scope/name` or a blob path.
  */
+function provablyWithoutUserinfo(token: string, colon: number): boolean {
+  if (/[\t\n\r]/u.test(token)) return false;
+  let authority = colon + 1;
+  while (token[authority] === "/" || token[authority] === "\\") authority += 1;
+  const delimiter = token.slice(authority).search(/[/?#]/u);
+  if (delimiter < 0) return false;
+  const authorityEnd = authority + delimiter;
+  return !/[:@]/u.test(token.slice(authority, authorityEnd)) && !token.slice(authorityEnd).includes(":");
+}
+
+/** Start and end (exclusive, at the last `@`) of a token's possible userinfo span. */
 function userinfoBounds(token: string): readonly [start: number, end: number] | undefined {
   const at = token.lastIndexOf("@");
   const colon = token.indexOf(":");
@@ -27,13 +39,7 @@ function userinfoBounds(token: string): readonly [start: number, end: number] | 
   // are only over-redacted.
   let start = colon + 1;
   while (start < at && start < colon + 3 && (token[start] === "/" || token[start] === "\\")) start += 1;
-  let authority = colon + 1;
-  while (token[authority] === "/" || token[authority] === "\\") authority += 1;
-  const delimiter = token.slice(authority).search(/[/?#]/u);
-  const authorityEnd = delimiter < 0 ? token.length : authority + delimiter;
-  const userinfoAt = token.lastIndexOf("@", authorityEnd - 1);
-  const end = userinfoAt >= authority ? userinfoAt : token.slice(authority, authorityEnd).includes(":") ? at : -1;
-  return end <= start ? undefined : [start, end];
+  return start === at || provablyWithoutUserinfo(token, colon) ? undefined : [start, at];
 }
 
 /**
@@ -43,11 +49,12 @@ function userinfoBounds(token: string): readonly [start: number, end: number] | 
  * `@`. Replacing that whole span (after any scheme slashes) is complete for
  * every spelling a parser normalizes: backslash authorities, tabs inside a
  * scheme, wrapper chains such as `git+https:` or `npm:`, inline `--flag=value`
- * tokens and single-label or `host:port` authorities. An `@` after the
- * authority, as in a scoped-package or blob URL, is left alone. The remaining
- * cost is deliberate: prose such as `Reminder: ping @bob` is treated as
- * possible userinfo. Such a token is redacted in refusal output, and its
- * invocation's refusals withhold executable retries. The rule is idempotent.
+ * tokens and single-label or `host:port` authorities. Only a token that
+ * provably holds no userinfo is left alone, such as a scoped-package or blob
+ * URL. The remaining cost is deliberate: prose such as `Reminder: ping @bob`
+ * or `alias@npm:@scope/pkg@1.0.0` is treated as possible userinfo. Such a
+ * token is redacted in refusal output, and its invocation's refusals withhold
+ * executable retries. The rule is idempotent.
  */
 export function redactUrlCredentialsInToken(token: string): string {
   const bounds = userinfoBounds(token);

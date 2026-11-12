@@ -115,6 +115,20 @@ describe("credential-key assignments (GH-1704)", () => {
     })).toThrow(/Mutation blocked by secret guard/);
   });
 
+  it("flags option and hyphenated key spellings", () => {
+    expect(rulesFor(`--token=${value}`)).toEqual(["credential_key_assignment"]);
+    expect(rulesFor(`reset-token: ${value}`)).toEqual(["credential_key_assignment"]);
+  });
+
+  it("scans a long hyphenated identifier in linear time", () => {
+    const rule = SECRET_RULES.find((entry) => entry.mutationRule === "credential_key_assignment")!;
+    const started = performance.now();
+    for (const input of ["a-".repeat(16_000) + "z", "token-".repeat(8_000), "secret_".repeat(8_000)]) {
+      expect([...findSecretRuleMatches(rule, input)]).toEqual([]);
+    }
+    expect(performance.now() - started).toBeLessThan(1_000);
+  });
+
   it("keeps password keys with the password rule, so one value is reported once", () => {
     expect(rulesFor(`password: ${value}`)).toEqual(["password_assignment"]);
     expect(rulesFor(`reset-password: ${value}`)).toEqual(["password_assignment"]);
@@ -140,6 +154,11 @@ describe("credential-key assignments (GH-1704)", () => {
     ["Windows variable", "api_key: %API_KEY%"],
     ["working directory", "pwd=/usr/local/bin"],
     ["relative path", "token: ./build/output"],
+    ["quoted prose", 'client_secret: "Configure this in the settings page"'],
+    ["quoted JSON prose", '{"token":"authentication failed"}'],
+    ["unquoted prose", "client_secret: Configure this"],
+    ["masked element", "<token>********</token>"],
+    ["scrubbed element", "<secret>[scrubbed]</secret>"],
   ])("keeps %s clean", (_label, content) => {
     expect(rulesFor(content)).not.toContain("credential_key_assignment");
   });

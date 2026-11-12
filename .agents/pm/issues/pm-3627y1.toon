@@ -1,0 +1,21 @@
+id: pm-3627y1
+title: "The user-at-private-host secret rule rescans every hyphen or dot run, so 32 KB of hyphenated text costs about a second in mutation preflight"
+description: "Found 2026-11-12 while answering a Codex review of pm-gh1704. The pre-existing user_at_private_host rule in src/core/shared/secret-rules.ts is a word boundary followed by [A-Za-z0-9._-]+@ and a private address. Every '-' or '.' inside a long run creates a new word boundary, so the engine restarts the greedy run at each one and the scan is quadratic in the run length. Measured with findSecretRuleMatches on credential-free input: 'a-' repeated 16,000 times takes about 1,169 ms, 'token-' repeated 8,000 times about 966 ms; every other rule stays under 20 ms. The rule runs synchronously in mutation preflight (advise mode included) and in the repository scan, so a pasted log can stall the CLI or a shared MCP process. Fix: start the local part only at the beginning of a run, for example a negative lookbehind for [A-Za-z0-9._-], keeping detection of a run that starts with a dot or hyphen, and add a linear-time regression test like the one pm-gh1704 added for credential_key_assignment."
+type: Issue
+status: open
+priority: 2
+tags[4]: performance,regex,secret-guard,security
+created_at: "2026-11-12T09:35:59.020Z"
+updated_at: "2026-11-12T09:35:59.020Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "Scanning 32 KB of hyphenated or dotted text with user_at_private_host finishes in linear time (well under 100 ms); Every existing user_at_private_host detection, including a local part that starts with a dot or hyphen, still matches in both the SDK guard and the repository scan; A regression test bounds the scan time"
+parent: pm-qwoy
+risk: low
+confidence: high
+severity: medium
+expected_result: Secret scanning cost stays linear in input size for every rule
+actual_result: user_at_private_host takes about a second on 32 KB of hyphenated text
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1704,discovered_from,"2026-11-12T09:35:59.020Z","harness:claude-code","cli:create:dep",detected
+body: ""
