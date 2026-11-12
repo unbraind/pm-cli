@@ -2,11 +2,13 @@ id: pm-n98pir
 title: "An annotation edit accepts text copied from a strings_compacted read, so a read-modify-write round trip silently truncates the stored entry"
 description: "Found 2026-11-11 on PR 1708 (a Greptile finding). To correct one timestamp, I read the newest pm-7zs0 comment with 'pm comments pm-7zs0 --json', replaced one word and wrote it back with 'pm comments pm-7zs0 --edit 270 --file <text>'. The default 3,000-token output budget had compacted that 900-character comment to a prefix ending in '…'. read_output reported strings_compacted: true and the page said truncated: true, but nothing stopped the edit, so the stored comment lost its second half. The same round trip is natural for notes and learnings, and for any agent that fixes a word in place. Duplicate check: searched output budget, compaction, truncation and annotation edit; pm-8eclqf, pm-gh1552 and pm-gh1478 (closed) bound and preserve reads, but none guards the write side of a compacted read."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags[4]: agent-ux,annotations,data-integrity,output-budget
 created_at: "2026-11-11T19:05:52.810Z"
-updated_at: "2026-11-11T19:08:31.192Z"
+updated_at: "2026-11-12T21:55:16.403Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#6cac702086723f6d9ab0b467"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: An annotation --edit whose replacement text equals a compacted projection of the stored entry (a prefix ending in the compaction marker) is refused with a typed code naming the --output-budget unbounded or --limit read that returns the full text; Compacted strings in budgeted reads carry a marker the write path can recognise; Edits of genuinely new text ending in an ellipsis still succeed
@@ -21,4 +23,11 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1478,related,"2026-11-11T19:05:52.810Z","harness:claude-code","cli:create:dep",detected
   pm-gh1552,related,"2026-11-11T19:05:52.810Z","harness:claude-code","cli:create:dep",detected
   pm-7zs0,discovered_from,"2026-11-11T19:08:30.933Z","harness:claude-code","cli:update:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-12T21:55:16.402Z","harness:claude-code","Implementation (2026-11-12). Compacted strings now carry a recognisable marker: compactExplanatoryString in src/core/shared/text-normalization.ts keeps the Unicode-safe 240-code-unit prefix and appends the ellipsis plus [+N chars], where N is the omitted UTF-16 code-unit count. Both compaction walkers use it, so JSON, TOON and the context-intent path agree. readCompactionMarker recognises only a trailing marker with a positive count (tolerating trailing whitespace), so a bare ellipsis or a marker quoted mid-text is ordinary text. runAnnotationCommand in src/sdk/annotations.ts refuses an --edit whose parsed replacement ends with the marker, before taking the item lock: annotation_text_compacted, exit 2, nothing written, with details collection, entry_index and omitted_characters, and examples naming the --output-budget unbounded read and the --file edit. The guard covers comments, notes and learnings (one shared path, so CLI, SDK and MCP alike). Appends are not refused, because quoting a compacted read as evidence is legitimate. Contract change: compacted strings used to end with a bare ellipsis."
+files[4]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+  src/core/shared/text-normalization.ts,project
+  src/sdk/annotations.ts,project
+  src/sdk/read-output-budget.ts,project
 body: ""

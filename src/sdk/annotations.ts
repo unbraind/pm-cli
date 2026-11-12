@@ -20,6 +20,7 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { parseLimit } from "../core/shared/numeric-parsers.js";
 import { nowIso } from "../core/shared/time.js";
+import { readCompactionMarker } from "../core/shared/text-normalization.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import {
   locateItem,
@@ -596,6 +597,40 @@ function assertAnnotationAddValueIsNotFlagLike(
 }
 
 /**
+ * Refuse an edit whose replacement ends with the read-output compaction marker
+ * (pm-n98pir). Budgeted reads shorten long entries to a prefix plus
+ * `…[+N chars]`, so such text was copied from a compacted read, and writing it
+ * back would silently drop the stored entry's remaining characters. A bare
+ * trailing ellipsis is ordinary text and still succeeds.
+ */
+function assertAnnotationEditTextIsNotCompacted(
+  id: string,
+  text: string,
+  config: AnnotationCommandConfig<string, AnnotationEntry>,
+): void {
+  if (config.input.mode !== "edit") return;
+  const omitted = readCompactionMarker(text);
+  if (omitted === undefined) return;
+  const noun = config.collectionKey.replace(/s$/, "");
+  const index = config.input.index as number;
+  throw new PmCliError(
+    `Replacement text for ${noun} ${index} on ${id} ends with the read-output compaction marker, so it was copied from a compacted read that left out ${omitted} characters. Nothing was written.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "annotation_text_compacted",
+      item_id: id,
+      details: { collection: config.collectionKey, entry_index: index, omitted_characters: omitted },
+      required: `Read the whole ${noun} with --output-budget unbounded, apply the change to the full text, and retry the edit without the trailing marker.`,
+      why: "A budgeted read shortens long entries to a prefix plus a marker naming how many characters it left out; editing from that text would replace the stored entry with the shortened prefix.",
+      examples: [
+        `pm ${config.collectionKey} ${id} --output-budget unbounded --json`,
+        `pm ${config.collectionKey} ${id} --edit ${index} --file <full-text-file>`,
+      ],
+    },
+  );
+}
+
+/**
  * Reject list-mode invocations that pass `--message` without any content
  * source. `--message` only labels a mutation's history entry, so accepting it
  * alone would exit 0 while recording nothing — the GH-588/GH-615 silent
@@ -878,6 +913,7 @@ export async function runAnnotationCommand<
       EXIT_CODE.USAGE,
     );
   }
+  assertAnnotationEditTextIsNotCompacted(id, text, config);
 
   if (config.input.mode === "edit") {
     const op = config.editOp ?? config.op;

@@ -1,0 +1,19 @@
+id: pm-gh1713
+title: "GH-1713: strict create offers no auditable deferred value, so importers cannot create an item whose deadline, assignee or acceptance criteria are not known yet"
+description: "GH-1713 (filed 2026-11-12). Under the strict preset, strict create requires concrete values for deadline, assignee and acceptance criteria and refuses every way of saying a value is not known yet: the repeatable options accept an explicit clear, but the three required scalars refuse --unset and accept no deferred value. An importer that mirrors records from another system (pm-github gated issue sync, Linear, ADO or CSV importers) must either fail or invent a deadline and an assignee. pm-github runs its sync inside one atomic import, so in a strict tracker every new GitHub issue fails strict create and the whole daily sync rolls back; one fleet repository has failed this way on every run for 19 days (importer side tracked in unbraind/pm-github issue 237). Proposed direction from the issue: an explicit, auditable deferred state for strict-required scalars on create, never a silent bypass. A typed marker or a defer option with a reason (CLI and SDK create options), recorded in history; pm health and pm validate list deferred fields as curation work; strict close still requires concrete values so a deferral never lets incomplete work finish; optionally the deferral is allowed only for items with external provenance or for callers that declare an import capability."
+type: Feature
+status: open
+priority: 2
+tags[5]: "gh:1713",governance,importers,sdk,strict-preset
+created_at: "2026-11-12T21:09:20.732Z"
+updated_at: "2026-11-12T21:09:20.732Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Strict create accepts an explicit deferral for deadline, assignee and acceptance criteria with a reason, through the CLI and the SDK create options; The deferral is recorded in history and pm validate and pm health list deferred fields as curation work; Strict close still requires concrete values for every deferred field; A strict-preset importer run creates items without inventing values and the pm-github sync no longer rolls back"
+parent: pm-33cw
+risk: medium
+confidence: medium
+severity: medium
+expected_result: An importer creates a strict item with explicitly deferred fields
+actual_result: "Strict create refuses every unknown deadline, assignee or acceptance criteria"
+body: ""

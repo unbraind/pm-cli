@@ -21542,6 +21542,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "annotation_text_compacted",
+      "class": "usage",
+      "code": "annotation_text_compacted",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Annotation text compacted condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/annotations.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "annotation_text_source_conflict",
       "class": "usage",
       "code": "annotation_text_source_conflict",

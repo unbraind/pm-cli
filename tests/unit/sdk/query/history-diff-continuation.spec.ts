@@ -29,7 +29,7 @@ describe("history diff output continuation", () => {
       );
       expect(page).not.toHaveProperty("output_budget_exceeded");
       expect(page.read_output).toMatchObject({ strings_compacted: true });
-      expect((page.history as Array<{ detail: string }>)[0]?.detail).toHaveLength(241);
+      expect((page.history as Array<{ detail: string }>)[0]?.detail).toBe(`${detail.slice(0, 240)}…[+${detail.length - 240} chars]`);
       expect(page.diff).toEqual(diff);
     }
   });

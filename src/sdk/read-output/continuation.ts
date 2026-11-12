@@ -10,6 +10,7 @@ import { createHash } from "node:crypto";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { stableStringify } from "../../core/shared/serialization.js";
+import { isCompactedCursorArgument } from "../../core/shared/text-normalization.js";
 import type {
   PmReadOutputCursorEnvelope,
   PmReadOutputSurface,
@@ -218,10 +219,29 @@ function isReadOutputCursorDirection(value: unknown): boolean {
   return value === undefined || value === "b";
 }
 
+/** Explain an output cursor that a compacted read shortened (GH-1710). */
+function assertReadOutputCursorNotCompacted(raw: string): void {
+  if (isCompactedCursorArgument(raw)) {
+    throw new PmCliError(
+      "The read-output continuation cursor was shortened by output compaction: it contains an ellipsis, which no cursor encoder emits.",
+      EXIT_CODE.USAGE,
+      {
+        code: "read_output_cursor_invalid",
+        reason: "cursor_compacted",
+        required: "Pass the whole cursor the previous page emitted; a shortened cursor cannot resume the read.",
+        nextSteps: [
+          "Re-read the previous page with a larger --output-budget (or --output-budget unbounded) and pass its whole output_cursor to --output-cursor.",
+        ],
+      },
+    );
+  }
+}
+
 /** Decode and validate one universal declared-row continuation cursor. */
 export function decodeReadOutputContinuationCursor(
   raw: string,
 ): PmReadOutputCursorEnvelope {
+  assertReadOutputCursorNotCompacted(raw);
   if (raw.length > MAX_READ_OUTPUT_CURSOR_LENGTH) {
     throw new PmCliError(
       "The read-output continuation cursor is malformed or unsupported.",

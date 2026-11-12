@@ -23,7 +23,7 @@ import {
 import { propagateContextUsageServingReceipt } from "./context-usage.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { unicodeSafePrefix } from "../core/shared/text-normalization.js";
+import { compactExplanatoryString, isContinuationTokenKey } from "../core/shared/text-normalization.js";
 
 /** Read commands that ship built-in intent projections. */
 export type PmContextIntentCommand =
@@ -599,7 +599,11 @@ const CONTEXT_INTENT_DEGRADATIONS: Readonly<
 
 const MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET = 256;
 
-/** Bound explanatory strings without dropping rows or invalidating pagination metadata. */
+/**
+ * Bound explanatory strings without dropping rows or invalidating pagination
+ * metadata: a continuation token stays whole (GH-1710), and a shortened string
+ * ends with the compaction marker (pm-n98pir).
+ */
 function compactContextIntentValue(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map(compactContextIntentValue);
@@ -608,13 +612,13 @@ function compactContextIntentValue(value: unknown): unknown {
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [
         key,
-        compactContextIntentValue(entry),
+        typeof entry === "string" && isContinuationTokenKey(key)
+          ? entry
+          : compactContextIntentValue(entry),
       ]),
     );
   }
-  return typeof value === "string" && value.length > 240
-    ? `${unicodeSafePrefix(value, 240)}…`
-    : value;
+  return typeof value === "string" ? compactExplanatoryString(value) : value;
 }
 
 function parsePositiveIntentTokenBudget(value: unknown): number | undefined {

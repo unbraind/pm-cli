@@ -40,7 +40,9 @@ the default adds no receipt overhead to ordinary reads. An oversized result is
 degraded deterministically through string compaction, row compaction, and a
 truthful omission envelope; automatic degradation adds `read_output` with
 `budget_source: default`, `budget_tokens`, the final estimate, and the applied
-compaction flags.
+compaction flags. A compacted string ends with the marker `…[+N chars]`, and
+an annotation `--edit` refuses text that ends with it; cursors (`next_cursor`,
+`output_cursor` and every other `*_cursor` key) are never compacted.
 
 Use `--output-budget <tokens>` to request a tighter per-call ceiling. Use
 `--output-budget unbounded` only when the caller deliberately accepts the full

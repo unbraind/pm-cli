@@ -5,7 +5,7 @@
  * read-output contract without expanding its public declaration module.
  */
 import { formatBuiltInOutput } from "../core/output/output.js";
-import { unicodeSafePrefix } from "../core/shared/text-normalization.js";
+import { compactExplanatoryString, isContinuationTokenKey } from "../core/shared/text-normalization.js";
 import type { PmReadOutputReceipt } from "./read-output-contracts.js";
 import {
   countReadOutputRows,
@@ -222,12 +222,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-/** Recursively shorten explanatory strings while preserving the selected row collection. */
+/**
+ * Recursively shorten explanatory strings while preserving the selected row
+ * collection. A continuation token is machine input for the next call, so it
+ * is never shortened (GH-1710); a shortened string ends with the compaction
+ * marker that write paths recognise (pm-n98pir).
+ */
 function compactStrings(value: unknown, state: StringCompactionState, preserveStrings = false): unknown {
   if (typeof value === "string") {
-    if (preserveStrings || value.length <= 240) return value;
-    state.compacted = true;
-    return `${unicodeSafePrefix(value, 240)}…`;
+    if (preserveStrings) return value;
+    const compacted = compactExplanatoryString(value);
+    if (compacted !== value) state.compacted = true;
+    return compacted;
   }
   if (Array.isArray(value)) {
     return value.map((entry) => compactStrings(entry, state, preserveStrings));
@@ -236,7 +242,11 @@ function compactStrings(value: unknown, state: StringCompactionState, preserveSt
   return Object.fromEntries(
     Object.entries(value).map(([key, entry]) => [
       key,
-      compactStrings(entry, state, preserveStrings || key === "focus_row_states"),
+      compactStrings(
+        entry,
+        state,
+        preserveStrings || key === "focus_row_states" || (typeof entry === "string" && isContinuationTokenKey(key)),
+      ),
     ]),
   );
 }
@@ -367,7 +377,11 @@ export function compactReadOutputToBudget(
   const compacted = Object.fromEntries(
     Object.entries(result).map(([key, value]) => [
       key,
-      compactStrings(value, stringCompactionState, preserveStrings && key === "diff"),
+      compactStrings(
+        value,
+        stringCompactionState,
+        (preserveStrings && key === "diff") || (typeof value === "string" && isContinuationTokenKey(key)),
+      ),
     ]),
   );
   preserveReadOutputRowContract(result, compacted);
