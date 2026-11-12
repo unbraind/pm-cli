@@ -7,6 +7,10 @@
 - GH-1707: URL credential redaction strips host and path from public URLs with @ in the path, and a stored credential-bearing identity is echoed verbatim in claim refusals: A public URL with an @ in its path lost its host and path and withheld the retry; a credential-bearing PM_AUTHOR, --author or --assignee was stored and echoed verbatim in claim refusals → Only an http(s), ws(s) or ftp URL that provably holds no userinfo is left alone, so scoped-package and blob URLs keep an executable retry; an asserted or configured identity, --assignee, a seed author or an identity runtime field carrying URL userinfo is refused with invalid_argument_value, and refusals, warnings and claim envelopes redact a stored one. Migrate: Use a plain name for PM_AUTHOR, --author, default_author, --assignee and seed author= values; rewrite a holder stored by an older version with pm update <id\> --assignee <name\> --force, or take it over with pm claim <id\> --force ([pm-gh1707](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1707.toon))
 - GH-1704: secret guard flags short credential values only under password keys; api_key, client_secret, token and \*\_TOKEN/\*\_SECRET keys pass: A short credential value under api_key, client_secret, token, secret_key, private_key, passwd, pwd or a compound key such as DB_PASSWORD or GITHUB_TOKEN produced no finding → Such a value produces a credential_key_assignment finding in advise mode and is refused in block mode; pm token budgets, counts, placeholders, masks, paths and prose stay clean. Migrate: Accept the credential_key_assignment rule id wherever finding rules are matched; replace the literal with a placeholder or reference, or review a force override in block mode ([pm-gh1704](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1704.toon))
 
+### Security
+
+- Identity refusal reads only top-level fields, so a runtime field mapped onto comments, notes, learnings or dependencies can store a nested author with URL userinfo ([pm-ziv9yb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ziv9yb.toon))
+
 ## 2026.11.12 - 2026-11-12
 
 ### Changed (SDK contract)

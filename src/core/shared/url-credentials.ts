@@ -120,10 +120,21 @@ export function parseIdentityOption(value: string | undefined, source: string): 
   return value;
 }
 
-/** Refuse URL userinfo in every identity field of runtime or registered field values. */
-export function assertIdentityFieldsWithoutUrlCredentials(values: object): void {
-  for (const field of IDENTITY_FIELDS) {
-    assertIdentityWithoutUrlCredentials((values as Record<string, unknown>)[field], field);
+/** Deepest nesting walked for identity fields; item metadata and field values are shallow. */
+const IDENTITY_FIELD_DEPTH = 4;
+const IDENTITY_FIELD_NAMES: ReadonlySet<string> = new Set(IDENTITY_FIELDS);
+
+/**
+ * Refuse URL userinfo in every identity field of item metadata or runtime and
+ * registered field values, including entries nested in collections such as a
+ * runtime array field mapped onto `comments` (pm-ziv9yb).
+ */
+export function assertIdentityFieldsWithoutUrlCredentials(values: object, depth = 0): void {
+  for (const [key, value] of Object.entries(values)) {
+    if (IDENTITY_FIELD_NAMES.has(key)) assertIdentityWithoutUrlCredentials(value, key);
+    else if (depth < IDENTITY_FIELD_DEPTH && typeof value === "object" && value !== null) {
+      assertIdentityFieldsWithoutUrlCredentials(value, depth + 1);
+    }
   }
 }
 

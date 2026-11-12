@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1707",privacy,redaction,security
 created_at: "2026-11-12T05:13:26.310Z"
-updated_at: "2026-11-12T14:41:38.399Z"
+updated_at: "2026-11-12T19:52:41.189Z"
 closed_at: "2026-11-12T08:56:31.736Z"
 completed_at: "2026-11-12T08:56:31.736Z"
 author: "harness:claude-code"
@@ -47,7 +47,7 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
   node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts tests/unit/sdk/agent-runtime-primitives.spec.ts,project,600,"harness:claude-code","2026-11-12T08:23:27.578Z",local_mutation,fix/credential-key-and-url-redaction
 docs[1]{path,scope}:
   docs/MUTATION_INTEGRITY.md,project
-close_reason: "Public URLs with an at sign in the path survive redaction, and identities can no longer store or echo URL credentials"
+close_reason: "Public URLs with an at sign in the path keep their host, path and retry; identities carrying URL userinfo are refused at write time; refusals, warn-mode warnings and claim and release envelopes redact a stored holder (pm get and pm list still show legacy data as stored, see pm-oh24c5)"
 contract_change:
   api: "URL credential redaction in refusals and recoveries; author, assignee and claim identities"
   before: "A public URL with an @ in its path lost its host and path and withheld the retry; a credential-bearing PM_AUTHOR, --author or --assignee was stored and echoed verbatim in claim refusals"

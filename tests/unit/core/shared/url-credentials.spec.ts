@@ -94,6 +94,12 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
     expect(() => assertIdentityWithoutUrlCredentials(undefined, "--assignee")).not.toThrow();
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ assignee: "https://t@h", note: "https://u:p@h" })).toThrow(/assignee must not/u);
     expect(() => assertIdentityFieldsWithoutUrlCredentials({ note: "https://u:p@h" })).not.toThrow();
+    // pm-ziv9yb: a runtime array field mapped onto a collection carries nested authors.
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ comments: [{ author: "https://u:p@h", text: "x" }] })).toThrow(/author must not/u);
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ comments: [{ author: "agent-a", text: "https://u:p@h" }] })).not.toThrow();
+    const deep = { a: { b: { c: { d: { e: { author: "https://u:p@h" } } } } } };
+    expect(() => assertIdentityFieldsWithoutUrlCredentials(deep)).not.toThrow();
+    expect(() => assertIdentityFieldsWithoutUrlCredentials({ note: null, count: 3, tags: ["a"] })).not.toThrow();
   });
 
   it("redacts each whitespace-delimited word of free text and skips text without an at sign", () => {
