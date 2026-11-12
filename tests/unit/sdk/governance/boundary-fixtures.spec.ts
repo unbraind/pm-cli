@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   evaluateBoundaryFixtures,
+  isWaiverNoticeDays,
+  MAX_WAIVER_NOTICE_DAYS,
+  sortWaiverNotices,
+  waiverNoticeFor,
   type BoundaryFixtureRegistry,
   type BoundaryFixtureSample,
 } from "../../../../src/sdk/governance/boundary-fixtures.js";
@@ -54,8 +58,99 @@ describe("boundary fixture SDK", () => {
       boundary_count: 2,
       captured_count: 1,
       waived_count: 1,
+      waiver_notices: [],
       findings: [],
     });
+  });
+
+  it("reports live waivers inside the declared notice window without failing", () => {
+    const fixtures = {
+      "tests/fixtures/boundaries/claude-project-slug.json": sample,
+    };
+    const now = new Date("2026-08-16T00:00:00.000Z");
+    expect(
+      evaluateBoundaryFixtures({ ...registry, waiver_notice_days: 3 }, fixtures, now),
+    ).toMatchObject({
+      ok: true,
+      waived_count: 1,
+      waiver_notices: [
+        {
+          subject_id: "provider-response",
+          owner: "pm-provider",
+          expires_at: "2026-08-18T00:00:00.000Z",
+          days_remaining: 2,
+        },
+      ],
+    });
+    // Exactly the window length away is outside it; absent and zero windows report nothing.
+    for (const window of [2, 0, undefined]) {
+      expect(
+        evaluateBoundaryFixtures(
+          { ...registry, waiver_notice_days: window },
+          fixtures,
+          now,
+        ).waiver_notices,
+      ).toEqual([]);
+    }
+    // An expired waiver is a finding, never a notice.
+    expect(
+      evaluateBoundaryFixtures(
+        { ...registry, waiver_notice_days: 30 },
+        fixtures,
+        new Date("2026-08-19T00:00:00.000Z"),
+      ),
+    ).toMatchObject({
+      ok: false,
+      waiver_notices: [],
+      findings: [{ boundary_id: "provider-response", kind: "expired_waiver" }],
+    });
+  });
+
+  it("rejects a notice window that is not a whole number of days within bounds", () => {
+    for (const window of [-1, 1.5, MAX_WAIVER_NOTICE_DAYS + 1, "14"]) {
+      expect(
+        evaluateBoundaryFixtures(
+          { ...registry, waiver_notice_days: window as number },
+          {},
+        ),
+      ).toMatchObject({
+        ok: false,
+        waiver_notices: [],
+        findings: [{ boundary_id: "registry", kind: "invalid_registry" }],
+      });
+    }
+    expect(isWaiverNoticeDays(0)).toBe(true);
+    expect(isWaiverNoticeDays(MAX_WAIVER_NOTICE_DAYS)).toBe(true);
+    expect(isWaiverNoticeDays(Number.NaN)).toBe(false);
+  });
+
+  it("builds notices only for valid future expiries and orders them soonest first", () => {
+    const nowMs = Date.parse("2026-08-16T00:00:00.000Z");
+    expect(waiverNoticeFor("a", "o", "not-a-date", nowMs, 14)).toBeUndefined();
+    expect(
+      waiverNoticeFor("a", "o", "2026-08-15T23:59:59.999Z", nowMs, 14),
+    ).toBeUndefined();
+    expect(
+      waiverNoticeFor("a", "o", "2026-08-16T06:00:00.000Z", nowMs, 1),
+    ).toEqual({
+      subject_id: "a",
+      owner: "o",
+      expires_at: "2026-08-16T06:00:00.000Z",
+      days_remaining: 0,
+    });
+    const notice = (subject_id: string, expires_at: string) => ({
+      subject_id,
+      owner: "o",
+      expires_at,
+      days_remaining: 0,
+    });
+    expect(
+      sortWaiverNotices([
+        notice("z", "2026-08-20T00:00:00.000Z"),
+        notice("b", "2026-08-17T00:00:00Z"),
+        notice("a", "2026-08-17T00:00:00.000Z"),
+      ]).map((entry) => entry.subject_id),
+    ).toEqual(["a", "b", "z"]);
   });
 
   it("fails closed for invalid registries, duplicate entries, and absent fixtures", () => {

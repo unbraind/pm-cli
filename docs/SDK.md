@@ -202,6 +202,18 @@ stored lists only from list calls. `projectLinkedCollectionMutation` and
 `writtenLinkedEntries` are exported so a package can bound its own collection
 writes the same way.
 
+The waiver notice update (pm-xcndcu) records a breaking acknowledgement for
+`BoundaryFixtureRegistry`, `BoundaryFixtureReport`, `DefectRecurrencePolicy`
+and `DefectGateEvidenceReport`. Both inputs gain an optional whole-day
+`waiver_notice_days` (0 to 366, absent means 0), and both reports gain a
+required `waiver_notices` array of live waivers expiring inside that window.
+Notices never change `ok`, so existing readers and gates behave unchanged; code
+that constructs either report, such as a test double, must add
+`waiver_notices: []`. An expired gate-evidence finding's `detail` now names the
+recorded expiry. No data migration or new dependency bounds are needed.
+`isWaiverNoticeDays`, `waiverNoticeFor` and `sortWaiverNotices` are exported so
+a package can apply the same notice window to its own waivers.
+
 Validation refusals for item status and priority carry producer-owned
 `code: "invalid_argument_value"` and `context.field`, `context.value` and
 `context.allowed`. The allowed spellings come from the active status schema or

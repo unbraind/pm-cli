@@ -1,0 +1,21 @@
+id: pm-gh1704
+title: "GH-1704: secret guard flags short credential values only under password keys; api_key, client_secret, token and *_TOKEN/*_SECRET keys pass"
+description: "GH-1704 (filed 2026-11-11). On 2026.11.11 the secret guard flags a short credential value under password and passphrase keys only. A 17-character random value under api_key, client_secret, token, passwd, db_password, private_key, GITHUB_TOKEN, NPM_TOKEN or AWS_SECRET_ACCESS_KEY passes scanMutationSecrets and the default advise write path in the key: v, key=v and JSON spellings. The high_entropy_assignment rule covers token, secret, password, passwd and api_key only from 24 characters with entropy 3.5, and covers neither client_secret nor compound keys such as db_password. Agents paste env excerpts, CI logs and pasted configs into comments and descriptions, and that is exactly the shape that leaks. Packages cannot rely on the SDK scanner, so pm-memory keeps its own parser. Proposal from the issue: one credential-key rule that reuses the pm-gh1699 KEY plus VALUE composition, the structured JSON, Python-dict and XML pass, an 8-character minimum, whitespace-free values and the placeholder exclusions, with a must-allow corpus (token_budget, max_tokens, token_count, placeholders, prose, localization labels)."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"gh:1704",sdk,secret-guard,security
+created_at: "2026-11-12T05:13:22.718Z"
+updated_at: "2026-11-12T05:13:22.718Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "One credential-key rule flags 8+ character whitespace-free non-placeholder values under secret, token, api key, private key, access key, client secret, passwd, pwd and compound *_password/*_secret/*_token/*_api_key/*_private_key keys in any case, in key: v, key=v, JSON, Python-dict and XML spellings; A must-allow corpus stays clean: token_budget, max_tokens, output_token_budget, numeric token counts, placeholders, prose and localization labels; The SDK scanMutationSecrets and the CLI advise path agree on the corpus"
+parent: pm-qwoy
+risk: medium
+confidence: high
+severity: medium
+expected_result: A credential value under any common credential key name raises secret_guard_detected
+actual_result: Only password and passphrase keys flag a 17-character value
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1699,related,"2026-11-12T05:13:22.718Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -66,6 +66,7 @@ Validates docs and .agents/skills freshness gates:
 - relative markdown links in docs + README/AGENTS/CONTRIBUTING
 - agentskills frontmatter validity for required skills
 - pm guide topic/doc routing integrity
+- every required guide document ships in the npm package
 - guide command examples match runtime command contracts
 - fenced skill invocations use only flags a contract or package declares
 - every declared capability family has a hand-written guide topic
@@ -583,6 +584,41 @@ export async function runGuideChecks(failures) {
   }
 }
 
+/** npm matches files patterns with dotfiles enabled; neutralize leading dots so `*` and `**` cross them. */
+function withoutLeadingDots(value) {
+  return value.replace(/(^|\/)\./gu, "$1\u0001");
+}
+
+/** Apply package.json files patterns in npm order: a later negation excludes what an earlier pattern included. */
+export function isPackagedPath(relativePath, filePatterns) {
+  const candidate = withoutLeadingDots(relativePath);
+  let included = false;
+  for (const pattern of filePatterns) {
+    const negated = pattern.startsWith("!");
+    const glob = withoutLeadingDots(negated ? pattern.slice(1) : pattern);
+    if (candidate === glob || path.posix.matchesGlob(candidate, glob)) {
+      included = !negated;
+    }
+  }
+  return included;
+}
+
+/** Installed guides read docs from the package root, so every required guide document must ship in the npm package. */
+export async function validateGuideDocsPackaged(failures, options = {}) {
+  const topics = options.topics ?? listGuideTopics();
+  const filePatterns =
+    options.filePatterns ?? JSON.parse(await readUtf8("package.json")).files;
+  for (const topic of topics) {
+    for (const doc of topic.docs) {
+      if (doc.optional !== true && !isPackagedPath(doc.path, filePatterns)) {
+        failures.push(
+          `Guide topic "${topic.id}" requires ${doc.path}, which the npm package does not ship; ship it or mark it optional`,
+        );
+      }
+    }
+  }
+}
+
 /** Require entrypoint docs to name optional guide routing and its package-install prerequisite. */
 
 export async function validateRequiredGuideMentions(failures) {
@@ -1048,6 +1084,7 @@ export async function main() {
     await validateCapabilityFamilyRouting(failures);
     await runSkillChecks(failures);
     await runGuideChecks(failures);
+    await validateGuideDocsPackaged(failures);
   }
 
   const payload = {

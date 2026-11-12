@@ -20,9 +20,9 @@ pm guide release --json
 | Reader                              | First page                                  | Then read                                                                                                                                                      |
 | ----------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | New user                            | [Quickstart](QUICKSTART.md)                 | [Command Reference](COMMANDS.md)                                                                                                                               |
-| New maintainer                      | [Onboarding](ONBOARDING.md)                 | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md), [Releasing](RELEASING.md)                                                                                |
+| New maintainer                      | [Onboarding](ONBOARDING.md)                 | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md), [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm)                                                                                |
 | Coding agent                        | [Agent Guide](AGENT_GUIDE.md)               | [Configuration](CONFIGURATION.md), then command help                                                                                                           |
-| Maintainer                          | [Contributing](../CONTRIBUTING.md)          | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md)                                                                              |
+| Maintainer                          | [Contributing](../CONTRIBUTING.md)          | [Testing](TESTING.md), [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm), [Architecture](ARCHITECTURE.md)                                                                              |
 | Package author                      | [Packages and Extensions](EXTENSIONS.md)    | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md)                                                                                       |
 | Codex or ChatGPT plugin implementer | [Codex Plugin](CODEX_PLUGIN.md)             | [Native ChatGPT and Codex Plugin Implementation Plan](https://github.com/unbraind/pm-cli/blob/main/docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) (repository-only, excluded from npm)                                                                  |
 | Codex user                          | [Codex Plugin](CODEX_PLUGIN.md)             | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md)                                                                                           |
@@ -110,7 +110,7 @@ pm guide release --json
   research, current-state audit, target architectures, security, testing, and phased remediation plan.
 - [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) - native Claude Code plugin architecture and install flow.
 - [CLI Simplification Migration](MIGRATION_CLI_SIMPLIFICATION.md) - root discovery (`--pm-path`), recovery bundles, and clear/unset semantics for automation maintainers.
-- [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
+- [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm) - maintainer release checklist and failure handling.
 - [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.
 
 Additional SDK, operations, and generated contracts:
@@ -136,7 +136,7 @@ Additional SDK, operations, and generated contracts:
 | `extensions`, `packages`  | [Packages and Extensions](EXTENSIONS.md), [starter extension](examples/starter-extension/README.md) |
 | `skills`                  | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/*`                                               |
 | `harnesses`               | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/HARNESS_COMPATIBILITY.md`                        |
-| `release`                 | [Releasing](RELEASING.md), [CHANGELOG](../CHANGELOG.md)                                             |
+| `release`                 | [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm), [CHANGELOG](../CHANGELOG.md)                                             |
 
 Community files:
 

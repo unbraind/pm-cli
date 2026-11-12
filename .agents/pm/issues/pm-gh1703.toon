@@ -1,0 +1,21 @@
+id: pm-gh1703
+title: "GH-1703: pm context spends a third of its default output on a fixed omission receipt whose restore hints are all --section <name>"
+description: "GH-1703 (filed 2026-11-11). Every default pm context call ends with an omission_receipt listing the ten sections the default projection leaves out, one row each, and every restore hint is the plain --section name form. Measured on a fresh two-item tracker: default TOON 1,449 B with a 505 B receipt (35 percent), --json 2,733 B with 684 B. The receipt is identical on every default call, so it is a fixed cost at the start of every session and the largest block on small trackers. Proposal: when the omitted set is exactly the documented default, emit one compact line of omitted section names plus a single restore template; keep the per-row table only for rows whose restore command is not derivable from the name (a budget cut, a truncated list, a requested section that could not be served); apply the same rule to other omission receipts whose restore hints are derivable from the row name."
+type: Issue
+status: open
+priority: 3
+tags[5]: agent-ux,context,"gh:1703",output,token-efficiency
+created_at: "2026-11-12T05:13:34.929Z"
+updated_at: "2026-11-12T05:13:34.929Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "When the omitted set equals the documented default, the receipt is one compact line of names plus a single restore template; Rows whose restore command is not derivable from the name keep the per-row form; Other omission receipts with name-derivable hints follow the same rule, and the receipt contract stays parseable"
+parent: pm-5t33or
+risk: low
+confidence: high
+severity: low
+expected_result: The default context receipt costs about 150 B
+actual_result: "The default receipt is 505 B, 35 percent of output on a small tracker"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1684,related,"2026-11-12T05:13:34.929Z","harness:claude-code","cli:create:dep",detected
+body: ""

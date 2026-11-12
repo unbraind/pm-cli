@@ -177,6 +177,16 @@
     "provider_checks": [
       {
         "kind": "provider_check",
+        "path": "scripts/release/defect-evidence-gate.mjs",
+        "provider": "repository-quality/defect-waiver-notice",
+        "provider_args": ["--waiver-notice"],
+        "negative_control": {
+          "test": "tests/unit/scripts/release/defect-evidence-gate.spec.ts",
+          "assertion": "fails while a boundary or defect waiver is inside its notice window and passes once every waiver is outside it"
+        }
+      },
+      {
+        "kind": "provider_check",
         "path": "scripts/release/dependency-advisories/gate.mjs",
         "provider": "repository-quality/dependency-advisories",
         "provider_args": ["--verify-receipt"],

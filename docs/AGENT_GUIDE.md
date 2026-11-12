@@ -239,7 +239,7 @@ push tracker-only or changelog-only closeout directly to `main`: that direct
 commit becomes the release candidate but has no reviewed analyzer provenance,
 so `Release analyzer readiness (main)` must refuse it. Record external
 post-merge observations on GitHub without changing repository state when no
-tracked closeout update is required. See [Releasing](RELEASING.md#reviewed-delivery-closeout)
+tracked closeout update is required. See [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md#reviewed-delivery-closeout) (repository-only, excluded from npm)
 for the release contract.
 
 ## Review and Analyzer Proof

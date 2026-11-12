@@ -1,6 +1,6 @@
 # Defect Recurrence and Boundary Evidence
 
-Tracked by [pm-1qkivy](../.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](../.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](../.agents/pm/tasks/pm-0pzgit.toon), [pm-7c27ep](../.agents/pm/issues/pm-7c27ep.toon), [pm-h8tpeh](../.agents/pm/features/pm-h8tpeh.toon), and [pm-003j](../.agents/pm/tasks/pm-003j.toon).
+Tracked by [pm-1qkivy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1qkivy.toon), [pm-rtn5h6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rtn5h6.toon), [pm-0pzgit](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0pzgit.toon), [pm-7c27ep](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7c27ep.toon), [pm-h8tpeh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-h8tpeh.toon), [pm-003j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-003j.toon), and [pm-xcndcu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xcndcu.toon). These tracker records are repository-only and excluded from npm.
 
 ## Agent Quick Context
 
@@ -197,6 +197,25 @@ The repository inventory is [config/boundary-fixtures.json](../config/boundary-f
 The evaluator rejects a `self_generated` source because a fixture created by the same implementation cannot reveal disagreement with an external format. It also scans committed JSON for common home-directory, package-token, GitHub-token, and private-key patterns.
 
 The Claude Code directory-slug fixture is consumed directly by the author-provenance test. The npm, GitHub Actions, Git commit, and Sentry samples preserve real field shapes while replacing identifiers, paths, URLs, and user data.
+
+## Waiver Notice Window
+
+An expiring waiver is a forcing function: once `waiver_expires_at` passes, the gate fails closed until someone renews or retires it. Without notice, that failure lands on whatever runs first after midnight UTC, which is usually the daily release. Both registries therefore declare a notice window as data:
+
+- `waiver_notice_days` in the recurrence policy (`config/defect-recurrence-policy.json`) covers `explicit_waiver` gate evidence on governed terminal defects;
+- `waiver_notice_days` in the boundary registry (`config/boundary-fixtures.json`) covers boundary waivers.
+
+The value is a whole number of days from `0` to `366`; absent means `0`. `evaluateDefectGateEvidence` and `evaluateBoundaryFixtures` return each valid live waiver whose expiry falls inside the window under `waiver_notices` (`subject_id`, `owner`, `expires_at`, `days_remaining`). Notices never change `ok`: the evidence gate, pull-request CI and the release keep passing, and the text output lists every notice under the findings. `isWaiverNoticeDays`, `waiverNoticeFor` and `sortWaiverNotices` are exported so a package can apply the same window to its own waiver registry.
+
+The early warning is a separate scheduled assurance gate:
+
+```bash
+node scripts/release/defect-evidence-gate.mjs --waiver-notice
+node scripts/release/defect-evidence-gate.mjs --waiver-notice --negative-control
+node scripts/release/repository-assurance.mjs repository-waiver-notice --trigger scheduled
+```
+
+`--waiver-notice` fails while any waiver is inside its window and on every boundary or defect-evidence finding, because a malformed or duplicate record can hide an expiry; recurrence-policy findings do not affect it. The negative control seeds one boundary waiver and one defect waiver an hour from expiry and must exit `1`. The `repository-waiver-notice` gate (assertion `repository-waiver-notice-clear`, trigger `scheduled`) runs this provider in the nightly quality job, so a scheduled run opens the nightly alert issue, listing every waiver it names, about two weeks before an expiry could block a release. Renew a waiver only after re-verifying its reason, and record that verification on the owning item.
 
 ## Repository Gate
 

@@ -1,0 +1,22 @@
+id: pm-gh1707
+title: "GH-1707: URL credential redaction strips host and path from public URLs with @ in the path, and a stored credential-bearing identity is echoed verbatim in claim refusals"
+description: "GH-1707 (filed 2026-11-11). Two gaps in the URL-credential redaction shipped by pm-nhauur. (1) Over-redaction: the rule replaces everything between a token's first colon and its last at-sign, so a public URL without userinfo but with an at-sign in the path loses its host and path; an npm scoped-package URL becomes https://[redacted]@unbrained/pm-cli and the retry command is useless. Proposal: treat a URL as carrying userinfo only when, after the double slash, an at-sign appears before the first slash, question mark or hash, or a colon appears before the first slash and an at-sign appears later; keep the conservative span for real userinfo, including a slash inside a base64 password. (2) Under-redaction of stored identities: PM_AUTHOR set to a credential URL with whitespace in the userinfo is accepted as author, assignee and claim_principal without any secret-guard advisory, persisted, and echoed verbatim three times in a later claim refusal, because the invocation-scoped registry only covers the current argv. Proposal: identity fields refuse or strip URL userinfo at write time, refusal builders redact stored identity values with the same rule as argv, and older data still reads. pm-rust mirrors the fixed behaviour already (pm-rust#165)."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"gh:1707",privacy,redaction,security
+created_at: "2026-11-12T05:13:26.310Z"
+updated_at: "2026-11-12T05:13:26.310Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "A URL is redacted only when it carries userinfo (an at-sign before the first slash, question mark or hash after the scheme, or a colon before the first slash and a later at-sign); npm scoped-package and GitHub blob URLs with an at-sign in the path survive intact; Real userinfo stays redacted, including a slash inside a base64 password, a bare token user and a multi-colon password; Identity fields (author, assignee, claim principal from flags or PM_AUTHOR) refuse or strip URL userinfo at write time; Refusal builders redact stored identity values with the argv rule, including whitespace inside userinfo; data written by older versions still reads"
+parent: pm-qwoy
+risk: medium
+confidence: high
+severity: medium
+expected_result: Public URLs survive redaction and no stored credential reaches a refusal
+actual_result: Scoped-package URLs lose host and path; a credential identity is echoed three times
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1699,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
+  pm-nhauur,related,"2026-11-12T05:13:26.310Z","harness:claude-code","cli:create:dep",detected
+body: ""

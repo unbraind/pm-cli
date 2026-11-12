@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: changelog-exclude,codeql,security
 created_at: "2026-10-21T20:14:32.680Z"
-updated_at: "2026-10-21T20:18:37.790Z"
+updated_at: "2026-11-12T05:21:03.576Z"
 closed_at: "2026-10-21T20:18:36.522Z"
 completed_at: "2026-10-21T20:18:36.522Z"
 author: "harness:codex"
@@ -20,9 +20,10 @@ expected_result: Batch and finding records are independently inspectable and sat
 actual_result: "Both child issues are closed/released; the linked SDK environment suite passes16/16. The batch and findings record explicit no-new-gate reasons expiring November21. Source, scanner configuration and coverage thresholds are unchanged."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-6ixn,related,"2026-10-21T20:14:32.680Z","harness:codex","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-10-21T20:14:32.680Z","harness:codex","Duplicate check: complete all-status intake and live CodeQL48/49 searches plus full canonical security epic reads found epic comments but no per-alert child issues. Reuse pm-qwoy and pm-6ixn lineage and create only the missing batch and two finding records."
   "2026-10-21T20:15:57.223Z","harness:codex","Review correction: individual scanner records now exist as pm-codeql48 and pm-codeql49 under this batch. Both preserve medium scanner severity and separate not_actionable verdicts with positive guard evidence. The governance waivers cover only the absence of a justified new gate for a false positive; no scanner or coverage control is disabled. Both records are excluded from the public changelog because they do not describe product changes."
+  "2026-11-12T05:21:03.576Z","harness:claude-code","Waiver renewed 2026-11-12 (pm-xcndcu) ahead of its 2026-11-21 expiry, which the new nightly waiver notice window would have flagged. Re-triage: CodeQL alerts 48 and 49 (js/prototype-polluting-assignment, src/sdk/environment/agent-environment.ts lines 781 and 790) remain dismissed as false positives. parseFieldPath still rejects empty, __proto__, prototype and constructor segments before both assignProjectedPath sinks, and the file is unchanged since 2026-09-03, before the waiver was set. New expiry 2027-02-10T00:00:00Z.\n"
 files[1]{path,scope}:
   src/sdk/environment/agent-environment.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
@@ -46,6 +47,6 @@ escape_class: scanner_finding
 gate_evidence:
   disposition: explicit_waiver
   owner: pm-codeql4849
-  waiver_reason: "This coordination batch imports two independently assessed false positives. Existing synchronous SDK path guards defeat both reported claims and are unchanged. A new product gate is not justified for the import itself; retain strict scanners and coverage, and reassess the disposition if the guard or scanner path changes."
-  waiver_expires_at: "2026-11-21T00:00:00.000Z"
+  waiver_reason: "This coordination batch imports two independently assessed false positives. Existing synchronous SDK path guards defeat both reported claims and are unchanged. A new product gate is not justified for the import itself; retain strict scanners and coverage, and reassess the disposition if the guard or scanner path changes. Re-triaged 2026-11-12 (pm-xcndcu): alerts 48 and 49 remain dismissed as false positives, and parseFieldPath and both assignProjectedPath sinks in src/sdk/environment/agent-environment.ts are unchanged since 2026-09-03, before this waiver was set."
+  waiver_expires_at: "2027-02-10T00:00:00.000Z"
 body: ""

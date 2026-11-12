@@ -1,0 +1,23 @@
+id: pm-vodsfs
+title: "Replace the four remaining boundary-fixture waivers with captured redacted samples (bunx argv, Win32 and Darwin errno, extension provider responses)"
+description: "Four of the nine inventoried external boundaries in config/boundary-fixtures.json still carry explicit waivers instead of captured samples: bunx-forwarded-argv, windows-filesystem-errno, macos-filesystem-errno and extension-provider-response. They were set on 2026-08-17 with a 2026-11-16 expiry, and three of their recorded owners (pm-lpqln4, pm-j668gl, pm-0pzgit) are closed, so nobody owned the capture work when the expiry approached. pm-xcndcu renewed them on 2026-11-12 after re-verifying each reason live; this task owns replacing them with captured, redacted samples so the renewals stop recurring. Paths: bunx argv and executable-path forwarding can be captured on a host with Bun from a probe bin run through bunx, then consumed by the bootstrap executable-alias normalization tests. Win32 and Darwin errno shapes need a redacted capture exporter that runs on the hosted windows-latest and macos-latest nightly legs, shared with the pm-3lhth4 errno translation primitive. Extension provider responses can be captured from a first-party unbraind package provider and consumed by the assurance-runtime provider contract tests."
+type: Task
+status: open
+priority: 2
+tags[7]: assurance,boundary-fixtures,bun,defect-evidence,macos,waivers,windows
+created_at: "2026-11-12T05:19:14.248Z"
+updated_at: "2026-11-12T05:49:14.056Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "bunx-forwarded-argv is backed by a captured_redacted sample from a real bunx run and consumed by the bootstrap executable-alias tests; windows-filesystem-errno and macos-filesystem-errno are backed by samples from a redacted errno capture exporter run on the hosted nightly legs; extension-provider-response is backed by a captured response from a first-party package provider and consumed by the provider contract tests; config/boundary-fixtures.json carries no explicit boundary waiver, or each remaining waiver names an open owner and a re-verified reason"
+parent: pm-1jzupz
+risk: medium
+confidence: medium
+expected_result: "Every inventoried external boundary is backed by a captured redacted sample, so no boundary waiver needs periodic renewal"
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0pzgit,related,"2026-11-12T05:19:14.248Z","harness:claude-code","cli:create:dep",detected
+  pm-3lhth4,related,"2026-11-12T05:19:14.248Z","harness:claude-code","cli:create:dep",detected
+  pm-j668gl,related,"2026-11-12T05:19:14.248Z","harness:claude-code","cli:create:dep",detected
+  pm-lpqln4,related,"2026-11-12T05:19:14.248Z","harness:claude-code","cli:create:dep",detected
+  pm-xcndcu,discovered_from,"2026-11-12T05:19:14.248Z","harness:claude-code","cli:create:dep",detected
+body: ""

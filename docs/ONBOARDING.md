@@ -52,7 +52,7 @@ Then use:
 - [Agent Guide](AGENT_GUIDE.md)
 - [Command Reference](COMMANDS.md)
 - [Testing](TESTING.md)
-- [Releasing](RELEASING.md)
+- [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm)
 
 ## Safe Local Verification
 

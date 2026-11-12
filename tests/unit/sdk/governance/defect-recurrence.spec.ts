@@ -512,6 +512,90 @@ describe("defect recurrence SDK", () => {
     ]);
   });
 
+  it("reports governed live waivers inside the policy notice window without failing", () => {
+    const waiver = (expiresAt: string) => ({
+      disposition: "explicit_waiver",
+      owner: "pm-owner",
+      waiver_reason: "Static false positive",
+      waiver_expires_at: expiresAt,
+    });
+    const items = [
+      {
+        id: "pm-soon",
+        status: "closed",
+        type: "Issue",
+        completed_at: "2026-08-16T12:01:00.000Z",
+        escape_class: "scanner_finding",
+        gate_evidence: waiver("2026-08-20T00:00:00.000Z"),
+      },
+      {
+        id: "pm-later",
+        status: "closed",
+        type: "Issue",
+        completed_at: "2026-08-16T12:01:00.000Z",
+        escape_class: "scanner_finding",
+        gate_evidence: waiver("2026-12-01T00:00:00.000Z"),
+      },
+      {
+        id: "pm-pre-epoch",
+        status: "closed",
+        type: "Issue",
+        completed_at: "2026-08-16T11:00:00.000Z",
+        escape_class: "scanner_finding",
+        gate_evidence: waiver("2026-08-19T00:00:00.000Z"),
+      },
+      {
+        id: "pm-gate",
+        status: "closed",
+        type: "Issue",
+        completed_at: "2026-08-16T12:01:00.000Z",
+        escape_class: "production_defect",
+        gate_evidence: {
+          disposition: "gate_added",
+          gate_id: "notice",
+          negative_control: "seeded waiver",
+          local_checks: ["pnpm test"],
+          hosted_checks: ["CI"],
+          owner: "pm-owner",
+        },
+      },
+    ];
+    const now = new Date("2026-08-17T00:00:00.000Z");
+    const report = evaluateDefectGateEvidence(
+      items,
+      { ...policy(), waiver_notice_days: 14 },
+      ["closed"],
+      now,
+    );
+    expect(report.ok).toBe(true);
+    expect(report.waiver_notices).toEqual([
+      {
+        subject_id: "pm-soon",
+        owner: "pm-owner",
+        expires_at: "2026-08-20T00:00:00.000Z",
+        days_remaining: 3,
+      },
+    ]);
+    expect(
+      evaluateDefectGateEvidence(items, policy(), ["closed"], now).waiver_notices,
+    ).toEqual([]);
+    const expired = evaluateDefectGateEvidence(
+      items,
+      { ...policy(), waiver_notice_days: 14 },
+      ["closed"],
+      new Date("2026-08-21T00:00:00.000Z"),
+    );
+    expect(expired.waiver_notices).toEqual([]);
+    expect(expired.findings).toEqual([
+      {
+        item_id: "pm-soon",
+        kind: "expired_waiver",
+        detail:
+          "pm-soon carries a gate-evidence waiver that expired at 2026-08-20T00:00:00.000Z.",
+      },
+    ]);
+  });
+
   it("uses closed_at for legacy records and governs fully undated terminal defects", () => {
     const completeEvidence = {
       escape_class: "production_defect" as const,
@@ -656,6 +740,18 @@ describe("defect recurrence SDK", () => {
     for (const [input, message] of invalidPolicies) {
       expect(() => parseDefectRecurrencePolicy(input)).toThrow(message);
     }
+    for (const waiverNoticeDays of [-1, 0.5, 367, "14"]) {
+      expect(() =>
+        parseDefectRecurrencePolicy({
+          ...policy(),
+          waiver_notice_days: waiverNoticeDays,
+        }),
+      ).toThrow("waiver_notice_days must be a whole number of days from 0 to 366");
+    }
+    expect(
+      parseDefectRecurrencePolicy({ ...policy(), waiver_notice_days: 14 })
+        .waiver_notice_days,
+    ).toBe(14);
     const accessorFailure = new RangeError("policy accessor failed");
     const accessorPolicy = { get families(): never { throw accessorFailure; } };
     let observedFailure: unknown;

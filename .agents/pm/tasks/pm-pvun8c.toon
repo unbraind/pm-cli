@@ -1,0 +1,44 @@
+id: pm-pvun8c
+title: Exclude the repository-only release runbook docs/RELEASING.md from the npm tarball to restore publication headroom
+description: "Found 2026-11-12 while landing pm-xcndcu: the packed distribution measured 19,998,975 B against the 20,000,000 B ceiling, 1,025 B of headroom, before the changelog lines that the closing items add. docs/RELEASING.md is 58,042 B and documents only how this repository releases @unbrained/pm-cli (the daily auto-release, morning dispatcher, release environment secrets, tag recovery and local parity). An installed package never runs that procedure, and every reader who can act on it has the repository checkout. Same treatment as the five repository-only docs pm-tuxw1i excluded: a package.json files exclusion, a reason in docs-reachability-exceptions.json, and canonical GitHub links marked repository-only in the packaged pages that point to it (AGENTS.md, README.md, CONTRIBUTING.md, docs/README.md, docs/AGENT_GUIDE.md, docs/ONBOARDING.md, docs/BUILD_AND_RELEASE_ACCEPTANCE.md)."
+type: Task
+status: closed
+priority: 1
+tags[4]: docs,packaging,publication-weight,release
+created_at: "2026-11-12T05:59:00.569Z"
+updated_at: "2026-11-12T07:07:44.829Z"
+closed_at: "2026-11-12T06:24:48.443Z"
+completed_at: "2026-11-12T06:24:48.443Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: npm pack no longer includes docs/RELEASING.md and the package artifact gate passes with at least 50 KB of headroom; Every packaged page that linked docs/RELEASING.md links its canonical GitHub URL and states that it is repository-only; The docs reachability gate records the exclusion with a reason
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: "package.json excludes docs/RELEASING.md, with a reason in docs-reachability-exceptions.json. The seven packaged pages that linked it (AGENTS.md, README.md, CONTRIBUTING.md, docs/README.md, docs/AGENT_GUIDE.md, docs/ONBOARDING.md, docs/BUILD_AND_RELEASE_ACCEPTANCE.md) now link its canonical GitHub URL and mark it repository-only."
+expected_result: At least 50 KB of publication headroom with no runtime file removed
+actual_result: "Distribution 19,942,799 B in 1,585 files against the 20,000,000 B ceiling (57,201 B headroom, up from 1,025 B); docs/skills gate passed"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-tuxw1i,related,"2026-11-12T05:59:00.569Z","harness:claude-code","cli:create:dep",detected
+  pm-xcndcu,discovered_from,"2026-11-12T05:59:00.569Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-12T06:48:41.698Z","harness:claude-code","PR 1711 Codex review (P2), fixed in this PR. The runtime guide catalogue in src/sdk/guide-topics.ts still listed docs/RELEASING.md as a required document of the release topic, so on an npm install pm guide release at standard or deep depth would warn 'Missing required guide document: docs/RELEASING.md'. The same topic already listed scripts/release/run-gates.mjs, which the package never shipped, so that warning predated this change. Both entries are now optional and say they exist only in a repository checkout. The docs-skills gate could not see the gap because it runs guides from the checkout. It now also applies package.json files in npm order (isPackagedPath) and fails when a required guide document is not shipped (validateGuideDocsPackaged); the spec covers a negated pattern, a dot-directory and the real repository.\n"
+  "2026-11-12T07:07:44.828Z","harness:claude-code","PR 1711 Codex review round 2, fixed in this PR. (P2) Filtering notice-mode failures to expired, invalid_registry and invalid_waiver still let a malformed explicit waiver (invalid_gate_evidence), a producer-less boundary (invalid_boundary) or a skipped duplicate (duplicate_boundary) hide an expiry, so the warning passed with no notices. Notice mode now fails on every boundary or defect-evidence finding plus every notice; only recurrence-policy findings stay out. The spec covers all four record shapes. (P3, on pm-pvun8c's check) isPackagedPath used path.posix.matchesGlob, which skips dot-prefixed segments, while npm's packlist includes them, so plugins/pm-codex/.mcp.json under plugins/** read as unshipped. Leading-dot segments are now neutralized in both path and pattern before matching; the spec covers dot files and directories under a wildcard and an explicit dot pattern.\n"
+files[4]{path,scope}:
+  package.json,project
+  scripts/release/docs-reachability-exceptions.json,project
+  scripts/release/docs-skills-gate.mjs,project
+  src/sdk/guide-topics.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/docs-skills-gate.mjs,project,300,"harness:claude-code","2026-11-12T06:02:10.330Z",local_mutation,fix/waiver-notice-window
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/docs-skills-gate.spec.ts,project,600,"harness:claude-code","2026-11-12T06:48:44.581Z",local_mutation,fix/waiver-notice-window
+docs[7]{path,scope}:
+  AGENTS.md,project
+  CONTRIBUTING.md,project
+  docs/AGENT_GUIDE.md,project
+  docs/BUILD_AND_RELEASE_ACCEPTANCE.md,project
+  docs/ONBOARDING.md,project
+  docs/README.md,project
+  README.md,project
+close_reason: docs/RELEASING.md is excluded from the npm tarball and every packaged link to it is a canonical repository-only URL
+body: ""

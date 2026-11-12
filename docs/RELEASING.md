@@ -735,6 +735,7 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 
 - If local gates fail, fix and rerun before tagging.
 - Treat failed scheduled Nightly Validation jobs as release-health blockers until triaged. The nightly workflow opens or updates a GitHub issue for each failing scheduled OS/Node matrix entry, with the run URL and commit SHA, so cross-platform regressions do not rely on someone manually scanning the Actions tab.
+- A time-bounded waiver that expires fails `repository-defect-evidence-required` at the next release gate; the failure record names the item or boundary and its expiry. The nightly `Waiver notice window` step fails about two weeks earlier, so renew or retire the waivers it names through a reviewed pull request first. See [Waiver Notice Window](DEFECT_RECURRENCE.md#waiver-notice-window).
 - Treat a green manual Auto Release dry-run (`push=false` or `dry_run=true`) as gate confidence only. It does not prove the protected-branch publish path; scheduled production runs still require `RELEASE_PAT` and `SENTRY_PERSONAL_ADMIN_TOKEN` to be configured in the `release` environment.
 - If release preparation fails before creating a tag, fix the cause and retry
   preparation on the same UTC day.

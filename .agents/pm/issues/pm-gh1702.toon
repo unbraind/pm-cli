@@ -1,0 +1,21 @@
+id: pm-gh1702
+title: "GH-1702: pm test --run prints the full execution_context with host paths on every passing run; default to the lean projection"
+description: "GH-1702 (filed 2026-11-11). pm test --run prints the full 21-field linked-test execution_context on every run, including a single passing test: sandbox and source tracker paths, counts, seeding flags, the trust fingerprint and the working directory. Two of those are absolute host paths: the global tracker under the caller's home directory, and the caller's checkout. Measured on a fresh tracker with one passing test: default TOON 1,975 B with 1,217 B of context (62 percent), --json 2,479 B with 1,355 B, --lean 798 B with 236 B. Agents paste this output into comments and PR text as evidence, so the default form carries host paths into public text and trips privacy gates. pm-fqdmbf hoisted the block across tests but a single-test item still pays it. Proposal: the lean five-field context (pm_context_mode, workspace_context_mode, mismatch_detected, trusted, trust_reason) becomes the default for TOON and JSON; the full block prints only when it explains something (mismatch, trust or config refusal, non-passing result, or an explicit request) with the existing restore hint; no absolute path outside the tracker in the default projection."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"gh:1702",linked-tests,privacy,token-efficiency
+created_at: "2026-11-12T05:13:29.775Z"
+updated_at: "2026-11-12T05:13:29.775Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "The default TOON and JSON pm test --run output carries only the five decision fields of execution_context when nothing needs explaining; The full context prints on a mismatch, a trust or config refusal, a non-passing result, or an explicit request, with the restore hint; The default projection prints no absolute path outside the tracker"
+parent: pm-5t33or
+risk: low
+confidence: high
+severity: medium
+expected_result: A passing single-test run prints a small context with no host paths
+actual_result: Default output is 62 percent execution_context including home and checkout paths
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fqdmbf,related,"2026-11-12T05:13:29.775Z","harness:claude-code","cli:create:dep",detected
+body: ""

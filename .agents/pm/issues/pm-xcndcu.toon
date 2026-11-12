@@ -1,0 +1,65 @@
+id: pm-xcndcu
+title: "A time-bounded gate waiver expires straight into a release block: no notice window, and the gate's text output names neither the item nor the expiry"
+description: "Found 2026-11-12 by the daily release-health check. The 03:45Z morning dispatcher run 43150266775 failed at static-quality-gate and opened GH-1709. The blocking assertion was repository-defect-evidence-required: the closed defect pm-m1tfmp carries an explicit_waiver whose waiver_expires_at (2026-11-12T00:00:00Z) passed at midnight UTC. Nothing in the repository changed; the calendar crossed a date the tracker had recorded for a month.\n\nThree problems. (1) No notice window: a waiver is valid until the second it expires and then blocks every release, pull request and nightly at once, with no earlier signal on any channel an agent reads. (2) The gate's text output, which is what the release log keeps, says only 'Findings: 1'. The failure record names neither the item nor the reason, so recovery needed a local --json rerun. (3) The same cliff repeats across the population: four boundary-fixture waivers in config/boundary-fixtures.json expire 2026-11-16 and three CodeQL disposition waivers (pm-codeql48, pm-codeql49, pm-codeql4849) expire 2026-11-21, so the release would have blocked again on both days.\n\nA census of every dated waiver in the repository found 32 surface-replication waivers. The 8 with future dates are scoped to the unchanged check, which diffs against the default-branch base and so binds only at pull-request time; they cannot block a release on main. The release-blocking population is therefore exactly the defect-evidence gate: item gate_evidence waivers plus boundary-fixture waivers."
+type: Issue
+status: closed
+priority: 1
+tags[6]: defect-evidence,governance,quality-gate,release,reliability,waivers
+created_at: "2026-11-12T05:13:03.902Z"
+updated_at: "2026-11-12T07:42:54.923Z"
+closed_at: "2026-11-12T06:24:41.616Z"
+completed_at: "2026-11-12T06:24:41.616Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "The SDK defect-evidence and boundary-fixture evaluators report every waiver expiring inside a declared notice window (subject, owner, expiry, days remaining) without failing the release gate; The notice window is declared as data in the recurrence policy and validated when the policy is parsed; A scheduled assurance gate fails when any waiver is inside the notice window, so the existing nightly alert opens an issue before the waiver can block a release; The gate's text output names every finding and every waiver inside the notice window; Negative controls prove the notice gate fails for a waiver inside the window and passes for one outside it"
+parent: pm-1jzupz
+risk: high
+confidence: high
+severity: high
+resolution: "The recurrence policy and the boundary registry declare waiver_notice_days (14). The SDK evaluators report waiver_notices without changing ok. defect-evidence-gate.mjs gained --waiver-notice, backed by the scheduled blocking assurance gate repository-waiver-notice, which the nightly quality job runs. Its text output names every finding and notice first, so the release failure record names the item and its expiry. pm-m1tfmp, the three CodeQL waivers and the four boundary waivers were re-verified live and renewed to 2027-02-10. The boundary waivers were re-owned to the open items pm-3lhth4 and pm-vodsfs."
+expected_result: A waiver inside its notice window fails the scheduled gate and leaves PR CI and the release untouched; the release gate passes again
+actual_result: "Defect evidence gate PASS with 0 findings and 0 notices. The scheduled gate passes, and with a 366-day window it blocks naming each waiver. The notice negative control exits 1. Focused specs: 48 tests; the gate script has 100% coverage and every changed SDK line is covered."
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0pzgit,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
+  pm-7zs0,discovered_from,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
+  pm-codeql48,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
+  pm-codeql4849,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
+  pm-codeql49,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
+  pm-m1tfmp,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
+  pm-rtn5h6,related,"2026-11-12T05:13:03.902Z","harness:claude-code","cli:create:dep",detected
+  pm-xa1w84,related,"2026-11-12T05:31:33.275Z","harness:claude-code","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-11-12T06:48:42.571Z","harness:claude-code","PR 1711 Codex review (P2), fixed in this PR. The assurance wrapper keeps only a 500-character excerpt of provider output, so a cohort of eight waivers entering the window together (the 2027-02-10 renewals) would have dropped whole notices, among them pm-codeql49, pm-m1tfmp and the Windows boundary, from the nightly log. The nightly step now prints the gate's complete text and keeps it in a runner temp file before the assurance verdict runs, and the alert body lists every finding and notice line from that file. A local simulation of the alert script confirmed the list renders and a missing file degrades to an empty list.\n"
+  "2026-11-12T06:52:16.689Z","harness:claude-code","PR 1711 CodeRabbit review (Major), fixed in this PR. Notice mode kept only expired_waiver findings, so a boundary registry with an invalid waiver_notice_days (for example the string \"14\" or 367) returned invalid_registry with an empty notice list and no evaluated waivers, and --waiver-notice exited 0 even when a boundary waiver had already expired. Notice mode now also fails on invalid_registry and invalid_waiver, the two findings that mean a waiver could not be evaluated; other fixture findings stay excluded. The spec covers both cases. Greptile and CodeRabbit also flagged the release guide topic listing the excluded docs/RELEASING.md; that is the Codex finding recorded on pm-pvun8c.\n"
+  "2026-11-12T07:07:44.085Z","harness:claude-code","PR 1711 Codex review round 2, fixed in this PR. (P2) Filtering notice-mode failures to expired, invalid_registry and invalid_waiver still let a malformed explicit waiver (invalid_gate_evidence), a producer-less boundary (invalid_boundary) or a skipped duplicate (duplicate_boundary) hide an expiry, so the warning passed with no notices. Notice mode now fails on every boundary or defect-evidence finding plus every notice; only recurrence-policy findings stay out. The spec covers all four record shapes. (P3, on pm-pvun8c's check) isPackagedPath used path.posix.matchesGlob, which skips dot-prefixed segments, while npm's packlist includes them, so plugins/pm-codex/.mcp.json under plugins/** read as unshipped. Leading-dot segments are now neutralized in both path and pattern before matching; the spec covers dot files and directories under a wildcard and an explicit dot pattern.\n"
+  "2026-11-12T07:42:54.923Z","harness:claude-code","PR 1711 CodeRabbit full review on 2f9697ccf (two minors), fixed in this PR. (1) The nightly alert told maintainers to renew or retire a waiver even when notice mode failed on a finding such as missing boundary provenance; the alert now lists waivers to renew or retire separately from findings to fix, and a local simulation renders both sections. (2) The Tracked-by line of the packaged docs/DEFECT_RECURRENCE.md linked .agents/pm records relatively although npm does not ship .agents/pm; the line now uses canonical GitHub URLs and states that the records are repository-only, as AGENTS.md prescribes.\n"
+files[8]{path,scope}:
+  .github/workflows/nightly.yml,project
+  config/boundary-fixtures.json,project
+  config/defect-recurrence-policy.json,project
+  scripts/release/defect-evidence-gate.mjs,project
+  scripts/release/gate-registry.json,project
+  sdk/public-surface.json,project
+  src/sdk/governance/boundary-fixtures.ts,project
+  src/sdk/governance/defect-recurrence.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/unit/sdk/governance/boundary-fixtures.spec.ts tests/unit/sdk/governance/defect-recurrence.spec.ts,project,600,"harness:claude-code","2026-11-12T05:30:34.253Z",local_mutation,fix/waiver-notice-window
+docs[3]{path,scope}:
+  docs/DEFECT_RECURRENCE.md,project
+  docs/RELEASING.md,project
+  docs/SDK.md,project
+close_reason: "Time-bounded waivers now raise a scheduled notice before they can block a release, and the expired and soon-expiring waivers were re-decided"
+contract_change:
+  api: "evaluateBoundaryFixtures, evaluateDefectGateEvidence and their report types"
+  before: Reports said nothing about an approaching expiry; a waiver stayed silent until it expired and failed the gate
+  after: "Reports carry waiver_notices for valid live waivers inside the declared waiver_notice_days window, and ok is unchanged"
+  migrate: "Code that constructs BoundaryFixtureReport or DefectGateEvidenceReport adds waiver_notices: []; declare waiver_notice_days in the policy or registry to receive notices"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  gate_id: repository-waiver-notice
+  negative_control: node scripts/release/defect-evidence-gate.mjs --waiver-notice --negative-control exits 1 with a seeded boundary waiver and a seeded defect waiver inside the window
+  local_checks[3]: node scripts/release/defect-evidence-gate.mjs --waiver-notice,node scripts/release/repository-assurance.mjs repository-waiver-notice --trigger scheduled,node scripts/run-tests.mjs test -- tests/unit/scripts/release/defect-evidence-gate.spec.ts tests/unit/sdk/governance/boundary-fixtures.spec.ts tests/unit/sdk/governance/defect-recurrence.spec.ts
+  hosted_checks[2]: "Nightly Validation / Nightly quality (ubuntu-latest, Node 24) / Waiver notice window",CI / Gates (static)
+  owner: pm-xcndcu
+body: ""
