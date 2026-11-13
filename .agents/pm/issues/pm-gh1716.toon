@@ -1,0 +1,21 @@
+id: pm-gh1716
+title: "GH-1716: pm files and pm docs --add silently replace an existing link's note, and the receipt reports it as a plain change"
+description: "GH-1716 (filed 2026-11-12). pm files id --add path=P,note=N2 on a path already linked with a different note silently replaces the earlier note, and pm docs --add does the same. The output reports changed true and mutation_receipt changed_count 1, which also describes adding a new link, so an agent cannot tell that it overwrote another agent's rationale; the first note survives only in history, which pm get does not show. Found during a multi-agent review round, where an orchestrator lost the implementer's notes on two paths and had to revert the writes and use a comment instead. Proposal from the issue: refuse an --add whose path and scope already exist with a different non-empty note with a conflict code (for example link_note_conflict) naming the existing note and offering --replace-note (today's behaviour) or --append-note (joins the notes); keep an identical or note-less repeat an idempotent no-op reporting changed false; and make the receipt distinguish added, note_replaced and unchanged per link, for files and docs and the SDK link operations alike."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,docs,files,"gh:1716",multi-agent
+created_at: "2026-11-13T05:59:08.574Z"
+updated_at: "2026-11-13T05:59:08.574Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "An --add whose path and scope are linked with a different non-empty note is refused with a link conflict code that names the existing note and keeps it; --append-note joins the notes and --replace-note keeps today's behaviour, each recorded in history as one operation; Repeating an identical --add reports changed false, and receipts distinguish added, note_replaced and unchanged per link for files, docs and the SDK"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: medium
+expected_result: A note replacement is refused or explicit
+actual_result: The earlier note is replaced silently and the receipt says changed
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-dj98,related,"2026-11-13T05:59:08.574Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -1,0 +1,21 @@
+id: pm-gh1715
+title: "GH-1715: pm history-repair rewrites recorded entries after a mid-chain break, so the only drift remedy breaks append-only consumers and later merges"
+description: "GH-1715 (filed 2026-11-12). When an item history chain breaks mid-stream (an unrecorded change landed between two recorded entries, such as a hand edit or a merge resolution that bypassed pm), pm history-repair re-anchors the chain by rewriting every recorded entry after the break (before_hash, after_hash and record_hash recomputed as if the unrecorded change had not happened) and appends one history_repair entry at repair time. Three problems follow. First, bytes other writers already hold change, so a later merge of two clones of the history file conflicts or duplicates entries and breaks the chain again. Second, an append-only consumer check (main's bytes are a prefix of the branch's bytes) must refuse the repair: in the fleet, one package's release gate refuses it with history_prefix_replaced, so the only remedy pm health offers for history_drift_chain_mismatch keeps that package's scheduled strict-health closeout red. Third, the rewritten entries misstate the order, claiming the unrecorded change happened after them although pm health knew where the break was. Proposal from the issue: an append-only repair, by default or behind --append-only, that appends one audited bridge record naming the break (the first entry whose before_hash does not match) and the reconciled on-disk state, leaves every earlier line byte-identical, and makes chain verification accept the bridge."
+type: Issue
+status: open
+priority: 2
+tags[5]: concurrency,"gh:1715",history,integrity,merge
+created_at: "2026-11-13T05:59:01.197Z"
+updated_at: "2026-11-13T05:59:01.197Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "pm history-repair offers an append-only repair that appends one audited bridge record naming the break and leaves every earlier line byte-identical; History chain verification and pm health accept a bridged stream, and a merge of two clones of a bridged stream stays verifiable; The bridge records where the unrecorded change happened instead of claiming it happened at repair time"
+parent: pm-o2kc
+risk: medium
+confidence: high
+severity: medium
+expected_result: The drift remedy appends a bridge record and never rewrites recorded entries
+actual_result: history-repair recomputes the hashes of every entry after the break
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-10l1vm,related,"2026-11-13T05:59:01.197Z","harness:claude-code","cli:create:dep",detected
+body: ""
