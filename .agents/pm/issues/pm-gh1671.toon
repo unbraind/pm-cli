@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,extensions,"gh:1671",linked-tests,sdk
 created_at: "2026-11-05T20:48:02.161Z"
-updated_at: "2026-11-13T22:33:50.541Z"
+updated_at: "2026-11-13T22:48:42.257Z"
 closed_at: "2026-11-13T21:04:48.138Z"
 completed_at: "2026-11-13T21:04:48.138Z"
 author: "harness:claude-code"
@@ -22,11 +22,12 @@ expected_result: A declared setup step runs once per pm test --run before linked
 actual_result: "Verified: tests/integration/linked-tests/linked-test-setup-phase.integration.spec.ts (negative control fails without the setup; setup_failed skips later entries and the CLI exits non-zero; test-all runs each item's setup; every intake path accepts phase and refuses unknown phases before persistence), tests/unit/sdk/test/run-phases.spec.ts (7 cases), workspace-compatibility matrix passed against real published hosts, and the published 2026.11.13 refuses get/update/test --run on a format-3 item without changing bytes"
 affected_version: 2026.11.4
 component: test
-dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
   pm-dlvv,related,"2026-11-05T20:48:02.161Z","harness:claude-code","cli:create:dep",detected
   pm-mf5z,related,"2026-11-05T20:48:02.161Z","harness:claude-code","cli:create:dep",detected
   pm-44iu,related,"2026-11-05T21:25:44.018Z","harness:claude-code","cli:update:dep",detected
   pm-wn34,related,"2026-11-05T21:25:44.018Z","harness:claude-code","cli:update:dep",detected
+  pm-v1mp64,related,"2026-11-13T22:48:41.903Z","harness:claude-code","cli:update:dep",detected
 comments[5]{created_at,author,text}:
   "2026-11-13T20:21:35.357Z","harness:claude-code","Investigation note (2026-11-13), premise check for the add-without-run half: `pm test <id> --add` has never executed a command. On v2026.11.4 and on main, `runTest` only calls `executeSelectedLinkedTests` when `options.run === true`, and `--add` persists the entry inside `resolveLinkedTestItem` with `run_results: []`. A sandbox repro on the current build confirms it: `--add command=\"node t.js\" --json` returned `run_results: []`. The misleading part was the help text. `--add` and `--add-json` read \"Add verified isolated test\", so the fleet ran `--add ... --run` to \"verify\", which re-runs every selected suite. A metadata-only fix already has a no-run path: `--update-index <n> --set-json '{...}'`.\n\nResolution of that half: the help now reads \"Link isolated test; runs only with --run\" for both flags, and docs/TESTING.md and docs/COMMANDS.md state that `--add` never executes and point to `--set-json` for metadata fixes. No `verified` provenance flag was added. Every `--add` is unverified, so the marker would be constant, and provenance is hashed into the trust fingerprint, so flipping it after a run would invalidate clone-local acknowledgements.\n\nAC refinement (third clause): \"an explicit add-without-run option records verified false\" becomes \"--add records a command without running it, help and docs say so, and pm test --run still executes it\". The setup-phase clauses (1, 2 and 4) are implemented as specified.\n"
   "2026-11-13T20:23:37.833Z","harness:claude-code","Evidence, mixed-host check (2026-11-13). The published @unbrained/pm-cli@2026.11.13 was installed into an isolated npm prefix. npx is not valid for this check, because `npm install -g .` links the working tree under the same name@version, so npx runs the new build. Against a sandbox tracker whose item carries `phase: setup` at `pm_format_version: 3`:\n- `get`, `update --priority 3` and `test --run` all refuse with \"Stored item uses format version 3; this runtime supports up to 2. Upgrade pm before reading or changing\". The item file is byte-identical afterwards.\n- `list` still lists the item, because its light metadata read does not parse linked tests.\nSo an older host refuses the setup entry rather than silently dropping it.\n\nDogfooding decision: this PR adds no setup entry to this repository's own tracker items. Any pinned or bundled older SDK reading the tracker would refuse such an item until it upgrades; package consumers such as pm-changelog are one example. Adopt setup entries here only after the release that ships format 3 is the pinned floor.\n"

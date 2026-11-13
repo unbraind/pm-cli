@@ -166,6 +166,14 @@ describe("core/output/linked-test-projection", () => {
     };
     expect(leanUntrusted.execution_context).toMatchObject({ trusted: false });
     expect(leanUntrusted.run_results[0]?.stdout).toBe(VITEST_REPORT);
+    // A shared context that is not an object carries no trust decision, so lean drops the passing streams.
+    const opaque = projectLinkedTestReply(
+      "test",
+      { run_results: [{ command: "a", status: "passed", execution_context: "opaque", stdout: "x", stderr: "" }] },
+      { ...DEFAULTS, lean: true },
+    ) as { execution_context: unknown; run_results: Array<Record<string, unknown>> };
+    expect(opaque.execution_context).toBe("opaque");
+    expect(opaque.run_results[0]).toEqual({ command: "a", status: "passed" });
   });
 
   it("bounds stderr too and appends to an omission receipt the reply already carries", () => {
