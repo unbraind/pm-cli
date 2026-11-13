@@ -16,7 +16,7 @@ import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { detectLinkedTestCommandNotFound } from "./command-resolution.js";
 import { updateLinkedTest, parseLinkedTestUpdateOptions, assertLinkedTestEditUsage } from "./update.js";
 import { admitLinkedTestRequest, assertLinkedTestCommand, linkedTestsHaveSameIdentity } from "./entry.js";
-import { countFailureCategories, createLinkedTestSetupGate, parseLinkedTestPhase, withLinkedTestSetupEntries, type LinkedTestFailureCategory } from "./run-phases.js";
+import { countFailureCategories, createLinkedTestSetupGate, orderLinkedTestsSetupFirst, parseLinkedTestPhase, withLinkedTestSetupEntries, type LinkedTestFailureCategory } from "./run-phases.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -2813,13 +2813,14 @@ async function runSingleLinkedTest(params: {
     : buildLinkedTestCommandFailureResult({ ...params, execution, timeoutMs });
 }
 
-/** Implements run linked tests for the public runtime surface of this module. */
+/** Run linked tests in one shared sandbox, setup entries first (GH-1671); results are returned in run order. */
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
   options?: RunLinkedTestsOptions,
 ): Promise<TestRunResult[]> {
-  for (const test of tests) assertLinkedTestCommand(test.command);
+  const ordered = orderLinkedTestsSetupFirst(tests);
+  for (const test of ordered) assertLinkedTestCommand(test.command);
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
   const layout = createLinkedTestSandboxLayout(sandboxRoot);
@@ -2837,12 +2838,12 @@ export async function runLinkedTests(
   const sourceRoots = options?.sourceRoots;
   const sourceWorkspaceRoot = resolveLinkedTestSourceWorkspaceRoot();
   const includeTrackerData = linkedTestsRequireTrackerData(
-    tests,
+    ordered,
     runLevelPmContextMode,
     options,
   );
   const includeWorkspaceSnapshot = linkedTestsRequireWorkspaceSnapshot(
-    tests,
+    ordered,
     runLevelWorkspaceContextMode,
     options?.overrideLinkedWorkspaceContext === true,
   );
@@ -2896,7 +2897,7 @@ export async function runLinkedTests(
       return preflightResult ?? await runSingleLinkedTest({
         linkedTest,
         index,
-        total: tests.length,
+        total: ordered.length,
         defaultTimeoutSeconds,
         runtimeDirectives,
         progressMode,
@@ -2904,8 +2905,8 @@ export async function runLinkedTests(
         options: entryOptions,
       });
     };
-    for (let index = 0; index < tests.length; index += 1) {
-      const linkedTest = tests[index];
+    for (let index = 0; index < ordered.length; index += 1) {
+      const linkedTest = ordered[index];
       // An entry after a setup entry that did not pass is skipped without executing (GH-1671).
       results.push(setupGate.blocked(linkedTest) ?? setupGate.record(linkedTest, await runEntry(linkedTest, index)));
     }

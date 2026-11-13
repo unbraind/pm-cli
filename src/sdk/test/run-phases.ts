@@ -104,7 +104,7 @@ export interface LinkedTestSetupGate {
   record(linkedTest: LinkedTest, result: TestRunResult): TestRunResult;
 }
 
-/** Create the setup gate for one item's run; entries must arrive in run order, setup entries first. */
+/** Create the setup gate for one item's run; entries must arrive in run order, setup entries first (see {@link orderLinkedTestsSetupFirst}). */
 export function createLinkedTestSetupGate(): LinkedTestSetupGate {
   let failure: { label: string; outcome: string } | undefined;
   return {
@@ -125,16 +125,19 @@ export function createLinkedTestSetupGate(): LinkedTestSetupGate {
     record(linkedTest, result) {
       if (!isLinkedTestSetup(linkedTest)) return result;
       if (result.status === "passed") return { ...result, phase: "setup" };
-      // A refusal keeps its own category, because its recovery (trust acknowledgement) differs from a failed build.
-      const row: TestRunResult =
-        result.status !== "failed" || result.failure_category === "trust_refusal"
-          ? { ...result, phase: "setup" }
-          : {
-              ...result,
-              phase: "setup",
-              failure_category: "setup_failed",
-              ...(result.failure_category === undefined ? {} : { setup_failure_cause: result.failure_category }),
-            };
+      // A refusal keeps its own category, because its recovery (trust acknowledgement) differs from a
+      // failed build. A setup that never executed (a safety skip, or an entry without a command) fails
+      // the run: otherwise every dependent entry would be skipped behind a passing verdict.
+      const refused = result.status === "refused" || result.failure_category === "trust_refusal";
+      const row: TestRunResult = refused
+        ? { ...result, phase: "setup" }
+        : {
+            ...result,
+            status: "failed",
+            phase: "setup",
+            failure_category: "setup_failed",
+            ...(result.failure_category === undefined ? {} : { setup_failure_cause: result.failure_category }),
+          };
       failure = {
         label: linkedTest.command ?? linkedTest.path ?? "<no command>",
         outcome: row.failure_category ?? row.status,

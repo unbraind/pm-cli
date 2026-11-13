@@ -196,7 +196,7 @@
     "src/sdk/templates.ts": 16,
     "src/sdk/test/batch.ts": 31,
     "src/sdk/test/entry.ts": 1,
-    "src/sdk/test/execution.ts": 44,
+    "src/sdk/test/execution.ts": 43,
     "src/sdk/test/linked-command-detection.ts": 13,
     "src/sdk/test/parsers.ts": 10,
     "src/sdk/test/runs.ts": 28,

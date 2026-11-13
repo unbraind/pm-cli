@@ -106,7 +106,7 @@ describe("sdk/test/run-phases", () => {
     expect(gate.blocked(build)).toMatchObject({ status: "skipped", phase: "setup" });
   });
 
-  it("keeps a refused or skipped setup entry's own outcome while still blocking later entries", () => {
+  it("keeps a refused setup entry's own outcome, fails a setup that never executed, and blocks later entries", () => {
     const trust = createLinkedTestSetupGate();
     const refused: TestRunResult = { command: build.command, status: "failed", failure_category: "trust_refusal" };
     expect(trust.record(build, refused)).toEqual({ ...refused, phase: "setup" });
@@ -117,9 +117,19 @@ describe("sdk/test/run-phases", () => {
     expect(config.record(build, configRefusal)).toEqual({ ...configRefusal, phase: "setup" });
     expect(config.blocked(unit)?.error).toContain("(config_refusal)");
 
+    // A setup that never executed fails the run instead of skipping every dependent behind a pass.
     const skipped = createLinkedTestSetupGate();
-    expect(skipped.record({ ...build, command: undefined, path: "docs/setup.md" }, { status: "skipped" })).toEqual({ status: "skipped", phase: "setup" });
-    expect(skipped.blocked(unit)?.error).toBe('Skipped because setup entry "docs/setup.md" did not pass (skipped); no later linked command ran.');
+    expect(skipped.record({ ...build, command: undefined, path: "docs/setup.md" }, { status: "skipped", error: "No command configured for this linked test." })).toEqual({
+      status: "failed",
+      phase: "setup",
+      failure_category: "setup_failed",
+      error: "No command configured for this linked test.",
+    });
+    expect(skipped.blocked(unit)?.error).toBe('Skipped because setup entry "docs/setup.md" did not pass (setup_failed); no later linked command ran.');
+
+    const bareRefusal = createLinkedTestSetupGate();
+    expect(bareRefusal.record(build, { status: "refused" })).toEqual({ status: "refused", phase: "setup" });
+    expect(bareRefusal.blocked(unit)?.error).toContain("(refused)");
 
     const unlabeled = createLinkedTestSetupGate();
     const uncategorized: TestRunResult = { status: "failed" };

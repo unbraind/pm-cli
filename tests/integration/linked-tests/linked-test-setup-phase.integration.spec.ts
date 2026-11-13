@@ -1,9 +1,12 @@
 /** GH-1671: linked-test setup entries run first in the shared sandbox, stop the run when they fail, and need item format 3. */
-import { readFile, readdir } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runTest } from "../../../src/sdk/test/execution.js";
-import { runTestAll } from "../../../src/sdk/test/batch.js";
+import { runCreate } from "../../../src/sdk/lifecycle/create.js";
+import { runLinkedTests, runTest } from "../../../src/sdk/test/execution.js";
+import { _testOnlyTestAll, runTestAll } from "../../../src/sdk/test/batch.js";
+import type { LinkedTest } from "../../../src/types/index.js";
+import { overwriteTaskTests } from "../../helpers/pmWorkspace.js";
 import { createTestItemId } from "../../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../../helpers/withTempPmPath.js";
 
@@ -144,6 +147,118 @@ describe("linked-test setup phase", () => {
       context.runCli(["test", id, "--update-index", "2", "--set-json", '{"phase":null}', "--json"]);
       const demoted = await runTest(id, { list: true }, { path: context.pmPath });
       expect(demoted.tests.map((test) => test.phase)).toEqual(["setup", undefined]);
+    });
+  }, 60_000);
+
+  it("blocks an item's later entries behind a refused setup in test-all and never reserves their dedupe keys", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      const markerPath = path.join(context.tempRoot, "ran.txt").replaceAll("\\", "/");
+      const marker = `node -e "require('fs').appendFileSync('${markerPath}', 'x')"`;
+      const refusedId = createTestItemId(context, { title: "refused setup", createMode: "progressive" });
+      const laterId = createTestItemId(context, { title: "same command later", createMode: "progressive" });
+      await runTest(refusedId, { addJson: [JSON.stringify([{ command: "node -e 1", phase: "setup" }, { command: marker }])] }, global);
+      // An imported assignment-only setup is refused before dispatch; nothing after it may run.
+      const stored = (await runTest(refusedId, { list: true }, global)).tests;
+      await overwriteTaskTests(context, refusedId, [{ ...stored[0], command: "X=1" }, stored[1]] as unknown as Array<Record<string, unknown>>);
+      await runTest(laterId, { addJson: [JSON.stringify({ command: marker })] }, global);
+      const batch = await runTestAll({}, global);
+      const byId = new Map(batch.results.map((result) => [result.id, result]));
+      expect(byId.get(refusedId)?.run_results.map((row) => [row.status, row.phase, row.failure_category])).toEqual([
+        ["refused", "setup", "config_refusal"],
+        ["skipped", undefined, undefined],
+      ]);
+      // The other item's identical command has a different setup signature, so it runs: exactly one marker write.
+      expect(byId.get(laterId)?.run_results.map((row) => row.status)).toEqual(["passed"]);
+      expect(await readFile(path.join(context.tempRoot, "ran.txt"), "utf8")).toBe("x");
+    });
+  }, 60_000);
+
+  it("deduplicates a regular test across items only when their setup entries match, and frees the key when the setup fails", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      const [built, empty, flakyFirst, flakySecond] = ["built", "no build", "flaky first", "flaky second"].map((title) =>
+        createTestItemId(context, { title, createMode: "progressive" }),
+      );
+      // Same regular command, different setup: the second item must run (and fail) it, not skip it as a duplicate.
+      await runTest(built!, { addJson: [JSON.stringify([isolated(WRITE_BUILD, "setup"), isolated(READ_BUILD)])] }, global);
+      await runTest(empty!, { addJson: [JSON.stringify([isolated(`node -e "0"`, "setup"), isolated(READ_BUILD)])] }, global);
+      // Identical setups whose first execution fails: the second item still runs the command.
+      const flagPath = path.join(context.tempRoot, "flaky.flag").replaceAll("\\", "/");
+      const flaky = `node -e "const fs=require('fs'); if (!fs.existsSync('${flagPath}')) { fs.writeFileSync('${flagPath}', ''); process.exit(1); } fs.writeFileSync('built.txt', 'ok')"`;
+      const flakyRead = READ_BUILD.replace("Tests 1 passed", "Tests 1 passed flaky");
+      for (const id of [flakyFirst!, flakySecond!]) {
+        await runTest(id, { addJson: [JSON.stringify([isolated(flaky, "setup"), isolated(flakyRead)])] }, global);
+      }
+      const batch = await runTestAll({}, global);
+      const byId = new Map(batch.results.map((result) => [result.id, result.run_results.map((row) => row.status)]));
+      expect(byId.get(built!)).toEqual(["passed", "passed"]);
+      expect(byId.get(empty!)).toEqual(["passed", "failed"]);
+      const flakyRows = [byId.get(flakyFirst!), byId.get(flakySecond!)];
+      expect(flakyRows).toContainEqual(["failed", "skipped"]);
+      expect(flakyRows).toContainEqual(["passed", "passed"]);
+      expect(batch.ok).toBe(false);
+    });
+  }, 90_000);
+
+  it("keys test-all timeouts by setup signature and leaves every setup entry its own timeout", () => {
+    const setup = (timeout: number, command = "npm run build"): LinkedTest => ({ command, scope: "project", phase: "setup", timeout_seconds: timeout });
+    const regular = (timeout: number): LinkedTest => ({ command: "node --test", scope: "project", timeout_seconds: timeout });
+    const item = (id: string, tests: LinkedTest[]) => ({ item: { id, status: "open" as const }, tests });
+    const map = _testOnlyTestAll.buildEffectiveTimeoutByKey([
+      item("pm-a", [setup(1), regular(30)]),
+      item("pm-b", [setup(300), regular(60)]),
+      item("pm-c", [regular(90)]),
+      item("pm-d", [setup(5, "npm run other"), regular(10)]),
+    ] as never);
+    const plainKey = _testOnlyTestAll.buildLinkedTestKey(regular(0));
+    // Setups are absent (each runs with its own timeout); regular tests key on their item's setup signature.
+    expect([...map.keys()].some((key) => key.startsWith("command:project:npm run"))).toBe(false);
+    expect(map.get(plainKey)).toBe(90);
+    // Items with the same setup share one key and its widest timeout; a different setup gets its own key.
+    const setupKeys = [...map.keys()].filter((key) => key.includes(":setup["));
+    expect(setupKeys).toHaveLength(2);
+    expect(setupKeys.map((key) => map.get(key)).sort((left, right) => Number(left) - Number(right))).toEqual([10, 60]);
+  });
+
+  it("orders setup entries first inside the exported runLinkedTests and fails a setup entry that cannot execute", async () => {
+    await withTempPmPath(async (context) => {
+      const results = await runLinkedTests(
+        [isolated(READ_BUILD) as LinkedTest, isolated(WRITE_BUILD, "setup") as LinkedTest],
+        60,
+        { sourceRoots: { projectPmRoot: context.pmPath, globalPmRoot: context.env.PM_GLOBAL_PATH! }, allowUntrustedLinkedTests: true, untrustedLinkedTestsPolicyEnabled: true },
+      );
+      expect(results.map((row) => [row.command, row.status, row.phase])).toEqual([
+        [WRITE_BUILD, "passed", "setup"],
+        [READ_BUILD, "passed", undefined],
+      ]);
+      // A setup entry without a command never executes; the run fails instead of skipping everything behind a pass.
+      const global = { path: context.pmPath };
+      const id = createTestItemId(context, { title: "path-only setup", createMode: "progressive" });
+      await runTest(id, { addJson: [JSON.stringify([{ command: "node -e 1", phase: "setup" }, { command: "node -e 2" }])] }, global);
+      const stored = (await runTest(id, { list: true }, global)).tests;
+      const { command: _command, ...pathOnly } = { ...stored[0], path: "docs/setup.md" };
+      await overwriteTaskTests(context, id, [pathOnly, stored[1]] as unknown as Array<Record<string, unknown>>);
+      const run = await runTest(id, { run: true }, global);
+      expect(run.ok).toBe(false);
+      expect(run.run_results.map((row) => [row.status, row.failure_category])).toEqual([
+        ["failed", "setup_failed"],
+        ["skipped", undefined],
+      ]);
+    });
+  }, 60_000);
+
+  it("stamps format 3 when an SDK create stores a setup entry, and refuses a project pin that cannot refuse it", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      const created = await runCreate({ title: "sdk setup create", type: "Task", createMode: "progressive", test: ["command=node -e 1,phase=setup"] }, global);
+      expect(created.item.pm_format_version).toBe(3);
+      const plain = await runCreate({ title: "sdk plain create", type: "Task", createMode: "progressive", test: ["command=node -e 1"] }, global);
+      expect(plain.item.pm_format_version).toBeUndefined();
+      await writeFile(path.join(path.dirname(path.dirname(context.pmPath)), "package.json"), JSON.stringify({ devDependencies: { "@unbrained/pm-cli": "2026.10.9" } }));
+      await expect(runCreate({ title: "pinned too old", type: "Task", createMode: "progressive", test: ["command=node -e 1,phase=setup"] }, global)).rejects.toMatchObject({
+        code: "project_runtime_item_format_incompatible",
+      });
     });
   }, 60_000);
 });

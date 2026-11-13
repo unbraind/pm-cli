@@ -5,7 +5,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { assertLinkedTestCommand } from "./entry.js";
-import { isLinkedTestSetup, orderLinkedTestsSetupFirst } from "./run-phases.js";
+import { createLinkedTestSetupGate, isLinkedTestSetup, orderLinkedTestsSetupFirst } from "./run-phases.js";
 import { isItemRevisionConflict } from "../lifecycle/item-revision.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -457,13 +457,28 @@ const selectTestAllItems = async (params: {
   return { filteredItems, statusFilter, limitFilter, offsetFilter };
 };
 
+/** The setup entries an item runs first, as one signature; empty when the item has none. */
+const resolveSetupSignature = (tests: LinkedTest[]): string =>
+  tests.filter(isLinkedTestSetup).map(buildLinkedTestKey).join("|");
+
+/**
+ * The key a regular test deduplicates on across items: its own key plus the
+ * setup entries its item runs first, because those decide what it sees in an
+ * isolated or snapshot sandbox (GH-1671).
+ */
+const buildTestAllDedupeKey = (test: LinkedTest, setupSignature: string): string =>
+  setupSignature.length === 0 ? buildLinkedTestKey(test) : `${buildLinkedTestKey(test)}:setup[${setupSignature}]`;
+
+/** Widest timeout per deduplicated regular test; setup entries run per item with their own timeout. */
 const buildEffectiveTimeoutByKey = (
   itemTests: TestAllItemTests[],
 ): Map<string, number | undefined> => {
   const effectiveTimeoutByKey = new Map<string, number | undefined>();
   for (const { tests } of itemTests) {
+    const setupSignature = resolveSetupSignature(tests);
     for (const test of tests) {
-      const key = buildLinkedTestKey(test);
+      if (isLinkedTestSetup(test)) continue;
+      const key = buildTestAllDedupeKey(test, setupSignature);
       if (!effectiveTimeoutByKey.has(key)) {
         effectiveTimeoutByKey.set(key, test.timeout_seconds);
         continue;
@@ -489,30 +504,66 @@ function resolveTestAllCommandRefusal(test: LinkedTest, itemId: string): TestRun
   }
 }
 
+/** One planned entry of an item's test-all run: dispatched, a cross-item duplicate, or a row decided before dispatch. */
+interface TestAllEntryPlan {
+  test: LinkedTest;
+  key: string;
+  duplicate: boolean;
+  refusal: TestRunResult | undefined;
+}
+
+/**
+ * Plan one item's entries in run order. Setup entries run first, once per
+ * item and never deduplicated: in an isolated or snapshot workspace a setup's
+ * output stays in that item's own sandbox. A setup refused before dispatch
+ * blocks the rest of the item, and a regular test reserves its dedupe key only
+ * when it is dispatched (GH-1671).
+ */
+const planTestAllItemEntries = (
+  entry: TestAllItemTests,
+  context: TestAllItemRunContext,
+): { plans: TestAllEntryPlan[]; testsToRun: LinkedTest[]; reservedKeys: string[] } => {
+  const testsToRun: LinkedTest[] = [];
+  const reservedKeys: string[] = [];
+  const ordered = orderLinkedTestsSetupFirst(entry.tests);
+  const setupSignature = resolveSetupSignature(ordered);
+  const setupGate = createLinkedTestSetupGate();
+  const plans = ordered.map((test): TestAllEntryPlan => {
+    const setup = isLinkedTestSetup(test);
+    const key = setup ? buildLinkedTestKey(test) : buildTestAllDedupeKey(test, setupSignature);
+    const blocked = setupGate.blocked(test);
+    if (blocked) return { test, key, duplicate: false, refusal: blocked };
+    const refusal = resolveTestAllCommandRefusal(test, entry.item.id);
+    if (refusal) return { test, key, duplicate: false, refusal: setupGate.record(test, refusal) };
+    if (setup) {
+      testsToRun.push(test);
+      return { test, key, duplicate: false, refusal: undefined };
+    }
+    if (context.seenTestKeys.has(key)) return { test, key, duplicate: true, refusal: undefined };
+    context.seenTestKeys.add(key);
+    reservedKeys.push(key);
+    const effectiveTimeoutSeconds = context.effectiveTimeoutByKey.get(key);
+    testsToRun.push(effectiveTimeoutSeconds === undefined ? test : { ...test, timeout_seconds: effectiveTimeoutSeconds });
+    return { test, key, duplicate: false, refusal: undefined };
+  });
+  return { plans, testsToRun, reservedKeys };
+};
+
+/** A setup that did not pass ran none of its item's regular commands, so a later item may still run them. */
+const releaseBlockedReservations = (
+  executedResults: TestRunResult[],
+  reservedKeys: string[],
+  context: TestAllItemRunContext,
+): void => {
+  if (!executedResults.some((row) => row.phase === "setup" && row.status !== "passed")) return;
+  for (const key of reservedKeys) context.seenTestKeys.delete(key);
+};
+
 const runTestAllItem = async (
   entry: TestAllItemTests,
   context: TestAllItemRunContext,
 ): Promise<TestAllItemExecution> => {
-  const testsToRun: LinkedTest[] = [];
-  // Setup entries run first, and once per item: in an isolated or snapshot
-  // workspace a setup's output stays in that item's own sandbox (GH-1671).
-  const ordered = orderLinkedTestsSetupFirst(entry.tests);
-  const keyedTests = ordered.map((test) => {
-    const key = buildLinkedTestKey(test);
-    const refusal = resolveTestAllCommandRefusal(test, entry.item.id);
-    if (refusal) return { test, key, duplicate: false, refusal };
-    const duplicate = !isLinkedTestSetup(test) && context.seenTestKeys.has(key);
-    if (!duplicate) {
-      if (!isLinkedTestSetup(test)) context.seenTestKeys.add(key);
-      const effectiveTimeoutSeconds = context.effectiveTimeoutByKey.get(key);
-      testsToRun.push(
-        effectiveTimeoutSeconds === undefined
-          ? test
-          : { ...test, timeout_seconds: effectiveTimeoutSeconds },
-      );
-    }
-    return { test, key, duplicate, refusal };
-  });
+  const { plans: keyedTests, testsToRun, reservedKeys } = planTestAllItemEntries(entry, context);
 
   const executedResults =
     testsToRun.length > 0
@@ -538,6 +589,7 @@ const runTestAllItem = async (
             context.settings.testing.allow_untrusted_linked_tests,
         })
       : [];
+  releaseBlockedReservations(executedResults, reservedKeys, context);
   let executedIndex = 0;
   const runResults = keyedTests.map(({ test, key, duplicate, refusal }) => {
     if (refusal) return refusal;
@@ -943,5 +995,6 @@ export const runTestAll = async (
 /** Public contract for test only test all, shared by SDK and presentation-layer consumers. */
 export const _testOnlyTestAll = {
   buildLinkedTestKey,
+  buildEffectiveTimeoutByKey,
   formatTrackingError,
 };

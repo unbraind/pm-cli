@@ -120,6 +120,30 @@ describe("core/output/linked-test-projection", () => {
     }
   });
 
+  it("lets --full-output override lean stream removal and declares the streams lean drops", () => {
+    const quiet = { ok: true, run_results: [passingRow(1, "short\n"), passingRow(2, "short\n")] };
+    const restored = projectLinkedTestReply("test", quiet, { ...DEFAULTS, lean: true, fullOutput: true }) as Record<string, unknown>;
+    expect((restored.run_results as Array<Record<string, unknown>>).map((row) => row.stdout)).toEqual(["short\n", "short\n"]);
+    expect(restored).not.toHaveProperty("omission_receipt");
+    const lean = projectLinkedTestReply("test", quiet, { ...DEFAULTS, lean: true }) as Record<string, unknown>;
+    expect((lean.run_results as Array<Record<string, unknown>>).every((row) => !("stdout" in row))).toBe(true);
+    expect(lean.omission_receipt).toEqual({
+      has_omissions: true,
+      omitted_field_group_count: 1,
+      omitted_field_groups: [{ name: "run_results.stdout", restore_with: "--full-output" }],
+    });
+    // A lean row with only stderr (or no stdout capture at all) declares exactly the stream it drops.
+    const { stdout: _stdout, ...noStdout } = passingRow(3, "");
+    const stderrOnly = projectLinkedTestReply(
+      "test",
+      { ok: true, run_results: [{ ...noStdout, stderr: "warn\n" }, { ...passingRow(4, ""), stderr: "warn\n" }] },
+      { ...DEFAULTS, lean: true },
+    ) as Record<string, unknown>;
+    expect(stderrOnly.omission_receipt).toMatchObject({
+      omitted_field_groups: [{ name: "run_results.stderr", restore_with: "--full-output" }],
+    });
+  });
+
   it("keeps the complete output of a row that passed only under an untrusted-command override", () => {
     const untrusted = passingRow(1, VITEST_REPORT, {
       trust: { fingerprint: "f", trusted: false, reason: "foreign_source_ref" },
@@ -163,7 +187,11 @@ describe("core/output/linked-test-projection", () => {
 
   it("reduces terminal output the way a terminal shows it", () => {
     expect(quietStreamTail("")).toBe("");
-    expect(quietStreamTail("\n\n")).toBe("\n\n");
+    expect(quietStreamTail("\n")).toBe("\n");
+    expect(quietStreamTail("\r\n")).toBe("\r\n");
+    // Whitespace-only output is bounded too: thousands of blank lines carry nothing to read.
+    expect(quietStreamTail("\n\n\n")).toBe("");
+    expect(quietStreamTail(" ".repeat(10_000))).toBe("");
     expect(quietStreamTail("short\n")).toBe("short\n");
     expect(quietStreamTail("no newline")).toBe("no newline");
     // A carriage-return progress overwrite keeps its final segment; CRLF endings keep the line.

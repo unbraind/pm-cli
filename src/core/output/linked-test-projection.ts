@@ -110,36 +110,11 @@ function projectLinkedTestRun(
     return value;
   }
   const quiet = isQuietLinkedTestSuccess(value, sourceRows);
-  const boundedRows =
-    quiet && !options.fullOutput
-      ? sourceRows.map((row) => boundQuietRowStreams(row, omitted))
-      : sourceRows;
   const reduceContext = quiet && !options.fullContext;
-  const rows: Record<string, unknown>[] =
-    reduceContext
-      ? boundedRows.map((row) => ({
-          ...row,
-          execution_context: projectLinkedTestDecisionContext(
-            row.execution_context as Record<string, unknown>,
-          ),
-        }))
-      : boundedRows;
+  const rows = quiet ? sourceRows.map((row) => reduceQuietRow(row, options, omitted)) : sourceRows;
   const sharedContext = resolveSharedExecutionContext(rows);
-  const runResults = rows.map((row) => {
-    if (sharedContext === undefined) {
-      return row;
-    }
-    const {
-      execution_context: _executionContext,
-      stdout,
-      stderr,
-      ...rest
-    } = row;
-    if (!options.lean || row.status !== "passed") {
-      return { ...rest, stdout, stderr };
-    }
-    return rest;
-  });
+  const runResults =
+    sharedContext === undefined ? rows : rows.map((row) => withoutHoistedContext(row, options, omitted));
   // Lean receipts for a quiet success also omit the all-zero failure categories.
   const { failure_categories: _zeroCategories, ...withoutCategories } = value;
   return {
@@ -149,6 +124,40 @@ function projectLinkedTestRun(
       : { execution_context: sharedContext }),
     run_results: runResults,
   };
+}
+
+/** Bound one quiet row's streams and reduce its context to the decision fields, as the selectors allow. */
+function reduceQuietRow(
+  row: Record<string, unknown>,
+  options: LinkedTestReplyOptions,
+  omitted: StreamOmissionTally,
+): Record<string, unknown> {
+  const bounded = options.fullOutput ? row : boundQuietRowStreams(row, omitted);
+  if (options.fullContext) return bounded;
+  return {
+    ...bounded,
+    execution_context: projectLinkedTestDecisionContext(bounded.execution_context as Record<string, unknown>),
+  };
+}
+
+/**
+ * Drop a row's hoisted context. Lean receipts also drop a passing row's
+ * streams unless `--full-output` asks for them, and the omission receipt still
+ * names each non-empty stream that was not delivered.
+ */
+function withoutHoistedContext(
+  row: Record<string, unknown>,
+  options: LinkedTestReplyOptions,
+  omitted: StreamOmissionTally,
+): Record<string, unknown> {
+  const { execution_context: _executionContext, stdout, stderr, ...rest } = row;
+  if (!options.lean || options.fullOutput || row.status !== "passed") {
+    return { ...rest, stdout, stderr };
+  }
+  for (const [key, stream] of [["stdout", stdout], ["stderr", stderr]] as const) {
+    if (typeof stream === "string" && stream.length > 0) omitted.add(key);
+  }
+  return rest;
 }
 
 /** The one execution context every entry shares, or undefined when entries differ or lack one. */
@@ -239,7 +248,8 @@ function boundQuietRowStreams(
  * {@link QUIET_LINKED_TEST_STREAM_TAIL_CHARS} characters, cut on code points.
  */
 export function quietStreamTail(stream: string): string {
-  if (stream.trim().length === 0) return stream;
+  // Whitespace-only output carries nothing to read; keep at most a bare line ending so it stays bounded.
+  if (stream.trim().length === 0) return stream.length <= 2 ? stream : "";
   const lines = stripVTControlCharacters(stream)
     .split("\n")
     // A CRLF line ending is not an overwrite; only a mid-line carriage return is.

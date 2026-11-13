@@ -711,16 +711,22 @@ pm test <item-id> --run
 - A setup entry that fails is reported with `failure_category: setup_failed`
   (its original classification stays in `setup_failure_cause`) and counted
   under `failure_categories.setup_failed`, separately from test failures. A
-  refused setup entry keeps its own category (for example `trust_refusal`). In
-  both cases every later entry is reported as `skipped` without executing, and
-  the run fails.
+  setup entry that never executes (a runtime safety skip, or an entry without a
+  command) is a `setup_failed` failure too. A refused setup entry keeps its own
+  category (for example `trust_refusal` or `config_refusal`). In every case
+  each later entry is reported as `skipped` without executing, and the run fails.
 - Setup rows carry `phase: setup`. They are exempt from
   `--fail-on-empty-test-run` and `--require-assertions-for-pm`, which describe
   test runners, and they never count as the executed linked test that
   `--measure` requires.
-- `pm test-all` runs each item's setup entries for that item and never
-  deduplicates them across items: in an isolated or snapshot workspace a setup's
-  output stays in its own item's sandbox.
+- `pm test-all` runs each item's setup entries for that item, each with its own
+  timeout, and never deduplicates them across items: in an isolated or snapshot
+  workspace a setup's output stays in its own item's sandbox. A regular command
+  is deduplicated across items only when the items' setup entries match, a setup
+  refused before dispatch blocks the rest of its item, and an item whose setup
+  did not pass leaves its regular commands free to run for a later item.
+- The SDK's `runLinkedTests` applies the same order itself: whatever order the
+  caller passes, setup entries run first and results come back in run order.
 - Setup entries are executable data under the same provenance and clone-trust
   rules as every linked command. `phase` is editable metadata
   (`--set-json '{"phase":"setup"}'`, or `null` to make the entry a regular test
