@@ -243,15 +243,21 @@ describe("linked-test setup phase", () => {
     await withTempPmPath(async (context) => {
       const global = { path: context.pmPath };
       const id = createTestItemId(context, { title: "runtime setup failure", createMode: "progressive" });
-      await runTest(id, { addJson: [JSON.stringify([{ command: `node -e "process.exit(1)"`, phase: "setup" }, { command: "node -e 2" }])] }, global);
+      const failing = `node -e "process.exit(1)"`;
+      await runTest(id, { addJson: [JSON.stringify([{ command: failing, phase: "setup" }, { command: "node -e 3", phase: "setup" }, { command: "node -e 2" }, { command: "node -e 4" }])] }, global);
       const stored = (await runTest(id, { list: true }, global)).tests;
-      await overwriteTaskTests(context, id, [stored[0], { ...stored[1], command: "X=1" }] as unknown as Array<Record<string, unknown>>);
+      // A later setup and a later regular entry are imported assignment-only commands, refused at planning.
+      await overwriteTaskTests(context, id, [stored[0], { ...stored[1], command: "X=1" }, { ...stored[2], command: "Y=1" }, stored[3]] as unknown as Array<Record<string, unknown>>);
       const batch = await runTestAll({}, global);
       const result = batch.results.find((entry) => entry.id === id)!;
       expect(result.run_results.map((row) => [row.status, row.phase, row.failure_category])).toEqual([
         ["failed", "setup", "setup_failed"],
+        ["skipped", "setup", undefined],
+        ["skipped", undefined, undefined],
         ["skipped", undefined, undefined],
       ]);
+      // Every skip names the setup that actually failed, never the refusal planned after it.
+      expect(result.run_results.slice(1).every((row) => row.error?.includes(failing) === true)).toBe(true);
       expect(result.failure_categories).toMatchObject({ setup_failed: 1, config_refusal: 0 });
     });
   }, 60_000);

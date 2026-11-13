@@ -606,7 +606,8 @@ const runTestAllItem = async (
   // a setup that failed at run time is reported as the skip it became (GH-1671).
   const runtimeGate = createLinkedTestSetupGate();
   const runResults = keyedTests.map(({ test, key, duplicate, refusal }) => {
-    if (refusal) return refusal.status === "refused" ? (runtimeGate.blocked(test) ?? refusal) : refusal;
+    // Every row decided before dispatch (a refusal, or a skip behind a refused setup) names the first setup that actually failed.
+    if (refusal) return runtimeGate.blocked(test) ?? refusal;
     if (!duplicate) {
       const executed = executedResults[executedIndex];
       executedIndex += 1;
