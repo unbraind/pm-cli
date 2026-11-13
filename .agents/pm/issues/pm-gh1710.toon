@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: agent-ux,"gh:1710",output-budget,pagination,read-output
 created_at: "2026-11-12T21:09:08.534Z"
-updated_at: "2026-11-12T23:24:17.770Z"
+updated_at: "2026-11-13T03:58:20.775Z"
 closed_at: "2026-11-12T23:24:17.749Z"
 completed_at: "2026-11-12T23:24:17.749Z"
 author: "harness:claude-code"
@@ -21,6 +21,8 @@ expected_result: next_cursor is never compacted and resumes the query
 actual_result: "Issue reproduction on the built CLI: page 1 emits the whole 351-character cursor and page 2 returns the next four distinct items, with and without --for triage; a hand-truncated cursor gets the cursor_compacted advice; continuation-tokens and cursor-recovery specs pass and fail against the previous walkers"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-n98pir,related,"2026-11-12T21:09:08.534Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-13T03:58:20.775Z","harness:claude-code","PR 1717 CI, SDK mutation gate (src/sdk/pagination.ts is in its declared scope): the cursor_compacted refusal was covered only by a spec outside the mutation test set, so its mutants reported NoCoverage and the guard survived, and the insertion shifted four existing equivalent-mutant waivers whose identities hash the mutant location. tests/unit/sdk/pagination.spec.ts now pins the refusal on both cursor flags (exact message, reason, required text and next steps), the four waivers are re-keyed to their new identities and lines with unchanged reasons, and the score floor ratchets from 98.011 to 98.072 as the gate requires.\n"
 notes[1]{created_at,author,text}:
   "2026-11-12T21:55:15.824Z","harness:claude-code","Implementation (2026-11-12). Both string-compaction walkers (compactStrings in src/sdk/read-output-budget.ts and compactContextIntentValue in src/sdk/context-intent-contracts.ts) now skip any string under a continuation-token key, decided by isContinuationTokenKey in src/core/shared/text-normalization.ts: the key cursor or any key ending in _cursor (next_cursor, output_cursor, source_cursor, base_source_cursor). A non-string value under such a key is still walked, so explanatory text nested under a cursor object keeps compacting. The cursor decoders refuse an argument carrying an ellipsis before parsing: decodeQueryCursorEnvelope (--after and --cursor) with invalid_query_cursor and reason cursor_compacted, decodeReadOutputContinuationCursor (--output-cursor) with read_output_cursor_invalid and the same reason; both name the larger-budget read that returns the whole cursor. Cursor lengths stay bounded by MAX_CURSOR_LENGTH, so exempting them cannot defeat the budget. Verified on the built CLI with the issue reproduction: page 1 emits the whole 351-character cursor and page 2 returns the next four items, with and without --for triage."
 learnings[1]{created_at,author,text}:

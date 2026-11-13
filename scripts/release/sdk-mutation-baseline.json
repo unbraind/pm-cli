@@ -5,7 +5,7 @@
     "src/sdk/dependency-provenance.ts",
     "src/sdk/pagination.ts"
   ],
-  "minimumScore": 98.01136363636364,
+  "minimumScore": 98.07162534435261,
   "equivalentMutants": [
     {
       "identity": "c0dd21b6b1034fe0d6ce8078c3bd3bbd15fba15605981d10d7c2c38faeb3ec3d",
@@ -32,33 +32,33 @@
       "owner": "pm-zclzll"
     },
     {
-      "identity": "ba730874a344c133a458f908382258c8f8908e3d1c67630908f1cd9de0a86c75",
+      "identity": "87560ee43ef0d679bf53d6da10bef169b7ba17d5fc9495eb2a3786f44a379c4b",
       "file": "src/sdk/pagination.ts",
-      "line": 111,
+      "line": 112,
       "replacement": "false",
       "reason": "JSON.stringify omits object properties whose values are undefined, so unconditional insertion of absent after_index produces identical serialized bytes.",
       "owner": "pm-zclzll"
     },
     {
-      "identity": "4006bf2137bb986bcd163f449bab327a2152e0bbb746ac2d1babb65b52c31053",
+      "identity": "5da7758f0d74c53a0f8ca45ff564486679b7278aea9d12dbead5244cddee195e",
       "file": "src/sdk/pagination.ts",
-      "line": 112,
+      "line": 113,
       "replacement": "false",
       "reason": "JSON.stringify omits object properties whose values are undefined, so unconditional insertion of absent snapshot produces identical serialized bytes.",
       "owner": "pm-zclzll"
     },
     {
-      "identity": "bb101bec1b4563810bc326a04cc12d94d68f28cfa4bc7c9e670af07eb433f634",
+      "identity": "c5d7f360dacd1d1044d0cca82c75f21852a67b1ceb30e27885df8ea73f297927",
       "file": "src/sdk/pagination.ts",
-      "line": 129,
+      "line": 147,
       "replacement": "false",
       "reason": "Inputs arrive from JSON.parse. Null and arrays remain separately rejected; string, number and boolean primitives cannot carry the required version and fields, so the remaining checks reject them.",
       "owner": "pm-zclzll"
     },
     {
-      "identity": "bbcc39f3468bcbb440e75339e4eb360fd721bdc8258207ce8e4f6288b27db1cd",
+      "identity": "734dd1d74fe2cc6c2396ac216a9a8a63d6c58cb9ba2a5dfa898e96e12bb2d23c",
       "file": "src/sdk/pagination.ts",
-      "line": 156,
+      "line": 175,
       "replacement": "false",
       "reason": "The anchored base64url pattern requires at least one character. Removing the separate zero-length check still rejects every empty cursor with the same error.",
       "owner": "pm-zclzll"
