@@ -13,6 +13,7 @@ import {
   type LinkedPathValidation,
 } from "./linked-artifacts.js";
 import type { AnnotationOmissionReceipt } from "./annotations.js";
+import type { LinkedArtifactNoteConflictMode } from "./linked-artifacts.js";
 
 /** Documents the docs command options payload exchanged by command, SDK, and package integrations. */
 export interface DocsCommandOptions {
@@ -26,6 +27,8 @@ export interface DocsCommandOptions {
   migrate?: string[];
   /** GH-170 (pm-pfnx): standalone note applied to every --add/--add-glob link in this invocation. */
   note?: string;
+  /** How an add treats a stored link with a different note: refuse (default), replace or append (GH-1716). */
+  noteConflict?: LinkedArtifactNoteConflictMode | (string & {});
   /** Value that configures or reports list for this contract. */
   list?: boolean;
   /** Value that configures or reports validate paths for this contract. */

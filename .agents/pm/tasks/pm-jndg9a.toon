@@ -1,0 +1,57 @@
+id: pm-jndg9a
+title: Exclude the generated CHANGELOG.md from the npm tarball so publication weight stops growing with release history
+description: "CHANGELOG.md is the largest file in the published distribution: 540,789 B of the 19,995,810 B base distribution measured on main 0fff5d35b (2026-11-13), against a 20,000,000 B ceiling, so 4,190 B are left. It is generated from closed tracker items on every release cut, so it grows with each PR bundle (the default-output economy bundle added about 9.8 KB, mostly changelog migration lines) and forces a new size tranche before almost every feature PR. Nothing reads it from an installed package: no source module opens it at runtime, the release workflow and release-notes generator read the repository checkout, and the only packaged references are two relative links in docs/README.md and one guide-topic doc entry. Release history stays available on GitHub Releases and in the repository. Duplicate check: searched exclude CHANGELOG npm tarball package files; an earlier docs-hygiene chore (closed) unpublished PRD.md and called a CHANGELOG slimming goal superseded by auto-generation, without deciding whether the file must ship."
+type: Task
+status: closed
+priority: 1
+tags[4]: artifact,npm,package-size,release
+created_at: "2026-11-13T15:15:00.914Z"
+updated_at: "2026-11-13T16:34:04.041Z"
+closed_at: "2026-11-13T16:34:03.018Z"
+completed_at: "2026-11-13T16:34:03.018Z"
+author: "harness:claude-code"
+estimated_minutes: 40
+acceptance_criteria: "package.json files excludes CHANGELOG.md and the package-artifact gate reports the regained headroom; Packaged pages link the changelog by its canonical GitHub URL with the repository-only note, and the release guide topic marks it optional; The docs reachability, guide-topic and release-readiness checks pass, and no runtime feature, type or export is removed"
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: "Removed CHANGELOG.md from package.json files; docs/README.md links the changelog by its canonical GitHub URL with the repository-only note; the release guide topic marks CHANGELOG.md optional and repository-only. No runtime feature, type or export changed."
+expected_result: "The package-artifact gate reports regained headroom and the docs, guide-topic and release-readiness checks pass"
+actual_result: "Base distribution 19,455,001 of 20,000,000 B before this bundle's code (544,999 B headroom, from 4,190 B) and 19,489,601 B with it; npm pack no longer lists CHANGELOG.md; docs/skills, docs-topology and the release-readiness spec pass"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-rjgh,related,"2026-11-13T15:15:00.914Z","harness:claude-code","cli:create:dep",detected
+  pm-tuxw1i,related,"2026-11-13T15:15:00.914Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-13T15:49:31.025Z","harness:claude-code","Measured on this branch after pnpm build: package-artifact gate base distribution 19,455,001 of 20,000,000 B (544,999 B of headroom, up from 4,190 B), and npm pack no longer lists CHANGELOG.md. The docs/skills gate first failed with 'Guide topic release requires CHANGELOG.md, which the npm package does not ship; ship it or mark it optional', and passes once the topic entry is optional and the build is fresh. Packaged references census: docs/README.md had the only two relative links; plugins/pm-claude/README.md already used the GitHub URL; release-relevance already treats CHANGELOG.md as not release-relevant, and the release-readiness spec reads the repository copy."
+files[2]{path,scope,note}:
+  package.json,project,files no longer lists CHANGELOG.md
+  src/sdk/guide-topics.ts,project,release guide topic marks CHANGELOG.md optional and repository-only
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/release/docs-skills-gate.mjs,project,600,"harness:claude-code","2026-11-13T15:49:30.144Z",local_mutation,fix/mutation-outcome-honesty
+test_runs[2]:
+  - run_id: test-local-mwf72upl-ogjv9k
+    kind: test
+    status: passed
+    started_at: "2026-11-13T16:31:56.351Z"
+    finished_at: "2026-11-13T16:32:07.929Z"
+    recorded_at: "2026-11-13T16:32:07.929Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs,schema,schema,source,local_source_ref
+  - run_id: test-local-mwf73lf5-6vfo6o
+    kind: test
+    status: passed
+    started_at: "2026-11-13T16:32:31.143Z"
+    finished_at: "2026-11-13T16:32:42.545Z"
+    recorded_at: "2026-11-13T16:32:42.545Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/release/docs-skills-gate.mjs,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/README.md,project,changelog links use the canonical GitHub URL with the repository-only note
+close_reason: "The generated CHANGELOG.md no longer ships in the npm tarball, restoring publication headroom that release history kept consuming"
+body: ""

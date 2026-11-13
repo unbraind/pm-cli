@@ -522,6 +522,7 @@ complete -c pm -n '__fish_seen_subcommand_from files' -l migrate -d 'Migrate lin
 complete -c pm -n '__fish_seen_subcommand_from files' -l list -d 'List linked files'
 complete -c pm -n '__fish_seen_subcommand_from files' -l apply -d 'Apply discovered linked files'
 complete -c pm -n '__fish_seen_subcommand_from files' -l note -d 'Linked-file note' -r
+complete -c pm -n '__fish_seen_subcommand_from files' -l note-conflict -d 'Treatment of an existing different note' -r -a 'refuse replace append'
 complete -c pm -n '__fish_seen_subcommand_from files' -l append-stable -d 'Preserve stable append ordering'
 complete -c pm -n '__fish_seen_subcommand_from files' -l validate-paths -d 'Validate linked-file paths'
 complete -c pm -n '__fish_seen_subcommand_from files' -l full-history -d 'Return every linked file after a write'

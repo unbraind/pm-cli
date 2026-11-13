@@ -434,7 +434,9 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
       },
       {
         path: "CHANGELOG.md",
-        purpose: "Versioned release history and unreleased notes.",
+        purpose:
+          "Versioned release history and unreleased notes (repository checkout only; excluded from the npm package).",
+        optional: true,
       },
       {
         path: "scripts/release/run-gates.mjs",

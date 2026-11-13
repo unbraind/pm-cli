@@ -16,7 +16,8 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError, type PmCliErrorContext } from "../shared/errors.js";
 import { toErrorMessage } from "../shared/primitives.js";
-import { getLockPath } from "../store/paths.js";
+import { getLockPath, getSettingsPath, resolvePmRoot } from "../store/paths.js";
+import { renderPmCommand } from "../shared/command-line.js";
 import { nowIso } from "../shared/time.js";
 
 import {
@@ -713,18 +714,79 @@ function resolveLockOverrideRelease(
   return null;
 }
 
-function throwIfStaleLockNeedsForce(
+/**
+ * The cleanup step for a stale lock: pm gc --scope locks against the tracker
+ * that holds it, scoped with --pm-path (relative to the working directory)
+ * when that is not the tracker this directory resolves to (GH-1706). gc keeps
+ * a lock it cannot read or date or whose own TTL has not run out, and cannot
+ * run where the lock root is not a tracker, so those get an owner-verified
+ * manual removal.
+ */
+async function staleLockCleanupStep(
+  lockPath: string,
+  relativeLockPath: string,
+  gcRemovable: boolean,
+): Promise<string> {
+  const lockRoot = path.dirname(path.dirname(lockPath));
+  const manual = `Remove ${relativeLockPath} under ${path.relative(process.cwd(), lockRoot) || "."} once its owner is confirmed gone, then retry the same command.`;
+  if (!gcRemovable) {
+    return `${manual} pm gc --scope locks keeps this lock: its metadata cannot be read or dated, or its own TTL has not run out.`;
+  }
+  try {
+    await fs.access(getSettingsPath(lockRoot));
+  } catch {
+    return manual;
+  }
+  const cwd = process.cwd();
+  const scope = path.resolve(resolvePmRoot(cwd)) === path.resolve(lockRoot)
+    ? []
+    : ["--pm-path", path.relative(cwd, lockRoot) || "."];
+  return `Run ${renderPmCommand([...scope, "gc", "--scope", "locks"])} (add --dry-run to preview), then retry the same command.`;
+}
+
+/**
+ * Whether pm gc --scope locks would remove this lock: its metadata parsed, it
+ * carries a valid timestamp, and it is past its OWN recorded TTL. The caller's
+ * TTL can be shorter (a lowered locks.ttl_seconds), and gc keeps a lease its
+ * owner still holds by its own terms. A confirmed-dead owner never reaches the
+ * refusal, because acquisition reclaims it.
+ */
+function isGcRemovableLock(lockInfo: LockReadResult): boolean {
+  return (
+    lockInfo.info !== null &&
+    lockInfo.warnings.length === 0 &&
+    Number.isFinite(Date.parse(lockInfo.info.created_at)) &&
+    isStaleLock(lockInfo.info, lockInfo.info.ttl_seconds)
+  );
+}
+
+/**
+ * Refuse to reclaim an expired lease when policy requires an explicit override.
+ * The refusal names the lock by its root-relative path and a cleanup that works
+ * for every command; --force reclaims the lease only where a command forwards it
+ * to this lock (GH-1706).
+ */
+async function throwIfStaleLockNeedsForce(
   id: string,
+  lockPath: string,
   lockInfo: LockReadResult,
   force: boolean,
   forceRequired: boolean,
-): void {
+): Promise<void> {
   if (!force && forceRequired) {
     const warningSuffix =
       lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
+    const relativeLockPath = `locks/${path.basename(lockPath)}`;
     throw new PmCliError(
-      `Item ${id} lock is stale${warningSuffix}; rerun with --force when supported for this command`,
+      `Lock ${id} is stale${warningSuffix}; remove the expired lease, or rerun with --force where this command accepts it`,
       EXIT_CODE.CONFLICT,
+      {
+        code: "stale_lock_requires_override",
+        details: { lock_id: id, lock_path: relativeLockPath },
+        why: `The lease in ${relativeLockPath} is past its TTL, and force_required_for_stale_lock keeps an expired lease until it is removed explicitly.`,
+        required: "Remove the expired lease, then retry the same command.",
+        nextSteps: [await staleLockCleanupStep(lockPath, relativeLockPath, isGcRemovableLock(lockInfo))],
+      },
     );
   }
 }
@@ -980,8 +1042,9 @@ async function removeConfirmedStaleLock(params: {
         staleRemovalCounted: false,
       };
     }
-    throwIfStaleLockNeedsForce(
+    await throwIfStaleLockNeedsForce(
       params.id,
+      params.lockPath,
       currentLockInfo,
       params.force || ownerDead,
       params.forceRequiredForStaleLock,

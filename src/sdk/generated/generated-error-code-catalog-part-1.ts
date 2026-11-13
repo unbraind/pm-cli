@@ -920,6 +920,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
       "sdk/lifecycle/task-composition.ts",
       "sdk/lifecycle/update-many.ts",
       "sdk/lifecycle/update.ts",
+      "sdk/linked-artifacts.ts",
       "sdk/query/next.ts",
       "sdk/runtime-input.ts",
       "sdk/runtime/mutation-admission.ts",
@@ -1127,6 +1128,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   {
     code: "linked_artifact_mutation_conflict",
     exit_code: 2,
+    sources: ["sdk/linked-artifacts.ts"],
+  },
+  {
+    code: "linked_artifact_note_conflict",
+    exit_code: 4,
     sources: ["sdk/linked-artifacts.ts"],
   },
   {

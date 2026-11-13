@@ -402,6 +402,8 @@ export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
   // GH-170 (pm-pfnx): single-value note applied to every --add/--add-glob link
   // in the invocation (embedded note= wins; usage error without an add).
   { flag: "--note" },
+  // GH-1716: how an add treats a stored link with a different note.
+  { flag: "--note-conflict", value_name: "mode", values: ["refuse", "replace", "append"], default: "refuse" },
   { flag: "--list" },
   { flag: "--append-stable" },
   { flag: "--validate-paths" },
@@ -428,6 +430,8 @@ export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--migrate" },
   // GH-170 (pm-pfnx): see FILES_FLAG_CONTRACTS --note.
   { flag: "--note" },
+  // GH-1716: see FILES_FLAG_CONTRACTS --note-conflict.
+  { flag: "--note-conflict", value_name: "mode", values: ["refuse", "replace", "append"], default: "refuse" },
   { flag: "--list" },
   { flag: "--validate-paths" },
   { flag: "--full-history" },

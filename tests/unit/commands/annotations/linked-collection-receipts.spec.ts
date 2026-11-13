@@ -183,8 +183,10 @@ describe("pm-gh1700 linked file and doc mutation receipts", () => {
       expect(retried).toMatchObject({ changed: false, files: [], count: 0, mutation_receipt: { changed_count: 0 } });
       expect(retried.validation).toBeUndefined();
 
-      const revised = await runFiles(id, { add: ["path=src/new.ts,scope=project,note=n2"] }, { path: context.pmPath });
+      // A different note on a stored link is revised only when the caller says how (GH-1716).
+      const revised = await runFiles(id, { add: ["path=src/new.ts,scope=project,note=n2"], noteConflict: "replace" }, { path: context.pmPath });
       expect(revised.files).toEqual([{ path: "src/new.ts", scope: "project", note: "n2" }]);
+      expect(revised.mutation_receipt?.link_outcomes).toEqual([{ path: "src/new.ts", scope: "project", outcome: "note_replaced" }]);
 
       const migrated = await runFiles(id, { migrate: ["from=src/f0,to=lib/f0"] }, { path: context.pmPath });
       expect(migrated).toMatchObject({ count: 9, total_count: 11, migrations_applied: 9, mutation_receipt: { changed_count: 9, removed_count: 0 } });

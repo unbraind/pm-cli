@@ -37,6 +37,146 @@ import type { AnnotationOmissionReceipt } from "./annotations.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "./command-line.js";
 import { activeItemRevisionExpectations } from "../core/store/item-mutation-precondition.js";
 
+/*
+ * Note conflicts (GH-1716): what an add does to a link that is already stored.
+ * A different note on an existing link is another agent's rationale, so the
+ * default refuses instead of overwriting it; `replace` keeps the earlier
+ * overwrite behaviour and `append` joins the notes. Every requested link
+ * reports what it became, so a receipt never reads an overwrite as an add.
+ */
+
+/** How an add treats a stored link whose note differs from the requested one. */
+export const LINKED_ARTIFACT_NOTE_CONFLICT_MODES = ["refuse", "replace", "append"] as const;
+
+/** One of {@link LINKED_ARTIFACT_NOTE_CONFLICT_MODES}; `refuse` is the default. */
+export type LinkedArtifactNoteConflictMode = (typeof LINKED_ARTIFACT_NOTE_CONFLICT_MODES)[number];
+
+/** What one requested link became in storage. */
+export type LinkedArtifactLinkOutcome =
+  | "added"
+  | "note_added"
+  | "note_replaced"
+  | "note_appended"
+  | "unchanged";
+
+/** Per-link outcome a files or docs write reports in its mutation receipt. */
+export interface LinkedArtifactLinkOutcomeEntry {
+  /** Linked path after anchoring and any path migration. */
+  path: string;
+  /** Scope of the requested link. */
+  scope: LinkScope;
+  /** What the write did to this link. */
+  outcome: LinkedArtifactLinkOutcome;
+}
+
+/** A requested note that would overwrite a different stored note. */
+export interface LinkedArtifactNoteConflict {
+  /** Linked path the conflict is on. */
+  path: string;
+  /** Scope of the stored link. */
+  scope: LinkScope;
+  /** The note already stored, which a refusal keeps. */
+  existing_note: string;
+  /** The note the add asked for. */
+  requested_note: string;
+  /** Whether the existing note was stored before this write or set by an earlier entry of the same write. */
+  source: "stored" | "this_write";
+}
+
+/** Separator `append` places between the stored note and the requested one. */
+export const LINKED_ARTIFACT_NOTE_JOINER = "; ";
+
+/** Parse the conflict mode, refusing a value outside the closed set and a mode with nothing to add. */
+export function parseNoteConflictMode(
+  raw: string | undefined,
+  hasAddFlags: boolean,
+): LinkedArtifactNoteConflictMode {
+  if (raw === undefined) return "refuse";
+  const mode = raw.trim().toLowerCase();
+  if (!LINKED_ARTIFACT_NOTE_CONFLICT_MODES.some((allowed) => allowed === mode)) {
+    throw new PmCliError(
+      `--note-conflict must be one of ${LINKED_ARTIFACT_NOTE_CONFLICT_MODES.join(", ")}; got "${raw}"`,
+      EXIT_CODE.USAGE,
+      {
+        code: "invalid_argument_value",
+        flag: "--note-conflict",
+        value: raw,
+        required: `Pass --note-conflict ${LINKED_ARTIFACT_NOTE_CONFLICT_MODES.join("|")}.`,
+      },
+    );
+  }
+  if (!hasAddFlags) {
+    throw new PmCliError(
+      "--note-conflict requires --add or --add-glob in the same invocation (it decides how those links treat an existing note)",
+      EXIT_CODE.USAGE,
+      { code: "missing_required_argument", flag: "--note-conflict", required: "Pass --add or --add-glob with --note-conflict." },
+    );
+  }
+  return mode as LinkedArtifactNoteConflictMode;
+}
+
+/**
+ * The note a stored link keeps after an add requests `requested`, and the
+ * outcome to report. A missing or identical requested note, and an append
+ * whose text is already one of the joined segments, leave the link unchanged.
+ */
+export function reviseLinkedNote(
+  existing: string | undefined,
+  requested: string | undefined,
+  mode: LinkedArtifactNoteConflictMode,
+): { note: string | undefined; outcome: LinkedArtifactLinkOutcome; conflict: boolean } {
+  if (requested === undefined || requested === existing) {
+    return { note: existing, outcome: "unchanged", conflict: false };
+  }
+  if (existing === undefined) return { note: requested, outcome: "note_added", conflict: false };
+  if (mode === "replace") return { note: requested, outcome: "note_replaced", conflict: false };
+  if (mode === "append") {
+    // A requested note that already appears as a whole run of joined segments (even one containing the joiner) is not appended again.
+    const joiner = LINKED_ARTIFACT_NOTE_JOINER;
+    return `${joiner}${existing}${joiner}`.includes(`${joiner}${requested}${joiner}`)
+      ? { note: existing, outcome: "unchanged", conflict: false }
+      : { note: `${existing}${LINKED_ARTIFACT_NOTE_JOINER}${requested}`, outcome: "note_appended", conflict: false };
+  }
+  return { note: existing, outcome: "unchanged", conflict: true };
+}
+
+/** Refuse a write whose adds would overwrite stored notes; nothing has been written when this throws. */
+export function buildNoteConflictError(params: {
+  itemId: string;
+  noun: "file" | "doc";
+  conflicts: readonly LinkedArtifactNoteConflict[];
+  retryArgs: (mode: Exclude<LinkedArtifactNoteConflictMode, "refuse">) => string[] | undefined;
+  render: (args: string[]) => string;
+}): PmCliError {
+  const first = params.conflicts[0]!;
+  const more = params.conflicts.length > 1 ? ` and ${params.conflicts.length - 1} more` : "";
+  const append = params.retryArgs("append");
+  const replace = params.retryArgs("replace");
+  const message =
+    first.source === "stored"
+      ? `${params.itemId} already links ${params.noun} ${first.path} with the note "${first.existing_note}"${more}; the add was refused so that note is kept`
+      : `The add names ${params.noun} ${first.path} on ${params.itemId} with two notes, "${first.existing_note}" and then "${first.requested_note}"${more}; the add was refused because they disagree`;
+  return new PmCliError(
+    message,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "linked_artifact_note_conflict",
+      item_id: params.itemId,
+      why: "A different stored note is usually another agent's rationale, so --add never overwrites it silently.",
+      required: "Re-run with --note-conflict append to keep both notes, or --note-conflict replace to overwrite the stored note.",
+      ...(append === undefined || replace === undefined
+        ? {}
+        : {
+            nextSteps: [params.render(append), params.render(replace)],
+            recovery: { suggested_retry: params.render(append), suggested_retry_args: append },
+          }),
+      details: {
+        conflicts: params.conflicts.map((conflict) => ({ ...conflict })),
+      },
+    },
+  );
+}
+
 /** Restricts linked artifact values accepted by command, SDK, and storage contracts. */
 export type LinkedArtifact = {
   /** Filesystem path used for path resolution. */
@@ -79,6 +219,8 @@ export interface LinkedArtifactCommandOptions {
   migrate?: string[];
   /** GH-170 (pm-pfnx): standalone note applied to every link added by --add / --add-glob in the same invocation. A per-entry embedded note (the `path=...,note=...` pair syntax) takes precedence over this flag. Requires at least one --add/--add-glob; rejected otherwise. */
   note?: string;
+  /** How an add treats a stored link with a different note: refuse (default), replace or append (GH-1716). Requires --add or --add-glob. */
+  noteConflict?: LinkedArtifactNoteConflictMode | (string & {});
   /** Value that configures or reports list for this contract. */
   list?: boolean;
   /** Value that configures or reports append stable for this contract. */
@@ -103,6 +245,8 @@ export interface LinkedCollectionMutationReceipt {
   removed_count: number;
   /** Whether the response includes the complete post-mutation collection. */
   full_history_included: boolean;
+  /** Files and docs writes: what each requested link became, so a note overwrite never reads as an add (GH-1716). */
+  link_outcomes?: LinkedArtifactLinkOutcomeEntry[];
 }
 
 /** Counts and receipts a linked-collection mutation response carries beside its entries. */
@@ -153,6 +297,7 @@ export function projectLinkedCollectionMutation<TEntry>(params: {
   written: readonly TEntry[];
   removedCount: number;
   fullHistory: boolean;
+  linkOutcomes?: readonly LinkedArtifactLinkOutcomeEntry[];
 }): LinkedCollectionMutationProjection<TEntry> {
   const entries = params.fullHistory ? [...params.stored] : [...params.written];
   const withheld = entries.length < params.stored.length;
@@ -165,6 +310,9 @@ export function projectLinkedCollectionMutation<TEntry>(params: {
       changed_count: params.written.length,
       removed_count: params.removedCount,
       full_history_included: !withheld,
+      ...(params.linkOutcomes && params.linkOutcomes.length > 0
+        ? { link_outcomes: [...params.linkOutcomes] }
+        : {}),
     },
     omission_receipt: {
       has_omissions: withheld,
@@ -515,13 +663,14 @@ export function assertLinkedArtifactMutationIsUnambiguous(
   if (adds.length === 0 || removes.length === 0) {
     return;
   }
+  // Compared in storage's path form, so two spellings of one saved path are the same path.
   const addedPaths = new Set(
-    adds.map((entry) => applyPathMigrations(entry.path, migrations)),
+    adds.map((entry) => storedLinkedPath(applyPathMigrations(entry.path, migrations))),
   );
   const conflicts = [
     ...new Set(
       removes
-        .map((entry) => applyPathMigrations(entry, migrations))
+        .map((entry) => storedLinkedPath(applyPathMigrations(entry, migrations)))
         .filter((entry) => addedPaths.has(entry)),
     ),
   ].sort((left, right) => left.localeCompare(right));
@@ -727,51 +876,158 @@ function applyLinkedArtifactMigrations(
   removes: string[],
   migrations: PathMigration[],
 ): { adds: LinkedArtifact[]; removes: string[]; count: number } {
+  // Identity is judged in storage's path form, so two spellings of one saved path are one link (GH-1716 review).
   let count = 0;
   for (let index = 0; index < current.length; index += 1) {
     const migratedPath = applyPathMigrations(current[index].path, migrations);
-    if (migratedPath !== current[index].path) {
-      current[index] = { ...current[index], path: migratedPath };
-      count += 1;
+    if (migratedPath !== current[index].path) count += 1;
+    const storedPath = storedLinkedPath(migratedPath);
+    if (storedPath !== current[index].path) {
+      current[index] = { ...current[index], path: storedPath };
     }
   }
   const migratedAdds = adds.map((entry) => {
     const migratedPath = applyPathMigrations(entry.path, migrations);
     if (migratedPath !== entry.path) count += 1;
-    return { ...entry, path: migratedPath };
+    return { ...entry, path: storedLinkedPath(migratedPath) };
   });
   return {
     adds: migratedAdds,
-    removes: removes.map((entry) => applyPathMigrations(entry, migrations)),
+    removes: removes.map((entry) => storedLinkedPath(applyPathMigrations(entry, migrations))),
     count,
   };
 }
 
-/** Collapse migration collisions with existing last-wins semantics, then apply explicit note revisions without reordering retries. */
+/** Accumulator one write's adds update while merging into the stored collection. */
+interface LinkedArtifactMergeState {
+  merged: LinkedArtifact[];
+  /** Entries whose current note an earlier entry of this write set. */
+  notedHere: Set<LinkedArtifact>;
+  conflicts: LinkedArtifactNoteConflict[];
+}
+
+/** A linked path as storage writes it: item-format normalization turns every backslash into a slash. */
+function storedLinkedPath(value: string): string {
+  return value.replaceAll("\\", "/");
+}
+
+/** Identity of a link as storage keys it. */
+function storedLinkKey(entry: LinkedArtifact): string {
+  return `${entry.scope}\0${storedLinkedPath(entry.path)}`;
+}
+
+/**
+ * One outcome per requested link, judged from the note it had before this
+ * write and the note the write leaves (GH-1716). Comparing end states, not the
+ * steps that reached them, keeps a batch that revises a note and then restores
+ * it from reporting a change storage never saved.
+ */
+function linkedArtifactOutcomes(
+  baseline: readonly LinkedArtifact[],
+  merged: readonly LinkedArtifact[],
+  adds: readonly LinkedArtifact[],
+): LinkedArtifactLinkOutcomeEntry[] {
+  const before = new Map(baseline.map((entry) => [storedLinkKey(entry), entry.note]));
+  const after = new Map(merged.map((entry) => [storedLinkKey(entry), entry.note]));
+  const outcomes = new Map<string, LinkedArtifactLinkOutcomeEntry>();
+  for (const add of adds) {
+    const key = storedLinkKey(add);
+    if (outcomes.has(key)) continue;
+    outcomes.set(key, {
+      path: storedLinkedPath(add.path),
+      scope: add.scope,
+      outcome: classifyLinkOutcome(before.has(key), before.get(key), after.get(key)),
+    });
+  }
+  return [...outcomes.values()];
+}
+
+/** What a link's note went through between the baseline and the end of the write. */
+function classifyLinkOutcome(
+  existed: boolean,
+  prior: string | undefined,
+  final: string | undefined,
+): LinkedArtifactLinkOutcome {
+  if (!existed) return "added";
+  if (final === prior) return "unchanged";
+  if (prior === undefined) return "note_added";
+  return final?.startsWith(`${prior}${LINKED_ARTIFACT_NOTE_JOINER}`) ? "note_appended" : "note_replaced";
+}
+
+/**
+ * Apply one add: append a new link, or revise the note it already carries as
+ * the mode allows. Adds apply in order under one rule, whether the earlier
+ * note was stored or came from an earlier entry of this write, so replaying a
+ * write that succeeded saves nothing new: an append re-finds every segment and
+ * a replace ends on the same note, while `refuse` rejects a write whose own
+ * entries disagree, every time.
+ */
+function applyLinkedArtifactAdd(
+  state: LinkedArtifactMergeState,
+  add: LinkedArtifact,
+  noteConflict: LinkedArtifactNoteConflictMode,
+): void {
+  const index = state.merged.findIndex(
+    /** Match normalized identity after migration collisions have been resolved. */
+    (entry) => entry.path === add.path && entry.scope === add.scope,
+  );
+  const stored = state.merged[index];
+  if (stored === undefined) {
+    state.merged.push(add);
+    if (add.note !== undefined) state.notedHere.add(add);
+    return;
+  }
+  const revision = reviseLinkedNote(stored.note, add.note, noteConflict);
+  if (revision.conflict) {
+    state.conflicts.push({
+      path: add.path,
+      scope: add.scope,
+      existing_note: stored.note!,
+      requested_note: add.note!,
+      source: state.notedHere.has(stored) ? "this_write" : "stored",
+    });
+  } else if (revision.note !== stored.note) {
+    const revised = { ...stored, note: revision.note };
+    state.merged[index] = revised;
+    state.notedHere.add(revised);
+  }
+}
+
+/**
+ * Collapse migration collisions with existing last-wins semantics, then apply
+ * each add without reordering retries. A different note is revised only as
+ * `noteConflict` allows (GH-1716).
+ */
 function mergeLinkedArtifactChanges(
   current: LinkedArtifact[],
   adds: LinkedArtifact[],
   removes: string[],
   appendStable: boolean,
-): LinkedArtifact[] {
-  const merged = dedupeLinkedArtifacts(current);
-  for (const add of adds) {
-    const index = merged.findIndex(
-      /** Match normalized identity after migration collisions have been resolved. */
-      (entry) => entry.path === add.path && entry.scope === add.scope,
-    );
-    if (index < 0) {
-      merged.push(add);
-    } else if (add.note !== undefined) {
-      merged[index] = { ...merged[index], note: add.note };
-    }
-  }
+  noteConflict: LinkedArtifactNoteConflictMode,
+): {
+  entries: LinkedArtifact[];
+  outcomes: LinkedArtifactLinkOutcomeEntry[];
+  conflicts: LinkedArtifactNoteConflict[];
+} {
+  const baseline = dedupeLinkedArtifacts(current);
+  const state: LinkedArtifactMergeState = {
+    merged: [...baseline],
+    notedHere: new Set(),
+    conflicts: [],
+  };
+  for (const add of adds) applyLinkedArtifactAdd(state, add, noteConflict);
+  const { merged } = state;
+  const outcomes = linkedArtifactOutcomes(baseline, merged, adds);
   if (removes.length > 0) {
     for (let index = merged.length - 1; index >= 0; index -= 1) {
       if (removes.includes(merged[index].path)) merged.splice(index, 1);
     }
   }
-  return appendStable ? merged : sortLinkedArtifacts(merged);
+  return {
+    entries: appendStable ? merged : sortLinkedArtifacts(merged),
+    outcomes,
+    conflicts: state.conflicts,
+  };
 }
 
 async function buildLinkedArtifactResult(params: {
@@ -818,7 +1074,8 @@ function countRemovedLinkedArtifacts(
   }
   let removed = 0;
   for (const entry of before) {
-    const key = artifactKey({ ...entry, path: applyPathMigrations(entry.path, migrations) });
+    // The migrated path in storage's form, as the merge applied it.
+    const key = artifactKey({ ...entry, path: storedLinkedPath(applyPathMigrations(entry.path, migrations)) });
     const left = remaining.get(key) ?? 0;
     if (left > 0) remaining.set(key, left - 1);
     else removed += 1;
@@ -893,9 +1150,16 @@ function firstRefusedAddEntry(entries: readonly string[], bareNoun: "file" | "do
   }) + 1;
 }
 
-/** Repeat one flag per value, as the CLI received a repeatable option. */
-function repeatFlag(flag: string, values: readonly string[] | undefined): string[] {
-  return (values ?? []).flatMap((value) => [flag, value]);
+/**
+ * Repeat one flag per value, as the CLI received a repeatable option. Values
+ * are already resolved, so a literal "-" is spelled as its keyed form: replayed
+ * bare, it would read stdin instead of naming the path.
+ */
+function repeatFlag(flag: string, values: readonly string[] | undefined, literalKey?: string): string[] {
+  return (values ?? []).flatMap((value) => [
+    flag,
+    literalKey !== undefined && value.trim() === "-" ? `${literalKey}=-` : value,
+  ]);
 }
 
 /**
@@ -913,19 +1177,22 @@ function noteRecoveryRetryArgs(params: {
   global: GlobalOptions;
   config: LinkedArtifactKindConfig;
   guards: readonly string[];
+  noteConflict?: LinkedArtifactNoteConflictMode;
 }): string[] {
   const { options } = params;
+  const noteConflict = params.noteConflict ?? options.noteConflict;
   return [
     ...resolvePmCommandScopeArgs(params.global),
     // The refused write changed nothing, so the revision guards it ran under still hold for the retry.
     ...params.guards.map((guard) => `--expect-hash=${guard}`),
     params.config.metadataKey,
     params.id,
-    ...repeatFlag("--add", params.entries.map((entry, index) => (index === params.position - 1 ? params.rewritten : entry))),
-    ...repeatFlag("--add-glob", params.resolved.addGlob),
-    ...repeatFlag("--remove", params.resolved.remove),
+    ...repeatFlag("--add", params.entries.map((entry, index) => (index === params.position - 1 ? params.rewritten : entry)), "path"),
+    ...repeatFlag("--add-glob", params.resolved.addGlob, "pattern"),
+    ...repeatFlag("--remove", params.resolved.remove, "path"),
     ...repeatFlag("--migrate", params.resolved.migrate),
     ...(options.note === undefined ? [] : ["--note", options.note]),
+    ...(noteConflict === undefined ? [] : ["--note-conflict", noteConflict]),
     ...(params.config.supportsAppendStable && options.appendStable === true ? ["--append-stable"] : []),
     ...(options.validatePaths === true ? ["--validate-paths"] : []),
     ...(options.fullHistory === true ? ["--full-history"] : []),
@@ -1118,11 +1385,13 @@ export async function runLinkedArtifacts(
     workspaceRoot,
     invocationRoot,
   );
+  const hasAddFlags = parsedAdds.length > 0 || addGlobs.length > 0;
   const adds = applyStandaloneNote(
     [...parsedAdds, ...expandedGlobAdds],
     options.note,
-    parsedAdds.length > 0 || addGlobs.length > 0,
+    hasAddFlags,
   );
+  const noteConflict = parseNoteConflictMode(options.noteConflict, hasAddFlags);
   const removes = parseRemoveEntries(resolvedRemoves).map((entry) =>
     anchorLinkedPath(entry, workspaceRoot, invocationRoot),
   );
@@ -1148,6 +1417,7 @@ export async function runLinkedArtifacts(
   const author = resolveAuthor(options.author, settings.author_default);
   let before: LinkedArtifact[] = [];
   let removedCount = 0;
+  let linkOutcomes: LinkedArtifactLinkOutcomeEntry[] = [];
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -1168,12 +1438,41 @@ export async function runLinkedArtifacts(
         removes,
         migrations,
       );
-      const normalized = mergeLinkedArtifactChanges(
+      const merge = mergeLinkedArtifactChanges(
         next,
         migrated.adds,
         migrated.removes,
         config.supportsAppendStable && options.appendStable === true,
+        noteConflict,
       );
+      if (merge.conflicts.length > 0) {
+        // Refused under the item lock before anything is written, so the revision guards still hold for a retry.
+        const guards = activeItemRevisionExpectations(pmRoot);
+        throw buildNoteConflictError({
+          itemId: document.metadata.id,
+          noun: config.bareNoun,
+          conflicts: merge.conflicts,
+          retryArgs: (mode) =>
+            guards === undefined
+              ? undefined
+              : noteRecoveryRetryArgs({
+                  // The canonical id, so a shorthand such as "discover" never replays as a subcommand.
+                  id: document.metadata.id,
+                  entries: resolvedAdds ?? [],
+                  position: 0,
+                  rewritten: "",
+                  resolved: { addGlob: resolvedAddGlobs, remove: resolvedRemoves, migrate: resolvedMigrations },
+                  options,
+                  global,
+                  config,
+                  guards,
+                  noteConflict: mode,
+                }),
+          render: renderPmCommand,
+        });
+      }
+      const normalized = merge.entries;
+      linkOutcomes = merge.outcomes;
       if (normalized.length > 0) {
         metadata[metadataKey] = normalized;
       } else {
@@ -1216,6 +1515,7 @@ export async function runLinkedArtifacts(
       written: writtenLinkedEntries(before, artifacts),
       removedCount,
       fullHistory: options.fullHistory === true,
+      linkOutcomes,
     }),
   });
 }

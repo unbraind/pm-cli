@@ -8,7 +8,7 @@ import { existsSync, promises as fs, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { writeFileAtomic } from "../fs/fs-utils.js";
-import { acquireLock } from "../lock/lock.js";
+import { acquireLockLease } from "../lock/lock.js";
 import { SETTINGS_DEFAULTS } from "../shared/constants.js";
 import { getRuntimePath } from "../store/paths.js";
 
@@ -151,23 +151,33 @@ export async function readSessionState(pmRoot: string): Promise<SessionState> {
   }
 }
 
-/** Apply a session edit to the latest state while holding its singleton lock. */
+/**
+ * Apply a session edit to the latest state while holding its singleton lock.
+ * The critical section is one read and one atomic write, so a lease past its
+ * TTL belongs to a writer that crashed or stalled: it is reclaimed under the
+ * stale-cleanup gate rather than refused, which would ask for a --force no
+ * caller forwards here (GH-1706). The write is fenced to the lease, so a
+ * stalled writer whose lease was reclaimed cannot overwrite newer state; it
+ * refuses with lock_lost instead.
+ */
 async function mutateSessionState(
   pmRoot: string,
   mutate: (state: SessionState) => void,
 ): Promise<void> {
-  const release = await acquireLock(
+  const lease = await acquireLockLease(
     pmRoot, "session-state", SETTINGS_DEFAULTS.locks.ttl_seconds,
-    "session-state", false, true, SETTINGS_DEFAULTS.locks.wait_ms,
+    "session-state", false, false, SETTINGS_DEFAULTS.locks.wait_ms,
   );
   try {
     const state = await readSessionState(pmRoot);
     mutate(state);
     const target = getSessionStatePath(pmRoot);
-    await fs.mkdir(path.dirname(target), { recursive: true });
-    await writeFileAtomic(target, JSON.stringify(state));
+    await lease.fence(async () => {
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      await writeFileAtomic(target, JSON.stringify(state));
+    });
   } finally {
-    await release();
+    await lease.release();
   }
 }
 
