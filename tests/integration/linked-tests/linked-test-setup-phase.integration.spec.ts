@@ -124,6 +124,16 @@ describe("linked-test setup phase", () => {
       const receipt = created.json as { id?: string; item?: { id: string } };
       const id = (receipt.item?.id ?? receipt.id) as string;
       expect((await runTest(id, { list: true }, { path: context.pmPath })).tests.map((test) => test.phase)).toEqual(["setup"]);
+      // Structured intake (pm create --stdin-json) keeps the phase and stamps the format too.
+      const structured = context.runCli(["create", "--stdin-json", "--create-mode", "progressive", "--json"], {
+        expectJson: true,
+        input: JSON.stringify({ title: "structured setup", type: "Task", tests: [{ command: "node -e 1", phase: "setup" }, { command: "node -e 2" }] }),
+      });
+      expect(structured.code, structured.stderr).toBe(0);
+      const structuredReceipt = structured.json as { id?: string; item?: { id: string } };
+      const structuredId = (structuredReceipt.item?.id ?? structuredReceipt.id) as string;
+      expect((await runTest(structuredId, { list: true }, { path: context.pmPath })).tests.map((test) => test.phase)).toEqual(["setup", undefined]);
+      expect(await readItemFile(context, structuredId)).toContain("pm_format_version: 3");
       const before = await readItemFile(context, id);
       expect(before).toContain("pm_format_version: 3");
       for (const args of [
