@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[7]: agent-ux,"area:cli","area:sdk",context-management,contracts,output-contract,token-efficiency
 created_at: "2026-07-24T23:45:26.200Z"
-updated_at: "2026-11-13T08:41:09.977Z"
+updated_at: "2026-11-13T10:54:10.160Z"
 author: maintainer-agent
 estimated_minutes: 1800
 acceptance_criteria: "The contract table declares a default output token budget per command and per output format, generated rather than hand-maintained; Commands exceeding their budget apply the shared degradation ladder (projection narrowing, then bounded truncation) and disclose what was dropped in the envelope; A budget override flag and a no-budget escape hatch exist for human and pipeline use, and are documented as non-default; The token-cost corpus gate is extended to assert every command against its declared budget, failing on regression; Degradation never changes machine-readable field names or breaks the scripting contract; Acceptance compares complete successful journeys including recovery and continuation costs, with silent omission treated as a failure"
@@ -233,9 +233,10 @@ notes[8]:
   - created_at: "2026-10-10T07:32:46.280Z"
     author: "harness:codex"
     text: "Agent-cost improvement observed during release closeout: contracts --command close --flags-only --json emits 11,947 UTF-8 bytes for one selected command while retaining all 47 global command-alias rows (2,584 bytes even when independently minified). Only one canonical close alias row is relevant to this lookup. This response remains below its current JSON ceiling; this is an optimization candidate, not a demonstrated budget violation. Preserve the complete global alias inventory through explicit full discovery and give command-scoped projections selected aliases plus truthful restoration/disclosure. Keep flag aliases, accepted spellings, canonical resolution, all caller-visible facts and existing token ceilings unchanged. All-status 2,917-item duplicate inspection and targeted search identify this canonical budget owner and historical projection task pm-xlzl; no new item or claim is created. Reproduction belongs to PR 1434 / pm-release-ledger-origin-delivery and is not represented as implemented by the release changes."
-learnings[2]{created_at,author,text}:
+learnings[3]{created_at,author,text}:
   "2026-09-10T06:06:49.371Z","harness:codex","A binding output budget must measure the final selected renderer, including UTF-8 bytes, newline, truncation disclosure, and cross-call receipts. Recompact from the original projection so opaque cursors are not accidentally string-compacted on later passes. Mandatory receipt floors require explicit infeasibility rather than a false within-budget claim."
   "2026-10-08T17:30:20.462Z","harness:codex","A compatibility budget must measure the whole response, but an already enforced intent receipt is sufficient disclosure of an equal ceiling. Duplicate receipts spend the budget they are meant to control. Keep the full-envelope accounting invariant and reject mismatched/unenforced receipt shortcuts; protect session orientation with unchanged calibration rather than increasing its approved cost."
+  "2026-11-13T10:54:10.159Z","harness:claude-code","A projection that applies only after a shared invocation context is hoisted never fires when each row's context carries per-row identity, such as a trust fingerprint that includes the command or a per-test sandbox path. Reduce each row to its decision fields first, then hoist the identical result. Found by review on the GH-1702 change: multi-test items kept every path until rows were reduced before the hoist."
 files[57]:
   - path: .agents/pm/extensions/.managed-extensions.json
     scope: project
