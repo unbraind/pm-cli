@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: agent-ux,privacy,redaction,security,validate
 created_at: "2026-11-12T08:23:44.023Z"
-updated_at: "2026-11-12T08:23:44.023Z"
+updated_at: "2026-11-13T03:07:36.588Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "pm validate and pm health report items whose author, assignee or claim_principal carries URL userinfo, naming the item id and field but never the value; Each finding carries the rewrite remediation; A tracker without such records reports nothing"
@@ -15,6 +15,9 @@ risk: low
 confidence: high
 expected_result: A maintainer learns about legacy credential-bearing identities and can rewrite them
 actual_result: Legacy identities with URL userinfo are invisible until echoed in full item reads
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1707,discovered_from,"2026-11-12T08:23:44.023Z","harness:claude-code","cli:create:dep",detected
+  pm-7ivxas,related,"2026-11-13T03:07:36.320Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-13T03:07:35.568Z","harness:claude-code","Scope note from PR 1717 (CodeRabbit major on the plan projection): read outputs show legacy stored identities as stored by design, and this item reports them for rewrite. The report should therefore also cover the nested identity locations the write-side table now judges (comments, notes and learnings authors, dependency authors, plan decision, discovery and step owners, and linked-test provenance and updated_by authors, the table pm-7ivxas completed), so a legacy plan step owner that pm plan show prints as stored is found and rewritten rather than redacted in one projection only.\n"
 body: ""
