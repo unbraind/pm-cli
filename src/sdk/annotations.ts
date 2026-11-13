@@ -15,6 +15,7 @@ import {
   transferMutationStdinTokenPolicy,
 } from "../core/item/parse.js";
 import { renderPmCommand } from "../core/shared/command-line.js";
+import { resolvePmCommandScopeArgs } from "./command-line.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -607,12 +608,15 @@ function assertAnnotationEditTextIsNotCompacted(
   id: string,
   text: string,
   config: AnnotationCommandConfig<string, AnnotationEntry>,
+  global: GlobalOptions,
 ): void {
   if (config.input.mode !== "edit") return;
   const omitted = readCompactionMarker(text);
   if (omitted === undefined) return;
   const noun = config.collectionKey.replace(/s$/, "");
   const index = config.input.index as number;
+  // The recovery targets the tracker the edit addressed, never the cwd default.
+  const scope = resolvePmCommandScopeArgs(global);
   throw new PmCliError(
     `Replacement text for ${noun} ${index} on ${id} ends with the read-output compaction marker, so it was copied from a compacted read that left out ${omitted} characters. Nothing was written.`,
     EXIT_CODE.USAGE,
@@ -623,8 +627,8 @@ function assertAnnotationEditTextIsNotCompacted(
       required: `Read the whole ${noun} with --output-budget unbounded, apply the change to the full text, and retry the edit without the trailing marker.`,
       why: "A budgeted read shortens long entries to a prefix plus a marker naming how many characters it left out; editing from that text would replace the stored entry with the shortened prefix.",
       examples: [
-        `pm ${config.collectionKey} ${id} --output-budget unbounded --json`,
-        `pm ${config.collectionKey} ${id} --edit ${index} --file <full-text-file>`,
+        renderPmCommand([...scope, config.collectionKey, id, "--output-budget", "unbounded", "--json"]),
+        `${renderPmCommand([...scope, config.collectionKey, id, "--edit", String(index), "--file"])} <full-text-file>`,
       ],
     },
   );
@@ -913,7 +917,7 @@ export async function runAnnotationCommand<
       EXIT_CODE.USAGE,
     );
   }
-  assertAnnotationEditTextIsNotCompacted(id, text, config);
+  assertAnnotationEditTextIsNotCompacted(id, text, config, global);
 
   if (config.input.mode === "edit") {
     const op = config.editOp ?? config.op;

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { runComments } from "../../../../src/cli/commands/annotations/comments.js";
 import { runLearnings } from "../../../../src/cli/commands/annotations/learnings.js";
 import { runNotes } from "../../../../src/cli/commands/annotations/notes.js";
+import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
@@ -56,10 +57,12 @@ describe("annotation edits refuse text copied from a compacted read (pm-n98pir)"
         details: { collection, entry_index: 1, omitted_characters: LONG_TEXT.length - 240 },
       });
       expect(error.message).toContain("Nothing was written");
+      // CodeRabbit on PR 1717: the recovery addresses the tracker the edit used.
       expect(error.context.examples).toEqual([
-        `pm ${collection} ${id} --output-budget unbounded --json`,
-        `pm ${collection} ${id} --edit 1 --file <full-text-file>`,
+        renderPmCommand(["--pm-path", context.pmPath, collection, id, "--output-budget", "unbounded", "--json"]),
+        `${renderPmCommand(["--pm-path", context.pmPath, collection, id, "--edit", "1", "--file"])} <full-text-file>`,
       ]);
+      expect(error.context.examples![0]).toContain("--pm-path");
       expect(await historyLineCount(context, id)).toBe(before);
       const stored = (await run(id, {}, global)) as unknown as Record<string, { text: string }[]>;
       expect(stored[collection]![0]!.text).toBe(LONG_TEXT);
