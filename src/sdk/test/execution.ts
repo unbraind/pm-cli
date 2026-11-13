@@ -2735,10 +2735,9 @@ function buildLinkedTestPassedExecutionResult(params: {
     params.execution.stdout,
     params.execution.stderr,
   );
-  if (
-    params.options?.failOnEmptyTestRun === true ||
-    commandUsesTestNameFilter(params.linkedTest.command ?? "")
-  ) {
+  // A setup entry builds rather than tests, so a name filter in it implies no execution receipt (GH-1671).
+  const nameFiltered = params.linkedTest.phase !== "setup" && commandUsesTestNameFilter(params.linkedTest.command ?? "");
+  if (params.options?.failOnEmptyTestRun === true || nameFiltered) {
     const emptyRunSignal = detectEmptyLinkedTestRun(
       params.execution.stdout,
       params.execution.stderr,
@@ -2746,10 +2745,7 @@ function buildLinkedTestPassedExecutionResult(params: {
     if (emptyRunSignal) {
       return buildLinkedTestEmptyRunResult({ ...params, emptyRunSignal });
     }
-    if (
-      commandUsesTestNameFilter(params.linkedTest.command ?? "") &&
-      !receipt
-    ) {
+    if (nameFiltered && !receipt) {
       return buildLinkedTestEmptyRunResult({
         ...params,
         emptyRunSignal: { code: "missing_positive_execution_receipt" },

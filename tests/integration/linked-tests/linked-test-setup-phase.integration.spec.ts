@@ -224,6 +224,21 @@ describe("linked-test setup phase", () => {
     expect(setupKeys.map((key) => map.get(key)).sort((left, right) => Number(left) - Number(right))).toEqual([10, 20, 25, 60]);
   });
 
+  it("exempts a setup entry from the implicit name-filter receipt check that a regular command must pass", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      const filtered = `node -e "0" -- --test-name-pattern=warmup`;
+      const id = createTestItemId(context, { title: "filtered setup", createMode: "progressive" });
+      await runTest(id, { addJson: [JSON.stringify([{ command: filtered, phase: "setup" }, { command: `node -e "console.log('Tests 1 passed')"` }])] }, global);
+      const run = await runTest(id, { run: true }, global);
+      expect(run.run_results.map((row) => [row.status, row.phase])).toEqual([["passed", "setup"], ["passed", undefined]]);
+      // Negative control: the same command as a regular test still needs a positive execution receipt.
+      const regular = createTestItemId(context, { title: "filtered regular", createMode: "progressive" });
+      await runTest(regular, { addJson: [JSON.stringify({ command: filtered })] }, global);
+      expect((await runTest(regular, { run: true }, global)).run_results[0]).toMatchObject({ status: "failed", failure_category: "empty_run" });
+    });
+  }, 60_000);
+
   it("reports a refusal planned after a setup that fails at run time as the skip it became", async () => {
     await withTempPmPath(async (context) => {
       const global = { path: context.pmPath };

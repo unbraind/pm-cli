@@ -716,9 +716,10 @@ pm test <item-id> --run
   category (for example `trust_refusal` or `config_refusal`). In every case
   each later entry is reported as `skipped` without executing, and the run fails.
 - Setup rows carry `phase: setup`. They are exempt from
-  `--fail-on-empty-test-run` and `--require-assertions-for-pm`, which describe
-  test runners, and they never count as the executed linked test that
-  `--measure` requires.
+  `--fail-on-empty-test-run`, `--require-assertions-for-pm` and the implicit
+  receipt check for test-name filters such as `--test-name-pattern`, which
+  describe test runners (explicit `assert_*` metadata still applies), and they
+  never count as the executed linked test that `--measure` requires.
 - `pm test-all` runs each item's setup entries for that item, each with its own
   timeout, and never deduplicates them across items: in an isolated or snapshot
   workspace a setup's output stays in its own item's sandbox. A regular command

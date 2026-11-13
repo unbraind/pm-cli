@@ -151,7 +151,7 @@ function withoutHoistedContext(
   omitted: StreamOmissionTally,
 ): Record<string, unknown> {
   const { execution_context: _executionContext, stdout, stderr, ...rest } = row;
-  if (!options.lean || options.fullOutput || row.status !== "passed") {
+  if (!options.lean || options.fullOutput || row.status !== "passed" || isUntrustedRow(row)) {
     return { ...rest, stdout, stderr };
   }
   // With the stream itself gone, a tail-relative omitted-byte count would understate what was dropped.
@@ -214,6 +214,13 @@ function projectLinkedTestDecisionContext(
   };
 }
 
+/** Whether a row ran only under an untrusted-command override, in its full or its reduced context. */
+function isUntrustedRow(row: Record<string, unknown>): boolean {
+  const context = row.execution_context;
+  if (!isPlainObject(context)) return false;
+  return context.trusted === false || (isPlainObject(context.trust) && context.trust.trusted === false);
+}
+
 /**
  * Keep an escape-free tail of a quiet row's streams. A row that passed only
  * under an explicit untrusted-command override keeps its complete output,
@@ -223,10 +230,7 @@ function boundQuietRowStreams(
   row: Record<string, unknown>,
   omitted: StreamOmissionTally,
 ): Record<string, unknown> {
-  const context = row.execution_context;
-  if (isPlainObject(context) && isPlainObject(context.trust) && context.trust.trusted === false) {
-    return row;
-  }
+  if (isUntrustedRow(row)) return row;
   let projected = row;
   for (const key of LINKED_TEST_STREAM_KEYS) {
     const stream = row[key];

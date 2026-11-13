@@ -159,6 +159,13 @@ describe("core/output/linked-test-projection", () => {
     expect(reply.run_results[0]?.execution_context).toMatchObject({ trusted: false, trust_reason: "foreign_source_ref" });
     expect(reply.run_results[1]?.stdout).not.toBe(VITEST_REPORT);
     expect(reply.omission_receipt.omitted_field_groups).toHaveLength(1);
+    // CodeRabbit on #1723: lean output hoists a single row's context but must still keep untrusted evidence.
+    const leanUntrusted = projectLinkedTestReply("test", { ok: true, run_results: [untrusted] }, { ...DEFAULTS, lean: true }) as {
+      run_results: Array<Record<string, unknown>>;
+      execution_context: Record<string, unknown>;
+    };
+    expect(leanUntrusted.execution_context).toMatchObject({ trusted: false });
+    expect(leanUntrusted.run_results[0]?.stdout).toBe(VITEST_REPORT);
   });
 
   it("bounds stderr too and appends to an omission receipt the reply already carries", () => {
