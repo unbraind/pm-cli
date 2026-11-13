@@ -106,9 +106,10 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
         );
         const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
         const before = await readFile(historyPath, "utf8");
+        // Revising a stored note is explicit since GH-1716.
         const changed = await run(
           id,
-          { add: ["path=./README.md,note=current"] },
+          { add: ["path=./README.md,note=current"], noteConflict: "replace" },
           global,
         );
         expect(changed.changed).toBe(true);
@@ -133,6 +134,7 @@ describe("durable evidence and bounded Plan mutation receipts", () => {
           {
             migrate: ["from=old.md,to=README.md"],
             add: ["path=README.md,note=collision revision"],
+            noteConflict: "replace",
           },
           global,
         );

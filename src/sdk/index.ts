@@ -763,6 +763,14 @@ export {
   projectLinkedCollectionMutation,
   writtenLinkedEntries,
 } from "./linked-artifacts.js";
+export {
+  LINKED_ARTIFACT_NOTE_CONFLICT_MODES,
+  reviseLinkedNote,
+  type LinkedArtifactLinkOutcome,
+  type LinkedArtifactLinkOutcomeEntry,
+  type LinkedArtifactNoteConflict,
+  type LinkedArtifactNoteConflictMode,
+} from "./linked-artifacts.js";
 export * from "./pagination.js";
 export * from "./query/item-filter-options.js";
 export * from "./query/parsers.js";

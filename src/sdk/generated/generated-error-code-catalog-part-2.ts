@@ -109,6 +109,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
       "sdk/history-redact.ts",
       "sdk/invocation-author.ts",
       "sdk/lifecycle/claim.ts",
+      "sdk/linked-artifacts.ts",
     ],
     emitting_commands: ["*", "claim"],
   },
@@ -550,6 +551,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     code: "stale_destination",
     exit_code: 1,
     sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+  },
+  {
+    code: "stale_lock_requires_override",
+    exit_code: 4,
+    sources: ["core/lock/lock.ts"],
   },
   {
     code: "stale_observed_signature",

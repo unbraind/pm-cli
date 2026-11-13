@@ -2,20 +2,73 @@ id: pm-gh1716
 title: "GH-1716: pm files and pm docs --add silently replace an existing link's note, and the receipt reports it as a plain change"
 description: "GH-1716 (filed 2026-11-12). pm files id --add path=P,note=N2 on a path already linked with a different note silently replaces the earlier note, and pm docs --add does the same. The output reports changed true and mutation_receipt changed_count 1, which also describes adding a new link, so an agent cannot tell that it overwrote another agent's rationale; the first note survives only in history, which pm get does not show. Found during a multi-agent review round, where an orchestrator lost the implementer's notes on two paths and had to revert the writes and use a comment instead. Proposal from the issue: refuse an --add whose path and scope already exist with a different non-empty note with a conflict code (for example link_note_conflict) naming the existing note and offering --replace-note (today's behaviour) or --append-note (joins the notes); keep an identical or note-less repeat an idempotent no-op reporting changed false; and make the receipt distinguish added, note_replaced and unchanged per link, for files and docs and the SDK link operations alike."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,docs,files,"gh:1716",multi-agent
 created_at: "2026-11-13T05:59:08.574Z"
-updated_at: "2026-11-13T05:59:08.574Z"
+updated_at: "2026-11-13T16:43:23.876Z"
+closed_at: "2026-11-13T16:34:00.994Z"
+completed_at: "2026-11-13T16:34:00.994Z"
 author: "harness:claude-code"
 estimated_minutes: 120
-acceptance_criteria: "An --add whose path and scope are linked with a different non-empty note is refused with a link conflict code that names the existing note and keeps it; --append-note joins the notes and --replace-note keeps today's behaviour, each recorded in history as one operation; Repeating an identical --add reports changed false, and receipts distinguish added, note_replaced and unchanged per link for files, docs and the SDK"
+acceptance_criteria: "An --add whose path and scope are linked with a different non-empty note is refused with a link conflict code that names the existing note and keeps it; --note-conflict append joins the notes and --note-conflict replace keeps today's behaviour, each recorded in history as one operation; Repeating an identical --add reports changed false, and receipts distinguish added, note_replaced and unchanged per link for files, docs and the SDK"
 parent: pm-mpbb
 risk: low
 confidence: high
 severity: medium
-expected_result: A note replacement is refused or explicit
-actual_result: The earlier note is replaced silently and the receipt says changed
+resolution: "An add on a link stored with a different note is refused under the item lock with linked_artifact_note_conflict (exit 4, nothing written, no history entry); details.conflicts lists path, scope, existing_note and requested_note, and next steps replay the whole invocation with --note-conflict append or replace, carrying its revision guards. New closed-domain flag --note-conflict refuse|replace|append (default refuse; SDK and MCP noteConflict): replace keeps the earlier overwrite, append joins with '; ' and is idempotent. mutation_receipt.link_outcomes reports added, note_added, note_replaced, note_appended or unchanged per requested link; identical and note-less repeats stay no-ops. reviseLinkedNote and LINKED_ARTIFACT_NOTE_CONFLICT_MODES are exported; strict MCP schema 4.25.0; flag lexicon +1 for files and docs."
+expected_result: "A conflicting add is refused and keeps the stored note; append joins and replace overwrites, each one history operation; identical repeats report changed false and receipts distinguish added, note_replaced and unchanged"
+actual_result: "Verified through the SDK, the CLI and this repository's own tracker: the conflicting add exits 4 with the stored note intact and no history appended, the emitted append retry executes and records one files_add entry, replace reports note_replaced, repeats report unchanged with changed false; the spec fails 5 of 6 cases against the old merge"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-dj98,related,"2026-11-13T05:59:08.574Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-13T15:48:38.311Z","harness:claude-code","Progress (branch fix/mutation-outcome-honesty): reproduced on the 2026.11.13 build; mergeLinkedArtifactChanges replaced the note of any existing path+scope match whenever the add carried one. Design: one closed-domain flag --note-conflict refuse|replace|append (default refuse; SDK noteConflict, MCP noteConflict) instead of the issue's two booleans, so no mutual-exclusion rule is needed and the files and docs grammar grows by one flag. The refusal is linked_artifact_note_conflict (exit 4), thrown under the item lock before any write; details.conflicts lists path, scope, existing_note and requested_note; next steps replay the whole invocation with --note-conflict append or replace, carrying the revision guards it ran under and withholding the retry when they cannot be spelled. append joins with '; ' and is idempotent when the text is already a segment. mutation_receipt.link_outcomes reports added, note_added, note_replaced, note_appended or unchanged per requested link; a link first added in the same write takes a later note. Fleet census 2026-11-13: pm-web links files without notes and pm-changelog only reads linked paths, so no released caller re-adds a note. pm update --file keeps the first stored entry and never replaces its note, so it cannot lose rationale."
+files[5]{path,scope,note}:
+  src/cli/register-mutation.ts,project,"--note-conflict on pm files and pm docs"
+  src/sdk/cli-contracts/flag-contracts.ts,project,"--note-conflict declared with its closed value set"
+  src/sdk/cli-contracts/tool-schema.ts,project,MCP noteConflict parameter; strict schema 4.25.0
+  src/sdk/linked-artifacts.ts,project,"note-conflict modes, per-link outcomes, the linked_artifact_note_conflict refusal and the merge that applies them under the item lock"
+  tests/unit/commands/annotations/linked-artifact-note-conflict.spec.ts,project,"refusal, modes, per-link outcomes, glob replay and guard withholding"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-artifact-note-conflict.spec.ts tests/unit/commands/annotations/linked-collection-receipts.spec.ts,project,600,"harness:claude-code","2026-11-13T15:48:37.456Z",local_mutation,fix/mutation-outcome-honesty
+test_runs[2]:
+  - run_id: test-local-mwf72l9q-su6904
+    kind: test
+    status: passed
+    started_at: "2026-11-13T16:31:41.938Z"
+    finished_at: "2026-11-13T16:31:55.694Z"
+    recorded_at: "2026-11-13T16:31:55.694Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-artifact-note-conflict.spec.ts tests/unit/commands/annotations/linked-collection-receipts.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mwf73wu6-0yd6ov
+    kind: test
+    status: passed
+    started_at: "2026-11-13T16:32:43.357Z"
+    finished_at: "2026-11-13T16:32:57.342Z"
+    recorded_at: "2026-11-13T16:32:57.342Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-artifact-note-conflict.spec.ts tests/unit/commands/annotations/linked-collection-receipts.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,"note-conflict refusal, modes and link_outcomes"
+  docs/SDK.md,project,breaking-acknowledgement migration paragraph
+close_reason: "pm files and pm docs --add no longer overwrite another agent's note: a different stored note is refused by default, --note-conflict replace or append resolves it explicitly, and every write reports each link's outcome"
+contract_change:
+  api: "pm files and pm docs --add (CLI, SDK runFiles/runDocs, MCP files/docs)"
+  before: An add on a link already stored with a different note replaced that note and reported a plain change
+  after: "Such an add is refused with linked_artifact_note_conflict (exit 4) and keeps the stored note; --note-conflict replace overwrites it, --note-conflict append joins the notes, and mutation_receipt.link_outcomes reports what each requested link became"
+  migrate: "Pass --note-conflict replace (SDK and MCP noteConflict) where a re-add is meant to revise the note, or append to keep both; identical and note-less repeats need no change"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1716
+  gate_id: linked-artifact-note-conflict
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-artifact-note-conflict.spec.ts (the refusal and outcome cases fail against the previous merge, which replaced a stored note on any add that carried one)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/commands/annotations/linked-artifact-note-conflict.spec.ts tests/unit/commands/annotations/linked-collection-receipts.spec.ts tests/integration/cli.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

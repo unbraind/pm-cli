@@ -616,6 +616,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   // GH-170 (pm-pfnx): single-string note for files/docs add batches (the shared
   // `note` key below is the array-typed create/update note seed).
   addNote: { type: "string" },
+  noteConflict: { type: "string", enum: ["refuse", "replace", "append"] },
   list: { type: "boolean" },
   appendStable: { type: "boolean" },
   validatePaths: { type: "boolean" },
@@ -1977,6 +1978,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
     description:
       "Note attached to every link added by add/addGlob in this call (per-entry embedded note= wins; requires add or addGlob). Maps to the CLI --note flag on pm files/pm docs.",
     examples: ["command wiring"],
+  },
+  noteConflict: {
+    description:
+      "How add/addGlob treat a link that already has a different note: refuse (default, keeps the stored note), replace, or append (requires add or addGlob). Maps to the CLI --note-conflict flag on pm files/pm docs.",
+    examples: ["append"],
   },
   list: {
     description:

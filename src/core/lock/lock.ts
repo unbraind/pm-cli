@@ -713,8 +713,15 @@ function resolveLockOverrideRelease(
   return null;
 }
 
+/**
+ * Refuse to reclaim an expired lease when policy requires an explicit override.
+ * The refusal names the lock by its tracker-relative path and the remedy that
+ * works for every command, pm gc --scope locks; --force reclaims the lease only
+ * where a command forwards it to this lock (GH-1706).
+ */
 function throwIfStaleLockNeedsForce(
   id: string,
+  lockPath: string,
   lockInfo: LockReadResult,
   force: boolean,
   forceRequired: boolean,
@@ -722,9 +729,19 @@ function throwIfStaleLockNeedsForce(
   if (!force && forceRequired) {
     const warningSuffix =
       lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
+    const trackerPath = `locks/${path.basename(lockPath)}`;
     throw new PmCliError(
-      `Item ${id} lock is stale${warningSuffix}; rerun with --force when supported for this command`,
+      `Lock ${id} is stale${warningSuffix}; remove it with pm gc --scope locks, or rerun with --force where this command accepts it`,
       EXIT_CODE.CONFLICT,
+      {
+        code: "stale_lock_requires_override",
+        details: { lock_id: id, lock_path: trackerPath },
+        why: `The lease in ${trackerPath} is past its TTL, and force_required_for_stale_lock keeps an expired lease until it is removed explicitly.`,
+        required: "Remove the expired lease, then retry the same command.",
+        nextSteps: [
+          "Run pm gc --scope locks (add --dry-run to preview), then retry the same command.",
+        ],
+      },
     );
   }
 }
@@ -982,6 +999,7 @@ async function removeConfirmedStaleLock(params: {
     }
     throwIfStaleLockNeedsForce(
       params.id,
+      params.lockPath,
       currentLockInfo,
       params.force || ownerDead,
       params.forceRequiredForStaleLock,

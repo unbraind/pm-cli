@@ -1437,6 +1437,7 @@ async function runFilesAction(
       remove: removeValues,
       migrate: migrateValues,
       note: readOptionString(options, "note"),
+      noteConflict: readOptionString(options, "noteConflict"),
       list: Boolean(options.list),
       appendStable: Boolean(options.appendStable),
       validatePaths: Boolean(options.validatePaths),
@@ -1526,6 +1527,7 @@ async function runDocsAction(
       remove: removeValues,
       migrate: migrateValues,
       note: readOptionString(options, "note"),
+      noteConflict: readOptionString(options, "noteConflict"),
       list: Boolean(options.list),
       validatePaths: Boolean(options.validatePaths),
       fullHistory: options.fullHistory === true,
@@ -2535,6 +2537,10 @@ export function registerMutationCommands(
       "--note <value>",
       "Note attached to every link added by --add/--add-glob in this invocation (embedded note= wins)",
     )
+    .option(
+      "--note-conflict <mode>",
+      "On a different stored note: refuse (default)|replace|append",
+    )
     .option("--list", "List linked files without mutating")
     .option(
       "--append-stable",
@@ -2598,6 +2604,10 @@ export function registerMutationCommands(
     .option(
       "--note <value>",
       "Note attached to every link added by --add/--add-glob in this invocation (embedded note= wins)",
+    )
+    .option(
+      "--note-conflict <mode>",
+      "On a different stored note: refuse (default)|replace|append",
     )
     .option("--list", "List linked docs without mutating")
     .option(

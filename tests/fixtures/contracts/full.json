@@ -4298,6 +4298,16 @@
           "flag": "--note"
         },
         {
+          "default": "refuse",
+          "flag": "--note-conflict",
+          "value_name": "mode",
+          "values": [
+            "refuse",
+            "replace",
+            "append"
+          ]
+        },
+        {
           "flag": "--list"
         },
         {
@@ -4861,6 +4871,16 @@
         },
         {
           "flag": "--note"
+        },
+        {
+          "default": "refuse",
+          "flag": "--note-conflict",
+          "value_name": "mode",
+          "values": [
+            "refuse",
+            "replace",
+            "append"
+          ]
         },
         {
           "flag": "--list"
@@ -6121,6 +6141,16 @@
           "flag": "--note"
         },
         {
+          "default": "refuse",
+          "flag": "--note-conflict",
+          "value_name": "mode",
+          "values": [
+            "refuse",
+            "replace",
+            "append"
+          ]
+        },
+        {
           "flag": "--list"
         },
         {
@@ -6202,6 +6232,16 @@
         },
         {
           "flag": "--note"
+        },
+        {
+          "default": "refuse",
+          "flag": "--note-conflict",
+          "value_name": "mode",
+          "values": [
+            "refuse",
+            "replace",
+            "append"
+          ]
         },
         {
           "flag": "--list"
@@ -24038,6 +24078,7 @@
         "sdk/lifecycle/task-composition.ts",
         "sdk/lifecycle/update-many.ts",
         "sdk/lifecycle/update.ts",
+        "sdk/linked-artifacts.ts",
         "sdk/query/next.ts",
         "sdk/runtime-input.ts",
         "sdk/runtime/mutation-admission.ts",
@@ -24628,6 +24669,23 @@
       ],
       "exit_code": 2,
       "meaning": "Linked artifact mutation conflict condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/linked-artifacts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "linked_artifact_note_conflict",
+      "class": "conflict",
+      "code": "linked_artifact_note_conflict",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Linked artifact note conflict condition.",
       "owned_states": [],
       "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
@@ -25642,7 +25700,8 @@
         "sdk/governance/assurance-action.ts",
         "sdk/history-redact.ts",
         "sdk/invocation-author.ts",
-        "sdk/lifecycle/claim.ts"
+        "sdk/lifecycle/claim.ts",
+        "sdk/linked-artifacts.ts"
       ],
       "stability": "stable"
     },
@@ -27009,6 +27068,23 @@
       "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "stale_lock_requires_override",
+      "class": "conflict",
+      "code": "stale_lock_requires_override",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "Stale lock requires override condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/lock/lock.ts"
       ],
       "stability": "provisional"
     },
@@ -37022,6 +37098,27 @@
                 }
               ]
             }
+          },
+          {
+            "if": {
+              "required": [
+                "noteConflict"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "add"
+                  ]
+                },
+                {
+                  "required": [
+                    "addGlob"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "properties": {
@@ -37110,6 +37207,18 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "noteConflict": {
+            "description": "How add/addGlob treat a link that already has a different note: refuse (default, keeps the stored note), replace, or append (requires add or addGlob). Maps to the CLI --note-conflict flag on pm files/pm docs.",
+            "enum": [
+              "refuse",
+              "replace",
+              "append"
+            ],
+            "examples": [
+              "append"
+            ],
+            "type": "string"
           },
           "options": {
             "type": "object"
@@ -37618,6 +37727,27 @@
                 }
               ]
             }
+          },
+          {
+            "if": {
+              "required": [
+                "noteConflict"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "add"
+                  ]
+                },
+                {
+                  "required": [
+                    "addGlob"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "anyOf": [
@@ -37789,6 +37919,18 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "noteConflict": {
+            "description": "How add/addGlob treat a link that already has a different note: refuse (default, keeps the stored note), replace, or append (requires add or addGlob). Maps to the CLI --note-conflict flag on pm files/pm docs.",
+            "enum": [
+              "refuse",
+              "replace",
+              "append"
+            ],
+            "examples": [
+              "append"
+            ],
+            "type": "string"
           },
           "noTruncate": {
             "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
@@ -60723,6 +60865,27 @@
                 }
               ]
             }
+          },
+          {
+            "if": {
+              "required": [
+                "noteConflict"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "add"
+                  ]
+                },
+                {
+                  "required": [
+                    "addGlob"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "anyOf": [
@@ -60897,6 +61060,18 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "noteConflict": {
+            "description": "How add/addGlob treat a link that already has a different note: refuse (default, keeps the stored note), replace, or append (requires add or addGlob). Maps to the CLI --note-conflict flag on pm files/pm docs.",
+            "enum": [
+              "refuse",
+              "replace",
+              "append"
+            ],
+            "examples": [
+              "append"
+            ],
+            "type": "string"
           },
           "noTruncate": {
             "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
@@ -61126,6 +61301,27 @@
                 }
               ]
             }
+          },
+          {
+            "if": {
+              "required": [
+                "noteConflict"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "add"
+                  ]
+                },
+                {
+                  "required": [
+                    "addGlob"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "properties": {
@@ -61217,6 +61413,18 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "noteConflict": {
+            "description": "How add/addGlob treat a link that already has a different note: refuse (default, keeps the stored note), replace, or append (requires add or addGlob). Maps to the CLI --note-conflict flag on pm files/pm docs.",
+            "enum": [
+              "refuse",
+              "replace",
+              "append"
+            ],
+            "examples": [
+              "append"
+            ],
+            "type": "string"
           },
           "outputBudget": {
             "anyOf": [
@@ -67278,10 +67486,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.24.0"
+    "x-schema-version": "4.25.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.24.0",
+  "schema_version": "4.25.0",
   "selected": {
     "action": null,
     "availability_only": false,

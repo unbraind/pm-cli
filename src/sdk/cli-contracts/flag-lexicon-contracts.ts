@@ -283,9 +283,10 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   comments: 32,
   notes: 36,
   learnings: 32,
-  // pm-gh1700: one --full-history restore for bounded write receipts; no spare allowance.
-  files: 40,
-  docs: 31,
+  // pm-gh1700: one --full-history restore for bounded write receipts; GH-1716:
+  // one --note-conflict mode for stored-note conflicts; no spare allowance.
+  files: 41,
+  docs: 32,
   deps: 32,
   // pm-gh1577: explicit plan focus opt-in/out, with no spare allowance.
   plan: 111,

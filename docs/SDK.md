@@ -202,6 +202,20 @@ stored lists only from list calls. `projectLinkedCollectionMutation` and
 `writtenLinkedEntries` are exported so a package can bound its own collection
 writes the same way.
 
+The note-conflict and post-commit attribution update (GH-1716, GH-1706) records
+a breaking acknowledgement for `FilesCommandOptions`, `DocsCommandOptions`,
+`LinkedCollectionMutationReceipt`, `projectLinkedCollectionMutation` and
+`ClaimResult`; every change is an optional member. One behaviour changes: a
+`runFiles` or `runDocs` add on a link stored with a different note now refuses
+with `linked_artifact_note_conflict` instead of overwriting the note. Pass
+`noteConflict: "replace"` to keep the earlier overwrite, or `"append"` to join
+the notes; an identical or note-less repeat is unchanged. Files and docs write
+receipts add `mutation_receipt.link_outcomes`, and `ClaimResult` may carry
+`suggestions` beside a post-commit attribution warning. `reviseLinkedNote` and
+`LINKED_ARTIFACT_NOTE_CONFLICT_MODES` are exported so a package that writes
+links applies the same policy. No data migration or new dependency bounds are
+needed.
+
 The waiver notice update (pm-xcndcu) records a breaking acknowledgement for
 `BoundaryFixtureRegistry`, `BoundaryFixtureReport`, `DefectRecurrencePolicy`
 and `DefectGateEvidenceReport`. Both inputs gain an optional whole-day

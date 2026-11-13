@@ -1015,6 +1015,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--list[List linked files]' \\
             '--apply[Apply discovered linked files]' \\
             '--note[Linked-file note]:note' \\
+            '--note-conflict[Treatment of an existing different note]:(refuse replace append)' \\
             '--append-stable[Preserve stable append ordering]' \\
             '--validate-paths[Validate linked-file paths]' \\
             '--full-history[Return every linked file after a write]' \\

@@ -46,6 +46,7 @@ import {
   type LinkedPathValidation,
 } from "./linked-artifacts.js";
 import type { AnnotationOmissionReceipt } from "./annotations.js";
+import type { LinkedArtifactNoteConflictMode } from "./linked-artifacts.js";
 import {
   explainSourceTraceability,
   type SourceLineRange,
@@ -65,6 +66,8 @@ export interface FilesCommandOptions {
   migrate?: string[];
   /** GH-170 (pm-pfnx): standalone note applied to every --add/--add-glob link in this invocation. */
   note?: string;
+  /** How an add treats a stored link with a different note: refuse (default), replace or append (GH-1716). */
+  noteConflict?: LinkedArtifactNoteConflictMode | (string & {});
   /** Value that configures or reports list for this contract. */
   list?: boolean;
   /** Value that configures or reports append stable for this contract. */

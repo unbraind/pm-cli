@@ -749,7 +749,7 @@ describe("core/lock/lock additional branch coverage", () => {
         acquireLock(pmPath, id, 60, "owner-a", false),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
-        message: expect.stringContaining("lock is stale"),
+        message: expect.stringContaining(`Lock ${id} is stale`),
       });
       await expect(
         acquireLock(pmPath, id, 60, "owner-a", false),
@@ -773,7 +773,14 @@ describe("core/lock/lock additional branch coverage", () => {
         acquireLock(pmPath, id, 60, "owner-a", false),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
-        message: `Item ${id} lock is stale; rerun with --force when supported for this command`,
+        message: `Lock ${id} is stale; remove it with pm gc --scope locks, or rerun with --force where this command accepts it`,
+        context: {
+          code: "stale_lock_requires_override",
+          details: { lock_id: id, lock_path: `locks/${id}.lock` },
+          nextSteps: [
+            "Run pm gc --scope locks (add --dry-run to preview), then retry the same command.",
+          ],
+        },
       });
     });
   });

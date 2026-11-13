@@ -2,11 +2,13 @@ id: pm-gh1706
 title: "GH-1706: a stale session-state lock makes pm release clear the claim and then exit 4, --force repeats the refusal, and claim only warns"
 description: "GH-1706 (filed 2026-11-11). A stale session-state lock (expired TTL from a crashed agent) makes claim and release disagree, and release reports failure after it has written. On a fresh tracker: pm claim exits 0 with the claim_semantic_attribution_unrecorded warning and records the claim; pm release exits 4 with 'Item session-state lock is stale; rerun with --force when supported for this command' but the claim is already removed; pm release --force exits 4 with the same text; pm health reports stale_lock_count 1 with remedy pm gc --scope locks. Four problems: a partial write reported as a failure, two policies for one condition, a recovery hint naming a flag that cannot succeed, and wording that attributes the lock to an item. Expected: release refuses before any mutation or succeeds with the same attribution warning claim uses; one policy for a stale session-state lock across claim, start, release and close (reclaiming an expired TTL automatically is simplest); the refusal or warning names pm gc --scope locks and the lock path and never recommends an unusable flag. pm-rust mirrors the published behaviour (pm-rust#165)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,concurrency,"gh:1706",locking,recovery
 created_at: "2026-11-12T05:13:38.060Z"
-updated_at: "2026-11-12T05:13:38.060Z"
+updated_at: "2026-11-13T16:43:24.862Z"
+closed_at: "2026-11-13T16:33:48.788Z"
+completed_at: "2026-11-13T16:33:48.788Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "release never mutates and then exits non-zero on a stale session-state lock; claim, start, release and close share one policy for a stale session-state lock; The refusal or warning names pm gc --scope locks and the lock path, never an unusable flag, and attributes the lock to session state"
@@ -14,8 +16,45 @@ parent: pm-dj98
 risk: medium
 confidence: high
 severity: medium
-expected_result: One consistent outcome for a stale session-state lock with a working recovery
-actual_result: release removes the claim then exits 4; --force repeats the refusal
+resolution: "mutateSessionState reclaims a session-state lease once it is past its TTL (force_required_for_stale_lock false, under the stale-cleanup gate), the policy the context usage ledger and workspace transaction locks already use. claim and release share recordAttributionAfterCommit: a failed attribution update after the ownership write returns claim_semantic_attribution_unrecorded or release_semantic_attribution_unrecorded with a suggestion naming the refusal code and pm gc --scope locks, never a non-zero exit. A stale lock kept by policy is refused before any write with stale_lock_requires_override (details lock_id and tracker-relative lock_path, next step pm gc --scope locks) and no longer calls a non-item lock an Item lock. close does not write session state."
+expected_result: "release refuses before writing or succeeds with the attribution warning; one stale session-lock policy across claim, start and release; the refusal names pm gc --scope locks and the lock path"
+actual_result: On the GH-1706 repro claim and release both exit 0 and the claim is cleared once; a forced attribution failure keeps release at exit 0 with the release warning and suggestion; a stale item lock under force_required_for_stale_lock is refused with stale_lock_requires_override before any write and release --force succeeds; the new spec fails against the old lock policy
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-d70h,related,"2026-11-12T05:13:38.060Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-13T15:22:40.744Z","harness:claude-code","Progress (branch fix/mutation-outcome-honesty): reproduced on the 2026.11.13 build (claim exit 0 with the attribution warning, release exit 4 after clearing the claim, release --force exit 4). Root cause: mutateSessionState acquired its singleton lock with force_required_for_stale_lock hard-coded true and force false, so an expired lease could never be reclaimed by any command, and runRelease awaited the attribution write after the item commit without the warning wrapper claim uses. Fix: the session-state lease is reclaimed past its TTL (the same policy the context usage ledger and workspace transaction locks already use); claim and release share recordAttributionAfterCommit, which returns claim_semantic_attribution_unrecorded or release_semantic_attribution_unrecorded plus a suggestion naming the refusal code and pm gc --scope locks; the stale-lock refusal is now typed stale_lock_requires_override with details lock_id and tracker-relative lock_path and no longer says Item for non-item locks. Close does not write session state, so it has no stale-lock path. Negative control: restoring the old lock policy fails the new stale-session-lock spec."
+files[5]{path,scope,note}:
+  src/core/lock/lock.ts,project,stale_lock_requires_override refusal names pm gc --scope locks and the tracker-relative lock path
+  src/core/session/session-state.ts,project,session-state lease past its TTL is reclaimed under the stale-cleanup gate
+  src/sdk/lifecycle/claim.ts,project,"claim and release share the post-commit attribution policy: warning plus suggestion, never a non-zero exit after the write"
+  tests/unit/sdk/lifecycle/claim-attribution.spec.ts,project,post-commit attribution failure keeps claim and release successful with warning and suggestion
+  tests/unit/sdk/lifecycle/stale-session-lock.spec.ts,project,"GH-1706 repro: claim and release reclaim an expired session lease"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/stale-session-lock.spec.ts tests/unit/sdk/lifecycle/claim-attribution.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-owner.spec.ts,project,600,"harness:claude-code","2026-11-13T15:22:40.092Z",local_mutation,fix/mutation-outcome-honesty
+test_runs[1]:
+  - run_id: test-local-mwf72a47-dt5jzk
+    kind: test
+    status: passed
+    started_at: "2026-11-13T16:31:27.053Z"
+    finished_at: "2026-11-13T16:31:41.239Z"
+    recorded_at: "2026-11-13T16:31:41.239Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/stale-session-lock.spec.ts tests/unit/sdk/lifecycle/claim-attribution.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-owner.spec.ts,schema,schema,source,local_source_ref
+close_reason: "A stale session-state lock no longer makes release fail after it wrote: the lease is reclaimed past its TTL, claim and release share one post-commit warning policy, and the stale-lock refusal is typed with a working remedy"
+contract_change:
+  api: "pm claim and pm release (CLI, SDK runClaim/runRelease, MCP claim/release), stale-lock refusals"
+  before: "A stale session-state lock made release clear the claim and exit 4, claim returned a bare attribution warning, and a stale lock kept by policy was refused untyped as an Item lock with a --force hint"
+  after: The session-state lease is reclaimed past its TTL; claim and release exit 0 after a committed write and add release_semantic_attribution_unrecorded or claim_semantic_attribution_unrecorded with a suggestion when attribution fails; a kept stale lock is refused with stale_lock_requires_override naming lock_path and pm gc --scope locks
+  migrate: "Match stale_lock_requires_override instead of the old message text, and read suggestions beside the attribution warnings; release exit codes need no handling for the session lock"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1706
+  gate_id: stale-session-lock-reclaim
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/stale-session-lock.spec.ts (fails with the claim attribution warning when the session-state lock again requires --force for an expired lease)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/stale-session-lock.spec.ts tests/unit/sdk/lifecycle/claim-attribution.spec.ts tests/unit/core/item/core-item-lock-coverage.spec.ts tests/unit/core/lock/lock-owner.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

@@ -151,14 +151,20 @@ export async function readSessionState(pmRoot: string): Promise<SessionState> {
   }
 }
 
-/** Apply a session edit to the latest state while holding its singleton lock. */
+/**
+ * Apply a session edit to the latest state while holding its singleton lock.
+ * The critical section is one read and one atomic write, so a lease past its
+ * TTL belongs to a writer that crashed: it is reclaimed under the stale-cleanup
+ * gate rather than refused, which would ask for a --force no caller forwards
+ * here (GH-1706).
+ */
 async function mutateSessionState(
   pmRoot: string,
   mutate: (state: SessionState) => void,
 ): Promise<void> {
   const release = await acquireLock(
     pmRoot, "session-state", SETTINGS_DEFAULTS.locks.ttl_seconds,
-    "session-state", false, true, SETTINGS_DEFAULTS.locks.wait_ms,
+    "session-state", false, false, SETTINGS_DEFAULTS.locks.wait_ms,
   );
   try {
     const state = await readSessionState(pmRoot);

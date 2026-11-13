@@ -136,7 +136,7 @@ Additional SDK, operations, and generated contracts:
 | `extensions`, `packages`  | [Packages and Extensions](EXTENSIONS.md), [starter extension](examples/starter-extension/README.md) |
 | `skills`                  | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/*`                                               |
 | `harnesses`               | [Agent Guide](AGENT_GUIDE.md) plus `.agents/skills/HARNESS_COMPATIBILITY.md`                        |
-| `release`                 | [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm), [CHANGELOG](../CHANGELOG.md)                                             |
+| `release`                 | [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm), [Changelog](https://github.com/unbraind/pm-cli/blob/main/CHANGELOG.md) (repository-only, excluded from npm) |
 
 Community files:
 
@@ -145,7 +145,7 @@ Community files:
 - [Contributing](../CONTRIBUTING.md)
 - [Security](../SECURITY.md)
 - [Code of Conduct](../CODE_OF_CONDUCT.md)
-- [Changelog](../CHANGELOG.md)
+- [Changelog](https://github.com/unbraind/pm-cli/blob/main/CHANGELOG.md) (repository-only, excluded from npm)
 - [License](../LICENSE)
 
 ## Agent Routing Rules

@@ -88,7 +88,6 @@
     "dist/**",
     "!dist/**/*.map",
     "README.md",
-    "CHANGELOG.md",
     "CONTRIBUTING.md",
     "SECURITY.md",
     "CODE_OF_CONDUCT.md",

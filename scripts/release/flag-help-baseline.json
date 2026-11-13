@@ -285,15 +285,15 @@
     },
     {
       "command": "files",
-      "help_bytes": 1955,
-      "estimated_tokens": 489,
-      "maximum_tokens": 489
+      "help_bytes": 2077,
+      "estimated_tokens": 520,
+      "maximum_tokens": 520
     },
     {
       "command": "docs",
-      "help_bytes": 1186,
-      "estimated_tokens": 297,
-      "maximum_tokens": 297
+      "help_bytes": 1422,
+      "estimated_tokens": 356,
+      "maximum_tokens": 356
     },
     {
       "command": "deps",

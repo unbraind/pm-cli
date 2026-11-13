@@ -3240,6 +3240,32 @@
       ],
       "package_version": "2026.11.13",
       "reason": "pm-gh1684: decodePmTableRows widens its parameter to PmRenderedTableCellEncoding (json_columns and absent optional, absent_rows added); every PmEncodedTableRows argument remains valid, so callers need no change"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ClaimResult",
+        "signature ./sdk:DocsCommandOptions",
+        "signature ./sdk:FilesCommandOptions",
+        "signature ./sdk:LinkedArtifactCommandOptions",
+        "signature ./sdk:LinkedCollectionMutationReceipt",
+        "signature ./sdk:projectLinkedCollectionMutation",
+        "signature ./sdk/core:ClaimResult",
+        "signature ./sdk/core:DocsCommandOptions",
+        "signature ./sdk/core:FilesCommandOptions",
+        "signature ./sdk/runtime:ClaimResult",
+        "signature ./sdk/runtime:DocsCommandOptions",
+        "signature ./sdk/runtime:FilesCommandOptions"
+      ],
+      "package_version": "2026.11.13",
+      "reason": "GH-1716 and GH-1706 add only optional members: FilesCommandOptions/DocsCommandOptions gain noteConflict, LinkedCollectionMutationReceipt gains link_outcomes, projectLinkedCollectionMutation takes an optional linkOutcomes, and ClaimResult gains suggestions; existing callers compile and behave unchanged except that an --add whose note differs from a stored note is now refused unless noteConflict is replace or append (migration line in docs/SDK.md)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.11.13",
+      "reason": "GH-1716 and GH-1706 add only optional members: FilesCommandOptions/DocsCommandOptions gain noteConflict, LinkedCollectionMutationReceipt gains link_outcomes, projectLinkedCollectionMutation takes an optional linkOutcomes, and ClaimResult gains suggestions; PM_TOOL_PARAMETERS_SCHEMA_VERSION moves to the additive 4.25.0 for the MCP noteConflict parameter. Existing callers compile and behave unchanged except that an add whose note differs from a stored note is now refused unless noteConflict is replace or append (migration paragraph in docs/SDK.md)"
     }
   ],
   "entrypoints": {
@@ -5512,7 +5538,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; }"
         },
         {
           "classification": "supported",
@@ -7924,7 +7950,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DocsCommandOptions",
-          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; noteConflict?: LinkedArtifactNoteConflictMode | (string & {}); list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -9364,7 +9390,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesCommandOptions",
-          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; noteConflict?: LinkedArtifactNoteConflictMode | (string & {}); list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -11805,6 +11831,12 @@
         {
           "classification": "advanced_export",
           "kind": "value",
+          "name": "LINKED_ARTIFACT_NOTE_CONFLICT_MODES",
+          "signature": "readonly [\"refuse\", \"replace\", \"append\"]"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
           "name": "LINKED_TEST_ENV_NAME_PATTERN",
           "signature": "RegExp"
         },
@@ -11836,13 +11868,37 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedArtifactCommandOptions",
-          "signature": "export interface LinkedArtifactCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface LinkedArtifactCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; noteConflict?: LinkedArtifactNoteConflictMode | (string & {}); list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedArtifactKindConfig",
           "signature": "export interface LinkedArtifactKindConfig { metadataKey: \"files\" | \"docs\"; op: \"files_add\" | \"docs_add\"; bareNoun: \"file\" | \"doc\"; supportsAppendStable: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "LinkedArtifactLinkOutcome",
+          "signature": "export type LinkedArtifactLinkOutcome = \"added\" | \"note_added\" | \"note_replaced\" | \"note_appended\" | \"unchanged\";"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LinkedArtifactLinkOutcomeEntry",
+          "signature": "export interface LinkedArtifactLinkOutcomeEntry { path: string; scope: LinkScope; outcome: LinkedArtifactLinkOutcome; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "LinkedArtifactNoteConflict",
+          "signature": "export interface LinkedArtifactNoteConflict { path: string; scope: LinkScope; existing_note: string; requested_note: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "LinkedArtifactNoteConflictMode",
+          "signature": "export type LinkedArtifactNoteConflictMode = (typeof LINKED_ARTIFACT_NOTE_CONFLICT_MODES)[number];"
         },
         {
           "classification": "advanced_export",
@@ -11860,7 +11916,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedCollectionMutationReceipt",
-          "signature": "export interface LinkedCollectionMutationReceipt { changed_count: number; removed_count: number; full_history_included: boolean; }"
+          "signature": "export interface LinkedCollectionMutationReceipt { changed_count: number; removed_count: number; full_history_included: boolean; link_outcomes?: LinkedArtifactLinkOutcomeEntry[]; }"
         },
         {
           "classification": "advanced_export",
@@ -14884,7 +14940,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.24.0\""
+          "signature": "\"4.25.0\""
         },
         {
           "classification": "contract_data",
@@ -16840,7 +16896,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "projectLinkedCollectionMutation",
-          "signature": "<TEntry>(params: { collectionKey: \"docs\" | \"files\" | \"tests\"; stored: readonly TEntry[]; written: readonly TEntry[]; removedCount: number; fullHistory: boolean; }) => LinkedCollectionMutationProjection<TEntry> | calls: <TEntry>(params: { collectionKey: \"files\" | \"docs\" | \"tests\"; stored: readonly TEntry[]; written: readonly TEntry[]; removedCount: number; fullHistory: boolean; }) => LinkedCollectionMutationProjection<TEntry>"
+          "signature": "<TEntry>(params: { collectionKey: \"docs\" | \"files\" | \"tests\"; stored: readonly TEntry[]; written: readonly TEntry[]; removedCount: number; fullHistory: boolean; linkOutcomes?: readonly LinkedArtifactLinkOutcomeEntry[]; }) => LinkedCollectionMutationProjection<TEntry> | calls: <TEntry>(params: { collectionKey: \"files\" | \"docs\" | \"tests\"; stored: readonly TEntry[]; written: readonly TEntry[]; removedCount: number; fullHistory: boolean; linkOutcomes?: readonly LinkedArtifactLinkOutcomeEntry[]; }) => LinkedCollectionMutationProjection<TEntry>"
         },
         {
           "classification": "advanced_export",
@@ -19625,6 +19681,12 @@
           "kind": "interface",
           "name": "ResurrectedItemRow",
           "signature": "export interface ResurrectedItemRow { id: string; deleted_at: string; deleted_by: string; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "reviseLinkedNote",
+          "signature": "(existing: string | undefined, requested: string | undefined, mode: LinkedArtifactNoteConflictMode) => { note: string | undefined; outcome: LinkedArtifactLinkOutcome; conflict: boolean; } | calls: (existing: string | undefined, requested: string | undefined, mode: LinkedArtifactNoteConflictMode) => { note: string | undefined; outcome: LinkedArtifactLinkOutcome; conflict: boolean; }"
         },
         {
           "classification": "supported",
@@ -26668,7 +26730,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.24.0\""
+          "signature": "\"4.25.0\""
         },
         {
           "classification": "contract_data",
@@ -28288,7 +28350,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; }"
         },
         {
           "classification": "supported",
@@ -28504,7 +28566,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DocsCommandOptions",
-          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; noteConflict?: LinkedArtifactNoteConflictMode | (string & {}); list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -28558,7 +28620,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesCommandOptions",
-          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; noteConflict?: LinkedArtifactNoteConflictMode | (string & {}); list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -35842,7 +35904,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; }"
         },
         {
           "classification": "supported",
@@ -36208,7 +36270,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "DocsCommandOptions",
-          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface DocsCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; noteConflict?: LinkedArtifactNoteConflictMode | (string & {}); list?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -36334,7 +36396,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "FilesCommandOptions",
-          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
+          "signature": "export interface FilesCommandOptions { add?: string[]; addGlob?: string[]; remove?: string[]; migrate?: string[]; note?: string; noteConflict?: LinkedArtifactNoteConflictMode | (string & {}); list?: boolean; appendStable?: boolean; validatePaths?: boolean; fullHistory?: boolean; author?: string; message?: string; force?: boolean; }"
         },
         {
           "classification": "supported",
@@ -40146,6 +40208,7 @@
     "item_revision_conflict",
     "likely_duplicate",
     "linked_artifact_mutation_conflict",
+    "linked_artifact_note_conflict",
     "linked_artifact_note_key_misread",
     "linked_resource_positional_value",
     "linked_test_command_immutable",
@@ -40283,6 +40346,7 @@
     "settings_write_invalid_existing_schema",
     "stale_budget",
     "stale_destination",
+    "stale_lock_requires_override",
     "stale_observed_signature",
     "stale_revision",
     "start_blocked_by_open_dependency",
@@ -40429,10 +40493,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1329,
-      "checked_values": 395,
+      "checked_functions": 1330,
+      "checked_values": 396,
       "exempt_test_seams": 15,
-      "referenced_types": 1037
+      "referenced_types": 1040
     },
     "./sdk/authoring": {
       "checked_functions": 54,

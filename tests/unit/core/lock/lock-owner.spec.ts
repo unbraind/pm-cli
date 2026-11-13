@@ -313,7 +313,7 @@ it.skipIf(process.platform !== "linux")(
       });
       await fs.writeFile(lockPath, malformed);
       await expect(acquireLock(root, "shared", 3600, "next")).rejects.toThrow(
-        "lock is stale",
+        "Lock shared is stale",
       );
       expect((await runLockGc(root, { dryRun: false })).retained).toEqual([
         "locks/shared.lock",

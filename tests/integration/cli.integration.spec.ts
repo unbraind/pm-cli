@@ -3849,6 +3849,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--json",
           "--add",
           "path=src/cli/main.ts,scope=project,note=duplicate add",
+          // Revising the stored note of a repeated link is explicit since GH-1716.
+          "--note-conflict",
+          "replace",
           "--author",
           "integration-test",
           "--message",
@@ -3907,6 +3910,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "--json",
           "--add",
           "path=README.md,scope=project,note=duplicate add",
+          // Revising the stored note of a repeated link is explicit since GH-1716.
+          "--note-conflict",
+          "replace",
           "--author",
           "integration-test",
           "--message",
