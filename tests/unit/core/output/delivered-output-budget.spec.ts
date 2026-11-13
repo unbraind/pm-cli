@@ -327,6 +327,46 @@ describe("GH-1662 an omitted intent result is unsuccessful and both budget spell
   });
 });
 
+describe("GH-1703 TOON names derivable omission receipts with one restore template", () => {
+  const section = (name: string) => ({ name, restore_with: `--section ${name}` });
+  const receipt = (groups: unknown[], extra: Record<string, unknown> = {}) => ({
+    omission_receipt: { has_omissions: true, omitted_field_group_count: groups.length, omitted_field_groups: groups, ...extra },
+  });
+
+  it("renders the names inline with one <name> template when every hint is the shared prefix plus the name", () => {
+    expect(formatBuiltInOutput(receipt([section("progress"), section("tests")], { summary_scope: "matching_items" }), "toon")).toBe(
+      "omission_receipt:\n  has_omissions: true\n  omitted_field_group_count: 2\n" +
+        '  omitted_field_groups[2]: progress,tests\n  restore_with: "--section <name>"\n  summary_scope: "matching_items"\n',
+    );
+    // JSON stays the typed per-row contract.
+    expect(JSON.parse(formatBuiltInOutput(receipt([section("progress")]), "json"))).toEqual(receipt([section("progress")]));
+  });
+
+  it("keeps the per-row table when any hint is not derivable from its name", () => {
+    const rows = "{name,restore_with}:";
+    for (const groups of [
+      [section("progress"), { name: "tests", restore_with: "--fields tests" }],
+      [section("progress"), { ...section("tests"), reason: "budget" }],
+      [section("progress"), { name: 7, restore_with: "--section 7" }],
+      [section("progress"), { name: "", restore_with: "--section " }],
+      [section("progress"), { name: "tests", restore_with: 7 }],
+    ]) {
+      const rendered = formatBuiltInOutput(receipt(groups), "toon");
+      expect(rendered).not.toContain("<name>");
+      expect(rendered).toContain("\"--section progress\"");
+    }
+    expect(formatBuiltInOutput(receipt([section("progress"), "tests"]), "toon")).not.toContain("<name>");
+    expect(formatBuiltInOutput(receipt([section("progress"), section("tests")], { restore_with: "--all" }), "toon")).toContain(rows);
+    expect(formatBuiltInOutput(receipt([{ name: "children", restore_with: "--fields children" }, { name: "dependency_provenance", restore_with: "--fields dependencies" }]), "toon")).toContain(rows);
+    expect(formatBuiltInOutput(receipt([]), "toon")).toContain("omitted_field_groups: []");
+    expect(formatBuiltInOutput({ omission_receipt: { has_omissions: true, omitted_field_groups: "progress" } }, "toon")).toContain('omitted_field_groups: "progress"');
+    // A receipt that is not an object (a producer-owned list under the reserved key) renders generically.
+    expect(formatBuiltInOutput({ omission_receipt: [section("progress"), section("tests")] }, "toon")).not.toContain("<name>");
+    // The named form is chosen only when it is smaller than the rows it replaces.
+    expect(formatBuiltInOutput(receipt([{ name: "a", restore_with: "a" }]), "toon")).toContain(rows);
+  });
+});
+
 describe("pm-sj66lm TOON explicit selection keeps requested empties and a one-line complete receipt", () => {
   const complete = { has_omissions: false, omitted_field_group_count: 0, omitted_field_groups: [] };
 

@@ -527,8 +527,27 @@ result exceeds the declared intent ceiling.
 
 In TOON, an omission receipt that reports nothing omitted costs one line,
 `omission_receipt: complete`, and an explicit `get --fields` selection renders
-each requested empty collection as `key: []`. JSON, SDK and MCP keep the typed
-receipt, and receipts that report omissions are unchanged.
+each requested empty collection as `key: []`. When every omitted group's
+`restore_with` is one shared prefix followed by the group's own name, as with
+the `--section <name>` hints of the default `pm context` receipt, TOON lists
+the names inline and states the hint once as a template:
+
+```toon
+omission_receipt:
+  has_omissions: true
+  omitted_field_group_count: 7
+  omitted_field_groups[7]: progress,recently_created,unparented,files,workload,staleness,tests
+  restore_with: "--section <name>"
+```
+
+Substitute each name for `<name>` to restore the rows. A receipt with any hint
+that is not derivable from its name, such as `pm get`'s
+`dependency_provenance` restored by `--fields dependencies`, or with any extra
+row field keeps the per-row form, and the named form is used only when it is
+smaller. The default context receipt on a fresh tracker went from 505 to
+265 bytes ([pm-gh1703](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1703.toon);
+repository-only tracker record excluded from npm). JSON, SDK and MCP keep the
+typed per-row receipt.
 
 ## SDK and Package Usage
 

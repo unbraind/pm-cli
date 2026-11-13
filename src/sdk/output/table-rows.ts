@@ -27,6 +27,23 @@ export interface PmTableCellEncoding {
   absent: Array<[number, string]>;
 }
 
+/**
+ * An encoding block in the form the TOON host renders it (GH-1684). Empty
+ * `json_columns` and `absent` arrays are left out, and missing cells are
+ * grouped by column in `absent_rows`, so consumers recognize the block by its
+ * reserved `<collection>_encoding` key rather than by the arrays it carries.
+ * {@link decodePmTableRows} accepts this form and every earlier one.
+ */
+export interface PmRenderedTableCellEncoding
+  extends Omit<PmTableCellEncoding, "json_columns" | "absent"> {
+  /** Columns whose every present cell contains a JSON-serialized value; omitted when none. */
+  json_columns?: string[];
+  /** Missing field coordinates as [zero-based row, column name] pairs, as earlier releases rendered them. */
+  absent?: Array<[number, string]>;
+  /** Missing field coordinates grouped by column: column name to its zero-based row indexes. */
+  absent_rows?: Record<string, number[]>;
+}
+
 /** Primitive rows accepted by the standard TOON tabular encoder. */
 export interface PmEncodedTableRows {
   /** Key-hoisted rows with primitive cells and null padding for absent keys. */
@@ -86,8 +103,32 @@ export function encodePmTableRows(
   } };
 }
 
+/**
+ * Project an encoding for TOON delivery without losing a fact: empty
+ * `json_columns` and `absent` arrays are dropped, and absent coordinates are
+ * grouped by column. Grouping writes each column name once, so it is smaller
+ * whenever a column misses more than one cell, which is the shape of sparse
+ * focus rows such as unblocked `pm context` rows.
+ */
+export function projectPmTableEncodingForToon(
+  encoding: PmTableCellEncoding,
+): PmRenderedTableCellEncoding {
+  const { json_columns: jsonColumns, absent, ...declarations } = encoding;
+  const absentRows = new Map<string, number[]>();
+  for (const [row, column] of absent) {
+    const rows = absentRows.get(column) ?? [];
+    rows.push(row);
+    absentRows.set(column, rows);
+  }
+  return {
+    ...(jsonColumns.length > 0 ? { json_columns: jsonColumns } : {}),
+    ...(absentRows.size > 0 ? { absent_rows: Object.fromEntries(absentRows) } : {}),
+    ...declarations,
+  };
+}
+
 /** Reinsert omitted null columns at their recorded original positions. */
-function restoreColumnOrder(encodedColumns: readonly string[], encoding: PmTableCellEncoding): string[] {
+function restoreColumnOrder(encodedColumns: readonly string[], encoding: PmRenderedTableCellEncoding): string[] {
   const nullColumns = encoding.null_columns ?? [];
   const positions = encoding.null_column_index ?? [];
   const columns = [...encodedColumns];
@@ -101,18 +142,24 @@ function restoreColumnOrder(encodedColumns: readonly string[], encoding: PmTable
 }
 
 /**
- * Restore rows emitted by {@link encodePmTableRows}. Metadata is explicit, so
- * strings resembling JSON stay strings unless their column declares JSON.
- * Malformed JSON cells throw instead of silently changing their meaning.
+ * Restore rows emitted by {@link encodePmTableRows}, including the TOON form
+ * that omits empty metadata and groups absent cells by column. Metadata is
+ * explicit, so strings resembling JSON stay strings unless their column
+ * declares JSON. Malformed JSON cells throw instead of silently changing their
+ * meaning.
  */
-export function decodePmTableRows(
-  table: PmEncodedTableRows,
-): Record<string, JsonValue>[] {
-  const nested = new Set(table.encoding.json_columns);
+export function decodePmTableRows(table: {
+  rows: PmEncodedTableRows["rows"];
+  encoding: PmRenderedTableCellEncoding;
+}): Record<string, JsonValue>[] {
+  const nested = new Set(table.encoding.json_columns ?? []);
   const delimiters = new Map(Object.entries(table.encoding.list_columns ?? {}));
-  const absent = new Set(
-    table.encoding.absent.map(([row, column]) => JSON.stringify([row, column])),
-  );
+  const absent = new Set([
+    ...(table.encoding.absent ?? []).map(([row, column]) => JSON.stringify([row, column])),
+    ...Object.entries(table.encoding.absent_rows ?? {}).flatMap(([column, rows]) =>
+      rows.map((row) => JSON.stringify([row, column])),
+    ),
+  ]);
   return table.rows.map((row, index) => {
     const cells = new Map<string, JsonValue>(
       Object.entries(row).flatMap(([column, cell]): Array<[string, JsonValue]> => {

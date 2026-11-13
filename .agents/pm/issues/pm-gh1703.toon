@@ -2,11 +2,13 @@ id: pm-gh1703
 title: "GH-1703: pm context spends a third of its default output on a fixed omission receipt whose restore hints are all --section <name>"
 description: "GH-1703 (filed 2026-11-11). Every default pm context call ends with an omission_receipt listing the ten sections the default projection leaves out, one row each, and every restore hint is the plain --section name form. Measured on a fresh two-item tracker: default TOON 1,449 B with a 505 B receipt (35 percent), --json 2,733 B with 684 B. The receipt is identical on every default call, so it is a fixed cost at the start of every session and the largest block on small trackers. Proposal: when the omitted set is exactly the documented default, emit one compact line of omitted section names plus a single restore template; keep the per-row table only for rows whose restore command is not derivable from the name (a budget cut, a truncated list, a requested section that could not be served); apply the same rule to other omission receipts whose restore hints are derivable from the row name."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[5]: agent-ux,context,"gh:1703",output,token-efficiency
 created_at: "2026-11-12T05:13:34.929Z"
-updated_at: "2026-11-12T05:13:34.929Z"
+updated_at: "2026-11-13T09:29:31.889Z"
+closed_at: "2026-11-13T08:40:57.732Z"
+completed_at: "2026-11-13T08:40:57.732Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "When the omitted set equals the documented default, the receipt is one compact line of names plus a single restore template; Rows whose restore command is not derivable from the name keep the per-row form; Other omission receipts with name-derivable hints follow the same rule, and the receipt contract stays parseable"
@@ -14,8 +16,44 @@ parent: pm-5t33or
 risk: low
 confidence: high
 severity: low
+resolution: "renderToonOmissionReceipt and projectDerivableOmissionReceipt (src/core/output/output.ts): when every omitted group is exactly {name, restore_with} with restore_with = one shared prefix + name, TOON renders omitted_field_groups[N] as a name list plus a receipt-level restore_with template ending in <name>, chosen only when smaller. Any non-derivable hint or extra row field keeps the per-row form (pm get's dependency_provenance -> --fields dependencies keeps its table). The rule is generic, so every receipt with name-derivable hints follows it. JSON, SDK and MCP keep the typed per-row receipt. Declared as contract_change."
 expected_result: The default context receipt costs about 150 B
-actual_result: "The default receipt is 505 B, 35 percent of output on a small tracker"
+actual_result: "Fresh tracker default pm context receipt 505 -> 265 B (read 1,322 -> 1,082 B); has_omissions and omitted_field_group_count are kept as contract keys, which is why it is not 150 B; JSON unchanged by design"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1684,related,"2026-11-12T05:13:34.929Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-13T07:57:00.458Z","harness:claude-code","Implementation evidence (2026-11-13): TOON-only presentation rule in renderToonOmissionReceipt/projectDerivableOmissionReceipt (src/core/output/output.ts). When every omitted group is exactly {name, restore_with} and restore_with is one shared prefix plus the name, TOON prints omitted_field_groups[N] as an inline name list plus one restore_with template ending in <name>, and only when that is smaller. Any non-derivable hint or extra row field keeps the per-row form; pm get's children/dependency_provenance receipt keeps its table. JSON, SDK and MCP keep the typed per-row receipt because complete-list.ts, list-envelope.ts and read-output-budget.ts read omitted_field_groups[].restore_with. Measured on a fresh tracker: default pm context receipt 505 -> 265 B (whole read 1,322 -> 1,082 B); JSON unchanged at 2,542 B by design. has_omissions and omitted_field_group_count stay so the receipt keeps its contract keys."
+files[2]{path,scope,note}:
+  src/core/output/output.ts,project,"projectDerivableOmissionReceipt: TOON names inline with one <name> template when every hint is prefix+name and smaller"
+  tests/unit/core/output/delivered-output-budget.spec.ts,project,GH-1703 named and per-row receipt cases
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts,project,600,"harness:claude-code","2026-11-13T07:57:14.147Z",local_mutation,feat/default-output-economy
+test_runs[1]:
+  - run_id: test-local-mweq8592-npiln9
+    kind: test
+    status: passed
+    started_at: "2026-11-13T08:40:13.868Z"
+    finished_at: "2026-11-13T08:40:21.398Z"
+    recorded_at: "2026-11-13T08:40:21.398Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/READ_OUTPUT_CONTRACTS.md,project,TOON named receipt form and substitution rule
+close_reason: TOON omission receipts whose every hint is a shared prefix plus the group name now print the names inline with one <name> template
+contract_change:
+  api: TOON omission_receipt rendering (CLI default output)
+  before: "Every omitted field group rendered as one name,restore_with table row"
+  after: "When every restore_with is one shared prefix followed by the group name and the result is smaller, TOON lists the names inline as omitted_field_groups[N] and states restore_with once as a template ending in <name>; JSON, SDK and MCP keep the per-row receipt"
+  migrate: TOON readers substitute each listed name for <name> in the receipt-level restore_with; use --json for the typed per-row form
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1703
+  gate_id: toon-omission-receipt-rendering
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts (the named-receipt case fails against the previous per-row rendering)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

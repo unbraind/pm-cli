@@ -17,6 +17,8 @@ interface TestEnvelope {
     working_directory: string;
     source_workspace_root: string;
     trust: { trusted: boolean; reason: string };
+    trusted?: boolean;
+    trust_reason?: string;
   };
   run_results: Array<{
     status: string;
@@ -237,9 +239,12 @@ describe("linked-test workspace and trust contracts", () => {
         expectJson: true,
       });
       expect(trusted.code).toBe(0);
-      expect(
-        (trusted.json as TestEnvelope).execution_context?.trust,
-      ).toMatchObject({ trusted: true, reason: "acknowledged" });
+      // GH-1702: the default receipt of a quiet success carries the trust decision, not the fingerprint.
+      expect((trusted.json as TestEnvelope).execution_context).toMatchObject({
+        trusted: true,
+        trust_reason: "acknowledged",
+      });
+      expect((trusted.json as TestEnvelope).execution_context).not.toHaveProperty("trust");
     });
   });
 
@@ -284,7 +289,7 @@ describe("linked-test workspace and trust contracts", () => {
         ).code,
       ).toBe(0);
 
-      const snapshot = context.runCli(["test", id, "--run", "--json"], {
+      const snapshot = context.runCli(["test", id, "--run", "--check-context", "--json"], {
         cwd: sourceRoot,
         expectJson: true,
       });
@@ -319,6 +324,7 @@ describe("linked-test workspace and trust contracts", () => {
           "--workspace-context",
           "isolated",
           "--override-linked-workspace-context",
+          "--check-context",
           "--json",
         ],
         { cwd: sourceRoot, expectJson: true },

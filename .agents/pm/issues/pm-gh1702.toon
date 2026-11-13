@@ -2,11 +2,13 @@ id: pm-gh1702
 title: "GH-1702: pm test --run prints the full execution_context with host paths on every passing run; default to the lean projection"
 description: "GH-1702 (filed 2026-11-11). pm test --run prints the full 21-field linked-test execution_context on every run, including a single passing test: sandbox and source tracker paths, counts, seeding flags, the trust fingerprint and the working directory. Two of those are absolute host paths: the global tracker under the caller's home directory, and the caller's checkout. Measured on a fresh tracker with one passing test: default TOON 1,975 B with 1,217 B of context (62 percent), --json 2,479 B with 1,355 B, --lean 798 B with 236 B. Agents paste this output into comments and PR text as evidence, so the default form carries host paths into public text and trips privacy gates. pm-fqdmbf hoisted the block across tests but a single-test item still pays it. Proposal: the lean five-field context (pm_context_mode, workspace_context_mode, mismatch_detected, trusted, trust_reason) becomes the default for TOON and JSON; the full block prints only when it explains something (mismatch, trust or config refusal, non-passing result, or an explicit request) with the existing restore hint; no absolute path outside the tracker in the default projection."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1702",linked-tests,privacy,token-efficiency
 created_at: "2026-11-12T05:13:29.775Z"
-updated_at: "2026-11-12T05:13:29.775Z"
+updated_at: "2026-11-13T09:29:29.562Z"
+closed_at: "2026-11-13T08:40:45.891Z"
+completed_at: "2026-11-13T08:40:45.891Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "The default TOON and JSON pm test --run output carries only the five decision fields of execution_context when nothing needs explaining; The full context prints on a mismatch, a trust or config refusal, a non-passing result, or an explicit request, with the restore hint; The default projection prints no absolute path outside the tracker"
@@ -14,8 +16,47 @@ parent: pm-5t33or
 risk: low
 confidence: high
 severity: medium
+resolution: "projectLinkedTestEvidence (src/core/output/output.ts) applies the decision-context projection to every quiet success, not only under --lean: pm_context_mode, workspace_context_mode, mismatch_detected, trusted, trust_reason and restore_with naming --check-context. Failures, refusals, skips, mismatches and non-zero failure categories keep the full hoisted block. --check-context is the explicit request (no new flag); its help text says so. Lean and default share one predicate. Declared as contract_change with a migration line. Follow-up pm-tcvccz covers pm test-all."
 expected_result: A passing single-test run prints a small context with no host paths
-actual_result: Default output is 62 percent execution_context including home and checkout paths
+actual_result: "Fresh sandbox, one passing test: default TOON 2,033 -> 965 B, JSON 2,525 -> 1,360 B, zero absolute paths; --check-context keeps all four tracker paths; failure variants keep the full block in lean and default (output.spec.ts), integration spec reads trusted/trust_reason from the default receipt"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-fqdmbf,related,"2026-11-12T05:13:29.775Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-13T07:56:58.471Z","harness:claude-code","Implementation evidence (2026-11-13, branch feat/default-output-economy): projectLinkedTestEvidence now reduces a quiet success (ok, all rows passed, no mismatch, no non-zero failure category) to the decision context in every format, not only under --lean. --check-context is the explicit full-context request, chosen over a new flag because it already means 'check the PM context' and adds no packaged bytes or replication-set rows; its help text now says it reports the full context. Measured on a fresh sandbox tracker, one passing test: default TOON 2,033 -> 965 B, JSON 2,525 -> 1,360 B, zero absolute paths in either; --lean 763 -> 769 B (hint text). Lean and default share one predicate, so an untrusted pass under --allow-untrusted-linked-tests keeps trusted:false and trust_reason. Found pm test-all has the same defect on every row and filed pm-tcvccz."
+  "2026-11-13T09:03:27.618Z","harness:claude-code","Review fix (Greptile P2 on PR 1720, 2026-11-13): the first implementation reduced the context only after hoisting a shared full context, and linkedTestTrustFingerprint includes the command, so any item with two different linked tests never shared a full context and kept every path on every row. projectLinkedTestEvidence now reduces each quiet row to its decision fields first and then hoists the identical result; rows whose decision fields differ (for example different trust reasons) keep their own reduced contexts. Measured on the sandbox item with two passing tests: TOON 2,733 -> 1,078 B, zero absolute paths. New spec case in output.spec.ts covers differing fingerprints, differing trust reasons, a row without a context and an empty run."
+files[4]{path,scope,note}:
+  src/cli/register-operations.ts,project,"--check-context help names the full-context report"
+  src/core/output/output.ts,project,quiet-success linked-test context projects to decision fields by default; --check-context keeps the full block
+  tests/integration/linked-test-context-trust.integration.spec.ts,project,trust decision from default receipt; --check-context for path assertions
+  tests/unit/core/output/output.spec.ts,project,"default, lean and --check-context projections"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,project,900,"harness:claude-code","2026-11-13T07:57:12.257Z",local_mutation,feat/default-output-economy
+test_runs[1]:
+  - run_id: test-local-mweq7yze-gh6yb5
+    kind: test
+    status: passed
+    started_at: "2026-11-13T08:39:54.819Z"
+    finished_at: "2026-11-13T08:40:13.273Z"
+    recorded_at: "2026-11-13T08:40:13.273Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,"linked-test receipt paragraph: default decision context and --check-context"
+close_reason: A quiet passing pm test --run now reports only the decision fields of execution_context in TOON and JSON; --check-context restores the full context
+contract_change:
+  api: pm test --run TOON and JSON output (execution_context)
+  before: "A passing run without --lean printed the full execution_context: sandbox and source tracker paths, item counts, seeding flags, the working directory and the trust object with its fingerprint"
+  after: "A passing, mismatch-free run with no failure category prints pm_context_mode, workspace_context_mode, mismatch_detected, trusted, trust_reason and a restore_with hint in every format; failures, refusals, skips and mismatches keep the full context"
+  migrate: "Read trusted and trust_reason instead of trust.trusted and trust.reason on passing runs, or pass --check-context to keep the full context with every path, count and the trust fingerprint; SDK runTest results are unchanged"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1702
+  gate_id: linked-test-receipt-projection
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts (the default quiet-success and multi-command cases fail against the previous projection, which kept sandbox paths on passing runs)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

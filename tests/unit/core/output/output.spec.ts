@@ -335,15 +335,48 @@ describe("core/output/output", () => {
       ],
     };
 
+    // GH-1702: a quiet success reports only the context's decision fields by default, so
+    // the sandbox and source host paths never reach pasted evidence; streams stay.
+    const decisionContext = {
+      pm_context_mode: "schema",
+      workspace_context_mode: "snapshot",
+      mismatch_detected: false,
+      restore_with: "not retained; a run with --check-context reports the full context",
+    };
     const projected = JSON.parse(
       formatOutput(payload, { json: true, command: "test" }),
     ) as Record<string, unknown>;
-    expect(projected.execution_context).toEqual(context);
+    expect(projected.execution_context).toEqual(decisionContext);
+    expect(JSON.stringify(projected)).not.toContain("/source/");
+    expect(projected.run_results).toEqual([
+      { command: "node --version", status: "passed", exit_code: 0, stdout: "v26", stderr: "" },
+      { command: "node --help", status: "passed", exit_code: 0, stdout: "help", stderr: "" },
+    ]);
+    const toon = formatOutput(payload, { command: "test" });
+    expect(toon).toContain("restore_with: \"not retained; a run with --check-context reports the full context\"");
+    expect(toon).not.toContain("sandbox_project_pm_path");
+    // --check-context is the explicit request for the full hoisted context, lean or not.
+    const requested = JSON.parse(
+      formatOutput(payload, { json: true, command: "test", commandOptions: { checkContext: true } }),
+    ) as Record<string, unknown>;
+    expect(requested.execution_context).toEqual(context);
     expect(
-      (projected.run_results as Array<Record<string, unknown>>).every(
+      (requested.run_results as Array<Record<string, unknown>>).every(
         (entry) => entry.execution_context === undefined,
       ),
     ).toBe(true);
+    const leanRequested = JSON.parse(
+      formatOutput(
+        { ...payload, failure_categories: { assertion_failure: 0 } },
+        { json: true, lean: true, command: "test", commandOptions: { checkContext: true } },
+      ),
+    ) as Record<string, unknown>;
+    expect(leanRequested.execution_context).toEqual(context);
+    expect(leanRequested.failure_categories).toEqual({ assertion_failure: 0 });
+    expect(leanRequested.run_results).toEqual([
+      { command: "node --version", status: "passed", exit_code: 0 },
+      { command: "node --help", status: "passed", exit_code: 0 },
+    ]);
 
     const zeroCategories = { assertion_failure: 0, timeout: 0 };
     const lean = JSON.parse(
@@ -351,12 +384,7 @@ describe("core/output/output", () => {
     ) as Record<string, unknown>;
     // pm-covpax: a passing, mismatch-free lean receipt keeps modes, the mismatch boolean and a
     // non-rerun restore hint (a rerun would repeat any mutating flags of the invocation).
-    expect(lean.execution_context).toEqual({
-      pm_context_mode: "schema",
-      workspace_context_mode: "snapshot",
-      mismatch_detected: false,
-      restore_with: "not retained; a run without --lean reports the full context",
-    });
+    expect(lean.execution_context).toEqual(decisionContext);
     expect(lean).not.toHaveProperty("failure_categories");
     expect(lean.run_results).toEqual([
       { command: "node --version", status: "passed", exit_code: 0 },
@@ -383,13 +411,60 @@ describe("core/output/output", () => {
       { ...payload, run_results: payload.run_results.map((row) => ({ ...row, execution_context: { ...context, mismatch_detected: true } })) },
       { ...payload, run_results: [payload.run_results[0], { ...payload.run_results[1], status: "skipped" }] },
     ]) {
-      const kept = JSON.parse(formatOutput(variant, { json: true, lean: true, command: "test" })) as Record<string, Record<string, unknown>>;
-      expect(kept.execution_context).toHaveProperty("sandbox_project_pm_path", "/sandbox/project");
+      for (const lean of [true, false]) {
+        const kept = JSON.parse(formatOutput(variant, { json: true, lean, command: "test" })) as Record<string, Record<string, unknown>>;
+        expect(kept.execution_context).toHaveProperty("sandbox_project_pm_path", "/sandbox/project");
+      }
     }
     const failedCategories = JSON.parse(
       formatOutput({ ...payload, failure_categories: { assertion_failure: 1 } }, { json: true, lean: true, command: "test" }),
     ) as Record<string, unknown>;
     expect(failedCategories.failure_categories).toEqual({ assertion_failure: 1 });
+  });
+
+  it("reduces each quiet row before hoisting, because every linked command has its own fingerprint and sandbox", () => {
+    // Greptile on #1720: full contexts differ per command, so hoisting first never fired for multi-test items.
+    const full = (index: number, reason = "local_mutation") => ({
+      pm_context_mode: "schema",
+      workspace_context_mode: "source",
+      sandbox_project_pm_path: `/sandbox-${index}/project`,
+      source_project_pm_path: "/source/project",
+      mismatch_detected: false,
+      trust: { fingerprint: `fingerprint-${index}`, trusted: true, reason },
+    });
+    const row = (index: number, reason?: string) => ({
+      command: `node -e ${index}`,
+      status: "passed",
+      exit_code: 0,
+      execution_context: full(index, reason),
+      stdout: "",
+      stderr: "",
+    });
+    const hint = "not retained; a run with --check-context reports the full context";
+    const shared = JSON.parse(
+      formatOutput({ ok: true, run_results: [row(1), row(2)] }, { json: true, command: "test" }),
+    ) as { execution_context: unknown; run_results: Array<Record<string, unknown>> };
+    expect(shared.execution_context).toEqual({
+      pm_context_mode: "schema",
+      workspace_context_mode: "source",
+      mismatch_detected: false,
+      trusted: true,
+      trust_reason: "local_mutation",
+      restore_with: hint,
+    });
+    expect(shared.run_results.every((entry) => !("execution_context" in entry))).toBe(true);
+    expect(JSON.stringify(shared)).not.toContain("/sandbox-");
+    // Rows whose decision fields differ keep their own reduced contexts, still without paths.
+    const distinct = JSON.parse(
+      formatOutput({ ok: true, run_results: [row(1), row(2, "acknowledged")] }, { json: true, command: "test" }),
+    ) as { execution_context?: unknown; run_results: Array<{ execution_context: Record<string, unknown> }> };
+    expect(distinct.execution_context).toBeUndefined();
+    expect(distinct.run_results.map((entry) => entry.execution_context.trust_reason)).toEqual(["local_mutation", "acknowledged"]);
+    expect(JSON.stringify(distinct)).not.toContain("/sandbox-");
+    // A row without its own context, or an empty run, is not a quiet success and stays as produced.
+    const missing = { ok: true, run_results: [row(1), { command: "node -e 2", status: "passed", exit_code: 0 }] };
+    expect(JSON.parse(formatOutput(missing, { json: true, command: "test" }))).toEqual(missing);
+    expect(JSON.parse(formatOutput({ ok: true, run_results: [] }, { json: true, lean: true, command: "test" }))).toEqual({ ok: true });
   });
 
   it("preserves heterogeneous linked-test contexts and non-result payloads", () => {
