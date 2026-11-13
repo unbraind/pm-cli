@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: agent-ux,context,"gh:1703",output,token-efficiency
 created_at: "2026-11-12T05:13:34.929Z"
-updated_at: "2026-11-13T08:40:58.839Z"
+updated_at: "2026-11-13T09:29:31.889Z"
 closed_at: "2026-11-13T08:40:57.732Z"
 completed_at: "2026-11-13T08:40:57.732Z"
 author: "harness:claude-code"
@@ -48,4 +48,12 @@ contract_change:
   before: "Every omitted field group rendered as one name,restore_with table row"
   after: "When every restore_with is one shared prefix followed by the group name and the result is smaller, TOON lists the names inline as omitted_field_groups[N] and states restore_with once as a template ending in <name>; JSON, SDK and MCP keep the per-row receipt"
   migrate: TOON readers substitute each listed name for <name> in the receipt-level restore_with; use --json for the typed per-row form
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1703
+  gate_id: toon-omission-receipt-rendering
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts (the named-receipt case fails against the previous per-row rendering)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/output/delivered-output-budget.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

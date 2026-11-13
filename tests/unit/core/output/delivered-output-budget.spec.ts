@@ -360,6 +360,8 @@ describe("GH-1703 TOON names derivable omission receipts with one restore templa
     expect(formatBuiltInOutput(receipt([{ name: "children", restore_with: "--fields children" }, { name: "dependency_provenance", restore_with: "--fields dependencies" }]), "toon")).toContain(rows);
     expect(formatBuiltInOutput(receipt([]), "toon")).toContain("omitted_field_groups: []");
     expect(formatBuiltInOutput({ omission_receipt: { has_omissions: true, omitted_field_groups: "progress" } }, "toon")).toContain('omitted_field_groups: "progress"');
+    // A receipt that is not an object (a producer-owned list under the reserved key) renders generically.
+    expect(formatBuiltInOutput({ omission_receipt: [section("progress"), section("tests")] }, "toon")).not.toContain("<name>");
     // The named form is chosen only when it is smaller than the rows it replaces.
     expect(formatBuiltInOutput(receipt([{ name: "a", restore_with: "a" }]), "toon")).toContain(rows);
   });

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1702",linked-tests,privacy,token-efficiency
 created_at: "2026-11-12T05:13:29.775Z"
-updated_at: "2026-11-13T09:03:27.619Z"
+updated_at: "2026-11-13T09:29:29.562Z"
 closed_at: "2026-11-13T08:40:45.891Z"
 completed_at: "2026-11-13T08:40:45.891Z"
 author: "harness:claude-code"
@@ -51,4 +51,12 @@ contract_change:
   before: "A passing run without --lean printed the full execution_context: sandbox and source tracker paths, item counts, seeding flags, the working directory and the trust object with its fingerprint"
   after: "A passing, mismatch-free run with no failure category prints pm_context_mode, workspace_context_mode, mismatch_detected, trusted, trust_reason and a restore_with hint in every format; failures, refusals, skips and mismatches keep the full context"
   migrate: "Read trusted and trust_reason instead of trust.trusted and trust.reason on passing runs, or pass --check-context to keep the full context with every path, count and the trust fingerprint; SDK runTest results are unchanged"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1702
+  gate_id: linked-test-receipt-projection
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts (the default quiet-success and multi-command cases fail against the previous projection, which kept sandbox paths on passing runs)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts tests/integration/linked-test-context-trust.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

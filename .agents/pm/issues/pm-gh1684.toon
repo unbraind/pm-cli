@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,context,"gh:1684",output,token-efficiency,toon
 created_at: "2026-11-07T22:10:47.408Z"
-updated_at: "2026-11-13T08:41:01.836Z"
+updated_at: "2026-11-13T09:29:34.765Z"
 closed_at: "2026-11-13T08:41:00.437Z"
 completed_at: "2026-11-13T08:41:00.437Z"
 author: "harness:claude-code"
@@ -58,4 +58,12 @@ contract_change:
   before: "Every block carried json_columns and an absent list of [row, column] pairs, even when empty, and decoders detected a block by the presence of both arrays"
   after: TOON omits empty json_columns and absent and groups missing fields by column in absent_rows; decodePmTableRows accepts PmRenderedTableCellEncoding and every earlier shape; encodePmTableRows still returns both arrays
   migrate: "Detect a block by its reserved <collection>_encoding key beside the <collection> array, treat a missing json_columns or absent as empty, and read absent_rows as column to row indexes, or decode with the current decodePmTableRows"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1684
+  gate_id: toon-table-encoding-ratchet
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts (the context-corpus byte ratchet at 331 B and the absent_rows decode cases fail against the previous encoding, which measured 638 B)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/output/table-rows.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
