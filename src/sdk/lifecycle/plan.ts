@@ -58,6 +58,7 @@ import type {
   SharedLinkedResourceOptions,
 } from "./mutation-command-options.js";
 import { createUnknownSubcommandError } from "../agent/subcommand-recovery.js";
+import { parseIdentityOption } from "../../core/shared/url-credentials.js";
 import { PLAN_SHOW_DEPTH_VALUES } from "../query/projection-contracts.js";
 import { buildPlanMutationReceipt, type PlanMutationReceipt } from "./plan-mutation-receipt.js";
 
@@ -1112,7 +1113,7 @@ function buildSingleInitialStep(
     title,
     body: options.stepBody?.trim() || undefined,
     status,
-    owner: options.stepOwner?.trim() || undefined,
+    owner: resolveStepOwner(options.stepOwner),
     evidence: options.stepEvidence?.trim() || undefined,
     blocked_reason:
       status === "blocked"
@@ -1489,7 +1490,7 @@ function buildAddedPlanStep(
     title: seed.title,
     body: options.stepBody?.trim() || undefined,
     status: seed.status,
-    owner: options.stepOwner?.trim() || undefined,
+    owner: resolveStepOwner(options.stepOwner),
     evidence: options.stepEvidence?.trim() || undefined,
     blocked_reason:
       seed.status === "blocked"
@@ -1584,6 +1585,11 @@ async function planUpdateStep(
   };
 }
 
+/** Normalize --step-owner, refusing URL userinfo like every other identity (pm-7ivxas); blank clears it. */
+function resolveStepOwner(value: string | undefined): string | undefined {
+  return parseIdentityOption(value?.trim(), "--step-owner") || undefined;
+}
+
 function applyStepUpdates(
   step: PlanStep,
   options: PlanCommandOptions,
@@ -1627,7 +1633,7 @@ function applyStepFieldUpdates(
     step.body = options.stepBody.trim() || undefined;
   }
   if (options.stepOwner !== undefined) {
-    step.owner = options.stepOwner.trim() || undefined;
+    step.owner = resolveStepOwner(options.stepOwner);
   }
   if (options.stepEvidence !== undefined) {
     step.evidence = options.stepEvidence.trim() || undefined;

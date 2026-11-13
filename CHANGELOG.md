@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- An annotation edit accepts text copied from a strings_compacted read, so a read-modify-write round trip silently truncates the stored entry: A compacted string ended with a bare ellipsis, and an edit accepted text copied from a compacted read → A compacted string ends with the marker …\[+N chars\] naming the omitted UTF-16 code units, and an annotation --edit whose text ends with that marker is refused with annotation_text_compacted. Migrate: Detect compaction through read_output.strings_compacted or the trailing …\[+N chars\] marker instead of a bare ellipsis; re-read the full entry with --output-budget unbounded before editing it ([pm-n98pir](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-n98pir.toon))
+
+### Fixed
+
+- GH-1710: budget compaction clips next_cursor to 240 characters, so --after rejects the cursor the page emitted and the rest of the result set is unreachable ([pm-gh1710](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1710.toon))
+
+### Security
+
+- Identity refusal table omits linked-test updated_by and plan step owner, so those identity locations still accept URL userinfo ([pm-7ivxas](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7ivxas.toon))
+
 ## 2026.11.13 - 2026-11-13
 
 ### Changed (SDK contract)

@@ -9,6 +9,7 @@ import { createHash } from "node:crypto";
 import { PmCliError } from "../core/shared/errors.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { stableStringify } from "../core/shared/serialization.js";
+import { isCompactedCursorArgument } from "../core/shared/text-normalization.js";
 import type { CliFlagContract } from "./cli-contracts/flag-contracts.js";
 import { decodeReadOutputContinuationCursor } from "./read-output/continuation.js";
 
@@ -124,6 +125,23 @@ function invalidCursor(message: string, cursorFlag: "--after" | "--cursor"): PmC
   });
 }
 
+/** Explain a cursor that a compacted read shortened, naming the read that returns it whole (GH-1710). */
+function compactedCursor(cursorFlag: "--after" | "--cursor"): PmCliError {
+  return new PmCliError(
+    "Query cursor was shortened by output compaction: it contains an ellipsis, which no cursor encoder emits.",
+    EXIT_CODE.USAGE,
+    {
+      code: "invalid_query_cursor",
+      reason: "cursor_compacted",
+      required: "Pass the whole cursor the previous page emitted; a shortened cursor cannot resume the query.",
+      nextSteps: [
+        `Re-read the previous page with a larger --output-budget (or --output-budget unbounded) and pass its whole next_cursor to ${cursorFlag}.`,
+        `Or repeat the original query without ${cursorFlag} to obtain a fresh cursor.`,
+      ],
+    },
+  );
+}
+
 /** Return whether an unknown payload is a supported cursor envelope. */
 function isQueryCursorEnvelope(value: unknown): value is QueryCursorEnvelope {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -152,6 +170,7 @@ export function decodeQueryCursorEnvelope(
     throw invalidCursor("Query cursor is malformed.", cursorFlag);
   }
   const normalized = cursor.trim();
+  if (isCompactedCursorArgument(normalized)) throw compactedCursor(cursorFlag);
   if (
     normalized.length === 0 ||
     normalized.length > MAX_CURSOR_LENGTH ||

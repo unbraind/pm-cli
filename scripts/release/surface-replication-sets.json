@@ -738,6 +738,38 @@
       "pm_item": "pm-gh1700",
       "reason": "Linked-collection --full-history lines (pm-gh1700) carry the same flag-contract and tool-schema markers; annotation receipts, flags and transports are unchanged.",
       "expires_on": "2026-11-25"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "docs/SDK_CONTEXT_INTEGRITY.md",
+      "scope": "unchanged",
+      "pm_item": "pm-n98pir",
+      "reason": "The annotation_text_compacted edit refusal (pm-n98pir) names entry_index in its refusal details; annotation mutation receipts, flags, completions and transports are unchanged.",
+      "expires_on": "2026-11-26"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/flag-contracts.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-n98pir",
+      "reason": "The annotation_text_compacted edit refusal (pm-n98pir) names entry_index in its refusal details; annotation mutation receipts, flags, completions and transports are unchanged.",
+      "expires_on": "2026-11-26"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/cli-contracts/tool-schema.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-n98pir",
+      "reason": "The annotation_text_compacted edit refusal (pm-n98pir) names entry_index in its refusal details; annotation mutation receipts, flags, completions and transports are unchanged.",
+      "expires_on": "2026-11-26"
+    },
+    {
+      "set_id": "annotation-mutation-receipts",
+      "member_path": "src/sdk/completion/zsh.ts",
+      "scope": "unchanged",
+      "pm_item": "pm-n98pir",
+      "reason": "The annotation_text_compacted edit refusal (pm-n98pir) names entry_index in its refusal details; annotation mutation receipts, flags, completions and transports are unchanged.",
+      "expires_on": "2026-11-26"
     }
   ],
   "cli_refusal_dispositions": [

@@ -16,7 +16,7 @@ describe("Unicode-safe read-output compaction (GH-1478)", () => {
     for (const format of ["json", "toon"] as const) {
       const bounded = applyReadOutputDimensions("list", { outputFormat: format, outputBudget: 1000 }, original);
       expect(bounded.read_output).toMatchObject({ strings_compacted: true, within_budget: true });
-      const expected = `${prefix}…`;
+      const expected = `${prefix}…[+${title.length - prefix.length} chars]`;
       expect(bounded.items[0]!.title).toBe(expected);
       expect(bounded.items[0]!.details.notes[0]).toBe(expected);
       expect(formatBuiltInOutput(bounded, format)).not.toContain("�");

@@ -1,0 +1,49 @@
+id: pm-gh1710
+title: "GH-1710: budget compaction clips next_cursor to 240 characters, so --after rejects the cursor the page emitted and the rest of the result set is unreachable"
+description: "GH-1710 (filed 2026-11-12). When pm list compacts its output to fit an output budget, it shortens next_cursor like any other long string: the cursor is cut to 240 characters plus an ellipsis while the page still says has_more true, so --after rejects it with invalid_query_cursor and the rest of the result set is unreachable. Reproduced on main 145286488: eight items with 180-character ids and 2,000-character titles, pm list --json --output-budget 2000 --limit 4 (with or without --for triage) emits a 241-character cursor ending in an ellipsis instead of the 351-character one. Root cause: both string-compaction walkers, compactStrings in src/sdk/read-output-budget.ts and compactContextIntentValue in src/sdk/context-intent-contracts.ts, shorten every string longer than 240 characters, and the producer cursor is rebased only when rows are dropped, so a string-only compaction keeps the clipped value. Fix: a continuation token (key cursor or ending in _cursor) is never shortened in either walker, and a cursor argument carrying an ellipsis is refused with invalid_query_cursor reason cursor_compacted (read_output_cursor_invalid for --output-cursor) naming the larger-budget read that returns it whole."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,"gh:1710",output-budget,pagination,read-output
+created_at: "2026-11-12T21:09:08.534Z"
+updated_at: "2026-11-13T03:58:20.775Z"
+closed_at: "2026-11-12T23:24:17.749Z"
+completed_at: "2026-11-12T23:24:17.749Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A budgeted list page emits next_cursor whole in JSON and TOON and with or without --for, and --after with it returns the next rows; Every continuation token in budgeted output (cursor, next_cursor, output_cursor, source_cursor) is exempt from string compaction; A cursor argument shortened by compaction is refused with invalid_query_cursor naming the larger-budget read that returns it whole"
+parent: pm-5t33or
+risk: medium
+confidence: high
+severity: high
+resolution: "Both string-compaction walkers skip strings under continuation-token keys (cursor or any key ending in _cursor), so a budgeted page emits next_cursor, output_cursor and nested cursors whole in JSON and TOON, with or without --for. A cursor argument carrying an ellipsis is refused with invalid_query_cursor or read_output_cursor_invalid, reason cursor_compacted, naming the larger-budget read that returns the whole cursor."
+expected_result: next_cursor is never compacted and resumes the query
+actual_result: "Issue reproduction on the built CLI: page 1 emits the whole 351-character cursor and page 2 returns the next four distinct items, with and without --for triage; a hand-truncated cursor gets the cursor_compacted advice; continuation-tokens and cursor-recovery specs pass and fail against the previous walkers"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-n98pir,related,"2026-11-12T21:09:08.534Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-13T03:58:20.775Z","harness:claude-code","PR 1717 CI, SDK mutation gate (src/sdk/pagination.ts is in its declared scope): the cursor_compacted refusal was covered only by a spec outside the mutation test set, so its mutants reported NoCoverage and the guard survived, and the insertion shifted four existing equivalent-mutant waivers whose identities hash the mutant location. tests/unit/sdk/pagination.spec.ts now pins the refusal on both cursor flags (exact message, reason, required text and next steps), the four waivers are re-keyed to their new identities and lines with unchanged reasons, and the score floor ratchets from 98.011 to 98.072 as the gate requires.\n"
+notes[1]{created_at,author,text}:
+  "2026-11-12T21:55:15.824Z","harness:claude-code","Implementation (2026-11-12). Both string-compaction walkers (compactStrings in src/sdk/read-output-budget.ts and compactContextIntentValue in src/sdk/context-intent-contracts.ts) now skip any string under a continuation-token key, decided by isContinuationTokenKey in src/core/shared/text-normalization.ts: the key cursor or any key ending in _cursor (next_cursor, output_cursor, source_cursor, base_source_cursor). A non-string value under such a key is still walked, so explanatory text nested under a cursor object keeps compacting. The cursor decoders refuse an argument carrying an ellipsis before parsing: decodeQueryCursorEnvelope (--after and --cursor) with invalid_query_cursor and reason cursor_compacted, decodeReadOutputContinuationCursor (--output-cursor) with read_output_cursor_invalid and the same reason; both name the larger-budget read that returns the whole cursor. Cursor lengths stay bounded by MAX_CURSOR_LENGTH, so exempting them cannot defeat the budget. Verified on the built CLI with the issue reproduction: page 1 emits the whole 351-character cursor and page 2 returns the next four items, with and without --for triage."
+learnings[1]{created_at,author,text}:
+  "2026-11-12T23:24:10.485Z","harness:claude-code","When an output transform shortens strings to fit a budget, list which strings are machine input for the next call (cursors, tokens, replay commands) and exempt them by key, in every walker that applies the transform. A rebase-on-row-drop step hides the defect whenever rows are dropped, so the failing case is a string-only compaction."
+files[7]{path,scope}:
+  docs/READ_OUTPUT_CONTRACTS.md,project
+  src/core/shared/text-normalization.ts,project
+  src/sdk/context-intent-contracts.ts,project
+  src/sdk/pagination.ts,project
+  src/sdk/read-output-budget.ts,project
+  src/sdk/read-output/continuation.ts,project
+  tests/unit/sdk/read-output/continuation-tokens.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/continuation-tokens.spec.ts tests/integration/read-output/cursor-recovery.integration.spec.ts tests/unit/core/shared/text-normalization.spec.ts,project,600,"harness:claude-code","2026-11-12T22:59:37.251Z",local_mutation,fix/compaction-round-trip-tokens
+close_reason: Budgeted reads emit every continuation cursor whole and diagnose a cursor a compacted read shortened
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1710
+  gate_id: read-output-compaction
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/continuation-tokens.spec.ts (every cursor case fails when the walkers shorten cursor keys)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/continuation-tokens.spec.ts tests/integration/read-output/cursor-recovery.integration.spec.ts tests/unit/core/shared/text-normalization.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

@@ -108,6 +108,34 @@ describe("SDK query pagination", () => {
     expect(QUERY_CURSOR_CONTRACT).toEqual({ version: 1, max_length: 4096 });
   });
 
+  it("names output compaction for a cursor carrying an ellipsis, on both cursor flags (GH-1710)", () => {
+    const whole = encodeQueryCursor(createQueryFingerprint("list", {}), "pm-first");
+    for (const flag of ["--after", "--cursor"] as const) {
+      let refusal: PmCliError | undefined;
+      try {
+        decodeQueryCursorEnvelope(`  ${whole.slice(0, 12)}…  `, flag);
+      } catch (error) {
+        refusal = error as PmCliError;
+      }
+      expect(refusal).toBeInstanceOf(PmCliError);
+      expect(refusal!.message).toBe(
+        "Query cursor was shortened by output compaction: it contains an ellipsis, which no cursor encoder emits.",
+      );
+      expect(refusal!.exitCode).toBe(2);
+      expect(refusal!.context).toEqual({
+        code: "invalid_query_cursor",
+        reason: "cursor_compacted",
+        required: "Pass the whole cursor the previous page emitted; a shortened cursor cannot resume the query.",
+        nextSteps: [
+          `Re-read the previous page with a larger --output-budget (or --output-budget unbounded) and pass its whole next_cursor to ${flag}.`,
+          `Or repeat the original query without ${flag} to obtain a fresh cursor.`,
+        ],
+      });
+    }
+    // The whole cursor still decodes, so the guard reads only the ellipsis.
+    expect(decodeQueryCursorEnvelope(whole).after_id).toBe("pm-first");
+  });
+
   it("rejects malformed, mismatched, and unsupported cursors", () => {
     const fingerprint = createQueryFingerprint("list", { status: "open" });
     const mismatched = encodeQueryCursor(

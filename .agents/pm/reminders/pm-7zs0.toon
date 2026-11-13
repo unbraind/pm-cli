@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: "area:release",living-map,reliability
 created_at: "2026-06-07T10:24:45.889Z"
-updated_at: "2026-11-12T20:12:49.342Z"
+updated_at: "2026-11-12T22:58:03.360Z"
 reminders[1]{at,text}:
   "2026-11-13T07:00:00.000Z",Independently verify the current UTC-day automatic release or guarded skip and the latest merged delivery. Require at most one automatic daily identity while allowing explicit manual triggers. Check npm latest and GitHub advertisement plus npm/npx/Bun/bunx and fresh Sentry/telemetry. Inspect and preserve any active publication child before recovery; older successful recoveries do not prove today's release. Retain original reliability failures and schedule the following daily check even when this occurrence cannot complete.
 author: maintainer-agent
@@ -16,7 +16,7 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: "At each reminder occurrence, verify that day's daily cut against the latest merged delivery: tag and npm identity, GitHub Release, npm/Bun/npx/bunx consumers and fresh Sentry/telemetry observability; record any failing stage and keep the original reliability outcome"
-actual_result: "Publication recovery verified 2026-11-09T20:22:07.900467+00:00: preserved Release child 42601586640 completed SUCCESS with all 12 jobs green, including producer, publication verifier, all nine native macOS/Windows/Ubuntu npm/npm-global/Bun acceptance jobs, and GitHub advertisement. The full public verifier passes with GitHub verification enabled, npm and executor attempts set to one: npm metadata, npx/bunx named and package-default CLI paths, stdio/HTTP MCP, all four declared bins, and expected nonzero negative controls. npm latest and the sole daily npm identity remain 2026.11.9; GitHub advertises v2026.11.9 and its annotated tag object remains 4bcc6fe0e88051eded262aa183f07c6e63546515. No new identity or recovery child was created. This recovery does not erase original failure evidence or publish the new SDK changes from PR #1696 under the existing version. Final-head PR checks/review and the next eligible scheduled daily cut remain distinct. Latest required observability passes: production Sentry critical/high/active zero, telemetry error rate 4.94 percent, missing codes zero, queue flush 1 to 0."
+actual_result: "Release health verified 2026-11-12 (live at 19:55Z, re-checked 22:30Z): v2026.11.12 cut by blocker_retry run 43179956824 at 08:46Z and published by Release run 43185766217 with 9/9 registry acceptance; npm latest and GitHub Latest are 2026.11.12, and npx, bunx and the pm-cli bin resolve it locally; the 10:11Z scheduled run was the same-day no-op, so one automatic release held. Earlier publication evidence (the 2026-11-09 recovery) stays in this item's history."
 dependencies[15]:
   - id: pm-7n5a
     kind: related

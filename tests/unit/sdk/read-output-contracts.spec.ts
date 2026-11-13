@@ -1164,7 +1164,7 @@ describe("read output contracts", () => {
     if (isReadOutputBudgetExceeded(textCompacted)) {
       throw new Error("Expected compacted text instead of an omission.");
     }
-    expect(String(textCompacted.detail).endsWith("…")).toBe(true);
+    expect(String(textCompacted.detail)).toMatch(/…\[\+[1-9]\d* chars\]$/u);
 
     const makeRows = (prefix: string) =>
       Array.from({ length: 8 }, (_, index) => ({

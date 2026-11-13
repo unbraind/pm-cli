@@ -103,7 +103,10 @@ describe("conservative URL credential redaction (pm-nhauur, pm-5htunt)", () => {
       ["dependencies", ["author"]],
       ["plan_decisions", ["author"]],
       ["plan_discoveries", ["author"]],
+      ["plan_steps", ["owner"]],
       ["tests", ["provenance", "author"]],
+      // pm-7ivxas: the last-edit author of a linked test.
+      ["tests", ["updated_by"]],
     ] as const) {
       const entry = path.reduceRight<unknown>((leaf, key) => ({ [key]: leaf }), "https://u:p@h");
       expect(() => assertIdentityFieldsWithoutUrlCredentials({ [collection]: [{ id: "x" }, entry] })).toThrow(

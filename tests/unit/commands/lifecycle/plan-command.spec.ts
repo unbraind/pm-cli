@@ -1643,6 +1643,52 @@ describe("runPlan command family", () => {
     });
   });
 
+  it("refuses a --step-owner carrying URL userinfo on create, add-step and update-step (pm-7ivxas)", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { ...GLOBAL, path: context.pmPath };
+      const refused = { exitCode: EXIT_CODE.USAGE, message: expect.stringContaining("--step-owner must not carry URL credentials") };
+      await expect(
+        runPlan({
+          subcommand: "create",
+          options: { title: "Owner Plan", step: ["Only step"], stepOwner: "https://u:p@h", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global,
+        }),
+      ).rejects.toMatchObject<PmCliError>(refused);
+      const { planId } = await bootstrapPlan(context);
+      await expect(
+        runPlan({
+          subcommand: "add-step",
+          id: planId,
+          options: { stepTitle: "owned", stepOwner: " https://t@h ", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global,
+        }),
+      ).rejects.toMatchObject<PmCliError>(refused);
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "owned", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global,
+      });
+      await expect(
+        runPlan({
+          subcommand: "update-step",
+          id: planId,
+          stepRef: "plan-step-001",
+          options: { stepOwner: "https://u:p@h", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global,
+        }),
+      ).rejects.toMatchObject<PmCliError>(refused);
+      const updated = await runPlan({
+        subcommand: "update-step",
+        id: planId,
+        stepRef: "plan-step-001",
+        options: { stepOwner: " agent-a ", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global,
+      });
+      expect(updated.step?.owner).toBe("agent-a");
+    });
+  });
+
   it("add-step normalizes empty body/owner/evidence to undefined and rejects empty step title", async () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);

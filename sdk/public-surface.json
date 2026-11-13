@@ -39955,6 +39955,7 @@
     "annotation_flag_like_value",
     "annotation_if_absent_without_append",
     "annotation_message_without_text",
+    "annotation_text_compacted",
     "annotation_text_source_conflict",
     "annotation_transposed_subcommand",
     "append_empty_body",

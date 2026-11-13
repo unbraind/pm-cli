@@ -35,4 +35,35 @@ describe("advertised cursor recovery (GH-1457)", () => {
       expect(explicitBudget.json).toHaveProperty("output_budget_truncation");
     });
   }, 30_000);
+
+  it("emits next_cursor whole under string compaction and diagnoses a shortened cursor (GH-1710)", async () => {
+    await withTempPmPath(async ({ runCliInProcess }) => {
+      const run = (args: string[]) => runCliInProcess([...args, "--json", "--no-extensions"], { expectJson: true });
+      for (let index = 0; index < 8; index += 1) {
+        const created = await run(["create", "Task", `${"T".repeat(2000)}${index}`, "--id", `gh1710-${index}${"a".repeat(170)}`, "--description", "d", "--create-mode", "progressive"]);
+        expect(created.code, created.stderr).toBe(0);
+      }
+      for (const intent of [[], ["--for", "triage"]]) {
+        const base = ["list", ...intent, "--output-budget", "2000", "--limit", "4"];
+        const first = await run(base);
+        expect(first.code, first.stderr).toBe(0);
+        const page = first.json as { items: { id: string; title: string }[]; next_cursor: string; has_more: boolean };
+        expect(page.has_more).toBe(true);
+        expect(page.items[0]!.title).toMatch(/…\[\+1761 chars\]$/u);
+        expect(page.next_cursor).not.toContain("…");
+        const second = await run([...base, "--after", page.next_cursor]);
+        expect(second.code, second.stderr).toBe(0);
+        const ids = (second.json as { items: { id: string }[] }).items.map((item) => item.id);
+        expect(ids).toHaveLength(4);
+        expect(ids.filter((id) => page.items.some((item) => item.id === id))).toEqual([]);
+        const shortened = await run([...base, "--after", `${page.next_cursor.slice(0, 240)}…`]);
+        expect(shortened.code).toBe(2);
+        expect(JSON.parse(shortened.stderr)).toMatchObject({
+          code: "invalid_query_cursor",
+          detail: expect.stringContaining("shortened by output compaction"),
+          next_steps: [expect.stringContaining("--output-budget unbounded"), expect.stringContaining("without --after")],
+        });
+      }
+    });
+  }, 60_000);
 });
