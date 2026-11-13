@@ -335,15 +335,48 @@ describe("core/output/output", () => {
       ],
     };
 
+    // GH-1702: a quiet success reports only the context's decision fields by default, so
+    // the sandbox and source host paths never reach pasted evidence; streams stay.
+    const decisionContext = {
+      pm_context_mode: "schema",
+      workspace_context_mode: "snapshot",
+      mismatch_detected: false,
+      restore_with: "not retained; a run with --check-context reports the full context",
+    };
     const projected = JSON.parse(
       formatOutput(payload, { json: true, command: "test" }),
     ) as Record<string, unknown>;
-    expect(projected.execution_context).toEqual(context);
+    expect(projected.execution_context).toEqual(decisionContext);
+    expect(JSON.stringify(projected)).not.toContain("/source/");
+    expect(projected.run_results).toEqual([
+      { command: "node --version", status: "passed", exit_code: 0, stdout: "v26", stderr: "" },
+      { command: "node --help", status: "passed", exit_code: 0, stdout: "help", stderr: "" },
+    ]);
+    const toon = formatOutput(payload, { command: "test" });
+    expect(toon).toContain("restore_with: \"not retained; a run with --check-context reports the full context\"");
+    expect(toon).not.toContain("sandbox_project_pm_path");
+    // --check-context is the explicit request for the full hoisted context, lean or not.
+    const requested = JSON.parse(
+      formatOutput(payload, { json: true, command: "test", commandOptions: { checkContext: true } }),
+    ) as Record<string, unknown>;
+    expect(requested.execution_context).toEqual(context);
     expect(
-      (projected.run_results as Array<Record<string, unknown>>).every(
+      (requested.run_results as Array<Record<string, unknown>>).every(
         (entry) => entry.execution_context === undefined,
       ),
     ).toBe(true);
+    const leanRequested = JSON.parse(
+      formatOutput(
+        { ...payload, failure_categories: { assertion_failure: 0 } },
+        { json: true, lean: true, command: "test", commandOptions: { checkContext: true } },
+      ),
+    ) as Record<string, unknown>;
+    expect(leanRequested.execution_context).toEqual(context);
+    expect(leanRequested.failure_categories).toEqual({ assertion_failure: 0 });
+    expect(leanRequested.run_results).toEqual([
+      { command: "node --version", status: "passed", exit_code: 0 },
+      { command: "node --help", status: "passed", exit_code: 0 },
+    ]);
 
     const zeroCategories = { assertion_failure: 0, timeout: 0 };
     const lean = JSON.parse(
@@ -351,12 +384,7 @@ describe("core/output/output", () => {
     ) as Record<string, unknown>;
     // pm-covpax: a passing, mismatch-free lean receipt keeps modes, the mismatch boolean and a
     // non-rerun restore hint (a rerun would repeat any mutating flags of the invocation).
-    expect(lean.execution_context).toEqual({
-      pm_context_mode: "schema",
-      workspace_context_mode: "snapshot",
-      mismatch_detected: false,
-      restore_with: "not retained; a run without --lean reports the full context",
-    });
+    expect(lean.execution_context).toEqual(decisionContext);
     expect(lean).not.toHaveProperty("failure_categories");
     expect(lean.run_results).toEqual([
       { command: "node --version", status: "passed", exit_code: 0 },
@@ -383,8 +411,10 @@ describe("core/output/output", () => {
       { ...payload, run_results: payload.run_results.map((row) => ({ ...row, execution_context: { ...context, mismatch_detected: true } })) },
       { ...payload, run_results: [payload.run_results[0], { ...payload.run_results[1], status: "skipped" }] },
     ]) {
-      const kept = JSON.parse(formatOutput(variant, { json: true, lean: true, command: "test" })) as Record<string, Record<string, unknown>>;
-      expect(kept.execution_context).toHaveProperty("sandbox_project_pm_path", "/sandbox/project");
+      for (const lean of [true, false]) {
+        const kept = JSON.parse(formatOutput(variant, { json: true, lean, command: "test" })) as Record<string, Record<string, unknown>>;
+        expect(kept.execution_context).toHaveProperty("sandbox_project_pm_path", "/sandbox/project");
+      }
     }
     const failedCategories = JSON.parse(
       formatOutput({ ...payload, failure_categories: { assertion_failure: 1 } }, { json: true, lean: true, command: "test" }),

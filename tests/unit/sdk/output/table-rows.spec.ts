@@ -18,6 +18,7 @@ import {
   encodePmTableRows,
   type PmEncodedTableRows,
 } from "../../../../src/sdk/output.js";
+import { projectPmTableEncodingForToon } from "../../../../src/sdk/output/table-rows.js";
 
 const baseline = JSON.parse(
   readFileSync(
@@ -34,7 +35,11 @@ const baseline = JSON.parse(
   }>;
 };
 
-/** Restore declared cells independently of the formatter's table-selection policy. */
+/**
+ * Restore declared cells independently of the formatter's table-selection
+ * policy. A block is recognized by its reserved `<collection>_encoding` key
+ * beside an array, never by which metadata arrays it carries (GH-1684).
+ */
 function restoreTables(value: JsonValue): JsonValue {
   if (Array.isArray(value)) return value.map(restoreTables);
   if (value === null || typeof value !== "object") return value;
@@ -47,9 +52,7 @@ function restoreTables(value: JsonValue): JsonValue {
       Array.isArray(cell) &&
       metadata !== null &&
       typeof metadata === "object" &&
-      !Array.isArray(metadata) &&
-      Array.isArray(metadata.json_columns) &&
-      Array.isArray(metadata.absent)
+      !Array.isArray(metadata)
     ) {
       result[key] = decodePmTableRows({
         rows: cell,
@@ -347,10 +350,96 @@ describe("lossless SDK table cells", () => {
         (rows) => {
           expect(decodePmTableRows(encodePmTableRows(rows))).toEqual(rows);
           expect(decodePmTableRows(encodePmTableRows(rows, { compact: true }))).toEqual(rows);
+          // GH-1684: the TOON projection drops empty arrays and groups absent cells without losing a fact.
+          for (const compact of [false, true]) {
+            const table = encodePmTableRows(rows, { compact });
+            const rendered = projectPmTableEncodingForToon(table.encoding);
+            expect(decodePmTableRows({ rows: table.rows, encoding: rendered })).toEqual(rows);
+            expect(rendered).not.toHaveProperty("absent");
+          }
         },
       ),
       { seed: 1401, numRuns: 100 },
     );
+  });
+
+  it("omits empty metadata, groups absent cells by column and still decodes every earlier block shape (GH-1684)", () => {
+    const rows = [
+      { id: "pm-a", tags: ["x", "y"], blocked: true, blocker_ids: ["pm-b"] },
+      { id: "pm-b", tags: [], order: null },
+      { id: "pm-c", tags: ["z"], blocked: true, blocker_ids: ["pm-a", "pm-b"], meta: { a: 1 } },
+    ];
+    const table = encodePmTableRows(rows, { compact: true });
+    expect(table.encoding.json_columns).toEqual(["meta"]);
+    expect(table.encoding.absent).toEqual([
+      [0, "order"], [0, "meta"], [1, "blocked"], [1, "blocker_ids"], [1, "meta"], [2, "order"],
+    ]);
+    expect(projectPmTableEncodingForToon(table.encoding)).toEqual({
+      json_columns: ["meta"],
+      absent_rows: { order: [0, 2], meta: [0, 1], blocked: [1], blocker_ids: [1] },
+      list_columns: { tags: ";", blocker_ids: ";" },
+    });
+    const uniform = encodePmTableRows([{ id: "pm-a", tags: ["x"] }, { id: "pm-b", tags: ["y"] }], { compact: true });
+    expect(projectPmTableEncodingForToon(uniform.encoding)).toEqual({ list_columns: { tags: ";" } });
+    // Legacy pair lists, column_order and blocks that carry both forms keep decoding exactly.
+    expect(decodePmTableRows(table)).toEqual(rows);
+    expect(decodePmTableRows({ rows: uniform.rows, encoding: { list_columns: { tags: ";" } } })).toEqual([
+      { id: "pm-a", tags: ["x"] },
+      { id: "pm-b", tags: ["y"] },
+    ]);
+    expect(
+      decodePmTableRows({
+        rows: table.rows,
+        encoding: { ...projectPmTableEncodingForToon(table.encoding), absent: [[1, "blocked"]] },
+      }),
+    ).toEqual(rows);
+  });
+
+  it("keeps pm context focus-table metadata below the 2026.11.7 pair-list baseline (GH-1684)", () => {
+    // Shape of the reported corpus: 11 high-level rows of which 7 are unblocked (no blocked or
+    // blocker_ids cell) and 9 uniform low-level rows, each carrying null order and tag lists.
+    const focus = (index: number, blocked: boolean) => ({
+      id: `pm-focus${index}`,
+      title: `Focus item ${index} with a realistic title length for the cold-start read`,
+      type: "Feature",
+      status: "open",
+      priority: 1,
+      order: null,
+      deadline: null,
+      assignee: null,
+      tags: ["agent-ux", "context", `area:${index}`],
+      updated_at: "2026-11-07T00:00:00.000Z",
+      parent: "pm-doxj",
+      ...(blocked ? { blocked: true, blocker_ids: [`pm-dep${index}`, `pm-dep${index + 1}`] } : {}),
+    });
+    const source = {
+      high_level: Array.from({ length: 11 }, (_, index) => focus(index, [2, 3, 7, 8].includes(index))),
+      low_level: Array.from({ length: 9 }, (_, index) => {
+        const { blocked: _blocked, blocker_ids: _ids, ...row } = focus(index + 20, false);
+        return { ...row, assignee: index % 2 === 0 ? "agent" : null };
+      }),
+    };
+    const rendered = formatBuiltInOutput(source, "toon");
+    expect(restoreTables(decode(rendered))).toEqual(source);
+    const encodingBytes = (text: string): number =>
+      text
+        .split(/\n(?=\S)/u)
+        .filter((block) => /^[a-z_]+_encoding:/u.test(block))
+        .reduce((total, block) => total + Buffer.byteLength(block), 0);
+    // The 2026.11.7 renderer wrote the SDK encoding verbatim: empty arrays and one line per absent pair.
+    const legacy = (["high_level", "low_level"] as const)
+      .map((key) => {
+        const table = encodePmTableRows(source[key], { compact: true });
+        return encode({ [`${key}_encoding`]: table.encoding as unknown as JsonValue });
+      })
+      .join("\n");
+    expect(encodingBytes(legacy)).toBe(638);
+    expect(encodingBytes(rendered)).toBeLessThanOrEqual(331);
+    expect(rendered).toContain("high_level_encoding:\n  absent_rows:");
+    expect(rendered).toContain("low_level_encoding:");
+    expect(rendered).not.toContain("json_columns: []");
+    expect(rendered).not.toContain("absent: []");
+    expect(rendered).not.toContain("absent[");
   });
 
   it("keeps producer encoding fields and falls back when metadata costs more than expansion", () => {

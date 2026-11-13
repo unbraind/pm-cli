@@ -25,7 +25,7 @@ import { readOutputPositionalRowPaths } from "../../sdk/read-output/positional-r
 import { GET_FACET_ROOTS } from "../../sdk/query/get-facet-roots.js";
 import { withDeliveredOutputRenderer } from "../../sdk/read-output-budget.js";
 import { encode as encodeToon, type JsonValue } from "@toon-format/toon";
-import { encodePmTableRows } from "../../sdk/output/table-rows.js";
+import { encodePmTableRows, projectPmTableEncodingForToon } from "../../sdk/output/table-rows.js";
 import {
   projectPmBriefListEnvelope,
   projectPmBriefSearchEnvelope,
@@ -265,10 +265,8 @@ function renderToonObjectEntry(
   if (!isPlainObject(entry) && !Array.isArray(entry)) {
     return `${indent}${key}: ${renderScalar(entry)}`;
   }
-  // A receipt that reports no omission costs one line; JSON keeps its typed form (pm-sj66lm).
-  if (key === "omission_receipt" && isCompleteOmissionReceipt(entry)) {
-    return `${indent}${key}: complete`;
-  }
+  const receipt = key === "omission_receipt" ? renderToonOmissionReceipt(entry, depth) : undefined;
+  if (receipt !== undefined) return receipt;
   if (Array.isArray(entry)) {
     if (entry.length === 0) return `${indent}${key}: []`;
     const expanded = indentToon(encodeToon({ [key]: entry }), depth);
@@ -281,7 +279,10 @@ function renderToonObjectEntry(
       const candidates = [false, true].map(compact => {
         const table = encodePmTableRows(entry as Record<string, JsonValue>[], { compact });
         return indentToon(
-          encodeToon({ [key]: table.rows, [`${key}_encoding`]: table.encoding }),
+          encodeToon({
+            [key]: table.rows,
+            [`${key}_encoding`]: projectPmTableEncodingForToon(table.encoding),
+          }),
           depth,
         );
       });
@@ -295,6 +296,57 @@ function renderToonObjectEntry(
     return `${indent}${key}: {}`;
   }
   return `${indent}${key}:\n${renderToonValue(entry, depth + 1)}`;
+}
+
+/**
+ * Render an omission receipt in its shortest faithful TOON form: one line when
+ * it reports no omission (pm-sj66lm), or the named form when every hint
+ * derives from its group name (GH-1703). Undefined leaves the receipt to the
+ * generic renderer; JSON always keeps the typed receipt.
+ */
+function renderToonOmissionReceipt(entry: unknown, depth: number): string | undefined {
+  const indent = "  ".repeat(depth);
+  if (isCompleteOmissionReceipt(entry)) return `${indent}omission_receipt: complete`;
+  const named = isPlainObject(entry) ? projectDerivableOmissionReceipt(entry) : undefined;
+  if (named === undefined) return undefined;
+  const rowsText = `${indent}omission_receipt:\n${renderToonValue(entry, depth + 1)}`;
+  const namedText = `${indent}omission_receipt:\n${renderToonValue(named, depth + 1)}`;
+  return Buffer.byteLength(namedText) < Buffer.byteLength(rowsText) ? namedText : rowsText;
+}
+
+/**
+ * A receipt whose every restore hint is one shared prefix followed by the
+ * group's own name, such as `--section progress`, says the same thing as the
+ * name list plus one `<name>` template. TOON renders that form when it is
+ * smaller; a row whose hint is not derivable from its name, or any extra row
+ * field, keeps the per-row table. JSON keeps the typed per-row form (GH-1703).
+ */
+function projectDerivableOmissionReceipt(
+  receipt: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  const groups = receipt.omitted_field_groups;
+  if (!Array.isArray(groups) || groups.length === 0 || Object.hasOwn(receipt, "restore_with")) {
+    return undefined;
+  }
+  const names: string[] = [];
+  let prefix: string | undefined;
+  for (const group of groups) {
+    if (!isPlainObject(group) || Object.keys(group).length !== 2) return undefined;
+    const { name, restore_with: restoreWith } = group;
+    if (typeof name !== "string" || name.length === 0) return undefined;
+    if (typeof restoreWith !== "string" || !restoreWith.endsWith(name)) return undefined;
+    const groupPrefix = restoreWith.slice(0, restoreWith.length - name.length);
+    if (prefix !== undefined && groupPrefix !== prefix) return undefined;
+    prefix = groupPrefix;
+    names.push(name);
+  }
+  return Object.fromEntries(
+    Object.entries(receipt).flatMap(([key, value]) =>
+      key === "omitted_field_groups"
+        ? [[key, names], ["restore_with", `${prefix}<name>`]]
+        : [[key, value]],
+    ),
+  );
 }
 
 /** Independent presentation policies shared by recursive value compaction. */
@@ -474,9 +526,12 @@ function projectLeanJsonValue(value: unknown): unknown {
  * Hoist an invocation-wide linked-test sandbox context out of repeated result
  * rows. Lean output also removes successful-process streams while retaining
  * failure diagnostics, so agents pay once for context and only for actionable
- * evidence.
+ * evidence. A quiet success reports only the context's decision fields in
+ * every format, because the sandbox paths, counts and fingerprint explain
+ * nothing about a run that passed and carry host paths into pasted evidence;
+ * `--check-context` asks for the full context explicitly (GH-1702).
  */
-function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
+function projectLinkedTestEvidence(value: unknown, lean: boolean, fullContext: boolean): unknown {
   if (!isPlainObject(value) || !Array.isArray(value.run_results)) {
     return value;
   }
@@ -500,14 +555,23 @@ function projectLinkedTestEvidence(value: unknown, lean: boolean): unknown {
     }
     return rest;
   });
-  if (lean && isQuietLinkedTestSuccess(value, sharedContext, rows)) {
-    return projectQuietLinkedTestSuccess(value, sharedContext, runResults);
+  const quietContext =
+    !fullContext && isQuietLinkedTestSuccess(value, sharedContext, rows)
+      ? sharedContext
+      : undefined;
+  if (lean && quietContext !== undefined) {
+    return projectQuietLinkedTestSuccess(value, quietContext, runResults);
   }
   return {
     ...value,
     ...(sharedContext === undefined
       ? {}
-      : { execution_context: sharedContext }),
+      : {
+          execution_context:
+            quietContext === undefined
+              ? sharedContext
+              : projectLinkedTestDecisionContext(quietContext),
+        }),
     run_results: runResults,
   };
 }
@@ -540,31 +604,38 @@ function isQuietLinkedTestSuccess(
 }
 
 /**
- * Lean receipts for a passing, mismatch-free run with no failure category keep
- * the sandbox modes, the mismatch and trust booleans and the trust reason that
- * explain what the tests saw; a passing run can still be untrusted under an
- * explicit override, so `trusted: false` is never dropped. The sandbox paths,
- * item counts and all-zero failure categories are not retained by this
- * receipt. The hint never tells the caller to rerun, because a rerun repeats
- * any mutating flags of the original invocation (pm-covpax).
+ * The decision fields of a quiet success's context: the sandbox modes, the
+ * mismatch and trust booleans and the trust reason that explain what the
+ * tests saw. A passing run can still be untrusted under an explicit override,
+ * so `trusted: false` is never dropped. The sandbox and source paths, item
+ * counts, seeding flags and trust fingerprint are not retained. The hint names
+ * the flag without telling the caller to rerun, because a rerun repeats any
+ * mutating flags of the original invocation (pm-covpax).
  */
+function projectLinkedTestDecisionContext(
+  context: Record<string, unknown>,
+): Record<string, unknown> {
+  const trust = isPlainObject(context.trust) ? context.trust : {};
+  return {
+    pm_context_mode: context.pm_context_mode,
+    workspace_context_mode: context.workspace_context_mode,
+    mismatch_detected: false,
+    ...(typeof trust.trusted === "boolean" ? { trusted: trust.trusted } : {}),
+    ...(trust.reason === undefined ? {} : { trust_reason: trust.reason }),
+    restore_with: "not retained; a run with --check-context reports the full context",
+  };
+}
+
+/** Lean receipts for a quiet success also omit the all-zero failure categories. */
 function projectQuietLinkedTestSuccess(
   value: Record<string, unknown>,
   context: Record<string, unknown>,
   runResults: unknown[],
 ): Record<string, unknown> {
   const { failure_categories: _zeroCategories, ...rest } = value;
-  const trust = isPlainObject(context.trust) ? context.trust : {};
   return {
     ...rest,
-    execution_context: {
-      pm_context_mode: context.pm_context_mode,
-      workspace_context_mode: context.workspace_context_mode,
-      mismatch_detected: false,
-      ...(typeof trust.trusted === "boolean" ? { trusted: trust.trusted } : {}),
-      ...(trust.reason === undefined ? {} : { trust_reason: trust.reason }),
-      restore_with: "not retained; a run without --lean reports the full context",
-    },
+    execution_context: projectLinkedTestDecisionContext(context),
     run_results: runResults,
   };
 }
@@ -875,7 +946,11 @@ function formatEffectiveOutput(
   propagateContextUsageServingReceipt(effectiveResult, outputResult);
   const projectedOutputResult =
     command === "test"
-      ? projectLinkedTestEvidence(outputResult, options.lean === true)
+      ? projectLinkedTestEvidence(
+          outputResult,
+          options.lean === true,
+          commandOptions.checkContext === true,
+        )
       : outputResult;
   /**
    * Render one value exactly as it is delivered. A budget refusal is always

@@ -21,14 +21,26 @@ Existing flat tables remain unchanged.
 Nested table cells contain JSON text. `<collection>_encoding.json_columns` names
 every column using this codec; all present cells in such a column use JSON,
 including scalar cells, so strings that resemble JSON remain distinguishable.
-`absent` contains `[row_index, column_name]` pairs for missing fields. Null padding
-does not imply an explicit null in the original object. Column order follows
-first occurrence; row order, ranking, identities, and nested facts are preserved.
-A compact candidate omits columns that are null in every row and names them in
+`absent_rows` maps each column with missing fields to the zero-based rows that
+lack it, for example `blocked[7]: 0,1,4,5,6,9,10`. Null padding does not imply
+an explicit null in the original object. Column order follows first occurrence;
+row order, ranking, identities, and nested facts are preserved. A compact
+candidate omits columns that are null in every row and names them in
 `null_columns`; `null_column_index` records each omitted column's original
 position, so restoration is exact without repeating the full column list
 (decoders still accept the legacy `column_order`).
 A producer-owned `<collection>_encoding` field prevents this transformation.
+
+Recognize a block by its reserved `<collection>_encoding` key beside the
+`<collection>` array, not by which fields it carries. TOON leaves out an empty
+`json_columns` list and an empty set of missing fields, so a block may hold
+only `list_columns` or `null_columns`. Releases up to 2026.11.13 always wrote
+`json_columns` and an `absent` list of `[row_index, column_name]` pairs;
+`decodePmTableRows` still restores those blocks. On a 20-row `pm context` read
+of this repository's tracker, encoding metadata fell from 618 to 310 bytes
+([pm-gh1684](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1684.toon);
+repository-only tracker record excluded from npm). `encodePmTableRows` still
+returns both arrays, so SDK callers that read its result are unaffected.
 
 Package authors can use `encodePmTableRows` and `decodePmTableRows` from
 `@unbrained/pm-cli/sdk`. The helpers accept JSON object rows and return primitive

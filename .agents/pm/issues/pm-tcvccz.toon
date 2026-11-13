@@ -1,0 +1,23 @@
+id: pm-tcvccz
+title: "pm test-all prints the full 21-field execution_context, with host paths, on every passing linked-test row"
+description: "Found while implementing pm-gh1702 (2026-11-13). pm test-all keeps the complete sandbox execution_context on every run_results row of every item: requested and effective modes, the sandbox and source project and global tracker paths, four item counts, seeding flags, the working directory, the source workspace root and the trust fingerprint. The command projection that pm-fqdmbf (GH-803) and pm-gh1702 added applies only to pm test, so test-all neither hoists the shared part nor reduces a quiet pass to its decision fields. Measured on a fresh tracker with one item and one passing test: default TOON 1,947 B, most of it one execution_context table cell set carrying four absolute paths (the source tracker and global root under the caller's checkout and home, plus the per-run sandbox). Each run gets its own sandbox directory, so the per-row contexts differ and a plain hoist would not fire; the decision-field projection per quiet row is the lever. Duplicate check: searched test-all execution_context hoist and lean; pm-fqdmbf (closed) and pm-gh1702 cover pm test only, pm-5a4f (closed) covers test-all limit and offset."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,linked-tests,privacy,token-efficiency
+created_at: "2026-11-13T07:54:29.038Z"
+updated_at: "2026-11-13T08:35:36.879Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A passing, mismatch-free, trusted test-all row reports only the five decision fields of execution_context in TOON and JSON; Failing, refused, skipped and mismatched rows keep the full context; --check-context restores the full context on every row, and the default projection prints no absolute path outside the tracker"
+parent: pm-5t33or
+risk: low
+confidence: high
+severity: medium
+expected_result: A passing test-all run prints small per-row contexts with no host paths
+actual_result: Every row carries the full 21-field context with four absolute paths
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fqdmbf,related,"2026-11-13T07:54:29.038Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1702,discovered_from,"2026-11-13T07:54:29.038Z","harness:claude-code","cli:create:dep",detected
+  pm-5a4f,related,"2026-11-13T08:35:34.446Z","harness:claude-code","cli:update:dep",detected
+body: ""

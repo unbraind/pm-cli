@@ -3233,6 +3233,13 @@
       ],
       "package_version": "2026.11.11",
       "reason": "pm-xcndcu: BoundaryFixtureReport and DefectGateEvidenceReport gain a required waiver_notices array; BoundaryFixtureRegistry and DefectRecurrencePolicy gain an optional waiver_notice_days. Readers are unaffected; code that constructs these reports must add waiver_notices."
+    },
+    {
+      "changes": [
+        "signature ./sdk:decodePmTableRows"
+      ],
+      "package_version": "2026.11.13",
+      "reason": "pm-gh1684: decodePmTableRows widens its parameter to PmRenderedTableCellEncoding (json_columns and absent optional, absent_rows added); every PmEncodedTableRows argument remains valid, so callers need no change"
     }
   ],
   "entrypoints": {
@@ -7131,7 +7138,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "decodePmTableRows",
-          "signature": "(table: PmEncodedTableRows) => Record<string, JsonValue>[] | calls: (table: PmEncodedTableRows) => Record<string, JsonValue>[]"
+          "signature": "(table: { rows: PmEncodedTableRows[\"rows\"]; encoding: PmRenderedTableCellEncoding; }) => Record<string, JsonValue>[] | calls: (table: { rows: PmEncodedTableRows[\"rows\"]; encoding: PmRenderedTableCellEncoding; }) => Record<string, JsonValue>[]"
         },
         {
           "classification": "supported",
@@ -16258,6 +16265,12 @@
           "kind": "interface",
           "name": "PmRefusalStateContract",
           "signature": "export interface PmRefusalStateContract { state: string; probe_id: string; entrypoints: string[]; expected_exit_class: PmErrorCodeClass; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "PmRenderedTableCellEncoding",
+          "signature": "export interface PmRenderedTableCellEncoding extends Omit<PmTableCellEncoding, \"json_columns\" | \"absent\"> { json_columns?: string[]; absent?: Array<[ number, string ]>; absent_rows?: Record<string, number[]>; }"
         },
         {
           "classification": "advanced_export",
@@ -40419,7 +40432,7 @@
       "checked_functions": 1329,
       "checked_values": 395,
       "exempt_test_seams": 15,
-      "referenced_types": 1036
+      "referenced_types": 1037
     },
     "./sdk/authoring": {
       "checked_functions": 54,

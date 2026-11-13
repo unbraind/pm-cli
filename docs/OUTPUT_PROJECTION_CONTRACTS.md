@@ -478,9 +478,12 @@ rejected.
 Tracked by [pm-gh1603](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1603.toon)
 (tracker record excluded from npm). The SDK `encodePmTableRows(rows, { compact: true })`
 can declare `list_columns` (column to delimiter) and `null_columns` alongside
-`json_columns` and `absent`. Omitted null columns also carry `column_order`
-to restore their original first-occurrence positions. `decodePmTableRows` restores
-these facts exactly.
+`json_columns` and `absent`. Omitted null columns also carry `null_column_index`
+(earlier releases wrote `column_order`) to restore their original
+first-occurrence positions. `decodePmTableRows` restores these facts exactly.
+TOON output leaves out empty `json_columns` and `absent` arrays and groups
+missing fields by column in `absent_rows`; a decoder recognizes the block by
+its `<collection>_encoding` key ([Fact-preserving agent output](AGENT_OUTPUT_ENCODINGS.md)).
 A safe string-array column uses `;` between nonempty members; an empty cell means
 an empty array. Any empty member, delimiter collision, mixed type or nested value
 uses the existing JSON-column encoding instead. Null columns are omitted only

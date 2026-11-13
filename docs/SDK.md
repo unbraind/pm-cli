@@ -2389,7 +2389,10 @@ The CLI applies these projections only to TOON; ordinary JSON and SDK query
 results retain their complete contracts. The public `encodePmTableRows` and
 `decodePmTableRows` primitives distinguish explicit null and empty cells from
 missing keys. TOON rendering preserves those row facts before selecting the
-smaller expanded or tabular encoding.
+smaller expanded or tabular encoding. `decodePmTableRows` accepts a
+`PmRenderedTableCellEncoding`: the TOON form that omits empty `json_columns`
+and `absent` and groups missing fields in `absent_rows`, as well as every block
+shape earlier releases emitted.
 
 Migration note: before this contract, `total` was present only when pagination
 omitted rows, a completed page omitted `next_cursor`, and verbose results

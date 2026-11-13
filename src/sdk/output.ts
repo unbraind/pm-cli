@@ -16,6 +16,7 @@ export {
   encodePmTableRows,
   decodePmTableRows,
   type PmTableCellEncoding,
+  type PmRenderedTableCellEncoding,
   type PmEncodedTableRows,
 } from "./output/table-rows.js";
 

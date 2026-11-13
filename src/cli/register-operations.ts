@@ -937,7 +937,7 @@ function addLinkedTestExecutionOptions(command: Command): Command {
     )
     .option(
       "--check-context",
-      "Check PM context before execution",
+      "Check PM context before execution and report the full execution context",
     )
     .option(
       "--auto-pm-context",
