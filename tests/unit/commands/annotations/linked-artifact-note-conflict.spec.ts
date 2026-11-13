@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { PassThrough } from "node:stream";
+import { describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { runDocs } from "../../../../src/sdk/docs.js";
@@ -95,7 +96,8 @@ describe("GH-1716 linked-artifact note conflicts", () => {
 
       const repeated = await runDocs(id, { add: ["path=docs/a.md,note=one", "docs/a.md", "path=docs/b.md,note=first note"] }, global);
       expect(repeated).toMatchObject({ changed: true, docs: [{ path: "docs/b.md", scope: "project", note: "first note" }] });
-      expect(repeated.mutation_receipt?.link_outcomes?.map((entry) => entry.outcome)).toEqual(["unchanged", "unchanged", "note_added"]);
+      // One outcome per link, however many entries in the write named it.
+      expect(repeated.mutation_receipt?.link_outcomes?.map((entry) => entry.outcome)).toEqual(["unchanged", "note_added"]);
 
       const appended = await runDocs(id, { add: ["path=docs/a.md,note=two"], noteConflict: "append" }, global);
       expect(appended.docs).toEqual([{ path: "docs/a.md", scope: "project", note: "one; two" }]);
@@ -111,7 +113,7 @@ describe("GH-1716 linked-artifact note conflicts", () => {
       // A link first added in this same write takes a later note: no stored rationale is at stake.
       const sameWrite = await runDocs(id, { add: ["path=docs/c.md,note=draft", "path=docs/c.md,note=final"] }, global);
       expect(sameWrite.docs).toEqual([{ path: "docs/c.md", scope: "project", note: "final" }]);
-      expect(sameWrite.mutation_receipt?.link_outcomes?.map((entry) => entry.outcome)).toEqual(["added", "added"]);
+      expect(sameWrite.mutation_receipt?.link_outcomes).toEqual([{ path: "docs/c.md", scope: "project", outcome: "added" }]);
       const sameWriteNoteless = await runDocs(id, { add: ["docs/d.md", "path=docs/d.md,note=later", "docs/d.md"] }, global);
       expect(sameWriteNoteless.docs).toEqual([{ path: "docs/d.md", scope: "project", note: "later" }]);
     });
@@ -140,6 +142,72 @@ describe("GH-1716 linked-artifact note conflicts", () => {
         ]);
       } finally {
         process.chdir(cwd);
+      }
+    });
+  });
+
+  it("judges outcomes from saved end states, in storage's path form (Codex review)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "end-state outcomes" });
+      const global = { path: context.pmPath };
+      await runFiles(id, { add: ["path=a.ts,note=original"] }, global);
+
+      // Revising a note and restoring it in one write saves nothing, so nothing is reported as replaced.
+      const restored = await runFiles(id, { add: ["path=a.ts,note=temporary", "path=a.ts,note=original"], noteConflict: "replace" }, global);
+      expect(restored).toMatchObject({ changed: false, mutation_receipt: { changed_count: 0, link_outcomes: [{ path: "a.ts", outcome: "unchanged" }] } });
+
+      // An append whose text contains the joiner is recognised on retry.
+      const compound = { add: ["path=a.ts,note=first; second"], noteConflict: "append" as const };
+      expect((await runFiles(id, compound, global)).files).toEqual([{ path: "a.ts", scope: "project", note: "original; first; second" }]);
+      expect(await runFiles(id, compound, global)).toMatchObject({ changed: false, mutation_receipt: { link_outcomes: [{ outcome: "unchanged" }] } });
+
+      // Replacing then appending in one write is a replacement of the stored note.
+      const replacedThenAppended = await runFiles(id, { add: ["path=a.ts,note=x", "path=a.ts,note=y"], noteConflict: "replace" }, global);
+      expect(replacedThenAppended.mutation_receipt?.link_outcomes).toEqual([{ path: "a.ts", scope: "project", outcome: "note_replaced" }]);
+
+      // A migration whose destination uses backslashes reports the path storage saved.
+      const migrated = await runFiles(id, { add: ["path=old/b.ts,note=moved"], migrate: ["from=old/,to=new\\"] }, global);
+      expect(migrated.files).toEqual([{ path: "new/b.ts", scope: "project", note: "moved" }]);
+      expect(migrated.mutation_receipt?.link_outcomes).toEqual([{ path: "new/b.ts", scope: "project", outcome: "added" }]);
+    });
+  });
+
+  it("spells a resolved literal '-' entry in its keyed form so the retry never reads stdin (Codex review)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "dash path" });
+      const global = { path: context.pmPath };
+      await runFiles(id, { add: ["path=-,note=kept"] }, global);
+      // The add entry arrives on stdin and resolves to the literal path "-".
+      const refused = context.runCli(["files", id, "--add", "-", "--note", "second", "--json"], { input: "-" });
+      expect(refused.code).toBe(4);
+      const envelope = JSON.parse(refused.stderr || refused.stdout) as { recovery: { suggested_retry_args: string[] } };
+      const retry = envelope.recovery.suggested_retry_args;
+      expect(retry.slice(retry.indexOf("files"))).toEqual([
+        "files", id, "--add", "path=-", "--note", "second", "--note-conflict", "append",
+      ]);
+      const executed = context.runCli([...retry, "--json"], { expectJson: true, preserveDefaultMutationOutput: true });
+      expect(executed.code, executed.stderr).toBe(0);
+      expect((await runFiles(id, {}, global)).files).toEqual([{ path: "-", scope: "project", note: "kept; second" }]);
+    });
+  });
+
+  it("spells a stdin-resolved '-' remove and glob in keyed form in the in-process retry", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "dash remove" });
+      const global = { path: context.pmPath };
+      await runFiles(id, { add: ["path=a.ts,note=kept", "path=-"] }, global);
+      const stdinStream = new PassThrough();
+      stdinStream.end("-");
+      Object.defineProperty(stdinStream, "isTTY", { value: false, configurable: true });
+      const stdin = vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream & { fd: 0 });
+      try {
+        const error = await refusal(runFiles(id, { add: ["path=a.ts,note=other"], remove: ["-"], addGlob: ["nothing-matches/*.md"] }, global));
+        const retry = error.context.recovery?.suggested_retry_args as string[];
+        expect(retry.slice(retry.indexOf("files"))).toEqual([
+          "files", id, "--add", "path=a.ts,note=other", "--add-glob", "nothing-matches/*.md", "--remove", "path=-", "--note-conflict", "append",
+        ]);
+      } finally {
+        stdin.mockRestore();
       }
     });
   });
@@ -192,6 +260,8 @@ describe("GH-1716 linked-artifact note conflicts", () => {
     expect(reviseLinkedNote("a", "b", "refuse")).toEqual({ note: "a", outcome: "unchanged", conflict: true });
     expect(reviseLinkedNote("a", "b", "replace")).toEqual({ note: "b", outcome: "note_replaced", conflict: false });
     expect(reviseLinkedNote("a; b", "b", "append")).toEqual({ note: "a; b", outcome: "unchanged", conflict: false });
+    expect(reviseLinkedNote("a; b; c", "b; c", "append")).toEqual({ note: "a; b; c", outcome: "unchanged", conflict: false });
+    expect(reviseLinkedNote("ab", "b", "append")).toEqual({ note: "ab; b", outcome: "note_appended", conflict: false });
     expect(reviseLinkedNote("a", "b", "append")).toEqual({ note: "a; b", outcome: "note_appended", conflict: false });
     expect(parseNoteConflictMode(undefined, false)).toBe("refuse");
   });

@@ -129,7 +129,9 @@ export function reviseLinkedNote(
   if (existing === undefined) return { note: requested, outcome: "note_added", conflict: false };
   if (mode === "replace") return { note: requested, outcome: "note_replaced", conflict: false };
   if (mode === "append") {
-    return existing.split(LINKED_ARTIFACT_NOTE_JOINER).includes(requested)
+    // A requested note that already appears as a whole run of joined segments (even one containing the joiner) is not appended again.
+    const joiner = LINKED_ARTIFACT_NOTE_JOINER;
+    return `${joiner}${existing}${joiner}`.includes(`${joiner}${requested}${joiner}`)
       ? { note: existing, outcome: "unchanged", conflict: false }
       : { note: `${existing}${LINKED_ARTIFACT_NOTE_JOINER}${requested}`, outcome: "note_appended", conflict: false };
   }
@@ -891,8 +893,55 @@ function applyLinkedArtifactMigrations(
 interface LinkedArtifactMergeState {
   merged: LinkedArtifact[];
   addedHere: Set<LinkedArtifact>;
-  outcomes: LinkedArtifactLinkOutcomeEntry[];
   conflicts: LinkedArtifactNoteConflict[];
+}
+
+/** A linked path as storage writes it: item-format normalization turns every backslash into a slash. */
+function storedLinkedPath(value: string): string {
+  return value.replaceAll("\\", "/");
+}
+
+/** Identity of a link as storage keys it. */
+function storedLinkKey(entry: LinkedArtifact): string {
+  return `${entry.scope}\0${storedLinkedPath(entry.path)}`;
+}
+
+/**
+ * One outcome per requested link, judged from the note it had before this
+ * write and the note the write leaves (GH-1716). Comparing end states, not the
+ * steps that reached them, keeps a batch that revises a note and then restores
+ * it from reporting a change storage never saved.
+ */
+function linkedArtifactOutcomes(
+  baseline: readonly LinkedArtifact[],
+  merged: readonly LinkedArtifact[],
+  adds: readonly LinkedArtifact[],
+): LinkedArtifactLinkOutcomeEntry[] {
+  const before = new Map(baseline.map((entry) => [storedLinkKey(entry), entry.note]));
+  const after = new Map(merged.map((entry) => [storedLinkKey(entry), entry.note]));
+  const outcomes = new Map<string, LinkedArtifactLinkOutcomeEntry>();
+  for (const add of adds) {
+    const key = storedLinkKey(add);
+    if (outcomes.has(key)) continue;
+    outcomes.set(key, {
+      path: storedLinkedPath(add.path),
+      scope: add.scope,
+      outcome: classifyLinkOutcome(before.has(key), before.get(key), after.get(key)),
+    });
+  }
+  return [...outcomes.values()];
+}
+
+/** What a link's note went through between the baseline and the end of the write. */
+function classifyLinkOutcome(
+  existed: boolean,
+  prior: string | undefined,
+  final: string | undefined,
+): LinkedArtifactLinkOutcome {
+  if (!existed) return "added";
+  if (final === prior) return "unchanged";
+  if (prior === undefined) return "note_added";
+  return final?.startsWith(`${prior}${LINKED_ARTIFACT_NOTE_JOINER}`) ? "note_appended" : "note_replaced";
 }
 
 /** Apply one add: append a new link, let a later add revise a link this write added, or revise a stored note as the mode allows. */
@@ -911,7 +960,6 @@ function applyLinkedArtifactAdd(
     if (stored === undefined) state.merged.push(entry);
     else state.merged[index] = entry;
     state.addedHere.add(entry);
-    state.outcomes.push({ path: add.path, scope: add.scope, outcome: "added" });
     return;
   }
   const revision = reviseLinkedNote(stored.note, add.note, noteConflict);
@@ -920,7 +968,6 @@ function applyLinkedArtifactAdd(
   } else if (revision.note !== stored.note) {
     state.merged[index] = { ...stored, note: revision.note };
   }
-  state.outcomes.push({ path: add.path, scope: add.scope, outcome: revision.outcome });
 }
 
 /**
@@ -940,14 +987,15 @@ function mergeLinkedArtifactChanges(
   outcomes: LinkedArtifactLinkOutcomeEntry[];
   conflicts: LinkedArtifactNoteConflict[];
 } {
+  const baseline = dedupeLinkedArtifacts(current);
   const state: LinkedArtifactMergeState = {
-    merged: dedupeLinkedArtifacts(current),
+    merged: [...baseline],
     addedHere: new Set(),
-    outcomes: [],
     conflicts: [],
   };
   for (const add of adds) applyLinkedArtifactAdd(state, add, noteConflict);
   const { merged } = state;
+  const outcomes = linkedArtifactOutcomes(baseline, merged, adds);
   if (removes.length > 0) {
     for (let index = merged.length - 1; index >= 0; index -= 1) {
       if (removes.includes(merged[index].path)) merged.splice(index, 1);
@@ -955,7 +1003,7 @@ function mergeLinkedArtifactChanges(
   }
   return {
     entries: appendStable ? merged : sortLinkedArtifacts(merged),
-    outcomes: state.outcomes,
+    outcomes,
     conflicts: state.conflicts,
   };
 }
@@ -1079,9 +1127,16 @@ function firstRefusedAddEntry(entries: readonly string[], bareNoun: "file" | "do
   }) + 1;
 }
 
-/** Repeat one flag per value, as the CLI received a repeatable option. */
-function repeatFlag(flag: string, values: readonly string[] | undefined): string[] {
-  return (values ?? []).flatMap((value) => [flag, value]);
+/**
+ * Repeat one flag per value, as the CLI received a repeatable option. Values
+ * are already resolved, so a literal "-" is spelled as its keyed form: replayed
+ * bare, it would read stdin instead of naming the path.
+ */
+function repeatFlag(flag: string, values: readonly string[] | undefined, literalKey?: string): string[] {
+  return (values ?? []).flatMap((value) => [
+    flag,
+    literalKey !== undefined && value.trim() === "-" ? `${literalKey}=-` : value,
+  ]);
 }
 
 /**
@@ -1109,9 +1164,9 @@ function noteRecoveryRetryArgs(params: {
     ...params.guards.map((guard) => `--expect-hash=${guard}`),
     params.config.metadataKey,
     params.id,
-    ...repeatFlag("--add", params.entries.map((entry, index) => (index === params.position - 1 ? params.rewritten : entry))),
-    ...repeatFlag("--add-glob", params.resolved.addGlob),
-    ...repeatFlag("--remove", params.resolved.remove),
+    ...repeatFlag("--add", params.entries.map((entry, index) => (index === params.position - 1 ? params.rewritten : entry)), "path"),
+    ...repeatFlag("--add-glob", params.resolved.addGlob, "pattern"),
+    ...repeatFlag("--remove", params.resolved.remove, "path"),
     ...repeatFlag("--migrate", params.resolved.migrate),
     ...(options.note === undefined ? [] : ["--note", options.note]),
     ...(noteConflict === undefined ? [] : ["--note-conflict", noteConflict]),

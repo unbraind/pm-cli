@@ -975,7 +975,8 @@ when it cannot run, the command still exits 0 and reports
 code. The `session-state` lease is reclaimed once it is past its TTL. A stale
 item lock under `governance.force_required_for_stale_lock` is refused before
 any write with `stale_lock_requires_override`, whose `details.lock_path` names
-the tracker-relative lock file and whose next step is `pm gc --scope locks`.
+the tracker-relative lock file and whose next step is `pm gc --scope locks`, scoped with `--pm-path` when the lock
+belongs to a tracker other than the one the working directory resolves to.
 
 Starting work respects declared blockers
 ([pm-urzubi](../.agents/pm/issues/pm-urzubi.toon)). `pm update <id> --status

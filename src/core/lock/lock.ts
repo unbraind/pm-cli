@@ -16,7 +16,8 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError, type PmCliErrorContext } from "../shared/errors.js";
 import { toErrorMessage } from "../shared/primitives.js";
-import { getLockPath } from "../store/paths.js";
+import { getLockPath, getSettingsPath, resolvePmRoot } from "../store/paths.js";
+import { renderPmCommand } from "../shared/command-line.js";
 import { nowIso } from "../shared/time.js";
 
 import {
@@ -714,33 +715,51 @@ function resolveLockOverrideRelease(
 }
 
 /**
- * Refuse to reclaim an expired lease when policy requires an explicit override.
- * The refusal names the lock by its tracker-relative path and the remedy that
- * works for every command, pm gc --scope locks; --force reclaims the lease only
- * where a command forwards it to this lock (GH-1706).
+ * The cleanup step for a stale lock: pm gc --scope locks against the tracker
+ * that holds it, scoped with --pm-path (relative to the working directory)
+ * when that is not the tracker this directory resolves to, or a manual removal
+ * when the lock root is not a tracker at all (GH-1706).
  */
-function throwIfStaleLockNeedsForce(
+async function staleLockCleanupStep(lockPath: string, relativeLockPath: string): Promise<string> {
+  const lockRoot = path.dirname(path.dirname(lockPath));
+  try {
+    await fs.access(getSettingsPath(lockRoot));
+  } catch {
+    return `Remove ${relativeLockPath} under ${path.relative(process.cwd(), lockRoot) || "."} once its owner is confirmed gone, then retry the same command.`;
+  }
+  const cwd = process.cwd();
+  const scope = path.resolve(resolvePmRoot(cwd)) === path.resolve(lockRoot)
+    ? []
+    : ["--pm-path", path.relative(cwd, lockRoot) || "."];
+  return `Run ${renderPmCommand([...scope, "gc", "--scope", "locks"])} (add --dry-run to preview), then retry the same command.`;
+}
+
+/**
+ * Refuse to reclaim an expired lease when policy requires an explicit override.
+ * The refusal names the lock by its root-relative path and a cleanup that works
+ * for every command; --force reclaims the lease only where a command forwards it
+ * to this lock (GH-1706).
+ */
+async function throwIfStaleLockNeedsForce(
   id: string,
   lockPath: string,
   lockInfo: LockReadResult,
   force: boolean,
   forceRequired: boolean,
-): void {
+): Promise<void> {
   if (!force && forceRequired) {
     const warningSuffix =
       lockInfo.warnings.length > 0 ? ` (${lockInfo.warnings.join(",")})` : "";
-    const trackerPath = `locks/${path.basename(lockPath)}`;
+    const relativeLockPath = `locks/${path.basename(lockPath)}`;
     throw new PmCliError(
-      `Lock ${id} is stale${warningSuffix}; remove it with pm gc --scope locks, or rerun with --force where this command accepts it`,
+      `Lock ${id} is stale${warningSuffix}; remove the expired lease, or rerun with --force where this command accepts it`,
       EXIT_CODE.CONFLICT,
       {
         code: "stale_lock_requires_override",
-        details: { lock_id: id, lock_path: trackerPath },
-        why: `The lease in ${trackerPath} is past its TTL, and force_required_for_stale_lock keeps an expired lease until it is removed explicitly.`,
+        details: { lock_id: id, lock_path: relativeLockPath },
+        why: `The lease in ${relativeLockPath} is past its TTL, and force_required_for_stale_lock keeps an expired lease until it is removed explicitly.`,
         required: "Remove the expired lease, then retry the same command.",
-        nextSteps: [
-          "Run pm gc --scope locks (add --dry-run to preview), then retry the same command.",
-        ],
+        nextSteps: [await staleLockCleanupStep(lockPath, relativeLockPath)],
       },
     );
   }
@@ -997,7 +1016,7 @@ async function removeConfirmedStaleLock(params: {
         staleRemovalCounted: false,
       };
     }
-    throwIfStaleLockNeedsForce(
+    await throwIfStaleLockNeedsForce(
       params.id,
       params.lockPath,
       currentLockInfo,

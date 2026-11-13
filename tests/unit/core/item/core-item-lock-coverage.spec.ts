@@ -18,6 +18,8 @@ import {
   type ExtensionHookRegistry,
 } from "../../../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
+import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
+import type { PmCliError } from "../../../../src/core/shared/errors.js";
 import { getLockPath } from "../../../../src/core/store/paths.js";
 import type { ItemMetadata } from "../../../../src/types/index.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
@@ -773,7 +775,7 @@ describe("core/lock/lock additional branch coverage", () => {
         acquireLock(pmPath, id, 60, "owner-a", false),
       ).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
-        message: `Lock ${id} is stale; remove it with pm gc --scope locks, or rerun with --force where this command accepts it`,
+        message: `Lock ${id} is stale; remove the expired lease, or rerun with --force where this command accepts it`,
         context: {
           code: "stale_lock_requires_override",
           details: { lock_id: id, lock_path: `locks/${id}.lock` },
@@ -782,6 +784,50 @@ describe("core/lock/lock additional branch coverage", () => {
           ],
         },
       });
+    });
+  });
+
+  it("scopes the stale-lock cleanup to the tracker that holds the lock, and names a manual removal outside any tracker", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      const id = "pm-lock-other-tracker";
+      const stale = (lockId: string) =>
+        `${JSON.stringify({ id: lockId, pid: 1, owner: "other-owner", created_at: STALE_TS, ttl_seconds: 60 })}\n`;
+      // Another tracker than the one this invocation resolves to (PM_PATH selects pmPath).
+      const otherRoot = path.join(tempRoot, "other tracker", ".agents", "pm");
+      await fs.mkdir(path.join(otherRoot, "locks"), { recursive: true });
+      await fs.writeFile(path.join(otherRoot, "settings.json"), "{}\n");
+      await fs.writeFile(getLockPath(otherRoot, id), stale(id));
+      const other = await acquireLock(otherRoot, id, 60, "owner-a", false).catch((error: unknown) => error as PmCliError);
+      expect((other as PmCliError).context.nextSteps).toEqual([
+        `Run ${renderPmCommand(["--pm-path", path.relative(process.cwd(), otherRoot), "gc", "--scope", "locks"])} (add --dry-run to preview), then retry the same command.`,
+      ]);
+
+      // A lock root that is no tracker (for example the merge-driver lock under the git directory).
+      const plainRoot = path.join(tempRoot, "plain");
+      await fs.mkdir(path.join(plainRoot, "locks"), { recursive: true });
+      await fs.writeFile(getLockPath(plainRoot, "merge-driver-config"), stale("merge-driver-config"));
+      const plain = await acquireLock(plainRoot, "merge-driver-config", 60, "owner-a", false).catch((error: unknown) => error as PmCliError);
+      expect((plain as PmCliError).context.nextSteps).toEqual([
+        `Remove locks/merge-driver-config.lock under ${path.relative(process.cwd(), plainRoot)} once its owner is confirmed gone, then retry the same command.`,
+      ]);
+      expect(pmPath).not.toBe(otherRoot);
+
+      // From inside the lock root, the path is spelled "." rather than left empty.
+      const cwd = process.cwd();
+      try {
+        process.chdir(otherRoot);
+        const here = await acquireLock(otherRoot, id, 60, "owner-a", false).catch((error: unknown) => error as PmCliError);
+        expect((here as PmCliError).context.nextSteps).toEqual([
+          "Run pm --pm-path . gc --scope locks (add --dry-run to preview), then retry the same command.",
+        ]);
+        process.chdir(plainRoot);
+        const plainHere = await acquireLock(plainRoot, "merge-driver-config", 60, "owner-a", false).catch((error: unknown) => error as PmCliError);
+        expect((plainHere as PmCliError).context.nextSteps).toEqual([
+          "Remove locks/merge-driver-config.lock under . once its owner is confirmed gone, then retry the same command.",
+        ]);
+      } finally {
+        process.chdir(cwd);
+      }
     });
   });
 

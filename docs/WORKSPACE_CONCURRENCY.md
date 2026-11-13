@@ -48,6 +48,8 @@ read-modify-write operation. Independent agents retain their attribution while
 focus changes. This state remains local and ephemeral. Its critical section is
 one read and one atomic write, so a lease past its TTL is reclaimed under the
 stale-cleanup gate instead of refused ([GH-1706](https://github.com/unbraind/pm-cli/issues/1706)).
+The write is fenced to the writer's lease: a stalled writer whose lease was
+reclaimed refuses with `lock_lost` instead of overwriting newer state.
 
 Rollback checkpoints use the same atomic, non-replacing publication as schema
 seeds. Filesystem identity also protects paths reached through symlink aliases.
