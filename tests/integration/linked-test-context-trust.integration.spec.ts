@@ -110,7 +110,8 @@ describe("linked-test workspace and trust contracts", () => {
         command: "node --test apps/site/dependency.test.mjs",
         pm_context_mode: "none", workspace_context_mode: "snapshot",
       }), "--json"], { cwd: sourceRoot }).code).toBe(0);
-      const snapshot = context.runCli(["test", id, "--run", "--json"], { cwd: sourceRoot, expectJson: true });
+      // The runner's full report names the test; a quiet run otherwise keeps only its tail (pm-v1mp64).
+      const snapshot = context.runCli(["test", id, "--run", "--full-output", "--json"], { cwd: sourceRoot, expectJson: true });
       const result = (snapshot.json as TestEnvelope).run_results[0];
       expect(snapshot.code, JSON.stringify(result)).toBe(0);
       expect(result).toMatchObject({ status: "passed" });

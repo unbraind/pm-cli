@@ -1,0 +1,22 @@
+id: pm-i0oazv
+title: pm test-all re-runs an identical passed setup entry for every item of a source-workspace sweep; reuse the setup outcome within one invocation
+description: "Follow-up from pm-gh1671 (2026-11-13). GH-1671 asked for the linked-test setup step to be \"cached by input digest where possible\". The implementation runs each item's setup entries once per item run and deliberately excludes them from test-all's cross-item duplicate skip. In an isolated or snapshot workspace, a setup's output stays in that item's own sandbox, so a skipped duplicate would leave the next item without its build. In the default source workspace, though, a fleet package whose 5 items all declare \"npm run build\" as setup rebuilds 5 times in one test-all sweep, because every item shares the source checkout and the first build is already visible to the rest. Proposal: within one test-all invocation, reuse a passed setup outcome for an identical setup key when the effective workspace context is source. Reuse means the same command, env, context modes and shared-host-safe flag. Report the reused row as a typed skip naming the item whose setup passed, and never reuse a failed or refused setup. Optionally extend the reuse across invocations with a declared input digest (for example a lockfile plus src tree hash). Duplicate check: searched setup step cache input digest test-all deduplicate build; no open item covers reuse of setup outcomes."
+type: Issue
+status: open
+priority: 3
+tags[4]: agent-ux,linked-tests,performance,test-all
+created_at: "2026-11-13T20:40:45.838Z"
+updated_at: "2026-11-13T20:40:45.838Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "Within one pm test-all invocation in the source workspace, an identical setup key that already passed for an earlier item is not executed again and its row is a typed skip naming the item whose setup passed; A failed or refused setup is never reused, and isolated or snapshot workspaces always run each item's setup; A spec proves the second item's regular command still sees the first item's build output, with a negative control for a failed first setup"
+parent: pm-mpbb
+risk: low
+confidence: medium
+severity: low
+expected_result: One build per test-all sweep in the source workspace when items share the setup entry
+actual_result: Every item's identical setup entry executes again
+component: test
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1671,discovered_from,"2026-11-13T20:40:45.838Z","harness:claude-code","cli:create:dep",detected
+body: ""

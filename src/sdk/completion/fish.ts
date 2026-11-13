@@ -914,6 +914,7 @@ complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-skipped -d 'Trea
 complete -c pm -n '__fish_seen_subcommand_from test' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
 complete -c pm -n '__fish_seen_subcommand_from test' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
 complete -c pm -n '__fish_seen_subcommand_from test' -l check-context -d 'Preflight linked PM command context diagnostics before execution'
+complete -c pm -n '__fish_seen_subcommand_from test' -l full-output -d 'Report full stdout/stderr of passing rows'
 complete -c pm -n '__fish_seen_subcommand_from test' -l auto-pm-context -d 'Auto-remediate tracker-read context mismatches using tracker context'
 complete -c pm -n '__fish_seen_subcommand_from test' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l message -d 'History message' -r
@@ -936,6 +937,7 @@ complete -c pm -n '__pm_history_operation test-all' -l fail-on-skipped -d 'Treat
 complete -c pm -n '__pm_history_operation test-all' -l fail-on-empty-test-run -d 'Treat empty linked-test selections as failures'
 complete -c pm -n '__pm_history_operation test-all' -l require-assertions-for-pm -d 'Require assertions for linked PM command tests'
 complete -c pm -n '__pm_history_operation test-all' -l check-context -d 'Preflight linked PM command context diagnostics before execution'
+complete -c pm -n '__pm_history_operation test-all' -l full-output -d 'Report full stdout/stderr of passing rows'
 complete -c pm -n '__pm_history_operation test-all' -l auto-pm-context -d 'Auto-remediate tracker-read context mismatches using tracker context'
 
 # test-runs flags

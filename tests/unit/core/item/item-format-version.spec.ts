@@ -96,8 +96,8 @@ describe("scanItemFormatVersions", () => {
     expect(result.ahead).toEqual(["ahead"]);
   });
 
-  it("keeps both readable formats current while refusing future formats", () => {
-    expect(scanItemFormatVersions([{ ref: "legacy", version: 1 }, { ref: "editor", version: 2 }, { ref: "future", version: 3 }], CURRENT_ITEM_FORMAT_VERSION, BASELINE_ITEM_FORMAT_VERSION)).toEqual({ outdated: [], ahead: ["future"] });
+  it("keeps every readable format current while refusing future formats", () => {
+    expect(scanItemFormatVersions([{ ref: "legacy", version: 1 }, { ref: "editor", version: 2 }, { ref: "setup", version: 3 }, { ref: "future", version: 4 }], CURRENT_ITEM_FORMAT_VERSION, BASELINE_ITEM_FORMAT_VERSION)).toEqual({ outdated: [], ahead: ["future"] });
   });
 });
 
@@ -111,5 +111,10 @@ describe("requiredItemFormatVersion", () => {
       expect(requiredItemFormatVersion({ tests: [{ command: "node --version", scope: "project", ...stamp }] })).toBe(2);
     }
     expect(requiredItemFormatVersion({ pm_format_version: 3 })).toBe(3);
+    // GH-1671: a setup entry needs format 3, which outranks editor stamps and never lowers a stored requirement.
+    const setup = { command: "npm run build", scope: "project" as const, phase: "setup" as const };
+    expect(requiredItemFormatVersion({ tests: [setup] })).toBe(3);
+    expect(requiredItemFormatVersion({ tests: [{ command: "node --version", scope: "project", updated_by: "editor" }, setup] })).toBe(3);
+    expect(requiredItemFormatVersion({ tests: [setup], pm_format_version: 4 })).toBe(4);
   });
 });

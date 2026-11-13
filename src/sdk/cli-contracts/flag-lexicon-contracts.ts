@@ -290,9 +290,10 @@ const LEGACY_COMMAND_FLAG_BUDGET_MAXIMUMS = Object.freeze({
   deps: 32,
   // pm-gh1577: explicit plan focus opt-in/out, with no spare allowance.
   plan: 111,
-  // pm-gh1700: one --full-history restore for bounded write receipts; no spare allowance.
-  test: 57,
-  "test-all": 40,
+  // pm-gh1700: one --full-history restore for bounded write receipts; pm-v1mp64:
+  // one --full-output restore for quiet-run streams; no spare allowance.
+  test: 58,
+  "test-all": 41,
   telemetry: 21,
   stats: 29,
   health: 36,

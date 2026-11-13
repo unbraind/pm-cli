@@ -1329,6 +1329,7 @@ export function normalizeLinkedTest(value: LinkedTest): LinkedTest {
     ),
     assert_json_field_gte: normalizeNumericRecord(value.assert_json_field_gte),
     note: value.note?.trim() || undefined,
+    phase: value.phase === "setup" ? "setup" : undefined,
   };
   deleteUndefinedFields(test as unknown as Record<string, unknown>);
   return test;

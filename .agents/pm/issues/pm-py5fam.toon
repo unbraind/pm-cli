@@ -1,0 +1,24 @@
+id: pm-py5fam
+title: "MCP pm_test and pm_test_all results bypass the quiet-run projection, so every passing row carries its full execution context with host paths and its complete runner output"
+description: "Found while implementing pm-v1mp64 and pm-tcvccz (2026-11-13). The quiet-run projection for linked-test replies lives in the CLI renderer (src/core/output/linked-test-projection.ts). It reduces a passing run's execution context to its decision fields and keeps an escape-free tail of each row's streams. The MCP server's resultContent returns the raw SDK result as structuredContent.result and as pretty JSON text, so a pm_test or pm_test_all call that passes still carries every row's full 21-field execution_context: the source tracker, global root, sandbox paths, working directory and trust fingerprint. It also carries the complete runner output, colour escapes included. An MCP agent therefore pays the cost that GH-1702 and pm-v1mp64 removed from the CLI. It also receives the caller's host paths, which the CLI default no longer prints. The fullOutput and checkContext MCP parameters are honest today only because MCP never reduces anything. Proposal: apply the same projection to MCP pm_test and pm_test_all results, with fullOutput and checkContext restoring the full data as on the CLI. Record the change as an MCP result contract change. Duplicate check: searched MCP pm_test result execution_context host paths and MCP test output projection. pm-gh1702 and pm-tcvccz cover the CLI only."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,"area:mcp",linked-tests,privacy,token-efficiency
+created_at: "2026-11-13T20:40:27.227Z"
+updated_at: "2026-11-13T20:40:27.227Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A passing, mismatch-free MCP pm_test or pm_test_all result reports only the decision fields of execution_context and an escape-free bounded stream tail, with the same omission receipt as the CLI; Failing, refused, skipped and mismatched runs keep the full context and streams; The checkContext and fullOutput MCP parameters restore the full context and streams; The MCP result contract change is declared for the changelog"
+parent: pm-5k4v
+risk: medium
+confidence: high
+severity: medium
+expected_result: A passing MCP linked-test result carries no host path and no full runner report
+actual_result: Every MCP linked-test row carries its full execution context with four absolute paths and its complete stdout
+component: mcp
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1702,related,"2026-11-13T20:40:27.227Z","harness:claude-code","cli:create:dep",detected
+  pm-tcvccz,related,"2026-11-13T20:40:27.227Z","harness:claude-code","cli:create:dep",detected
+  pm-v1mp64,discovered_from,"2026-11-13T20:40:27.227Z","harness:claude-code","cli:create:dep",detected
+body: ""

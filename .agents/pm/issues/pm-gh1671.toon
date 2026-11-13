@@ -2,11 +2,13 @@ id: pm-gh1671
 title: "GH-1671: linked tests have no setup step, so every command embeds its build and --add re-runs heavy suites just to fix metadata"
 description: "GitHub issue #1671 (reported 2026-11-05 against 2026.11.4 from three fleet PR reviews: pm-vcs#182, pm-rl#145 and pm-linear#208). Linked test commands have no setup or prerequisite step. In TypeScript extension packages the specs import built output (../dist/index.js), so a linked command works only after npm run build, and every command must embed npm run build && itself (5 linked commands on pm-rl, each rebuilding). CodeRabbit flagged the missing build on all three PRs. Because pm test <id> --add verifies by running the command, a metadata-only fix re-runs every heavy suite (300-750 s each on pm-rl). Expected: a declared per-item or per-tracker setup step (for example pm test <id> --setup \"npm run build\" or a tests.setup settings key) that pm test --run executes once before the linked commands, recorded with provenance like the commands, cached by input digest where possible, and reported as a typed setup_failed result distinct from test failures. Also an explicit way to add a command without running it, recorded as verified false in provenance, so metadata fixes need no re-run. Why it matters for agents: linked tests are the evidence the next agent reproduces with pm test --run; a missing build today fails with a confusing module-not-found error, and the only workaround multiplies run time. Duplicate check: searched linked test setup, prerequisite, build step and pm test --run across all statuses. pm-dlvv (closed) added per-linked-test env directives, and pm-mf5z, pm-44iu and pm-wn34 (closed) enforce runnable command-required linked tests; none adds a setup phase or unverified add."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,extensions,"gh:1671",linked-tests,sdk
 created_at: "2026-11-05T20:48:02.161Z"
-updated_at: "2026-11-05T21:25:44.266Z"
+updated_at: "2026-11-13T21:04:48.896Z"
+closed_at: "2026-11-13T21:04:48.138Z"
+completed_at: "2026-11-13T21:04:48.138Z"
 author: "harness:claude-code"
 estimated_minutes: 360
 acceptance_criteria: "A per-item or per-tracker setup command can be declared through CLI, SDK and MCP, is stored with provenance, and pm test --run executes it once before the linked commands; A failing setup step is reported as a typed setup_failed result distinct from test failures, and no linked command runs after it; An explicit add-without-run option records the command with verified false in provenance, and pm test --run still executes it; Negative control: removing the setup execution makes a spec whose linked command needs the setup output fail"
@@ -15,8 +17,9 @@ risk: medium
 confidence: medium
 severity: medium
 repro_steps: "In a TypeScript extension package whose specs import ../dist/index.js: pm test <id> --add command='node --test test/x.test.js' on a clean checkout fails with module-not-found until the command embeds npm run build &&, and each --add re-runs the suite"
-expected_result: "A declared setup step runs once per pm test --run before linked commands, with provenance and a typed setup_failed result, and an explicit unverified add records verified false"
-actual_result: pm test help lists only --shared-host-safe and --check-context; every linked command repeats the build and --add always executes the command
+resolution: "New src/sdk/test/run-phases.ts: phase grammar (setup|test, test stored as absent), withLinkedTestSetupEntries (setups prepended to any selection naming a regular command; selected_indexes in run order; setup_indexes for unnamed setups), orderLinkedTestsSetupFirst for test-all, createLinkedTestSetupGate (setup rows marked phase: setup; executed failure -> setup_failed with setup_failure_cause; refusals keep their category; every later entry skipped without executing; setups exempt from empty-run and PM-assertion requirements) and the failure-category counters with setup_failed. phase is accepted by --add, --add-json, pm create/update --test and --set-json, kept by normalizeLinkedTest, excluded from identity and trust fingerprint, never deduplicated across test-all items, and never satisfies --measure. requiredItemFormatVersion returns 3 for a setup entry and CURRENT_ITEM_FORMAT_VERSION is 3; create now stamps the required format. --add/--add-json help reads 'Link isolated test; runs only with --run' (add never executed). Published-artifact matrix asserts 2026.10.9/10.10/10.13 refuse a format-3 setup item byte-identically. Follow-ups: pm-i0oazv (reuse passed setup in source-mode test-all), pm-04mzfl (write-time warning for pins that cannot read format 3)."
+expected_result: A declared setup step runs once per pm test --run before linked commands with provenance and a typed setup_failed result; an add records a command without running it
+actual_result: "Verified: tests/integration/linked-tests/linked-test-setup-phase.integration.spec.ts (negative control fails without the setup; setup_failed skips later entries and the CLI exits non-zero; test-all runs each item's setup; every intake path accepts phase and refuses unknown phases before persistence), tests/unit/sdk/test/run-phases.spec.ts (7 cases), workspace-compatibility matrix passed against real published hosts, and the published 2026.11.13 refuses get/update/test --run on a format-3 item without changing bytes"
 affected_version: 2026.11.4
 component: test
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
@@ -24,4 +27,67 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-mf5z,related,"2026-11-05T20:48:02.161Z","harness:claude-code","cli:create:dep",detected
   pm-44iu,related,"2026-11-05T21:25:44.018Z","harness:claude-code","cli:update:dep",detected
   pm-wn34,related,"2026-11-05T21:25:44.018Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-13T20:21:35.357Z","harness:claude-code","Investigation note (2026-11-13), premise check for the add-without-run half: `pm test <id> --add` has never executed a command. On v2026.11.4 and on main, `runTest` only calls `executeSelectedLinkedTests` when `options.run === true`, and `--add` persists the entry inside `resolveLinkedTestItem` with `run_results: []`. A sandbox repro on the current build confirms it: `--add command=\"node t.js\" --json` returned `run_results: []`. The misleading part was the help text. `--add` and `--add-json` read \"Add verified isolated test\", so the fleet ran `--add ... --run` to \"verify\", which re-runs every selected suite. A metadata-only fix already has a no-run path: `--update-index <n> --set-json '{...}'`.\n\nResolution of that half: the help now reads \"Link isolated test; runs only with --run\" for both flags, and docs/TESTING.md and docs/COMMANDS.md state that `--add` never executes and point to `--set-json` for metadata fixes. No `verified` provenance flag was added. Every `--add` is unverified, so the marker would be constant, and provenance is hashed into the trust fingerprint, so flipping it after a run would invalidate clone-local acknowledgements.\n\nAC refinement (third clause): \"an explicit add-without-run option records verified false\" becomes \"--add records a command without running it, help and docs say so, and pm test --run still executes it\". The setup-phase clauses (1, 2 and 4) are implemented as specified.\n"
+  "2026-11-13T20:23:37.833Z","harness:claude-code","Evidence, mixed-host check (2026-11-13). The published @unbrained/pm-cli@2026.11.13 was installed into an isolated npm prefix. npx is not valid for this check, because `npm install -g .` links the working tree under the same name@version, so npx runs the new build. Against a sandbox tracker whose item carries `phase: setup` at `pm_format_version: 3`:\n- `get`, `update --priority 3` and `test --run` all refuse with \"Stored item uses format version 3; this runtime supports up to 2. Upgrade pm before reading or changing\". The item file is byte-identical afterwards.\n- `list` still lists the item, because its light metadata read does not parse linked tests.\nSo an older host refuses the setup entry rather than silently dropping it.\n\nDogfooding decision: this PR adds no setup entry to this repository's own tracker items. Any pinned or bundled older SDK reading the tracker would refuse such an item until it upgrades; package consumers such as pm-changelog are one example. Adopt setup entries here only after the release that ships format 3 is the pinned floor.\n"
+notes[1]{created_at,author,text}:
+  "2026-11-13T20:21:51.236Z","harness:claude-code","Design (2026-11-13). The setup step is a per-item linked-test field, `phase: setup` (input `phase=setup|test`; `test`, the default, is stored as absent). It is not a tests.setup settings key: a settings-declared command is executable data that would bypass the provenance and clone-trust model every linked command goes through.\n\nBehaviour:\n- Ordering. `withLinkedTestSetupEntries` (src/sdk/test/run-phases.ts) prepends every stored setup entry to a selection that names at least one regular command. `selected_indexes` lists run order (setup positions first), and `setup_indexes` lists the setups the selector did not name. A selection of setups only runs just those. test-all uses `orderLinkedTestsSetupFirst` per item.\n- Gate. `createLinkedTestSetupGate` runs inside `runLinkedTests`, which shares one sandbox, isolated root and snapshot across the item's entries, so setup output is visible to later entries. An executed setup that fails becomes `failure_category: setup_failed`, with the original class kept in `setup_failure_cause`. A refused setup keeps its category (trust_refusal or config_refusal), because its recovery differs. Either way every later entry gets a `skipped` row without executing. Setup rows carry `phase: setup` and are exempt from `--fail-on-empty-test-run` and `--require-assertions-for-pm`. They never satisfy `--measure`'s executed-test requirement (prerequisites.ts).\n- test-all. Setups are excluded from the cross-item duplicate skip. A deduplicated setup leaves an isolated or snapshot sandbox without its output (the integration spec proves this with two items).\n- Storage. `normalizeLinkedTest` keeps `phase`. `requiredItemFormatVersion` returns 3 when any test is a setup entry, and `CURRENT_ITEM_FORMAT_VERSION` is now 3, so hosts 2026.10.10 to 2026.11.13 refuse the item instead of silently dropping the field from its canonical hash. Create now stamps the required format as well (`stampCreatedItemFormat`). Before this change only edits stamped it, and create could not produce a guarded field until `phase`.\n- Identity and trust. `phase` is not in `linkedTestsHaveSameIdentity`: the same command is not both a setup and a test of one item, so convert an entry with `--set-json`. It is not in the trust fingerprint either, because the command that executes is unchanged. Merge identity hashes the whole definition, so `phase` survives three-way merges.\n- Line cap. execution.ts was at exactly 3400 effective lines. The failure-category type and counters moved to run-phases.ts and are re-exported, which leaves execution.ts at 3370.\n\nNot done (follow-up): caching a passed setup across test-all items by input digest. The issue asked for it \"where possible\", and the AC does not require it."
+files[25]{path,scope,note}:
+  scripts/release/docstring-quality-baseline.json,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  scripts/release/workspace-linked-tests.mjs,project,format-3 setup refusal against published hosts (GH-1671)
+  sdk/public-surface.json,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/cli/register-operations.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/core/item/item-format-version.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/core/item/item-format.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/core/test/run-selectors.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/lifecycle/create.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/test/batch.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/test/entry.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/test/execution.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/test/parsers.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/test/prerequisites.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/sdk/test/run-phases.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  src/types.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/fixtures/contracts/full.json,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/integration/linked-tests/linked-test-setup-phase.integration.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/integration/schema/custom-field-roundtrip.integration.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/unit/commands/governance/health-command.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/unit/commands/governance/validate-command.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/unit/core/item/item-format-migration.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/unit/core/item/item-format-version.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/unit/sdk/merge/item-identity.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+  tests/unit/sdk/test/run-phases.spec.ts,project,"linked-test setup phase, item format 3 and --add help truthfulness (GH-1671)"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/test/run-phases.spec.ts tests/integration/linked-tests/linked-test-setup-phase.integration.spec.ts tests/unit/core/item/item-format-version.spec.ts,project,1200,"harness:claude-code","2026-11-13T20:41:37.231Z",local_mutation,feat/linked-test-setup-and-quiet-output
+test_runs[1]:
+  - run_id: test-local-mwfgst4d-35rpes
+    kind: test
+    status: passed
+    started_at: "2026-11-13T21:04:01.955Z"
+    finished_at: "2026-11-13T21:04:15.469Z"
+    recorded_at: "2026-11-13T21:04:15.469Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/test/run-phases.spec.ts tests/integration/linked-tests/linked-test-setup-phase.integration.spec.ts tests/unit/core/item/item-format-version.spec.ts,schema,schema,source,local_source_ref
+docs[3]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/LINKED_TEST_EDITS.md,project
+  docs/TESTING.md,project
+close_reason: "Linked-test setup entries (phase=setup) run first in the shared sandbox, stop the run as setup_failed, and require item format 3; --add help no longer claims verification"
+contract_change:
+  api: "Linked tests: pm test --add/--add-json, pm create/update --test, SDK LinkedTest, TestRunResult, LinkedTestFailureCategory and CURRENT_ITEM_FORMAT_VERSION, MCP pm_test"
+  before: "Linked tests had no setup phase, failure_categories had nine keys, and the highest item format was 2"
+  after: "A phase=setup entry runs before the item's regular commands in the same sandbox; a failing setup reports setup_failed and every later entry is skipped; failure_categories gains setup_failed; an item with a setup entry is stored at item format 3, which pm 2026.10.10 through 2026.11.13 refuses to read"
+  migrate: "Exhaustive consumers of LinkedTestFailureCategory or failure_categories add setup_failed; upgrade every reader, pinned SDK, CI host and Git merge driver before adding a setup entry to a shared tracker"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1671
+  gate_id: linked-test-setup-phase
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/linked-tests/linked-test-setup-phase.integration.spec.ts (the regular command fails without its setup entry, and the test-all case fails when setup entries are deduplicated across items); node scripts/release/workspace-compatibility.mjs --json refuses a published host that reads a format-3 setup item"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/sdk/test/run-phases.spec.ts tests/integration/linked-tests/linked-test-setup-phase.integration.spec.ts tests/unit/core/item/item-format-version.spec.ts,node scripts/release/workspace-compatibility.mjs --json
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

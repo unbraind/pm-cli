@@ -926,6 +926,7 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
       "sdk/runtime/mutation-admission.ts",
       "sdk/runtime/mutation-value-validation.ts",
       "sdk/runtime/schema-preview.ts",
+      "sdk/test/run-phases.ts",
       "sdk/workspace.ts",
     ],
     emitting_commands: ["*", "create", "next", "task-composition", "update", "update-many"],

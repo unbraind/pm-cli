@@ -5,6 +5,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { assertLinkedTestCommand } from "./entry.js";
+import { isLinkedTestSetup, orderLinkedTestsSetupFirst } from "./run-phases.js";
 import { isItemRevisionConflict } from "../lifecycle/item-revision.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -73,6 +74,8 @@ export interface TestAllCommandOptions {
   requireAssertionsForPm?: boolean;
   /** Value that configures or reports check context for this contract. */
   checkContext?: boolean;
+  /** Report every row's complete stdout and stderr; presentation only, so the SDK result is unchanged (pm-v1mp64). */
+  fullOutput?: boolean;
   /** Value that configures or reports auto pm context for this contract. */
   autoPmContext?: boolean;
 }
@@ -491,13 +494,16 @@ const runTestAllItem = async (
   context: TestAllItemRunContext,
 ): Promise<TestAllItemExecution> => {
   const testsToRun: LinkedTest[] = [];
-  const keyedTests = entry.tests.map((test) => {
+  // Setup entries run first, and once per item: in an isolated or snapshot
+  // workspace a setup's output stays in that item's own sandbox (GH-1671).
+  const ordered = orderLinkedTestsSetupFirst(entry.tests);
+  const keyedTests = ordered.map((test) => {
     const key = buildLinkedTestKey(test);
     const refusal = resolveTestAllCommandRefusal(test, entry.item.id);
     if (refusal) return { test, key, duplicate: false, refusal };
-    const duplicate = context.seenTestKeys.has(key);
+    const duplicate = !isLinkedTestSetup(test) && context.seenTestKeys.has(key);
     if (!duplicate) {
-      context.seenTestKeys.add(key);
+      if (!isLinkedTestSetup(test)) context.seenTestKeys.add(key);
       const effectiveTimeoutSeconds = context.effectiveTimeoutByKey.get(key);
       testsToRun.push(
         effectiveTimeoutSeconds === undefined

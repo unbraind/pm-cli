@@ -13,6 +13,7 @@ import {
 import { EXIT_CODE } from "../shared/constants.js";
 import { isHostOutputSuppressed } from "./output-control.js";
 import { projectMutationResult } from "./mutation-projection.js";
+import { projectLinkedTestReply } from "./linked-test-projection.js";
 import { attachReadOutputContracts } from "../../sdk/context-intent-contracts.js";
 import { attachOutputTokenAccounting } from "../../sdk/output-token-accounting.js";
 import { propagateContextUsageServingReceipt } from "../../sdk/context-usage.js";
@@ -522,119 +523,6 @@ function projectLeanJsonValue(value: unknown): unknown {
   return projected;
 }
 
-/**
- * Hoist an invocation-wide linked-test sandbox context out of repeated result
- * rows. Lean output also removes successful-process streams while retaining
- * failure diagnostics, so agents pay once for context and only for actionable
- * evidence. A quiet success reports only each row's decision fields in every
- * format, because the sandbox paths, counts and fingerprint explain nothing
- * about a run that passed and carry host paths into pasted evidence;
- * `--check-context` asks for the full context explicitly (GH-1702). Rows are
- * reduced before the hoist: each linked command has its own trust fingerprint
- * and sandbox, so full contexts differ between tests while their decision
- * fields usually match.
- */
-function projectLinkedTestEvidence(value: unknown, lean: boolean, fullContext: boolean): unknown {
-  if (!isPlainObject(value) || !Array.isArray(value.run_results)) {
-    return value;
-  }
-  const sourceRows = value.run_results;
-  if (!sourceRows.every(isPlainObject)) {
-    return value;
-  }
-  const quietRows =
-    !fullContext && isQuietLinkedTestSuccess(value, sourceRows) ? sourceRows : undefined;
-  const rows: Record<string, unknown>[] =
-    quietRows === undefined
-      ? sourceRows
-      : quietRows.map((row) => ({
-          ...row,
-          execution_context: projectLinkedTestDecisionContext(row.execution_context),
-        }));
-  const sharedContext = resolveSharedExecutionContext(rows);
-  const runResults = rows.map((row) => {
-    if (sharedContext === undefined) {
-      return row;
-    }
-    const {
-      execution_context: _executionContext,
-      stdout,
-      stderr,
-      ...rest
-    } = row;
-    if (!lean || row.status !== "passed") {
-      return { ...rest, stdout, stderr };
-    }
-    return rest;
-  });
-  // Lean receipts for a quiet success also omit the all-zero failure categories.
-  const { failure_categories: _zeroCategories, ...withoutCategories } = value;
-  return {
-    ...(lean && quietRows !== undefined ? withoutCategories : value),
-    ...(sharedContext === undefined
-      ? {}
-      : { execution_context: sharedContext }),
-    run_results: runResults,
-  };
-}
-
-/** The one execution context every result row shares, or undefined when rows differ or lack one. */
-function resolveSharedExecutionContext(
-  rows: Record<string, unknown>[],
-): unknown {
-  const contexts = rows
-    .map((row) => row.execution_context)
-    .filter((context) => context !== undefined);
-  if (contexts.length !== rows.length || contexts.length === 0) return undefined;
-  const first = JSON.stringify(contexts[0]);
-  return contexts.every((context) => JSON.stringify(context) === first)
-    ? contexts[0]
-    : undefined;
-}
-
-/** A result row whose own sandbox context is present. */
-type LinkedTestRowWithContext = Record<string, unknown> & {
-  execution_context: Record<string, unknown>;
-};
-
-/** A passing run whose every row has a mismatch-free context and whose failure categories are all zero. */
-function isQuietLinkedTestSuccess(
-  value: Record<string, unknown>,
-  rows: Record<string, unknown>[],
-): rows is LinkedTestRowWithContext[] {
-  if (value.ok !== true || rows.length === 0) return false;
-  const quietRow = (row: Record<string, unknown>): boolean =>
-    row.status === "passed" &&
-    isPlainObject(row.execution_context) &&
-    row.execution_context.mismatch_detected === false;
-  if (!rows.every(quietRow)) return false;
-  const categories = value.failure_categories;
-  return !(isPlainObject(categories) && Object.values(categories).some((count) => count !== 0));
-}
-
-/**
- * The decision fields of a quiet success's context: the sandbox modes, the
- * mismatch and trust booleans and the trust reason that explain what the
- * tests saw. A passing run can still be untrusted under an explicit override,
- * so `trusted: false` is never dropped. The sandbox and source paths, item
- * counts, seeding flags and trust fingerprint are not retained. The hint names
- * the flag without telling the caller to rerun, because a rerun repeats any
- * mutating flags of the original invocation (pm-covpax).
- */
-function projectLinkedTestDecisionContext(
-  context: Record<string, unknown>,
-): Record<string, unknown> {
-  const trust = isPlainObject(context.trust) ? context.trust : {};
-  return {
-    pm_context_mode: context.pm_context_mode,
-    workspace_context_mode: context.workspace_context_mode,
-    mismatch_detected: false,
-    ...(typeof trust.trusted === "boolean" ? { trusted: trust.trusted } : {}),
-    ...(trust.reason === undefined ? {} : { trust_reason: trust.reason }),
-    restore_with: "not retained; a run with --check-context reports the full context",
-  };
-}
-
 /** Omit only vacuous diagnostic objects on explicitly successful check rows. */
 function projectEmptyCheckDetails(value: unknown): unknown {
   if (
@@ -939,14 +827,11 @@ function formatEffectiveOutput(
   }
   const outputResult = service.result;
   propagateContextUsageServingReceipt(effectiveResult, outputResult);
-  const projectedOutputResult =
-    command === "test"
-      ? projectLinkedTestEvidence(
-          outputResult,
-          options.lean === true,
-          commandOptions.checkContext === true,
-        )
-      : outputResult;
+  const projectedOutputResult = projectLinkedTestReply(command, outputResult, {
+    lean: options.lean === true,
+    fullContext: commandOptions.checkContext === true,
+    fullOutput: commandOptions.fullOutput === true,
+  });
   /**
    * Render one value exactly as it is delivered. A budget refusal is always
    * rendered natively: routing it through an expanding renderer would undo

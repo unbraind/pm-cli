@@ -393,6 +393,8 @@ export interface LinkedTest {
   assert_json_field_gte?: Record<string, number>;
   /** Value that configures or reports note for this contract. */
   note?: string;
+  /** `setup` marks a step that runs before the item's regular linked commands (GH-1671); absent means a regular linked test. */
+  phase?: "setup";
 }
 
 /** Documents the linked doc payload exchanged by command, SDK, and package integrations. */

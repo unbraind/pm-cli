@@ -22,15 +22,22 @@ export const BASELINE_ITEM_FORMAT_VERSION = 1;
 
 /**
  * Highest item format understood by this runtime. Ordinary records retain the
- * implicit baseline; linked-test editor stamps require format 2 so earlier
- * published hosts refuse before dropping fields from their canonical hashes.
- * Reading legacy records never changes their format or immutable commitments.
+ * implicit baseline; linked-test editor stamps require format 2 and linked-test
+ * setup entries (GH-1671) require format 3, so earlier published hosts refuse
+ * before dropping fields from their canonical hashes. Reading legacy records
+ * never changes their format or immutable commitments.
  */
-export const CURRENT_ITEM_FORMAT_VERSION = 2;
+export const CURRENT_ITEM_FORMAT_VERSION = 3;
 
-/** Resolve the minimum format needed to retain persisted linked-test editor metadata. */
+/** Resolve the minimum format needed to retain persisted linked-test editor metadata and setup phases. */
 export function requiredItemFormatVersion(metadata: Pick<ItemMetadata, "tests" | "pm_format_version">): number {
-  return Math.max(effectiveItemFormatVersion(metadata), metadata.tests?.some((test) => test.updated_by !== undefined || test.updated_at !== undefined) ? 2 : BASELINE_ITEM_FORMAT_VERSION);
+  const tests = metadata.tests ?? [];
+  const linkedTestFormat = tests.some((test) => test.phase === "setup")
+    ? 3
+    : tests.some((test) => test.updated_by !== undefined || test.updated_at !== undefined)
+      ? 2
+      : BASELINE_ITEM_FORMAT_VERSION;
+  return Math.max(effectiveItemFormatVersion(metadata), linkedTestFormat);
 }
 
 /**

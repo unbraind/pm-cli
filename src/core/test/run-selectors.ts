@@ -42,6 +42,8 @@ export interface LinkedTestRunSelection {
   selected_count: number;
   /** Number of skipped entries represented by this result. */
   skipped_count: number;
+  /** 1-based positions of setup entries that run before the selection although the selector did not name them (GH-1671). */
+  setup_indexes?: number[];
 }
 
 const MAX_SELECTOR_ENTRY_LABEL_LENGTH = 100;

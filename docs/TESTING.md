@@ -249,7 +249,8 @@ markers for integrity inspection; inventory diagnostics are not permission to
 rewrite an unsupported item.
 
 Format 1 remains readable and is still used for ordinary records. Persisting
-linked-test editor stamps requires format 2. The same mutation records that
+linked-test editor stamps requires format 2, and a linked-test setup entry
+(`phase: setup`) requires format 3, on create as well as on edit. The same mutation records that
 marker in history; ordinary subsequent writes, restoration and current-runtime
 merges retain it. Restoring an older state does not lower the reader requirement
 while newer history remains. Existing format-1 editor records written by
@@ -680,6 +681,53 @@ For broader sweeps:
 ```bash
 pm test-all --status in_progress --progress
 ```
+
+`--add` and `--add-json` only record a command; nothing executes until `--run`.
+A metadata-only correction therefore never re-runs a suite: edit the stored
+entry with `--update-index <n> --set-json '{...}'` (see
+[Linked-test edits](LINKED_TEST_EDITS.md)).
+
+### Setup entries
+
+Tracked by
+[pm-gh1671](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1671.toon)
+(a repository-only tracker record excluded from npm). A linked test declared
+with `phase=setup` is a step the item's regular linked commands depend on, such
+as building the output that specs import:
+
+```bash
+pm test <item-id> --add "command=npm run build,phase=setup"
+pm test <item-id> --add-json '{"command":"npm run build","phase":"setup"}'
+pm test <item-id> --run
+```
+
+- Every setup entry runs first, in stored order, once per `pm test --run`,
+  inside the same sandbox and workspace snapshot as the regular commands, so
+  its output is what they see. A selector (`--match`, `--only-index`,
+  `--only-last`) that names a regular command still runs the setup entries
+  first; `selection.setup_indexes` lists the ones it did not name, and
+  `selection.selected_indexes` is in run order. A selector naming only setup
+  entries runs just those.
+- A setup entry that fails is reported with `failure_category: setup_failed`
+  (its original classification stays in `setup_failure_cause`) and counted
+  under `failure_categories.setup_failed`, separately from test failures. A
+  refused setup entry keeps its own category (for example `trust_refusal`). In
+  both cases every later entry is reported as `skipped` without executing, and
+  the run fails.
+- Setup rows carry `phase: setup`. They are exempt from
+  `--fail-on-empty-test-run` and `--require-assertions-for-pm`, which describe
+  test runners, and they never count as the executed linked test that
+  `--measure` requires.
+- `pm test-all` runs each item's setup entries for that item and never
+  deduplicates them across items: in an isolated or snapshot workspace a setup's
+  output stays in its own item's sandbox.
+- Setup entries are executable data under the same provenance and clone-trust
+  rules as every linked command. `phase` is editable metadata
+  (`--set-json '{"phase":"setup"}'`, or `null` to make the entry a regular test
+  again) and is not part of the trust fingerprint.
+- An item with a setup entry is stored at item format 3, so hosts that predate
+  the phase refuse the item instead of silently dropping the field (see
+  [Published Workspace Compatibility](#published-workspace-compatibility)).
 
 Do not link `pm test-all` itself as an item-level test command. It creates recursive orchestration.
 Use `--fail-on-empty-test-run` for release/readiness gates where selecting zero

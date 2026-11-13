@@ -121,6 +121,7 @@ function pushSharedBackgroundTestCommandArgs(
     options.requireAssertionsForPm,
   );
   pushOptionalBooleanFlag(args, "--check-context", options.checkContext);
+  pushOptionalBooleanFlag(args, "--full-output", options.fullOutput);
   pushOptionalBooleanFlag(args, "--auto-pm-context", options.autoPmContext);
 }
 

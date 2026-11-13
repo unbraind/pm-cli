@@ -52,6 +52,19 @@ async function verifySdkReaders({ cwd, edited, id, pmRoot, current, release, pre
   }
 }
 
+/** GH-1671: a created setup entry stamps format 3, which the published host refuses before changing bytes. */
+async function verifySetupPhaseRefusal({ cli, current, release, pmRoot, preFormatAdmission }) {
+  const id = cli(current, ["create", "Task", "Setup-phase compatibility", "--create-mode", "progressive", "--test", "command=node --version,phase=setup"]).id;
+  const capture = async () => ({
+    item: await readFile(path.join(pmRoot, "tasks", `${id}.toon`), "utf8"),
+    history: await readFile(path.join(pmRoot, "history", `${id}.jsonl`), "utf8"),
+  });
+  const created = cli(current, ["get", id, "--full"]).item;
+  assert.equal(created.pm_format_version, 3, "A created setup entry did not require item format 3");
+  assert.equal(created.tests[0].phase, "setup");
+  for (const args of [...(preFormatAdmission ? [] : [["get", id]]), ["update", id, "--title", "Unsafe"]]) await assertRefused(cli, release, args, capture, preFormatAdmission ? "project_runtime_stale_mutation" : "item_format_version_unsupported");
+}
+
 /** Verify legacy commitments, guarded writes, public SDK reads, restore and current-driver native merges. */
 export async function verifyLinkedTestWorkspaces({ root, current, releases, run, fixtureRoot }) {
   const matrix = [];
@@ -112,6 +125,7 @@ export async function verifyLinkedTestWorkspaces({ root, current, releases, run,
     assert.equal(merged.description, "Peer description");
     assert.equal(merged.priority, 1);
     assert.equal(cli(current, ["history", id, "--verify"]).verification.ok, true);
+    await verifySetupPhaseRefusal({ cli, current, release, pmRoot, preFormatAdmission });
     matrix.push({ legacy_writer: release.version, writer: current.version, nested_fields: true, older_refusal: true, admission: preFormatAdmission ? "project_pin_before_write" : "stored_format", sdk: true, restore: true, git_merge: true, history: true });
   }
   return matrix;

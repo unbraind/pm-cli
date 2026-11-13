@@ -2,11 +2,13 @@ id: pm-tcvccz
 title: "pm test-all prints the full 21-field execution_context, with host paths, on every passing linked-test row"
 description: "Found while implementing pm-gh1702 (2026-11-13). pm test-all keeps the complete sandbox execution_context on every run_results row of every item: requested and effective modes, the sandbox and source project and global tracker paths, four item counts, seeding flags, the working directory, the source workspace root and the trust fingerprint. The command projection that pm-fqdmbf (GH-803) and pm-gh1702 added applies only to pm test, so test-all neither hoists the shared part nor reduces a quiet pass to its decision fields. Measured on a fresh tracker with one item and one passing test: default TOON 1,947 B, most of it one execution_context table cell set carrying four absolute paths (the source tracker and global root under the caller's checkout and home, plus the per-run sandbox). Each run gets its own sandbox directory, so the per-row contexts differ and a plain hoist would not fire; the decision-field projection per quiet row is the lever. Duplicate check: searched test-all execution_context hoist and lean; pm-fqdmbf (closed) and pm-gh1702 cover pm test only, pm-5a4f (closed) covers test-all limit and offset."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,linked-tests,privacy,token-efficiency
 created_at: "2026-11-13T07:54:29.038Z"
-updated_at: "2026-11-13T08:35:36.879Z"
+updated_at: "2026-11-13T21:04:35.784Z"
+closed_at: "2026-11-13T21:04:35.048Z"
+completed_at: "2026-11-13T21:04:35.048Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "A passing, mismatch-free, trusted test-all row reports only the five decision fields of execution_context in TOON and JSON; Failing, refused, skipped and mismatched rows keep the full context; --check-context restores the full context on every row, and the default projection prints no absolute path outside the tracker"
@@ -14,10 +16,47 @@ parent: pm-5t33or
 risk: low
 confidence: high
 severity: medium
-expected_result: A passing test-all run prints small per-row contexts with no host paths
-actual_result: Every row carries the full 21-field context with four absolute paths
+resolution: "projectLinkedTestReply now dispatches test-all: each results[] entry is projected exactly as a pm test reply (quiet item: decision fields per row plus the stream tail; non-quiet item: every row keeps its full context and streams). When every item that ran shares one reduced context it is hoisted to the top-level execution_context, and stream omissions are declared as results.run_results.stdout/stderr. --check-context restores every row's full context. AC refinement recorded in a note: the unit of the quiet judgment is the item run, matching pm test since GH-1702."
+expected_result: "A passing, mismatch-free, trusted test-all row reports only the decision fields in TOON and JSON; failing, refused, skipped and mismatched rows keep the full context; --check-context restores it and the default projection prints no absolute path"
+actual_result: "Verified by the test-all cases of tests/unit/core/output/linked-test-projection.spec.ts (quiet hoist, mixed failing item, --check-context/--full-output restore, empty item) through formatOutput in JSON and TOON with no /home or sandbox path; one-item sandbox sweep 2,124 -> 1,248 B TOON and 3,010 -> 1,760 B JSON"
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-fqdmbf,related,"2026-11-13T07:54:29.038Z","harness:claude-code","cli:create:dep",detected
   pm-gh1702,discovered_from,"2026-11-13T07:54:29.038Z","harness:claude-code","cli:create:dep",detected
   pm-5a4f,related,"2026-11-13T08:35:34.446Z","harness:claude-code","cli:update:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-13T19:40:30.932Z","harness:claude-code","Design decision (2026-11-13): the unit of the quiet judgment is one item's run, the same rule pm test applies since GH-1702. Each test-all results[] entry is projected exactly as a pm test reply would be. A quiet item (ok, every row passed and mismatch-free, all failure categories zero) is reduced to the decision fields. A non-quiet item keeps the full context on EVERY row, including its passing rows, so the failing row can be compared side by side with its siblings. When every item that ran shares one reduced context, test-all hoists it once to the top-level execution_context.\n\nAC refinement: the first AC clause reads \"a passing ... row\". It holds for every row of a quiet item. A passing row inside a failing item keeps its full context, for the same reason pm test keeps it.\n\nCode: the projection moved from src/core/output/output.ts into src/core/output/linked-test-projection.ts (projectLinkedTestReply). output.ts now dispatches both commands to it.\n\nMeasured on a one-item, one-test sandbox: test-all TOON 2124 B -> 1248 B, JSON 3010 B -> 1760 B. No absolute path remains in the default projection."
+files[3]{path,scope,note}:
+  src/core/output/linked-test-projection.ts,project,test-all per-item quiet projection and cross-item hoist (pm-tcvccz)
+  src/core/output/output.ts,project,test-all per-item quiet projection and cross-item hoist (pm-tcvccz)
+  tests/unit/core/output/linked-test-projection.spec.ts,project,test-all per-item quiet projection and cross-item hoist (pm-tcvccz)
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts,project,900,"harness:claude-code","2026-11-13T20:41:34.408Z",local_mutation,feat/linked-test-setup-and-quiet-output
+test_runs[1]:
+  - run_id: test-local-mwfgshvf-g2khey
+    kind: test
+    status: passed
+    started_at: "2026-11-13T21:03:50.945Z"
+    finished_at: "2026-11-13T21:04:00.891Z"
+    recorded_at: "2026-11-13T21:04:00.891Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: pm test-all judges each item's run as pm test does and hoists one shared decision context; a passing sweep prints no host path
+contract_change:
+  api: pm test-all CLI rendering
+  before: "Every run_results row printed the full 21-field execution_context, including four absolute host paths"
+  after: "Each item run is judged as pm test judges it: a quiet item's rows report only the decision fields, a context shared by every item that ran is hoisted to the top-level execution_context, and a non-quiet item keeps every full context"
+  migrate: Pass --check-context to keep every row's full execution context
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-tcvccz
+  gate_id: test-all-quiet-context-projection
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts (the test-all cases fail against the previous dispatch, which projected only pm test and left every test-all row with its full 21-field context and host paths)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

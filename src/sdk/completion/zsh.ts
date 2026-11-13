@@ -1092,6 +1092,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
             '--check-context[Preflight linked PM command context diagnostics before execution]' \\
+            '--full-output[Report full stdout/stderr of passing rows]' \\
             '--auto-pm-context[Auto-remediate tracker-read context mismatches using tracker context]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
@@ -1117,6 +1118,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--fail-on-empty-test-run[Treat empty linked-test selections as failures]' \\
             '--require-assertions-for-pm[Require assertions for linked PM command tests]' \\
             '--check-context[Preflight linked PM command context diagnostics before execution]' \\
+            '--full-output[Report full stdout/stderr of passing rows]' \\
             '--auto-pm-context[Auto-remediate tracker-read context mismatches using tracker context]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'

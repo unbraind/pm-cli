@@ -229,6 +229,7 @@ function buildRunTestOptions(
     failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
     requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
     checkContext: Boolean(options.checkContext),
+    fullOutput: Boolean(options.fullOutput),
     autoPmContext: Boolean(options.autoPmContext),
     author: typeof options.author === "string" ? options.author : undefined,
     message: typeof options.message === "string" ? options.message : undefined,
@@ -401,6 +402,7 @@ function buildRunTestAllOptions(options: Record<string, unknown>) {
     failOnEmptyTestRun: Boolean(options.failOnEmptyTestRun),
     requireAssertionsForPm: Boolean(options.requireAssertionsForPm),
     checkContext: Boolean(options.checkContext),
+    fullOutput: Boolean(options.fullOutput),
     autoPmContext: Boolean(options.autoPmContext),
   };
 }
@@ -940,6 +942,10 @@ function addLinkedTestExecutionOptions(command: Command): Command {
       "Check PM context before execution and report the full execution context",
     )
     .option(
+      "--full-output",
+      "Report full stdout/stderr of passing rows",
+    )
+    .option(
       "--auto-pm-context",
       "Route mismatched PM tracker reads through tracker context",
     );
@@ -953,12 +959,12 @@ export function registerOperationCommands(program: Command): void {
     .argument("<id>", "Item id")
     .option(
       "--add <value>",
-      "Add verified isolated test (CSV/markdown or stdin)",
+      "Link isolated test; runs only with --run (CSV/markdown or stdin)",
       collect,
     )
     .option(
       "--add-json <value>",
-      "Add verified isolated test (JSON object/array or stdin)",
+      "Link isolated test; runs only with --run (JSON object/array or stdin)",
       collect,
     )
     .option(
