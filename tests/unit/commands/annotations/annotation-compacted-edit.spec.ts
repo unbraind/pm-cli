@@ -63,9 +63,37 @@ describe("annotation edits refuse text copied from a compacted read (pm-n98pir)"
         `${renderPmCommand(["--pm-path", context.pmPath, collection, id, "--edit", "1", "--file"])} <full-text-file>`,
       ]);
       expect(error.context.examples![0]).toContain("--pm-path");
+      // Codex on PR 1717: a relative tracker spelling is replayed as its resolved
+      // root, and host-internal extension isolation is never replayed.
+      const relative = path.relative(process.cwd(), context.pmPath);
+      const scoped = await refusal(
+        run(id, { edit: 1, add: compacted }, { path: relative, noExtensions: true }),
+      );
+      expect(scoped.context.examples![0]).toBe(
+        renderPmCommand(["--pm-path", path.resolve(context.pmPath), collection, id, "--output-budget", "unbounded", "--json"]),
+      );
+      expect(scoped.context.examples!.join(" ")).not.toContain("--no-extensions");
       expect(await historyLineCount(context, id)).toBe(before);
       const stored = (await run(id, {}, global)) as unknown as Record<string, { text: string }[]>;
       expect(stored[collection]![0]!.text).toBe(LONG_TEXT);
+    });
+  });
+
+  it("names no tracker scope when the edit used the cwd's own tracker", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "Implicit tracker" });
+      await runComments(id, { add: LONG_TEXT }, { path: context.pmPath });
+      const previousCwd = process.cwd();
+      try {
+        process.chdir(context.tempRoot);
+        const error = await refusal(runComments(id, { edit: 1, add: `${LONG_TEXT.slice(0, 240)}…[+9 chars]` }, {}));
+        expect(error.context.examples).toEqual([
+          `pm comments ${id} --output-budget unbounded --json`,
+          `pm comments ${id} --edit 1 --file <full-text-file>`,
+        ]);
+      } finally {
+        process.chdir(previousCwd);
+      }
     });
   });
 

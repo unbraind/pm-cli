@@ -609,14 +609,19 @@ function assertAnnotationEditTextIsNotCompacted(
   text: string,
   config: AnnotationCommandConfig<string, AnnotationEntry>,
   global: GlobalOptions,
+  pmRoot: string,
 ): void {
   if (config.input.mode !== "edit") return;
   const omitted = readCompactionMarker(text);
   if (omitted === undefined) return;
   const noun = config.collectionKey.replace(/s$/, "");
   const index = config.input.index as number;
-  // The recovery targets the tracker the edit addressed, never the cwd default.
-  const scope = resolvePmCommandScopeArgs(global);
+  // The recovery targets the tracker the edit addressed. An explicit or
+  // environment-selected tracker is named by its resolved absolute root, which
+  // stays correct for SDK and MCP calls whose cwd differed from the caller's.
+  // Extension isolation is not replayed: the extension host sets it
+  // internally, and these reads only need to find the same entry.
+  const scope = resolvePmCommandScopeArgs(global)[0] === "--pm-path" ? ["--pm-path", pmRoot] : [];
   throw new PmCliError(
     `Replacement text for ${noun} ${index} on ${id} ends with the read-output compaction marker, so it was copied from a compacted read that left out ${omitted} characters. Nothing was written.`,
     EXIT_CODE.USAGE,
@@ -917,7 +922,7 @@ export async function runAnnotationCommand<
       EXIT_CODE.USAGE,
     );
   }
-  assertAnnotationEditTextIsNotCompacted(id, text, config, global);
+  assertAnnotationEditTextIsNotCompacted(id, text, config, global, pmRoot);
 
   if (config.input.mode === "edit") {
     const op = config.editOp ?? config.op;
