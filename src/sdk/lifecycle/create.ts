@@ -81,7 +81,6 @@ import {
   getHistoryPath,
   getItemPath,
   resolvePmRoot,
-  resolveWorkspaceRoot,
   readSettings,
   resolveAuthor,
 } from "../runtime-primitives.js";
@@ -136,8 +135,7 @@ import {
 } from "../test/entry.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
 import { parseLinkedTestPhase } from "../test/run-phases.js";
-import { BASELINE_ITEM_FORMAT_VERSION, requiredItemFormatVersion } from "../../core/item/item-format-version.js";
-import { assertProjectRuntimeFormatGuard } from "../environment/project-runtime-compatibility.js";
+import { stampRequiredItemFormat } from "../environment/project-runtime-compatibility.js";
 import {
   CREATE_UNSET_FIELD_DEFINITIONS,
   literalSentinelAdvisories,
@@ -746,18 +744,6 @@ export function parseTests(raw: string[] | undefined): {
     };
   });
   return { values, explicitEmpty: false };
-}
-
-/**
- * Stamp the item format a created record needs, exactly as a later edit would:
- * a linked-test setup entry needs format 3 (GH-1671). A project whose pinned pm
- * cannot refuse that format is refused before anything is written.
- */
-function stampCreatedItemFormat(metadata: ItemMetadata, pmRoot: string): void {
-  const requiredFormat = requiredItemFormatVersion(metadata);
-  if (requiredFormat <= BASELINE_ITEM_FORMAT_VERSION) return;
-  assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(pmRoot), requiredFormat);
-  metadata.pm_format_version = requiredFormat;
 }
 
 /** Implements parse docs for the public runtime surface of this module. */
@@ -3296,7 +3282,7 @@ export async function runCreate(
     /* c8 ignore stop */
   }
 
-  stampCreatedItemFormat(itemMetadata, pmRoot);
+  stampRequiredItemFormat(itemMetadata, pmRoot);
   const afterDocument: ItemDocument = canonicalDocument(
     {
       metadata: itemMetadata,

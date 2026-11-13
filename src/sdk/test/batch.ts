@@ -614,7 +614,7 @@ const runTestAllItem = async (
       // Entries after a failed setup were skipped in the sandbox; report them with the same blocked row.
       return runtimeGate.blocked(test) ?? runtimeGate.record(test, executed);
     }
-    return {
+    return runtimeGate.blocked(test) ?? {
       command: test.command,
       path: test.path,
       status: "skipped" as const,

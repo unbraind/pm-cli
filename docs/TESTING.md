@@ -735,6 +735,9 @@ pm test <item-id> --run
 - An item with a setup entry is stored at item format 3, so hosts that predate
   the phase refuse the item instead of silently dropping the field (see
   [Published Workspace Compatibility](#published-workspace-compatibility)).
+  Create, edits and the SDK import writer (`commitImportedItem`) all stamp it
+  through `stampRequiredItemFormat`, and package import adapters keep
+  `phase: setup` through an export and re-import.
 
 Do not link `pm test-all` itself as an item-level test command. It creates recursive orchestration.
 Use `--fail-on-empty-test-run` for release/readiness gates where selecting zero

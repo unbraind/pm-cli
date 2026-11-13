@@ -1,4 +1,5 @@
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   acquireLock,
@@ -185,6 +186,15 @@ describe("package import adapter primitives", () => {
           note: undefined,
         },
       ]);
+      // GH-1671: a setup entry keeps its phase through import; any other phase value is a regular test.
+      expect(
+        toImportLinkedTests([
+          { command: "npm run build", phase: "Setup" },
+          { command: "node --test", phase: "test" },
+          { command: "node --teardown", phase: "teardown" },
+          { command: "node --bare", phase: 1 },
+        ])?.map((test) => test.phase),
+      ).toEqual(["setup", undefined, undefined, undefined]);
       expect(
         toImportLinkedTests([{ command: "pnpm test", timeout_seconds: 0 }]),
       ).toEqual([
@@ -317,6 +327,41 @@ describe("package import adapter primitives", () => {
         expect(located).not.toBeNull();
         const written = await readFile(itemPath, "utf8");
         expect(written).toContain(id);
+      });
+    });
+
+    it("stamps item format 3 for an imported setup entry in the item and its history, and refuses a pin that cannot refuse it", async () => {
+      // Codex review of #1723: the SDK import writer serializes directly, so it must stamp the format create stamps (GH-1671).
+      await withTempPmPath(async (context) => {
+        const pmRoot = context.pmPath;
+        const settings = await readSettings(pmRoot);
+        const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+        const importOne = async (title: string) => {
+          const id = await generateItemId(pmRoot, settings.id_prefix);
+          const document = canonicalDocument({
+            metadata: normalizeItemMetadata({
+              id, title, description: "", type: "Task", status: "open", priority: 2, tags: [],
+              created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z",
+              tests: toImportLinkedTests([{ command: "npm run build", phase: "setup" }, { command: "node --test" }]),
+            }),
+            body: "",
+          });
+          const itemPath = getItemPath(pmRoot, "Task", id, "toon", typeRegistry.type_to_folder);
+          const result = await commitImportedItem({
+            pmRoot, id, itemPath, document, author: "import-agent", message: "Import setup", settings,
+            conflictWarningPrefix: "demo_import_lock_conflict",
+          });
+          return { id, itemPath, result, document };
+        };
+        const imported = await importOne("Imported setup");
+        expect(imported.result.committed).toBe(true);
+        expect(await readFile(imported.itemPath, "utf8")).toContain("pm_format_version: 3");
+        const history = await readFile(path.join(pmRoot, "history", `${imported.id}.jsonl`), "utf8");
+        expect(history).toContain("pm_format_version");
+        // The caller's document is not mutated.
+        expect(imported.document.metadata.pm_format_version).toBeUndefined();
+        await writeFile(path.join(path.dirname(path.dirname(pmRoot)), "package.json"), JSON.stringify({ devDependencies: { "@unbrained/pm-cli": "2026.10.9" } }));
+        await expect(importOne("Pinned too old")).rejects.toMatchObject({ code: "project_runtime_item_format_incompatible" });
       });
     });
 

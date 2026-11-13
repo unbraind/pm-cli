@@ -201,6 +201,25 @@ describe("linked-test setup phase", () => {
     });
   }, 90_000);
 
+  it("names the failed setup instead of a duplicate when a later item's identical setup fails at run time", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      // The first execution passes and leaves a flag; every later execution of the same setup fails.
+      const flagPath = path.join(context.tempRoot, "once.flag").replaceAll("\\", "/");
+      const once = `node -e "const fs=require('fs'); if (fs.existsSync('${flagPath}')) process.exit(1); fs.writeFileSync('${flagPath}', ''); fs.writeFileSync('built.txt', 'ok')"`;
+      const ids = ["first", "second"].map((title) => createTestItemId(context, { title, createMode: "progressive" }));
+      for (const id of ids) {
+        await runTest(id, { addJson: [JSON.stringify([isolated(once, "setup"), isolated(READ_BUILD)])] }, global);
+      }
+      const batch = await runTestAll({}, global);
+      const rows = batch.results.map((result) => result.run_results);
+      expect(rows.map((item) => item.map((row) => row.status))).toEqual([["passed", "passed"], ["failed", "skipped"]]);
+      // Codex review of #1723: the second item's regular row is a planned duplicate, but its receipt names the failed setup.
+      expect(rows[1]?.[1]?.error).toContain("did not pass (setup_failed)");
+      expect(rows[1]?.[1]?.error).not.toContain("Duplicate linked test skipped");
+    });
+  }, 60_000);
+
   it("keys test-all timeouts by setup signature and leaves every setup entry its own timeout", () => {
     const setup = (timeout: number, command = "npm run build"): LinkedTest => ({ command, scope: "project", phase: "setup", timeout_seconds: timeout });
     const regular = (timeout: number): LinkedTest => ({ command: "node --test", scope: "project", timeout_seconds: timeout });

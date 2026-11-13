@@ -33,6 +33,7 @@ import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
 import { nowIso } from "../core/shared/time.js";
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
+import { stampRequiredItemFormat } from "./environment/project-runtime-compatibility.js";
 import type {
   ConfidenceTextLevel,
   ItemDocument,
@@ -479,6 +480,8 @@ function toImportLinkedTest(
     scope: toImportLinkScope(entry.scope),
     timeout_seconds: toImportLinkedTestTimeout(entry.timeout_seconds, options),
     note: toNonEmptyImportString(entry.note),
+    // A setup entry keeps its phase through export and import (GH-1671); any other value is a regular test.
+    ...(typeof entry.phase === "string" && entry.phase.trim().toLowerCase() === "setup" ? { phase: "setup" as const } : {}),
     ...(options.includeExtendedAssertions === true
       ? toImportLinkedTestAssertions(entry)
       : {}),
@@ -581,16 +584,10 @@ export type CommitImportedItemResult =
 export async function commitImportedItem(
   params: CommitImportedItemParams,
 ): Promise<CommitImportedItemResult> {
-  const {
-    pmRoot,
-    id,
-    itemPath,
-    document,
-    author,
-    message,
-    settings,
-    conflictWarningPrefix,
-  } = params;
+  const { pmRoot, id, itemPath, author, message, settings, conflictWarningPrefix } = params;
+  // The item and its history carry the format the record needs, exactly as create stamps it (GH-1671).
+  const document = { ...params.document, metadata: { ...params.document.metadata } };
+  stampRequiredItemFormat(document.metadata, pmRoot);
   const historyPath = getHistoryPath(pmRoot, id);
   const beforeDocument = emptyImportedDocument();
   try {

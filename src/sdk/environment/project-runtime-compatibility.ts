@@ -9,6 +9,9 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { BASELINE_ITEM_FORMAT_VERSION, requiredItemFormatVersion } from "../../core/item/item-format-version.js";
+import { resolveWorkspaceRoot } from "../../core/store/paths.js";
+import type { ItemMetadata } from "../../types/index.js";
 
 export { PmCliError };
 
@@ -556,6 +559,19 @@ export function assertProjectRuntimeFormatGuard(projectRoot: string, formatVersi
     required: "Upgrade project pins, installed SDKs, CI hosts and Git merge drivers before writing guarded item formats.",
     nextSteps: ["Use a pm runtime supporting the required item format throughout the project; preserve original item and history bytes, and never re-anchor history to satisfy an older host."],
   });
+}
+
+/**
+ * Stamp the item format a newly written record needs, exactly as a later edit
+ * would: a linked-test setup entry needs format 3 (GH-1671). Create and the SDK
+ * import writer call it before serializing, and a project whose pinned pm
+ * cannot refuse that format is refused before anything is written.
+ */
+export function stampRequiredItemFormat(metadata: ItemMetadata, pmRoot: string): void {
+  const requiredFormat = requiredItemFormatVersion(metadata);
+  if (requiredFormat <= BASELINE_ITEM_FORMAT_VERSION) return;
+  assertProjectRuntimeFormatGuard(resolveWorkspaceRoot(pmRoot), requiredFormat);
+  metadata.pm_format_version = requiredFormat;
 }
 
 /** Resolve the first command token and index while preserving global option values. */
