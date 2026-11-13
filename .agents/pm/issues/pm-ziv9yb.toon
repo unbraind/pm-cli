@@ -2,11 +2,13 @@ id: pm-ziv9yb
 title: "Identity refusal reads only top-level fields, so a runtime field mapped onto comments, notes, learnings or dependencies can store a nested author with URL userinfo"
 description: "Found by the CodeRabbit review of PR 1712 (pm-gh1707). assertIdentityFieldsWithoutUrlCredentials checks the top-level author, assignee and claim_principal of create metadata and runtime update values. A runtime field definition may set metadata_key to a built-in collection such as comments, notes, learnings or dependencies, and an array field without a value_schema stores its JSON as-is, so a nested entry's author can carry URL userinfo past the guard. Fix: walk nested arrays and objects of the checked values (bounded depth) for identity keys, or reject built-in collection keys as runtime metadata_key during field normalization."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: identity,redaction,runtime-fields,security
 created_at: "2026-11-12T16:08:56.108Z"
-updated_at: "2026-11-12T16:08:56.108Z"
+updated_at: "2026-11-12T21:01:04.812Z"
+closed_at: "2026-11-12T19:54:44.173Z"
+completed_at: "2026-11-12T19:54:44.173Z"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "A runtime or registered field value whose nested entries carry an author, assignee or claim_principal with URL userinfo is refused like a top-level one; Ordinary nested collections without credentials are unaffected; A regression test covers a runtime array field mapped onto comments"
@@ -14,8 +16,25 @@ parent: pm-qwoy
 risk: low
 confidence: high
 severity: medium
-expected_result: No field path can store an identity carrying URL userinfo
-actual_result: Nested authors in runtime collection fields bypass the identity refusal
+resolution: "assertIdentityFieldsWithoutUrlCredentials judges the top-level author, assignee and claim_principal plus a declared table of nested identity paths (comments, notes, learnings, dependencies, plan_decisions and plan_discoveries author, tests provenance author). A runtime or registered field mapped onto one of those collections with a nested author carrying URL userinfo is refused like a top-level one, naming the entry path. Author keys in arbitrary field data, such as a linked test assertion map, are ordinary data and are never judged."
+expected_result: Nested identity fields with URL userinfo are refused
+actual_result: "url-credentials spec covers every declared nested path (refused), URL text in a comment and an author key in an assertion map or audit_details (allowed), a container at an identity location (refused) and the depth bound; 57 related tests pass with full coverage of the change"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1707,discovered_from,"2026-11-12T16:08:56.108Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-12T20:13:44.114Z","harness:claude-code","PR 1714 Greptile, fixed in this PR: the walk skipped recursion when an identity key held an object, so {audit_details: {author: {author: url}}} passed. The walk now recurses into every container, including one stored under an identity key; the case is in the spec.\n"
+  "2026-11-12T21:00:55.740Z","harness:claude-code","PR 1714 Codex review (P2), fixed in this PR: the recursive walk judged every nested key named author, so a linked test whose assert_json_field_equals map checks an author field holding a public URL with an at sign in its path (an example.com profile URL) was refused at create. pm reads identities only at declared locations, so the walk now follows a declared table: the top-level author, assignee and claim_principal plus the entry paths comments/notes/learnings/dependencies/plan_decisions/plan_discoveries author and tests provenance author. A container stored at one of those locations is still identity data throughout (bounded at depth 4), so author holding an object with a nested URL credential stays refused. An author key in arbitrary field data, such as an assertion map or audit_details, is no longer judged. The refusal now names the entry path, for example comments[0].author.\n"
+files[1]{path,scope}:
+  src/core/shared/url-credentials.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts,project,600,"harness:claude-code","2026-11-12T19:52:43.882Z",local_mutation,chore/identity-nested-guard-and-release-health
+close_reason: "Identity refusal judges every declared identity location, so no field path stores an identity carrying URL userinfo"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-ziv9yb
+  gate_id: credential-redaction
+  negative_control: node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts (the nested comments case fails on the top-level-only check)
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/shared/url-credentials.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
