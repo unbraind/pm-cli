@@ -179,6 +179,11 @@ describe("GH-1716 linked-artifact note conflicts", () => {
       const migrated = await runFiles(id, { add: ["path=old/b.ts,note=moved"], migrate: ["from=old/,to=new\\"] }, global);
       expect(migrated.files).toEqual([{ path: "new/b.ts", scope: "project", note: "moved" }]);
       expect(migrated.mutation_receipt?.link_outcomes).toEqual([{ path: "new/b.ts", scope: "project", outcome: "added" }]);
+      // A pure migration in that spelling moves a stored link without counting it as removed (Codex review round 3).
+      const moved = await runFiles(id, { migrate: ["from=new/,to=moved\\"] }, global);
+      expect(moved.mutation_receipt).toMatchObject({ removed_count: 0 });
+      expect((await runFiles(id, {}, global)).files.map((file) => file.path)).toContain("moved/b.ts");
+      await runFiles(id, { migrate: ["from=moved/,to=new/"] }, global);
 
       // That spelling is the stored link's identity too: it cannot bypass the refusal or save a duplicate (Codex review round 2).
       const bypass = await refusal(runFiles(id, { add: ["path=old/b.ts,note=other"], migrate: ["from=old/,to=new\\"] }, global));

@@ -760,7 +760,7 @@ describe("core/lock/lock additional branch coverage", () => {
         // pm gc keeps a lock it cannot read, so the step is an owner-verified removal (Codex review round 2).
         context: {
           nextSteps: [
-            `Remove locks/${id}.lock under ${path.relative(process.cwd(), pmPath)} once its owner is confirmed gone, then retry the same command. pm gc --scope locks keeps a lock whose metadata cannot be read or dated.`,
+            `Remove locks/${id}.lock under ${path.relative(process.cwd(), pmPath)} once its owner is confirmed gone, then retry the same command. pm gc --scope locks keeps this lock: its metadata cannot be read or dated, or its own TTL has not run out.`,
           ],
         },
       });
@@ -790,6 +790,21 @@ describe("core/lock/lock additional branch coverage", () => {
           ],
         },
       });
+    });
+  });
+
+  it("names a manual removal when the lock is stale only by the caller's shorter TTL, which pm gc does not use (Codex review round 3)", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-lock-own-ttl-live";
+      // 120 s old against its own 3600 s lease: gc keeps it, though a 60 s caller TTL judges it stale.
+      const createdAt = new Date(Date.now() - 120_000).toISOString();
+      await fs.writeFile(
+        getLockPath(pmPath, id),
+        `${JSON.stringify({ id, pid: 1, owner: "other-owner", created_at: createdAt, ttl_seconds: 3600 })}\n`,
+      );
+      const error = await acquireLock(pmPath, id, 60, "owner-a", false).catch((caught: unknown) => caught as PmCliError);
+      expect(error.context.code).toBe("stale_lock_requires_override");
+      expect(error.context.nextSteps?.[0]).toContain("its own TTL has not run out");
     });
   });
 

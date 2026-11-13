@@ -718,8 +718,9 @@ function resolveLockOverrideRelease(
  * The cleanup step for a stale lock: pm gc --scope locks against the tracker
  * that holds it, scoped with --pm-path (relative to the working directory)
  * when that is not the tracker this directory resolves to (GH-1706). gc keeps
- * a lock whose metadata cannot be read or dated, and cannot run where the lock
- * root is not a tracker, so those get an owner-verified manual removal.
+ * a lock it cannot read or date or whose own TTL has not run out, and cannot
+ * run where the lock root is not a tracker, so those get an owner-verified
+ * manual removal.
  */
 async function staleLockCleanupStep(
   lockPath: string,
@@ -728,7 +729,9 @@ async function staleLockCleanupStep(
 ): Promise<string> {
   const lockRoot = path.dirname(path.dirname(lockPath));
   const manual = `Remove ${relativeLockPath} under ${path.relative(process.cwd(), lockRoot) || "."} once its owner is confirmed gone, then retry the same command.`;
-  if (!gcRemovable) return `${manual} pm gc --scope locks keeps a lock whose metadata cannot be read or dated.`;
+  if (!gcRemovable) {
+    return `${manual} pm gc --scope locks keeps this lock: its metadata cannot be read or dated, or its own TTL has not run out.`;
+  }
   try {
     await fs.access(getSettingsPath(lockRoot));
   } catch {
@@ -741,12 +744,19 @@ async function staleLockCleanupStep(
   return `Run ${renderPmCommand([...scope, "gc", "--scope", "locks"])} (add --dry-run to preview), then retry the same command.`;
 }
 
-/** Whether a lock's metadata parsed and carries a valid timestamp, the only stale locks pm gc removes. */
-function isDatedLock(lockInfo: LockReadResult): boolean {
+/**
+ * Whether pm gc --scope locks would remove this lock: its metadata parsed, it
+ * carries a valid timestamp, and it is past its OWN recorded TTL. The caller's
+ * TTL can be shorter (a lowered locks.ttl_seconds), and gc keeps a lease its
+ * owner still holds by its own terms. A confirmed-dead owner never reaches the
+ * refusal, because acquisition reclaims it.
+ */
+function isGcRemovableLock(lockInfo: LockReadResult): boolean {
   return (
     lockInfo.info !== null &&
     lockInfo.warnings.length === 0 &&
-    Number.isFinite(Date.parse(lockInfo.info.created_at))
+    Number.isFinite(Date.parse(lockInfo.info.created_at)) &&
+    isStaleLock(lockInfo.info, lockInfo.info.ttl_seconds)
   );
 }
 
@@ -775,7 +785,7 @@ async function throwIfStaleLockNeedsForce(
         details: { lock_id: id, lock_path: relativeLockPath },
         why: `The lease in ${relativeLockPath} is past its TTL, and force_required_for_stale_lock keeps an expired lease until it is removed explicitly.`,
         required: "Remove the expired lease, then retry the same command.",
-        nextSteps: [await staleLockCleanupStep(lockPath, relativeLockPath, isDatedLock(lockInfo))],
+        nextSteps: [await staleLockCleanupStep(lockPath, relativeLockPath, isGcRemovableLock(lockInfo))],
       },
     );
   }

@@ -1074,7 +1074,8 @@ function countRemovedLinkedArtifacts(
   }
   let removed = 0;
   for (const entry of before) {
-    const key = artifactKey({ ...entry, path: applyPathMigrations(entry.path, migrations) });
+    // The migrated path in storage's form, as the merge applied it.
+    const key = artifactKey({ ...entry, path: storedLinkedPath(applyPathMigrations(entry.path, migrations)) });
     const left = remaining.get(key) ?? 0;
     if (left > 0) remaining.set(key, left - 1);
     else removed += 1;
