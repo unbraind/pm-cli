@@ -757,6 +757,12 @@ describe("core/lock/lock additional branch coverage", () => {
         acquireLock(pmPath, id, 60, "owner-a", false),
       ).rejects.toMatchObject({
         message: expect.stringContaining("lock_info_invalid_json"),
+        // pm gc keeps a lock it cannot read, so the step is an owner-verified removal (Codex review round 2).
+        context: {
+          nextSteps: [
+            `Remove locks/${id}.lock under ${path.relative(process.cwd(), pmPath)} once its owner is confirmed gone, then retry the same command. pm gc --scope locks keeps a lock whose metadata cannot be read or dated.`,
+          ],
+        },
       });
     });
   });

@@ -717,21 +717,37 @@ function resolveLockOverrideRelease(
 /**
  * The cleanup step for a stale lock: pm gc --scope locks against the tracker
  * that holds it, scoped with --pm-path (relative to the working directory)
- * when that is not the tracker this directory resolves to, or a manual removal
- * when the lock root is not a tracker at all (GH-1706).
+ * when that is not the tracker this directory resolves to (GH-1706). gc keeps
+ * a lock whose metadata cannot be read or dated, and cannot run where the lock
+ * root is not a tracker, so those get an owner-verified manual removal.
  */
-async function staleLockCleanupStep(lockPath: string, relativeLockPath: string): Promise<string> {
+async function staleLockCleanupStep(
+  lockPath: string,
+  relativeLockPath: string,
+  gcRemovable: boolean,
+): Promise<string> {
   const lockRoot = path.dirname(path.dirname(lockPath));
+  const manual = `Remove ${relativeLockPath} under ${path.relative(process.cwd(), lockRoot) || "."} once its owner is confirmed gone, then retry the same command.`;
+  if (!gcRemovable) return `${manual} pm gc --scope locks keeps a lock whose metadata cannot be read or dated.`;
   try {
     await fs.access(getSettingsPath(lockRoot));
   } catch {
-    return `Remove ${relativeLockPath} under ${path.relative(process.cwd(), lockRoot) || "."} once its owner is confirmed gone, then retry the same command.`;
+    return manual;
   }
   const cwd = process.cwd();
   const scope = path.resolve(resolvePmRoot(cwd)) === path.resolve(lockRoot)
     ? []
     : ["--pm-path", path.relative(cwd, lockRoot) || "."];
   return `Run ${renderPmCommand([...scope, "gc", "--scope", "locks"])} (add --dry-run to preview), then retry the same command.`;
+}
+
+/** Whether a lock's metadata parsed and carries a valid timestamp, the only stale locks pm gc removes. */
+function isDatedLock(lockInfo: LockReadResult): boolean {
+  return (
+    lockInfo.info !== null &&
+    lockInfo.warnings.length === 0 &&
+    Number.isFinite(Date.parse(lockInfo.info.created_at))
+  );
 }
 
 /**
@@ -759,7 +775,7 @@ async function throwIfStaleLockNeedsForce(
         details: { lock_id: id, lock_path: relativeLockPath },
         why: `The lease in ${relativeLockPath} is past its TTL, and force_required_for_stale_lock keeps an expired lease until it is removed explicitly.`,
         required: "Remove the expired lease, then retry the same command.",
-        nextSteps: [await staleLockCleanupStep(lockPath, relativeLockPath)],
+        nextSteps: [await staleLockCleanupStep(lockPath, relativeLockPath, isDatedLock(lockInfo))],
       },
     );
   }

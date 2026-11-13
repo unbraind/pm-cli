@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,concurrency,"gh:1706",locking,recovery
 created_at: "2026-11-12T05:13:38.060Z"
-updated_at: "2026-11-13T17:12:42.078Z"
+updated_at: "2026-11-13T18:02:28.967Z"
 closed_at: "2026-11-13T16:33:48.788Z"
 completed_at: "2026-11-13T16:33:48.788Z"
 author: "harness:claude-code"
@@ -21,9 +21,10 @@ expected_result: "release refuses before writing or succeeds with the attributio
 actual_result: On the GH-1706 repro claim and release both exit 0 and the claim is cleared once; a forced attribution failure keeps release at exit 0 with the release warning and suggestion; a stale item lock under force_required_for_stale_lock is refused with stale_lock_requires_override before any write and release --force succeeds; the new spec fails against the old lock policy
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-d70h,related,"2026-11-12T05:13:38.060Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-13T15:22:40.744Z","harness:claude-code","Progress (branch fix/mutation-outcome-honesty): reproduced on the 2026.11.13 build (claim exit 0 with the attribution warning, release exit 4 after clearing the claim, release --force exit 4). Root cause: mutateSessionState acquired its singleton lock with force_required_for_stale_lock hard-coded true and force false, so an expired lease could never be reclaimed by any command, and runRelease awaited the attribution write after the item commit without the warning wrapper claim uses. Fix: the session-state lease is reclaimed past its TTL (the same policy the context usage ledger and workspace transaction locks already use); claim and release share recordAttributionAfterCommit, which returns claim_semantic_attribution_unrecorded or release_semantic_attribution_unrecorded plus a suggestion naming the refusal code and pm gc --scope locks; the stale-lock refusal is now typed stale_lock_requires_override with details lock_id and tracker-relative lock_path and no longer says Item for non-item locks. Close does not write session state, so it has no stale-lock path. Negative control: restoring the old lock policy fails the new stale-session-lock spec."
   "2026-11-13T17:10:57.969Z","harness:claude-code","Review round 1 (Codex gpt-6.1-sol xhigh, Greptile): with the session-state lease reclaimable, a writer stalled past the TTL could overwrite newer state, because the write was not fenced. mutateSessionState now uses acquireLockLease and writes inside lease.fence, so a writer whose lease was replaced refuses with lock_lost (claim and release turn that into their attribution warning). The stale-lock next step ran pm gc against the invocation's own tracker when --pm-path selected another one: the cleanup step now derives the tracker from the lock path, adds --pm-path relative to the working directory when it differs from the resolved tracker, and names a manual removal when the lock root is not a tracker (the merge-driver lock under the git directory). New spec tests/unit/core/session/session-state-fence.spec.ts."
+  "2026-11-13T18:02:28.967Z","harness:claude-code","Review round 2 (Codex, CodeRabbit): (1) pm gc keeps a lock whose metadata cannot be read or dated, so the stale-lock refusal now names an owner-verified manual removal for those instead of a gc that changes nothing. (2) refusalCode checks the context shape again, so an error named PmCliError without a context never escapes the post-commit catch or makes isAlreadyClaimedError throw. (3) the attribution suggestion renders pm health and pm gc --scope locks with the caller's tracker selection. claim and release moved their advice assembly into helpers so both stay under the CodeFactor complexity ceiling of 16."
 files[7]{path,scope,note}:
   src/core/lock/lock.ts,project,stale_lock_requires_override refusal names pm gc --scope locks and the tracker-relative lock path
   src/core/session/session-state.ts,project,session-state lease past its TTL is reclaimed under the stale-cleanup gate

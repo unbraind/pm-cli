@@ -3266,6 +3266,13 @@
       ],
       "package_version": "2026.11.13",
       "reason": "GH-1716 and GH-1706 add only optional members: FilesCommandOptions/DocsCommandOptions gain noteConflict, LinkedCollectionMutationReceipt gains link_outcomes, projectLinkedCollectionMutation takes an optional linkOutcomes, and ClaimResult gains suggestions; PM_TOOL_PARAMETERS_SCHEMA_VERSION moves to the additive 4.25.0 for the MCP noteConflict parameter. Existing callers compile and behave unchanged except that an add whose note differs from a stored note is now refused unless noteConflict is replace or append (migration paragraph in docs/SDK.md)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:LinkedArtifactNoteConflict"
+      ],
+      "package_version": "2026.11.13",
+      "reason": "LinkedArtifactNoteConflict is new in this unreleased change (GH-1716); review round 2 adds its required source field (stored or this_write) before it ships, so no released caller constructs it"
     }
   ],
   "entrypoints": {
@@ -11892,7 +11899,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "LinkedArtifactNoteConflict",
-          "signature": "export interface LinkedArtifactNoteConflict { path: string; scope: LinkScope; existing_note: string; requested_note: string; }"
+          "signature": "export interface LinkedArtifactNoteConflict { path: string; scope: LinkScope; existing_note: string; requested_note: string; source: \"stored\" | \"this_write\"; }"
         },
         {
           "classification": "advanced_export",

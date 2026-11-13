@@ -419,7 +419,8 @@ describe("runFiles", () => {
         { fullHistory: true,
           add: [
             "path=README.md,scope=project,note=readme reference",
-            "path=README.md,scope=project,note=duplicate should be ignored",
+            // A note-less repeat is ignored; one with a different note would need --note-conflict (GH-1716).
+            "path=README.md,scope=project",
             "path=docs/reference/architecture.md,scope=global,note=global file",
             "path=docs/reference/implicit-scope-file.md,note=implicit project scope",
           ],
@@ -1189,7 +1190,8 @@ describe("runDocs", () => {
         { fullHistory: true,
           add: [
             "path=README.md,scope=project,note=readme doc",
-            "path=README.md,scope=project,note=duplicate should be ignored",
+            // A note-less repeat is ignored; one with a different note would need --note-conflict (GH-1716).
+            "path=README.md,scope=project",
             "path=docs/reference/architecture.md,scope=global,note=global doc",
             "path=docs/reference/implicit-scope-doc.md,note=implicit project scope",
           ],

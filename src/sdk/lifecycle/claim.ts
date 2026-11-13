@@ -19,6 +19,7 @@ import {
   normalizeStatusForRegistry,
 } from "../runtime-primitives.js";
 import { wrapOwnershipConflict } from "../annotations.js";
+import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
 import { resolveItemOwnershipConflict } from "../ownership-source.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
@@ -117,8 +118,11 @@ function refusalCode(error: unknown): string | undefined {
   if (!(error instanceof Error) || error.name !== "PmCliError") {
     return undefined;
   }
-  // Every PmCliError carries a context object (its constructor defaults it to {}).
-  return (error as PmCliError).context.code;
+  // Matched by name, so the error may come from elsewhere: check its shape before reading the code.
+  const context = (error as Error & { context?: unknown }).context;
+  if (typeof context !== "object" || context === null) return undefined;
+  const code = (context as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
 }
 
 /** Returns whether an error is a pm refusal carrying the typed `code`. */
@@ -288,17 +292,18 @@ export async function runClaim(
     },
   });
 
-  const attribution = skipped
-    ? undefined
-    : await recordAttributionAfterCommit("claim", result.item.id, () =>
-        recordClaimSemanticAttribution({
-          pmRoot,
-          settings,
-          principal: claimPrincipal,
-          itemId: result.item.id,
-        }),
-      );
-  if (attribution) mutationWarnings.push(attribution.warning);
+  // A skipped claim wrote nothing, so it records no attribution either.
+  const attribution = attributionAdvice(
+    await recordAttributionAfterCommit("claim", result.item.id, global, skipped, () =>
+      recordClaimSemanticAttribution({
+        pmRoot,
+        settings,
+        principal: claimPrincipal,
+        itemId: result.item.id,
+      }),
+    ),
+  );
+  mutationWarnings.push(...attribution.warnings);
 
   return {
     // Echo identities an older version stored only in redacted form (GH-1707).
@@ -310,13 +315,27 @@ export async function runClaim(
     forced: force,
     ...(skipped ? { skipped: true } : {}),
     ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
-    ...(attribution ? { suggestions: [attribution.suggestion] } : {}),
+    ...nonEmptyList("suggestions", attribution.suggestions),
     ...startEvidence,
   };
 }
 
 /** Stable warning when session attribution could not be recorded for a claim that already committed. */
 export const CLAIM_ATTRIBUTION_UNRECORDED_WARNING = "claim_semantic_attribution_unrecorded";
+
+/** The warning and suggestion lists a post-commit attribution outcome contributes; both empty when it was recorded. */
+function attributionAdvice(
+  attribution: { warning: string; suggestion: string } | undefined,
+): { warnings: string[]; suggestions: string[] } {
+  return attribution
+    ? { warnings: [attribution.warning], suggestions: [attribution.suggestion] }
+    : { warnings: [], suggestions: [] };
+}
+
+/** A result field present only when its list has entries. */
+function nonEmptyList<K extends string>(key: K, values: string[]): Partial<Record<K, string[]>> {
+  return values.length > 0 ? ({ [key]: values } as Partial<Record<K, string[]>>) : {};
+}
 
 /** Stable warning when session attribution could not be updated for a release that already committed (GH-1706). */
 export const RELEASE_ATTRIBUTION_UNRECORDED_WARNING = "release_semantic_attribution_unrecorded";
@@ -331,16 +350,21 @@ export const RELEASE_ATTRIBUTION_UNRECORDED_WARNING = "release_semantic_attribut
 async function recordAttributionAfterCommit(
   operation: "claim" | "release",
   itemId: string,
+  global: GlobalOptions,
+  skip: boolean,
   record: () => Promise<void>,
 ): Promise<{ warning: string; suggestion: string } | undefined> {
+  if (skip) return undefined;
   try {
     await record();
     return undefined;
   } catch (error: unknown) {
     const cause = refusalCode(error) ?? "unexpected_error";
+    // The commands keep the caller's tracker selection, so they inspect the tracker that was written.
+    const scope = resolvePmCommandScopeArgs(global);
     return {
       warning: operation === "claim" ? CLAIM_ATTRIBUTION_UNRECORDED_WARNING : RELEASE_ATTRIBUTION_UNRECORDED_WARNING,
-      suggestion: `The ${operation} of ${itemId} is saved, but the session attribution that names this agent's active work was not updated (${cause}); nothing needs a retry. If pm health reports a stale lock, remove it with pm gc --scope locks.`,
+      suggestion: `The ${operation} of ${itemId} is saved, but the session attribution that names this agent's active work was not updated (${cause}); nothing needs a retry. If ${renderPmCommand([...scope, "health"])} reports a stale lock, remove it with ${renderPmCommand([...scope, "gc", "--scope", "locks"])}.`,
     };
   }
 }
@@ -613,24 +637,16 @@ export async function runRelease(
     });
   }
 
-  const attribution = await recordAttributionAfterCommit("release", result.item.id, () =>
-    recordReleaseSemanticAttribution({
-      pmRoot,
-      principal: claimPrincipal,
-      itemId: result.item.id,
-    }),
+  const attribution = attributionAdvice(
+    await recordAttributionAfterCommit("release", result.item.id, global, false, () =>
+      recordReleaseSemanticAttribution({
+        pmRoot,
+        principal: claimPrincipal,
+        itemId: result.item.id,
+      }),
+    ),
   );
-
-  const stillInProgress = normalizeStatusForRegistry(result.item.status, statusRegistry) === normalizeStatusForRegistry(statusRegistry.in_progress_status, statusRegistry);
-  const warnings = [
-    ...result.warnings,
-    ...(stillInProgress ? ["released_unclaimed_in_progress"] : []),
-    ...(attribution ? [attribution.warning] : []),
-  ];
-  const suggestions = [
-    ...(stillInProgress ? [`${result.item.id} remains ${result.item.status} and unclaimed. If work is paused, run pm release ${result.item.id} --pause to move it to ${statusRegistry.open_status}.`] : []),
-    ...(attribution ? [attribution.suggestion] : []),
-  ];
+  const handoffAdvice = releaseHandoffAdvice(result.item, statusRegistry);
 
   return {
     item: redactIdentityFields(toItemRecord(result.item)),
@@ -639,7 +655,21 @@ export async function runRelease(
     previous_assignee: previousAssignee === null ? null : redactIdentityCredentials(previousAssignee),
     forced: force,
     ...(handoff === undefined ? {} : { handoff }),
-    ...(warnings.length > 0 ? { warnings } : {}),
-    ...(suggestions.length > 0 ? { suggestions } : {}),
+    ...nonEmptyList("warnings", [...result.warnings, ...handoffAdvice.warnings, ...attribution.warnings]),
+    ...nonEmptyList("suggestions", [...handoffAdvice.suggestions, ...attribution.suggestions]),
   };
+}
+
+/** Advice for a release that leaves its item in the in-progress status without an owner. */
+function releaseHandoffAdvice(
+  item: ItemMetadata,
+  statusRegistry: RuntimeStatusRegistry,
+): { warnings: string[]; suggestions: string[] } {
+  const stillInProgress = normalizeStatusForRegistry(item.status, statusRegistry) === normalizeStatusForRegistry(statusRegistry.in_progress_status, statusRegistry);
+  return stillInProgress
+    ? {
+        warnings: ["released_unclaimed_in_progress"],
+        suggestions: [`${item.id} remains ${item.status} and unclaimed. If work is paused, run pm release ${item.id} --pause to move it to ${statusRegistry.open_status}.`],
+      }
+    : { warnings: [], suggestions: [] };
 }

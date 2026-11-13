@@ -110,10 +110,20 @@ describe("GH-1716 linked-artifact note conflicts", () => {
       const replaced = await runDocs(id, { add: ["docs/b.md"], note: "second note", noteConflict: " Replace " }, global);
       expect(replaced.mutation_receipt?.link_outcomes).toEqual([{ path: "docs/b.md", scope: "project", outcome: "note_replaced" }]);
 
-      // A link first added in this same write takes a later note: no stored rationale is at stake.
-      const sameWrite = await runDocs(id, { add: ["path=docs/c.md,note=draft", "path=docs/c.md,note=final"] }, global);
-      expect(sameWrite.docs).toEqual([{ path: "docs/c.md", scope: "project", note: "final" }]);
-      expect(sameWrite.mutation_receipt?.link_outcomes).toEqual([{ path: "docs/c.md", scope: "project", outcome: "added" }]);
+      // Entries of one write apply in order under one rule, so a write whose own notes disagree is refused...
+      const disagreeing = { add: ["path=docs/c.md,note=draft", "path=docs/c.md,note=final"] };
+      const sameWrite = await refusal(runDocs(id, disagreeing, global));
+      expect(sameWrite.message).toBe(`The add names doc docs/c.md on ${id} with two notes, "draft" and then "final"; the add was refused because they disagree`);
+      expect(sameWrite.context.details).toMatchObject({ conflicts: [{ existing_note: "draft", requested_note: "final", source: "this_write" }] });
+      // ...and a successful write replays as a no-op under either explicit mode (Codex review round 2).
+      for (const [noteConflict, note] of [["append", "draft; final"], ["replace", "final"]] as const) {
+        const pathFor = `docs/${noteConflict}.md`;
+        const entries = [`path=${pathFor},note=draft`, `path=${pathFor},note=final`];
+        const first = await runDocs(id, { add: entries, noteConflict }, global);
+        expect(first.docs).toEqual([{ path: pathFor, scope: "project", note }]);
+        expect(first.mutation_receipt?.link_outcomes).toEqual([{ path: pathFor, scope: "project", outcome: "added" }]);
+        expect(await runDocs(id, { add: entries, noteConflict }, global)).toMatchObject({ changed: false, mutation_receipt: { changed_count: 0 } });
+      }
       const sameWriteNoteless = await runDocs(id, { add: ["docs/d.md", "path=docs/d.md,note=later", "docs/d.md"] }, global);
       expect(sameWriteNoteless.docs).toEqual([{ path: "docs/d.md", scope: "project", note: "later" }]);
     });
@@ -169,6 +179,17 @@ describe("GH-1716 linked-artifact note conflicts", () => {
       const migrated = await runFiles(id, { add: ["path=old/b.ts,note=moved"], migrate: ["from=old/,to=new\\"] }, global);
       expect(migrated.files).toEqual([{ path: "new/b.ts", scope: "project", note: "moved" }]);
       expect(migrated.mutation_receipt?.link_outcomes).toEqual([{ path: "new/b.ts", scope: "project", outcome: "added" }]);
+
+      // That spelling is the stored link's identity too: it cannot bypass the refusal or save a duplicate (Codex review round 2).
+      const bypass = await refusal(runFiles(id, { add: ["path=old/b.ts,note=other"], migrate: ["from=old/,to=new\\"] }, global));
+      expect(bypass.context.details).toMatchObject({ conflicts: [{ path: "new/b.ts", existing_note: "moved", source: "stored" }] });
+      await runFiles(id, { add: ["path=old/b.ts,note=other"], migrate: ["from=old/,to=new\\"], noteConflict: "replace" }, global);
+      expect((await runFiles(id, {}, global)).files.filter((file) => file.path === "new/b.ts")).toEqual([
+        { path: "new/b.ts", scope: "project", note: "other" },
+      ]);
+      // Adding and removing two spellings of one saved path is the same ambiguous intent.
+      const ambiguous = await refusal(runFiles(id, { add: ["new\\c.ts"], remove: ["new/c.ts"] }, global));
+      expect(ambiguous.context.code).toBe("linked_artifact_mutation_conflict");
     });
   });
 
@@ -209,6 +230,18 @@ describe("GH-1716 linked-artifact note conflicts", () => {
       } finally {
         stdin.mockRestore();
       }
+    });
+  });
+
+  it("replays a conflict with the canonical item id, not the shorthand the caller passed (Codex review round 2)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "shorthand" });
+      const global = { path: context.pmPath };
+      await runFiles(id, { add: ["path=a.ts,note=kept"] }, global);
+      const shorthand = id.replace(/^pm-/u, "");
+      const error = await refusal(runFiles(shorthand, { add: ["path=a.ts,note=new"] }, global));
+      const retry = error.context.recovery?.suggested_retry_args as string[];
+      expect(retry.slice(retry.indexOf("files"), retry.indexOf("files") + 2)).toEqual(["files", id]);
     });
   });
 
