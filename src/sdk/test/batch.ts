@@ -18,6 +18,7 @@ import {
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { listAllItemMetadataLight } from "../../core/store/item-store.js";
 import { resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
@@ -457,9 +458,19 @@ const selectTestAllItems = async (params: {
   return { filteredItems, statusFilter, limitFilter, offsetFilter };
 };
 
-/** The setup entries an item runs first, as one signature; empty when the item has none. */
-const resolveSetupSignature = (tests: LinkedTest[]): string =>
-  tests.filter(isLinkedTestSetup).map(buildLinkedTestKey).join("|");
+/**
+ * The setup entries an item runs first, as one exact signature (empty when the
+ * item has none). Unlike the dedupe key it keeps command bytes verbatim: two
+ * setups differing only in quoted whitespace produce different output. A
+ * timeout changes how long a setup may run, not what it produces, and a setup
+ * that times out releases its item's keys anyway.
+ */
+const resolveSetupSignature = (tests: LinkedTest[]): string => {
+  const setups = tests
+    .filter(isLinkedTestSetup)
+    .map(({ provenance: _provenance, provenance_invalid: _invalid, updated_by: _by, updated_at: _at, note: _note, timeout_seconds: _timeout, ...definition }) => definition);
+  return setups.length === 0 ? "" : stableStringify(setups);
+};
 
 /**
  * The key a regular test deduplicates on across items: its own key plus the
@@ -591,12 +602,16 @@ const runTestAllItem = async (
       : [];
   releaseBlockedReservations(executedResults, reservedKeys, context);
   let executedIndex = 0;
+  // Replays the executed setup outcomes in run order, so a refusal planned after
+  // a setup that failed at run time is reported as the skip it became (GH-1671).
+  const runtimeGate = createLinkedTestSetupGate();
   const runResults = keyedTests.map(({ test, key, duplicate, refusal }) => {
-    if (refusal) return refusal;
+    if (refusal) return refusal.status === "refused" ? (runtimeGate.blocked(test) ?? refusal) : refusal;
     if (!duplicate) {
       const executed = executedResults[executedIndex];
       executedIndex += 1;
-      return executed;
+      // Entries after a failed setup were skipped in the sandbox; report them with the same blocked row.
+      return runtimeGate.blocked(test) ?? runtimeGate.record(test, executed);
     }
     return {
       command: test.command,

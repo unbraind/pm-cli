@@ -210,6 +210,9 @@ describe("linked-test setup phase", () => {
       item("pm-b", [setup(300), regular(60)]),
       item("pm-c", [regular(90)]),
       item("pm-d", [setup(5, "npm run other"), regular(10)]),
+      // Codex round 2: the dedupe key collapses whitespace, but quoted whitespace changes what a setup writes.
+      item("pm-e", [setup(5, `node -e "write('a  b')"`), regular(20)]),
+      item("pm-f", [setup(5, `node -e "write('a b')"`), regular(25)]),
     ] as never);
     const plainKey = _testOnlyTestAll.buildLinkedTestKey(regular(0));
     // Setups are absent (each runs with its own timeout); regular tests key on their item's setup signature.
@@ -217,9 +220,26 @@ describe("linked-test setup phase", () => {
     expect(map.get(plainKey)).toBe(90);
     // Items with the same setup share one key and its widest timeout; a different setup gets its own key.
     const setupKeys = [...map.keys()].filter((key) => key.includes(":setup["));
-    expect(setupKeys).toHaveLength(2);
-    expect(setupKeys.map((key) => map.get(key)).sort((left, right) => Number(left) - Number(right))).toEqual([10, 60]);
+    expect(setupKeys).toHaveLength(4);
+    expect(setupKeys.map((key) => map.get(key)).sort((left, right) => Number(left) - Number(right))).toEqual([10, 20, 25, 60]);
   });
+
+  it("reports a refusal planned after a setup that fails at run time as the skip it became", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      const id = createTestItemId(context, { title: "runtime setup failure", createMode: "progressive" });
+      await runTest(id, { addJson: [JSON.stringify([{ command: `node -e "process.exit(1)"`, phase: "setup" }, { command: "node -e 2" }])] }, global);
+      const stored = (await runTest(id, { list: true }, global)).tests;
+      await overwriteTaskTests(context, id, [stored[0], { ...stored[1], command: "X=1" }] as unknown as Array<Record<string, unknown>>);
+      const batch = await runTestAll({}, global);
+      const result = batch.results.find((entry) => entry.id === id)!;
+      expect(result.run_results.map((row) => [row.status, row.phase, row.failure_category])).toEqual([
+        ["failed", "setup", "setup_failed"],
+        ["skipped", undefined, undefined],
+      ]);
+      expect(result.failure_categories).toMatchObject({ setup_failed: 1, config_refusal: 0 });
+    });
+  }, 60_000);
 
   it("orders setup entries first inside the exported runLinkedTests and fails a setup entry that cannot execute", async () => {
     await withTempPmPath(async (context) => {

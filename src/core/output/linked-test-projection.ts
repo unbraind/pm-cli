@@ -154,10 +154,12 @@ function withoutHoistedContext(
   if (!options.lean || options.fullOutput || row.status !== "passed") {
     return { ...rest, stdout, stderr };
   }
+  // With the stream itself gone, a tail-relative omitted-byte count would understate what was dropped.
+  const { stdout_omitted_bytes: _stdoutBytes, stderr_omitted_bytes: _stderrBytes, ...delivered } = rest;
   for (const [key, stream] of [["stdout", stdout], ["stderr", stderr]] as const) {
     if (typeof stream === "string" && stream.length > 0) omitted.add(key);
   }
-  return rest;
+  return delivered;
 }
 
 /** The one execution context every entry shares, or undefined when entries differ or lack one. */

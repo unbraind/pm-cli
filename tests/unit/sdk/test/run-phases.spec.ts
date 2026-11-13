@@ -127,6 +127,12 @@ describe("sdk/test/run-phases", () => {
     });
     expect(skipped.blocked(unit)?.error).toBe('Skipped because setup entry "docs/setup.md" did not pass (setup_failed); no later linked command ran.');
 
+    // Recording an already-typed setup failure (as test-all's replay does) keeps it as it is.
+    const replay = createLinkedTestSetupGate();
+    const typed: TestRunResult = { command: build.command, status: "failed", phase: "setup", failure_category: "setup_failed", setup_failure_cause: "timeout" };
+    expect(replay.record(build, typed)).toEqual(typed);
+    expect(replay.blocked(unit)?.error).toContain("(setup_failed)");
+
     const bareRefusal = createLinkedTestSetupGate();
     expect(bareRefusal.record(build, { status: "refused" })).toEqual({ status: "refused", phase: "setup" });
     expect(bareRefusal.blocked(unit)?.error).toContain("(refused)");

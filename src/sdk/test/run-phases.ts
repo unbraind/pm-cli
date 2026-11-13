@@ -128,7 +128,8 @@ export function createLinkedTestSetupGate(): LinkedTestSetupGate {
       // A refusal keeps its own category, because its recovery (trust acknowledgement) differs from a
       // failed build. A setup that never executed (a safety skip, or an entry without a command) fails
       // the run: otherwise every dependent entry would be skipped behind a passing verdict.
-      const refused = result.status === "refused" || result.failure_category === "trust_refusal";
+      // A row this gate (or the in-sandbox gate) already typed is recorded as it is.
+      const refused = result.status === "refused" || result.failure_category === "trust_refusal" || result.failure_category === "setup_failed";
       const row: TestRunResult = refused
         ? { ...result, phase: "setup" }
         : {

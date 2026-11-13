@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: agent-ux,linked-tests,token-efficiency
 created_at: "2026-11-13T16:33:08.298Z"
-updated_at: "2026-11-13T21:36:32.832Z"
+updated_at: "2026-11-13T22:25:29.922Z"
 closed_at: "2026-11-13T21:04:26.321Z"
 completed_at: "2026-11-13T21:04:26.321Z"
 author: "harness:claude-code"
@@ -22,8 +22,9 @@ actual_result: "Verified by tests/unit/core/output/linked-test-projection.spec.t
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1716,discovered_from,"2026-11-13T16:33:08.298Z","harness:claude-code","cli:create:dep",detected
   pm-tcvccz,related,"2026-11-13T16:33:08.298Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-13T21:36:32.832Z","harness:claude-code","Review round 1 on PR #1723 (Codex and Greptile, 2026-11-13). Two valid findings, both fixed.\n1. (minor, Codex and Greptile) `--lean --full-output` still dropped a passing row's streams once the context was hoisted, so the advertised restore flag restored nothing. Fix: fullOutput overrides lean stream removal. When lean does drop non-empty streams, it now declares run_results.stdout/stderr with restore_with --full-output in omission_receipt.\n2. (minor, Greptile) quietStreamTail returned whitespace-only output unchanged, so thousands of blank lines bypassed both limits. Fix: whitespace-only output longer than a bare line ending (2 characters) becomes an empty string, counted in <stream>_omitted_bytes.\nSpecs: tests/unit/core/output/linked-test-projection.spec.ts covers lean plus full-output, the lean declaration for stdout and stderr, and the whitespace bounds.\n"
+  "2026-11-13T22:25:29.922Z","harness:claude-code","Review round 2 on PR #1723 (Codex, 2026-11-13), one minor finding, fixed. When lean dropped a passing row's shortened stream, the row kept the tail-relative <stream>_omitted_bytes. That understated what was dropped, for example 182 of 229 bytes. Lean rows now drop the counters together with the streams, and omission_receipt still names the dropped streams. Spec: the lean case in tests/unit/core/output/linked-test-projection.spec.ts.\n"
 notes[1]{created_at,author,text}:
   "2026-11-13T19:40:41.858Z","harness:claude-code","Design (2026-11-13): stream bounding uses the same quiet-run gate as the context projection. When a run is quiet, each row whose trust is not false keeps an escape-free tail of stdout and stderr. The tail strips escapes with node:util stripVTControlCharacters, keeps only the final segment of each carriage-return overwrite, drops blank lines, and holds at most 6 lines and 480 code points. A shortened stream adds `<stream>_omitted_bytes` to its row (UTF-8 bytes of the original minus the tail). The reply's omission_receipt gains `run_results.stdout` / `run_results.stderr` (test-all: `results.run_results.*`) with restore_with `--full-output`, appended after any groups the reply already declares.\n\nThe following rows keep their complete streams: failing, refused, skipped and mismatched rows; every row of a non-quiet run; and a row that passed only under an explicit untrusted-command override. That last row's output is what a reviewer reads before trusting the command.\n\n`--full-output` is a presentation-only selector on pm test (requires --run) and pm test-all. It is independent of `--check-context`, which restores contexts only.\n\nMeasured on a vitest-style two-line ANSI report: the stdout cell drops 17 B of escapes. A real 3-file vitest report keeps the 6 summary lines (Test Files / Tests / Start at / Duration plus the last two file lines)."
 files[15]{path,scope,note}:

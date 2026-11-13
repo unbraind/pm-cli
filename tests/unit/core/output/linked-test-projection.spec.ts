@@ -132,6 +132,9 @@ describe("core/output/linked-test-projection", () => {
       omitted_field_group_count: 1,
       omitted_field_groups: [{ name: "run_results.stdout", restore_with: "--full-output" }],
     });
+    // A lean run that drops a shortened stream also drops its tail-relative byte count.
+    const long = projectLinkedTestReply("test", { ok: true, run_results: [passingRow(1), passingRow(2)] }, { ...DEFAULTS, lean: true }) as Record<string, unknown>;
+    expect((long.run_results as Array<Record<string, unknown>>).every((row) => !("stdout" in row) && !("stdout_omitted_bytes" in row))).toBe(true);
     // A lean row with only stderr (or no stdout capture at all) declares exactly the stream it drops.
     const { stdout: _stdout, ...noStdout } = passingRow(3, "");
     const stderrOnly = projectLinkedTestReply(
