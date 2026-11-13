@@ -526,52 +526,54 @@ function projectLeanJsonValue(value: unknown): unknown {
  * Hoist an invocation-wide linked-test sandbox context out of repeated result
  * rows. Lean output also removes successful-process streams while retaining
  * failure diagnostics, so agents pay once for context and only for actionable
- * evidence. A quiet success reports only the context's decision fields in
- * every format, because the sandbox paths, counts and fingerprint explain
- * nothing about a run that passed and carry host paths into pasted evidence;
- * `--check-context` asks for the full context explicitly (GH-1702).
+ * evidence. A quiet success reports only each row's decision fields in every
+ * format, because the sandbox paths, counts and fingerprint explain nothing
+ * about a run that passed and carry host paths into pasted evidence;
+ * `--check-context` asks for the full context explicitly (GH-1702). Rows are
+ * reduced before the hoist: each linked command has its own trust fingerprint
+ * and sandbox, so full contexts differ between tests while their decision
+ * fields usually match.
  */
 function projectLinkedTestEvidence(value: unknown, lean: boolean, fullContext: boolean): unknown {
   if (!isPlainObject(value) || !Array.isArray(value.run_results)) {
     return value;
   }
-  if (!value.run_results.every(isPlainObject)) {
+  const sourceRows = value.run_results;
+  if (!sourceRows.every(isPlainObject)) {
     return value;
   }
-  const rows = value.run_results;
+  const quietRows =
+    !fullContext && isQuietLinkedTestSuccess(value, sourceRows) ? sourceRows : undefined;
+  const rows: Record<string, unknown>[] =
+    quietRows === undefined
+      ? sourceRows
+      : quietRows.map((row) => ({
+          ...row,
+          execution_context: projectLinkedTestDecisionContext(row.execution_context),
+        }));
   const sharedContext = resolveSharedExecutionContext(rows);
   const runResults = rows.map((row) => {
+    if (sharedContext === undefined) {
+      return row;
+    }
     const {
       execution_context: _executionContext,
       stdout,
       stderr,
       ...rest
     } = row;
-    if (sharedContext === undefined) {
-      return row;
-    }
     if (!lean || row.status !== "passed") {
       return { ...rest, stdout, stderr };
     }
     return rest;
   });
-  const quietContext =
-    !fullContext && isQuietLinkedTestSuccess(value, sharedContext, rows)
-      ? sharedContext
-      : undefined;
-  if (lean && quietContext !== undefined) {
-    return projectQuietLinkedTestSuccess(value, quietContext, runResults);
-  }
+  // Lean receipts for a quiet success also omit the all-zero failure categories.
+  const { failure_categories: _zeroCategories, ...withoutCategories } = value;
   return {
-    ...value,
+    ...(lean && quietRows !== undefined ? withoutCategories : value),
     ...(sharedContext === undefined
       ? {}
-      : {
-          execution_context:
-            quietContext === undefined
-              ? sharedContext
-              : projectLinkedTestDecisionContext(quietContext),
-        }),
+      : { execution_context: sharedContext }),
     run_results: runResults,
   };
 }
@@ -590,15 +592,22 @@ function resolveSharedExecutionContext(
     : undefined;
 }
 
-/** A passing, mismatch-free run whose failure categories are all zero. */
+/** A result row whose own sandbox context is present. */
+type LinkedTestRowWithContext = Record<string, unknown> & {
+  execution_context: Record<string, unknown>;
+};
+
+/** A passing run whose every row has a mismatch-free context and whose failure categories are all zero. */
 function isQuietLinkedTestSuccess(
   value: Record<string, unknown>,
-  sharedContext: unknown,
   rows: Record<string, unknown>[],
-): sharedContext is Record<string, unknown> {
-  if (value.ok !== true || !isPlainObject(sharedContext)) return false;
-  if (sharedContext.mismatch_detected !== false) return false;
-  if (!rows.every((row) => row.status === "passed")) return false;
+): rows is LinkedTestRowWithContext[] {
+  if (value.ok !== true || rows.length === 0) return false;
+  const quietRow = (row: Record<string, unknown>): boolean =>
+    row.status === "passed" &&
+    isPlainObject(row.execution_context) &&
+    row.execution_context.mismatch_detected === false;
+  if (!rows.every(quietRow)) return false;
   const categories = value.failure_categories;
   return !(isPlainObject(categories) && Object.values(categories).some((count) => count !== 0));
 }
@@ -623,20 +632,6 @@ function projectLinkedTestDecisionContext(
     ...(typeof trust.trusted === "boolean" ? { trusted: trust.trusted } : {}),
     ...(trust.reason === undefined ? {} : { trust_reason: trust.reason }),
     restore_with: "not retained; a run with --check-context reports the full context",
-  };
-}
-
-/** Lean receipts for a quiet success also omit the all-zero failure categories. */
-function projectQuietLinkedTestSuccess(
-  value: Record<string, unknown>,
-  context: Record<string, unknown>,
-  runResults: unknown[],
-): Record<string, unknown> {
-  const { failure_categories: _zeroCategories, ...rest } = value;
-  return {
-    ...rest,
-    execution_context: projectLinkedTestDecisionContext(context),
-    run_results: runResults,
   };
 }
 

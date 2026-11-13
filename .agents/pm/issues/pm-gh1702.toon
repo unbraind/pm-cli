@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"gh:1702",linked-tests,privacy,token-efficiency
 created_at: "2026-11-12T05:13:29.775Z"
-updated_at: "2026-11-13T08:40:46.625Z"
+updated_at: "2026-11-13T09:03:27.619Z"
 closed_at: "2026-11-13T08:40:45.891Z"
 completed_at: "2026-11-13T08:40:45.891Z"
 author: "harness:claude-code"
@@ -21,8 +21,9 @@ expected_result: A passing single-test run prints a small context with no host p
 actual_result: "Fresh sandbox, one passing test: default TOON 2,033 -> 965 B, JSON 2,525 -> 1,360 B, zero absolute paths; --check-context keeps all four tracker paths; failure variants keep the full block in lean and default (output.spec.ts), integration spec reads trusted/trust_reason from the default receipt"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-fqdmbf,related,"2026-11-12T05:13:29.775Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-13T07:56:58.471Z","harness:claude-code","Implementation evidence (2026-11-13, branch feat/default-output-economy): projectLinkedTestEvidence now reduces a quiet success (ok, all rows passed, no mismatch, no non-zero failure category) to the decision context in every format, not only under --lean. --check-context is the explicit full-context request, chosen over a new flag because it already means 'check the PM context' and adds no packaged bytes or replication-set rows; its help text now says it reports the full context. Measured on a fresh sandbox tracker, one passing test: default TOON 2,033 -> 965 B, JSON 2,525 -> 1,360 B, zero absolute paths in either; --lean 763 -> 769 B (hint text). Lean and default share one predicate, so an untrusted pass under --allow-untrusted-linked-tests keeps trusted:false and trust_reason. Found pm test-all has the same defect on every row and filed pm-tcvccz."
+  "2026-11-13T09:03:27.618Z","harness:claude-code","Review fix (Greptile P2 on PR 1720, 2026-11-13): the first implementation reduced the context only after hoisting a shared full context, and linkedTestTrustFingerprint includes the command, so any item with two different linked tests never shared a full context and kept every path on every row. projectLinkedTestEvidence now reduces each quiet row to its decision fields first and then hoists the identical result; rows whose decision fields differ (for example different trust reasons) keep their own reduced contexts. Measured on the sandbox item with two passing tests: TOON 2,733 -> 1,078 B, zero absolute paths. New spec case in output.spec.ts covers differing fingerprints, differing trust reasons, a row without a context and an empty run."
 files[4]{path,scope,note}:
   src/cli/register-operations.ts,project,"--check-context help names the full-context report"
   src/core/output/output.ts,project,quiet-success linked-test context projects to decision fields by default; --check-context keeps the full block
