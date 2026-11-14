@@ -2,13 +2,13 @@ id: pm-gh1727
 title: "GH-1727: direct-caller extension options — a missing required flag has no error code, and an undeclared option reaches the handler instead of unknown_option"
 description: "GH-1727 (filed 2026-11-14, reproduced on 2026.11.13 and 2026.11.14). For an extension command with declared flags, direct callers (PmClient.run and the extension test harness's runCommand) diverge from the CLI option contract in two ways. (1) A missing required flag throws exitCode 2 with code undefined; only the English message (Missing required option '--from-tracker' for extension command 'probe option'.) identifies it, so callers and tests must match text. (2) An undeclared option key from a direct caller ({fromTracker: 'x', typo: 'y'}) dispatches the handler with typo intact, although the CLI path refuses unknown options with unknown_option and lists only the accepted flags (pm-1du7s3). A misspelled option therefore silently falls back to the handler default, the failure class GH-1665 fixed for CLI spellings. Expected from the issue: a stable code for the missing required flag (structured flag field, exit 2, recovery.suggested_retry_argv), and an unknown_option refusal before dispatch for undeclared direct-caller keys, with any opt-out declared per command rather than default. Duplicate check: searched direct caller option validation unknown_option required flag; pm-4of199 owns the CLI-path leak for commands that declare NO flags, pm-gh1726 owns the strict-boolean empty-array case, pm-1du7s3 and pm-gh1665 (closed) shipped the CLI-path refusal and SDK key spelling."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[5]: extensions,flags,"gh:1727",sdk,validation
 created_at: "2026-11-14T16:18:18.920Z"
-updated_at: "2026-11-14T18:49:23.147Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#dec610b5c29dc08047ecfcc1"
+updated_at: "2026-11-14T19:16:39.181Z"
+closed_at: "2026-11-14T19:16:38.090Z"
+completed_at: "2026-11-14T19:16:38.090Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A direct caller omitting a required extension flag is refused before dispatch with a stable machine code, exit 2, the flag in a structured field and a recovery retry; A direct caller passing an undeclared option key to an extension command with declared flags is refused with unknown_option, exit 2, before dispatch, listing only the accepted flags; Specs drive PmClient.run and the extension test harness for both refusals, with a negative control that shows the handler ran before the fix"
@@ -17,8 +17,9 @@ risk: low
 confidence: high
 reporter: unbraind
 severity: medium
-expected_result: "Both refusals carry stable codes before dispatch, matching the CLI path"
-actual_result: The missing-flag refusal has code undefined and an undeclared key reaches the handler
+resolution: "Shared refusal helpers in src/sdk/extension/command-options.ts throw literal codes for both validators: missing_required_option (flag, field = handler key, recovery.missing, example built from the declared value contract), extension_option_disabled, unknown_option. The direct path refuses a key that is neither declared nor host-owned (reserved host flags in camel/snake/dashed form, --no-* positives, force, subcommand, inputResponses, requestState) on extension-created command paths; DirectExtensionOptionPolicy keeps native paths an extension extends passing undeclared keys through (resolveDirectExtensionOptionPolicy in src/sdk/extension/native-command-options.ts). Labels use the declaration's flag token. pm-calendar declares --inherit-focus, the only bundled undeclared read."
+expected_result: "A missing required flag, an undeclared key and a disabled flag are refused with stable codes before dispatch for PmClient.run and the harness, matching the CLI; host keys and native-path options keep working"
+actual_result: "Specs pass for PmClient.run, the harness and the in-process CLI with a handler-run negative control (one run after every refusal); pm meet --no-inherit-focus creates an unparented meeting on the built CLI; linked run passed 34/34; Codex rounds 1-5 findings fixed"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-1du7s3,related,"2026-11-14T16:18:18.920Z","harness:claude-code","cli:create:dep",detected
   pm-4of199,related,"2026-11-14T16:18:18.920Z","harness:claude-code","cli:create:dep",detected
@@ -30,6 +31,8 @@ comments[5]{created_at,author,text}:
   "2026-11-14T17:53:02.880Z","harness:claude-code","Codex review round 1 (gpt-6.1-sol xhigh, head 0f221bf98), two P2 findings, both verified and fixed: (1) an extension that extends or overrides a native command (registerFlags('list', ...) plus a list handler) had the native options (all, status) refused for direct callers, because the normalizer saw only contributed flags while CLI dispatch validates contributed and native definitions together. Fix: normalizeDirectExtensionCommandOptions takes nativeDefinitions; the harness and PmClient.run pass resolveNativeCommandOptionDefinitions(commandPath) (new src/sdk/extension/native-command-options.ts, kept out of command-options.ts so the sdk/authoring entrypoint does not load the flag-contract tables); an extension-created path resolves to the shared global flags only. (2) harness read-output admission judged the raw handler result while native formatOutput applies a registered command-result override first; admission now runs on the override's result and skips a suppressed-host-output result (tests/unit/sdk/extension/harness-parity.spec.ts covers both directions)."
   "2026-11-14T18:16:16.016Z","harness:claude-code","Codex review round 2 (head 51f6bd6cd), three P2 findings, all verified and fixed: (1) native aliases (--tags for --tag) and the positive key a --no-* flag sets (truncate from --no-truncate) were still refused for an extension that extends list; resolveNativeCommandOptionDefinitions now admits the canonical flag with its short letter, every alias, and the positive key of each --no-* flag, values untouched. (2) harness read-output admission ignored a structured output_format replacement that native formatEffectiveOutput admits in place of the result; the activation now attaches its service registry to the command registry (symbol pm.sdk.testing.activatedServices) and admission runs output_format first: a structured replacement is admitted, a string rendering leaves the result itself to be admitted. (3) an inline declaration (--from-tracker <path>) leaked its placeholder into flag, recovery.missing and the example (--from-tracker <path> <value>); formatLooseOptionLabel now labels a declaration by resolveExtensionLongFlagName, and the missing-option usage is built from the declared value contract (<path>, [kind] or none). Specs in tests/unit/sdk/extension/harness-parity.spec.ts."
   "2026-11-14T18:49:23.140Z","harness:claude-code","Codex review round 3 (head 72046c9d4), four P2 findings, all verified and fixed: (1) runtime-schema flags (a workspace --story-points on list) were still refused on a native path an extension extends, which showed that enumerating every key a native command accepts (aliases, negations, settings-dependent runtime fields) is open-ended. Decision: the unknown-key refusal applies to extension-created command paths only; on a native path (hasSubcommandFlagContractsForCommand) undeclared keys keep passing through exactly as before, because the native contract owns them. normalizeDirectExtensionCommandOptions takes a DirectExtensionOptionPolicy ({ undeclaredKeys: 'refuse' | 'pass' }) and the harness and PmClient.run pass resolveDirectExtensionOptionPolicy(commandPath); the round-1/2 native-spelling enumeration is removed. GH-1727 is about extension commands, so its acceptance criteria are unaffected. (2) a raw repeatable declaration passed straight to the exported normalizer (no loader) was read as single-value; repeatable now counts as list at entry. (3) the harness ran output_format with the JSON branch even when the caller passed outputFormat: 'toon'; the format now comes from resolveReadOutputEncoding first. (4) the SDK surface snapshot is regenerated with an acknowledgement for the optional trailing policy argument, and DirectExtensionOptionPolicy is exported from ./sdk and ./sdk/authoring."
+learnings[1]{created_at,author,text}:
+  "2026-11-14T19:16:09.424Z","harness:claude-code","A harness or SDK path that claims parity with native dispatch must be checked against every stage native dispatch runs between the handler and the verdict, not only the one under test: five Codex rounds each found one more stage (native option ownership, command-result overrides, output_format structured replacement, encoding resolution, service payload). When the set of legitimate inputs on a path is open-ended (native command aliases, negations, settings-dependent runtime fields), scope the refusal to the path whose contract you fully own instead of enumerating."
 files[8]{path,scope}:
   packages/pm-calendar/extensions/calendar/command-definitions.ts,project
   src/sdk/extension/command-options.ts,project
@@ -39,6 +42,34 @@ files[8]{path,scope}:
   tests/integration/extensions/direct-caller-option-contract.integration.spec.ts,project
   tests/unit/sdk/extension/command-options.spec.ts,project
   tests/unit/sdk/extension/harness-parity.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,project,900,"harness:claude-code","2026-11-14T19:13:09.044Z",local_mutation,feat/direct-caller-option-contract-parity
+test_runs[1]:
+  - run_id: test-local-mwgscpnt-zkt9yf
+    kind: test
+    status: passed
+    started_at: "2026-11-14T19:15:02.996Z"
+    finished_at: "2026-11-14T19:15:26.057Z"
+    recorded_at: "2026-11-14T19:15:26.057Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
+close_reason: "Direct callers of extension-created commands get missing_required_option, unknown_option and extension_option_disabled before the handler runs"
+contract_change:
+  api: "PmClient.run, runRegisteredCommandForTest and createExtensionTestHarness().runCommand for extension-created commands with declared flags; normalizeDirectExtensionCommandOptions (new optional DirectExtensionOptionPolicy argument)"
+  before: A missing required flag threw exit 2 with code undefined; a key that was neither declared nor host-owned reached the handler; a disabled flag threw without a code (the CLI derived missing_required_option from the message and printed pm create examples)
+  after: "missing_required_option (flag, field = handler key, recovery.missing, a command example), unknown_option (flag) and extension_option_disabled are thrown before the handler runs on every caller path; host-owned keys (reserved host flags in camel, snake or dashed form, force, subcommand, inputResponses, requestState) pass through; on a native command path an extension extends, undeclared keys still pass through; pm-calendar declares --inherit-focus"
+  migrate: "Match on error codes instead of messages; declare every option a handler reads with registerFlags or inline flags (keys the handler only read from direct callers are now refused); pass { undeclaredKeys: \"pass\" } to normalizeDirectExtensionCommandOptions only for a native command path"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1727
+  gate_id: direct-caller-option-refusals
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts (the missing-required, undeclared-key and disabled cases fail before the fix: the handler runs with typoKey and the missing-flag refusal has code undefined)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

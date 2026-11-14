@@ -2,13 +2,13 @@ id: pm-gh1729
 title: "GH-1729: the extension test harness passes a compact output_format receipt that the native CLI refuses with extension_read_output_invalid since 2026.11.13"
 description: "GH-1729 (filed 2026-11-14, reproduced on the 2026.11.7, 2026.11.13 and 2026.11.14 artifacts). An extension command declares read_output { row_keys: [\"rows\"] } and an output_format service returns a compact receipt ({ ok: true, output: \"receipt.md\" }). The native CLI on 2026.11.13 and 2026.11.14 refuses the receipt-only handler result with exit 2 and extension_read_output_invalid before the formatter receipt, while the same result with a rows array passes. createExtensionTestHarness().runCommand() handles both, so a package author cannot detect the native refusal before adoption; 2026.11.7 accepted both. Expected from the issue: make native output admission testable through the public harness, or document that the harness validates only the handler result and requires a packed native probe; if declared row keys are intentionally mandatory before custom formatting, document the compatible compact receipt pattern and migration. Malformed and oversized output must stay refused. Duplicate check: searched extension read_output row_keys output_format receipt harness native refusal; no open item."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[5]: extensions,"gh:1729",read-output,sdk,testing
 created_at: "2026-11-14T15:21:20.930Z"
-updated_at: "2026-11-14T19:12:36.058Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#dec610b5c29dc08047ecfcc1"
+updated_at: "2026-11-14T19:16:42.149Z"
+closed_at: "2026-11-14T19:16:40.530Z"
+completed_at: "2026-11-14T19:16:40.530Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "A regression fixture distinguishes receipt-only output, valid rows with compact formatter output, malformed rows and oversized delivered output across the native CLI and the test harness; Package authors can detect the native refusal before adoption, either through the harness or a documented packed-native probe; Valid compact output stays compact and malformed or oversized output stays refused"
@@ -17,8 +17,9 @@ risk: medium
 confidence: medium
 reporter: unbraind
 severity: medium
-expected_result: The harness and the native CLI agree on whether a compact formatter receipt is admitted
-actual_result: The harness passes a receipt that the native CLI refuses with extension_read_output_invalid
+resolution: "assertExtensionReadOutputResult (src/sdk/read-output/extension.ts) is the shared admission; runRegisteredCommandForTest (src/sdk/testing.ts) applies it to every handled result of a command whose last registration declares read_output, after a registered command-result override, skipping suppressed host output, and to a structured output_format replacement (the activation attaches its service registry; the service payload mirrors native resolveOutputService with merged output controls and resolvedOutputFormat). The refusal carries required/why text naming the compact-receipt pattern; docs/SDK.md documents it."
+expected_result: Receipt-only and malformed results are refused in the harness exactly as natively; valid rows with a compact formatter receipt pass both; oversized delivered output stays refused natively
+actual_result: "direct-caller-option-contract.integration.spec covers receipt-only, rows, empty rows, malformed and oversized cases across the built CLI and the harness; harness-parity.spec covers overrides, suppression, structured and string services and explicit encodings; linked run passed 34/34"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1726,related,"2026-11-14T15:26:13.918Z","harness:claude-code","cli:update:dep",detected
 comments[3]{created_at,author,text}:
@@ -30,6 +31,34 @@ files[4]{path,scope}:
   src/sdk/testing.ts,project
   tests/integration/extensions/direct-caller-option-contract.integration.spec.ts,project
   tests/unit/sdk/extension/harness-parity.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,project,900,"harness:claude-code","2026-11-14T19:13:10.692Z",local_mutation,feat/direct-caller-option-contract-parity
+test_runs[1]:
+  - run_id: test-local-mwgsd8ks-zkdy4l
+    kind: test
+    status: passed
+    started_at: "2026-11-14T19:15:28.117Z"
+    finished_at: "2026-11-14T19:15:50.572Z"
+    recorded_at: "2026-11-14T19:15:50.572Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,schema,schema,source,local_source_ref
 docs[1]{path,scope}:
   docs/SDK.md,project
+close_reason: The extension test harness applies the native read-output admission to the same effective result native output admits
+contract_change:
+  api: runRegisteredCommandForTest and createExtensionTestHarness().runCommand for commands that declare read_output; assertExtensionReadOutputResult
+  before: "The harness returned handled: true for a result missing its declared row collections, which the native CLI refuses with extension_read_output_invalid before formatting"
+  after: "The harness applies the native admission to the result a registered command-result override and a structured output_format replacement deliver (skipping suppressed host output, honouring an explicit outputFormat), and throws the same extension_read_output_invalid refusal"
+  migrate: A command that renders a compact receipt keeps returning its declared rows (an empty collection is valid) and lets its output_format service render the receipt
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1729
+  gate_id: harness-read-output-admission
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts (the receipt-only and malformed harness cases resolve handled: true before the fix while the native CLI refuses them)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
