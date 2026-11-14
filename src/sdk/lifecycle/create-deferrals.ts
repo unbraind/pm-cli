@@ -139,9 +139,11 @@ export function deferredTemplateOverrideKeys(raw: unknown, runtimeFields: readon
 }
 
 /**
- * Drop the missing-flag entries of schema fields whose metadata key is
- * deferred: a deferral satisfies the create requirement of the key it records
- * as unknown, whichever spelling declares that requirement.
+ * Drop the missing-flag entries of create-only schema requirements
+ * (`required_on_create`) whose metadata key is deferred: a deferral satisfies
+ * the create requirement of the key it records as unknown, as it does a type's.
+ * A field `required` on every stored record keeps its requirement, because the
+ * item could not be read back without the value.
  */
 export function withoutDeferredRuntimeRequirements(
   missingFlags: readonly string[],
@@ -149,6 +151,10 @@ export function withoutDeferredRuntimeRequirements(
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): string[] {
   const deferredFields = new Set<string>(deferrals.fields.map((entry) => entry.field));
-  const satisfied = new Set(runtimeFields.filter((definition) => deferredFields.has(definition.metadata_key)).map((definition) => `--${definition.cli_flag}`));
+  const satisfied = new Set(
+    runtimeFields
+      .filter((definition) => definition.required !== true && deferredFields.has(definition.metadata_key))
+      .map((definition) => `--${definition.cli_flag}`),
+  );
   return missingFlags.filter((flag) => !satisfied.has(flag));
 }

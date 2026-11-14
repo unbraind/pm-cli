@@ -169,6 +169,12 @@ describe("strict create deferrals (GH-1713)", () => {
       // The schema field's create requirement for deadline is satisfied by the deferral, as the type's is.
       await expect(client.create({ ...STRICT_BASE, title: "Schema-required deferral", defer: ALL_DEFERRED, deferReason: "Imported" })).resolves.toMatchObject({ item: { deferred_fields: expect.arrayContaining([{ field: "deadline", reason: "Imported" }]) } });
       await expect(client.create({ ...STRICT_BASE, title: "Schema-required missing", defer: ["assignee", "acceptance_criteria", "estimated_minutes"], deferReason: "Imported" })).rejects.toMatchObject({ code: "missing_required_option" });
+      // A field required on every stored record keeps its requirement: the item could not be read back without it.
+      settings.schema.fields = [{ key: "due", metadata_key: "deadline", cli_flag: "due", type: "string", required: true }];
+      await writeFile(path.join(context.pmPath, "settings.json"), JSON.stringify(settings));
+      await expect(client.create({ ...STRICT_BASE, title: "Stored-required deferral", defer: ALL_DEFERRED, deferReason: "Imported" })).rejects.toMatchObject({ code: "missing_required_option" });
+      settings.schema.fields = [{ key: "due", metadata_key: "deadline", cli_flag: "due", type: "string", required_on_create: true }];
+      await writeFile(path.join(context.pmPath, "settings.json"), JSON.stringify(settings));
 
       // A later row fails: the strict close validation must not refuse the rollback of the deferred create.
       await expect(client.commitItemMutations({
