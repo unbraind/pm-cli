@@ -8,6 +8,7 @@ import type {
   BeforeCommandHookContext,
   BeforeMutationHookContext,
   MutationActor,
+  CommandHandlerContext,
   CommandHandlerResult,
   CommandOverrideContext,
   CommandOverrideResult,
@@ -141,7 +142,9 @@ import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
 } from "./extension/command-options.js";
+import { resolveNativeCommandOptionDefinitions } from "./extension/native-command-options.js";
 import { assertExtensionReadOutputResult } from "./read-output/extension.js";
+import { isHostOutputSuppressed } from "../core/output/output-control.js";
 import { PmClient } from "./runtime.js";
 
 /** Host-pinned TOON codecs for semantic package-output assertions without deep imports. */
@@ -248,18 +251,24 @@ type ActivatedCommandRegistrations = Pick<ExtensionActivationResult["registratio
 /**
  * Admit a handled result the way the native CLI does before projection or
  * custom formatting (pm-gh1729): a command that declares `read_output` must
- * return its declared row collections. The last registration of a command
- * path wins, as in the host.
+ * deliver its declared row collections. Native output applies a registered
+ * command-result override first and skips a result that suppresses host
+ * output, so admission judges the same effective result; the harness still
+ * returns the handler's own outcome. The last registration of a command path
+ * wins, as in the host.
  */
 function admitRegisteredReadOutputResult(
   registrations: ActivatedCommandRegistrations | undefined,
-  command: string,
+  commands: ExtensionCommandRegistry,
+  context: CommandHandlerContext,
   outcome: CommandHandlerResult,
 ): CommandHandlerResult {
   if (registrations === undefined || !outcome.handled) return outcome;
-  const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === command)?.read_output;
-  if (readOutput !== undefined) {
-    assertExtensionReadOutputResult(readOutput, outcome.result);
+  const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
+  if (readOutput === undefined) return outcome;
+  const effective = runCommandOverride(commands, { ...context, result: outcome.result }).result;
+  if (!isHostOutputSuppressed(effective)) {
+    assertExtensionReadOutputResult(readOutput, effective);
   }
   return outcome;
 }
@@ -1080,7 +1089,7 @@ export async function runRegisteredCommandForTest(
       : undefined);
   const registrations = readActivatedFlagRegistrations(commands);
   const handlerOptions = options.options ? { ...options.options } : {};
-  const outcome = await runCommandHandler(commands, {
+  const context: CommandHandlerContext = {
     command,
     args: options.args ? [...options.args] : [],
     options:
@@ -1090,12 +1099,14 @@ export async function runRegisteredCommandForTest(
             handlerOptions,
             collectExtensionFlagDefinitionsForCommand(registrations, command),
             command,
+            resolveNativeCommandOptionDefinitions(command),
           ),
     global,
     pm_root: pmRoot,
     ...(sdk === undefined ? {} : { sdk }),
-  });
-  return admitRegisteredReadOutputResult(registrations, command, outcome);
+  };
+  const outcome = await runCommandHandler(commands, context);
+  return admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
 /** Invoke registered transactional mutation guards through the same fail-closed runtime used by real writes. */

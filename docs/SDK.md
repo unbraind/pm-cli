@@ -2912,8 +2912,10 @@ delivers a compact receipt (for example `{ ok: true, output: "report.md" }`
 after writing a file) keeps returning its rows, or an empty collection, and
 lets its `output_format` service render the receipt; a receipt-only result is
 refused with `extension_read_output_invalid`. `runRegisteredCommandForTest`
-and `createExtensionTestHarness().runCommand()` apply the same admission, so a
-package test fails exactly where the native CLI would
+and `createExtensionTestHarness().runCommand()` apply the same admission to
+the result a registered command-result override delivers (skipping a result
+that suppresses host output), so a package test fails exactly where the
+native CLI would
 ([pm-gh1729](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1729.toon),
 tracker record excluded from npm). Avoid
 reserved metadata and prototype property names. The declaration promises a
@@ -3236,8 +3238,11 @@ tracker records excluded from npm). Match on the code, never the message:
 Host-owned keys pass through untouched: every reserved host flag in camel case,
 snake_case or dashed form (`json`, `outputBudget`, `output_budget`, `pmPath`,
 `--json`), the positive key of each `--no-*` switch, and the action-transport
-keys `force`, `subcommand`, `inputResponses` and `requestState`. A command
-that declares no flags still receives every key (pm-4of199, below). An
+keys `force`, `subcommand`, `inputResponses` and `requestState`. An
+extension that extends or overrides a native command (`list`) also receives
+that command's own options (`all`, `status`), as CLI argv validates contributed
+flags together with the native ones. A command that declares no flags still
+receives every key (pm-4of199, below). An
 extension action also keeps the caller's values as given: the native
 `tags`-to-CSV and `dep`-to-array rewrites of core commands do not apply to it.
 On the CLI, each bare occurrence of a repeatable boolean switch reaches the
