@@ -873,6 +873,40 @@ interface ItemMetadataMergeAccumulator {
   conflictDecisions: ItemMergeConflictDecision[];
 }
 
+/** Union one collection field with the element identity that field declares. */
+function mergeUnionFieldValue(field: string, base: unknown, ours: unknown, theirs: unknown): unknown {
+  if (field === "tests") return unionLinkedTests(base, ours, theirs);
+  if (field === "deferred_fields") return unionDeferredFields(base, ours, theirs);
+  if (field === "acceptance_criteria") {
+    return unionCollection(splitAcceptanceCriteria(base), splitAcceptanceCriteria(ours), splitAcceptanceCriteria(theirs)).join("; ");
+  }
+  return unionCollection(base, ours, theirs);
+}
+
+/**
+ * Merge deferral entries by their field (GH-1713), so the result never lists a
+ * field twice. Presence merges like a set and a deletion (a resolved deferral)
+ * wins. When both sides changed one field's reason differently, the stable
+ * value order picks one, so every merge order yields the same document.
+ */
+function unionDeferredFields(base: unknown, ours: unknown, theirs: unknown): unknown[] {
+  const byField = (value: unknown): Map<string, unknown> =>
+    new Map((Array.isArray(value) ? value : []).map((entry) => [String((entry as { field?: unknown }).field), entry]));
+  const [baseEntries, oursEntries, theirsEntries] = [byField(base), byField(ours), byField(theirs)];
+  const merged: unknown[] = [];
+  for (const field of [...new Set([...oursEntries.keys(), ...theirsEntries.keys()])].sort()) {
+    const [baseEntry, oursEntry, theirsEntry] = [baseEntries.get(field), oursEntries.get(field), theirsEntries.get(field)];
+    if (oursEntry === undefined || theirsEntry === undefined) {
+      // Present on one side only: an addition survives, a deletion by the other side wins.
+      if (baseEntry === undefined) merged.push(oursEntry ?? theirsEntry);
+      continue;
+    }
+    const outcome = mergeScalarThreeWay(baseEntry, oursEntry, theirsEntry, "ours");
+    merged.push(outcome.conflict && stableStringify(theirsEntry).localeCompare(stableStringify(oursEntry)) < 0 ? theirsEntry : outcome.value);
+  }
+  return merged;
+}
+
 /** Merge one collection field and report whether the field was handled. */
 function mergeItemUnionField(params: {
   field: string;
@@ -883,20 +917,7 @@ function mergeItemUnionField(params: {
   accumulator: ItemMetadataMergeAccumulator;
 }): boolean {
   if (!params.unionFieldSet.has(params.field)) return false;
-  const union =
-    params.field === "tests"
-      ? unionLinkedTests(params.baseValue, params.oursValue, params.theirsValue)
-      : params.field === "acceptance_criteria"
-        ? unionCollection(
-            splitAcceptanceCriteria(params.baseValue),
-            splitAcceptanceCriteria(params.oursValue),
-            splitAcceptanceCriteria(params.theirsValue),
-          ).join("; ")
-        : unionCollection(
-            params.baseValue,
-            params.oursValue,
-            params.theirsValue,
-          );
+  const union = mergeUnionFieldValue(params.field, params.baseValue, params.oursValue, params.theirsValue);
   params.accumulator.merged[params.field] = union;
   if (!jsonEquals(union, params.oursValue)) {
     params.accumulator.unionFields.push(params.field);

@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[6]: "area:sdk",extensions,"gh:1719",hooks,identity,multi-agent
 created_at: "2026-11-13T10:53:59.741Z"
-updated_at: "2026-11-14T05:10:00.926Z"
+updated_at: "2026-11-14T05:42:14.568Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#9d7f970542d8df5a0a6bdb3b"
 author: "harness:claude-code"
@@ -22,8 +22,9 @@ actual_result: "BeforeMutationHookContext has no actor, so guards cannot enforce
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1656,related,"2026-11-13T10:53:59.741Z","harness:claude-code","cli:create:dep",detected
   pm-z9x1r2,related,"2026-11-13T10:53:59.741Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-14T04:03:53.093Z","harness:claude-code","Progress (2026-11-14): BeforeMutationHookContext gains a frozen actor block {author, author_source, principal, agent?} resolved by src/core/extensions/mutation-actor.ts from the same resolvers createHistoryEntry uses (resolveHistoryAuthorSource, resolveHistoryAgentIdentity, resolveClaimPrincipal), plus dry_run. runActiveBeforeMutationHooks now takes the author instead of a prebuilt context, so no call site can hand a guard another identity. previewItemMutations evaluates the caller's guards against the staged plan as dry runs with the commit's actor; the unresolved constraint is renamed extension_write_hooks. Two guard bypasses found and closed in scope: commitImportedItem (op import) and pm copy wrote items without running any guard, and commitImportedItem converted every CONFLICT (including a guard denial) into a skippable lock-conflict warning; only the lock acquisition is now skippable. Spec: tests/unit/sdk/mutation-guard-actor.spec.ts (claimant-only close through SDK client, CLI, MCP; preview/commit actor parity; delete dry run, copy, import; test harness defaults)."
+  "2026-11-14T05:42:14.567Z","harness:claude-code","Review round 1 (Greptile P1, Codex P1/P2), fixed: (1) commitImportedItem now canonicalizes the stamped document before workflow policies and guards, and the guard, the item file and the history entry share that one snapshot. A guard rejecting the canonical tag sensitive could previously be bypassed by importing ' SENSITIVE ', which serialization then normalized. (2) copy and import guard contexts include body in changed_fields: copy reuses buildChangedFields, and import lists every set field plus a non-empty body. Specs extended in tests/unit/sdk/extension/mutation-guard-actor.spec.ts."
 files[12]{path,scope,note}:
   src/core/extensions/extension-hook-runtime.ts,project,per-guard actor clone
   src/core/extensions/extension-types.ts,project,MutationActor and context fields

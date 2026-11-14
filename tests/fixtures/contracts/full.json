@@ -22299,7 +22299,7 @@
       "class": "usage",
       "code": "create_deferral_conflict",
       "emitting_commands": [
-        "create-deferrals"
+        "create"
       ],
       "exit_code": 2,
       "meaning": "Create deferral conflict condition.",
@@ -22316,7 +22316,7 @@
       "class": "usage",
       "code": "create_deferral_field_unsupported",
       "emitting_commands": [
-        "create-deferrals"
+        "create"
       ],
       "exit_code": 2,
       "meaning": "Create deferral field unsupported condition.",
@@ -22333,7 +22333,7 @@
       "class": "usage",
       "code": "create_deferral_fields_required",
       "emitting_commands": [
-        "create-deferrals"
+        "create"
       ],
       "exit_code": 2,
       "meaning": "Create deferral fields required condition.",
@@ -22350,7 +22350,7 @@
       "class": "usage",
       "code": "create_deferral_reason_required",
       "emitting_commands": [
-        "create-deferrals"
+        "create"
       ],
       "exit_code": 2,
       "meaning": "Create deferral reason required condition.",
@@ -36404,17 +36404,6 @@
             "type": "string"
           },
           "defer": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
             "description": "Strict-required create fields whose values are not known yet (GH-1713): deadline, assignee, acceptance_criteria or estimated_minutes. Each is recorded in deferred_fields with deferReason; close validation refuses the item until every deferred field holds a value.",
             "examples": [
               [
@@ -36422,7 +36411,11 @@
                 "assignee"
               ],
               "acceptance_criteria"
-            ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "deferReason": {
             "description": "Why the deferred values are not known yet, for example the external system the record was imported from. Required with defer.",
@@ -50158,17 +50151,6 @@
             "type": "string"
           },
           "defer": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
             "description": "Strict-required create fields whose values are not known yet (GH-1713): deadline, assignee, acceptance_criteria or estimated_minutes. Each is recorded in deferred_fields with deferReason; close validation refuses the item until every deferred field holds a value.",
             "examples": [
               [
@@ -50176,7 +50158,11 @@
                 "assignee"
               ],
               "acceptance_criteria"
-            ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "deferReason": {
             "description": "Why the deferred values are not known yet, for example the external system the record was imported from. Required with defer.",

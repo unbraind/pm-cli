@@ -197,6 +197,13 @@ describe("strict create deferrals (GH-1713)", () => {
     expect(itemDocumentToMutationOptions(JSON.stringify({ ...stored, deferred_fields: [{ field: "deadline" }] }), "create")).toMatchObject({ defer: ["deadline"] });
     expect(itemDocumentToMutationOptions(JSON.stringify({ ...stored, deferred_fields: [{ field: "deadline" }] }), "create")).not.toHaveProperty("deferReason");
     expect(itemDocumentToMutationOptions(JSON.stringify({ ...stored, deferred_fields: "deadline" }), "create")).not.toHaveProperty("defer");
+    // Explicit values and unsets override the document's deferral of that field, like any other document value.
+    const overridden = itemDocumentToMutationOptions(envelope, "create", { deadline: "2026-12-31", unset: ["assignee"] });
+    expect(overridden).toMatchObject({ defer: ["estimated_minutes"], deadline: "2026-12-31" });
+    const allOverridden = itemDocumentToMutationOptions(envelope, "create", { deadline: "2026-12-31", assignee: "alice", estimatedMinutes: "30" });
+    expect(allOverridden).not.toHaveProperty("defer");
+    expect(allOverridden).not.toHaveProperty("deferReason");
+    expect(itemDocumentToMutationOptions(envelope, "create", { defer: ["deadline"], deferReason: "Explicit" })).toMatchObject({ defer: ["deadline"], deferReason: "Explicit" });
 
     await withTempPmPath(async (context) => {
       const client = new PmClient({ pmRoot: context.pmPath, author: "importer" });
@@ -234,6 +241,33 @@ describe("strict create deferrals (GH-1713)", () => {
     const merged = parseItemDocument(result.merged, { format: "toon" }).metadata;
     expect(merged).toMatchObject({ deadline: "2026-12-31T00:00:00.000Z", assignee: "alice", pm_format_version: 4 });
     expect(merged.deferred_fields).toBeUndefined();
+
+    // Both sides change one field's reason: the result keeps one entry per field, in either merge order.
+    const reasoned = (reason: string, updatedAt: string) => {
+      const branch = structuredClone(deferredBase);
+      branch.metadata.deferred_fields = [{ field: "assignee", reason: "Imported" }, { field: "deadline", reason }];
+      branch.metadata.updated_at = updatedAt;
+      return serializeItemDocument(branch);
+    };
+    const baseRaw = serializeItemDocument(deferredBase);
+    const forward = mergeItemDocuments(baseRaw, reasoned("Imported from GitHub", "2026-11-14T01:00:00.000Z"), reasoned("Imported from Linear", "2026-11-14T02:00:00.000Z"));
+    const backward = mergeItemDocuments(baseRaw, reasoned("Imported from Linear", "2026-11-14T02:00:00.000Z"), reasoned("Imported from GitHub", "2026-11-14T01:00:00.000Z"));
+    const forwardFields = parseItemDocument(forward.merged, { format: "toon" }).metadata.deferred_fields;
+    expect(forwardFields).toEqual([{ field: "assignee", reason: "Imported" }, { field: "deadline", reason: "Imported from GitHub" }]);
+    expect(parseItemDocument(backward.merged, { format: "toon" }).metadata.deferred_fields).toEqual(forwardFields);
+
+    // One side resolves a field while the other changed its reason: the resolution wins.
+    const resolvedSide = structuredClone(deferredBase);
+    resolvedSide.metadata.deferred_fields = [{ field: "assignee", reason: "Imported" }];
+    resolvedSide.metadata.deadline = "2026-12-31T00:00:00.000Z";
+    const resolvedMerge = mergeItemDocuments(baseRaw, serializeItemDocument(resolvedSide), reasoned("Reworded", "2026-11-14T03:00:00.000Z"));
+    expect(parseItemDocument(resolvedMerge.merged, { format: "toon" }).metadata.deferred_fields).toEqual([{ field: "assignee", reason: "Imported" }]);
+
+    // A deferral added on one side survives; an entry both sides keep unchanged stays.
+    const added = structuredClone(deferredBase);
+    added.metadata.deferred_fields = [...(deferredBase.metadata.deferred_fields ?? []), { field: "estimated_minutes", reason: "Unknown size" }];
+    const addedMerge = mergeItemDocuments(baseRaw, baseRaw, serializeItemDocument(added));
+    expect(parseItemDocument(addedMerge.merged, { format: "toon" }).metadata.deferred_fields?.map((entry) => entry.field)).toEqual(["assignee", "deadline", "estimated_minutes"]);
   });
 
   it("lets a deferral override a template default exactly like an unset", () => {

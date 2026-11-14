@@ -27,6 +27,7 @@ import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
 import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS, resolveCoreUpsertMetadataKey } from "./lifecycle/core-item-fields.js";
+import { DEFERRABLE_ITEM_FIELDS, resolveDeferrableItemField } from "../core/item/deferred-fields.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 
@@ -1349,6 +1350,27 @@ function deferralOptionsFromDocument(value: unknown): { defer?: string[]; deferR
   return { defer: fields, ...(reasons.length === 0 ? {} : { deferReason: reasons.join("; ") }) };
 }
 
+/**
+ * A value or unset supplied explicitly overrides the document's deferral of
+ * that field, exactly as explicit options override any other document value.
+ * The synthesized reason goes when no document deferral remains.
+ */
+function dropOverriddenDocumentDeferrals(documentOptions: Record<string, unknown>, explicitKeys: ReadonlySet<string>, explicitUnset: unknown): void {
+  if (!Array.isArray(documentOptions.defer)) return;
+  const unsetTokens = (Array.isArray(explicitUnset) ? explicitUnset : []).flatMap((token) => String(token).split(","));
+  const overridden = new Set<string | undefined>([
+    ...DEFERRABLE_ITEM_FIELDS.filter((entry) => explicitKeys.has(entry.option)).map((entry) => entry.field),
+    ...unsetTokens.map((token) => resolveDeferrableItemField(token)?.field),
+  ]);
+  const remaining = (documentOptions.defer as string[]).filter((field) => !overridden.has(field));
+  if (remaining.length > 0) {
+    documentOptions.defer = remaining;
+    return;
+  }
+  delete documentOptions.defer;
+  delete documentOptions.deferReason;
+}
+
 /** Resolve explicit CLI aliases and schema fields to their logical option keys. */
 function explicitDocumentOptionKeys(explicitOptions: Record<string, unknown>, mode: "create" | "update", runtimeFields: readonly RuntimeFieldDefinitionResolved[]): Set<string> {
   const explicitKeys = new Set(Object.entries(explicitOptions).filter(([, value]) => value !== undefined).map(([key]) => key));
@@ -1402,6 +1424,7 @@ export function itemDocumentToMutationOptions(
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
   const explicitKeys = explicitDocumentOptionKeys(explicitOptions, mode, runtimeFields);
   removeOverriddenDocumentOptions(documentOptions, mode, explicitKeys);
+  dropOverriddenDocumentDeferrals(documentOptions, explicitKeys, explicitOptions.unset);
   if (mode === "update") {
     const annotations = Object.fromEntries(
       (["comments", "notes", "learnings"] as const)

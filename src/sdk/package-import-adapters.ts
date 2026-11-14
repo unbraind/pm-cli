@@ -21,7 +21,7 @@ import { acquireLock } from "../core/lock/lock.js";
 import { enforceWorkflowMutation } from "../core/policy/workflow-policy-store.js";
 import { parseTags } from "../core/item/parse.js";
 import { normalizeStatusInput } from "../core/item/status.js";
-import { serializeItemDocument } from "../core/item/item-format.js";
+import { canonicalDocument, serializeItemDocument } from "../core/item/item-format.js";
 import { getHistoryPath } from "../core/store/paths.js";
 import {
   removeFileIfExists,
@@ -582,14 +582,22 @@ export type CommitImportedItemResult =
   | { committed: true; writeWarnings: string[] }
   | { committed: false; conflictWarning: string };
 
+/** Every field an imported document sets, including a non-empty body, as a create reports them to guards. */
+function importedChangedFields(document: ItemDocument): string[] {
+  const fields = Object.entries(document.metadata).filter(([, value]) => value !== undefined).map(([key]) => key);
+  return [...fields, ...(document.body.length > 0 ? ["body"] : [])].sort();
+}
+
 /** Performs the shared item write/commit sequence: acquire the per-item lock, atomically write the TOON document, append the import history entry, and run on-write hooks. On a lock CONFLICT it returns a `conflictWarning` (using the caller-supplied prefix) instead of throwing; any other error removes the partially written file and rethrows. */
 export async function commitImportedItem(
   params: CommitImportedItemParams,
 ): Promise<CommitImportedItemResult> {
   const { pmRoot, id, itemPath, author, message, settings, conflictWarningPrefix } = params;
   // The item and its history carry the format the record needs, exactly as create stamps it (GH-1671).
-  const document = { ...params.document, metadata: { ...params.document.metadata } };
-  stampRequiredItemFormat(document.metadata, pmRoot);
+  const stamped = { ...params.document, metadata: { ...params.document.metadata } };
+  stampRequiredItemFormat(stamped.metadata, pmRoot);
+  // Guards, the item file and its history all see the canonical form serialization persists (GH-1719).
+  const document = canonicalDocument(stamped);
   const historyPath = getHistoryPath(pmRoot, id);
   const beforeDocument = emptyImportedDocument();
   let releaseLock: () => Promise<void>;
@@ -624,7 +632,7 @@ export async function commitImportedItem(
       operation: "import",
       before: null,
       after: document,
-      changed_fields: Object.keys(document.metadata).sort(),
+      changed_fields: importedChangedFields(document),
       author,
       sdk: createMutationGuardSdk({
         pmRoot,

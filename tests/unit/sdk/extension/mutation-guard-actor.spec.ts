@@ -31,6 +31,8 @@ interface GuardLogEntry {
   dry_run: boolean;
   actor: BeforeMutationHookContext["actor"];
   frozen: boolean;
+  changed_fields: string[];
+  tags: string[];
 }
 
 const GUARD_LOG_KEY = "__pmGh1719GuardLog";
@@ -45,7 +47,7 @@ const CLAIMANT_GUARD_SOURCE = `export default {
   activate(api) {
     api.hooks.beforeMutation((context) => {
       const log = (globalThis.${GUARD_LOG_KEY} ??= []);
-      log.push({ operation: context.operation, dry_run: context.dry_run, actor: context.actor, frozen: Object.isFrozen(context.actor) });
+      log.push({ operation: context.operation, dry_run: context.dry_run, actor: context.actor, frozen: Object.isFrozen(context.actor), changed_fields: [...context.changed_fields], tags: context.after?.metadata.tags ?? [] });
       const title = context.after?.metadata.title ?? "";
       if ((context.operation === "create" || context.operation === "import") && title.startsWith("Forbidden")) {
         return { allow: false, code: "forbidden_by_actor_policy", remediation: "Use an allowed title." };
@@ -161,8 +163,11 @@ describe("mutation guard actor (GH-1719)", () => {
       expect(guardLog().at(-1)).toMatchObject({ operation: "delete", dry_run: true, actor: { author: "agent-curator" } });
 
       guardLog().length = 0;
+      await client.update(created.item.id, { body: "Copied body text" });
+      guardLog().length = 0;
       await client.copy(created.item.id, { title: "Copied work" });
       expect(guardLog().at(-1)).toMatchObject({ operation: "create", dry_run: false, actor: { author: "agent-curator" } });
+      expect(guardLog().at(-1)?.changed_fields).toContain("body");
       await expect(client.copy(created.item.id, { title: "Forbidden copy" })).rejects.toMatchObject({
         code: "forbidden_by_actor_policy",
       });
@@ -176,11 +181,11 @@ describe("mutation guard actor (GH-1719)", () => {
           type: "Task",
           status: "open",
           priority: 2,
-          tags: [],
+          tags: [" Mirrored "],
           created_at: "2026-11-14T00:00:00.000Z",
           updated_at: "2026-11-14T00:00:00.000Z",
         },
-        body: "",
+        body: "Imported body",
       });
       const importOne = (id: string, title: string) =>
         runWithActiveExtensions({ path: context.pmPath }, () =>
@@ -197,7 +202,10 @@ describe("mutation guard actor (GH-1719)", () => {
         );
       guardLog().length = 0;
       await expect(importOne("pm-allowed-import", "Allowed import")).resolves.toMatchObject({ committed: true });
-      expect(guardLog().at(-1)).toMatchObject({ operation: "import", dry_run: false, actor: { author: "agent-importer" } });
+      // The guard judges the canonical document that is persisted, body included.
+      expect(guardLog().at(-1)).toMatchObject({ operation: "import", dry_run: false, actor: { author: "agent-importer" }, tags: ["mirrored"] });
+      expect(guardLog().at(-1)?.changed_fields).toEqual(expect.arrayContaining(["body", "tags", "title"]));
+      await expect(client.get("pm-allowed-import")).resolves.toMatchObject({ item: { tags: ["mirrored"] } });
       // A guard denial is a refusal, never a skippable lock-conflict warning.
       await expect(importOne("pm-forbidden-import", "Forbidden import")).rejects.toMatchObject({
         code: "forbidden_by_actor_policy",

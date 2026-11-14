@@ -279,7 +279,7 @@ export async function runCopy(
         operation: "create",
         before: null,
         after: copiedDocument,
-        changed_fields: Object.keys(copiedDocument.metadata).sort(),
+        changed_fields: changedFields,
         author,
         sdk: createMutationGuardSdk({ pmRoot, settings, typeToFolder: typeRegistry.type_to_folder }),
       });
