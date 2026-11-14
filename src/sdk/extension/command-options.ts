@@ -989,23 +989,24 @@ function refuseConflictingOptionSpellings(
  * keys pass through unchanged. A command that declares no flags is returned
  * as it is (pm-4of199 owns that refusal).
  *
- * `nativeDefinitions` are the flags the host command at `commandPath` owns,
- * as CLI dispatch validates contributed flags together with them: an extension
- * that overrides or extends a native command (`list`) still receives the
- * native options (`all`, `status`) untouched. Pass
- * `resolveSubcommandFlagContractsForCommand(commandPath)` mapped to `{ long,
- * short }`; an extension-created path resolves to the shared global flags only.
+ * Pass `{ undeclaredKeys: "pass" }` for a native command path an extension
+ * extends or overrides (`list`): the native contract, including its aliases,
+ * negated flags and settings-dependent runtime fields, owns every other key
+ * there, so undeclared keys keep passing through as before. A `repeatable`
+ * declaration counts as `list` here, as the loader expands it.
  */
 export function normalizeDirectExtensionCommandOptions(
   options: Record<string, unknown>,
-  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+  declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>,
   commandPath: string,
-  nativeDefinitions: ReadonlyArray<LooseCommandFlagDefinition> = [],
+  policy: DirectExtensionOptionPolicy = {},
 ): Record<string, unknown> {
-  if (definitions.length === 0) {
+  if (declaredDefinitions.length === 0) {
     return options;
   }
-  const nativeKeys = collectLooseCommandOptionKeysForDefinitions(nativeDefinitions);
+  const definitions = declaredDefinitions.map((definition) =>
+    definition.repeatable === true && definition.list !== true ? { ...definition, list: true } : definition,
+  );
   const index = indexDeclaredOptionSpellings(definitions);
   const folded = foldDirectOptionSpellings(options, index, commandPath);
   // Only declared handler keys reach the shared coercer: its CLI alias folding (`-S` -> `s`) must never
@@ -1016,7 +1017,7 @@ export function normalizeDirectExtensionCommandOptions(
   for (const [key, value] of Object.entries(folded)) {
     if (handlerKeys.has(key)) {
       declared[key] = value;
-    } else if (value === undefined || isDirectHostOptionKey(key, nativeKeys)) {
+    } else if (value === undefined || policy.undeclaredKeys === "pass" || isDirectHostOptionKey(key)) {
       passthrough[key] = value;
     } else {
       refuseUnknownExtensionOption(key, toDashedOptionFlag(key), commandPath, collectRefusalListingLabels(definitions, {}));
@@ -1128,14 +1129,12 @@ const DIRECT_HOST_OPTION_KEYS: ReadonlySet<string> = new Set([
 
 /**
  * Whether a direct caller's undeclared option key is host-owned rather than a
- * misspelled or undeclared command flag: a reserved host key, or a flag the
- * native command at the same path owns. Both answer to the spellings a
+ * misspelled or undeclared command flag. Host keys answer to the spellings a
  * declared flag answers to: the key itself, or its dashed form (`--json`,
  * `output-budget`).
  */
-function isDirectHostOptionKey(key: string, nativeKeys: ReadonlySet<string>): boolean {
-  const folded = toLooseOptionKey(key.replace(/^-{1,2}/u, ""));
-  return DIRECT_HOST_OPTION_KEYS.has(key) || DIRECT_HOST_OPTION_KEYS.has(folded) || nativeKeys.has(key) || nativeKeys.has(folded);
+function isDirectHostOptionKey(key: string): boolean {
+  return DIRECT_HOST_OPTION_KEYS.has(key) || DIRECT_HOST_OPTION_KEYS.has(toLooseOptionKey(key.replace(/^-{1,2}/u, "")));
 }
 
 /** Render a direct caller's option key as the dashed flag an unknown-option refusal names (`typoKey` -> `--typo-key`). */
@@ -1145,6 +1144,12 @@ function toDashedOptionFlag(key: string): string {
     .replace(/([a-z0-9])([A-Z])/gu, "$1-$2")
     .replaceAll("_", "-")
     .toLowerCase()}`;
+}
+
+/** How {@link normalizeDirectExtensionCommandOptions} treats a key no declaration or host flag owns. */
+export interface DirectExtensionOptionPolicy {
+  /** `refuse` (default) for an extension-created command; `pass` for a native command path an extension extends. */
+  undeclaredKeys?: "refuse" | "pass";
 }
 
 /** A declared flag reachable through one direct-caller spelling. */

@@ -189,6 +189,7 @@ export type {
 export {
   normalizeDirectExtensionCommandOptions,
   resolveExtensionFlagOptionKey,
+  type DirectExtensionOptionPolicy,
   type LooseCommandFlagDefinition,
 } from "./extension/command-options.js";
 

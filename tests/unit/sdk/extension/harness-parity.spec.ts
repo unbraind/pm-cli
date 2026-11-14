@@ -16,15 +16,20 @@ async function activate(register: (api: ExtensionApi) => void) {
 }
 
 describe("extension test harness parity with native dispatch", () => {
-  it("passes a native command's own options to an extension that extends it, and still refuses undeclared keys", async () => {
+  it("passes every undeclared key through on a native command path an extension extends, while still refusing on its own commands", async () => {
     const activation = await activate((api) => {
       api.registerFlags("list", [{ long: "--probe", value_type: "boolean" }]);
       api.registerCommand({ name: "list", run: (context) => ({ options: context.options }) });
+      api.registerCommand({ name: "probe-own", flags: [{ long: "--probe", value_type: "boolean" }], run: (context) => ({ options: context.options }) });
     });
-    const result = await runRegisteredCommandForTest(activation.commands, { command: "list", options: { all: true, status: "open", "--limit": 2, probe: "true" } });
-    expect(result).toMatchObject({ handled: true, result: { options: { all: true, status: "open", "--limit": 2, probe: true } } });
-    await expect(runRegisteredCommandForTest(activation.commands, { command: "list", options: { typo: 1 } })).rejects.toMatchObject({
-      context: expect.objectContaining({ code: "unknown_option", flag: "--typo" }),
+    // The native contract owns aliases, negated flags and runtime fields there (Codex review rounds 1-3).
+    const result = await runRegisteredCommandForTest(activation.commands, {
+      command: "list",
+      options: { all: true, status: "open", "--limit": 2, probe: "true", truncate: false, tags: "a", storyPoints: 3 },
+    });
+    expect(result).toMatchObject({ handled: true, result: { options: { all: true, status: "open", "--limit": 2, probe: true, truncate: false, tags: "a", storyPoints: 3 } } });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-own", options: { storyPoints: 3 } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "unknown_option", flag: "--story-points" }),
     });
   });
 
@@ -100,12 +105,17 @@ describe("extension test harness parity with native dispatch", () => {
     });
   });
 
-  it("admits every spelling of a native flag: aliases and the positive key of a --no-* flag (Codex review round 2)", async () => {
+  it("honours an explicit output encoding when it runs output_format before admission (Codex review round 3)", async () => {
     const activation = await activate((api) => {
-      api.registerFlags("list", [{ long: "--probe", value_type: "boolean" }]);
-      api.registerCommand({ name: "list", run: (context) => ({ options: context.options }) });
+      api.registerFlags("svc-toon", [{ long: "--note", value_type: "string" }]);
+      api.registerCommand({ name: "svc-toon", read_output: { row_keys: ["rows"] }, run: () => ({ ok: true }) });
+      api.registerService("output_format", (context) =>
+        (context.payload as { format: string }).format === "toon" ? { handled: true, result: { ok: true, rows: [] } } : { handled: false },
+      );
     });
-    const result = await runRegisteredCommandForTest(activation.commands, { command: "list", options: { probe: true, truncate: false, tags: "a" } });
-    expect(result).toMatchObject({ handled: true, result: { options: { probe: true, truncate: false, tags: "a" } } });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", options: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon" })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "extension_read_output_invalid" }),
+    });
   });
 });

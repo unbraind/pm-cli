@@ -143,8 +143,9 @@ import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
 } from "./extension/command-options.js";
-import { resolveNativeCommandOptionDefinitions } from "./extension/native-command-options.js";
+import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import { assertExtensionReadOutputResult } from "./read-output/extension.js";
+import { resolveReadOutputEncoding } from "./read-output-contracts.js";
 import { isHostOutputSuppressed } from "../core/output/output-control.js";
 import { PmClient } from "./runtime.js";
 
@@ -265,7 +266,8 @@ function resolveServiceAdmittedResult(
   result: unknown,
 ): unknown {
   if (services === undefined) return result;
-  const format = context.global?.json === false ? "toon" : "json";
+  // An explicit output encoding wins over the harness's JSON default, as in native formatOutput.
+  const format = resolveReadOutputEncoding(context.command, context.options) ?? (context.global?.json === false ? "toon" : "json");
   const service = runServiceOverrideSync(services, {
     service: "output_format",
     command: context.command,
@@ -1137,7 +1139,7 @@ export async function runRegisteredCommandForTest(
             handlerOptions,
             collectExtensionFlagDefinitionsForCommand(registrations, command),
             command,
-            resolveNativeCommandOptionDefinitions(command),
+            resolveDirectExtensionOptionPolicy(command),
           ),
     global,
     pm_root: pmRoot,

@@ -1,26 +1,16 @@
 /**
  * @module sdk/extension/native-command-options
  *
- * The native flags a host command path owns, in the definition shape the
- * direct-caller option normalizer reads (pm-gh1727). CLI dispatch validates an
- * extension's contributed flags together with the native command's own, so a
- * direct caller (`PmClient.run`, the extension test harness) gets the same
- * allowance when an extension overrides or extends a native command.
+ * Whether an extension command path is also a native command (pm-gh1727). An
+ * extension may extend or override a native command (`list`); there the
+ * native contract (aliases, negated flags, settings-dependent runtime fields)
+ * owns every key the extension does not declare, so the direct-caller option
+ * normalizer keeps passing those keys through instead of refusing them.
  */
-import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
-import type { LooseCommandFlagDefinition } from "./command-options.js";
+import { hasSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
+import type { DirectExtensionOptionPolicy } from "./command-options.js";
 
-/**
- * Native flag definitions for a command path; an extension-created path
- * resolves to the shared global flags only. Every spelling Commander accepts
- * is admitted: the canonical flag with its short letter, each alias, and the
- * positive handler key a `--no-*` flag sets (`--no-truncate` sets `truncate`).
- */
-export function resolveNativeCommandOptionDefinitions(commandPath: string): LooseCommandFlagDefinition[] {
-  return resolveSubcommandFlagContractsForCommand(commandPath).flatMap((contract) =>
-    [contract.flag, ...(contract.aliases ?? [])].flatMap((long, index): LooseCommandFlagDefinition[] => [
-      index === 0 ? { long, short: contract.short } : { long },
-      ...(long.startsWith("--no-") ? [{ long: `--${long.slice(5)}` }] : []),
-    ]),
-  );
+/** The direct-caller undeclared-key policy for a command path: pass on a native path, refuse on an extension-created one. */
+export function resolveDirectExtensionOptionPolicy(commandPath: string): DirectExtensionOptionPolicy {
+  return { undeclaredKeys: hasSubcommandFlagContractsForCommand(commandPath) ? "pass" : "refuse" };
 }

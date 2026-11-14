@@ -2916,7 +2916,8 @@ and `createExtensionTestHarness().runCommand()` apply the same admission to
 the result a registered command-result override delivers (skipping a result
 that suppresses host output), and to a structured `output_format` replacement
 in place of that result (a string rendering leaves the result itself to be
-admitted), so a package test fails exactly where the native CLI would
+admitted; the service sees the explicit `outputFormat` when one is passed), so
+a package test fails exactly where the native CLI would
 ([pm-gh1729](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1729.toon),
 tracker record excluded from npm). Avoid
 reserved metadata and prototype property names. The declaration promises a
@@ -3239,12 +3240,15 @@ tracker records excluded from npm). Match on the code, never the message:
 Host-owned keys pass through untouched: every reserved host flag in camel case,
 snake_case or dashed form (`json`, `outputBudget`, `output_budget`, `pmPath`,
 `--json`), the positive key of each `--no-*` switch, and the action-transport
-keys `force`, `subcommand`, `inputResponses` and `requestState`. An
-extension that extends or overrides a native command (`list`) also receives
-that command's own options (`all`, `status`, aliases such as `tags`, and the
-key a `--no-*` flag sets, such as `truncate`), as CLI argv validates contributed
-flags together with the native ones. A command that declares no flags still
-receives every key (pm-4of199, below). An
+keys `force`, `subcommand`, `inputResponses` and `requestState`. The
+unknown-key refusal applies to extension-created commands only: on a native
+command path an extension extends or overrides (`list`), the native contract
+(its aliases, negated flags and settings-dependent runtime fields) owns every
+key the extension does not declare, so those keys keep passing through. A
+command that declares no flags still receives every key (pm-4of199, below).
+A `repeatable` declaration counts as `list` for these checks, as the loader
+expands it, also when `normalizeDirectExtensionCommandOptions` is called
+directly. An
 extension action also keeps the caller's values as given: the native
 `tags`-to-CSV and `dep`-to-array rewrites of core commands do not apply to it.
 On the CLI, each bare occurrence of a repeatable boolean switch reaches the

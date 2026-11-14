@@ -77,7 +77,7 @@ import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
 } from "./extension/command-options.js";
-import { resolveNativeCommandOptionDefinitions } from "./extension/native-command-options.js";
+import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import {
   type ExtensionCommandOptions,
   type ExtensionCommandResult
@@ -2889,7 +2889,7 @@ async function dispatchActiveExtensionAction(
     extensionOptionsFromArgs(args, options),
     collectExtensionFlagDefinitionsForCommand(active.registrations, commandPath),
     commandPath,
-    resolveNativeCommandOptionDefinitions(commandPath),
+    resolveDirectExtensionOptionPolicy(commandPath),
   );
   const handlerResult = await runActiveCommandHandler({
     command: commandPath,

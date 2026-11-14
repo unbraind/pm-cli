@@ -440,4 +440,15 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
       expect(refusal(direct({ ...valid, [key]: "v" })), key).toMatchObject({ code: "unknown_option" });
     }
   });
+
+  it("reads a raw repeatable declaration as a list, as the loader expands it (Codex review round 3)", () => {
+    const raw = [{ long: "--many", value_type: "boolean", repeatable: true }, { long: "--ids", value_type: "string", repeatable: true, required: true }];
+    expect(normalizeDirectExtensionCommandOptions({ many: [true, "false"], ids: ["a,b", "c"] }, raw, "demo brief")).toEqual({ many: [true, false], ids: ["a,b", "c"] });
+    expect(refusal(() => normalizeDirectExtensionCommandOptions({ ids: [] }, raw, "demo brief"))).toMatchObject({ code: "missing_required_option", field: "ids" });
+  });
+
+  it("passes undeclared keys through under the native-path policy", () => {
+    expect(normalizeDirectExtensionCommandOptions({ ...valid, storyPoints: 3 }, definitions, "demo brief", { undeclaredKeys: "pass" })).toMatchObject({ storyPoints: 3 });
+  });
 });
+

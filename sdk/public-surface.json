@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2127,
+    "covered_symbols": 2128,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2128
+    "required_symbols": 2129
   },
   "breaking_acknowledgements": [
     {
@@ -3337,6 +3337,14 @@
       ],
       "package_version": "2026.11.14",
       "reason": "pm-gh1728: certifyCompleteListResult, assertCompleteListResult and the PmCompleteListValidationError constructor gain an optional trailing PmCompleteListOptions argument; every existing call keeps compiling and behaving the same"
+    },
+    {
+      "changes": [
+        "signature ./sdk:normalizeDirectExtensionCommandOptions",
+        "signature ./sdk/authoring:normalizeDirectExtensionCommandOptions"
+      ],
+      "package_version": "2026.11.14",
+      "reason": "pm-gh1727: normalizeDirectExtensionCommandOptions gains an optional trailing DirectExtensionOptionPolicy argument (its first parameter is renamed declaredDefinitions); every existing three-argument call keeps compiling"
     }
   ],
   "entrypoints": {
@@ -7980,6 +7988,12 @@
           "kind": "function",
           "name": "digestMcpRequestParameters",
           "signature": "(value: unknown) => string | calls: (value: unknown) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DirectExtensionOptionPolicy",
+          "signature": "export interface DirectExtensionOptionPolicy { undeclaredKeys?: \"refuse\" | \"pass\"; }"
         },
         {
           "classification": "advanced_export",
@@ -13121,7 +13135,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "normalizeDirectExtensionCommandOptions",
-          "signature": "(options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown> | calls: (options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown>"
+          "signature": "(options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown> | calls: (options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown>"
         },
         {
           "classification": "advanced_export",
@@ -24375,6 +24389,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "DirectExtensionOptionPolicy",
+          "signature": "export interface DirectExtensionOptionPolicy { undeclaredKeys?: \"refuse\" | \"pass\"; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "ExactDefinition",
           "signature": "export type ExactDefinition<TDefinition, TContract> = TDefinition & Record<Exclude<keyof TDefinition, keyof TContract>, never>;"
@@ -24935,7 +24955,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "normalizeDirectExtensionCommandOptions",
-          "signature": "(options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown> | calls: (options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown>"
+          "signature": "(options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown> | calls: (options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown>"
         },
         {
           "classification": "supported",
@@ -40645,13 +40665,13 @@
       "checked_functions": 1332,
       "checked_values": 396,
       "exempt_test_seams": 15,
-      "referenced_types": 1041
+      "referenced_types": 1042
     },
     "./sdk/authoring": {
       "checked_functions": 54,
       "checked_values": 18,
       "exempt_test_seams": 0,
-      "referenced_types": 59
+      "referenced_types": 60
     },
     "./sdk/contracts": {
       "checked_functions": 102,

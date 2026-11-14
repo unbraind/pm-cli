@@ -23180,6 +23180,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "extension_option_disabled",
+      "class": "usage",
+      "code": "extension_option_disabled",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Extension option disabled condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/extension/command-options.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "extension_option_spelling_conflict",
       "class": "usage",
       "code": "extension_option_spelling_conflict",
@@ -25844,6 +25861,7 @@
         "cli/error-guidance.ts",
         "core/telemetry/observability.ts",
         "sdk/context-intent-contracts.ts",
+        "sdk/extension/command-options.ts",
         "sdk/lifecycle/create.ts",
         "sdk/lifecycle/plan.ts"
       ],
