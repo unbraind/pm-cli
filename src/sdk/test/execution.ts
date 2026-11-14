@@ -16,7 +16,7 @@ import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { detectLinkedTestCommandNotFound } from "./command-resolution.js";
 import { updateLinkedTest, parseLinkedTestUpdateOptions, assertLinkedTestEditUsage } from "./update.js";
 import { admitLinkedTestRequest, assertLinkedTestCommand, linkedTestsHaveSameIdentity } from "./entry.js";
-import { countFailureCategories, createLinkedTestSetupGate, orderLinkedTestsSetupFirst, parseLinkedTestPhase, withLinkedTestSetupEntries, type LinkedTestFailureCategory } from "./run-phases.js";
+import { countFailureCategories, createLinkedTestSetupGate, isLinkedTestSetup, orderLinkedTestsSetupFirst, parseLinkedTestPhase, resolveSetupWorkspaceRefusal, withLinkedTestSetupEntries, type LinkedTestFailureCategory } from "./run-phases.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -2864,13 +2864,13 @@ export async function runLinkedTests(
     }
     const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
     const setupGate = createLinkedTestSetupGate();
+    const resolveWorkspaceMode = (linkedTest: LinkedTest) => resolveLinkedTestWorkspaceContextMode(linkedTest, runLevelWorkspaceContextMode, options?.overrideLinkedWorkspaceContext === true);
+    const regularWorkspaceModes = new Set(ordered.filter((test) => !isLinkedTestSetup(test)).map(resolveWorkspaceMode));
     const runEntry = async (linkedTest: LinkedTest, index: number): Promise<TestRunResult> => {
       const entryOptions = setupGate.options(linkedTest, options);
-      const workspaceContextMode = resolveLinkedTestWorkspaceContextMode(
-        linkedTest,
-        runLevelWorkspaceContextMode,
-        options?.overrideLinkedWorkspaceContext === true,
-      );
+      const workspaceContextMode = resolveWorkspaceMode(linkedTest);
+      const workspaceRefusal = resolveSetupWorkspaceRefusal(linkedTest, workspaceContextMode, regularWorkspaceModes);
+      if (workspaceRefusal) return workspaceRefusal;
       const commandContext = await resolveLinkedTestCommandContext({
         linkedTest,
         layout,

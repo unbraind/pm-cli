@@ -7,6 +7,7 @@ import {
   isLinkedTestSetup,
   orderLinkedTestsSetupFirst,
   parseLinkedTestPhase,
+  resolveSetupWorkspaceRefusal,
   withLinkedTestSetupEntries,
 } from "../../../../src/sdk/test/run-phases.js";
 import type { TestRunResult } from "../../../../src/sdk/test/execution.js";
@@ -141,6 +142,17 @@ describe("sdk/test/run-phases", () => {
     const uncategorized: TestRunResult = { status: "failed" };
     expect(unlabeled.record({ scope: "project", phase: "setup" }, uncategorized)).toEqual({ status: "failed", phase: "setup", failure_category: "setup_failed" });
     expect(unlabeled.blocked(unit)?.error).toContain('"<no command>"');
+  });
+
+  it("refuses only a setup entry whose workspace mode differs from a command it prepares", () => {
+    expect(resolveSetupWorkspaceRefusal(unit, "source", new Set(["snapshot"]))).toBeUndefined();
+    expect(resolveSetupWorkspaceRefusal(build, "isolated", new Set(["isolated"]))).toBeUndefined();
+    expect(resolveSetupWorkspaceRefusal(build, "source", new Set())).toBeUndefined();
+    expect(resolveSetupWorkspaceRefusal(build, "source", new Set(["source", "snapshot", "isolated"]))).toMatchObject({
+      status: "refused",
+      failure_category: "config_refusal",
+      error: expect.stringContaining("run in isolated, snapshot,"),
+    });
   });
 
   it("never admits a setup row as the executed linked test that --measure requires", () => {

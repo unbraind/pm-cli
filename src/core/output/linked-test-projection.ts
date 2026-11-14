@@ -151,7 +151,7 @@ function withoutHoistedContext(
   omitted: StreamOmissionTally,
 ): Record<string, unknown> {
   const { execution_context: _executionContext, stdout, stderr, ...rest } = row;
-  if (!options.lean || options.fullOutput || row.status !== "passed" || isUntrustedRow(row)) {
+  if (!options.lean || options.fullOutput || row.status !== "passed" || keepsDiagnosticStreams(row)) {
     return { ...rest, stdout, stderr };
   }
   // With the stream itself gone, a tail-relative omitted-byte count would understate what was dropped.
@@ -212,6 +212,15 @@ function projectLinkedTestDecisionContext(
     ...(trust.reason === undefined ? {} : { trust_reason: trust.reason }),
     restore_with: "not retained; a run with --check-context reports the full context",
   };
+}
+
+/**
+ * Whether lean output must keep a passing row's streams: the row ran only
+ * under an untrusted-command override, or its context recorded a mismatch.
+ * Either way the streams are the diagnostic a reader needs.
+ */
+function keepsDiagnosticStreams(row: Record<string, unknown>): boolean {
+  return isUntrustedRow(row) || (isPlainObject(row.execution_context) && row.execution_context.mismatch_detected === true);
 }
 
 /** Whether a row ran only under an untrusted-command override, in its full or its reduced context. */

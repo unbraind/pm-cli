@@ -166,6 +166,14 @@ describe("core/output/linked-test-projection", () => {
     };
     expect(leanUntrusted.execution_context).toMatchObject({ trusted: false });
     expect(leanUntrusted.run_results[0]?.stdout).toBe(VITEST_REPORT);
+    // A row whose context recorded a mismatch keeps its streams under lean too, in pm test and test-all alike.
+    const mismatched = { status: "passed", stdout: "diagnostic-out", stderr: "diagnostic-err", execution_context: { mismatch_detected: true, trust: { trusted: true } } };
+    const leanTest = projectLinkedTestReply("test", { ok: true, run_results: [mismatched] }, { ...DEFAULTS, lean: true }) as { run_results: Array<Record<string, unknown>> };
+    expect(leanTest.run_results[0]).toMatchObject({ stdout: "diagnostic-out", stderr: "diagnostic-err" });
+    const leanBatch = projectLinkedTestReply("test-all", { ok: true, results: [{ ok: true, run_results: [mismatched] }] }, { ...DEFAULTS, lean: true }) as {
+      results: Array<{ run_results: Array<Record<string, unknown>> }>;
+    };
+    expect(leanBatch.results[0]?.run_results[0]).toMatchObject({ stdout: "diagnostic-out", stderr: "diagnostic-err" });
     // A shared context that is not an object carries no trust decision, so lean drops the passing streams.
     const opaque = projectLinkedTestReply(
       "test",

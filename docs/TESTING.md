@@ -702,8 +702,13 @@ pm test <item-id> --run
 ```
 
 - Every setup entry runs first, in stored order, once per `pm test --run`,
-  inside the same sandbox and workspace snapshot as the regular commands, so
-  its output is what they see. A selector (`--match`, `--only-index`,
+  inside the same sandbox as the regular commands, so its output is what they
+  see. Entries share an execution root only within one workspace context mode
+  (the source checkout, the run's isolated root, or the run's snapshot, which
+  is seeded before any entry runs). A setup entry whose mode differs from a
+  command it prepares is therefore refused with `config_refusal` before it
+  executes; set `workspace_context_mode` on the setup entry and its commands to
+  one mode. A selector (`--match`, `--only-index`,
   `--only-last`) that names a regular command still runs the setup entries
   first; `selection.setup_indexes` lists the ones it did not name, and
   `selection.selected_indexes` is in run order. A selector naming only setup

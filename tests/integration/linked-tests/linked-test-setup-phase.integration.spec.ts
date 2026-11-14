@@ -70,7 +70,7 @@ describe("linked-test setup phase", () => {
       await runTest(id, { addJson: [JSON.stringify([
         isolated(`node -e "process.exit(3)"`, "setup"),
         isolated(WRITE_BUILD, "setup"),
-        { command: marker },
+        isolated(marker),
       ])] }, global);
       const run = await runTest(id, { run: true }, global);
       expect(run.ok).toBe(false);
@@ -252,6 +252,27 @@ describe("linked-test setup phase", () => {
     expect(setupKeys).toHaveLength(4);
     expect(setupKeys.map((key) => map.get(key)).sort((left, right) => Number(left) - Number(right))).toEqual([10, 20, 25, 60]);
   });
+
+  it("refuses a setup whose workspace mode differs from the commands it prepares, before anything runs", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      const markerPath = path.join(context.tempRoot, "setup-ran.txt").replaceAll("\\", "/");
+      const id = createTestItemId(context, { title: "mixed workspaces", createMode: "progressive" });
+      // The setup builds in the run's isolated root; the regular command runs in the source workspace and never sees it.
+      await runTest(id, { addJson: [JSON.stringify([
+        isolated(`node -e "require('fs').writeFileSync('${markerPath}', 'x')"`, "setup"),
+        { command: READ_BUILD },
+      ])] }, global);
+      const run = await runTest(id, { run: true }, global);
+      expect(run.ok).toBe(false);
+      expect(run.run_results.map((row) => [row.status, row.phase, row.failure_category])).toEqual([
+        ["refused", "setup", "config_refusal"],
+        ["skipped", undefined, undefined],
+      ]);
+      expect(run.run_results[0]?.error).toContain("Setup entry runs in the isolated workspace, but linked commands it prepares run in source");
+      await expect(readFile(markerPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  }, 60_000);
 
   it("exempts a setup entry from the implicit name-filter receipt check that a regular command must pass", async () => {
     await withTempPmPath(async (context) => {

@@ -88,6 +88,31 @@ export function withLinkedTestSetupEntries(
   };
 }
 
+/**
+ * Refuse a setup entry whose workspace differs from a command it prepares.
+ * Entries share an execution root only within one workspace context mode: the
+ * source checkout, the run's isolated root, or the run's snapshot, which is
+ * seeded before any entry runs. A setup in another mode would build where its
+ * dependents never look, so it is refused before it executes.
+ */
+export function resolveSetupWorkspaceRefusal(
+  linkedTest: LinkedTest,
+  setupMode: string,
+  regularModes: ReadonlySet<string>,
+): TestRunResult | undefined {
+  if (!isLinkedTestSetup(linkedTest)) return undefined;
+  const mismatched = [...regularModes].filter((mode) => mode !== setupMode).sort();
+  if (mismatched.length === 0) return undefined;
+  return {
+    command: linkedTest.command,
+    path: linkedTest.path,
+    status: "refused",
+    exit_code: null,
+    failure_category: "config_refusal",
+    error: `Setup entry runs in the ${setupMode} workspace, but linked commands it prepares run in ${mismatched.join(", ")}, so its output would not reach them. Set workspace_context_mode on the setup entry and the linked commands to one mode.`,
+  };
+}
+
 /** Options a setup entry overrides: empty-run and assertion requirements describe test runners, not build steps. */
 interface SetupExemptOptions {
   failOnEmptyTestRun?: boolean;
