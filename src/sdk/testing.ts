@@ -147,6 +147,7 @@ import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-o
 import { assertExtensionReadOutputResult } from "./read-output/extension.js";
 import { resolveReadOutputEncoding } from "./read-output-contracts.js";
 import { isHostOutputSuppressed } from "../core/output/output-control.js";
+import { resolvePortableWorkspaceContext } from "../core/extensions/index.js";
 import { PmClient } from "./runtime.js";
 
 /** Host-pinned TOON codecs for semantic package-output assertions without deep imports. */
@@ -285,6 +286,9 @@ function resolveServiceAdmittedResult(
     options: { ...context.options },
     global: context.global,
     pm_root: context.pm_root,
+    source_workspace_root: context.source_workspace_root,
+    repo_root: context.repo_root,
+    pm_root_rel: context.pm_root_rel,
     payload: {
       command: context.command,
       args: [...context.args],
@@ -1162,6 +1166,9 @@ export async function runRegisteredCommandForTest(
           ),
     global,
     pm_root: pmRoot,
+    // Native runActiveCommandHandler supplies the portable workspace coordinates to the handler and to every
+    // output hook that follows it, so the harness does too (Codex review round 7).
+    ...resolvePortableWorkspaceContext(pmRoot.length > 0 ? pmRoot : undefined),
     ...(sdk === undefined ? {} : { sdk }),
   };
   const outcome = await runCommandHandler(commands, context);

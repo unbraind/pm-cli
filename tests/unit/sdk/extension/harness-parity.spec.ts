@@ -113,9 +113,11 @@ describe("extension test harness parity with native dispatch", () => {
         const payload = context.payload as { format: string; command_options: Record<string, unknown> };
         // Native output hands the service the merged command options with the resolved encoding (Codex review round 5).
         const options = (context.payload as { options: { commandArgs: string[]; pmRoot?: string; command: string } }).options;
-        // ...and the dispatch metadata native output passes: command, commandArgs, pmRoot (Codex review round 6).
+        // ...and the dispatch metadata native output passes: command, commandArgs, pmRoot (Codex review round 6),
+        // plus the portable workspace coordinates native dispatch resolves (Codex review round 7).
         return payload.format === "toon" && payload.command_options.resolvedOutputFormat === "toon" && payload.command_options.outputFormat === "toon" &&
-          options.command === "svc-toon" && options.commandArgs[0] === "arg-1" && options.pmRoot === "/tracker"
+          options.command === "svc-toon" && options.commandArgs[0] === "arg-1" && options.pmRoot === "/tracker" &&
+          typeof context.source_workspace_root === "string"
           ? { handled: true, result: { ok: true, rows: [] } }
           : { handled: false };
       });
