@@ -147,6 +147,7 @@ import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-o
 import { assertExtensionReadOutputResult } from "./read-output/extension.js";
 import { resolveReadOutputEncoding } from "./read-output-contracts.js";
 import { isHostOutputSuppressed } from "../core/output/output-control.js";
+import { projectPrintedResult } from "../core/output/output.js";
 import { resolvePortableWorkspaceContext } from "../core/extensions/index.js";
 import { PmClient } from "./runtime.js";
 
@@ -325,7 +326,9 @@ function admitRegisteredReadOutputResult(
   if (registrations === undefined || !outcome.handled) return outcome;
   const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
   if (readOutput === undefined) return outcome;
-  const effective = runCommandOverride(commands, { ...context, result: outcome.result }).result;
+  // Native printResult projects mutation receipts (--id-only, changed fields) before overrides run.
+  const projected = projectPrintedResult(outcome.result, context.global ?? {});
+  const effective = runCommandOverride(commands, { ...context, result: projected }).result;
   if (!isHostOutputSuppressed(effective)) {
     assertExtensionReadOutputResult(readOutput, resolveServiceAdmittedResult(readActivatedServices(commands), context, effective));
   }

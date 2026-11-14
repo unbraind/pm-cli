@@ -1826,7 +1826,7 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
 }
 
 /** Recognize core flag contracts while keeping package-owned operations outside the core provider surface. */
-function isCoreCommandPath(command: string): boolean {
+export function isCoreCommandPath(command: string): boolean {
   if (PACKAGE_OWNED_COMMANDS.has(resolvePmCommandOperation(command))) {
     return false;
   }

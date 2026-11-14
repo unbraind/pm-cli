@@ -1021,6 +1021,23 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   );
 }
 
+/**
+ * The mutation-receipt projection `printResult` applies before command-result
+ * overrides, services and rendering run: `--id-only`, `--full-changed-fields`,
+ * `--no-changed-fields`, or the compact envelope by default. Shared with the
+ * extension test harness so its read-output admission judges the same value.
+ */
+export function projectPrintedResult(
+  result: unknown,
+  options: Pick<OutputOptions, "idOnly" | "fullChangedFields" | "noChangedFields">,
+): unknown {
+  if (options.idOnly) return projectMutationResult(result, { idOnly: true });
+  if (options.fullChangedFields) return result;
+  return options.noChangedFields
+    ? projectMutationResult(result, { changedFields: "compact" })
+    : projectMutationResult(result, { compactEnvelope: true });
+}
+
 /** Apply declared exit codes and mutation projection before writing a nonquiet result. */
 export function printResult(result: unknown, options: OutputOptions): void {
   if (
@@ -1031,14 +1048,7 @@ export function printResult(result: unknown, options: OutputOptions): void {
   ) {
     process.exitCode = Number(result.exit_code);
   }
-  const projected = options.idOnly
-    ? projectMutationResult(result, { idOnly: true })
-    : options.fullChangedFields
-      ? result
-      : options.noChangedFields
-        ? projectMutationResult(result, { changedFields: "compact" })
-        : projectMutationResult(result, { compactEnvelope: true });
-  const rendered = formatOutput(projected, options);
+  const rendered = formatOutput(projectPrintedResult(result, options), options);
   if (options.quiet) {
     return;
   }

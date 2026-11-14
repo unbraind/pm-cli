@@ -2913,8 +2913,9 @@ after writing a file) keeps returning its rows, or an empty collection, and
 lets its `output_format` service render the receipt; a receipt-only result is
 refused with `extension_read_output_invalid`. `runRegisteredCommandForTest`
 and `createExtensionTestHarness().runCommand()` apply the same admission to
-the result a registered command-result override delivers (skipping a result
-that suppresses host output), and to a structured `output_format` replacement
+the result a registered command-result override delivers after the native
+mutation-receipt projection (`--id-only`, changed fields), skipping a result
+that suppresses host output, and to a structured `output_format` replacement
 in place of that result (a string rendering leaves the result itself to be
 admitted; the service sees the explicit `outputFormat` when one is passed), so
 a package test fails exactly where the native CLI would
@@ -3241,8 +3242,10 @@ Host-owned keys pass through untouched: every reserved host flag in camel case,
 snake_case or dashed form (`json`, `outputBudget`, `output_budget`, `pmPath`,
 `--json`), the positive key of each `--no-*` switch, and the action-transport
 keys `force`, `subcommand`, `inputResponses` and `requestState`. The
-unknown-key refusal applies to extension-created commands only: on a native
-command path an extension extends or overrides (`list`), the native contract
+unknown-key refusal applies to extension-created commands only: on a command
+path core itself registers that an extension extends or overrides (`list`;
+package-owned compatibility paths such as `calendar` or `guide` stay strict),
+the native contract
 (its aliases, negated flags and settings-dependent runtime fields) owns every
 key the extension does not declare, so those keys keep passing through. A
 command that declares no flags still receives every key (pm-4of199, below).

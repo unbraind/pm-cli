@@ -129,4 +129,31 @@ describe("extension test harness parity with native dispatch", () => {
       context: expect.objectContaining({ code: "extension_read_output_invalid" }),
     });
   });
+
+  it("keeps package-owned compatibility paths under the strict policy, unlike core paths (Codex review round 8)", async () => {
+    const activation = await activate((api) => {
+      api.registerCommand({ name: "guide", flags: [{ long: "--topic", value_type: "string" }], run: (context) => ({ options: context.options }) });
+    });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "guide", options: { typoKey: "x" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "unknown_option", flag: "--typo-key" }),
+    });
+  });
+
+  it("admits the mutation-receipt projection native printResult applies before overrides (Codex review round 8)", async () => {
+    const activation = await activate((api) => {
+      api.registerFlags("probe-id", [{ long: "--note", value_type: "string" }]);
+      api.registerCommand({ name: "probe-id", read_output: { row_keys: ["rows"] }, run: () => ({ item: { id: "pm-x", status: "open" } }) });
+      api.registerService("output_format", (context) => {
+        const result = (context.payload as { result: Record<string, unknown> }).result;
+        return result.id === "pm-x" ? { handled: true, result: { rows: [{ id: result.id }] } } : { handled: false };
+      });
+    });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-id", global: { idOnly: true } })).resolves.toMatchObject({ handled: true });
+    for (const global of [{}, { fullChangedFields: true }, { noChangedFields: true }]) {
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-id", global })).rejects.toMatchObject({
+        context: expect.objectContaining({ code: "extension_read_output_invalid" }),
+      });
+    }
+  });
 });
+
