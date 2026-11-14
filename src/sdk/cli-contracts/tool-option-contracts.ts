@@ -272,6 +272,8 @@ export const TOOL_CREATE_OPTION_CONTRACT_SOURCE = [
   { param: "type", flag: "--type" },
   { param: "template", flag: "--template" },
   { param: "createMode", flag: "--create-mode" },
+  { param: "defer", flag: "--defer", repeatable: true },
+  { param: "deferReason", flag: "--defer-reason" },
   { param: "schedulePreset", flag: "--schedule-preset" },
   { param: "status", flag: "--status" },
   { param: "closeReason", flag: "--close-reason" },

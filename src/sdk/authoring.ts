@@ -89,6 +89,8 @@ export type {
   BeforeMutationHook,
   BeforeMutationHookContext,
   BeforeMutationHookDecision,
+  MutationActor,
+  MutationActorAgent,
   CommandDefinition,
   ExtensionCommandReadOutput,
   ExtensionCommandArgumentDefinition,

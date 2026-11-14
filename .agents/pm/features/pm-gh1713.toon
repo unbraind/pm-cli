@@ -2,11 +2,13 @@ id: pm-gh1713
 title: "GH-1713: strict create offers no auditable deferred value, so importers cannot create an item whose deadline, assignee or acceptance criteria are not known yet"
 description: "GH-1713 (filed 2026-11-12). Under the strict preset, strict create requires concrete values for deadline, assignee and acceptance criteria and refuses every way of saying a value is not known yet: the repeatable options accept an explicit clear, but the three required scalars refuse --unset and accept no deferred value. An importer that mirrors records from another system (pm-github gated issue sync, Linear, ADO or CSV importers) must either fail or invent a deadline and an assignee. pm-github runs its sync inside one atomic import, so in a strict tracker every new GitHub issue fails strict create and the whole daily sync rolls back; one fleet repository has failed this way on every run for 19 days (importer side tracked in unbraind/pm-github issue 237). Proposed direction from the issue: an explicit, auditable deferred state for strict-required scalars on create, never a silent bypass. A typed marker or a defer option with a reason (CLI and SDK create options), recorded in history; pm health and pm validate list deferred fields as curation work; strict close still requires concrete values so a deferral never lets incomplete work finish; optionally the deferral is allowed only for items with external provenance or for callers that declare an import capability."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: "gh:1713",governance,importers,sdk,strict-preset
 created_at: "2026-11-12T21:09:20.732Z"
-updated_at: "2026-11-12T23:23:56.703Z"
+updated_at: "2026-11-14T09:10:46.581Z"
+closed_at: "2026-11-14T09:04:35.595Z"
+completed_at: "2026-11-14T09:04:35.595Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Strict create accepts an explicit deferral for deadline, assignee and acceptance criteria with a reason, through the CLI and the SDK create options; The deferral is recorded in history and pm validate and pm health list deferred fields as curation work; Strict close still requires concrete values for every deferred field; A strict-preset importer run creates items without inventing values and the pm-github sync no longer rolls back"
@@ -14,8 +16,83 @@ parent: pm-33cw
 risk: medium
 confidence: medium
 severity: medium
-expected_result: An importer creates a strict item with explicitly deferred fields
-actual_result: "Strict create refuses every unknown deadline, assignee or acceptance criteria"
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+resolution: "--defer <field> (repeatable, comma lists) plus required --defer-reason (SDK defer/deferReason, MCP pm_create, tool schema 4.27.0) store typed deferred_fields metadata at item format 4. The create history entry records the deferral, and any write that supplies a deferred value resolves its entry: update, claim, stdin-json, imports, and the merge driver through a field-keyed union reconciled against merged and replayed values. Close validation refuses strict closes with close_validation_deferred_fields and a runnable pm update recovery that carries --author and --force; warn mode warns. pm validate --check-metadata lists open deferrals (validate_metadata_deferred_fields), and pm health reports them informationally. Conflicts with values, unsets and schema aliases refuse with create_deferral_conflict. Template defaults yield to a deferral. Create-only schema requirements yield to it, stored-record requirements do not. Compensation closes skip close validation, and pm-chdp87 fixed the marker mismatch, so strict importers roll back cleanly. The pm-todos import keeps deferrals via toImportDeferredFields. Spec: tests/unit/sdk/lifecycle/create-deferrals.spec.ts."
+expected_result: "An importer creates a strict item with explicitly deferred fields, the deferral is auditable and curated, and strict close still requires the values"
+actual_result: "Verified by spec through the SDK, CLI, MCP and commitItemMutations; strict close refuses until the values are supplied; 12 review rounds converged with Codex reporting no findings on c069805c5"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1656,related,"2026-11-12T23:23:56.409Z","harness:claude-code","cli:update:dep",detected
+  pm-o74zyh,related,"2026-11-14T05:21:45.455Z","harness:claude-code","cli:update:dep",detected
+  pm-chdp87,related,"2026-11-14T06:10:56.712Z","harness:claude-code","cli:update:dep",detected
+  pm-04mzfl,related,"2026-11-14T08:19:00.610Z","harness:claude-code","cli:update:dep",detected
+comments[11]{created_at,author,text}:
+  "2026-11-14T05:42:15.462Z","harness:claude-code","Review round 1 (Greptile P1, Codex P2/P3), fixed: (1) The merge driver merges deferred_fields by field, not by whole-element identity. A one-sided addition survives, a deletion (resolution) wins, and a reason both sides changed differently resolves by stable value order in either merge direction. Two branches with different reasons for one field previously produced a document the parser refuses (duplicate field). (2) Explicit --deadline/--assignee/--ac/--estimate values or unsets on create --stdin-json now override the document's deferral of that field instead of failing with create_deferral_conflict. (3) The error catalog attributes the create_deferral_* codes to the create command (generator module map). Specs extended in tests/unit/sdk/lifecycle/create-deferrals.spec.ts."
+  "2026-11-14T06:10:56.045Z","harness:claude-code","Review round 2 (Codex), fixed: (1) On a strict tracker, rolling back a deferred create was refused twice over. The compensation close went through strict close validation, and a create that used the --clear-* options hid the transaction's apply marker behind its ' | explicit_unset=...' suffix (filed and fixed as pm-chdp87). Compensation closes now pass validateClose off, since a rollback close completes no work. (2) After the field-keyed union, the merge driver prunes any deferral whose field holds a concrete merged value, in the item merge and the history-union projection alike. (3) A runtime schema field whose metadata key is a deferrable field (due mapped to deadline) now conflicts with a deferral of that field, both in create and in the stdin-json override. (4) The close refusal's pm update recovery carries --author=<the close's author>, so strict ownership accepts the corrective update. Negative control: without the compensation fix, the strict rollback spec fails."
+  "2026-11-14T06:34:03.946Z","harness:claude-code","Review round 3 (Codex, Greptile, CodeRabbit). Four findings fixed: (1) commitImportedItem prunes deferrals that the imported document resolves before stamping, guards and persistence, matching the item-store write path. (2) On stdin-json create, an --unset of a schema field mapped to a deferrable key (due, its cli flag, or an alias) drops the document deferral of that key. (3) A deferral drops template defaults of schema fields mapped to that key. A caller's explicit value is kept, so the conflict check still fires. (4) The close refusal's recovery carries --force alongside --author. Kept by design: an explicit --defer-reason supplied together with a document's reasonless deferral applies to it, because the caller's own reason is explicit and auditable. The round-2 fix was about one document entry silently borrowing another entry's reason."
+  "2026-11-14T06:50:10.362Z","harness:claude-code","Review round 4 (Codex), fixed: (1) A schema field with required_on_create whose metadata key is a deferrable field (due mapped to deadline) is now satisfied by a deferral of that key, as the type-level requirement is (withoutDeferredRuntimeRequirements). (2) On stdin-json create, an explicit reason in any spelling (deferReason or the defer_reason alias) is never replaced by a reason synthesized from the document."
+  "2026-11-14T07:00:49.515Z","harness:claude-code","Review round 5 (Codex P1), fixed: the round-4 relaxation also suppressed schema fields with required: true. Those require the value on every stored record, so the item would persist and then fail item_document_invalid on the next read. Only create-only required_on_create requirements now yield to a deferral; a stored-record requirement keeps refusing the create. Covered by spec."
+  "2026-11-14T07:15:35.376Z","harness:claude-code","Review round 6 (Codex, Greptile, CodeRabbit), fixed: (1) The deferral exemption covers only create-scoped schema definitions, and it keeps any flag another create requirement still needs, so a shared flag spelling can never hide an unrelated stored-required field. (2) On stdin-json create, unset tokens resolve through the shared create unset resolver (resolveRuntimeUnsetFieldDefinition), accepting the same uppercase and underscore spellings. (3) Template defaults are dropped under every candidate option key of a schema field mapped to the deferred key (resolveCandidateOptionKeys: key, flag and aliases in each spelling). Kept by design: creating an item directly in a terminal status may carry deferrals. That path mirrors work finished in another system, it already bypasses close-evidence validation, and refusing it would re-break the strict importer sync for every closed upstream issue. The deferral stays listed as curation work in validate and health."
+  "2026-11-14T07:50:23.534Z","harness:claude-code","Review round 7 (Codex), fixed: (1) The stdin-json adapter resolves unsets with create's own parser (parseCreateUnsetTargets now lives in shared-unset-fields.ts and is shared by create and the adapter). Resolution is core alias first, then schema fields, with whole-token expansion, so a schema key spelled ac can no longer drop the deadline deferral. (2) Schema-field overrides of document deferrals and of template defaults consider only create-scoped fields. (3) The shared-flag guard keeps a flag only for another genuinely required create definition, not an optional one. Also: the actor clone moved to the dependency-free mutation-actor-snapshot.ts, and the resolver loads lazily when a guard runs. The local entrypoint-cost bench is noisy on this host (main fails it too: ./sdk/authoring 172 ms against 164 ms); CI passed it on earlier heads."
+  "2026-11-14T08:07:09.277Z","harness:claude-code","Review round 8 (Codex), fixed: the first-party pm-todos export/import round trip rebuilt metadata without deferred_fields, which silently dropped the audit trail and the strict-close protection. A new SDK import helper, toImportDeferredFields, keeps one valid, reasoned entry per deferrable field. The todos mapping passes it through, and commitImportedItem stamps format 4. ItemDeferredField is exported from ./sdk and ./sdk/runtime."
+  "2026-11-14T08:18:59.672Z","harness:claude-code","Review round 9 (CodeRabbit), fixed: the shared-flag guard applies each definition's required_types, using the shared shouldRequireFieldOnCreate rule; stdin-json explicit-key detection considers only fields scoped to the current command; the new docs links point at GitHub, because .agents/pm is not packaged. Not fixed here: format-4 writes passing the project pin guard is the format-3 gap already tracked as pm-04mzfl, which now covers format 4. Codex round 9 on 5da73ca17 reported no findings."
+  "2026-11-14T08:39:44.780Z","harness:claude-code","Review round 10 (Codex P1), fixed: historyUnionPatchProjection reconciled deferrals against the whole-document scalar winners, but the replayed stream's own scalars can differ. When one branch restored the deferred revision after the other moved the deadline, the merged history held neither the deadline nor its deferral. rebaseReplayDeferrals now rebuilds the field-keyed union for each replayed event and reconciles it against the rebased replay metadata. Negative control: without it, both restore-after-move orders fail the new spec."
+  "2026-11-14T08:50:40.615Z","harness:claude-code","Review round 11 (Codex P1), fixed: the field-keyed deferral union let a one-sided deletion win, but a deletion only means the value was supplied. If the shared prefix held the deferral, one branch resolved it, and the other resolved and then restored the deferred revision, the merge kept neither the value nor the deferral. The union now keeps an entry present on either side, and reconcileMergedDeferrals and rebaseReplayDeferrals prune it against the merged or replayed value. This holds the invariant that a deferral exists exactly while its field has no value. Negative control: the old rule fails both directions of the new spec."
+notes[2]{created_at,author,text}:
+  "2026-11-14T04:32:04.757Z","harness:claude-code","Design (2026-11-14): deferral is typed item metadata deferred_fields [{field, reason}] (src/core/item/deferred-fields.ts declares the deferrable set as data: deadline, assignee, acceptance_criteria, estimated_minutes; repeatables already have --clear-*). Stored deferrals require item format 4, so a host that predates them refuses the record instead of dropping the entries and letting strict close pass. Create: --defer (repeatable, comma lists) + required --defer-reason (SDK defer[]/deferReason, MCP pm_create), parsed in src/sdk/lifecycle/create-deferrals.ts; a deferred option satisfies the strict required check; deferring a field also set or unset is create_deferral_conflict; a deferral drops the template default like an unset. Resolution: mutateItem prunes any entry whose field gained a value on the same write (covers update, update-many, claim, stdin-json). Close: outstanding deferrals refuse --validate-close strict with close_validation_deferred_fields (recovery is a runnable pm update) and warn otherwise. Curation: validate --check-metadata adds details.deferred_fields + validate_metadata_deferred_fields:<n>; health reports integrity details.curation informationally only, so strict fleet trackers running pm health --check-only in CI do not turn red. Creating directly in a terminal status with a deferral is allowed (it mirrors work finished elsewhere) and stays listed as curation work."
+  "2026-11-14T05:21:44.115Z","harness:claude-code","Side effect handled in scope (2026-11-14): adding deferred_fields to the item key order pushed the pm list --fields refusal from 1,9xx to 2,025 estimated tokens, over the 2,000-token recovery-bundle budget. The ladder then dropped why and examples and cut allowed_values to 3 entries. The cause was that list doubled its legal domain with an item.-prefixed copy of every field. The list refusal and its closed-domain contract now name each field once (listCanonicalListProjectionFields) and state the item. alias in required. The refusal fits undegraded again, with all 78 fields and its examples. listListProjectionFields still returns every accepted spelling. get and search keep their domains; for search, item.<field> differs from search-row fields. Also in scope: deferred_fields joins ITEM_UNION_COLLECTION_FIELDS so concurrent resolutions union-merge, and the stdin-json document adapter treats it as read-only on update and maps it to defer/deferReason on create (pm-o74zyh)."
+files[21]{path,scope,note}:
+  packages/pm-todos/extensions/todos/runtime.ts,project,todos import keeps deferred_fields
+  src/core/item/deferred-fields.ts,project,"declared deferrable set, validation, resolution"
+  src/core/item/item-format-version.ts,project,format 4
+  src/core/item/item-format.ts,project,normalize and validate stored entries
+  src/core/store/item-store.ts,project,resolve deferrals on write
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,"--defer flags"
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,MCP params
+  src/sdk/governance/health.ts,project,informational curation details
+  src/sdk/governance/lifecycle-dependency-cycles.ts,project,extracted SCC helper to stay under the line cap
+  src/sdk/governance/validate-deferred-fields.ts,project,curation summary
+  src/sdk/governance/validate.ts,project,metadata check wiring
+  src/sdk/lifecycle/close.ts,project,close validation refusal
+  src/sdk/lifecycle/create-deferrals.ts,project,create-time parsing and conflicts
+  src/sdk/lifecycle/create.ts,project,strict required check and stored entries
+  src/sdk/lifecycle/shared-unset-fields.ts,project,parseCreateUnsetTargets shared by create and the stdin adapter
+  src/sdk/merge/three-way.ts,project,union merge of deferred_fields
+  src/sdk/package-import-adapters.ts,project,toImportDeferredFields and import deferral pruning
+  src/sdk/query/list.ts,project,list refusal lists each field once
+  src/sdk/query/projection-contracts.ts,project,canonical list projection domain
+  src/sdk/structured-mutations.ts,project,stdin-json deferral mapping
+  tests/unit/sdk/lifecycle/create-deferrals.spec.ts,project,GH-1713 spec
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts tests/unit/core/item/item-format-version.spec.ts,project,600,"harness:claude-code","2026-11-14T05:10:01.765Z",local_mutation,feat/package-write-path-actor-and-deferral
+test_runs[2]:
+  - run_id: test-local-mwg6g5ql-spprkn
+    kind: test
+    status: passed
+    started_at: "2026-11-14T09:02:01.751Z"
+    finished_at: "2026-11-14T09:02:15.309Z"
+    recorded_at: "2026-11-14T09:02:15.309Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts tests/unit/core/item/item-format-version.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mwg6ifo7-tgd150
+    kind: test
+    status: passed
+    started_at: "2026-11-14T09:03:49.511Z"
+    finished_at: "2026-11-14T09:04:01.495Z"
+    recorded_at: "2026-11-14T09:04:01.495Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts tests/unit/core/item/item-format-version.spec.ts,schema,schema,source,local_source_ref
+docs[2]{path,scope,note}:
+  docs/COMMANDS.md,project,"--defer usage"
+  docs/SDK.md,project,importer deferrals
+close_reason: "Strict create accepts an explicit, reasoned deferral for deadline, assignee, acceptance criteria and estimate; strict close still demands the values"
+contract_change:
+  api: "pm create --defer/--defer-reason, SDK and MCP create defer/deferReason, ItemMetadata.deferred_fields, CURRENT_ITEM_FORMAT_VERSION, close_validation_deferred_fields, ITEM_UNION_COLLECTION_FIELDS, toImportDeferredFields, the pm list --fields refusal domain"
+  before: "Strict create refused every unknown deadline, assignee, acceptance criteria or estimate; the highest item format was 3; the list --fields refusal listed every field twice (bare and item.-prefixed)"
+  after: "A reasoned deferral satisfies strict create and is stored as deferred_fields at item format 4, which pm 2026.10.10 through 2026.11.14 refuses to read; strict close refuses outstanding deferrals; the merge driver union-merges deferred_fields; the list --fields refusal names each field once and states the item. alias"
+  migrate: "Upgrade every reader, pinned SDK, CI host and Git merge driver before creating deferred items in a shared tracker; exhaustive consumers of item keys or close-validation codes add deferred_fields and close_validation_deferred_fields; parsers of the list --fields refusal domain accept bare names and the stated item. alias"
 body: ""

@@ -2634,7 +2634,7 @@ describe("release readiness runtime coverage", () => {
       repository?: { type?: string; url?: string };
       bugs?: { url?: string };
       homepage?: string;
-      author?: string;
+      author?: string | { name?: string; url?: string };
       publishConfig?: { access?: string };
     };
 
@@ -2726,8 +2726,9 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.repository?.type).toBe("git");
     expect(packageJson.repository?.url).toContain("github.com");
     expect(packageJson.bugs?.url).toContain("github.com");
-    expect(typeof packageJson.homepage).toBe("string");
-    expect(typeof packageJson.author).toBe("string");
+    expect(packageJson.homepage).toBe("https://pm-cli.unbrained.dev");
+    // GH-1594: the npm author is the named maker with a link, in npm's object form.
+    expect(packageJson.author).toEqual({ name: "Stefan Preu", url: "https://preu.at" });
   });
 
   it("keeps coverage gate wiring aligned in config and scripts", async () => {

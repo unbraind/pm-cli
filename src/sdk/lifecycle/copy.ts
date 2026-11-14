@@ -17,6 +17,8 @@ import {
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
   runActiveOnWriteHooks,
+  runActiveBeforeMutationHooks,
+  createMutationGuardSdk,
   collectRegisteredItemFieldNames,
   resolveRuntimeStatusRegistry,
   EXIT_CODE,
@@ -271,6 +273,16 @@ export async function runCopy(
           },
         );
       }
+      // A copy is a create: the guards judge it with the copier's actor (GH-1719).
+      await runActiveBeforeMutationHooks({
+        pm_root: pmRoot,
+        operation: "create",
+        before: null,
+        after: copiedDocument,
+        changed_fields: changedFields,
+        author,
+        sdk: createMutationGuardSdk({ pmRoot, settings, typeToFolder: typeRegistry.type_to_folder }),
+      });
       await writeFileAtomic(
         itemPath,
         serializeItemDocument(copiedDocument, {

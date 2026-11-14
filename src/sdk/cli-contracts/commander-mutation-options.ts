@@ -56,6 +56,25 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
       ],
     },
     {
+      target: "defer",
+      keys: ["defer"],
+      option: "--defer <field>",
+      description: "Defer an unknown strict field: deadline|assignee|ac|estimate (repeatable)",
+      repeatable: true,
+    },
+    {
+      target: "deferReason",
+      keys: ["deferReason", "defer_reason"],
+      option: "--defer-reason <value>",
+      description: "Why deferred values are unknown (required with --defer)",
+      aliasOptions: [
+        {
+          option: "--defer_reason <value>",
+          description: "Alias for --defer-reason",
+        },
+      ],
+    },
+    {
       target: "schedulePreset",
       keys: ["schedulePreset", "schedule_preset"],
       option: "--schedule-preset <value>",

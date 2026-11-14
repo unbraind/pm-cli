@@ -28,6 +28,7 @@ import {
   toImportTags,
   toNonEmptyImportString,
 } from "../../../src/sdk/package-import-adapters.js";
+import { toImportDeferredFields } from "../../../src/sdk/package-import-adapters.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 describe("package import adapter primitives", () => {
@@ -472,5 +473,17 @@ describe("package import adapter primitives", () => {
         expect(await pathExists(itemPath)).toBe(false);
       });
     });
+  });
+});
+
+describe("toImportDeferredFields (GH-1713)", () => {
+  it("keeps one valid, reasoned entry per deferrable field", () => {
+    expect(toImportDeferredFields(undefined)).toBeUndefined();
+    expect(toImportDeferredFields("deadline")).toBeUndefined();
+    expect(toImportDeferredFields([null, [], { field: "deadline" }, { field: 7, reason: "x" }, { field: "priority", reason: "x" }])).toBeUndefined();
+    expect(toImportDeferredFields([{ field: "deadline", reason: " later " }, { field: "assignee", reason: "first" }, { field: "assignee", reason: "second" }])).toEqual([
+      { field: "assignee", reason: "second" },
+      { field: "deadline", reason: "later" },
+    ]);
   });
 });

@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 466
+- Catalog error codes: 471
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 447
-- Coverage fraction: 0.040773
+- Uncovered error codes: 452
+- Coverage fraction: 0.040340
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -51,6 +51,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `child_projection_item_bound_exceeded` | `child_projection_item_bound_exceeded` | uncovered | none | 0 |
 | `close_reason_required` | `close_reason_required` | uncovered | none | 0 |
 | `close_through_update` | `close_through_update` | uncovered | none | 0 |
+| `close_validation_deferred_fields` | `close_validation_deferred_fields` | uncovered | none | 0 |
 | `close_validation_missing_fields` | `close_validation_missing_fields` | uncovered | none | 0 |
 | `collected_zero_items` | `collected_zero_items` | uncovered | none | 0 |
 | `collection_transposed_subcommand` | `collection_transposed_subcommand` | uncovered | none | 0 |
@@ -67,6 +68,10 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `context_signal_store_write_failed` | `context_signal_store_write_failed` | uncovered | none | 0 |
 | `context_takes_no_item_argument` | `context_takes_no_item_argument` | uncovered | none | 0 |
 | `core_item_field_requires_dedicated_flag` | `core_item_field_requires_dedicated_flag` | uncovered | none | 0 |
+| `create_deferral_conflict` | `create_deferral_conflict` | uncovered | none | 0 |
+| `create_deferral_field_unsupported` | `create_deferral_field_unsupported` | uncovered | none | 0 |
+| `create_deferral_fields_required` | `create_deferral_fields_required` | uncovered | none | 0 |
+| `create_deferral_reason_required` | `create_deferral_reason_required` | uncovered | none | 0 |
 | `create_positional_type_without_title` | `create_positional_type_without_title` | uncovered | none | 0 |
 | `dependency_cardinality_created` | `dependency_cardinality_created` | uncovered | none | 0 |
 | `dependency_edge_not_allowed` | `dependency_edge_not_allowed` | uncovered | none | 0 |

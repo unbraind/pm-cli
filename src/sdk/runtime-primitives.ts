@@ -31,6 +31,7 @@ export {
 } from "./agent/subcommand-recovery.js";
 export {
   type ActiveExtensionHookContext,
+  type BeforeMutationHookInput,
   type ExtensionCommandRegistry,
   type ExtensionDiscoveryResult,
   type ExtensionHookRegistry,

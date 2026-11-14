@@ -870,6 +870,14 @@ export interface ItemTestRunSummary {
   executions?: ItemTestRunExecution[];
 }
 
+/** One strict-required create field recorded as not known yet (GH-1713). */
+export interface ItemDeferredField {
+  /** Canonical metadata key: deadline, assignee, acceptance_criteria or estimated_minutes. */
+  field: string;
+  /** Why the value is not known yet, for example the external system it was imported from. */
+  reason: string;
+}
+
 /** Documents the item metadata payload exchanged by command, SDK, and package integrations. */
 export interface ItemMetadata {
   /** Stable identifier used to reference this record across commands and storage. */
@@ -918,6 +926,8 @@ export interface ItemMetadata {
   estimated_minutes?: number;
   /** Value that configures or reports acceptance criteria for this contract. */
   acceptance_criteria?: string;
+  /** Strict-required create fields recorded as not known yet, each with its reason (GH-1713). Close validation refuses the item while any listed field lacks a value. */
+  deferred_fields?: ItemDeferredField[];
   /** Value that configures or reports design for this contract. */
   design?: string;
   /** Value that configures or reports external ref for this contract. */

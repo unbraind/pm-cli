@@ -8,6 +8,7 @@ import { createExtensionCommandError } from "../error-runtime.js";
 import { isLiteralMutationInput, mutationInputAudience, mutationOptionLabel, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
+import { assertNoCreateDeferralConflicts, buildCreateDeferredFieldEntries, deferredTemplateOverrideKeys, resolveCreateDeferrals, withoutDeferredRuntimeRequirements } from "./create-deferrals.js";
 import {
   assertNoAmbiguousBareCommaEntry,
   looksLikeStructuredKeyValueEntry,
@@ -139,7 +140,7 @@ import { stampRequiredItemFormat } from "../environment/project-runtime-compatib
 import {
   CREATE_UNSET_FIELD_DEFINITIONS,
   literalSentinelAdvisories,
-  parseCommandUnsetTargets,
+  parseCreateUnsetTargets,
   type CreateNullClearableOptionKey,
   type WithNullClears,
   resolveRuntimeUnsetFieldDefinition,
@@ -226,6 +227,10 @@ export interface CreateCommandOptions
   template?: string;
   /** Creates mode using the validated operation inputs. */
   createMode?: string;
+  /** Strict-required fields whose values are not known yet (GH-1713): deadline, assignee, acceptance_criteria, estimated_minutes. */
+  defer?: string[];
+  /** Why the deferred values are not known yet; required with `defer` and recorded on every deferred entry. */
+  deferReason?: string;
   /** Value that configures or reports schedule preset for this contract. */
   schedulePreset?: string;
   /** Explicitly permit a likely duplicate when strict governance is enabled. */
@@ -265,35 +270,12 @@ const SCHEDULE_CREATE_PRESET_VALUES = ["lightweight"] as const;
 const SCHEDULE_CREATE_PRESET_TYPES = new Set(["Reminder", "Meeting", "Event"]);
 const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
 
-interface CreateUnsetFieldDefinition {
-  optionKey: string;
-  metadataKey: string;
-}
-
-const CREATE_UNSET_ALIAS_MAP: Map<string, CreateUnsetFieldDefinition> = (() => {
-  const map = new Map<string, CreateUnsetFieldDefinition>();
-  for (const definition of CREATE_UNSET_FIELD_DEFINITIONS) {
-    for (const alias of definition.aliases) {
-      map.set(alias, {
-        optionKey: definition.optionKey,
-        metadataKey: definition.metadataKey,
-      });
-    }
-  }
-  return map;
-})();
-
 const CREATE_OPTION_KEY_TO_UNSET_CANONICAL = new Map<string, string>(
   CREATE_UNSET_FIELD_DEFINITIONS.map((definition) => [
     definition.optionKey,
     definition.canonical,
   ]),
 );
-
-const CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS =
-  CREATE_UNSET_FIELD_DEFINITIONS.map((definition) => definition.canonical)
-    .sort((left, right) => left.localeCompare(right))
-    .join(", ");
 
 function buildInvalidLogSeedKeysMessage(
   optionName: "--comment" | "--note" | "--learning",
@@ -418,22 +400,6 @@ function parseOptionalString(value: string | undefined): string | undefined {
   return value;
 }
 
-function parseCreateUnsetTargets(
-  raw: string[] | undefined,
-  runtimeFieldRegistry?: RuntimeFieldRegistry,
-): { metadataKeys: Set<string>; optionKeys: Set<string> } {
-  return parseCommandUnsetTargets({
-    raw,
-    supportedFields: CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS,
-    resolveDefinition: (trimmed) =>
-      CREATE_UNSET_ALIAS_MAP.get(trimmed) ??
-      resolveRuntimeUnsetFieldDefinition(
-        trimmed,
-        "create",
-        runtimeFieldRegistry,
-      ),
-  });
-}
 
 /** Allowed CSV/markdown keys for the create `--dep` seed (GH-258). */
 const DEP_SEED_KEYS = [
@@ -1169,6 +1135,7 @@ function requireCreateOptionByType(
   createMode: CreateMode,
   clearOptionKeys: Set<string>,
   resolvedAuthor: string,
+  deferredOptionKeys: ReadonlySet<string>,
 ): string[] {
   const typeName = typeDefinition.name;
   const optionLookup = buildCreateOptionValueLookup(options);
@@ -1212,6 +1179,10 @@ function requireCreateOptionByType(
       return true;
     }
     if (optionKey === "status" && typeDefinition.default_status !== undefined) {
+      return true;
+    }
+    // An explicit, reasoned deferral satisfies strict create; strict close still demands the value (GH-1713).
+    if (deferredOptionKeys.has(optionKey)) {
       return true;
     }
     if (
@@ -1437,7 +1408,7 @@ function dropTemplateDefaultsForExplicitUnsets(
   explicitOptions: CreateCommandOptions,
   runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
 ): void {
-  const keys = [...parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys]
+  const keys = [...parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys, ...deferredTemplateOverrideKeys(explicitOptions.defer, runtimeFieldRegistry?.definitions)]
     .flatMap((key) => (key === "order" ? [key, "rank"] : key === "tags" ? [key, "addTags"] : [key]));
   for (const key of keys) {
     if (Reflect.get(explicitOptions, key) === undefined) Reflect.deleteProperty(merged, key);
@@ -2640,6 +2611,7 @@ async function writeCreatedItem(params: {
         before: null,
         after: afterDocument,
         changed_fields: changedFields,
+        author,
         sdk: createMutationGuardSdk({
           pmRoot,
           settings,
@@ -2799,6 +2771,9 @@ export async function runCreate(
   );
   assertNoCreateScalarUnsetConflicts(resolvedOptions, unsetTargets);
   assertNoLegacyCreateScalarTokens(resolvedOptions);
+  const deferrals = resolveCreateDeferrals(resolvedOptions, audience);
+  // Contradictory option input refuses before the strict contract; schema-field values are checked once resolved.
+  assertNoCreateDeferralConflicts(deferrals, resolvedOptions, unsetTargets.metadataKeys, audience);
 
   const author = resolveAuthor(
     parseOptionalString(resolvedOptions.author),
@@ -2810,6 +2785,7 @@ export async function runCreate(
     createMode,
     clearOptionKeys,
     author,
+    deferrals.optionKeys,
   );
   const nowValue = nowIso();
 
@@ -2863,6 +2839,9 @@ export async function runCreate(
     runtimeFieldRegistry,
     type,
   );
+  assertNoCreateDeferralConflicts(deferrals, resolvedOptions, unsetTargets.metadataKeys, audience, runtimeCreateFieldValues.values);
+  // A deferral satisfies a schema field's create requirement for the key it writes, as it does a type's.
+  runtimeCreateFieldValues.missing_required_flags = withoutDeferredRuntimeRequirements(runtimeCreateFieldValues.missing_required_flags, deferrals, runtimeFieldRegistry.definitions, type, resolvedOptions as Record<string, unknown>);
   const missingRequiredRuntimeFlagSet = new Set(
     runtimeCreateFieldValues.missing_required_flags,
   );
@@ -3224,6 +3203,7 @@ export async function runCreate(
     author: authorValue,
     estimated_minutes: estimatedMinutes,
     acceptance_criteria: acceptanceCriteria,
+    deferred_fields: buildCreateDeferredFieldEntries(deferrals),
     definition_of_ready: definitionOfReady,
     order,
     goal,

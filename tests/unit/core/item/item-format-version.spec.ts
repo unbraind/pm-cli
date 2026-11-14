@@ -78,7 +78,7 @@ describe("scanItemFormatVersions", () => {
         { ref: "z-current", version: 2 },
         { ref: "b-outdated", version: 1 },
         { ref: "a-outdated", version: 1 },
-        { ref: "y-ahead", version: 4 },
+        { ref: "y-ahead", version: 5 },
         { ref: "x-ahead", version: 3 },
       ],
       2,
@@ -97,7 +97,7 @@ describe("scanItemFormatVersions", () => {
   });
 
   it("keeps every readable format current while refusing future formats", () => {
-    expect(scanItemFormatVersions([{ ref: "legacy", version: 1 }, { ref: "editor", version: 2 }, { ref: "setup", version: 3 }, { ref: "future", version: 4 }], CURRENT_ITEM_FORMAT_VERSION, BASELINE_ITEM_FORMAT_VERSION)).toEqual({ outdated: [], ahead: ["future"] });
+    expect(scanItemFormatVersions([{ ref: "legacy", version: 1 }, { ref: "editor", version: 2 }, { ref: "setup", version: 3 }, { ref: "deferral", version: 4 }, { ref: "future", version: 5 }], CURRENT_ITEM_FORMAT_VERSION, BASELINE_ITEM_FORMAT_VERSION)).toEqual({ outdated: [], ahead: ["future"] });
   });
 });
 
@@ -116,5 +116,10 @@ describe("requiredItemFormatVersion", () => {
     expect(requiredItemFormatVersion({ tests: [setup] })).toBe(3);
     expect(requiredItemFormatVersion({ tests: [{ command: "node --version", scope: "project", updated_by: "editor" }, setup] })).toBe(3);
     expect(requiredItemFormatVersion({ tests: [setup], pm_format_version: 4 })).toBe(4);
+    // GH-1713: a field deferral needs format 4, an empty deferral list does not, and a stored 5 is never lowered.
+    const deferral = { field: "deadline", reason: "Imported" };
+    expect(requiredItemFormatVersion({ deferred_fields: [deferral] })).toBe(4);
+    expect(requiredItemFormatVersion({ deferred_fields: [], tests: [setup] })).toBe(3);
+    expect(requiredItemFormatVersion({ deferred_fields: [deferral], pm_format_version: 5 })).toBe(5);
   });
 });

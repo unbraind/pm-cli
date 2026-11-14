@@ -32,6 +32,7 @@ import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers
 import { PmCliError } from "../../core/shared/errors.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { compareTimestampStrings } from "../../core/shared/time.js";
+import { hasConcreteItemFieldValue } from "../../core/item/deferred-fields.js";
 import type {
   HistoryEntry,
   HistoryPatchOp,
@@ -279,6 +280,7 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
       if (Object.hasOwn(merged.merged, field)) next.metadata[field] = merged.merged[field];
       else delete next.metadata[field];
     }
+    rebaseReplayDeferrals(next.metadata, prefix.metadata, oursState.metadata, theirsState.metadata);
     const canonical = toReplayDocument({ metadata: next.metadata as ItemMetadata, body: next.body });
     return jsonPatch.compare(current, canonical) as HistoryPatchOp[];
   };
@@ -586,6 +588,8 @@ export const ITEM_UNION_COLLECTION_FIELDS = [
   "docs",
   "reminders",
   "events",
+  // GH-1713: branches that each resolve a different deferral keep both resolutions.
+  "deferred_fields",
 ] as const;
 
 /** Delimiter-backed list fields that use the same lossless element merge as native metadata collections while retaining their legacy scalar storage shape. */
@@ -871,6 +875,43 @@ interface ItemMetadataMergeAccumulator {
   conflictDecisions: ItemMergeConflictDecision[];
 }
 
+/** Union one collection field with the element identity that field declares. */
+function mergeUnionFieldValue(field: string, base: unknown, ours: unknown, theirs: unknown): unknown {
+  if (field === "tests") return unionLinkedTests(base, ours, theirs);
+  if (field === "deferred_fields") return unionDeferredFields(base, ours, theirs);
+  if (field === "acceptance_criteria") {
+    return unionCollection(splitAcceptanceCriteria(base), splitAcceptanceCriteria(ours), splitAcceptanceCriteria(theirs)).join("; ");
+  }
+  return unionCollection(base, ours, theirs);
+}
+
+/**
+ * Merge deferral entries by their field (GH-1713), so the result never lists a
+ * field twice. A deferral exists exactly while its field has no value, so an
+ * entry on either side is kept and the caller's reconciliation against the
+ * merged values (reconcileMergedDeferrals) decides: a value resolves it, while
+ * a branch that removed the value (a restore) keeps it. When both sides changed
+ * one field's reason differently, the stable value order picks one, so every
+ * merge order yields the same document.
+ */
+function unionDeferredFields(base: unknown, ours: unknown, theirs: unknown): unknown[] {
+  const byField = (value: unknown): Map<string, unknown> =>
+    new Map((Array.isArray(value) ? value : []).map((entry) => [String((entry as { field?: unknown }).field), entry]));
+  const [baseEntries, oursEntries, theirsEntries] = [byField(base), byField(ours), byField(theirs)];
+  const merged: unknown[] = [];
+  for (const field of [...new Set([...oursEntries.keys(), ...theirsEntries.keys()])].sort()) {
+    const [baseEntry, oursEntry, theirsEntry] = [baseEntries.get(field), oursEntries.get(field), theirsEntries.get(field)];
+    if (oursEntry === undefined || theirsEntry === undefined) {
+      // Present on one side only: kept until a merged value resolves it.
+      merged.push(oursEntry ?? theirsEntry);
+      continue;
+    }
+    const outcome = mergeScalarThreeWay(baseEntry, oursEntry, theirsEntry, "ours");
+    merged.push(outcome.conflict && stableStringify(theirsEntry).localeCompare(stableStringify(oursEntry)) < 0 ? theirsEntry : outcome.value);
+  }
+  return merged;
+}
+
 /** Merge one collection field and report whether the field was handled. */
 function mergeItemUnionField(params: {
   field: string;
@@ -881,20 +922,7 @@ function mergeItemUnionField(params: {
   accumulator: ItemMetadataMergeAccumulator;
 }): boolean {
   if (!params.unionFieldSet.has(params.field)) return false;
-  const union =
-    params.field === "tests"
-      ? unionLinkedTests(params.baseValue, params.oursValue, params.theirsValue)
-      : params.field === "acceptance_criteria"
-        ? unionCollection(
-            splitAcceptanceCriteria(params.baseValue),
-            splitAcceptanceCriteria(params.oursValue),
-            splitAcceptanceCriteria(params.theirsValue),
-          ).join("; ")
-        : unionCollection(
-            params.baseValue,
-            params.oursValue,
-            params.theirsValue,
-          );
+  const union = mergeUnionFieldValue(params.field, params.baseValue, params.oursValue, params.theirsValue);
   params.accumulator.merged[params.field] = union;
   if (!jsonEquals(union, params.oursValue)) {
     params.accumulator.unionFields.push(params.field);
@@ -1005,7 +1033,34 @@ function mergeItemMetadataRecords(
       accumulator,
     });
   }
+  reconcileMergedDeferrals(accumulator.merged);
   return accumulator;
+}
+
+/**
+ * Rebase deferrals for one replayed history event (GH-1713). The replay's own
+ * scalars can differ from the whole-document scalar winners (a restore on one
+ * branch removes a value the other branch set), so the field-keyed union is
+ * reconciled against the rebased replay state, never the full-document merge.
+ */
+function rebaseReplayDeferrals(
+  replay: Record<string, unknown>,
+  base: Record<string, unknown>,
+  ours: Record<string, unknown>,
+  theirs: Record<string, unknown>,
+): void {
+  const union = unionDeferredFields(base.deferred_fields, ours.deferred_fields, theirs.deferred_fields);
+  replay.deferred_fields = union;
+  reconcileMergedDeferrals(replay);
+  if ((replay.deferred_fields as unknown[]).length === 0) delete replay.deferred_fields;
+}
+
+/** Drop merged deferrals whose field holds a concrete merged value, exactly as a write resolves them (GH-1713). */
+function reconcileMergedDeferrals(merged: Record<string, unknown>): void {
+  if (!Array.isArray(merged.deferred_fields)) return;
+  merged.deferred_fields = merged.deferred_fields.filter(
+    (entry) => !hasConcreteItemFieldValue(merged, String((entry as { field?: unknown }).field)),
+  );
 }
 
 /**

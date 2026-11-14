@@ -930,6 +930,7 @@ export {
   toEstimatedMinutesValue,
   toImportBoolean,
   toImportConfidence,
+  toImportDeferredFields,
   toImportInteger,
   toImportLinkedDocs,
   toImportLinkedFiles,
@@ -1421,6 +1422,7 @@ export * from "./testing.js";
 export type { GlobalOptions } from "../core/shared/command-types.js";
 export type {
   ItemDocument,
+  ItemDeferredField,
   ItemMetadata,
   ItemStatus,
   ItemType,

@@ -1,0 +1,22 @@
+id: pm-womkyw
+title: "pm copy writes a new item without evaluating workflow policies, while create, update, delete, restore and imports all run enforceWorkflowMutation"
+description: "Found while implementing pm-gh1719 (2026-11-14). Every item writer runs enforceWorkflowMutation before persistence and records its decisions in the history entry context (workflow_policies): create, the item-store mutate and delete paths, restore, and the package import adapter. runCopy in src/sdk/lifecycle/copy.ts writes the copied item and its op create history entry without it, so a workflow policy that refuses or annotates creation (for example a per-type creation rule or a required-field policy) is bypassed by copying an existing item, and the copy's history carries no workflow_policies decisions. pm-gh1719 added the missing beforeMutation guard call to copy but left workflow policy enforcement unchanged to keep that change scoped. Proposal: call enforceWorkflowMutation in runCopy with operation create, before null and after the copied document, and record its decisions in the history context exactly as create does. Duplicate check: searched copy workflow policy enforce bypass; pm-mj42og (closed) delivered the policy engine without naming copy."
+type: Issue
+status: open
+priority: 3
+tags[4]: "area:sdk",copy,governance,workflow-policy
+created_at: "2026-11-14T04:31:19.556Z"
+updated_at: "2026-11-14T04:31:19.556Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: pm copy evaluates the workspace workflow policies with operation create and refuses a copy that create would refuse; The copy's history entry records the workflow_policies decisions like a create; A spec proves a refusing policy blocks both create and copy
+parent: pm-33cw
+risk: low
+confidence: high
+severity: low
+expected_result: Copy is judged by the same workflow policies as create
+actual_result: Copy bypasses workflow policies entirely
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1719,discovered_from,"2026-11-14T04:31:19.556Z","harness:claude-code","cli:create:dep",detected
+  pm-mj42og,related,"2026-11-14T04:31:19.556Z","harness:claude-code","cli:create:dep",detected
+body: ""

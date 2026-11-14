@@ -516,7 +516,7 @@ describe("runValidate", () => {
       const check = checkByName(result, "format_version");
       expect(check.status).toBe("ok");
       expect(check.details).toMatchObject({
-        current_format_version: 3,
+        current_format_version: 4,
         outdated_items_count: 0,
         ahead_items_count: 0,
       });
@@ -538,7 +538,7 @@ describe("runValidate", () => {
           "title: Future format item",
           'description: ""',
           "type: Task",
-          "pm_format_version: 4",
+          "pm_format_version: 5",
           "status: open",
           "priority: 2",
           "tags: []",

@@ -54,6 +54,7 @@ import { getHistoryPath, getItemPath, ITEM_FILE_EXTENSIONS, resolveWorkspaceRoot
 import { resolveGovernanceKnobs } from "./settings.js";
 import { assertReadableTrackerRoot } from "./tracker-preflight.js";
 import { resolveClaimPrincipal } from "../shared/author.js";
+import { pruneResolvedDeferredFields } from "../item/deferred-fields.js";
 import { nowIso } from "../shared/time.js";
 import type {
   ItemDocument,
@@ -772,6 +773,11 @@ type DeferredItemMutationParams = Omit<ItemMutationParams, "historyContext"> & {
 };
 
 /** Commit a locked item mutation and seal deferred policy and checkpoint context into its immutable event. */
+/** A write that gives a deferred field its value resolves that deferral on the same history entry (GH-1713). */
+function recordResolvedDeferrals(document: ItemDocument, changedFields: string[]): void {
+  if (pruneResolvedDeferredFields(document.metadata)) changedFields.push("deferred_fields");
+}
+
 async function mutateItemWithDeferredHistoryContext(
   params: DeferredItemMutationParams,
 ): Promise<ItemMutationResult> {
@@ -809,6 +815,7 @@ async function mutateItemWithDeferredHistoryContext(
       extensionFieldNames: params.extensionFieldNames,
     });
     const mutation = await params.mutate(mutableDocument);
+    recordResolvedDeferrals(mutableDocument, mutation.changedFields);
     if (params.skipNoop === true && mutation.changedFields.length === 0) {
       return {
         item: beforeDocument.metadata,
@@ -843,6 +850,7 @@ async function mutateItemWithDeferredHistoryContext(
       before: beforeDocument,
       after: afterDocument,
       changed_fields: mutation.changedFields,
+      author: params.author,
       sdk: createMutationGuardSdk({
         pmRoot: params.pmRoot,
         settings: params.settings,
@@ -1159,6 +1167,8 @@ export async function deleteItem(params: {
       before: beforeDocument,
       after: null,
       changed_fields: ["deleted"],
+      author: params.author,
+      dry_run: params.dryRun === true,
       sdk: createMutationGuardSdk({
         pmRoot: params.pmRoot,
         settings: params.settings,

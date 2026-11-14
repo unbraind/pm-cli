@@ -4,6 +4,7 @@
  * Implements extension runtime contracts and governance for Extension Hook Runtime.
  */
 import { unicodeSafePrefix } from "../shared/text-normalization.js";
+import { cloneMutationActor } from "./mutation-actor-snapshot.js";
 import {
   cloneCommandOptionsSnapshot,
   cloneContextSnapshot,
@@ -154,6 +155,8 @@ export async function runBeforeMutationHooks(
               ? null
               : cloneContextSnapshot(context.after),
           changed_fields: [...context.changed_fields],
+          actor: cloneMutationActor(context.actor),
+          dry_run: context.dry_run,
           sdk: context.sdk,
         }),
       );

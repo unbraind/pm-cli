@@ -1,0 +1,21 @@
+id: pm-0m64xk
+title: "commitImportedItem holds a plain item lock while workflow policies and mutation guards run, so a short lock TTL lets a second importer reclaim the lock and write the same id before the first writes"
+description: "Follow-up from the PR #1725 review of pm-gh1719 (2026-11-14). commitImportedItem acquires the item lock with acquireLock and then awaits workflow policies and, since pm-gh1719, the beforeMutation guards (up to the 5-second guard timeout) before writing the item and its history. The mutate path fences its write with the lease (commitLockedItemWrite re-verifies the lease when used); the import adapter does not. With locks.ttl_seconds shorter than a guard's run time and force_required_for_stale_lock false, a second importer can reclaim the expired lock and commit the same id during the first importer's guard wait, and then the first importer overwrites it. The window existed before for workflow policies; guard time widens it. Proposal: acquire a lease (acquireLockLease) in commitImportedItem and verify it immediately before the item write and the history append, refusing with the same lease-lost refusal the mutate path uses. Duplicate check: searched import lock lease fencing; the closed lease-fencing work covered the item-store mutate path only."
+type: Issue
+status: open
+priority: 2
+tags[4]: concurrency,extensions,importers,locks
+created_at: "2026-11-14T15:21:44.228Z"
+updated_at: "2026-11-14T15:21:44.228Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: commitImportedItem fences the item write and the history append with its lock lease; A spec with a short TTL and a slow allowing guard proves the second importer's write is never overwritten and the first importer receives a typed lease-lost refusal; Lock-conflict skips keep returning conflictWarning
+parent: pm-dj98
+risk: medium
+confidence: high
+severity: medium
+expected_result: An import write is fenced by its lock lease
+actual_result: A slow guard plus a short TTL lets two importers write the same id
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1719,discovered_from,"2026-11-14T15:21:44.228Z","harness:claude-code","cli:create:dep",detected
+body: ""

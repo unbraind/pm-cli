@@ -9,7 +9,7 @@ import { PM_CONTEXT_INTENT_CONTRACTS } from "../context-intent-contracts.js";
 import {
   LIST_COMMAND_DEFAULT_PROJECTIONS,
   listGetProjectionFields,
-  listListProjectionFields,
+  listCanonicalListProjectionFields,
   listSearchProjectionFields,
 } from "../query/projection-contracts.js";
 
@@ -77,7 +77,7 @@ export function listCoreClosedDomainContracts(): PmClosedDomainContract[] {
       error_code: "unknown_context_intent" as const,
     };
   });
-  const listFields = listListProjectionFields();
+  const listFields = listCanonicalListProjectionFields();
   const listFieldContracts = Object.keys(LIST_COMMAND_DEFAULT_PROJECTIONS).map(
     (command) => ({
       probe_id: `${command}-invalid-field`,

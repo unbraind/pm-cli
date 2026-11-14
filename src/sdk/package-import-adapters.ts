@@ -21,13 +21,16 @@ import { acquireLock } from "../core/lock/lock.js";
 import { enforceWorkflowMutation } from "../core/policy/workflow-policy-store.js";
 import { parseTags } from "../core/item/parse.js";
 import { normalizeStatusInput } from "../core/item/status.js";
-import { serializeItemDocument } from "../core/item/item-format.js";
+import { canonicalDocument, serializeItemDocument } from "../core/item/item-format.js";
+import { deferrableItemFieldByKey, normalizeDeferredFields, pruneResolvedDeferredFields } from "../core/item/deferred-fields.js";
 import { getHistoryPath } from "../core/store/paths.js";
 import {
   removeFileIfExists,
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
-import { runActiveOnWriteHooks } from "../core/extensions/index.js";
+import { getActiveExtensionRegistrations, runActiveBeforeMutationHooks, runActiveOnWriteHooks } from "../core/extensions/index.js";
+import { createMutationGuardSdk } from "../core/store/item-store.js";
+import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolveAuthor } from "../core/shared/author.js";
@@ -37,6 +40,7 @@ import { stampRequiredItemFormat } from "./environment/project-runtime-compatibi
 import type {
   ConfidenceTextLevel,
   ItemDocument,
+  ItemDeferredField,
   ItemMetadata,
   ItemStatus,
   LinkedDoc,
@@ -312,6 +316,24 @@ export function toImportLinkedDocs(
   }));
 }
 
+/**
+ * Converts source deferral entries into pm `deferred_fields` (GH-1713): one
+ * entry per deferrable field, with a non-empty reason. An importer passes the
+ * result straight into item metadata, and `commitImportedItem` stamps the
+ * format the deferral needs, so a round trip keeps the audit trail and the
+ * strict-close protection.
+ */
+export function toImportDeferredFields(value: unknown): ItemDeferredField[] | undefined {
+  const entries = (Array.isArray(value) ? value : []).filter(
+    (entry): entry is { field: string; reason: string } =>
+      typeof entry === "object" && entry !== null && !Array.isArray(entry)
+      && typeof (entry as { field?: unknown }).field === "string" && deferrableItemFieldByKey((entry as { field: string }).field) !== undefined
+      && typeof (entry as { reason?: unknown }).reason === "string" && (entry as { reason: string }).reason.trim().length > 0,
+  );
+  const byField = new Map(entries.map((entry) => [entry.field, { field: entry.field, reason: entry.reason }] as const));
+  return normalizeDeferredFields([...byField.values()]);
+}
+
 /** Converts source test artifacts into pm linked tests. */
 export function toImportLinkedTests(
   value: unknown,
@@ -580,18 +602,29 @@ export type CommitImportedItemResult =
   | { committed: true; writeWarnings: string[] }
   | { committed: false; conflictWarning: string };
 
+/** Every field an imported document sets, including a non-empty body, as a create reports them to guards. */
+function importedChangedFields(document: ItemDocument): string[] {
+  const fields = Object.entries(document.metadata).filter(([, value]) => value !== undefined).map(([key]) => key);
+  return [...fields, ...(document.body.length > 0 ? ["body"] : [])].sort();
+}
+
 /** Performs the shared item write/commit sequence: acquire the per-item lock, atomically write the TOON document, append the import history entry, and run on-write hooks. On a lock CONFLICT it returns a `conflictWarning` (using the caller-supplied prefix) instead of throwing; any other error removes the partially written file and rethrows. */
 export async function commitImportedItem(
   params: CommitImportedItemParams,
 ): Promise<CommitImportedItemResult> {
   const { pmRoot, id, itemPath, author, message, settings, conflictWarningPrefix } = params;
   // The item and its history carry the format the record needs, exactly as create stamps it (GH-1671).
-  const document = { ...params.document, metadata: { ...params.document.metadata } };
-  stampRequiredItemFormat(document.metadata, pmRoot);
+  const stamped = { ...params.document, metadata: { ...params.document.metadata } };
+  // An imported value resolves its deferral, as on every other write (GH-1713).
+  pruneResolvedDeferredFields(stamped.metadata);
+  stampRequiredItemFormat(stamped.metadata, pmRoot);
+  // Guards, the item file and its history all see the canonical form serialization persists (GH-1719).
+  const document = canonicalDocument(stamped);
   const historyPath = getHistoryPath(pmRoot, id);
   const beforeDocument = emptyImportedDocument();
+  let releaseLock: () => Promise<void>;
   try {
-    const releaseLock = await acquireLock(
+    releaseLock = await acquireLock(
       pmRoot,
       id,
       settings.locks.ttl_seconds,
@@ -600,63 +633,79 @@ export async function commitImportedItem(
       settings.governance.force_required_for_stale_lock,
       settings.locks.wait_ms,
     );
-    try {
-      const workflowPolicy = await enforceWorkflowMutation({
-        pmRoot, settings, operation: "import", author, before: null, after: document,
-      });
-      await writeFileAtomic(
-        itemPath,
-        serializeItemDocument(document, { format: "toon" }),
-      );
-      try {
-        const entry = createHistoryEntry({
-          nowIso: nowIso(),
-          author,
-          op: "import",
-          before: beforeDocument,
-          after: document,
-          message,
-          context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
-        });
-        await appendHistoryEntry(historyPath, entry);
-        const writeWarnings = [
-          ...workflowPolicy.warnings,
-          ...(await runActiveOnWriteHooks({
-            path: itemPath,
-            scope: "project",
-            op: "import",
-            item_id: document.metadata.id,
-            item_type: document.metadata.type,
-            before: beforeDocument,
-            after: document,
-            changed_fields: ["imported"],
-          })),
-          ...(await runActiveOnWriteHooks({
-            path: historyPath,
-            scope: "project",
-            op: "import:history",
-            item_id: document.metadata.id,
-            item_type: document.metadata.type,
-            before: beforeDocument,
-            after: document,
-            changed_fields: ["imported"],
-          })),
-        ];
-        return { committed: true, writeWarnings };
-      } catch (error: unknown) {
-        await removeFileIfExists(itemPath);
-        throw error;
-      }
-    } finally {
-      await releaseLock();
-    }
   } catch (error: unknown) {
-    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT && !error.code?.startsWith("workflow_policy_")) {
+    // Only a held lock is a skippable conflict. A workflow policy or mutation guard
+    // denial after the lock is acquired is a refusal and propagates (GH-1719).
+    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT) {
       return {
         committed: false,
         conflictWarning: `${conflictWarningPrefix}:${id}`,
       };
     }
     throw error;
+  }
+  try {
+    const workflowPolicy = await enforceWorkflowMutation({
+      pmRoot, settings, operation: "import", author, before: null, after: document,
+    });
+    // Imports are mutations too: the guards judge them, with the importer's actor (GH-1719).
+    await runActiveBeforeMutationHooks({
+      pm_root: pmRoot,
+      operation: "import",
+      before: null,
+      after: document,
+      changed_fields: importedChangedFields(document),
+      author,
+      sdk: createMutationGuardSdk({
+        pmRoot,
+        settings,
+        typeToFolder: resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder,
+      }),
+    });
+    await writeFileAtomic(
+      itemPath,
+      serializeItemDocument(document, { format: "toon" }),
+    );
+    try {
+      const entry = createHistoryEntry({
+        nowIso: nowIso(),
+        author,
+        op: "import",
+        before: beforeDocument,
+        after: document,
+        message,
+        context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
+      });
+      await appendHistoryEntry(historyPath, entry);
+      const writeWarnings = [
+        ...workflowPolicy.warnings,
+        ...(await runActiveOnWriteHooks({
+          path: itemPath,
+          scope: "project",
+          op: "import",
+          item_id: document.metadata.id,
+          item_type: document.metadata.type,
+          before: beforeDocument,
+          after: document,
+          changed_fields: ["imported"],
+        })),
+        ...(await runActiveOnWriteHooks({
+          path: historyPath,
+          scope: "project",
+          op: "import:history",
+          item_id: document.metadata.id,
+          item_type: document.metadata.type,
+          before: beforeDocument,
+          after: document,
+          changed_fields: ["imported"],
+        })),
+      ];
+      return { committed: true, writeWarnings };
+    } catch (error: unknown) {
+      await removeFileIfExists(itemPath);
+      throw error;
+    }
+  } finally {
+    await releaseLock();
   }
 }

@@ -57,12 +57,19 @@ describe("SDK read context for customizable trackers", () => {
       // Unknown selectors must refuse while preserving valid package fields in recovery.
       for (const read of [
         () => client.get(id, { fields: "probe_score,probe_typo" }),
-        () => client.list({ fields: "probe_score,probe_typo" }),
         () => client.search("Projection", { fields: "probe_score,probe_typo", mode: "keyword" }),
       ]) await expect(read()).rejects.toMatchObject({ context: {
         code: "unknown_field_projection",
         recovery: { allowed_values: expect.arrayContaining(["probe_score", "item.probe_score"]), suggested_retry_args: expect.arrayContaining(["--fields", "probe_score"]) },
       } });
+      // The list domain names each field once and states the item. prefix as an accepted alias.
+      const listRefusal = await client.list({ fields: "probe_score,probe_typo" }).catch((error: unknown) => error);
+      expect(listRefusal).toMatchObject({ context: {
+        code: "unknown_field_projection",
+        required: expect.stringContaining("item. prefix"),
+        recovery: { allowed_values: expect.arrayContaining(["probe_score"]), suggested_retry_args: expect.arrayContaining(["--fields", "probe_score"]) },
+      } });
+      expect((listRefusal as { context: { recovery: { allowed_values: string[] } } }).context.recovery.allowed_values).not.toContain("item.probe_score");
       const disabled = new PmClient({ cwd: context.tempRoot, pmRoot: context.pmPath, noExtensions: true });
       await expect(disabled.get(id, { fields: "probe_score" })).rejects.toMatchObject({ context: { code: "unknown_field_projection" } });
       expect((await client.get(id, { fields: "probe_score" })).item).toEqual({ id, probe_score: 0 });

@@ -35,6 +35,7 @@ import {
   toEstimatedMinutesValue,
   toImportBoolean,
   toImportConfidence,
+  toImportDeferredFields,
   toImportInteger,
   toImportLinkedDocs,
   toImportLinkedFiles,
@@ -353,6 +354,8 @@ async function importTodoCandidate(
       acceptance_criteria: toNonEmptyString(
         candidate.itemMetadata.acceptance_criteria,
       ),
+      // GH-1713: deferred strict fields keep their reasons across export and import.
+      deferred_fields: toImportDeferredFields(candidate.itemMetadata.deferred_fields),
       definition_of_ready: toNonEmptyString(
         candidate.itemMetadata.definition_of_ready,
       ),

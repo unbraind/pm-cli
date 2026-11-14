@@ -61,6 +61,17 @@ export function listListProjectionFields(
     .sort();
 }
 
+/**
+ * Canonical list projection fields: one bare name per field. Every name also
+ * accepts the `item.` prefix, so a refusal lists each field once instead of
+ * doubling its legal domain with aliases.
+ */
+export function listCanonicalListProjectionFields(
+  runtimeMetadataKeys: Iterable<string> = [],
+): string[] {
+  return listListProjectionFields(runtimeMetadataKeys).filter((field) => !field.startsWith("item."));
+}
+
 /** Canonical get depth values. The CLI also accepts full as an alias for deep. */
 export const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
 
