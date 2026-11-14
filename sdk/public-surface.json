@@ -40456,6 +40456,7 @@
     "npm_package_archive_missing",
     "npm_package_archive_unsafe",
     "npm_package_not_found",
+    "output_budget_exceeded",
     "ownership_conflict",
     "ownership_dependency_bypass_restricted_options",
     "ownership_metadata_bypass_restricted_options",

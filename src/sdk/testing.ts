@@ -144,6 +144,8 @@ import {
 } from "./extension/command-options.js";
 import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
 import { formatOutput, projectPrintedResult } from "../core/output/output.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 import {
   resolvePortableWorkspaceContext,
   runWithIsolatedExtensionRuntime,
@@ -294,8 +296,11 @@ async function admitRegisteredReadOutputResult(
   if (registrations === undefined || !outcome.handled) return outcome;
   const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
   if (readOutput === undefined) return outcome;
-  // Native delivery may set process.exitCode (an infeasible budget exits 2); a harness call must not leak it.
+  // Native delivery marks an omitted-for-budget read with `process.exitCode ||= 2` and renders the refusal
+  // instead of throwing. The harness clears the code for the synchronous formatting call so it can observe
+  // that mark, restores the caller's value, and raises the refusal a native caller would see as exit 2.
   const exitCode = process.exitCode;
+  let omittedForBudget = false;
   await runWithIsolatedExtensionRuntime(async () => {
     setActiveExtensionCommands(commands);
     setActiveExtensionServices(readActivatedServices(commands) ?? null);
@@ -304,6 +309,7 @@ async function admitRegisteredReadOutputResult(
     setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
     setActiveCommandContext({ command: context.command, args: context.args, options: context.options, global: context.global, pm_root: context.pm_root });
     const global = context.global ?? {};
+    process.exitCode = 0;
     try {
       formatOutput(projectPrintedResult(outcome.result, global), {
         ...global,
@@ -312,11 +318,27 @@ async function admitRegisteredReadOutputResult(
         commandOptions: context.options,
         pmRoot: context.pm_root,
       });
+      omittedForBudget = process.exitCode === EXIT_CODE.USAGE;
     } finally {
       process.exitCode = exitCode;
     }
   });
+  if (omittedForBudget) refuseOmittedForBudget(context.command);
   return outcome;
+}
+
+/** The harness form of a native read that cannot fit its output budget: native delivery omits the result and exits 2. */
+function refuseOmittedForBudget(command: string): never {
+  throw new PmCliError(
+    `Read output for extension command '${command}' does not fit the requested output budget; native delivery omits the result and exits 2.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "output_budget_exceeded",
+      required: "Raise outputBudget, or return fewer or smaller rows so the delivered output fits.",
+      why: "The delivered output, including any output_format or renderer string, answers to the caller's output budget, and an infeasible budget omits the result natively.",
+      nextSteps: ["Re-run with a larger outputBudget, or without one, to inspect the full result."],
+    },
+  );
 }
 
 /**

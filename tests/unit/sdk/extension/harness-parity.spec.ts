@@ -170,9 +170,18 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerService("output_format", (context) => (context.command === "probe-huge" ? { handled: true, result: "x".repeat(20000) } : { handled: false }));
     });
     await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-big" })).resolves.toMatchObject({ handled: true });
-    const before = process.exitCode;
-    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge", options: { outputBudget: "400" } })).resolves.toMatchObject({ handled: true });
-    expect(process.exitCode).toBe(before);
+    // An infeasible budget is the native exit-2 omission: the harness raises it as a typed refusal
+    // (CodeRabbit review) and never leaks the exit code (Codex review round 10).
+    for (const before of [undefined, 1]) {
+      process.exitCode = before;
+      await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge", options: { outputBudget: "400" } })).rejects.toMatchObject({
+        exitCode: 2,
+        context: expect.objectContaining({ code: "output_budget_exceeded" }),
+      });
+      expect(process.exitCode).toBe(before);
+    }
+    process.exitCode = undefined;
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge" })).resolves.toMatchObject({ handled: true });
   });
 });
 

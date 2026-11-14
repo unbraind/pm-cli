@@ -26202,6 +26202,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "output_budget_exceeded",
+      "class": "usage",
+      "code": "output_budget_exceeded",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Output budget exceeded condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/testing.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "ownership_conflict",
       "class": "conflict",
       "code": "ownership_conflict",

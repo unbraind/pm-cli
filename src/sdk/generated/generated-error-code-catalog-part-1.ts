@@ -1373,4 +1373,9 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     stable: true,
     sources: ["sdk/merge/install.ts"],
   },
+  {
+    code: "merge_receipt_evidence_invalid",
+    exit_code: 4,
+    sources: ["core/diagnostics/remediation.ts", "sdk/merge/reconcile.ts"],
+  },
 ];

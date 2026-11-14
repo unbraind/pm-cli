@@ -223,6 +223,11 @@ describe("direct-caller extension option contract", () => {
         const oversized = context.runCli(["probe", "report", "--shape", "huge", "--output-budget", "400", "--json"]);
         expect(oversized.code).toBe(2);
         expect(JSON.parse(oversized.stdout)).toMatchObject({ output_budget_exceeded: { omitted_result: true } });
+        // The same budget refuses in the harness (CodeRabbit review); without a budget the huge receipt is delivered.
+        await expect(harness.runCommand({ command: "probe report", options: { shape: "huge", outputBudget: "400" } })).rejects.toMatchObject({
+          exitCode: 2,
+          context: expect.objectContaining({ code: "output_budget_exceeded" }),
+        });
         await expect(harness.runCommand({ command: "probe report", options: { shape: "huge" } })).resolves.toMatchObject({ handled: true });
       } finally {
         await harness.deactivate();
