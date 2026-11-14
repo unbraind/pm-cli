@@ -2811,6 +2811,7 @@ export async function runCreate(
   assertNoCreateScalarUnsetConflicts(resolvedOptions, unsetTargets);
   assertNoLegacyCreateScalarTokens(resolvedOptions);
   const deferrals = resolveCreateDeferrals(resolvedOptions, audience);
+  // Contradictory option input refuses before the strict contract; schema-field values are checked once resolved.
   assertNoCreateDeferralConflicts(deferrals, resolvedOptions, unsetTargets.metadataKeys, audience);
 
   const author = resolveAuthor(
@@ -2877,6 +2878,7 @@ export async function runCreate(
     runtimeFieldRegistry,
     type,
   );
+  assertNoCreateDeferralConflicts(deferrals, resolvedOptions, unsetTargets.metadataKeys, audience, runtimeCreateFieldValues.values);
   const missingRequiredRuntimeFlagSet = new Set(
     runtimeCreateFieldValues.missing_required_flags,
   );

@@ -773,6 +773,11 @@ type DeferredItemMutationParams = Omit<ItemMutationParams, "historyContext"> & {
 };
 
 /** Commit a locked item mutation and seal deferred policy and checkpoint context into its immutable event. */
+/** A write that gives a deferred field its value resolves that deferral on the same history entry (GH-1713). */
+function recordResolvedDeferrals(document: ItemDocument, changedFields: string[]): void {
+  if (pruneResolvedDeferredFields(document.metadata)) changedFields.push("deferred_fields");
+}
+
 async function mutateItemWithDeferredHistoryContext(
   params: DeferredItemMutationParams,
 ): Promise<ItemMutationResult> {
@@ -810,8 +815,7 @@ async function mutateItemWithDeferredHistoryContext(
       extensionFieldNames: params.extensionFieldNames,
     });
     const mutation = await params.mutate(mutableDocument);
-    // A write that gives a deferred field its value resolves the deferral on the same entry (GH-1713).
-    if (pruneResolvedDeferredFields(mutableDocument.metadata)) mutation.changedFields.push("deferred_fields");
+    recordResolvedDeferrals(mutableDocument, mutation.changedFields);
     if (params.skipNoop === true && mutation.changedFields.length === 0) {
       return {
         item: beforeDocument.metadata,

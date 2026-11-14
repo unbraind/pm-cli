@@ -1355,11 +1355,13 @@ function deferralOptionsFromDocument(value: unknown): { defer?: string[]; deferR
  * that field, exactly as explicit options override any other document value.
  * The synthesized reason goes when no document deferral remains.
  */
-function dropOverriddenDocumentDeferrals(documentOptions: Record<string, unknown>, explicitKeys: ReadonlySet<string>, explicitUnset: unknown): void {
+function dropOverriddenDocumentDeferrals(documentOptions: Record<string, unknown>, explicitKeys: ReadonlySet<string>, explicitUnset: unknown, runtimeFields: readonly RuntimeFieldDefinitionResolved[]): void {
   if (!Array.isArray(documentOptions.defer)) return;
   const unsetTokens = (Array.isArray(explicitUnset) ? explicitUnset : []).flatMap((token) => String(token).split(","));
   const overridden = new Set<string | undefined>([
     ...DEFERRABLE_ITEM_FIELDS.filter((entry) => explicitKeys.has(entry.option)).map((entry) => entry.field),
+    // An explicit schema field that writes a deferrable metadata key overrides it the same way.
+    ...runtimeFields.filter((definition) => explicitKeys.has(runtimeFieldOptionTarget(definition))).map((definition) => definition.metadata_key),
     ...unsetTokens.map((token) => resolveDeferrableItemField(token)?.field),
   ]);
   const remaining = (documentOptions.defer as string[]).filter((field) => !overridden.has(field));
@@ -1424,7 +1426,7 @@ export function itemDocumentToMutationOptions(
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
   const explicitKeys = explicitDocumentOptionKeys(explicitOptions, mode, runtimeFields);
   removeOverriddenDocumentOptions(documentOptions, mode, explicitKeys);
-  dropOverriddenDocumentDeferrals(documentOptions, explicitKeys, explicitOptions.unset);
+  dropOverriddenDocumentDeferrals(documentOptions, explicitKeys, explicitOptions.unset, runtimeFields);
   if (mode === "update") {
     const annotations = Object.fromEntries(
       (["comments", "notes", "learnings"] as const)

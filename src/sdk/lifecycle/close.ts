@@ -704,9 +704,12 @@ function closeValidationDeferredFieldsError(
   metadata: ItemMetadata,
   deferred: readonly ItemDeferredField[],
   commandScope: readonly string[],
+  author: string | undefined,
 ): PmCliError {
   const flags = deferred.map((entry) => deferrableItemFieldByKey(entry.field)!.flag);
-  const updateTokens = [...commandScope, "update", metadata.id, ...flags.flatMap((flag) => [flag, "<value>"])];
+  // The update runs as the identity the close ran as, so strict ownership does not refuse it.
+  const identity = author === undefined || author.trim().length === 0 ? [] : [`--author=${author}`];
+  const updateTokens = [...commandScope, "update", metadata.id, ...identity, ...flags.flatMap((flag) => [flag, "<value>"])];
   return new PmCliError(
     `Cannot close item ${metadata.id}: deferred fields still have no value (${deferred.map((entry) => entry.field).join(", ")}). Supply them or use --validate-close warn.`,
     EXIT_CODE.USAGE,
@@ -726,11 +729,11 @@ function closeValidationDeferredFieldsError(
 function collectDeferredFieldCloseWarnings(
   metadata: ItemMetadata,
   validateCloseMode: Exclude<ValidateCloseMode, "off">,
-  commandScope: readonly string[],
+  context: Pick<CloseMutationContext, "commandScope" | "options">,
 ): string[] {
   const deferred = outstandingDeferredFields(metadata);
   if (deferred.length === 0) return [];
-  if (validateCloseMode === "strict") throw closeValidationDeferredFieldsError(metadata, deferred, commandScope);
+  if (validateCloseMode === "strict") throw closeValidationDeferredFieldsError(metadata, deferred, context.commandScope, context.options.author);
   return [`close_validation_deferred_fields:${metadata.id}:${deferred.map((entry) => entry.field).join(",")}`];
 }
 
@@ -742,7 +745,7 @@ function collectCloseValidationWarnings(
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
-    warnings.push(...collectDeferredFieldCloseWarnings(metadata, validateCloseMode, context.commandScope));
+    warnings.push(...collectDeferredFieldCloseWarnings(metadata, validateCloseMode, context));
     const missingFields = findMissingCloseValidationFields(metadata);
     if (missingFields.length > 0) {
       const missingLabels = missingFields.map((field) => field.label);

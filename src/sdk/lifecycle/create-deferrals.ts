@@ -94,12 +94,14 @@ export function assertNoCreateDeferralConflicts(
   options: Record<string, unknown>,
   unsetKeys: ReadonlySet<string>,
   audience: MutationInputAudience,
+  runtimeValues: Readonly<Record<string, unknown>> = {},
 ): void {
   const conflicts = deferrals.fields.filter((entry) => {
     const value = options[entry.option];
     // Native option validation types these options as strings and folds typed nulls into unsets (GH-1655).
     const supplied = typeof value === "string" && value.trim().length > 0;
-    return supplied || unsetKeys.has(entry.field);
+    // A schema field whose metadata key is a deferrable field supplies that value too.
+    return supplied || runtimeValues[entry.field] !== undefined || unsetKeys.has(entry.field);
   });
   if (conflicts.length === 0) return;
   const deferLabel = mutationOptionLabel(audience, "defer");

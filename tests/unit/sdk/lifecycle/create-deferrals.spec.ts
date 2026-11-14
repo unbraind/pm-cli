@@ -5,7 +5,7 @@
  * value, listed by validate and health, and refused by strict close.
  */
 import path from "node:path";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../../../src/mcp/server.js";
 import { PmClient } from "../../../../src/sdk/runtime.js";
@@ -24,6 +24,7 @@ import { summarizeDeferredFieldCuration } from "../../../../src/sdk/governance/v
 import { runValidate } from "../../../../src/sdk/governance/validate.js";
 import { runHealth } from "../../../../src/sdk/governance/health.js";
 import { readHistoryEntries } from "../../../../src/core/history/read.js";
+import { readSettings } from "../../../../src/core/store/settings.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
 import type { ItemDocument, ItemMetadata } from "../../../../src/types/index.js";
 import { mergeItemDocuments } from "../../../../src/sdk/merge/three-way.js";
@@ -113,7 +114,7 @@ describe("strict create deferrals (GH-1713)", () => {
         context: {
           recovery: {
             missing: ["--acceptance-criteria", "--assignee", "--deadline", "--estimate"],
-            next_best_command: expect.stringContaining(`update ${id} --acceptance-criteria`),
+            next_best_command: expect.stringContaining(`update ${id} --author=importer --acceptance-criteria`),
           },
         },
       });
@@ -143,6 +144,35 @@ describe("strict create deferrals (GH-1713)", () => {
       expect(resolved.item.deferred_fields).toBeUndefined();
       expect(resolved.item.pm_format_version).toBe(4);
       await expect(client.close(id, "Done", { ...evidence, validateClose: "strict" })).resolves.toMatchObject({ item: { status: "closed" } });
+    });
+  });
+
+  it("rolls back a deferred create on a strict tracker and judges schema-field values like core options", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.governance.preset = "strict";
+      // A schema field whose metadata key is a deferrable core field supplies that value.
+      settings.schema.fields = [{ key: "due", metadata_key: "deadline", cli_flag: "due", type: "string" }];
+      await writeFile(path.join(context.pmPath, "settings.json"), JSON.stringify(settings));
+      const client = new PmClient({ pmRoot: context.pmPath, author: "importer" });
+      await expect(client.create({ ...STRICT_BASE, defer: ["deadline"], due: "2026-12-31", deferReason: "Imported" } as never)).rejects.toMatchObject({ code: "create_deferral_conflict" });
+
+      // A later row fails: the strict close validation must not refuse the rollback of the deferred create.
+      await expect(client.commitItemMutations({
+        transactionId: "gh1713-rollback",
+        mutations: [
+          { op: "create", id: "pm-rolled-back", options: { ...STRICT_BASE, title: "Rolled back", defer: ALL_DEFERRED, deferReason: "Imported" } },
+          { op: "update", id: "pm-missing-row", options: { description: "fails" } },
+        ],
+      })).rejects.not.toBeInstanceOf(AggregateError);
+      await expect(client.get("pm-rolled-back")).resolves.toMatchObject({ item: { status: "closed", close_reason: expect.stringContaining("Compensated") } });
+
+      // The corrective update of a strict close refusal runs as the identity the close ran as.
+      const owned = await client.create({ ...STRICT_BASE, title: "Owned deferral", defer: ["deadline"], assignee: "alice", acceptanceCriteria: "ok", estimatedMinutes: "5", deferReason: "Imported" });
+      await expect(client.close(owned.item.id, "Done", { author: "alice", resolution: "r", expectedResult: "e", actualResult: "a" })).rejects.toMatchObject({
+        code: "close_validation_deferred_fields",
+        context: { recovery: { next_best_command: expect.stringContaining("--author=alice") } },
+      });
     });
   });
 
@@ -262,6 +292,25 @@ describe("strict create deferrals (GH-1713)", () => {
     resolvedSide.metadata.deadline = "2026-12-31T00:00:00.000Z";
     const resolvedMerge = mergeItemDocuments(baseRaw, serializeItemDocument(resolvedSide), reasoned("Reworded", "2026-11-14T03:00:00.000Z"));
     expect(parseItemDocument(resolvedMerge.merged, { format: "toon" }).metadata.deferred_fields).toEqual([{ field: "assignee", reason: "Imported" }]);
+
+    // One side resolved every deferral (the key is gone); the other kept them unchanged: the resolutions win.
+    const allResolved = structuredClone(deferredBase);
+    delete allResolved.metadata.deferred_fields;
+    allResolved.metadata.deadline = "2026-12-31T00:00:00.000Z";
+    allResolved.metadata.assignee = "alice";
+    const allResolvedMerge = mergeItemDocuments(baseRaw, baseRaw, serializeItemDocument(allResolved));
+    expect(parseItemDocument(allResolvedMerge.merged, { format: "toon" }).metadata.deferred_fields).toBeUndefined();
+
+    // A branch restoring a deferral while the other supplies its value: the merged value resolves the deferral.
+    const undeferred = structuredClone(deferredBase);
+    delete undeferred.metadata.deferred_fields;
+    const restoring = structuredClone(deferredBase);
+    restoring.metadata.deferred_fields = [{ field: "deadline", reason: "Restored" }];
+    const supplying = structuredClone(undeferred);
+    supplying.metadata.deadline = "2027-01-31T00:00:00.000Z";
+    const reconciled = mergeItemDocuments(serializeItemDocument(undeferred), serializeItemDocument(restoring), serializeItemDocument(supplying));
+    expect(parseItemDocument(reconciled.merged, { format: "toon" }).metadata).toMatchObject({ deadline: "2027-01-31T00:00:00.000Z" });
+    expect(parseItemDocument(reconciled.merged, { format: "toon" }).metadata.deferred_fields).toBeUndefined();
 
     // A deferral added on one side survives; an entry both sides keep unchanged stays.
     const added = structuredClone(deferredBase);

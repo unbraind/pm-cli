@@ -1,0 +1,29 @@
+id: pm-chdp87
+title: "commitItemMutations cannot compensate a create that clears a collection: the explicit_unset suffix hides the apply marker, so a refused batch reports transaction_partial_mutation and keeps the create"
+description: "Found while implementing pm-gh1713 (2026-11-14). A strict-preset importer must pass the --clear-* options (clearDeps, clearComments and the rest) to satisfy strict create's required repeatables. When the create runs inside commitItemMutations, buildHistoryMessage appends ' | explicit_unset=dependencies,comments,...' to the transaction's apply marker. compensateCreatedItem and isUpdateMarkerApplied match the marker by exact string equality, so they never recognise the step's own create. When a later row fails, compensation therefore throws transaction_partial_mutation ('cannot safely compensate incomplete step'), the batch surfaces an AggregateError, and the created item stays open. Reproduced with no deferrals and with close validation off: a create step with clearDeps plus a failing update row. The same create without clear options rolls back cleanly. Fix: treat the marker as a prefix followed by ' | ' (isStepMarkerMessage) everywhere a step marker is matched. Duplicate check: searched compensation explicit_unset marker partial mutation; pm-wb6ktl covers guard-judged compensation, not marker matching."
+type: Issue
+status: in_progress
+priority: 1
+tags[4]: "area:sdk",importers,strict-preset,transactions
+created_at: "2026-11-14T06:08:20.927Z"
+updated_at: "2026-11-14T06:08:30.947Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#9d7f970542d8df5a0a6bdb3b"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "A commitItemMutations batch whose create step clears collections rolls back cleanly when a later row fails, with no transaction_partial_mutation; Marker matching accepts the explicit_unset suffix and nothing else; A spec reproduces the refusal and passes after the fix"
+parent: pm-9rgaal
+risk: medium
+confidence: high
+severity: high
+expected_result: A refused batch rolls back its strict-mode creates
+actual_result: Compensation refuses with transaction_partial_mutation and the created item stays open
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1713,discovered_from,"2026-11-14T06:08:20.927Z","harness:claude-code","cli:create:dep",detected
+  pm-wb6ktl,related,"2026-11-14T06:08:20.927Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope,note}:
+  src/sdk/item-transaction.ts,project,isStepMarkerMessage and validateClose off for compensation closes
+  tests/unit/sdk/lifecycle/create-deferrals.spec.ts,project,strict rollback spec
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts,project,600,"harness:claude-code","2026-11-14T06:08:30.867Z",local_mutation,feat/package-write-path-actor-and-deferral
+body: ""

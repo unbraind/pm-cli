@@ -32,6 +32,7 @@ import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers
 import { PmCliError } from "../../core/shared/errors.js";
 import { sha256Hex, stableStringify } from "../../core/shared/serialization.js";
 import { compareTimestampStrings } from "../../core/shared/time.js";
+import { hasConcreteItemFieldValue } from "../../core/item/deferred-fields.js";
 import type {
   HistoryEntry,
   HistoryPatchOp,
@@ -1028,7 +1029,16 @@ function mergeItemMetadataRecords(
       accumulator,
     });
   }
+  reconcileMergedDeferrals(accumulator.merged);
   return accumulator;
+}
+
+/** Drop merged deferrals whose field holds a concrete merged value, exactly as a write resolves them (GH-1713). */
+function reconcileMergedDeferrals(merged: Record<string, unknown>): void {
+  if (!Array.isArray(merged.deferred_fields)) return;
+  merged.deferred_fields = merged.deferred_fields.filter(
+    (entry) => !hasConcreteItemFieldValue(merged, String((entry as { field?: unknown }).field)),
+  );
 }
 
 /**
