@@ -22,7 +22,7 @@ import { enforceWorkflowMutation } from "../core/policy/workflow-policy-store.js
 import { parseTags } from "../core/item/parse.js";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { canonicalDocument, serializeItemDocument } from "../core/item/item-format.js";
-import { pruneResolvedDeferredFields } from "../core/item/deferred-fields.js";
+import { deferrableItemFieldByKey, normalizeDeferredFields, pruneResolvedDeferredFields } from "../core/item/deferred-fields.js";
 import { getHistoryPath } from "../core/store/paths.js";
 import {
   removeFileIfExists,
@@ -40,6 +40,7 @@ import { stampRequiredItemFormat } from "./environment/project-runtime-compatibi
 import type {
   ConfidenceTextLevel,
   ItemDocument,
+  ItemDeferredField,
   ItemMetadata,
   ItemStatus,
   LinkedDoc,
@@ -313,6 +314,24 @@ export function toImportLinkedDocs(
     scope: toImportLinkScope(record?.scope),
     note: toNonEmptyImportString(record?.note),
   }));
+}
+
+/**
+ * Converts source deferral entries into pm `deferred_fields` (GH-1713): one
+ * entry per deferrable field, with a non-empty reason. An importer passes the
+ * result straight into item metadata, and `commitImportedItem` stamps the
+ * format the deferral needs, so a round trip keeps the audit trail and the
+ * strict-close protection.
+ */
+export function toImportDeferredFields(value: unknown): ItemDeferredField[] | undefined {
+  const entries = (Array.isArray(value) ? value : []).filter(
+    (entry): entry is { field: string; reason: string } =>
+      typeof entry === "object" && entry !== null && !Array.isArray(entry)
+      && typeof (entry as { field?: unknown }).field === "string" && deferrableItemFieldByKey((entry as { field: string }).field) !== undefined
+      && typeof (entry as { reason?: unknown }).reason === "string" && (entry as { reason: string }).reason.trim().length > 0,
+  );
+  const byField = new Map(entries.map((entry) => [entry.field, { field: entry.field, reason: entry.reason }] as const));
+  return normalizeDeferredFields([...byField.values()]);
 }
 
 /** Converts source test artifacts into pm linked tests. */

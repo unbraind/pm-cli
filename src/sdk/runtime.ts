@@ -380,6 +380,7 @@ export {
   toEstimatedMinutesValue,
   toImportBoolean,
   toImportConfidence,
+  toImportDeferredFields,
   toImportInteger,
   toImportLinkedDocs,
   toImportLinkedFiles,
@@ -663,6 +664,7 @@ export type PackageCommandResult = ExtensionCommandResult;
 export type {
   Dependency,
   ItemDocument,
+  ItemDeferredField,
   ItemMetadata,
   ItemStatus,
   ItemType,

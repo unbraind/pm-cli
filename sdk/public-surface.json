@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2125,
+    "covered_symbols": 2127,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2126
+    "required_symbols": 2128
   },
   "breaking_acknowledgements": [
     {
@@ -11603,6 +11603,12 @@
           "signature": "export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> { signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemDeferredField",
+          "signature": "export interface ItemDeferredField { field: string; reason: string; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ItemDocument",
@@ -22515,6 +22521,12 @@
           "kind": "function",
           "name": "toImportConfidence",
           "signature": "(value: unknown, allowedTextValues: readonly ConfidenceTextLevel[]) => ItemMetadata[\"confidence\"] | undefined | calls: (value: unknown, allowedTextValues: readonly ConfidenceTextLevel[]) => ItemMetadata[\"confidence\"] | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "toImportDeferredFields",
+          "signature": "(value: unknown) => ItemDeferredField[] | undefined | calls: (value: unknown) => ItemDeferredField[] | undefined"
         },
         {
           "classification": "advanced_export",
@@ -36941,6 +36953,12 @@
           "signature": "readonly [\"Epic\", \"Feature\", \"Task\", \"Chore\", \"Issue\", \"Decision\", \"Event\", \"Reminder\", \"Milestone\", \"Meeting\", \"Plan\"]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemDeferredField",
+          "signature": "export interface ItemDeferredField { field: string; reason: string; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ItemDocument",
@@ -38899,6 +38917,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "toImportDeferredFields",
+          "signature": "(value: unknown) => ItemDeferredField[] | undefined | calls: (value: unknown) => ItemDeferredField[] | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "toImportInteger",
           "signature": "(value: unknown) => number | undefined | calls: (value: unknown) => number | undefined"
         },
@@ -40602,10 +40626,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1331,
+      "checked_functions": 1332,
       "checked_values": 396,
       "exempt_test_seams": 15,
-      "referenced_types": 1040
+      "referenced_types": 1041
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -40650,10 +40674,10 @@
       "referenced_types": 112
     },
     "./sdk/runtime": {
-      "checked_functions": 234,
+      "checked_functions": 235,
       "checked_values": 34,
       "exempt_test_seams": 0,
-      "referenced_types": 223
+      "referenced_types": 224
     },
     "./sdk/testing": {
       "checked_functions": 46,
