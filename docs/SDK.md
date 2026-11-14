@@ -4163,7 +4163,7 @@ actions and relationship stores without spawning the CLI or recursively
 activating packages.
 
 Strict trackers need no invented values from an importer
-([pm-gh1713](../.agents/pm/features/pm-gh1713.toon)). When the source system
+([pm-gh1713](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1713.toon)). When the source system
 does not know a strict-required scalar, the create step can defer it with a
 reason: `create({ ..., defer: ["deadline", "assignee"], deferReason:
 "Imported from GitHub issue 42" })`. The same options work in a

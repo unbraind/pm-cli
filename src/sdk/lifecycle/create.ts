@@ -2841,7 +2841,7 @@ export async function runCreate(
   );
   assertNoCreateDeferralConflicts(deferrals, resolvedOptions, unsetTargets.metadataKeys, audience, runtimeCreateFieldValues.values);
   // A deferral satisfies a schema field's create requirement for the key it writes, as it does a type's.
-  runtimeCreateFieldValues.missing_required_flags = withoutDeferredRuntimeRequirements(runtimeCreateFieldValues.missing_required_flags, deferrals, runtimeFieldRegistry.definitions);
+  runtimeCreateFieldValues.missing_required_flags = withoutDeferredRuntimeRequirements(runtimeCreateFieldValues.missing_required_flags, deferrals, runtimeFieldRegistry.definitions, type);
   const missingRequiredRuntimeFlagSet = new Set(
     runtimeCreateFieldValues.missing_required_flags,
   );

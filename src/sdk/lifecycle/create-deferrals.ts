@@ -17,7 +17,7 @@ import {
 import { mutationOptionLabel, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
-import { resolveCandidateOptionKeys } from "../../core/schema/runtime-field-values.js";
+import { resolveCandidateOptionKeys, shouldRequireFieldOnCreate } from "../../core/schema/runtime-field-values.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import type { ItemDeferredField } from "../../types/index.js";
 
@@ -152,6 +152,7 @@ export function withoutDeferredRuntimeRequirements(
   missingFlags: readonly string[],
   deferrals: ResolvedCreateDeferrals,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+  itemTypeName?: string,
 ): string[] {
   const deferredFields = new Set<string>(deferrals.fields.map((entry) => entry.field));
   const createFields = runtimeFields.filter((definition) => definition.commands.includes("create"));
@@ -161,7 +162,7 @@ export function withoutDeferredRuntimeRequirements(
   // A flag another create requirement still needs stays missing, so a shared spelling never hides it.
   const stillRequired = new Set(
     createFields
-      .filter((definition) => !exempt(definition) && (definition.required === true || definition.required_on_create === true))
+      .filter((definition) => !exempt(definition) && shouldRequireFieldOnCreate(definition, itemTypeName))
       .map((definition) => `--${definition.cli_flag}`),
   );
   return missingFlags.filter((flag) => !satisfied.has(flag) || stillRequired.has(flag));

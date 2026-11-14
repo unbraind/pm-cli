@@ -374,6 +374,13 @@ describe("strict create deferrals (GH-1713)", () => {
       { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string" },
     ] } as never);
     expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, optionalShared.definitions)).toEqual([]);
+    // A requirement for another item type sharing the flag does not keep it missing for this type.
+    const typeScoped = resolveRuntimeFieldRegistry({ fields: [
+      { key: "due", metadata_key: "deadline", cli_flag: "shared", type: "string", required_on_create: true },
+      { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string", required: true, required_types: ["Issue"] },
+    ] } as never);
+    expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, typeScoped.definitions, "Task")).toEqual([]);
+    expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, typeScoped.definitions, "Issue")).toEqual(["--shared"]);
   });
 
   it("resolves stdin-json overrides core-first and only through create-scoped schema fields", () => {
@@ -387,6 +394,12 @@ describe("strict create deferrals (GH-1713)", () => {
       { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string", commands: ["create"] },
     ] } as never);
     expect(itemDocumentToMutationOptions(document, "create", { due: "2026-12-31" }, scoped.definitions)).toMatchObject({ defer: ["acceptance_criteria", "deadline"] });
+    // An update-only field keyed deadline never makes the create's shared flag an explicit deadline.
+    const updateKeyed = resolveRuntimeFieldRegistry({ fields: [
+      { key: "deadline", metadata_key: "deadline", cli_flag: "shared", type: "string", commands: ["update"] },
+      { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string", commands: ["create"] },
+    ] } as never);
+    expect(itemDocumentToMutationOptions(document, "create", { shared: "T-1" }, updateKeyed.definitions)).toMatchObject({ defer: ["acceptance_criteria", "deadline"] });
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ due: "2026-12-31" }, { title: "x", defer: ["deadline"] } as never, scoped)).toMatchObject({ due: "2026-12-31" });
   });
 

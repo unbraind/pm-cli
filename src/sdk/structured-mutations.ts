@@ -1387,7 +1387,8 @@ function explicitDocumentOptionKeys(explicitOptions: Record<string, unknown>, mo
   for (const { target, keys } of contracts) {
     if (keys.some((key) => explicitKeys.has(key))) explicitKeys.add(target);
   }
-  for (const definition of runtimeFields) {
+  // Only fields this command accepts can make one of its options explicit.
+  for (const definition of runtimeFields.filter((candidate) => candidate.commands.includes(mode))) {
     if (readRuntimeFieldOptionValue(explicitOptions, definition) !== undefined) explicitKeys.add(runtimeFieldOptionTarget(definition));
   }
   return explicitKeys;

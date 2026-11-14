@@ -491,7 +491,8 @@ export function coerceRuntimeFieldValue(
   );
 }
 
-function shouldRequireFieldOnCreate(
+/** True when a schema field must hold a value when an item of `itemTypeName` is created. */
+export function shouldRequireFieldOnCreate(
   definition: RuntimeFieldDefinitionResolved,
   itemTypeName: string | undefined,
 ): boolean {

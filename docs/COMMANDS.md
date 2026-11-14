@@ -576,7 +576,7 @@ pm create \
   --message "Create restore replay issue"
 ```
 
-When a strict-required value is genuinely not known yet, as with a record mirrored from another tracker, defer it instead of inventing one ([pm-gh1713](../.agents/pm/features/pm-gh1713.toon)). `--defer <field>` (repeatable, comma lists accepted) names `deadline`, `assignee`, `acceptance-criteria`/`ac` or `estimate`, and `--defer-reason` is required with it:
+When a strict-required value is genuinely not known yet, as with a record mirrored from another tracker, defer it instead of inventing one ([pm-gh1713](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1713.toon)). `--defer <field>` (repeatable, comma lists accepted) names `deadline`, `assignee`, `acceptance-criteria`/`ac` or `estimate`, and `--defer-reason` is required with it:
 
 ```bash
 pm create "Imported issue" --type Issue --description "Mirrored from GitHub" --create-mode strict \
