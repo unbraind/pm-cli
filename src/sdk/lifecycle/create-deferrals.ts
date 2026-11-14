@@ -137,3 +137,18 @@ export function deferredTemplateOverrideKeys(raw: unknown, runtimeFields: readon
   const runtimeKeys = runtimeFields.filter((definition) => fields.has(definition.metadata_key)).map((definition) => runtimeFieldOptionTarget(definition));
   return [...deferred.map((entry) => entry.option), ...runtimeKeys];
 }
+
+/**
+ * Drop the missing-flag entries of schema fields whose metadata key is
+ * deferred: a deferral satisfies the create requirement of the key it records
+ * as unknown, whichever spelling declares that requirement.
+ */
+export function withoutDeferredRuntimeRequirements(
+  missingFlags: readonly string[],
+  deferrals: ResolvedCreateDeferrals,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): string[] {
+  const deferredFields = new Set<string>(deferrals.fields.map((entry) => entry.field));
+  const satisfied = new Set(runtimeFields.filter((definition) => deferredFields.has(definition.metadata_key)).map((definition) => `--${definition.cli_flag}`));
+  return missingFlags.filter((flag) => !satisfied.has(flag));
+}

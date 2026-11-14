@@ -1370,6 +1370,8 @@ function documentDeferralOptions(
   if (entries.length === 0) return {};
   const reasons = entries.map((entry) => (typeof entry.reason === "string" ? entry.reason.trim() : ""));
   const defer = entries.map((entry) => entry.field);
+  // An explicit reason, in any spelling, is the caller's own and is never replaced by the document's.
+  if (explicitKeys.has("deferReason")) return { defer };
   return reasons.every((reason) => reason.length > 0) ? { defer, deferReason: [...new Set(reasons)].join("; ") } : { defer };
 }
 

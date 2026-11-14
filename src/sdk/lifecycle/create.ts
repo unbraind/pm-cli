@@ -8,7 +8,7 @@ import { createExtensionCommandError } from "../error-runtime.js";
 import { isLiteralMutationInput, mutationInputAudience, mutationOptionLabel, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { assertMutationStringOperand, prepareNativeMutationOptions } from "../runtime/mutation-value-validation.js";
 import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
-import { assertNoCreateDeferralConflicts, buildCreateDeferredFieldEntries, deferredTemplateOverrideKeys, resolveCreateDeferrals } from "./create-deferrals.js";
+import { assertNoCreateDeferralConflicts, buildCreateDeferredFieldEntries, deferredTemplateOverrideKeys, resolveCreateDeferrals, withoutDeferredRuntimeRequirements } from "./create-deferrals.js";
 import {
   assertNoAmbiguousBareCommaEntry,
   looksLikeStructuredKeyValueEntry,
@@ -2879,6 +2879,8 @@ export async function runCreate(
     type,
   );
   assertNoCreateDeferralConflicts(deferrals, resolvedOptions, unsetTargets.metadataKeys, audience, runtimeCreateFieldValues.values);
+  // A deferral satisfies a schema field's create requirement for the key it writes, as it does a type's.
+  runtimeCreateFieldValues.missing_required_flags = withoutDeferredRuntimeRequirements(runtimeCreateFieldValues.missing_required_flags, deferrals, runtimeFieldRegistry.definitions);
   const missingRequiredRuntimeFlagSet = new Set(
     runtimeCreateFieldValues.missing_required_flags,
   );

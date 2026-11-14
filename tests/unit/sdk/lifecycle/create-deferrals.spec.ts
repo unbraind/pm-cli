@@ -162,10 +162,13 @@ describe("strict create deferrals (GH-1713)", () => {
       const settings = await readSettings(context.pmPath);
       settings.governance.preset = "strict";
       // A schema field whose metadata key is a deferrable core field supplies that value.
-      settings.schema.fields = [{ key: "due", metadata_key: "deadline", cli_flag: "due", type: "string" }];
+      settings.schema.fields = [{ key: "due", metadata_key: "deadline", cli_flag: "due", type: "string", required_on_create: true }];
       await writeFile(path.join(context.pmPath, "settings.json"), JSON.stringify(settings));
       const client = new PmClient({ pmRoot: context.pmPath, author: "importer" });
       await expect(client.create({ ...STRICT_BASE, defer: ["deadline"], due: "2026-12-31", deferReason: "Imported" } as never)).rejects.toMatchObject({ code: "create_deferral_conflict" });
+      // The schema field's create requirement for deadline is satisfied by the deferral, as the type's is.
+      await expect(client.create({ ...STRICT_BASE, title: "Schema-required deferral", defer: ALL_DEFERRED, deferReason: "Imported" })).resolves.toMatchObject({ item: { deferred_fields: expect.arrayContaining([{ field: "deadline", reason: "Imported" }]) } });
+      await expect(client.create({ ...STRICT_BASE, title: "Schema-required missing", defer: ["assignee", "acceptance_criteria", "estimated_minutes"], deferReason: "Imported" })).rejects.toMatchObject({ code: "missing_required_option" });
 
       // A later row fails: the strict close validation must not refuse the rollback of the deferred create.
       await expect(client.commitItemMutations({
@@ -246,6 +249,10 @@ describe("strict create deferrals (GH-1713)", () => {
     expect(itemDocumentToMutationOptions(envelope, "create", { defer: ["deadline"], deferReason: "Explicit" })).toMatchObject({ defer: ["deadline"], deferReason: "Explicit" });
     // Each remaining field contributes only its own reason; one without a reason gets none synthesized.
     expect(itemDocumentToMutationOptions(JSON.stringify({ ...stored, deferred_fields: [{ field: "deadline", reason: "A" }, { field: "assignee", reason: "B" }] }), "create", { deadline: "2026-12-31" })).toMatchObject({ defer: ["assignee"], deferReason: "B" });
+    // An explicit reason in any spelling is never replaced by the document's reason.
+    const explicitAlias = itemDocumentToMutationOptions(envelope, "create", { defer_reason: "Explicit alias" });
+    expect(explicitAlias).toMatchObject({ defer: ["deadline", "assignee", "estimated_minutes"], defer_reason: "Explicit alias" });
+    expect(explicitAlias).not.toHaveProperty("deferReason");
     const borrowed = itemDocumentToMutationOptions(JSON.stringify({ ...stored, deferred_fields: [{ field: "deadline", reason: "Imported" }, { field: "assignee" }] }), "create");
     expect(borrowed).toMatchObject({ defer: ["deadline", "assignee"] });
     expect(borrowed).not.toHaveProperty("deferReason");
