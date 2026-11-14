@@ -1361,6 +1361,8 @@ function documentDeferralOptions(
     // An explicit schema field that writes a deferrable metadata key overrides it the same way.
     ...runtimeFields.filter((definition) => explicitKeys.has(runtimeFieldOptionTarget(definition))).map((definition) => definition.metadata_key),
     ...unsetTokens.map((token) => resolveDeferrableItemField(token)?.field),
+    // An unset of a schema field resolves to its metadata key, as the create unset parser resolves it.
+    ...unsetTokens.flatMap((token) => runtimeFields.filter((definition) => [definition.key, definition.cli_flag, ...definition.cli_aliases].includes(token.trim())).map((definition) => definition.metadata_key)),
   ]);
   const entries = (Array.isArray(value) ? value : [])
     .filter(isPlainObject)

@@ -16,6 +16,7 @@ import {
 } from "../../core/item/deferred-fields.js";
 import { mutationOptionLabel, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
+import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import type { ItemDeferredField } from "../../types/index.js";
 
@@ -124,11 +125,15 @@ export function buildCreateDeferredFieldEntries(deferrals: ResolvedCreateDeferra
  * must not fill it in. Malformed tokens are ignored here; the strict parse
  * refuses them afterwards.
  */
-export function deferredTemplateOverrideKeys(raw: unknown): string[] {
+export function deferredTemplateOverrideKeys(raw: unknown, runtimeFields: readonly RuntimeFieldDefinitionResolved[] = []): string[] {
   const values = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
-  return values
+  const deferred = values
     .filter((value): value is string => typeof value === "string")
     .flatMap((value) => value.split(","))
-    .map((token) => resolveDeferrableItemField(token)?.option)
-    .filter((option): option is DeferrableItemField["option"] => option !== undefined);
+    .map((token) => resolveDeferrableItemField(token))
+    .filter((field): field is DeferrableItemField => field !== undefined);
+  const fields = new Set<string>(deferred.map((entry) => entry.field));
+  // A schema field that writes a deferred metadata key is the same default under another name.
+  const runtimeKeys = runtimeFields.filter((definition) => fields.has(definition.metadata_key)).map((definition) => runtimeFieldOptionTarget(definition));
+  return [...deferred.map((entry) => entry.option), ...runtimeKeys];
 }

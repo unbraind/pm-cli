@@ -8,7 +8,7 @@ import path from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../../../src/mcp/server.js";
-import { PmClient } from "../../../../src/sdk/runtime.js";
+import { PmClient, resolveRuntimeFieldRegistry } from "../../../../src/sdk/runtime.js";
 import { _testOnlyCreateCommand } from "../../../../src/sdk/lifecycle/create.js";
 import { itemDocumentToMutationOptions } from "../../../../src/sdk/structured-mutations.js";
 import {
@@ -117,6 +117,16 @@ describe("strict create deferrals (GH-1713)", () => {
             next_best_command: expect.stringContaining(`update ${id} --author=importer --acceptance-criteria`),
           },
         },
+      });
+
+      // An ownership override carries into the recovery, so the corrective update is not refused either.
+      await expect(client.close(id, "Done", { ...evidence, validateClose: "strict", force: true })).rejects.toMatchObject({
+        context: { recovery: { next_best_command: expect.stringContaining("--author=importer --force") } },
+      });
+      // Without an explicit author the recovery names none, and the update resolves the author as usual.
+      await expect(new PmClient({ pmRoot: context.pmPath }).close(id, "Done", { ...evidence, validateClose: "strict" })).rejects.toMatchObject({
+        code: "close_validation_deferred_fields",
+        context: { recovery: { next_best_command: expect.not.stringContaining("--author") } },
       });
 
       const partial = await client.update(id, { deadline: "2026-12-31", estimatedMinutes: "30" });
@@ -322,6 +332,16 @@ describe("strict create deferrals (GH-1713)", () => {
     added.metadata.deferred_fields = [...(deferredBase.metadata.deferred_fields ?? []), { field: "estimated_minutes", reason: "Unknown size" }];
     const addedMerge = mergeItemDocuments(baseRaw, baseRaw, serializeItemDocument(added));
     expect(parseItemDocument(addedMerge.merged, { format: "toon" }).metadata.deferred_fields?.map((entry) => entry.field)).toEqual(["assignee", "deadline", "estimated_minutes"]);
+  });
+
+  it("resolves schema fields mapped to a deferrable key in stdin unsets and template defaults", () => {
+    const registry = resolveRuntimeFieldRegistry({ fields: [{ key: "due", metadata_key: "deadline", cli_flag: "due-date", cli_aliases: ["due-on"], type: "string" }] } as never);
+    const document = JSON.stringify({ item: { title: "Mirrored", type: "Issue", deferred_fields: [{ field: "deadline", reason: "Imported" }, { field: "assignee", reason: "Imported" }] } });
+    for (const token of ["due", "due-date", "due-on"]) {
+      expect(itemDocumentToMutationOptions(document, "create", { unset: [token] }, registry.definitions)).toMatchObject({ defer: ["assignee"] });
+    }
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ due: "2026-12-31", sprint: "s1" }, { title: "x", defer: ["deadline"] } as never, registry)).not.toHaveProperty("due");
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ due: "2026-12-31" }, { title: "x", defer: ["deadline"], due: "2027-01-01" } as never, registry)).toMatchObject({ due: "2027-01-01" });
   });
 
   it("lets a deferral override a template default exactly like an unset", () => {

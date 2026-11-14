@@ -1447,7 +1447,7 @@ function dropTemplateDefaultsForExplicitUnsets(
   explicitOptions: CreateCommandOptions,
   runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
 ): void {
-  const keys = [...parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys, ...deferredTemplateOverrideKeys(explicitOptions.defer)]
+  const keys = [...parseCreateUnsetTargets(explicitOptions.unset, runtimeFieldRegistry).optionKeys, ...deferredTemplateOverrideKeys(explicitOptions.defer, runtimeFieldRegistry?.definitions)]
     .flatMap((key) => (key === "order" ? [key, "rank"] : key === "tags" ? [key, "addTags"] : [key]));
   for (const key of keys) {
     if (Reflect.get(explicitOptions, key) === undefined) Reflect.deleteProperty(merged, key);

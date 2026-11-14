@@ -22,6 +22,7 @@ import { enforceWorkflowMutation } from "../core/policy/workflow-policy-store.js
 import { parseTags } from "../core/item/parse.js";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { canonicalDocument, serializeItemDocument } from "../core/item/item-format.js";
+import { pruneResolvedDeferredFields } from "../core/item/deferred-fields.js";
 import { getHistoryPath } from "../core/store/paths.js";
 import {
   removeFileIfExists,
@@ -595,6 +596,8 @@ export async function commitImportedItem(
   const { pmRoot, id, itemPath, author, message, settings, conflictWarningPrefix } = params;
   // The item and its history carry the format the record needs, exactly as create stamps it (GH-1671).
   const stamped = { ...params.document, metadata: { ...params.document.metadata } };
+  // An imported value resolves its deferral, as on every other write (GH-1713).
+  pruneResolvedDeferredFields(stamped.metadata);
   stampRequiredItemFormat(stamped.metadata, pmRoot);
   // Guards, the item file and its history all see the canonical form serialization persists (GH-1719).
   const document = canonicalDocument(stamped);

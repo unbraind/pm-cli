@@ -206,6 +206,14 @@ describe("mutation guard actor (GH-1719)", () => {
       expect(guardLog().at(-1)).toMatchObject({ operation: "import", dry_run: false, actor: { author: "agent-importer" }, tags: ["mirrored"] });
       expect(guardLog().at(-1)?.changed_fields).toEqual(expect.arrayContaining(["body", "tags", "title"]));
       await expect(client.get("pm-allowed-import")).resolves.toMatchObject({ item: { tags: ["mirrored"] } });
+      // An imported value resolves that field's deferral before guards and persistence (GH-1713).
+      const resolvedImport = { ...importDocument("pm-resolved-import", "Resolved import"), body: "", metadata: { ...importDocument("pm-resolved-import", "Resolved import").metadata, deadline: "2026-12-31T00:00:00.000Z", deferred_fields: [{ field: "deadline", reason: "Imported" }, { field: "assignee", reason: "Imported" }] } };
+      await expect(runWithActiveExtensions({ path: context.pmPath }, () => commitImportedItem({
+        pmRoot: context.pmPath, id: "pm-resolved-import", itemPath: getItemPath(context.pmPath, "Task", "pm-resolved-import", "toon"),
+        document: resolvedImport as never, author: "agent-importer", message: "Import", settings, conflictWarningPrefix: "gh1719_import_lock_conflict",
+      }))).resolves.toMatchObject({ committed: true });
+      expect(guardLog().at(-1)?.changed_fields).not.toContain("body");
+      await expect(client.get("pm-resolved-import")).resolves.toMatchObject({ item: { deferred_fields: [{ field: "assignee", reason: "Imported" }], pm_format_version: 4 } });
       // A guard denial is a refusal, never a skippable lock-conflict warning.
       await expect(importOne("pm-forbidden-import", "Forbidden import")).rejects.toMatchObject({
         code: "forbidden_by_actor_policy",

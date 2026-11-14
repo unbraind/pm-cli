@@ -704,11 +704,11 @@ function closeValidationDeferredFieldsError(
   metadata: ItemMetadata,
   deferred: readonly ItemDeferredField[],
   commandScope: readonly string[],
-  author: string | undefined,
+  options: Pick<CloseCommandOptions, "author" | "force">,
 ): PmCliError {
   const flags = deferred.map((entry) => deferrableItemFieldByKey(entry.field)!.flag);
-  // The update runs as the identity the close ran as, so strict ownership does not refuse it.
-  const identity = author === undefined || author.trim().length === 0 ? [] : [`--author=${author}`];
+  // The update runs as the identity, and with the ownership override, the close ran with.
+  const identity = [...(options.author?.trim() ? [`--author=${options.author}`] : []), ...(options.force === true ? ["--force"] : [])];
   const updateTokens = [...commandScope, "update", metadata.id, ...identity, ...flags.flatMap((flag) => [flag, "<value>"])];
   return new PmCliError(
     `Cannot close item ${metadata.id}: deferred fields still have no value (${deferred.map((entry) => entry.field).join(", ")}). Supply them or use --validate-close warn.`,
@@ -733,7 +733,7 @@ function collectDeferredFieldCloseWarnings(
 ): string[] {
   const deferred = outstandingDeferredFields(metadata);
   if (deferred.length === 0) return [];
-  if (validateCloseMode === "strict") throw closeValidationDeferredFieldsError(metadata, deferred, context.commandScope, context.options.author);
+  if (validateCloseMode === "strict") throw closeValidationDeferredFieldsError(metadata, deferred, context.commandScope, context.options);
   return [`close_validation_deferred_fields:${metadata.id}:${deferred.map((entry) => entry.field).join(",")}`];
 }
 
