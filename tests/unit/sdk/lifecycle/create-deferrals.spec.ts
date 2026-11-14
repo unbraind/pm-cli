@@ -27,8 +27,10 @@ import { runHealth } from "../../../../src/sdk/governance/health.js";
 import { readHistoryEntries } from "../../../../src/core/history/read.js";
 import { readSettings } from "../../../../src/core/store/settings.js";
 import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
-import type { ItemDocument, ItemMetadata } from "../../../../src/types/index.js";
-import { mergeItemDocuments } from "../../../../src/sdk/merge/three-way.js";
+import type { HistoryEntry, ItemDocument, ItemMetadata } from "../../../../src/types/index.js";
+import { createHistoryEntry } from "../../../../src/core/history/history.js";
+import { historyEntriesToRaw, reanchorHistoryEntries, verifyHistoryChain } from "../../../../src/core/history/replay.js";
+import { mergeHistoryStreams, mergeItemDocuments } from "../../../../src/sdk/merge/three-way.js";
 import { parseItemDocument, serializeItemDocument } from "../../../../src/core/item/item-format.js";
 
 const STRICT_LINKS = {
@@ -401,6 +403,30 @@ describe("strict create deferrals (GH-1713)", () => {
     ] } as never);
     expect(itemDocumentToMutationOptions(document, "create", { shared: "T-1" }, updateKeyed.definitions)).toMatchObject({ defer: ["acceptance_criteria", "deadline"] });
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ due: "2026-12-31" }, { title: "x", defer: ["deadline"] } as never, scoped)).toMatchObject({ due: "2026-12-31" });
+  });
+
+  it.each([[false, 2, 3], [true, 2, 3], [false, 3, 2], [true, 3, 2]])("never merges a history stream into neither the deadline nor its deferral (reverse: %s, restore minute %i, move minute %i)", (reverse, restoreMinute, moveMinute) => {
+    const created = { metadata: { id: "pm-history", title: "Mirrored", description: "", type: "Issue", status: "open", priority: 2, tags: [],
+      created_at: "2026-11-14T00:00:00.000Z", updated_at: "2026-11-14T00:00:00.000Z", pm_format_version: 4,
+      deferred_fields: [{ field: "deadline", reason: "Imported" }] }, body: "" } as unknown as ItemDocument;
+    const resolved = structuredClone(created);
+    resolved.metadata.deadline = "2026-12-31T00:00:00.000Z";
+    delete resolved.metadata.deferred_fields;
+    const event = (before: ItemDocument, after: ItemDocument, op: string, minute: number) =>
+      createHistoryEntry({ before, after, op, author: op, nowIso: `2026-11-14T00:0${minute}:00.000Z` });
+    const seed = event({ metadata: {} as ItemDocument["metadata"], body: "" }, created, "create", 0);
+    const resolve = event(created, resolved, "update", 1);
+    // One branch restores the deferred revision, the other moves the deadline.
+    const restoring = [seed, resolve, event(resolved, created, "restore", restoreMinute)];
+    const moved = structuredClone(resolved);
+    moved.metadata.deadline = "2027-01-31T00:00:00.000Z";
+    const moving = [seed, resolve, event(resolved, moved, "update", moveMinute)];
+    const result = mergeHistoryStreams(historyEntriesToRaw([seed, resolve]), historyEntriesToRaw(reverse ? moving : restoring), historyEntriesToRaw(reverse ? restoring : moving));
+    const entries = result.merged.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+    expect(verifyHistoryChain(entries).ok).toBe(true);
+    const final = reanchorHistoryEntries(entries).finalDocument.metadata as ItemMetadata;
+    const deferred = (final.deferred_fields ?? []).some((entry) => entry.field === "deadline");
+    expect(hasConcreteItemFieldValue(final, "deadline") !== deferred).toBe(true);
   });
 
   it("lets a deferral override a template default exactly like an unset", () => {

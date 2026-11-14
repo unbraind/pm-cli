@@ -280,6 +280,7 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
       if (Object.hasOwn(merged.merged, field)) next.metadata[field] = merged.merged[field];
       else delete next.metadata[field];
     }
+    rebaseReplayDeferrals(next.metadata, prefix.metadata, oursState.metadata, theirsState.metadata);
     const canonical = toReplayDocument({ metadata: next.metadata as ItemMetadata, body: next.body });
     return jsonPatch.compare(current, canonical) as HistoryPatchOp[];
   };
@@ -1031,6 +1032,24 @@ function mergeItemMetadataRecords(
   }
   reconcileMergedDeferrals(accumulator.merged);
   return accumulator;
+}
+
+/**
+ * Rebase deferrals for one replayed history event (GH-1713). The replay's own
+ * scalars can differ from the whole-document scalar winners (a restore on one
+ * branch removes a value the other branch set), so the field-keyed union is
+ * reconciled against the rebased replay state, never the full-document merge.
+ */
+function rebaseReplayDeferrals(
+  replay: Record<string, unknown>,
+  base: Record<string, unknown>,
+  ours: Record<string, unknown>,
+  theirs: Record<string, unknown>,
+): void {
+  const union = unionDeferredFields(base.deferred_fields, ours.deferred_fields, theirs.deferred_fields);
+  replay.deferred_fields = union;
+  reconcileMergedDeferrals(replay);
+  if ((replay.deferred_fields as unknown[]).length === 0) delete replay.deferred_fields;
 }
 
 /** Drop merged deferrals whose field holds a concrete merged value, exactly as a write resolves them (GH-1713). */
