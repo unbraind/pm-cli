@@ -479,14 +479,57 @@ export async function runActiveOnWriteHooks(
   return runOnWriteHooks(hooks, context);
 }
 
+/**
+ * What a mutation site supplies to the transactional guards. The host resolves
+ * the guard-facing actor from `author`, the same value the mutation's history
+ * entry records, so no caller can hand a guard a different identity (GH-1719).
+ */
+export type BeforeMutationHookInput = Omit<BeforeMutationHookContext, "actor" | "dry_run"> & {
+  /** Author the mutation is attributed to in history. */
+  author: string;
+  /** True when the evaluation previews a write that persists nothing. */
+  dry_run?: boolean;
+};
+
+/** Guards a staged preview evaluates in place of the (extension-free) staged runtime's own hooks. */
+const previewMutationGuards = new AsyncLocalStorage<ExtensionHookRegistry>();
+
+/**
+ * Run a staged preview with the caller's transactional mutation guards active
+ * as dry-run guards (GH-1719). A staged preview executes in an extension-free
+ * runtime, so without this no guard could judge it; inside `run`, only the
+ * guards of `hooks` are evaluated, each with `dry_run: true`, and every other
+ * hook kind stays suppressed.
+ */
+export function runWithPreviewMutationGuards<T>(
+  hooks: ExtensionHookRegistry | null,
+  run: () => Promise<T>,
+): Promise<T> {
+  if (!hooks || (hooks.beforeMutation?.length ?? 0) === 0) return run();
+  return previewMutationGuards.run(hooks, run);
+}
+
+/** Return the hook registry active for the current request, or null when none is active. */
+export function getActiveExtensionHooks(): ExtensionHookRegistry | null {
+  const state = runtimeState();
+  return state ? state.hooks : activeExtensionHooks;
+}
+
 /** Run active transactional mutation guards before any item or history write. */
 export async function runActiveBeforeMutationHooks(
-  context: BeforeMutationHookContext,
+  input: BeforeMutationHookInput,
 ): Promise<void> {
-  const state = runtimeState();
-  const hooks = state ? state.hooks : activeExtensionHooks;
+  const preview = previewMutationGuards.getStore();
+  const hooks = preview ?? getActiveExtensionHooks();
   if (!hooks) return;
-  await runBeforeMutationHooks(hooks, context);
+  // Loaded on first use, so entrypoints that never run a guard do not load author resolution.
+  const { resolveMutationActor } = await import("./mutation-actor.js");
+  const { author, dry_run: dryRun, ...context } = input;
+  await runBeforeMutationHooks(hooks, {
+    ...context,
+    actor: resolveMutationActor(author),
+    dry_run: preview !== undefined || dryRun === true,
+  });
 }
 
 /** Implements run active on read hooks for the public runtime surface of this module. */

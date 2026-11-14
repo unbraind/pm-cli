@@ -25,8 +25,10 @@ import {
 } from "./cli-contracts/commander-mutation-options.js";
 import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
-import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
+import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved, type RuntimeFieldRegistry } from "../core/schema/runtime-schema.js";
 import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS, resolveCoreUpsertMetadataKey } from "./lifecycle/core-item-fields.js";
+import { DEFERRABLE_ITEM_FIELDS } from "../core/item/deferred-fields.js";
+import { parseCreateUnsetTargets } from "./lifecycle/shared-unset-fields.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 
@@ -81,6 +83,12 @@ const READ_ONLY_ITEM_KEYS = new Set([
   "collection_counts",
   "notes_count",
   "tests_count",
+  // pm-o74zyh: system-maintained metadata; the host derives each value, so a get -> update round trip carries it unchanged.
+  "pm_format_version",
+  "claim_principal",
+  "test_runs",
+  // GH-1713: writes resolve deferrals; a create document recreates them through its defer options instead.
+  "deferred_fields",
 ]);
 const UPDATE_READ_ONLY_ITEM_KEYS = new Set([
   ...READ_ONLY_ITEM_KEYS,
@@ -1334,6 +1342,44 @@ function appendItemDocumentEntry(
   ] = scalarItemOption(key, value);
 }
 
+/** The create-command view of the document's schema fields, in the shape the shared unset resolver reads. */
+function createFieldRegistry(runtimeFields: readonly RuntimeFieldDefinitionResolved[]): RuntimeFieldRegistry {
+  return { command_to_fields: new Map([["create", runtimeFields.filter((definition) => definition.commands.includes("create"))]]) } as unknown as RuntimeFieldRegistry;
+}
+
+/**
+ * Recreate a document's stored deferrals as create `defer` and `deferReason`
+ * options (GH-1713). A value or unset supplied explicitly overrides the
+ * deferral of that field, exactly as explicit options override any other
+ * document value. Each remaining field contributes only its own reason; when
+ * one has none, no reason is synthesized, so create refuses the deferral as it
+ * refuses a reasonless one on its own.
+ */
+function documentDeferralOptions(
+  value: unknown,
+  explicitKeys: ReadonlySet<string>,
+  explicitUnset: unknown,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): { defer?: string[]; deferReason?: string } {
+  const createFields = runtimeFields.filter((definition) => definition.commands.includes("create"));
+  const overridden = new Set<string>([
+    ...DEFERRABLE_ITEM_FIELDS.filter((entry) => explicitKeys.has(entry.option)).map((entry) => entry.field),
+    // An explicit create-scoped schema field that writes a deferrable metadata key overrides it the same way.
+    ...createFields.filter((definition) => explicitKeys.has(runtimeFieldOptionTarget(definition))).map((definition) => definition.metadata_key),
+    // Unsets name exactly what create's own parser resolves them to: core aliases first, then schema fields.
+    ...parseCreateUnsetTargets(Array.isArray(explicitUnset) ? explicitUnset.map(String) : [], createFieldRegistry(createFields)).metadataKeys,
+  ]);
+  const entries = (Array.isArray(value) ? value : [])
+    .filter(isPlainObject)
+    .filter((entry): entry is Record<string, unknown> & { field: string } => typeof entry.field === "string" && !overridden.has(entry.field));
+  if (entries.length === 0) return {};
+  const reasons = entries.map((entry) => (typeof entry.reason === "string" ? entry.reason.trim() : ""));
+  const defer = entries.map((entry) => entry.field);
+  // An explicit reason, in any spelling, is the caller's own and is never replaced by the document's.
+  if (explicitKeys.has("deferReason")) return { defer };
+  return reasons.every((reason) => reason.length > 0) ? { defer, deferReason: [...new Set(reasons)].join("; ") } : { defer };
+}
+
 /** Resolve explicit CLI aliases and schema fields to their logical option keys. */
 function explicitDocumentOptionKeys(explicitOptions: Record<string, unknown>, mode: "create" | "update", runtimeFields: readonly RuntimeFieldDefinitionResolved[]): Set<string> {
   const explicitKeys = new Set(Object.entries(explicitOptions).filter(([, value]) => value !== undefined).map(([key]) => key));
@@ -1341,7 +1387,8 @@ function explicitDocumentOptionKeys(explicitOptions: Record<string, unknown>, mo
   for (const { target, keys } of contracts) {
     if (keys.some((key) => explicitKeys.has(key))) explicitKeys.add(target);
   }
-  for (const definition of runtimeFields) {
+  // Only fields this command accepts can make one of its options explicit.
+  for (const definition of runtimeFields.filter((candidate) => candidate.commands.includes(mode))) {
     if (readRuntimeFieldOptionValue(explicitOptions, definition) !== undefined) explicitKeys.add(runtimeFieldOptionTarget(definition));
   }
   return explicitKeys;
@@ -1386,6 +1433,9 @@ export function itemDocumentToMutationOptions(
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
   const explicitKeys = explicitDocumentOptionKeys(explicitOptions, mode, runtimeFields);
   removeOverriddenDocumentOptions(documentOptions, mode, explicitKeys);
+  if (mode === "create" && !explicitKeys.has("defer")) {
+    Object.assign(documentOptions, documentDeferralOptions(item.deferred_fields, explicitKeys, explicitOptions.unset, runtimeFields));
+  }
   if (mode === "update") {
     const annotations = Object.fromEntries(
       (["comments", "notes", "learnings"] as const)

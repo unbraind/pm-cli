@@ -127,4 +127,4 @@ Search behavior (lexical `search.tuning` weights, hybrid `--semantic-weight`, qu
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). Made by [Stefan Preu](https://preu.at/).

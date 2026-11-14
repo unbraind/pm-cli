@@ -55,6 +55,7 @@ const ITEM_METADATA_KEY_ORDER_VALUES = [
   "author",
   "estimated_minutes",
   "acceptance_criteria",
+  "deferred_fields",
   "design",
   "external_ref",
   "definition_of_ready",

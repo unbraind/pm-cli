@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- GH-1713: strict create offers no auditable deferred value, so importers cannot create an item whose deadline, assignee or acceptance criteria are not known yet: Strict create refused every unknown deadline, assignee, acceptance criteria or estimate; the highest item format was 3; the list --fields refusal listed every field twice (bare and item.-prefixed) → A reasoned deferral satisfies strict create and is stored as deferred_fields at item format 4, which pm 2026.10.10 through 2026.11.14 refuses to read; strict close refuses outstanding deferrals; the merge driver union-merges deferred_fields; the list --fields refusal names each field once and states the item. alias. Migrate: Upgrade every reader, pinned SDK, CI host and Git merge driver before creating deferred items in a shared tracker; exhaustive consumers of item keys or close-validation codes add deferred_fields and close_validation_deferred_fields; parsers of the list --fields refusal domain accept bare names and the stated item. alias ([pm-gh1713](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1713.toon))
+- GH-1719: beforeMutation guards cannot see the acting author, so packages cannot write actor-aware policy or verify that a preview and its write share one identity: Guard contexts carried no actor or dry_run; runActiveBeforeMutationHooks took a prebuilt context; previews ran no guards and disclosed extension_mutation_guards_and_hooks; package imports and pm copy wrote without guards, and commitImportedItem turned every CONFLICT into a conflictWarning → Guard contexts carry a frozen actor {author, author_source, principal, agent?} and dry_run; runActiveBeforeMutationHooks takes author (and optional dry_run) and resolves the actor; previews evaluate guards as dry runs and disclose extension_write_hooks; imports (operation import) and copies are guarded, and only a held lock is a skippable import conflict. Migrate: Hosts that call runActiveBeforeMutationHooks pass author instead of building a context; consumers matching unresolved_commit_constraints read extension_write_hooks; guards with side effects check dry_run; importers treat a guard denial from commitImportedItem as a refusal, not a lock conflict ([pm-gh1719](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1719.toon))
+
+### Fixed
+
+- commitItemMutations cannot compensate a create that clears a collection: the explicit_unset suffix hides the apply marker, so a refused batch reports transaction_partial_mutation and keeps the create ([pm-chdp87](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-chdp87.toon))
+- The documented pm get --json to pm update --stdin-json round trip refuses system-maintained metadata: a claimed item's claim_principal and any format-bumped item's pm_format_version are rejected as core fields ([pm-o74zyh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-o74zyh.toon))
+
 ## 2026.11.14 - 2026-11-14
 
 ### Changed (SDK contract)

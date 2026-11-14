@@ -311,6 +311,8 @@ complete -c pm -n '__fish_seen_subcommand_from create' -s t -l title            
 complete -c pm -n '__fish_seen_subcommand_from create' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from create' -l create-mode             -d 'Create required-option policy mode' -r -a 'strict progressive'
+complete -c pm -n '__fish_seen_subcommand_from create' -l defer                   -d 'Defer a strict-required field as not known yet' -r -a 'deadline assignee acceptance-criteria estimate'
+complete -c pm -n '__fish_seen_subcommand_from create' -l defer-reason            -d 'Why the deferred values are not known yet' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l schedule-preset         -d 'Scheduling preset for Reminder/Meeting/Event' -r -a 'lightweight'
 complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status             -d 'Item status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'

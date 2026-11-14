@@ -519,3 +519,37 @@ export function resolveRuntimeUnsetFieldDefinition(
   }
   return undefined;
 }
+
+/** Create's own unset aliases, resolved before schema fields, so a core spelling always wins. */
+const CREATE_UNSET_ALIAS_MAP: Map<string, RuntimeUnsetFieldDefinition> = (() => {
+  const map = new Map<string, RuntimeUnsetFieldDefinition>();
+  for (const definition of CREATE_UNSET_FIELD_DEFINITIONS) {
+    for (const alias of definition.aliases) {
+      map.set(alias, { optionKey: definition.optionKey, metadataKey: definition.metadataKey });
+    }
+  }
+  return map;
+})();
+
+const CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS =
+  CREATE_UNSET_FIELD_DEFINITIONS.map((definition) => definition.canonical)
+    .sort((left, right) => left.localeCompare(right))
+    .join(", ");
+
+/**
+ * Parse create `--unset` tokens exactly as create resolves them: core aliases
+ * first, then schema fields, with whole-token expansion. Shared by create and
+ * the stdin-json document adapter, so both agree on what an unset names.
+ */
+export function parseCreateUnsetTargets(
+  raw: readonly string[] | undefined,
+  runtimeFieldRegistry?: RuntimeFieldRegistry,
+): { metadataKeys: Set<string>; optionKeys: Set<string> } {
+  return parseCommandUnsetTargets({
+    raw,
+    supportedFields: CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS,
+    resolveDefinition: (trimmed) =>
+      CREATE_UNSET_ALIAS_MAP.get(trimmed) ??
+      resolveRuntimeUnsetFieldDefinition(trimmed, "create", runtimeFieldRegistry),
+  });
+}

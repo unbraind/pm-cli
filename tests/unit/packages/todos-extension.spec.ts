@@ -154,6 +154,40 @@ describe("built-in todos extension import/export", () => {
     });
   });
 
+  it("keeps deferred strict fields and their format through a todos import (GH-1713)", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceFolder = path.join(context.tempRoot, "todos-deferral-source");
+      await mkdir(sourceFolder, { recursive: true });
+      await writeTodoMarkdown(
+        sourceFolder,
+        "pm-deferred.md",
+        {
+          id: "pm-deferred",
+          title: "Deferred todo import",
+          status: "open",
+          deferred_fields: [
+            { field: "deadline", reason: "Imported from GitHub" },
+            { field: "assignee", reason: "Imported from GitHub" },
+            { field: "priority", reason: "not deferrable" },
+            { field: "assignee", reason: "duplicate" },
+            { field: "estimated_minutes", reason: " " },
+          ],
+        },
+        "Deferred body.",
+      );
+      const imported = await runTodosImport({ folder: sourceFolder }, {});
+      expect(imported.ids).toEqual(["pm-deferred"]);
+      const result = context.runCli(["get", "pm-deferred", "--json"], { expectJson: true });
+      expect((result.json as { item: Record<string, unknown> }).item).toMatchObject({
+        pm_format_version: 4,
+        deferred_fields: [
+          { field: "assignee", reason: "duplicate" },
+          { field: "deadline", reason: "Imported from GitHub" },
+        ],
+      });
+    });
+  });
+
   it("imports confidence variants and drops invalid confidence values", async () => {
     await withTempPmPath(async (context) => {
       const sourceFolder = path.join(context.tempRoot, "todos-confidence-source");

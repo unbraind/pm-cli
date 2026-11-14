@@ -523,6 +523,36 @@ export interface ExtensionMutationGuardSdk {
   list(): Promise<ItemMetadata[]>;
 }
 
+/** Detected agent provenance a mutation records with its history entry, when an agent harness was resolved. */
+export interface MutationActorAgent {
+  /** Normalized harness namespace, for example `claude-code`. */
+  harness?: string;
+  /** Model identifier observed from a bounded runtime signal. */
+  model?: string;
+  /** Signal class that supplied `model`. */
+  model_source?: string;
+  /** Privacy-safe fingerprint of the current harness invocation. */
+  instance?: string;
+}
+
+/**
+ * The identity a mutation is performed as (GH-1719). The host resolves it from
+ * the same author and identity state that the mutation's history entry records,
+ * so a guard judges exactly the identity that will be written. It is never a
+ * placeholder: an unattributed mutation reports `author: "unknown"` with
+ * `author_source: "unknown"`.
+ */
+export interface MutationActor {
+  /** Author written to the mutation's history entry. */
+  author: string;
+  /** How the author was selected: asserted (explicit), configured, detected (harness) or unknown. */
+  author_source: "asserted" | "configured" | "detected" | "unknown";
+  /** Ownership principal compared with an item's `claim_principal` (or `assignee`) by the ownership check. */
+  principal: string;
+  /** Agent provenance recorded with the history entry; absent when no harness was resolved. */
+  agent?: MutationActorAgent;
+}
+
 /** Proposed item transition supplied before either the item or history artifact is persisted. */
 export interface BeforeMutationHookContext {
   /** Tracker root owning the transaction. */
@@ -535,6 +565,10 @@ export interface BeforeMutationHookContext {
   after: ItemDocument | null;
   /** Canonical fields the transaction proposes to change. */
   changed_fields: readonly string[];
+  /** Read-only identity the mutation is performed as; identical in a preview and the write it previews. */
+  actor: Readonly<MutationActor>;
+  /** True when the host evaluates the guard for a preview or dry run that persists nothing. */
+  dry_run: boolean;
   /** Host-bound read-only SDK services. */
   sdk: ExtensionMutationGuardSdk;
 }

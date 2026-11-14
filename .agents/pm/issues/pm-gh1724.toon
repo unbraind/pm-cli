@@ -1,0 +1,22 @@
+id: pm-gh1724
+title: "GH-1724: in_progress items with no owner stay counted as active work; health flags them only after the 72-hour idle window, and context and list cannot separate them"
+description: "GH-1724 (filed 2026-11-14). An item can stay in_progress with no assignee and no claim, and orientation keeps counting it as active work. Measured across 37 public pm package trackers on 2026.11.x: about 110 in_progress items, most with assignee and claim_principal null. Current state, verified on main: pm-w8q4 (closed) shipped a warn-only stale_in_progress_items:<n> health advisory for unassigned in_progress items idle longer than settings.mutation_guard.stale_in_progress_hours (default 72). The advisory never flips ok, and an item idle for less than 72 hours is never flagged. pm update --status in_progress warns once (in_progress_item_unclaimed). The remaining gaps from the issue: (1) health has no unowned in_progress signal independent of idleness; (2) pm context counts unowned or idle in_progress items under in_progress as active work, so orientation over-reports focus; (3) list offers no one-call filter (proposed --unowned and --idle <days>) for a sweep that returns them to open; (4) the advisory carries no structured remedy (pm update <id> --status open or pm claim <id>) in the shape other health findings use. Duplicate check: searched in_progress unowned idle health stale work; pm-w8q4 covers the idle advisory only."
+type: Issue
+status: open
+priority: 2
+tags[6]: agent-ux,context,"gh:1724",health,multi-agent,wip-hygiene
+created_at: "2026-11-14T05:44:47.936Z"
+updated_at: "2026-11-14T05:44:47.936Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "pm health reports in_progress_unowned (no assignee and no live claim) and in_progress_idle (no update within the configured window) as non-fatal advisories with counts, ids and a structured remedy; pm context reports unowned and idle in_progress items under their own counts instead of active work; pm list --status in_progress --unowned and --idle <days> select them in one call; existing stale_in_progress_items consumers keep working"
+parent: pm-dj98
+risk: medium
+confidence: high
+reporter: unbraind
+severity: medium
+expected_result: "Orientation separates owned, active work from unowned or idle in_progress items, and health names them with a remedy"
+actual_result: "Unowned in_progress items count as active work; health flags them only after 72 idle hours, without a structured remedy"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-w8q4,related,"2026-11-14T05:44:47.936Z","harness:claude-code","cli:create:dep",detected
+body: ""

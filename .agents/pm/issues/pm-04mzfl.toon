@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: compatibility,item-format,linked-tests,mixed-host,ux
 created_at: "2026-11-13T20:41:09.195Z"
-updated_at: "2026-11-13T20:41:09.195Z"
+updated_at: "2026-11-14T08:18:58.551Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Writing an item whose required format exceeds what the project's pinned or resolved pm can read returns a typed warning naming the pin, the minimum release that reads the format and the upgrade step, without blocking the write; A pin that cannot refuse the format is still refused before persistence; The minimum readable release per item format is declared data consumed by the guard, with a spec for formats 2 and 3"
@@ -17,6 +17,9 @@ severity: low
 expected_result: The writer learns at write time that the project's pinned pm cannot read the record it just wrote
 actual_result: The write succeeds silently and the pinned CI host later refuses the item
 component: storage
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1671,discovered_from,"2026-11-13T20:41:09.195Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1713,related,"2026-11-14T08:18:55.598Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-14T08:18:54.902Z","harness:claude-code","Scope extension (2026-11-14): pm-gh1713 adds item format 4 for deferred_fields, and the same gap applies. assertProjectRuntimeFormatGuard holds one minimum (2026.10.10) for every format above 1, so a project pinned to 2026.11.13 admits a deferred create that its pinned runtime then refuses to read. The pinned host fails safe (item_format_version_unsupported, bytes unchanged), but the writer learns only in CI. The declared minimum-readable release per format must cover formats 2, 3 and 4; 4 is first readable by the release that ships pm-gh1713."
 body: ""

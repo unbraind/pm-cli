@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2123,
+    "covered_symbols": 2127,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2124
+    "required_symbols": 2128
   },
   "breaking_acknowledgements": [
     {
@@ -3290,6 +3290,38 @@
       ],
       "package_version": "2026.11.13",
       "reason": "GH-1671/pm-v1mp64: additive optional LinkedTest.phase, TestRunResult.phase/setup_failure_cause, TestCommandOptions/TestAllCommandOptions.fullOutput; LinkedTestFailureCategory gains setup_failed (exhaustive Record consumers add one key); CURRENT_ITEM_FORMAT_VERSION 2->3 for setup entries; tool parameter schema 4.25.0->4.26.0 adds fullOutput"
+    },
+    {
+      "changes": [
+        "signature ./sdk:BeforeMutationHookContext",
+        "signature ./sdk:CURRENT_ITEM_FORMAT_VERSION",
+        "signature ./sdk:ItemMetadata",
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk:runActiveBeforeMutationHooks",
+        "signature ./sdk:RunRegisteredMutationGuardForTestOptions",
+        "signature ./sdk:TOOL_CREATE_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk/authoring:BeforeMutationHookContext",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:TOOL_CREATE_OPTION_CONTRACT_SOURCE",
+        "signature ./sdk/core:CURRENT_ITEM_FORMAT_VERSION",
+        "signature ./sdk/core:ItemMetadata",
+        "signature ./sdk/governance:ItemMetadata",
+        "signature ./sdk/graph:ItemMetadata",
+        "signature ./sdk/query:ItemMetadata",
+        "signature ./sdk/runtime:CURRENT_ITEM_FORMAT_VERSION",
+        "signature ./sdk/runtime:ItemMetadata",
+        "signature ./sdk/testing:RunRegisteredMutationGuardForTestOptions"
+      ],
+      "package_version": "2026.11.13",
+      "reason": "GH-1719 adds the required actor and dry_run fields to BeforeMutationHookContext (guards only read them; hosts that build contexts pass author to runActiveBeforeMutationHooks, which resolves the actor) and widens the test-harness guard context; GH-1713 adds optional deferred_fields to ItemMetadata, the defer/deferReason create options, MCP schema 4.27.0 and item format 4"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ITEM_UNION_COLLECTION_FIELDS",
+        "signature ./sdk/merge:ITEM_UNION_COLLECTION_FIELDS"
+      ],
+      "package_version": "2026.11.13",
+      "reason": "GH-1713 adds deferred_fields to ITEM_UNION_COLLECTION_FIELDS so branches resolving different deferrals union-merge instead of conflicting as one scalar"
     }
   ],
   "entrypoints": {
@@ -4938,13 +4970,19 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BeforeMutationHookContext",
-          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; sdk: ExtensionMutationGuardSdk; }"
+          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; actor: Readonly<MutationActor>; dry_run: boolean; sdk: ExtensionMutationGuardSdk; }"
         },
         {
           "classification": "supported",
           "kind": "type",
           "name": "BeforeMutationHookDecision",
           "signature": "export type BeforeMutationHookDecision = { allow: true; } | { allow: false; code: string; message?: string; remediation: string; };"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BeforeMutationHookInput",
+          "signature": "export type BeforeMutationHookInput = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\"> & { author: string; dry_run?: boolean; };"
         },
         {
           "classification": "supported",
@@ -7098,7 +7136,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
-          "signature": "3"
+          "signature": "4"
         },
         {
           "classification": "supported",
@@ -11550,7 +11588,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ITEM_UNION_COLLECTION_FIELDS",
-          "signature": "readonly [\"tags\", \"dependencies\", \"comments\", \"notes\", \"learnings\", \"files\", \"tests\", \"test_runs\", \"docs\", \"reminders\", \"events\"]"
+          "signature": "readonly [\"tags\", \"dependencies\", \"comments\", \"notes\", \"learnings\", \"files\", \"tests\", \"test_runs\", \"docs\", \"reminders\", \"events\", \"deferred_fields\"]"
         },
         {
           "classification": "advanced_export",
@@ -11563,6 +11601,12 @@
           "kind": "interface",
           "name": "ItemContextRelevanceCandidate",
           "signature": "export interface ItemContextRelevanceCandidate extends ContextRelevanceCandidate<ItemMetadata> { signals: ContextRelevanceSignals; signal_provenance: ContextSignalProvenance; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemDeferredField",
+          "signature": "export interface ItemDeferredField { field: string; reason: string; }"
         },
         {
           "classification": "supported",
@@ -11640,7 +11684,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; deferred_fields?: ItemDeferredField[]; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -12861,6 +12905,18 @@
           "signature": "export interface MutationActionContract { action: string; history_scope: MutationHistoryScope; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationActor",
+          "signature": "export interface MutationActor { author: string; author_source: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; principal: string; agent?: MutationActorAgent; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationActorAgent",
+          "signature": "export interface MutationActorAgent { harness?: string; model?: string; model_source?: string; instance?: string; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "MutationCheckpointItem",
@@ -12889,6 +12945,12 @@
           "kind": "interface",
           "name": "MutationGuardSettings",
           "signature": "export interface MutationGuardSettings { require_attributed_author: boolean; secret_guard: SecretGuardMode; stale_in_progress_hours: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "MutationGuardTestContext",
+          "signature": "export type MutationGuardTestContext = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\"> & { actor?: MutationActor; author?: string; dry_run?: boolean; };"
         },
         {
           "classification": "supported",
@@ -14964,7 +15026,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.26.0\""
+          "signature": "\"4.27.0\""
         },
         {
           "classification": "contract_data",
@@ -19728,7 +19790,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "runActiveBeforeMutationHooks",
-          "signature": "(context: BeforeMutationHookContext) => Promise<void> | calls: (context: BeforeMutationHookContext) => Promise<void>"
+          "signature": "(input: BeforeMutationHookInput) => Promise<void> | calls: (input: BeforeMutationHookInput) => Promise<void>"
         },
         {
           "classification": "advanced_export",
@@ -20298,7 +20360,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunRegisteredMutationGuardForTestOptions",
-          "signature": "export interface RunRegisteredMutationGuardForTestOptions { context: BeforeMutationHookContext; }"
+          "signature": "export interface RunRegisteredMutationGuardForTestOptions { context: MutationGuardTestContext; }"
         },
         {
           "classification": "supported",
@@ -22463,6 +22525,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "toImportDeferredFields",
+          "signature": "(value: unknown) => ItemDeferredField[] | undefined | calls: (value: unknown) => ItemDeferredField[] | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "toImportInteger",
           "signature": "(value: unknown) => number | undefined | calls: (value: unknown) => number | undefined"
         },
@@ -22614,7 +22682,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_CREATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"inheritFocus\"; readonly flag: \"--inherit-focus\"; readonly booleanish: true; }, { readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
+          "signature": "readonly [{ readonly param: \"inheritFocus\"; readonly flag: \"--inherit-focus\"; readonly booleanish: true; }, { readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"defer\"; readonly flag: \"--defer\"; readonly repeatable: true; }, { readonly param: \"deferReason\"; readonly flag: \"--defer-reason\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
         },
         {
           "classification": "contract_data",
@@ -24012,7 +24080,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BeforeMutationHookContext",
-          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; sdk: ExtensionMutationGuardSdk; }"
+          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; actor: Readonly<MutationActor>; dry_run: boolean; sdk: ExtensionMutationGuardSdk; }"
         },
         {
           "classification": "supported",
@@ -24835,6 +24903,18 @@
           "kind": "type",
           "name": "MigrationAuthoringDefinition",
           "signature": "export type MigrationAuthoringDefinition = Pick<SchemaMigrationDefinition, \"id\" | \"description\" | \"status\" | \"mandatory\" | \"run\">;"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationActor",
+          "signature": "export interface MutationActor { author: string; author_source: \"asserted\" | \"configured\" | \"detected\" | \"unknown\"; principal: string; agent?: MutationActorAgent; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationActorAgent",
+          "signature": "export interface MutationActorAgent { harness?: string; model?: string; model_source?: string; instance?: string; }"
         },
         {
           "classification": "supported",
@@ -26760,7 +26840,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.26.0\""
+          "signature": "\"4.27.0\""
         },
         {
           "classification": "contract_data",
@@ -27924,7 +28004,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "TOOL_CREATE_OPTION_CONTRACT_SOURCE",
-          "signature": "readonly [{ readonly param: \"inheritFocus\"; readonly flag: \"--inherit-focus\"; readonly booleanish: true; }, { readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
+          "signature": "readonly [{ readonly param: \"inheritFocus\"; readonly flag: \"--inherit-focus\"; readonly booleanish: true; }, { readonly param: \"id\"; readonly flag: \"--id\"; }, { readonly param: \"title\"; readonly flag: \"--title\"; }, { readonly param: \"description\"; readonly flag: \"--description\"; readonly allowEmpty: true; }, { readonly param: \"type\"; readonly flag: \"--type\"; }, { readonly param: \"template\"; readonly flag: \"--template\"; }, { readonly param: \"createMode\"; readonly flag: \"--create-mode\"; }, { readonly param: \"defer\"; readonly flag: \"--defer\"; readonly repeatable: true; }, { readonly param: \"deferReason\"; readonly flag: \"--defer-reason\"; }, { readonly param: \"schedulePreset\"; readonly flag: \"--schedule-preset\"; }, { readonly param: \"status\"; readonly flag: \"--status\"; }, { readonly param: \"closeReason\"; readonly flag: \"--close-reason\"; }, { readonly param: \"completedAt\"; readonly flag: \"--completed-at\"; }, { readonly param: \"priority\"; readonly flag: \"--priority\"; }, { readonly param: \"tags\"; readonly flag: \"--tags\"; readonly allowEmpty: true; }, { readonly param: \"addTags\"; readonly flag: \"--add-tags\"; readonly repeatable: true; }, { readonly param: \"body\"; readonly flag: \"--body\"; readonly allowEmpty: true; }, { readonly param: \"deadline\"; readonly flag: \"--deadline\"; }, { readonly param: \"estimate\"; readonly flag: \"--estimate\"; }, { readonly param: \"acceptanceCriteria\"; readonly flag: \"--acceptance-criteria\"; readonly allowEmpty: true; }, { readonly param: \"author\"; readonly flag: \"--author\"; }, { readonly param: \"message\"; readonly flag: \"--message\"; readonly allowEmpty: true; }, { readonly param: \"assignee\"; readonly flag: \"--assignee\"; }, { readonly param: \"allowMissingParent\"; readonly flag: \"--allow-missing-parent\"; }, { readonly param: \"allowUnresolvedDeps\"; readonly flag: \"--allow-unresolved-deps\"; }, { readonly param: \"allowDuplicate\"; readonly flag: \"--allow-duplicate\"; readonly booleanish: true; }, { readonly param: \"reminder\"; readonly flag: \"--reminder\"; readonly repeatable: true; }, { readonly param: \"event\"; readonly flag: \"--event\"; readonly repeatable: true; }, { readonly param: \"typeOption\"; readonly flag: \"--type-option\"; readonly repeatable: true; }, { readonly param: \"field\"; readonly flag: \"--field\"; readonly repeatable: true; }, { readonly param: \"dep\"; readonly flag: \"--dep\"; readonly repeatable: true; }, { readonly param: \"comment\"; readonly flag: \"--comment\"; readonly repeatable: true; }, { readonly param: \"note\"; readonly flag: \"--note\"; readonly repeatable: true; }, { readonly param: \"learning\"; readonly flag: \"--learning\"; readonly repeatable: true; }, { readonly param: \"linkedFile\"; readonly flag: \"--file\"; readonly repeatable: true; }, { readonly param: \"linkedTest\"; readonly flag: \"--test\"; readonly repeatable: true; }, { readonly param: \"doc\"; readonly flag: \"--doc\"; readonly repeatable: true; }, { readonly param: \"unset\"; readonly flag: \"--unset\"; readonly repeatable: true; }, { readonly param: \"clearDeps\"; readonly flag: \"--clear-deps\"; }, { readonly param: \"clearComments\"; readonly flag: \"--clear-comments\"; }, { readonly param: \"clearNotes\"; readonly flag: \"--clear-notes\"; }, { readonly param: \"clearLearnings\"; readonly flag: \"--clear-learnings\"; }, { readonly param: \"clearFiles\"; readonly flag: \"--clear-files\"; }, { readonly param: \"clearTests\"; readonly flag: \"--clear-tests\"; }, { readonly param: \"clearDocs\"; readonly flag: \"--clear-docs\"; }, { readonly param: \"clearReminders\"; readonly flag: \"--clear-reminders\"; }, { readonly param: \"clearEvents\"; readonly flag: \"--clear-events\"; }, { readonly param: \"clearTypeOptions\"; readonly flag: \"--clear-type-options\"; }]"
         },
         {
           "classification": "contract_data",
@@ -28506,7 +28586,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
-          "signature": "3"
+          "signature": "4"
         },
         {
           "classification": "supported",
@@ -28848,7 +28928,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; deferred_fields?: ItemDeferredField[]; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -30804,7 +30884,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; deferred_fields?: ItemDeferredField[]; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -32472,7 +32552,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; deferred_fields?: ItemDeferredField[]; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -33318,7 +33398,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "ITEM_UNION_COLLECTION_FIELDS",
-          "signature": "readonly [\"tags\", \"dependencies\", \"comments\", \"notes\", \"learnings\", \"files\", \"tests\", \"test_runs\", \"docs\", \"reminders\", \"events\"]"
+          "signature": "readonly [\"tags\", \"dependencies\", \"comments\", \"notes\", \"learnings\", \"files\", \"tests\", \"test_runs\", \"docs\", \"reminders\", \"events\", \"deferred_fields\"]"
         },
         {
           "classification": "supported",
@@ -34620,7 +34700,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; deferred_fields?: ItemDeferredField[]; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -36228,7 +36308,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "CURRENT_ITEM_FORMAT_VERSION",
-          "signature": "3"
+          "signature": "4"
         },
         {
           "classification": "advanced_export",
@@ -36873,6 +36953,12 @@
           "signature": "readonly [\"Epic\", \"Feature\", \"Task\", \"Chore\", \"Issue\", \"Decision\", \"Event\", \"Reminder\", \"Milestone\", \"Meeting\", \"Plan\"]"
         },
         {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemDeferredField",
+          "signature": "export interface ItemDeferredField { field: string; reason: string; }"
+        },
+        {
           "classification": "supported",
           "kind": "interface",
           "name": "ItemDocument",
@@ -36912,7 +36998,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ItemMetadata",
-          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
+          "signature": "export interface ItemMetadata { id: string; title: string; description: string; type: ItemType; pm_format_version?: number; source_type?: string; type_options?: Record<string, string>; status: ItemStatus; priority: 0 | 1 | 2 | 3 | 4; tags: string[]; created_at: string; updated_at: string; deadline?: string; reminders?: Reminder[]; events?: CalendarEvent[]; closed_at?: string; completed_at?: string; assignee?: string; claim_principal?: string; source_owner?: string; author?: string; estimated_minutes?: number; acceptance_criteria?: string; deferred_fields?: ItemDeferredField[]; design?: string; external_ref?: string; definition_of_ready?: string; order?: number; goal?: string; objective?: string; value?: string; impact?: string; outcome?: string; why_now?: string; parent?: string; reviewer?: string; risk?: RiskLevel; confidence?: ConfidenceValue; sprint?: string; release?: string; blocked_by?: string; blocked_reason?: string; unblock_note?: string; reporter?: string; severity?: IssueSeverity; environment?: string; repro_steps?: string; resolution?: string; expected_result?: string; actual_result?: string; affected_version?: string; fixed_version?: string; component?: string; regression?: boolean; customer_impact?: string; dependencies?: Dependency[]; comments?: Comment[]; notes?: LogNote[]; learnings?: LogNote[]; files?: LinkedFile[]; tests?: LinkedTest[]; test_runs?: ItemTestRunSummary[]; docs?: LinkedDoc[]; close_reason?: string; duplicate_of?: string; plan_mode?: PlanMode; plan_scope?: string; plan_harness?: PlanHarness; plan_steps?: PlanStep[]; plan_decisions?: PlanDecision[]; plan_discoveries?: PlanDiscovery[]; plan_validation?: PlanValidationCheck[]; plan_resume_context?: string; [key: string]: unknown; }"
         },
         {
           "classification": "supported",
@@ -38831,6 +38917,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "toImportDeferredFields",
+          "signature": "(value: unknown) => ItemDeferredField[] | undefined | calls: (value: unknown) => ItemDeferredField[] | undefined"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "toImportInteger",
           "signature": "(value: unknown) => number | undefined | calls: (value: unknown) => number | undefined"
         },
@@ -39580,6 +39672,12 @@
         },
         {
           "classification": "supported",
+          "kind": "type",
+          "name": "MutationGuardTestContext",
+          "signature": "export type MutationGuardTestContext = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\"> & { actor?: MutationActor; author?: string; dry_run?: boolean; };"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "PackageManifestExpectation",
           "signature": "export interface PackageManifestExpectation { packageName?: string; aliases?: readonly string[]; resources?: PackageManifestResourceExpectation; }"
@@ -39936,7 +40034,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "RunRegisteredMutationGuardForTestOptions",
-          "signature": "export interface RunRegisteredMutationGuardForTestOptions { context: BeforeMutationHookContext; }"
+          "signature": "export interface RunRegisteredMutationGuardForTestOptions { context: MutationGuardTestContext; }"
         },
         {
           "classification": "supported",
@@ -40081,6 +40179,7 @@
     "child_projection_item_bound_exceeded",
     "close_reason_required",
     "close_through_update",
+    "close_validation_deferred_fields",
     "close_validation_missing_fields",
     "collected_zero_items",
     "collection_transposed_subcommand",
@@ -40097,6 +40196,10 @@
     "context_signal_store_write_failed",
     "context_takes_no_item_argument",
     "core_item_field_requires_dedicated_flag",
+    "create_deferral_conflict",
+    "create_deferral_field_unsupported",
+    "create_deferral_fields_required",
+    "create_deferral_reason_required",
     "create_positional_type_without_title",
     "dependency_cardinality_created",
     "dependency_edge_not_allowed",
@@ -40523,10 +40626,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1331,
+      "checked_functions": 1332,
       "checked_values": 396,
       "exempt_test_seams": 15,
-      "referenced_types": 1040
+      "referenced_types": 1041
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -40571,10 +40674,10 @@
       "referenced_types": 112
     },
     "./sdk/runtime": {
-      "checked_functions": 234,
+      "checked_functions": 235,
       "checked_values": 34,
       "exempt_test_seams": 0,
-      "referenced_types": 223
+      "referenced_types": 224
     },
     "./sdk/testing": {
       "checked_functions": 46,

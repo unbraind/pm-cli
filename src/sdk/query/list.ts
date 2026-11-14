@@ -90,7 +90,7 @@ import {
 import {
   BRIEF_LIST_FIELDS,
   DEFAULT_COMPACT_LIST_FIELDS,
-  listListProjectionFields,
+  listCanonicalListProjectionFields,
   type ListCommandName,
   type ListProjectionMode,
 } from "./projection-contracts.js";
@@ -951,10 +951,8 @@ function validateListProjectionFields(
   if (projection.mode !== "fields") {
     return;
   }
-  const allowedValues = listListProjectionFields(runtimeMetadataKeys);
-  const allowed = new Set(
-    allowedValues.map((field) => normalizeProjectionField(field)),
-  );
+  const allowedValues = listCanonicalListProjectionFields(runtimeMetadataKeys);
+  const allowed = new Set(allowedValues);
   const unknown = projection.fields.filter(
     (field) => !allowed.has(normalizeProjectionField(field)),
   );
@@ -969,6 +967,7 @@ function validateListProjectionFields(
       EXIT_CODE.USAGE,
       {
         code: "unknown_field_projection",
+        required: "Choose fields from recovery.allowed_values; each field also accepts an item. prefix.",
         examples: [
           "pm list --status open --fields id,title,status",
           "pm list --fields id,title,parent,priority --limit 10",

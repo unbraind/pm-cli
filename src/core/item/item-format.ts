@@ -53,6 +53,7 @@ import {
   normalizeItemFormatVersion,
 } from "./item-format-version.js";
 import { normalizeStatusInput } from "./status.js";
+import { describeInvalidDeferredFields, normalizeDeferredFields } from "./deferred-fields.js";
 import { decodeToonItemContent } from "./toon-decode.js";
 import { EXIT_CODE, ITEM_METADATA_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
@@ -779,6 +780,8 @@ function assertValidItemMetadata(
   assertOptionalTimestampString(record, "completed_at", "completed_at");
   assertOptionalStringFields(record);
   assertTypeOptionsField(record);
+  const invalidDeferral = describeInvalidDeferredFields(record.deferred_fields);
+  assertItemMetadataCondition(invalidDeferral === undefined, invalidDeferral ?? "");
   coerceRuntimeItemMetadataFields(record, itemType, runtimeContext);
   assertRuntimeUnknownItemMetadataFields(record, runtimeContext);
 }
@@ -1770,6 +1773,7 @@ export function normalizeItemMetadata(
     author: emptyStringToUndefined(itemMetadata.author),
     estimated_minutes: itemMetadata.estimated_minutes,
     acceptance_criteria: itemMetadata.acceptance_criteria ?? undefined,
+    deferred_fields: normalizeDeferredFields(itemMetadata.deferred_fields),
     design: itemMetadata.design ?? undefined,
     external_ref: itemMetadata.external_ref ?? undefined,
     definition_of_ready: trimStringOrUndefined(

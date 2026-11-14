@@ -218,6 +218,12 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/telemetry/observability.ts"],
   },
   {
+    code: "close_validation_deferred_fields",
+    exit_code: 2,
+    sources: ["sdk/lifecycle/close.ts"],
+    emitting_commands: ["close"],
+  },
+  {
     code: "close_validation_missing_fields",
     exit_code: 2,
     stable: true,
@@ -308,6 +314,30 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 2,
     stable: true,
     sources: ["core/extensions/item-fields.ts"],
+  },
+  {
+    code: "create_deferral_conflict",
+    exit_code: 2,
+    sources: ["sdk/lifecycle/create-deferrals.ts"],
+    emitting_commands: ["create"],
+  },
+  {
+    code: "create_deferral_field_unsupported",
+    exit_code: 2,
+    sources: ["sdk/lifecycle/create-deferrals.ts"],
+    emitting_commands: ["create"],
+  },
+  {
+    code: "create_deferral_fields_required",
+    exit_code: 2,
+    sources: ["sdk/lifecycle/create-deferrals.ts"],
+    emitting_commands: ["create"],
+  },
+  {
+    code: "create_deferral_reason_required",
+    exit_code: 2,
+    sources: ["sdk/lifecycle/create-deferrals.ts"],
+    emitting_commands: ["create"],
   },
   {
     code: "create_positional_type_without_title",
@@ -1342,15 +1372,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "merge_receipt_evidence_invalid",
     exit_code: 4,
     sources: ["core/diagnostics/remediation.ts", "sdk/merge/reconcile.ts"],
-  },
-  {
-    code: "merge_receipt_history_reference_missing",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
-    code: "merge_receipt_not_portable",
-    exit_code: 4,
-    sources: ["sdk/merge/receipts.ts"],
   },
 ];

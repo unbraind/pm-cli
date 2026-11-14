@@ -145,6 +145,7 @@ import {
   type HistoryMergeReceiptReference,
 } from "./merge-receipt-history.js";
 import { runHistoryRepair } from "../history-repair.js";
+import { summarizeDeferredFieldCuration, type DeferredFieldCuration } from "./validate-deferred-fields.js";
 import { resolveWorkspaceRelationshipKindRegistry } from "../graph/assembly.js";
 import {
   analyzeHierarchyIntegrity,
@@ -604,6 +605,12 @@ function shouldReportHistoryDirectoryUnreadable(error: unknown): boolean {
   );
 }
 
+/** Informational `curation.deferred_fields` summary for the integrity details, or nothing when no item defers a field. */
+function withDeferredFieldCuration(items: ReadonlyArray<ItemMetadata | ItemWithBody>): { curation?: { deferred_fields: DeferredFieldCuration["details"] } } {
+  const curation = summarizeDeferredFieldCuration(items, false);
+  return curation === undefined ? {} : { curation: { deferred_fields: curation.details } };
+}
+
 interface ItemIntegrityScan {
   paths: string[];
   unreadable: string[];
@@ -919,6 +926,8 @@ async function buildIntegrityCheck(
         item_parse_failures: itemScan.parseFailures,
         item_outdated_format_version: formatVersionScan.outdated,
         item_ahead_format_version: formatVersionScan.ahead,
+        // Curation work, not an integrity fault: deferred fields never turn health red (GH-1713).
+        ...withDeferredFieldCuration(items),
         hierarchy_integrity: {
           ...hierarchyIntegrity,
           relations: summarizeRecordList(

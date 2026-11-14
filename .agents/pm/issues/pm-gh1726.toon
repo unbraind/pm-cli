@@ -1,0 +1,23 @@
+id: pm-gh1726
+title: "GH-1726: a strict boolean extension flag accepts an empty array from direct callers (PmClient.run, the test harness), while {} and 1 are refused"
+description: "GH-1726 (filed 2026-11-14). A flag declared value_type boolean with value_validation strict accepts an empty array from direct callers: PmClient.run and the extension test harness's runCommand. The handler receives options.enabled === [] (typeof object) with no warning, while {}, 'bogus' and 1 are refused before dispatch with extension_flag_value_invalid (exit 2). A handler that trusts the host's strict validation, which 2026.11.8+ encourages because the host owns option spelling and value checks, can therefore read a truthy object where it expects true or false. Likely cause from the issue: the empty array is taken as 'no repeated values' and validation is skipped. Expected: a non-repeatable flag never accepts an array; a repeatable boolean flag validates each element and refuses an empty array where at least one value is required. The issue also asks that the changelog name the direct-caller string coercion ('true' -> true) for strict booleans, which broke several fleet test suites between 2026.11.7 and 2026.11.9. Duplicate check: searched strict boolean extension flag empty array direct caller; no open item."
+type: Issue
+status: open
+priority: 2
+tags[5]: extensions,flags,"gh:1726",sdk,validation
+created_at: "2026-11-14T09:00:39.423Z"
+updated_at: "2026-11-14T09:00:53.982Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A strict boolean flag refuses [] from PmClient.run and the test harness with extension_flag_value_invalid, exit 2, before dispatch; A non-repeatable flag refuses any array and a repeatable boolean flag validates every element; Specs cover [], {}, 1, 'bogus' and 'true' for both direct callers and the CLI"
+parent: pm-ugqx
+risk: low
+confidence: high
+reporter: unbraind
+severity: medium
+expected_result: "An empty array is refused like {} and 1"
+actual_result: "The handler receives [] as the flag value"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-4of199,related,"2026-11-14T09:00:50.576Z","harness:claude-code","cli:update:dep",detected
+  pm-gh1665,related,"2026-11-14T09:00:50.576Z","harness:claude-code","cli:update:dep",detected
+body: ""

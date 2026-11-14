@@ -27,7 +27,7 @@ describe("whole-document item merge conformance", () => {
   it("pins collection and freshness classes so new policies require conformance cases", () => {
     expect(ITEM_UNION_COLLECTION_FIELDS).toEqual([
       "tags", "dependencies", "comments", "notes", "learnings", "files", "tests",
-      "test_runs", "docs", "reminders", "events",
+      "test_runs", "docs", "reminders", "events", "deferred_fields",
     ]);
     expect(ITEM_LATEST_TIMESTAMP_FIELDS).toEqual(["updated_at"]);
   });

@@ -1,0 +1,22 @@
+id: pm-wb6ktl
+title: "A beforeMutation guard that denies close also denies the transaction's own create compensation, so a refused batch fails with compensation failed and keeps its earlier creates"
+description: "Found while implementing pm-gh1719 (2026-11-14). commitItemMutations compensates an applied create step (createCompensation close, the default) by calling close() on the created item with force and the compensation marker. That close goes through mutateItem, so every beforeMutation guard judges it as an ordinary close. A guard whose policy denies close (for example a claimant-only or approval policy) therefore also denies the rollback: when a later step of the batch is refused, commitWorkspaceTransaction raises AggregateError 'Workspace transaction failed and compensation failed', and the items the batch created stay open in the tracker. The same happens with createCompensation delete and a guard that denies delete, and with update-step compensation (restore) and a guard that denies restore. Since GH-1719, previewItemMutations evaluates the guards as dry runs, so a preview now predicts this failure faithfully. Reproduction: register a guard returning allow false for operation close, then commit [create A, update A (denied by a second rule)]: the update refusal triggers the create compensation, which the close rule refuses. Proposal: tell the guard that a write is a transaction compensation (for example a compensation block on the context carrying the transaction id and step id) and exempt compensation writes the journal proves it owns from denial, or let a guard opt in to judging them; never let a guard wedge a transaction half-applied. Duplicate check: searched compensation guard denies close transaction partial; pm-gh1656 covers transaction-owned finalization steps, not guard-judged compensation."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:sdk",extensions,hooks,transactions
+created_at: "2026-11-14T04:31:05.107Z"
+updated_at: "2026-11-14T04:31:05.107Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "A guard that denies close, delete or restore cannot turn a refused batch into a compensation failure: the batch rolls back cleanly and reports the original refusal; The guard can tell a compensation write from an ordinary mutation through a documented context field; A spec reproduces the AggregateError today and passes after the change, with a negative control for an unowned write"
+parent: pm-9rgaal
+risk: medium
+confidence: high
+severity: medium
+expected_result: A guard denial mid-batch rolls back the batch's own creates and reports the denial
+actual_result: "The guard also denies the compensation close, so the batch fails with compensation failed and its creates remain"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1656,related,"2026-11-14T04:31:05.107Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1719,discovered_from,"2026-11-14T04:31:05.107Z","harness:claude-code","cli:create:dep",detected
+body: ""

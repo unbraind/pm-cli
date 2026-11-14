@@ -62,6 +62,8 @@ const LIFECYCLE_EMITTING_COMMAND_BY_MODULE = new Map([
   ["start-blockers", "update"],
   // pm-4yxzvd: update's dependency-removal helpers emit refusals for the update command.
   ["dependency-removal", "update"],
+  // pm-gh1713: create's deferral parser emits its refusals for the create command.
+  ["create-deferrals", "create"],
 ]);
 
 const GENERATED_CATALOG_PART_COUNT = 2;
