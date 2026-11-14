@@ -429,6 +429,29 @@ describe("strict create deferrals (GH-1713)", () => {
     expect(hasConcreteItemFieldValue(final, "deadline") !== deferred).toBe(true);
   });
 
+  it.each([false, true])("keeps a deferral that a branch restores while the other resolves it from a deferred prefix (reverse: %s)", (reverse) => {
+    const created = { metadata: { id: "pm-prefix", title: "Mirrored", description: "", type: "Issue", status: "open", priority: 2, tags: [],
+      created_at: "2026-11-14T00:00:00.000Z", updated_at: "2026-11-14T00:00:00.000Z", pm_format_version: 4,
+      deferred_fields: [{ field: "deadline", reason: "Imported" }] }, body: "" } as unknown as ItemDocument;
+    const resolvedA = structuredClone(created);
+    resolvedA.metadata.deadline = "2026-12-31T00:00:00.000Z";
+    delete resolvedA.metadata.deferred_fields;
+    const resolvedB = structuredClone(created);
+    resolvedB.metadata.deadline = "2027-03-31T00:00:00.000Z";
+    delete resolvedB.metadata.deferred_fields;
+    const event = (before: ItemDocument, after: ItemDocument, op: string, minute: number) =>
+      createHistoryEntry({ before, after, op, author: op, nowIso: `2026-11-14T00:0${minute}:00.000Z` });
+    const seed = event({ metadata: {} as ItemDocument["metadata"], body: "" }, created, "create", 0);
+    const branchA = [seed, event(created, resolvedA, "update", 1)];
+    const branchB = [seed, event(created, resolvedB, "update", 2), event(resolvedB, created, "restore", 3)];
+    const result = mergeHistoryStreams(historyEntriesToRaw([seed]), historyEntriesToRaw(reverse ? branchB : branchA), historyEntriesToRaw(reverse ? branchA : branchB));
+    const entries = result.merged.trim().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+    expect(verifyHistoryChain(entries).ok).toBe(true);
+    const final = reanchorHistoryEntries(entries).finalDocument.metadata as ItemMetadata;
+    const deferred = (final.deferred_fields ?? []).some((entry) => entry.field === "deadline");
+    expect(hasConcreteItemFieldValue(final, "deadline") !== deferred).toBe(true);
+  });
+
   it("lets a deferral override a template default exactly like an unset", () => {
     const template = { deadline: "2026-12-31", assignee: "template-owner", estimatedMinutes: "10" };
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate(template, { title: "x", defer: ["deadline", "bogus"] } as never)).not.toHaveProperty("deadline");

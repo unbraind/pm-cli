@@ -887,9 +887,12 @@ function mergeUnionFieldValue(field: string, base: unknown, ours: unknown, their
 
 /**
  * Merge deferral entries by their field (GH-1713), so the result never lists a
- * field twice. Presence merges like a set and a deletion (a resolved deferral)
- * wins. When both sides changed one field's reason differently, the stable
- * value order picks one, so every merge order yields the same document.
+ * field twice. A deferral exists exactly while its field has no value, so an
+ * entry on either side is kept and the caller's reconciliation against the
+ * merged values (reconcileMergedDeferrals) decides: a value resolves it, while
+ * a branch that removed the value (a restore) keeps it. When both sides changed
+ * one field's reason differently, the stable value order picks one, so every
+ * merge order yields the same document.
  */
 function unionDeferredFields(base: unknown, ours: unknown, theirs: unknown): unknown[] {
   const byField = (value: unknown): Map<string, unknown> =>
@@ -899,8 +902,8 @@ function unionDeferredFields(base: unknown, ours: unknown, theirs: unknown): unk
   for (const field of [...new Set([...oursEntries.keys(), ...theirsEntries.keys()])].sort()) {
     const [baseEntry, oursEntry, theirsEntry] = [baseEntries.get(field), oursEntries.get(field), theirsEntries.get(field)];
     if (oursEntry === undefined || theirsEntry === undefined) {
-      // Present on one side only: an addition survives, a deletion by the other side wins.
-      if (baseEntry === undefined) merged.push(oursEntry ?? theirsEntry);
+      // Present on one side only: kept until a merged value resolves it.
+      merged.push(oursEntry ?? theirsEntry);
       continue;
     }
     const outcome = mergeScalarThreeWay(baseEntry, oursEntry, theirsEntry, "ours");
