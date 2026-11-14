@@ -88,7 +88,6 @@ import {
   runPreflightOverride,
   runRendererOverride,
   runServiceOverride,
-  runServiceOverrideSync,
 } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import {
@@ -144,11 +143,15 @@ import {
   normalizeDirectExtensionCommandOptions,
 } from "./extension/command-options.js";
 import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
-import { assertExtensionReadOutputResult } from "./read-output/extension.js";
-import { resolveReadOutputEncoding } from "./read-output-contracts.js";
-import { isHostOutputSuppressed } from "../core/output/output-control.js";
-import { projectPrintedResult, resolveDefaultOutputFormat } from "../core/output/output.js";
-import { resolvePortableWorkspaceContext } from "../core/extensions/index.js";
+import { formatOutput, projectPrintedResult } from "../core/output/output.js";
+import {
+  resolvePortableWorkspaceContext,
+  runWithIsolatedExtensionRuntime,
+  setActiveCommandContext,
+  setActiveExtensionCommands,
+  setActiveExtensionRegistrations,
+  setActiveExtensionServices,
+} from "../core/extensions/index.js";
 import { PmClient } from "./runtime.js";
 
 /** Host-pinned TOON codecs for semantic package-output assertions without deep imports. */
@@ -257,81 +260,46 @@ function readActivatedServices(commands: ExtensionCommandRegistry): ExtensionSer
   return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_SERVICES]?: ExtensionServiceRegistry })[ACTIVATED_COMMAND_SERVICES];
 }
 
-/** Global output controls native formatting merges over command options before it resolves the encoding. */
-const HARNESS_GLOBAL_OUTPUT_CONTROLS = ["outputInclude", "outputLimit", "outputBudget", "outputFormat", "outputSession", "outputCursor", "outputRowContract"] as const;
-
-/**
- * The result native output admits after an `output_format` service ran: a
- * structured replacement is admitted in place of the result, while a string
- * rendering (or a declined service) leaves the result itself to be admitted.
- */
-function resolveServiceAdmittedResult(
-  services: ExtensionServiceRegistry | undefined,
-  context: CommandHandlerContext,
-  result: unknown,
-): unknown {
-  if (services === undefined) return result;
-  // An explicit output encoding (a command option, or a global output control, which wins as in native
-  // formatEffectiveOutput) beats the harness's JSON default.
-  const global = (context.global ?? {}) as Record<string, unknown>;
-  const controls = Object.fromEntries(HARNESS_GLOBAL_OUTPUT_CONTROLS.filter((key) => global[key] !== undefined).map((key) => [key, global[key]]));
-  const commandOptions = { ...context.options, ...controls };
-  const format = resolveReadOutputEncoding(context.command, commandOptions) ?? resolveDefaultOutputFormat(global);
-  // The payload mirrors native resolveOutputService: merged command options carry resolvedOutputFormat.
-  const resolvedCommandOptions = { ...commandOptions, resolvedOutputFormat: format };
-  const outputOptions = { ...global, command: context.command, commandArgs: [...context.args], pmRoot: context.pm_root, commandOptions: resolvedCommandOptions };
-  const service = runServiceOverrideSync(services, {
-    service: "output_format",
-    command: context.command,
-    args: [...context.args],
-    options: { ...context.options },
-    global: context.global,
-    pm_root: context.pm_root,
-    source_workspace_root: context.source_workspace_root,
-    repo_root: context.repo_root,
-    pm_root_rel: context.pm_root_rel,
-    payload: {
-      command: context.command,
-      args: [...context.args],
-      command_options: resolvedCommandOptions,
-      global: { ...outputOptions },
-      pm_root: context.pm_root,
-      format,
-      options: { ...outputOptions },
-      result,
-    },
-  });
-  return service.handled && typeof service.result !== "string" ? service.result : result;
-}
-
 /** The activation registrations the harness reads: declared flags, and command declarations such as `read_output`. */
 type ActivatedCommandRegistrations = Pick<ExtensionActivationResult["registrations"], "flags" | "commands">;
 
 /**
- * Admit a handled result the way the native CLI does before projection or
- * custom formatting (pm-gh1729): a command that declares `read_output` must
- * deliver its declared row collections. Native output applies a registered
- * command-result override first, skips a result that suppresses host output,
- * and admits a structured `output_format` replacement in place of the result,
- * so admission judges the same effective result; the harness still returns
- * the handler's own outcome. The last registration of a command path
- * wins, as in the host.
+ * Admit a handled read-output result through the native output pipeline
+ * itself (pm-gh1729): inside an isolated extension runtime holding the
+ * activation's commands, services and registrations, the harness sets the
+ * command context the CLI sets and calls native `formatOutput` on the
+ * `printResult` projection, exactly as CLI dispatch does after the handler.
+ * Mutation-receipt projection, command-result overrides, suppressed host
+ * output, `output_format` services, encoding resolution and the declared-row
+ * admission therefore match native output by construction, and a refusal
+ * (`extension_read_output_invalid`) propagates as it would natively. Commands
+ * without `read_output` are not formatted. The harness still returns the
+ * handler's own outcome; the last registration of a command path wins.
  */
-function admitRegisteredReadOutputResult(
+async function admitRegisteredReadOutputResult(
   registrations: ActivatedCommandRegistrations | undefined,
   commands: ExtensionCommandRegistry,
   context: CommandHandlerContext,
   outcome: CommandHandlerResult,
-): CommandHandlerResult {
+): Promise<CommandHandlerResult> {
   if (registrations === undefined || !outcome.handled) return outcome;
   const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
   if (readOutput === undefined) return outcome;
-  // Native printResult projects mutation receipts (--id-only, changed fields) before overrides run.
-  const projected = projectPrintedResult(outcome.result, context.global ?? {});
-  const effective = runCommandOverride(commands, { ...context, result: projected }).result;
-  if (!isHostOutputSuppressed(effective)) {
-    assertExtensionReadOutputResult(readOutput, resolveServiceAdmittedResult(readActivatedServices(commands), context, effective));
-  }
+  await runWithIsolatedExtensionRuntime(async () => {
+    setActiveExtensionCommands(commands);
+    setActiveExtensionServices(readActivatedServices(commands) ?? null);
+    // The attached object is the activation's full registration registry.
+    setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
+    setActiveCommandContext({ command: context.command, args: context.args, options: context.options, global: context.global, pm_root: context.pm_root });
+    const global = context.global ?? {};
+    formatOutput(projectPrintedResult(outcome.result, global), {
+      ...global,
+      command: context.command,
+      commandArgs: context.args,
+      commandOptions: context.options,
+      pmRoot: context.pm_root,
+    });
+  });
   return outcome;
 }
 
@@ -1175,7 +1143,7 @@ export async function runRegisteredCommandForTest(
     ...(sdk === undefined ? {} : { sdk }),
   };
   const outcome = await runCommandHandler(commands, context);
-  return admitRegisteredReadOutputResult(registrations, commands, context, outcome);
+  return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
 /** Invoke registered transactional mutation guards through the same fail-closed runtime used by real writes. */

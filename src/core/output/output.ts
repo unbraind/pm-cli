@@ -1016,8 +1016,8 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   );
 }
 
-/** The encoding used when no read-output control names one: JSON for `--json` or a JSON workspace default, TOON otherwise. Shared with the extension test harness. */
-export function resolveDefaultOutputFormat(options: Pick<OutputOptions, "json" | "defaultOutputFormat">): "json" | "toon" {
+/** The encoding used when no read-output control names one: JSON for `--json` or a JSON workspace default, TOON otherwise. */
+function resolveDefaultOutputFormat(options: Pick<OutputOptions, "json" | "defaultOutputFormat">): "json" | "toon" {
   return options.json === true || (options.json === undefined && options.defaultOutputFormat === "json") ? "json" : "toon";
 }
 

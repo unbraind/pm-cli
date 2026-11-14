@@ -30,8 +30,9 @@ export function resolveExtensionReadOutput(command: string): RegisteredExtension
  * Admit a handler result for a command that declares `read_output`: the result
  * must be a structured object carrying every declared row collection, before
  * any projection or `output_format` service runs. The native CLI, `PmClient.run`
- * and the extension test harness share this check (pm-gh1729), so a compact
- * receipt-only result is refused in a package test exactly as it is natively.
+ * and the extension test harness (which runs native formatOutput) share this
+ * check (pm-gh1729), so a compact receipt-only result is refused in a package
+ * test exactly as it is natively.
  * A command that formats a compact receipt keeps returning its rows (an empty
  * collection is valid) and lets the formatter render the receipt.
  */
