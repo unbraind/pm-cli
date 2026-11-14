@@ -2,13 +2,13 @@ id: pm-chdp87
 title: "commitItemMutations cannot compensate a create that clears a collection: the explicit_unset suffix hides the apply marker, so a refused batch reports transaction_partial_mutation and keeps the create"
 description: "Found while implementing pm-gh1713 (2026-11-14). A strict-preset importer must pass the --clear-* options (clearDeps, clearComments and the rest) to satisfy strict create's required repeatables. When the create runs inside commitItemMutations, buildHistoryMessage appends ' | explicit_unset=dependencies,comments,...' to the transaction's apply marker. compensateCreatedItem and isUpdateMarkerApplied match the marker by exact string equality, so they never recognise the step's own create. When a later row fails, compensation therefore throws transaction_partial_mutation ('cannot safely compensate incomplete step'), the batch surfaces an AggregateError, and the created item stays open. Reproduced with no deferrals and with close validation off: a create step with clearDeps plus a failing update row. The same create without clear options rolls back cleanly. Fix: treat the marker as a prefix followed by ' | ' (isStepMarkerMessage) everywhere a step marker is matched. Duplicate check: searched compensation explicit_unset marker partial mutation; pm-wb6ktl covers guard-judged compensation, not marker matching."
 type: Issue
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:sdk",importers,strict-preset,transactions
 created_at: "2026-11-14T06:08:20.927Z"
-updated_at: "2026-11-14T06:08:30.947Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#9d7f970542d8df5a0a6bdb3b"
+updated_at: "2026-11-14T09:04:51.432Z"
+closed_at: "2026-11-14T09:04:49.754Z"
+completed_at: "2026-11-14T09:04:49.754Z"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "A commitItemMutations batch whose create step clears collections rolls back cleanly when a later row fails, with no transaction_partial_mutation; Marker matching accepts the explicit_unset suffix and nothing else; A spec reproduces the refusal and passes after the fix"
@@ -16,8 +16,9 @@ parent: pm-9rgaal
 risk: medium
 confidence: high
 severity: high
-expected_result: A refused batch rolls back its strict-mode creates
-actual_result: Compensation refuses with transaction_partial_mutation and the created item stays open
+resolution: "isStepMarkerMessage in src/sdk/item-transaction.ts matches a step marker exactly or as a prefix followed by ' | '. buildHistoryMessage appends the ' | explicit_unset=...' suffix, which compensateCreatedItem, isUpdateMarkerApplied and the ownership proof missed. Compensation closes now pass validateClose off: a rollback close completes no work, so strict evidence or deferral validation no longer refuses it."
+expected_result: A refused batch rolls back its strict-mode creates cleanly
+actual_result: "Verified by spec on a strict-preset tracker: a batch whose deferred, collection-clearing create is followed by a failing row reports only the row's error, and the created item is closed by compensation. The negative control fails without the fix."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1713,discovered_from,"2026-11-14T06:08:20.927Z","harness:claude-code","cli:create:dep",detected
   pm-wb6ktl,related,"2026-11-14T06:08:20.927Z","harness:claude-code","cli:create:dep",detected
@@ -26,4 +27,36 @@ files[2]{path,scope,note}:
   tests/unit/sdk/lifecycle/create-deferrals.spec.ts,project,strict rollback spec
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts,project,600,"harness:claude-code","2026-11-14T06:08:30.867Z",local_mutation,feat/package-write-path-actor-and-deferral
+test_runs[2]:
+  - run_id: test-local-mwg6gtef-9m0emc
+    kind: test
+    status: passed
+    started_at: "2026-11-14T09:02:32.199Z"
+    finished_at: "2026-11-14T09:02:45.975Z"
+    recorded_at: "2026-11-14T09:02:45.975Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts,schema,schema,source,local_source_ref
+  - run_id: test-local-mwg6h7cj-l5z4m2
+    kind: test
+    status: passed
+    started_at: "2026-11-14T09:02:50.455Z"
+    finished_at: "2026-11-14T09:03:04.051Z"
+    recorded_at: "2026-11-14T09:03:04.051Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts,schema,schema,source,local_source_ref
+close_reason: "Transactions recognise their own create markers when the create cleared collections, and compensation closes skip close validation"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-chdp87
+  gate_id: transaction-compensation-explicit-unset
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts -t \"rolls back\" (fails when compensation closes run strict close validation or step markers are matched exactly)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
