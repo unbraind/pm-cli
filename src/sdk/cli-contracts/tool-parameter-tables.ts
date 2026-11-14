@@ -426,6 +426,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   failOnEmptyTestRun: { type: "boolean" },
   requireAssertionsForPm: { type: "boolean" },
   checkContext: { type: "boolean" },
+  fullOutput: { type: "boolean" },
   autoPmContext: { type: "boolean" },
   measure: { type: "array", items: { type: "string" } },
   metricBelow: { type: "string" },
@@ -1640,6 +1641,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   checkContext: {
     description:
       "Run linked PM command context preflight diagnostics before command execution.",
+  },
+  fullOutput: {
+    description:
+      "Keep every linked-test row's complete stdout and stderr in the CLI rendering, which otherwise keeps an escape-free tail on a quiet passing run; MCP and SDK results always carry the complete streams.",
   },
   autoPmContext: {
     description:

@@ -460,7 +460,7 @@ describe("generateBashScript", () => {
     expect(script).toContain(
       "--fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm",
     );
-    expect(script).toContain("--check-context --auto-pm-context");
+    expect(script).toContain("--check-context --full-output --auto-pm-context");
   });
 
   it("includes test-all pagination flags in bash completion", () => {

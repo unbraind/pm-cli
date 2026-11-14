@@ -134,6 +134,8 @@ import {
   normalizeStructuredLinkedTestEntry,
 } from "../test/entry.js";
 import { attachLinkedTestMutationProvenance } from "../test/trust.js";
+import { parseLinkedTestPhase } from "../test/run-phases.js";
+import { stampRequiredItemFormat } from "../environment/project-runtime-compatibility.js";
 import {
   CREATE_UNSET_FIELD_DEFINITIONS,
   literalSentinelAdvisories,
@@ -738,6 +740,7 @@ export function parseTests(raw: string[] | undefined): {
         "--test",
       ),
       note: parseOptionalString(kv.note),
+      phase: parseLinkedTestPhase(kv.phase, "--test"),
     };
   });
   return { values, explicitEmpty: false };
@@ -3279,6 +3282,7 @@ export async function runCreate(
     /* c8 ignore stop */
   }
 
+  stampRequiredItemFormat(itemMetadata, pmRoot);
   const afterDocument: ItemDocument = canonicalDocument(
     {
       metadata: itemMetadata,

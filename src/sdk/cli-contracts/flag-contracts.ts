@@ -1122,6 +1122,7 @@ export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fail-on-empty-test-run" },
   { flag: "--require-assertions-for-pm" },
   { flag: "--check-context" },
+  { flag: "--full-output" },
   { flag: "--auto-pm-context" },
   { flag: "--measure", list: true, description: "Record numeric measurement evidence; requires --run and an executed linked command." },
   { flag: "--metric-below" },
@@ -1152,6 +1153,7 @@ export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fail-on-empty-test-run" },
   { flag: "--require-assertions-for-pm" },
   { flag: "--check-context" },
+  { flag: "--full-output" },
   { flag: "--auto-pm-context" },
 ];
 

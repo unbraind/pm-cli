@@ -114,7 +114,8 @@ The `TestRunResult.exit_code` type now allows null, and `TestCommandOptions` and
 ## Mixed host versions
 
 Tracked by [pm-gh1458](../.agents/pm/issues/pm-gh1458.toon).
-Editor stamps require item format 2. Ordinary records retain format 1, while
+Editor stamps require item format 2, and a setup entry (`phase: setup`)
+requires item format 3. Ordinary records retain format 1, while
 existing unstamped or legacy format-1 records advance only on a real write that
 needs the new fields. Upgrade the CLI, pinned SDK, CI and clone-local merge
 driver together before editing guarded records. Hosts from 2026.10.10 refuse

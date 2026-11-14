@@ -2,11 +2,13 @@ id: pm-v1mp64
 title: "A passing pm test --run row echoes the command's full stdout, including raw ANSI colour codes, so every quiet pass grows with the runner's report"
 description: "Found while recording linked-test evidence for the note-conflict fix (2026-11-13). pm test --run keeps each run_results row's complete captured stdout and stderr even when the command passed, the context matched and the run was trusted. A vitest-based linked test prints its coloured summary, so a passing two-file run returns 694 B of stdout of which 304 B are ANSI escape sequences (JSON response 2,697 B in total); in TOON the same stdout is one escaped string cell. The reply grows with the runner's report (file count, test names) although an agent only needs the verdict on a quiet pass, and the escape sequences are noise in every encoding. The decision-field projection added for the execution context leaves stdout untouched. Proposal: on a passing, trusted, mismatch-free row, keep a bounded tail of stdout with ANSI sequences removed (or a byte count with a restore selector), keep full output on failing, refused and mismatched rows, and let an explicit selector (for example --full-output) restore it. Duplicate check: searched linked test run stdout ANSI escape passing output, and run_results stdout passing run bounded output; the closed bounded test-run summaries task persists summaries on item records but does not shape the command reply."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,linked-tests,token-efficiency
 created_at: "2026-11-13T16:33:08.298Z"
-updated_at: "2026-11-13T16:33:08.298Z"
+updated_at: "2026-11-13T22:25:29.922Z"
+closed_at: "2026-11-13T21:04:26.321Z"
+completed_at: "2026-11-13T21:04:26.321Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "A passing, trusted, mismatch-free pm test --run row returns no raw ANSI escape sequences and at most a bounded stdout tail in TOON and JSON; Failing, refused, skipped and mismatched rows keep their full captured output; An explicit selector restores the full output on every row, and the omission receipt names it"
@@ -14,9 +16,61 @@ parent: pm-5t33or
 risk: low
 confidence: high
 severity: low
-expected_result: "A passing trusted linked-test row returns its verdict and at most a bounded, escape-free tail of stdout"
-actual_result: A passing row returns the command's full stdout with raw ANSI colour codes
+resolution: "src/core/output/linked-test-projection.ts keeps, for a quiet run (every row passed, mismatch-free, zero failure categories), an escape-free tail of each trusted row's stdout/stderr: stripVTControlCharacters, carriage-return overwrites collapsed, blank lines dropped, at most 6 lines and 480 code points. A shortened row gains <stream>_omitted_bytes; omission_receipt appends run_results.stdout/stderr with restore_with --full-output. Failing, refused, skipped, mismatched rows, every row of a non-quiet run, and rows that passed only under an untrusted override keep complete output. --full-output is registered on pm test (requires --run) and pm test-all, mirrored as MCP fullOutput (schema 4.26.0), completion, flag contracts and budgets (test 58, test-all 41). SDK and MCP results are unchanged (pm-py5fam tracks MCP)."
+expected_result: "A passing, trusted, mismatch-free row returns no ANSI escapes and at most a bounded tail; failing/refused/skipped/mismatched rows keep full output; an explicit selector restores full output and the omission receipt names it"
+actual_result: "Verified by tests/unit/core/output/linked-test-projection.spec.ts (7 cases: tail, untrusted override, stderr and receipt merge, terminal reduction, non-quiet variants, --full-output) and dogfood: pm test pm-v1mp64 --run returned a 6-line escape-free tail with stdout_omitted_bytes 355"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1716,discovered_from,"2026-11-13T16:33:08.298Z","harness:claude-code","cli:create:dep",detected
   pm-tcvccz,related,"2026-11-13T16:33:08.298Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-13T21:36:32.832Z","harness:claude-code","Review round 1 on PR #1723 (Codex and Greptile, 2026-11-13). Two valid findings, both fixed.\n1. (minor, Codex and Greptile) `--lean --full-output` still dropped a passing row's streams once the context was hoisted, so the advertised restore flag restored nothing. Fix: fullOutput overrides lean stream removal. When lean does drop non-empty streams, it now declares run_results.stdout/stderr with restore_with --full-output in omission_receipt.\n2. (minor, Greptile) quietStreamTail returned whitespace-only output unchanged, so thousands of blank lines bypassed both limits. Fix: whitespace-only output longer than a bare line ending (2 characters) becomes an empty string, counted in <stream>_omitted_bytes.\nSpecs: tests/unit/core/output/linked-test-projection.spec.ts covers lean plus full-output, the lean declaration for stdout and stderr, and the whitespace bounds.\n"
+  "2026-11-13T22:25:29.922Z","harness:claude-code","Review round 2 on PR #1723 (Codex, 2026-11-13), one minor finding, fixed. When lean dropped a passing row's shortened stream, the row kept the tail-relative <stream>_omitted_bytes. That understated what was dropped, for example 182 of 229 bytes. Lean rows now drop the counters together with the streams, and omission_receipt still names the dropped streams. Spec: the lean case in tests/unit/core/output/linked-test-projection.spec.ts.\n"
+notes[1]{created_at,author,text}:
+  "2026-11-13T19:40:41.858Z","harness:claude-code","Design (2026-11-13): stream bounding uses the same quiet-run gate as the context projection. When a run is quiet, each row whose trust is not false keeps an escape-free tail of stdout and stderr. The tail strips escapes with node:util stripVTControlCharacters, keeps only the final segment of each carriage-return overwrite, drops blank lines, and holds at most 6 lines and 480 code points. A shortened stream adds `<stream>_omitted_bytes` to its row (UTF-8 bytes of the original minus the tail). The reply's omission_receipt gains `run_results.stdout` / `run_results.stderr` (test-all: `results.run_results.*`) with restore_with `--full-output`, appended after any groups the reply already declares.\n\nThe following rows keep their complete streams: failing, refused, skipped and mismatched rows; every row of a non-quiet run; and a row that passed only under an explicit untrusted-command override. That last row's output is what a reviewer reads before trusting the command.\n\n`--full-output` is a presentation-only selector on pm test (requires --run) and pm test-all. It is independent of `--check-context`, which restores contexts only.\n\nMeasured on a vitest-style two-line ANSI report: the stdout cell drops 17 B of escapes. A real 3-file vitest report keeps the 6 summary lines (Test Files / Tests / Start at / Duration plus the last two file lines)."
+files[15]{path,scope,note}:
+  src/cli/register-operations.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/core/output/linked-test-projection.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/core/output/output.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/cli-contracts/flag-contracts.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/cli-contracts/tool-schema.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/completion/bash.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/completion/fish.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/completion/zsh.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  src/sdk/test/command-args.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  tests/integration/linked-test-context-trust.integration.spec.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  tests/unit/commands/workspace/completion-command.spec.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  tests/unit/core/output/linked-test-projection.spec.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+  tests/unit/sdk/action-schema-parity.spec.ts,project,quiet-run stream tail and --full-output (pm-v1mp64)
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts tests/unit/core/output/output.spec.ts,project,900,"harness:claude-code","2026-11-13T20:41:32.634Z",local_mutation,feat/linked-test-setup-and-quiet-output
+test_runs[1]:
+  - run_id: test-local-mwfgs9mg-pk8dm2
+    kind: test
+    status: passed
+    started_at: "2026-11-13T21:03:41.441Z"
+    finished_at: "2026-11-13T21:03:50.200Z"
+    recorded_at: "2026-11-13T21:03:50.200Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts tests/unit/core/output/output.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/COMMANDS.md,project
+close_reason: Quiet pm test --run rows keep an escape-free bounded stream tail; --full-output restores complete streams
+contract_change:
+  api: pm test --run and pm test-all CLI rendering; new --full-output flag; MCP fullOutput parameter (tool parameter schema 4.26.0)
+  before: "A passing linked-test row printed the command's complete stdout and stderr, ANSI escape sequences included"
+  after: "A quiet passing run prints an escape-free tail of at most 6 lines and 480 characters per stream, adds stdout_omitted_bytes or stderr_omitted_bytes to shortened rows and names --full-output in omission_receipt; SDK and MCP results still carry the complete streams"
+  migrate: Pass --full-output where a script parses a passing linked test's complete CLI stdout; SDK and MCP consumers need no change
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-v1mp64
+  gate_id: linked-test-quiet-stream-tail
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts (the escape-free tail, omission receipt and untrusted-row cases fail against the previous projection, which kept every passing row's full stdout with ANSI escapes)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/core/output/linked-test-projection.spec.ts tests/unit/core/output/output.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

@@ -466,7 +466,7 @@ describe("structured mutation input", () => {
         comments: [{ text: 'said "yes"\non two lines', author: "agent" }],
         notes: [{ text: "note" }],
         learnings: [{ text: "learning" }],
-        tests: [{ command: "pnpm test", timeout_seconds: 30 }],
+        tests: [{ command: "npm run build", phase: "setup" }, { command: "pnpm test", timeout_seconds: 30 }],
         docs: [{ path: "docs/SDK.md" }],
         reminders: [{ at: "2026-07-21", text: "review" }],
         events: [{ start_at: "2026-07-21", title: "review" }],
@@ -486,7 +486,8 @@ describe("structured mutation input", () => {
       comment: ['text="said \\"yes\\"\\non two lines",author=agent'],
       note: ["text=note"],
       learning: ["text=learning"],
-      test: ["command=pnpm test,timeout_seconds=30"],
+      // Codex review of #1723: structured intake keeps a setup entry's phase (GH-1671).
+      test: ["command=npm run build,phase=setup", "command=pnpm test,timeout_seconds=30"],
       doc: ["path=docs/SDK.md"],
       reminder: ["at=2026-07-21,text=review"],
       event: ["start_at=2026-07-21,title=review"],

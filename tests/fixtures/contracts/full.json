@@ -6619,6 +6619,9 @@
           "flag": "--check-context"
         },
         {
+          "flag": "--full-output"
+        },
+        {
           "flag": "--auto-pm-context"
         },
         {
@@ -7372,6 +7375,9 @@
         },
         {
           "flag": "--check-context"
+        },
+        {
+          "flag": "--full-output"
         },
         {
           "flag": "--auto-pm-context"
@@ -10890,6 +10896,9 @@
           "flag": "--check-context"
         },
         {
+          "flag": "--full-output"
+        },
+        {
           "flag": "--auto-pm-context"
         },
         {
@@ -10982,6 +10991,9 @@
         },
         {
           "flag": "--check-context"
+        },
+        {
+          "flag": "--full-output"
         },
         {
           "flag": "--auto-pm-context"
@@ -24084,6 +24096,7 @@
         "sdk/runtime/mutation-admission.ts",
         "sdk/runtime/mutation-value-validation.ts",
         "sdk/runtime/schema-preview.ts",
+        "sdk/test/run-phases.ts",
         "sdk/workspace.ts"
       ],
       "stability": "stable"
@@ -43464,6 +43477,10 @@
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "fullOutput": {
+            "description": "Keep every linked-test row's complete stdout and stderr in the CLI rendering, which otherwise keeps an escape-free tail on a quiet passing run; MCP and SDK results always carry the complete streams.",
             "type": "boolean"
           },
           "id": {
@@ -62861,6 +62878,10 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullOutput": {
+            "description": "Keep every linked-test row's complete stdout and stderr in the CLI rendering, which otherwise keeps an escape-free tail on a quiet passing run; MCP and SDK results always carry the complete streams.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
@@ -63184,6 +63205,10 @@
           },
           "failOnSkipped": {
             "description": "Treat skipped linked tests as dependency-failed policy violations.",
+            "type": "boolean"
+          },
+          "fullOutput": {
+            "description": "Keep every linked-test row's complete stdout and stderr in the CLI rendering, which otherwise keeps an escape-free tail on a quiet passing run; MCP and SDK results always carry the complete streams.",
             "type": "boolean"
           },
           "json": {
@@ -67486,10 +67511,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.25.0"
+    "x-schema-version": "4.26.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.25.0",
+  "schema_version": "4.26.0",
   "selected": {
     "action": null,
     "availability_only": false,

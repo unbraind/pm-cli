@@ -179,6 +179,7 @@ export const STRUCTURED_LINKED_TEST_KEYS = [
   "assert_json_field_equals",
   "assert_json_field_gte",
   "note",
+  "phase",
 ] as const;
 
 const STRUCTURED_LINKED_TEST_KEY_SET = new Set<string>(

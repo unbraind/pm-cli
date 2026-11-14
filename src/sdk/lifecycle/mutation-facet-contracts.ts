@@ -10,7 +10,8 @@ export const ITEM_MUTATION_FACET_OPTION_MAPPINGS: ReadonlyArray<readonly [string
   ["notes", "note", ["text", "created_at", "author"]],
   ["learnings", "learning", ["text", "created_at", "author"]],
   ["files", "file", ["path", "scope", "note"]],
-  ["tests", "test", ["command", "scope", "timeout_seconds"]],
+  // phase keeps a setup entry a setup entry through structured intake (GH-1671).
+  ["tests", "test", ["command", "scope", "timeout_seconds", "phase"]],
   ["docs", "doc", ["path", "scope", "note"]],
   ["reminders", "reminder", ["at", "text", "created_at"]],
   ["events", "event", ["start_at", "end_at", "title", "location"]],

@@ -16,6 +16,7 @@ import { seedLinkedTestWorkspaceSnapshot } from "./workspace-snapshot.js";
 import { detectLinkedTestCommandNotFound } from "./command-resolution.js";
 import { updateLinkedTest, parseLinkedTestUpdateOptions, assertLinkedTestEditUsage } from "./update.js";
 import { admitLinkedTestRequest, assertLinkedTestCommand, linkedTestsHaveSameIdentity } from "./entry.js";
+import { countFailureCategories, createLinkedTestSetupGate, isLinkedTestSetup, orderLinkedTestsSetupFirst, parseLinkedTestPhase, resolveSetupWorkspaceRefusal, withLinkedTestSetupEntries, type LinkedTestFailureCategory } from "./run-phases.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
@@ -316,6 +317,8 @@ export interface TestCommandOptions {
   requireAssertionsForPm?: boolean;
   /** Value that configures or reports check context for this contract. */
   checkContext?: boolean;
+  /** Report every row's complete stdout and stderr; presentation only, so the SDK result is unchanged (pm-v1mp64). */
+  fullOutput?: boolean;
   /** Value that configures or reports auto pm context for this contract. */
   autoPmContext?: boolean;
   /** Value that configures or reports author for this contract. */
@@ -332,17 +335,8 @@ export interface TestCommandOptions {
   metricDiff?: string;
 }
 
-/** Restricts linked test failure category values accepted by command, SDK, and storage contracts. */
-export type LinkedTestFailureCategory =
-  | "infra_collision"
-  | "trust_refusal"
-  | "config_refusal"
-  | "assertion_failure"
-  | "empty_run"
-  | "timeout"
-  | "max_buffer"
-  | "spawn_error"
-  | "signal";
+export type { LinkedTestFailureCategory } from "./run-phases.js";
+export { countFailureCategories } from "./run-phases.js";
 
 /** Documents the test run result payload exchanged by command, SDK, and package integrations. */
 export interface TestRunResult {
@@ -356,6 +350,10 @@ export interface TestRunResult {
   exit_code?: number | null;
   /** Value that configures or reports failure category for this contract. */
   failure_category?: LinkedTestFailureCategory;
+  /** Present on a setup entry's row (GH-1671). */
+  phase?: "setup";
+  /** The category a failed setup entry's execution was classified as before it became `setup_failed`. */
+  setup_failure_cause?: LinkedTestFailureCategory;
   /** Recognized runner summary proving execution, including the stream that supplied it. */
   execution_receipt?: { code: string; stream: "stdout" | "stderr" };
   /** Value that configures or reports execution context for this contract. */
@@ -977,6 +975,7 @@ function parseAddEntry(entry: string): LinkedTest {
       "--add",
     ),
     note: trimLinkedTestEntryField(kv.note),
+    phase: parseLinkedTestPhase(kv.phase, "--add"),
   };
 }
 
@@ -1562,38 +1561,6 @@ export function classifyLinkedTestFailure(
     return "signal";
   }
   return "assertion_failure";
-}
-
-/** Initialize every public failure category so aggregate receipts retain a stable exhaustive shape. */
-function createEmptyFailureCategoryCounts(): Record<
-  LinkedTestFailureCategory,
-  number
-> {
-  return {
-    infra_collision: 0,
-    trust_refusal: 0,
-    config_refusal: 0,
-    assertion_failure: 0,
-    empty_run: 0,
-    timeout: 0,
-    max_buffer: 0,
-    spawn_error: 0,
-    signal: 0,
-  };
-}
-
-/** Implements count failure categories for the public runtime surface of this module. */
-export function countFailureCategories(
-  runResults: TestRunResult[],
-): Record<LinkedTestFailureCategory, number> {
-  const counts = createEmptyFailureCategoryCounts();
-  for (const result of runResults) {
-    if ((result.status !== "failed" && result.status !== "refused") || !result.failure_category) {
-      continue;
-    }
-    counts[result.failure_category] += 1;
-  }
-  return counts;
 }
 
 function applyEnvDirectiveStage(
@@ -2768,10 +2735,9 @@ function buildLinkedTestPassedExecutionResult(params: {
     params.execution.stdout,
     params.execution.stderr,
   );
-  if (
-    params.options?.failOnEmptyTestRun === true ||
-    commandUsesTestNameFilter(params.linkedTest.command ?? "")
-  ) {
+  // A setup entry builds rather than tests, so a name filter in it implies no execution receipt (GH-1671).
+  const nameFiltered = params.linkedTest.phase !== "setup" && commandUsesTestNameFilter(params.linkedTest.command ?? "");
+  if (params.options?.failOnEmptyTestRun === true || nameFiltered) {
     const emptyRunSignal = detectEmptyLinkedTestRun(
       params.execution.stdout,
       params.execution.stderr,
@@ -2779,10 +2745,7 @@ function buildLinkedTestPassedExecutionResult(params: {
     if (emptyRunSignal) {
       return buildLinkedTestEmptyRunResult({ ...params, emptyRunSignal });
     }
-    if (
-      commandUsesTestNameFilter(params.linkedTest.command ?? "") &&
-      !receipt
-    ) {
+    if (nameFiltered && !receipt) {
       return buildLinkedTestEmptyRunResult({
         ...params,
         emptyRunSignal: { code: "missing_positive_execution_receipt" },
@@ -2846,13 +2809,14 @@ async function runSingleLinkedTest(params: {
     : buildLinkedTestCommandFailureResult({ ...params, execution, timeoutMs });
 }
 
-/** Implements run linked tests for the public runtime surface of this module. */
+/** Run linked tests in one shared sandbox, setup entries first (GH-1671); results are returned in run order. */
 export async function runLinkedTests(
   tests: LinkedTest[],
   defaultTimeoutSeconds: number | undefined,
   options?: RunLinkedTestsOptions,
 ): Promise<TestRunResult[]> {
-  for (const test of tests) assertLinkedTestCommand(test.command);
+  const ordered = orderLinkedTestsSetupFirst(tests);
+  for (const test of ordered) assertLinkedTestCommand(test.command);
   const results: TestRunResult[] = [];
   const sandboxRoot = await mkdtemp(path.join(tmpdir(), "pm-linked-test-"));
   const layout = createLinkedTestSandboxLayout(sandboxRoot);
@@ -2870,12 +2834,12 @@ export async function runLinkedTests(
   const sourceRoots = options?.sourceRoots;
   const sourceWorkspaceRoot = resolveLinkedTestSourceWorkspaceRoot();
   const includeTrackerData = linkedTestsRequireTrackerData(
-    tests,
+    ordered,
     runLevelPmContextMode,
     options,
   );
   const includeWorkspaceSnapshot = linkedTestsRequireWorkspaceSnapshot(
-    tests,
+    ordered,
     runLevelWorkspaceContextMode,
     options?.overrideLinkedWorkspaceContext === true,
   );
@@ -2899,14 +2863,14 @@ export async function runLinkedTests(
       );
     }
     const counts = await countLinkedTestSandboxItems(layout, sourceRoots);
-
-    for (let index = 0; index < tests.length; index += 1) {
-      const linkedTest = tests[index];
-      const workspaceContextMode = resolveLinkedTestWorkspaceContextMode(
-        linkedTest,
-        runLevelWorkspaceContextMode,
-        options?.overrideLinkedWorkspaceContext === true,
-      );
+    const setupGate = createLinkedTestSetupGate();
+    const resolveWorkspaceMode = (linkedTest: LinkedTest) => resolveLinkedTestWorkspaceContextMode(linkedTest, runLevelWorkspaceContextMode, options?.overrideLinkedWorkspaceContext === true);
+    const regularWorkspaceModes = new Set(ordered.filter((test) => !isLinkedTestSetup(test)).map(resolveWorkspaceMode));
+    const runEntry = async (linkedTest: LinkedTest, index: number): Promise<TestRunResult> => {
+      const entryOptions = setupGate.options(linkedTest, options);
+      const workspaceContextMode = resolveWorkspaceMode(linkedTest);
+      const workspaceRefusal = resolveSetupWorkspaceRefusal(linkedTest, workspaceContextMode, regularWorkspaceModes);
+      if (workspaceRefusal) return workspaceRefusal;
       const commandContext = await resolveLinkedTestCommandContext({
         linkedTest,
         layout,
@@ -2924,24 +2888,23 @@ export async function runLinkedTests(
         executionContext: commandContext.executionContext,
         runLevelPmContextMode,
         linkedOverridePmContextMode: commandContext.linkedOverridePmContextMode,
-        options,
+        options: entryOptions,
       });
-      if (preflightResult) {
-        results.push(preflightResult);
-        continue;
-      }
-      results.push(
-        await runSingleLinkedTest({
-          linkedTest,
-          index,
-          total: tests.length,
-          defaultTimeoutSeconds,
-          runtimeDirectives,
-          progressMode,
-          executionContext: commandContext.executionContext,
-          options,
-        }),
-      );
+      return preflightResult ?? await runSingleLinkedTest({
+        linkedTest,
+        index,
+        total: ordered.length,
+        defaultTimeoutSeconds,
+        runtimeDirectives,
+        progressMode,
+        executionContext: commandContext.executionContext,
+        options: entryOptions,
+      });
+    };
+    for (let index = 0; index < ordered.length; index += 1) {
+      const linkedTest = ordered[index];
+      // An entry after a setup entry that did not pass is skipped without executing (GH-1671).
+      results.push(setupGate.blocked(linkedTest) ?? setupGate.record(linkedTest, await runEntry(linkedTest, index)));
     }
   } finally {
     await rm(layout.root, {
@@ -3071,6 +3034,7 @@ function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
     options.failOnEmptyTestRun === true,
     options.requireAssertionsForPm === true,
     options.checkContext === true,
+    options.fullOutput === true,
     options.autoPmContext === true,
     options.workspaceContext !== undefined,
     options.overrideLinkedWorkspaceContext === true,
@@ -3082,7 +3046,7 @@ function hasTestRuntimeDirectiveFlags(options: TestCommandOptions): boolean {
 function assertTestRunFlagUsage(options: TestCommandOptions): void {
   if (hasTestRuntimeDirectiveFlags(options) && options.run !== true) {
     throw new PmCliError(
-      "--timeout, --progress, --env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --workspace-context, --override-linked-workspace-context, --allow-untrusted-linked-tests, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, and --auto-pm-context require --run",
+      "--timeout, --progress, --env-set, --env-clear, --shared-host-safe, --pm-context, --override-linked-pm-context, --workspace-context, --override-linked-workspace-context, --allow-untrusted-linked-tests, --fail-on-context-mismatch, --fail-on-skipped, --fail-on-empty-test-run, --require-assertions-for-pm, --check-context, --full-output, and --auto-pm-context require --run",
       EXIT_CODE.USAGE,
     );
   }
@@ -3217,7 +3181,7 @@ function resolveTestRunOptions(
     );
   }
   assertTestRunFlagUsage(options);
-  const runSelection = options.run === true ? resolveLinkedTestRunSelection(tests, selectorInput) : undefined;
+  const runSelection = options.run === true ? withLinkedTestSetupEntries(resolveLinkedTestRunSelection(tests, selectorInput), tests) : undefined;
   if (runSelection) {
     for (const test of runSelection.selected) assertLinkedTestCommand(test.command);
   }
@@ -3506,6 +3470,7 @@ function projectTestResult(input: {
           selected_indexes: runSelection.selected_indexes,
           selected_count: runSelection.selected_count,
           skipped_count: runSelection.skipped_count,
+          ...(runSelection.setup_indexes ? { setup_indexes: runSelection.setup_indexes } : {}),
         }
       : undefined,
     fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,

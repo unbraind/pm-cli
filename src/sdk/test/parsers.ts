@@ -8,6 +8,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { STRUCTURED_LINKED_TEST_KEYS } from "./entry.js";
+import { parseLinkedTestPhase } from "./run-phases.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
 import {
@@ -763,6 +764,7 @@ function parseLinkedTestJsonEntry(
       noteValue !== undefined && noteValue.trim().length > 0
         ? noteValue.trim()
         : undefined,
+    phase: parseLinkedTestPhase(entry.phase, `${optionName} ${label}`),
   };
 }
 

@@ -1,0 +1,22 @@
+id: pm-04mzfl
+title: "Writing a format-3 setup entry is admitted when the project pins a pm that will refuse to read it, so the failure surfaces later in CI instead of at write time"
+description: "Found while implementing pm-gh1671 (2026-11-13). A linked-test setup entry stamps item format 3. The write-time guard (assertProjectRuntimeFormatGuard in src/sdk/environment/project-runtime-compatibility.ts) refuses only when the project's declared or resolved pm pin predates 2026.10.10, which is the first host that can refuse an unknown format. That was the right line for format 2, whose risk was silent field loss. For format 3, every pin from 2026.10.10 through 2026.11.13 refuses safely but cannot read the item. A developer whose global pm is newer can therefore write a setup entry into a project that pins an exact older pm, for example a fleet package whose devDependency is pinned to an exact release. The write succeeds locally. CI then fails later with item_format_version_unsupported on every get, update or pm test --run of that item (verified against the published 2026.11.13 artifact). Proposal: when the stored format would exceed what the project's pinned or resolved pm can read, warn at write time. The warning names the pin, the required minimum release, and the upgrade step. Keep refusing only where the pinned host cannot refuse (data-loss risk). The minimum readable release per format should be declared data, not a literal. Duplicate check: searched project runtime format guard pinned version cannot read item format; the closed format-guard work covers the refusal boundary only."
+type: Issue
+status: open
+priority: 3
+tags[5]: compatibility,item-format,linked-tests,mixed-host,ux
+created_at: "2026-11-13T20:41:09.195Z"
+updated_at: "2026-11-13T20:41:09.195Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Writing an item whose required format exceeds what the project's pinned or resolved pm can read returns a typed warning naming the pin, the minimum release that reads the format and the upgrade step, without blocking the write; A pin that cannot refuse the format is still refused before persistence; The minimum readable release per item format is declared data consumed by the guard, with a spec for formats 2 and 3"
+parent: pm-o2kc
+risk: low
+confidence: high
+severity: low
+expected_result: The writer learns at write time that the project's pinned pm cannot read the record it just wrote
+actual_result: The write succeeds silently and the pinned CI host later refuses the item
+component: storage
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1671,discovered_from,"2026-11-13T20:41:09.195Z","harness:claude-code","cli:create:dep",detected
+body: ""

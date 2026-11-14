@@ -11,7 +11,7 @@ import { buildBackgroundTestCommandArgs } from "./command-args.js";
 import type { TestCommandOptions, TestRunResult } from "./execution.js";
 import { detectEmptyLinkedTestRun } from "./execution-receipts.js";
 
-/** Admit measurements only after real command execution, excluding preflight, spawn and recognised empty-run failures. */
+/** Admit measurements only after real linked-test execution, excluding setup entries, preflight, spawn and recognised empty-run failures. */
 export function assertTestMeasurementExecution(
   id: string,
   options: TestCommandOptions,
@@ -23,6 +23,7 @@ export function assertTestMeasurementExecution(
     (options.measure?.length ?? 0) === 0 ||
     results.some(
       (result) =>
+        result.phase !== "setup" &&
         typeof result.stdout === "string" &&
         result.failure_category !== "spawn_error" &&
         result.failure_category !== "empty_run" &&
