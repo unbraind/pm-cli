@@ -140,7 +140,7 @@ import { stampRequiredItemFormat } from "../environment/project-runtime-compatib
 import {
   CREATE_UNSET_FIELD_DEFINITIONS,
   literalSentinelAdvisories,
-  parseCommandUnsetTargets,
+  parseCreateUnsetTargets,
   type CreateNullClearableOptionKey,
   type WithNullClears,
   resolveRuntimeUnsetFieldDefinition,
@@ -270,35 +270,12 @@ const SCHEDULE_CREATE_PRESET_VALUES = ["lightweight"] as const;
 const SCHEDULE_CREATE_PRESET_TYPES = new Set(["Reminder", "Meeting", "Event"]);
 const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
 
-interface CreateUnsetFieldDefinition {
-  optionKey: string;
-  metadataKey: string;
-}
-
-const CREATE_UNSET_ALIAS_MAP: Map<string, CreateUnsetFieldDefinition> = (() => {
-  const map = new Map<string, CreateUnsetFieldDefinition>();
-  for (const definition of CREATE_UNSET_FIELD_DEFINITIONS) {
-    for (const alias of definition.aliases) {
-      map.set(alias, {
-        optionKey: definition.optionKey,
-        metadataKey: definition.metadataKey,
-      });
-    }
-  }
-  return map;
-})();
-
 const CREATE_OPTION_KEY_TO_UNSET_CANONICAL = new Map<string, string>(
   CREATE_UNSET_FIELD_DEFINITIONS.map((definition) => [
     definition.optionKey,
     definition.canonical,
   ]),
 );
-
-const CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS =
-  CREATE_UNSET_FIELD_DEFINITIONS.map((definition) => definition.canonical)
-    .sort((left, right) => left.localeCompare(right))
-    .join(", ");
 
 function buildInvalidLogSeedKeysMessage(
   optionName: "--comment" | "--note" | "--learning",
@@ -423,22 +400,6 @@ function parseOptionalString(value: string | undefined): string | undefined {
   return value;
 }
 
-function parseCreateUnsetTargets(
-  raw: string[] | undefined,
-  runtimeFieldRegistry?: RuntimeFieldRegistry,
-): { metadataKeys: Set<string>; optionKeys: Set<string> } {
-  return parseCommandUnsetTargets({
-    raw,
-    supportedFields: CREATE_UNSET_SUPPORTED_CANONICAL_FIELDS,
-    resolveDefinition: (trimmed) =>
-      CREATE_UNSET_ALIAS_MAP.get(trimmed) ??
-      resolveRuntimeUnsetFieldDefinition(
-        trimmed,
-        "create",
-        runtimeFieldRegistry,
-      ),
-  });
-}
 
 /** Allowed CSV/markdown keys for the create `--dep` seed (GH-258). */
 const DEP_SEED_KEYS = [

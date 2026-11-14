@@ -45,7 +45,6 @@ import {
   type ServiceOverrideResult,
 } from "./loader.js";
 import type { ItemMetadata } from "../../types/index.js";
-import { resolveMutationActor } from "./mutation-actor.js";
 
 let activeExtensionHooks: ExtensionHookRegistry | null = null;
 let activeExtensionCommands: ExtensionCommandRegistry | null = null;
@@ -523,6 +522,8 @@ export async function runActiveBeforeMutationHooks(
   const preview = previewMutationGuards.getStore();
   const hooks = preview ?? getActiveExtensionHooks();
   if (!hooks) return;
+  // Loaded on first use, so entrypoints that never run a guard do not load author resolution.
+  const { resolveMutationActor } = await import("./mutation-actor.js");
   const { author, dry_run: dryRun, ...context } = input;
   await runBeforeMutationHooks(hooks, {
     ...context,

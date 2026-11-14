@@ -368,6 +368,26 @@ describe("strict create deferrals (GH-1713)", () => {
       { key: "eta", metadata_key: "deadline", cli_flag: "eta", type: "string", required_on_create: true },
     ] } as never);
     expect(withoutDeferredRuntimeRequirements(["--eta", "--shared"], deferrals, registry.definitions)).toEqual(["--shared"]);
+    // An optional field sharing the deferred field's flag does not keep the satisfied requirement alive.
+    const optionalShared = resolveRuntimeFieldRegistry({ fields: [
+      { key: "due", metadata_key: "deadline", cli_flag: "shared", type: "string", required_on_create: true },
+      { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string" },
+    ] } as never);
+    expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, optionalShared.definitions)).toEqual([]);
+  });
+
+  it("resolves stdin-json overrides core-first and only through create-scoped schema fields", () => {
+    const document = JSON.stringify({ item: { title: "Mirrored", type: "Issue", deferred_fields: [{ field: "acceptance_criteria", reason: "Imported" }, { field: "deadline", reason: "Imported" }] } });
+    // A schema key spelled like the core ac alias never shadows it: unset ac clears acceptance criteria only.
+    const acShadow = resolveRuntimeFieldRegistry({ fields: [{ key: "ac", metadata_key: "deadline", cli_flag: "due", type: "string" }] } as never);
+    expect(itemDocumentToMutationOptions(document, "create", { unset: ["ac"] }, acShadow.definitions)).toMatchObject({ defer: ["deadline"] });
+    // An update-only field writing deadline does not override the deferral when create receives its flag for another field.
+    const scoped = resolveRuntimeFieldRegistry({ fields: [
+      { key: "due", metadata_key: "deadline", cli_flag: "shared", type: "string", commands: ["update"] },
+      { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string", commands: ["create"] },
+    ] } as never);
+    expect(itemDocumentToMutationOptions(document, "create", { due: "2026-12-31" }, scoped.definitions)).toMatchObject({ defer: ["acceptance_criteria", "deadline"] });
+    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ due: "2026-12-31" }, { title: "x", defer: ["deadline"] } as never, scoped)).toMatchObject({ due: "2026-12-31" });
   });
 
   it("lets a deferral override a template default exactly like an unset", () => {

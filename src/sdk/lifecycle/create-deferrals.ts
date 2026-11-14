@@ -135,7 +135,9 @@ export function deferredTemplateOverrideKeys(raw: unknown, runtimeFields: readon
     .filter((field): field is DeferrableItemField => field !== undefined);
   const fields = new Set<string>(deferred.map((entry) => entry.field));
   // A schema field that writes a deferred metadata key is the same default under another name.
-  const runtimeKeys = runtimeFields.filter((definition) => fields.has(definition.metadata_key)).flatMap((definition) => resolveCandidateOptionKeys(definition));
+  const runtimeKeys = runtimeFields
+    .filter((definition) => definition.commands.includes("create") && fields.has(definition.metadata_key))
+    .flatMap((definition) => resolveCandidateOptionKeys(definition));
   return [...deferred.map((entry) => entry.option), ...runtimeKeys];
 }
 
@@ -157,6 +159,10 @@ export function withoutDeferredRuntimeRequirements(
     definition.required !== true && deferredFields.has(definition.metadata_key);
   const satisfied = new Set(createFields.filter(exempt).map((definition) => `--${definition.cli_flag}`));
   // A flag another create requirement still needs stays missing, so a shared spelling never hides it.
-  const stillRequired = new Set(createFields.filter((definition) => !exempt(definition)).map((definition) => `--${definition.cli_flag}`));
+  const stillRequired = new Set(
+    createFields
+      .filter((definition) => !exempt(definition) && (definition.required === true || definition.required_on_create === true))
+      .map((definition) => `--${definition.cli_flag}`),
+  );
   return missingFlags.filter((flag) => !satisfied.has(flag) || stillRequired.has(flag));
 }

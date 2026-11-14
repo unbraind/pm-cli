@@ -34,13 +34,3 @@ export function resolveMutationActor(author: string): Readonly<MutationActor> {
     ...(Object.keys(agent).length === 0 ? {} : { agent: Object.freeze(agent) }),
   });
 }
-
-/** Copy an actor for one guard, so no guard can alter what the next guard or the history writer sees. */
-export function cloneMutationActor(actor: Readonly<MutationActor>): Readonly<MutationActor> {
-  return Object.freeze({
-    author: actor.author,
-    author_source: actor.author_source,
-    principal: actor.principal,
-    ...(actor.agent === undefined ? {} : { agent: Object.freeze({ ...actor.agent }) }),
-  });
-}

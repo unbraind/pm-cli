@@ -4,7 +4,7 @@
  * Implements extension runtime contracts and governance for Extension Hook Runtime.
  */
 import { unicodeSafePrefix } from "../shared/text-normalization.js";
-import { cloneMutationActor } from "./mutation-actor.js";
+import { cloneMutationActor } from "./mutation-actor-snapshot.js";
 import {
   cloneCommandOptionsSnapshot,
   cloneContextSnapshot,

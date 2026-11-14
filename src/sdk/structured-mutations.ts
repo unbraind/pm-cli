@@ -27,8 +27,8 @@ import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved, type RuntimeFieldRegistry } from "../core/schema/runtime-schema.js";
 import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS, resolveCoreUpsertMetadataKey } from "./lifecycle/core-item-fields.js";
-import { DEFERRABLE_ITEM_FIELDS, resolveDeferrableItemField } from "../core/item/deferred-fields.js";
-import { resolveRuntimeUnsetFieldDefinition } from "./lifecycle/shared-unset-fields.js";
+import { DEFERRABLE_ITEM_FIELDS } from "../core/item/deferred-fields.js";
+import { parseCreateUnsetTargets } from "./lifecycle/shared-unset-fields.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 
@@ -1361,14 +1361,13 @@ function documentDeferralOptions(
   explicitUnset: unknown,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): { defer?: string[]; deferReason?: string } {
-  const unsetTokens = (Array.isArray(explicitUnset) ? explicitUnset : []).flatMap((token) => String(token).split(","));
-  const overridden = new Set<string | undefined>([
+  const createFields = runtimeFields.filter((definition) => definition.commands.includes("create"));
+  const overridden = new Set<string>([
     ...DEFERRABLE_ITEM_FIELDS.filter((entry) => explicitKeys.has(entry.option)).map((entry) => entry.field),
-    // An explicit schema field that writes a deferrable metadata key overrides it the same way.
-    ...runtimeFields.filter((definition) => explicitKeys.has(runtimeFieldOptionTarget(definition))).map((definition) => definition.metadata_key),
-    ...unsetTokens.map((token) => resolveDeferrableItemField(token)?.field),
-    // An unset of a schema field resolves to its metadata key exactly as the create unset parser resolves it.
-    ...unsetTokens.map((token) => resolveRuntimeUnsetFieldDefinition(token, "create", createFieldRegistry(runtimeFields))?.metadataKey),
+    // An explicit create-scoped schema field that writes a deferrable metadata key overrides it the same way.
+    ...createFields.filter((definition) => explicitKeys.has(runtimeFieldOptionTarget(definition))).map((definition) => definition.metadata_key),
+    // Unsets name exactly what create's own parser resolves them to: core aliases first, then schema fields.
+    ...parseCreateUnsetTargets(Array.isArray(explicitUnset) ? explicitUnset.map(String) : [], createFieldRegistry(createFields)).metadataKeys,
   ]);
   const entries = (Array.isArray(value) ? value : [])
     .filter(isPlainObject)

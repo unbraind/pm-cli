@@ -72,7 +72,6 @@ import type {
   VectorStoreQueryHit,
   VectorStoreUpsertContext,
 } from "../core/extensions/loader.js";
-import { resolveMutationActor } from "../core/extensions/mutation-actor.js";
 import {
   activateExtensions,
   deactivateExtensions,
@@ -1084,6 +1083,7 @@ export async function runRegisteredMutationGuardForTest(
     throw new Error("Expected a registered before_mutation hook to invoke");
   }
   const { actor, author, dry_run: dryRun, ...context } = options.context;
+  const { resolveMutationActor } = await import("../core/extensions/mutation-actor.js");
   await runBeforeMutationHooks(hooks, {
     ...context,
     actor: actor ?? resolveMutationActor(author ?? "unknown"),
