@@ -109,9 +109,13 @@ describe("extension test harness parity with native dispatch", () => {
     const activation = await activate((api) => {
       api.registerFlags("svc-toon", [{ long: "--note", value_type: "string" }]);
       api.registerCommand({ name: "svc-toon", read_output: { row_keys: ["rows"] }, run: () => ({ ok: true }) });
-      api.registerService("output_format", (context) =>
-        (context.payload as { format: string }).format === "toon" ? { handled: true, result: { ok: true, rows: [] } } : { handled: false },
-      );
+      api.registerService("output_format", (context) => {
+        const payload = context.payload as { format: string; command_options: Record<string, unknown> };
+        // Native output hands the service the merged command options with the resolved encoding (Codex review round 5).
+        return payload.format === "toon" && payload.command_options.resolvedOutputFormat === "toon" && payload.command_options.outputFormat === "toon"
+          ? { handled: true, result: { ok: true, rows: [] } }
+          : { handled: false };
+      });
     });
     await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", options: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
     // A global output control wins over the JSON default too (Codex review round 4).

@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: extensions,"gh:1729",read-output,sdk,testing
 created_at: "2026-11-14T15:21:20.930Z"
-updated_at: "2026-11-14T19:02:15.163Z"
+updated_at: "2026-11-14T19:12:36.058Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#dec610b5c29dc08047ecfcc1"
 author: "harness:claude-code"
@@ -21,9 +21,10 @@ expected_result: The harness and the native CLI agree on whether a compact forma
 actual_result: The harness passes a receipt that the native CLI refuses with extension_read_output_invalid
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1726,related,"2026-11-14T15:26:13.918Z","harness:claude-code","cli:update:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-14T16:56:07.237Z","harness:claude-code","Root cause (2026-11-14): attachExtensionReadOutputRows (src/sdk/read-output/extension.ts) refuses a result that lacks a declared row collection before projection or any output_format service runs, which is intended: declared row_keys are a promise. runRegisteredCommandForTest never ran that check, so a receipt-only handler passed package tests and failed natively. Fix: the check is extracted as assertExtensionReadOutputResult and the harness applies it to every handled result of a command whose last registration declares read_output, so package tests now fail with the same code and message. The refusal now also carries required/why text naming the compatible pattern: keep returning the rows (an empty collection is valid) and let the output_format service render the compact receipt. Oversized delivered output stays refused natively (output_budget_exceeded) even with valid rows; the regression fixture covers receipt-only, rows, empty rows, malformed rows and oversized delivery."
   "2026-11-14T19:02:15.162Z","harness:claude-code","Codex review round 4 (head 66ec6d502), one P2 finding, verified and fixed: the harness ignored an outputFormat passed through global options when it chose the output_format branch, while native formatEffectiveOutput merges the global output controls (outputInclude, outputLimit, outputBudget, outputFormat, outputSession, outputCursor, outputRowContract) over the command options before resolveReadOutputEncoding. The harness now merges the same keys first; harness-parity.spec covers command-option and global spellings."
+  "2026-11-14T19:12:36.057Z","harness:claude-code","Codex review round 5 (head 6f1062e37), one P2 finding, verified and fixed: the harness resolved the encoding from the merged command and global output controls but then handed the output_format service the unmerged options, so a service reading payload.command_options.outputFormat saw undefined where native output passes toon. The payload now mirrors native resolveOutputService: command_options are the merged options plus resolvedOutputFormat, and payload.options/global carry command and commandOptions."
 files[4]{path,scope}:
   src/sdk/read-output/extension.ts,project
   src/sdk/testing.ts,project

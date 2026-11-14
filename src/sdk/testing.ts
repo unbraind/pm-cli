@@ -273,7 +273,10 @@ function resolveServiceAdmittedResult(
   // formatEffectiveOutput) beats the harness's JSON default.
   const global = (context.global ?? {}) as Record<string, unknown>;
   const controls = Object.fromEntries(HARNESS_GLOBAL_OUTPUT_CONTROLS.filter((key) => global[key] !== undefined).map((key) => [key, global[key]]));
-  const format = resolveReadOutputEncoding(context.command, { ...context.options, ...controls }) ?? (global.json === false ? "toon" : "json");
+  const commandOptions = { ...context.options, ...controls };
+  const format = resolveReadOutputEncoding(context.command, commandOptions) ?? (global.json === false ? "toon" : "json");
+  // The payload mirrors native resolveOutputService: merged command options carry resolvedOutputFormat.
+  const resolvedCommandOptions = { ...commandOptions, resolvedOutputFormat: format };
   const service = runServiceOverrideSync(services, {
     service: "output_format",
     command: context.command,
@@ -281,7 +284,16 @@ function resolveServiceAdmittedResult(
     options: { ...context.options },
     global: context.global,
     pm_root: context.pm_root,
-    payload: { command: context.command, args: [...context.args], command_options: { ...context.options }, global: { ...context.global }, pm_root: context.pm_root, format, options: { ...context.global }, result },
+    payload: {
+      command: context.command,
+      args: [...context.args],
+      command_options: resolvedCommandOptions,
+      global: { ...global, command: context.command, commandOptions: resolvedCommandOptions },
+      pm_root: context.pm_root,
+      format,
+      options: { ...global, command: context.command, commandOptions: resolvedCommandOptions },
+      result,
+    },
   });
   return service.handled && typeof service.result !== "string" ? service.result : result;
 }
