@@ -231,8 +231,8 @@ function resolveCanonicalLooseOptionKey(
 function formatLooseOptionLabel(
   definition: LooseCommandFlagDefinition,
 ): string | null {
-  const long =
-    typeof definition.long === "string" ? definition.long.trim() : "";
+  // An inline declaration (`--from-tracker <path>`) is labelled by its flag token alone (pm-gh1727 review).
+  const long = resolveExtensionLongFlagName(definition.long) ?? "";
   if (long.startsWith("--") && long.length > 2) {
     return long;
   }
@@ -367,7 +367,8 @@ function refuseMissingRequiredExtensionOption(
   label: string,
   commandPath: string,
 ): never {
-  const usage = isBooleanSwitchDefinition(definition) ? label : `${label} <value>`;
+  const value = resolveExtensionFlagValueContract(definition as Parameters<typeof resolveExtensionFlagValueContract>[0]);
+  const usage = value.value_arity === "none" ? label : value.value_arity === "optional" ? `${label} [${value.value_name}]` : `${label} <${value.value_name}>`;
   throw new PmCliError(
     `Missing required option '${label}' for extension command '${commandPath}'.`,
     EXIT_CODE.USAGE,

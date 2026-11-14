@@ -2914,8 +2914,9 @@ lets its `output_format` service render the receipt; a receipt-only result is
 refused with `extension_read_output_invalid`. `runRegisteredCommandForTest`
 and `createExtensionTestHarness().runCommand()` apply the same admission to
 the result a registered command-result override delivers (skipping a result
-that suppresses host output), so a package test fails exactly where the
-native CLI would
+that suppresses host output), and to a structured `output_format` replacement
+in place of that result (a string rendering leaves the result itself to be
+admitted), so a package test fails exactly where the native CLI would
 ([pm-gh1729](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1729.toon),
 tracker record excluded from npm). Avoid
 reserved metadata and prototype property names. The declaration promises a
@@ -3240,7 +3241,8 @@ snake_case or dashed form (`json`, `outputBudget`, `output_budget`, `pmPath`,
 `--json`), the positive key of each `--no-*` switch, and the action-transport
 keys `force`, `subcommand`, `inputResponses` and `requestState`. An
 extension that extends or overrides a native command (`list`) also receives
-that command's own options (`all`, `status`), as CLI argv validates contributed
+that command's own options (`all`, `status`, aliases such as `tags`, and the
+key a `--no-*` flag sets, such as `truncate`), as CLI argv validates contributed
 flags together with the native ones. A command that declares no flags still
 receives every key (pm-4of199, below). An
 extension action also keeps the caller's values as given: the native

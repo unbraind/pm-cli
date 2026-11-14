@@ -10,7 +10,7 @@ import { suppressHostOutput } from "../../../../src/sdk/output.js";
 import type { ExtensionApi } from "../../../../src/core/extensions/extension-types.js";
 
 async function activate(register: (api: ExtensionApi) => void) {
-  const activation = await activateExtensionForTest({ activate: register }, { name: "harness-parity", capabilities: ["commands", "schema"] });
+  const activation = await activateExtensionForTest({ activate: register }, { name: "harness-parity", capabilities: ["commands", "schema", "services"] });
   expect(activation.failed).toEqual([]);
   return activation;
 }
@@ -48,5 +48,64 @@ describe("extension test harness parity with native dispatch", () => {
     });
     // An override that suppresses host output renders nothing, so nothing is admitted.
     await expect(runRegisteredCommandForTest(activation.commands, { command: "rows-suppressed" })).resolves.toMatchObject({ handled: true });
+  });
+
+  it("admits a structured output_format replacement in place of the result, as native output does (Codex review round 2)", async () => {
+    const seen: string[] = [];
+    const activation = await activate((api) => {
+      api.registerFlags("svc-structured", [{ long: "--note", value_type: "string" }]);
+      api.registerFlags("svc-string", [{ long: "--note", value_type: "string" }]);
+      api.registerCommand({ name: "svc-structured", read_output: { row_keys: ["rows"] }, run: () => ({ ok: true }) });
+      api.registerCommand({ name: "svc-string", read_output: { row_keys: ["rows"] }, run: () => ({ ok: true }) });
+      api.registerService("output_format", (context) => {
+        const payload = context.payload as { format: string };
+        seen.push(`${context.command}:${payload.format}`);
+        if (context.command === "svc-structured") return { handled: true, result: { ok: true, rows: [] } };
+        return { handled: true, result: "receipt.md" };
+      });
+    });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-structured" })).resolves.toMatchObject({ handled: true });
+    // A string rendering does not replace the result, so the receipt-only result is still refused.
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-string", global: { json: false } })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "extension_read_output_invalid" }),
+    });
+    expect(seen).toEqual(["svc-structured:json", "svc-string:toon"]);
+    // A registry copied without the service symbol admits the result itself.
+    const copied = { ...activation.commands };
+    Object.defineProperty(copied, Symbol.for("pm.sdk.testing.activatedFlagRegistrations"), { value: activation.registrations });
+    await expect(runRegisteredCommandForTest(copied, { command: "svc-structured" })).rejects.toMatchObject({
+      context: expect.objectContaining({ code: "extension_read_output_invalid" }),
+    });
+  });
+
+  it("names an inline declaration's flag token alone in missing-option metadata (Codex review round 2)", async () => {
+    const activation = await activate((api) => {
+      api.registerFlags("inline-required", [
+        { long: "--from-tracker <path>", required: true },
+        { long: "--mode [kind]", required: true },
+      ]);
+      api.registerCommand({ name: "inline-required", run: () => ({ ok: true }) });
+    });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "inline-required", options: { mode: "x" } })).rejects.toMatchObject({
+      context: expect.objectContaining({
+        code: "missing_required_option",
+        flag: "--from-tracker",
+        field: "fromTracker",
+        examples: ["pm inline-required --from-tracker <path>"],
+        recovery: { missing: ["--from-tracker"] },
+      }),
+    });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "inline-required", options: { fromTracker: "x" } })).rejects.toMatchObject({
+      context: expect.objectContaining({ flag: "--mode", examples: ["pm inline-required --mode [kind]"] }),
+    });
+  });
+
+  it("admits every spelling of a native flag: aliases and the positive key of a --no-* flag (Codex review round 2)", async () => {
+    const activation = await activate((api) => {
+      api.registerFlags("list", [{ long: "--probe", value_type: "boolean" }]);
+      api.registerCommand({ name: "list", run: (context) => ({ options: context.options }) });
+    });
+    const result = await runRegisteredCommandForTest(activation.commands, { command: "list", options: { probe: true, truncate: false, tags: "a" } });
+    expect(result).toMatchObject({ handled: true, result: { options: { probe: true, truncate: false, tags: "a" } } });
   });
 });

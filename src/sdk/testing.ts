@@ -88,6 +88,7 @@ import {
   runPreflightOverride,
   runRendererOverride,
   runServiceOverride,
+  runServiceOverrideSync,
 } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import {
@@ -245,6 +246,38 @@ function readActivatedFlagRegistrations(
   ];
 }
 
+/** Symbol under which an activation attaches its service registry, so command admission can run `output_format` as native output does. */
+const ACTIVATED_COMMAND_SERVICES = Symbol.for("pm.sdk.testing.activatedServices");
+
+/** Read the service registry an activation attached to its command registry. */
+function readActivatedServices(commands: ExtensionCommandRegistry): ExtensionServiceRegistry | undefined {
+  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_SERVICES]?: ExtensionServiceRegistry })[ACTIVATED_COMMAND_SERVICES];
+}
+
+/**
+ * The result native output admits after an `output_format` service ran: a
+ * structured replacement is admitted in place of the result, while a string
+ * rendering (or a declined service) leaves the result itself to be admitted.
+ */
+function resolveServiceAdmittedResult(
+  services: ExtensionServiceRegistry | undefined,
+  context: CommandHandlerContext,
+  result: unknown,
+): unknown {
+  if (services === undefined) return result;
+  const format = context.global?.json === false ? "toon" : "json";
+  const service = runServiceOverrideSync(services, {
+    service: "output_format",
+    command: context.command,
+    args: [...context.args],
+    options: { ...context.options },
+    global: context.global,
+    pm_root: context.pm_root,
+    payload: { command: context.command, args: [...context.args], command_options: { ...context.options }, global: { ...context.global }, pm_root: context.pm_root, format, options: { ...context.global }, result },
+  });
+  return service.handled && typeof service.result !== "string" ? service.result : result;
+}
+
 /** The activation registrations the harness reads: declared flags, and command declarations such as `read_output`. */
 type ActivatedCommandRegistrations = Pick<ExtensionActivationResult["registrations"], "flags" | "commands">;
 
@@ -252,9 +285,10 @@ type ActivatedCommandRegistrations = Pick<ExtensionActivationResult["registratio
  * Admit a handled result the way the native CLI does before projection or
  * custom formatting (pm-gh1729): a command that declares `read_output` must
  * deliver its declared row collections. Native output applies a registered
- * command-result override first and skips a result that suppresses host
- * output, so admission judges the same effective result; the harness still
- * returns the handler's own outcome. The last registration of a command path
+ * command-result override first, skips a result that suppresses host output,
+ * and admits a structured `output_format` replacement in place of the result,
+ * so admission judges the same effective result; the harness still returns
+ * the handler's own outcome. The last registration of a command path
  * wins, as in the host.
  */
 function admitRegisteredReadOutputResult(
@@ -268,7 +302,7 @@ function admitRegisteredReadOutputResult(
   if (readOutput === undefined) return outcome;
   const effective = runCommandOverride(commands, { ...context, result: outcome.result }).result;
   if (!isHostOutputSuppressed(effective)) {
-    assertExtensionReadOutputResult(readOutput, effective);
+    assertExtensionReadOutputResult(readOutput, resolveServiceAdmittedResult(readActivatedServices(commands), context, effective));
   }
   return outcome;
 }
@@ -988,6 +1022,10 @@ export async function activateExtensionForTest(
   );
   Object.defineProperty(activation.commands, ACTIVATED_COMMAND_FLAG_REGISTRATIONS, {
     value: activation.registrations,
+    enumerable: false,
+  });
+  Object.defineProperty(activation.commands, ACTIVATED_COMMAND_SERVICES, {
+    value: activation.services,
     enumerable: false,
   });
   return activation;

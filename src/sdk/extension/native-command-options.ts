@@ -10,10 +10,17 @@
 import { resolveSubcommandFlagContractsForCommand } from "../cli-contracts/flag-contracts.js";
 import type { LooseCommandFlagDefinition } from "./command-options.js";
 
-/** Native flag definitions for a command path; an extension-created path resolves to the shared global flags only. */
+/**
+ * Native flag definitions for a command path; an extension-created path
+ * resolves to the shared global flags only. Every spelling Commander accepts
+ * is admitted: the canonical flag with its short letter, each alias, and the
+ * positive handler key a `--no-*` flag sets (`--no-truncate` sets `truncate`).
+ */
 export function resolveNativeCommandOptionDefinitions(commandPath: string): LooseCommandFlagDefinition[] {
-  return resolveSubcommandFlagContractsForCommand(commandPath).map((contract) => ({
-    long: contract.flag,
-    short: contract.short,
-  }));
+  return resolveSubcommandFlagContractsForCommand(commandPath).flatMap((contract) =>
+    [contract.flag, ...(contract.aliases ?? [])].flatMap((long, index): LooseCommandFlagDefinition[] => [
+      index === 0 ? { long, short: contract.short } : { long },
+      ...(long.startsWith("--no-") ? [{ long: `--${long.slice(5)}` }] : []),
+    ]),
+  );
 }
