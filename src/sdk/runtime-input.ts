@@ -615,12 +615,19 @@ function checkedMcpMutationOptions(
   return normalized;
 }
 
-/** Normalize MCP mutation aliases after merging explicit nested values over flat fields. */
+/**
+ * Normalize MCP mutation aliases after merging explicit nested values over
+ * flat fields. The core array rewrites (`tags` joined to CSV, `dep` promoted to
+ * an array, ...) describe native command fields, so an extension action keeps
+ * the caller's values and its declared flag contract normalizes them
+ * (pm-gh1726): a declared scalar `--dep` must not receive an array.
+ */
 function normalizedActionOptions(
   args: Record<string, unknown>,
   action: string | undefined,
   hoisted: Record<string, unknown>,
   nested: Record<string, unknown>,
+  nativeAction: boolean,
 ): Record<string, unknown> {
   const mcpMutation = (action === "create" || action === "update") && isMcpMutationTransportInput(args);
   const options = {
@@ -633,7 +640,8 @@ function normalizedActionOptions(
     if (!cli) foldNullClearsIntoUnset(action, options);
     assertNativeMutationValueTypes(action, options, true, cli);
   }
-  return mcpMutation ? checkedMcpMutationOptions(action, args, options) : normalizeMcpOptionsArrays(options, action);
+  if (mcpMutation) return checkedMcpMutationOptions(action, args, options);
+  return nativeAction ? normalizeMcpOptionsArrays(options, action) : options;
 }
 
 /** Apply literal data policy to mutation actions while preserving every other action's options. */
@@ -642,10 +650,15 @@ function literalActionOptions(action: string | undefined, options: Record<string
   return withLiteralMutationInput(options);
 }
 
-/** Merge hoisted top-level action arguments and author aliases into options. */
+/**
+ * Merge hoisted top-level action arguments and author aliases into options.
+ * Pass `nativeAction: false` for an extension-contributed action, whose
+ * options skip the native field array rewrites.
+ */
 export function optionsWithAuthor(
   args: Record<string, unknown>,
   action?: string,
+  { nativeAction = true }: { nativeAction?: boolean } = {},
 ): Record<string, unknown> {
   assertMutationItemOperand(action, args);
   const sourceOptions = isRuntimeRecord(args.options)
@@ -671,7 +684,7 @@ export function optionsWithAuthor(
     args,
     camelCaseDeclaredOptions(
       action,
-      normalizedActionOptions(args, action, hoistedTopLevel, baseOptions),
+      normalizedActionOptions(args, action, hoistedTopLevel, baseOptions, nativeAction),
     ),
   );
   if (action === "history-attest" && isMcpMutationTransportInput(args)) {

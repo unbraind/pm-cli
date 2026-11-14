@@ -14,6 +14,8 @@ const commonFlags: FlagDefinition[] = [
   { long: "--body", value_name: "text", value_type: "string", description: "Body/markdown content" },
   { long: "--description", value_name: "text", value_type: "string", description: "Short description" },
   { long: "--message", value_name: "value", value_type: "string", description: "History message" },
+  // The handler reads inheritFocus, so it is declared: direct callers are refused undeclared keys (pm-gh1727).
+  { long: "--inherit-focus", value_type: "boolean", description: "Use saved focus as parent (default)" },
 ];
 
 const eventFlags: FlagDefinition[] = [

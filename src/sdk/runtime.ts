@@ -854,7 +854,7 @@ export class PmClient {
   }
 
   /** Return every status and full item row only after fail-closed corpus certification. */
-  async listAllComplete(options: PmCompleteListOptions = {}): Promise<PmCompleteListResult> { return certifyCompleteListResult(await this.list(createCompleteListOptions(options))); }
+  async listAllComplete(options: PmCompleteListOptions = {}): Promise<PmCompleteListResult> { return certifyCompleteListResult(await this.list(createCompleteListOptions(options)), options); }
 
   /** Search items with the MCP/agent compact defaults. */
   search<Options extends ReadOptions<SearchOptions> = InitialReadOptions>(
@@ -3090,12 +3090,12 @@ async function dispatchAction(
   global: GlobalOptions,
   activeExtensions: ActiveExtensionRuntime | null,
 ): Promise<unknown> {
-  const options = optionsWithAuthor(args, action);
+  const handler = getOwnHandler(SDK_ACTION_HANDLERS, action);
+  const options = optionsWithAuthor(args, action, { nativeAction: handler !== undefined });
   if (action === "create" || action === "update") {
     const { assertNativeMutationOptions } = await import("./runtime/mutation-admission.js");
     await assertNativeMutationOptions(action, args, options, global.path, HOISTED_ACTION_OPTION_KEYS[action]!);
   }
-  const handler = getOwnHandler(SDK_ACTION_HANDLERS, action);
   const extensionCommand = handler ? undefined : resolveActiveExtensionActionCommand(action, activeExtensions);
   const readCommand = extensionCommand === undefined ? action : `extension:${extensionCommand}`;
   validateReadOutputOptions(readCommand, options);

@@ -6,6 +6,7 @@ import {
   listAllComplete,
 } from "../../src/sdk/runtime.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import { createTestItemId } from "../helpers/itemFactory.js";
 
 describe("complete list SDK acceptance", () => {
   it("preserves the canonical full projection when body inclusion is omitted", async () => {
@@ -192,6 +193,42 @@ describe("complete list SDK acceptance", () => {
         omitted_field_group_count: 0,
         omitted_field_groups: [],
       });
+    });
+  });
+
+  it("pm-gh1728: executing the emitted recovery returns the bodies, edges, learnings and counts the refused request asked for", async () => {
+    await withTempPmPath(async (context) => {
+      const parent = createTestItemId(context, { title: "Recovery parent", body: "parent body" });
+      createTestItemId(context, { title: "Recovery child", body: "child body", parent });
+      const empty = createTestItemId(context, { title: "Recovery empty body", body: "" });
+      expect(context.runCli(["learnings", empty, "--add", "A durable lesson"]).code).toBe(0);
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      type Row = { id: string; body?: string; parent?: string; learnings?: unknown[] };
+      const recoveryFor = async (includeBody: boolean | undefined) => {
+        const page = await client.list({ excludeTerminal: false, full: true, outputLimit: 1, ...(includeBody === undefined ? {} : { includeBody }) });
+        try {
+          certifyCompleteListResult(page);
+        } catch (error: unknown) {
+          if (error instanceof PmCompleteListValidationError) return error.receipt.recovery;
+        }
+        throw new Error("Expected the one-row page to be refused");
+      };
+      const summarize = (items: Row[]) =>
+        items.map(({ id, body, parent: edge, learnings }) => ({ id, body, parent: edge, learnings: learnings?.length ?? 0 })).sort((a, b) => a.id.localeCompare(b.id));
+      for (const includeBody of [true, false, undefined]) {
+        const recovery = await recoveryFor(includeBody);
+        const argv = recovery.suggested_retry.split(" ").slice(1);
+        const retried = context.runCli(argv, { expectJson: true });
+        expect(retried.code, recovery.suggested_retry).toBe(0);
+        const viaCli = certifyCompleteListResult(retried.json);
+        const viaSdk = await client.listAllComplete(includeBody === true ? { includeBody: true } : {});
+        expect(viaCli.complete_list.item_count).toBe(3);
+        expect(summarize(viaCli.items as Row[])).toEqual(summarize(viaSdk.items as Row[]));
+        const bodies = (viaCli.items as Row[]).map((item) => item.body).filter((body) => body !== undefined).sort();
+        // Bodies come back exactly when they were asked for; the empty body stays an empty string.
+        expect(bodies).toEqual(includeBody === true ? ["", "child body", "parent body"] : []);
+        expect(recovery.sdk).toBe(includeBody === true ? "await client.listAllComplete({ includeBody: true })" : "await client.listAllComplete()");
+      }
     });
   });
 });

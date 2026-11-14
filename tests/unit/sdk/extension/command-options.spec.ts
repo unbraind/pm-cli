@@ -10,6 +10,7 @@ import {
   type ArgvOptionScope,
   refuseConflictingArgvOptionSpellings,
   resolveExtensionFlagOptionKey,
+  validateLooseCommandOptionsWithFlagDefinitions,
 } from "../../../../src/sdk/extension/command-options.js";
 import { PmCliError } from "../../../../src/sdk/runtime-primitives.js";
 
@@ -21,7 +22,7 @@ describe("direct extension command options", () => {
     expect(resolveExtensionFlagOptionKey({})).toBeNull();
   });
 
-  it("folds declared spellings into the handler key, applies defaults and coercion, and passes undeclared keys through", () => {
+  it("folds declared spellings into the handler key, applies defaults and coercion, and passes host-owned keys through", () => {
     const definitions = [
       { long: "--status-filter", short: "-s", value_type: "string", default: "open" },
       { long: "--limit", value_type: "number" },
@@ -32,18 +33,18 @@ describe("direct extension command options", () => {
     ];
     expect(
       normalizeDirectExtensionCommandOptions(
-        { "status-filter": "closed", "--limit": "5", extra: true, ignored: undefined },
+        { "status-filter": "closed", "--limit": "5", json: true, output_budget: "400", force: false, ignored: undefined },
         definitions,
         "demo brief",
       ),
-    ).toEqual({ statusFilter: "closed", limit: 5, extra: true, ignored: undefined });
+    ).toEqual({ statusFilter: "closed", limit: 5, json: true, output_budget: "400", force: false, ignored: undefined });
     expect(normalizeDirectExtensionCommandOptions({ s: "done" }, definitions, "demo brief")).toEqual({ statusFilter: "done" });
     // An explicit undefined counts as omitted, so the declared default applies.
     expect(normalizeDirectExtensionCommandOptions({ statusFilter: undefined }, definitions, "demo brief")).toEqual({ statusFilter: "open" });
     // Equal values under two spellings fold silently.
     expect(
-      normalizeDirectExtensionCommandOptions({ statusFilter: ["a"], "status-filter": ["a"] }, definitions, "demo brief"),
-    ).toEqual({ statusFilter: ["a"] });
+      normalizeDirectExtensionCommandOptions({ statusFilter: "a", "status-filter": "a" }, definitions, "demo brief"),
+    ).toEqual({ statusFilter: "a" });
     const options = { statusFilter: "closed" };
     expect(normalizeDirectExtensionCommandOptions(options, [], "demo brief")).toBe(options);
   });
@@ -68,13 +69,14 @@ describe("direct extension command options", () => {
       s: "lower",
       sortOrder: "upper",
     });
-    // An undeclared key equal to a lower-cased short alias passes through untouched (Greptile review).
+    // An undeclared key equal to a lower-cased short alias is never folded into that flag (Greptile review);
+    // like `-s` on the CLI, it is an unknown option (pm-gh1727).
     const onlyUpper = [{ long: "--sort-order", short: "-S", value_type: "string" }];
-    expect(normalizeDirectExtensionCommandOptions({ s: "keep", sortOrder: "descending" }, onlyUpper, "demo brief")).toEqual({
-      s: "keep",
-      sortOrder: "descending",
-    });
-    expect(normalizeDirectExtensionCommandOptions({ s: "keep" }, onlyUpper, "demo brief")).toEqual({ s: "keep" });
+    for (const options of [{ s: "keep", sortOrder: "descending" }, { s: "keep" }]) {
+      expect(() => normalizeDirectExtensionCommandOptions(options, onlyUpper, "demo brief")).toThrow(
+        "Unknown option 's' for extension command 'demo brief'. Expected one of: --sort-order.",
+      );
+    }
   });
 
   it("binds required and disabled declarations and reads negated boolean spellings on direct calls (CodeRabbit review)", () => {
@@ -104,13 +106,12 @@ describe("direct extension command options", () => {
       { long: "--optional-off", value_type: "string", required: true, enabled: false },
     ];
     expect(normalizeDirectExtensionCommandOptions({ s: "keep" }, shadowed, "demo brief")).toEqual({ s: "keep" });
-    // A negated spelling of a non-boolean, or of nothing declared, passes through unchanged.
-    expect(normalizeDirectExtensionCommandOptions({ target: "a", "no-target": true, "no-such": 1 }, definitions, "demo brief")).toEqual({
-      target: "a",
-      verbose: true,
-      "no-target": true,
-      "no-such": 1,
-    });
+    // A negated spelling of a non-boolean, or of nothing declared, is not folded; it is an unknown option.
+    for (const [spelling, flag] of [["no-target", "--no-target"], ["no-such", "--no-such"]]) {
+      expect(() => normalizeDirectExtensionCommandOptions({ target: "a", [spelling]: 1 }, definitions, "demo brief")).toThrow(
+        expect.objectContaining({ context: expect.objectContaining({ code: "unknown_option", flag }) }),
+      );
+    }
     // A flag that is itself declared with a no- prefix keeps its own key.
     expect(
       normalizeDirectExtensionCommandOptions({ "--no-cache": true }, [{ long: "--no-cache", value_type: "boolean" }], "demo brief"),
@@ -357,5 +358,86 @@ describe("pm-wlxf8f argv spelling conflicts", () => {
     expect(refuse(parent(["--bogus", "child", "--status-filter", "a", "-s", "b"], positional))).toThrow();
     // Pass-through options stop at the first unrecognized token.
     expect(refuse(parent(["--status-filter", "a", "--bogus", "-s", "b"], { atSubcommand: () => false, atFirstUnrecognized: true }))).not.toThrow();
+  });
+});
+
+describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () => {
+  const definitions = [
+    { long: "--target", value_type: "string", required: true },
+    { long: "--confirm", value_type: "boolean", required: true },
+    { long: "--legacy", value_type: "string", enabled: false },
+    { long: "--ids", value_type: "string", list: true },
+    { long: "--labels", value_type: "string", list: true, required: true },
+  ];
+  const refusal = (run: () => unknown): Record<string, unknown> => {
+    try {
+      run();
+    } catch (error) {
+      expect(error).toBeInstanceOf(PmCliError);
+      return { message: (error as PmCliError).message, exitCode: (error as PmCliError).exitCode, ...(error as PmCliError).context };
+    }
+    throw new Error("Expected a refusal");
+  };
+  const direct = (options: Record<string, unknown>) => () => normalizeDirectExtensionCommandOptions(options, definitions, "demo brief");
+  const valid = { target: "a", confirm: true, labels: ["x"] };
+
+  it("names the missing flag, its handler key and a retry; a required switch has no value placeholder", () => {
+    expect(refusal(direct({ confirm: true, labels: ["x"] }))).toMatchObject({
+      exitCode: 2,
+      code: "missing_required_option",
+      flag: "--target",
+      field: "target",
+      required: "Pass --target <value>.",
+      examples: ["pm demo brief --target <value>"],
+      recovery: { missing: ["--target"] },
+    });
+    expect(refusal(direct({ target: "a", labels: ["x"] }))).toMatchObject({ code: "missing_required_option", required: "Pass --confirm.", examples: ["pm demo brief --confirm"] });
+    // A required list given no entries is zero occurrences, exactly as omitting the flag on the CLI.
+    expect(refusal(direct({ ...valid, labels: [] }))).toMatchObject({ code: "missing_required_option", field: "labels" });
+    // The CLI validator reports the same code for argv.
+    expect(refusal(() => validateLooseCommandOptionsWithFlagDefinitions({ confirm: true, labels: "x" }, definitions, "demo brief"))).toMatchObject({
+      code: "missing_required_option",
+      field: "target",
+    });
+  });
+
+  it("refuses a disabled flag and an undeclared key before the handler, on both validators", () => {
+    expect(refusal(direct({ ...valid, legacy: "v" }))).toMatchObject({ code: "extension_option_disabled", flag: "--legacy", examples: ["pm demo brief --help"] });
+    expect(refusal(() => validateLooseCommandOptionsWithFlagDefinitions({ ...valid, legacy: "v" }, definitions, "demo brief"))).toMatchObject({
+      code: "extension_option_disabled",
+    });
+    expect(refusal(direct({ ...valid, Typo_Key: 1 }))).toMatchObject({
+      code: "unknown_option",
+      flag: "--typo-key",
+      message: "Unknown option 'Typo_Key' for extension command 'demo brief'. Expected one of: --target, --confirm, --legacy, --ids, --labels.",
+    });
+    expect(refusal(direct({ ...valid, "--typo": 1 }))).toMatchObject({ code: "unknown_option", flag: "--typo" });
+    // An explicit undefined under any key is an omission, never an unknown option.
+    expect(normalizeDirectExtensionCommandOptions({ ...valid, typo: undefined }, definitions, "demo brief")).toEqual({ ...valid, typo: undefined });
+  });
+
+  it("refuses an array for a single-value flag and keeps list arrays, including an empty optional list", () => {
+    for (const target of [[], ["a"], ["a", "b"]]) {
+      expect(refusal(direct({ ...valid, target }))).toMatchObject({
+        code: "extension_flag_value_invalid",
+        flag: "--target",
+        message: "Option '--target' for extension command 'demo brief' takes one value; received an array.",
+      });
+    }
+    expect(normalizeDirectExtensionCommandOptions({ ...valid, ids: [] }, definitions, "demo brief")).toMatchObject({ ids: [] });
+    expect(normalizeDirectExtensionCommandOptions({ ...valid, ids: ["a", "b"] }, definitions, "demo brief")).toMatchObject({ ids: ["a", "b"] });
+    // A strict scalar refusal names its flag too.
+    expect(
+      refusal(() => normalizeDirectExtensionCommandOptions({ on: 1 }, [{ long: "--on", value_type: "boolean", value_validation: "strict" }], "demo brief")),
+    ).toMatchObject({ code: "extension_flag_value_invalid", flag: "--on" });
+  });
+
+  it("treats every reserved host flag spelling and the action transport keys as host-owned", () => {
+    for (const key of ["json", "quiet", "outputBudget", "output_budget", "outputInclude", "pmPath", "pm_path", "path", "noExtensions", "extensions", "noPager", "pager", "changedFields", "idOnly", "id_only", "expectHash", "author", "help", "force", "subcommand", "inputResponses", "requestState", "--json", "output-budget", "no-extensions"]) {
+      expect(normalizeDirectExtensionCommandOptions({ ...valid, [key]: "v" }, definitions, "demo brief"), key).toMatchObject({ [key]: "v" });
+    }
+    for (const key of ["typo", "limit", "strictRead", "includeBody", "--strict-read"]) {
+      expect(refusal(direct({ ...valid, [key]: "v" })), key).toMatchObject({ code: "unknown_option" });
+    }
   });
 });

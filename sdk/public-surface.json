@@ -3322,6 +3322,21 @@
       ],
       "package_version": "2026.11.13",
       "reason": "GH-1713 adds deferred_fields to ITEM_UNION_COLLECTION_FIELDS so branches resolving different deferrals union-merge instead of conflicting as one scalar"
+    },
+    {
+      "changes": [
+        "signature ./sdk:assertCompleteListResult",
+        "signature ./sdk:certifyCompleteListResult",
+        "signature ./sdk:PmCompleteListValidationError",
+        "signature ./sdk/query:assertCompleteListResult",
+        "signature ./sdk/query:certifyCompleteListResult",
+        "signature ./sdk/query:PmCompleteListValidationError",
+        "signature ./sdk/runtime:assertCompleteListResult",
+        "signature ./sdk/runtime:certifyCompleteListResult",
+        "signature ./sdk/runtime:PmCompleteListValidationError"
+      ],
+      "package_version": "2026.11.14",
+      "reason": "pm-gh1728: certifyCompleteListResult, assertCompleteListResult and the PmCompleteListValidationError constructor gain an optional trailing PmCompleteListOptions argument; every existing call keeps compiling and behaving the same"
     }
   ],
   "entrypoints": {
@@ -4166,7 +4181,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "assertCompleteListResult",
-          "signature": "(candidate: unknown) => asserts candidate is ListFullResult | calls: (candidate: unknown) => asserts candidate is ListFullResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult"
         },
         {
           "classification": "supported",
@@ -5528,7 +5543,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "certifyCompleteListResult",
-          "signature": "(candidate: unknown) => PmCompleteListResult | calls: (candidate: unknown) => PmCompleteListResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult"
         },
         {
           "classification": "supported",
@@ -15452,7 +15467,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCompleteListValidationError",
-          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[]); }"
+          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[], options?: PmCompleteListOptions); }"
         },
         {
           "classification": "contract_data",
@@ -33812,7 +33827,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "assertCompleteListResult",
-          "signature": "(candidate: unknown) => asserts candidate is ListFullResult | calls: (candidate: unknown) => asserts candidate is ListFullResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult"
         },
         {
           "classification": "supported",
@@ -33938,7 +33953,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "certifyCompleteListResult",
-          "signature": "(candidate: unknown) => PmCompleteListResult | calls: (candidate: unknown) => PmCompleteListResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult"
         },
         {
           "classification": "supported",
@@ -35180,7 +35195,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCompleteListValidationError",
-          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[]); }"
+          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[], options?: PmCompleteListOptions); }"
         },
         {
           "classification": "supported",
@@ -35900,7 +35915,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "assertCompleteListResult",
-          "signature": "(candidate: unknown) => asserts candidate is ListFullResult | calls: (candidate: unknown) => asserts candidate is ListFullResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult"
         },
         {
           "classification": "supported",
@@ -35984,7 +35999,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "certifyCompleteListResult",
-          "signature": "(candidate: unknown) => PmCompleteListResult | calls: (candidate: unknown) => PmCompleteListResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult"
         },
         {
           "classification": "supported",
@@ -37658,7 +37673,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCompleteListValidationError",
-          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[]); }"
+          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[], options?: PmCompleteListOptions); }"
         },
         {
           "classification": "contract_data",
@@ -40249,6 +40264,7 @@
     "extension_mutation_guard_invalid_decision",
     "extension_mutation_guard_invalid_denial",
     "extension_mutation_guard_timed_out",
+    "extension_option_disabled",
     "extension_option_spelling_conflict",
     "extension_read_output_invalid",
     "extension_update_health_partial_coverage",

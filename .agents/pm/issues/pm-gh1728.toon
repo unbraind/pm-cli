@@ -2,11 +2,13 @@ id: pm-gh1728
 title: "GH-1728: complete-list recovery drops an explicit includeBody request, so a repaired whole-list read returns every item without bodies"
 description: "GH-1728 (filed 2026-11-14, reproduced on the published 2026.11.14 tarball). A caller requests a complete list with bodies (createCompleteListOptions({ includeBody: true }) plus a page limit); certifyCompleteListResult correctly refuses the incomplete page with PmCompleteListValidationError, but the recovery it emits omits the body request. The CLI retry (pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json) returns 4/4 items and 0/4 bodies, and the SDK recipe client.listAllComplete() likewise drops it; listAllComplete({ includeBody: true }) and the CLI retry with --include-body return all bodies. The recovery builder lives in src/sdk/query/complete-list.ts. The emitted retry also uses the redundant legacy --no-truncate alias, which adds a migration hint. Expected: a declared projection requirement such as includeBody survives the recovery, or the certifier says explicitly that it cannot know and offers an opt-in recipe; page-incomplete refusal and the corpus safety invariants stay unchanged. Duplicate check: searched complete list recovery include body certify; pm-y4aaol (closed) shipped the primitive and pm-gh1078 (closed) fixed a stale recovery command name."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: complete-list,"gh:1728",read-output,recovery,sdk
 created_at: "2026-11-14T15:21:19.875Z"
-updated_at: "2026-11-14T15:21:19.875Z"
+updated_at: "2026-11-14T17:28:33.706Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#dec610b5c29dc08047ecfcc1"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "The CLI and SDK recovery for a refused complete list preserve an explicit includeBody request and use canonical flags; Specs cover a caller requesting bodies, one not requesting them, and empty bodies, executing the emitted recovery against the same fixture and comparing bodies, typed edges, learnings and counts; Page-incomplete refusal and the corpus safety invariants are unchanged"
@@ -20,4 +22,15 @@ actual_result: The emitted CLI and SDK recovery return every item without bodies
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1078,related,"2026-11-14T15:21:19.875Z","harness:claude-code","cli:create:dep",detected
   pm-y4aaol,related,"2026-11-14T15:21:19.875Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-14T16:56:10.232Z","harness:claude-code","Root cause (2026-11-14): PmCompleteListValidationError built a fixed recovery (pm list ... --no-truncate ... and await client.listAllComplete()) with no knowledge of the request, so a refused includeBody request was retried without bodies. Fix: the constructor takes PmCompleteListOptions; certifyCompleteListResult and assertCompleteListResult take an optional options argument, and without it read the candidate's own filters.include_body record (every list envelope carries it when bodies were requested). listAllComplete passes its options through. The recovery drops the redundant legacy --no-truncate alias because --output-limit unbounded --output-budget unbounded already cover it."
+  "2026-11-14T17:19:50.100Z","harness:claude-code","Correction (2026-11-14, same session): the recovery KEEPS --no-truncate. Executing the emitted retry without it against a fresh tracker returned 3/3 items with has_more false, yet certification refused it as page_incomplete, because inspectEnvelopeShape requires filters.no_truncate and pm list echoes that only for the legacy flag (src/sdk/query/list.ts); --no-truncate also lifts list's own default page limit (resolveListPageLimit caps an unlimited read at 20 rows on a tracker of 10,000+ items). So the alias is load-bearing, not redundant, and the issue's secondary request is declined with that evidence. The mismatch it exposes (the migration hint tells callers to replace --no-truncate with --output-limit unbounded --output-budget unbounded, which yields an uncertifiable list) is filed separately."
+files[5]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/query/complete-list.ts,project
+  src/sdk/runtime.ts,project
+  tests/integration/sdk-complete-list.integration.spec.ts,project
+  tests/unit/sdk/query/complete-list.spec.ts,project
+docs[1]{path,scope}:
+  docs/SDK.md,project
 body: ""

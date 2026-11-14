@@ -611,6 +611,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/extensions/extension-hook-runtime.ts"],
   },
   {
+    code: "extension_option_disabled",
+    exit_code: 2,
+    sources: ["sdk/extension/command-options.ts"],
+  },
+  {
     code: "extension_option_spelling_conflict",
     exit_code: 2,
     sources: ["sdk/extension/command-options.ts"],
@@ -1367,10 +1372,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     exit_code: 5,
     stable: true,
     sources: ["sdk/merge/install.ts"],
-  },
-  {
-    code: "merge_receipt_evidence_invalid",
-    exit_code: 4,
-    sources: ["core/diagnostics/remediation.ts", "sdk/merge/reconcile.ts"],
   },
 ];

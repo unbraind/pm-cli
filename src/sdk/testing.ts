@@ -141,6 +141,7 @@ import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
 } from "./extension/command-options.js";
+import { assertExtensionReadOutputResult } from "./read-output/extension.js";
 import { PmClient } from "./runtime.js";
 
 /** Host-pinned TOON codecs for semantic package-output assertions without deep imports. */
@@ -235,10 +236,32 @@ const ACTIVATED_COMMAND_FLAG_REGISTRATIONS = Symbol.for("pm.sdk.testing.activate
 /** Read the flag registrations an activation attached to its command registry. */
 function readActivatedFlagRegistrations(
   commands: ExtensionCommandRegistry,
-): Pick<ExtensionActivationResult["registrations"], "flags"> | undefined {
-  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_FLAG_REGISTRATIONS]?: Pick<ExtensionActivationResult["registrations"], "flags"> })[
+): ActivatedCommandRegistrations | undefined {
+  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_FLAG_REGISTRATIONS]?: ActivatedCommandRegistrations })[
     ACTIVATED_COMMAND_FLAG_REGISTRATIONS
   ];
+}
+
+/** The activation registrations the harness reads: declared flags, and command declarations such as `read_output`. */
+type ActivatedCommandRegistrations = Pick<ExtensionActivationResult["registrations"], "flags" | "commands">;
+
+/**
+ * Admit a handled result the way the native CLI does before projection or
+ * custom formatting (pm-gh1729): a command that declares `read_output` must
+ * return its declared row collections. The last registration of a command
+ * path wins, as in the host.
+ */
+function admitRegisteredReadOutputResult(
+  registrations: ActivatedCommandRegistrations | undefined,
+  command: string,
+  outcome: CommandHandlerResult,
+): CommandHandlerResult {
+  if (registrations === undefined || !outcome.handled) return outcome;
+  const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === command)?.read_output;
+  if (readOutput !== undefined) {
+    assertExtensionReadOutputResult(readOutput, outcome.result);
+  }
+  return outcome;
 }
 
 /**
@@ -1057,7 +1080,7 @@ export async function runRegisteredCommandForTest(
       : undefined);
   const registrations = readActivatedFlagRegistrations(commands);
   const handlerOptions = options.options ? { ...options.options } : {};
-  return runCommandHandler(commands, {
+  const outcome = await runCommandHandler(commands, {
     command,
     args: options.args ? [...options.args] : [],
     options:
@@ -1072,6 +1095,7 @@ export async function runRegisteredCommandForTest(
     pm_root: pmRoot,
     ...(sdk === undefined ? {} : { sdk }),
   });
+  return admitRegisteredReadOutputResult(registrations, command, outcome);
 }
 
 /** Invoke registered transactional mutation guards through the same fail-closed runtime used by real writes. */

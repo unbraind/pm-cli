@@ -1,0 +1,22 @@
+id: pm-g2zzus
+title: "A repeatable boolean extension switch mixed in attached and bare forms (--many=false --many) loses its bare occurrences, because Commander never sees the attached form"
+description: "Found 2026-11-14 while fixing pm-gh1726 on the built CLI. A flag declared value_type boolean with repeatable: true is a switch (value_arity none), so Commander registers it without a value placeholder: a bare --many reaches the list accumulator, while --many=false is unknown to Commander and is read only by the loose parser from command.args. coerceAccumulatedLooseOption in src/sdk/extension/command-options.ts orders values from the loose occurrences whenever any exist, so the Commander-held bare values are dropped: pm <cmd> --many=false --many delivers [false] instead of [false, true], and --many --many=false delivers [false] instead of [true, false]. All-bare (--many --many, fixed in the same PR to [true, true]) and all-attached forms are unaffected. Fix direction: derive list-switch occurrences in argv order from the captured COMMAND_OPTION_TOKENS with the existing scanArgvScope grammar (refuseConflictingArgvOptionSpellings already resolves each spelling with Commander semantics), instead of mixing Commander's accumulator with the loose occurrence list. Duplicate check: searched repeatable boolean switch attached value order argv; pm-wlxf8f (closed) owns scalar spelling conflicts, pm-853a (closed) value-arity predicates; nothing owns list-switch occurrence order."
+type: Issue
+status: open
+priority: 3
+tags[4]: argv,cli,extensions,flags
+created_at: "2026-11-14T16:53:28.191Z"
+updated_at: "2026-11-14T16:53:28.191Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "pm <cmd> --many=false --many delivers [false, true] and --many --many=false delivers [true, false] on the built CLI; Occurrence order for list switches comes from the same argv scanner that resolves spelling conflicts, so a token consumed as another option's value is never counted; An in-process spec drives mixed, bare-only and attached-only forms, with a negative control showing the pre-fix loss"
+parent: pm-ugqx
+risk: low
+confidence: high
+severity: low
+expected_result: Every occurrence of a repeatable switch reaches the handler in argv order
+actual_result: Bare occurrences are dropped when any attached occurrence is present
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1726,discovered_from,"2026-11-14T16:53:28.191Z","harness:claude-code","cli:create:dep",detected
+  pm-wlxf8f,related,"2026-11-14T16:53:28.191Z","harness:claude-code","cli:create:dep",detected
+body: ""

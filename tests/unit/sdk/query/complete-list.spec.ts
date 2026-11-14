@@ -165,4 +165,43 @@ describe("complete list SDK contract", () => {
       }
     }
   });
+
+  describe("pm-gh1728: the recovery repeats the caller's body request", () => {
+    const refusedPage = (filters: Record<string, unknown>) => ({ ...completeResult(), has_more: true, filters: { ...completeResult().filters, ...filters } });
+    const recoveryOf = (run: () => unknown) => {
+      try {
+        run();
+      } catch (error: unknown) {
+        if (error instanceof PmCompleteListValidationError) return error.receipt.recovery;
+      }
+      throw new Error("Expected PmCompleteListValidationError");
+    };
+
+    it("adds --include-body and includeBody when the refused envelope recorded a body request", () => {
+      expect(recoveryOf(() => certifyCompleteListResult(refusedPage({ include_body: true })))).toEqual({
+        suggested_retry: "pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --include-body --json",
+        sdk: "await client.listAllComplete({ includeBody: true })",
+      });
+    });
+
+    it("keeps the bodiless retry when bodies were not requested", () => {
+      for (const candidate of [refusedPage({}), refusedPage({ include_body: false }), null, { items: [] }]) {
+        const recovery = recoveryOf(() => certifyCompleteListResult(candidate));
+        expect(recovery).toEqual({
+          suggested_retry: "pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json",
+          sdk: "await client.listAllComplete()",
+        });
+      }
+    });
+
+    it("lets the caller's declared options win over the envelope record", () => {
+      expect(recoveryOf(() => certifyCompleteListResult(refusedPage({}), { includeBody: true })).sdk).toBe(
+        "await client.listAllComplete({ includeBody: true })",
+      );
+      expect(recoveryOf(() => assertCompleteListResult(refusedPage({ include_body: true }), { includeBody: false })).sdk).toBe(
+        "await client.listAllComplete()",
+      );
+      expect(new PmCompleteListValidationError([]).receipt.recovery.sdk).toBe("await client.listAllComplete()");
+    });
+  });
 });

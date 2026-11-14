@@ -101,20 +101,26 @@ export class PmCompleteListValidationError extends Error {
   /** Structured failure and executable recovery evidence. */
   readonly receipt: PmCompleteListFailureReceipt;
 
-  /** Construct an immutable complete-list validation failure. */
-  constructor(findings: PmCompleteListFinding[]) {
+  /**
+   * Construct an immutable complete-list validation failure. The recovery
+   * repeats the caller's body request (pm-gh1728): a retry that silently
+   * dropped `includeBody` would certify a corpus without the bodies asked for.
+   */
+  constructor(findings: PmCompleteListFinding[], options: PmCompleteListOptions = {}) {
     super(
       `Complete-list certification failed: ${findings.map((finding) => finding.code).join(", ")}.`,
     );
     this.name = "PmCompleteListValidationError";
+    const withBodies = options.includeBody === true;
     this.receipt = {
       contract_version: 1,
       contract: "complete_list",
       findings,
       recovery: {
-        suggested_retry:
-          "pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json",
-        sdk: "await client.listAllComplete()",
+        // --no-truncate stays: it lifts list's own page limit and is the only flag that echoes
+        // filters.no_truncate, which certification requires (pm-gh1728 review).
+        suggested_retry: `pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded${withBodies ? " --include-body" : ""} --json`,
+        sdk: withBodies ? "await client.listAllComplete({ includeBody: true })" : "await client.listAllComplete()",
       },
     };
   }
@@ -427,13 +433,29 @@ export function inspectCompleteListResult(
   return { ok: findings.length === 0, findings };
 }
 
-/** Certify a result as the whole tracker corpus or throw a typed recovery error. */
+/**
+ * Whether the refused request asked for bodies: the caller's declared option
+ * wins, otherwise the candidate's own `filters.include_body` record, which a
+ * list envelope carries whenever bodies were requested.
+ */
+function resolveRequestedBodies(candidate: unknown, options: PmCompleteListOptions): boolean {
+  if (options.includeBody !== undefined) return options.includeBody;
+  return isRecord(candidate) && isRecord(candidate.filters) && candidate.filters.include_body === true;
+}
+
+/**
+ * Certify a result as the whole tracker corpus or throw a typed recovery
+ * error. Pass the request's {@link PmCompleteListOptions} so the recovery
+ * repeats them; without them, a body request recorded in the candidate's
+ * filters is repeated.
+ */
 export function certifyCompleteListResult(
   candidate: unknown,
+  options: PmCompleteListOptions = {},
 ): PmCompleteListResult {
   const inspection = inspectCompleteListResult(candidate);
   if (!inspection.ok) {
-    throw new PmCompleteListValidationError(inspection.findings);
+    throw new PmCompleteListValidationError(inspection.findings, { includeBody: resolveRequestedBodies(candidate, options) });
   }
   const result = candidate as ListFullResult & {
     items: ListedItem[];
@@ -457,6 +479,7 @@ export function certifyCompleteListResult(
 /** Assert whole-corpus completeness while narrowing the candidate type in place. */
 export function assertCompleteListResult(
   candidate: unknown,
+  options: PmCompleteListOptions = {},
 ): asserts candidate is ListFullResult {
-  certifyCompleteListResult(candidate);
+  certifyCompleteListResult(candidate, options);
 }

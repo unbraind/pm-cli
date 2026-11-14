@@ -1,0 +1,39 @@
+id: pm-gh1727
+title: "GH-1727: direct-caller extension options — a missing required flag has no error code, and an undeclared option reaches the handler instead of unknown_option"
+description: "GH-1727 (filed 2026-11-14, reproduced on 2026.11.13 and 2026.11.14). For an extension command with declared flags, direct callers (PmClient.run and the extension test harness's runCommand) diverge from the CLI option contract in two ways. (1) A missing required flag throws exitCode 2 with code undefined; only the English message (Missing required option '--from-tracker' for extension command 'probe option'.) identifies it, so callers and tests must match text. (2) An undeclared option key from a direct caller ({fromTracker: 'x', typo: 'y'}) dispatches the handler with typo intact, although the CLI path refuses unknown options with unknown_option and lists only the accepted flags (pm-1du7s3). A misspelled option therefore silently falls back to the handler default, the failure class GH-1665 fixed for CLI spellings. Expected from the issue: a stable code for the missing required flag (structured flag field, exit 2, recovery.suggested_retry_argv), and an unknown_option refusal before dispatch for undeclared direct-caller keys, with any opt-out declared per command rather than default. Duplicate check: searched direct caller option validation unknown_option required flag; pm-4of199 owns the CLI-path leak for commands that declare NO flags, pm-gh1726 owns the strict-boolean empty-array case, pm-1du7s3 and pm-gh1665 (closed) shipped the CLI-path refusal and SDK key spelling."
+type: Issue
+status: in_progress
+priority: 2
+tags[5]: extensions,flags,"gh:1727",sdk,validation
+created_at: "2026-11-14T16:18:18.920Z"
+updated_at: "2026-11-14T17:28:40.361Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#dec610b5c29dc08047ecfcc1"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A direct caller omitting a required extension flag is refused before dispatch with a stable machine code, exit 2, the flag in a structured field and a recovery retry; A direct caller passing an undeclared option key to an extension command with declared flags is refused with unknown_option, exit 2, before dispatch, listing only the accepted flags; Specs drive PmClient.run and the extension test harness for both refusals, with a negative control that shows the handler ran before the fix"
+parent: pm-ugqx
+risk: low
+confidence: high
+reporter: unbraind
+severity: medium
+expected_result: "Both refusals carry stable codes before dispatch, matching the CLI path"
+actual_result: The missing-flag refusal has code undefined and an undeclared key reaches the handler
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-1du7s3,related,"2026-11-14T16:18:18.920Z","harness:claude-code","cli:create:dep",detected
+  pm-4of199,related,"2026-11-14T16:18:18.920Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1665,related,"2026-11-14T16:18:18.920Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1726,related,"2026-11-14T16:18:18.920Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-14T16:55:49.640Z","harness:claude-code","Root cause (2026-11-14): normalizeDirectExtensionCommandOptions in src/sdk/extension/command-options.ts split folded options into declared and passthrough maps and passed every undeclared key straight to the handler; refuseDirectDeclarationViolations threw a bare PmCliError for a missing required flag with no context, so the code was undefined. The CLI path reported missing_required_option only because src/cli/error-guidance.ts derived it from the message text, and that heuristic printed a broken 'Pass ... for extension command ... with a valid value' hint plus pm create examples. Fix: shared refusal helpers with literal codes for both validators (missing_required_option with flag, field = handler key, recovery.missing and a command-specific example; extension_option_disabled; unknown_option), and the direct path refuses any key that is neither a declared spelling nor host-owned (reserved host flags in camel, snake or dashed form, plus the pm_run transport keys force, subcommand, inputResponses and requestState, which reach the same option record). Census before tightening: pm-presets injects resolvedParameterValues inside its own code, not through the host, and pm-linear/pm-presets runtime code makes no direct PmClient.run calls with extra keys."
+  "2026-11-14T17:28:40.360Z","harness:claude-code","Bundled-package census before the refusal (2026-11-14): grepped every bundled package's handler reads of context.options and importer options. pm-vcs reads parent and at, both declared; the beads and todos importers read file, backupDir, preserveSourceIds, folder and message, all declared, and author, which is host-owned. pm-calendar's meet, event and remind read inheritFocus without declaring it, so only direct callers could ever set it and the CLI refused --no-inherit-focus as unknown; tests/unit/packages/calendar-shortcuts.spec.ts failed on the new refusal (Unknown option 'inheritFocus' for extension command 'meet'). Fixed by declaring --inherit-focus (boolean, help text shortened to stay inside the flag-help token ratchet) in the package's common flags; on the built CLI pm meet --no-inherit-focus now creates the meeting without the focused parent, which was impossible before."
+files[6]{path,scope}:
+  packages/pm-calendar/extensions/calendar/command-definitions.ts,project
+  src/sdk/extension/command-options.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/generated/generated-error-code-catalog-part-2.ts,project
+  tests/integration/extensions/direct-caller-option-contract.integration.spec.ts,project
+  tests/unit/sdk/extension/command-options.spec.ts,project
+docs[1]{path,scope}:
+  docs/SDK.md,project
+body: ""

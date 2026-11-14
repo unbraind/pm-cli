@@ -3,7 +3,7 @@
  * Resolves request-local package declarations and validates their structured results.
  */
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import type { RegisteredExtensionCommandDefinition } from "../../core/extensions/extension-types.js";
+import type { ExtensionCommandReadOutput, RegisteredExtensionCommandDefinition } from "../../core/extensions/extension-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { isNativeExtensionOutputCommand } from "../../core/extensions/read-output-contract.js";
@@ -26,11 +26,19 @@ export function resolveExtensionReadOutput(command: string): RegisteredExtension
   return registration?.read_output === undefined ? undefined : registration;
 }
 
-/** Validate declared rows before projection and attach the host-owned row contract. */
-export function attachExtensionReadOutputRows(command: string, result: unknown): unknown {
-  const registration = resolveExtensionReadOutput(command);
-  const definition = registration?.read_output;
-  if (definition === undefined) return result;
+/**
+ * Admit a handler result for a command that declares `read_output`: the result
+ * must be a structured object carrying every declared row collection, before
+ * any projection or `output_format` service runs. The native CLI, `PmClient.run`
+ * and the extension test harness share this check (pm-gh1729), so a compact
+ * receipt-only result is refused in a package test exactly as it is natively.
+ * A command that formats a compact receipt keeps returning its rows (an empty
+ * collection is valid) and lets the formatter render the receipt.
+ */
+export function assertExtensionReadOutputResult(
+  definition: ExtensionCommandReadOutput,
+  result: unknown,
+): asserts result is Record<string, unknown> {
   if (typeof result !== "object" || result === null || Array.isArray(result)) {
     throw new PmCliError("Read-only extension commands must return a structured object.", EXIT_CODE.USAGE, { code: "extension_read_output_invalid" });
   }
@@ -40,9 +48,21 @@ export function attachExtensionReadOutputRows(command: string, result: unknown):
       value = typeof value === "object" && value !== null && Object.hasOwn(value, segment) ? Reflect.get(value, segment) : undefined;
     }
     if (value === null || typeof value !== "object") {
-      throw new PmCliError(`Read-only extension result is missing declared row collection ${rowPath}.`, EXIT_CODE.USAGE, { code: "extension_read_output_invalid" });
+      throw new PmCliError(`Read-only extension result is missing declared row collection ${rowPath}.`, EXIT_CODE.USAGE, {
+        code: "extension_read_output_invalid",
+        required: `Return ${rowPath} as an object or array (an empty collection is valid); an output_format service renders the compact receipt from it.`,
+        why: "A command that declares read_output.row_keys promises those row collections, and pm checks them before projection, budgeting or custom formatting.",
+      });
     }
   }
+}
+
+/** Validate declared rows before projection and attach the host-owned row contract. */
+export function attachExtensionReadOutputRows(command: string, result: unknown): unknown {
+  const registration = resolveExtensionReadOutput(command);
+  const definition = registration?.read_output;
+  if (definition === undefined) return result;
+  assertExtensionReadOutputResult(definition, result);
   return { ...result, row_contract: {
     command: `extension:${registration!.command}`,
     row_kind: definition.row_keys.length > 0 ? "collection" : "none",
