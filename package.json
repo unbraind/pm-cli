@@ -4,8 +4,11 @@
   "description": "Git-native project management CLI for humans and agents.",
   "type": "module",
   "packageManager": "pnpm@11.28.5",
-  "author": "unbrained",
-  "homepage": "https://github.com/unbraind/pm-cli#readme",
+  "author": {
+    "name": "Stefan Preu",
+    "url": "https://preu.at"
+  },
+  "homepage": "https://pm-cli.unbrained.dev",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/unbraind/pm-cli.git"
