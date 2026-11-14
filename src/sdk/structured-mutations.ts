@@ -1341,22 +1341,20 @@ function appendItemDocumentEntry(
   ] = scalarItemOption(key, value);
 }
 
-/** Map a document's stored deferral entries to the create `defer` and `deferReason` options. */
-function deferralOptionsFromDocument(value: unknown): { defer?: string[]; deferReason?: string } {
-  const entries = (Array.isArray(value) ? value : []).filter(isPlainObject);
-  const fields = entries.map((entry) => entry.field).filter((field): field is string => typeof field === "string");
-  if (fields.length === 0) return {};
-  const reasons = [...new Set(entries.map((entry) => (typeof entry.reason === "string" ? entry.reason.trim() : "")).filter((reason) => reason.length > 0))];
-  return { defer: fields, ...(reasons.length === 0 ? {} : { deferReason: reasons.join("; ") }) };
-}
-
 /**
- * A value or unset supplied explicitly overrides the document's deferral of
- * that field, exactly as explicit options override any other document value.
- * The synthesized reason goes when no document deferral remains.
+ * Recreate a document's stored deferrals as create `defer` and `deferReason`
+ * options (GH-1713). A value or unset supplied explicitly overrides the
+ * deferral of that field, exactly as explicit options override any other
+ * document value. Each remaining field contributes only its own reason; when
+ * one has none, no reason is synthesized, so create refuses the deferral as it
+ * refuses a reasonless one on its own.
  */
-function dropOverriddenDocumentDeferrals(documentOptions: Record<string, unknown>, explicitKeys: ReadonlySet<string>, explicitUnset: unknown, runtimeFields: readonly RuntimeFieldDefinitionResolved[]): void {
-  if (!Array.isArray(documentOptions.defer)) return;
+function documentDeferralOptions(
+  value: unknown,
+  explicitKeys: ReadonlySet<string>,
+  explicitUnset: unknown,
+  runtimeFields: readonly RuntimeFieldDefinitionResolved[],
+): { defer?: string[]; deferReason?: string } {
   const unsetTokens = (Array.isArray(explicitUnset) ? explicitUnset : []).flatMap((token) => String(token).split(","));
   const overridden = new Set<string | undefined>([
     ...DEFERRABLE_ITEM_FIELDS.filter((entry) => explicitKeys.has(entry.option)).map((entry) => entry.field),
@@ -1364,13 +1362,13 @@ function dropOverriddenDocumentDeferrals(documentOptions: Record<string, unknown
     ...runtimeFields.filter((definition) => explicitKeys.has(runtimeFieldOptionTarget(definition))).map((definition) => definition.metadata_key),
     ...unsetTokens.map((token) => resolveDeferrableItemField(token)?.field),
   ]);
-  const remaining = (documentOptions.defer as string[]).filter((field) => !overridden.has(field));
-  if (remaining.length > 0) {
-    documentOptions.defer = remaining;
-    return;
-  }
-  delete documentOptions.defer;
-  delete documentOptions.deferReason;
+  const entries = (Array.isArray(value) ? value : [])
+    .filter(isPlainObject)
+    .filter((entry): entry is Record<string, unknown> & { field: string } => typeof entry.field === "string" && !overridden.has(entry.field));
+  if (entries.length === 0) return {};
+  const reasons = entries.map((entry) => (typeof entry.reason === "string" ? entry.reason.trim() : ""));
+  const defer = entries.map((entry) => entry.field);
+  return reasons.every((reason) => reason.length > 0) ? { defer, deferReason: [...new Set(reasons)].join("; ") } : { defer };
 }
 
 /** Resolve explicit CLI aliases and schema fields to their logical option keys. */
@@ -1421,12 +1419,13 @@ export function itemDocumentToMutationOptions(
     if (metadataKey !== key && Object.hasOwn(item, metadataKey)) continue;
     appendItemDocumentEntry(documentOptions, metadataKey, value, mode, runtimeFields, explicitOptions);
   }
-  if (mode === "create") Object.assign(documentOptions, deferralOptionsFromDocument(item.deferred_fields));
   appendFacetOptions(documentOptions, item, mode === "update");
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
   const explicitKeys = explicitDocumentOptionKeys(explicitOptions, mode, runtimeFields);
   removeOverriddenDocumentOptions(documentOptions, mode, explicitKeys);
-  dropOverriddenDocumentDeferrals(documentOptions, explicitKeys, explicitOptions.unset, runtimeFields);
+  if (mode === "create" && !explicitKeys.has("defer")) {
+    Object.assign(documentOptions, documentDeferralOptions(item.deferred_fields, explicitKeys, explicitOptions.unset, runtimeFields));
+  }
   if (mode === "update") {
     const annotations = Object.fromEntries(
       (["comments", "notes", "learnings"] as const)

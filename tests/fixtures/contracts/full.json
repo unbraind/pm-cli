@@ -36410,7 +36410,9 @@
                 "deadline",
                 "assignee"
               ],
-              "acceptance_criteria"
+              [
+                "acceptance_criteria"
+              ]
             ],
             "items": {
               "type": "string"
@@ -50157,7 +50159,9 @@
                 "deadline",
                 "assignee"
               ],
-              "acceptance_criteria"
+              [
+                "acceptance_criteria"
+              ]
             ],
             "items": {
               "type": "string"

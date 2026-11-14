@@ -234,6 +234,11 @@ describe("strict create deferrals (GH-1713)", () => {
     expect(allOverridden).not.toHaveProperty("defer");
     expect(allOverridden).not.toHaveProperty("deferReason");
     expect(itemDocumentToMutationOptions(envelope, "create", { defer: ["deadline"], deferReason: "Explicit" })).toMatchObject({ defer: ["deadline"], deferReason: "Explicit" });
+    // Each remaining field contributes only its own reason; one without a reason gets none synthesized.
+    expect(itemDocumentToMutationOptions(JSON.stringify({ ...stored, deferred_fields: [{ field: "deadline", reason: "A" }, { field: "assignee", reason: "B" }] }), "create", { deadline: "2026-12-31" })).toMatchObject({ defer: ["assignee"], deferReason: "B" });
+    const borrowed = itemDocumentToMutationOptions(JSON.stringify({ ...stored, deferred_fields: [{ field: "deadline", reason: "Imported" }, { field: "assignee" }] }), "create");
+    expect(borrowed).toMatchObject({ defer: ["deadline", "assignee"] });
+    expect(borrowed).not.toHaveProperty("deferReason");
 
     await withTempPmPath(async (context) => {
       const client = new PmClient({ pmRoot: context.pmPath, author: "importer" });

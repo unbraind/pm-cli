@@ -448,7 +448,7 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '--type[Item type]:(${typeChoices})' \\
             '--create-mode[Create required-option policy mode]:(strict progressive)' \\
-            '*--defer[Defer a strict-required field as not known yet]:(deadline assignee acceptance-criteria estimate)' \\
+            '*--defer[Defer a strict-required field as not known yet]:field:(deadline assignee acceptance-criteria estimate)' \\
             '--defer-reason[Why the deferred values are not known yet]:reason' \\
             '--schedule-preset[Scheduling preset for Reminder/Meeting/Event]:(lightweight)' \\
             '(-s --status)'{-s,--status}'[Item status]:(${statusChoices})' \\
