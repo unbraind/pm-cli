@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: extensions,flags,"gh:1726",sdk,validation
 created_at: "2026-11-14T09:00:39.423Z"
-updated_at: "2026-11-14T19:16:22.069Z"
+updated_at: "2026-11-14T19:43:19.365Z"
 closed_at: "2026-11-14T19:16:20.807Z"
 completed_at: "2026-11-14T19:16:20.807Z"
 author: "harness:claude-code"
@@ -23,8 +23,9 @@ actual_result: "direct-caller-option-contract.integration.spec and command-optio
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4of199,related,"2026-11-14T09:00:50.576Z","harness:claude-code","cli:update:dep",detected
   pm-gh1665,related,"2026-11-14T09:00:50.576Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-14T16:55:59.879Z","harness:claude-code","Root cause (2026-11-14): the direct-caller occurrence recorder flattens an array into one attached occurrence per entry, so [] produced zero occurrences and strict validation had nothing to check; for a non-list flag the coercer mapped each entry, so [true], [1,2] and ['a','b'] also reached handlers as arrays although argv keeps the last occurrence and never delivers one. Fix: refuseDirectDeclarationViolations refuses any array for a flag that is not list/repeatable (extension_flag_value_invalid with flag) and treats [] on a required list as missing. Two more defects in the same seam: (1) on the built CLI a bare repeatable boolean switch reached the handler as [] (pm demo --many -> []), because Commander calls the list accumulator with undefined for a value-less switch and list flattening drops undefined; fixed in applyDynamicExtensionFlagOptions (each bare occurrence records true). (2) PmClient.run applied the native-field array rewrites (tags joined to CSV; dep, comment, file, test and others promoted to arrays) to extension actions too, so a declared scalar --dep would have received ['x']; optionsWithAuthor now takes nativeAction and extension actions keep the caller's values. The mixed attached/bare ordering edge (--many=false --many keeps only [false]) is filed as pm-g2zzus."
+  "2026-11-14T19:43:19.365Z","harness:claude-code","Greptile review on PR #1732 (P2, verified and fixed): a required list given entries that normalization drops ([''], [[]], or --ids '' on the CLI) passed the required check and reached the handler as []. Both validators now judge a list by its normalized entries (hasLooseListEntries), so those inputs are refused with missing_required_option."
 learnings[1]{created_at,author,text}:
   "2026-11-14T19:16:12.086Z","harness:claude-code",Commander calls a custom argParser with undefined for a value-less switch occurrence; a list accumulator must map that to true or the occurrence is silently flattened away.
 files[6]{path,scope}:

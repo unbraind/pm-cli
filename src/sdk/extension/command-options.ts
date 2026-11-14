@@ -309,7 +309,9 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
     }
   }
   for (const entry of required) {
-    if (!entry.keys.some((key) => Object.hasOwn(options, key))) {
+    const present = (key: string): boolean =>
+      Object.hasOwn(options, key) && (entry.definition.list !== true || hasLooseListEntries(entry.definition, options[key]));
+    if (!entry.keys.some(present)) {
       // The first collected key is the canonical handler key (long flag first, else short).
       refuseMissingRequiredExtensionOption(entry.definition, entry.keys[0] as string, entry.label, commandPath);
     }
@@ -467,6 +469,11 @@ function normalizeAccumulatedFlagValue(
   return kind
     ? entries.map((entry) => coerceLooseOptionValue(entry, kind))
     : entries;
+}
+
+/** Whether a list value keeps at least one entry once normalized: `--ids ""`, `[""]` and `[[]]` carry none. */
+function hasLooseListEntries(definition: LooseCommandFlagDefinition, value: unknown): boolean {
+  return normalizeAccumulatedFlagValue(value, null, definition.repeatable === true).length > 0;
 }
 
 /** Resolve the value applied when a flag is omitted entirely. List flags wrap the default into an accumulated array; scalar flags coerce by declared kind. */
@@ -1078,8 +1085,8 @@ function refuseDirectDeclarationViolations(
     if (definition.enabled === false && supplied) {
       refuseDisabledExtensionOption(label, commandPath);
     }
-    // An empty list is zero occurrences, which argv spells by omitting the flag.
-    const present = supplied && !(definition.list === true && Array.isArray(value) && value.length === 0);
+    // A list with no entries left after normalization ([], [""], [[]]) is zero occurrences (Greptile review).
+    const present = supplied && (definition.list !== true || hasLooseListEntries(definition, value));
     if (definition.required === true && definition.enabled !== false && !present) {
       refuseMissingRequiredExtensionOption(definition, handlerKey, label, commandPath);
     }

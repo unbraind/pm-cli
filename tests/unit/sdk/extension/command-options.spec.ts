@@ -392,8 +392,15 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
       recovery: { missing: ["--target"] },
     });
     expect(refusal(direct({ target: "a", labels: ["x"] }))).toMatchObject({ code: "missing_required_option", required: "Pass --confirm.", examples: ["pm demo brief --confirm"] });
-    // A required list given no entries is zero occurrences, exactly as omitting the flag on the CLI.
-    expect(refusal(direct({ ...valid, labels: [] }))).toMatchObject({ code: "missing_required_option", field: "labels" });
+    // A required list given no entries is zero occurrences, exactly as omitting the flag on the CLI,
+    // including entries that normalization drops (Greptile review).
+    for (const labels of [[], [""], [[]], ["", [""]]]) {
+      expect(refusal(direct({ ...valid, labels }))).toMatchObject({ code: "missing_required_option", field: "labels" });
+    }
+    expect(refusal(() => validateLooseCommandOptionsWithFlagDefinitions({ target: "a", confirm: true, labels: "" }, definitions, "demo brief"))).toMatchObject({
+      code: "missing_required_option",
+      field: "labels",
+    });
     // The CLI validator reports the same code for argv.
     expect(refusal(() => validateLooseCommandOptionsWithFlagDefinitions({ confirm: true, labels: "x" }, definitions, "demo brief"))).toMatchObject({
       code: "missing_required_option",
