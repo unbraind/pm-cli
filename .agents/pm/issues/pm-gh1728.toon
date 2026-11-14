@@ -1,0 +1,23 @@
+id: pm-gh1728
+title: "GH-1728: complete-list recovery drops an explicit includeBody request, so a repaired whole-list read returns every item without bodies"
+description: "GH-1728 (filed 2026-11-14, reproduced on the published 2026.11.14 tarball). A caller requests a complete list with bodies (createCompleteListOptions({ includeBody: true }) plus a page limit); certifyCompleteListResult correctly refuses the incomplete page with PmCompleteListValidationError, but the recovery it emits omits the body request. The CLI retry (pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json) returns 4/4 items and 0/4 bodies, and the SDK recipe client.listAllComplete() likewise drops it; listAllComplete({ includeBody: true }) and the CLI retry with --include-body return all bodies. The recovery builder lives in src/sdk/query/complete-list.ts. The emitted retry also uses the redundant legacy --no-truncate alias, which adds a migration hint. Expected: a declared projection requirement such as includeBody survives the recovery, or the certifier says explicitly that it cannot know and offers an opt-in recipe; page-incomplete refusal and the corpus safety invariants stay unchanged. Duplicate check: searched complete list recovery include body certify; pm-y4aaol (closed) shipped the primitive and pm-gh1078 (closed) fixed a stale recovery command name."
+type: Issue
+status: open
+priority: 2
+tags[5]: complete-list,"gh:1728",read-output,recovery,sdk
+created_at: "2026-11-14T15:21:19.875Z"
+updated_at: "2026-11-14T15:21:19.875Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "The CLI and SDK recovery for a refused complete list preserve an explicit includeBody request and use canonical flags; Specs cover a caller requesting bodies, one not requesting them, and empty bodies, executing the emitted recovery against the same fixture and comparing bodies, typed edges, learnings and counts; Page-incomplete refusal and the corpus safety invariants are unchanged"
+parent: pm-usfg
+risk: low
+confidence: high
+reporter: unbraind
+severity: medium
+expected_result: The recovery of a refused complete list returns the bodies the caller asked for
+actual_result: The emitted CLI and SDK recovery return every item without bodies
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1078,related,"2026-11-14T15:21:19.875Z","harness:claude-code","cli:create:dep",detected
+  pm-y4aaol,related,"2026-11-14T15:21:19.875Z","harness:claude-code","cli:create:dep",detected
+body: ""

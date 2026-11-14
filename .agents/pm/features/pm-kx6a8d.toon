@@ -1,0 +1,20 @@
+id: pm-kx6a8d
+title: "Strict create takes a single --defer-reason, so a stdin-json round trip of deferrals with different reasons stores the joined reasons on every field"
+description: "Follow-up from the PR #1725 review of pm-gh1713 (2026-11-14). deferred_fields stores one reason per field, but create accepts a single --defer-reason (SDK deferReason). When a pm get --json document with distinct per-field reasons is recreated through create --stdin-json, documentDeferralOptions joins the distinct reasons with '; ', and every recreated entry carries the joined text, so the original field-to-reason mapping is lost (the text itself is kept). Proposal: accept per-field reasons on create, for example --defer field=reason (SDK defer entries as {field, reason}), keep the shared --defer-reason as the default for bare field names, and make the stdin-json adapter emit per-field entries. Duplicate check: searched per-field deferral reason; no item."
+type: Feature
+status: open
+priority: 3
+tags[4]: governance,importers,stdin-json,strict-preset
+created_at: "2026-11-14T15:21:40.765Z"
+updated_at: "2026-11-14T15:26:13.353Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "Create accepts per-field deferral reasons on the CLI, the SDK and MCP while a shared --defer-reason still applies to bare field names; A stdin-json round trip of deferrals with distinct reasons recreates each field with its own reason; Conflict and validation rules of pm-gh1713 are unchanged"
+parent: pm-33cw
+risk: low
+confidence: high
+expected_result: A recreated deferral keeps each field's own reason
+actual_result: Every recreated field carries the joined reasons of all fields
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1713,discovered_from,"2026-11-14T15:21:40.765Z","harness:claude-code","cli:create:dep",detected
+body: ""

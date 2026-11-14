@@ -1,0 +1,22 @@
+id: pm-gh1729
+title: "GH-1729: the extension test harness passes a compact output_format receipt that the native CLI refuses with extension_read_output_invalid since 2026.11.13"
+description: "GH-1729 (filed 2026-11-14, reproduced on the 2026.11.7, 2026.11.13 and 2026.11.14 artifacts). An extension command declares read_output { row_keys: [\"rows\"] } and an output_format service returns a compact receipt ({ ok: true, output: \"receipt.md\" }). The native CLI on 2026.11.13 and 2026.11.14 refuses the receipt-only handler result with exit 2 and extension_read_output_invalid before the formatter receipt, while the same result with a rows array passes. createExtensionTestHarness().runCommand() handles both, so a package author cannot detect the native refusal before adoption; 2026.11.7 accepted both. Expected from the issue: make native output admission testable through the public harness, or document that the harness validates only the handler result and requires a packed native probe; if declared row keys are intentionally mandatory before custom formatting, document the compatible compact receipt pattern and migration. Malformed and oversized output must stay refused. Duplicate check: searched extension read_output row_keys output_format receipt harness native refusal; no open item."
+type: Issue
+status: open
+priority: 2
+tags[5]: extensions,"gh:1729",read-output,sdk,testing
+created_at: "2026-11-14T15:21:20.930Z"
+updated_at: "2026-11-14T15:26:14.192Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "A regression fixture distinguishes receipt-only output, valid rows with compact formatter output, malformed rows and oversized delivered output across the native CLI and the test harness; Package authors can detect the native refusal before adoption, either through the harness or a documented packed-native probe; Valid compact output stays compact and malformed or oversized output stays refused"
+parent: pm-ugqx
+risk: medium
+confidence: medium
+reporter: unbraind
+severity: medium
+expected_result: The harness and the native CLI agree on whether a compact formatter receipt is admitted
+actual_result: The harness passes a receipt that the native CLI refuses with extension_read_output_invalid
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1726,related,"2026-11-14T15:26:13.918Z","harness:claude-code","cli:update:dep",detected
+body: ""
