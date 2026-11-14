@@ -22,22 +22,25 @@ export const BASELINE_ITEM_FORMAT_VERSION = 1;
 
 /**
  * Highest item format understood by this runtime. Ordinary records retain the
- * implicit baseline; linked-test editor stamps require format 2 and linked-test
- * setup entries (GH-1671) require format 3, so earlier published hosts refuse
- * before dropping fields from their canonical hashes. Reading legacy records
- * never changes their format or immutable commitments.
+ * implicit baseline; linked-test editor stamps require format 2, linked-test
+ * setup entries (GH-1671) require format 3 and deferred strict-required fields
+ * (GH-1713) require format 4, so earlier published hosts refuse before dropping
+ * fields from their canonical hashes. Reading legacy records never changes
+ * their format or immutable commitments.
  */
-export const CURRENT_ITEM_FORMAT_VERSION = 3;
+export const CURRENT_ITEM_FORMAT_VERSION = 4;
 
-/** Resolve the minimum format needed to retain persisted linked-test editor metadata and setup phases. */
-export function requiredItemFormatVersion(metadata: Pick<ItemMetadata, "tests" | "pm_format_version">): number {
+/** Resolve the minimum format needed to retain persisted linked-test editor metadata, setup phases and field deferrals. */
+export function requiredItemFormatVersion(metadata: Pick<ItemMetadata, "tests" | "pm_format_version" | "deferred_fields">): number {
   const tests = metadata.tests ?? [];
   const linkedTestFormat = tests.some((test) => test.phase === "setup")
     ? 3
     : tests.some((test) => test.updated_by !== undefined || test.updated_at !== undefined)
       ? 2
       : BASELINE_ITEM_FORMAT_VERSION;
-  return Math.max(effectiveItemFormatVersion(metadata), linkedTestFormat);
+  // A host that predates deferrals would drop the entries and let strict close pass without the values.
+  const deferralFormat = (metadata.deferred_fields?.length ?? 0) > 0 ? 4 : BASELINE_ITEM_FORMAT_VERSION;
+  return Math.max(effectiveItemFormatVersion(metadata), linkedTestFormat, deferralFormat);
 }
 
 /**

@@ -54,6 +54,7 @@ import { getHistoryPath, getItemPath, ITEM_FILE_EXTENSIONS, resolveWorkspaceRoot
 import { resolveGovernanceKnobs } from "./settings.js";
 import { assertReadableTrackerRoot } from "./tracker-preflight.js";
 import { resolveClaimPrincipal } from "../shared/author.js";
+import { pruneResolvedDeferredFields } from "../item/deferred-fields.js";
 import { nowIso } from "../shared/time.js";
 import type {
   ItemDocument,
@@ -809,6 +810,8 @@ async function mutateItemWithDeferredHistoryContext(
       extensionFieldNames: params.extensionFieldNames,
     });
     const mutation = await params.mutate(mutableDocument);
+    // A write that gives a deferred field its value resolves the deferral on the same entry (GH-1713).
+    if (pruneResolvedDeferredFields(mutableDocument.metadata)) mutation.changedFields.push("deferred_fields");
     if (params.skipNoop === true && mutation.changedFields.length === 0) {
       return {
         item: beforeDocument.metadata,
@@ -843,6 +846,7 @@ async function mutateItemWithDeferredHistoryContext(
       before: beforeDocument,
       after: afterDocument,
       changed_fields: mutation.changedFields,
+      author: params.author,
       sdk: createMutationGuardSdk({
         pmRoot: params.pmRoot,
         settings: params.settings,
@@ -1159,6 +1163,8 @@ export async function deleteItem(params: {
       before: beforeDocument,
       after: null,
       changed_fields: ["deleted"],
+      author: params.author,
+      dry_run: params.dryRun === true,
       sdk: createMutationGuardSdk({
         pmRoot: params.pmRoot,
         settings: params.settings,

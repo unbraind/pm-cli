@@ -586,6 +586,8 @@ export const ITEM_UNION_COLLECTION_FIELDS = [
   "docs",
   "reminders",
   "events",
+  // GH-1713: branches that each resolve a different deferral keep both resolutions.
+  "deferred_fields",
 ] as const;
 
 /** Delimiter-backed list fields that use the same lossless element merge as native metadata collections while retaining their legacy scalar storage shape. */

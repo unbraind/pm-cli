@@ -45,9 +45,9 @@
     },
     {
       "command": "create",
-      "help_bytes": 7548,
-      "estimated_tokens": 1887,
-      "maximum_tokens": 1887
+      "help_bytes": 7756,
+      "estimated_tokens": 1939,
+      "maximum_tokens": 1939
     },
     {
       "command": "copy",

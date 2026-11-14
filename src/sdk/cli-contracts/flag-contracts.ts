@@ -1339,6 +1339,9 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--template" },
   { flag: "--create-mode" },
   { flag: "--create_mode" },
+  // GH-1713: Commander's repeatable collector gathers --defer; values may also be comma lists.
+  { flag: "--defer", repeatable: true },
+  { flag: "--defer-reason", aliases: ["--defer_reason"] },
   { flag: "--schedule-preset" },
   { flag: "--schedule_preset" },
   { short: "-s", flag: "--status" },

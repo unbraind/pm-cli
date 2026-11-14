@@ -37,7 +37,8 @@ import {
   type CloseCompletionReceipt,
   type TerminalTransitionPolicy,
 } from "../lifecycle-policy.js";
-import type { ItemMetadata } from "../../types/index.js";
+import type { ItemDeferredField, ItemMetadata } from "../../types/index.js";
+import { deferrableItemFieldByKey, outstandingDeferredFields } from "../../core/item/deferred-fields.js";
 import { nowIso } from "../../core/shared/time.js";
 import { isPmCliErrorDetails } from "../../core/shared/error-details.js";
 import { unicodeSafePrefix } from "../../core/shared/text-normalization.js";
@@ -693,6 +694,46 @@ function closeValidationMissingFieldsError(
   });
 }
 
+/**
+ * Refuse a strict close while a deferred strict-required field still has no
+ * value (GH-1713): the deferral let the item be created, never finished. The
+ * recovery supplies each deferred field through pm update, which resolves the
+ * deferral on the same write, and then repeats the close.
+ */
+function closeValidationDeferredFieldsError(
+  metadata: ItemMetadata,
+  deferred: readonly ItemDeferredField[],
+  commandScope: readonly string[],
+): PmCliError {
+  const flags = deferred.map((entry) => deferrableItemFieldByKey(entry.field)!.flag);
+  const updateTokens = [...commandScope, "update", metadata.id, ...flags.flatMap((flag) => [flag, "<value>"])];
+  return new PmCliError(
+    `Cannot close item ${metadata.id}: deferred fields still have no value (${deferred.map((entry) => entry.field).join(", ")}). Supply them or use --validate-close warn.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "close_validation_deferred_fields",
+      required: `Supply ${flags.join(", ")}: each was deferred at create (${deferred.map((entry) => `${entry.field}: ${entry.reason}`).join("; ")}).`,
+      recovery: { missing: flags, next_best_command: renderPmCommand(updateTokens) },
+      nextSteps: [
+        "Record the now-known values with recovery.next_best_command; the update resolves each deferral, then repeat the close.",
+        "Use --validate-close warn only when governance permits closing with deferred values still unknown.",
+      ],
+    },
+  );
+}
+
+/** Refuse (strict) or warn about deferred fields that still have no value when an item closes. */
+function collectDeferredFieldCloseWarnings(
+  metadata: ItemMetadata,
+  validateCloseMode: Exclude<ValidateCloseMode, "off">,
+  commandScope: readonly string[],
+): string[] {
+  const deferred = outstandingDeferredFields(metadata);
+  if (deferred.length === 0) return [];
+  if (validateCloseMode === "strict") throw closeValidationDeferredFieldsError(metadata, deferred, commandScope);
+  return [`close_validation_deferred_fields:${metadata.id}:${deferred.map((entry) => entry.field).join(",")}`];
+}
+
 function collectCloseValidationWarnings(
   metadata: ItemMetadata,
   validateCloseMode: ValidateCloseMode,
@@ -701,6 +742,7 @@ function collectCloseValidationWarnings(
 ): string[] {
   const warnings: string[] = [];
   if (validateCloseMode !== "off") {
+    warnings.push(...collectDeferredFieldCloseWarnings(metadata, validateCloseMode, context.commandScope));
     const missingFields = findMissingCloseValidationFields(metadata);
     if (missingFields.length > 0) {
       const missingLabels = missingFields.map((field) => field.label);

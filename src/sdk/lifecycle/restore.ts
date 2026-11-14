@@ -406,6 +406,7 @@ export async function runRestore(
       before: currentState.document,
       after: restoredDocument,
       changed_fields: restoreChangedFields,
+      author,
       sdk: createMutationGuardSdk({
         pmRoot,
         settings,

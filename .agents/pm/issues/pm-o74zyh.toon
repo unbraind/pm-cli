@@ -1,0 +1,31 @@
+id: pm-o74zyh
+title: "The documented pm get --json to pm update --stdin-json round trip refuses system-maintained metadata: a claimed item's claim_principal and any format-bumped item's pm_format_version are rejected as core fields"
+description: "Found while implementing pm-gh1713 (2026-11-14). docs/COMMANDS.md promises a lossless get, edit, update round trip through --stdin-json. The document adapter in src/sdk/structured-mutations.ts skips a short list of read-only keys (created_at, updated_at, author, collection_counts and similar) and turns every key outside CORE_ITEM_FIELD_KEYS into an extension --field assignment. System-maintained metadata is in neither list, so the round trip fails with core_item_field_requires_dedicated_flag for: claim_principal, present on every item a detected agent harness claimed (reproduced on 2026.11.13: pm claim, pm get --json, pm update --stdin-json); pm_format_version, present on every item with linked-test editor stamps (format 2) or setup entries (format 3); test_runs, the recorded linked-test run summaries. pm-gh1713 adds deferred_fields, which an imported item carries until it is curated, so the defect would hit every mirrored item. Expected: system-maintained keys are read-only in the document adapter, exactly like updated_at and author, and a create document's deferred_fields maps to the create deferral options so a strict tracker can recreate it. Duplicate check: searched stdin-json round trip claim_principal pm_format_version core item field requires dedicated flag; pm-stdin-schema-fields (closed) covered schema and extension fields only."
+type: Issue
+status: in_progress
+priority: 2
+tags[5]: agent-ux,"area:cli","area:sdk",round-trip,stdin-json
+created_at: "2026-11-14T04:35:27.736Z"
+updated_at: "2026-11-14T05:10:02.564Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#9d7f970542d8df5a0a6bdb3b"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "pm get --json piped into pm update --stdin-json succeeds for a claimed item, a format-2 or format-3 item and an item with deferred fields, without changing claim_principal, pm_format_version or test_runs; A create document carrying deferred_fields recreates the deferral (fields and reason) instead of refusing; A spec reproduces each refusal and proves the round trip"
+parent: pm-mpbb
+risk: low
+confidence: high
+severity: medium
+expected_result: Piping pm get --json into pm update --stdin-json is lossless for every stored item
+actual_result: "The round trip refuses any item that carries claim_principal, pm_format_version or test_runs"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1713,discovered_from,"2026-11-14T04:35:27.736Z","harness:claude-code","cli:create:dep",detected
+  pm-stdin-schema-fields,related,"2026-11-14T04:35:27.736Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-14T04:39:54.926Z","harness:claude-code","Fix (2026-11-14, on the pm-gh1713 branch): src/sdk/structured-mutations.ts now treats pm_format_version, claim_principal and test_runs as read-only document keys, like updated_at and author, so the host keeps deriving them. deferred_fields is read-only on update, where writes resolve deferrals, and on create maps to the defer and deferReason options, with distinct reasons joined by '; '. A strict tracker can therefore recreate a mirrored item from its own pm get --json output. Spec: tests/unit/sdk/create-deferrals.spec.ts, the round-trip case driving both the adapter and the built CLI."
+files[2]{path,scope,note}:
+  src/sdk/structured-mutations.ts,project,read-only system metadata and deferral mapping
+  tests/unit/sdk/lifecycle/create-deferrals.spec.ts,project,round-trip spec
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/lifecycle/create-deferrals.spec.ts,project,600,"harness:claude-code","2026-11-14T05:10:02.531Z",local_mutation,feat/package-write-path-actor-and-deferral
+body: ""

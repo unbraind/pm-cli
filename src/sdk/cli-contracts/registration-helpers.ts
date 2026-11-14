@@ -382,6 +382,8 @@ export function normalizeCreateOptions(
     type,
     template: readCreateString("template"),
     createMode: readCreateString("createMode"),
+    defer: readCreateList("defer"),
+    deferReason: readCreateString("deferReason"),
     schedulePreset: readCreateString("schedulePreset"),
     status: readCreateString("status"),
     closeReason: readCreateString("closeReason"),

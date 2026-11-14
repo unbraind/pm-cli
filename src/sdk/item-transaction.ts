@@ -11,7 +11,7 @@ import { constants, type Stats } from "node:fs";
 import { isFileMissingError, readRegularFile, transactionPreviewNonRegularFileError } from "../core/fs/fs-utils.js";
 import { cp, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { getActiveExtensionRegistrations, setActiveExtensionRegistrations } from "../core/extensions/index.js";
+import { getActiveExtensionHooks, getActiveExtensionRegistrations, runWithPreviewMutationGuards, setActiveExtensionRegistrations } from "../core/extensions/index.js";
 import path from "node:path";
 import {
   transferMutationStdinTokenPolicy,
@@ -904,7 +904,7 @@ export interface ItemMutationPreviewValidation {
   validated: boolean;
   /** Distinguishes newly staged execution from idempotent replay without fresh step validation. */
   state: "staged_snapshot" | "replayed_committed_plan";
-  /** Preview leaves current commit state and executable extension effects unvalidated, including host-run pending migrations, mutation guards and hooks. */
+  /** Preview leaves current commit state and executable extension effects unvalidated, including host-run pending migrations and every hook except the mutation guards, which judge the staged plan as dry runs. */
   unresolved_commit_constraints: readonly string[];
   /** Advisory create warnings from newly executed stages; replay does not re-evaluate them. */
   warnings: {
@@ -1181,11 +1181,13 @@ async function stagePreviewTracker(sourceRoot: string, stagedRoot: string, regis
   }
 }
 
-/** Validate ordered mutations using apply's coordinator in a disposable tracker, without source writes, journals or extension hooks. */
+/** Validate ordered mutations using apply's coordinator in a disposable tracker, without source writes, journals or extension hooks other than the dry-run mutation guards. */
 export async function previewItemMutations(options: Pick<CommitItemMutationsOptions, "pmRoot" | "transactionId" | "author" | "mutations">): Promise<ItemMutationPreviewValidation> {
   const identity = validateWorkspaceTransactionIdentity(options);
   const mutations = snapshotBulkMutations(options.mutations);
   const registrations = getActiveExtensionRegistrations();
+  // Guards judge the staged plan as dry runs with the commit's actor; every other hook stays suppressed.
+  const guards = getActiveExtensionHooks();
   const root = await mkdtemp(path.join(tmpdir(), "pm-transaction-preview-"));
   const stagedRoot = path.join(root, "tracker");
   try {
@@ -1194,7 +1196,7 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
     const warnings: ItemMutationPreviewValidation["warnings"] = [];
     const records: ItemMutationStagedRecord[] = [];
     const applied = new Set<number>();
-    await runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
+    await runWithPreviewMutationGuards(guards, () => runWithActiveExtensions({ path: stagedRoot, noExtensions: true }, async () => {
       setActiveExtensionRegistrations(registrations);
       const config: BulkMutationStepConfig = { ...identity, pmRoot: stagedRoot, createCompensation: "close", uniqueIndex: createUniqueKeyIndex(stagedRoot) };
       const steps = mutations.map((mutation, index) => {
@@ -1217,8 +1219,8 @@ export async function previewItemMutations(options: Pick<CommitItemMutationsOpti
         const item = (await runGet(mutation.id, { path: stagedRoot }, { full: true })).item;
         records.push({ index, id: String(item.id), op: mutation.op, execution: applied.has(index) ? "applied" : "adopted", item, commit_time_fields: previewClockFields(item) });
       }
-    });
-    return { records, validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", warnings, unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded", "generated_timestamps_and_provenance"] };
+    }));
+    return { records, validated, state: validated ? "staged_snapshot" : "replayed_committed_plan", warnings, unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_write_hooks", "derived_extension_dependencies_excluded", "generated_timestamps_and_provenance"] };
   } finally {
     await rm(root, { recursive: true, force: true });
   }

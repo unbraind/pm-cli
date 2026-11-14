@@ -576,6 +576,15 @@ pm create \
   --message "Create restore replay issue"
 ```
 
+When a strict-required value is genuinely not known yet, as with a record mirrored from another tracker, defer it instead of inventing one ([pm-gh1713](../.agents/pm/features/pm-gh1713.toon)). `--defer <field>` (repeatable, comma lists accepted) names `deadline`, `assignee`, `acceptance-criteria`/`ac` or `estimate`, and `--defer-reason` is required with it:
+
+```bash
+pm create "Imported issue" --type Issue --description "Mirrored from GitHub" --create-mode strict \
+  --defer deadline --defer assignee,ac --defer estimate --defer-reason "Imported from GitHub issue 42" ...
+```
+
+The deferral satisfies strict create and is stored as typed `deferred_fields` metadata (item format 4), so the create history entry records it. A later write that supplies a deferred value (`pm update <id> --deadline 2026-12-31`, or a claim for `assignee`) resolves that entry in the same history entry. `pm validate --check-metadata` lists the remaining deferrals as curation work (`validate_metadata_deferred_fields:<items>`), and `pm health` reports them informationally under the integrity check's `curation` details. Close validation never lets a deferral finish work: `--validate-close strict` (the strict preset default) refuses with `close_validation_deferred_fields` and a runnable `pm update` recovery, and `warn` closes with a `close_validation_deferred_fields:<id>:<fields>` warning. Deferring a field you also set or unset in the same create is refused as `create_deferral_conflict`, and a deferral overrides a template's default for that field. SDK and MCP callers pass `defer: ["deadline", ...]` and `deferReason`.
+
 For long markdown bodies (multi-paragraph specs with code blocks or tables), load the body from a file with `--body-file <path>` on both `pm create` and `pm update` instead of escaping a huge inline `--body` string or issuing a second `pm append`:
 
 ```bash

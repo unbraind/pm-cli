@@ -199,6 +199,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   type: { type: "string" },
   template: { type: "string" },
   createMode: { type: "string", enum: ["strict", "progressive"] },
+  defer: { type: "array", items: { type: "string" } },
+  deferReason: { type: "string" },
   schedulePreset: { type: "string", enum: ["lightweight"] },
   status: { type: "string" },
   since: { type: "string", format: "date-time" },
@@ -1279,6 +1281,16 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   createMode: {
     description: "Create required-option policy mode.",
     examples: ["strict", "progressive"],
+  },
+  defer: {
+    description:
+      "Strict-required create fields whose values are not known yet (GH-1713): deadline, assignee, acceptance_criteria or estimated_minutes. Each is recorded in deferred_fields with deferReason; close validation refuses the item until every deferred field holds a value.",
+    examples: [["deadline", "assignee"], "acceptance_criteria"],
+  },
+  deferReason: {
+    description:
+      "Why the deferred values are not known yet, for example the external system the record was imported from. Required with defer.",
+    examples: ["Imported from GitHub issue 42"],
   },
   schedulePreset: {
     description:

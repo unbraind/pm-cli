@@ -7,6 +7,7 @@ import type {
   AfterCommandHookContext,
   BeforeCommandHookContext,
   BeforeMutationHookContext,
+  MutationActor,
   CommandHandlerResult,
   CommandOverrideContext,
   CommandOverrideResult,
@@ -71,6 +72,7 @@ import type {
   VectorStoreQueryHit,
   VectorStoreUpsertContext,
 } from "../core/extensions/loader.js";
+import { resolveMutationActor } from "../core/extensions/mutation-actor.js";
 import {
   activateExtensions,
   deactivateExtensions,
@@ -240,10 +242,25 @@ function readActivatedFlagRegistrations(
   ];
 }
 
+/**
+ * Synthetic guard context for package tests. `actor` and `dry_run` are
+ * optional so tests written before GH-1719 keep compiling: an omitted actor is
+ * resolved from `author` exactly as a host resolves it (an omitted author is
+ * the unattributed `unknown` actor), and an omitted `dry_run` is `false`.
+ */
+export type MutationGuardTestContext = Omit<BeforeMutationHookContext, "actor" | "dry_run"> & {
+  /** Actor the guard should see; overrides `author`. */
+  actor?: MutationActor;
+  /** Author to resolve the actor from when `actor` is omitted. */
+  author?: string;
+  /** Whether the guard is evaluated for a preview that persists nothing. */
+  dry_run?: boolean;
+};
+
 /** Options for invoking a registered transactional mutation guard in package tests. */
 export interface RunRegisteredMutationGuardForTestOptions {
   /** Synthetic proposed mutation context, including a host-bound read-only SDK. */
-  context: BeforeMutationHookContext;
+  context: MutationGuardTestContext;
 }
 
 /**
@@ -1066,7 +1083,12 @@ export async function runRegisteredMutationGuardForTest(
   if ((hooks.beforeMutation?.length ?? 0) === 0) {
     throw new Error("Expected a registered before_mutation hook to invoke");
   }
-  await runBeforeMutationHooks(hooks, options.context);
+  const { actor, author, dry_run: dryRun, ...context } = options.context;
+  await runBeforeMutationHooks(hooks, {
+    ...context,
+    actor: actor ?? resolveMutationActor(author ?? "unknown"),
+    dry_run: dryRun === true,
+  });
 }
 
 /**

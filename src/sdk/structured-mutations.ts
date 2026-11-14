@@ -81,6 +81,12 @@ const READ_ONLY_ITEM_KEYS = new Set([
   "collection_counts",
   "notes_count",
   "tests_count",
+  // pm-o74zyh: system-maintained metadata; the host derives each value, so a get -> update round trip carries it unchanged.
+  "pm_format_version",
+  "claim_principal",
+  "test_runs",
+  // GH-1713: writes resolve deferrals; a create document recreates them through its defer options instead.
+  "deferred_fields",
 ]);
 const UPDATE_READ_ONLY_ITEM_KEYS = new Set([
   ...READ_ONLY_ITEM_KEYS,
@@ -1334,6 +1340,15 @@ function appendItemDocumentEntry(
   ] = scalarItemOption(key, value);
 }
 
+/** Map a document's stored deferral entries to the create `defer` and `deferReason` options. */
+function deferralOptionsFromDocument(value: unknown): { defer?: string[]; deferReason?: string } {
+  const entries = (Array.isArray(value) ? value : []).filter(isPlainObject);
+  const fields = entries.map((entry) => entry.field).filter((field): field is string => typeof field === "string");
+  if (fields.length === 0) return {};
+  const reasons = [...new Set(entries.map((entry) => (typeof entry.reason === "string" ? entry.reason.trim() : "")).filter((reason) => reason.length > 0))];
+  return { defer: fields, ...(reasons.length === 0 ? {} : { deferReason: reasons.join("; ") }) };
+}
+
 /** Resolve explicit CLI aliases and schema fields to their logical option keys. */
 function explicitDocumentOptionKeys(explicitOptions: Record<string, unknown>, mode: "create" | "update", runtimeFields: readonly RuntimeFieldDefinitionResolved[]): Set<string> {
   const explicitKeys = new Set(Object.entries(explicitOptions).filter(([, value]) => value !== undefined).map(([key]) => key));
@@ -1382,6 +1397,7 @@ export function itemDocumentToMutationOptions(
     if (metadataKey !== key && Object.hasOwn(item, metadataKey)) continue;
     appendItemDocumentEntry(documentOptions, metadataKey, value, mode, runtimeFields, explicitOptions);
   }
+  if (mode === "create") Object.assign(documentOptions, deferralOptionsFromDocument(item.deferred_fields));
   appendFacetOptions(documentOptions, item, mode === "update");
   if (linked !== undefined) appendFacetOptions(documentOptions, linked);
   const explicitKeys = explicitDocumentOptionKeys(explicitOptions, mode, runtimeFields);

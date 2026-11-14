@@ -2,11 +2,13 @@ id: pm-gh1719
 title: "GH-1719: beforeMutation guards cannot see the acting author, so packages cannot write actor-aware policy or verify that a preview and its write share one identity"
 description: "GH-1719 (filed 2026-11-13). BeforeMutationHookContext, the context passed to api.hooks.beforeMutation guards, carries pm_root, operation, before, after, changed_fields and sdk but not the acting author or agent. Packages therefore cannot express actor-aware policy that multi-agent trackers need: only the claiming agent may close or release an item, an agent may not approve its own plan or review, an automation identity may write only inside its namespace. It also leaves author propagation unverifiable: in the memory package's review (its issue 51), an injected host client previewed an import without the invocation author while the following write carried it, and no hook could observe the difference. Proposal from the issue: a read-only actor block on the context, identical across CLI, SDK and MCP, with author (the resolved history author), source (argv, env, settings or fallback) and optional agent provenance (harness, model, instance) already recorded in history; previewItemMutations and dry runs pass the same actor as the write they preview; hosts must supply a real actor, never a placeholder. Related: pm-z9x1r2 (closed) resolves the harness identity this block would expose; pm-gh1656 (open) adds a transaction-owned finalization step to commitItemMutations, the same preview and commit seam. Duplicate check: searched BeforeMutationHookContext actor author guard; no open item covers hook-visible identity."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[6]: "area:sdk",extensions,"gh:1719",hooks,identity,multi-agent
 created_at: "2026-11-13T10:53:59.741Z"
-updated_at: "2026-11-13T10:53:59.741Z"
+updated_at: "2026-11-14T05:10:00.926Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#9d7f970542d8df5a0a6bdb3b"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A beforeMutation guard can refuse a close whose actor is not the item's claim owner, with tests through the CLI, the SDK and an injected host client; previewItemMutations and the following commitItemMutations present an identical actor to the guard; Hooks registered without reading actor keep working unchanged, and the actor block is documented as host-supplied and never a placeholder"
@@ -20,4 +22,24 @@ actual_result: "BeforeMutationHookContext has no actor, so guards cannot enforce
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1656,related,"2026-11-13T10:53:59.741Z","harness:claude-code","cli:create:dep",detected
   pm-z9x1r2,related,"2026-11-13T10:53:59.741Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-14T04:03:53.093Z","harness:claude-code","Progress (2026-11-14): BeforeMutationHookContext gains a frozen actor block {author, author_source, principal, agent?} resolved by src/core/extensions/mutation-actor.ts from the same resolvers createHistoryEntry uses (resolveHistoryAuthorSource, resolveHistoryAgentIdentity, resolveClaimPrincipal), plus dry_run. runActiveBeforeMutationHooks now takes the author instead of a prebuilt context, so no call site can hand a guard another identity. previewItemMutations evaluates the caller's guards against the staged plan as dry runs with the commit's actor; the unresolved constraint is renamed extension_write_hooks. Two guard bypasses found and closed in scope: commitImportedItem (op import) and pm copy wrote items without running any guard, and commitImportedItem converted every CONFLICT (including a guard denial) into a skippable lock-conflict warning; only the lock acquisition is now skippable. Spec: tests/unit/sdk/mutation-guard-actor.spec.ts (claimant-only close through SDK client, CLI, MCP; preview/commit actor parity; delete dry run, copy, import; test harness defaults)."
+files[12]{path,scope,note}:
+  src/core/extensions/extension-hook-runtime.ts,project,per-guard actor clone
+  src/core/extensions/extension-types.ts,project,MutationActor and context fields
+  src/core/extensions/index.ts,project,active guard runner and preview guard scope
+  src/core/extensions/mutation-actor.ts,project,actor resolver
+  src/core/store/item-store.ts,project,author to guards
+  src/sdk/item-transaction.ts,project,preview runs dry-run guards
+  src/sdk/lifecycle/copy.ts,project,copy guards
+  src/sdk/lifecycle/restore.ts,project,author to guards
+  src/sdk/package-import-adapters.ts,project,import guards and lock-only conflict warning
+  src/sdk/testing.ts,project,test harness actor defaults
+  tests/integration/transactions/semantic-preview.integration.spec.ts,project,preview guard spec
+  tests/unit/sdk/extension/mutation-guard-actor.spec.ts,project,GH-1719 spec
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/extension/mutation-guard-actor.spec.ts tests/integration/transactions/semantic-preview.integration.spec.ts,project,600,"harness:claude-code","2026-11-14T05:10:00.856Z",local_mutation,feat/package-write-path-actor-and-deferral
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,actor block and dry_run
+  docs/SDK.md,project,preview guard evaluation and import guards
 body: ""

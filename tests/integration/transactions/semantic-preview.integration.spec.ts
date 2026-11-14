@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../../src/mcp/server.js";
 import { buildItemCompletionMutations, commitItemMutations, previewItemMutations, type ItemMutationPreviewValidation } from "../../../src/sdk/item-transaction.js";
-import { createEmptyExtensionHookRegistry, setActiveExtensionHooks } from "../../../src/core/extensions/index.js";
+import { createEmptyExtensionHookRegistry, setActiveExtensionHooks, type BeforeMutationHookContext } from "../../../src/core/extensions/index.js";
 import { runPmCli } from "../../../src/cli/main.js";
 import { runDirectDistCli, runInProcessDistCli } from "../../helpers/cliRunner.js";
 import type { PmSettings } from "../../../src/types/index.js";
@@ -414,26 +414,39 @@ describe("semantic transaction previews (GH-1370)", () => {
       const beforeValid = await durableSnapshot(context.pmPath);
       const preview = context.runCli([...valid, "--dry-run"], { expectJson: true });
       expect(preview.code).toBe(0);
-      expect(preview.json).toMatchObject({ mutation_count: 3, validation: { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_mutation_guards_and_hooks", "derived_extension_dependencies_excluded", "generated_timestamps_and_provenance"] } });
+      expect(preview.json).toMatchObject({ mutation_count: 3, validation: { validated: true, state: "staged_snapshot", unresolved_commit_constraints: ["concurrent_tracker_changes", "extension_write_hooks", "derived_extension_dependencies_excluded", "generated_timestamps_and_provenance"] } });
       expect(await durableSnapshot(context.pmPath)).toEqual(beforeValid);
       expect(context.runCli(valid).code).toBe(0);
       expect(context.runCli(["get", "pm-complete", "--full", "--json"], { expectJson: true }).json).toMatchObject({ item: { status: "closed", resolution: "Delivered", comments: [expect.objectContaining({ text: "Staged completion evidence" })] } });
     });
   });
 
-  it("shares SDK and MCP validation, suppresses source hooks, and still revalidates commit", async () => {
+  it("shares SDK and MCP validation, runs only dry-run guards, and still revalidates commit", async () => {
     await withTempPmPath(async (context) => {
       const options = { pmRoot: context.pmPath, transactionId: "sdk-preview", author: "preview-agent", mutations: [
         { op: "create" as const, id: "pm-staged", options: { title: "Staged", type: "Task" } },
         { op: "update" as const, id: "pm-staged", options: { resolution: "Delivered", expectedResult: "Expected", actualResult: "Observed" } },
         ...buildItemCompletionMutations({ id: "pm-staged", reason: "Complete", closeOptions: { validateClose: "strict" } }),
       ] };
-      let hooks = 0;
-      setActiveExtensionHooks({ ...createEmptyExtensionHookRegistry(), beforeMutation: [{ layer: "project", name: "guard", run: async () => { hooks += 1; return { allow: true }; } }], onWrite: [{ layer: "project", name: "writer", run: async () => { hooks += 1; } }] });
+      let writes = 0;
+      const judged: Array<{ operation: string; dry_run: boolean; author: string; author_source: string; principal: string; staged: boolean }> = [];
+      const guardRegistry = { ...createEmptyExtensionHookRegistry(), beforeMutation: [{ layer: "project" as const, name: "guard", run: async (guard: BeforeMutationHookContext) => {
+        judged.push({ operation: guard.operation, dry_run: guard.dry_run, author: guard.actor.author, author_source: guard.actor.author_source, principal: guard.actor.principal, staged: guard.pm_root !== context.pmPath });
+        return { allow: true as const };
+      } }], onWrite: [{ layer: "project" as const, name: "writer", run: async () => { writes += 1; } }] };
+      setActiveExtensionHooks(guardRegistry);
       try {
         const before = await durableSnapshot(context.pmPath);
         expect(await previewItemMutations(options)).toMatchObject({ validated: true });
-        expect(hooks).toBe(0);
+        // GH-1719: the guards judge every staged step as a dry run with the commit's actor; write hooks stay suppressed.
+        expect(writes).toBe(0);
+        expect(judged.map((entry) => entry.operation)).toEqual(expect.arrayContaining(["create", "close"]));
+        expect(judged.every((entry) => entry.dry_run && entry.staged && entry.author === "preview-agent" && entry.author_source === "asserted" && entry.principal === "preview-agent")).toBe(true);
+        expect(await durableSnapshot(context.pmPath)).toEqual(before);
+        judged.splice(0);
+        // A denying guard refuses the preview with the guard's own code, before the commit ever runs.
+        setActiveExtensionHooks({ ...guardRegistry, beforeMutation: [{ layer: "project", name: "deny", run: async (guard: BeforeMutationHookContext) => guard.operation === "update" ? { allow: false, code: "update_denied_in_preview", remediation: "Ask the claimant." } : { allow: true } }] });
+        await expect(previewItemMutations(options)).rejects.toMatchObject({ code: "update_denied_in_preview", context: { transaction_operation: { index: 1, op: "update", id: "pm-staged" } } });
         expect(await durableSnapshot(context.pmPath)).toEqual(before);
       } finally { setActiveExtensionHooks(null); }
       await commitItemMutations(options);

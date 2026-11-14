@@ -2106,9 +2106,33 @@ executes the staged plan. An already committed journal instead returns
 without freshly executing or validating the supplied lifecycle steps. Both
 results disclose
 `unresolved_commit_constraints: ["concurrent_tracker_changes",
-"extension_mutation_guards_and_hooks"]`. Newly staged validation proves core
+"extension_write_hooks", ...]`. Newly staged validation proves core
 semantic validity at that snapshot; commit still checks current state and runs
-extension guards and hooks. Preview cost is proportional to the tracker data
+every extension hook. The caller's `beforeMutation` guards are the exception
+(GH-1719): a newly staged preview evaluates them against the staged plan with
+`dry_run: true` and the same `actor` the commit presents, so a guard denial
+surfaces at preview time. Inside a preview, the guard's `pm_root` and `sdk`
+read the disposable staged tracker. Every other hook kind stays suppressed.
+
+### Actor-aware mutation guards
+
+Every `beforeMutation` context carries a frozen `actor` (GH-1719). Its
+`author`, `author_source` and `agent` provenance are exactly what the
+mutation's history entry records, and `principal` is the ownership identity the
+claim check compares. A package can therefore enforce actor-aware policy, such
+as letting only the claimant close an item:
+
+```ts
+api.hooks.beforeMutation(({ operation, before, actor }) => {
+  const holder = before?.metadata.claim_principal ?? before?.metadata.assignee;
+  if (operation !== "close" || !holder || holder === actor.principal) return { allow: true };
+  return { allow: false, code: "close_requires_claimant", remediation: `Ask ${holder} to close it, or claim it first.` };
+});
+```
+
+Hosts never supply a placeholder: an unattributed write reports
+`author: "unknown"` with `author_source: "unknown"`. `runRegisteredMutationGuardForTest`
+resolves an omitted test `actor` from the context's `author` the same way. Preview cost is proportional to the tracker data
 staged, rather than unrelated root-layout project content.
 
 `itemDocumentToMutationOptions` is the companion full-document adapter. It
@@ -4137,6 +4161,22 @@ portable `source_workspace_root` / `repo_root` / `pm_root_rel` coordinates, and
 the host-bound `sdk` service bundle). Importers can therefore compose native PM
 actions and relationship stores without spawning the CLI or recursively
 activating packages.
+
+Strict trackers need no invented values from an importer
+([pm-gh1713](../.agents/pm/features/pm-gh1713.toon)). When the source system
+does not know a strict-required scalar, the create step can defer it with a
+reason: `create({ ..., defer: ["deadline", "assignee"], deferReason:
+"Imported from GitHub issue 42" })`. The same options work in a
+`commitItemMutations` create step and through MCP `pm_create`. Deferrable
+fields are `deadline`, `assignee`, `acceptance_criteria` and
+`estimated_minutes`. The item stores `deferred_fields` (format 4), and any
+later write that supplies a value resolves that entry. Validate lists open
+deferrals as curation work, and strict close refuses the item with
+`close_validation_deferred_fields` until every deferred field has a value.
+Package import adapters (`commitImportedItem`) now run the tracker's
+`beforeMutation` guards as operation `import`, with the importer's actor. A
+guard denial propagates as a refusal; only a held item lock returns the
+skippable `conflictWarning`.
 
 By default the auto-created command only has a handler. Pass an optional third
 `ImportExportRegistrationOptions` argument to make it a first-class command with a
