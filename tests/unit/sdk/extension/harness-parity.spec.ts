@@ -74,7 +74,11 @@ describe("extension test harness parity with native dispatch", () => {
     await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-string", global: { json: false } })).rejects.toMatchObject({
       context: expect.objectContaining({ code: "extension_read_output_invalid" }),
     });
-    expect(seen).toEqual(["svc-structured:json", "svc-string:toon"]);
+    // The fallback encoding follows native formatOutput: TOON unless --json or a JSON workspace default (Codex review round 9).
+    for (const defaultOutputFormat of ["toon", "json"] as const) {
+      await runRegisteredCommandForTest(activation.commands, { command: "svc-structured", global: { json: undefined, defaultOutputFormat } });
+    }
+    expect(seen).toEqual(["svc-structured:json", "svc-string:toon", "svc-structured:toon", "svc-structured:json"]);
     // A registry copied without the service symbol admits the result itself.
     const copied = { ...activation.commands };
     Object.defineProperty(copied, Symbol.for("pm.sdk.testing.activatedFlagRegistrations"), { value: activation.registrations });

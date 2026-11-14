@@ -147,7 +147,7 @@ import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-o
 import { assertExtensionReadOutputResult } from "./read-output/extension.js";
 import { resolveReadOutputEncoding } from "./read-output-contracts.js";
 import { isHostOutputSuppressed } from "../core/output/output-control.js";
-import { projectPrintedResult } from "../core/output/output.js";
+import { projectPrintedResult, resolveDefaultOutputFormat } from "../core/output/output.js";
 import { resolvePortableWorkspaceContext } from "../core/extensions/index.js";
 import { PmClient } from "./runtime.js";
 
@@ -276,7 +276,7 @@ function resolveServiceAdmittedResult(
   const global = (context.global ?? {}) as Record<string, unknown>;
   const controls = Object.fromEntries(HARNESS_GLOBAL_OUTPUT_CONTROLS.filter((key) => global[key] !== undefined).map((key) => [key, global[key]]));
   const commandOptions = { ...context.options, ...controls };
-  const format = resolveReadOutputEncoding(context.command, commandOptions) ?? (global.json === false ? "toon" : "json");
+  const format = resolveReadOutputEncoding(context.command, commandOptions) ?? resolveDefaultOutputFormat(global);
   // The payload mirrors native resolveOutputService: merged command options carry resolvedOutputFormat.
   const resolvedCommandOptions = { ...commandOptions, resolvedOutputFormat: format };
   const outputOptions = { ...global, command: context.command, commandArgs: [...context.args], pmRoot: context.pm_root, commandOptions: resolvedCommandOptions };
