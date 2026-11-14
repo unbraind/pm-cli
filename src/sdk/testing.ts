@@ -255,6 +255,9 @@ function readActivatedServices(commands: ExtensionCommandRegistry): ExtensionSer
   return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_SERVICES]?: ExtensionServiceRegistry })[ACTIVATED_COMMAND_SERVICES];
 }
 
+/** Global output controls native formatting merges over command options before it resolves the encoding. */
+const HARNESS_GLOBAL_OUTPUT_CONTROLS = ["outputInclude", "outputLimit", "outputBudget", "outputFormat", "outputSession", "outputCursor", "outputRowContract"] as const;
+
 /**
  * The result native output admits after an `output_format` service ran: a
  * structured replacement is admitted in place of the result, while a string
@@ -266,8 +269,11 @@ function resolveServiceAdmittedResult(
   result: unknown,
 ): unknown {
   if (services === undefined) return result;
-  // An explicit output encoding wins over the harness's JSON default, as in native formatOutput.
-  const format = resolveReadOutputEncoding(context.command, context.options) ?? (context.global?.json === false ? "toon" : "json");
+  // An explicit output encoding (a command option, or a global output control, which wins as in native
+  // formatEffectiveOutput) beats the harness's JSON default.
+  const global = (context.global ?? {}) as Record<string, unknown>;
+  const controls = Object.fromEntries(HARNESS_GLOBAL_OUTPUT_CONTROLS.filter((key) => global[key] !== undefined).map((key) => [key, global[key]]));
+  const format = resolveReadOutputEncoding(context.command, { ...context.options, ...controls }) ?? (global.json === false ? "toon" : "json");
   const service = runServiceOverrideSync(services, {
     service: "output_format",
     command: context.command,

@@ -114,6 +114,8 @@ describe("extension test harness parity with native dispatch", () => {
       );
     });
     await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", options: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
+    // A global output control wins over the JSON default too (Codex review round 4).
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", global: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
     await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon" })).rejects.toMatchObject({
       context: expect.objectContaining({ code: "extension_read_output_invalid" }),
     });
