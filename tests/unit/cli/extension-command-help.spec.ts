@@ -70,6 +70,16 @@ describe("dynamic extension Commander options", () => {
     await program.parseAsync(["probe", "--number=4", "--switch"], { from: "user" });
     expect(observed).toEqual({ number: "4", switch: true });
   });
+  it("records each bare occurrence of a repeatable boolean switch as true (pm-gh1726)", async () => {
+    const program = new Command().exitOverride();
+    const command = program.command("probe");
+    applyDynamicExtensionFlagOptions(command, [{ long: "--many", value_type: "boolean", list: true, repeatable: true }]);
+    let observed: Record<string, unknown> = {};
+    command.action((_, invoked: Command) => { observed = invoked.opts<Record<string, unknown>>(); });
+    // Commander hands the accumulator undefined for a value-less switch; list flattening would drop it.
+    await program.parseAsync(["probe", "--many", "--many"], { from: "user" });
+    expect(observed).toEqual({ many: [true, true] });
+  });
   it("accumulates repeated long and short list flag occurrences", async () => {
     const program = new Command().exitOverride();
     const command = program.command("probe");

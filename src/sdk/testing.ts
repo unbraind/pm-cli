@@ -308,7 +308,7 @@ async function admitRegisteredReadOutputResult(
     // The attached object is the activation's full registration registry.
     setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
     setActiveCommandContext({ command: context.command, args: context.args, options: context.options, global: context.global, pm_root: context.pm_root });
-    const global = context.global ?? {};
+    const global = context.global;
     process.exitCode = 0;
     try {
       formatOutput(projectPrintedResult(outcome.result, global), {
