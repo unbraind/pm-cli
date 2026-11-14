@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../../../src/mcp/server.js";
 import { PmClient, resolveRuntimeFieldRegistry } from "../../../../src/sdk/runtime.js";
 import { _testOnlyCreateCommand } from "../../../../src/sdk/lifecycle/create.js";
+import { withoutDeferredRuntimeRequirements } from "../../../../src/sdk/lifecycle/create-deferrals.js";
 import { itemDocumentToMutationOptions } from "../../../../src/sdk/structured-mutations.js";
 import {
   DEFERRABLE_ITEM_FIELDS,
@@ -350,11 +351,23 @@ describe("strict create deferrals (GH-1713)", () => {
   it("resolves schema fields mapped to a deferrable key in stdin unsets and template defaults", () => {
     const registry = resolveRuntimeFieldRegistry({ fields: [{ key: "due", metadata_key: "deadline", cli_flag: "due-date", cli_aliases: ["due-on"], type: "string" }] } as never);
     const document = JSON.stringify({ item: { title: "Mirrored", type: "Issue", deferred_fields: [{ field: "deadline", reason: "Imported" }, { field: "assignee", reason: "Imported" }] } });
-    for (const token of ["due", "due-date", "due-on"]) {
+    for (const token of ["due", "due-date", "due-on", "due_date", "DUE", "deadline"]) {
       expect(itemDocumentToMutationOptions(document, "create", { unset: [token] }, registry.definitions)).toMatchObject({ defer: ["assignee"] });
     }
-    expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ due: "2026-12-31", sprint: "s1" }, { title: "x", defer: ["deadline"] } as never, registry)).not.toHaveProperty("due");
+    for (const templateKey of ["due", "dueDate", "dueOn"]) {
+      expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ [templateKey]: "2026-12-31", sprint: "s1" }, { title: "x", defer: ["deadline"] } as never, registry)).not.toHaveProperty(templateKey);
+    }
     expect(_testOnlyCreateCommand.mergeCreateOptionsWithTemplate({ due: "2026-12-31" }, { title: "x", defer: ["deadline"], due: "2027-01-01" } as never, registry)).toMatchObject({ due: "2027-01-01" });
+  });
+
+  it("never lets a deferral hide an unrelated requirement that shares a schema flag", () => {
+    const deferrals = { fields: [DEFERRABLE_ITEM_FIELDS.find((entry) => entry.field === "deadline")!], reason: "Imported", optionKeys: new Set(["deadline"]) };
+    const registry = resolveRuntimeFieldRegistry({ fields: [
+      { key: "due", metadata_key: "deadline", cli_flag: "shared", type: "string", commands: ["update"], required_on_create: true },
+      { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string", commands: ["create"], required: true },
+      { key: "eta", metadata_key: "deadline", cli_flag: "eta", type: "string", required_on_create: true },
+    ] } as never);
+    expect(withoutDeferredRuntimeRequirements(["--eta", "--shared"], deferrals, registry.definitions)).toEqual(["--shared"]);
   });
 
   it("lets a deferral override a template default exactly like an unset", () => {

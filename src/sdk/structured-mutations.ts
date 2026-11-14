@@ -25,9 +25,10 @@ import {
 } from "./cli-contracts/commander-mutation-options.js";
 import type { PmClientFullMutationOptions } from "./runtime.js";
 import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
-import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved } from "../core/schema/runtime-schema.js";
+import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved, type RuntimeFieldRegistry } from "../core/schema/runtime-schema.js";
 import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS, resolveCoreUpsertMetadataKey } from "./lifecycle/core-item-fields.js";
 import { DEFERRABLE_ITEM_FIELDS, resolveDeferrableItemField } from "../core/item/deferred-fields.js";
+import { resolveRuntimeUnsetFieldDefinition } from "./lifecycle/shared-unset-fields.js";
 import { readRuntimeFieldOptionValue } from "../core/schema/runtime-field-values.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 
@@ -1341,6 +1342,11 @@ function appendItemDocumentEntry(
   ] = scalarItemOption(key, value);
 }
 
+/** The create-command view of the document's schema fields, in the shape the shared unset resolver reads. */
+function createFieldRegistry(runtimeFields: readonly RuntimeFieldDefinitionResolved[]): RuntimeFieldRegistry {
+  return { command_to_fields: new Map([["create", runtimeFields.filter((definition) => definition.commands.includes("create"))]]) } as unknown as RuntimeFieldRegistry;
+}
+
 /**
  * Recreate a document's stored deferrals as create `defer` and `deferReason`
  * options (GH-1713). A value or unset supplied explicitly overrides the
@@ -1361,8 +1367,8 @@ function documentDeferralOptions(
     // An explicit schema field that writes a deferrable metadata key overrides it the same way.
     ...runtimeFields.filter((definition) => explicitKeys.has(runtimeFieldOptionTarget(definition))).map((definition) => definition.metadata_key),
     ...unsetTokens.map((token) => resolveDeferrableItemField(token)?.field),
-    // An unset of a schema field resolves to its metadata key, as the create unset parser resolves it.
-    ...unsetTokens.flatMap((token) => runtimeFields.filter((definition) => [definition.key, definition.cli_flag, ...definition.cli_aliases].includes(token.trim())).map((definition) => definition.metadata_key)),
+    // An unset of a schema field resolves to its metadata key exactly as the create unset parser resolves it.
+    ...unsetTokens.map((token) => resolveRuntimeUnsetFieldDefinition(token, "create", createFieldRegistry(runtimeFields))?.metadataKey),
   ]);
   const entries = (Array.isArray(value) ? value : [])
     .filter(isPlainObject)

@@ -152,7 +152,8 @@ export function commanderOptionAttribute(flag: string): string {
     .reduce((name, word) => `${name}${word.charAt(0).toUpperCase()}${word.slice(1)}`);
 }
 
-function resolveCandidateOptionKeys(
+/** Every option key a schema field's value can arrive under: its key, flag and aliases in each accepted spelling. */
+export function resolveCandidateOptionKeys(
   definition: RuntimeFieldDefinitionResolved,
 ): string[] {
   return [
