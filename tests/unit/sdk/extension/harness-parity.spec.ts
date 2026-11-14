@@ -112,14 +112,17 @@ describe("extension test harness parity with native dispatch", () => {
       api.registerService("output_format", (context) => {
         const payload = context.payload as { format: string; command_options: Record<string, unknown> };
         // Native output hands the service the merged command options with the resolved encoding (Codex review round 5).
-        return payload.format === "toon" && payload.command_options.resolvedOutputFormat === "toon" && payload.command_options.outputFormat === "toon"
+        const options = (context.payload as { options: { commandArgs: string[]; pmRoot?: string; command: string } }).options;
+        // ...and the dispatch metadata native output passes: command, commandArgs, pmRoot (Codex review round 6).
+        return payload.format === "toon" && payload.command_options.resolvedOutputFormat === "toon" && payload.command_options.outputFormat === "toon" &&
+          options.command === "svc-toon" && options.commandArgs[0] === "arg-1" && options.pmRoot === "/tracker"
           ? { handled: true, result: { ok: true, rows: [] } }
           : { handled: false };
       });
     });
-    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", options: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", args: ["arg-1"], pmRoot: "/tracker", options: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
     // A global output control wins over the JSON default too (Codex review round 4).
-    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", global: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon", args: ["arg-1"], pmRoot: "/tracker", global: { outputFormat: "toon" } })).resolves.toMatchObject({ handled: true });
     await expect(runRegisteredCommandForTest(activation.commands, { command: "svc-toon" })).rejects.toMatchObject({
       context: expect.objectContaining({ code: "extension_read_output_invalid" }),
     });

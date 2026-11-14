@@ -277,6 +277,7 @@ function resolveServiceAdmittedResult(
   const format = resolveReadOutputEncoding(context.command, commandOptions) ?? (global.json === false ? "toon" : "json");
   // The payload mirrors native resolveOutputService: merged command options carry resolvedOutputFormat.
   const resolvedCommandOptions = { ...commandOptions, resolvedOutputFormat: format };
+  const outputOptions = { ...global, command: context.command, commandArgs: [...context.args], pmRoot: context.pm_root, commandOptions: resolvedCommandOptions };
   const service = runServiceOverrideSync(services, {
     service: "output_format",
     command: context.command,
@@ -288,10 +289,10 @@ function resolveServiceAdmittedResult(
       command: context.command,
       args: [...context.args],
       command_options: resolvedCommandOptions,
-      global: { ...global, command: context.command, commandOptions: resolvedCommandOptions },
+      global: { ...outputOptions },
       pm_root: context.pm_root,
       format,
-      options: { ...global, command: context.command, commandOptions: resolvedCommandOptions },
+      options: { ...outputOptions },
       result,
     },
   });
