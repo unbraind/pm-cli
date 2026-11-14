@@ -1224,12 +1224,25 @@ function resolveNegatedBooleanSpelling(
   if (declared === undefined || resolveLooseOptionCoercionKind(declared.definition) !== "boolean") {
     return { spelling, value };
   }
-  const flag = coerceLooseBooleanOptionValue(value);
-  if (typeof flag === "boolean") return { spelling: negated, value: !flag };
+  // A repeatable boolean inverts entry by entry, as --no-many --no-many gives [false, false] (Codex review round 10).
+  if ((declared.definition.list === true || declared.definition.repeatable === true) && Array.isArray(value)) {
+    return { spelling: negated, value: value.flat(Infinity).map((entry) => invertNegatedBooleanEntry(spelling, declared.definition, entry, commandPath)) };
+  }
   // A negated spelling of a declared boolean names that flag, so a value it cannot invert ([] or "bogus")
   // is a value error, not an unknown option (CodeRabbit review); an undefined value stays an omission.
-  if (value !== undefined) refuseNegatedBooleanValue(spelling, declared.definition, value, commandPath);
-  return { spelling: negated, value };
+  return { spelling: negated, value: value === undefined ? value : invertNegatedBooleanEntry(spelling, declared.definition, value, commandPath) };
+}
+
+/** Invert one boolean value under a negated spelling, refusing a value that is not a boolean token. */
+function invertNegatedBooleanEntry(
+  spelling: string,
+  definition: LooseCommandFlagDefinition,
+  value: unknown,
+  commandPath: string,
+): boolean {
+  const flag = coerceLooseBooleanOptionValue(value);
+  if (typeof flag === "boolean") return !flag;
+  return refuseNegatedBooleanValue(spelling, definition, value, commandPath);
 }
 
 /** Refuse a value a negated boolean spelling cannot invert. */

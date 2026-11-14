@@ -10,7 +10,7 @@ import { suppressHostOutput } from "../../../../src/sdk/output.js";
 import type { ExtensionApi } from "../../../../src/core/extensions/extension-types.js";
 
 async function activate(register: (api: ExtensionApi) => void) {
-  const activation = await activateExtensionForTest({ activate: register }, { name: "harness-parity", capabilities: ["commands", "schema", "services"] });
+  const activation = await activateExtensionForTest({ activate: register }, { name: "harness-parity", capabilities: ["commands", "schema", "services", "renderers"] });
   expect(activation.failed).toEqual([]);
   return activation;
 }
@@ -158,6 +158,21 @@ describe("extension test harness parity with native dispatch", () => {
         context: expect.objectContaining({ code: "extension_read_output_invalid" }),
       });
     }
+  });
+
+  it("formats with the activation's renderers and never leaks the process exit code (Codex review round 10)", async () => {
+    const activation = await activate((api) => {
+      api.registerFlags("probe-big", [{ long: "--note", value_type: "string" }]);
+      api.registerFlags("probe-huge", [{ long: "--note", value_type: "string" }]);
+      api.registerCommand({ name: "probe-big", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [{ n: 1n }] }) });
+      api.registerCommand({ name: "probe-huge", read_output: { row_keys: ["rows"] }, run: () => ({ rows: [{ id: "a" }] }) });
+      api.registerRenderer("json", (context) => JSON.stringify(context.result, (_key, value) => (typeof value === "bigint" ? value.toString() : value)), { commands: ["probe-big"] });
+      api.registerService("output_format", (context) => (context.command === "probe-huge" ? { handled: true, result: "x".repeat(20000) } : { handled: false }));
+    });
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-big" })).resolves.toMatchObject({ handled: true });
+    const before = process.exitCode;
+    await expect(runRegisteredCommandForTest(activation.commands, { command: "probe-huge", options: { outputBudget: "400" } })).resolves.toMatchObject({ handled: true });
+    expect(process.exitCode).toBe(before);
   });
 });
 

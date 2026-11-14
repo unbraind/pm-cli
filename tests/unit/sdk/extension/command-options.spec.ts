@@ -443,6 +443,15 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
     }
     expect(normalizeDirectExtensionCommandOptions({ "no-on": undefined }, on, "demo brief")).toEqual({});
     expect(normalizeDirectExtensionCommandOptions({ "no-on": true }, on, "demo brief")).toEqual({ on: false });
+    // A repeatable boolean inverts entry by entry, like --no-many --no-many on the CLI (Codex review round 10).
+    const many = [{ long: "--many", value_type: "boolean", value_validation: "strict", repeatable: true }];
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": [true, "true"] }, many, "demo brief")).toEqual({ many: [false, false] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": [] }, many, "demo brief")).toEqual({ many: [] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": true }, many, "demo brief")).toEqual({ many: [false] });
+    expect(refusal(() => normalizeDirectExtensionCommandOptions({ "no-many": [true, "bogus"] }, many, "demo brief"))).toMatchObject({
+      code: "extension_flag_value_invalid",
+      flag: "--many",
+    });
     // A strict scalar refusal names its flag too.
     expect(
       refusal(() => normalizeDirectExtensionCommandOptions({ on: 1 }, [{ long: "--on", value_type: "boolean", value_validation: "strict" }], "demo brief")),

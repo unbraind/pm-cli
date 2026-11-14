@@ -150,6 +150,7 @@ import {
   setActiveCommandContext,
   setActiveExtensionCommands,
   setActiveExtensionRegistrations,
+  setActiveExtensionRenderers,
   setActiveExtensionServices,
 } from "../core/extensions/index.js";
 import { PmClient } from "./runtime.js";
@@ -255,6 +256,14 @@ function readActivatedFlagRegistrations(
 /** Symbol under which an activation attaches its service registry, so command admission can run `output_format` as native output does. */
 const ACTIVATED_COMMAND_SERVICES = Symbol.for("pm.sdk.testing.activatedServices");
 
+/** Symbol under which an activation attaches its renderer registry for the same native formatting. */
+const ACTIVATED_COMMAND_RENDERERS = Symbol.for("pm.sdk.testing.activatedRenderers");
+
+/** Read the renderer registry an activation attached to its command registry. */
+function readActivatedRenderers(commands: ExtensionCommandRegistry): ExtensionRendererRegistry | undefined {
+  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_RENDERERS]?: ExtensionRendererRegistry })[ACTIVATED_COMMAND_RENDERERS];
+}
+
 /** Read the service registry an activation attached to its command registry. */
 function readActivatedServices(commands: ExtensionCommandRegistry): ExtensionServiceRegistry | undefined {
   return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_SERVICES]?: ExtensionServiceRegistry })[ACTIVATED_COMMAND_SERVICES];
@@ -285,20 +294,27 @@ async function admitRegisteredReadOutputResult(
   if (registrations === undefined || !outcome.handled) return outcome;
   const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
   if (readOutput === undefined) return outcome;
+  // Native delivery may set process.exitCode (an infeasible budget exits 2); a harness call must not leak it.
+  const exitCode = process.exitCode;
   await runWithIsolatedExtensionRuntime(async () => {
     setActiveExtensionCommands(commands);
     setActiveExtensionServices(readActivatedServices(commands) ?? null);
+    setActiveExtensionRenderers(readActivatedRenderers(commands) ?? null);
     // The attached object is the activation's full registration registry.
     setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
     setActiveCommandContext({ command: context.command, args: context.args, options: context.options, global: context.global, pm_root: context.pm_root });
     const global = context.global ?? {};
-    formatOutput(projectPrintedResult(outcome.result, global), {
-      ...global,
-      command: context.command,
-      commandArgs: context.args,
-      commandOptions: context.options,
-      pmRoot: context.pm_root,
-    });
+    try {
+      formatOutput(projectPrintedResult(outcome.result, global), {
+        ...global,
+        command: context.command,
+        commandArgs: context.args,
+        commandOptions: context.options,
+        pmRoot: context.pm_root,
+      });
+    } finally {
+      process.exitCode = exitCode;
+    }
   });
   return outcome;
 }
@@ -1022,6 +1038,10 @@ export async function activateExtensionForTest(
   });
   Object.defineProperty(activation.commands, ACTIVATED_COMMAND_SERVICES, {
     value: activation.services,
+    enumerable: false,
+  });
+  Object.defineProperty(activation.commands, ACTIVATED_COMMAND_RENDERERS, {
+    value: activation.renderers,
     enumerable: false,
   });
   return activation;
