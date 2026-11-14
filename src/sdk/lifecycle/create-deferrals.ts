@@ -17,7 +17,7 @@ import {
 import { mutationOptionLabel, type MutationInputAudience } from "../../core/item/literal-mutation-input.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { RuntimeFieldDefinitionResolved } from "../../core/schema/runtime-schema.js";
-import { resolveCandidateOptionKeys, shouldRequireFieldOnCreate } from "../../core/schema/runtime-field-values.js";
+import { readRuntimeFieldOptionValue, resolveCandidateOptionKeys, shouldRequireFieldOnCreate } from "../../core/schema/runtime-field-values.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import type { ItemDeferredField } from "../../types/index.js";
 
@@ -153,16 +153,17 @@ export function withoutDeferredRuntimeRequirements(
   deferrals: ResolvedCreateDeferrals,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
   itemTypeName?: string,
+  options: Record<string, unknown> = {},
 ): string[] {
   const deferredFields = new Set<string>(deferrals.fields.map((entry) => entry.field));
   const createFields = runtimeFields.filter((definition) => definition.commands.includes("create"));
   const exempt = (definition: RuntimeFieldDefinitionResolved): boolean =>
     definition.required !== true && deferredFields.has(definition.metadata_key);
   const satisfied = new Set(createFields.filter(exempt).map((definition) => `--${definition.cli_flag}`));
-  // A flag another create requirement still needs stays missing, so a shared spelling never hides it.
+  // A flag another unsatisfied create requirement still needs stays missing, so a shared spelling never hides it.
   const stillRequired = new Set(
     createFields
-      .filter((definition) => !exempt(definition) && shouldRequireFieldOnCreate(definition, itemTypeName))
+      .filter((definition) => !exempt(definition) && shouldRequireFieldOnCreate(definition, itemTypeName) && readRuntimeFieldOptionValue(options, definition) === undefined)
       .map((definition) => `--${definition.cli_flag}`),
   );
   return missingFlags.filter((flag) => !satisfied.has(flag) || stillRequired.has(flag));

@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { create, get, readSettings, resolveRuntimeFieldRegistry, update } from "../../../src/sdk/runtime.js";
 import { parseItemDocument } from "../../../src/core/item/item-format.js";
+import { CURRENT_ITEM_FORMAT_VERSION } from "../../../src/core/item/item-format-version.js";
 import { itemDocumentToMutationOptions } from "../../../src/sdk/structured-mutations.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
@@ -69,17 +70,19 @@ describe("declared custom item JSON transport", () => {
         const itemPath = path.join(context.pmPath, "tasks", `${id}.${format === "toon" ? "toon" : "md"}`);
         const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
         const baseline = await readFile(createdPath, "utf8");
-        const metadata = { ...parseItemDocument(baseline, { format: "toon" }).metadata, pm_format_version: 5 };
+        // The first format this runtime cannot read, so the case survives the next format bump.
+        const futureVersion = CURRENT_ITEM_FORMAT_VERSION + 1;
+        const metadata = { ...parseItemDocument(baseline, { format: "toon" }).metadata, pm_format_version: futureVersion };
         if (format === "json_markdown") {
           await rename(createdPath, itemPath);
         }
         const variants = format === "toon" ? [
-          `${baseline}\npm_format_version: 5\n`,
-          `${baseline.replace(/^title:.*$/mu, "title: 123")}\npm_format_version: 5\n`,
-          "pm_format_version: 5\n",
-          "front_matter:\n  pm_format_version: 5\n  title: 123\nbody[1]: wrong-shape\n",
-        ] : [JSON.stringify(metadata), JSON.stringify({ ...metadata, title: 123 }), JSON.stringify({ pm_format_version: 5 })];
-        expect(parseItemDocument(variants[0]!, { format }).metadata.pm_format_version).toBe(5);
+          `${baseline}\npm_format_version: ${futureVersion}\n`,
+          `${baseline.replace(/^title:.*$/mu, "title: 123")}\npm_format_version: ${futureVersion}\n`,
+          `pm_format_version: ${futureVersion}\n`,
+          `front_matter:\n  pm_format_version: ${futureVersion}\n  title: 123\nbody[1]: wrong-shape\n`,
+        ] : [JSON.stringify(metadata), JSON.stringify({ ...metadata, title: 123 }), JSON.stringify({ pm_format_version: futureVersion })];
+        expect(parseItemDocument(variants[0]!, { format }).metadata.pm_format_version).toBe(futureVersion);
         expect(() => parseItemDocument(variants[0]!, { format, requireSupportedFormat: true })).toThrow("Upgrade");
         for (const raw of variants) {
           await writeFile(itemPath, raw);
@@ -90,7 +93,7 @@ describe("declared custom item JSON transport", () => {
             expect(JSON.parse(refused.stderr)).toMatchObject({ code: "item_format_version_unsupported", required: expect.stringContaining("Upgrade") });
             expect(await Promise.all([readFile(itemPath), readFile(historyPath)])).toEqual(original);
           }
-          await expect(get(id, {}, { pmRoot: context.pmPath, noExtensions: true })).rejects.toMatchObject({ context: { code: "item_format_version_unsupported", item_id: id, format_version: 5 } });
+          await expect(get(id, {}, { pmRoot: context.pmPath, noExtensions: true })).rejects.toMatchObject({ context: { code: "item_format_version_unsupported", item_id: id, format_version: futureVersion } });
         }
         for (const raw of format === "toon" ? ["front_matter: null\n", "front_matter: 123\n"] : []) {
           await writeFile(itemPath, raw);

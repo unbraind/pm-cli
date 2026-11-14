@@ -383,6 +383,13 @@ describe("strict create deferrals (GH-1713)", () => {
     ] } as never);
     expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, typeScoped.definitions, "Task")).toEqual([]);
     expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, typeScoped.definitions, "Issue")).toEqual(["--shared"]);
+    // A required field sharing the flag that already holds a value does not keep it missing.
+    const satisfiedShared = resolveRuntimeFieldRegistry({ fields: [
+      { key: "due", metadata_key: "deadline", cli_flag: "shared", type: "string", required_on_create: true },
+      { key: "ticket", metadata_key: "ticket", cli_flag: "shared", type: "string", required: true },
+    ] } as never);
+    expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, satisfiedShared.definitions, "Task")).toEqual(["--shared"]);
+    expect(withoutDeferredRuntimeRequirements(["--shared"], deferrals, satisfiedShared.definitions, "Task", { ticket: "T-1" })).toEqual([]);
   });
 
   it("resolves stdin-json overrides core-first and only through create-scoped schema fields", () => {

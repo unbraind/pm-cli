@@ -1284,7 +1284,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   },
   defer: {
     description:
-      "Strict-required create fields whose values are not known yet (GH-1713): deadline, assignee, acceptance_criteria or estimated_minutes. Each is recorded in deferred_fields with deferReason; close validation refuses the item until every deferred field holds a value.",
+      "Strict-required create fields whose values are not known yet (GH-1713): deadline, assignee, acceptance_criteria or estimated_minutes. Each is recorded in deferred_fields with deferReason; strict close validation refuses the item until every deferred field holds a value, and warn mode only warns.",
     examples: [["deadline", "assignee"], ["acceptance_criteria"]],
   },
   deferReason: {
