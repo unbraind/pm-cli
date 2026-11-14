@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: argv,cli,extensions,flags
 created_at: "2026-11-14T16:53:28.191Z"
-updated_at: "2026-11-14T16:53:28.191Z"
+updated_at: "2026-11-14T20:34:37.896Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "pm <cmd> --many=false --many delivers [false, true] and --many --many=false delivers [true, false] on the built CLI; Occurrence order for list switches comes from the same argv scanner that resolves spelling conflicts, so a token consumed as another option's value is never counted; An in-process spec drives mixed, bare-only and attached-only forms, with a negative control showing the pre-fix loss"
@@ -16,7 +16,10 @@ confidence: high
 severity: low
 expected_result: Every occurrence of a repeatable switch reaches the handler in argv order
 actual_result: Bare occurrences are dropped when any attached occurrence is present
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1726,discovered_from,"2026-11-14T16:53:28.191Z","harness:claude-code","cli:create:dep",detected
   pm-wlxf8f,related,"2026-11-14T16:53:28.191Z","harness:claude-code","cli:create:dep",detected
+  pm-853a,related,"2026-11-14T20:34:37.444Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-14T20:17:55.068Z","harness:claude-code","Narrowed 2026-11-14 by PR #1732: list flags no longer lose Commander-parsed values when an unrelated flag reaches the loose parser (readOrderedLooseListValues now falls back when no occurrence names the flag). What remains here is only the same-flag mix of attached and bare occurrences of a repeatable switch."
 body: ""

@@ -493,22 +493,20 @@ function applyFlagDefault(
   return kind ? coerceLooseOptionValue(defaultValue, kind) : defaultValue;
 }
 
-/** Preserve parse-time value order for list flags whose long and short aliases are interleaved. */
+/**
+ * Preserve parse-time value order for list flags whose long and short aliases
+ * are interleaved. When no recorded occurrence names this flag, the value
+ * came from elsewhere (Commander parsed `--tags a` while only an unrelated
+ * attached `--enabled=1` reached the loose parser), so the fallback is kept:
+ * an empty filter result would silently drop every value (pm-gh1726 review).
+ */
 function readOrderedLooseListValues(
   occurrenceSource: Record<string, unknown>,
   optionKeys: readonly string[],
   fallback: unknown,
 ): unknown {
-  const occurrences = (occurrenceSource as LooseOptionsWithOccurrences)[
-    LOOSE_OPTION_OCCURRENCES
-  ];
-  if (!occurrences || occurrences.length === 0) {
-    return fallback;
-  }
-  const acceptedKeys = new Set(optionKeys);
-  return occurrences
-    .filter((occurrence) => acceptedKeys.has(occurrence.key))
-    .map((occurrence) => occurrence.value);
+  const matching = readLooseOccurrences(occurrenceSource, optionKeys);
+  return matching.length === 0 ? fallback : matching.map((occurrence) => occurrence.value);
 }
 
 /** Whether a declared `boolean` flag is a value-less switch (as opposed to the legacy `bool` optional-value grammar), per the shared value contract. */
@@ -1216,18 +1214,44 @@ function resolveNegatedBooleanSpelling(
   index: DeclaredOptionSpellingIndex,
   spelling: string,
   value: unknown,
+  commandPath: string,
 ): { spelling: string; value: unknown } {
   const negated = /^(?:--)?no-(.+)$/u.exec(spelling)?.[1];
   if (negated === undefined || resolveDeclaredOptionSpelling(index, spelling) !== undefined) {
     return { spelling, value };
   }
   const declared = resolveDeclaredOptionSpelling(index, negated);
+  if (declared === undefined || resolveLooseOptionCoercionKind(declared.definition) !== "boolean") {
+    return { spelling, value };
+  }
   const flag = coerceLooseBooleanOptionValue(value);
-  return declared !== undefined &&
-    resolveLooseOptionCoercionKind(declared.definition) === "boolean" &&
-    typeof flag === "boolean"
-    ? { spelling: negated, value: !flag }
-    : { spelling, value };
+  if (typeof flag === "boolean") return { spelling: negated, value: !flag };
+  // A negated spelling of a declared boolean names that flag, so a value it cannot invert ([] or "bogus")
+  // is a value error, not an unknown option (CodeRabbit review); an undefined value stays an omission.
+  if (value !== undefined) refuseNegatedBooleanValue(spelling, declared.definition, value, commandPath);
+  return { spelling: negated, value };
+}
+
+/** Refuse a value a negated boolean spelling cannot invert. */
+function refuseNegatedBooleanValue(
+  spelling: string,
+  definition: LooseCommandFlagDefinition,
+  value: unknown,
+  commandPath: string,
+): never {
+  // A declaration with a handler key always renders a long or short label.
+  const label = formatLooseOptionLabel(definition) as string;
+  throw new PmCliError(
+    `Option '${spelling}' for extension command '${commandPath}' negates ${label} and expects true, false, 1, or 0; received ${JSON.stringify(value)}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_flag_value_invalid",
+      flag: label,
+      required: `Pass ${label} as true or false, or '${spelling}' as true.`,
+      why: `'${spelling}' is the negated spelling of the boolean ${label}, so only a boolean value can be inverted before the extension handler runs.`,
+      nextSteps: [`Run pm contracts --command ${commandPath} --flags-only --json to read each flag's value contract.`],
+    },
+  );
 }
 
 /** Fold declared spellings into handler keys, refusing two spellings of one flag with different values. */
@@ -1239,7 +1263,7 @@ function foldDirectOptionSpellings(
   const folded = Object.create(null) as Record<string, unknown>;
   const suppliedBy = new Map<string, string>();
   for (const [rawSpelling, rawValue] of Object.entries(options)) {
-    const { spelling, value } = resolveNegatedBooleanSpelling(index, rawSpelling, rawValue);
+    const { spelling, value } = resolveNegatedBooleanSpelling(index, rawSpelling, rawValue, commandPath);
     const declared = resolveDeclaredOptionSpelling(index, spelling);
     if (declared === undefined) {
       folded[spelling] = value;

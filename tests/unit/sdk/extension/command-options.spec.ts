@@ -433,6 +433,16 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
     }
     expect(normalizeDirectExtensionCommandOptions({ ...valid, ids: [] }, definitions, "demo brief")).toMatchObject({ ids: [] });
     expect(normalizeDirectExtensionCommandOptions({ ...valid, ids: ["a", "b"] }, definitions, "demo brief")).toMatchObject({ ids: ["a", "b"] });
+    // A negated spelling of a declared boolean that carries a value it cannot invert is a value error (CodeRabbit review).
+    const on = [{ long: "--on", value_type: "boolean", value_validation: "strict" }];
+    for (const [spelling, value] of [["no-on", []], ["--no-on", "bogus"], ["no-on", [true]]] as const) {
+      expect(refusal(() => normalizeDirectExtensionCommandOptions({ [spelling]: value }, on, "demo brief"))).toMatchObject({
+        code: "extension_flag_value_invalid",
+        flag: "--on",
+      });
+    }
+    expect(normalizeDirectExtensionCommandOptions({ "no-on": undefined }, on, "demo brief")).toEqual({});
+    expect(normalizeDirectExtensionCommandOptions({ "no-on": true }, on, "demo brief")).toEqual({ on: false });
     // A strict scalar refusal names its flag too.
     expect(
       refusal(() => normalizeDirectExtensionCommandOptions({ on: 1 }, [{ long: "--on", value_type: "boolean", value_validation: "strict" }], "demo brief")),

@@ -178,6 +178,11 @@ describe("direct-caller extension option contract", () => {
           const result = await context.runCliInProcess(["probe", "option", "--from-tracker", "x", "--tags", "a", enabled, "--json"]);
           expect(result.code, enabled).toBe(enabled === "--enabled=1" ? 0 : 2);
         }
+        // An unrelated attached option (--enabled=1 reaches only the loose parser) no longer empties a list
+        // Commander parsed: --tags a stays ["a"] (it reached the handler as [] before).
+        const mixed = await context.runCliInProcess(["probe", "option", "--from-tracker", "x", "--tags", "a", "--tags", "b", "--enabled=1", "--json"], { expectJson: true });
+        expect(mixed.code, mixed.stderr).toBe(0);
+        expect((mixed.json as { options: Record<string, unknown> }).options).toMatchObject({ tags: ["a", "b"], enabled: true });
         // Commander hands the accumulator `undefined` for a bare switch; each bare occurrence is `true`.
         for (const [argv, expected] of [
           [["--many"], [true]],

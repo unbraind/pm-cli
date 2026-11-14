@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[4]: agent-ux,complete-list,migration-hints,read-output
 created_at: "2026-11-14T17:20:14.074Z"
-updated_at: "2026-11-14T17:20:14.074Z"
+updated_at: "2026-11-14T20:34:39.495Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A pm list read that follows the --no-truncate migration hint is certifiable by certifyCompleteListResult, or the hint is no longer emitted for pm list; The canonical unbounded controls lift pm list's own page limit on a tracker above the 10,000-item threshold, verified with a fixture above the threshold; pm-gh1728's recovery can drop --no-truncate once both hold, with the executed-recovery spec still certifying"
@@ -16,7 +16,9 @@ confidence: medium
 severity: medium
 expected_result: Following a migration hint never makes a complete read uncertifiable
 actual_result: The read the hint recommends is refused with page_incomplete
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-0c0j,related,"2026-11-14T17:20:14.074Z","harness:claude-code","cli:create:dep",detected
   pm-gh1728,discovered_from,"2026-11-14T17:20:14.074Z","harness:claude-code","cli:create:dep",detected
+  pm-dfg0,related,"2026-11-14T20:34:39.062Z","harness:claude-code","cli:update:dep",detected
+  pm-q7qojt,related,"2026-11-14T20:34:39.062Z","harness:claude-code","cli:update:dep",detected
 body: ""
