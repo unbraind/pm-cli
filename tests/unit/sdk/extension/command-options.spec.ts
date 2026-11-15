@@ -490,6 +490,54 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
       expect(normalizeDirectExtensionCommandOptions({ many: false, "no-many": true }, definitions, "demo brief")).toEqual({ many: [false] });
       expect(normalizeDirectExtensionCommandOptions({ many: true, "no-many": false }, definitions, "demo brief")).toEqual({ many: [true] });
     }
+    // List spellings compare as the entries normalization reads (Greptile review), so equivalent shapes are one value...
+    for (const [options, expected] of [
+      [{ many: [false], "no-many": true }, [false]],
+      [{ many: [false], "--many": false }, [false]],
+      [{ many: [false, true], "no-many": "true,false" }, [false, true]],
+      [{ many: ["false", " true"], "--many": [false, true, null] }, [false, true]],
+    ] as const) {
+      expect(normalizeDirectExtensionCommandOptions(options, listed, "demo brief")).toEqual({ many: expected });
+    }
+    expect(normalizeDirectExtensionCommandOptions({ many: [false], "no-many": [true] }, many, "demo brief")).toEqual({ many: [false] });
+    // ...while different entries, a malformed token or a blank entry still conflict, so strict refusal is never masked.
+    for (const options of [
+      { many: [false], "no-many": false },
+      { many: [true], "--many": ["bogus"] },
+      { many: [true, false], "--many": "true,,false" },
+      { many: [false, true], "--many": [true, false] },
+    ]) {
+      expect(refusal(() => normalizeDirectExtensionCommandOptions(options, listed, "demo brief"))).toMatchObject({
+        code: "extension_option_spelling_conflict",
+      });
+    }
+    // A typed scalar compares as its kind coerces it; a malformed token or an array stays raw.
+    for (const definitions of [on, [{ long: "--on", value_type: "boolean" }]]) {
+      expect(normalizeDirectExtensionCommandOptions({ on: "true", "no-on": "false" }, definitions, "demo brief")).toEqual({ on: true });
+      expect(normalizeDirectExtensionCommandOptions({ on: "false", "--on": false }, definitions, "demo brief")).toEqual({ on: false });
+    }
+    expect(normalizeDirectExtensionCommandOptions({ count: "3", "--count": 3 }, [{ long: "--count", value_type: "number" }], "demo brief")).toEqual({ count: 3 });
+    expect(normalizeDirectExtensionCommandOptions({ on: " true", "--on": true }, [{ long: "--on", value_type: "boolean" }], "demo brief")).toEqual({ on: true });
+    for (const options of [{ on: true, "--on": "bogus" }, { on: [true], "--on": true }]) {
+      expect(refusal(() => normalizeDirectExtensionCommandOptions(options, [{ long: "--on", value_type: "boolean" }], "demo brief"))).toMatchObject({
+        code: "extension_option_spelling_conflict",
+      });
+    }
+    const note = [{ long: "--note", value_type: "string" }];
+    expect(refusal(() => normalizeDirectExtensionCommandOptions({ note: " a", "--note": "a" }, note, "demo brief"))).toMatchObject({
+      code: "extension_option_spelling_conflict",
+    });
+    // A repeatable keeps each occurrence whole, so padding is part of the value there.
+    expect(refusal(() => normalizeDirectExtensionCommandOptions({ tag: [" a"], "--tag": ["a"] }, [{ long: "--tag", value_type: "string", repeatable: true }], "demo brief"))).toMatchObject({
+      code: "extension_option_spelling_conflict",
+    });
+    // A string or untyped list compares its trimmed tokens without coercion.
+    expect(normalizeDirectExtensionCommandOptions({ ids: "a,b", "--ids": ["a", "b"] }, [{ long: "--ids", list: true }], "demo brief")).toEqual({ ids: ["a", "b"] });
+    const labels = [{ long: "--label", value_type: "string", list: true }];
+    expect(normalizeDirectExtensionCommandOptions({ label: "a,b", "--label": ["a", " b"] }, labels, "demo brief")).toEqual({ label: ["a", "b"] });
+    expect(refusal(() => normalizeDirectExtensionCommandOptions({ label: "a,b", "--label": ["a"] }, labels, "demo brief"))).toMatchObject({
+      code: "extension_option_spelling_conflict",
+    });
     // A repeatable keeps each occurrence atomic, so "true,false" stays one malformed token under either spelling.
     for (const options of [{ many: "true,false" }, { "no-many": "true,false" }]) {
       expect(refusal(() => normalizeDirectExtensionCommandOptions(options, many, "demo brief"))).toMatchObject({

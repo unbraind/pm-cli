@@ -2906,8 +2906,12 @@ api.registerCommand({
 The handler must return a structured object. Each declared path must contain
 an array or object map; paths may be nested, unique and non-overlapping. Use
 `row_keys: []` for a singleton result. Activation snapshots the declaration,
-and the host validates the returned collections before projecting them, and
-before any `output_format` service or renderer formats them. A command that
+and the host validates the collections of the result it delivers before
+projecting them or rendering them. That result is the handler's own unless an
+`output_format` service returns a structured replacement: the replacement is
+then validated in its place, so a replacement that supplies the declared rows
+is admitted even when the handler's result lacks them, while a string rendering
+replaces nothing and the handler's result is validated. A command that
 delivers a compact receipt (for example `{ ok: true, output: "report.md" }`
 after writing a file) keeps returning its rows, or an empty collection, and
 lets its `output_format` service render the receipt; a receipt-only result is

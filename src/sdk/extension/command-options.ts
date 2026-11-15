@@ -1312,12 +1312,47 @@ function foldDirectOptionSpellings(
       if (prior === undefined) {
         suppliedBy.set(declared.handlerKey, spelling);
         folded[declared.handlerKey] = value;
-      } else if (!isDeepStrictEqual(folded[declared.handlerKey], value)) {
+      } else if (!isSameDirectOptionValue(declared.definition, folded[declared.handlerKey], value)) {
         refuseConflictingOptionSpellings(declared.definition, declared.handlerKey, [prior, spelling], commandPath);
       }
     }
   }
   return folded;
+}
+
+/**
+ * Whether two spellings of one declared flag carry the same value, read as normalization reads it (Greptile
+ * review): `[false]`, `false` and `"false"` are one list, `"true,false"` and `[true, false]` are one CSV list, and
+ * `"true"` and `true` are one boolean. A token that is not a valid value of the declared kind, and a blank entry,
+ * stay raw, so they never compare equal to a valid value and strict refusal cannot be masked.
+ */
+function isSameDirectOptionValue(definition: LooseCommandFlagDefinition, left: unknown, right: unknown): boolean {
+  const kind = resolveLooseOptionCoercionKind(definition);
+  if (definition.list === true || definition.repeatable === true) {
+    return isDeepStrictEqual(readDirectListComparisonEntries(definition, kind, left), readDirectListComparisonEntries(definition, kind, right));
+  }
+  if (Array.isArray(left) || Array.isArray(right)) return isDeepStrictEqual(left, right);
+  return isDeepStrictEqual(readDirectComparisonToken(kind, left), readDirectComparisonToken(kind, right));
+}
+
+/** The entries of a list or repeatable value as normalization reads them: a CSV list splits and trims, a repeatable keeps each occurrence whole. */
+function readDirectListComparisonEntries(
+  definition: LooseCommandFlagDefinition,
+  kind: LooseOptionCoercionKind | null,
+  value: unknown,
+): unknown[] {
+  const occurrences = (Array.isArray(value) ? value.flat(Infinity) : [value]).filter((entry) => entry !== null && entry !== undefined);
+  const entries = definition.repeatable === true
+    ? occurrences
+    : occurrences.flatMap((entry) => (typeof entry === "string" ? entry.split(",").map((segment) => segment.trim()) : [entry]));
+  return entries.map((entry) => readDirectComparisonToken(kind, entry));
+}
+
+/** One token as its declared kind coerces it, or raw when it is blank, untyped, a string, or not a valid value of the kind. */
+function readDirectComparisonToken(kind: LooseOptionCoercionKind | null, token: unknown): unknown {
+  if (kind === null || kind === "string" || token === "") return token;
+  const coerced = coerceLooseOptionValue(token, kind);
+  return describeFlagScalarValueFailure(coerced, kind) === null ? coerced : token;
 }
 
 /** How an argv option token takes its value, as Commander parses it: `<value>`, `[value]`, or a switch. */
