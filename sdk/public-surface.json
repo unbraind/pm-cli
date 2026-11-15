@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2151,
+    "covered_symbols": 2152,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2152
+    "required_symbols": 2153
   },
   "breaking_acknowledgements": [
     {
@@ -17899,6 +17899,12 @@
           "signature": "(options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void> | calls: (options: ContextUsageLedgerOptions & { author: string; itemIds: readonly string[]; intent: string; }) => Promise<void>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "recordedPrefixActivity",
+          "signature": "(prunedEntries: ReadonlyArray<unknown>) => string | null | calls: (prunedEntries: ReadonlyArray<unknown>) => string | null"
+        },
+        {
           "classification": "advanced_export",
           "kind": "type",
           "name": "RecordedStateObject",
@@ -31580,6 +31586,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "recordedPrefixActivity",
+          "signature": "(prunedEntries: ReadonlyArray<unknown>) => string | null | calls: (prunedEntries: ReadonlyArray<unknown>) => string | null"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "ReindexOptions",
           "signature": "export interface ReindexOptions { mode?: string; progress?: boolean; full?: boolean; }"
@@ -41072,7 +41084,7 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1346,
+      "checked_functions": 1347,
       "checked_values": 399,
       "exempt_test_seams": 15,
       "referenced_types": 1050
@@ -41096,7 +41108,7 @@
       "referenced_types": 103
     },
     "./sdk/governance": {
-      "checked_functions": 112,
+      "checked_functions": 113,
       "checked_values": 26,
       "exempt_test_seams": 4,
       "referenced_types": 118

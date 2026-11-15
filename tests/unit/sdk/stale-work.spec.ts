@@ -12,6 +12,7 @@ import {
 } from "../../../src/sdk/index.js";
 import {
   latestHistoryTimestamp,
+  recordedPrefixActivity,
   readLatestHistoryActivity,
   staleEligibleAt,
   wholeHoursSince,
@@ -302,6 +303,9 @@ describe("stale in-progress SDK governance", () => {
       expect(latestHistoryTimestamp([create, malformed, audit])).toBe("2026-07-06T00:00:00.000Z");
     }
     expect(latestHistoryTimestamp([{ ts: "bad", op: "update" }])).toBeUndefined();
+    // A compaction records its pruned prefix's newest work, or null when the prefix held none.
+    expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "update", patch: [] }])).toBe("2026-07-02T00:00:00.000Z");
+    expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "history_compact", patch: [] }])).toBeNull();
   });
 
   it("lets a newer history entry (a restore) rescue an item whose metadata alone looks idle", async () => {

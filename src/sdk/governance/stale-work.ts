@@ -347,6 +347,14 @@ export function latestHistoryTimestamp(
   return latest?.value;
 }
 
+/**
+ * The activity a compaction baseline records for the prefix it prunes: the
+ * prefix's newest activity time, or null when the prefix held no work.
+ */
+export function recordedPrefixActivity(prunedEntries: ReadonlyArray<unknown>): string | null {
+  return latestHistoryTimestamp(prunedEntries) ?? null;
+}
+
 /** Read the newest valid history timestamp of one item stream, or undefined when unreadable or empty. */
 export async function readLatestHistoryActivity(
   pmRoot: string,
