@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: assurance,ci,github-actions,local-runner,merge-evidence,runner-queue
 created_at: "2026-11-15T04:04:18.607Z"
-updated_at: "2026-11-15T08:13:51.368Z"
+updated_at: "2026-11-15T09:56:49.319Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "ci.yml routes build-foundation, gates (static, smokes), the four coverage shards, Gates (coverage), the Windows regression aggregator and the ubuntu Packed runtime leg to runs-on [self-hosted, pm-local-pmcli] when vars.PM_LOCAL_RUNNER is on and the event is not a fork pull request, and to ubuntu-latest otherwise; every routed job keeps timeout-minutes; A pm-cli runner on omarchy runs ephemeral containers from pm-local-runner:2.338.2-2 (named pmr-pm-cli-<epoch>, labels pm-local-runner=1 and pm-local-repo=pm-cli, --cpus 2 --memory 8g --pids-limit 8192 --security-opt no-new-privileges, no docker socket, a 1-hour registration token), capped at 3 concurrent containers, coordinated with the fleet's omarchy share; A health toggle sets PM_LOCAL_RUNNER to off when no pm-local-pmcli runner is online and back to on when one is, so a dead local pool falls back to hosted runners instead of queueing forever; A declared assurance gate (no bespoke gate script) runs the required gate set against a named head tree locally and records a verdict keyed to that tree, so a merge on local evidence is reproducible and checkable from the tracker; Documented in docs (CI and release docs) with the fork guard, the security posture of self-hosted runners on a public repository, and the fallback behaviour"
@@ -18,4 +18,6 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gzr4j6,related,"2026-11-15T04:04:18.607Z","harness:claude-code","cli:create:dep",detected
   pm-m6ig79,related,"2026-11-15T04:04:18.607Z","harness:claude-code","cli:create:dep",detected
   pm-tzwy,related,"2026-11-15T04:04:18.607Z","harness:claude-code","cli:create:dep",detected
+notes[1]{created_at,author,text}:
+  "2026-11-15T09:56:49.317Z","harness:claude-code","Local runner capacity, 2026-11-15, relayed by the fleet's Raspberry Pi CI session:\n- **Usable:** three Pi 4B hosts can run CI; one of them was restored that morning on a new power supply.\n- **Light work only:** one Pi 3B+.\n- **Out of service:** one Pi 3B+, until its power supply is replaced.\n- **Runner controller:** owned by the fleet session pm-cli-02. It places at most one ephemeral runner (3 CPUs / 2.5 GB) per Pi 4B. Routing pm-cli onto it means asking that session to add pm-cli to its repos configuration (arm64 pool); never register runners by hand or start a second controller.\n- **Cost caveat for this item:** the WAN is slow (about 85 KB/s), so routed jobs should skip setup-node's npm cache. `~/.npm` and the Node 22/26 toolcache are already persistent volumes there, and setup-bun should be pinned.\n\nThis is arm64 capacity. The x86 omarchy runner this item proposes stays the primary design, and the Pi pool would be an additional, arm64-only lane."
 body: ""

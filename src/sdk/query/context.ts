@@ -1964,6 +1964,14 @@ function pushEmptyContextSuggestions(
 }
 
 /** Implements render context markdown for the public runtime surface of this module. */
+/** The unowned and idle in-progress counts, rendered only when non-zero like their JSON keys (GH-1724). */
+function renderUnattendedCounts(summary: ContextSummary): string {
+  return [
+    summary.in_progress_unowned === undefined ? "" : `, in_progress_unowned: ${summary.in_progress_unowned}`,
+    summary.in_progress_idle === undefined ? "" : `, in_progress_idle: ${summary.in_progress_idle}`,
+  ].join("");
+}
+
 export function renderContextMarkdown(result: ContextResult): string {
   const lines: string[] = [];
   const focusFields = result.focus_fields;
@@ -1979,7 +1987,7 @@ export function renderContextMarkdown(result: ContextResult): string {
     lines.push(`- scope: subtree of ${result.filters.parent}`);
   }
   lines.push(
-    `- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}, open: ${result.summary.open})`,
+    `- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}${renderUnattendedCounts(result.summary)}, open: ${result.summary.open})`,
   );
   if (result.summary.total_items !== undefined) {
     lines.push(

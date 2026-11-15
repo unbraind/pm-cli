@@ -43,7 +43,9 @@ One activity clock serves every stale-work consumer: the newer of an item's
 advance both; `pm restore` writes the historical document, with its older
 `updated_at`, and appends a new entry, so the stream counts too. Maintenance
 entries (`history-compact`, `history-repair`, `history-redact`) preserve the
-record without working on the item and do not count. A takeover refuses when
+record without working on the item and do not count; a compaction baseline
+does, because it stands for the pruned prefix and carries the time of its
+last entry. A takeover refuses when
 the stream exists but cannot be read (`claim_activity.history_unreadable`),
 because recent work may hide behind it. A threshold too large for the Date range reports
 `eligible_at: null` rather than failing. `pm health` reports three advisories
@@ -58,7 +60,8 @@ in the storage check, none of which fails the verdict:
 The storage check's `details.in_progress_work` lists up to 25 ids per group
 with each group's sweep, plus the per-item recoveries `pm claim <id>` (unowned
 work), `pm claim <id> --takeover-stale` (another holder's idle claim) and
-`pm update <id> --status <open>`. A sweep is a candidate list by metadata
+`pm update <id> --status <open>`. Sweeps and recoveries carry `--pm-path` when
+the diagnosed tracker was selected explicitly or through `PM_PATH`. A sweep is a candidate list by metadata
 time: it can include an item whose history is newer than its `updated_at`
 (for example after a restore), which the advisory does not count;
 `pm claim <id> --takeover-stale` re-judges each one under the item lock. `pm context` reports `in_progress_unowned`

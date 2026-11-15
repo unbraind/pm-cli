@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runHealth } from "../../../../src/sdk/governance/health.js";
-import { runContext } from "../../../../src/sdk/query/context.js";
+import { renderContextMarkdown, runContext } from "../../../../src/sdk/query/context.js";
+import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
 
@@ -39,6 +40,9 @@ describe("unowned and idle in-progress work (GH-1724)", () => {
       const owned = createInProgress(context, "Held but idle", "agent-a");
       createInProgress(context, "Held by another agent", "agent-b");
       const global = { path: context.pmPath };
+      // Remedies stay on the tracker the diagnosis read (an explicit --pm-path here).
+      const sweep = (...args: string[]): string =>
+        renderPmCommand(["list", "--status", "in_progress", "--pm-path", context.pmPath, ...args]);
 
       const fresh = await runHealth(global, { skipIntegrity: true, skipDrift: true, skipVectors: true });
       expect(fresh.warnings).toContain("in_progress_unowned:1");
@@ -58,14 +62,14 @@ describe("unowned and idle in-progress work (GH-1724)", () => {
         details: {
           in_progress_work: {
             threshold_hours: 48,
-            unowned: { count: 1, items: [{ id: unowned }], sweep: "pm list --status in_progress --assignee-filter unassigned" },
-            idle: { count: 3, sweep: "pm list --status in_progress --updated-before -48h" },
-            item_remedies: { return_to_open: "pm update <id> --status open" },
+            unowned: { count: 1, items: [{ id: unowned }], sweep: sweep("--assignee-filter", "unassigned") },
+            idle: { count: 3, sweep: sweep("--updated-before", "-48h") },
+            item_remedies: { return_to_open: `pm update <id> --status open --pm-path ${context.pmPath}` },
           },
           remediation_map: {
-            stale_in_progress_items: "pm list --status in_progress --assignee-filter unassigned --updated-before -48h",
-            in_progress_unowned: "pm list --status in_progress --assignee-filter unassigned",
-            in_progress_idle: "pm list --status in_progress --updated-before -48h",
+            stale_in_progress_items: sweep("--assignee-filter", "unassigned", "--updated-before", "-48h"),
+            in_progress_unowned: sweep("--assignee-filter", "unassigned"),
+            in_progress_idle: sweep("--updated-before", "-48h"),
           },
         },
       });
@@ -77,13 +81,14 @@ describe("unowned and idle in-progress work (GH-1724)", () => {
           expect.objectContaining({
             code: "in_progress_idle",
             severity: "advisory",
-            remediation: "pm list --status in_progress --updated-before -48h",
+            remediation: sweep("--updated-before", "-48h"),
           }),
         ]),
       );
 
       const orient = await runContext({}, global);
       expect(orient.summary).toMatchObject({ in_progress: 3, in_progress_unowned: 1, in_progress_idle: 3 });
+      expect(renderContextMarkdown(orient)).toContain("(in_progress: 3, in_progress_unowned: 1, in_progress_idle: 3, open: 0)");
     });
   });
 
@@ -94,6 +99,7 @@ describe("unowned and idle in-progress work (GH-1724)", () => {
       expect(orient.summary).toMatchObject({ in_progress: 1 });
       expect(orient.summary).not.toHaveProperty("in_progress_unowned");
       expect(orient.summary).not.toHaveProperty("in_progress_idle");
+      expect(renderContextMarkdown(orient)).toContain("(in_progress: 1, open: 0)");
     });
   });
 });

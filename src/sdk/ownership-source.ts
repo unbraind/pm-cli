@@ -10,6 +10,7 @@ import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
 import { getHistoryPath } from "../core/store/paths.js";
 import {
   STALE_WORK_THRESHOLD_SETTING,
+  isWellFormedHistoryRecord,
   latestHistoryTimestamp,
   normalizeStaleWorkThresholdHours,
   resolveLastActivityAt,
@@ -96,16 +97,6 @@ function classifyOwnershipSource(
   return operation === "claim" ? "claim" : "assignment";
 }
 
-/** Whether a decoded history value has the shape ownership evidence reads (timestamp and patch list). */
-function isHistoryRecord(entry: unknown): boolean {
-  return (
-    entry !== null &&
-    typeof entry === "object" &&
-    typeof (entry as { ts?: unknown }).ts === "string" &&
-    Array.isArray((entry as { patch?: unknown }).patch)
-  );
-}
-
 /** Read one stream and derive the holder evidence it proves, keeping the entries for activity reads. */
 async function readOwnershipEvidence(
   pmRoot: string,
@@ -118,7 +109,7 @@ async function readOwnershipEvidence(
   const history = await Promise.resolve()
     .then(() => readHistoryEntries(getHistoryPath(pmRoot, itemId), itemId))
     .then((entries) => {
-      if (entries.every(isHistoryRecord)) return entries;
+      if (entries.every(isWellFormedHistoryRecord)) return entries;
       readable = false;
       return [];
     })

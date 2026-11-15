@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2148,
+    "covered_symbols": 2150,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2149
+    "required_symbols": 2151
   },
   "breaking_acknowledgements": [
     {
@@ -3402,6 +3402,16 @@
       ],
       "package_version": "2026.11.15",
       "reason": "pm-gh1336 and pm-gh1724 (new in this release): latestHistoryTimestamp accepts decoded values of any shape and counts only substantive entries; InProgressWorkHealthDetails.item_remedies gains take_over_idle"
+    },
+    {
+      "changes": [
+        "signature ./sdk:buildInProgressSweepCommands",
+        "signature ./sdk:buildInProgressWorkHealthSummary",
+        "signature ./sdk/governance:buildInProgressSweepCommands",
+        "signature ./sdk/governance:buildInProgressWorkHealthSummary"
+      ],
+      "package_version": "2026.11.15",
+      "reason": "pm-gh1724 (new in this release): buildInProgressSweepCommands and buildInProgressWorkHealthSummary take an optional trailing scopeArgs so remedies stay on the diagnosed tracker; every existing call keeps compiling"
     }
   ],
   "entrypoints": {
@@ -5230,13 +5240,13 @@
           "classification": "supported",
           "kind": "function",
           "name": "buildInProgressSweepCommands",
-          "signature": "(inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands | calls: (inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands"
+          "signature": "(inProgressStatus: string, thresholdHours: number, scopeArgs?: readonly string[]) => InProgressSweepCommands | calls: (inProgressStatus: string, thresholdHours: number, scopeArgs?: readonly string[]) => InProgressSweepCommands"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "buildInProgressWorkHealthSummary",
-          "signature": "(scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary | calls: (scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary"
+          "signature": "(scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }, scopeArgs?: readonly string[]) => InProgressWorkHealthSummary | calls: (scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }, scopeArgs?: readonly string[]) => InProgressWorkHealthSummary"
         },
         {
           "classification": "advanced_export",
@@ -11699,6 +11709,12 @@
           "kind": "function",
           "name": "isWaiverNoticeDays",
           "signature": "(value: unknown) => value is number | calls: (value: unknown) => value is number"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isWellFormedHistoryRecord",
+          "signature": "(entry: unknown) => entry is WellFormedHistoryRecord | calls: (entry: unknown) => entry is WellFormedHistoryRecord"
         },
         {
           "classification": "contract_data",
@@ -23696,6 +23712,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "WellFormedHistoryRecord",
+          "signature": "export interface WellFormedHistoryRecord { ts: string; op: string; patch: Array<{ path: string; value?: unknown; }>; event_class?: unknown; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "wholeHoursSince",
           "signature": "(timestamp: string, nowMs: number) => number | calls: (timestamp: string, nowMs: number) => number"
@@ -30514,13 +30536,13 @@
           "classification": "supported",
           "kind": "function",
           "name": "buildInProgressSweepCommands",
-          "signature": "(inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands | calls: (inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands"
+          "signature": "(inProgressStatus: string, thresholdHours: number, scopeArgs?: readonly string[]) => InProgressSweepCommands | calls: (inProgressStatus: string, thresholdHours: number, scopeArgs?: readonly string[]) => InProgressSweepCommands"
         },
         {
           "classification": "supported",
           "kind": "function",
           "name": "buildInProgressWorkHealthSummary",
-          "signature": "(scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary | calls: (scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary"
+          "signature": "(scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }, scopeArgs?: readonly string[]) => InProgressWorkHealthSummary | calls: (scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }, scopeArgs?: readonly string[]) => InProgressWorkHealthSummary"
         },
         {
           "classification": "supported",
@@ -31193,6 +31215,12 @@
           "kind": "function",
           "name": "isWaiverNoticeDays",
           "signature": "(value: unknown) => value is number | calls: (value: unknown) => value is number"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isWellFormedHistoryRecord",
+          "signature": "(entry: unknown) => entry is WellFormedHistoryRecord | calls: (entry: unknown) => entry is WellFormedHistoryRecord"
         },
         {
           "classification": "supported",
@@ -32003,6 +32031,12 @@
           "kind": "function",
           "name": "waiverNoticeFor",
           "signature": "(subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined | calls: (subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "WellFormedHistoryRecord",
+          "signature": "export interface WellFormedHistoryRecord { ts: string; op: string; patch: Array<{ path: string; value?: unknown; }>; event_class?: unknown; }"
         },
         {
           "classification": "supported",
@@ -41006,10 +41040,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1344,
+      "checked_functions": 1345,
       "checked_values": 399,
       "exempt_test_seams": 15,
-      "referenced_types": 1048
+      "referenced_types": 1049
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -41030,10 +41064,10 @@
       "referenced_types": 103
     },
     "./sdk/governance": {
-      "checked_functions": 110,
+      "checked_functions": 111,
       "checked_values": 26,
       "exempt_test_seams": 4,
-      "referenced_types": 117
+      "referenced_types": 118
     },
     "./sdk/graph": {
       "checked_functions": 76,

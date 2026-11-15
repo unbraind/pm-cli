@@ -10,7 +10,9 @@
  * the historical document, with its historical `updated_at`, then appends a
  * new `restore` entry. Only substantive entries count: maintenance such as
  * `history_compact` or `history_repair` preserves the record without working
- * on the item, so it must not reset an abandoned claim's idle time.
+ * on the item, so it must not reset an abandoned claim's idle time. A
+ * compaction baseline does count: it stands for the pruned prefix and carries
+ * the time of the last pruned entry, which bounds the work it replaced.
  */
 import path from "node:path";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
@@ -229,20 +231,52 @@ export function inspectStaleInProgressItems(
   return inspectInProgressWork(items, options).stale;
 }
 
-/** Whether one decoded history value is a record of work on the item, not storage or governance maintenance. */
-function isActivityEntry(entry: unknown): entry is { ts: string; op: string } {
+/** A decoded history value with the shape every activity and ownership read relies on. */
+export interface WellFormedHistoryRecord {
+  /** Event timestamp (validity is judged separately). */
+  ts: string;
+  /** Operation name. */
+  op: string;
+  /** Patch operations, each a record with a string path. */
+  patch: Array<{ path: string; value?: unknown }>;
+  /** Declared semantic effect, when present. */
+  event_class?: unknown;
+}
+
+/**
+ * Whether a decoded history value is a well-formed record: string `ts` and
+ * `op`, and a `patch` list whose operations are all records with a string
+ * `path` (event classification splits it). Shared by the
+ * advisory reads, which skip anything else, and the stale-claim takeover,
+ * which refuses to judge a stream containing anything else.
+ */
+export function isWellFormedHistoryRecord(entry: unknown): entry is WellFormedHistoryRecord {
   if (entry === null || typeof entry !== "object") return false;
-  const record = entry as { ts?: unknown; op?: unknown; patch?: unknown; event_class?: unknown };
+  const record = entry as { ts?: unknown; op?: unknown; patch?: unknown };
   return (
     typeof record.ts === "string" &&
     typeof record.op === "string" &&
-    classifyHistoryEvent(record as Parameters<typeof classifyHistoryEvent>[0]) === "substantive"
+    Array.isArray(record.patch) &&
+    record.patch.every(
+      (operation) =>
+        operation !== null && typeof operation === "object" && typeof (operation as { path?: unknown }).path === "string",
+    )
+  );
+}
+
+/** Whether a well-formed record is evidence of work on the item, not storage or governance maintenance. */
+function isActivityEntry(entry: unknown): entry is WellFormedHistoryRecord {
+  return (
+    isWellFormedHistoryRecord(entry) &&
+    (entry.op === "history_compact_baseline" ||
+      classifyHistoryEvent(entry as unknown as Parameters<typeof classifyHistoryEvent>[0]) === "substantive")
   );
 }
 
 /**
- * Newest valid timestamp among substantive history entries, or undefined when
- * none parses. Decoded values that are not records (a `null` line) are skipped.
+ * Newest valid timestamp among substantive history entries (and compaction
+ * baselines), or undefined when none parses. Decoded values that are not
+ * well-formed records (a `null` line, a record without `op`) are skipped.
  */
 export function latestHistoryTimestamp(
   history: ReadonlyArray<unknown>,
@@ -277,9 +311,11 @@ export async function readLatestHistoryActivity(
 
 /**
  * Scan tracker metadata and history for unowned and idle in-progress work.
- * History is read only for in-progress items whose `updated_at` is already at
- * or past the threshold (or unparseable): a newer history entry can only make
- * an item more recent, so a fresh `updated_at` already proves it is not idle.
+ * History is read for every unowned in-progress item, whose row is published
+ * with its exact activity time, and for owned ones whose `updated_at` is
+ * already at or past the threshold (or unparseable): a newer history entry can
+ * only make an item more recent, so a fresh `updated_at` proves an owned item
+ * is not idle, and owned fresh items are never published.
  * An unreadable stream degrades to metadata activity, since these reads are
  * advisory; a takeover instead refuses when it cannot read the stream.
  */
@@ -296,6 +332,7 @@ export async function scanInProgressWork(
     items
       .filter((item) => {
         if (!isInProgress(item, inProgressStatus)) return false;
+        if (assigneeOf(item) === undefined) return true;
         const updatedAt = resolveLastActivityAt(item.updated_at, undefined);
         return updatedAt === undefined || wholeHoursSince(updatedAt, nowMs) >= thresholdHours;
       })

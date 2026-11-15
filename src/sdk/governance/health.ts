@@ -126,6 +126,7 @@ import {
   buildInProgressWorkHealthSummary,
   type InProgressWorkHealthDetails,
 } from "./in-progress-work-health.js";
+import { resolvePmCommandScopeArgs } from "../command-line.js";
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import {
   buildMergeReceiptEvidenceWarnings,
@@ -3068,7 +3069,7 @@ export async function runHealth(
   const inProgressWorkHealth = buildInProgressWorkHealthSummary(inProgressWork, {
     in_progress: workStatuses.in_progress_status,
     open: workStatuses.open_status,
-  });
+  }, resolvePmCommandScopeArgs(global));
   const staleWorkWarnings = [...staleInProgress.warnings, ...inProgressWorkHealth.warnings];
   const provenanceResolverHealth = await scanProvenanceResolverHealth(pmRoot);
   const provenanceWarnings = provenanceResolverHealth.warnings;

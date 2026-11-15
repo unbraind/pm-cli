@@ -63,12 +63,17 @@ export interface InProgressWorkHealthSummary {
   remediation: Record<string, string>;
 }
 
-/** Build the exact list sweeps for a workspace's in-progress status id and threshold. */
+/**
+ * Build the exact list sweeps for a workspace's in-progress status id and
+ * threshold. `scopeArgs` (from `resolvePmCommandScopeArgs`) keeps a sweep on
+ * the tracker the diagnosis read when that tracker was selected explicitly.
+ */
 export function buildInProgressSweepCommands(
   inProgressStatus: string,
   thresholdHours: number,
+  scopeArgs: readonly string[] = [],
 ): InProgressSweepCommands {
-  const base = ["list", "--status", inProgressStatus];
+  const base = ["list", "--status", inProgressStatus, ...scopeArgs];
   const unowned = ["--assignee-filter", "unassigned"];
   const idle = ["--updated-before", `-${thresholdHours}h`];
   return {
@@ -95,8 +100,12 @@ function boundGroup(
 export function buildInProgressWorkHealthSummary(
   scan: InProgressWorkScan,
   statuses: { in_progress: string; open: string },
+  scopeArgs: readonly string[] = [],
 ): InProgressWorkHealthSummary {
-  const commands = buildInProgressSweepCommands(statuses.in_progress, scan.threshold_hours);
+  const commands = buildInProgressSweepCommands(statuses.in_progress, scan.threshold_hours, scopeArgs);
+  // Per-item recoveries keep the `<id>` placeholder unquoted and render every real token.
+  const itemRemedy = (verb: string, ...args: string[]): string =>
+    `pm ${verb} <id>${[...args, ...scopeArgs].map((token) => ` ${quoteCommandArg(token)}`).join("")}`;
   const warnings = [
     ...(scan.unowned.count > 0 ? [`in_progress_unowned:${scan.unowned.count}`] : []),
     ...(scan.idle.count > 0 ? [`in_progress_idle:${scan.idle.count}`] : []),
@@ -112,9 +121,9 @@ export function buildInProgressWorkHealthSummary(
             unowned: boundGroup(scan.unowned, commands.unowned),
             idle: boundGroup(scan.idle, commands.idle),
             item_remedies: {
-              claim: "pm claim <id>",
-              take_over_idle: "pm claim <id> --takeover-stale",
-              return_to_open: `pm update <id> --status ${quoteCommandArg(statuses.open)}`,
+              claim: itemRemedy("claim"),
+              take_over_idle: itemRemedy("claim", "--takeover-stale"),
+              return_to_open: itemRemedy("update", "--status", statuses.open),
             },
           },
     remediation: {

@@ -179,7 +179,7 @@
     "src/sdk/query/activity.ts": 20,
     "src/sdk/query/aggregate.ts": 34,
     "src/sdk/query/calendar.ts": 55,
-    "src/sdk/query/context.ts": 108,
+    "src/sdk/query/context.ts": 107,
     "src/sdk/query/history.ts": 21,
     "src/sdk/query/item-filter-options.ts": 28,
     "src/sdk/query/list-filter-shared.ts": 2,

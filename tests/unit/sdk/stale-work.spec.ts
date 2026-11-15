@@ -266,8 +266,20 @@ describe("stale in-progress SDK governance", () => {
         "text",
         { ts: 42, op: "update" },
         { ts: "2026-07-05T00:00:00.000Z" },
+        // Records the classifier could not read are skipped too: no op, or patch entries without a string path.
+        { ts: "2026-07-06T00:00:00.000Z", patch: [] },
+        { ts: "2026-07-06T00:00:00.000Z", op: "update", patch: [null] },
+        { ts: "2026-07-06T00:00:00.000Z", op: "update", patch: [{}] },
       ]),
     ).toBe("2026-07-02T00:00:00.000Z");
+    // A compaction baseline stands for the pruned prefix and carries its last entry's time; the audit entry does not count.
+    expect(
+      latestHistoryTimestamp([
+        { ts: "2026-07-01T00:00:00.000Z", op: "create", patch: [] },
+        { ts: "2026-07-06T00:00:00.000Z", op: "history_compact_baseline", patch: [] },
+        { ts: "2026-07-09T00:00:00.000Z", op: "history_compact", patch: [] },
+      ]),
+    ).toBe("2026-07-06T00:00:00.000Z");
     expect(latestHistoryTimestamp([{ ts: "bad", op: "update" }])).toBeUndefined();
   });
 
@@ -281,9 +293,15 @@ describe("stale in-progress SDK governance", () => {
         path.join(historyDirectory, "pm-rescued.jsonl"),
         `${JSON.stringify({ ts: "2026-07-24T11:00:00.000Z", author: "a", op: "comment_add", patch: [], before_hash: "x", after_hash: "y" })}\n`,
       );
+      // An unowned row is published with its exact activity, even when its metadata alone is fresh.
+      await writeFile(
+        path.join(historyDirectory, "pm-unowned-fresh.jsonl"),
+        `${JSON.stringify({ ts: "2026-07-24T11:00:00.000Z", author: "a", op: "restore", patch: [], before_hash: "x", after_hash: "y" })}\n`,
+      );
       const scan = await scanInProgressWork(
         pmRoot,
         [
+          item({ id: "pm-unowned-fresh", status: "in_progress", updated_at: "2026-07-23T16:00:00.000Z" }),
           item({ id: "pm-rescued", status: "in_progress", assignee: "agent" }),
           item({ id: "pm-fresh", status: "in_progress", assignee: "agent", updated_at: "2026-07-24T11:30:00.000Z" }),
           item({ id: "pm-idle", status: "in_progress", assignee: "agent" }),
@@ -291,6 +309,9 @@ describe("stale in-progress SDK governance", () => {
         { threshold_hours: 72, now: new Date("2026-07-24T12:00:00.000Z") },
       );
       expect(scan.idle.items.map((entry) => entry.id)).toEqual(["pm-idle"]);
+      expect(scan.unowned.items).toEqual([
+        { id: "pm-unowned-fresh", last_activity_at: "2026-07-24T11:00:00.000Z", age_hours: 1 },
+      ]);
       await expect(readLatestHistoryActivity(pmRoot, "pm-rescued")).resolves.toBe("2026-07-24T11:00:00.000Z");
       await expect(readLatestHistoryActivity(pmRoot, "pm-missing")).resolves.toBeUndefined();
       await writeFile(path.join(historyDirectory, "pm-corrupt-direct.jsonl"), "not-json\n");

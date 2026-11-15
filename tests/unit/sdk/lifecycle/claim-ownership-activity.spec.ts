@@ -126,7 +126,15 @@ describe("claim activity evidence (GH-1336)", () => {
         resolveItemOwnershipActivity(pmRoot, "pm-compacted", "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
       ).resolves.toMatchObject({ activity: { last_activity_at: "2026-07-02T00:00:00.000Z", stale_policy: { stale: true } } });
       // Lines that decode but are no history record make the stream unreadable, so the claim is never judged stale.
-      for (const [index, line] of ["null", '"text"', '{"patch":[]}', '{"ts":"2026-07-02T00:00:00.000Z"}'].entries()) {
+      for (const [index, line] of [
+        "null",
+        '"text"',
+        '{"patch":[]}',
+        '{"ts":"2026-07-02T00:00:00.000Z"}',
+        '{"ts":"2026-07-24T11:00:00.000Z","patch":[]}',
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"update","patch":[null]}',
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"update","patch":[{"op":"replace"}]}',
+      ].entries()) {
         const id = `pm-malformed-${index}`;
         await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${entries[0]}\n${line}\n`);
         await expect(

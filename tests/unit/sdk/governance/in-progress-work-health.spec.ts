@@ -60,6 +60,19 @@ describe("in-progress work health projection (GH-1724)", () => {
     });
   });
 
+  it("keeps every remedy on the tracker the diagnosis read", () => {
+    const scope = ["--pm-path", "/work/other tracker/.agents/pm"];
+    expect(buildInProgressSweepCommands("doing", 48, scope).unowned).toBe(
+      'pm list --status doing --pm-path "/work/other tracker/.agents/pm" --assignee-filter unassigned',
+    );
+    const scan = inspectInProgressWork([work("pm-u")], { in_progress_status: "doing", threshold_hours: 48, now: NOW });
+    expect(buildInProgressWorkHealthSummary(scan, { in_progress: "doing", open: "todo" }, scope).details?.item_remedies).toEqual({
+      claim: 'pm claim <id> --pm-path "/work/other tracker/.agents/pm"',
+      take_over_idle: 'pm claim <id> --takeover-stale --pm-path "/work/other tracker/.agents/pm"',
+      return_to_open: 'pm update <id> --status todo --pm-path "/work/other tracker/.agents/pm"',
+    });
+  });
+
   it("emits nothing but registry overrides when no in-progress item is unattended", () => {
     const scan = inspectInProgressWork(
       [work("pm-held", { assignee: "agent", updated_at: "2026-07-24T11:00:00.000Z" })],
