@@ -1,0 +1,20 @@
+id: pm-0574of
+title: "The history merge driver dedups records by ts, author, op, patch and message only, so a merge silently drops the other copy's compaction receipt, event_class or reanchor_evidence and later readers see rewritten work as original"
+description: "The history merge driver dedups records across branches by an identity of ts, author, op, patch and message, and keeps the ours copy. The identity leaves out context, event_class and reanchor_evidence, so two records that agree on those five fields but differ in provenance collapse into one. The surviving copy then silently loses the other copy's compaction receipt, declared event class or rewrite evidence. Readers that rely on that provenance, such as the stale-claim takeover's rewrite detection and compaction receipts, then see a record that looks original. Codex found two reproductions while reviewing the stale-takeover redesign."
+type: Issue
+status: open
+priority: 2
+tags[4]: claims,history,merge,provenance
+created_at: "2026-11-15T23:42:37.655Z"
+updated_at: "2026-11-15T23:42:37.655Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "historyEntryIdentity covers provenance fields, or a provenance mismatch on an identity match is refused or kept deterministically; Regressions cover the equal-checkpoint baseline receipt case and the rebased-update event_class and reanchor_evidence case; A stale-claim takeover regression proves a merge cannot turn rewritten_history into a permitted takeover"
+parent: pm-o2kc
+risk: medium
+confidence: high
+expected_result: "Merging two records that agree on ts, author, op, patch and message but differ in provenance keeps both provenances or refuses, never silently drops one"
+actual_result: "The merge keeps the ours copy and discards the theirs copy's context, event_class and reanchor_evidence"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1336,discovered_from,"2026-11-15T23:42:37.655Z","harness:claude-code","cli:create:dep",detected
+body: "## Observed\n\n`historyEntryIdentity` in `src/sdk/merge/three-way.ts` is:\n\n```ts\nstableStringify({ ts, author, op, patch, message })\n```\n\n`mergeHistoryStreams` treats records with equal identity as the same record and keeps ours.\n\nReproductions (Codex, production history builders, both merged chains verify):\n\n1. Two branches compact different prefixes into the same snapshot with equal checkpoint timestamps, authors and entry counts. Their baselines share an identity but carry different receipts, and the merge keeps ours.\n2. After a July 1 claim, merging title updates reduces a substantive July 3 title-plus-order update to the same patch as an independent July 3 order-only update. A second merge keeps the maintenance copy and drops the other copy's `event_class` and `reanchor_evidence`.\n\nIn both cases the stale-claim takeover then treats rewritten or uncertain work as original (scenario 2: `rewritten_history` with 48 idle hours becomes a permitted takeover at 72).\n\n## Fix direction\n\n- Include the provenance fields (`context`, `event_class`, `reanchor_evidence`, `record_hash`) in the dedup identity. Alternatively, treat a match on the five fields with different provenance as a conflict that refuses, or that keeps both records in a deterministic order, instead of silently keeping ours.\n- Add regressions for both scenarios at the `mergeHistoryStreams` level, plus one through the stale-claim takeover."

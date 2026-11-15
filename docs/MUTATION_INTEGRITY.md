@@ -72,7 +72,10 @@ Restore precedence uses wall-clock time and assumes the restoring host's clock
 does not run behind the holder's. Ordering restores by a durable generation
 instead is tracked as pm-8su89a. A restore that activates while a takeover is
 between its reads and its commit is not yet fenced; that gap affects every
-item writer and is tracked as pm-vgk0nj. A
+item writer and is tracked as pm-vgk0nj. Rewrite detection also trusts the
+history merge driver to keep provenance: its dedup identity omits `context`,
+`event_class` and `reanchor_evidence`, so two records that match on everything
+else collapse into one. That is tracked as pm-0574of. A
 stream any of whose records lacks a parseable timestamp, or holds a baseline
 with a malformed receipt, is unreadable for a takeover, and `history-compact`
 refuses to prune such a record (it would launder the damage into a judgeable
