@@ -321,8 +321,10 @@ export interface PmCliErrorContext {
   claim_source?: "claim" | "assignment" | "unknown";
   /** Holder activity and stale-claim policy behind an `already_claimed_by` or `stale_claim_takeover_refused` refusal (GH-1336). */
   claim_activity?: {
-    /** The item's `updated_at` (every recorded mutation advances it), or its newest history entry when that does not parse; null when neither parses. */
+    /** Most recent valid item `updated_at` or history timestamp, or null when neither parses. */
     last_activity_at: string | null;
+    /** Present when the history stream exists but could not be read: idleness cannot be established, so the claim is never judged stale. */
+    history_unreadable?: true;
     /** Whole hours since `claimed_at`, or null when the claim time is unknown. */
     claim_age_hours: number | null;
     /** Whole hours since `last_activity_at`, or null when the activity time is unknown. */

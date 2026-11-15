@@ -422,6 +422,29 @@ function staleTakeoverReceipt(
   };
 }
 
+/** Why a claim is not stale, and the one step that can change that, for a refused `--takeover-stale`. */
+function describeNotStale(
+  itemId: string,
+  activity: ClaimActivityEvidence,
+): { reason: string; nextStep: string } {
+  if (activity.history_unreadable === true) {
+    return {
+      reason: "its history stream could not be read, so idleness cannot be established",
+      nextStep: `Repair the history stream of ${itemId} (pm history ${itemId} --verify), then retry --takeover-stale.`,
+    };
+  }
+  if (activity.stale_policy.eligible_at === null) {
+    return {
+      reason: activity.idle_hours === null ? "no valid activity time is recorded" : `idle ${activity.idle_hours}h of ${activity.stale_policy.threshold_hours}h`,
+      nextStep: `No eligibility time can be computed for ${itemId}; inspect pm history ${itemId}.`,
+    };
+  }
+  return {
+    reason: `idle ${activity.idle_hours}h of ${activity.stale_policy.threshold_hours}h`,
+    nextStep: `Retry with --takeover-stale after ${activity.stale_policy.eligible_at} if nothing else is recorded on ${itemId}.`,
+  };
+}
+
 /** The typed refusal for a held item: plain contention, or a stale takeover the policy did not permit. */
 function claimConflictRefusal(
   itemId: string,
@@ -440,22 +463,16 @@ function claimConflictRefusal(
   const why = "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.";
   const forceStep = "Re-run with --force only when taking over the item is coordinated.";
   if (takeoverStale) {
-    const idle = activity.idle_hours;
+    const notStale = describeNotStale(itemId, activity);
     return new PmCliError(
-      `Item ${itemId} is ${ownership.phrase}, and its claim is not stale under ${policy.setting}${idle === null ? " (no valid activity time is recorded)" : ` (idle ${idle}h of ${policy.threshold_hours}h)`}.`,
+      `Item ${itemId} is ${ownership.phrase}, and its claim is not stale under ${policy.setting} (${notStale.reason}).`,
       EXIT_CODE.CONFLICT,
       {
         code: "stale_claim_takeover_refused",
         ...evidence,
         required: `The claim must be idle for at least ${policy.threshold_hours}h (${policy.setting}) before --takeover-stale may take it.`,
         why: `${why} A stale takeover needs recorded evidence that the claim has been idle for the configured threshold, so an active claim is never taken over.`,
-        nextSteps: [
-          policy.eligible_at !== null
-            ? `Retry with --takeover-stale after ${policy.eligible_at} if nothing else is recorded on ${itemId}.`
-            : `No valid activity time is recorded for ${itemId}, so its claim cannot be judged stale; inspect pm history ${itemId}.`,
-          "Run pm next to pick a different unclaimed item.",
-          forceStep,
-        ],
+        nextSteps: [notStale.nextStep, "Run pm next to pick a different unclaimed item.", forceStep],
       },
     );
   }

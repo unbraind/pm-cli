@@ -188,7 +188,10 @@ pm list --status in_progress --assignee-filter unassigned --updated-before -72h 
 `pm health` prints these sweeps (with the configured status id and threshold)
 as the remedies of its `in_progress_unowned`, `in_progress_idle` and
 `stale_in_progress_items` advisories, and `pm context` counts
-`in_progress_unowned` and `in_progress_idle` next to `in_progress`.
+`in_progress_unowned` and `in_progress_idle` next to `in_progress`. The sweeps
+select by `updated_at`, so they are candidate lists: an item restored within
+the window keeps an older `updated_at` but recent history, and only
+`--takeover-stale` applies the full activity clock.
 
 `pm next` has two budgets with different scopes. `--token-budget <n>` bounds
 only the selection (`recommended` plus `ready`) and reports it under

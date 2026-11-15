@@ -28,6 +28,12 @@ export interface ClaimActivityOptions {
   threshold_hours: number;
   /** Evaluation instant, injectable for deterministic tests. */
   now?: Date;
+  /**
+   * The item's history stream exists but could not be read (corrupt JSONL or
+   * conflict markers). Idleness then cannot be established, so the claim is
+   * never judged stale: recent activity may hide behind the unreadable lines.
+   */
+  history_unreadable?: boolean;
 }
 
 /** Typed holder evidence behind an `already_claimed_by` refusal (GH-1610). */
@@ -64,17 +70,19 @@ export function evaluateClaimActivity(
   const lastActivityAt = resolveLastActivityAt(options.updated_at, latestHistoryAt) ?? null;
   const validClaimedAt = claimedAt !== null && Number.isFinite(Date.parse(claimedAt)) ? claimedAt : null;
   const idleHours = lastActivityAt === null ? null : wholeHoursSince(lastActivityAt, nowMs);
+  // Unknown or unprovable activity never qualifies: a takeover needs positive evidence of idleness.
+  const judgeable = lastActivityAt !== null && options.history_unreadable !== true;
   return {
     last_activity_at: lastActivityAt,
+    ...(options.history_unreadable === true ? { history_unreadable: true as const } : {}),
     claim_age_hours: validClaimedAt === null ? null : wholeHoursSince(validClaimedAt, nowMs),
     idle_hours: idleHours,
     stale_policy: {
       setting: STALE_WORK_THRESHOLD_SETTING,
       threshold_hours: thresholdHours,
-      // Unknown activity never qualifies: a takeover needs positive evidence of idleness.
-      stale: idleHours !== null && idleHours >= thresholdHours,
-      eligible_at: lastActivityAt === null ? null : staleEligibleAt(lastActivityAt, thresholdHours),
+      stale: judgeable && (idleHours as number) >= thresholdHours,
       // A threshold past the Date range (accepted by settings) yields a null eligibility, never a throw.
+      eligible_at: judgeable ? staleEligibleAt(lastActivityAt, thresholdHours) : null,
     },
   };
 }
@@ -93,10 +101,15 @@ async function readOwnershipEvidence(
   pmRoot: string,
   itemId: string,
   assignee: string,
-): Promise<{ conflict: ItemOwnershipConflict; history: ReadonlyArray<{ ts: string }> }> {
+): Promise<{ conflict: ItemOwnershipConflict; history: ReadonlyArray<{ ts: string }>; readable: boolean }> {
+  // A missing stream reads as empty; only a stream that exists but cannot be parsed is unreadable.
+  let readable = true;
   const history = await Promise.resolve()
     .then(() => readHistoryEntries(getHistoryPath(pmRoot, itemId), itemId))
-    .catch(() => []);
+    .catch(() => {
+      readable = false;
+      return [];
+    });
   const latestOwnershipEntry = [...history]
     .reverse()
     .find((entry) =>
@@ -126,6 +139,7 @@ async function readOwnershipEvidence(
       since: evidence?.ts ?? null,
     },
     history,
+    readable,
   };
 }
 
@@ -145,10 +159,13 @@ export async function resolveItemOwnershipActivity(
   assignee: string,
   options: ClaimActivityOptions,
 ): Promise<ItemOwnershipActivity> {
-  const { conflict, history } = await readOwnershipEvidence(pmRoot, itemId, assignee);
+  const { conflict, history, readable } = await readOwnershipEvidence(pmRoot, itemId, assignee);
   return {
     ...conflict,
-    activity: evaluateClaimActivity(conflict.since, latestHistoryTimestamp(history), options),
+    activity: evaluateClaimActivity(conflict.since, latestHistoryTimestamp(history), {
+      ...options,
+      ...(readable ? {} : { history_unreadable: true }),
+    }),
   };
 }
 

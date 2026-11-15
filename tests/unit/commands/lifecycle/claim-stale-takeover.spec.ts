@@ -9,6 +9,7 @@ import {
 } from "../../../../src/sdk/lifecycle/claim.js";
 import { runStartTask } from "../../../../src/sdk/lifecycle/task-composition.js";
 import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
+import { runRestore } from "../../../../src/sdk/lifecycle/restore.js";
 import { runNext } from "../../../../src/sdk/query/next.js";
 import { runAction } from "../../../../src/sdk/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
@@ -153,6 +154,46 @@ describe("stale-claim takeover (GH-1336)", () => {
         code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
         claim_activity: { idle_hours: 1, claim_age_hours: 101, stale_policy: { stale: false } },
       });
+    });
+  });
+
+  it("counts a holder's restore as activity even though it writes an older updated_at", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Restored claim");
+      const global = { path: context.pmPath };
+      setClock(at(0));
+      await runClaim(id, false, global, { author: "agent-a" });
+      await runUpdate(id, { description: "Second version", author: "agent-a" }, global);
+
+      setClock(at(100));
+      // The holder restores version 2: the document keeps its T0 updated_at, the new entry is T+100h.
+      await runRestore(id, "2", { author: "agent-a" }, global);
+      setClock(at(101));
+      const error = await refusal(runClaim(id, false, global, { author: "agent-b", takeoverStale: true }));
+      expect(error.context).toMatchObject({
+        code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
+        claim_activity: { last_activity_at: at(100).toISOString(), idle_hours: 1, stale_policy: { stale: false } },
+      });
+    });
+  });
+
+  it("refuses a takeover whose history stream cannot be read, because recent work may hide behind it", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Corrupt stream");
+      const global = { path: context.pmPath };
+      setClock(at(0));
+      await runClaim(id, false, global, { author: "agent-a" });
+      const historyPath = getHistoryPath(context.pmPath, id);
+      await writeFile(historyPath, `${await readFile(historyPath, "utf8")}not-json\n`);
+
+      setClock(at(200));
+      const error = await refusal(runClaim(id, false, global, { author: "agent-b", takeoverStale: true }));
+      expect(error.context).toMatchObject({
+        code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
+        claim_activity: { history_unreadable: true, stale_policy: { stale: false, eligible_at: null } },
+      });
+      expect(error.message).toContain("its history stream could not be read");
+      expect(error.context.nextSteps?.[0]).toBe(`Repair the history stream of ${id} (pm history ${id} --verify), then retry --takeover-stale.`);
     });
   });
 
@@ -336,9 +377,7 @@ describe("stale-claim takeover (GH-1336)", () => {
     expect(takeover.message).toBe(
       "Item pm-x is claimed by agent-a, and its claim is not stale under mutation_guard.stale_in_progress_hours (no valid activity time is recorded).",
     );
-    expect(takeover.context.nextSteps?.[0]).toBe(
-      "No valid activity time is recorded for pm-x, so its claim cannot be judged stale; inspect pm history pm-x.",
-    );
+    expect(takeover.context.nextSteps?.[0]).toBe("No eligibility time can be computed for pm-x; inspect pm history pm-x.");
     expect(_testOnlyClaimCommand.staleTakeoverReceipt(ownership, "agent-b")).toBeUndefined();
   });
 });

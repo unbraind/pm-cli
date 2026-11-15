@@ -38,14 +38,14 @@ Defaults preserve author compatibility while providing secret advice:
 | `mutation_guard.secret_guard`              | `advise` | `off`, stderr/structured `advise`, or pre-write `block`. |
 | `mutation_guard.stale_in_progress_hours`   | `72`     | Inactivity threshold for stale work: `pm health` advisories, `pm context` idle counts, and `pm claim --takeover-stale`. |
 
-One activity clock serves every stale-work consumer: an item's `updated_at`.
-Every recorded mutation advances it and the merge driver resolves it to the
-later side, so the `--updated-before` sweeps below list exactly the items the
-advisories count. The newest history entry stands in only when `updated_at`
-does not parse; history-only maintenance rewrites are not activity. A
-threshold too large for the Date range reports `eligible_at: null` rather
-than failing. `pm health` reports three advisories in the storage check, none
-of which fails the verdict:
+One activity clock serves every stale-work consumer: the newer of an item's
+`updated_at` and its latest history entry. Ordinary mutations advance both;
+`pm restore` writes the historical document, with its older `updated_at`, and
+appends a new entry, so the stream counts too. A takeover refuses when the
+stream exists but cannot be read (`history_unreadable`), because recent work
+may hide behind it. A threshold too large for the Date range reports
+`eligible_at: null` rather than failing. `pm health` reports three advisories
+in the storage check, none of which fails the verdict:
 
 | Warning                       | Population                                               | Remedy printed by `pm health`                                            |
 | ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -55,7 +55,10 @@ of which fails the verdict:
 
 The storage check's `details.in_progress_work` lists up to 25 ids per group
 with each group's sweep, plus the per-item recoveries `pm claim <id>` and
-`pm update <id> --status <open>`. `pm context` reports `in_progress_unowned`
+`pm update <id> --status <open>`. A sweep is a candidate list by metadata
+time: it can include an item whose history is newer than its `updated_at`
+(for example after a restore), which the advisory does not count;
+`pm claim <id> --takeover-stale` re-judges each one under the item lock. `pm context` reports `in_progress_unowned`
 and `in_progress_idle` next to `in_progress` in its summary when they are
 non-zero, so unattended work is not read as active work.
 

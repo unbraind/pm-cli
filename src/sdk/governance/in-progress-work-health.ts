@@ -5,10 +5,11 @@
  * advisories, bounded storage-check details and executable remedies (GH-1724).
  * Every remedy is a read-only `pm list` sweep built from the workspace's own
  * in-progress status id and threshold, shell-quoted, so an agent can run it as
- * printed. `--updated-before` filters on `updated_at`, the same activity clock
- * the scan applies, so each sweep lists exactly the population its advisory counts
- * (an item whose `updated_at` does not parse is classified from history and
- * cannot be selected by a timestamp filter).
+ * printed. A sweep is a candidate list by metadata time: `--updated-before`
+ * reads `updated_at`, while the scan also counts a newer history entry (a
+ * restore writes an older `updated_at`), so a sweep can include an item the
+ * advisory does not count. The per-item recovery re-judges: `pm claim <id>
+ * --takeover-stale` applies the full clock under the item lock.
  */
 import { quoteCommandArg, renderPmCommand } from "../command-line.js";
 import type { InProgressWorkGroup, InProgressWorkScan } from "./stale-work.js";
@@ -30,7 +31,7 @@ export interface InProgressSweepCommands {
 export interface InProgressWorkHealthGroup extends InProgressWorkGroup {
   /** Present when `items` was capped at {@link IN_PROGRESS_WORK_DETAIL_LIMIT}. */
   truncated?: true;
-  /** Read-only sweep that lists the complete group. */
+  /** Read-only candidate sweep by metadata time; a superset of the group when history is newer than `updated_at`. */
   sweep: string;
 }
 
