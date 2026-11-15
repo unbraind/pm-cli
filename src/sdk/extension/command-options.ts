@@ -1224,9 +1224,12 @@ function resolveNegatedBooleanSpelling(
   if (declared === undefined || resolveLooseOptionCoercionKind(declared.definition) !== "boolean") {
     return { spelling, value };
   }
-  // A repeatable boolean inverts entry by entry, as --no-many --no-many gives [false, false] (Codex review round 10).
-  if ((declared.definition.list === true || declared.definition.repeatable === true) && Array.isArray(value)) {
-    return { spelling: negated, value: value.flat(Infinity).map((entry) => invertNegatedBooleanEntry(spelling, declared.definition, entry, commandPath)) };
+  // A list or repeatable boolean inverts entry by entry, as --no-many --no-many gives [false, false] (Codex review round 10).
+  // Entries come from the declaration's own list grammar first, so a list splits "true,false" exactly as the
+  // canonical spelling does and a repeatable keeps each occurrence atomic (CodeRabbit review).
+  if ((declared.definition.list === true || declared.definition.repeatable === true) && value !== undefined) {
+    const entries = normalizeAccumulatedFlagValue(value, null, declared.definition.repeatable === true);
+    return { spelling: negated, value: entries.map((entry) => invertNegatedBooleanEntry(spelling, declared.definition, entry, commandPath)) };
   }
   // A negated spelling of a declared boolean names that flag, so a value it cannot invert ([] or "bogus")
   // is a value error, not an unknown option (CodeRabbit review); an undefined value stays an omission.

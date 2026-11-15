@@ -452,6 +452,19 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
       code: "extension_flag_value_invalid",
       flag: "--many",
     });
+    // Entries follow the declaration's list grammar before inversion (CodeRabbit review): a list splits a
+    // comma-delimited value as its canonical spelling does, a repeatable keeps each occurrence atomic.
+    const listed = [{ long: "--many", value_type: "boolean", value_validation: "strict", list: true }];
+    expect(normalizeDirectExtensionCommandOptions({ many: "true,false" }, listed, "demo brief")).toEqual({ many: [true, false] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": "true,false" }, listed, "demo brief")).toEqual({ many: [false, true] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": ["true,false", true] }, listed, "demo brief")).toEqual({ many: [false, true, false] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": undefined }, listed, "demo brief")).toEqual({});
+    for (const options of [{ many: "true,false" }, { "no-many": "true,false" }]) {
+      expect(refusal(() => normalizeDirectExtensionCommandOptions(options, many, "demo brief"))).toMatchObject({
+        code: "extension_flag_value_invalid",
+        flag: "--many",
+      });
+    }
     // A strict scalar refusal names its flag too.
     expect(
       refusal(() => normalizeDirectExtensionCommandOptions({ on: 1 }, [{ long: "--on", value_type: "boolean", value_validation: "strict" }], "demo brief")),
