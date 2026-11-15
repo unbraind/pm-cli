@@ -621,11 +621,14 @@ export function applyDynamicExtensionFlagOptions(
       command.addOption(option);
       continue;
     }
+    // Commander calls the accumulator with `undefined` for a bare switch, so a
+    // repeatable boolean switch records each bare occurrence as `true`; list
+    // flattening drops `undefined` and the handler would receive `[]`.
     command.addOption(
       option.argParser(
-        (value: string, previous: string | string[] = []) => [
+        (value: string | undefined, previous: unknown = []) => [
           ...(Array.isArray(previous) ? previous : [previous]),
-          value,
+          value ?? true,
         ],
       ),
     );

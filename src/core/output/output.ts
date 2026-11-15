@@ -1008,17 +1008,34 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
     setActiveCommandResultOmitted(effectiveResult);
     return "";
   }
-  const defaultFormat =
-    options.json === true ||
-    (options.json === undefined && options.defaultOutputFormat === "json")
-      ? "json"
-      : "toon";
   return formatEffectiveOutput(
     effectiveResult,
     nativeOutput,
     options,
-    defaultFormat,
+    resolveDefaultOutputFormat(options),
   );
+}
+
+/** The encoding used when no read-output control names one: JSON for `--json` or a JSON workspace default, TOON otherwise. */
+function resolveDefaultOutputFormat(options: Pick<OutputOptions, "json" | "defaultOutputFormat">): "json" | "toon" {
+  return options.json === true || (options.json === undefined && options.defaultOutputFormat === "json") ? "json" : "toon";
+}
+
+/**
+ * The mutation-receipt projection `printResult` applies before command-result
+ * overrides, services and rendering run: `--id-only`, `--full-changed-fields`,
+ * `--no-changed-fields`, or the compact envelope by default. Shared with the
+ * extension test harness so its read-output admission judges the same value.
+ */
+export function projectPrintedResult(
+  result: unknown,
+  options: Pick<OutputOptions, "idOnly" | "fullChangedFields" | "noChangedFields">,
+): unknown {
+  if (options.idOnly) return projectMutationResult(result, { idOnly: true });
+  if (options.fullChangedFields) return result;
+  return options.noChangedFields
+    ? projectMutationResult(result, { changedFields: "compact" })
+    : projectMutationResult(result, { compactEnvelope: true });
 }
 
 /** Apply declared exit codes and mutation projection before writing a nonquiet result. */
@@ -1031,14 +1048,7 @@ export function printResult(result: unknown, options: OutputOptions): void {
   ) {
     process.exitCode = Number(result.exit_code);
   }
-  const projected = options.idOnly
-    ? projectMutationResult(result, { idOnly: true })
-    : options.fullChangedFields
-      ? result
-      : options.noChangedFields
-        ? projectMutationResult(result, { changedFields: "compact" })
-        : projectMutationResult(result, { compactEnvelope: true });
-  const rendered = formatOutput(projected, options);
+  const rendered = formatOutput(projectPrintedResult(result, options), options);
   if (options.quiet) {
     return;
   }

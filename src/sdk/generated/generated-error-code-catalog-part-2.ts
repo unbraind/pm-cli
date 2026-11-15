@@ -131,6 +131,7 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
       "cli/error-guidance.ts",
       "core/telemetry/observability.ts",
       "sdk/context-intent-contracts.ts",
+      "sdk/extension/command-options.ts",
       "sdk/lifecycle/create.ts",
       "sdk/lifecycle/plan.ts",
     ],
@@ -244,6 +245,11 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     exit_code: 3,
     stable: true,
     sources: ["sdk/extension/install-sources.ts"],
+  },
+  {
+    code: "output_budget_exceeded",
+    exit_code: 2,
+    sources: ["sdk/testing.ts"],
   },
   {
     code: "ownership_conflict",

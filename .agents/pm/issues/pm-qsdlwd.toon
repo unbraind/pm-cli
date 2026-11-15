@@ -1,0 +1,24 @@
+id: pm-qsdlwd
+title: "pm list's --no-truncate migration hint points at --output-limit unbounded --output-budget unbounded, but a list read that follows it cannot be certified complete"
+description: "Found 2026-11-14 while fixing pm-gh1728. pm list --no-truncate emits the migration hint '--no-truncate is a compatibility alias; prefer --output-limit unbounded --output-budget unbounded.' A caller who follows it loses certification: running pm list --all --output-include full --strict-read --output-budget unbounded --output-limit unbounded --json on a fresh 3-item tracker returned 3 of 3 items with has_more false, yet certifyCompleteListResult refused it with page_incomplete, because inspectEnvelopeShape in src/sdk/query/complete-list.ts requires filters.no_truncate === true and src/sdk/query/list.ts echoes that only when options.noTruncate is set. To verify next: resolveListPageLimit caps a read with neither --limit nor --no-truncate at 20 rows once a tracker reaches 10,000 items; check whether --output-limit unbounded reaches that page limit before execution. If it does not, the hint is also wrong on large trackers, not only for certification. Fix direction: either let canonical unbounded output controls lift list's page limit and echo the unbounded evidence the certifier reads, or stop advertising --no-truncate as replaceable on pm list. The SDK path is unaffected: createCompleteListOptions passes noTruncate marked canonical. Duplicate check: searched no-truncate migration hint output-limit unbounded list page limit certification; pm-0c0j and pm-dfg0 (closed) shipped the flags and defaults, pm-q7qojt (closed) list --all completeness; nothing owns the hint/certifier mismatch."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,complete-list,migration-hints,read-output
+created_at: "2026-11-14T17:20:14.074Z"
+updated_at: "2026-11-14T20:34:39.495Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A pm list read that follows the --no-truncate migration hint is certifiable by certifyCompleteListResult, or the hint is no longer emitted for pm list; The canonical unbounded controls lift pm list's own page limit on a tracker above the 10,000-item threshold, verified with a fixture above the threshold; pm-gh1728's recovery can drop --no-truncate once both hold, with the executed-recovery spec still certifying"
+parent: pm-usfg
+risk: medium
+confidence: medium
+severity: medium
+expected_result: Following a migration hint never makes a complete read uncertifiable
+actual_result: The read the hint recommends is refused with page_incomplete
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-0c0j,related,"2026-11-14T17:20:14.074Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1728,discovered_from,"2026-11-14T17:20:14.074Z","harness:claude-code","cli:create:dep",detected
+  pm-dfg0,related,"2026-11-14T20:34:39.062Z","harness:claude-code","cli:update:dep",detected
+  pm-q7qojt,related,"2026-11-14T20:34:39.062Z","harness:claude-code","cli:update:dep",detected
+body: ""

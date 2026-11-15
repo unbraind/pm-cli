@@ -19,6 +19,7 @@ import {
   resolveFlagValueKind,
   type FlagDefinition,
 } from "../runtime-primitives.js";
+import { RESERVED_EXTENSION_HOST_FLAG_NAMES } from "../../core/extensions/reserved-host-flags.js";
 
 /** Flag metadata consumed by loose-option parsing across core and extension commands. */
 export interface LooseCommandFlagDefinition {
@@ -230,8 +231,8 @@ function resolveCanonicalLooseOptionKey(
 function formatLooseOptionLabel(
   definition: LooseCommandFlagDefinition,
 ): string | null {
-  const long =
-    typeof definition.long === "string" ? definition.long.trim() : "";
+  // An inline declaration (`--from-tracker <path>`) is labelled by its flag token alone (pm-gh1727 review).
+  const long = resolveExtensionLongFlagName(definition.long) ?? "";
   if (long.startsWith("--") && long.length > 2) {
     return long;
   }
@@ -279,7 +280,7 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
   }
   const allowed = new Set<string>();
   const disabled = new Map<string, string>();
-  const required: Array<{ keys: string[]; label: string }> = [];
+  const required: Array<{ keys: string[]; label: string; definition: LooseCommandFlagDefinition }> = [];
   const labels = collectRefusalListingLabels(definitions, listing);
   for (const definition of definitions) {
     const keys = collectLooseOptionKeys(definition);
@@ -295,41 +296,95 @@ export function validateLooseCommandOptionsWithFlagDefinitions(
       definition.enabled !== false &&
       keys.length > 0
     ) {
-      required.push({ keys, label: normalizedLabel as string });
+      required.push({ keys, label: normalizedLabel as string, definition });
     }
   }
   for (const key of Object.keys(options)) {
     if (!allowed.has(key)) {
-      const expected =
-        labels.length > 0
-          ? ` Expected one of: ${[...new Set(labels)].join(", ")}.`
-          : "";
-      throw new PmCliError(
-        `Unknown option '--${key}' for extension command '${commandPath}'.${expected}`,
-        EXIT_CODE.USAGE,
-        {
-          code: "unknown_option",
-          flag: `--${key}`,
-          required: `Use a flag the command accepts; run pm contracts --command ${commandPath} --flags-only --json to list them.`,
-        },
-      );
+      refuseUnknownExtensionOption(`--${key}`, `--${key}`, commandPath, labels);
     }
     const disabledLabel = disabled.get(key);
     if (disabledLabel) {
-      throw new PmCliError(
-        `Option '${disabledLabel}' is disabled for extension command '${commandPath}'.`,
-        EXIT_CODE.USAGE,
-      );
+      refuseDisabledExtensionOption(disabledLabel, commandPath);
     }
   }
   for (const entry of required) {
-    if (!entry.keys.some((key) => Object.hasOwn(options, key))) {
-      throw new PmCliError(
-        `Missing required option '${entry.label}' for extension command '${commandPath}'.`,
-        EXIT_CODE.USAGE,
-      );
+    const present = (key: string): boolean =>
+      Object.hasOwn(options, key) && (entry.definition.list !== true || hasLooseListEntries(entry.definition, options[key]));
+    if (!entry.keys.some(present)) {
+      // The first collected key is the canonical handler key (long flag first, else short).
+      refuseMissingRequiredExtensionOption(entry.definition, entry.keys[0] as string, entry.label, commandPath);
     }
   }
+}
+
+/**
+ * Refuse an option the command does not accept. `supplied` is the spelling the
+ * caller used (an argv token, or a direct caller's option key); `flag` is its
+ * dashed form, the structured field every unknown-option refusal carries.
+ */
+function refuseUnknownExtensionOption(
+  supplied: string,
+  flag: string,
+  commandPath: string,
+  labels: readonly string[],
+): never {
+  const expected = labels.length > 0 ? ` Expected one of: ${[...new Set(labels)].join(", ")}.` : "";
+  throw new PmCliError(
+    `Unknown option '${supplied}' for extension command '${commandPath}'.${expected}`,
+    EXIT_CODE.USAGE,
+    {
+      code: "unknown_option",
+      flag,
+      required: `Use a flag the command accepts; run pm contracts --command ${commandPath} --flags-only --json to list them.`,
+    },
+  );
+}
+
+/** Refuse a supplied flag its declaration disables, with a stable code (pm-gh1727). */
+function refuseDisabledExtensionOption(label: string, commandPath: string): never {
+  throw new PmCliError(
+    `Option '${label}' is disabled for extension command '${commandPath}'.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_option_disabled",
+      flag: label,
+      required: `Remove ${label}; the command declares it with enabled: false.`,
+      why: "A disabled declaration keeps the flag in the contract while refusing every value for it.",
+      examples: [`pm ${commandPath} --help`],
+      nextSteps: [`Run pm contracts --command ${commandPath} --flags-only --json to list the flags this command accepts.`],
+    },
+  );
+}
+
+/**
+ * Refuse a missing required flag with the code the CLI guidance has always
+ * reported, so direct callers (`PmClient.run`, the test harness) no longer
+ * have to match the English message (pm-gh1727). `field` is the handler key a
+ * direct caller passes; `recovery.missing` names the flag for the CLI retry.
+ */
+function refuseMissingRequiredExtensionOption(
+  definition: LooseCommandFlagDefinition,
+  handlerKey: string,
+  label: string,
+  commandPath: string,
+): never {
+  const value = resolveExtensionFlagValueContract(definition as Parameters<typeof resolveExtensionFlagValueContract>[0]);
+  const usage = value.value_arity === "none" ? label : value.value_arity === "optional" ? `${label} [${value.value_name}]` : `${label} <${value.value_name}>`;
+  throw new PmCliError(
+    `Missing required option '${label}' for extension command '${commandPath}'.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "missing_required_option",
+      flag: label,
+      field: handlerKey,
+      required: `Pass ${usage}.`,
+      why: "The command declares this flag as required, so pm refuses the invocation before the extension handler runs.",
+      examples: [`pm ${commandPath} ${usage}`],
+      nextSteps: [`Run pm contracts --command ${commandPath} --flags-only --json to read each flag's sdk_option key.`],
+      recovery: { missing: [label] },
+    },
+  );
 }
 
 /** Coerce a scalar value to a string. Existing strings pass through untouched and the `null`/`undefined` sentinels are preserved so an explicitly-cleared flag stays distinguishable from an omitted one; every other primitive is stringified. */
@@ -416,6 +471,11 @@ function normalizeAccumulatedFlagValue(
     : entries;
 }
 
+/** Whether a list value keeps at least one entry once normalized: `--ids ""`, `[""]` and `[[]]` carry none. */
+function hasLooseListEntries(definition: LooseCommandFlagDefinition, value: unknown): boolean {
+  return normalizeAccumulatedFlagValue(value, null, definition.repeatable === true).length > 0;
+}
+
 /** Resolve the value applied when a flag is omitted entirely. List flags wrap the default into an accumulated array; scalar flags coerce by declared kind. */
 function applyFlagDefault(
   defaultValue: unknown,
@@ -433,22 +493,20 @@ function applyFlagDefault(
   return kind ? coerceLooseOptionValue(defaultValue, kind) : defaultValue;
 }
 
-/** Preserve parse-time value order for list flags whose long and short aliases are interleaved. */
+/**
+ * Preserve parse-time value order for list flags whose long and short aliases
+ * are interleaved. When no recorded occurrence names this flag, the value
+ * came from elsewhere (Commander parsed `--tags a` while only an unrelated
+ * attached `--enabled=1` reached the loose parser), so the fallback is kept:
+ * an empty filter result would silently drop every value (pm-gh1726 review).
+ */
 function readOrderedLooseListValues(
   occurrenceSource: Record<string, unknown>,
   optionKeys: readonly string[],
   fallback: unknown,
 ): unknown {
-  const occurrences = (occurrenceSource as LooseOptionsWithOccurrences)[
-    LOOSE_OPTION_OCCURRENCES
-  ];
-  if (!occurrences || occurrences.length === 0) {
-    return fallback;
-  }
-  const acceptedKeys = new Set(optionKeys);
-  return occurrences
-    .filter((occurrence) => acceptedKeys.has(occurrence.key))
-    .map((occurrence) => occurrence.value);
+  const matching = readLooseOccurrences(occurrenceSource, optionKeys);
+  return matching.length === 0 ? fallback : matching.map((occurrence) => occurrence.value);
 }
 
 /** Whether a declared `boolean` flag is a value-less switch (as opposed to the legacy `bool` optional-value grammar), per the shared value contract. */
@@ -479,6 +537,7 @@ function refuseStrictScalarValue(
     EXIT_CODE.USAGE,
     {
       code: "extension_flag_value_invalid",
+      flag: label,
       required: `Pass ${label} ${kind === "number" ? "<number>" : "<true|false|1|0>"}.`,
       why: `The flag declares value_type ${kind} with value_validation strict, so a malformed token is refused before the extension handler runs.`,
       nextSteps: [
@@ -922,27 +981,52 @@ function refuseConflictingOptionSpellings(
  * `status-filter`, `--status-filter`, or its short letter) folds into the
  * handler key, then declared defaults, value coercion, and strict validation
  * apply through {@link coerceLooseCommandOptionsWithFlagDefinitions}. An
- * `undefined` value counts as omitted. Undeclared keys pass through unchanged.
- * Two spellings of one flag with different values are refused with
- * `extension_option_spelling_conflict`.
+ * `undefined` value counts as omitted. Two spellings of one flag with
+ * different values are refused with `extension_option_spelling_conflict`.
+ *
+ * The refusals match CLI dispatch (pm-gh1726, pm-gh1727): a key that is
+ * neither a declared spelling nor a host-owned option ({@link isDirectHostOptionKey})
+ * is refused with `unknown_option` before the handler runs; a missing required
+ * flag (an empty array counts as missing for a list flag) with
+ * `missing_required_option`; a disabled flag with `extension_option_disabled`;
+ * and an array for a flag that is not `list`/`repeatable` with
+ * `extension_flag_value_invalid`, because argv never delivers one. Host-owned
+ * keys pass through unchanged. A command that declares no flags is returned
+ * as it is (pm-4of199 owns that refusal).
+ *
+ * Pass `{ undeclaredKeys: "pass" }` for a native command path an extension
+ * extends or overrides (`list`): the native contract, including its aliases,
+ * negated flags and settings-dependent runtime fields, owns every other key
+ * there, so undeclared keys keep passing through as before. A `repeatable`
+ * declaration counts as `list` here, as the loader expands it.
  */
 export function normalizeDirectExtensionCommandOptions(
   options: Record<string, unknown>,
-  definitions: ReadonlyArray<LooseCommandFlagDefinition>,
+  declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>,
   commandPath: string,
+  policy: DirectExtensionOptionPolicy = {},
 ): Record<string, unknown> {
-  if (definitions.length === 0) {
+  if (declaredDefinitions.length === 0) {
     return options;
   }
+  const definitions = declaredDefinitions.map((definition) =>
+    definition.repeatable === true && definition.list !== true ? { ...definition, list: true } : definition,
+  );
   const index = indexDeclaredOptionSpellings(definitions);
   const folded = foldDirectOptionSpellings(options, index, commandPath);
   // Only declared handler keys reach the shared coercer: its CLI alias folding (`-S` -> `s`) must never
-  // rewrite or absorb an undeclared key a direct caller passes through.
+  // rewrite or absorb a host-owned key a direct caller passes through.
   const handlerKeys = new Set([...index.long.values()].map(({ handlerKey }) => handlerKey));
   const declared = Object.create(null) as Record<string, unknown>;
   const passthrough = Object.create(null) as Record<string, unknown>;
   for (const [key, value] of Object.entries(folded)) {
-    (handlerKeys.has(key) ? declared : passthrough)[key] = value;
+    if (handlerKeys.has(key)) {
+      declared[key] = value;
+    } else if (value === undefined || policy.undeclaredKeys === "pass" || isDirectHostOptionKey(key)) {
+      passthrough[key] = value;
+    } else {
+      refuseUnknownExtensionOption(key, toDashedOptionFlag(key), commandPath, collectRefusalListingLabels(definitions, {}));
+    }
   }
   refuseDirectDeclarationViolations(declared, definitions, commandPath);
   return Object.assign(
@@ -994,14 +1078,83 @@ function refuseDirectDeclarationViolations(
     if (handlerKey === null) continue;
     // A declaration with a handler key always renders a long or short label.
     const label = formatLooseOptionLabel(definition) as string;
+    const value = declared[handlerKey];
     const supplied = Object.hasOwn(declared, handlerKey);
     if (definition.enabled === false && supplied) {
-      throw new PmCliError(`Option '${label}' is disabled for extension command '${commandPath}'.`, EXIT_CODE.USAGE);
+      refuseDisabledExtensionOption(label, commandPath);
     }
-    if (definition.required === true && definition.enabled !== false && !supplied) {
-      throw new PmCliError(`Missing required option '${label}' for extension command '${commandPath}'.`, EXIT_CODE.USAGE);
+    // A list with no entries left after normalization ([], [""], [[]]) is zero occurrences (Greptile review).
+    const present = supplied && (definition.list !== true || hasLooseListEntries(definition, value));
+    if (definition.required === true && definition.enabled !== false && !present) {
+      refuseMissingRequiredExtensionOption(definition, handlerKey, label, commandPath);
+    }
+    if (definition.list !== true && Array.isArray(value)) {
+      refuseDirectArrayForSingleValueFlag(label, commandPath);
     }
   }
+}
+
+/** Refuse an array for a flag that takes one value: argv keeps the last occurrence, so it never delivers one (pm-gh1726). */
+function refuseDirectArrayForSingleValueFlag(label: string, commandPath: string): never {
+  throw new PmCliError(
+    `Option '${label}' for extension command '${commandPath}' takes one value; received an array.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_flag_value_invalid",
+      flag: label,
+      required: `Pass one value for ${label}, or ask the package to declare it with list: true or repeatable: true.`,
+      why: "The flag is not declared list or repeatable, so pm refuses an array before the extension handler runs instead of handing it a value of the wrong shape.",
+      nextSteps: [`Run pm contracts --command ${commandPath} --flags-only --json to read each flag's value contract.`],
+    },
+  );
+}
+
+/**
+ * Option keys the host owns on every extension command, in the camel-case and
+ * snake_case spellings a direct caller may pass: each reserved host flag and
+ * alias (`json`, `outputBudget`, `output_budget`, `pmPath`, `path`, ...) plus
+ * the positive key of each `--no-*` switch (`extensions`, `pager`), and the
+ * action-transport keys `pm_run` and `PmClient.run` accept at the top level
+ * (`force`, `subcommand`, and the MCP retry keys `inputResponses` and
+ * `requestState`), which reach the same option record. They pass through
+ * untouched, as CLI dispatch strips the host spellings before validating
+ * command options.
+ */
+const DIRECT_HOST_OPTION_KEYS: ReadonlySet<string> = new Set([
+  ...[...RESERVED_EXTENSION_HOST_FLAG_NAMES].flatMap((flag) => {
+    const body = flag.replace(/^--/u, "");
+    const spellings = [body, ...(body.startsWith("no-") ? [body.slice(3)] : [])];
+    return spellings.flatMap((spelling) => [toLooseOptionKey(spelling), spelling.replaceAll("-", "_")]);
+  }),
+  "force",
+  "subcommand",
+  "inputResponses",
+  "requestState",
+]);
+
+/**
+ * Whether a direct caller's undeclared option key is host-owned rather than a
+ * misspelled or undeclared command flag. Host keys answer to the spellings a
+ * declared flag answers to: the key itself, or its dashed form (`--json`,
+ * `output-budget`).
+ */
+function isDirectHostOptionKey(key: string): boolean {
+  return DIRECT_HOST_OPTION_KEYS.has(key) || DIRECT_HOST_OPTION_KEYS.has(toLooseOptionKey(key.replace(/^-{1,2}/u, "")));
+}
+
+/** Render a direct caller's option key as the dashed flag an unknown-option refusal names (`typoKey` -> `--typo-key`). */
+function toDashedOptionFlag(key: string): string {
+  return `--${key
+    .replace(/^-+/u, "")
+    .replace(/([a-z0-9])([A-Z])/gu, "$1-$2")
+    .replaceAll("_", "-")
+    .toLowerCase()}`;
+}
+
+/** How {@link normalizeDirectExtensionCommandOptions} treats a key no declaration or host flag owns. */
+export interface DirectExtensionOptionPolicy {
+  /** `refuse` (default) for an extension-created command; `pass` for a native command path an extension extends. */
+  undeclaredKeys?: "refuse" | "pass";
 }
 
 /** A declared flag reachable through one direct-caller spelling. */
@@ -1061,18 +1214,84 @@ function resolveNegatedBooleanSpelling(
   index: DeclaredOptionSpellingIndex,
   spelling: string,
   value: unknown,
+  commandPath: string,
 ): { spelling: string; value: unknown } {
   const negated = /^(?:--)?no-(.+)$/u.exec(spelling)?.[1];
   if (negated === undefined || resolveDeclaredOptionSpelling(index, spelling) !== undefined) {
     return { spelling, value };
   }
   const declared = resolveDeclaredOptionSpelling(index, negated);
+  if (declared === undefined || resolveLooseOptionCoercionKind(declared.definition) !== "boolean") {
+    return { spelling, value };
+  }
+  // A repeatable boolean inverts entry by entry, as --no-many --no-many gives [false, false] (Codex review round 10).
+  if ((declared.definition.list === true || declared.definition.repeatable === true) && Array.isArray(value)) {
+    return { spelling: negated, value: value.flat(Infinity).map((entry) => invertNegatedListEntry(spelling, declared.definition, entry, commandPath)) };
+  }
+  if (declared.definition.list === true && value !== undefined) {
+    return { spelling: negated, value: invertNegatedListEntry(spelling, declared.definition, value, commandPath) };
+  }
+  // A negated spelling of a declared boolean names that flag, so a value it cannot invert ([] or "bogus")
+  // is a value error, not an unknown option (CodeRabbit review); an undefined value stays an omission.
+  return { spelling: negated, value: value === undefined ? value : invertNegatedBooleanEntry(spelling, declared.definition, value, commandPath) };
+}
+
+/**
+ * Invert one entry of a negated list boolean token by token, keeping its raw shape (CodeRabbit review): a CSV
+ * list's comma-delimited string stays a string with each segment inverted, so the canonical pipeline still
+ * splits it, refuses a blank strict segment, and compares it against another spelling exactly as it would the
+ * canonical value; a scalar stays a scalar (Codex review round 13). A repeatable keeps each occurrence atomic.
+ */
+function invertNegatedListEntry(
+  spelling: string,
+  definition: LooseCommandFlagDefinition,
+  entry: unknown,
+  commandPath: string,
+): unknown {
+  // A blank or nullish entry, or a blank segment, carries no token to invert: it passes through for the canonical
+  // pipeline to judge (dropped, refused under strict validation, or counted as a missing required list) exactly as
+  // under the canonical spelling (Codex review round 14).
+  const invertToken = (token: string): string =>
+    token.trim().length === 0 ? token : String(invertNegatedBooleanEntry(spelling, definition, token.trim(), commandPath));
+  if (entry === null || entry === undefined) return entry;
+  if (typeof entry !== "string") return invertNegatedBooleanEntry(spelling, definition, entry, commandPath);
+  if (entry.trim().length === 0) return entry;
+  if (definition.repeatable === true || !entry.includes(",")) return invertNegatedBooleanEntry(spelling, definition, entry, commandPath);
+  return entry.split(",").map(invertToken).join(",");
+}
+
+/** Invert one boolean value under a negated spelling, refusing a value that is not a boolean token. */
+function invertNegatedBooleanEntry(
+  spelling: string,
+  definition: LooseCommandFlagDefinition,
+  value: unknown,
+  commandPath: string,
+): boolean {
   const flag = coerceLooseBooleanOptionValue(value);
-  return declared !== undefined &&
-    resolveLooseOptionCoercionKind(declared.definition) === "boolean" &&
-    typeof flag === "boolean"
-    ? { spelling: negated, value: !flag }
-    : { spelling, value };
+  if (typeof flag === "boolean") return !flag;
+  return refuseNegatedBooleanValue(spelling, definition, value, commandPath);
+}
+
+/** Refuse a value a negated boolean spelling cannot invert. */
+function refuseNegatedBooleanValue(
+  spelling: string,
+  definition: LooseCommandFlagDefinition,
+  value: unknown,
+  commandPath: string,
+): never {
+  // A declaration with a handler key always renders a long or short label.
+  const label = formatLooseOptionLabel(definition) as string;
+  throw new PmCliError(
+    `Option '${spelling}' for extension command '${commandPath}' negates ${label} and expects true, false, 1, or 0; received ${JSON.stringify(value)}.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "extension_flag_value_invalid",
+      flag: label,
+      required: `Pass ${label} as true or false, or '${spelling}' as true.`,
+      why: `'${spelling}' is the negated spelling of the boolean ${label}, so only a boolean value can be inverted before the extension handler runs.`,
+      nextSteps: [`Run pm contracts --command ${commandPath} --flags-only --json to read each flag's value contract.`],
+    },
+  );
 }
 
 /** Fold declared spellings into handler keys, refusing two spellings of one flag with different values. */
@@ -1084,7 +1303,7 @@ function foldDirectOptionSpellings(
   const folded = Object.create(null) as Record<string, unknown>;
   const suppliedBy = new Map<string, string>();
   for (const [rawSpelling, rawValue] of Object.entries(options)) {
-    const { spelling, value } = resolveNegatedBooleanSpelling(index, rawSpelling, rawValue);
+    const { spelling, value } = resolveNegatedBooleanSpelling(index, rawSpelling, rawValue, commandPath);
     const declared = resolveDeclaredOptionSpelling(index, spelling);
     if (declared === undefined) {
       folded[spelling] = value;
@@ -1093,12 +1312,35 @@ function foldDirectOptionSpellings(
       if (prior === undefined) {
         suppliedBy.set(declared.handlerKey, spelling);
         folded[declared.handlerKey] = value;
-      } else if (!isDeepStrictEqual(folded[declared.handlerKey], value)) {
+      } else if (
+        !isDeepStrictEqual(
+          deliverDirectOptionValue(declared.definition, declared.handlerKey, folded[declared.handlerKey], index, commandPath),
+          deliverDirectOptionValue(declared.definition, declared.handlerKey, value, index, commandPath),
+        )
+      ) {
         refuseConflictingOptionSpellings(declared.definition, declared.handlerKey, [prior, spelling], commandPath);
       }
     }
   }
   return folded;
+}
+
+/**
+ * The value one spelling would deliver to the handler on its own, through the same declaration checks and shared
+ * coercer the folded options take. Two spellings of one flag conflict only when they would deliver different
+ * values (Greptile review: `[false]` and `false` are one list, `"true"` and `true` one boolean), and each spelling is
+ * validated before either is discarded, so a second spelling never masks a strict refusal (Codex review round 16).
+ */
+function deliverDirectOptionValue(
+  definition: LooseCommandFlagDefinition,
+  handlerKey: string,
+  value: unknown,
+  index: DeclaredOptionSpellingIndex,
+  commandPath: string,
+): unknown {
+  const single = { [handlerKey]: value };
+  refuseDirectDeclarationViolations(single, [definition], commandPath);
+  return coerceLooseCommandOptionsWithFlagDefinitions(single, [definition], recordDirectOptionOccurrences(single, index), commandPath)[handlerKey];
 }
 
 /** How an argv option token takes its value, as Commander parses it: `<value>`, `[value]`, or a switch. */

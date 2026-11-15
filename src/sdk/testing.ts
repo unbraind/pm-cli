@@ -8,6 +8,7 @@ import type {
   BeforeCommandHookContext,
   BeforeMutationHookContext,
   MutationActor,
+  CommandHandlerContext,
   CommandHandlerResult,
   CommandOverrideContext,
   CommandOverrideResult,
@@ -141,6 +142,19 @@ import {
   collectExtensionFlagDefinitionsForCommand,
   normalizeDirectExtensionCommandOptions,
 } from "./extension/command-options.js";
+import { resolveDirectExtensionOptionPolicy } from "./extension/native-command-options.js";
+import { formatOutput, projectPrintedResult } from "../core/output/output.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
+import {
+  resolvePortableWorkspaceContext,
+  runWithIsolatedExtensionRuntime,
+  setActiveCommandContext,
+  setActiveExtensionCommands,
+  setActiveExtensionRegistrations,
+  setActiveExtensionRenderers,
+  setActiveExtensionServices,
+} from "../core/extensions/index.js";
 import { PmClient } from "./runtime.js";
 
 /** Host-pinned TOON codecs for semantic package-output assertions without deep imports. */
@@ -235,10 +249,96 @@ const ACTIVATED_COMMAND_FLAG_REGISTRATIONS = Symbol.for("pm.sdk.testing.activate
 /** Read the flag registrations an activation attached to its command registry. */
 function readActivatedFlagRegistrations(
   commands: ExtensionCommandRegistry,
-): Pick<ExtensionActivationResult["registrations"], "flags"> | undefined {
-  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_FLAG_REGISTRATIONS]?: Pick<ExtensionActivationResult["registrations"], "flags"> })[
+): ActivatedCommandRegistrations | undefined {
+  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_FLAG_REGISTRATIONS]?: ActivatedCommandRegistrations })[
     ACTIVATED_COMMAND_FLAG_REGISTRATIONS
   ];
+}
+
+/** Symbol under which an activation attaches its service registry, so command admission can run `output_format` as native output does. */
+const ACTIVATED_COMMAND_SERVICES = Symbol.for("pm.sdk.testing.activatedServices");
+
+/** Symbol under which an activation attaches its renderer registry for the same native formatting. */
+const ACTIVATED_COMMAND_RENDERERS = Symbol.for("pm.sdk.testing.activatedRenderers");
+
+/** Read the renderer registry an activation attached to its command registry. */
+function readActivatedRenderers(commands: ExtensionCommandRegistry): ExtensionRendererRegistry | undefined {
+  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_RENDERERS]?: ExtensionRendererRegistry })[ACTIVATED_COMMAND_RENDERERS];
+}
+
+/** Read the service registry an activation attached to its command registry. */
+function readActivatedServices(commands: ExtensionCommandRegistry): ExtensionServiceRegistry | undefined {
+  return (commands as ExtensionCommandRegistry & { [ACTIVATED_COMMAND_SERVICES]?: ExtensionServiceRegistry })[ACTIVATED_COMMAND_SERVICES];
+}
+
+/** The activation registrations the harness reads: declared flags, and command declarations such as `read_output`. */
+type ActivatedCommandRegistrations = Pick<ExtensionActivationResult["registrations"], "flags" | "commands">;
+
+/**
+ * Admit a handled read-output result through the native output pipeline
+ * itself (pm-gh1729): inside an isolated extension runtime holding the
+ * activation's commands, services and registrations, the harness sets the
+ * command context the CLI sets and calls native `formatOutput` on the
+ * `printResult` projection, exactly as CLI dispatch does after the handler.
+ * Mutation-receipt projection, command-result overrides, suppressed host
+ * output, `output_format` services, encoding resolution and the declared-row
+ * admission therefore match native output by construction, and a refusal
+ * (`extension_read_output_invalid`) propagates as it would natively. Commands
+ * without `read_output` are not formatted. The harness still returns the
+ * handler's own outcome; the last registration of a command path wins.
+ */
+async function admitRegisteredReadOutputResult(
+  registrations: ActivatedCommandRegistrations | undefined,
+  commands: ExtensionCommandRegistry,
+  context: CommandHandlerContext,
+  outcome: CommandHandlerResult,
+): Promise<CommandHandlerResult> {
+  if (registrations === undefined || !outcome.handled) return outcome;
+  const readOutput = [...registrations.commands].reverse().find((entry) => entry.command === context.command)?.read_output;
+  if (readOutput === undefined) return outcome;
+  // Native delivery marks an omitted-for-budget read with `process.exitCode ||= 2` and renders the refusal
+  // instead of throwing. The harness clears the code for the synchronous formatting call so it can observe
+  // that mark, restores the caller's value, and raises the refusal a native caller would see as exit 2.
+  const exitCode = process.exitCode;
+  let omittedForBudget = false;
+  await runWithIsolatedExtensionRuntime(async () => {
+    setActiveExtensionCommands(commands);
+    setActiveExtensionServices(readActivatedServices(commands) ?? null);
+    setActiveExtensionRenderers(readActivatedRenderers(commands) ?? null);
+    // The attached object is the activation's full registration registry.
+    setActiveExtensionRegistrations(registrations as ExtensionActivationResult["registrations"]);
+    setActiveCommandContext({ command: context.command, args: context.args, options: context.options, global: context.global, pm_root: context.pm_root });
+    const global = context.global;
+    process.exitCode = 0;
+    try {
+      formatOutput(projectPrintedResult(outcome.result, global), {
+        ...global,
+        command: context.command,
+        commandArgs: context.args,
+        commandOptions: context.options,
+        pmRoot: context.pm_root,
+      });
+      omittedForBudget = process.exitCode === EXIT_CODE.USAGE;
+    } finally {
+      process.exitCode = exitCode;
+    }
+  });
+  if (omittedForBudget) refuseOmittedForBudget(context.command);
+  return outcome;
+}
+
+/** The harness form of a native read that cannot fit its output budget: native delivery omits the result and exits 2. */
+function refuseOmittedForBudget(command: string): never {
+  throw new PmCliError(
+    `Read output for extension command '${command}' does not fit the requested output budget; native delivery omits the result and exits 2.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "output_budget_exceeded",
+      required: "Raise outputBudget, or return fewer or smaller rows so the delivered output fits.",
+      why: "The delivered output, including any output_format or renderer string, answers to the caller's output budget, and an infeasible budget omits the result natively.",
+      nextSteps: ["Re-run with a larger outputBudget, or without one, to inspect the full result."],
+    },
+  );
 }
 
 /**
@@ -958,6 +1058,14 @@ export async function activateExtensionForTest(
     value: activation.registrations,
     enumerable: false,
   });
+  Object.defineProperty(activation.commands, ACTIVATED_COMMAND_SERVICES, {
+    value: activation.services,
+    enumerable: false,
+  });
+  Object.defineProperty(activation.commands, ACTIVATED_COMMAND_RENDERERS, {
+    value: activation.renderers,
+    enumerable: false,
+  });
   return activation;
 }
 
@@ -1057,7 +1165,7 @@ export async function runRegisteredCommandForTest(
       : undefined);
   const registrations = readActivatedFlagRegistrations(commands);
   const handlerOptions = options.options ? { ...options.options } : {};
-  return runCommandHandler(commands, {
+  const context: CommandHandlerContext = {
     command,
     args: options.args ? [...options.args] : [],
     options:
@@ -1067,11 +1175,17 @@ export async function runRegisteredCommandForTest(
             handlerOptions,
             collectExtensionFlagDefinitionsForCommand(registrations, command),
             command,
+            resolveDirectExtensionOptionPolicy(command),
           ),
     global,
     pm_root: pmRoot,
+    // Native runActiveCommandHandler supplies the portable workspace coordinates to the handler and to every
+    // output hook that follows it, so the harness does too (Codex review round 7).
+    ...resolvePortableWorkspaceContext(pmRoot.length > 0 ? pmRoot : undefined),
     ...(sdk === undefined ? {} : { sdk }),
-  });
+  };
+  const outcome = await runCommandHandler(commands, context);
+  return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
 /** Invoke registered transactional mutation guards through the same fail-closed runtime used by real writes. */

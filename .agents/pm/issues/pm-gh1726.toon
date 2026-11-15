@@ -2,11 +2,13 @@ id: pm-gh1726
 title: "GH-1726: a strict boolean extension flag accepts an empty array from direct callers (PmClient.run, the test harness), while {} and 1 are refused"
 description: "GH-1726 (filed 2026-11-14). A flag declared value_type boolean with value_validation strict accepts an empty array from direct callers: PmClient.run and the extension test harness's runCommand. The handler receives options.enabled === [] (typeof object) with no warning, while {}, 'bogus' and 1 are refused before dispatch with extension_flag_value_invalid (exit 2). A handler that trusts the host's strict validation, which 2026.11.8+ encourages because the host owns option spelling and value checks, can therefore read a truthy object where it expects true or false. Likely cause from the issue: the empty array is taken as 'no repeated values' and validation is skipped. Expected: a non-repeatable flag never accepts an array; a repeatable boolean flag validates each element and refuses an empty array where at least one value is required. The issue also asks that the changelog name the direct-caller string coercion ('true' -> true) for strict booleans, which broke several fleet test suites between 2026.11.7 and 2026.11.9. Duplicate check: searched strict boolean extension flag empty array direct caller; no open item."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: extensions,flags,"gh:1726",sdk,validation
 created_at: "2026-11-14T09:00:39.423Z"
-updated_at: "2026-11-14T09:00:53.982Z"
+updated_at: "2026-11-15T02:54:26.821Z"
+closed_at: "2026-11-14T19:16:20.807Z"
+completed_at: "2026-11-14T19:16:20.807Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "A strict boolean flag refuses [] from PmClient.run and the test harness with extension_flag_value_invalid, exit 2, before dispatch; A non-repeatable flag refuses any array and a repeatable boolean flag validates every element; Specs cover [], {}, 1, 'bogus' and 'true' for both direct callers and the CLI"
@@ -15,9 +17,60 @@ risk: low
 confidence: high
 reporter: unbraind
 severity: medium
-expected_result: "An empty array is refused like {} and 1"
-actual_result: "The handler receives [] as the flag value"
+resolution: "normalizeDirectExtensionCommandOptions (src/sdk/extension/command-options.ts) refuses an array for a flag that is not list/repeatable with extension_flag_value_invalid (flag field) and treats an empty required list as missing; a raw repeatable declaration counts as list. applyDynamicExtensionFlagOptions (src/cli/extension-command-help.ts) records each bare repeatable switch occurrence as true. optionsWithAuthor (src/sdk/runtime-input.ts) skips the native-field array rewrites for extension actions (nativeAction: false from runtime.ts dispatchAction). Strict scalar refusals carry flag. pm-g2zzus owns the mixed attached/bare ordering edge."
+expected_result: "A strict boolean refuses [], [true], {}, 1 and 'bogus' from PmClient.run and the harness before dispatch; 'true' still coerces; a repeatable boolean validates each element; pm <cmd> --many delivers [true]"
+actual_result: "direct-caller-option-contract.integration.spec and command-options.spec pass for both direct callers and the in-process CLI; --many -> [true], --many --many -> [true, true]; linked run passed 34/34"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-4of199,related,"2026-11-14T09:00:50.576Z","harness:claude-code","cli:update:dep",detected
   pm-gh1665,related,"2026-11-14T09:00:50.576Z","harness:claude-code","cli:update:dep",detected
+comments[4]{created_at,author,text}:
+  "2026-11-14T16:55:59.879Z","harness:claude-code","Root cause (2026-11-14): the direct-caller occurrence recorder flattens an array into one attached occurrence per entry, so [] produced zero occurrences and strict validation had nothing to check; for a non-list flag the coercer mapped each entry, so [true], [1,2] and ['a','b'] also reached handlers as arrays although argv keeps the last occurrence and never delivers one. Fix: refuseDirectDeclarationViolations refuses any array for a flag that is not list/repeatable (extension_flag_value_invalid with flag) and treats [] on a required list as missing. Two more defects in the same seam: (1) on the built CLI a bare repeatable boolean switch reached the handler as [] (pm demo --many -> []), because Commander calls the list accumulator with undefined for a value-less switch and list flattening drops undefined; fixed in applyDynamicExtensionFlagOptions (each bare occurrence records true). (2) PmClient.run applied the native-field array rewrites (tags joined to CSV; dep, comment, file, test and others promoted to arrays) to extension actions too, so a declared scalar --dep would have received ['x']; optionsWithAuthor now takes nativeAction and extension actions keep the caller's values. The mixed attached/bare ordering edge (--many=false --many keeps only [false]) is filed as pm-g2zzus."
+  "2026-11-14T19:43:19.365Z","harness:claude-code","Greptile review on PR #1732 (P2, verified and fixed): a required list given entries that normalization drops ([''], [[]], or --ids '' on the CLI) passed the required check and reached the handler as []. Both validators now judge a list by its normalized entries (hasLooseListEntries), so those inputs are refused with missing_required_option."
+  "2026-11-14T20:17:53.950Z","harness:claude-code","CI on PR #1732 (coverage shard 1/4, head 047492427) exposed a pre-existing CLI data loss in the same seam: readOrderedLooseListValues treated the loose occurrence list as authoritative for every list flag whenever ANY loose occurrence existed, so pm <cmd> --tags a --enabled=1 (the attached switch value is unknown to Commander and reaches only the loose parser) delivered tags: [] to the handler, silently dropping a value Commander had parsed. The new required-list check made it visible as missing_required_option. Fix: when no recorded occurrence names the flag, the Commander value is kept; covered by the in-process --tags a --tags b --enabled=1 case. The remaining same-flag mix (--many=false --many) stays with pm-g2zzus."
+  "2026-11-14T20:37:06.325Z","harness:claude-code","CodeRabbit review on PR #1732 (minor, verified and fixed): a direct caller passing a negated spelling of a declared boolean with a value it cannot invert ({ 'no-on': [] } or 'bogus') got unknown_option, because resolveNegatedBooleanSpelling kept the no- spelling unless the value was boolean. It now resolves the declaration first and refuses such a value with extension_flag_value_invalid naming the flag; an undefined value stays an omission."
+notes[5]{created_at,author,text}:
+  "2026-11-15T01:55:35.129Z","harness:claude-code","CodeRabbit re-review on 0564da3ff (Minor, valid): a negated list boolean given a comma-delimited value ({ \"no-many\": \"true,false\" } for list: true) was refused while the canonical { many: \"true,false\" } splits into [true, false]. resolveNegatedBooleanSpelling now normalizes entries with the declaration's own list grammar (normalizeAccumulatedFlagValue: list splits commas, repeatable keeps each occurrence atomic) before inverting each one, so the negated form yields [false, true]. Covered in tests/unit/sdk/extension/command-options.spec.ts."
+  "2026-11-15T02:10:31.802Z","harness:claude-code","Codex review round 13 on 734663f34 (two P2, both verified): normalizing the negated list value first dropped a blank segment that strict validation refuses under the canonical spelling ({ \"no-many\": \"true,,false\" } reached the handler), and turned a scalar into [false], so { many: false, \"no-many\": true } became a spelling conflict. Replaced by invertNegatedListEntry: inversion is token by token and keeps the raw shape (a CSV string stays a string with each segment inverted, a scalar stays a scalar, blank entries and segments pass through), so the canonical pipeline judges the result exactly as it judges the canonical spelling. A differential probe over 5 declarations x 18 inputs against 0564da3ff changed only the negated CSV and blank cases, and each now matches its canonical counterpart. Documented in docs/SDK.md (direct-caller section)."
+  "2026-11-15T02:21:59.952Z","harness:claude-code","Codex review round 14 on a5b25d0f9 (P2, verified): nullish entries of a negated list ({ \"no-many\": [true, null] }) were inverted and refused, while canonical list normalization drops them; an all-null required list got extension_flag_value_invalid instead of missing_required_option. invertNegatedListEntry now passes nullish entries through. A systematic parity probe (8 declarations x 37 value shapes, negated result vs canonical result with each boolean inverted) shows zero mismatches for strict declarations and for every invertible token; the only remaining differences are coerce-mode non-boolean tokens (1, yes, bogus, {}), which the canonical spelling forwards untouched and the negated spelling refuses because they cannot be inverted (the documented CodeRabbit-round decision)."
+  "2026-11-15T02:44:32.648Z","harness:claude-code","Greptile review on a5b25d0f9 (P2, verified): the direct spelling fold compared raw values with isDeepStrictEqual, so equivalent spellings of one flag conflicted: { many: [false], \"no-many\": true } on a list boolean ([false] vs false), \"true,false\" vs [true, false] on a CSV list, and (pre-existing, same seam) \"true\" vs true on a scalar boolean. isSameDirectOptionValue now compares values as normalization reads them: a CSV list splits and trims, a repeatable and a scalar are never trimmed, nullish list entries drop, and a valid typed token compares as its coerced value; a blank entry or a token that is not a valid value of the kind stays raw, so it never equals a valid value and strict refusal cannot be masked. A probe of 6 declarations x 16 values shows a value passed under two spellings, or under its canonical and inverted negated spellings, now always equals the value passed once, except the documented coerce-mode non-boolean tokens a negation cannot invert. CodeRabbit (docs/SDK.md, Minor): the read_output paragraph claimed validation before any output_format service; it now says a structured replacement is validated in place of the handler result."
+  "2026-11-15T02:54:26.820Z","harness:claude-code","Codex review round 16 on 0467438c9 (P2, verified): the comparator that approximated normalization dropped a null that strict repeatable validation refuses, so { many: [true], \"--many\": [true, null] } reached the handler while either spelling alone, or the reversed order, was refused. Replaced the approximation with the native path (the session method hook: call the pipeline, do not re-implement it): deliverDirectOptionValue runs each colliding spelling's value alone through refuseDirectDeclarationViolations and the shared coercer with its recorded occurrences, and the fold compares the delivered values. Every spelling is validated before either is discarded. An order probe over 6 declarations x 23 x 23 value pairs in both orders shows zero mismatches: a pair is refused exactly when either spelling alone is refused or the two deliver different values, and an accepted pair delivers the single-spelling value. An invalid second spelling now gets the value refusal it gets alone (extension_flag_value_invalid) instead of extension_option_spelling_conflict."
+learnings[1]{created_at,author,text}:
+  "2026-11-14T19:16:12.086Z","harness:claude-code",Commander calls a custom argParser with undefined for a value-less switch occurrence; a list accumulator must map that to true or the occurrence is silently flattened away.
+files[6]{path,scope}:
+  src/cli/extension-command-help.ts,project
+  src/sdk/extension/command-options.ts,project
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime.ts,project
+  tests/integration/extensions/direct-caller-option-contract.integration.spec.ts,project
+  tests/unit/sdk/extension/command-options.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,project,900,"harness:claude-code","2026-11-14T19:13:07.703Z",local_mutation,feat/direct-caller-option-contract-parity
+test_runs[1]:
+  - run_id: test-local-mwgsc72g-mdshrp
+    kind: test
+    status: passed
+    started_at: "2026-11-14T19:14:36.299Z"
+    finished_at: "2026-11-14T19:15:01.960Z"
+    recorded_at: "2026-11-14T19:15:01.960Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Direct callers refuse arrays for single-value extension flags; bare repeatable switches reach the handler as true; extension actions keep caller values
+contract_change:
+  api: "PmClient.run, runRegisteredCommandForTest and createExtensionTestHarness().runCommand for extension commands with declared flags; normalizeDirectExtensionCommandOptions"
+  before: "An array passed to a flag that is not list/repeatable reached the handler ([] and [true] for a strict boolean, [1,2] for a number); PmClient.run joined a tags array to CSV and promoted a scalar dep, comment, file or test to an array for extension actions; a bare repeatable boolean switch reached the handler as [] on the CLI"
+  after: An array for a single-value flag is refused with extension_flag_value_invalid (flag field) before the handler runs; extension actions keep the caller values and their declared contract normalizes them; each bare occurrence of a repeatable switch is true; a raw repeatable declaration counts as list
+  migrate: "Pass one value for a flag that is not list/repeatable, or declare it with list: true or repeatable: true; handlers that read a scalar declared flag from PmClient.run no longer receive an array"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1726
+  gate_id: direct-caller-single-value-arrays
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts (the [], [true] and {} strict-boolean cases and the bare --many switch fail before the fix: [] and [true] reach the handler, --many delivers [])"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

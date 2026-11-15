@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2127,
+    "covered_symbols": 2128,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2128
+    "required_symbols": 2129
   },
   "breaking_acknowledgements": [
     {
@@ -3322,6 +3322,29 @@
       ],
       "package_version": "2026.11.13",
       "reason": "GH-1713 adds deferred_fields to ITEM_UNION_COLLECTION_FIELDS so branches resolving different deferrals union-merge instead of conflicting as one scalar"
+    },
+    {
+      "changes": [
+        "signature ./sdk:assertCompleteListResult",
+        "signature ./sdk:certifyCompleteListResult",
+        "signature ./sdk:PmCompleteListValidationError",
+        "signature ./sdk/query:assertCompleteListResult",
+        "signature ./sdk/query:certifyCompleteListResult",
+        "signature ./sdk/query:PmCompleteListValidationError",
+        "signature ./sdk/runtime:assertCompleteListResult",
+        "signature ./sdk/runtime:certifyCompleteListResult",
+        "signature ./sdk/runtime:PmCompleteListValidationError"
+      ],
+      "package_version": "2026.11.14",
+      "reason": "pm-gh1728: certifyCompleteListResult, assertCompleteListResult and the PmCompleteListValidationError constructor gain an optional trailing PmCompleteListOptions argument; every existing call keeps compiling and behaving the same"
+    },
+    {
+      "changes": [
+        "signature ./sdk:normalizeDirectExtensionCommandOptions",
+        "signature ./sdk/authoring:normalizeDirectExtensionCommandOptions"
+      ],
+      "package_version": "2026.11.14",
+      "reason": "pm-gh1727: normalizeDirectExtensionCommandOptions gains an optional trailing DirectExtensionOptionPolicy argument (its first parameter is renamed declaredDefinitions); every existing three-argument call keeps compiling"
     }
   ],
   "entrypoints": {
@@ -4166,7 +4189,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "assertCompleteListResult",
-          "signature": "(candidate: unknown) => asserts candidate is ListFullResult | calls: (candidate: unknown) => asserts candidate is ListFullResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult"
         },
         {
           "classification": "supported",
@@ -5528,7 +5551,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "certifyCompleteListResult",
-          "signature": "(candidate: unknown) => PmCompleteListResult | calls: (candidate: unknown) => PmCompleteListResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult"
         },
         {
           "classification": "supported",
@@ -7965,6 +7988,12 @@
           "kind": "function",
           "name": "digestMcpRequestParameters",
           "signature": "(value: unknown) => string | calls: (value: unknown) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "DirectExtensionOptionPolicy",
+          "signature": "export interface DirectExtensionOptionPolicy { undeclaredKeys?: \"refuse\" | \"pass\"; }"
         },
         {
           "classification": "advanced_export",
@@ -13106,7 +13135,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "normalizeDirectExtensionCommandOptions",
-          "signature": "(options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown> | calls: (options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown>"
+          "signature": "(options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown> | calls: (options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown>"
         },
         {
           "classification": "advanced_export",
@@ -15452,7 +15481,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCompleteListValidationError",
-          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[]); }"
+          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[], options?: PmCompleteListOptions); }"
         },
         {
           "classification": "contract_data",
@@ -24360,6 +24389,12 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "DirectExtensionOptionPolicy",
+          "signature": "export interface DirectExtensionOptionPolicy { undeclaredKeys?: \"refuse\" | \"pass\"; }"
+        },
+        {
+          "classification": "supported",
           "kind": "type",
           "name": "ExactDefinition",
           "signature": "export type ExactDefinition<TDefinition, TContract> = TDefinition & Record<Exclude<keyof TDefinition, keyof TContract>, never>;"
@@ -24920,7 +24955,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "normalizeDirectExtensionCommandOptions",
-          "signature": "(options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown> | calls: (options: Record<string, unknown>, definitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string) => Record<string, unknown>"
+          "signature": "(options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown> | calls: (options: Record<string, unknown>, declaredDefinitions: ReadonlyArray<LooseCommandFlagDefinition>, commandPath: string, policy?: DirectExtensionOptionPolicy) => Record<string, unknown>"
         },
         {
           "classification": "supported",
@@ -33812,7 +33847,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "assertCompleteListResult",
-          "signature": "(candidate: unknown) => asserts candidate is ListFullResult | calls: (candidate: unknown) => asserts candidate is ListFullResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult"
         },
         {
           "classification": "supported",
@@ -33938,7 +33973,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "certifyCompleteListResult",
-          "signature": "(candidate: unknown) => PmCompleteListResult | calls: (candidate: unknown) => PmCompleteListResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult"
         },
         {
           "classification": "supported",
@@ -35180,7 +35215,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCompleteListValidationError",
-          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[]); }"
+          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[], options?: PmCompleteListOptions); }"
         },
         {
           "classification": "supported",
@@ -35900,7 +35935,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "assertCompleteListResult",
-          "signature": "(candidate: unknown) => asserts candidate is ListFullResult | calls: (candidate: unknown) => asserts candidate is ListFullResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => asserts candidate is ListFullResult"
         },
         {
           "classification": "supported",
@@ -35984,7 +36019,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "certifyCompleteListResult",
-          "signature": "(candidate: unknown) => PmCompleteListResult | calls: (candidate: unknown) => PmCompleteListResult"
+          "signature": "(candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult | calls: (candidate: unknown, options?: PmCompleteListOptions) => PmCompleteListResult"
         },
         {
           "classification": "supported",
@@ -37658,7 +37693,7 @@
           "classification": "supported",
           "kind": "class",
           "name": "PmCompleteListValidationError",
-          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[]); }"
+          "signature": "export declare class PmCompleteListValidationError extends Error { readonly receipt: PmCompleteListFailureReceipt; constructor(findings: PmCompleteListFinding[], options?: PmCompleteListOptions); }"
         },
         {
           "classification": "contract_data",
@@ -40249,6 +40284,7 @@
     "extension_mutation_guard_invalid_decision",
     "extension_mutation_guard_invalid_denial",
     "extension_mutation_guard_timed_out",
+    "extension_option_disabled",
     "extension_option_spelling_conflict",
     "extension_read_output_invalid",
     "extension_update_health_partial_coverage",
@@ -40420,6 +40456,7 @@
     "npm_package_archive_missing",
     "npm_package_archive_unsafe",
     "npm_package_not_found",
+    "output_budget_exceeded",
     "ownership_conflict",
     "ownership_dependency_bypass_restricted_options",
     "ownership_metadata_bypass_restricted_options",
@@ -40629,13 +40666,13 @@
       "checked_functions": 1332,
       "checked_values": 396,
       "exempt_test_seams": 15,
-      "referenced_types": 1041
+      "referenced_types": 1042
     },
     "./sdk/authoring": {
       "checked_functions": 54,
       "checked_values": 18,
       "exempt_test_seams": 0,
-      "referenced_types": 59
+      "referenced_types": 60
     },
     "./sdk/contracts": {
       "checked_functions": 102,

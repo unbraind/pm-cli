@@ -2,11 +2,13 @@ id: pm-gh1729
 title: "GH-1729: the extension test harness passes a compact output_format receipt that the native CLI refuses with extension_read_output_invalid since 2026.11.13"
 description: "GH-1729 (filed 2026-11-14, reproduced on the 2026.11.7, 2026.11.13 and 2026.11.14 artifacts). An extension command declares read_output { row_keys: [\"rows\"] } and an output_format service returns a compact receipt ({ ok: true, output: \"receipt.md\" }). The native CLI on 2026.11.13 and 2026.11.14 refuses the receipt-only handler result with exit 2 and extension_read_output_invalid before the formatter receipt, while the same result with a rows array passes. createExtensionTestHarness().runCommand() handles both, so a package author cannot detect the native refusal before adoption; 2026.11.7 accepted both. Expected from the issue: make native output admission testable through the public harness, or document that the harness validates only the handler result and requires a packed native probe; if declared row keys are intentionally mandatory before custom formatting, document the compatible compact receipt pattern and migration. Malformed and oversized output must stay refused. Duplicate check: searched extension read_output row_keys output_format receipt harness native refusal; no open item."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: extensions,"gh:1729",read-output,sdk,testing
 created_at: "2026-11-14T15:21:20.930Z"
-updated_at: "2026-11-14T15:26:14.192Z"
+updated_at: "2026-11-14T22:05:20.907Z"
+closed_at: "2026-11-14T19:16:40.530Z"
+completed_at: "2026-11-14T19:16:40.530Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: "A regression fixture distinguishes receipt-only output, valid rows with compact formatter output, malformed rows and oversized delivered output across the native CLI and the test harness; Package authors can detect the native refusal before adoption, either through the harness or a documented packed-native probe; Valid compact output stays compact and malformed or oversized output stays refused"
@@ -15,8 +17,53 @@ risk: medium
 confidence: medium
 reporter: unbraind
 severity: medium
-expected_result: The harness and the native CLI agree on whether a compact formatter receipt is admitted
-actual_result: The harness passes a receipt that the native CLI refuses with extension_read_output_invalid
+resolution: "assertExtensionReadOutputResult (src/sdk/read-output/extension.ts) is the shared admission; runRegisteredCommandForTest (src/sdk/testing.ts) applies it to every handled result of a command whose last registration declares read_output, after a registered command-result override, skipping suppressed host output, and to a structured output_format replacement (the activation attaches its service registry; the service payload mirrors native resolveOutputService with merged output controls and resolvedOutputFormat). The refusal carries required/why text naming the compact-receipt pattern; docs/SDK.md documents it."
+expected_result: Receipt-only and malformed results are refused in the harness exactly as natively; valid rows with a compact formatter receipt pass both; oversized delivered output stays refused natively
+actual_result: "direct-caller-option-contract.integration.spec covers receipt-only, rows, empty rows, malformed and oversized cases across the built CLI and the harness; harness-parity.spec covers overrides, suppression, structured and string services and explicit encodings; linked run passed 34/34"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1726,related,"2026-11-14T15:26:13.918Z","harness:claude-code","cli:update:dep",detected
+comments[8]{created_at,author,text}:
+  "2026-11-14T16:56:07.237Z","harness:claude-code","Root cause (2026-11-14): attachExtensionReadOutputRows (src/sdk/read-output/extension.ts) refuses a result that lacks a declared row collection before projection or any output_format service runs, which is intended: declared row_keys are a promise. runRegisteredCommandForTest never ran that check, so a receipt-only handler passed package tests and failed natively. Fix: the check is extracted as assertExtensionReadOutputResult and the harness applies it to every handled result of a command whose last registration declares read_output, so package tests now fail with the same code and message. The refusal now also carries required/why text naming the compatible pattern: keep returning the rows (an empty collection is valid) and let the output_format service render the compact receipt. Oversized delivered output stays refused natively (output_budget_exceeded) even with valid rows; the regression fixture covers receipt-only, rows, empty rows, malformed rows and oversized delivery."
+  "2026-11-14T19:02:15.162Z","harness:claude-code","Codex review round 4 (head 66ec6d502), one P2 finding, verified and fixed: the harness ignored an outputFormat passed through global options when it chose the output_format branch, while native formatEffectiveOutput merges the global output controls (outputInclude, outputLimit, outputBudget, outputFormat, outputSession, outputCursor, outputRowContract) over the command options before resolveReadOutputEncoding. The harness now merges the same keys first; harness-parity.spec covers command-option and global spellings."
+  "2026-11-14T19:12:36.057Z","harness:claude-code","Codex review round 5 (head 6f1062e37), one P2 finding, verified and fixed: the harness resolved the encoding from the merged command and global output controls but then handed the output_format service the unmerged options, so a service reading payload.command_options.outputFormat saw undefined where native output passes toon. The payload now mirrors native resolveOutputService: command_options are the merged options plus resolvedOutputFormat, and payload.options/global carry command and commandOptions."
+  "2026-11-14T19:40:39.235Z","harness:claude-code","Codex review round 6 (pushed head b52035aab, PR #1732), one P2 finding, verified and fixed: the harness formatter payload omitted the dispatch metadata native resolveOutputService passes in payload.options and payload.global (commandArgs, pmRoot); a formatter keyed on commandArgs[0] supplied rows natively but not in the harness. Both now carry command, commandArgs, pmRoot and the resolved commandOptions."
+  "2026-11-14T20:53:38.045Z","harness:claude-code","Codex review round 7 (head 6c9fe839a), one P2 finding, verified and fixed: harness output hooks lacked the portable workspace coordinates (source_workspace_root, repo_root, pm_root_rel) that native runActiveCommandHandler resolves with resolvePortableWorkspaceContext, so a service keyed on them supplied rows natively but not in the harness. The harness now resolves them into the handler context (as native dispatch does for the handler too), and the command-result override and output_format service inherit them."
+  "2026-11-14T21:28:23.869Z","harness:claude-code","Codex review round 9 (head 44fa876c9) found one more replicated-stage edge (the fallback encoding ignored defaultOutputFormat). After nine rounds each found one more native output stage the harness copy missed, the design was changed so parity holds by construction: admitRegisteredReadOutputResult now runs native formatOutput on the printResult projection inside runWithIsolatedExtensionRuntime, with the activation's commands, services and registrations installed and the CLI's command context set, instead of re-implementing projection, overrides, services, encoding and payload. The replicated helpers are removed (net code reduction); every case from rounds 1-9 is covered in harness-parity.spec and passes through the native path."
+  "2026-11-14T21:36:09.538Z","harness:claude-code","Codex review round 10 (head 35a0623a7), three P2 findings, verified and fixed: (1) native delivery can set process.exitCode (an oversized output_format string under --output-budget 400 exits 2); the harness now saves and restores it around formatOutput so a passing package test cannot leak a failing exit code. (2) the isolated runtime left renderers null, so a JSON renderer that serializes BigInts worked natively but threw in the harness; the activation now attaches its renderer registry and the harness installs it with setActiveExtensionRenderers. (3, pm-gh1726 seam) a negated spelling of a repeatable boolean ({ 'no-many': [true, true] }) was refused although CLI --no-many --no-many gives [false, false]; list declarations now invert entry by entry, an empty optional array stays [], and a non-boolean entry is still refused."
+  "2026-11-14T22:05:20.906Z","harness:claude-code","CodeRabbit review on PR #1732 (head 35a0623a7): the renderer and exit-code findings were already fixed in 7fa0738ee. The Major finding is valid and fixed: native delivery marks an omitted-for-budget read with process.exitCode ||= 2 and renders the refusal instead of throwing, so the harness returned the original success. The harness now clears the exit code for the synchronous formatting call, observes the mark, restores the caller's value, and throws output_budget_exceeded (exit 2). The trivial finding (a budgeted harness case beside the unbudgeted one) is added to direct-caller-option-contract.integration.spec; harness-parity.spec checks the caller's exit code (undefined and 1) is preserved."
+files[4]{path,scope}:
+  src/sdk/read-output/extension.ts,project
+  src/sdk/testing.ts,project
+  tests/integration/extensions/direct-caller-option-contract.integration.spec.ts,project
+  tests/unit/sdk/extension/harness-parity.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,project,900,"harness:claude-code","2026-11-14T19:13:10.692Z",local_mutation,feat/direct-caller-option-contract-parity
+test_runs[1]:
+  - run_id: test-local-mwgsd8ks-zkdy4l
+    kind: test
+    status: passed
+    started_at: "2026-11-14T19:15:28.117Z"
+    finished_at: "2026-11-14T19:15:50.572Z"
+    recorded_at: "2026-11-14T19:15:50.572Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: The extension test harness applies the native read-output admission to the same effective result native output admits
+contract_change:
+  api: runRegisteredCommandForTest and createExtensionTestHarness().runCommand for commands that declare read_output
+  before: "The harness returned handled: true for a result missing its declared row collections, which the native CLI refuses with extension_read_output_invalid before formatting, and for output that cannot fit a requested outputBudget, which the native CLI omits with exit 2"
+  after: "The harness runs a handled read-output result through native formatOutput (receipt projection, command-result overrides, suppressed host output, output_format services, renderers and encoding resolution apply as natively) and throws extension_read_output_invalid for missing declared rows and output_budget_exceeded (exit 2) when the delivered output cannot fit the requested budget; process.exitCode is left untouched"
+  migrate: A command that renders a compact receipt keeps returning its declared rows (an empty collection is valid) and lets its output_format service render the receipt; package tests that pass an outputBudget their output cannot fit now expect output_budget_exceeded
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1729
+  gate_id: harness-read-output-admission
+  negative_control: "node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts (the receipt-only and malformed harness cases resolve handled: true before the fix while the native CLI refuses them)"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/extensions/direct-caller-option-contract.integration.spec.ts tests/unit/sdk/extension/command-options.spec.ts tests/unit/sdk/extension/harness-parity.spec.ts tests/unit/packages/calendar-shortcuts.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

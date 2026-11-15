@@ -611,6 +611,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/extensions/extension-hook-runtime.ts"],
   },
   {
+    code: "extension_option_disabled",
+    exit_code: 2,
+    sources: ["sdk/extension/command-options.ts"],
+  },
+  {
     code: "extension_option_spelling_conflict",
     exit_code: 2,
     sources: ["sdk/extension/command-options.ts"],

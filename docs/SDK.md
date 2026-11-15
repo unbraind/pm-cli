@@ -2389,7 +2389,16 @@ const certified = certifyCompleteListResult(candidate);
 
 `PmCompleteListValidationError.receipt` lists every failed invariant and carries
 the exact recovery command
-`pm list --all --full --strict-read --no-truncate --output-budget unbounded --json`.
+`pm list --all --output-include full --strict-read --no-truncate --output-budget unbounded --output-limit unbounded --json`
+with its SDK equivalent `await client.listAllComplete()`. `--no-truncate` is
+load-bearing here: it lifts `pm list`'s own page limit and is the flag that
+echoes `filters.no_truncate`, which certification requires. A refused request that
+asked for bodies gets a recovery that asks for them too (`--include-body` and
+`listAllComplete({ includeBody: true })`): pass the request's options as
+`certifyCompleteListResult(candidate, { includeBody: true })`, or let the
+certifier read the `filters.include_body` record the list envelope carries
+([pm-gh1728](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1728.toon),
+tracker record excluded from npm).
 The helper never infers completeness from a large limit: derived-index reads,
 terminal-state filtering, duplicate ids, cursor/session projection, compaction,
 and any omission receipt all prevent certification.
@@ -2897,7 +2906,24 @@ api.registerCommand({
 The handler must return a structured object. Each declared path must contain
 an array or object map; paths may be nested, unique and non-overlapping. Use
 `row_keys: []` for a singleton result. Activation snapshots the declaration,
-and the host validates the returned collections before projecting them. Avoid
+and the host validates the collections of the result it delivers before
+projecting them or rendering them. That result is the handler's own unless an
+`output_format` service returns a structured replacement: the replacement is
+then validated in its place, so a replacement that supplies the declared rows
+is admitted even when the handler's result lacks them, while a string rendering
+replaces nothing and the handler's result is validated. A command that
+delivers a compact receipt (for example `{ ok: true, output: "report.md" }`
+after writing a file) keeps returning its rows, or an empty collection, and
+lets its `output_format` service render the receipt; a receipt-only result is
+refused with `extension_read_output_invalid`. `runRegisteredCommandForTest`
+and `createExtensionTestHarness().runCommand()` run a handled read-output
+result through native `formatOutput` itself, inside an isolated runtime that
+holds the activation's commands, services and registrations: the
+mutation-receipt projection, command-result overrides, suppressed host
+output, `output_format` services and encoding resolution apply as they do
+natively, so a package test fails exactly where the native CLI would
+([pm-gh1729](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1729.toon),
+tracker record excluded from npm). Avoid
 reserved metadata and prototype property names. The declaration promises a
 read-only handler; writers and undeclared commands keep refusing read controls,
 and native commands/actions retain their existing contracts. A declaration
@@ -3186,7 +3212,7 @@ definition-driven normalizer
 ([pm-gh1665](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1665.toon),
 tracker record excluded from npm). A direct caller should pass the handler key.
 The flag's own spellings (`status-filter`, `--status-filter`, or its short
-letter) fold into the same key, and undeclared keys pass through unchanged. Two
+letter) fold into the same key. Two
 spellings of one flag with different values are refused with
 `extension_option_spelling_conflict` (exit 2) instead of silently picking one.
 CLI argv gets the same refusal: `pm demo-brief --status-filter open -s closed`
@@ -3201,6 +3227,46 @@ const client = new PmClient({ pmRoot });
 await client.run("demo-brief", { options: { statusFilter: "closed" } }); // handler key
 await client.run("demo-brief", { options: { "status-filter": "closed" } }); // same result
 ```
+
+Direct callers get the refusals CLI argv gets, with the same codes and exit 2,
+before the handler runs
+([pm-gh1726](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1726.toon),
+[pm-gh1727](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1727.toon),
+tracker records excluded from npm). Match on the code, never the message:
+
+| Condition | Code | Structured fields |
+| --- | --- | --- |
+| A required flag is missing (an empty array counts as missing for a `list` flag) | `missing_required_option` | `flag`, `field` (the handler key), `recovery.missing` |
+| A key is neither a declared spelling nor host-owned | `unknown_option` | `flag` (dashed form of the key) |
+| A disabled flag is supplied | `extension_option_disabled` | `flag` |
+| An array is passed to a flag that is not `list`/`repeatable`, or a strict value is malformed | `extension_flag_value_invalid` | `flag` |
+
+Host-owned keys pass through untouched: every reserved host flag in camel case,
+snake_case or dashed form (`json`, `outputBudget`, `output_budget`, `pmPath`,
+`--json`), the positive key of each `--no-*` switch, and the action-transport
+keys `force`, `subcommand`, `inputResponses` and `requestState`. The
+unknown-key refusal applies to extension-created commands only: on a command
+path core itself registers that an extension extends or overrides (`list`;
+package-owned compatibility paths such as `calendar` or `guide` stay strict),
+the native contract
+(its aliases, negated flags and settings-dependent runtime fields) owns every
+key the extension does not declare, so those keys keep passing through. A
+command that declares no flags still receives every key (pm-4of199, below).
+A `repeatable` declaration counts as `list` for these checks, as the loader
+expands it, also when `normalizeDirectExtensionCommandOptions` is called
+directly. An
+extension action also keeps the caller's values as given: the native
+`tags`-to-CSV and `dep`-to-array rewrites of core commands do not apply to it.
+On the CLI, each bare occurrence of a repeatable boolean switch reaches the
+handler as `true` (`--many --many` is `[true, true]`). A direct caller's negated
+spelling of a declared boolean (`no-many`, `--no-many`) inverts token by token
+and is then judged exactly as the canonical spelling: on a `list` boolean,
+`{ "no-many": "true,false" }` is `{ many: [false, true] }`, a blank segment is
+refused under `value_validation: "strict"` and dropped otherwise, and
+`{ many: false, "no-many": true }` is one value, not a spelling conflict. A
+`repeatable` boolean keeps each occurrence atomic, so `"true,false"` is one
+malformed token under either spelling. A value that is not a boolean token
+(`"bogus"`) cannot be inverted and is refused with `extension_flag_value_invalid`.
 
 `pm contracts --command <command> --flags-only --json` publishes the key as
 `sdk_option` on every extension-declared row, and marks the row `owner:
