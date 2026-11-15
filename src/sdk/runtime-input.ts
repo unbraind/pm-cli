@@ -389,6 +389,8 @@ function declaredContractActionOptionKeys(action: string): readonly string[] {
 
 /** Annotation, linked-artifact and linked-test actions whose handlers read only camelCase option keys. */
 const CAMEL_CASE_NORMALIZED_ACTIONS: ReadonlySet<string> = new Set([
+  "claim",
+  "start-task",
   "comments",
   "notes",
   "learnings",

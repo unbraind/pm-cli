@@ -109,7 +109,8 @@ async function readOwnershipEvidence(
   const history = await Promise.resolve()
     .then(() => readHistoryEntries(getHistoryPath(pmRoot, itemId), itemId))
     .then((entries) => {
-      if (entries.every(isWellFormedHistoryRecord)) return entries;
+      // Every record must also carry a parseable timestamp: a skipped one could be the recent work.
+      if (entries.every((entry) => isWellFormedHistoryRecord(entry) && Number.isFinite(Date.parse(entry.ts)))) return entries;
       readable = false;
       return [];
     })

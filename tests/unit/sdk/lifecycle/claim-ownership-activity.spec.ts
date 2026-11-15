@@ -134,6 +134,8 @@ describe("claim activity evidence (GH-1336)", () => {
         '{"ts":"2026-07-24T11:00:00.000Z","patch":[]}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"update","patch":[null]}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"update","patch":[{"op":"replace"}]}',
+        // Well-formed but unparseable: skipping it could hide the recent work, so the stream is unreadable.
+        '{"ts":"not-a-date","op":"restore","patch":[]}',
       ].entries()) {
         const id = `pm-malformed-${index}`;
         await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${entries[0]}\n${line}\n`);

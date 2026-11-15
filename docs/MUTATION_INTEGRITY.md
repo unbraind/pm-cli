@@ -43,9 +43,13 @@ One activity clock serves every stale-work consumer: the newer of an item's
 advance both; `pm restore` writes the historical document, with its older
 `updated_at`, and appends a new entry, so the stream counts too. Maintenance
 entries (`history-compact`, `history-repair`, `history-redact`) preserve the
-record without working on the item and do not count; a compaction baseline
-does, because it stands for the pruned prefix and carries the time of its
-last entry. A takeover refuses when
+record without working on the item and do not count. A compaction baseline
+stands for its pruned prefix and records that prefix's newest substantive
+time as `context.history_compaction.last_activity_at`, so repeated
+compaction never renews an abandoned claim; a baseline written before that
+field existed counts with its own timestamp, a conservative upper bound. A
+stream any of whose records lacks a parseable timestamp is unreadable for a
+takeover. A takeover refuses when
 the stream exists but cannot be read (`claim_activity.history_unreadable`),
 because recent work may hide behind it. A threshold too large for the Date range reports
 `eligible_at: null` rather than failing. `pm health` reports three advisories

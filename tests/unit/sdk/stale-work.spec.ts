@@ -272,14 +272,21 @@ describe("stale in-progress SDK governance", () => {
         { ts: "2026-07-06T00:00:00.000Z", op: "update", patch: [{}] },
       ]),
     ).toBe("2026-07-02T00:00:00.000Z");
-    // A compaction baseline stands for the pruned prefix and carries its last entry's time; the audit entry does not count.
-    expect(
-      latestHistoryTimestamp([
-        { ts: "2026-07-01T00:00:00.000Z", op: "create", patch: [] },
-        { ts: "2026-07-06T00:00:00.000Z", op: "history_compact_baseline", patch: [] },
-        { ts: "2026-07-09T00:00:00.000Z", op: "history_compact", patch: [] },
-      ]),
-    ).toBe("2026-07-06T00:00:00.000Z");
+    // A compaction baseline contributes its recorded prefix activity; the audit entry never counts.
+    const baseline = (receipt: Record<string, unknown> | undefined) => ({
+      ts: "2026-07-06T00:00:00.000Z",
+      op: "history_compact_baseline",
+      patch: [],
+      ...(receipt === undefined ? {} : { context: { history_compaction: receipt } }),
+    });
+    const audit = { ts: "2026-07-09T00:00:00.000Z", op: "history_compact", patch: [] };
+    const create = { ts: "2026-07-01T00:00:00.000Z", op: "create", patch: [] };
+    expect(latestHistoryTimestamp([create, baseline({ last_activity_at: "2026-07-03T00:00:00.000Z" }), audit])).toBe("2026-07-03T00:00:00.000Z");
+    // A prefix with no work records null: the baseline contributes nothing.
+    expect(latestHistoryTimestamp([create, baseline({ last_activity_at: null }), audit])).toBe("2026-07-01T00:00:00.000Z");
+    // A baseline written before the field existed is bounded by its own timestamp (the last pruned entry).
+    expect(latestHistoryTimestamp([create, baseline({ contract_version: 1 }), audit])).toBe("2026-07-06T00:00:00.000Z");
+    expect(latestHistoryTimestamp([create, baseline(undefined), audit])).toBe("2026-07-06T00:00:00.000Z");
     expect(latestHistoryTimestamp([{ ts: "bad", op: "update" }])).toBeUndefined();
   });
 

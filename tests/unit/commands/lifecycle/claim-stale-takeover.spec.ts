@@ -307,6 +307,22 @@ describe("stale-claim takeover (GH-1336)", () => {
     });
   });
 
+  it("lets a nested snake_case takeover_stale override the flat argument on the MCP transport", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Nested precedence");
+      const global = { path: context.pmPath };
+      setClock(at(0));
+      await runClaim(id, false, global, { author: "agent-a" });
+      setClock(at(80));
+      const common = { path: context.pmPath, noExtensions: true, author: "agent-b", id };
+      const error = await refusal(runAction({ ...common, action: "claim", takeoverStale: true, options: { takeover_stale: false } }));
+      expect(error.context).toMatchObject({ code: "already_claimed_by", claim_activity: { stale_policy: { stale: true } } });
+      expect(await runAction({ ...common, action: "claim", takeoverStale: false, options: { takeover_stale: true } })).toMatchObject({
+        takeover: { idle_hours: 80 },
+      });
+    });
+  });
+
   it("reports held rows in pm next with claim time, idle hours and stale eligibility", async () => {
     await withTempPmPath(async (context) => {
       const recent = createTask(context, "Recent hold");

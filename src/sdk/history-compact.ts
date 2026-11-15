@@ -45,6 +45,7 @@ import { runActiveOnReadHooks } from "../core/extensions/index.js";
 import { readLocatedItem } from "../core/store/item-store.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry } from "../types/index.js";
+import { latestHistoryTimestamp } from "./governance/stale-work.js";
 import {
   resolveHistoryWorkspace,
   resolveHistorySubject,
@@ -327,6 +328,10 @@ function buildHistoryCompactEntries(params: {
             ? null
             : offset + params.boundary.compactCount - 1,
         checkpoint_timestamp_semantics: "last_compacted_entry",
+        // The newest substantive entry among the pruned records (null when none), so a stale-work
+        // clock reading this baseline never counts maintenance, even across repeated compactions.
+        last_activity_at:
+          latestHistoryTimestamp(params.historyEntries.slice(0, params.boundary.compactCount)) ?? null,
         pruned_entry_count: params.boundary.compactCount,
         pruned_stream_digest: hashHistoryStream(
           params.historyEntries.slice(0, params.boundary.compactCount),

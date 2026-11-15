@@ -11,8 +11,12 @@
  * new `restore` entry. Only substantive entries count: maintenance such as
  * `history_compact` or `history_repair` preserves the record without working
  * on the item, so it must not reset an abandoned claim's idle time. A
- * compaction baseline does count: it stands for the pruned prefix and carries
- * the time of the last pruned entry, which bounds the work it replaced.
+ * compaction baseline stands for its pruned prefix: it contributes the
+ * prefix's newest substantive time, which compaction records as
+ * `context.history_compaction.last_activity_at` (null when the prefix held no
+ * work). A baseline written before that field existed contributes its own
+ * timestamp, the time of the last pruned entry: an upper bound, so a legacy
+ * baseline can only make a claim look more recent, never take over active work.
  */
 import path from "node:path";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
@@ -264,29 +268,39 @@ export function isWellFormedHistoryRecord(entry: unknown): entry is WellFormedHi
   );
 }
 
-/** Whether a well-formed record is evidence of work on the item, not storage or governance maintenance. */
-function isActivityEntry(entry: unknown): entry is WellFormedHistoryRecord {
-  return (
-    isWellFormedHistoryRecord(entry) &&
-    (entry.op === "history_compact_baseline" ||
-      classifyHistoryEvent(entry as unknown as Parameters<typeof classifyHistoryEvent>[0]) === "substantive")
-  );
+/**
+ * The activity time one decoded history value contributes: a substantive
+ * record's own timestamp, a compaction baseline's recorded prefix activity
+ * (or its timestamp when it predates that field), and nothing for maintenance
+ * or for values that are not well-formed records.
+ */
+function activityTimestampOf(entry: unknown): string | undefined {
+  if (!isWellFormedHistoryRecord(entry)) return undefined;
+  if (entry.op === "history_compact_baseline") {
+    const receipt = (entry as { context?: { history_compaction?: { last_activity_at?: unknown } } }).context?.history_compaction;
+    if (receipt === undefined || !("last_activity_at" in receipt)) return entry.ts;
+    return typeof receipt.last_activity_at === "string" ? receipt.last_activity_at : undefined;
+  }
+  return classifyHistoryEvent(entry as unknown as Parameters<typeof classifyHistoryEvent>[0]) === "substantive"
+    ? entry.ts
+    : undefined;
 }
 
 /**
- * Newest valid timestamp among substantive history entries (and compaction
- * baselines), or undefined when none parses. Decoded values that are not
- * well-formed records (a `null` line, a record without `op`) are skipped.
+ * Newest valid activity time among history entries: substantive records and
+ * the recorded prefix activity of compaction baselines. Undefined when none
+ * parses. Decoded values that are not well-formed records (a `null` line, a
+ * record without `op`) are skipped.
  */
 export function latestHistoryTimestamp(
   history: ReadonlyArray<unknown>,
 ): string | undefined {
   let latest: { value: string; time: number } | undefined;
   for (const entry of history) {
-    if (!isActivityEntry(entry)) continue;
-    const time = Date.parse(entry.ts);
-    if (Number.isFinite(time) && (latest === undefined || time > latest.time)) {
-      latest = { value: entry.ts, time };
+    const value = activityTimestampOf(entry);
+    const time = Date.parse(value ?? "");
+    if (value !== undefined && Number.isFinite(time) && (latest === undefined || time > latest.time)) {
+      latest = { value, time };
     }
   }
   return latest?.value;
