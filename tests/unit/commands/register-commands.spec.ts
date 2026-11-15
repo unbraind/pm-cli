@@ -2041,7 +2041,12 @@ describe("operation command actions", () => {
       takeoverStale: true,
     });
     for (const args of [["start-task", "pm-1", "--takeover-stale"], ["claim", "pm-1", "--start", "--takeover-stale"]]) {
+      // Each composition must make its own calls; stale calls from the previous one never satisfy it.
+      vi.mocked(runClaim).mockClear();
+      vi.mocked(runUpdate).mockClear();
       await runCli(...args);
+      expect(vi.mocked(runClaim)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(runUpdate)).toHaveBeenCalledTimes(1);
       expect(lastCallArg<Record<string, unknown>>(vi.mocked(runClaim) as never, 3).takeoverStale).toBe(true);
       expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1)).not.toHaveProperty("takeoverStale");
     }
