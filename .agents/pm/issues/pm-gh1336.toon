@@ -2,21 +2,22 @@ id: pm-gh1336
 title: "GH-1336: a claim held by an ended agent blocks everyone until --force; refusals and pm next omit its age and last activity, and no policy permits a stale takeover"
 description: "GH-1336 (filed 2026-09-28) reports claims left behind by ended agents across nine repositories. Today a held item refuses pm claim with already_claimed_by, which carries claimed_by, claimed_at and claim_source but neither the last recorded activity nor how long the item has been idle. pm next lists foreign work under held_by_others as bare {id, assignee} rows. The only way past an abandoned claim is --force, which takes over an active claim just as readily, so agents either wait forever or override work in progress. This tranche of pm-szv11n delivers the standalone claim criteria from that story: holder, claim age and last activity in the refusal and the next-item occupancy view, an explicit stale-claim policy that permits a conditional takeover without --force, and auditable takeover history. The inactivity clock is the item's last recorded mutation (max of updated_at and the newest history entry), and the threshold is the existing mutation_guard.stale_in_progress_hours setting that pm health already uses for stale in-progress work, so the item health calls stale is the item a takeover may claim. The cross-branch claim race (GH-1406) and the merge-composition scenarios stay on pm-szv11n. Duplicate check: searched claim takeover stale dead agent, read pm-szv11n, pm-8t5x, pm-05u4, pm-w9w4, pm-d4bo, pm-gh1706 and pm-1wujzi (bulk occupancy derived state, not per-item diagnostics); none owns the standalone stale-takeover tranche."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[6]: agent-ux,claims,"gh:1336",multi-agent,ownership,stale-work
 created_at: "2026-11-15T07:09:59.771Z"
-updated_at: "2026-11-15T07:51:04.821Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#489731d8ab76ae02b28618d0"
+updated_at: "2026-11-15T08:35:02.111Z"
+closed_at: "2026-11-15T08:35:01.496Z"
+completed_at: "2026-11-15T08:35:01.496Z"
 author: "harness:claude-code"
 estimated_minutes: 300
 acceptance_criteria: "The already_claimed_by refusal reports the holder, claimed_at, claim_age_hours, last_activity_at, idle_hours and the stale-claim policy (threshold_hours, the setting key, whether the claim is stale and when it becomes eligible), computed under the item lock; pm next held_by_others rows report claimed_at, last_activity_at, idle_hours and stale while reading at most one history stream per returned row; pm claim <id> --takeover-stale takes over a non-terminal claim only when its idle time meets mutation_guard.stale_in_progress_hours, refuses an active or too-recent claim with stale_claim_takeover_refused and no mutation, behaves as a plain claim for an unclaimed or self-held item, and is refused in combination with --force or --next; A permitted takeover records previous_holder, new_holder, last_activity_at, idle_hours, threshold_hours and the policy key in the claim history entry's structured context, and the claim result carries the same takeover receipt; Isolated CLI, SDK and MCP scenarios cover active, stale, released, unclaimed and renewed claims, including a claim renewed after a refusal being refused again on retry"
 parent: pm-szv11n
 risk: medium
 confidence: high
-expected_result: "An agent meeting another agent's claim sees how long that claim has been idle, and can take over an abandoned claim under an explicit policy that refuses active ones, with the takeover recorded in history."
-actual_result: "The refusal and pm next omit last activity and idle time, and --force is the only takeover path, which overrides active claims as readily as abandoned ones."
+resolution: "already_claimed_by carries claim_activity (last activity, claim age, idle hours, stale policy); held_by_others rows add claimed_at, idle_hours and stale; pm claim --takeover-stale (claim --start, start-task, MCP and SDK takeoverStale) takes over only a claim idle for mutation_guard.stale_in_progress_hours under the item lock, refuses active ones with stale_claim_takeover_refused without writing, and seals the takeover receipt into the claim history context"
+expected_result: "An agent meeting another agent's claim sees how long it has been idle and can take over an abandoned claim under an explicit policy that refuses active ones, with the takeover recorded in history"
+actual_result: "Isolated scenarios for active, stale, renewed, unclaimed, self-held, if-available, start and combination cases pass on CLI, SDK and MCP paths; the claim history entry records previous_holder, new_holder, idle_hours, threshold_hours and the policy"
 dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-05u4,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
   pm-1wujzi,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
@@ -24,6 +25,8 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-d4bo,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
   pm-gh1706,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
   pm-w9w4,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-15T08:35:00.796Z","harness:claude-code","Verification evidence (2026-11-15, branch feat/stale-work-visibility-and-takeover). The isolated scenarios in `tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts` pin only the wall clock, so the real lock, history and CLI paths run:\n\n- An active claim (5h idle) refuses with `stale_claim_takeover_refused`. The refusal carries `claim_activity` and a specific `required` text, names the claim's `eligible_at`, and leaves the history stream byte-identical.\n- An idle claim (96h) is taken over. `takeover` and `context.stale_claim_takeover` match field by field, and the warning reads `claim_stale_takeover:agent-a->agent-b:idle_hours=96`.\n- A holder that renews at T+100h makes a takeover at T+101h refuse (`idle_hours` 1, `claim_age_hours` 101).\n- With `--if-available`, an active claim is skipped and a stale one is taken over.\n- Unclaimed and self-held items behave as plain claims (no `takeover` key).\n- A plain `already_claimed_by` names `--takeover-stale` in its next steps only once the claim is stale.\n- `--force` and `--next` combinations refuse before any write.\n- `pm claim --start` and `start-task` take over and start. `takeoverStale` does not leak into the status update (register-commands spec).\n- `pm next` `held_by_others` rows carry `claimed_at`, `idle_hours` and `stale`.\n- No valid activity time means fail-closed: never stale, and the next steps point at history.\n\nParity: CLI, MCP (strict schema 4.28.0, with `takeoverStale` on claim and start-task plus mutual-exclusion groups) and the SDK (`runClaim` and `runStartTask`). Completions cover bash, zsh and fish. The flag lexicon budget is claim 40 and start-task 24, and the help baselines were raised by hand without an inventory rewrite.\n\nNarrowed row: `last_activity_at` was removed from `NextHeldRow` because the execute intent's bounded read lost two `decision_needed` rows to the wider held rows. The exact timestamp stays in the refusal. The calibration re-approval moves next from 9 to 8 rows, keeps all 5 ready rows, and makes the session spend fewer tokens.\n\n`pm test pm-gh1336 --run` passed (run test-local-mwhkv9vw-6tp7ji).\n"
 notes[1]{created_at,author,text}:
   "2026-11-15T07:37:48.377Z","harness:claude-code","Implementation decisions (2026-11-15):\n\n- **Clock.** One activity clock: the newest of `updated_at` and the newest history entry. Every recorded mutation advances `updated_at`; I verified create, comment_add, note_add, files_add and claim on a sandbox. History covers trackers whose metadata and stream diverged. A claim with no valid activity time is never stale (fail-closed).\n- **Threshold.** The existing `mutation_guard.stale_in_progress_hours` (default 72), reused rather than adding a second knob. The item health calls stale is the item `--takeover-stale` may take.\n- **Race safety.** The decision runs inside the claim's `mutate` callback under the item lock. A holder's renewal is a mutation that has to wait for that lock, so it either lands before the decision (and is seen) or after the takeover.\n- **Evidence.** `mutateItemWithHistoryContextResolver` seals `context.stale_claim_takeover` into the same claim entry. The result carries the same receipt as `takeover`.\n- **Combinations.** `--takeover-stale` with `--force` and with `--next` are both refused (`ambiguous_option_combination`) before any read. `--if-available` turns an active-claim refusal into a skip.\n- **Ownership-source split.** `resolveItemOwnershipActivity` always returns activity, so the claim path carries no unreachable optional branches. `resolveItemOwnershipConflict` keeps its signature.\n- **pm next.** It reads one stream per returned `held_by_others` row (bounded by `--limit`), never per held item in the corpus. Bulk occupancy stays with pm-1wujzi."
 learnings[1]{created_at,author,text}:
@@ -57,9 +60,35 @@ files[26]{path,scope}:
   tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts,project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,600,"harness:claude-code","2026-11-15T07:51:04.783Z",local_mutation,feat/stale-work-visibility-and-takeover
+test_runs[1]:
+  - run_id: test-local-mwhkv9vw-6tp7ji
+    kind: test
+    status: passed
+    started_at: "2026-11-15T08:33:28.695Z"
+    finished_at: "2026-11-15T08:33:41.324Z"
+    recorded_at: "2026-11-15T08:33:41.324Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
 docs[4]{path,scope}:
   docs/AGENT_GUIDE.md,project
   docs/COMMANDS.md,project
   docs/LIFECYCLE_COMMANDS.md,project
   docs/SDK.md,project
+close_reason: "Claim refusals and pm next report claim age and idleness, and an idle claim can be taken over under the stale-work policy with audited history"
+contract_change:
+  api: "pm claim --takeover-stale (claim --start, start-task, MCP and SDK takeoverStale); already_claimed_by refusal context; NextResult.held_by_others (NextHeldRow); ClaimResult.takeover; strict tool-parameters schema 4.28.0"
+  before: "already_claimed_by carried claimed_by, claimed_at and claim_source only; held_by_others rows were {id, assignee}; --force was the only way past another holder, active or abandoned"
+  after: "already_claimed_by and the new stale_claim_takeover_refused carry claim_activity {last_activity_at, claim_age_hours, idle_hours, stale_policy}; held_by_others rows add claimed_at, idle_hours and stale; --takeover-stale takes over only a claim idle for mutation_guard.stale_in_progress_hours (default 72), refuses an active one without writing, and records context.stale_claim_takeover in the claim history entry"
+  migrate: "Code that constructs NextResult or held_by_others rows supplies claimed_at, idle_hours and stale; consumers pinning the tool-parameters schema version accept 4.28.0; take over abandoned claims with --takeover-stale instead of --force"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1336
+  gate_id: stale-claim-takeover
+  negative_control: "node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts (before the fix --takeover-stale is an unknown option, the refusal has no claim_activity, held_by_others rows have no idle evidence and an active claim can only be refused or forced)"
+  local_checks[1]: node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""
