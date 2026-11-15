@@ -283,6 +283,24 @@ function buildHistoryCompactBaselineMessage(
   return `history-compact baseline snapshot before ${boundary.raw}.`;
 }
 
+/**
+ * Refuse before any write when a record the compaction would prune has an
+ * unparseable timestamp, for every boundary kind (the timestamp boundary
+ * already refuses while it scans). Pruning it would launder the damage: the
+ * new baseline records only the remaining valid activity, so a stale-claim
+ * takeover that fails closed on the damaged record would accept the compacted
+ * stream (GH-1336).
+ */
+function assertPrunedTimestampsParse(entries: readonly HistoryEntry[], compactCount: number): void {
+  const index = entries.slice(0, compactCount).findIndex((entry) => !Number.isFinite(Date.parse(entry.ts)));
+  if (index !== -1) {
+    throw new PmCliError(
+      `History for this item contains invalid timestamp at entry ${index + 1}.`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+}
+
 /** Replace the pruned prefix with a durable-addressed checkpoint while retaining original records and hash semantics. */
 function buildHistoryCompactEntries(params: {
   historyEntries: HistoryEntry[];
@@ -423,6 +441,7 @@ function buildHistoryCompactPlan(
   }
 
   const boundary = parseBeforeBoundary(options.before, historyEntries);
+  assertPrunedTimestampsParse(historyEntries, boundary.compactCount);
   const changed = boundary.compactCount > 0;
   const dryRun = Boolean(options.dryRun);
   const author = snapshot.author;

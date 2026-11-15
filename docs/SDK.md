@@ -1272,8 +1272,13 @@ tools do not need to reproduce CLI concurrency policy.
 
 Stale work uses one activity clock and one threshold
 (`mutation_guard.stale_in_progress_hours`, exported as
-`STALE_WORK_THRESHOLD_SETTING`) everywhere, so a fleet tool sees the same verdict
-as `pm health` and `pm claim --takeover-stale`. Each `held_by_others` row is a
+`STALE_WORK_THRESHOLD_SETTING`) everywhere. Advisory results (`pm health`,
+`pm context`, `inspectInProgressWork`/`scanInProgressWork`, `held_by_others`)
+can still call an item idle when the takeover would refuse it: advisory reads
+degrade an unreadable history stream to metadata activity, while the ownership
+evaluation fails closed (`claim_activity.history_unreadable`, never stale).
+Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
+the locked `pm claim --takeover-stale` decision, never from an advisory row. Each `held_by_others` row is a
 `NextHeldRow` with `claimed_at`, `idle_hours` and `stale`.
 `runClaim(id, false, global, { takeoverStale: true })` takes over only an idle
 claim and returns a `StaleClaimTakeoverReceipt` as `takeover`; an active claim

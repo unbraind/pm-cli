@@ -300,6 +300,24 @@ describe("history-compact command", () => {
     });
   });
 
+  it("refuses to prune an unparseable timestamp under every boundary, so compaction cannot launder damaged activity (GH-1336)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Compact Damaged Prefix");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      const historyFile = getHistoryPath(context, id);
+      await rewriteEntryTimestamps(historyFile, ["invalid-timestamp-token"]);
+      const before = await readFile(historyFile, "utf8");
+      // Default (full) compaction would prune the damaged first entry.
+      await expect(
+        runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: "History for this item contains invalid timestamp at entry 1.",
+      });
+      expect(await readFile(historyFile, "utf8")).toBe(before);
+    });
+  });
+
   it("uses the first timestamp boundary hit as the contiguous compact prefix", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "Compact Timestamp Prefix");

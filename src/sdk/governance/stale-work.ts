@@ -4,8 +4,10 @@
  * Detects unattended in-progress work from tracker metadata and append-only
  * history without changing item ownership or lifecycle state. One activity
  * clock and one threshold serve every consumer (health, context, claim
- * refusals, stale-claim takeover and next-item occupancy), so the item health
- * calls stale is the item a takeover may claim. The clock includes history
+ * refusals, stale-claim takeover and next-item occupancy). Advisory reads
+ * degrade unreadable history to metadata activity while the takeover fails
+ * closed, so an advisory "idle" is a candidate, never takeover eligibility.
+ * The clock includes history
  * because some recorded work leaves `updated_at` behind: `pm restore` writes
  * the historical document, with its historical `updated_at`, then appends a
  * new `restore` entry. Only substantive entries count: maintenance such as
