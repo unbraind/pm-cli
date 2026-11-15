@@ -6,10 +6,10 @@ status: open
 priority: 2
 tags[5]: auto-release,ci,github-actions,release,reliability
 created_at: "2026-11-15T07:10:28.209Z"
-updated_at: "2026-11-15T08:25:29.980Z"
+updated_at: "2026-11-15T09:46:10.458Z"
 author: "harness:claude-code"
 estimated_minutes: 240
-acceptance_criteria: "A push rejected as behind after the sealed producer binding records its own failure cause (default branch advanced after sealing, naming the sealed and current main SHAs) in the release failure record and the blocker issue, distinct from other producer-binding-or-push failures; On that cause the pipeline prepares a fresh candidate from the advanced main without human action, at most once per UTC day, through every pre-push gate and the same-day guard, and a second advance during the re-preparation fails closed into the existing blocker issue; docs/RELEASING.md documents the release window, the automatic re-preparation and its bound; Specs cover the cause classification, the single re-preparation, the same-day guard and the fail-closed second advance"
+acceptance_criteria: "A push rejected as behind after the sealed producer binding records its own failure cause (the default branch advanced after the candidate's GITHUB_SHA was captured, including before sealing, naming the sealed and current main SHAs) in the release failure record and the blocker issue, distinct from other producer-binding-or-push failures; On that cause the pipeline prepares a fresh candidate from the advanced main without human action, at most once per UTC day, through every pre-push gate and the same-day guard, and a second advance during the re-preparation fails closed into the existing blocker issue; docs/RELEASING.md documents the release window, the automatic re-preparation and its bound; Specs cover the cause classification, the single re-preparation, the same-day guard and the fail-closed second advance"
 parent: pm-u9d0
 risk: medium
 confidence: high
@@ -20,4 +20,6 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-5oti,related,"2026-11-15T07:10:28.209Z","harness:claude-code","cli:create:dep",detected
   pm-prrlce,related,"2026-11-15T07:10:28.209Z","harness:claude-code","cli:create:dep",detected
   pm-7zs0,related,"2026-11-15T08:25:29.707Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-15T09:46:10.458Z","harness:claude-code","Acceptance wording corrected after CodeRabbit review on PR #1734. In the 2026-11-15 incident main advanced at 04:03Z, before the binding was sealed at 04:40Z; only the push rejection (05:22Z) came after sealing. The recorded cause therefore names the real window: the default branch advanced after the candidate's GITHUB_SHA was captured, sealing included or not."
 body: ""

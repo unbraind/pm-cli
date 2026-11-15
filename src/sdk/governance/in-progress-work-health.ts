@@ -45,8 +45,12 @@ export interface InProgressWorkHealthDetails {
   unowned: InProgressWorkHealthGroup;
   /** In-progress items idle past the threshold. */
   idle: InProgressWorkHealthGroup;
-  /** Per-item recoveries: take the work, or return it to the open queue. */
-  item_remedies: { claim: string; return_to_open: string };
+  /**
+   * Per-item recoveries: claim unowned work, take over another holder's idle
+   * claim (re-judged under the item lock with the full clock), or return the
+   * work to the open queue.
+   */
+  item_remedies: { claim: string; take_over_idle: string; return_to_open: string };
 }
 
 /** Health warnings, details and remediation overrides derived from one scan. */
@@ -109,6 +113,7 @@ export function buildInProgressWorkHealthSummary(
             idle: boundGroup(scan.idle, commands.idle),
             item_remedies: {
               claim: "pm claim <id>",
+              take_over_idle: "pm claim <id> --takeover-stale",
               return_to_open: `pm update <id> --status ${quoteCommandArg(statuses.open)}`,
             },
           },

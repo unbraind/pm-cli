@@ -119,6 +119,20 @@ describe("claim activity evidence (GH-1336)", () => {
         since: null,
         activity: { last_activity_at: "2026-07-24T11:00:00.000Z", idle_hours: 1, stale_policy: { stale: false } },
       });
+      // A trailing maintenance entry (history-compact) is not work: idle time is unchanged.
+      const compactEntry = JSON.stringify({ ts: "2026-07-24T11:00:00.000Z", author: "maintainer", op: "history_compact", patch: [], before_hash: "x", after_hash: "y" });
+      await writeFile(path.join(pmRoot, "history", "pm-compacted.jsonl"), `${entries.join("\n")}\n${compactEntry}\n`);
+      await expect(
+        resolveItemOwnershipActivity(pmRoot, "pm-compacted", "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
+      ).resolves.toMatchObject({ activity: { last_activity_at: "2026-07-02T00:00:00.000Z", stale_policy: { stale: true } } });
+      // Lines that decode but are no history record make the stream unreadable, so the claim is never judged stale.
+      for (const [index, line] of ["null", '"text"', '{"patch":[]}', '{"ts":"2026-07-02T00:00:00.000Z"}'].entries()) {
+        const id = `pm-malformed-${index}`;
+        await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${entries[0]}\n${line}\n`);
+        await expect(
+          resolveItemOwnershipActivity(pmRoot, id, "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
+        ).resolves.toMatchObject({ source: "unknown", activity: { history_unreadable: true, stale_policy: { stale: false } } });
+      }
       // A missing stream is empty, not unreadable.
       expect(
         (await resolveItemOwnershipActivity(pmRoot, "pm-missing", "agent-z", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW })).activity,

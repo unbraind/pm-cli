@@ -53,7 +53,11 @@ describe("in-progress work health projection (GH-1724)", () => {
     });
     expect(
       buildInProgressWorkHealthSummary(scan, { in_progress: "doing(done)", open: "to do" }).details?.item_remedies,
-    ).toEqual({ claim: "pm claim <id>", return_to_open: 'pm update <id> --status "to do"' });
+    ).toEqual({
+      claim: "pm claim <id>",
+      take_over_idle: "pm claim <id> --takeover-stale",
+      return_to_open: 'pm update <id> --status "to do"',
+    });
   });
 
   it("emits nothing but registry overrides when no in-progress item is unattended", () => {
@@ -98,7 +102,11 @@ describe("in-progress work health projection (GH-1724)", () => {
         items: [{ id: "pm-idle", assignee: "agent", age_hours: 564 }],
         sweep: "pm list --status doing --updated-before -48h",
       },
-      item_remedies: { claim: "pm claim <id>", return_to_open: "pm update <id> --status todo" },
+      item_remedies: {
+        claim: "pm claim <id>",
+        take_over_idle: "pm claim <id> --takeover-stale",
+        return_to_open: "pm update <id> --status todo",
+      },
     });
     expect(summary.details?.unowned.items).toHaveLength(IN_PROGRESS_WORK_DETAIL_LIMIT);
     expect(summary.details?.idle).not.toHaveProperty("truncated");

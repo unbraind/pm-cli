@@ -379,5 +379,21 @@ describe("stale-claim takeover (GH-1336)", () => {
     );
     expect(takeover.context.nextSteps?.[0]).toBe("No eligibility time can be computed for pm-x; inspect pm history pm-x.");
     expect(_testOnlyClaimCommand.staleTakeoverReceipt(ownership, "agent-b")).toBeUndefined();
+    // A threshold settings accept but the Date range cannot represent: idle hours known, no eligibility.
+    const unbounded = _testOnlyClaimCommand.claimConflictRefusal(
+      "pm-x",
+      {
+        ...ownership,
+        activity: {
+          ...ownership.activity,
+          last_activity_at: "2026-07-01T00:00:00.000Z",
+          idle_hours: 564,
+          stale_policy: { ...ownership.activity.stale_policy, threshold_hours: 3_000_000_000 },
+        },
+      },
+      true,
+    );
+    expect(unbounded.message).toContain("(idle 564h of 3000000000h)");
+    expect(unbounded.context.nextSteps?.[0]).toBe("No eligibility time can be computed for pm-x; inspect pm history pm-x.");
   });
 });

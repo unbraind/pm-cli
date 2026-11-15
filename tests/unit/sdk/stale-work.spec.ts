@@ -253,8 +253,22 @@ describe("stale in-progress SDK governance", () => {
     expect(staleEligibleAt("2026-07-24T00:00:00.000Z", 72)).toBe("2026-07-27T00:00:00.000Z");
     // A threshold settings accept but the Date range cannot represent yields null, never a RangeError.
     expect(staleEligibleAt("2026-07-24T00:00:00.000Z", 3_000_000_000)).toBeNull();
-    expect(latestHistoryTimestamp([{ ts: "2026-07-02T00:00:00.000Z" }, { ts: "bad" }, { ts: "2026-07-01T00:00:00.000Z" }])).toBe("2026-07-02T00:00:00.000Z");
-    expect(latestHistoryTimestamp([{ ts: "bad" }])).toBeUndefined();
+    expect(
+      latestHistoryTimestamp([
+        { ts: "2026-07-02T00:00:00.000Z", op: "restore", patch: [] },
+        { ts: "bad", op: "update", patch: [] },
+        { ts: "2026-07-01T00:00:00.000Z", op: "comment_add", patch: [] },
+        // Maintenance preserves the record without working on the item (history-compact, repair, redact).
+        { ts: "2026-07-09T00:00:00.000Z", op: "history_compact", patch: [] },
+        { ts: "2026-07-08T00:00:00.000Z", op: "update", patch: [], event_class: "maintenance" },
+        // Decoded values that are not records never throw.
+        null,
+        "text",
+        { ts: 42, op: "update" },
+        { ts: "2026-07-05T00:00:00.000Z" },
+      ]),
+    ).toBe("2026-07-02T00:00:00.000Z");
+    expect(latestHistoryTimestamp([{ ts: "bad", op: "update" }])).toBeUndefined();
   });
 
   it("lets a newer history entry (a restore) rescue an item whose metadata alone looks idle", async () => {
@@ -281,6 +295,9 @@ describe("stale in-progress SDK governance", () => {
       await expect(readLatestHistoryActivity(pmRoot, "pm-missing")).resolves.toBeUndefined();
       await writeFile(path.join(historyDirectory, "pm-corrupt-direct.jsonl"), "not-json\n");
       await expect(readLatestHistoryActivity(pmRoot, "pm-corrupt-direct")).resolves.toBeUndefined();
+      // A `null` line parses as JSON but is no record: the advisory read degrades instead of throwing.
+      await writeFile(path.join(historyDirectory, "pm-null-line.jsonl"), "null\n");
+      await expect(readLatestHistoryActivity(pmRoot, "pm-null-line")).resolves.toBeUndefined();
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }

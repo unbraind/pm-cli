@@ -3392,6 +3392,16 @@
       ],
       "package_version": "2026.11.15",
       "reason": "pm-gh1336: claim_activity and ClaimActivityOptions gain optional history_unreadable (a stream that exists but cannot be read is never judged stale)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:InProgressWorkHealthDetails",
+        "signature ./sdk:latestHistoryTimestamp",
+        "signature ./sdk/governance:InProgressWorkHealthDetails",
+        "signature ./sdk/governance:latestHistoryTimestamp"
+      ],
+      "package_version": "2026.11.15",
+      "reason": "pm-gh1336 and pm-gh1724 (new in this release): latestHistoryTimestamp accepts decoded values of any shape and counts only substantive entries; InProgressWorkHealthDetails.item_remedies gains take_over_idle"
     }
   ],
   "entrypoints": {
@@ -11286,7 +11296,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "InProgressWorkHealthDetails",
-          "signature": "export interface InProgressWorkHealthDetails { threshold_hours: number; threshold_setting: \"mutation_guard.stale_in_progress_hours\"; unowned: InProgressWorkHealthGroup; idle: InProgressWorkHealthGroup; item_remedies: { claim: string; return_to_open: string; }; }"
+          "signature": "export interface InProgressWorkHealthDetails { threshold_hours: number; threshold_setting: \"mutation_guard.stale_in_progress_hours\"; unowned: InProgressWorkHealthGroup; idle: InProgressWorkHealthGroup; item_remedies: { claim: string; take_over_idle: string; return_to_open: string; }; }"
         },
         {
           "classification": "supported",
@@ -12024,7 +12034,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "latestHistoryTimestamp",
-          "signature": "(history: ReadonlyArray<{ ts: string; }>) => string | undefined | calls: (history: ReadonlyArray<{ ts: string; }>) => string | undefined"
+          "signature": "(history: ReadonlyArray<unknown>) => string | undefined | calls: (history: ReadonlyArray<unknown>) => string | undefined"
         },
         {
           "classification": "supported",
@@ -31116,7 +31126,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "InProgressWorkHealthDetails",
-          "signature": "export interface InProgressWorkHealthDetails { threshold_hours: number; threshold_setting: \"mutation_guard.stale_in_progress_hours\"; unowned: InProgressWorkHealthGroup; idle: InProgressWorkHealthGroup; item_remedies: { claim: string; return_to_open: string; }; }"
+          "signature": "export interface InProgressWorkHealthDetails { threshold_hours: number; threshold_setting: \"mutation_guard.stale_in_progress_hours\"; unowned: InProgressWorkHealthGroup; idle: InProgressWorkHealthGroup; item_remedies: { claim: string; take_over_idle: string; return_to_open: string; }; }"
         },
         {
           "classification": "supported",
@@ -31212,7 +31222,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "latestHistoryTimestamp",
-          "signature": "(history: ReadonlyArray<{ ts: string; }>) => string | undefined | calls: (history: ReadonlyArray<{ ts: string; }>) => string | undefined"
+          "signature": "(history: ReadonlyArray<unknown>) => string | undefined | calls: (history: ReadonlyArray<unknown>) => string | undefined"
         },
         {
           "classification": "supported",

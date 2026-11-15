@@ -96,16 +96,32 @@ function classifyOwnershipSource(
   return operation === "claim" ? "claim" : "assignment";
 }
 
+/** Whether a decoded history value has the shape ownership evidence reads (timestamp and patch list). */
+function isHistoryRecord(entry: unknown): boolean {
+  return (
+    entry !== null &&
+    typeof entry === "object" &&
+    typeof (entry as { ts?: unknown }).ts === "string" &&
+    Array.isArray((entry as { patch?: unknown }).patch)
+  );
+}
+
 /** Read one stream and derive the holder evidence it proves, keeping the entries for activity reads. */
 async function readOwnershipEvidence(
   pmRoot: string,
   itemId: string,
   assignee: string,
 ): Promise<{ conflict: ItemOwnershipConflict; history: ReadonlyArray<{ ts: string }>; readable: boolean }> {
-  // A missing stream reads as empty; only a stream that exists but cannot be parsed is unreadable.
+  // A missing stream reads as empty; a stream that exists but cannot be parsed, or that
+  // decodes to values which are not history records (a `null` line), is unreadable.
   let readable = true;
   const history = await Promise.resolve()
     .then(() => readHistoryEntries(getHistoryPath(pmRoot, itemId), itemId))
+    .then((entries) => {
+      if (entries.every(isHistoryRecord)) return entries;
+      readable = false;
+      return [];
+    })
     .catch(() => {
       readable = false;
       return [];

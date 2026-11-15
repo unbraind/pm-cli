@@ -8,9 +8,12 @@
  * calls stale is the item a takeover may claim. The clock includes history
  * because some recorded work leaves `updated_at` behind: `pm restore` writes
  * the historical document, with its historical `updated_at`, then appends a
- * new `restore` entry.
+ * new `restore` entry. Only substantive entries count: maintenance such as
+ * `history_compact` or `history_repair` preserves the record without working
+ * on the item, so it must not reset an abandoned claim's idle time.
  */
 import path from "node:path";
+import { classifyHistoryEvent } from "../../core/history/event-classification.js";
 import { readHistoryEntries } from "../../core/history/read.js";
 import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 import type { ItemMetadata } from "../../types/index.js";
@@ -97,9 +100,9 @@ export function normalizeStaleWorkThresholdHours(value: number): number {
 
 /**
  * Return the item's last recorded activity: the most recent valid timestamp
- * among its `updated_at` and its newest history entry, or undefined when
- * neither parses. Ordinary mutations advance both; a restore or rollback
- * advances only the history stream, so the stream must be consulted.
+ * among its `updated_at` and its newest substantive history entry, or
+ * undefined when neither parses. Ordinary mutations advance both; a restore or
+ * rollback advances only the history stream, so the stream must be consulted.
  */
 export function resolveLastActivityAt(
   updatedAt: string | undefined,
@@ -226,12 +229,27 @@ export function inspectStaleInProgressItems(
   return inspectInProgressWork(items, options).stale;
 }
 
-/** Newest valid timestamp among history entries, or undefined when none parses. */
+/** Whether one decoded history value is a record of work on the item, not storage or governance maintenance. */
+function isActivityEntry(entry: unknown): entry is { ts: string; op: string } {
+  if (entry === null || typeof entry !== "object") return false;
+  const record = entry as { ts?: unknown; op?: unknown; patch?: unknown; event_class?: unknown };
+  return (
+    typeof record.ts === "string" &&
+    typeof record.op === "string" &&
+    classifyHistoryEvent(record as Parameters<typeof classifyHistoryEvent>[0]) === "substantive"
+  );
+}
+
+/**
+ * Newest valid timestamp among substantive history entries, or undefined when
+ * none parses. Decoded values that are not records (a `null` line) are skipped.
+ */
 export function latestHistoryTimestamp(
-  history: ReadonlyArray<{ ts: string }>,
+  history: ReadonlyArray<unknown>,
 ): string | undefined {
   let latest: { value: string; time: number } | undefined;
   for (const entry of history) {
+    if (!isActivityEntry(entry)) continue;
     const time = Date.parse(entry.ts);
     if (Number.isFinite(time) && (latest === undefined || time > latest.time)) {
       latest = { value: entry.ts, time };

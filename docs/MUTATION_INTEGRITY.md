@@ -39,11 +39,13 @@ Defaults preserve author compatibility while providing secret advice:
 | `mutation_guard.stale_in_progress_hours`   | `72`     | Inactivity threshold for stale work: `pm health` advisories, `pm context` idle counts, and `pm claim --takeover-stale`. |
 
 One activity clock serves every stale-work consumer: the newer of an item's
-`updated_at` and its latest history entry. Ordinary mutations advance both;
-`pm restore` writes the historical document, with its older `updated_at`, and
-appends a new entry, so the stream counts too. A takeover refuses when the
-stream exists but cannot be read (`history_unreadable`), because recent work
-may hide behind it. A threshold too large for the Date range reports
+`updated_at` and its latest substantive history entry. Ordinary mutations
+advance both; `pm restore` writes the historical document, with its older
+`updated_at`, and appends a new entry, so the stream counts too. Maintenance
+entries (`history-compact`, `history-repair`, `history-redact`) preserve the
+record without working on the item and do not count. A takeover refuses when
+the stream exists but cannot be read (`claim_activity.history_unreadable`),
+because recent work may hide behind it. A threshold too large for the Date range reports
 `eligible_at: null` rather than failing. `pm health` reports three advisories
 in the storage check, none of which fails the verdict:
 
@@ -54,7 +56,8 @@ in the storage check, none of which fails the verdict:
 | `stale_in_progress_items:<n>` | both: unowned and idle                                   | `pm list --status <in_progress> --assignee-filter unassigned --updated-before -<hours>h` |
 
 The storage check's `details.in_progress_work` lists up to 25 ids per group
-with each group's sweep, plus the per-item recoveries `pm claim <id>` and
+with each group's sweep, plus the per-item recoveries `pm claim <id>` (unowned
+work), `pm claim <id> --takeover-stale` (another holder's idle claim) and
 `pm update <id> --status <open>`. A sweep is a candidate list by metadata
 time: it can include an item whose history is newer than its `updated_at`
 (for example after a restore), which the advisory does not count;
