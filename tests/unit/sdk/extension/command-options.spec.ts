@@ -471,9 +471,19 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
     }
     expect(normalizeDirectExtensionCommandOptions({ many: "true,,false" }, loose, "demo brief")).toEqual({ many: [true, false] });
     expect(normalizeDirectExtensionCommandOptions({ "no-many": "true,,false" }, loose, "demo brief")).toEqual({ many: [false, true] });
-    for (const blank of ["", [""], ","]) {
+    for (const blank of ["", [""], ",", null, [null, undefined]]) {
       expect(normalizeDirectExtensionCommandOptions({ "no-many": blank }, loose, "demo brief")).toEqual({ many: [] });
       expect(normalizeDirectExtensionCommandOptions({ many: blank }, loose, "demo brief")).toEqual({ many: [] });
+    }
+    // Nullish entries are dropped under either spelling, and an all-nullish required list is missing (Codex review round 14).
+    expect(normalizeDirectExtensionCommandOptions({ many: [false, null] }, listed, "demo brief")).toEqual({ many: [false] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": [true, null, undefined] }, listed, "demo brief")).toEqual({ many: [false] });
+    const requiredListed = [{ ...listed[0], required: true }];
+    for (const options of [{ many: [null] }, { "no-many": [null] }, { "no-many": null }]) {
+      expect(refusal(() => normalizeDirectExtensionCommandOptions(options, requiredListed, "demo brief"))).toMatchObject({
+        code: "missing_required_option",
+        flag: "--many",
+      });
     }
     // Equivalent scalar spellings of one list or repeatable flag stay equivalent, not a spelling conflict.
     for (const definitions of [listed, many]) {

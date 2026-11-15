@@ -1248,10 +1248,12 @@ function invertNegatedListEntry(
   entry: unknown,
   commandPath: string,
 ): unknown {
-  // A blank entry or segment carries no token to invert: it passes through for the canonical pipeline to judge,
-  // refused under strict validation and dropped otherwise, exactly as under the canonical spelling.
+  // A blank or nullish entry, or a blank segment, carries no token to invert: it passes through for the canonical
+  // pipeline to judge (dropped, refused under strict validation, or counted as a missing required list) exactly as
+  // under the canonical spelling (Codex review round 14).
   const invertToken = (token: string): string =>
     token.trim().length === 0 ? token : String(invertNegatedBooleanEntry(spelling, definition, token.trim(), commandPath));
+  if (entry === null || entry === undefined) return entry;
   if (typeof entry !== "string") return invertNegatedBooleanEntry(spelling, definition, entry, commandPath);
   if (entry.trim().length === 0) return entry;
   if (definition.repeatable === true || !entry.includes(",")) return invertNegatedBooleanEntry(spelling, definition, entry, commandPath);
