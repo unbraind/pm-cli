@@ -15,7 +15,7 @@ import {
   recordedPrefixActivity,
   readLatestHistoryActivity,
   staleEligibleAt,
-  unprovenHistoryActivity,
+  unprovenClaimActivity,
   wholeHoursSince,
 } from "../../../src/sdk/governance/stale-work.js";
 import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
@@ -288,7 +288,7 @@ describe("stale in-progress SDK governance", () => {
     // A prefix with no work records null: the baseline contributes nothing.
     expect(latestHistoryTimestamp([create, baseline({ last_activity_at: null }), audit])).toBe("2026-07-01T00:00:00.000Z");
     // A baseline written before the field existed is approximated by its own timestamp (the last pruned
-    // entry) for advisory reads; takeover decisions refuse it instead (unprovenHistoryActivity).
+    // entry) for advisory reads; takeover decisions anchor on the claim record instead (unprovenClaimActivity).
     expect(latestHistoryTimestamp([create, baseline({ contract_version: 1 }), audit])).toBe("2026-07-06T00:00:00.000Z");
     expect(latestHistoryTimestamp([create, baseline(undefined), audit])).toBe("2026-07-06T00:00:00.000Z");
     expect(latestHistoryTimestamp([create, { ...baseline(undefined), context: {} }, audit])).toBe("2026-07-06T00:00:00.000Z");
@@ -306,32 +306,16 @@ describe("stale in-progress SDK governance", () => {
       expect(latestHistoryTimestamp([create, malformed, audit])).toBe("2026-07-06T00:00:00.000Z");
     }
     expect(latestHistoryTimestamp([{ ts: "bad", op: "update" }])).toBeUndefined();
-    // Unproven activity: a legacy baseline, a salvaged tail, or a receipt carrying either reason forward.
-    for (const legacy of [baseline(undefined), baseline({ contract_version: 1 }), { ...baseline(undefined), context: {} }]) {
-      expect(unprovenHistoryActivity([create, legacy, audit])).toBe("legacy_compaction_baseline");
-    }
+    // A takeover judges the holder from its own claim record onward: missing or folded records prove nothing,
+    // and a discard or rewrite after the claim leaves its activity unproven.
+    const claim = { ts: "2026-07-02T00:00:00.000Z", op: "claim", patch: [] };
     const salvage = { ts: "2026-07-07T00:00:00.000Z", op: "history_salvage", patch: [] };
-    expect(unprovenHistoryActivity([create, salvage])).toBe("discarded_history_tail");
-    expect(unprovenHistoryActivity([baseline({ last_activity_at: null, unproven_activity: "discarded_history_tail" })])).toBe("discarded_history_tail");
-    // The first such record decides; recorded, malformed and non-record values prove nothing either way.
-    expect(unprovenHistoryActivity([baseline(undefined), salvage])).toBe("legacy_compaction_baseline");
-    expect(
-      unprovenHistoryActivity([
-        baseline({ last_activity_at: null }),
-        baseline({ last_activity_at: "2026-07-03T00:00:00.000Z" }),
-        baseline({ last_activity_at: "invalid" }),
-        baseline({ last_activity_at: null, unproven_activity: "other" }),
-        { ...baseline(undefined), context: null },
-        { ...baseline(undefined), patch: undefined },
-        { ...salvage, op: undefined },
-        create,
-        audit,
-        null,
-      ]),
-    ).toBeUndefined();
-    // An unknown reason makes the receipt malformed, so advisory reads degrade it to the baseline's own time.
-    expect(latestHistoryTimestamp([create, baseline({ last_activity_at: null, unproven_activity: "other" })])).toBe("2026-07-06T00:00:00.000Z");
-    expect(latestHistoryTimestamp([create, baseline({ last_activity_at: null, unproven_activity: "legacy_compaction_baseline" })])).toBe("2026-07-01T00:00:00.000Z");
+    const repair = { ...salvage, op: "history_repair" };
+    expect(unprovenClaimActivity([create, claim], -1)).toBe("claim_record_unavailable");
+    expect(unprovenClaimActivity([baseline(undefined)], 0)).toBe("claim_record_unavailable");
+    expect(unprovenClaimActivity([create, claim, salvage, repair], 1)).toBe("discarded_history_tail");
+    expect(unprovenClaimActivity([create, claim, repair, salvage], 1)).toBe("rewritten_history");
+    expect(unprovenClaimActivity([baseline(undefined), salvage, repair, claim, audit, create], 3)).toBeUndefined();
     // A compaction records its pruned prefix's newest work, or null when the prefix held none.
     expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "update", patch: [] }])).toBe("2026-07-02T00:00:00.000Z");
     expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "history_compact", patch: [] }])).toBeNull();

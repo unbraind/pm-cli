@@ -50,12 +50,22 @@ compaction never renews an abandoned claim. A baseline written before that
 field existed carries only its own timestamp, the last pruned entry's time,
 which does not bound the pruned work because history keeps caller-supplied
 timestamps without an ordering check. Advisory reads approximate its activity
-with that timestamp; a takeover refuses it. A `history-repair --salvage-tail`
-record likewise stands for a discarded record whose time is unknown. A
-takeover refuses either (`claim_activity.unproven_activity`:
-`legacy_compaction_baseline` or `discarded_history_tail`). A later compaction
-records the reason in its receipt as `unproven_activity`, next to the advisory
-`last_activity_at`, so pruning never turns unknown work into proven idleness. A
+with that timestamp.
+
+A takeover trusts no summary or rewrite. It anchors on the holder's own claim
+record, the newest original entry that set the current assignee. Records
+before it cannot be the holder's work, so a compacted, salvaged or legacy
+prefix never matters. The takeover refuses (`claim_activity.unproven_activity`)
+in these cases:
+
+| Reason | Cause |
+| --- | --- |
+| `claim_record_unavailable` | No original record sets the holder: the history is silent, missing, or folded the claim into a compaction baseline. |
+| `discarded_history_tail` | A `history-repair --salvage-tail` after the claim discarded a record whose time is unknown. |
+| `rewritten_history` | A `history-repair`, `history-redact` or merge reconcile after the claim rewrote records. |
+| `workspace_restored` | A workspace snapshot restore at or after the claim may have replaced the holder's later work, or the workspace stream cannot be read to rule one out. |
+
+The holder can release such an item; a new claim starts a provable record. A
 stream any of whose records lacks a parseable timestamp, or holds a baseline
 with a malformed receipt, is unreadable for a takeover, and `history-compact`
 refuses to prune such a record (it would launder the damage into a judgeable

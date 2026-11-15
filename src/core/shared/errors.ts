@@ -325,8 +325,8 @@ export interface PmCliErrorContext {
     last_activity_at: string | null;
     /** Present when the history stream exists but could not be read: idleness cannot be established, so the claim is never judged stale. */
     history_unreadable?: true;
-    /** Present when the readable stream stands for work whose time no record keeps: a compaction baseline from before receipts recorded pruned activity, or a salvaged history tail. The claim is then never judged stale. */
-    unproven_activity?: "legacy_compaction_baseline" | "discarded_history_tail";
+    /** Present when the readable stream cannot prove the holder's idleness: no original record sets the holder, or after it a salvage discarded, a repair, redaction or merge reconcile rewrote, or a workspace restore replaced records. The claim is then never judged stale. */
+    unproven_activity?: "claim_record_unavailable" | "discarded_history_tail" | "rewritten_history" | "workspace_restored";
     /** Whole hours since `claimed_at`, or null when the claim time is unknown. */
     claim_age_hours: number | null;
     /** Whole hours since `last_activity_at`, or null when the activity time is unknown. */

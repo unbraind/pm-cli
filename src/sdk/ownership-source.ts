@@ -5,6 +5,7 @@
  * claim or a general metadata assignment using the append-only history stream.
  */
 import { readHistoryEntries } from "../core/history/read.js";
+import { getWorkspaceHistoryPath, WORKSPACE_HISTORY_ID } from "../core/history/workspace-history.js";
 import type { PmCliErrorContext } from "../core/shared/errors.js";
 import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
 import { getHistoryPath } from "../core/store/paths.js";
@@ -15,7 +16,7 @@ import {
   normalizeStaleWorkThresholdHours,
   resolveLastActivityAt,
   staleEligibleAt,
-  unprovenHistoryActivity,
+  unprovenClaimActivity,
   wholeHoursSince,
   type UnprovenActivityReason,
 } from "./governance/stale-work.js";
@@ -38,9 +39,10 @@ export interface ClaimActivityOptions {
    */
   history_unreadable?: boolean;
   /**
-   * The readable stream stands for work whose time no record keeps (a legacy
-   * compaction baseline, a salvaged tail); see `unprovenHistoryActivity`.
-   * History timestamps are not ordered, so the claim is never judged stale.
+   * The readable stream cannot prove the holder's idleness: no original
+   * record sets the holder, or records after it were discarded, rewritten or
+   * replaced by a workspace restore; see `unprovenClaimActivity`. The claim is
+   * then never judged stale.
    */
   unproven_activity?: UnprovenActivityReason;
 }
@@ -133,13 +135,14 @@ async function readOwnershipEvidence(
       readable = false;
       return [];
     });
-  const latestOwnershipEntry = [...history]
-    .reverse()
-    .find((entry) =>
-      entry.patch.some(
-        (operation) => operation.path === "/metadata/assignee",
-      ),
-    );
+  let latestOwnershipIndex = history.length - 1;
+  while (
+    latestOwnershipIndex >= 0 &&
+    !history[latestOwnershipIndex]!.patch.some((operation) => operation.path === "/metadata/assignee")
+  ) {
+    latestOwnershipIndex -= 1;
+  }
+  const latestOwnershipEntry = history[latestOwnershipIndex];
   // The newest assignee change is evidence only when it set the current holder;
   // if item state and history diverge, its origin and time describe someone else.
   const assigneeOperation = latestOwnershipEntry?.patch.find(
@@ -163,8 +166,34 @@ async function readOwnershipEvidence(
     },
     history,
     readable,
-    unproven: unprovenHistoryActivity(history),
+    // Only a readable stream is judged; an unreadable one already refuses as history_unreadable.
+    unproven: readable ? unprovenClaimActivity(history, evidence === undefined ? -1 : latestOwnershipIndex) : undefined,
   };
+}
+
+/**
+ * Whether a workspace snapshot restore at or after the claim record may have
+ * replaced the holder's later work. The restore rewrites the item stream and
+ * records itself only in the workspace stream, which shares no order with it
+ * except wall-clock time. A workspace stream that cannot be read, or holds a
+ * record whose operation or restore time cannot be read, cannot rule a
+ * restore out.
+ */
+async function workspaceRestoredSince(pmRoot: string, claimedAt: string): Promise<boolean> {
+  let entries: unknown[];
+  try {
+    entries = await readHistoryEntries(getWorkspaceHistoryPath(pmRoot), WORKSPACE_HISTORY_ID);
+  } catch {
+    return true;
+  }
+  const claimedMs = Date.parse(claimedAt);
+  return entries.some((entry) => {
+    const record = (entry ?? {}) as { op?: unknown; ts?: unknown };
+    if (typeof record.op !== "string") return true;
+    if (record.op !== "workspace_snapshot_restore") return false;
+    const restoredMs = typeof record.ts === "string" ? Date.parse(record.ts) : Number.NaN;
+    return !Number.isFinite(restoredMs) || restoredMs >= claimedMs;
+  });
 }
 
 /** Resolve the current holder, its source and its start time for an atomic claim conflict. */
@@ -183,7 +212,12 @@ export async function resolveItemOwnershipActivity(
   assignee: string,
   options: ClaimActivityOptions,
 ): Promise<ItemOwnershipActivity> {
-  const { conflict, history, readable, unproven } = await readOwnershipEvidence(pmRoot, itemId, assignee);
+  const evidence = await readOwnershipEvidence(pmRoot, itemId, assignee);
+  const { conflict, history, readable } = evidence;
+  // `since` is the claim record's time whenever the stream proved one (unproven is then undefined).
+  const unproven =
+    evidence.unproven ??
+    (readable && (await workspaceRestoredSince(pmRoot, conflict.since as string)) ? "workspace_restored" : undefined);
   return {
     ...conflict,
     activity: evaluateClaimActivity(conflict.since, latestHistoryTimestamp(history), {

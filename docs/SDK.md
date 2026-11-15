@@ -1277,13 +1277,12 @@ Stale work uses one activity clock and one threshold
 can still call an item idle when the takeover would refuse it: advisory reads
 degrade an unreadable history stream to metadata activity, while the ownership
 evaluation fails closed (`claim_activity.history_unreadable`, never stale).
-A readable stream that stands for work whose time no record keeps also fails
-closed (`claim_activity.unproven_activity`, never stale). That covers a
-baseline compacted by an older version (`legacy_compaction_baseline`) and a
-salvaged history tail (`discarded_history_tail`). History keeps
-caller-supplied timestamps, so neither record's own time bounds that work.
-`unprovenHistoryActivity()` names the reason, and a later compaction records it
-as the receipt's `unproven_activity`. Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
+The takeover anchors on the holder's own claim record. A readable stream that
+cannot prove the holder's idleness from that record onward also fails closed
+(`claim_activity.unproven_activity`, never stale). The reasons are
+`claim_record_unavailable`, `discarded_history_tail`, `rewritten_history` and
+`workspace_restored`. `unprovenClaimActivity()` returns the reason a stream
+gives, and `UNPROVEN_ACTIVITY_REASONS` lists all of them. Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
 the locked `pm claim --takeover-stale` decision, never from an advisory row. Each `held_by_others` row is a
 `NextHeldRow` with `claimed_at`, `idle_hours` and `stale`.
 `runClaim(id, false, global, { takeoverStale: true })` takes over only an idle

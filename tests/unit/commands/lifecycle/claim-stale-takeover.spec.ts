@@ -6,6 +6,7 @@ import {
   _testOnlyClaimCommand,
   runClaim,
   runClaimNext,
+  runRelease,
   STALE_CLAIM_TAKEOVER_REFUSED_CODE,
 } from "../../../../src/sdk/lifecycle/claim.js";
 import { runStartTask } from "../../../../src/sdk/lifecycle/task-composition.js";
@@ -200,7 +201,7 @@ describe("stale-claim takeover (GH-1336)", () => {
     });
   });
 
-  it("refuses a takeover over a legacy compaction baseline without writing, because its pruned work is unknown", async () => {
+  it("refuses a takeover whose claim record was folded into a compaction baseline, without writing", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "Legacy compacted claim");
       const global = { path: context.pmPath };
@@ -224,13 +225,11 @@ describe("stale-claim takeover (GH-1336)", () => {
       expect(error.context).toMatchObject({
         code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
         claimed_by: "agent-a",
-        claim_activity: { unproven_activity: "legacy_compaction_baseline", idle_hours: 200, stale_policy: { stale: false, eligible_at: null } },
+        claim_activity: { unproven_activity: "claim_record_unavailable", idle_hours: 200, stale_policy: { stale: false, eligible_at: null } },
       });
       expect(error.context.claim_activity).not.toHaveProperty("history_unreadable");
-      expect(error.message).toContain(
-        "(an older pm version compacted its history without recording the newest pruned activity, so idleness cannot be proven)",
-      );
-      expect(error.context.nextSteps?.[0]).toBe(`Ask the holder to release ${id} (pm release ${id}): no later compaction can prove its idleness.`);
+      expect(error.message).toContain("(no original history record shows when the holder took it, so idleness cannot be proven)");
+      expect(error.context.nextSteps?.[0]).toBe(`Ask the holder to release ${id} (pm release ${id}); a new claim starts a provable record.`);
       // A plain claim names no stale takeover either.
       const plain = await refusal(runClaim(id, false, global, { author: "agent-b" }));
       expect(plain.context.nextSteps?.join("\n")).not.toContain("--takeover-stale");
@@ -238,7 +237,7 @@ describe("stale-claim takeover (GH-1336)", () => {
     });
   });
 
-  it("refuses a takeover after a tail salvage discarded a record of unknown time, and keeps refusing after compaction", async () => {
+  it("refuses a takeover after a tail salvage discarded a record of unknown time, and keeps refusing after compaction folds the claim", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "Salvaged claim");
       const global = { path: context.pmPath };
@@ -257,14 +256,17 @@ describe("stale-claim takeover (GH-1336)", () => {
         code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
         claim_activity: { unproven_activity: "discarded_history_tail", stale_policy: { stale: false, eligible_at: null } },
       });
-      expect(salvaged.message).toContain("(a history salvage discarded an unreadable record whose time is unknown, so idleness cannot be proven)");
-      // Compaction prunes the salvage record but records its reason, so the unknown work never becomes proven idleness.
+      expect(salvaged.message).toContain("(a history salvage after the claim discarded a record whose time is unknown, so idleness cannot be proven)");
+      // Compaction folds the claim and the salvage into a baseline: no original claim record remains to prove anything.
       await runHistoryCompact(id, { author: "maintainer" }, global);
-      expect((await historyLines(context, id))[0]).toMatchObject({
-        op: "history_compact_baseline",
-        context: { history_compaction: { unproven_activity: "discarded_history_tail" } },
-      });
-      expect((await refused()).context).toMatchObject({ claim_activity: { unproven_activity: "discarded_history_tail", stale_policy: { stale: false } } });
+      expect((await historyLines(context, id))[0]).toMatchObject({ op: "history_compact_baseline" });
+      expect((await refused()).context).toMatchObject({ claim_activity: { unproven_activity: "claim_record_unavailable", stale_policy: { stale: false } } });
+      // Releasing and claiming again starts a provable record.
+      await runRelease(id, false, global, { author: "agent-a" });
+      await runClaim(id, false, global, { author: "agent-c" });
+      setClock(at(300));
+      const taken = await runClaim(id, false, global, { author: "agent-b", takeoverStale: true });
+      expect(taken.takeover).toMatchObject({ previous_holder: "agent-c", new_holder: "agent-b", idle_hours: 100 });
     });
   });
 

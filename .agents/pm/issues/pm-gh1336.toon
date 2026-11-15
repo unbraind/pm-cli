@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,claims,"gh:1336",multi-agent,ownership,stale-work
 created_at: "2026-11-15T07:09:59.771Z"
-updated_at: "2026-11-15T22:20:11.254Z"
+updated_at: "2026-11-15T22:45:14.159Z"
 closed_at: "2026-11-15T08:35:01.496Z"
 completed_at: "2026-11-15T08:35:01.496Z"
 author: "harness:claude-code"
@@ -48,8 +48,8 @@ learnings[2]:
     text: "A new field on a mutation result is invisible on `pm <cmd> --json` until `src/core/output/mutation-projection.ts` lets it through. The lean mutation envelope copies only allowlisted plain-object keys (`recovery`, `follow_up`, `handoff`, `completion`, `start`, and now `takeover`), so the SDK result had the receipt while the CLI JSON silently dropped it. Check every new result key against the CLI JSON, not just the SDK return value."
   - created_at: "2026-11-15T21:46:10.542Z"
     author: "harness:claude-code"
-    text: "A readable history stream can still fail to prove idleness. It does whenever it stands for work whose time no record keeps.\n\nTwo such records exist:\n1. A legacy compaction baseline: a receipt without last_activity_at, whose own timestamp is the last pruned entry's time.\n2. A history_salvage record: history-repair --salvage-tail discarded an unreadable tail that may have been the holder's recent restore.\n\nappendHistoryEntry keeps caller-supplied timestamps without an ordering check, so neither record's own time bounds that work. CodeRabbit found the legacy case and Codex found the salvage case, both on PR #1734.\n\nFix:\n- unprovenHistoryActivity(history) returns legacy_compaction_baseline or discarded_history_tail.\n- resolveItemOwnershipActivity passes it to evaluateClaimActivity as unproven_activity, which makes the claim never stale. The holder evidence is kept, because the stream is not unreadable.\n- The refusal names the cause and asks the holder to release.\n- history-compact records the reason in the new receipt (unproven_activity, next to the advisory last_activity_at), so pruning never launders unknown work into proven idleness. An unknown reason value makes the receipt malformed.\n\nRule: for a fail-closed decision, enumerate every writer that DISCARDS or SUMMARIZES records (compaction, salvage), not only the ones that add or rewrite them. Each one needs a typed \"unknown\" state that survives later summarization."
-    edited_at: "2026-11-15T22:20:11.253Z"
+    text: "Fail-closed decisions must ANCHOR on positive evidence. They must not try to enumerate every writer that could hide evidence.\n\nFixing writers one at a time did not converge. Each review round on PR #1734 found one more writer that discards, folds or rewrites history and so hides the holder's recent work:\n- a legacy compaction baseline whose own timestamp does not bound its pruned prefix (CodeRabbit);\n- a history-repair --salvage-tail that discards a record of unknown time (Codex round 1);\n- a merge dedup that drops a baseline receipt, a patch repair that reclassifies a rewritten update as maintenance, and a workspace snapshot restore that replaces the stream wholesale (Codex round 2).\n\nThe convergent design anchors on the holder's own claim record: the newest original entry that set the current assignee. Records before it cannot be the holder's work, so a compacted, salvaged, legacy or merged prefix never matters. unprovenClaimActivity refuses in four cases:\n1. claim_record_unavailable: the record is missing, or was folded into a compaction baseline.\n2. discarded_history_tail: a history_salvage follows the claim.\n3. rewritten_history: a history_repair, history_redact or merge_reconcile audit follows the claim.\n4. workspace_restored: the _workspace stream holds a workspace_snapshot_restore at or after the claim time, or cannot be read.\n\nThis let the compaction receipt drop its extra unproven_activity field: compaction no longer has to carry uncertainty forward. A holder can release, and a new claim starts a provable record.\n\nRule: when each review round finds one more hiding writer, stop patching writers. Ask which single record must exist, unmodified, for the decision to be safe, and refuse whenever it is absent or anything after it is a rewrite."
+    edited_at: "2026-11-15T22:45:11.391Z"
 files[29]:
   - path: docs/MUTATION_INTEGRITY.md
     scope: project
@@ -86,9 +86,9 @@ files[29]:
     scope: project
   - path: src/sdk/governance.ts
     scope: project
-  - path: src/sdk/history-compact.ts
+  - path: src/sdk/governance/stale-work.ts
     scope: project
-    note: Compaction keeps a legacy baseline legacy (prunedActivityReceipt) so it cannot certify unknown pruned work as idle
+    note: "unprovenClaimActivity: the claim-anchored takeover evidence"
   - path: src/sdk/index.ts
     scope: project
   - path: src/sdk/lifecycle/claim.ts

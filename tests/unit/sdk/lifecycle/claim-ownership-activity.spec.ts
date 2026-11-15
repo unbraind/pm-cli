@@ -47,8 +47,8 @@ describe("claim activity evidence (GH-1336)", () => {
         history_unreadable: true,
       }),
     ).toMatchObject({ history_unreadable: true, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
-    // Work whose time no record keeps (a legacy baseline, a salvaged tail): reported idle, never stale.
-    for (const reason of ["legacy_compaction_baseline", "discarded_history_tail"] as const) {
+    // Activity the holder's records cannot prove (see unprovenClaimActivity): reported idle, never stale.
+    for (const reason of ["claim_record_unavailable", "discarded_history_tail", "rewritten_history", "workspace_restored"] as const) {
       expect(
         evaluateClaimActivity(null, undefined, {
           updated_at: "2026-07-01T00:00:00.000Z",
@@ -153,8 +153,6 @@ describe("claim activity evidence (GH-1336)", () => {
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":null}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":[]}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":[]}}',
-        // An unknown unproven-activity reason is a damaged receipt, not a judgeable one.
-        '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":{"last_activity_at":null,"unproven_activity":"other"}}}',
       ].entries()) {
         const id = `pm-malformed-${index}`;
         await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${entries[0]}\n${line}\n`);
@@ -162,54 +160,64 @@ describe("claim activity evidence (GH-1336)", () => {
           resolveItemOwnershipActivity(pmRoot, id, "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
         ).resolves.toMatchObject({ source: "unknown", activity: { history_unreadable: true, stale_policy: { stale: false } } });
       }
-      // A legacy baseline (no recorded field) is readable, so the holder evidence survives, but its own
-      // time does not bound the pruned work: the claim is never judged stale. The July 5 example: a pruned
-      // restore at July 4 23:00 hides behind a baseline whose last pruned entry is a July 1 maintenance record.
+      // A takeover anchors on the holder's own claim record. The July 5 example: a legacy baseline whose own
+      // time (July 1) hides a pruned July 4 23:00 restore. When the baseline folded the claim, nothing proves
+      // the holder's activity, so the claim is never stale; the holder evidence survives (the stream is readable).
       const july5 = new Date("2026-07-05T00:00:00.000Z");
-      const baseline = (receipt: Record<string, unknown>) =>
-        JSON.stringify({ ts: "2026-07-01T00:00:00.000Z", author: "m", op: "history_compact_baseline", patch: [{ op: "add", path: "/metadata/assignee", value: "agent-a" }], context: { history_compaction: { contract_version: 1, ...receipt } }, before_hash: "x", after_hash: "y" });
-      const judge = async (id: string, receipt: Record<string, unknown>) => {
-        await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${baseline(receipt)}\n`);
-        return resolveItemOwnershipActivity(pmRoot, id, "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: july5 });
-      };
-      const legacy = await judge("pm-legacy", {});
+      const judge = (id: string) =>
+        resolveItemOwnershipActivity(pmRoot, id, "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: july5 });
+      const write = async (id: string, records: Array<Record<string, unknown>>) =>
+        writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${records.map((record) => JSON.stringify({ author: "m", before_hash: "x", after_hash: "y", ...record })).join("\n")}\n`);
+      const claimRecord = { ts: "2026-07-01T00:00:00.000Z", op: "claim", patch: [{ op: "add", path: "/metadata/assignee", value: "agent-a" }] };
+      const legacyBaseline = (patch: unknown[]) => ({ ts: "2026-07-01T00:00:00.000Z", op: "history_compact_baseline", patch, context: { history_compaction: { contract_version: 1 } } });
+      await write("pm-legacy", [legacyBaseline(claimRecord.patch)]);
+      const legacy = await judge("pm-legacy");
       expect(legacy).toMatchObject({ source: "assignment", since: "2026-07-01T00:00:00.000Z" });
       expect(legacy.activity).toEqual({
         last_activity_at: "2026-07-01T00:00:00.000Z",
-        unproven_activity: "legacy_compaction_baseline",
+        unproven_activity: "claim_record_unavailable",
         claim_age_hours: 96,
         idle_hours: 96,
         stale_policy: { setting: "mutation_guard.stale_in_progress_hours", threshold_hours: 72, stale: false, eligible_at: null },
       });
       expect(legacy.activity).not.toHaveProperty("history_unreadable");
-      // The same stream with the pruned restore recorded: one idle hour, not stale.
-      expect((await judge("pm-recorded-recent", { last_activity_at: "2026-07-04T23:00:00.000Z" })).activity).toMatchObject({
-        last_activity_at: "2026-07-04T23:00:00.000Z",
-        idle_hours: 1,
-        stale_policy: { stale: false, eligible_at: "2026-07-07T23:00:00.000Z" },
-      });
-      // A valid older recorded time, and a recorded null (no pruned work), leave metadata as the newest activity.
-      for (const [id, receipt] of [
-        ["pm-recorded-old", { last_activity_at: "2026-06-30T00:00:00.000Z" }],
-        ["pm-recorded-null", { last_activity_at: null }],
+      // A claim recorded after any prefix is provable: whatever the baseline hides predates the holder's claim.
+      await write("pm-claimed-after-compaction", [legacyBaseline([]), claimRecord]);
+      const anchored = (await judge("pm-claimed-after-compaction")).activity;
+      expect(anchored).toMatchObject({ idle_hours: 96, stale_policy: { stale: true } });
+      expect(anchored).not.toHaveProperty("unproven_activity");
+      // Discards and rewrites after the claim leave its activity unproven; the same records before it do not.
+      for (const [op, reason] of [
+        ["history_salvage", "discarded_history_tail"],
+        ["history_repair", "rewritten_history"],
+        ["history_redact", "rewritten_history"],
+        ["merge_reconcile", "rewritten_history"],
       ] as const) {
-        const judged = (await judge(id, receipt)).activity;
-        expect(judged).toMatchObject({ last_activity_at: "2026-07-01T00:00:00.000Z", idle_hours: 96, stale_policy: { stale: true } });
-        expect(judged).not.toHaveProperty("unproven_activity");
+        const maintenance = { ts: "2026-07-01T00:00:00.000Z", op, patch: [] };
+        await write(`pm-after-${op}`, [claimRecord, maintenance]);
+        expect((await judge(`pm-after-${op}`)).activity).toMatchObject({ unproven_activity: reason, stale_policy: { stale: false, eligible_at: null } });
+        await write(`pm-before-${op}`, [maintenance, claimRecord]);
+        expect((await judge(`pm-before-${op}`)).activity).toMatchObject({ stale_policy: { stale: true } });
       }
-      // A receipt that carries the pruned prefix's unproven reason forward stays unproven despite its recorded time.
-      expect(
-        (await judge("pm-recorded-unproven", { last_activity_at: "2026-06-30T00:00:00.000Z", unproven_activity: "discarded_history_tail" })).activity,
-      ).toMatchObject({ unproven_activity: "discarded_history_tail", stale_policy: { stale: false, eligible_at: null } });
-      // A salvage record means a discarded tail of unknown time: the stream is readable but proves nothing.
-      const salvage = JSON.stringify({ ts: "2026-07-01T00:00:00.000Z", author: "m", op: "history_salvage", patch: [], context: { history_salvage: { discarded_bytes: 40 } }, before_hash: "x", after_hash: "x" });
-      await writeFile(path.join(pmRoot, "history", "pm-salvaged.jsonl"), `${baseline({ last_activity_at: null })}\n${salvage}\n`);
-      const salvaged = await resolveItemOwnershipActivity(pmRoot, "pm-salvaged", "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: july5 });
-      expect(salvaged.activity).toMatchObject({ unproven_activity: "discarded_history_tail", idle_hours: 96, stale_policy: { stale: false } });
-      // A missing stream is empty, not unreadable.
-      expect(
-        (await resolveItemOwnershipActivity(pmRoot, "pm-missing", "agent-z", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW })).activity,
-      ).not.toHaveProperty("history_unreadable");
+      // A holder no record sets (silent history) is unproven too.
+      await write("pm-silent", [{ ts: "2026-07-01T00:00:00.000Z", op: "comment_add", patch: [] }]);
+      expect((await judge("pm-silent")).activity).toMatchObject({ unproven_activity: "claim_record_unavailable", stale_policy: { stale: false } });
+      // A missing stream is empty, not unreadable, and proves no claim record.
+      const missing = (await resolveItemOwnershipActivity(pmRoot, "pm-missing", "agent-z", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW })).activity;
+      expect(missing).not.toHaveProperty("history_unreadable");
+      expect(missing).toMatchObject({ unproven_activity: "claim_record_unavailable" });
+      // A workspace snapshot restore at or after the claim may have replaced the holder's later work; one before it did not.
+      const workspacePath = path.join(pmRoot, "history", "_workspace.jsonl");
+      const restoreAt = async (lines: string[]) => {
+        await writeFile(workspacePath, `${lines.join("\n")}\n`);
+        return (await judge("pm-claimed-after-compaction")).activity;
+      };
+      const restore = (ts: unknown) => JSON.stringify({ ts, author: "m", op: "workspace_snapshot_restore", patch: [], before_hash: "x", after_hash: "y" });
+      const other = JSON.stringify({ ts: "2026-07-03T00:00:00.000Z", author: "m", op: "workspace_settings_update", patch: [], before_hash: "x", after_hash: "y" });
+      expect(await restoreAt([restore("2026-06-30T00:00:00.000Z"), other])).toMatchObject({ stale_policy: { stale: true } });
+      for (const lines of [[restore("2026-07-01T00:00:00.000Z")], [restore("2026-07-03T00:00:00.000Z")], [restore("not-a-date")], [restore(5)], ["null"], ['{"ts":"2026-06-01T00:00:00.000Z"}'], ["not-json"]]) {
+        expect(await restoreAt(lines)).toMatchObject({ unproven_activity: "workspace_restored", stale_policy: { stale: false } });
+      }
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }

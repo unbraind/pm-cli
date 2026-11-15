@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { latestHistoryTimestamp, unprovenHistoryActivity } from "../../src/sdk/governance/stale-work.js";
+import { latestHistoryTimestamp } from "../../src/sdk/governance/stale-work.js";
 import { describe, expect, it, vi } from "vitest";
 import { runHistory } from "../../src/cli/commands/history/history.js";
 import {
@@ -150,40 +150,6 @@ describe("history-compact command", () => {
       const second = JSON.parse(lines[0]!) as HistoryEntry;
       expect(second.context?.history_compaction).toMatchObject({ last_activity_at: workTs });
       expect(latestHistoryTimestamp(lines.map((line) => JSON.parse(line) as unknown))).toBe(workTs);
-    });
-  });
-
-  it("records a legacy baseline's unproven reason on recompaction, so compaction cannot certify unknown pruned work as idle (GH-1336)", async () => {
-    await withTempPmPath(async (context) => {
-      const id = createItem(context, "Compact Legacy Baseline");
-      expect(context.runCli(["append", id, "--body", "real work"]).code).toBe(0);
-      await runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath });
-      const historyFile = getHistoryPath(context, id);
-      const lines = (await readFile(historyFile, "utf8")).trim().split("\n");
-      const baseline = JSON.parse(lines[0]!) as HistoryEntry;
-      // Rewrite the baseline as an older version wrote it: no last_activity_at in the receipt.
-      const { last_activity_at: _recorded, ...legacyReceipt } = baseline.context?.history_compaction as Record<string, unknown>;
-      lines[0] = JSON.stringify(
-        sealHistoryRecord({ ...baseline, context: { ...baseline.context, history_compaction: legacyReceipt } } as HistoryEntry),
-      );
-      await writeFile(historyFile, `${lines.join("\n")}\n`, "utf8");
-      expect(context.runCli(["append", id, "--body", "more work"]).code).toBe(0);
-      const moreWorkTs = (JSON.parse((await readFile(historyFile, "utf8")).trim().split("\n").at(-1)!) as HistoryEntry).ts;
-
-      const recompacted = await runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath });
-      expect(recompacted.history.verify_ok).toBe(true);
-      const second = JSON.parse((await readFile(historyFile, "utf8")).split("\n")[0]!) as HistoryEntry;
-      expect(second.op).toBe("history_compact_baseline");
-      // The advisory time is still recorded (the newest pruned work), next to the reason it proves nothing.
-      expect(second.context?.history_compaction).toMatchObject({
-        contract_version: 1,
-        pruned_entry_count: 3,
-        last_activity_at: moreWorkTs,
-        unproven_activity: "legacy_compaction_baseline",
-      });
-      expect(unprovenHistoryActivity([second])).toBe("legacy_compaction_baseline");
-      // The first compaction's prefix proved its activity, so it recorded no reason.
-      expect(baseline.context?.history_compaction).not.toHaveProperty("unproven_activity");
     });
   });
 
