@@ -3254,7 +3254,15 @@ directly. An
 extension action also keeps the caller's values as given: the native
 `tags`-to-CSV and `dep`-to-array rewrites of core commands do not apply to it.
 On the CLI, each bare occurrence of a repeatable boolean switch reaches the
-handler as `true` (`--many --many` is `[true, true]`).
+handler as `true` (`--many --many` is `[true, true]`). A direct caller's negated
+spelling of a declared boolean (`no-many`, `--no-many`) inverts token by token
+and is then judged exactly as the canonical spelling: on a `list` boolean,
+`{ "no-many": "true,false" }` is `{ many: [false, true] }`, a blank segment is
+refused under `value_validation: "strict"` and dropped otherwise, and
+`{ many: false, "no-many": true }` is one value, not a spelling conflict. A
+`repeatable` boolean keeps each occurrence atomic, so `"true,false"` is one
+malformed token under either spelling. A value that is not a boolean token
+(`"bogus"`) cannot be inverted and is refused with `extension_flag_value_invalid`.
 
 `pm contracts --command <command> --flags-only --json` publishes the key as
 `sdk_option` on every extension-declared row, and marks the row `owner:

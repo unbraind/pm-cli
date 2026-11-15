@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: extensions,flags,"gh:1726",sdk,validation
 created_at: "2026-11-14T09:00:39.423Z"
-updated_at: "2026-11-15T01:55:35.129Z"
+updated_at: "2026-11-15T02:10:31.802Z"
 closed_at: "2026-11-14T19:16:20.807Z"
 completed_at: "2026-11-14T19:16:20.807Z"
 author: "harness:claude-code"
@@ -28,8 +28,9 @@ comments[4]{created_at,author,text}:
   "2026-11-14T19:43:19.365Z","harness:claude-code","Greptile review on PR #1732 (P2, verified and fixed): a required list given entries that normalization drops ([''], [[]], or --ids '' on the CLI) passed the required check and reached the handler as []. Both validators now judge a list by its normalized entries (hasLooseListEntries), so those inputs are refused with missing_required_option."
   "2026-11-14T20:17:53.950Z","harness:claude-code","CI on PR #1732 (coverage shard 1/4, head 047492427) exposed a pre-existing CLI data loss in the same seam: readOrderedLooseListValues treated the loose occurrence list as authoritative for every list flag whenever ANY loose occurrence existed, so pm <cmd> --tags a --enabled=1 (the attached switch value is unknown to Commander and reaches only the loose parser) delivered tags: [] to the handler, silently dropping a value Commander had parsed. The new required-list check made it visible as missing_required_option. Fix: when no recorded occurrence names the flag, the Commander value is kept; covered by the in-process --tags a --tags b --enabled=1 case. The remaining same-flag mix (--many=false --many) stays with pm-g2zzus."
   "2026-11-14T20:37:06.325Z","harness:claude-code","CodeRabbit review on PR #1732 (minor, verified and fixed): a direct caller passing a negated spelling of a declared boolean with a value it cannot invert ({ 'no-on': [] } or 'bogus') got unknown_option, because resolveNegatedBooleanSpelling kept the no- spelling unless the value was boolean. It now resolves the declaration first and refuses such a value with extension_flag_value_invalid naming the flag; an undefined value stays an omission."
-notes[1]{created_at,author,text}:
+notes[2]{created_at,author,text}:
   "2026-11-15T01:55:35.129Z","harness:claude-code","CodeRabbit re-review on 0564da3ff (Minor, valid): a negated list boolean given a comma-delimited value ({ \"no-many\": \"true,false\" } for list: true) was refused while the canonical { many: \"true,false\" } splits into [true, false]. resolveNegatedBooleanSpelling now normalizes entries with the declaration's own list grammar (normalizeAccumulatedFlagValue: list splits commas, repeatable keeps each occurrence atomic) before inverting each one, so the negated form yields [false, true]. Covered in tests/unit/sdk/extension/command-options.spec.ts."
+  "2026-11-15T02:10:31.802Z","harness:claude-code","Codex review round 13 on 734663f34 (two P2, both verified): normalizing the negated list value first dropped a blank segment that strict validation refuses under the canonical spelling ({ \"no-many\": \"true,,false\" } reached the handler), and turned a scalar into [false], so { many: false, \"no-many\": true } became a spelling conflict. Replaced by invertNegatedListEntry: inversion is token by token and keeps the raw shape (a CSV string stays a string with each segment inverted, a scalar stays a scalar, blank entries and segments pass through), so the canonical pipeline judges the result exactly as it judges the canonical spelling. A differential probe over 5 declarations x 18 inputs against 0564da3ff changed only the negated CSV and blank cases, and each now matches its canonical counterpart. Documented in docs/SDK.md (direct-caller section)."
 learnings[1]{created_at,author,text}:
   "2026-11-14T19:16:12.086Z","harness:claude-code",Commander calls a custom argParser with undefined for a value-less switch occurrence; a list accumulator must map that to true or the occurrence is silently flattened away.
 files[6]{path,scope}:

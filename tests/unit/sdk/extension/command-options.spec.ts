@@ -452,13 +452,35 @@ describe("pm-gh1726 / pm-gh1727 direct-caller refusals carry the CLI codes", () 
       code: "extension_flag_value_invalid",
       flag: "--many",
     });
-    // Entries follow the declaration's list grammar before inversion (CodeRabbit review): a list splits a
-    // comma-delimited value as its canonical spelling does, a repeatable keeps each occurrence atomic.
+    // A CSV list inverts a comma-delimited value segment by segment, as its canonical spelling splits it (CodeRabbit
+    // review), while keeping the raw shape so the canonical pipeline still judges it (Codex review round 13).
     const listed = [{ long: "--many", value_type: "boolean", value_validation: "strict", list: true }];
+    const loose = [{ long: "--many", value_type: "boolean", list: true }];
     expect(normalizeDirectExtensionCommandOptions({ many: "true,false" }, listed, "demo brief")).toEqual({ many: [true, false] });
     expect(normalizeDirectExtensionCommandOptions({ "no-many": "true,false" }, listed, "demo brief")).toEqual({ many: [false, true] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": " true , false" }, listed, "demo brief")).toEqual({ many: [false, true] });
     expect(normalizeDirectExtensionCommandOptions({ "no-many": ["true,false", true] }, listed, "demo brief")).toEqual({ many: [false, true, false] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": "true" }, listed, "demo brief")).toEqual({ many: [false] });
     expect(normalizeDirectExtensionCommandOptions({ "no-many": undefined }, listed, "demo brief")).toEqual({});
+    // A blank strict segment is refused under either spelling; a coerce list drops it under either spelling.
+    for (const options of [{ many: "true,,false" }, { "no-many": "true,,false" }, { "no-many": ["true, ,false"] }, { "no-many": "" }, { "no-many": [""] }]) {
+      expect(refusal(() => normalizeDirectExtensionCommandOptions(options, listed, "demo brief"))).toMatchObject({
+        code: "extension_flag_value_invalid",
+        flag: "--many",
+      });
+    }
+    expect(normalizeDirectExtensionCommandOptions({ many: "true,,false" }, loose, "demo brief")).toEqual({ many: [true, false] });
+    expect(normalizeDirectExtensionCommandOptions({ "no-many": "true,,false" }, loose, "demo brief")).toEqual({ many: [false, true] });
+    for (const blank of ["", [""], ","]) {
+      expect(normalizeDirectExtensionCommandOptions({ "no-many": blank }, loose, "demo brief")).toEqual({ many: [] });
+      expect(normalizeDirectExtensionCommandOptions({ many: blank }, loose, "demo brief")).toEqual({ many: [] });
+    }
+    // Equivalent scalar spellings of one list or repeatable flag stay equivalent, not a spelling conflict.
+    for (const definitions of [listed, many]) {
+      expect(normalizeDirectExtensionCommandOptions({ many: false, "no-many": true }, definitions, "demo brief")).toEqual({ many: [false] });
+      expect(normalizeDirectExtensionCommandOptions({ many: true, "no-many": false }, definitions, "demo brief")).toEqual({ many: [true] });
+    }
+    // A repeatable keeps each occurrence atomic, so "true,false" stays one malformed token under either spelling.
     for (const options of [{ many: "true,false" }, { "no-many": "true,false" }]) {
       expect(refusal(() => normalizeDirectExtensionCommandOptions(options, many, "demo brief"))).toMatchObject({
         code: "extension_flag_value_invalid",

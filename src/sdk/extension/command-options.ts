@@ -1224,16 +1224,38 @@ function resolveNegatedBooleanSpelling(
   if (declared === undefined || resolveLooseOptionCoercionKind(declared.definition) !== "boolean") {
     return { spelling, value };
   }
-  // A list or repeatable boolean inverts entry by entry, as --no-many --no-many gives [false, false] (Codex review round 10).
-  // Entries come from the declaration's own list grammar first, so a list splits "true,false" exactly as the
-  // canonical spelling does and a repeatable keeps each occurrence atomic (CodeRabbit review).
-  if ((declared.definition.list === true || declared.definition.repeatable === true) && value !== undefined) {
-    const entries = normalizeAccumulatedFlagValue(value, null, declared.definition.repeatable === true);
-    return { spelling: negated, value: entries.map((entry) => invertNegatedBooleanEntry(spelling, declared.definition, entry, commandPath)) };
+  // A repeatable boolean inverts entry by entry, as --no-many --no-many gives [false, false] (Codex review round 10).
+  if ((declared.definition.list === true || declared.definition.repeatable === true) && Array.isArray(value)) {
+    return { spelling: negated, value: value.flat(Infinity).map((entry) => invertNegatedListEntry(spelling, declared.definition, entry, commandPath)) };
+  }
+  if (declared.definition.list === true && value !== undefined) {
+    return { spelling: negated, value: invertNegatedListEntry(spelling, declared.definition, value, commandPath) };
   }
   // A negated spelling of a declared boolean names that flag, so a value it cannot invert ([] or "bogus")
   // is a value error, not an unknown option (CodeRabbit review); an undefined value stays an omission.
   return { spelling: negated, value: value === undefined ? value : invertNegatedBooleanEntry(spelling, declared.definition, value, commandPath) };
+}
+
+/**
+ * Invert one entry of a negated list boolean token by token, keeping its raw shape (CodeRabbit review): a CSV
+ * list's comma-delimited string stays a string with each segment inverted, so the canonical pipeline still
+ * splits it, refuses a blank strict segment, and compares it against another spelling exactly as it would the
+ * canonical value; a scalar stays a scalar (Codex review round 13). A repeatable keeps each occurrence atomic.
+ */
+function invertNegatedListEntry(
+  spelling: string,
+  definition: LooseCommandFlagDefinition,
+  entry: unknown,
+  commandPath: string,
+): unknown {
+  // A blank entry or segment carries no token to invert: it passes through for the canonical pipeline to judge,
+  // refused under strict validation and dropped otherwise, exactly as under the canonical spelling.
+  const invertToken = (token: string): string =>
+    token.trim().length === 0 ? token : String(invertNegatedBooleanEntry(spelling, definition, token.trim(), commandPath));
+  if (typeof entry !== "string") return invertNegatedBooleanEntry(spelling, definition, entry, commandPath);
+  if (entry.trim().length === 0) return entry;
+  if (definition.repeatable === true || !entry.includes(",")) return invertNegatedBooleanEntry(spelling, definition, entry, commandPath);
+  return entry.split(",").map(invertToken).join(",");
 }
 
 /** Invert one boolean value under a negated spelling, refusing a value that is not a boolean token. */
