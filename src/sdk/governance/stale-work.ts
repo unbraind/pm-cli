@@ -286,6 +286,11 @@ function activityTimestampOf(entry: unknown): string | undefined {
     : undefined;
 }
 
+/** Whether a value is a non-null, non-array object. */
+function isPlainRecord(value: unknown): value is object {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 /**
  * Read the prefix activity a compaction baseline records. `recorded` carries
  * a parseable timestamp or null (no work in the prefix); `legacy` means the
@@ -297,10 +302,10 @@ function readCompactionActivity(
 ): { kind: "recorded"; at: string | null } | { kind: "legacy" } | { kind: "malformed" } {
   const context = (entry as { context?: unknown }).context;
   if (context === undefined) return { kind: "legacy" };
-  if (context === null || typeof context !== "object") return { kind: "malformed" };
+  if (!isPlainRecord(context)) return { kind: "malformed" };
   const receipt = (context as { history_compaction?: unknown }).history_compaction;
   if (receipt === undefined) return { kind: "legacy" };
-  if (receipt === null || typeof receipt !== "object") return { kind: "malformed" };
+  if (!isPlainRecord(receipt)) return { kind: "malformed" };
   if (!("last_activity_at" in receipt)) return { kind: "legacy" };
   const at = (receipt as { last_activity_at?: unknown }).last_activity_at;
   if (at === null) return { kind: "recorded", at: null };

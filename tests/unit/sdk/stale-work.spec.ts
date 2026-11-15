@@ -294,6 +294,8 @@ describe("stale in-progress SDK governance", () => {
       { ...baseline(undefined), context: "x" },
       { ...baseline(undefined), context: { history_compaction: null } },
       { ...baseline(undefined), context: { history_compaction: 5 } },
+      { ...baseline(undefined), context: [] },
+      { ...baseline(undefined), context: { history_compaction: [] } },
       baseline({ last_activity_at: "invalid" }),
       baseline({ last_activity_at: 5 }),
     ]) {

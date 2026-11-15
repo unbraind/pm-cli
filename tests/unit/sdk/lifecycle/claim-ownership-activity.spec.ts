@@ -140,6 +140,8 @@ describe("claim activity evidence (GH-1336)", () => {
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":{"last_activity_at":"invalid"}}}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":null}}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":null}',
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":[]}',
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":[]}}',
       ].entries()) {
         const id = `pm-malformed-${index}`;
         await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${entries[0]}\n${line}\n`);
