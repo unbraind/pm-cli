@@ -2942,6 +2942,7 @@ export async function runContext(
     // Unattended in-progress work is counted apart from active work (GH-1724).
     await scanInProgressWork(pmRoot, corpus.allItems, {
       in_progress_status: runtime.statusRegistry.in_progress_status,
+      status_registry: runtime.statusRegistry,
       threshold_hours: runtime.settings.mutation_guard.stale_in_progress_hours,
       now: new Date(agendaContext.agenda.now),
     }),

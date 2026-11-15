@@ -1286,7 +1286,8 @@ throws `STALE_CLAIM_TAKEOVER_REFUSED_CODE` (`stale_claim_takeover_refused`) with
 `context.claim_activity`. `resolveItemOwnershipActivity()` and
 `evaluateClaimActivity()` return that evidence directly, `inspectInProgressWork()`
 and `scanInProgressWork()` classify in-progress work into `unowned`, `idle` and
-`stale` groups, and `buildInProgressSweepCommands()` returns the exact list
+`stale` groups (pass `status_registry` so stored status aliases resolve the way
+the `in_progress` counters resolve them), and `buildInProgressSweepCommands()` returns the exact list
 sweeps `pm health` prints.
 
 Lifecycle convenience methods and the matching top-level functions (`create`,

@@ -45,7 +45,7 @@ import { runActiveOnReadHooks } from "../core/extensions/index.js";
 import { readLocatedItem } from "../core/store/item-store.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry } from "../types/index.js";
-import { recordedPrefixActivity } from "./governance/stale-work.js";
+import { isJudgeableHistoryRecord, recordedPrefixActivity } from "./governance/stale-work.js";
 import {
   resolveHistoryWorkspace,
   resolveHistorySubject,
@@ -284,21 +284,21 @@ function buildHistoryCompactBaselineMessage(
 }
 
 /**
- * Refuse before any write when a record the compaction would prune has an
- * unparseable timestamp, for every boundary kind (the timestamp boundary
- * already refuses while it scans). Pruning it would launder the damage: the
- * new baseline records only the remaining valid activity, so a stale-claim
- * takeover that fails closed on the damaged record would accept the compacted
- * stream (GH-1336).
+ * Refuse before any write when a record the compaction would prune is not
+ * judgeable, for every boundary kind (the timestamp boundary already refuses
+ * an unparseable timestamp while it scans): an unparseable timestamp, a
+ * malformed record shape, or a prior baseline whose compaction receipt is
+ * malformed. Pruning it would launder the damage: the new baseline records
+ * only the remaining valid activity, so a stale-claim takeover that fails
+ * closed on the damaged record would accept the compacted stream (GH-1336).
  */
-function assertPrunedTimestampsParse(entries: readonly HistoryEntry[], compactCount: number): void {
-  const index = entries.slice(0, compactCount).findIndex((entry) => !Number.isFinite(Date.parse(entry.ts)));
-  if (index !== -1) {
-    throw new PmCliError(
-      `History for this item contains invalid timestamp at entry ${index + 1}.`,
-      EXIT_CODE.GENERIC_FAILURE,
-    );
-  }
+function assertPrunedRecordsJudgeable(entries: readonly HistoryEntry[], compactCount: number): void {
+  const index = entries.slice(0, compactCount).findIndex((entry) => !isJudgeableHistoryRecord(entry));
+  if (index === -1) return;
+  const damage = Number.isFinite(Date.parse(entries[index]!.ts))
+    ? "a malformed record or compaction receipt"
+    : "invalid timestamp";
+  throw new PmCliError(`History for this item contains ${damage} at entry ${index + 1}.`, EXIT_CODE.GENERIC_FAILURE);
 }
 
 /** Replace the pruned prefix with a durable-addressed checkpoint while retaining original records and hash semantics. */
@@ -441,7 +441,7 @@ function buildHistoryCompactPlan(
   }
 
   const boundary = parseBeforeBoundary(options.before, historyEntries);
-  assertPrunedTimestampsParse(historyEntries, boundary.compactCount);
+  assertPrunedRecordsJudgeable(historyEntries, boundary.compactCount);
   const changed = boundary.compactCount > 0;
   const dryRun = Boolean(options.dryRun);
   const author = snapshot.author;

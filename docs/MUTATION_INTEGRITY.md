@@ -48,8 +48,10 @@ stands for its pruned prefix and records that prefix's newest substantive
 time as `context.history_compaction.last_activity_at`, so repeated
 compaction never renews an abandoned claim; a baseline written before that
 field existed counts with its own timestamp, a conservative upper bound. A
-stream any of whose records lacks a parseable timestamp is unreadable for a
-takeover. A takeover refuses when
+stream any of whose records lacks a parseable timestamp, or holds a baseline
+with a malformed receipt, is unreadable for a takeover, and `history-compact`
+refuses to prune such a record (it would launder the damage into a judgeable
+stream). A takeover refuses when
 the stream exists but cannot be read (`claim_activity.history_unreadable`),
 because recent work may hide behind it. A threshold too large for the Date range reports
 `eligible_at: null` rather than failing. `pm health` reports three advisories
@@ -85,6 +87,7 @@ import {
   evaluateMutationGuard,
   inspectInProgressWork,
   inspectStaleInProgressItems,
+  resolveRuntimeStatusRegistry,
   scanMutationSecrets,
 } from "@unbrained/pm-cli/sdk";
 
@@ -102,7 +105,9 @@ const stale = inspectStaleInProgressItems(items, {
 });
 // Unowned, idle and stale groups from one pass; scanInProgressWork(pmRoot, ...)
 // also reads history, but only for items whose metadata already looks idle.
+// The registry resolves stored status aliases, as the in-progress counters do.
 const work = inspectInProgressWork(items, {
+  status_registry: resolveRuntimeStatusRegistry(projectSettings.schema),
   threshold_hours: projectSettings.mutation_guard.stale_in_progress_hours,
 });
 ```

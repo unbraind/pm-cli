@@ -318,6 +318,35 @@ describe("history-compact command", () => {
     });
   });
 
+  it("refuses to prune a baseline whose compaction receipt is malformed, so a second compaction cannot launder it (GH-1336)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Compact Damaged Receipt");
+      expect(context.runCli(["append", id, "--body", "real work"]).code).toBe(0);
+      await runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath });
+      const historyFile = getHistoryPath(context, id);
+      const lines = (await readFile(historyFile, "utf8")).trim().split("\n");
+      const baseline = JSON.parse(lines[0]!) as HistoryEntry;
+      expect(baseline.op).toBe("history_compact_baseline");
+      // A valid baseline timestamp with a garbage receipt: the takeover reads this stream as unreadable.
+      lines[0] = JSON.stringify(
+        sealHistoryRecord({
+          ...baseline,
+          context: { ...baseline.context, history_compaction: { ...baseline.context?.history_compaction, last_activity_at: "garbage" } },
+        } as HistoryEntry),
+      );
+      await writeFile(historyFile, `${lines.join("\n")}\n`, "utf8");
+      expect(context.runCli(["append", id, "--body", "more work"]).code).toBe(0);
+      const before = await readFile(historyFile, "utf8");
+      await expect(
+        runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: "History for this item contains a malformed record or compaction receipt at entry 1.",
+      });
+      expect(await readFile(historyFile, "utf8")).toBe(before);
+    });
+  });
+
   it("uses the first timestamp boundary hit as the contiguous compact prefix", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "Compact Timestamp Prefix");

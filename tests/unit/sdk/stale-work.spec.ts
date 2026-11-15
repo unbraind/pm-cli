@@ -17,7 +17,8 @@ import {
   staleEligibleAt,
   wholeHoursSince,
 } from "../../../src/sdk/governance/stale-work.js";
-import type { ItemMetadata } from "../../../src/types/index.js";
+import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
+import type { ItemMetadata, ItemStatus } from "../../../src/types/index.js";
 
 function item(overrides: Partial<ItemMetadata>): ItemMetadata {
   return {
@@ -344,6 +345,44 @@ describe("stale in-progress SDK governance", () => {
       // A `null` line parses as JSON but is no record: the advisory read degrades instead of throwing.
       await writeFile(path.join(historyDirectory, "pm-null-line.jsonl"), "null\n");
       await expect(readLatestHistoryActivity(pmRoot, "pm-null-line")).resolves.toBeUndefined();
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves stored status aliases through the registry, matching the in-progress counters", async () => {
+    const registry = resolveRuntimeStatusRegistry({
+      statuses: [
+        { id: "todo", roles: ["active", "default_open"] },
+        { id: "doing", aliases: ["wip"], roles: ["active"] },
+        { id: "shipped", roles: ["terminal", "terminal_done", "default_close"] },
+      ],
+      fields: [],
+      workflow: { open_status: "todo", in_progress_status: "doing", close_status: "shipped" },
+    });
+    const items = [
+      item({ id: "pm-alias", status: "wip" as ItemStatus }),
+      item({ id: "pm-canonical", status: "doing" as ItemStatus }),
+      item({ id: "pm-open", status: "todo" as ItemStatus }),
+    ];
+    const now = new Date("2026-07-24T12:00:00.000Z");
+    // The target defaults to the registry's in-progress status.
+    expect(
+      inspectInProgressWork(items, { status_registry: registry, threshold_hours: 72, now }).unowned.items.map((entry) => entry.id),
+    ).toEqual(["pm-alias", "pm-canonical"]);
+    // Without a registry only the spelling matches, so an item stored under an alias is not counted.
+    expect(
+      inspectInProgressWork(items, { in_progress_status: "doing", threshold_hours: 72, now }).unowned.items.map((entry) => entry.id),
+    ).toEqual(["pm-canonical"]);
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-stale-work-"));
+    try {
+      const scan = await scanInProgressWork(pmRoot, items, {
+        in_progress_status: "doing",
+        status_registry: registry,
+        threshold_hours: 72,
+        now,
+      });
+      expect(scan.stale.items.map((entry) => entry.id)).toEqual(["pm-alias", "pm-canonical"]);
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }

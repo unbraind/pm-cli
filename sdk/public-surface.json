@@ -3420,6 +3420,14 @@
       ],
       "package_version": "2026.11.15",
       "reason": "pm-gh1336: mutateItem and mutateItemWithHistoryContext take an ItemMutationCallback whose optional second argument ItemMutationLocation {storageId} names the id their lock and history stream use; existing one-argument callbacks keep compiling"
+    },
+    {
+      "changes": [
+        "signature ./sdk:InspectStaleInProgressOptions",
+        "signature ./sdk/governance:InspectStaleInProgressOptions"
+      ],
+      "package_version": "2026.11.15",
+      "reason": "InspectStaleInProgressOptions gains an optional status_registry so stored status aliases resolve like the in-progress counters; existing callers are unaffected (GH-1724)"
     }
   ],
   "entrypoints": {
@@ -11386,7 +11394,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "InspectStaleInProgressOptions",
-          "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
+          "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; status_registry?: RuntimeStatusRegistry; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
         },
         {
           "classification": "advanced_export",
@@ -31228,7 +31236,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "InspectStaleInProgressOptions",
-          "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
+          "signature": "export interface InspectStaleInProgressOptions { in_progress_status?: string; status_registry?: RuntimeStatusRegistry; threshold_hours: number; now?: Date; last_history_activity?: (item: ItemMetadata) => string | undefined; }"
         },
         {
           "classification": "supported",

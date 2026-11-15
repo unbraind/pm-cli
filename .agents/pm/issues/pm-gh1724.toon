@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,context,"gh:1724",health,multi-agent,wip-hygiene
 created_at: "2026-11-14T05:44:47.936Z"
-updated_at: "2026-11-15T09:46:23.928Z"
+updated_at: "2026-11-15T16:38:21.232Z"
 closed_at: "2026-11-15T08:34:42.995Z"
 completed_at: "2026-11-15T08:34:42.995Z"
 author: "harness:claude-code"
@@ -37,6 +37,8 @@ comments[4]:
   - created_at: "2026-11-15T09:46:23.928Z"
     author: "harness:claude-code"
     text: "Review round 3 on PR #1734: details.in_progress_work.item_remedies gains take_over_idle (pm claim <id> --takeover-stale) for idle items another agent holds, because a plain pm claim refuses them. The idle clock now ignores maintenance-only history entries such as history-compact, so compaction cannot hide abandoned work."
+notes[1]{created_at,author,text}:
+  "2026-11-15T16:38:21.231Z","harness:claude-code","Review follow-up: the unattended-work scan now resolves stored status aliases through the workspace status registry (optional status_registry on InspectStaleInProgressOptions, passed by pm health and pm context), so an item stored under an alias of the in-progress status is counted in in_progress_unowned, in_progress_idle and stale_in_progress_items, the same population the in_progress counter reads. SDK callers without a registry keep the spelling match. Regression: tests/unit/sdk/stale-work.spec.ts (alias resolution)."
 files[8]:
   - path: src/core/diagnostics/remediation.ts
     scope: project

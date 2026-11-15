@@ -23,6 +23,8 @@
 import path from "node:path";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
 import { readHistoryEntries } from "../../core/history/read.js";
+import { normalizeStatusForRegistry } from "../../core/item/status.js";
+import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 import type { ItemMetadata } from "../../types/index.js";
 
@@ -89,6 +91,14 @@ export interface InProgressWorkScan {
 export interface InspectStaleInProgressOptions {
   /** Status id configured as the active lifecycle state. */
   in_progress_status?: string;
+  /**
+   * Workspace status registry. When present, each item's stored status
+   * resolves through the registry's aliases before matching, so the scan reads
+   * the same population as the `in_progress` counters; the target defaults to
+   * the registry's in-progress status. Without it, statuses match by their
+   * trimmed, lowercased, underscore-normalized spelling.
+   */
+  status_registry?: RuntimeStatusRegistry;
   /** Age threshold in hours. */
   threshold_hours: number;
   /** Scan timestamp, injectable for deterministic tests. */
@@ -140,8 +150,17 @@ export function staleEligibleAt(timestamp: string, thresholdHours: number): stri
   return Math.abs(eligibleMs) <= MAX_DATE_MS ? new Date(eligibleMs).toISOString() : null;
 }
 
-function isInProgress(item: ItemMetadata, inProgressStatus: string): boolean {
-  return normalizedStatus(String(item.status)) === inProgressStatus;
+/** Build the in-progress membership test once per scan: registry-resolved when a registry is given. */
+function inProgressMatcher(
+  options: Pick<InspectStaleInProgressOptions, "in_progress_status" | "status_registry">,
+): (item: ItemMetadata) => boolean {
+  const registry = options.status_registry;
+  if (registry === undefined) {
+    const target = normalizedStatus(options.in_progress_status);
+    return (item) => normalizedStatus(String(item.status)) === target;
+  }
+  const target = normalizeStatusForRegistry(options.in_progress_status ?? registry.in_progress_status, registry);
+  return (item) => normalizeStatusForRegistry(item.status, registry) === target;
 }
 
 function assigneeOf(item: ItemMetadata): string | undefined {
@@ -200,12 +219,12 @@ export function inspectInProgressWork(
 ): InProgressWorkScan {
   const thresholdHours = normalizeStaleWorkThresholdHours(options.threshold_hours);
   const nowMs = (options.now ?? new Date()).getTime();
-  const inProgressStatus = normalizedStatus(options.in_progress_status);
+  const isInProgress = inProgressMatcher(options);
   const unowned: InProgressWorkItem[] = [];
   const idle: InProgressWorkItem[] = [];
   const stale: StaleInProgressItem[] = [];
   for (const item of items) {
-    if (!isInProgress(item, inProgressStatus)) continue;
+    if (!isInProgress(item)) continue;
     const placement = placeInProgressItem(
       item,
       resolveLastActivityAt(item.updated_at, options.last_history_activity?.(item)),
@@ -391,12 +410,12 @@ export async function scanInProgressWork(
 ): Promise<InProgressWorkScan> {
   const thresholdHours = normalizeStaleWorkThresholdHours(options.threshold_hours);
   const nowMs = (options.now ?? new Date()).getTime();
-  const inProgressStatus = normalizedStatus(options.in_progress_status);
+  const isInProgress = inProgressMatcher(options);
   const historyTimestamps = new Map<string, string>();
   await Promise.all(
     items
       .filter((item) => {
-        if (!isInProgress(item, inProgressStatus)) return false;
+        if (!isInProgress(item)) return false;
         if (assigneeOf(item) === undefined) return true;
         const updatedAt = resolveLastActivityAt(item.updated_at, undefined);
         return updatedAt === undefined || wholeHoursSince(updatedAt, nowMs) >= thresholdHours;

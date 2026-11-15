@@ -3063,6 +3063,7 @@ export async function runHealth(
   const workStatuses = resolveRuntimeStatusRegistry(settings.schema);
   const inProgressWork = await scanInProgressWork(pmRoot, items, {
     in_progress_status: workStatuses.in_progress_status,
+    status_registry: workStatuses,
     threshold_hours: settings.mutation_guard.stale_in_progress_hours,
   });
   const staleInProgress = buildStaleInProgressHealthSummary(inProgressWork.stale);
