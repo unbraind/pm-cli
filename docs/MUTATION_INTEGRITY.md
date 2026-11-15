@@ -50,9 +50,12 @@ compaction never renews an abandoned claim. A baseline written before that
 field existed carries only its own timestamp, the last pruned entry's time,
 which does not bound the pruned work because history keeps caller-supplied
 timestamps without an ordering check. Advisory reads approximate its activity
-with that timestamp; a takeover refuses it
-(`claim_activity.legacy_compaction_baseline`), and a later compaction keeps
-the new baseline legacy instead of recording a time. A
+with that timestamp; a takeover refuses it. A `history-repair --salvage-tail`
+record likewise stands for a discarded record whose time is unknown. A
+takeover refuses either (`claim_activity.unproven_activity`:
+`legacy_compaction_baseline` or `discarded_history_tail`). A later compaction
+records the reason in its receipt as `unproven_activity`, next to the advisory
+`last_activity_at`, so pruning never turns unknown work into proven idleness. A
 stream any of whose records lacks a parseable timestamp, or holds a baseline
 with a malformed receipt, is unreadable for a takeover, and `history-compact`
 refuses to prune such a record (it would launder the damage into a judgeable

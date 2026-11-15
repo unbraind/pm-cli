@@ -6,13 +6,15 @@ status: open
 priority: 1
 tags[4]: agent-ux,"gh:1735",observability,telemetry
 created_at: "2026-11-15T21:50:02.937Z"
-updated_at: "2026-11-15T21:50:02.937Z"
+updated_at: "2026-11-15T22:07:33.063Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "With NODE_TEST_CONTEXT set and PM_TELEMETRY_SOURCE_CONTEXT=automation inherited, telemetry stays suppressed (test_suppressed=true); With PM_TELEMETRY_SOURCE_CONTEXT=test or PM_TELEMETRY_SEND_TEST_EVENTS inside a test runner, telemetry emits labelled test; Outside a test runner, an automation source context behaves exactly as before; pm ops telemetry status reports the deciding input next to test_suppressed"
 parent: pm-5oj5
 risk: medium
 confidence: high
+expected_result: "Inside a detected test runner, telemetry stays suppressed unless PM_TELEMETRY_SOURCE_CONTEXT=test or PM_TELEMETRY_SEND_TEST_EVENTS opts in, and status names the deciding input"
+actual_result: "An inherited PM_TELEMETRY_SOURCE_CONTEXT=automation re-enables telemetry for every pm child a test suite spawns, so fixtures emit labelled automation"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-745epp,related,"2026-11-15T21:50:02.937Z","harness:claude-code","cli:create:dep",detected
 body: "## Reproduction (pm 2026.11.14)\n\n```console\n$ NODE_TEST_CONTEXT=child pm ops telemetry status --json\n# enabled=false, env_overrides.test_suppressed=true\n$ NODE_TEST_CONTEXT=child PM_TELEMETRY_SOURCE_CONTEXT=automation pm ops telemetry status --json\n# enabled=true, env_overrides.test_suppressed=false\n```\n\n## Root cause\n\n`src/core/telemetry/policy.ts`, `resolveTelemetryEnvironmentPolicy`:\n\n```ts\nconst testSuppressed = inferredTest && !SOURCE_CONTEXTS.has(override) &&\n  !telemetryEnvironmentFlag(\"PM_TELEMETRY_SEND_TEST_EVENTS\", env);\n```\n\nEvery member of `SOURCE_CONTEXTS` (automation, ci, test, ...) counts as an explicit opt-in. Only `test` (or the existing force flag `PM_TELEMETRY_SEND_TEST_EVENTS`) says that test telemetry is intended.\n\n## Impact\n\n- Telemetry and Sentry count package-test fixtures as real automation activity. That is the failure mode the closed inferred-test suppression item fixed, reached by a new route. Expected fixture refusals then look like production errors.\n- Emitting children queue events and may start detached flush workers, which slows suites run under agents.\n\n## Fix direction\n\n- When a test runner is detected, suppress unless the opt-in is explicit: `PM_TELEMETRY_SOURCE_CONTEXT=test` or `PM_TELEMETRY_SEND_TEST_EVENTS`. An inherited `automation`, `ci` or other non-test context no longer re-enables emission.\n- `pm ops telemetry status` reports the deciding input, for example `decided_by: \"env:NODE_TEST_CONTEXT\"` or `\"env:PM_TELEMETRY_SOURCE_CONTEXT\"`, next to `test_suppressed`.\n- Outside a test runner, `automation` behaves exactly as today."

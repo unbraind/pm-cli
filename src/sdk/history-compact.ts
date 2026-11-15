@@ -45,7 +45,8 @@ import { runActiveOnReadHooks } from "../core/extensions/index.js";
 import { readLocatedItem } from "../core/store/item-store.js";
 import { readSettings } from "../core/store/settings.js";
 import type { HistoryEntry } from "../types/index.js";
-import { isJudgeableHistoryRecord, isLegacyCompactionBaseline, recordedPrefixActivity } from "./governance/stale-work.js";
+import type { UnprovenActivityReason } from "./governance/stale-work.js";
+import { isJudgeableHistoryRecord, recordedPrefixActivity, unprovenHistoryActivity } from "./governance/stale-work.js";
 import {
   resolveHistoryWorkspace,
   resolveHistorySubject,
@@ -304,13 +305,20 @@ function assertPrunedRecordsJudgeable(entries: readonly HistoryEntry[], compactC
 /**
  * The pruned prefix's activity a new baseline records: the newest substantive
  * entry (null when none), so a stale-work clock reading the baseline never
- * counts maintenance, even across repeated compactions. A prefix holding a
- * legacy baseline has unknown activity, so the field stays absent and the new
- * baseline remains legacy: recording a time would certify the unknown pruned
- * work as idle for a stale-claim takeover (GH-1336).
+ * counts maintenance, even across repeated compactions. A prefix that stands
+ * for work of unknown time (a legacy baseline, a salvaged tail) also records
+ * that reason as `unproven_activity`: without it, the recorded time would
+ * certify the unknown pruned work as idle for a stale-claim takeover (GH-1336).
  */
-function prunedActivityReceipt(pruned: readonly HistoryEntry[]): { last_activity_at?: string | null } {
-  return pruned.some(isLegacyCompactionBaseline) ? {} : { last_activity_at: recordedPrefixActivity(pruned) };
+function prunedActivityReceipt(pruned: readonly HistoryEntry[]): {
+  last_activity_at: string | null;
+  unproven_activity?: UnprovenActivityReason;
+} {
+  const unproven = unprovenHistoryActivity(pruned);
+  return {
+    last_activity_at: recordedPrefixActivity(pruned),
+    ...(unproven === undefined ? {} : { unproven_activity: unproven }),
+  };
 }
 
 /** Replace the pruned prefix with a durable-addressed checkpoint while retaining original records and hash semantics. */

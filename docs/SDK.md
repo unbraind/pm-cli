@@ -1277,12 +1277,13 @@ Stale work uses one activity clock and one threshold
 can still call an item idle when the takeover would refuse it: advisory reads
 degrade an unreadable history stream to metadata activity, while the ownership
 evaluation fails closed (`claim_activity.history_unreadable`, never stale).
-A stream compacted by an older version, whose baseline does not record the
-pruned prefix's newest activity, also fails closed
-(`claim_activity.legacy_compaction_baseline`, never stale): history keeps
-caller-supplied timestamps, so the baseline's own time does not bound the
-pruned work. A later compaction keeps such a baseline legacy instead of
-recording a time. Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
+A readable stream that stands for work whose time no record keeps also fails
+closed (`claim_activity.unproven_activity`, never stale). That covers a
+baseline compacted by an older version (`legacy_compaction_baseline`) and a
+salvaged history tail (`discarded_history_tail`). History keeps
+caller-supplied timestamps, so neither record's own time bounds that work.
+`unprovenHistoryActivity()` names the reason, and a later compaction records it
+as the receipt's `unproven_activity`. Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
 the locked `pm claim --takeover-stale` decision, never from an advisory row. Each `held_by_others` row is a
 `NextHeldRow` with `claimed_at`, `idle_hours` and `stale`.
 `runClaim(id, false, global, { takeoverStale: true })` takes over only an idle
@@ -1291,7 +1292,7 @@ throws `STALE_CLAIM_TAKEOVER_REFUSED_CODE` (`stale_claim_takeover_refused`) with
 `context.claim_activity`. `evaluateClaimActivity()` returns that evidence
 directly; `resolveItemOwnershipActivity()` returns an `ItemOwnershipActivity`
 (holder, `source` and `since`) that carries it as `.activity`, so read
-`.activity.history_unreadable`, `.activity.legacy_compaction_baseline` and
+`.activity.history_unreadable`, `.activity.unproven_activity` and
 `.activity.stale_policy` there. `inspectInProgressWork()`
 and `scanInProgressWork()` classify in-progress work into `unowned`, `idle` and
 `stale` groups (pass `status_registry` so stored status aliases resolve the way

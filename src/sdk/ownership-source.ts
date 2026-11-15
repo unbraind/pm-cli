@@ -11,12 +11,13 @@ import { getHistoryPath } from "../core/store/paths.js";
 import {
   STALE_WORK_THRESHOLD_SETTING,
   isJudgeableHistoryRecord,
-  isLegacyCompactionBaseline,
   latestHistoryTimestamp,
   normalizeStaleWorkThresholdHours,
   resolveLastActivityAt,
   staleEligibleAt,
+  unprovenHistoryActivity,
   wholeHoursSince,
+  type UnprovenActivityReason,
 } from "./governance/stale-work.js";
 
 /** Activity and stale-claim policy evidence behind a claim refusal or takeover (GH-1336). */
@@ -37,12 +38,11 @@ export interface ClaimActivityOptions {
    */
   history_unreadable?: boolean;
   /**
-   * The readable stream holds a compaction baseline written before baselines
-   * recorded their pruned prefix's activity. The newest pruned work is
-   * unknown (history timestamps are not ordered), so the claim is never
-   * judged stale.
+   * The readable stream stands for work whose time no record keeps (a legacy
+   * compaction baseline, a salvaged tail); see `unprovenHistoryActivity`.
+   * History timestamps are not ordered, so the claim is never judged stale.
    */
-  legacy_compaction_baseline?: boolean;
+  unproven_activity?: UnprovenActivityReason;
 }
 
 /** Typed holder evidence behind an `already_claimed_by` refusal (GH-1610). */
@@ -81,11 +81,11 @@ export function evaluateClaimActivity(
   const idleHours = lastActivityAt === null ? null : wholeHoursSince(lastActivityAt, nowMs);
   // Unknown or unprovable activity never qualifies: a takeover needs positive evidence of idleness.
   const judgeable =
-    lastActivityAt !== null && options.history_unreadable !== true && options.legacy_compaction_baseline !== true;
+    lastActivityAt !== null && options.history_unreadable !== true && options.unproven_activity === undefined;
   return {
     last_activity_at: lastActivityAt,
     ...(options.history_unreadable === true ? { history_unreadable: true as const } : {}),
-    ...(options.legacy_compaction_baseline === true ? { legacy_compaction_baseline: true as const } : {}),
+    ...(options.unproven_activity === undefined ? {} : { unproven_activity: options.unproven_activity }),
     claim_age_hours: validClaimedAt === null ? null : wholeHoursSince(validClaimedAt, nowMs),
     idle_hours: idleHours,
     stale_policy: {
@@ -116,7 +116,7 @@ async function readOwnershipEvidence(
   conflict: ItemOwnershipConflict;
   history: ReadonlyArray<{ ts: string }>;
   readable: boolean;
-  legacyBaseline: boolean;
+  unproven: UnprovenActivityReason | undefined;
 }> {
   // A missing stream reads as empty; a stream that exists but cannot be parsed, or that
   // decodes to values which are not history records (a `null` line), is unreadable.
@@ -163,7 +163,7 @@ async function readOwnershipEvidence(
     },
     history,
     readable,
-    legacyBaseline: history.some(isLegacyCompactionBaseline),
+    unproven: unprovenHistoryActivity(history),
   };
 }
 
@@ -183,13 +183,13 @@ export async function resolveItemOwnershipActivity(
   assignee: string,
   options: ClaimActivityOptions,
 ): Promise<ItemOwnershipActivity> {
-  const { conflict, history, readable, legacyBaseline } = await readOwnershipEvidence(pmRoot, itemId, assignee);
+  const { conflict, history, readable, unproven } = await readOwnershipEvidence(pmRoot, itemId, assignee);
   return {
     ...conflict,
     activity: evaluateClaimActivity(conflict.since, latestHistoryTimestamp(history), {
       ...options,
       ...(readable ? {} : { history_unreadable: true }),
-      ...(legacyBaseline ? { legacy_compaction_baseline: true } : {}),
+      ...(unproven === undefined ? {} : { unproven_activity: unproven }),
     }),
   };
 }

@@ -21,8 +21,11 @@
  * prefix's newest work, because history keeps caller-supplied timestamps
  * without an ordering check: after a clock regression the last pruned entry
  * can predate a pruned restore. Advisory reads approximate a legacy baseline's
- * activity with its timestamp; the stale-claim takeover refuses it, and a
- * later compaction carries the legacy state forward instead of recording it.
+ * activity with its timestamp. The stale-claim takeover refuses any stream
+ * holding work whose time no record keeps (`unprovenHistoryActivity`): a legacy
+ * baseline, or a `history_salvage` record whose discarded tail may have been
+ * the recent work. A later compaction records that reason in its receipt as
+ * `unproven_activity`, so pruning never turns unknown work into proven idleness.
  */
 import path from "node:path";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
@@ -37,6 +40,17 @@ import { mapWithFixedConcurrency } from "../extension/concurrency.js";
 export const STALE_WORK_THRESHOLD_SETTING = "mutation_guard.stale_in_progress_hours";
 
 const HOUR_MS = 3_600_000;
+
+/**
+ * Why a readable history stream cannot prove idleness: it stands for work whose
+ * time no record keeps. `legacy_compaction_baseline` is a baseline written
+ * before receipts recorded pruned activity; `discarded_history_tail` is a
+ * `history-repair --salvage-tail` that removed an unreadable record.
+ */
+export const UNPROVEN_ACTIVITY_REASONS = ["legacy_compaction_baseline", "discarded_history_tail"] as const;
+
+/** One reason from `UNPROVEN_ACTIVITY_REASONS`. */
+export type UnprovenActivityReason = (typeof UNPROVEN_ACTIVITY_REASONS)[number];
 
 /** Streams one in-progress scan reads at a time: each read loads and parses a whole history file. */
 const HISTORY_READ_CONCURRENCY = 16;
@@ -321,15 +335,23 @@ function isPlainRecord(value: unknown): value is object {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/** A receipt's recorded `unproven_activity`: absent, a known reason, or `null` when the value is unknown. */
+function readRecordedUnproven(receipt: object): UnprovenActivityReason | undefined | null {
+  if (!("unproven_activity" in receipt)) return undefined;
+  const value = (receipt as { unproven_activity?: unknown }).unproven_activity;
+  return (UNPROVEN_ACTIVITY_REASONS as readonly unknown[]).includes(value) ? (value as UnprovenActivityReason) : null;
+}
+
 /**
  * Read the prefix activity a compaction baseline records. `recorded` carries
- * a parseable timestamp or null (no work in the prefix); `legacy` means the
- * receipt predates the field; `malformed` means the context, the receipt or
- * the value has the wrong shape (for example `history_compaction: null`).
+ * a parseable timestamp or null (no work in the prefix), plus the
+ * `unproven_activity` reason the pruned prefix carried; `legacy` means the
+ * receipt predates the field; `malformed` means the context, the receipt or a
+ * value has the wrong shape (for example `history_compaction: null`).
  */
 function readCompactionActivity(
   entry: WellFormedHistoryRecord,
-): { kind: "recorded"; at: string | null } | { kind: "legacy" } | { kind: "malformed" } {
+): { kind: "recorded"; at: string | null; unproven?: UnprovenActivityReason } | { kind: "legacy" } | { kind: "malformed" } {
   const context = (entry as { context?: unknown }).context;
   if (context === undefined) return { kind: "legacy" };
   if (!isPlainRecord(context)) return { kind: "malformed" };
@@ -337,9 +359,12 @@ function readCompactionActivity(
   if (receipt === undefined) return { kind: "legacy" };
   if (!isPlainRecord(receipt)) return { kind: "malformed" };
   if (!("last_activity_at" in receipt)) return { kind: "legacy" };
+  const unproven = readRecordedUnproven(receipt);
+  if (unproven === null) return { kind: "malformed" };
   const at = (receipt as { last_activity_at?: unknown }).last_activity_at;
-  if (at === null) return { kind: "recorded", at: null };
-  return typeof at === "string" && Number.isFinite(Date.parse(at)) ? { kind: "recorded", at } : { kind: "malformed" };
+  const reason = unproven === undefined ? {} : { unproven };
+  if (at === null) return { kind: "recorded", at: null, ...reason };
+  return typeof at === "string" && Number.isFinite(Date.parse(at)) ? { kind: "recorded", at, ...reason } : { kind: "malformed" };
 }
 
 /**
@@ -347,8 +372,8 @@ function readCompactionActivity(
  * record with a parseable timestamp and, for a compaction baseline, a receipt
  * that is absent (legacy) or well formed. The stale-claim takeover treats a
  * stream with any other value as unreadable, because a skipped record could be
- * the recent work. A readable legacy baseline still cannot prove idleness; see
- * `isLegacyCompactionBaseline`.
+ * the recent work. A readable stream can still fail to prove idleness; see
+ * `unprovenHistoryActivity`.
  */
 export function isJudgeableHistoryRecord(entry: unknown): entry is WellFormedHistoryRecord {
   return (
@@ -358,17 +383,30 @@ export function isJudgeableHistoryRecord(entry: unknown): entry is WellFormedHis
   );
 }
 
+/** The reason one decoded history value stands for work of unknown time, or undefined. */
+function unprovenActivityOf(entry: unknown): UnprovenActivityReason | undefined {
+  if (!isWellFormedHistoryRecord(entry)) return undefined;
+  // A salvage record exists only when it discarded an unreadable tail, which may have been the recent work.
+  if (entry.op === "history_salvage") return "discarded_history_tail";
+  if (entry.op !== "history_compact_baseline") return undefined;
+  const recorded = readCompactionActivity(entry);
+  if (recorded.kind === "legacy") return "legacy_compaction_baseline";
+  return recorded.kind === "recorded" ? recorded.unproven : undefined;
+}
+
 /**
- * Whether a decoded history value is a compaction baseline written before
- * baselines recorded their pruned prefix's activity. Its stream is readable,
- * but the newest pruned work is unknown, so idleness cannot be proven.
+ * Why a readable history stream cannot prove idleness, or undefined when it
+ * can: the reason of the first record standing for work whose time no record
+ * keeps (a legacy compaction baseline, a salvage of a discarded tail, or a
+ * baseline whose pruned prefix held either). History timestamps are
+ * caller-supplied and unordered, so neither record's own time bounds that work.
  */
-export function isLegacyCompactionBaseline(entry: unknown): boolean {
-  return (
-    isWellFormedHistoryRecord(entry) &&
-    entry.op === "history_compact_baseline" &&
-    readCompactionActivity(entry).kind === "legacy"
-  );
+export function unprovenHistoryActivity(history: ReadonlyArray<unknown>): UnprovenActivityReason | undefined {
+  for (const entry of history) {
+    const reason = unprovenActivityOf(entry);
+    if (reason !== undefined) return reason;
+  }
+  return undefined;
 }
 
 /**

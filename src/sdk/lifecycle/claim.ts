@@ -426,6 +426,12 @@ function staleTakeoverReceipt(
   };
 }
 
+/** What left work of unknown time in a readable history stream, phrased for a refusal. */
+const UNPROVEN_ACTIVITY_CAUSE: Record<NonNullable<ClaimActivityEvidence["unproven_activity"]>, string> = {
+  legacy_compaction_baseline: "an older pm version compacted its history without recording the newest pruned activity",
+  discarded_history_tail: "a history salvage discarded an unreadable record whose time is unknown",
+};
+
 /** Why a claim is not stale, and the one step that can change that, for a refused `--takeover-stale`. */
 function describeNotStale(
   itemId: string,
@@ -437,9 +443,9 @@ function describeNotStale(
       nextStep: `Repair the history stream of ${itemId} (pm history ${itemId} --verify), then retry --takeover-stale.`,
     };
   }
-  if (activity.legacy_compaction_baseline === true) {
+  if (activity.unproven_activity !== undefined) {
     return {
-      reason: "an older pm version compacted its history without recording the newest pruned activity, so idleness cannot be proven",
+      reason: `${UNPROVEN_ACTIVITY_CAUSE[activity.unproven_activity]}, so idleness cannot be proven`,
       nextStep: `Ask the holder to release ${itemId} (pm release ${itemId}): no later compaction can prove its idleness.`,
     };
   }

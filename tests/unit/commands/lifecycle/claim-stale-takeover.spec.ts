@@ -11,6 +11,8 @@ import {
 import { runStartTask } from "../../../../src/sdk/lifecycle/task-composition.js";
 import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import { runRestore } from "../../../../src/sdk/lifecycle/restore.js";
+import { runHistoryRepair } from "../../../../src/sdk/history-repair.js";
+import { runHistoryCompact } from "../../../../src/sdk/history-compact.js";
 import { runNext } from "../../../../src/sdk/query/next.js";
 import { runAction } from "../../../../src/sdk/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
@@ -222,15 +224,47 @@ describe("stale-claim takeover (GH-1336)", () => {
       expect(error.context).toMatchObject({
         code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
         claimed_by: "agent-a",
-        claim_activity: { legacy_compaction_baseline: true, idle_hours: 200, stale_policy: { stale: false, eligible_at: null } },
+        claim_activity: { unproven_activity: "legacy_compaction_baseline", idle_hours: 200, stale_policy: { stale: false, eligible_at: null } },
       });
       expect(error.context.claim_activity).not.toHaveProperty("history_unreadable");
-      expect(error.message).toContain("without recording the newest pruned activity, so idleness cannot be proven");
+      expect(error.message).toContain(
+        "(an older pm version compacted its history without recording the newest pruned activity, so idleness cannot be proven)",
+      );
       expect(error.context.nextSteps?.[0]).toBe(`Ask the holder to release ${id} (pm release ${id}): no later compaction can prove its idleness.`);
       // A plain claim names no stale takeover either.
       const plain = await refusal(runClaim(id, false, global, { author: "agent-b" }));
       expect(plain.context.nextSteps?.join("\n")).not.toContain("--takeover-stale");
       expect({ history: await readFile(historyPath, "utf8"), item: await readFile(itemPath, "utf8") }).toEqual(before);
+    });
+  });
+
+  it("refuses a takeover after a tail salvage discarded a record of unknown time, and keeps refusing after compaction", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Salvaged claim");
+      const global = { path: context.pmPath };
+      setClock(at(0));
+      await runClaim(id, false, global, { author: "agent-a" });
+      // A torn append: the holder's recent restore never finished its line, so its time is unreadable.
+      const historyPath = getHistoryPath(context.pmPath, id);
+      await writeFile(historyPath, `${await readFile(historyPath, "utf8")}{"ts":"${at(199).toISOString()}","op":"rest`);
+      await runHistoryRepair(id, { salvageTail: true, author: "maintainer" }, global);
+      expect((await historyLines(context, id)).at(-1)).toMatchObject({ op: "history_salvage" });
+
+      setClock(at(200));
+      const refused = async () => refusal(runClaim(id, false, global, { author: "agent-b", takeoverStale: true }));
+      const salvaged = await refused();
+      expect(salvaged.context).toMatchObject({
+        code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
+        claim_activity: { unproven_activity: "discarded_history_tail", stale_policy: { stale: false, eligible_at: null } },
+      });
+      expect(salvaged.message).toContain("(a history salvage discarded an unreadable record whose time is unknown, so idleness cannot be proven)");
+      // Compaction prunes the salvage record but records its reason, so the unknown work never becomes proven idleness.
+      await runHistoryCompact(id, { author: "maintainer" }, global);
+      expect((await historyLines(context, id))[0]).toMatchObject({
+        op: "history_compact_baseline",
+        context: { history_compaction: { unproven_activity: "discarded_history_tail" } },
+      });
+      expect((await refused()).context).toMatchObject({ claim_activity: { unproven_activity: "discarded_history_tail", stale_policy: { stale: false } } });
     });
   });
 

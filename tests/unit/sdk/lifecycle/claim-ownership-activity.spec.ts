@@ -47,15 +47,17 @@ describe("claim activity evidence (GH-1336)", () => {
         history_unreadable: true,
       }),
     ).toMatchObject({ history_unreadable: true, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
-    // A legacy compaction baseline leaves the pruned work unknown: reported idle, never stale.
-    expect(
-      evaluateClaimActivity(null, undefined, {
-        updated_at: "2026-07-01T00:00:00.000Z",
-        threshold_hours: 72,
-        now: NOW,
-        legacy_compaction_baseline: true,
-      }),
-    ).toMatchObject({ legacy_compaction_baseline: true, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
+    // Work whose time no record keeps (a legacy baseline, a salvaged tail): reported idle, never stale.
+    for (const reason of ["legacy_compaction_baseline", "discarded_history_tail"] as const) {
+      expect(
+        evaluateClaimActivity(null, undefined, {
+          updated_at: "2026-07-01T00:00:00.000Z",
+          threshold_hours: 72,
+          now: NOW,
+          unproven_activity: reason,
+        }),
+      ).toMatchObject({ unproven_activity: reason, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
+    }
     expect(
       evaluateClaimActivity(null, undefined, { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 3_000_000_000, now: NOW }),
     ).toMatchObject({ idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
@@ -151,6 +153,8 @@ describe("claim activity evidence (GH-1336)", () => {
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":null}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":[]}',
         '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":[]}}',
+        // An unknown unproven-activity reason is a damaged receipt, not a judgeable one.
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":{"last_activity_at":null,"unproven_activity":"other"}}}',
       ].entries()) {
         const id = `pm-malformed-${index}`;
         await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${entries[0]}\n${line}\n`);
@@ -172,7 +176,7 @@ describe("claim activity evidence (GH-1336)", () => {
       expect(legacy).toMatchObject({ source: "assignment", since: "2026-07-01T00:00:00.000Z" });
       expect(legacy.activity).toEqual({
         last_activity_at: "2026-07-01T00:00:00.000Z",
-        legacy_compaction_baseline: true,
+        unproven_activity: "legacy_compaction_baseline",
         claim_age_hours: 96,
         idle_hours: 96,
         stale_policy: { setting: "mutation_guard.stale_in_progress_hours", threshold_hours: 72, stale: false, eligible_at: null },
@@ -191,8 +195,17 @@ describe("claim activity evidence (GH-1336)", () => {
       ] as const) {
         const judged = (await judge(id, receipt)).activity;
         expect(judged).toMatchObject({ last_activity_at: "2026-07-01T00:00:00.000Z", idle_hours: 96, stale_policy: { stale: true } });
-        expect(judged).not.toHaveProperty("legacy_compaction_baseline");
+        expect(judged).not.toHaveProperty("unproven_activity");
       }
+      // A receipt that carries the pruned prefix's unproven reason forward stays unproven despite its recorded time.
+      expect(
+        (await judge("pm-recorded-unproven", { last_activity_at: "2026-06-30T00:00:00.000Z", unproven_activity: "discarded_history_tail" })).activity,
+      ).toMatchObject({ unproven_activity: "discarded_history_tail", stale_policy: { stale: false, eligible_at: null } });
+      // A salvage record means a discarded tail of unknown time: the stream is readable but proves nothing.
+      const salvage = JSON.stringify({ ts: "2026-07-01T00:00:00.000Z", author: "m", op: "history_salvage", patch: [], context: { history_salvage: { discarded_bytes: 40 } }, before_hash: "x", after_hash: "x" });
+      await writeFile(path.join(pmRoot, "history", "pm-salvaged.jsonl"), `${baseline({ last_activity_at: null })}\n${salvage}\n`);
+      const salvaged = await resolveItemOwnershipActivity(pmRoot, "pm-salvaged", "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: july5 });
+      expect(salvaged.activity).toMatchObject({ unproven_activity: "discarded_history_tail", idle_hours: 96, stale_policy: { stale: false } });
       // A missing stream is empty, not unreadable.
       expect(
         (await resolveItemOwnershipActivity(pmRoot, "pm-missing", "agent-z", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW })).activity,
