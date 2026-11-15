@@ -15,7 +15,7 @@ import { runNext } from "../../../../src/sdk/query/next.js";
 import { runAction } from "../../../../src/sdk/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { getHistoryPath } from "../../../../src/core/store/paths.js";
+import { getHistoryPath, getItemPath } from "../../../../src/core/store/paths.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
 
 const HOUR = 3_600_000;
@@ -195,6 +195,42 @@ describe("stale-claim takeover (GH-1336)", () => {
       });
       expect(error.message).toContain("its history stream could not be read");
       expect(error.context.nextSteps?.[0]).toBe(`Repair the history stream of ${id} (pm history ${id} --verify), then retry --takeover-stale.`);
+    });
+  });
+
+  it("refuses a takeover over a legacy compaction baseline without writing, because its pruned work is unknown", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Legacy compacted claim");
+      const global = { path: context.pmPath };
+      setClock(at(0));
+      await runClaim(id, false, global, { author: "agent-a" });
+      // A baseline an older version wrote: the receipt has no last_activity_at, only the last pruned entry's time.
+      const historyPath = getHistoryPath(context.pmPath, id);
+      const lines = await historyLines(context, id);
+      const legacyBaseline = {
+        ...lines.at(-1),
+        op: "history_compact_baseline",
+        context: { history_compaction: { contract_version: 1, checkpoint_timestamp_semantics: "last_compacted_entry" } },
+      };
+      await writeFile(historyPath, `${JSON.stringify(legacyBaseline)}\n`);
+      const itemPath = getItemPath(context.pmPath, "Task", id);
+      const before = { history: await readFile(historyPath, "utf8"), item: await readFile(itemPath, "utf8") };
+
+      setClock(at(200));
+      const error = await refusal(runClaim(id, false, global, { author: "agent-b", takeoverStale: true }));
+      expect(error.exitCode).toBe(EXIT_CODE.CONFLICT);
+      expect(error.context).toMatchObject({
+        code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
+        claimed_by: "agent-a",
+        claim_activity: { legacy_compaction_baseline: true, idle_hours: 200, stale_policy: { stale: false, eligible_at: null } },
+      });
+      expect(error.context.claim_activity).not.toHaveProperty("history_unreadable");
+      expect(error.message).toContain("without recording the newest pruned activity, so idleness cannot be proven");
+      expect(error.context.nextSteps?.[0]).toBe(`Ask the holder to release ${id} (pm release ${id}): no later compaction can prove its idleness.`);
+      // A plain claim names no stale takeover either.
+      const plain = await refusal(runClaim(id, false, global, { author: "agent-b" }));
+      expect(plain.context.nextSteps?.join("\n")).not.toContain("--takeover-stale");
+      expect({ history: await readFile(historyPath, "utf8"), item: await readFile(itemPath, "utf8") }).toEqual(before);
     });
   });
 

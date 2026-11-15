@@ -47,6 +47,15 @@ describe("claim activity evidence (GH-1336)", () => {
         history_unreadable: true,
       }),
     ).toMatchObject({ history_unreadable: true, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
+    // A legacy compaction baseline leaves the pruned work unknown: reported idle, never stale.
+    expect(
+      evaluateClaimActivity(null, undefined, {
+        updated_at: "2026-07-01T00:00:00.000Z",
+        threshold_hours: 72,
+        now: NOW,
+        legacy_compaction_baseline: true,
+      }),
+    ).toMatchObject({ legacy_compaction_baseline: true, idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
     expect(
       evaluateClaimActivity(null, undefined, { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 3_000_000_000, now: NOW }),
     ).toMatchObject({ idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
@@ -149,12 +158,41 @@ describe("claim activity evidence (GH-1336)", () => {
           resolveItemOwnershipActivity(pmRoot, id, "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
         ).resolves.toMatchObject({ source: "unknown", activity: { history_unreadable: true, stale_policy: { stale: false } } });
       }
-      // A legacy baseline without the recorded field is readable and bounded by its own time.
-      const legacy = JSON.stringify({ ts: "2026-07-03T00:00:00.000Z", author: "m", op: "history_compact_baseline", patch: [], context: { history_compaction: { contract_version: 1 } }, before_hash: "x", after_hash: "y" });
-      await writeFile(path.join(pmRoot, "history", "pm-legacy.jsonl"), `${legacy}\n`);
-      await expect(
-        resolveItemOwnershipActivity(pmRoot, "pm-legacy", "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
-      ).resolves.toMatchObject({ activity: { last_activity_at: "2026-07-03T00:00:00.000Z" } });
+      // A legacy baseline (no recorded field) is readable, so the holder evidence survives, but its own
+      // time does not bound the pruned work: the claim is never judged stale. The July 5 example: a pruned
+      // restore at July 4 23:00 hides behind a baseline whose last pruned entry is a July 1 maintenance record.
+      const july5 = new Date("2026-07-05T00:00:00.000Z");
+      const baseline = (receipt: Record<string, unknown>) =>
+        JSON.stringify({ ts: "2026-07-01T00:00:00.000Z", author: "m", op: "history_compact_baseline", patch: [{ op: "add", path: "/metadata/assignee", value: "agent-a" }], context: { history_compaction: { contract_version: 1, ...receipt } }, before_hash: "x", after_hash: "y" });
+      const judge = async (id: string, receipt: Record<string, unknown>) => {
+        await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${baseline(receipt)}\n`);
+        return resolveItemOwnershipActivity(pmRoot, id, "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: july5 });
+      };
+      const legacy = await judge("pm-legacy", {});
+      expect(legacy).toMatchObject({ source: "assignment", since: "2026-07-01T00:00:00.000Z" });
+      expect(legacy.activity).toEqual({
+        last_activity_at: "2026-07-01T00:00:00.000Z",
+        legacy_compaction_baseline: true,
+        claim_age_hours: 96,
+        idle_hours: 96,
+        stale_policy: { setting: "mutation_guard.stale_in_progress_hours", threshold_hours: 72, stale: false, eligible_at: null },
+      });
+      expect(legacy.activity).not.toHaveProperty("history_unreadable");
+      // The same stream with the pruned restore recorded: one idle hour, not stale.
+      expect((await judge("pm-recorded-recent", { last_activity_at: "2026-07-04T23:00:00.000Z" })).activity).toMatchObject({
+        last_activity_at: "2026-07-04T23:00:00.000Z",
+        idle_hours: 1,
+        stale_policy: { stale: false, eligible_at: "2026-07-07T23:00:00.000Z" },
+      });
+      // A valid older recorded time, and a recorded null (no pruned work), leave metadata as the newest activity.
+      for (const [id, receipt] of [
+        ["pm-recorded-old", { last_activity_at: "2026-06-30T00:00:00.000Z" }],
+        ["pm-recorded-null", { last_activity_at: null }],
+      ] as const) {
+        const judged = (await judge(id, receipt)).activity;
+        expect(judged).toMatchObject({ last_activity_at: "2026-07-01T00:00:00.000Z", idle_hours: 96, stale_policy: { stale: true } });
+        expect(judged).not.toHaveProperty("legacy_compaction_baseline");
+      }
       // A missing stream is empty, not unreadable.
       expect(
         (await resolveItemOwnershipActivity(pmRoot, "pm-missing", "agent-z", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW })).activity,

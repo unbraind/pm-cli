@@ -325,6 +325,8 @@ export interface PmCliErrorContext {
     last_activity_at: string | null;
     /** Present when the history stream exists but could not be read: idleness cannot be established, so the claim is never judged stale. */
     history_unreadable?: true;
+    /** Present when the stream holds a compaction baseline from before baselines recorded pruned activity: the newest pruned work is unknown, so the claim is never judged stale. */
+    legacy_compaction_baseline?: true;
     /** Whole hours since `claimed_at`, or null when the claim time is unknown. */
     claim_age_hours: number | null;
     /** Whole hours since `last_activity_at`, or null when the activity time is unknown. */

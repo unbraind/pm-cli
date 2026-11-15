@@ -11,6 +11,7 @@ import {
   scanStaleInProgressItems,
 } from "../../../src/sdk/index.js";
 import {
+  isLegacyCompactionBaseline,
   latestHistoryTimestamp,
   recordedPrefixActivity,
   readLatestHistoryActivity,
@@ -286,7 +287,8 @@ describe("stale in-progress SDK governance", () => {
     expect(latestHistoryTimestamp([create, baseline({ last_activity_at: "2026-07-03T00:00:00.000Z" }), audit])).toBe("2026-07-03T00:00:00.000Z");
     // A prefix with no work records null: the baseline contributes nothing.
     expect(latestHistoryTimestamp([create, baseline({ last_activity_at: null }), audit])).toBe("2026-07-01T00:00:00.000Z");
-    // A baseline written before the field existed is bounded by its own timestamp (the last pruned entry).
+    // A baseline written before the field existed is approximated by its own timestamp (the last pruned
+    // entry) for advisory reads; takeover decisions refuse it instead (isLegacyCompactionBaseline).
     expect(latestHistoryTimestamp([create, baseline({ contract_version: 1 }), audit])).toBe("2026-07-06T00:00:00.000Z");
     expect(latestHistoryTimestamp([create, baseline(undefined), audit])).toBe("2026-07-06T00:00:00.000Z");
     expect(latestHistoryTimestamp([create, { ...baseline(undefined), context: {} }, audit])).toBe("2026-07-06T00:00:00.000Z");
@@ -304,6 +306,19 @@ describe("stale in-progress SDK governance", () => {
       expect(latestHistoryTimestamp([create, malformed, audit])).toBe("2026-07-06T00:00:00.000Z");
     }
     expect(latestHistoryTimestamp([{ ts: "bad", op: "update" }])).toBeUndefined();
+    // Only a well-formed baseline whose receipt lacks the field is legacy; recorded and malformed receipts are not.
+    expect([baseline(undefined), baseline({ contract_version: 1 }), { ...baseline(undefined), context: {} }].every(isLegacyCompactionBaseline)).toBe(true);
+    expect(
+      [
+        baseline({ last_activity_at: null }),
+        baseline({ last_activity_at: "2026-07-03T00:00:00.000Z" }),
+        baseline({ last_activity_at: "invalid" }),
+        { ...baseline(undefined), context: null },
+        { ...baseline(undefined), patch: undefined },
+        create,
+        null,
+      ].some(isLegacyCompactionBaseline),
+    ).toBe(false);
     // A compaction records its pruned prefix's newest work, or null when the prefix held none.
     expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "update", patch: [] }])).toBe("2026-07-02T00:00:00.000Z");
     expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "history_compact", patch: [] }])).toBeNull();

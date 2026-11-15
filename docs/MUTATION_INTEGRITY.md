@@ -46,8 +46,13 @@ entries (`history-compact`, `history-repair`, `history-redact`) preserve the
 record without working on the item and do not count. A compaction baseline
 stands for its pruned prefix and records that prefix's newest substantive
 time as `context.history_compaction.last_activity_at`, so repeated
-compaction never renews an abandoned claim; a baseline written before that
-field existed counts with its own timestamp, a conservative upper bound. A
+compaction never renews an abandoned claim. A baseline written before that
+field existed carries only its own timestamp, the last pruned entry's time,
+which does not bound the pruned work because history keeps caller-supplied
+timestamps without an ordering check. Advisory reads approximate its activity
+with that timestamp; a takeover refuses it
+(`claim_activity.legacy_compaction_baseline`), and a later compaction keeps
+the new baseline legacy instead of recording a time. A
 stream any of whose records lacks a parseable timestamp, or holds a baseline
 with a malformed receipt, is unreadable for a takeover, and `history-compact`
 refuses to prune such a record (it would launder the damage into a judgeable

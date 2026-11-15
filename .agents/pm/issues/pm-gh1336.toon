@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,claims,"gh:1336",multi-agent,ownership,stale-work
 created_at: "2026-11-15T07:09:59.771Z"
-updated_at: "2026-11-15T16:38:22.350Z"
+updated_at: "2026-11-15T21:46:36.788Z"
 closed_at: "2026-11-15T08:35:01.496Z"
 completed_at: "2026-11-15T08:35:01.496Z"
 author: "harness:claude-code"
@@ -42,35 +42,71 @@ comments[11]{created_at,author,text}:
 notes[2]{created_at,author,text}:
   "2026-11-15T07:37:48.377Z","harness:claude-code","Implementation decisions (2026-11-15):\n\n- **Clock.** One activity clock: the newest of `updated_at` and the newest history entry. Every recorded mutation advances `updated_at`; I verified create, comment_add, note_add, files_add and claim on a sandbox. History covers trackers whose metadata and stream diverged. A claim with no valid activity time is never stale (fail-closed).\n- **Threshold.** The existing `mutation_guard.stale_in_progress_hours` (default 72), reused rather than adding a second knob. The item health calls stale is the item `--takeover-stale` may take.\n- **Race safety.** The decision runs inside the claim's `mutate` callback under the item lock. A holder's renewal is a mutation that has to wait for that lock, so it either lands before the decision (and is seen) or after the takeover.\n- **Evidence.** `mutateItemWithHistoryContextResolver` seals `context.stale_claim_takeover` into the same claim entry. The result carries the same receipt as `takeover`.\n- **Combinations.** `--takeover-stale` with `--force` and with `--next` are both refused (`ambiguous_option_combination`) before any read. `--if-available` turns an active-claim refusal into a skip.\n- **Ownership-source split.** `resolveItemOwnershipActivity` always returns activity, so the claim path carries no unreachable optional branches. `resolveItemOwnershipConflict` keeps its signature.\n- **pm next.** It reads one stream per returned `held_by_others` row (bounded by `--limit`), never per held item in the corpus. Bulk occupancy stays with pm-1wujzi."
   "2026-11-15T16:38:22.349Z","harness:claude-code","Review follow-up: history-compact now refuses before any write when any record in the pruned prefix is not judgeable (the isJudgeableHistoryRecord rule the takeover applies), not only one with an unparseable timestamp. A prior baseline with a malformed compaction receipt previously compacted into a baseline that recorded its own timestamp as last_activity_at, which made an unreadable stream judgeable and eligible for --takeover-stale. The refusal names the damage (invalid timestamp, or a malformed record or compaction receipt). Regression: tests/integration/history-compact-command.spec.ts (malformed receipt refusal)."
-learnings[1]{created_at,author,text}:
+learnings[2]{created_at,author,text}:
   "2026-11-15T07:37:51.949Z","harness:claude-code","A new field on a mutation result is invisible on `pm <cmd> --json` until `src/core/output/mutation-projection.ts` lets it through. The lean mutation envelope copies only allowlisted plain-object keys (`recovery`, `follow_up`, `handoff`, `completion`, `start`, and now `takeover`), so the SDK result had the receipt while the CLI JSON silently dropped it. Check every new result key against the CLI JSON, not just the SDK return value."
-files[26]{path,scope}:
-  scripts/release/flag-help-baseline.json,project
-  sdk/public-surface.json,project
-  src/cli/error-guidance.ts,project
-  src/cli/help-content.ts,project
-  src/cli/register-operations.ts,project
-  src/core/output/mutation-projection.ts,project
-  src/core/shared/errors.ts,project
-  src/sdk/cli-contracts/flag-contracts.ts,project
-  src/sdk/cli-contracts/flag-lexicon-contracts.ts,project
-  src/sdk/cli-contracts/tool-parameter-tables.ts,project
-  src/sdk/cli-contracts/tool-schema.ts,project
-  src/sdk/completion/bash.ts,project
-  src/sdk/completion/fish.ts,project
-  src/sdk/completion/zsh.ts,project
-  src/sdk/flag-invocation-contracts.ts,project
-  src/sdk/governance.ts,project
-  src/sdk/index.ts,project
-  src/sdk/lifecycle/claim.ts,project
-  src/sdk/lifecycle/task-composition.ts,project
-  src/sdk/ownership-source.ts,project
-  src/sdk/query/next.ts,project
-  src/sdk/runtime-input.ts,project
-  tests/unit/cli/error-guidance.spec.ts,project
-  tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts,project
-  tests/unit/commands/query/next-command.spec.ts,project
-  tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts,project
+  "2026-11-15T21:46:10.542Z","harness:claude-code","A legacy compaction baseline (a receipt without last_activity_at) cannot prove idleness, so it never certifies a takeover. Its own timestamp is the last pruned entry's time, and appendHistoryEntry keeps caller-supplied timestamps without an ordering check. After a clock regression, a July 1 maintenance record can be the last pruned entry while a July 4 23:00 restore hides earlier in the prefix (CodeRabbit on PR #1734).\n\nFix: evaluateClaimActivity gains the legacy_compaction_baseline input and evidence flag, which makes a claim never stale. resolveItemOwnershipActivity sets it whenever the readable stream holds such a baseline. The refusal says \"Ask the holder to release\". history-compact carries the legacy state forward (prunedActivityReceipt leaves the field absent), so a later compaction cannot launder it. Advisory reads still approximate the activity with the baseline timestamp.\n\nRule: for a fail-closed decision, \"the field is absent\" is a third state, separate from both \"recorded\" and \"malformed\". Ask whether the fallback is a real bound or only usually right."
+files[29]:
+  - path: docs/MUTATION_INTEGRITY.md
+    scope: project
+    note: Activity clock and legacy-baseline takeover refusal
+  - path: scripts/release/flag-help-baseline.json
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/cli/error-guidance.ts
+    scope: project
+  - path: src/cli/help-content.ts
+    scope: project
+  - path: src/cli/register-operations.ts
+    scope: project
+  - path: src/core/output/mutation-projection.ts
+    scope: project
+  - path: src/core/shared/errors.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-lexicon-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-parameter-tables.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-schema.ts
+    scope: project
+  - path: src/sdk/completion/bash.ts
+    scope: project
+  - path: src/sdk/completion/fish.ts
+    scope: project
+  - path: src/sdk/completion/zsh.ts
+    scope: project
+  - path: src/sdk/flag-invocation-contracts.ts
+    scope: project
+  - path: src/sdk/governance.ts
+    scope: project
+  - path: src/sdk/history-compact.ts
+    scope: project
+    note: Compaction keeps a legacy baseline legacy (prunedActivityReceipt) so it cannot certify unknown pruned work as idle
+  - path: src/sdk/index.ts
+    scope: project
+  - path: src/sdk/lifecycle/claim.ts
+    scope: project
+  - path: src/sdk/lifecycle/task-composition.ts
+    scope: project
+  - path: src/sdk/ownership-source.ts
+    scope: project
+  - path: src/sdk/query/next.ts
+    scope: project
+  - path: src/sdk/runtime-input.ts
+    scope: project
+  - path: tests/integration/history-compact-command.spec.ts
+    scope: project
+    note: Compaction laundering regressions
+  - path: tests/unit/cli/error-guidance.spec.ts
+    scope: project
+  - path: tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts
+    scope: project
+  - path: tests/unit/commands/query/next-command.spec.ts
+    scope: project
+  - path: tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts
+    scope: project
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,600,"harness:claude-code","2026-11-15T07:51:04.783Z",local_mutation,feat/stale-work-visibility-and-takeover
 test_runs[1]:

@@ -16,9 +16,13 @@
  * compaction baseline stands for its pruned prefix: it contributes the
  * prefix's newest substantive time, which compaction records as
  * `context.history_compaction.last_activity_at` (null when the prefix held no
- * work). A baseline written before that field existed contributes its own
- * timestamp, the time of the last pruned entry: an upper bound, so a legacy
- * baseline can only make a claim look more recent, never take over active work.
+ * work). A baseline written before that field existed carries only its own
+ * timestamp, the time of the last pruned entry. That is no bound on the
+ * prefix's newest work, because history keeps caller-supplied timestamps
+ * without an ordering check: after a clock regression the last pruned entry
+ * can predate a pruned restore. Advisory reads approximate a legacy baseline's
+ * activity with its timestamp; the stale-claim takeover refuses it, and a
+ * later compaction carries the legacy state forward instead of recording it.
  */
 import path from "node:path";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
@@ -27,11 +31,15 @@ import { normalizeStatusForRegistry } from "../../core/item/status.js";
 import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 import type { ItemMetadata } from "../../types/index.js";
+import { mapWithFixedConcurrency } from "../extension/concurrency.js";
 
 /** Setting key that owns the stale-work inactivity threshold for every consumer. */
 export const STALE_WORK_THRESHOLD_SETTING = "mutation_guard.stale_in_progress_hours";
 
 const HOUR_MS = 3_600_000;
+
+/** Streams one in-progress scan reads at a time: each read loads and parses a whole history file. */
+const HISTORY_READ_CONCURRENCY = 16;
 
 /** One unclaimed in-progress item whose recorded activity exceeded policy. */
 export interface StaleInProgressItem {
@@ -292,14 +300,15 @@ export function isWellFormedHistoryRecord(entry: unknown): entry is WellFormedHi
 /**
  * The activity time one decoded history value contributes: a substantive
  * record's own timestamp, a compaction baseline's recorded prefix activity
- * (or its timestamp when it predates that field), and nothing for maintenance
- * or for values that are not well-formed records.
+ * (or, as an advisory approximation, its timestamp when it predates that
+ * field), and nothing for maintenance or for values that are not well-formed
+ * records.
  */
 function activityTimestampOf(entry: unknown): string | undefined {
   if (!isWellFormedHistoryRecord(entry)) return undefined;
   if (entry.op === "history_compact_baseline") {
     const recorded = readCompactionActivity(entry);
-    // A legacy or malformed receipt degrades to the baseline's own time, the conservative bound.
+    // A legacy or malformed receipt degrades to the baseline's own time; decisions refuse both instead.
     return recorded.kind === "recorded" ? (recorded.at ?? undefined) : entry.ts;
   }
   return classifyHistoryEvent(entry as unknown as Parameters<typeof classifyHistoryEvent>[0]) === "substantive"
@@ -334,17 +343,31 @@ function readCompactionActivity(
 }
 
 /**
- * Whether a decoded history value supports an idleness judgement: a
- * well-formed record with a parseable timestamp and, for a compaction
- * baseline, a receipt that is absent (legacy) or well formed. The stale-claim
- * takeover treats a stream with any other value as unreadable, because a
- * skipped record could be the recent work.
+ * Whether a decoded history value is undamaged enough to read: a well-formed
+ * record with a parseable timestamp and, for a compaction baseline, a receipt
+ * that is absent (legacy) or well formed. The stale-claim takeover treats a
+ * stream with any other value as unreadable, because a skipped record could be
+ * the recent work. A readable legacy baseline still cannot prove idleness; see
+ * `isLegacyCompactionBaseline`.
  */
 export function isJudgeableHistoryRecord(entry: unknown): entry is WellFormedHistoryRecord {
   return (
     isWellFormedHistoryRecord(entry) &&
     Number.isFinite(Date.parse(entry.ts)) &&
     (entry.op !== "history_compact_baseline" || readCompactionActivity(entry).kind !== "malformed")
+  );
+}
+
+/**
+ * Whether a decoded history value is a compaction baseline written before
+ * baselines recorded their pruned prefix's activity. Its stream is readable,
+ * but the newest pruned work is unknown, so idleness cannot be proven.
+ */
+export function isLegacyCompactionBaseline(entry: unknown): boolean {
+  return (
+    isWellFormedHistoryRecord(entry) &&
+    entry.op === "history_compact_baseline" &&
+    readCompactionActivity(entry).kind === "legacy"
   );
 }
 
@@ -401,7 +424,9 @@ export async function readLatestHistoryActivity(
  * only make an item more recent, so a fresh `updated_at` proves an owned item
  * is not idle, and owned fresh items are never published.
  * An unreadable stream degrades to metadata activity, since these reads are
- * advisory; a takeover instead refuses when it cannot read the stream.
+ * advisory; a takeover instead refuses when it cannot read the stream. At most
+ * `HISTORY_READ_CONCURRENCY` streams are read at once, so a workspace with many
+ * unowned in-progress items never holds every stream in memory together.
  */
 export async function scanInProgressWork(
   pmRoot: string,
@@ -412,19 +437,16 @@ export async function scanInProgressWork(
   const nowMs = (options.now ?? new Date()).getTime();
   const isInProgress = inProgressMatcher(options);
   const historyTimestamps = new Map<string, string>();
-  await Promise.all(
-    items
-      .filter((item) => {
-        if (!isInProgress(item)) return false;
-        if (assigneeOf(item) === undefined) return true;
-        const updatedAt = resolveLastActivityAt(item.updated_at, undefined);
-        return updatedAt === undefined || wholeHoursSince(updatedAt, nowMs) >= thresholdHours;
-      })
-      .map(async (item) => {
-        const latest = await readLatestHistoryActivity(pmRoot, item.id);
-        if (latest !== undefined) historyTimestamps.set(item.id, latest);
-      }),
-  );
+  const candidates = items.filter((item) => {
+    if (!isInProgress(item)) return false;
+    if (assigneeOf(item) === undefined) return true;
+    const updatedAt = resolveLastActivityAt(item.updated_at, undefined);
+    return updatedAt === undefined || wholeHoursSince(updatedAt, nowMs) >= thresholdHours;
+  });
+  await mapWithFixedConcurrency(candidates, HISTORY_READ_CONCURRENCY, async (item) => {
+    const latest = await readLatestHistoryActivity(pmRoot, item.id);
+    if (latest !== undefined) historyTimestamps.set(item.id, latest);
+  });
   return inspectInProgressWork(items, {
     ...options,
     now: new Date(nowMs),

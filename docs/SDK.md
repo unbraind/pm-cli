@@ -1277,14 +1277,22 @@ Stale work uses one activity clock and one threshold
 can still call an item idle when the takeover would refuse it: advisory reads
 degrade an unreadable history stream to metadata activity, while the ownership
 evaluation fails closed (`claim_activity.history_unreadable`, never stale).
-Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
+A stream compacted by an older version, whose baseline does not record the
+pruned prefix's newest activity, also fails closed
+(`claim_activity.legacy_compaction_baseline`, never stale): history keeps
+caller-supplied timestamps, so the baseline's own time does not bound the
+pruned work. A later compaction keeps such a baseline legacy instead of
+recording a time. Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
 the locked `pm claim --takeover-stale` decision, never from an advisory row. Each `held_by_others` row is a
 `NextHeldRow` with `claimed_at`, `idle_hours` and `stale`.
 `runClaim(id, false, global, { takeoverStale: true })` takes over only an idle
 claim and returns a `StaleClaimTakeoverReceipt` as `takeover`; an active claim
 throws `STALE_CLAIM_TAKEOVER_REFUSED_CODE` (`stale_claim_takeover_refused`) with
-`context.claim_activity`. `resolveItemOwnershipActivity()` and
-`evaluateClaimActivity()` return that evidence directly, `inspectInProgressWork()`
+`context.claim_activity`. `evaluateClaimActivity()` returns that evidence
+directly; `resolveItemOwnershipActivity()` returns an `ItemOwnershipActivity`
+(holder, `source` and `since`) that carries it as `.activity`, so read
+`.activity.history_unreadable`, `.activity.legacy_compaction_baseline` and
+`.activity.stale_policy` there. `inspectInProgressWork()`
 and `scanInProgressWork()` classify in-progress work into `unowned`, `idle` and
 `stale` groups (pass `status_registry` so stored status aliases resolve the way
 the `in_progress` counters resolve them), and `buildInProgressSweepCommands()` returns the exact list

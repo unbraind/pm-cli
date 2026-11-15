@@ -437,6 +437,12 @@ function describeNotStale(
       nextStep: `Repair the history stream of ${itemId} (pm history ${itemId} --verify), then retry --takeover-stale.`,
     };
   }
+  if (activity.legacy_compaction_baseline === true) {
+    return {
+      reason: "an older pm version compacted its history without recording the newest pruned activity, so idleness cannot be proven",
+      nextStep: `Ask the holder to release ${itemId} (pm release ${itemId}): no later compaction can prove its idleness.`,
+    };
+  }
   if (activity.stale_policy.eligible_at === null) {
     return {
       reason: activity.idle_hours === null ? "no valid activity time is recorded" : `idle ${activity.idle_hours}h of ${activity.stale_policy.threshold_hours}h`,
