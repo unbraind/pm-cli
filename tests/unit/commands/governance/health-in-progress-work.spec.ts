@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runHealth } from "../../../../src/sdk/governance/health.js";
 import { renderContextMarkdown, runContext } from "../../../../src/sdk/query/context.js";
-import { renderPmCommand } from "../../../../src/core/shared/command-line.js";
+import { quoteCommandArg, renderPmCommand } from "../../../../src/core/shared/command-line.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../../../helpers/withTempPmPath.js";
 
@@ -64,7 +64,7 @@ describe("unowned and idle in-progress work (GH-1724)", () => {
             threshold_hours: 48,
             unowned: { count: 1, items: [{ id: unowned }], sweep: sweep("--assignee-filter", "unassigned") },
             idle: { count: 3, sweep: sweep("--updated-before", "-48h") },
-            item_remedies: { return_to_open: `pm update <id> --status open --pm-path ${context.pmPath}` },
+            item_remedies: { return_to_open: `pm update <id> --status open --pm-path ${quoteCommandArg(context.pmPath)}` },
           },
           remediation_map: {
             stale_in_progress_items: sweep("--assignee-filter", "unassigned", "--updated-before", "-48h"),
