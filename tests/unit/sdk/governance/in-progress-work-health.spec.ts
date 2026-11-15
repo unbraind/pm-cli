@@ -33,6 +33,16 @@ describe("in-progress work health projection (GH-1724)", () => {
     });
   });
 
+  it("redacts URL credentials an older version stored in an idle holder's identity", () => {
+    const scan = inspectInProgressWork(
+      [work("pm-legacy", { assignee: "https://agent:s3cret@example.test/bot" })],
+      { in_progress_status: "doing", threshold_hours: 48, now: NOW },
+    );
+    const summary = buildInProgressWorkHealthSummary(scan, { in_progress: "doing", open: "todo" });
+    expect(JSON.stringify(summary)).not.toContain("s3cret");
+    expect(summary.details?.idle.items[0]?.assignee).not.toContain("s3cret");
+  });
+
   it("shell-quotes status ids that a custom schema accepts but a shell would misparse", () => {
     const commands = buildInProgressSweepCommands("doing(done)", 72);
     expect(commands.idle).toBe('pm list --status "doing(done)" --updated-before -72h');

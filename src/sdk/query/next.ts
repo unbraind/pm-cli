@@ -64,6 +64,7 @@ import {
 } from "../context-usage.js";
 import { applyNextReadyBudget, type NextReadyBudgetReceipt } from "./next-ready-budget.js";
 import { resolveItemOwnershipActivity } from "../ownership-source.js";
+import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 import {
   readWorkspaceContextSignals,
   type ContextSignalStoreReadResult,
@@ -184,7 +185,7 @@ export interface NextRecommendation extends NextActionableItem {
 export interface NextHeldRow {
   /** Stable item identifier. */
   id: string;
-  /** Current holder. */
+  /** Current holder, with URL credentials an older version stored redacted (GH-1707). */
   assignee: string;
   /** When the holder took the item, from the latest assignee change; null when history is silent. */
   claimed_at: string | null;
@@ -402,7 +403,8 @@ async function describeHeldRows(
       });
       return {
         id: row.id,
-        assignee: row.assignee,
+        // Occupancy rows never echo URL userinfo an older version stored in an identity (GH-1707).
+        assignee: redactIdentityCredentials(row.assignee),
         claimed_at: since,
         idle_hours: activity.idle_hours,
         stale: activity.stale_policy.stale,

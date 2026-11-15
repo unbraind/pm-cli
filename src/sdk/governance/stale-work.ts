@@ -10,6 +10,7 @@
  */
 import path from "node:path";
 import { readHistoryEntries } from "../../core/history/read.js";
+import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 import type { ItemMetadata } from "../../types/index.js";
 
 /** Setting key that owns the stale-work inactivity threshold for every consumer. */
@@ -47,7 +48,7 @@ export interface InProgressWorkItem {
   last_activity_at: string | null;
   /** Whole hours elapsed at scan time; null when the activity time is unknown. */
   age_hours: number | null;
-  /** Current holder; omitted when the item has no assignee. */
+  /** Current holder, with URL credentials an older version stored redacted (GH-1707); omitted when the item has no assignee. */
   assignee?: string;
 }
 
@@ -169,7 +170,8 @@ function placeInProgressItem(
     age_hours: wholeHoursSince(lastActivityAt, nowMs),
   };
   const isIdle = row.age_hours >= thresholdHours;
-  if (assignee !== undefined) return isIdle ? { idle: { ...row, assignee } } : {};
+  // Diagnostics never echo URL userinfo an older version stored in an identity (GH-1707).
+  if (assignee !== undefined) return isIdle ? { idle: { ...row, assignee: redactIdentityCredentials(assignee) } } : {};
   return isIdle
     ? { unowned: { ...row }, idle: { ...row }, stale: { ...row } }
     : { unowned: { ...row } };

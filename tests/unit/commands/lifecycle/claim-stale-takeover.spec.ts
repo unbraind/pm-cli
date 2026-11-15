@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   _testOnlyClaimCommand,
@@ -294,6 +295,22 @@ describe("stale-claim takeover (GH-1336)", () => {
           },
         ]),
       );
+    });
+  });
+
+  it("redacts URL credentials a legacy holder identity carries in pm next occupancy rows", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "Legacy holder");
+      await runClaim(id, false, { path: context.pmPath }, { author: "agent-a" });
+      // An older version stored credentialed identities verbatim; this one refuses to write them.
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      await writeFile(
+        itemPath,
+        (await readFile(itemPath, "utf8")).replace(/^assignee: .*$/mu, 'assignee: "https://agent:s3cret@example.test/bot"'),
+      );
+      const next = await runNext({ callerAuthor: "agent-b" }, { path: context.pmPath });
+      expect(next.held_by_others.map((row) => row.id)).toContain(id);
+      expect(JSON.stringify(next.held_by_others)).not.toContain("s3cret");
     });
   });
 
