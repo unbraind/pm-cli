@@ -33,6 +33,7 @@
  */
 import path from "node:path";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
+import { hashHistoryPatch } from "../../core/history/history.js";
 import { readHistoryEntries } from "../../core/history/read.js";
 import { normalizeStatusForRegistry } from "../../core/item/status.js";
 import type { RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
@@ -51,8 +52,9 @@ const HOUR_MS = 3_600_000;
  * history is silent, the record was folded into a compaction baseline, or only
  * a rewrite audit's reconcile patch set the holder),
  * `discarded_history_tail` (a `history-repair --salvage-tail` after the claim
- * removed an unreadable record), `rewritten_history` (a repair, redaction or
- * merge reconcile after the claim rewrote records) and `workspace_restored` (a
+ * removed an unreadable record), `rewritten_history` (a repair, redaction,
+ * merge reconcile or merge rebase rewrote records from the claim on) and
+ * `workspace_restored` (a
  * workspace snapshot restore at or after the claim replaced the stream, or the
  * workspace stream cannot be read to rule one out).
  */
@@ -72,6 +74,21 @@ const HISTORY_REWRITE_OPERATIONS: ReadonlySet<string> = new Set(["history_repair
 /** Whether an operation's record is a rewrite or discard audit rather than original work. */
 function isRewriteOrDiscard(op: string): boolean {
   return op === "history_salvage" || HISTORY_REWRITE_OPERATIONS.has(op);
+}
+
+/**
+ * Whether a record's patch was rewritten in place, as `reanchor_evidence`
+ * records: a merge rebase leaves no audit entry, but each rewrite keeps the
+ * hash of the patch it replaced. A rewritten patch can reclassify work as
+ * maintenance. A rehash that kept the patch is not a rewrite of the work;
+ * evidence that cannot be read cannot rule one out.
+ */
+function rewritesRecordedPatch(entry: WellFormedHistoryRecord): boolean {
+  const evidence = (entry as { reanchor_evidence?: unknown }).reanchor_evidence;
+  if (evidence === undefined) return false;
+  if (!Array.isArray(evidence)) return true;
+  const current = hashHistoryPatch(entry.patch as unknown as Parameters<typeof hashHistoryPatch>[0]);
+  return evidence.some((item) => !isPlainRecord(item) || (item as { patch_hash?: unknown }).patch_hash !== current);
 }
 
 /** Streams one in-progress scan reads at a time: each read loads and parses a whole history file. */
@@ -403,8 +420,9 @@ export function isJudgeableHistoryRecord(entry: unknown): entry is WellFormedHis
  * original form (not a compaction baseline that folded it, nor a rewrite audit
  * whose reconcile patch set the holder) and an unbroken
  * run of original records after it: a salvage after the claim discarded a
- * record of unknown time, and a repair, redaction or merge reconcile after it
- * rewrote records whose meaning the clock relies on. History timestamps are
+ * record of unknown time, and a repair, redaction or merge reconcile after it,
+ * or a patch rewrite that `reanchor_evidence` records on the anchor or a later
+ * record, changed records whose meaning the clock relies on. History timestamps are
  * caller-supplied and unordered, so no rewrite's own time bounds that work.
  */
 export function unprovenClaimActivity(
@@ -416,10 +434,22 @@ export function unprovenClaimActivity(
   if (anchor === undefined || anchor.op === "history_compact_baseline" || isRewriteOrDiscard(anchor.op)) {
     return "claim_record_unavailable";
   }
+  if (rewritesRecordedPatch(anchor)) return "rewritten_history";
   for (const entry of history.slice(claimIndex + 1)) {
     if (isRewriteOrDiscard(entry.op)) return entry.op === "history_salvage" ? "discarded_history_tail" : "rewritten_history";
+    if (rewritesRecordedPatch(entry)) return "rewritten_history";
   }
   return undefined;
+}
+
+/**
+ * The newest substantive time a compaction baseline proves for its pruned
+ * prefix: a timestamp, null when the prefix held no work, or undefined when
+ * a legacy or malformed receipt proves neither.
+ */
+export function recordedBaselineActivity(entry: WellFormedHistoryRecord): string | null | undefined {
+  const recorded = readCompactionActivity(entry);
+  return recorded.kind === "recorded" ? recorded.at : undefined;
 }
 
 /**

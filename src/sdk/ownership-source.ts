@@ -12,8 +12,10 @@ import { getHistoryPath } from "../core/store/paths.js";
 import {
   STALE_WORK_THRESHOLD_SETTING,
   isJudgeableHistoryRecord,
+  isWellFormedHistoryRecord,
   latestHistoryTimestamp,
   normalizeStaleWorkThresholdHours,
+  recordedBaselineActivity,
   resolveLastActivityAt,
   staleEligibleAt,
   unprovenClaimActivity,
@@ -171,13 +173,22 @@ async function readOwnershipEvidence(
   };
 }
 
+/** Whether a time is unreadable or at or after the claim, so the event it dates may follow the claim. */
+function atOrAfter(timestamp: unknown, claimedMs: number): boolean {
+  const ms = typeof timestamp === "string" ? Date.parse(timestamp) : Number.NaN;
+  return !Number.isFinite(ms) || ms >= claimedMs;
+}
+
 /**
  * Whether a workspace snapshot restore at or after the claim record may have
  * replaced the holder's later work. The restore rewrites the item stream and
  * records itself only in the workspace stream, which shares no order with it
- * except wall-clock time. A workspace stream that cannot be read, or holds a
- * record whose operation or restore time cannot be read, cannot rule a
- * restore out.
+ * except wall-clock time: precedence assumes the restoring host's clock does
+ * not run behind the holder's. A restore is substantive, so a compaction
+ * baseline of the workspace stream bounds any restore it pruned by its
+ * recorded `last_activity_at`. The check fails closed, because it cannot rule
+ * a restore out, when the workspace stream cannot be read, when a record's
+ * operation or time cannot be read, or when a baseline proves no bound.
  */
 async function workspaceRestoredSince(pmRoot: string, claimedAt: string): Promise<boolean> {
   let entries: unknown[];
@@ -188,11 +199,11 @@ async function workspaceRestoredSince(pmRoot: string, claimedAt: string): Promis
   }
   const claimedMs = Date.parse(claimedAt);
   return entries.some((entry) => {
-    const record = (entry ?? {}) as { op?: unknown; ts?: unknown };
-    if (typeof record.op !== "string") return true;
-    if (record.op !== "workspace_snapshot_restore") return false;
-    const restoredMs = typeof record.ts === "string" ? Date.parse(record.ts) : Number.NaN;
-    return !Number.isFinite(restoredMs) || restoredMs >= claimedMs;
+    if (!isWellFormedHistoryRecord(entry)) return true;
+    if (entry.op === "workspace_snapshot_restore") return atOrAfter(entry.ts, claimedMs);
+    if (entry.op !== "history_compact_baseline") return false;
+    const bound = recordedBaselineActivity(entry);
+    return bound === undefined || (bound !== null && atOrAfter(bound, claimedMs));
   });
 }
 

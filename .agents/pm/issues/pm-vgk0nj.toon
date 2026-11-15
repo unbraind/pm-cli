@@ -1,0 +1,21 @@
+id: pm-vgk0nj
+title: "A workspace snapshot restore can activate between an item writer's locked reads and its commit: restore holds only the workspace writer lock, so a racing claim, update or takeover overwrites restored state"
+description: "Workspace snapshot restore activation takes only the sdk-workspace-transaction writer lock. It never takes or fences the per-item locks that every item mutation holds. A claim, update or stale-claim takeover that read the item and history under its item lock can therefore commit after the restore swapped the tracker. That overwrites restored state and breaks the restored history chain (before_hash_mismatch). Found by the Codex review of the stale-takeover redesign, which reproduced it with an in-memory interleaving using the real claim, store and lock functions. The gap predates the takeover feature and affects every item writer."
+type: Issue
+status: open
+priority: 1
+tags[4]: claims,concurrency,durability,workspace-snapshot
+created_at: "2026-11-15T23:11:02.746Z"
+updated_at: "2026-11-15T23:11:02.746Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Restore activation and item commits share one fence, so a commit whose reads predate an activation refuses instead of writing; A deterministic interleaving test pauses an item writer between read and commit, activates a restore, and proves the refusal and unchanged restored bytes; The stale-claim takeover evidence read and its claim commit run under that fence"
+parent: pm-o2kc
+risk: high
+confidence: medium
+expected_result: An item commit that began before a workspace restore activated refuses with a typed retryable conflict and leaves the restored item and history unchanged
+actual_result: "The item commit lands on the restored tracker, overwriting restored state and anchoring a history entry to the pre-restore document"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-6l2mza,related,"2026-11-15T23:11:02.746Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1336,discovered_from,"2026-11-15T23:11:02.746Z","harness:claude-code","cli:create:dep",detected
+body: "## Observed\n\n`restoreWorkspaceSnapshotWithRecovery` (`src/sdk/workspace-snapshot.ts`) acquires `WORKSPACE_WRITER_LOCK_ID = \"sdk-workspace-transaction\"`, stages the snapshot and activates it. Item mutations (`mutateItem`, `fenceOwnedLock`) hold the item's own lock and check its ownership only before their callback. Neither side waits for the other:\n\n1. An item writer takes the item lock and reads the item and history (for example, the stale-takeover evidence read).\n2. The restore activates and replaces the item file and its history stream.\n3. The item writer commits the bytes it computed from the pre-restore state.\n\n## Impact\n\n- The restored state is silently overwritten for that item, and the restored stream gets an entry anchored to the pre-restore document (`history --verify` reports `before_hash_mismatch`).\n- For a stale-claim takeover, workspace evidence read before activation can authorize overwriting newly restored active work.\n\n## Fix direction\n\n- Share one root-swap fence between restore activation and item commits. Restore activation waits for, or refuses on, live item leases. Item commits re-verify a workspace generation (or a fence token) at commit time, after their callback, and refuse with a typed retryable conflict when a restore intervened.\n- Cover it with a deterministic interleaving test: an item writer paused between read and commit, a restore activated, then the commit refused and the restored bytes unchanged."

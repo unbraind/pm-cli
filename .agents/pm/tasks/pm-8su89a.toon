@@ -1,0 +1,22 @@
+id: pm-8su89a
+title: "Order workspace snapshot restores against claims without wall-clock time: bind each claim to a durable restore generation so a skewed restore clock cannot make a replaced claim look provable to --takeover-stale"
+description: "The stale-claim takeover refuses when a workspace snapshot restore at or after the holder's claim may have replaced the holder's later work. The only order between the workspace stream and an item stream is wall-clock time, though. When the restoring host's clock runs behind the holder's, a restore that really happened after the claim carries an earlier timestamp, and the takeover then treats the restored claim as provable. A durable restore generation recorded on each claim would order the two without trusting clocks."
+type: Task
+status: open
+priority: 2
+tags[4]: claims,clock,takeover,workspace-snapshot
+created_at: "2026-11-15T23:11:20.391Z"
+updated_at: "2026-11-15T23:13:30.054Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Every workspace snapshot restore activation advances a durable restore generation; Claim history entries record the generation, and --takeover-stale refuses with workspace_restored when the claim's generation differs from the current one; A regression with a restore clock behind the claim clock refuses the takeover"
+parent: pm-gh1357
+risk: medium
+confidence: medium
+expected_result: "A takeover refuses whenever a workspace restore activated after the holder's claim, whatever either host's clock says"
+actual_result: "A restore stamped earlier than the claim by a lagging clock is ignored, so the restored claim looks provable"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1336,discovered_from,"2026-11-15T23:11:20.391Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1359,related,"2026-11-15T23:11:20.391Z","harness:claude-code","cli:create:dep",detected
+  pm-vgk0nj,related,"2026-11-15T23:11:20.391Z","harness:claude-code","cli:create:dep",detected
+body: "## Observed\n\n`workspaceRestoredSince` (`src/sdk/ownership-source.ts`) compares each `workspace_snapshot_restore` record's `ts` (and a compacted workspace baseline's `last_activity_at`) with the anchor claim record's `ts`. `appendWorkspaceAuditEvent` stamps `nowIso()` without ordering it against item history.\n\nScenario (Codex review): a July 1 claim, July 4 work, then a restore of a July 1 snapshot whose host clock reads June 30. The restore record predates the claim by timestamp, so the July 1 claim survives as provable and a July 5 takeover is permitted over work the restore discarded.\n\n## Fix direction\n\n- Keep a durable, monotonically increasing restore generation in the tracker root, bumped by every restore activation.\n- Record the generation in the claim history entry's context. A takeover is provable only when the claim's generation equals the current one. Claims without the field are judged by today's timestamp rule, or refused once any restore exists.\n- This probably shares machinery with fenced claim generations (pm-gh1359) and with the root-swap fence (pm-vgk0nj).\n\nUntil then, the documented assumption stands: restore precedence uses wall-clock time, and the restoring host's clock must not run behind the holder's."

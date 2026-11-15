@@ -10,8 +10,10 @@ import {
   scanInProgressWork,
   scanStaleInProgressItems,
 } from "../../../src/sdk/index.js";
+import { hashHistoryPatch } from "../../../src/core/history/history.js";
 import {
   latestHistoryTimestamp,
+  recordedBaselineActivity,
   recordedPrefixActivity,
   readLatestHistoryActivity,
   staleEligibleAt,
@@ -320,6 +322,19 @@ describe("stale in-progress SDK governance", () => {
     expect(unprovenClaimActivity([create, claim, salvage, repair], 1)).toBe("discarded_history_tail");
     expect(unprovenClaimActivity([create, claim, repair, salvage], 1)).toBe("rewritten_history");
     expect(unprovenClaimActivity([baseline(undefined), salvage, repair, claim, audit, create], 3)).toBeUndefined();
+    // A merge rebase leaves no audit, only reanchor_evidence: a changed patch is a rewrite, a kept patch (a rehash) is not.
+    const work = { ts: "2026-07-03T00:00:00.000Z", op: "update", patch: [{ op: "replace", path: "/metadata/title", value: "x" }] };
+    const rehashed = { ...work, reanchor_evidence: [{ before_hash: "a", after_hash: "b", patch_hash: hashHistoryPatch(work.patch as never) }] };
+    expect(unprovenClaimActivity([claim, rehashed], 0)).toBeUndefined();
+    for (const evidence of [[{ before_hash: "a", after_hash: "b", patch_hash: "other" }], [null], "garbage"]) {
+      expect(unprovenClaimActivity([claim, { ...work, reanchor_evidence: evidence }], 0)).toBe("rewritten_history");
+      expect(unprovenClaimActivity([{ ...claim, reanchor_evidence: evidence }, work], 0)).toBe("rewritten_history");
+    }
+    // A baseline proves its pruned prefix's newest work, no work (null), or nothing (legacy or malformed).
+    expect(recordedBaselineActivity(baseline({ last_activity_at: "2026-07-03T00:00:00.000Z" }) as never)).toBe("2026-07-03T00:00:00.000Z");
+    expect(recordedBaselineActivity(baseline({ last_activity_at: null }) as never)).toBeNull();
+    expect(recordedBaselineActivity(baseline(undefined) as never)).toBeUndefined();
+    expect(recordedBaselineActivity(baseline({ last_activity_at: "invalid" }) as never)).toBeUndefined();
     // A compaction records its pruned prefix's newest work, or null when the prefix held none.
     expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "update", patch: [] }])).toBe("2026-07-02T00:00:00.000Z");
     expect(recordedPrefixActivity([{ ts: "2026-07-02T00:00:00.000Z", op: "history_compact", patch: [] }])).toBeNull();

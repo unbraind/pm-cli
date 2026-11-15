@@ -215,7 +215,24 @@ describe("claim activity evidence (GH-1336)", () => {
       const restore = (ts: unknown) => JSON.stringify({ ts, author: "m", op: "workspace_snapshot_restore", patch: [], before_hash: "x", after_hash: "y" });
       const other = JSON.stringify({ ts: "2026-07-03T00:00:00.000Z", author: "m", op: "workspace_settings_update", patch: [], before_hash: "x", after_hash: "y" });
       expect(await restoreAt([restore("2026-06-30T00:00:00.000Z"), other])).toMatchObject({ stale_policy: { stale: true } });
-      for (const lines of [[restore("2026-07-01T00:00:00.000Z")], [restore("2026-07-03T00:00:00.000Z")], [restore("not-a-date")], [restore(5)], ["null"], ['{"ts":"2026-06-01T00:00:00.000Z"}'], ["not-json"]]) {
+      // A compacted workspace stream bounds any pruned restore by its recorded last_activity_at.
+      const workspaceBaseline = (receipt: Record<string, unknown> | undefined) =>
+        JSON.stringify({ ts: "2026-06-29T00:00:00.000Z", author: "m", op: "history_compact_baseline", patch: [], ...(receipt === undefined ? {} : { context: { history_compaction: receipt } }), before_hash: "x", after_hash: "y" });
+      for (const lines of [[workspaceBaseline({ last_activity_at: "2026-06-30T00:00:00.000Z" }), other], [workspaceBaseline({ last_activity_at: null })]]) {
+        expect(await restoreAt(lines)).toMatchObject({ stale_policy: { stale: true } });
+      }
+      for (const lines of [
+        [restore("2026-07-01T00:00:00.000Z")],
+        [restore("2026-07-03T00:00:00.000Z")],
+        [restore("not-a-date")],
+        [restore(5)],
+        ["null"],
+        ['{"ts":"2026-06-01T00:00:00.000Z"}'],
+        ["not-json"],
+        [workspaceBaseline({ last_activity_at: "2026-07-02T00:00:00.000Z" })],
+        [workspaceBaseline(undefined)],
+        [workspaceBaseline({ last_activity_at: "invalid" })],
+      ]) {
         expect(await restoreAt(lines)).toMatchObject({ unproven_activity: "workspace_restored", stale_policy: { stale: false } });
       }
     } finally {

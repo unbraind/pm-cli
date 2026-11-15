@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2155,
+    "covered_symbols": 2156,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2156
+    "required_symbols": 2157
   },
   "breaking_acknowledgements": [
     {
@@ -17917,6 +17917,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "recordedBaselineActivity",
+          "signature": "(entry: WellFormedHistoryRecord) => string | null | undefined | calls: (entry: WellFormedHistoryRecord) => string | null | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "recordedPrefixActivity",
           "signature": "(prunedEntries: ReadonlyArray<unknown>) => string | null | calls: (prunedEntries: ReadonlyArray<unknown>) => string | null"
         },
@@ -31621,6 +31627,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "recordedBaselineActivity",
+          "signature": "(entry: WellFormedHistoryRecord) => string | null | undefined | calls: (entry: WellFormedHistoryRecord) => string | null | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "recordedPrefixActivity",
           "signature": "(prunedEntries: ReadonlyArray<unknown>) => string | null | calls: (prunedEntries: ReadonlyArray<unknown>) => string | null"
         },
@@ -41136,7 +41148,7 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1348,
+      "checked_functions": 1349,
       "checked_values": 400,
       "exempt_test_seams": 15,
       "referenced_types": 1051
@@ -41160,7 +41172,7 @@
       "referenced_types": 103
     },
     "./sdk/governance": {
-      "checked_functions": 114,
+      "checked_functions": 115,
       "checked_values": 27,
       "exempt_test_seams": 4,
       "referenced_types": 119

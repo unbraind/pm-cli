@@ -62,10 +62,15 @@ in these cases:
 | --- | --- |
 | `claim_record_unavailable` | No original record sets the holder: the history is silent, missing, or folded the claim into a compaction baseline. |
 | `discarded_history_tail` | A `history-repair --salvage-tail` after the claim discarded a record whose time is unknown. |
-| `rewritten_history` | A `history-repair`, `history-redact` or merge reconcile after the claim rewrote records. |
-| `workspace_restored` | A workspace snapshot restore at or after the claim may have replaced the holder's later work, or the workspace stream cannot be read to rule one out. |
+| `rewritten_history` | A `history-repair`, `history-redact` or merge reconcile after the claim rewrote records, or `reanchor_evidence` on the claim or a later record shows a changed patch (a merge rebase leaves no audit entry). |
+| `workspace_restored` | A workspace snapshot restore at or after the claim may have replaced the holder's later work. Also when a compacted workspace stream's baseline cannot bound its pruned restores before the claim, or when the workspace stream cannot be read to rule a restore out. |
 
-The holder can release such an item; a new claim starts a provable record. A
+The holder can release such an item; a new claim starts a provable record.
+Restore precedence uses wall-clock time and assumes the restoring host's clock
+does not run behind the holder's. Ordering restores by a durable generation
+instead is tracked as pm-8su89a. A restore that activates while a takeover is
+between its reads and its commit is not yet fenced; that gap affects every
+item writer and is tracked as pm-vgk0nj. A
 stream any of whose records lacks a parseable timestamp, or holds a baseline
 with a malformed receipt, is unreadable for a takeover, and `history-compact`
 refuses to prune such a record (it would launder the damage into a judgeable
