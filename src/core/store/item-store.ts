@@ -740,6 +740,25 @@ async function rollbackMutatedItemWrite(params: {
   await writeFileAtomic(params.originalItemPath, params.originalRaw);
 }
 
+/** Where a locked mutation acts: the storage identity its lock, item file and history stream use. */
+export interface ItemMutationLocation {
+  /**
+   * Item id taken from the item's storage file name. The lock and the history
+   * stream are keyed by it, and it can differ from the embedded
+   * `document.metadata.id` (for example in case on a case-sensitive
+   * filesystem), so any read of this item's history inside the mutation must use it.
+   */
+  storageId: string;
+}
+
+/** The locked edit a single-item mutation applies; it receives the document and where the lock acts. */
+export type ItemMutationCallback = (
+  document: ItemDocument,
+  mutation: ItemMutationLocation,
+) =>
+  | { changedFields: string[]; warnings?: string[] }
+  | Promise<{ changedFields: string[]; warnings?: string[] }>;
+
 interface ItemMutationResult {
   item: ItemMetadata;
   body: string;
@@ -761,11 +780,7 @@ interface ItemMutationParams {
   skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
-  mutate: (
-    document: ItemDocument,
-  ) =>
-    | { changedFields: string[]; warnings?: string[] }
-    | Promise<{ changedFields: string[]; warnings?: string[] }>;
+  mutate: ItemMutationCallback;
 }
 
 type DeferredItemMutationParams = Omit<ItemMutationParams, "historyContext"> & {
@@ -814,7 +829,7 @@ async function mutateItemWithDeferredHistoryContext(
       schema: params.settings.schema,
       extensionFieldNames: params.extensionFieldNames,
     });
-    const mutation = await params.mutate(mutableDocument);
+    const mutation = await params.mutate(mutableDocument, { storageId: located.id });
     recordResolvedDeferrals(mutableDocument, mutation.changedFields);
     if (params.skipNoop === true && mutation.changedFields.length === 0) {
       return {
@@ -1049,11 +1064,7 @@ export async function mutateItemWithHistoryContext(params: {
   skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
-  mutate: (
-    document: ItemDocument,
-  ) =>
-    | { changedFields: string[]; warnings?: string[] }
-    | Promise<{ changedFields: string[]; warnings?: string[] }>;
+  mutate: ItemMutationCallback;
 }): Promise<{
   item: ItemMetadata;
   body: string;
@@ -1089,11 +1100,7 @@ export function mutateItem(params: {
   skipNoop?: boolean;
   extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
-  mutate: (
-    document: ItemDocument,
-  ) =>
-    | { changedFields: string[]; warnings?: string[] }
-    | Promise<{ changedFields: string[]; warnings?: string[] }>;
+  mutate: ItemMutationCallback;
 }): Promise<{
   item: ItemMetadata;
   body: string;

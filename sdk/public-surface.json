@@ -3412,6 +3412,14 @@
       ],
       "package_version": "2026.11.15",
       "reason": "pm-gh1724 (new in this release): buildInProgressSweepCommands and buildInProgressWorkHealthSummary take an optional trailing scopeArgs so remedies stay on the diagnosed tracker; every existing call keeps compiling"
+    },
+    {
+      "changes": [
+        "signature ./sdk:mutateItem",
+        "signature ./sdk:mutateItemWithHistoryContext"
+      ],
+      "package_version": "2026.11.15",
+      "reason": "pm-gh1336: mutateItem and mutateItemWithHistoryContext take an ItemMutationCallback whose optional second argument ItemMutationLocation {storageId} names the id their lock and history stream use; existing one-argument callbacks keep compiling"
     }
   ],
   "entrypoints": {
@@ -11910,6 +11918,18 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "ItemMutationCallback",
+          "signature": "export type ItemMutationCallback = (document: ItemDocument, mutation: ItemMutationLocation) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ItemMutationLocation",
+          "signature": "export interface ItemMutationLocation { storageId: string; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "ItemMutationPreviewValidation",
           "signature": "export interface ItemMutationPreviewValidation { records: ItemMutationStagedRecord[]; validated: boolean; state: \"staged_snapshot\" | \"replayed_committed_plan\"; unresolved_commit_constraints: readonly string[]; warnings: { index: number; id: string; op: \"create\"; warnings: readonly string[]; }[]; }"
@@ -13076,13 +13096,13 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "mutateItem",
-          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
+          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
         },
         {
           "classification": "advanced_export",
           "kind": "function",
           "name": "mutateItemWithHistoryContext",
-          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[]; } | Promise<{ changedFields: string[]; warnings?: string[]; }>; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
+          "signature": "(params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }> | calls: (params: { pmRoot: string; settings: PmSettings; id: string; op: string; author: string; message?: string; historyContext?: Record<string, unknown>; force?: boolean; bypassAssigneeConflict?: boolean; skipNoop?: boolean; extensionFieldNames?: readonly string[]; typeToFolder?: Record<string, string>; mutate: ItemMutationCallback; }) => Promise<{ item: ItemMetadata; body: string; changedFields: string[]; warnings: string[]; }>"
         },
         {
           "classification": "advanced_export",
@@ -41043,7 +41063,7 @@
       "checked_functions": 1345,
       "checked_values": 399,
       "exempt_test_seams": 15,
-      "referenced_types": 1049
+      "referenced_types": 1050
     },
     "./sdk/authoring": {
       "checked_functions": 54,

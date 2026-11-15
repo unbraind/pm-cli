@@ -264,7 +264,7 @@ export async function runClaim(
     // The takeover evidence is decided under the item lock, then sealed into this claim's history entry.
     resolveHistoryContext: () =>
       takeover === undefined ? undefined : { stale_claim_takeover: takeover },
-    async mutate(document) {
+    async mutate(document, location) {
       const currentAssignee = document.metadata.assignee;
       const currentAssigneeText = currentAssignee ?? "";
       // Compared exactly so distinct legacy holders stay distinct; echoed redacted (GH-1707).
@@ -286,6 +286,7 @@ export async function runClaim(
       if (heldByOther) {
         const decision = await decideHeldClaim({
           pmRoot,
+          storageId: location.storageId,
           metadata: document.metadata,
           holder: currentAssigneeText,
           author,
@@ -361,6 +362,8 @@ type HeldClaimDecision =
  */
 async function decideHeldClaim(params: {
   pmRoot: string;
+  /** Storage identity whose history stream the store locks and appends to. */
+  storageId: string;
   metadata: Pick<ItemMetadata, "id" | "updated_at">;
   holder: string;
   author: string;
@@ -373,7 +376,8 @@ async function decideHeldClaim(params: {
   if (params.force) {
     return { kind: "take", warning: `claim_takeover:${redactOptionalIdentityCredentials(params.holder)}->${params.author}` };
   }
-  const ownership = await resolveItemOwnershipActivity(params.pmRoot, params.metadata.id, params.holder, {
+  // Read the stream the lock guards, not one derived from the embedded id, which can differ.
+  const ownership = await resolveItemOwnershipActivity(params.pmRoot, params.storageId, params.holder, {
     updated_at: params.metadata.updated_at,
     threshold_hours: params.thresholdHours,
   });
@@ -863,5 +867,6 @@ function releaseHandoffAdvice(
 /** Test-only access to the stale-takeover decision helpers. */
 export const _testOnlyClaimCommand = {
   claimConflictRefusal,
+  decideHeldClaim,
   staleTakeoverReceipt,
 };

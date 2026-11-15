@@ -1,4 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -353,6 +354,37 @@ describe("stale-claim takeover (GH-1336)", () => {
       expect(next.held_by_others.map((row) => row.id)).toContain(id);
       expect(JSON.stringify(next.held_by_others)).not.toContain("s3cret");
     });
+  });
+
+  it("judges a takeover from the history stream the item lock guards, not the embedded id", async () => {
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-takeover-storage-id-"));
+    try {
+      await mkdir(path.join(pmRoot, "history"));
+      // Stored as PM-STORE with an embedded id pm-store: the lock and the stream use the storage id.
+      const recent = { ts: "2026-07-24T11:00:00.000Z", author: "agent-a", op: "restore", patch: [], before_hash: "x", after_hash: "y" };
+      await writeFile(path.join(pmRoot, "history", "PM-STORE.jsonl"), `${JSON.stringify(recent)}\n`);
+      setClock(new Date("2026-07-24T12:00:00.000Z"));
+      const error = await refusal(
+        _testOnlyClaimCommand.decideHeldClaim({
+          pmRoot,
+          storageId: "PM-STORE",
+          metadata: { id: "pm-store", updated_at: "2026-07-01T00:00:00.000Z" },
+          holder: "agent-a",
+          author: "agent-b",
+          thresholdHours: 72,
+          force: false,
+          ifAvailable: false,
+          takeoverStale: true,
+        }),
+      );
+      expect(error.context).toMatchObject({
+        code: STALE_CLAIM_TAKEOVER_REFUSED_CODE,
+        item_id: "pm-store",
+        claim_activity: { last_activity_at: "2026-07-24T11:00:00.000Z", idle_hours: 1, stale_policy: { stale: false } },
+      });
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
   });
 
   it("explains a claim whose activity time cannot be judged", () => {
