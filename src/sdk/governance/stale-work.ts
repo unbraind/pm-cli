@@ -48,7 +48,8 @@ const HOUR_MS = 3_600_000;
 /**
  * Why a readable history stream cannot prove a holder's idleness:
  * `claim_record_unavailable` (no original record sets the current holder: the
- * history is silent, or the record was folded into a compaction baseline),
+ * history is silent, the record was folded into a compaction baseline, or only
+ * a rewrite audit's reconcile patch set the holder),
  * `discarded_history_tail` (a `history-repair --salvage-tail` after the claim
  * removed an unreadable record), `rewritten_history` (a repair, redaction or
  * merge reconcile after the claim rewrote records) and `workspace_restored` (a
@@ -67,6 +68,11 @@ export type UnprovenActivityReason = (typeof UNPROVEN_ACTIVITY_REASONS)[number];
 
 /** Operations that rewrite recorded entries in place and append their own audit record. */
 const HISTORY_REWRITE_OPERATIONS: ReadonlySet<string> = new Set(["history_repair", "history_redact", "merge_reconcile"]);
+
+/** Whether an operation's record is a rewrite or discard audit rather than original work. */
+function isRewriteOrDiscard(op: string): boolean {
+  return op === "history_salvage" || HISTORY_REWRITE_OPERATIONS.has(op);
+}
 
 /** Streams one in-progress scan reads at a time: each read loads and parses a whole history file. */
 const HISTORY_READ_CONCURRENCY = 16;
@@ -394,7 +400,8 @@ export function isJudgeableHistoryRecord(entry: unknown): entry is WellFormedHis
  * or undefined when it can. `claimIndex` is the position of the newest record
  * that set the current holder, or -1 when none does. The holder's work can
  * only follow that record, so the judgement needs the record itself in
- * original form (not a compaction baseline that folded it) and an unbroken
+ * original form (not a compaction baseline that folded it, nor a rewrite audit
+ * whose reconcile patch set the holder) and an unbroken
  * run of original records after it: a salvage after the claim discarded a
  * record of unknown time, and a repair, redaction or merge reconcile after it
  * rewrote records whose meaning the clock relies on. History timestamps are
@@ -404,10 +411,13 @@ export function unprovenClaimActivity(
   history: ReadonlyArray<WellFormedHistoryRecord>,
   claimIndex: number,
 ): UnprovenActivityReason | undefined {
-  if (claimIndex < 0 || history[claimIndex]?.op === "history_compact_baseline") return "claim_record_unavailable";
+  const anchor = history[claimIndex];
+  // A baseline folds the claim, and a rewrite's own reconcile patch is no record of the holder taking the item.
+  if (anchor === undefined || anchor.op === "history_compact_baseline" || isRewriteOrDiscard(anchor.op)) {
+    return "claim_record_unavailable";
+  }
   for (const entry of history.slice(claimIndex + 1)) {
-    if (entry.op === "history_salvage") return "discarded_history_tail";
-    if (HISTORY_REWRITE_OPERATIONS.has(entry.op)) return "rewritten_history";
+    if (isRewriteOrDiscard(entry.op)) return entry.op === "history_salvage" ? "discarded_history_tail" : "rewritten_history";
   }
   return undefined;
 }

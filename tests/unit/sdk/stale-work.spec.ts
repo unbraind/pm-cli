@@ -313,6 +313,10 @@ describe("stale in-progress SDK governance", () => {
     const repair = { ...salvage, op: "history_repair" };
     expect(unprovenClaimActivity([create, claim], -1)).toBe("claim_record_unavailable");
     expect(unprovenClaimActivity([baseline(undefined)], 0)).toBe("claim_record_unavailable");
+    // A repair or merge reconcile whose own patch sets the holder is no original claim record.
+    expect(unprovenClaimActivity([create, repair], 1)).toBe("claim_record_unavailable");
+    expect(unprovenClaimActivity([create, { ...repair, op: "merge_reconcile" }, claim], 1)).toBe("claim_record_unavailable");
+    expect(unprovenClaimActivity([create, claim], 5)).toBe("claim_record_unavailable");
     expect(unprovenClaimActivity([create, claim, salvage, repair], 1)).toBe("discarded_history_tail");
     expect(unprovenClaimActivity([create, claim, repair, salvage], 1)).toBe("rewritten_history");
     expect(unprovenClaimActivity([baseline(undefined), salvage, repair, claim, audit, create], 3)).toBeUndefined();
