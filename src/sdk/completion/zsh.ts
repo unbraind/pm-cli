@@ -1187,6 +1187,7 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
             '--message[History message]:message' \\
             '--force[Force override]' \\
             '--if-available[Skip work held by another author]' \\
+            '--takeover-stale[Take over a claim idle past the stale-work threshold]' \\
             '--next[Atomically claim the next actionable item]' \\
             '--type[Filter --next candidates by type]:(${typeChoices})' \\
             '--tag[Filter --next candidates by tag]:(${zshTagChoices})' \\
@@ -1224,7 +1225,16 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
           _arguments \\
 ${renderZshArgumentSpecs(RESTORE_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.description}]${flag.takes_value ? ":value" : ""}'`), { trailingContinuation: false })}
           ;;
-        start-task|pause-task)
+        start-task)
+          _arguments \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force override]' \\
+            '--takeover-stale[Take over a claim idle past the stale-work threshold]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        pause-task)
           _arguments \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\

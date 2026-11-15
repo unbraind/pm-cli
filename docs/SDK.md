@@ -1270,6 +1270,20 @@ filters, and bound the race-loss candidate walk with `maxAttempts` (1 through
 100 inclusive), so custom SDK
 tools do not need to reproduce CLI concurrency policy.
 
+Stale work uses one activity clock and one threshold
+(`mutation_guard.stale_in_progress_hours`, exported as
+`STALE_WORK_THRESHOLD_SETTING`) everywhere, so a fleet tool sees the same verdict
+as `pm health` and `pm claim --takeover-stale`. Each `held_by_others` row is a
+`NextHeldRow` with `claimed_at`, `idle_hours` and `stale`.
+`runClaim(id, false, global, { takeoverStale: true })` takes over only an idle
+claim and returns a `StaleClaimTakeoverReceipt` as `takeover`; an active claim
+throws `STALE_CLAIM_TAKEOVER_REFUSED_CODE` (`stale_claim_takeover_refused`) with
+`context.claim_activity`. `resolveItemOwnershipActivity()` and
+`evaluateClaimActivity()` return that evidence directly, `inspectInProgressWork()`
+and `scanInProgressWork()` classify in-progress work into `unowned`, `idle` and
+`stale` groups, and `buildInProgressSweepCommands()` returns the exact list
+sweeps `pm health` prints.
+
 Lifecycle convenience methods and the matching top-level functions (`create`,
 `update`, `reopen`, `close`, `claim`, `release`, `copy`, `deleteItem`, `restore`,
 `focus`, `startTask`, `pauseTask`, and `closeTask`) use the same mutation paths

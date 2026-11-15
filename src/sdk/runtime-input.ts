@@ -327,7 +327,7 @@ export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string
     update: ["parent", "allowMissingParent", "completedAt"],
     copy: ["allowDuplicate"],
     close: ["duplicateOf", "completedAt", "releaseAssignment"],
-    claim: ["start", "next", "ifAvailable"],
+    claim: ["start", "next", "ifAvailable", "takeoverStale"],
     release: ["pause", "handoff"],
     comments: ["ifAbsent"],
     notes: ["ifAbsent"],

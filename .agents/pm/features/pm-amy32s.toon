@@ -1,0 +1,21 @@
+id: pm-amy32s
+title: "pm-cli required checks wait hours for the account's shared 20-slot hosted pool, so merges stall; route the required ubuntu jobs to a dedicated local runner and let a pm-native local verification run of the exact head serve as merge evidence"
+description: "On 2026-11-14/15 PR #1732 had every review bot, Codex, Windows and macOS green, but its 7 required ubuntu jobs (coverage shards, Gates static/smokes, the Windows regression aggregator) stayed queued for over 3 hours. GitHub does not prioritize between repositories on a Free account's 20 concurrent hosted jobs, and about 30 ecosystem repositories share them. Slots freed by cancelling three hung fleet runs went straight to newer fleet jobs. The merge finally happened on local evidence with owner approval: the full coverage suite plus a hand-written replica of every Gates (static) and Gates (smokes) step on the exact head. Two structural gaps remain. First, pm-cli has no runner of its own, so every required check depends on a pool pm-cli cannot reserve (pm-m6ig79 reduced the job count, pm-gzr4j6 tracks the fleet's runner-held waits, pm-tzwy the earlier runtime work). Second, local verification has no first-class form: the replica was an ad hoc shell script, its verdict lived in a PR comment, and nothing binds it to the head tree, so repeating it is manual and cannot be checked by anyone else."
+type: Feature
+status: open
+priority: 1
+tags[6]: assurance,ci,github-actions,local-runner,merge-evidence,runner-queue
+created_at: "2026-11-15T04:04:18.607Z"
+updated_at: "2026-11-15T08:13:51.368Z"
+author: "harness:claude-code"
+estimated_minutes: 480
+acceptance_criteria: "ci.yml routes build-foundation, gates (static, smokes), the four coverage shards, Gates (coverage), the Windows regression aggregator and the ubuntu Packed runtime leg to runs-on [self-hosted, pm-local-pmcli] when vars.PM_LOCAL_RUNNER is on and the event is not a fork pull request, and to ubuntu-latest otherwise; every routed job keeps timeout-minutes; A pm-cli runner on omarchy runs ephemeral containers from pm-local-runner:2.338.2-2 (named pmr-pm-cli-<epoch>, labels pm-local-runner=1 and pm-local-repo=pm-cli, --cpus 2 --memory 8g --pids-limit 8192 --security-opt no-new-privileges, no docker socket, a 1-hour registration token), capped at 3 concurrent containers, coordinated with the fleet's omarchy share; A health toggle sets PM_LOCAL_RUNNER to off when no pm-local-pmcli runner is online and back to on when one is, so a dead local pool falls back to hosted runners instead of queueing forever; A declared assurance gate (no bespoke gate script) runs the required gate set against a named head tree locally and records a verdict keyed to that tree, so a merge on local evidence is reproducible and checkable from the tracker; Documented in docs (CI and release docs) with the fork guard, the security posture of self-hosted runners on a public repository, and the fallback behaviour"
+parent: pm-doxj
+risk: medium
+confidence: high
+expected_result: "pm-cli's required ubuntu jobs run on a dedicated local runner when one is online and fall back to hosted runners otherwise, and a merge on local evidence is reproducible from a tracker verdict keyed to the exact head tree."
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gzr4j6,related,"2026-11-15T04:04:18.607Z","harness:claude-code","cli:create:dep",detected
+  pm-m6ig79,related,"2026-11-15T04:04:18.607Z","harness:claude-code","cli:create:dep",detected
+  pm-tzwy,related,"2026-11-15T04:04:18.607Z","harness:claude-code","cli:create:dep",detected
+body: ""

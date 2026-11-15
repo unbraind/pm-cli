@@ -554,7 +554,13 @@ describe("runNext", () => {
       expect(optedIn.recommended?.id).toBe(decision);
       expect(optedIn.decision_needed).toEqual([]);
       expect(optedIn.held_by_others).toEqual([
-        { id: foreignDecision, assignee: "other-agent" },
+        {
+          id: foreignDecision,
+          assignee: "other-agent",
+          claimed_at: expect.any(String),
+          idle_hours: 0,
+          stale: false,
+        },
       ]);
 
       const numericPriority = await runNext(
@@ -714,7 +720,7 @@ describe("runNext", () => {
         expect(result.recommended?.id).toBe(mine);
         expect(result.ready).toEqual([]);
         expect(result.held_by_others).toEqual([
-          { id: foreign, assignee: "other-agent" },
+          expect.objectContaining({ id: foreign, assignee: "other-agent", idle_hours: 0, stale: false }),
         ]);
         expect(result.blocked.map((entry) => entry.id).sort()).toEqual(
           [dangling, lifecycleBlocked].sort(),

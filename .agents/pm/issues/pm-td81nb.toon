@@ -1,0 +1,23 @@
+id: pm-td81nb
+title: "A merge to main while the daily Auto Release run is still preparing its sealed candidate costs that day's automatic cut: the push refuses by design and only a manual close of the blocker issue retries"
+description: "2026-11-15: the morning dispatcher run 43673791029 was dispatched at 03:45Z, so its GITHUB_SHA was fixed to c433badcf. Its job started at 04:40Z and sealed the producer binding to that tree. PR #1732 was admin-merged at 04:03Z (f443c17cd), so main advanced while the pipeline ran its 42 minutes of pre-push gates. At 05:22Z the atomic push of v2026.11.15 was rejected as behind. pushReleaseRefs then refused, correctly, to rebase a hosted candidate after its sealed producer binding ('Cannot rebase a hosted release after its sealed producer binding; prepare a new candidate from the advanced default branch.'), and the run failed at stage producer-binding-or-push with the generic cause 'Gate producer-binding-or-push failed with status 1.' Blocker issue #1733 opened. Nothing retried until a maintainer closed #1733 at 07:01Z, which fired the same-day blocker_retry run 43688095886 from the advanced main. Two gaps: the failure record does not distinguish 'main advanced after sealing' (expected, recoverable by re-preparing) from a real push failure, and the documented recovery for that expected case needs a human even though it is deterministic: prepare a new candidate from the advanced default branch, at most once per day, under the same gates and same-day guard. The refusal itself is right and must stay: rebasing a sealed candidate would publish a tree the gates never judged. Related: pm-5oti (closed) added the local rebase-and-retry path; pm-prrlce owns trigger origins; pm-44u3wt owns the release window drift."
+type: Issue
+status: open
+priority: 2
+tags[5]: auto-release,ci,github-actions,release,reliability
+created_at: "2026-11-15T07:10:28.209Z"
+updated_at: "2026-11-15T08:25:29.980Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A push rejected as behind after the sealed producer binding records its own failure cause (default branch advanced after sealing, naming the sealed and current main SHAs) in the release failure record and the blocker issue, distinct from other producer-binding-or-push failures; On that cause the pipeline prepares a fresh candidate from the advanced main without human action, at most once per UTC day, through every pre-push gate and the same-day guard, and a second advance during the re-preparation fails closed into the existing blocker issue; docs/RELEASING.md documents the release window, the automatic re-preparation and its bound; Specs cover the cause classification, the single re-preparation, the same-day guard and the fail-closed second advance"
+parent: pm-u9d0
+risk: medium
+confidence: high
+expected_result: A merge that lands while the daily release is preparing delays that day's cut by one re-preparation instead of cancelling it.
+actual_result: The run fails with a generic producer-binding-or-push cause and the day's automatic release waits for a human to close the blocker issue.
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-44u3wt,related,"2026-11-15T07:10:28.209Z","harness:claude-code","cli:create:dep",detected
+  pm-5oti,related,"2026-11-15T07:10:28.209Z","harness:claude-code","cli:create:dep",detected
+  pm-prrlce,related,"2026-11-15T07:10:28.209Z","harness:claude-code","cli:create:dep",detected
+  pm-7zs0,related,"2026-11-15T08:25:29.707Z","harness:claude-code","cli:update:dep",detected
+body: ""

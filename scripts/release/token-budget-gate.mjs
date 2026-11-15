@@ -183,6 +183,9 @@ function seedFixture(cliPath, options) {
       "Task",
       "--status",
       "in_progress",
+      // Active work is owned: an unowned in-progress child is a pm health advisory (GH-1724).
+      "--assignee",
+      "token-budget-gate",
       "--parent",
       parentId,
       "--blocked-by",

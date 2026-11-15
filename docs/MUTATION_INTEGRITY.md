@@ -36,7 +36,24 @@ Defaults preserve author compatibility while providing secret advice:
 | ------------------------------------------ | -------- | -------------------------------------------------------- |
 | `mutation_guard.require_attributed_author` | `false`  | When enabled, reject an effective author of `unknown`.   |
 | `mutation_guard.secret_guard`              | `advise` | `off`, stderr/structured `advise`, or pre-write `block`. |
-| `mutation_guard.stale_in_progress_hours`   | `72`     | Age threshold for unclaimed active work in `pm health`.  |
+| `mutation_guard.stale_in_progress_hours`   | `72`     | Inactivity threshold for stale work: `pm health` advisories, `pm context` idle counts, and `pm claim --takeover-stale`. |
+
+One activity clock serves every stale-work consumer: the newest of an item's
+`updated_at` (every recorded mutation advances it) and its latest history
+entry. `pm health` reports three advisories in the storage check, none of
+which fails the verdict:
+
+| Warning                       | Population                                               | Remedy printed by `pm health`                                            |
+| ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `in_progress_unowned:<n>`     | in-progress items with no assignee (so no live claim)    | `pm list --status <in_progress> --assignee-filter unassigned`            |
+| `in_progress_idle:<n>`        | in-progress items idle past the threshold, owned or not  | `pm list --status <in_progress> --updated-before -<hours>h`              |
+| `stale_in_progress_items:<n>` | both: unowned and idle                                   | `pm list --status <in_progress> --assignee-filter unassigned --updated-before -<hours>h` |
+
+The storage check's `details.in_progress_work` lists up to 25 ids per group
+with each group's sweep, plus the per-item recoveries `pm claim <id>` and
+`pm update <id> --status <open>`. `pm context` reports `in_progress_unowned`
+and `in_progress_idle` next to `in_progress` in its summary when they are
+non-zero, so unattended work is not read as active work.
 
 A blocking secret policy may be bypassed only by an explicit `--force` on a
 force-capable mutation. The warning records that an override occurred while
@@ -49,6 +66,7 @@ Package hosts can apply the exact runtime policy before dispatch:
 ```ts
 import {
   evaluateMutationGuard,
+  inspectInProgressWork,
   inspectStaleInProgressItems,
   scanMutationSecrets,
 } from "@unbrained/pm-cli/sdk";
@@ -65,7 +83,17 @@ const stale = inspectStaleInProgressItems(items, {
     projectSettings.schema.workflow.in_progress_status ?? "in_progress",
   threshold_hours: projectSettings.mutation_guard.stale_in_progress_hours,
 });
+// Unowned, idle and stale groups from one pass; scanInProgressWork(pmRoot, ...)
+// also reads history, but only for items whose metadata already looks idle.
+const work = inspectInProgressWork(items, {
+  threshold_hours: projectSettings.mutation_guard.stale_in_progress_hours,
+});
 ```
+
+`resolveItemOwnershipActivity(pmRoot, id, holder, { updated_at, threshold_hours })`
+returns the same claim evidence a refused `pm claim` reports, and
+`buildInProgressSweepCommands(status, hours)` returns the exact list sweeps
+`pm health` prints.
 
 `evaluateMutationGuard` returns stable warning codes, redacted findings, and
 whether a blocking policy was explicitly overridden. `scanMutationSecrets` is

@@ -362,15 +362,31 @@ export {
   type PreparedSimilarityText,
 } from "./similarity.js";
 export {
+  STALE_WORK_THRESHOLD_SETTING,
+  inspectInProgressWork,
   inspectStaleInProgressItems,
+  resolveLastActivityAt,
+  scanInProgressWork,
   scanStaleInProgressItems,
+  type InProgressWorkGroup,
+  type InProgressWorkItem,
+  type InProgressWorkScan,
   type InspectStaleInProgressOptions,
   type StaleInProgressItem,
   type StaleInProgressScan,
 } from "./governance/stale-work.js";
 export {
+  buildInProgressSweepCommands,
+  type InProgressSweepCommands,
+} from "./governance/in-progress-work-health.js";
+export {
   describeItemOwnershipConflict,
+  evaluateClaimActivity,
+  resolveItemOwnershipActivity,
   resolveItemOwnershipConflict,
+  type ClaimActivityEvidence,
+  type ClaimActivityOptions,
+  type ItemOwnershipActivity,
   type ItemOwnershipConflict,
 } from "./ownership-source.js";
 export { discoverNearbyPmRoot } from "./tracker-root-discovery.js";
@@ -824,10 +840,12 @@ export { runCreate } from "./lifecycle/create.js";
 export { runPlan } from "./lifecycle/plan.js";
 export { runAppend } from "./lifecycle/append.js";
 export {
+  STALE_CLAIM_TAKEOVER_REFUSED_CODE,
   isAlreadyClaimedError,
   runClaim,
   runClaimNext,
   runRelease,
+  type StaleClaimTakeoverReceipt,
 } from "./lifecycle/claim.js";
 export { runStartTask, runPauseTask, runCloseTask, type TaskCompositionOptions } from "./lifecycle/task-composition.js";
 export { runCloseMany } from "./lifecycle/close-many.js";

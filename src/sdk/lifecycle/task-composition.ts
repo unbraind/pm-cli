@@ -67,7 +67,7 @@ export async function runStartTask(id: string, options: TaskCompositionOptions, 
   return runAsExplicitStart(async () => {
     const claim = await runClaim(id, options.force === true, global, mutationOptionsWithOverrides(options, {}, ["start"]));
     const canonicalId = claim.item.id as string;
-    const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts"]) as UpdateCommandOptions, global))
+    const update = await finishComposition(canonicalId, "claim", /** Advance the persisted claim identity using the configured workflow while preserving constituent mutation policy. */ () => runUpdate(canonicalId, mutationOptionsWithOverrides(options, { status }, ["assignee", "start", "next", "ifAvailable", "maxAttempts", "takeoverStale"]) as UpdateCommandOptions, global))
       .catch(async (error: unknown) => {
         throw await releaseRefusedStartClaim(error, claim, global, options.author);
       });

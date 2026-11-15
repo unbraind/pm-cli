@@ -853,6 +853,16 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/improvement-ledger.ts"],
   },
   {
+    code: "in_progress_idle",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
+    code: "in_progress_unowned",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
     code: "incomplete_allowed_values",
     exit_code: 1,
     sources: ["sdk/agent/refusal-closure.ts"],

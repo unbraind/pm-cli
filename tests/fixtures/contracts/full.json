@@ -2817,6 +2817,9 @@
           "flag": "--if-available"
         },
         {
+          "flag": "--takeover-stale"
+        },
+        {
           "flag": "--next"
         },
         {
@@ -23942,6 +23945,40 @@
     },
     {
       "aliases": [],
+      "canonical_code": "in_progress_idle",
+      "class": "generic_failure",
+      "code": "in_progress_idle",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "In progress idle condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "in_progress_unowned",
+      "class": "generic_failure",
+      "code": "in_progress_unowned",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "In progress unowned condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "incomplete_allowed_values",
       "class": "generic_failure",
       "code": "incomplete_allowed_values",
@@ -27212,6 +27249,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "stale_claim_takeover_refused",
+      "class": "conflict",
+      "code": "stale_claim_takeover_refused",
+      "emitting_commands": [
+        "claim"
+      ],
+      "exit_code": 4,
+      "meaning": "Stale claim takeover refused condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/lifecycle/claim.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "stale_destination",
       "class": "generic_failure",
       "code": "stale_destination",
@@ -27224,6 +27278,23 @@
       "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "sdk/cli-contracts/grammar-contracts.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "stale_in_progress_items",
+      "class": "generic_failure",
+      "code": "stale_in_progress_items",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "Stale in progress items condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
       ],
       "stability": "provisional"
     },
@@ -34520,6 +34591,58 @@
                 }
               ]
             }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "takeoverStale": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "takeoverStale"
+                  ]
+                },
+                {
+                  "properties": {
+                    "force": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "force"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "takeoverStale": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "takeoverStale"
+                  ]
+                },
+                {
+                  "properties": {
+                    "next": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "next"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "oneOf": [
@@ -34768,6 +34891,10 @@
               "release"
             ],
             "type": "string"
+          },
+          "takeoverStale": {
+            "description": "Take over another holder's claim only when it has been idle for mutation_guard.stale_in_progress_hours; an active claim is refused with stale_claim_takeover_refused. Not combinable with force or next.",
+            "type": "boolean"
           },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
@@ -66822,6 +66949,58 @@
                 }
               ]
             }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "takeoverStale": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "takeoverStale"
+                  ]
+                },
+                {
+                  "properties": {
+                    "force": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "force"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "allOf": [
+                {
+                  "properties": {
+                    "takeoverStale": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "takeoverStale"
+                  ]
+                },
+                {
+                  "properties": {
+                    "next": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "next"
+                  ]
+                }
+              ]
+            }
           }
         ],
         "oneOf": [
@@ -67074,6 +67253,10 @@
               "release"
             ],
             "type": "string"
+          },
+          "takeoverStale": {
+            "description": "Take over another holder's claim only when it has been idle for mutation_guard.stale_in_progress_hours; an active claim is refused with stale_claim_takeover_refused. Not combinable with force or next.",
+            "type": "boolean"
           },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
@@ -67700,10 +67883,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.27.0"
+    "x-schema-version": "4.28.0"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.27.0",
+  "schema_version": "4.28.0",
   "selected": {
     "action": null,
     "availability_only": false,

@@ -319,6 +319,26 @@ export interface PmCliErrorContext {
   claimed_at?: string | null;
   /** Whether the holder arrived through an explicit claim or a metadata assignment; `unknown` when history cannot say. */
   claim_source?: "claim" | "assignment" | "unknown";
+  /** Holder activity and stale-claim policy behind an `already_claimed_by` or `stale_claim_takeover_refused` refusal (GH-1336). */
+  claim_activity?: {
+    /** Most recent valid item or history timestamp, or null when neither parses. */
+    last_activity_at: string | null;
+    /** Whole hours since `claimed_at`, or null when the claim time is unknown. */
+    claim_age_hours: number | null;
+    /** Whole hours since `last_activity_at`, or null when the activity time is unknown. */
+    idle_hours: number | null;
+    /** The stale-work policy the claim was judged against. */
+    stale_policy: {
+      /** Setting that owns the inactivity threshold. */
+      setting: "mutation_guard.stale_in_progress_hours";
+      /** Configured threshold in whole hours. */
+      threshold_hours: number;
+      /** Whether the claim's idle time meets the threshold, so `--takeover-stale` may take it. */
+      stale: boolean;
+      /** When the claim becomes eligible for `--takeover-stale` if nothing else is recorded, or null when unknown. */
+      eligible_at: string | null;
+    };
+  };
   /** Lease a refused `lock_lost` commit held when it tried to commit. */
   lease?: {
     /** Principal recorded as the lease owner. */

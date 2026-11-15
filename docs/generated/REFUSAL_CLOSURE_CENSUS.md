@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 473
+- Catalog error codes: 477
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 454
-- Coverage fraction: 0.040169
+- Uncovered error codes: 458
+- Coverage fraction: 0.039832
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -164,6 +164,8 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `host_environment_resource_fault` | `host_environment_resource_fault` | uncovered | none | 0 |
 | `improvement_metric_contract_conflict` | `improvement_metric_contract_conflict` | uncovered | none | 0 |
 | `improvement_observation_conflict` | `improvement_observation_conflict` | uncovered | none | 0 |
+| `in_progress_idle` | `in_progress_idle` | uncovered | none | 0 |
+| `in_progress_unowned` | `in_progress_unowned` | uncovered | none | 0 |
 | `incomplete_allowed_values` | `incomplete_allowed_values` | uncovered | none | 0 |
 | `inconsistent_concept_kind` | `inconsistent_concept_kind` | uncovered | none | 0 |
 | `init_existing_settings_requires_force` | `init_existing_settings_requires_force` | uncovered | none | 0 |
@@ -351,7 +353,9 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `settings_write_invalid_existing_json` | `settings_write_invalid_existing_json` | uncovered | none | 0 |
 | `settings_write_invalid_existing_schema` | `settings_write_invalid_existing_schema` | uncovered | none | 0 |
 | `stale_budget` | `stale_budget` | uncovered | none | 0 |
+| `stale_claim_takeover_refused` | `stale_claim_takeover_refused` | uncovered | none | 0 |
 | `stale_destination` | `stale_destination` | uncovered | none | 0 |
+| `stale_in_progress_items` | `stale_in_progress_items` | uncovered | none | 0 |
 | `stale_lock_requires_override` | `stale_lock_requires_override` | uncovered | none | 0 |
 | `stale_observed_signature` | `stale_observed_signature` | uncovered | none | 0 |
 | `stale_revision` | `stale_revision` | uncovered | none | 0 |

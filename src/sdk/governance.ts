@@ -20,6 +20,7 @@ export {
   type ReindexResult,
 } from "./governance/reindex.js";
 export * from "./governance/stale-work.js";
+export * from "./governance/in-progress-work-health.js";
 export * from "./governance/storage-integrity.js";
 export * from "./governance/status-role-diagnostics.js";
 export * from "./governance/workspace-position.js";

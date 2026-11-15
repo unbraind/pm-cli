@@ -3,9 +3,19 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  STALE_WORK_THRESHOLD_SETTING,
+  inspectInProgressWork,
   inspectStaleInProgressItems,
+  resolveLastActivityAt,
+  scanInProgressWork,
   scanStaleInProgressItems,
 } from "../../../src/sdk/index.js";
+import {
+  latestHistoryTimestamp,
+  readLatestHistoryActivity,
+  staleEligibleAt,
+  wholeHoursSince,
+} from "../../../src/sdk/governance/stale-work.js";
 import type { ItemMetadata } from "../../../src/types/index.js";
 
 function item(overrides: Partial<ItemMetadata>): ItemMetadata {
@@ -161,6 +171,105 @@ describe("stale in-progress SDK governance", () => {
         count: 1,
         items: [{ id: "pm-corrupt" }],
       });
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("classifies in-progress work by ownership and idleness independently (GH-1724)", () => {
+    const scan = inspectInProgressWork(
+      [
+        item({ id: "pm-unowned-idle", status: "in_progress" }),
+        item({ id: "pm-unowned-fresh", status: "in_progress", updated_at: "2026-07-24T11:00:00.000Z" }),
+        item({ id: "pm-owned-idle", status: "in_progress", assignee: " agent " }),
+        item({ id: "pm-owned-fresh", status: "in_progress", assignee: "agent", updated_at: "2026-07-24T11:00:00.000Z" }),
+        item({ id: "pm-blank-owner", status: "in_progress", assignee: "   ", updated_at: "2026-07-24T11:00:00.000Z" }),
+        item({ id: "pm-unknown", status: "in_progress", updated_at: "invalid" }),
+        item({ id: "pm-owned-unknown", status: "in_progress", assignee: "agent", updated_at: "invalid" }),
+        item({ id: "pm-open", status: "open" }),
+      ],
+      { threshold_hours: 72, now: new Date("2026-07-24T12:00:00.000Z") },
+    );
+    expect(scan.threshold_hours).toBe(72);
+    expect(scan.unowned).toEqual({
+      count: 4,
+      items: [
+        { id: "pm-unowned-idle", last_activity_at: "2026-07-01T00:00:00.000Z", age_hours: 564 },
+        { id: "pm-blank-owner", last_activity_at: "2026-07-24T11:00:00.000Z", age_hours: 1 },
+        { id: "pm-unowned-fresh", last_activity_at: "2026-07-24T11:00:00.000Z", age_hours: 1 },
+        { id: "pm-unknown", last_activity_at: null, age_hours: null },
+      ],
+    });
+    expect(scan.idle).toEqual({
+      count: 2,
+      items: [
+        { id: "pm-owned-idle", last_activity_at: "2026-07-01T00:00:00.000Z", age_hours: 564, assignee: "agent" },
+        { id: "pm-unowned-idle", last_activity_at: "2026-07-01T00:00:00.000Z", age_hours: 564 },
+      ],
+    });
+    expect(scan.stale).toMatchObject({ count: 1, items: [{ id: "pm-unowned-idle" }] });
+  });
+
+  it("defaults the classification clock to now and reads history for unparseable metadata", async () => {
+    expect(
+      inspectInProgressWork([item({ id: "pm-old", status: "in_progress" })], { threshold_hours: 1 }).idle.count,
+    ).toBe(1);
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-stale-work-"));
+    try {
+      await mkdir(path.join(pmRoot, "history"));
+      await writeFile(
+        path.join(pmRoot, "history", "pm-unparsed.jsonl"),
+        `${JSON.stringify({ ts: "2026-07-24T11:30:00.000Z", author: "a", op: "update", patch: [], before_hash: "x", after_hash: "y" })}\n`,
+      );
+      const scan = await scanInProgressWork(
+        pmRoot,
+        [item({ id: "pm-unparsed", status: "in_progress", updated_at: "invalid" })],
+        { threshold_hours: 72, now: new Date("2026-07-24T12:00:00.000Z") },
+      );
+      expect(scan.unowned.items).toEqual([
+        { id: "pm-unparsed", last_activity_at: "2026-07-24T11:30:00.000Z", age_hours: 0 },
+      ]);
+      expect(scan.idle.count).toBe(0);
+    } finally {
+      await rm(pmRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves the shared activity clock and its derived instants", () => {
+    expect(STALE_WORK_THRESHOLD_SETTING).toBe("mutation_guard.stale_in_progress_hours");
+    expect(resolveLastActivityAt("2026-07-01T00:00:00.000Z", "2026-07-02T00:00:00.000Z")).toBe("2026-07-02T00:00:00.000Z");
+    expect(resolveLastActivityAt("2026-07-03T00:00:00.000Z", "2026-07-02T00:00:00.000Z")).toBe("2026-07-03T00:00:00.000Z");
+    expect(resolveLastActivityAt("invalid", undefined)).toBeUndefined();
+    expect(resolveLastActivityAt(undefined, "2026-07-02T00:00:00.000Z")).toBe("2026-07-02T00:00:00.000Z");
+    expect(wholeHoursSince("2026-07-24T10:30:00.000Z", Date.parse("2026-07-24T12:00:00.000Z"))).toBe(1);
+    expect(wholeHoursSince("2026-07-25T00:00:00.000Z", Date.parse("2026-07-24T12:00:00.000Z"))).toBe(0);
+    expect(staleEligibleAt("2026-07-24T00:00:00.000Z", 72)).toBe("2026-07-27T00:00:00.000Z");
+    expect(latestHistoryTimestamp([{ ts: "2026-07-02T00:00:00.000Z" }, { ts: "bad" }, { ts: "2026-07-01T00:00:00.000Z" }])).toBe("2026-07-02T00:00:00.000Z");
+    expect(latestHistoryTimestamp([{ ts: "bad" }])).toBeUndefined();
+  });
+
+  it("lets a newer history entry rescue an item whose metadata alone looks idle", async () => {
+    const pmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-stale-work-"));
+    try {
+      const historyDirectory = path.join(pmRoot, "history");
+      await mkdir(historyDirectory);
+      // History newer than metadata rescues an item that metadata alone would call idle.
+      await writeFile(
+        path.join(historyDirectory, "pm-rescued.jsonl"),
+        `${JSON.stringify({ ts: "2026-07-24T11:00:00.000Z", author: "a", op: "comment_add", patch: [], before_hash: "x", after_hash: "y" })}\n`,
+      );
+      const scan = await scanInProgressWork(
+        pmRoot,
+        [
+          item({ id: "pm-rescued", status: "in_progress", assignee: "agent" }),
+          item({ id: "pm-fresh", status: "in_progress", assignee: "agent", updated_at: "2026-07-24T11:30:00.000Z" }),
+          item({ id: "pm-idle", status: "in_progress", assignee: "agent" }),
+        ],
+        { threshold_hours: 72, now: new Date("2026-07-24T12:00:00.000Z") },
+      );
+      expect(scan.idle.items.map((entry) => entry.id)).toEqual(["pm-idle"]);
+      await expect(readLatestHistoryActivity(pmRoot, "pm-rescued")).resolves.toBe("2026-07-24T11:00:00.000Z");
+      await expect(readLatestHistoryActivity(pmRoot, "pm-missing")).resolves.toBeUndefined();
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }

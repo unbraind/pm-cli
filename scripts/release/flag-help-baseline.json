@@ -369,9 +369,9 @@
     },
     {
       "command": "claim",
-      "help_bytes": 1628,
-      "estimated_tokens": 407,
-      "maximum_tokens": 407
+      "help_bytes": 1687,
+      "estimated_tokens": 422,
+      "maximum_tokens": 422
     },
     {
       "command": "release",
@@ -381,9 +381,9 @@
     },
     {
       "command": "start-task",
-      "help_bytes": 339,
-      "estimated_tokens": 85,
-      "maximum_tokens": 85
+      "help_bytes": 404,
+      "estimated_tokens": 101,
+      "maximum_tokens": 101
     },
     {
       "command": "pause-task",

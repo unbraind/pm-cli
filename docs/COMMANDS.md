@@ -171,6 +171,25 @@ pm next --parent pm-epic01              # scope readiness to one epic's subtree
 pm next --ready-only --limit 3 --json   # tightest agent-loop projection
 ```
 
+Each `held_by_others` row reports the holder's `claimed_at`, `idle_hours` and
+`stale` (idle at least `mutation_guard.stale_in_progress_hours`), reading one
+history stream per returned row only; the exact `last_activity_at` is in a
+refused claim's `claim_activity`. A stale row can be taken with
+`pm claim <id> --takeover-stale`; an active one is refused with
+`stale_claim_takeover_refused` and nothing is written. Unattended in-progress
+work is swept with the existing list grammar:
+
+```bash
+pm list --status in_progress --assignee-filter unassigned                    # unowned
+pm list --status in_progress --updated-before -72h                           # idle, owned or not
+pm list --status in_progress --assignee-filter unassigned --updated-before -72h  # stale
+```
+
+`pm health` prints these sweeps (with the configured status id and threshold)
+as the remedies of its `in_progress_unowned`, `in_progress_idle` and
+`stale_in_progress_items` advisories, and `pm context` counts
+`in_progress_unowned` and `in_progress_idle` next to `in_progress`.
+
 `pm next` has two budgets with different scopes. `--token-budget <n>` bounds
 only the selection (`recommended` plus `ready`) and reports it under
 `truncation.ready_budget`; `filters.token_budget` echoes that request and is

@@ -845,11 +845,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Claims an item to signal active ownership and reduce conflicts.",
     examples: [
       'pm claim pm-a1b2 --start',
+      'pm claim pm-a1b2 --takeover-stale --message "Take over an abandoned claim"',
       'pm claim pm-a1b2 --force --message "Take over terminal item"',
       'pm claim pm-a1b2 --author "release-service" --message "Explicit non-agent identity override"',
     ],
     tips: [
       "Claim is an atomic test-and-set: a non-terminal item held by another principal refuses with already_claimed_by. Use --if-available to skip that item without failing. Terminal items still require --force, even when --if-available is set. Use --force for coordinated takeovers; stale locks require --force only when governance.force_required_for_stale_lock is enabled.",
+      "The refusal reports the holder's claim age, last activity and idle hours. --takeover-stale takes over only a claim idle for at least mutation_guard.stale_in_progress_hours (default 72), refuses an active one with stale_claim_takeover_refused, and records the previous holder and idle time in the claim's history entry.",
       "Harness identity is automatic; use --author only to assert an intentional external principal.",
     ],
   },

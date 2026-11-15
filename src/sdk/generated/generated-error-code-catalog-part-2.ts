@@ -564,9 +564,20 @@ export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
     sources: ["sdk/cli-contracts/flag-lexicon-contracts.ts"],
   },
   {
+    code: "stale_claim_takeover_refused",
+    exit_code: 4,
+    sources: ["sdk/lifecycle/claim.ts"],
+    emitting_commands: ["claim"],
+  },
+  {
     code: "stale_destination",
     exit_code: 1,
     sources: ["sdk/cli-contracts/grammar-contracts.ts"],
+  },
+  {
+    code: "stale_in_progress_items",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
   },
   {
     code: "stale_lock_requires_override",

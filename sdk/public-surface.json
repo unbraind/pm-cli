@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2128,
+    "covered_symbols": 2148,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2129
+    "required_symbols": 2149
   },
   "breaking_acknowledgements": [
     {
@@ -3345,6 +3345,37 @@
       ],
       "package_version": "2026.11.14",
       "reason": "pm-gh1727: normalizeDirectExtensionCommandOptions gains an optional trailing DirectExtensionOptionPolicy argument (its first parameter is renamed declaredDefinitions); every existing three-argument call keeps compiling"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ClaimMutationOptions",
+        "signature ./sdk:ClaimResult",
+        "signature ./sdk:NextResult",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk/core:ClaimResult",
+        "signature ./sdk/core:NextResult",
+        "signature ./sdk/query:NextResult",
+        "signature ./sdk/runtime:ClaimResult",
+        "signature ./sdk/runtime:NextResult"
+      ],
+      "package_version": "2026.11.14",
+      "reason": "pm-gh1336 and pm-gh1724: NextResult.held_by_others rows become NextHeldRow and gain claimed_at, last_activity_at, idle_hours and stale; ClaimMutationOptions gains optional takeoverStale; ClaimResult gains optional takeover (StaleClaimTakeoverReceipt); PmCliErrorContext gains optional claim_activity. Every reader keeps compiling; code that constructs a NextResult or its held_by_others rows must supply the four new row fields."
+    },
+    {
+      "changes": [
+        "signature ./sdk:PM_TOOL_PARAMETERS_SCHEMA_VERSION",
+        "signature ./sdk/contracts:PM_TOOL_PARAMETERS_SCHEMA_VERSION"
+      ],
+      "package_version": "2026.11.14",
+      "reason": "pm-gh1336: PM_TOOL_PARAMETERS_SCHEMA_VERSION becomes 4.28.0 (additive minor: claim and start-task accept takeoverStale); consumers that pin the literal 4.27.0 type must accept 4.28.0"
+    },
+    {
+      "changes": [
+        "signature ./sdk:NextHeldRow",
+        "signature ./sdk/query:NextHeldRow"
+      ],
+      "package_version": "2026.11.14",
+      "reason": "pm-gh1336: NextHeldRow carries claimed_at, idle_hours and stale (the exact last_activity_at stays in a refused claim's claim_activity, so a bounded next read keeps its actionable rows)"
     }
   ],
   "entrypoints": {
@@ -5170,6 +5201,18 @@
           "signature": "(options: Record<string, unknown>) => Record<string, true> | calls: (options: Record<string, unknown>) => Record<string, true>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildInProgressSweepCommands",
+          "signature": "(inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands | calls: (inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildInProgressWorkHealthSummary",
+          "signature": "(scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary | calls: (scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "buildInvalidTypeError",
@@ -5597,9 +5640,21 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "type",
+          "name": "ClaimActivityEvidence",
+          "signature": "export type ClaimActivityEvidence = NonNullable<PmCliErrorContext[\"claim_activity\"]>;"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "ClaimActivityOptions",
+          "signature": "export interface ClaimActivityOptions { updated_at: string | undefined; threshold_hours: number; now?: Date; }"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "interface",
           "name": "ClaimMutationOptions",
-          "signature": "export interface ClaimMutationOptions { author?: string; message?: string; ifAvailable?: boolean; maxAttempts?: string | number; start?: boolean; }"
+          "signature": "export interface ClaimMutationOptions { author?: string; message?: string; ifAvailable?: boolean; takeoverStale?: boolean; maxAttempts?: string | number; start?: boolean; }"
         },
         {
           "classification": "supported",
@@ -5623,7 +5678,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; takeover?: StaleClaimTakeoverReceipt; }"
         },
         {
           "classification": "supported",
@@ -8440,6 +8495,12 @@
           "signature": "(registry: BoundaryFixtureRegistry, fixtures: Readonly<Record<string, unknown>>, now?: Date) => BoundaryFixtureReport | calls: (registry: BoundaryFixtureRegistry, fixtures: Readonly<Record<string, unknown>>, now?: Date) => BoundaryFixtureReport"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "evaluateClaimActivity",
+          "signature": "(claimedAt: string | null, latestHistoryAt: string | undefined, options: ClaimActivityOptions) => ClaimActivityEvidence | calls: (claimedAt: string | null, latestHistoryAt: string | undefined, options: ClaimActivityOptions) => ClaimActivityEvidence"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "evaluateContextRanking",
@@ -11063,6 +11124,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "IN_PROGRESS_WORK_DETAIL_LIMIT",
+          "signature": "25"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "indexBlockedByIds",
           "signature": "(corpus: readonly ItemMetadata[]) => Map<string, string[]> | calls: (corpus: readonly ItemMetadata[]) => Map<string, string[]>"
@@ -11189,6 +11256,48 @@
         },
         {
           "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressSweepCommands",
+          "signature": "export interface InProgressSweepCommands { unowned: string; idle: string; stale: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkGroup",
+          "signature": "export interface InProgressWorkGroup { count: number; items: InProgressWorkItem[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkHealthDetails",
+          "signature": "export interface InProgressWorkHealthDetails { threshold_hours: number; threshold_setting: \"mutation_guard.stale_in_progress_hours\"; unowned: InProgressWorkHealthGroup; idle: InProgressWorkHealthGroup; item_remedies: { claim: string; return_to_open: string; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkHealthGroup",
+          "signature": "export interface InProgressWorkHealthGroup extends InProgressWorkGroup { truncated?: true; sweep: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkHealthSummary",
+          "signature": "export interface InProgressWorkHealthSummary { warnings: string[]; details: InProgressWorkHealthDetails | undefined; remediation: Record<string, string>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkItem",
+          "signature": "export interface InProgressWorkItem { id: string; last_activity_at: string | null; age_hours: number | null; assignee?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkScan",
+          "signature": "export interface InProgressWorkScan { threshold_hours: number; unowned: InProgressWorkGroup; idle: InProgressWorkGroup; stale: StaleInProgressScan; }"
+        },
+        {
+          "classification": "supported",
           "kind": "function",
           "name": "inspectCompleteListResult",
           "signature": "(candidate: unknown) => PmCompleteListInspection | calls: (candidate: unknown) => PmCompleteListInspection"
@@ -11204,6 +11313,12 @@
           "kind": "value",
           "name": "inspectHistoryAuthorStream",
           "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_events\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples_truncated\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\" | \"samples_truncated\" | \"actionable_events\">"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "inspectInProgressWork",
+          "signature": "(items: readonly ItemMetadata[], options: InspectStaleInProgressOptions) => InProgressWorkScan | calls: (items: readonly ItemMetadata[], options: InspectStaleInProgressOptions) => InProgressWorkScan"
         },
         {
           "classification": "supported",
@@ -11778,6 +11893,12 @@
         {
           "classification": "advanced_export",
           "kind": "interface",
+          "name": "ItemOwnershipActivity",
+          "signature": "export interface ItemOwnershipActivity extends ItemOwnershipConflict { activity: ClaimActivityEvidence; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
           "name": "ItemOwnershipConflict",
           "signature": "export interface ItemOwnershipConflict { phrase: string; holder: string; source: \"claim\" | \"assignment\" | \"unknown\"; since: string | null; }"
         },
@@ -11882,6 +12003,12 @@
           "kind": "class",
           "name": "JsonFileContextSignalStoreAdapter",
           "signature": "export declare class JsonFileContextSignalStoreAdapter implements ContextSignalStoreAdapter { private readonly filePath; constructor(filePath: string); read(): Promise<unknown | null>; write(snapshot: ContextSignalSnapshot): Promise<void>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "latestHistoryTimestamp",
+          "signature": "(history: ReadonlyArray<{ ts: string; }>) => string | undefined | calls: (history: ReadonlyArray<{ ts: string; }>) => string | undefined"
         },
         {
           "classification": "supported",
@@ -13044,6 +13171,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "NextHeldRow",
+          "signature": "export interface NextHeldRow { id: string; assignee: string; claimed_at: string | null; idle_hours: number | null; stale: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "NextOptions",
           "signature": "export interface NextOptions { type?: string; tag?: string; priority?: string | number; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; parent?: string; limit?: string; blockedLimit?: string; readyOnly?: boolean; format?: string; explainRanking?: boolean; rankingPolicy?: NextRankingPolicy; tokenBudget?: string | number; includeDecisions?: boolean; includeGates?: boolean; includeContainers?: boolean; callerAuthor?: string; [key: string]: unknown; }"
         },
@@ -13069,7 +13202,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: NextHeldRow[]; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -13244,6 +13377,12 @@
           "kind": "function",
           "name": "normalizeSimilarityText",
           "signature": "(value: string) => string | calls: (value: string) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeStaleWorkThresholdHours",
+          "signature": "(value: number) => number | calls: (value: number) => number"
         },
         {
           "classification": "advanced_export",
@@ -15055,7 +15194,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.27.0\""
+          "signature": "\"4.28.0\""
         },
         {
           "classification": "contract_data",
@@ -15211,7 +15350,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; details?: PmCliErrorDetails; details_omitted?: PmCliErrorDetailsOmission; }"
+          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; claim_activity?: { last_activity_at: string | null; claim_age_hours: number | null; idle_hours: number | null; stale_policy: { setting: \"mutation_guard.stale_in_progress_hours\"; threshold_hours: number; stale: boolean; eligible_at: string | null; }; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; details?: PmCliErrorDetails; details_omitted?: PmCliErrorDetailsOmission; }"
         },
         {
           "classification": "advanced_export",
@@ -17392,6 +17531,12 @@
           "signature": "(pmRoot: string, transactionId: string) => Promise<ItemTransactionStatus | undefined> | calls: (pmRoot: string, transactionId: string) => Promise<ItemTransactionStatus | undefined>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readLatestHistoryActivity",
+          "signature": "(pmRoot: string, itemId: string) => Promise<string | undefined> | calls: (pmRoot: string, itemId: string) => Promise<string | undefined>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "readLocatedItem",
@@ -19254,6 +19399,12 @@
         {
           "classification": "advanced_export",
           "kind": "function",
+          "name": "resolveItemOwnershipActivity",
+          "signature": "(pmRoot: string, itemId: string, assignee: string, options: ClaimActivityOptions) => Promise<ItemOwnershipActivity> | calls: (pmRoot: string, itemId: string, assignee: string, options: ClaimActivityOptions) => Promise<ItemOwnershipActivity>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
           "name": "resolveItemOwnershipConflict",
           "signature": "(pmRoot: string, itemId: string, assignee: string) => Promise<ItemOwnershipConflict> | calls: (pmRoot: string, itemId: string, assignee: string) => Promise<ItemOwnershipConflict>"
         },
@@ -19268,6 +19419,12 @@
           "kind": "function",
           "name": "resolveItemTypesFilePath",
           "signature": "(pmRoot: string, schema: RuntimeSchemaSettings) => string | calls: (pmRoot: string, schema: RuntimeSchemaSettings) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveLastActivityAt",
+          "signature": "(updatedAt: string | undefined, historyTimestamp: string | undefined) => string | undefined | calls: (updatedAt: string | undefined, historyTimestamp: string | undefined) => string | undefined"
         },
         {
           "classification": "advanced_export",
@@ -20746,6 +20903,12 @@
           "signature": "(pmRoot: string, sampleLimit?: number, includeActionableEvents?: boolean) => Promise<HistoryAuthorAttributionScan> | calls: (pmRoot: string, sampleLimit?: number, includeActionableEvents?: boolean) => Promise<HistoryAuthorAttributionScan>"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "scanInProgressWork",
+          "signature": "(pmRoot: string, items: readonly ItemMetadata[], options: Omit<InspectStaleInProgressOptions, \"last_history_activity\">) => Promise<InProgressWorkScan> | calls: (pmRoot: string, items: readonly ItemMetadata[], options: Omit<InspectStaleInProgressOptions, \"last_history_activity\">) => Promise<InProgressWorkScan>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "scanItemFormatVersions",
@@ -21938,6 +22101,30 @@
           "kind": "function",
           "name": "stableValueEquals",
           "signature": "(left: unknown, right: unknown) => boolean | calls: (left: unknown, right: unknown) => boolean"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "value",
+          "name": "STALE_CLAIM_TAKEOVER_REFUSED_CODE",
+          "signature": "\"stale_claim_takeover_refused\""
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "STALE_WORK_THRESHOLD_SETTING",
+          "signature": "\"mutation_guard.stale_in_progress_hours\""
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "interface",
+          "name": "StaleClaimTakeoverReceipt",
+          "signature": "export interface StaleClaimTakeoverReceipt { previous_holder: string; new_holder: string; claimed_at: string | null; last_activity_at: string; idle_hours: number; threshold_hours: number; policy: ClaimActivityEvidence[\"stale_policy\"][\"setting\"]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "staleEligibleAt",
+          "signature": "(timestamp: string, thresholdHours: number) => string | calls: (timestamp: string, thresholdHours: number) => string"
         },
         {
           "classification": "supported",
@@ -23480,6 +23667,12 @@
           "kind": "function",
           "name": "waiverNoticeFor",
           "signature": "(subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined | calls: (subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "wholeHoursSince",
+          "signature": "(timestamp: string, nowMs: number) => number | calls: (timestamp: string, nowMs: number) => number"
         },
         {
           "classification": "advanced_export",
@@ -26875,7 +27068,7 @@
           "classification": "contract_data",
           "kind": "value",
           "name": "PM_TOOL_PARAMETERS_SCHEMA_VERSION",
-          "signature": "\"4.27.0\""
+          "signature": "\"4.28.0\""
         },
         {
           "classification": "contract_data",
@@ -28495,7 +28688,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; takeover?: StaleClaimTakeoverReceipt; }"
         },
         {
           "classification": "supported",
@@ -29053,7 +29246,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: NextHeldRow[]; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -30294,6 +30487,18 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "buildInProgressSweepCommands",
+          "signature": "(inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands | calls: (inProgressStatus: string, thresholdHours: number) => InProgressSweepCommands"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "buildInProgressWorkHealthSummary",
+          "signature": "(scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary | calls: (scan: InProgressWorkScan, statuses: { in_progress: string; open: string; }) => InProgressWorkHealthSummary"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "buildLinkedFileRepairReport",
           "signature": "(links: readonly StaleLinkOwnerInput[], classifications: readonly ClassifiedStaleLinkedPath[], lookup: (id: string) => OwnerItemMetadata | undefined, registry: RuntimeStatusRegistry, limit?: number) => LinkedFileRepairReport | calls: (links: readonly StaleLinkOwnerInput[], classifications: readonly ClassifiedStaleLinkedPath[], lookup: (id: string) => OwnerItemMetadata | undefined, registry: RuntimeStatusRegistry, limit?: number) => LinkedFileRepairReport"
         },
@@ -30876,8 +31081,62 @@
         {
           "classification": "supported",
           "kind": "value",
+          "name": "IN_PROGRESS_WORK_DETAIL_LIMIT",
+          "signature": "25"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressSweepCommands",
+          "signature": "export interface InProgressSweepCommands { unowned: string; idle: string; stale: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkGroup",
+          "signature": "export interface InProgressWorkGroup { count: number; items: InProgressWorkItem[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkHealthDetails",
+          "signature": "export interface InProgressWorkHealthDetails { threshold_hours: number; threshold_setting: \"mutation_guard.stale_in_progress_hours\"; unowned: InProgressWorkHealthGroup; idle: InProgressWorkHealthGroup; item_remedies: { claim: string; return_to_open: string; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkHealthGroup",
+          "signature": "export interface InProgressWorkHealthGroup extends InProgressWorkGroup { truncated?: true; sweep: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkHealthSummary",
+          "signature": "export interface InProgressWorkHealthSummary { warnings: string[]; details: InProgressWorkHealthDetails | undefined; remediation: Record<string, string>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkItem",
+          "signature": "export interface InProgressWorkItem { id: string; last_activity_at: string | null; age_hours: number | null; assignee?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "InProgressWorkScan",
+          "signature": "export interface InProgressWorkScan { threshold_hours: number; unowned: InProgressWorkGroup; idle: InProgressWorkGroup; stale: StaleInProgressScan; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
           "name": "inspectHistoryAuthorStream",
           "signature": "(itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"acknowledged_actionable_event_count\" | \"actionable_events\" | \"actionable_unknown_event_count\" | \"checked_events\" | \"legacy_unknown_event_count\" | \"samples_truncated\" | \"samples\" | \"unknown_event_count\"> | calls: (itemId: string, raw: string, sampleLimit?: number, acknowledgedEvents?: ReadonlySet<string>) => Pick<HistoryAuthorAttributionScan, \"checked_events\" | \"unknown_event_count\" | \"legacy_unknown_event_count\" | \"actionable_unknown_event_count\" | \"acknowledged_actionable_event_count\" | \"samples\" | \"samples_truncated\" | \"actionable_events\">"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "inspectInProgressWork",
+          "signature": "(items: readonly ItemMetadata[], options: InspectStaleInProgressOptions) => InProgressWorkScan | calls: (items: readonly ItemMetadata[], options: InspectStaleInProgressOptions) => InProgressWorkScan"
         },
         {
           "classification": "supported",
@@ -30932,6 +31191,12 @@
           "kind": "function",
           "name": "jaccardSimilarity",
           "signature": "(leftTokens: readonly string[], rightTokens: readonly string[]) => number | calls: (leftTokens: readonly string[], rightTokens: readonly string[]) => number"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "latestHistoryTimestamp",
+          "signature": "(history: ReadonlyArray<{ ts: string; }>) => string | undefined | calls: (history: ReadonlyArray<{ ts: string; }>) => string | undefined"
         },
         {
           "classification": "supported",
@@ -31046,6 +31311,12 @@
           "kind": "function",
           "name": "normalizeSimilarityText",
           "signature": "(value: string) => string | calls: (value: string) => string"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "normalizeStaleWorkThresholdHours",
+          "signature": "(value: number) => number | calls: (value: number) => number"
         },
         {
           "classification": "supported",
@@ -31188,6 +31459,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "readLatestHistoryActivity",
+          "signature": "(pmRoot: string, itemId: string) => Promise<string | undefined> | calls: (pmRoot: string, itemId: string) => Promise<string | undefined>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "readWorkflowPolicies",
           "signature": "(pmRoot: string) => Promise<WorkflowPolicyDocument> | calls: (pmRoot: string) => Promise<WorkflowPolicyDocument>"
         },
@@ -31262,6 +31539,12 @@
           "kind": "function",
           "name": "resolveHistoryHashAlgorithm",
           "signature": "(value?: string) => HistoryHashAlgorithm | calls: (value?: string) => HistoryHashAlgorithm"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "resolveLastActivityAt",
+          "signature": "(updatedAt: string | undefined, historyTimestamp: string | undefined) => string | undefined | calls: (updatedAt: string | undefined, historyTimestamp: string | undefined) => string | undefined"
         },
         {
           "classification": "supported",
@@ -31368,6 +31651,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "scanInProgressWork",
+          "signature": "(pmRoot: string, items: readonly ItemMetadata[], options: Omit<InspectStaleInProgressOptions, \"last_history_activity\">) => Promise<InProgressWorkScan> | calls: (pmRoot: string, items: readonly ItemMetadata[], options: Omit<InspectStaleInProgressOptions, \"last_history_activity\">) => Promise<InProgressWorkScan>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "scanMutationSecrets",
           "signature": "(payload: unknown) => SecretGuardFinding[] | calls: (payload: unknown) => SecretGuardFinding[]"
         },
@@ -31460,6 +31749,18 @@
           "kind": "function",
           "name": "sortWaiverNotices",
           "signature": "(notices: WaiverNotice[]) => WaiverNotice[] | calls: (notices: WaiverNotice[]) => WaiverNotice[]"
+        },
+        {
+          "classification": "supported",
+          "kind": "value",
+          "name": "STALE_WORK_THRESHOLD_SETTING",
+          "signature": "\"mutation_guard.stale_in_progress_hours\""
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "staleEligibleAt",
+          "signature": "(timestamp: string, thresholdHours: number) => string | calls: (timestamp: string, thresholdHours: number) => string"
         },
         {
           "classification": "supported",
@@ -31676,6 +31977,12 @@
           "kind": "function",
           "name": "waiverNoticeFor",
           "signature": "(subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined | calls: (subjectId: string, owner: string, expiresAt: string, nowMs: number, noticeDays: number) => WaiverNotice | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "wholeHoursSince",
+          "signature": "(timestamp: string, nowMs: number) => number | calls: (timestamp: string, nowMs: number) => number"
         },
         {
           "classification": "supported",
@@ -34986,6 +35293,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "NextHeldRow",
+          "signature": "export interface NextHeldRow { id: string; assignee: string; claimed_at: string | null; idle_hours: number | null; stale: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "NextOptions",
           "signature": "export interface NextOptions { type?: string; tag?: string; priority?: string | number; assignee?: string; assigneeFilter?: string; sprint?: string; release?: string; parent?: string; limit?: string; blockedLimit?: string; readyOnly?: boolean; format?: string; explainRanking?: boolean; rankingPolicy?: NextRankingPolicy; tokenBudget?: string | number; includeDecisions?: boolean; includeGates?: boolean; includeContainers?: boolean; callerAuthor?: string; [key: string]: unknown; }"
         },
@@ -35011,7 +35324,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: NextHeldRow[]; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -36049,7 +36362,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ClaimResult",
-          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; }"
+          "signature": "export interface ClaimResult { item: Record<string, unknown>; changed_fields?: string[]; claimed_by: string; previous_assignee: string | null; forced: boolean; skipped?: boolean; warnings?: string[]; start?: ClaimStartReceipt; suggestions?: string[]; takeover?: StaleClaimTakeoverReceipt; }"
         },
         {
           "classification": "supported",
@@ -37297,7 +37610,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "NextResult",
-          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: Array<{ id: string; assignee: string; }>; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
+          "signature": "export interface NextResult { output_default: \"toon\"; now: string; recommended: NextRecommendation | null; ready: NextActionableItem[]; decision_needed: NextActionableItem[]; gate_needed?: NextActionableItem[]; containers?: NextActionableItem[]; blocked: NextActionableItem[]; held_by_others: NextHeldRow[]; summary: NextSummary; filters: { type: string | null; tag: string | null; priority: string | number | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; parent: string | null; limit: number; blocked_limit: number; ready_only: boolean; include_decisions: boolean; include_gates?: boolean; include_containers?: boolean; token_budget: number | null; ranking_policy: NextRankingPolicy; }; suggestions?: string[]; warnings?: string[]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; truncation?: { ready_total?: number; ready_budget?: NextReadyBudgetReceipt; decision_needed_total?: number; held_by_others_total?: number; gate_needed_total?: number; containers_total?: number; }; }"
         },
         {
           "classification": "supported",
@@ -40328,6 +40641,8 @@
     "host_environment_resource_fault",
     "improvement_metric_contract_conflict",
     "improvement_observation_conflict",
+    "in_progress_idle",
+    "in_progress_unowned",
     "incomplete_allowed_values",
     "inconsistent_concept_kind",
     "init_existing_settings_requires_force",
@@ -40515,7 +40830,9 @@
     "settings_write_invalid_existing_json",
     "settings_write_invalid_existing_schema",
     "stale_budget",
+    "stale_claim_takeover_refused",
     "stale_destination",
+    "stale_in_progress_items",
     "stale_lock_requires_override",
     "stale_observed_signature",
     "stale_revision",
@@ -40663,10 +40980,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1332,
-      "checked_values": 396,
+      "checked_functions": 1344,
+      "checked_values": 399,
       "exempt_test_seams": 15,
-      "referenced_types": 1042
+      "referenced_types": 1048
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -40687,10 +41004,10 @@
       "referenced_types": 103
     },
     "./sdk/governance": {
-      "checked_functions": 100,
-      "checked_values": 24,
+      "checked_functions": 110,
+      "checked_values": 26,
       "exempt_test_seams": 4,
-      "referenced_types": 114
+      "referenced_types": 117
     },
     "./sdk/graph": {
       "checked_functions": 76,

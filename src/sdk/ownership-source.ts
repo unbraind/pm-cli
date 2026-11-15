@@ -5,8 +5,30 @@
  * claim or a general metadata assignment using the append-only history stream.
  */
 import { readHistoryEntries } from "../core/history/read.js";
+import type { PmCliErrorContext } from "../core/shared/errors.js";
 import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
 import { getHistoryPath } from "../core/store/paths.js";
+import {
+  STALE_WORK_THRESHOLD_SETTING,
+  latestHistoryTimestamp,
+  normalizeStaleWorkThresholdHours,
+  resolveLastActivityAt,
+  staleEligibleAt,
+  wholeHoursSince,
+} from "./governance/stale-work.js";
+
+/** Activity and stale-claim policy evidence behind a claim refusal or takeover (GH-1336). */
+export type ClaimActivityEvidence = NonNullable<PmCliErrorContext["claim_activity"]>;
+
+/** Inputs that let a claim conflict report the holder's activity under the stale-work policy. */
+export interface ClaimActivityOptions {
+  /** The item's stored `updated_at`, read under the same lock as the conflict. */
+  updated_at: string | undefined;
+  /** Configured `mutation_guard.stale_in_progress_hours`. */
+  threshold_hours: number;
+  /** Evaluation instant, injectable for deterministic tests. */
+  now?: Date;
+}
 
 /** Typed holder evidence behind an `already_claimed_by` refusal (GH-1610). */
 export interface ItemOwnershipConflict {
@@ -25,6 +47,38 @@ export interface ItemOwnershipConflict {
   since: string | null;
 }
 
+/** Holder evidence plus the holder's activity under the stale-work policy (GH-1336). */
+export interface ItemOwnershipActivity extends ItemOwnershipConflict {
+  /** Claim age, last activity and stale-claim eligibility. */
+  activity: ClaimActivityEvidence;
+}
+
+/** Evaluate claim age, last activity and stale-claim eligibility from one item's evidence. */
+export function evaluateClaimActivity(
+  claimedAt: string | null,
+  latestHistoryAt: string | undefined,
+  options: ClaimActivityOptions,
+): ClaimActivityEvidence {
+  const nowMs = (options.now ?? new Date()).getTime();
+  const thresholdHours = normalizeStaleWorkThresholdHours(options.threshold_hours);
+  const lastActivityAt = resolveLastActivityAt(options.updated_at, latestHistoryAt) ?? null;
+  const validClaimedAt = claimedAt !== null && Number.isFinite(Date.parse(claimedAt)) ? claimedAt : null;
+  const idleHours = lastActivityAt === null ? null : wholeHoursSince(lastActivityAt, nowMs);
+  return {
+    last_activity_at: lastActivityAt,
+    claim_age_hours: validClaimedAt === null ? null : wholeHoursSince(validClaimedAt, nowMs),
+    idle_hours: idleHours,
+    stale_policy: {
+      setting: STALE_WORK_THRESHOLD_SETTING,
+      threshold_hours: thresholdHours,
+      // Unknown activity never qualifies: a takeover needs positive evidence of idleness.
+      stale: idleHours !== null && idleHours >= thresholdHours,
+      eligible_at: lastActivityAt === null ? null : staleEligibleAt(lastActivityAt, thresholdHours),
+    },
+  };
+}
+
+
 /** Map the operation of the latest assignee change to the holder's origin. */
 function classifyOwnershipSource(
   operation: string | undefined,
@@ -33,12 +87,12 @@ function classifyOwnershipSource(
   return operation === "claim" ? "claim" : "assignment";
 }
 
-/** Resolve the current holder, its source and its start time for an atomic claim conflict. */
-export async function resolveItemOwnershipConflict(
+/** Read one stream and derive the holder evidence it proves, keeping the entries for activity reads. */
+async function readOwnershipEvidence(
   pmRoot: string,
   itemId: string,
   assignee: string,
-): Promise<ItemOwnershipConflict> {
+): Promise<{ conflict: ItemOwnershipConflict; history: ReadonlyArray<{ ts: string }> }> {
   const history = await Promise.resolve()
     .then(() => readHistoryEntries(getHistoryPath(pmRoot, itemId), itemId))
     .catch(() => []);
@@ -64,10 +118,36 @@ export async function resolveItemOwnershipConflict(
   // A holder stored by an older version may carry URL userinfo; refusals never echo it (GH-1707).
   const holder = redactIdentityCredentials(assignee);
   return {
-    phrase: source === "claim" ? `claimed by ${holder}` : `assigned to ${holder}`,
-    holder,
-    source,
-    since: evidence?.ts ?? null,
+    conflict: {
+      phrase: source === "claim" ? `claimed by ${holder}` : `assigned to ${holder}`,
+      holder,
+      source,
+      since: evidence?.ts ?? null,
+    },
+    history,
+  };
+}
+
+/** Resolve the current holder, its source and its start time for an atomic claim conflict. */
+export async function resolveItemOwnershipConflict(
+  pmRoot: string,
+  itemId: string,
+  assignee: string,
+): Promise<ItemOwnershipConflict> {
+  return (await readOwnershipEvidence(pmRoot, itemId, assignee)).conflict;
+}
+
+/** Resolve the holder evidence and judge the holder's activity under the stale-work policy, from one stream read. */
+export async function resolveItemOwnershipActivity(
+  pmRoot: string,
+  itemId: string,
+  assignee: string,
+  options: ClaimActivityOptions,
+): Promise<ItemOwnershipActivity> {
+  const { conflict, history } = await readOwnershipEvidence(pmRoot, itemId, assignee);
+  return {
+    ...conflict,
+    activity: evaluateClaimActivity(conflict.since, latestHistoryTimestamp(history), options),
   };
 }
 

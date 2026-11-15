@@ -2,14 +2,16 @@ id: pm-gh1724
 title: "GH-1724: in_progress items with no owner stay counted as active work; health flags them only after the 72-hour idle window, and context and list cannot separate them"
 description: "GH-1724 (filed 2026-11-14). An item can stay in_progress with no assignee and no claim, and orientation keeps counting it as active work. Measured across 37 public pm package trackers on 2026.11.x: about 110 in_progress items, most with assignee and claim_principal null. Current state, verified on main: pm-w8q4 (closed) shipped a warn-only stale_in_progress_items:<n> health advisory for unassigned in_progress items idle longer than settings.mutation_guard.stale_in_progress_hours (default 72). The advisory never flips ok, and an item idle for less than 72 hours is never flagged. pm update --status in_progress warns once (in_progress_item_unclaimed). The remaining gaps from the issue: (1) health has no unowned in_progress signal independent of idleness; (2) pm context counts unowned or idle in_progress items under in_progress as active work, so orientation over-reports focus; (3) list offers no one-call filter (proposed --unowned and --idle <days>) for a sweep that returns them to open; (4) the advisory carries no structured remedy (pm update <id> --status open or pm claim <id>) in the shape other health findings use. Duplicate check: searched in_progress unowned idle health stale work; pm-w8q4 covers the idle advisory only."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[6]: agent-ux,context,"gh:1724",health,multi-agent,wip-hygiene
 created_at: "2026-11-14T05:44:47.936Z"
-updated_at: "2026-11-14T05:44:47.936Z"
+updated_at: "2026-11-15T07:37:02.035Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#489731d8ab76ae02b28618d0"
 author: "harness:claude-code"
 estimated_minutes: 240
-acceptance_criteria: "pm health reports in_progress_unowned (no assignee and no live claim) and in_progress_idle (no update within the configured window) as non-fatal advisories with counts, ids and a structured remedy; pm context reports unowned and idle in_progress items under their own counts instead of active work; pm list --status in_progress --unowned and --idle <days> select them in one call; existing stale_in_progress_items consumers keep working"
+acceptance_criteria: "pm health reports in_progress_unowned (in_progress with no assignee, so no live claim, at any age) and in_progress_idle (in_progress with no recorded mutation within mutation_guard.stale_in_progress_hours, owned or not) as non-fatal advisories with counts, bounded ids and a structured remedy; pm context reports in_progress_unowned and in_progress_idle in its summary next to in_progress, so unattended work is not read as active work; One existing list call selects them and the remediation registry publishes it: pm list --status in_progress --assignee-filter unassigned for unowned work and --updated-before -<N>h with the configured threshold for idle work; Existing stale_in_progress_items consumers keep working"
 parent: pm-dj98
 risk: medium
 confidence: high
@@ -19,4 +21,34 @@ expected_result: "Orientation separates owned, active work from unowned or idle 
 actual_result: "Unowned in_progress items count as active work; health flags them only after 72 idle hours, without a structured remedy"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-w8q4,related,"2026-11-14T05:44:47.936Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-15T07:10:58.232Z","harness:claude-code","Design decision (2026-11-15), recorded before implementation: the one-call sweep in criterion 3 is delivered through the list grammar that already exists, not through two new list flags.\n\n- Ownership is keyed on `assignee` alone. The item-store ownership guard reads `claim_principal` only when an assignee is present, and both claim and release write the two fields together. So \"no assignee and no live claim\" is exactly `--assignee-filter unassigned`.\n- Every item mutation bumps `updated_at`. Measured on a sandbox tracker: create, comment_add, note_add, files_add and claim each moved it. So \"no update within N hours\" is exactly `--updated-before -<N>h`. The relative form is already accepted (`^[+-]?\\d+[hdwm]$`).\n- `pm list --status in_progress --assignee-filter unassigned --updated-before -72h` therefore selects stale unowned work in one call today. Adding `--unowned` and `--idle` would add two canonical flags to each of the eight list commands, whose flag budgets are ratcheted at zero headroom under the one-screen grammar milestone, for no new selection power.\n- What was actually missing is discoverability. Health and the remediation registry now publish these exact commands as the structured remedy, using the threshold that the workspace configured.\n\nThe acceptance criteria are updated to that form. Health keeps the `stale_in_progress_items` advisory unchanged and adds `in_progress_unowned` (independent of idleness) and `in_progress_idle` (independent of ownership).\n"
+files[8]:
+  - path: src/core/diagnostics/remediation.ts
+    scope: project
+    note: registry entries for the three advisories
+  - path: src/sdk/governance/health.ts
+    scope: project
+    note: storage check wiring
+  - path: src/sdk/governance/in-progress-work-health.ts
+    scope: project
+    note: health advisories details and sweep remedies
+  - path: src/sdk/governance/stale-work.ts
+    scope: project
+    note: shared activity clock + unowned/idle/stale classification
+  - path: src/sdk/query/context.ts
+    scope: project
+    note: summary in_progress_unowned/in_progress_idle
+  - path: tests/unit/commands/governance/health-in-progress-work.spec.ts
+    scope: project
+  - path: tests/unit/sdk/governance/in-progress-work-health.spec.ts
+    scope: project
+  - path: tests/unit/sdk/stale-work.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/sdk/stale-work.spec.ts tests/unit/sdk/governance/in-progress-work-health.spec.ts tests/unit/commands/governance/health-in-progress-work.spec.ts tests/unit/commands/governance/health-command.spec.ts,project,600,"harness:claude-code","2026-11-15T07:37:01.755Z",local_mutation,feat/stale-work-visibility-and-takeover
+docs[3]{path,scope}:
+  docs/COMMANDS.md,project
+  docs/CONFIGURATION.md,project
+  docs/MUTATION_INTEGRITY.md,project
 body: ""
