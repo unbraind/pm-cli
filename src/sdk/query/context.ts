@@ -1963,7 +1963,6 @@ function pushEmptyContextSuggestions(
   lines.push("- `pm aggregate` for a full project status overview");
 }
 
-/** Implements render context markdown for the public runtime surface of this module. */
 /** The unowned and idle in-progress counts, rendered only when non-zero like their JSON keys (GH-1724). */
 function renderUnattendedCounts(summary: ContextSummary): string {
   return [
@@ -1972,6 +1971,7 @@ function renderUnattendedCounts(summary: ContextSummary): string {
   ].join("");
 }
 
+/** Implements render context markdown for the public runtime surface of this module. */
 export function renderContextMarkdown(result: ContextResult): string {
   const lines: string[] = [];
   const focusFields = result.focus_fields;
