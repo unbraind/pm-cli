@@ -277,13 +277,49 @@ export function isWellFormedHistoryRecord(entry: unknown): entry is WellFormedHi
 function activityTimestampOf(entry: unknown): string | undefined {
   if (!isWellFormedHistoryRecord(entry)) return undefined;
   if (entry.op === "history_compact_baseline") {
-    const receipt = (entry as { context?: { history_compaction?: { last_activity_at?: unknown } } }).context?.history_compaction;
-    if (receipt === undefined || !("last_activity_at" in receipt)) return entry.ts;
-    return typeof receipt.last_activity_at === "string" ? receipt.last_activity_at : undefined;
+    const recorded = readCompactionActivity(entry);
+    // A legacy or malformed receipt degrades to the baseline's own time, the conservative bound.
+    return recorded.kind === "recorded" ? (recorded.at ?? undefined) : entry.ts;
   }
   return classifyHistoryEvent(entry as unknown as Parameters<typeof classifyHistoryEvent>[0]) === "substantive"
     ? entry.ts
     : undefined;
+}
+
+/**
+ * Read the prefix activity a compaction baseline records. `recorded` carries
+ * a parseable timestamp or null (no work in the prefix); `legacy` means the
+ * receipt predates the field; `malformed` means the context, the receipt or
+ * the value has the wrong shape (for example `history_compaction: null`).
+ */
+function readCompactionActivity(
+  entry: WellFormedHistoryRecord,
+): { kind: "recorded"; at: string | null } | { kind: "legacy" } | { kind: "malformed" } {
+  const context = (entry as { context?: unknown }).context;
+  if (context === undefined) return { kind: "legacy" };
+  if (context === null || typeof context !== "object") return { kind: "malformed" };
+  const receipt = (context as { history_compaction?: unknown }).history_compaction;
+  if (receipt === undefined) return { kind: "legacy" };
+  if (receipt === null || typeof receipt !== "object") return { kind: "malformed" };
+  if (!("last_activity_at" in receipt)) return { kind: "legacy" };
+  const at = (receipt as { last_activity_at?: unknown }).last_activity_at;
+  if (at === null) return { kind: "recorded", at: null };
+  return typeof at === "string" && Number.isFinite(Date.parse(at)) ? { kind: "recorded", at } : { kind: "malformed" };
+}
+
+/**
+ * Whether a decoded history value supports an idleness judgement: a
+ * well-formed record with a parseable timestamp and, for a compaction
+ * baseline, a receipt that is absent (legacy) or well formed. The stale-claim
+ * takeover treats a stream with any other value as unreadable, because a
+ * skipped record could be the recent work.
+ */
+export function isJudgeableHistoryRecord(entry: unknown): entry is WellFormedHistoryRecord {
+  return (
+    isWellFormedHistoryRecord(entry) &&
+    Number.isFinite(Date.parse(entry.ts)) &&
+    (entry.op !== "history_compact_baseline" || readCompactionActivity(entry).kind !== "malformed")
+  );
 }
 
 /**

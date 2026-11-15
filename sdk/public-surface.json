@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2150,
+    "covered_symbols": 2151,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2151
+    "required_symbols": 2152
   },
   "breaking_acknowledgements": [
     {
@@ -11519,6 +11519,12 @@
           "kind": "function",
           "name": "isItemScalarMissingValue",
           "signature": "(value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE | calls: (value: unknown) => value is typeof ITEM_SCALAR_MISSING_VALUE"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "isJudgeableHistoryRecord",
+          "signature": "(entry: unknown) => entry is WellFormedHistoryRecord | calls: (entry: unknown) => entry is WellFormedHistoryRecord"
         },
         {
           "classification": "advanced_export",
@@ -31227,6 +31233,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "isJudgeableHistoryRecord",
+          "signature": "(entry: unknown) => entry is WellFormedHistoryRecord | calls: (entry: unknown) => entry is WellFormedHistoryRecord"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "isMutationAction",
           "signature": "(action: string) => boolean | calls: (action: string) => boolean"
         },
@@ -41060,7 +41072,7 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1345,
+      "checked_functions": 1346,
       "checked_values": 399,
       "exempt_test_seams": 15,
       "referenced_types": 1050
@@ -41084,7 +41096,7 @@
       "referenced_types": 103
     },
     "./sdk/governance": {
-      "checked_functions": 111,
+      "checked_functions": 112,
       "checked_values": 26,
       "exempt_test_seams": 4,
       "referenced_types": 118

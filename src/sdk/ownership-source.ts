@@ -10,7 +10,7 @@ import { redactIdentityCredentials } from "../core/shared/url-credentials.js";
 import { getHistoryPath } from "../core/store/paths.js";
 import {
   STALE_WORK_THRESHOLD_SETTING,
-  isWellFormedHistoryRecord,
+  isJudgeableHistoryRecord,
   latestHistoryTimestamp,
   normalizeStaleWorkThresholdHours,
   resolveLastActivityAt,
@@ -109,8 +109,8 @@ async function readOwnershipEvidence(
   const history = await Promise.resolve()
     .then(() => readHistoryEntries(getHistoryPath(pmRoot, itemId), itemId))
     .then((entries) => {
-      // Every record must also carry a parseable timestamp: a skipped one could be the recent work.
-      if (entries.every((entry) => isWellFormedHistoryRecord(entry) && Number.isFinite(Date.parse(entry.ts)))) return entries;
+      // Every record must support the judgement (parseable time, valid compaction receipt): a skipped one could be the recent work.
+      if (entries.every(isJudgeableHistoryRecord)) return entries;
       readable = false;
       return [];
     })

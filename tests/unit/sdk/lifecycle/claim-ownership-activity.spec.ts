@@ -136,6 +136,10 @@ describe("claim activity evidence (GH-1336)", () => {
         '{"ts":"2026-07-24T11:00:00.000Z","op":"update","patch":[{"op":"replace"}]}',
         // Well-formed but unparseable: skipping it could hide the recent work, so the stream is unreadable.
         '{"ts":"not-a-date","op":"restore","patch":[]}',
+        // A compaction receipt whose recorded activity cannot be read is no evidence either.
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":{"last_activity_at":"invalid"}}}',
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":{"history_compaction":null}}',
+        '{"ts":"2026-07-24T11:00:00.000Z","op":"history_compact_baseline","patch":[],"context":null}',
       ].entries()) {
         const id = `pm-malformed-${index}`;
         await writeFile(path.join(pmRoot, "history", `${id}.jsonl`), `${entries[0]}\n${line}\n`);
@@ -143,6 +147,12 @@ describe("claim activity evidence (GH-1336)", () => {
           resolveItemOwnershipActivity(pmRoot, id, "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
         ).resolves.toMatchObject({ source: "unknown", activity: { history_unreadable: true, stale_policy: { stale: false } } });
       }
+      // A legacy baseline without the recorded field is readable and bounded by its own time.
+      const legacy = JSON.stringify({ ts: "2026-07-03T00:00:00.000Z", author: "m", op: "history_compact_baseline", patch: [], context: { history_compaction: { contract_version: 1 } }, before_hash: "x", after_hash: "y" });
+      await writeFile(path.join(pmRoot, "history", "pm-legacy.jsonl"), `${legacy}\n`);
+      await expect(
+        resolveItemOwnershipActivity(pmRoot, "pm-legacy", "agent-a", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW }),
+      ).resolves.toMatchObject({ activity: { last_activity_at: "2026-07-03T00:00:00.000Z" } });
       // A missing stream is empty, not unreadable.
       expect(
         (await resolveItemOwnershipActivity(pmRoot, "pm-missing", "agent-z", { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 72, now: NOW })).activity,

@@ -287,6 +287,18 @@ describe("stale in-progress SDK governance", () => {
     // A baseline written before the field existed is bounded by its own timestamp (the last pruned entry).
     expect(latestHistoryTimestamp([create, baseline({ contract_version: 1 }), audit])).toBe("2026-07-06T00:00:00.000Z");
     expect(latestHistoryTimestamp([create, baseline(undefined), audit])).toBe("2026-07-06T00:00:00.000Z");
+    expect(latestHistoryTimestamp([create, { ...baseline(undefined), context: {} }, audit])).toBe("2026-07-06T00:00:00.000Z");
+    // Malformed receipts never throw in an advisory read; they degrade to the baseline's own time.
+    for (const malformed of [
+      { ...baseline(undefined), context: null },
+      { ...baseline(undefined), context: "x" },
+      { ...baseline(undefined), context: { history_compaction: null } },
+      { ...baseline(undefined), context: { history_compaction: 5 } },
+      baseline({ last_activity_at: "invalid" }),
+      baseline({ last_activity_at: 5 }),
+    ]) {
+      expect(latestHistoryTimestamp([create, malformed, audit])).toBe("2026-07-06T00:00:00.000Z");
+    }
     expect(latestHistoryTimestamp([{ ts: "bad", op: "update" }])).toBeUndefined();
   });
 
