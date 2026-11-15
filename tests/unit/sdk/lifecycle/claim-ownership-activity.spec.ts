@@ -199,6 +199,16 @@ describe("claim activity evidence (GH-1336)", () => {
         await write(`pm-before-${op}`, [maintenance, claimRecord]);
         expect((await judge(`pm-before-${op}`)).activity).toMatchObject({ stale_policy: { stale: true } });
       }
+      // Another session of the same principal took the item: its claim moved only claim_principal, and anchors the judgement
+      // even after compaction folded the first session's claim. A principal change outside a claim is no anchor.
+      const principalClaim = { ts: "2026-07-01T00:00:00.000Z", op: "claim", patch: [{ op: "replace", path: "/metadata/claim_principal", value: "session-b" }] };
+      await write("pm-same-principal", [legacyBaseline(claimRecord.patch), principalClaim, { ts: "2026-07-01T00:00:00.000Z", op: "comment_add", patch: [] }]);
+      expect(await judge("pm-same-principal")).toMatchObject({ source: "claim", since: "2026-07-01T00:00:00.000Z", activity: { idle_hours: 96, stale_policy: { stale: true } } });
+      await write("pm-principal-normalized", [legacyBaseline(claimRecord.patch), { ...principalClaim, op: "normalize" }]);
+      expect((await judge("pm-principal-normalized")).activity).toMatchObject({ unproven_activity: "claim_record_unavailable" });
+      // A principal-only claim is evidence only when the holder name it kept is the current holder.
+      await write("pm-principal-diverged", [{ ...claimRecord, patch: [{ op: "add", path: "/metadata/assignee", value: "agent-z" }] }, principalClaim]);
+      expect(await judge("pm-principal-diverged")).toMatchObject({ source: "unknown", since: null, activity: { unproven_activity: "claim_record_unavailable" } });
       // A holder no record sets (silent history) is unproven too.
       await write("pm-silent", [{ ts: "2026-07-01T00:00:00.000Z", op: "comment_add", patch: [] }]);
       expect((await judge("pm-silent")).activity).toMatchObject({ unproven_activity: "claim_record_unavailable", stale_policy: { stale: false } });
@@ -218,9 +228,22 @@ describe("claim activity evidence (GH-1336)", () => {
       // A compacted workspace stream bounds any pruned restore by its recorded last_activity_at.
       const workspaceBaseline = (receipt: Record<string, unknown> | undefined) =>
         JSON.stringify({ ts: "2026-06-29T00:00:00.000Z", author: "m", op: "history_compact_baseline", patch: [], ...(receipt === undefined ? {} : { context: { history_compaction: receipt } }), before_hash: "x", after_hash: "y" });
-      for (const lines of [[workspaceBaseline({ last_activity_at: "2026-06-30T00:00:00.000Z" }), other], [workspaceBaseline({ last_activity_at: null })]]) {
+      // Discards and rewrites of the workspace stream may have removed a restore; dated before the claim, they predate it.
+      const workspaceRewrite = (op: string, ts: string) => JSON.stringify({ ts, author: "m", op, patch: [], before_hash: "x", after_hash: "y" });
+      for (const lines of [
+        [workspaceBaseline({ last_activity_at: "2026-06-30T00:00:00.000Z" }), other],
+        [workspaceBaseline({ last_activity_at: null })],
+        [workspaceRewrite("history_salvage", "2026-06-30T00:00:00.000Z"), workspaceRewrite("history_repair", "2026-06-30T00:00:00.000Z")],
+      ]) {
         expect(await restoreAt(lines)).toMatchObject({ stale_policy: { stale: true } });
       }
+      for (const op of ["history_salvage", "history_repair", "history_redact", "merge_reconcile"]) {
+        expect(await restoreAt([workspaceRewrite(op, "2026-07-04T23:00:00.000Z")])).toMatchObject({ unproven_activity: "workspace_restored" });
+      }
+      // A baseline whose last pruned record is at or after the claim may have folded such a record, even with no recorded work.
+      expect(
+        await restoreAt([JSON.stringify({ ...JSON.parse(workspaceBaseline({ last_activity_at: null })), ts: "2026-07-02T00:00:00.000Z" })]),
+      ).toMatchObject({ unproven_activity: "workspace_restored" });
       for (const lines of [
         [restore("2026-07-01T00:00:00.000Z")],
         [restore("2026-07-03T00:00:00.000Z")],

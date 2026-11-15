@@ -415,7 +415,8 @@ export function isJudgeableHistoryRecord(entry: unknown): entry is WellFormedHis
 /**
  * Why a judgeable history stream cannot prove the current holder's idleness,
  * or undefined when it can. `claimIndex` is the position of the newest record
- * that set the current holder, or -1 when none does. The holder's work can
+ * that set the current holder (an assignee change, or a claim that moved only
+ * the claim principal), or -1 when none does. The holder's work can
  * only follow that record, so the judgement needs the record itself in
  * original form (not a compaction baseline that folded it, nor a rewrite audit
  * whose reconcile patch set the holder) and an unbroken

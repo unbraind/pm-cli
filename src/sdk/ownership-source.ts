@@ -111,6 +111,25 @@ function classifyOwnershipSource(
   return operation === "claim" ? "claim" : "assignment";
 }
 
+const ASSIGNEE_PATH = "/metadata/assignee";
+const CLAIM_PRINCIPAL_PATH = "/metadata/claim_principal";
+
+/** Whether a record changed who holds the item: any assignee change, or a claim that moved only the claim principal. */
+function changesOwnership(entry: { op: string; patch: ReadonlyArray<{ path: string }> }): boolean {
+  return entry.patch.some(
+    (operation) => operation.path === ASSIGNEE_PATH || (entry.op === "claim" && operation.path === CLAIM_PRINCIPAL_PATH),
+  );
+}
+
+/** The holder name the newest assignee change at or before `index` set, or undefined when none sets a string. */
+function holderNamedAt(history: ReadonlyArray<{ patch: ReadonlyArray<{ path: string; value?: unknown }> }>, index: number): string | undefined {
+  for (let position = index; position >= 0; position -= 1) {
+    const operation = history[position]!.patch.find((candidate) => candidate.path === ASSIGNEE_PATH);
+    if (operation !== undefined) return typeof operation.value === "string" ? operation.value.trim() : undefined;
+  }
+  return undefined;
+}
+
 /** Read one stream and derive the holder evidence it proves, keeping the entries for activity reads. */
 async function readOwnershipEvidence(
   pmRoot: string,
@@ -138,24 +157,15 @@ async function readOwnershipEvidence(
       return [];
     });
   let latestOwnershipIndex = history.length - 1;
-  while (
-    latestOwnershipIndex >= 0 &&
-    !history[latestOwnershipIndex]!.patch.some((operation) => operation.path === "/metadata/assignee")
-  ) {
+  while (latestOwnershipIndex >= 0 && !changesOwnership(history[latestOwnershipIndex]!)) {
     latestOwnershipIndex -= 1;
   }
   const latestOwnershipEntry = history[latestOwnershipIndex];
-  // The newest assignee change is evidence only when it set the current holder;
+  // The newest ownership change is evidence only when it left the current holder in place;
   // if item state and history diverge, its origin and time describe someone else.
-  const assigneeOperation = latestOwnershipEntry?.patch.find(
-    (operation) => operation.path === "/metadata/assignee",
-  );
-  const evidence =
-    assigneeOperation !== undefined &&
-    typeof assigneeOperation.value === "string" &&
-    assigneeOperation.value.trim() === assignee.trim()
-      ? latestOwnershipEntry
-      : undefined;
+  // A claim that changed only the claim principal kept the holder's name: another
+  // session of the same principal took the item, and that record is its start.
+  const evidence = holderNamedAt(history, latestOwnershipIndex) === assignee.trim() ? latestOwnershipEntry : undefined;
   const source = classifyOwnershipSource(evidence?.op);
   // A holder stored by an older version may carry URL userinfo; refusals never echo it (GH-1707).
   const holder = redactIdentityCredentials(assignee);
@@ -179,16 +189,29 @@ function atOrAfter(timestamp: unknown, claimedMs: number): boolean {
   return !Number.isFinite(ms) || ms >= claimedMs;
 }
 
+/** Workspace-stream operations that discard or rewrite records, so a restore record may be gone or changed. */
+const WORKSPACE_EVIDENCE_REWRITES: ReadonlySet<string> = new Set([
+  "history_salvage",
+  "history_repair",
+  "history_redact",
+  "merge_reconcile",
+]);
+
 /**
  * Whether a workspace snapshot restore at or after the claim record may have
  * replaced the holder's later work. The restore rewrites the item stream and
  * records itself only in the workspace stream, which shares no order with it
- * except wall-clock time: precedence assumes the restoring host's clock does
- * not run behind the holder's. A restore is substantive, so a compaction
- * baseline of the workspace stream bounds any restore it pruned by its
- * recorded `last_activity_at`. The check fails closed, because it cannot rule
- * a restore out, when the workspace stream cannot be read, when a record's
- * operation or time cannot be read, or when a baseline proves no bound.
+ * except wall-clock time: precedence assumes pm's own appends follow wall-clock
+ * order and the restoring host's clock does not run behind the holder's. Under
+ * that assumption a record dated before the claim, and everything it discarded
+ * or rewrote, predates the claim.
+ *
+ * The check fails closed (it cannot rule a restore out) on any of these:
+ * - a restore record, or a salvage, repair, redaction or merge reconcile of
+ *   the workspace stream, dated at or after the claim;
+ * - a compaction baseline whose own time (its last pruned record) or recorded
+ *   `last_activity_at` is at or after the claim, or that proves no bound;
+ * - a workspace stream, record, operation or time that cannot be read.
  */
 async function workspaceRestoredSince(pmRoot: string, claimedAt: string): Promise<boolean> {
   let entries: unknown[];
@@ -200,10 +223,12 @@ async function workspaceRestoredSince(pmRoot: string, claimedAt: string): Promis
   const claimedMs = Date.parse(claimedAt);
   return entries.some((entry) => {
     if (!isWellFormedHistoryRecord(entry)) return true;
-    if (entry.op === "workspace_snapshot_restore") return atOrAfter(entry.ts, claimedMs);
+    if (entry.op === "workspace_snapshot_restore" || WORKSPACE_EVIDENCE_REWRITES.has(entry.op)) {
+      return atOrAfter(entry.ts, claimedMs);
+    }
     if (entry.op !== "history_compact_baseline") return false;
     const bound = recordedBaselineActivity(entry);
-    return bound === undefined || (bound !== null && atOrAfter(bound, claimedMs));
+    return bound === undefined || atOrAfter(entry.ts, claimedMs) || (bound !== null && atOrAfter(bound, claimedMs));
   });
 }
 
