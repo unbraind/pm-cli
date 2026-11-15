@@ -38,10 +38,14 @@ Defaults preserve author compatibility while providing secret advice:
 | `mutation_guard.secret_guard`              | `advise` | `off`, stderr/structured `advise`, or pre-write `block`. |
 | `mutation_guard.stale_in_progress_hours`   | `72`     | Inactivity threshold for stale work: `pm health` advisories, `pm context` idle counts, and `pm claim --takeover-stale`. |
 
-One activity clock serves every stale-work consumer: the newest of an item's
-`updated_at` (every recorded mutation advances it) and its latest history
-entry. `pm health` reports three advisories in the storage check, none of
-which fails the verdict:
+One activity clock serves every stale-work consumer: an item's `updated_at`.
+Every recorded mutation advances it and the merge driver resolves it to the
+later side, so the `--updated-before` sweeps below list exactly the items the
+advisories count. The newest history entry stands in only when `updated_at`
+does not parse; history-only maintenance rewrites are not activity. A
+threshold too large for the Date range reports `eligible_at: null` rather
+than failing. `pm health` reports three advisories in the storage check, none
+of which fails the verdict:
 
 | Warning                       | Population                                               | Remedy printed by `pm health`                                            |
 | ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |

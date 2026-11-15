@@ -9,6 +9,7 @@ import {
 import { runStartTask } from "../../../../src/sdk/lifecycle/task-composition.js";
 import { runUpdate } from "../../../../src/sdk/lifecycle/update.js";
 import { runNext } from "../../../../src/sdk/query/next.js";
+import { runAction } from "../../../../src/sdk/index.js";
 import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { getHistoryPath } from "../../../../src/core/store/paths.js";
@@ -241,6 +242,25 @@ describe("stale-claim takeover (GH-1336)", () => {
       const started = await runStartTask(id, { author: "agent-b", takeoverStale: true }, global);
       expect(started.claim).toMatchObject({ claimed_by: "agent-b", takeover: { idle_hours: 73 } });
       expect(started.update.item).toMatchObject({ status: "in_progress", assignee: "agent-b" });
+    });
+  });
+
+  it("forwards a flat takeoverStale through the MCP transport for claim and start-task", async () => {
+    await withTempPmPath(async (context) => {
+      const claimed = createTask(context, "Transport claim");
+      const started = createTask(context, "Transport start");
+      const global = { path: context.pmPath };
+      setClock(at(0));
+      await runClaim(claimed, false, global, { author: "agent-a" });
+      await runClaim(started, false, global, { author: "agent-a" });
+
+      setClock(at(80));
+      const common = { path: context.pmPath, noExtensions: true, author: "agent-b", takeoverStale: true };
+      expect(await runAction({ ...common, action: "claim", id: claimed })).toMatchObject({ takeover: { idle_hours: 80 } });
+      expect(await runAction({ ...common, action: "start-task", id: started })).toMatchObject({
+        action: "start_task",
+        claim: { takeover: { idle_hours: 80 } },
+      });
     });
   });
 

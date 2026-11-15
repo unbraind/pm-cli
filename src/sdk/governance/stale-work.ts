@@ -4,8 +4,9 @@
  * Detects unattended in-progress work from tracker metadata and append-only
  * history without changing item ownership or lifecycle state. One activity
  * clock and one threshold serve every consumer (health, context, claim
- * refusals, stale-claim takeover and next-item occupancy), so the item health
- * calls stale is the item a takeover may claim.
+ * refusals, stale-claim takeover, next-item occupancy and the
+ * `pm list --updated-before` sweep), so the item health calls stale is the
+ * item a takeover may claim and the item the printed sweep lists.
  */
 import path from "node:path";
 import { readHistoryEntries } from "../../core/history/read.js";
@@ -42,7 +43,7 @@ export interface StaleInProgressScan {
 export interface InProgressWorkItem {
   /** Stable item identifier. */
   id: string;
-  /** Most recent valid item or history timestamp; null when neither parses. */
+  /** The item's `updated_at`, or its newest history entry when that does not parse; null when neither parses. */
   last_activity_at: string | null;
   /** Whole hours elapsed at scan time; null when the activity time is unknown. */
   age_hours: number | null;
@@ -92,23 +93,20 @@ export function normalizeStaleWorkThresholdHours(value: number): number {
 }
 
 /**
- * Return the most recent valid timestamp among an item's `updated_at` and its
- * newest history entry, or undefined when neither parses. Every recorded item
- * mutation advances `updated_at`; the history timestamp covers trackers whose
- * metadata and stream diverged (for example after a merge).
+ * Return the item's last recorded activity: its `updated_at`, which every
+ * recorded item mutation advances and the merge driver resolves to the later
+ * side, so it is exactly what `pm list --updated-before` filters on. The newest
+ * history entry stands in only when `updated_at` does not parse; history-only
+ * maintenance rewrites are not activity. Undefined when neither parses.
  */
 export function resolveLastActivityAt(
   updatedAt: string | undefined,
   historyTimestamp: string | undefined,
 ): string | undefined {
-  let latest: { value: string; time: number } | undefined;
   for (const value of [updatedAt, historyTimestamp]) {
-    const time = Date.parse(value ?? "");
-    if (typeof value === "string" && Number.isFinite(time) && (latest === undefined || time > latest.time)) {
-      latest = { value, time };
-    }
+    if (typeof value === "string" && Number.isFinite(Date.parse(value))) return value;
   }
-  return latest?.value;
+  return undefined;
 }
 
 /** Whole hours elapsed from a valid timestamp to `nowMs`, never negative. */
@@ -116,9 +114,13 @@ export function wholeHoursSince(timestamp: string, nowMs: number): number {
   return Math.max(0, Math.floor((nowMs - Date.parse(timestamp)) / HOUR_MS));
 }
 
-/** Instant at which activity recorded at `timestamp` becomes stale under `thresholdHours`. */
-export function staleEligibleAt(timestamp: string, thresholdHours: number): string {
-  return new Date(Date.parse(timestamp) + thresholdHours * HOUR_MS).toISOString();
+/** Largest absolute epoch offset a JavaScript Date can represent (ECMA-262). */
+const MAX_DATE_MS = 8.64e15;
+
+/** Instant at which activity recorded at `timestamp` becomes stale, or null when it lies beyond the representable Date range. */
+export function staleEligibleAt(timestamp: string, thresholdHours: number): string | null {
+  const eligibleMs = Date.parse(timestamp) + thresholdHours * HOUR_MS;
+  return Math.abs(eligibleMs) <= MAX_DATE_MS ? new Date(eligibleMs).toISOString() : null;
 }
 
 function isInProgress(item: ItemMetadata, inProgressStatus: string): boolean {
@@ -249,27 +251,25 @@ export async function readLatestHistoryActivity(
 }
 
 /**
- * Scan tracker history and metadata for unowned and idle in-progress work.
- * History is read only for in-progress items whose `updated_at` is already at
- * or past the threshold (or unparseable): a newer history entry can only make
- * an item more recent, so a fresh `updated_at` already proves it is not idle.
+ * Scan tracker metadata for unowned and idle in-progress work. History is read
+ * only for in-progress items whose `updated_at` does not parse, the one case in
+ * which the activity clock falls back to the newest history entry.
  */
 export async function scanInProgressWork(
   pmRoot: string,
   items: readonly ItemMetadata[],
   options: Omit<InspectStaleInProgressOptions, "last_history_activity">,
 ): Promise<InProgressWorkScan> {
-  const thresholdHours = normalizeStaleWorkThresholdHours(options.threshold_hours);
   const nowMs = (options.now ?? new Date()).getTime();
   const inProgressStatus = normalizedStatus(options.in_progress_status);
   const historyTimestamps = new Map<string, string>();
   await Promise.all(
     items
-      .filter((item) => {
-        if (!isInProgress(item, inProgressStatus)) return false;
-        const updatedAt = resolveLastActivityAt(item.updated_at, undefined);
-        return updatedAt === undefined || wholeHoursSince(updatedAt, nowMs) >= thresholdHours;
-      })
+      .filter(
+        (item) =>
+          isInProgress(item, inProgressStatus) &&
+          resolveLastActivityAt(item.updated_at, undefined) === undefined,
+      )
       .map(async (item) => {
         const latest = await readLatestHistoryActivity(pmRoot, item.id);
         if (latest !== undefined) historyTimestamps.set(item.id, latest);

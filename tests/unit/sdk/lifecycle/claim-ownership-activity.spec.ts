@@ -12,10 +12,10 @@ import {
 const NOW = new Date("2026-07-24T12:00:00.000Z");
 
 describe("claim activity evidence (GH-1336)", () => {
-  it("judges idleness from the newest of metadata and history, and stays fail-closed without evidence", () => {
+  it("judges idleness by updated_at, falls back to history only when it does not parse, and fails closed without evidence", () => {
     expect(
-      evaluateClaimActivity("2026-07-20T12:00:00.000Z", "2026-07-21T12:00:00.000Z", {
-        updated_at: "2026-07-20T12:00:00.000Z",
+      evaluateClaimActivity("2026-07-20T12:00:00.000Z", "2026-07-23T12:00:00.000Z", {
+        updated_at: "2026-07-21T12:00:00.000Z",
         threshold_hours: 72,
         now: NOW,
       }),
@@ -30,6 +30,12 @@ describe("claim activity evidence (GH-1336)", () => {
         eligible_at: "2026-07-24T12:00:00.000Z",
       },
     });
+    expect(
+      evaluateClaimActivity(null, "2026-07-23T12:00:00.000Z", { updated_at: "invalid", threshold_hours: 72, now: NOW }),
+    ).toMatchObject({ last_activity_at: "2026-07-23T12:00:00.000Z", idle_hours: 24, stale_policy: { stale: false } });
+    expect(
+      evaluateClaimActivity(null, undefined, { updated_at: "2026-07-01T00:00:00.000Z", threshold_hours: 3_000_000_000, now: NOW }),
+    ).toMatchObject({ idle_hours: 564, stale_policy: { stale: false, eligible_at: null } });
     expect(
       evaluateClaimActivity("not-a-date", undefined, { updated_at: "invalid", threshold_hours: 0.5, now: NOW }),
     ).toEqual({
@@ -74,9 +80,9 @@ describe("claim activity evidence (GH-1336)", () => {
         holder: "agent-a",
         since: "2026-07-01T00:00:00.000Z",
         activity: {
-          last_activity_at: "2026-07-02T00:00:00.000Z",
+          last_activity_at: "2026-07-01T00:00:00.000Z",
           claim_age_hours: 564,
-          idle_hours: 540,
+          idle_hours: 564,
           stale_policy: { stale: true },
         },
       });

@@ -4,8 +4,13 @@
  * Projects the in-progress ownership and idleness scan into `pm health`
  * advisories, bounded storage-check details and executable remedies (GH-1724).
  * Every remedy is a read-only `pm list` sweep built from the workspace's own
- * in-progress status id and threshold, so an agent can run it as printed.
+ * in-progress status id and threshold, shell-quoted, so an agent can run it as
+ * printed. `--updated-before` filters on `updated_at`, the same activity clock
+ * the scan applies, so each sweep lists exactly the population its advisory counts
+ * (an item whose `updated_at` does not parse is classified from history and
+ * cannot be selected by a timestamp filter).
  */
+import { quoteCommandArg, renderPmCommand } from "../command-line.js";
 import type { InProgressWorkGroup, InProgressWorkScan } from "./stale-work.js";
 
 /** Most item rows one in-progress work group publishes in health details. */
@@ -58,13 +63,13 @@ export function buildInProgressSweepCommands(
   inProgressStatus: string,
   thresholdHours: number,
 ): InProgressSweepCommands {
-  const base = `pm list --status ${inProgressStatus}`;
-  const unowned = `${base} --assignee-filter unassigned`;
-  const idleBound = `--updated-before -${thresholdHours}h`;
+  const base = ["list", "--status", inProgressStatus];
+  const unowned = ["--assignee-filter", "unassigned"];
+  const idle = ["--updated-before", `-${thresholdHours}h`];
   return {
-    unowned,
-    idle: `${base} ${idleBound}`,
-    stale: `${unowned} ${idleBound}`,
+    unowned: renderPmCommand([...base, ...unowned]),
+    idle: renderPmCommand([...base, ...idle]),
+    stale: renderPmCommand([...base, ...unowned, ...idle]),
   };
 }
 
@@ -103,7 +108,7 @@ export function buildInProgressWorkHealthSummary(
             idle: boundGroup(scan.idle, commands.idle),
             item_remedies: {
               claim: "pm claim <id>",
-              return_to_open: `pm update <id> --status ${statuses.open}`,
+              return_to_open: `pm update <id> --status ${quoteCommandArg(statuses.open)}`,
             },
           },
     remediation: {

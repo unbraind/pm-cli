@@ -74,6 +74,7 @@ export function evaluateClaimActivity(
       // Unknown activity never qualifies: a takeover needs positive evidence of idleness.
       stale: idleHours !== null && idleHours >= thresholdHours,
       eligible_at: lastActivityAt === null ? null : staleEligibleAt(lastActivityAt, thresholdHours),
+      // A threshold past the Date range (accepted by settings) yields a null eligibility, never a throw.
     },
   };
 }

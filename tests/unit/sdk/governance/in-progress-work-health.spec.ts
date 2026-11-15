@@ -33,6 +33,19 @@ describe("in-progress work health projection (GH-1724)", () => {
     });
   });
 
+  it("shell-quotes status ids that a custom schema accepts but a shell would misparse", () => {
+    const commands = buildInProgressSweepCommands("doing(done)", 72);
+    expect(commands.idle).toBe('pm list --status "doing(done)" --updated-before -72h');
+    const scan = inspectInProgressWork([work("pm-u", { status: "doing(done)" })], {
+      in_progress_status: "doing(done)",
+      threshold_hours: 72,
+      now: NOW,
+    });
+    expect(
+      buildInProgressWorkHealthSummary(scan, { in_progress: "doing(done)", open: "to do" }).details?.item_remedies,
+    ).toEqual({ claim: "pm claim <id>", return_to_open: 'pm update <id> --status "to do"' });
+  });
+
   it("emits nothing but registry overrides when no in-progress item is unattended", () => {
     const scan = inspectInProgressWork(
       [work("pm-held", { assignee: "agent", updated_at: "2026-07-24T11:00:00.000Z" })],

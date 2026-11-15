@@ -3376,6 +3376,14 @@
       ],
       "package_version": "2026.11.14",
       "reason": "pm-gh1336: NextHeldRow carries claimed_at, idle_hours and stale (the exact last_activity_at stays in a refused claim's claim_activity, so a bounded next read keeps its actionable rows)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:staleEligibleAt",
+        "signature ./sdk/governance:staleEligibleAt"
+      ],
+      "package_version": "2026.11.15",
+      "reason": "pm-gh1336: staleEligibleAt (new in this release) returns string | null, null when the threshold puts eligibility beyond the Date range"
     }
   ],
   "entrypoints": {
@@ -22124,7 +22132,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "staleEligibleAt",
-          "signature": "(timestamp: string, thresholdHours: number) => string | calls: (timestamp: string, thresholdHours: number) => string"
+          "signature": "(timestamp: string, thresholdHours: number) => string | null | calls: (timestamp: string, thresholdHours: number) => string | null"
         },
         {
           "classification": "supported",
@@ -31760,7 +31768,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "staleEligibleAt",
-          "signature": "(timestamp: string, thresholdHours: number) => string | calls: (timestamp: string, thresholdHours: number) => string"
+          "signature": "(timestamp: string, thresholdHours: number) => string | null | calls: (timestamp: string, thresholdHours: number) => string | null"
         },
         {
           "classification": "supported",

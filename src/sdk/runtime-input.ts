@@ -328,6 +328,7 @@ export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string
     copy: ["allowDuplicate"],
     close: ["duplicateOf", "completedAt", "releaseAssignment"],
     claim: ["start", "next", "ifAvailable", "takeoverStale"],
+    "start-task": ["takeoverStale"],
     release: ["pause", "handoff"],
     comments: ["ifAbsent"],
     notes: ["ifAbsent"],
