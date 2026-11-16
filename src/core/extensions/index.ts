@@ -525,15 +525,20 @@ export async function runActiveBeforeMutationHooks(
   if (!hooks) return;
   // Loaded on first use, so entrypoints that never run a guard do not load author resolution.
   const { resolveMutationActor } = await import("./mutation-actor.js");
-  const { author, dry_run: dryRun, ...context } = input;
-  const isDryRun = preview !== undefined || dryRun === true;
+  const isDryRun = preview !== undefined || input.dry_run === true;
   // Only the transaction coordinator opens this scope, after proving the rollback owns the write (pm-wb6ktl).
   const compensation = isDryRun
     ? undefined
     : ownedTransactionCompensation(input.pm_root, [input.before?.metadata.id, input.after?.metadata.id], input.operation);
+  // An explicit allowlist: a caller-supplied actor, dry_run or compensation can never reach the guards.
   const overrides = await runBeforeMutationHooks(hooks, {
-    ...context,
-    actor: resolveMutationActor(author),
+    pm_root: input.pm_root,
+    operation: input.operation,
+    before: input.before,
+    after: input.after,
+    changed_fields: input.changed_fields,
+    sdk: input.sdk,
+    actor: resolveMutationActor(input.author),
     dry_run: isDryRun,
     ...(compensation === undefined ? {} : { compensation: { transaction_id: compensation.transaction_id, step_id: compensation.step_id } }),
   });

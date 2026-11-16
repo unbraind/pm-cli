@@ -91,6 +91,7 @@ import {
 } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
 import type { MutationGuardOverride } from "../core/extensions/extension-hook-runtime.js";
+import type { MutationCompensation } from "../core/extensions/extension-types.js";
 
 /** A guard refusal a journal-proven rollback recorded instead of obeying (pm-wb6ktl). */
 export type { MutationGuardOverride };
@@ -1192,17 +1193,32 @@ export async function runRegisteredCommandForTest(
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
+/** Guard-test options whose context is a journal-proven transaction rollback (pm-wb6ktl). */
+export interface RunRegisteredMutationGuardRollbackForTestOptions extends RunRegisteredMutationGuardForTestOptions {
+  /** Synthetic rollback context: `compensation` names the transaction step being undone. */
+  context: MutationGuardTestContext & { compensation: MutationCompensation };
+}
+
 /**
  * Invoke registered transactional mutation guards through the same fail-closed
- * runtime used by real writes. A denial or failure refuses, except when the
- * context carries `compensation`: a journal-proven rollback records each one,
- * and the helper resolves the list a host records in the rollback's history
- * entry (pm-wb6ktl). An ordinary context still resolves `undefined`.
+ * runtime used by real writes: a denial or failure refuses. A context carrying
+ * `compensation` is a journal-proven rollback instead (pm-wb6ktl): each denial
+ * or failure is recorded rather than refused, and the helper resolves the list
+ * a host records in the rollback's history entry.
  */
+export function runRegisteredMutationGuardForTest(
+  hooks: ExtensionHookRegistry,
+  options: RunRegisteredMutationGuardRollbackForTestOptions,
+): Promise<MutationGuardOverride[]>;
+/** Invoke the guards for an ordinary write; a denial or failure refuses. */
+export function runRegisteredMutationGuardForTest(
+  hooks: ExtensionHookRegistry,
+  options: RunRegisteredMutationGuardForTestOptions,
+): Promise<void>;
 export async function runRegisteredMutationGuardForTest(
   hooks: ExtensionHookRegistry,
   options: RunRegisteredMutationGuardForTestOptions,
-): Promise<MutationGuardOverride[] | undefined> {
+): Promise<MutationGuardOverride[] | void> {
   if ((hooks.beforeMutation?.length ?? 0) === 0) {
     throw new Error("Expected a registered before_mutation hook to invoke");
   }
@@ -2849,8 +2865,10 @@ export interface ExtensionTestHarness {
   ): Promise<CommandHandlerResult>;
   /** Bound {@link runRegisteredHookForTest} over `activation.hooks`. */
   runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>;
+  /** Bound transactional mutation-guard runner over `activation.hooks`; a rollback context resolves the recorded overrides. */
+  runMutationGuard(options: RunRegisteredMutationGuardRollbackForTestOptions): Promise<MutationGuardOverride[]>;
   /** Bound transactional mutation-guard runner over `activation.hooks`. */
-  runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<MutationGuardOverride[] | undefined>;
+  runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<void>;
   /** Bound {@link runRegisteredCommandOverrideForTest} over `activation.commands`. */
   runCommandOverride(
     context: CommandOverrideContext,
@@ -3056,9 +3074,9 @@ export async function createExtensionTestHarness(
     runHook(runOptions) {
       return runRegisteredHookForTest(activation.hooks, runOptions);
     },
-    runMutationGuard(runOptions) {
-      return runRegisteredMutationGuardForTest(activation.hooks, runOptions);
-    },
+    // One implementation serves both overloads; the runtime result already matches each.
+    runMutationGuard: ((runOptions: RunRegisteredMutationGuardRollbackForTestOptions) =>
+      runRegisteredMutationGuardForTest(activation.hooks, runOptions)) as ExtensionTestHarness["runMutationGuard"],
     runCommandOverride(context) {
       return runRegisteredCommandOverrideForTest(activation.commands, context);
     },
