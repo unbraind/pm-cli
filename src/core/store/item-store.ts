@@ -8,7 +8,7 @@ import { buildDeletedItemError } from "../history/tombstone.js";
 import { normalizeHistoryOperationForWrite } from "../history/operation-contract.js";
 import { enforceWorkflowMutation } from "../policy/workflow-policy-store.js";
 import { recordItemMetadataEnumeration } from "./item-metadata-read-work.js";
-import { advanceItemMutationPreconditions, assertItemMutationPreconditions, itemMutationPreconditionHistoryContext } from "./item-mutation-precondition.js";
+import { advanceItemMutationPreconditions, assertItemMutationPreconditions, itemMutationPreconditionHistoryContext, transactionCompensationHistoryContext } from "./item-mutation-precondition.js";
 import { checkpointMutationHistoryContext } from "../checkpoint/mutation-context.js";
 import path from "node:path";
 import {
@@ -577,6 +577,11 @@ async function prepareLockedItem(params: {
   }
 }
 
+/** A history entry records no context block when nothing attributes the write. */
+function historyContextOrUndefined(context: Record<string, unknown>): Record<string, unknown> | undefined {
+  return Object.keys(context).length === 0 ? undefined : context;
+}
+
 /**
  * Commit a locked item write only while the lease still owns its lock
  * generation and the stored item still matches the revision the mutation read.
@@ -945,9 +950,11 @@ async function mutateItemWithDeferredHistoryContext(
             before: beforeDocument,
             after: afterDocument,
             message: params.message,
-            context: workflowPolicy.decisions.length === 0 ? (Object.keys(historyContext).length === 0 ? undefined : historyContext) : {
-              ...historyContext, workflow_policies: workflowPolicy.decisions,
-            },
+            context: historyContextOrUndefined({
+              ...historyContext,
+              ...(workflowPolicy.decisions.length === 0 ? {} : { workflow_policies: workflowPolicy.decisions }),
+              ...transactionCompensationHistoryContext(params.pmRoot, [located.id, document.metadata.id], params.op),
+            }),
           });
           try {
             await appendHistoryEntry(historyPath, entry);
@@ -1198,7 +1205,10 @@ export async function deleteItem(params: {
       before: beforeDocument,
       after: tombstoneDocument,
       message: params.message,
-      context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
+      context: historyContextOrUndefined({
+        ...(workflowPolicy.decisions.length === 0 ? {} : { workflow_policies: workflowPolicy.decisions }),
+        ...transactionCompensationHistoryContext(params.pmRoot, [located.id, document.metadata.id], "delete"),
+      }),
     });
     const historyPath = getHistoryPath(params.pmRoot, located.id);
     const runDeleteOverride = () =>

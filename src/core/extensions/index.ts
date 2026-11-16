@@ -6,6 +6,7 @@
 import { existsSync } from "node:fs";
 import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
+import { ownedTransactionCompensation } from "../store/item-mutation-precondition.js";
 import {
   runCommandHandler,
   runBeforeMutationHooks,
@@ -484,7 +485,7 @@ export async function runActiveOnWriteHooks(
  * the guard-facing actor from `author`, the same value the mutation's history
  * entry records, so no caller can hand a guard a different identity (GH-1719).
  */
-export type BeforeMutationHookInput = Omit<BeforeMutationHookContext, "actor" | "dry_run"> & {
+export type BeforeMutationHookInput = Omit<BeforeMutationHookContext, "actor" | "dry_run" | "compensation"> & {
   /** Author the mutation is attributed to in history. */
   author: string;
   /** True when the evaluation previews a write that persists nothing. */
@@ -525,11 +526,18 @@ export async function runActiveBeforeMutationHooks(
   // Loaded on first use, so entrypoints that never run a guard do not load author resolution.
   const { resolveMutationActor } = await import("./mutation-actor.js");
   const { author, dry_run: dryRun, ...context } = input;
-  await runBeforeMutationHooks(hooks, {
+  const isDryRun = preview !== undefined || dryRun === true;
+  // Only the transaction coordinator opens this scope, after proving the rollback owns the write (pm-wb6ktl).
+  const compensation = isDryRun
+    ? undefined
+    : ownedTransactionCompensation(input.pm_root, [input.before?.metadata.id, input.after?.metadata.id], input.operation);
+  const overrides = await runBeforeMutationHooks(hooks, {
     ...context,
     actor: resolveMutationActor(author),
-    dry_run: preview !== undefined || dryRun === true,
+    dry_run: isDryRun,
+    ...(compensation === undefined ? {} : { compensation: { transaction_id: compensation.transaction_id, step_id: compensation.step_id } }),
   });
+  compensation?.overrides.push(...overrides.map((override) => ({ source: "mutation_guard" as const, ...override })));
 }
 
 /** Implements run active on read hooks for the public runtime surface of this module. */

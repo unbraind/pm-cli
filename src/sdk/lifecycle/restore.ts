@@ -10,7 +10,7 @@ import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { readLocatedItemSnapshot } from "../../core/store/item-store.js";
-import { advanceItemMutationPreconditions, assertItemMutationPreconditions, assertItemRevisionExpectationsOnUnreadable } from "../../core/store/item-mutation-precondition.js";
+import { advanceItemMutationPreconditions, assertItemMutationPreconditions, assertItemRevisionExpectationsOnUnreadable, transactionCompensationHistoryContext } from "../../core/store/item-mutation-precondition.js";
 import { EMPTY_CANONICAL_DOCUMENT } from "../../core/shared/constants.js";
 import { readHistorySnapshot } from "../../core/history/read.js";
 import { verifyHistoryRewriteNoDrift } from "../../core/history/history-rewrite.js";
@@ -248,6 +248,11 @@ function collectRestoreOwnershipWarnings(params: {
     : [];
 }
 
+/** A restore's history entry carries a context block only when something attributes it. */
+function restoreHistoryContext(context: Record<string, unknown>): Record<string, unknown> | undefined {
+  return Object.keys(context).length === 0 ? undefined : context;
+}
+
 async function restorePreviousItemAfterHistoryFailure(params: {
   existingItemPath: string | null;
   resolvedOriginalRaw: string | null;
@@ -446,7 +451,10 @@ export async function runRestore(
           before: currentState.document,
           after: restoredDocument,
           message: options.message,
-          context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
+          context: restoreHistoryContext({
+            ...(workflowPolicy.decisions.length === 0 ? {} : { workflow_policies: workflowPolicy.decisions }),
+            ...transactionCompensationHistoryContext(pmRoot, [resolvedId, currentState.document.metadata.id, restoredDocument.metadata.id], "restore"),
+          }),
         });
         try {
           await appendHistoryEntry(subject.historyPath, historyEntry);

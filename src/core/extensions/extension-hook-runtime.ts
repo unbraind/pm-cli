@@ -133,71 +133,101 @@ function enforceMutationGuardDecision(
   );
 }
 
-/** Run every transactional mutation guard in registration order and fail closed on denial or failure. */
+/** A guard refusal that a journal-proven rollback recorded instead of obeying (pm-wb6ktl). */
+export interface MutationGuardOverride {
+  /** Registering layer and extension name of the refusing guard. */
+  guard: string;
+  /** Stable denial or failure code the guard produced. */
+  code: string;
+}
+
+/**
+ * Run every transactional mutation guard in registration order and fail closed
+ * on denial or failure. A write carrying `compensation` is a rollback the
+ * transaction journal proved it owns: every guard still judges it, but its
+ * denial or failure is returned as an override instead of refusing the
+ * rollback, so no guard can leave a batch half-applied (pm-wb6ktl).
+ */
 export async function runBeforeMutationHooks(
   hooks: ExtensionHookRegistry,
   context: BeforeMutationHookContext,
-): Promise<void> {
+): Promise<MutationGuardOverride[]> {
+  const overrides: MutationGuardOverride[] = [];
   for (const entry of hooks.beforeMutation ?? []) {
-    let decision;
-    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
     try {
-      const guardPromise = Promise.resolve().then(() =>
-        entry.run({
-          pm_root: context.pm_root,
-          operation: context.operation,
-          before:
-            context.before === null
-              ? null
-              : cloneContextSnapshot(context.before),
-          after:
-            context.after === null
-              ? null
-              : cloneContextSnapshot(context.after),
-          changed_fields: [...context.changed_fields],
-          actor: cloneMutationActor(context.actor),
-          dry_run: context.dry_run,
-          sdk: context.sdk,
-        }),
-      );
-      guardPromise.catch(() => {});
-      decision = await Promise.race([
-        guardPromise,
-        new Promise<never>((_, reject) => {
-          timeoutHandle = setTimeout(() => {
-            reject(
-              new PmCliError(
-                `Extension mutation guard ${entry.name} timed out before ${context.operation}.`,
-                EXIT_CODE.CONFLICT,
-                {
-                  code: "extension_mutation_guard_timed_out",
-                  reason: `${entry.layer}:${entry.name}`,
-                  nextSteps: [
-                    "Fix or disable the stalled extension guard, then retry the mutation.",
-                  ],
-                },
-              ),
-            );
-          }, DEFAULT_MUTATION_GUARD_TIMEOUT_MS);
-          timeoutHandle.unref?.();
-        }),
-      ]);
+      await evaluateMutationGuard(entry, context);
     } catch (error: unknown) {
-      if (error instanceof PmCliError) throw error;
-      throw new PmCliError(
-        `Extension mutation guard ${entry.name} failed before ${context.operation}.`,
-        EXIT_CODE.CONFLICT,
-        {
-          code: "extension_mutation_guard_failed",
-          reason: `${entry.layer}:${entry.name}`,
-          nextSteps: ["Fix or disable the failing extension guard, then retry the mutation."],
-        },
-      );
-    } finally {
-      clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
+      if (context.compensation === undefined) throw error;
+      overrides.push({ guard: `${entry.layer}:${entry.name}`, code: (error as PmCliError).code ?? "extension_mutation_guard_failed" });
     }
-    enforceMutationGuardDecision(decision, entry, context.operation);
   }
+  return overrides;
+}
+
+/** Evaluate one guard, throwing its denial, failure or timeout as a typed refusal. */
+async function evaluateMutationGuard(
+  entry: RegisteredExtensionHook<BeforeMutationHook>,
+  context: BeforeMutationHookContext,
+): Promise<void> {
+  let decision;
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const guardPromise = Promise.resolve().then(() =>
+      entry.run({
+        pm_root: context.pm_root,
+        operation: context.operation,
+        before:
+          context.before === null
+            ? null
+            : cloneContextSnapshot(context.before),
+        after:
+          context.after === null
+            ? null
+            : cloneContextSnapshot(context.after),
+        changed_fields: [...context.changed_fields],
+        actor: cloneMutationActor(context.actor),
+        dry_run: context.dry_run,
+        ...(context.compensation === undefined ? {} : { compensation: Object.freeze({ transaction_id: context.compensation.transaction_id, step_id: context.compensation.step_id }) }),
+        sdk: context.sdk,
+      }),
+    );
+    guardPromise.catch(() => {});
+    decision = await Promise.race([
+      guardPromise,
+      new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(
+            new PmCliError(
+              `Extension mutation guard ${entry.name} timed out before ${context.operation}.`,
+              EXIT_CODE.CONFLICT,
+              {
+                code: "extension_mutation_guard_timed_out",
+                reason: `${entry.layer}:${entry.name}`,
+                nextSteps: [
+                  "Fix or disable the stalled extension guard, then retry the mutation.",
+                ],
+              },
+            ),
+          );
+        }, DEFAULT_MUTATION_GUARD_TIMEOUT_MS);
+        timeoutHandle.unref?.();
+      }),
+    ]);
+  } catch (error: unknown) {
+    if (error instanceof PmCliError) throw error;
+    throw new PmCliError(
+      `Extension mutation guard ${entry.name} failed before ${context.operation}.`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "extension_mutation_guard_failed",
+        reason: `${entry.layer}:${entry.name}`,
+        nextSteps: ["Fix or disable the failing extension guard, then retry the mutation."],
+      },
+    );
+  } finally {
+    clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
+  }
+  enforceMutationGuardDecision(decision, entry, context.operation);
 }
 
 /** Implements run after command hooks for the public runtime surface of this module. */

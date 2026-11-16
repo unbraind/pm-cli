@@ -12,7 +12,7 @@ import {
   generateItemId,
   canonicalDocument,
   serializeItemDocument,
-  acquireLock,
+  acquireLockLease,
   getActiveExtensionRegistrations,
   projectAfterCommandItemSnapshot,
   recordAfterCommandAffectedItem,
@@ -45,6 +45,7 @@ import {
   acquireItemMetadataDerivedIndexLock,
   refreshItemMetadataDerivedIndex,
 } from "../item-metadata-index.js";
+import { enforceWorkflowMutation } from "../../core/policy/workflow-policy-store.js";
 import type { ItemDocument, ItemMetadata } from "../../types/index.js";
 
 /** Documents the copy options payload exchanged by command, SDK, and package integrations. */
@@ -206,7 +207,7 @@ export async function runCopy(
     typeRegistry.type_to_folder,
   );
   const historyPath = getHistoryPath(pmRoot, newId);
-  const lockRelease = await acquireLock(
+  const lease = await acquireLockLease(
     pmRoot,
     newId,
     settings.locks.ttl_seconds,
@@ -222,6 +223,7 @@ export async function runCopy(
 
   let hookWarnings: string[];
   let derivedIndexWarnings: string[];
+  let workflowWarnings: string[];
   try {
     const releaseDerivedIndexLock = await acquireItemMetadataDerivedIndexLock(
       pmRoot,
@@ -273,7 +275,12 @@ export async function runCopy(
           },
         );
       }
-      // A copy is a create: the guards judge it with the copier's actor (GH-1719).
+      // A copy is a create: workflow policies judge it exactly as they judge create (pm-womkyw).
+      const workflowPolicy = await enforceWorkflowMutation({
+        pmRoot, settings, operation: "create", author, before: null, after: copiedDocument,
+      });
+      workflowWarnings = workflowPolicy.warnings;
+      // The guards judge it with the copier's actor (GH-1719).
       await runActiveBeforeMutationHooks({
         pm_root: pmRoot,
         operation: "create",
@@ -283,28 +290,32 @@ export async function runCopy(
         author,
         sdk: createMutationGuardSdk({ pmRoot, settings, typeToFolder: typeRegistry.type_to_folder }),
       });
-      await writeFileAtomic(
-        itemPath,
-        serializeItemDocument(copiedDocument, {
-          format: settings.item_format,
-          schema: settings.schema,
-          extensionFieldNames,
-        }),
-      );
-      try {
-        const historyEntry = createHistoryEntry({
-          nowIso: copiedAt,
-          author,
-          op: "create",
-          before: beforeDocument,
-          after: copiedDocument,
-          message: buildCopyMessage(located.id, options.message),
-        });
-        await appendHistoryEntry(historyPath, historyEntry);
-      } catch (error: unknown) {
-        await removeFileIfExists(itemPath);
-        throw error;
-      }
+      // Policies and guards may outlast the lock TTL: a lease taken over meanwhile refuses instead of overwriting.
+      await lease.fence(async () => {
+        await writeFileAtomic(
+          itemPath,
+          serializeItemDocument(copiedDocument, {
+            format: settings.item_format,
+            schema: settings.schema,
+            extensionFieldNames,
+          }),
+        );
+        try {
+          const historyEntry = createHistoryEntry({
+            nowIso: copiedAt,
+            author,
+            op: "create",
+            before: beforeDocument,
+            after: copiedDocument,
+            message: buildCopyMessage(located.id, options.message),
+            context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
+          });
+          await appendHistoryEntry(historyPath, historyEntry);
+        } catch (error: unknown) {
+          await removeFileIfExists(itemPath);
+          throw error;
+        }
+      });
       derivedIndexWarnings = await refreshItemMetadataDerivedIndex({
         pmRoot,
         preferredFormat: settings.item_format,
@@ -351,7 +362,7 @@ export async function runCopy(
       changed_fields: changedFields,
     });
   } finally {
-    await lockRelease();
+    await lease.release();
   }
 
   return {
@@ -360,6 +371,7 @@ export async function runCopy(
     changed_fields: changedFields,
     warnings: [
       ...similarityAdvisoryWarnings(similarityAdvisory),
+      ...workflowWarnings,
       ...derivedIndexWarnings,
       ...hookWarnings,
     ],

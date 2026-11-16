@@ -16,12 +16,14 @@ import { verifyHistoryChain } from "../history/replay.js";
 import { PmCliError, type PmCliErrorContext } from "../shared/errors.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { getHistoryPath } from "../store/paths.js";
+import { ownedTransactionCompensation } from "../store/item-mutation-precondition.js";
 import type { HistoryEntry, ItemDocument, PmSettings } from "../../types/index.js";
 import {
   evaluateWorkflowPolicies,
   parseWorkflowPolicyDocument,
   workflowPolicyApplies,
   type WorkflowPolicyApproval,
+  type WorkflowPolicyDecision,
   type WorkflowPolicyDocument,
   type WorkflowPolicyEvaluation,
   type WorkflowPolicyInput,
@@ -126,6 +128,22 @@ export async function evaluateWorkspacePolicies(pmRoot: string, document: Workfl
   return evaluateWorkflowPolicies(document, { ...input, approvals });
 }
 
+/**
+ * A journal-proven rollback undoes the transaction's own step, so its refusals
+ * are recorded on the rollback instead of leaving the batch half-applied
+ * (pm-wb6ktl). True when the write is such a rollback.
+ */
+function recordCompensationOverrides(
+  params: { pmRoot: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; dryRun?: boolean },
+  refused: readonly WorkflowPolicyDecision[],
+): boolean {
+  if (params.dryRun === true) return false;
+  const compensation = ownedTransactionCompensation(params.pmRoot, [params.before?.metadata.id, params.after?.metadata.id], params.operation);
+  if (compensation === undefined) return false;
+  compensation.overrides.push(...refused.map((decision) => ({ source: "workflow_policy" as const, policy_id: decision.policy_id, rule: decision.rule })));
+  return true;
+}
+
 /** Enforce policy under the caller's item lock, returning evidence for the same history transaction. */
 export async function enforceWorkflowMutation(params: {
   pmRoot: string;
@@ -144,6 +162,17 @@ export async function enforceWorkflowMutation(params: {
   });
   if (result.allowed) return result;
   const refused = result.decisions.filter((decision) => !decision.satisfied && decision.effect === "refuse");
+  if (recordCompensationOverrides(params, refused)) return result;
+  return refuseWorkflowMutation(params, document, result, refused);
+}
+
+/** Record the refusal audit (unless a dry run) and throw the typed policy refusal. */
+async function refuseWorkflowMutation(
+  params: Parameters<typeof enforceWorkflowMutation>[0],
+  document: WorkflowPolicyDocument,
+  result: WorkflowPolicyEvaluation,
+  refused: readonly WorkflowPolicyDecision[],
+): Promise<never> {
   const sideEffects: NonNullable<PmCliErrorContext["side_effects"]> = [];
   let auditNotice = "";
   if (!params.dryRun) {

@@ -91,6 +91,7 @@ export type {
   BeforeMutationHookDecision,
   MutationActor,
   MutationActorAgent,
+  MutationCompensation,
   CommandDefinition,
   ExtensionCommandReadOutput,
   ExtensionCommandArgumentDefinition,

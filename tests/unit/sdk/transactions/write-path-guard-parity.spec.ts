@@ -1,0 +1,346 @@
+/**
+ * Write-path parity for the transactional guards and workflow policies:
+ * - pm-wb6ktl: a guard or workflow policy that refuses close, delete or restore
+ *   cannot wedge a refused batch half-applied; the journal-proven rollback is
+ *   judged, recorded, and completed.
+ * - pm-womkyw: pm copy is judged by the workflow policies exactly like create.
+ * - pm-0m64xk: package imports (and create/copy) fence their write with the
+ *   lock lease, and an import re-checks the id under the lock.
+ */
+import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
+import { describe, expect, it } from "vitest";
+import { PmClient } from "../../../../src/sdk/runtime.js";
+import { commitImportedItem, runWithActiveExtensions } from "../../../../src/sdk/index.js";
+import { activateExtensionForTest, createExtensionTestHarness, runRegisteredMutationGuardForTest } from "../../../../src/sdk/testing.js";
+import { runWorkflowPolicyAction } from "../../../../src/sdk/governance/workflow-policy.js";
+import { readHistoryEntries } from "../../../../src/core/history/read.js";
+import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
+import { getItemPath } from "../../../../src/core/store/paths.js";
+import { runWithItemMutationPrecondition } from "../../../../src/core/store/item-mutation-precondition.js";
+import { enforceWorkflowMutation } from "../../../../src/core/policy/workflow-policy-store.js";
+import { PmCliError } from "../../../../src/core/shared/errors.js";
+import { withTempPmPath } from "../../../helpers/withTempPmPath.js";
+import { writeTestExtension } from "../../../helpers/extensions.js";
+import type { TempPmContext } from "../../../helpers/withTempPmPath.js";
+import type { ExtensionApi } from "../../../../src/core/extensions/extension-types.js";
+
+interface GuardLogEntry {
+  operation: string;
+  id: string | undefined;
+  compensation: { transaction_id: string; step_id: string } | null;
+  frozen: boolean | null;
+}
+
+const GUARD_LOG_KEY = "__pmWb6ktlGuardLog";
+const SLOW_GATE_KEY = "__pmGuardParitySlowGate";
+
+function guardLog(): GuardLogEntry[] {
+  const store = globalThis as unknown as Record<string, GuardLogEntry[] | undefined>;
+  store[GUARD_LOG_KEY] ??= [];
+  return store[GUARD_LOG_KEY];
+}
+
+/** Denies every close, delete and restore; crashes on items titled "Throw"; denies updates titled "Denied update". */
+const ROLLBACK_DENYING_GUARD = `export default {
+  activate(api) {
+    api.hooks.beforeMutation(async (context) => {
+      const document = context.after ?? context.before;
+      (globalThis.${GUARD_LOG_KEY} ??= []).push({
+        operation: context.operation,
+        id: document?.metadata.id,
+        compensation: context.compensation ?? null,
+        frozen: context.compensation ? Object.isFrozen(context.compensation) : null,
+      });
+      const title = document?.metadata.title ?? "";
+      if (context.operation === "update" && context.after?.metadata.title === "Denied update") {
+        return { allow: false, code: "update_denied", remediation: "Use another title." };
+      }
+      if ((context.operation === "create" || context.operation === "import") && title.startsWith("Slow")) {
+        await globalThis.${SLOW_GATE_KEY};
+      }
+      if (!["close", "delete", "restore"].includes(context.operation)) return { allow: true };
+      if (title.startsWith("Throw")) throw new Error("guard crashed");
+      return { allow: false, code: context.operation + "_denied", remediation: "Never " + context.operation + "." };
+    });
+  }
+};
+`;
+
+async function installGuard(context: TempPmContext): Promise<void> {
+  await writeTestExtension({
+    root: path.join(context.pmPath, "extensions", "rollback-denier"),
+    name: "rollback-denier",
+    manifestOverrides: { capabilities: ["hooks"] },
+    entrySource: ROLLBACK_DENYING_GUARD,
+  });
+  guardLog().length = 0;
+}
+
+async function lastEntry(pmPath: string, id: string) {
+  return (await readHistoryEntries(path.join(pmPath, "history", `${id}.jsonl`), id)).at(-1)!;
+}
+
+describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)", () => {
+  it("completes a close compensation a guard denies, reports the original refusal, and records the override", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch" });
+      await expect(client.commitItemMutations({
+        transactionId: "wb6ktl-close",
+        mutations: [
+          { op: "create", id: "pm-batch-a", options: { title: "Batch A", type: "Task" } },
+          { op: "update", id: "pm-batch-a", options: { title: "Denied update" } },
+        ],
+      })).rejects.toMatchObject({ code: "update_denied" });
+
+      await expect(client.get("pm-batch-a")).resolves.toMatchObject({ item: { status: "closed" } });
+      const entry = await lastEntry(context.pmPath, "pm-batch-a");
+      expect(entry.op).toBe("close");
+      expect(entry.context).toMatchObject({
+        transaction_compensation: {
+          transaction_id: "wb6ktl-close",
+          step_id: expect.any(String),
+          overridden: [{ source: "mutation_guard", guard: expect.stringContaining("rollback-denier"), code: "close_denied" }],
+        },
+      });
+      const judged = guardLog().filter((logged) => logged.operation === "close");
+      expect(judged).toEqual([{ operation: "close", id: "pm-batch-a", compensation: { transaction_id: "wb6ktl-close", step_id: (entry.context as { transaction_compensation: { step_id: string } }).transaction_compensation.step_id }, frozen: true }]);
+    });
+  });
+
+  it("completes delete and restore compensations, and records a crashing guard as an override", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch" });
+      await expect(client.commitItemMutations({
+        transactionId: "wb6ktl-delete",
+        createCompensation: "delete",
+        mutations: [
+          { op: "create", id: "pm-batch-d", options: { title: "Batch D", type: "Task" } },
+          { op: "update", id: "pm-batch-d", options: { title: "Denied update" } },
+        ],
+      })).rejects.toMatchObject({ code: "update_denied" });
+      await expect(client.get("pm-batch-d")).rejects.toMatchObject({ exitCode: 3 });
+      expect((await lastEntry(context.pmPath, "pm-batch-d")).context).toMatchObject({
+        transaction_compensation: { overridden: [{ source: "mutation_guard", code: "delete_denied" }] },
+      });
+
+      await client.create({ id: "pm-existing", title: "Existing title", type: "Task" });
+      await client.create({ id: "pm-other", title: "Other", type: "Task" });
+      await expect(client.commitItemMutations({
+        transactionId: "wb6ktl-restore",
+        mutations: [
+          { op: "update", id: "pm-existing", options: { title: "Batch title" } },
+          { op: "update", id: "pm-other", options: { title: "Denied update" } },
+        ],
+      })).rejects.toMatchObject({ code: "update_denied" });
+      await expect(client.get("pm-existing")).resolves.toMatchObject({ item: { title: "Existing title" } });
+      const restored = await lastEntry(context.pmPath, "pm-existing");
+      expect(restored.op).toBe("restore");
+      expect(restored.context).toMatchObject({
+        transaction_compensation: { transaction_id: "wb6ktl-restore", overridden: [{ source: "mutation_guard", code: "restore_denied" }] },
+      });
+
+      await expect(client.commitItemMutations({
+        transactionId: "wb6ktl-throw",
+        mutations: [
+          { op: "create", id: "pm-batch-t", options: { title: "Throw T", type: "Task" } },
+          { op: "update", id: "pm-batch-t", options: { title: "Denied update" } },
+        ],
+      })).rejects.toMatchObject({ code: "update_denied" });
+      // The crashing guard judged the rollback against the proposed (pre-update) title, so it threw rather than denied.
+      expect((await lastEntry(context.pmPath, "pm-batch-t")).context).toMatchObject({
+        transaction_compensation: { overridden: [{ source: "mutation_guard", code: "extension_mutation_guard_failed" }] },
+      });
+    });
+  });
+
+  it("records a workflow policy that refuses closing instead of wedging the rollback", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      await runWorkflowPolicyAction("policy-put", "release-close", { definition: {
+        id: "release-close", description: "Only the release manager closes work.", effect: "refuse",
+        subject: { statuses: ["closed"] }, rule: { kind: "authors", authors: ["release-manager"] },
+      } }, global);
+      await runWorkflowPolicyAction("policy-mode", "refuse", {}, global);
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch", noExtensions: true });
+      // The same policy refuses an ordinary close by the batch author.
+      await client.create({ id: "pm-ordinary", title: "Ordinary", type: "Task" });
+      await expect(client.close("pm-ordinary", "Done")).rejects.toMatchObject({ code: "workflow_policy_refused" });
+
+      await expect(client.commitItemMutations({
+        transactionId: "wb6ktl-policy",
+        mutations: [
+          { op: "create", id: "pm-batch-p", options: { title: "Batch P", type: "Task" } },
+          { op: "update", id: "pm-missing", options: { title: "Never applied" } },
+        ],
+      })).rejects.toMatchObject({ exitCode: 3 });
+      await expect(client.get("pm-batch-p")).resolves.toMatchObject({ item: { status: "closed" } });
+      expect((await lastEntry(context.pmPath, "pm-batch-p")).context).toMatchObject({
+        workflow_policies: [{ policy_id: "release-close", satisfied: false, effect: "refuse" }],
+        transaction_compensation: { transaction_id: "wb6ktl-policy", overridden: [{ source: "workflow_policy", policy_id: "release-close", rule: "authors" }] },
+      });
+      // A dry-run evaluation inside a rollback scope is never exempted.
+      const before = (await client.get("pm-ordinary")).item;
+      const settings = await readSettings(context.pmPath);
+      await expect(runWithItemMutationPrecondition({
+        pmRoot: context.pmPath, id: "pm-ordinary", validate: () => {},
+        compensation: { transaction_id: "scoped", step_id: "step", operations: ["close"], overrides: [] },
+      }, () => enforceWorkflowMutation({
+        pmRoot: context.pmPath, settings, operation: "close", author: "agent-batch",
+        before: { metadata: before, body: "" }, after: { metadata: { ...before, status: "closed" }, body: "" }, dryRun: true,
+      }))).rejects.toMatchObject({ code: "workflow_policy_refused" });
+    });
+  });
+
+  it("judges an unowned write inside a rollback scope, and an ordinary close, as normal mutations", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch" });
+      await client.create({ id: "pm-owned", title: "Owned", type: "Task" });
+      await client.create({ id: "pm-unowned", title: "Unowned", type: "Task" });
+      const scope = { transaction_id: "scoped", step_id: "step-1", operations: ["close"], overrides: [] };
+      const inScope = <T>(run: () => Promise<T>) =>
+        runWithItemMutationPrecondition({ pmRoot: context.pmPath, id: "pm-owned", validate: () => {}, compensation: scope }, run);
+
+      await expect(inScope(() => client.close("pm-unowned", "Not the owned item"))).rejects.toMatchObject({ code: "close_denied" });
+      await expect(inScope(() => client.delete("pm-owned"))).rejects.toMatchObject({ code: "delete_denied" });
+      await expect(client.close("pm-owned", "Ordinary close", { message: "bulk-item-transaction scoped step-1 compensate" })).rejects.toMatchObject({ code: "close_denied" });
+      expect(scope.overrides).toEqual([]);
+      expect(guardLog().filter((logged) => logged.operation !== "create").map((logged) => logged.compensation)).toEqual([null, null, null]);
+      await expect(client.get("pm-owned")).resolves.toMatchObject({ item: { status: "open" } });
+      await expect(client.get("pm-unowned")).resolves.toMatchObject({ item: { status: "open" } });
+    });
+  });
+
+  it("lets a package test observe a guard's rollback branch through runRegisteredMutationGuardForTest", async () => {
+    const seen: unknown[] = [];
+    const guardModule = {
+      activate(api: ExtensionApi) {
+        api.hooks.beforeMutation((guard) => {
+          seen.push(guard.compensation ?? null);
+          return { allow: false, code: "always_denied", remediation: "Never." };
+        });
+      },
+    };
+    const activation = await activateExtensionForTest(guardModule, { capabilities: ["hooks"] });
+    const harness = await createExtensionTestHarness(guardModule, { capabilities: ["hooks"] });
+    const base = {
+      pm_root: "/tracker", operation: "close", before: null, after: null, changed_fields: [],
+      sdk: { get: async () => null, list: async () => [] },
+    };
+    await expect(runRegisteredMutationGuardForTest(activation.hooks, { context: base })).rejects.toMatchObject({ code: "always_denied" });
+    await expect(runRegisteredMutationGuardForTest(activation.hooks, { context: { ...base, compensation: { transaction_id: "t", step_id: "s" } } }))
+      .resolves.toEqual([{ guard: expect.stringContaining(":"), code: "always_denied" }]);
+    await expect(harness.runMutationGuard({ context: { ...base, compensation: { transaction_id: "t", step_id: "s" } } })).resolves.toHaveLength(1);
+    const allowing = await createExtensionTestHarness({ activate(api: ExtensionApi) { api.hooks.beforeMutation(() => ({ allow: true })); } }, { capabilities: ["hooks"] });
+    await expect(allowing.runMutationGuard({ context: base })).resolves.toBeUndefined();
+    await expect(allowing.runMutationGuard({ context: { ...base, compensation: { transaction_id: "t", step_id: "s" } } })).resolves.toEqual([]);
+    expect(seen).toEqual([null, { transaction_id: "t", step_id: "s" }, { transaction_id: "t", step_id: "s" }]);
+    // A guard that throws its own code-less typed error during a rollback is recorded as a guard failure.
+    const codeless = await createExtensionTestHarness({ activate(api: ExtensionApi) { api.hooks.beforeMutation(() => { throw new PmCliError("Guard storage unavailable", 4); }); } }, { capabilities: ["hooks"] });
+    await expect(codeless.runMutationGuard({ context: base })).rejects.toThrow("Guard storage unavailable");
+    await expect(codeless.runMutationGuard({ context: { ...base, compensation: { transaction_id: "t", step_id: "s" } } }))
+      .resolves.toEqual([{ guard: expect.any(String), code: "extension_mutation_guard_failed" }]);
+  });
+});
+
+describe("pm copy under workflow policies (pm-womkyw)", () => {
+  it("refuses a copy that create would refuse and records the decisions on an accepted copy", async () => {
+    await withTempPmPath(async (context) => {
+      const global = { path: context.pmPath };
+      const allowed = new PmClient({ pmRoot: context.pmPath, author: "agent-allowed", noExtensions: true });
+      const other = new PmClient({ pmRoot: context.pmPath, author: "agent-other", noExtensions: true });
+      const source = await allowed.create({ title: "Copy source", type: "Task" });
+      await runWorkflowPolicyAction("policy-put", "creators", { definition: {
+        id: "creators", description: "Only allowed agents create work.", effect: "refuse",
+        subject: { operations: ["create"] }, rule: { kind: "authors", authors: ["agent-allowed"] },
+      } }, global);
+      await runWorkflowPolicyAction("policy-mode", "refuse", {}, global);
+
+      await expect(other.create({ title: "Direct create", type: "Task" })).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      await expect(other.copy(source.item.id, { title: "Copied by another agent" })).rejects.toMatchObject({
+        code: "workflow_policy_refused",
+        context: { policy_violations: [{ policy_id: "creators", rule: "authors" }] },
+      });
+      expect((await allowed.list({})).items.map((item) => item.title)).toEqual(["Copy source"]);
+
+      const copied = await allowed.copy(source.item.id, { title: "Copied by the allowed agent" });
+      const entry = await lastEntry(context.pmPath, copied.item.id);
+      expect(entry).toMatchObject({ op: "create", context: { workflow_policies: [{ policy_id: "creators", satisfied: true }] } });
+    });
+  });
+});
+
+describe("lease-fenced import, create and copy writes (pm-0m64xk)", () => {
+  function importDocument(id: string, title: string) {
+    return {
+      metadata: { id, title, description: "", type: "Task", status: "open", priority: 2, tags: [], created_at: "2026-11-16T00:00:00.000Z", updated_at: "2026-11-16T00:00:00.000Z" },
+      body: "",
+    };
+  }
+
+  it("skips an id a concurrent importer committed after the caller's existence check", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const importOne = (title: string) => commitImportedItem({
+        pmRoot: context.pmPath, id: "pm-dup", itemPath: getItemPath(context.pmPath, "Task", "pm-dup", "toon"),
+        document: importDocument("pm-dup", title) as never, author: "agent-importer", message: "Import", settings,
+        conflictWarningPrefix: "parity_import_lock_conflict",
+      });
+      await expect(importOne("First import")).resolves.toMatchObject({ committed: true });
+      await expect(importOne("Second import")).resolves.toEqual({ committed: false, conflictWarning: "parity_import_lock_conflict:pm-dup" });
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      await expect(client.get("pm-dup")).resolves.toMatchObject({ item: { title: "First import" } });
+      expect((await readHistoryEntries(path.join(context.pmPath, "history", "pm-dup.jsonl"), "pm-dup")).map((entry) => entry.op)).toEqual(["import"]);
+    });
+  });
+
+  it("refuses an import whose lease was taken over during a slow guard, keeping the other importer's write", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const settings = await readSettings(context.pmPath);
+      settings.locks.ttl_seconds = 1;
+      settings.governance.force_required_for_stale_lock = false;
+      let openGate!: () => void;
+      (globalThis as Record<string, unknown>)[SLOW_GATE_KEY] = new Promise<void>((resolve) => { openGate = resolve; });
+      const importAs = (title: string, author: string) => runWithActiveExtensions({ path: context.pmPath }, () => commitImportedItem({
+        pmRoot: context.pmPath, id: "pm-race", itemPath: getItemPath(context.pmPath, "Task", "pm-race", "toon"),
+        document: importDocument("pm-race", title) as never, author, message: "Import", settings,
+        conflictWarningPrefix: "parity_import_lock_conflict",
+      }));
+      const slow = importAs("Slow import", "agent-slow").catch((error: unknown) => error);
+      await sleep(1_200);
+      await expect(importAs("Fast import", "agent-fast")).resolves.toMatchObject({ committed: true });
+      openGate();
+      await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
+      const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
+      await expect(client.get("pm-race")).resolves.toMatchObject({ item: { title: "Fast import" } });
+      const history = await readHistoryEntries(path.join(context.pmPath, "history", "pm-race.jsonl"), "pm-race");
+      expect(history.map((entry) => [entry.op, entry.author])).toEqual([["import", "agent-fast"]]);
+    });
+  });
+
+  it("refuses a create whose lease was taken over during a slow guard instead of overwriting the newer item", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const settings = await readSettings(context.pmPath);
+      settings.locks.ttl_seconds = 1;
+      settings.governance.force_required_for_stale_lock = false;
+      await writeSettings(context.pmPath, settings);
+      let openGate!: () => void;
+      (globalThis as Record<string, unknown>)[SLOW_GATE_KEY] = new Promise<void>((resolve) => { openGate = resolve; });
+      const slowClient = new PmClient({ pmRoot: context.pmPath, author: "agent-slow" });
+      const fastClient = new PmClient({ pmRoot: context.pmPath, author: "agent-fast" });
+      const slow = slowClient.create({ id: "pm-race-create", title: "Slow create", type: "Task" }).catch((error: unknown) => error);
+      await sleep(1_200);
+      await expect(fastClient.create({ id: "pm-race-create", title: "Fast create", type: "Task" })).resolves.toMatchObject({ item: { title: "Fast create" } });
+      openGate();
+      await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
+      await expect(fastClient.get("pm-race-create")).resolves.toMatchObject({ item: { title: "Fast create" } });
+      const history = await readHistoryEntries(path.join(context.pmPath, "history", "pm-race-create.jsonl"), "pm-race-create");
+      expect(history.map((entry) => entry.author)).toEqual(["agent-fast"]);
+    });
+  });
+});

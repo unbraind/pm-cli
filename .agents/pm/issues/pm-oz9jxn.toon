@@ -1,0 +1,22 @@
+id: pm-oz9jxn
+title: "The SDK surface gate classifies every signature text change as breaking, so an optional field added to a host-built context needs the same acknowledgement as a removed export"
+description: "Found while landing pm-wb6ktl (2026-11-16). scripts/sdk-surface-snapshot.mjs compares each exported symbol's printed signature text, and any difference is reported as breaking. Adding an optional, host-set field to BeforeMutationHookContext (a context the host constructs and hands to guards, so no implementer is affected) and widening runRegisteredMutationGuardForTest from Promise<void> to Promise<MutationGuardOverride[] | undefined> were both reported as breaking, so an additive SDK change needs the same recorded acknowledgement as a removed export. The gate's own acceptance criteria (pm-e6tm5c) classify changes as additive, compatible or breaking, but no signature change is ever classed as compatible. The cost: breaking_acknowledgements fills with false positives, which hides the real breaks reviewers and release notes must see. Proposal: classify signature changes by position. A new optional property on an object type is compatible. A new required property on a type the caller supplies, or any removed property, is breaking. A return type widened from void, and a parameter made optional, are compatible. Keep a removed export and a narrowed input as breaking. Record the classification reason with each change. Duplicate check: searched sdk surface snapshot breaking signature optional property additive. pm-e6tm5c (closed) delivered the gate; no open item covers classification precision."
+type: Issue
+status: open
+priority: 3
+tags[5]: "area:sdk",contracts,developer-experience,release-notes,sdk-surface
+created_at: "2026-11-16T04:20:04.606Z"
+updated_at: "2026-11-16T04:30:27.777Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "An optional property added to an exported object type is classified compatible, not breaking; A removed export, a removed property or a new required property on a caller-supplied type stays breaking; Each classified change records the reason the classifier used, and the spec covers one example of each class"
+parent: pm-ugqx
+risk: low
+confidence: medium
+severity: low
+expected_result: Only caller-visible incompatibilities require a breaking acknowledgement
+actual_result: "Any signature text difference, including an added optional field, is reported as breaking"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e6tm5c,related,"2026-11-16T04:20:04.606Z","harness:claude-code","cli:create:dep",detected
+  pm-wb6ktl,discovered_from,"2026-11-16T04:20:04.606Z","harness:claude-code","cli:create:dep",detected
+body: ""

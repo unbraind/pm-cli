@@ -90,6 +90,10 @@ import {
   runServiceOverride,
 } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
+import type { MutationGuardOverride } from "../core/extensions/extension-hook-runtime.js";
+
+/** A guard refusal a journal-proven rollback recorded instead of obeying (pm-wb6ktl). */
+export type { MutationGuardOverride };
 import {
   getMigrationRuntimeDefinition,
   resolveRegisteredSearchProvider,
@@ -1188,21 +1192,28 @@ export async function runRegisteredCommandForTest(
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
-/** Invoke registered transactional mutation guards through the same fail-closed runtime used by real writes. */
+/**
+ * Invoke registered transactional mutation guards through the same fail-closed
+ * runtime used by real writes. A denial or failure refuses, except when the
+ * context carries `compensation`: a journal-proven rollback records each one,
+ * and the helper resolves the list a host records in the rollback's history
+ * entry (pm-wb6ktl). An ordinary context still resolves `undefined`.
+ */
 export async function runRegisteredMutationGuardForTest(
   hooks: ExtensionHookRegistry,
   options: RunRegisteredMutationGuardForTestOptions,
-): Promise<void> {
+): Promise<MutationGuardOverride[] | undefined> {
   if ((hooks.beforeMutation?.length ?? 0) === 0) {
     throw new Error("Expected a registered before_mutation hook to invoke");
   }
   const { actor, author, dry_run: dryRun, ...context } = options.context;
   const { resolveMutationActor } = await import("../core/extensions/mutation-actor.js");
-  await runBeforeMutationHooks(hooks, {
+  const overrides = await runBeforeMutationHooks(hooks, {
     ...context,
     actor: actor ?? resolveMutationActor(author ?? "unknown"),
     dry_run: dryRun === true,
   });
+  return context.compensation === undefined ? undefined : overrides;
 }
 
 /**
@@ -2839,7 +2850,7 @@ export interface ExtensionTestHarness {
   /** Bound {@link runRegisteredHookForTest} over `activation.hooks`. */
   runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>;
   /** Bound transactional mutation-guard runner over `activation.hooks`. */
-  runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<void>;
+  runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<MutationGuardOverride[] | undefined>;
   /** Bound {@link runRegisteredCommandOverrideForTest} over `activation.commands`. */
   runCommandOverride(
     context: CommandOverrideContext,

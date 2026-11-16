@@ -51,7 +51,7 @@ import {
   resolveTypeDefinition,
   resolveTypeName,
   validateTypeOptions,
-  acquireLock,
+  acquireLockLease,
   printError,
   buildInvalidTypeError,
   resolveTypeSynonym,
@@ -2553,7 +2553,7 @@ async function writeCreatedItem(params: {
   let hierarchyLockHeld = hierarchyMutationRequired;
   let hookWarnings: string[] = [];
   try {
-    const lockRelease = await acquireLock(
+    const lease = await acquireLockLease(
       pmRoot,
       id,
       settings.locks.ttl_seconds,
@@ -2641,29 +2641,32 @@ async function writeCreatedItem(params: {
             allowDuplicate: false,
           });
         }
-        await writeFileAtomic(
-          itemPath,
-          serializeItemDocument(afterDocument, {
-            format: settings.item_format,
-            schema: settings.schema,
-            extensionFieldNames,
-          }),
-        );
-        try {
-          const entry = createHistoryEntry({
-            nowIso: nowValue,
-            author,
-            op: "create",
-            before: beforeDocument,
-            after: afterDocument,
-            message: historyMessage,
-            context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
-          });
-          await appendHistoryEntry(historyPath, entry);
-        } catch (error: unknown) {
-          await removeFileIfExists(itemPath);
-          throw error;
-        }
+        // Policies, guards and governance may outlast the lock TTL: a lease taken over meanwhile refuses instead of overwriting.
+        await lease.fence(async () => {
+          await writeFileAtomic(
+            itemPath,
+            serializeItemDocument(afterDocument, {
+              format: settings.item_format,
+              schema: settings.schema,
+              extensionFieldNames,
+            }),
+          );
+          try {
+            const entry = createHistoryEntry({
+              nowIso: nowValue,
+              author,
+              op: "create",
+              before: beforeDocument,
+              after: afterDocument,
+              message: historyMessage,
+              context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
+            });
+            await appendHistoryEntry(historyPath, entry);
+          } catch (error: unknown) {
+            await removeFileIfExists(itemPath);
+            throw error;
+          }
+        });
         if (hierarchyLockHeld) {
           await hierarchyLockRelease();
           hierarchyLockHeld = false;
@@ -2722,7 +2725,7 @@ async function writeCreatedItem(params: {
         changed_fields: changedFields,
       });
     } finally {
-      await lockRelease();
+      await lease.release();
     }
   } finally {
     if (hierarchyLockHeld) await hierarchyLockRelease();

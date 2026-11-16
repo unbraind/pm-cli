@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2156,
+    "covered_symbols": 2157,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2157
+    "required_symbols": 2158
   },
   "breaking_acknowledgements": [
     {
@@ -3436,6 +3436,19 @@
       ],
       "package_version": "2026.11.15",
       "reason": "Add optional claim_activity.unproven_activity to PmCliErrorContext and ClaimActivityOptions (GH-1336): a stale takeover now anchors on the holder's own claim record and refuses when that record is missing or folded, or when a salvage, rewrite or workspace restore follows it; no existing member is removed or narrowed."
+    },
+    {
+      "changes": [
+        "signature ./sdk:BeforeMutationHookContext",
+        "signature ./sdk:BeforeMutationHookInput",
+        "signature ./sdk:ExtensionTestHarness",
+        "signature ./sdk:runRegisteredMutationGuardForTest",
+        "signature ./sdk/authoring:BeforeMutationHookContext",
+        "signature ./sdk/testing:ExtensionTestHarness",
+        "signature ./sdk/testing:runRegisteredMutationGuardForTest"
+      ],
+      "package_version": "2026.11.15",
+      "reason": "pm-wb6ktl: BeforeMutationHookContext gains the optional host-set compensation field (BeforeMutationHookInput omits it so callers cannot pass it); runRegisteredMutationGuardForTest and ExtensionTestHarness.runMutationGuard resolve the recorded rollback overrides when the context carries compensation and still resolve undefined otherwise. Source-compatible for guards and package tests."
     }
   ],
   "entrypoints": {
@@ -5084,7 +5097,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BeforeMutationHookContext",
-          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; actor: Readonly<MutationActor>; dry_run: boolean; sdk: ExtensionMutationGuardSdk; }"
+          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; actor: Readonly<MutationActor>; dry_run: boolean; compensation?: Readonly<MutationCompensation>; sdk: ExtensionMutationGuardSdk; }"
         },
         {
           "classification": "supported",
@@ -5096,7 +5109,7 @@
           "classification": "advanced_export",
           "kind": "type",
           "name": "BeforeMutationHookInput",
-          "signature": "export type BeforeMutationHookInput = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\"> & { author: string; dry_run?: boolean; };"
+          "signature": "export type BeforeMutationHookInput = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\" | \"compensation\"> & { author: string; dry_run?: boolean; };"
         },
         {
           "classification": "supported",
@@ -9494,7 +9507,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionTestHarness",
-          "signature": "export interface ExtensionTestHarness { readonly module: unknown; readonly name: string; readonly layer: ExtensionLayer; readonly activation: ExtensionActivationResult; activationSummary(options?: DescribeExtensionActivationOptions): ExtensionActivationSummary; renderMarkdown(options?: RenderExtensionHarnessMarkdownOptions): string; assertCommandContract(expectation: RegisteredCommandContractExpectation): RegisteredCommandContractAssertion; assertFlags(expectation: RegisteredFlagsExpectation): RegisteredExtensionFlagDefinitions; assertItemField(expectation: RegisteredItemFieldExpectation): RegisteredItemFieldAssertion; assertItemType(expectation: RegisteredItemTypeExpectation): RegisteredItemTypeAssertion; assertProfile(expectation: RegisteredProfileExpectation): RegisteredProfileAssertion; assertHook<TKind extends RegisteredHookKind>(expectation: RegisteredHookExpectation & { kind: TKind; }): RegisteredHookEntry<TKind>; assertCommandOverride(expectation: RegisteredCommandOverrideExpectation): RegisteredExtensionCommandOverride; assertParserOverride(expectation: RegisteredParserOverrideExpectation): RegisteredExtensionParserOverride; assertPreflightOverride(expectation?: RegisteredPreflightOverrideExpectation): RegisteredExtensionPreflightOverride; assertRendererOverride(expectation: RegisteredRendererOverrideExpectation): RegisteredExtensionRendererOverride; assertServiceOverride(expectation: RegisteredServiceOverrideExpectation): RegisteredExtensionServiceOverride; assertSearchProvider(expectation: RegisteredSearchProviderExpectation): RegisteredExtensionSearchProvider; assertVectorStoreAdapter(expectation: RegisteredVectorStoreAdapterExpectation): RegisteredExtensionVectorStoreAdapter; assertImporter(expectation: RegisteredImporterExpectation): RegisteredExtensionImporter; assertExporter(expectation: RegisteredExporterExpectation): RegisteredExtensionExporter; assertMigration(expectation: RegisteredMigrationExpectation): RegisteredExtensionSchemaMigrationDefinition; assertCapabilityUsage(expectation: ExtensionCapabilityUsageExpectation): ExtensionCapabilityUsageAssertion; runCommand(options: RunRegisteredCommandForTestOptions): Promise<CommandHandlerResult>; runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>; runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<void>; runCommandOverride(context: CommandOverrideContext): Promise<CommandOverrideResult>; runParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult>; runPreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult>; runRendererOverride(context: RendererOverrideContext): Promise<RendererOverrideResult>; runServiceOverride(context: ServiceOverrideContext): Promise<ServiceOverrideResult>; runSearchProvider<Operation extends keyof SearchProviderOperationContexts>(options: { provider: string; operation: Operation; context: SearchProviderOperationContexts[Operation]; }): Promise<SearchProviderOperationResults[Operation]>; runVectorStoreAdapter<Operation extends keyof VectorStoreAdapterOperationContexts>(options: { adapter: string; operation: Operation; context: VectorStoreAdapterOperationContexts[Operation]; }): Promise<VectorStoreAdapterOperationResults[Operation]>; runMigration(options: RunRegisteredMigrationForTestOptions): Promise<unknown>; runImporter(options: RunRegisteredImporterForTestOptions): Promise<CommandHandlerResult>; runExporter(options: RunRegisteredExporterForTestOptions): Promise<CommandHandlerResult>; deactivate(options?: { deactivateTimeoutMs?: number; }): Promise<ExtensionDeactivationResult>; }"
+          "signature": "export interface ExtensionTestHarness { readonly module: unknown; readonly name: string; readonly layer: ExtensionLayer; readonly activation: ExtensionActivationResult; activationSummary(options?: DescribeExtensionActivationOptions): ExtensionActivationSummary; renderMarkdown(options?: RenderExtensionHarnessMarkdownOptions): string; assertCommandContract(expectation: RegisteredCommandContractExpectation): RegisteredCommandContractAssertion; assertFlags(expectation: RegisteredFlagsExpectation): RegisteredExtensionFlagDefinitions; assertItemField(expectation: RegisteredItemFieldExpectation): RegisteredItemFieldAssertion; assertItemType(expectation: RegisteredItemTypeExpectation): RegisteredItemTypeAssertion; assertProfile(expectation: RegisteredProfileExpectation): RegisteredProfileAssertion; assertHook<TKind extends RegisteredHookKind>(expectation: RegisteredHookExpectation & { kind: TKind; }): RegisteredHookEntry<TKind>; assertCommandOverride(expectation: RegisteredCommandOverrideExpectation): RegisteredExtensionCommandOverride; assertParserOverride(expectation: RegisteredParserOverrideExpectation): RegisteredExtensionParserOverride; assertPreflightOverride(expectation?: RegisteredPreflightOverrideExpectation): RegisteredExtensionPreflightOverride; assertRendererOverride(expectation: RegisteredRendererOverrideExpectation): RegisteredExtensionRendererOverride; assertServiceOverride(expectation: RegisteredServiceOverrideExpectation): RegisteredExtensionServiceOverride; assertSearchProvider(expectation: RegisteredSearchProviderExpectation): RegisteredExtensionSearchProvider; assertVectorStoreAdapter(expectation: RegisteredVectorStoreAdapterExpectation): RegisteredExtensionVectorStoreAdapter; assertImporter(expectation: RegisteredImporterExpectation): RegisteredExtensionImporter; assertExporter(expectation: RegisteredExporterExpectation): RegisteredExtensionExporter; assertMigration(expectation: RegisteredMigrationExpectation): RegisteredExtensionSchemaMigrationDefinition; assertCapabilityUsage(expectation: ExtensionCapabilityUsageExpectation): ExtensionCapabilityUsageAssertion; runCommand(options: RunRegisteredCommandForTestOptions): Promise<CommandHandlerResult>; runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>; runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<MutationGuardOverride[] | undefined>; runCommandOverride(context: CommandOverrideContext): Promise<CommandOverrideResult>; runParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult>; runPreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult>; runRendererOverride(context: RendererOverrideContext): Promise<RendererOverrideResult>; runServiceOverride(context: ServiceOverrideContext): Promise<ServiceOverrideResult>; runSearchProvider<Operation extends keyof SearchProviderOperationContexts>(options: { provider: string; operation: Operation; context: SearchProviderOperationContexts[Operation]; }): Promise<SearchProviderOperationResults[Operation]>; runVectorStoreAdapter<Operation extends keyof VectorStoreAdapterOperationContexts>(options: { adapter: string; operation: Operation; context: VectorStoreAdapterOperationContexts[Operation]; }): Promise<VectorStoreAdapterOperationResults[Operation]>; runMigration(options: RunRegisteredMigrationForTestOptions): Promise<unknown>; runImporter(options: RunRegisteredImporterForTestOptions): Promise<CommandHandlerResult>; runExporter(options: RunRegisteredExporterForTestOptions): Promise<CommandHandlerResult>; deactivate(options?: { deactivateTimeoutMs?: number; }): Promise<ExtensionDeactivationResult>; }"
         },
         {
           "classification": "supported",
@@ -13163,6 +13176,12 @@
           "signature": "export interface MutationCheckpointItem { id: string; target_updated_at: string; }"
         },
         {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationCompensation",
+          "signature": "export interface MutationCompensation { transaction_id: string; step_id: string; }"
+        },
+        {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "MutationEvent",
@@ -13173,6 +13192,12 @@
           "kind": "interface",
           "name": "MutationEventPage",
           "signature": "export interface MutationEventPage { integrity: \"verified\" | \"unverified\"; verified_streams?: number; events: MutationEvent[]; count: number; has_more: boolean; cursor_mode: \"batch\" | \"row\"; next_cursor?: string; source: \"derived_index\" | \"authoritative_history\"; provenance_summary?: HistoryProvenanceSummary; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationGuardOverride",
+          "signature": "export interface MutationGuardOverride { guard: string; code: string; }"
         },
         {
           "classification": "supported",
@@ -20636,7 +20661,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "runRegisteredMutationGuardForTest",
-          "signature": "(hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<void> | calls: (hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<void>"
+          "signature": "(hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<MutationGuardOverride[] | undefined> | calls: (hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<MutationGuardOverride[] | undefined>"
         },
         {
           "classification": "supported",
@@ -24422,7 +24447,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "BeforeMutationHookContext",
-          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; actor: Readonly<MutationActor>; dry_run: boolean; sdk: ExtensionMutationGuardSdk; }"
+          "signature": "export interface BeforeMutationHookContext { pm_root: string; operation: string; before: ItemDocument | null; after: ItemDocument | null; changed_fields: readonly string[]; actor: Readonly<MutationActor>; dry_run: boolean; compensation?: Readonly<MutationCompensation>; sdk: ExtensionMutationGuardSdk; }"
         },
         {
           "classification": "supported",
@@ -25263,6 +25288,12 @@
           "kind": "interface",
           "name": "MutationActorAgent",
           "signature": "export interface MutationActorAgent { harness?: string; model?: string; model_source?: string; instance?: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationCompensation",
+          "signature": "export interface MutationCompensation { transaction_id: string; step_id: string; }"
         },
         {
           "classification": "supported",
@@ -40172,7 +40203,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ExtensionTestHarness",
-          "signature": "export interface ExtensionTestHarness { readonly module: unknown; readonly name: string; readonly layer: ExtensionLayer; readonly activation: ExtensionActivationResult; activationSummary(options?: DescribeExtensionActivationOptions): ExtensionActivationSummary; renderMarkdown(options?: RenderExtensionHarnessMarkdownOptions): string; assertCommandContract(expectation: RegisteredCommandContractExpectation): RegisteredCommandContractAssertion; assertFlags(expectation: RegisteredFlagsExpectation): RegisteredExtensionFlagDefinitions; assertItemField(expectation: RegisteredItemFieldExpectation): RegisteredItemFieldAssertion; assertItemType(expectation: RegisteredItemTypeExpectation): RegisteredItemTypeAssertion; assertProfile(expectation: RegisteredProfileExpectation): RegisteredProfileAssertion; assertHook<TKind extends RegisteredHookKind>(expectation: RegisteredHookExpectation & { kind: TKind; }): RegisteredHookEntry<TKind>; assertCommandOverride(expectation: RegisteredCommandOverrideExpectation): RegisteredExtensionCommandOverride; assertParserOverride(expectation: RegisteredParserOverrideExpectation): RegisteredExtensionParserOverride; assertPreflightOverride(expectation?: RegisteredPreflightOverrideExpectation): RegisteredExtensionPreflightOverride; assertRendererOverride(expectation: RegisteredRendererOverrideExpectation): RegisteredExtensionRendererOverride; assertServiceOverride(expectation: RegisteredServiceOverrideExpectation): RegisteredExtensionServiceOverride; assertSearchProvider(expectation: RegisteredSearchProviderExpectation): RegisteredExtensionSearchProvider; assertVectorStoreAdapter(expectation: RegisteredVectorStoreAdapterExpectation): RegisteredExtensionVectorStoreAdapter; assertImporter(expectation: RegisteredImporterExpectation): RegisteredExtensionImporter; assertExporter(expectation: RegisteredExporterExpectation): RegisteredExtensionExporter; assertMigration(expectation: RegisteredMigrationExpectation): RegisteredExtensionSchemaMigrationDefinition; assertCapabilityUsage(expectation: ExtensionCapabilityUsageExpectation): ExtensionCapabilityUsageAssertion; runCommand(options: RunRegisteredCommandForTestOptions): Promise<CommandHandlerResult>; runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>; runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<void>; runCommandOverride(context: CommandOverrideContext): Promise<CommandOverrideResult>; runParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult>; runPreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult>; runRendererOverride(context: RendererOverrideContext): Promise<RendererOverrideResult>; runServiceOverride(context: ServiceOverrideContext): Promise<ServiceOverrideResult>; runSearchProvider<Operation extends keyof SearchProviderOperationContexts>(options: { provider: string; operation: Operation; context: SearchProviderOperationContexts[Operation]; }): Promise<SearchProviderOperationResults[Operation]>; runVectorStoreAdapter<Operation extends keyof VectorStoreAdapterOperationContexts>(options: { adapter: string; operation: Operation; context: VectorStoreAdapterOperationContexts[Operation]; }): Promise<VectorStoreAdapterOperationResults[Operation]>; runMigration(options: RunRegisteredMigrationForTestOptions): Promise<unknown>; runImporter(options: RunRegisteredImporterForTestOptions): Promise<CommandHandlerResult>; runExporter(options: RunRegisteredExporterForTestOptions): Promise<CommandHandlerResult>; deactivate(options?: { deactivateTimeoutMs?: number; }): Promise<ExtensionDeactivationResult>; }"
+          "signature": "export interface ExtensionTestHarness { readonly module: unknown; readonly name: string; readonly layer: ExtensionLayer; readonly activation: ExtensionActivationResult; activationSummary(options?: DescribeExtensionActivationOptions): ExtensionActivationSummary; renderMarkdown(options?: RenderExtensionHarnessMarkdownOptions): string; assertCommandContract(expectation: RegisteredCommandContractExpectation): RegisteredCommandContractAssertion; assertFlags(expectation: RegisteredFlagsExpectation): RegisteredExtensionFlagDefinitions; assertItemField(expectation: RegisteredItemFieldExpectation): RegisteredItemFieldAssertion; assertItemType(expectation: RegisteredItemTypeExpectation): RegisteredItemTypeAssertion; assertProfile(expectation: RegisteredProfileExpectation): RegisteredProfileAssertion; assertHook<TKind extends RegisteredHookKind>(expectation: RegisteredHookExpectation & { kind: TKind; }): RegisteredHookEntry<TKind>; assertCommandOverride(expectation: RegisteredCommandOverrideExpectation): RegisteredExtensionCommandOverride; assertParserOverride(expectation: RegisteredParserOverrideExpectation): RegisteredExtensionParserOverride; assertPreflightOverride(expectation?: RegisteredPreflightOverrideExpectation): RegisteredExtensionPreflightOverride; assertRendererOverride(expectation: RegisteredRendererOverrideExpectation): RegisteredExtensionRendererOverride; assertServiceOverride(expectation: RegisteredServiceOverrideExpectation): RegisteredExtensionServiceOverride; assertSearchProvider(expectation: RegisteredSearchProviderExpectation): RegisteredExtensionSearchProvider; assertVectorStoreAdapter(expectation: RegisteredVectorStoreAdapterExpectation): RegisteredExtensionVectorStoreAdapter; assertImporter(expectation: RegisteredImporterExpectation): RegisteredExtensionImporter; assertExporter(expectation: RegisteredExporterExpectation): RegisteredExtensionExporter; assertMigration(expectation: RegisteredMigrationExpectation): RegisteredExtensionSchemaMigrationDefinition; assertCapabilityUsage(expectation: ExtensionCapabilityUsageExpectation): ExtensionCapabilityUsageAssertion; runCommand(options: RunRegisteredCommandForTestOptions): Promise<CommandHandlerResult>; runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>; runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<MutationGuardOverride[] | undefined>; runCommandOverride(context: CommandOverrideContext): Promise<CommandOverrideResult>; runParserOverride(context: ParserOverrideContext): Promise<ParserOverrideResult>; runPreflightOverride(context: PreflightOverrideContext): Promise<PreflightOverrideResult>; runRendererOverride(context: RendererOverrideContext): Promise<RendererOverrideResult>; runServiceOverride(context: ServiceOverrideContext): Promise<ServiceOverrideResult>; runSearchProvider<Operation extends keyof SearchProviderOperationContexts>(options: { provider: string; operation: Operation; context: SearchProviderOperationContexts[Operation]; }): Promise<SearchProviderOperationResults[Operation]>; runVectorStoreAdapter<Operation extends keyof VectorStoreAdapterOperationContexts>(options: { adapter: string; operation: Operation; context: VectorStoreAdapterOperationContexts[Operation]; }): Promise<VectorStoreAdapterOperationResults[Operation]>; runMigration(options: RunRegisteredMigrationForTestOptions): Promise<unknown>; runImporter(options: RunRegisteredImporterForTestOptions): Promise<CommandHandlerResult>; runExporter(options: RunRegisteredExporterForTestOptions): Promise<CommandHandlerResult>; deactivate(options?: { deactivateTimeoutMs?: number; }): Promise<ExtensionDeactivationResult>; }"
         },
         {
           "classification": "supported",
@@ -40185,6 +40216,12 @@
           "kind": "interface",
           "name": "LintExtensionBlueprintOptions",
           "signature": "export interface LintExtensionBlueprintOptions { declaredCapabilities?: readonly string[]; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MutationGuardOverride",
+          "signature": "export interface MutationGuardOverride { guard: string; code: string; }"
         },
         {
           "classification": "supported",
@@ -40544,7 +40581,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "runRegisteredMutationGuardForTest",
-          "signature": "(hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<void> | calls: (hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<void>"
+          "signature": "(hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<MutationGuardOverride[] | undefined> | calls: (hooks: ExtensionHookRegistry, options: RunRegisteredMutationGuardForTestOptions) => Promise<MutationGuardOverride[] | undefined>"
         },
         {
           "classification": "supported",
@@ -41151,7 +41188,7 @@
       "checked_functions": 1349,
       "checked_values": 400,
       "exempt_test_seams": 15,
-      "referenced_types": 1051
+      "referenced_types": 1052
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -41205,7 +41242,7 @@
       "checked_functions": 46,
       "checked_values": 0,
       "exempt_test_seams": 0,
-      "referenced_types": 87
+      "referenced_types": 88
     }
   }
 }

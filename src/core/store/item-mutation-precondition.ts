@@ -22,6 +22,29 @@ interface ItemMutationPrecondition {
   committed?: (document: ItemDocument) => void;
   /** Immutable attribution for every internal write to this target. */
   historyContext?: Record<string, unknown>;
+  /**
+   * Set only by the transaction coordinator once immutable history proves the
+   * scoped write undoes the step's own effects (pm-wb6ktl). Guards and workflow
+   * policies still judge it, but a refusal is recorded instead of enforced.
+   */
+  compensation?: OwnedTransactionCompensation;
+}
+
+/** One guard or workflow-policy refusal that a journal-proven rollback recorded instead of obeying. */
+export type CompensationOverride =
+  | { source: "mutation_guard"; guard: string; code: string }
+  | { source: "workflow_policy"; policy_id: string; rule: string };
+
+/** A rollback write the transaction journal proved it owns, and the refusals it overrode. */
+export interface OwnedTransactionCompensation {
+  /** Transaction whose own step is being undone. */
+  transaction_id: string;
+  /** Step whose effects the write undoes. */
+  step_id: string;
+  /** The only operations the rollback performs, such as close, delete or restore. */
+  operations: readonly string[];
+  /** Refusals recorded while the rollback ran; filled by the guard and policy evaluators. */
+  overrides: CompensationOverride[];
 }
 
 const preconditions = new AsyncLocalStorage<readonly ItemMutationPrecondition[]>();
@@ -401,6 +424,23 @@ export function advanceItemMutationPreconditions(pmRoot: string, document: ItemD
     }
   }
   for (const condition of conditionsFor(pmRoot, [targetId, document.metadata.id, ...aliasIds])) condition.committed?.(document);
+}
+
+/**
+ * The journal-proven rollback scoped to this write, if any: it must name this
+ * tracker, either identity of the locked item and this operation, so a write to
+ * another item, or another operation, inside the same scope is judged as an
+ * ordinary mutation (pm-wb6ktl).
+ */
+export function ownedTransactionCompensation(pmRoot: string, ids: readonly unknown[], operation: string): OwnedTransactionCompensation | undefined {
+  return conditionsFor(pmRoot, ids).find((condition) => condition.compensation?.operations.includes(operation) === true)?.compensation;
+}
+
+/** History attribution for a rollback that overrode a refusal; empty when nothing was overridden. */
+export function transactionCompensationHistoryContext(pmRoot: string, ids: readonly unknown[], operation: string): Record<string, unknown> {
+  const compensation = ownedTransactionCompensation(pmRoot, ids, operation);
+  if (compensation === undefined || compensation.overrides.length === 0) return {};
+  return { transaction_compensation: { transaction_id: compensation.transaction_id, step_id: compensation.step_id, overridden: structuredClone(compensation.overrides) } };
 }
 
 /** Collect target-scoped immutable attribution (keyed by either identity of the locked item) without attributing another caller's writes. */
