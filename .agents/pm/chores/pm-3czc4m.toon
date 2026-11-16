@@ -2,28 +2,30 @@ id: pm-3czc4m
 title: "Adopt the 2026-11-16 Dependabot updates: knip 6.44.2, marked 18.1.3, six GitHub Actions patch releases and @sentry/node 10.78.0, holding the Sentry 11 major"
 description: "Dependabot opened three update PRs on 2026-11-16 after the 7-day cooldown. PR 1737 bumps knip 6.44.1 to 6.44.2 and marked 18.1.2 to 18.1.3, and is green. PR 1738 brings six GitHub Actions patch updates: pnpm/action-setup 6.1.1, github/codeql-action init/analyze/upload-sarif 4.39.3, CodSpeedHQ/action 5.6.3 and softprops/action-gh-release 3.0.4. It is red because tests/integration/ci-workflow-contract.spec.ts pins the CodSpeed and action-gh-release commit SHAs. PR 1739 bumps @sentry/node 10.76.2 to 11.11.0, a major, and is red because Sentry 11 removed the enableLogs option. A trial adoption of 11.11.0 showed a deeper blocker, filed as pm-jy61mz: Sentry 11 pulls @sentry/bundler-plugins and native oxc-parser bindings into pm's runtime closure (42 to 88 packages), and the package-artifact gate cannot stage them. This chore therefore adopts knip, marked and the six actions, moves the contract pins, and takes @sentry/node to 10.78.0, the newest 10.x, released 2026-10-28 and past the cooldown. It adds a Dependabot ignore rule for @sentry/node semver-major updates that points at pm-jy61mz, refreshes the runtime lock, and closes the three Dependabot PRs as superseded. Duplicate check: searched dependency update sentry node major knip marked github actions; the earlier refresh chores (pm-2h8ohq, pm-98f0ec, pm-4dz7) are closed."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[4]: dependencies,github-actions,quality,sentry
 created_at: "2026-11-16T14:55:36.707Z"
-updated_at: "2026-11-16T15:09:44.719Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#aafa2be13b294c2b9a62368a"
+updated_at: "2026-11-16T15:22:02.112Z"
+closed_at: "2026-11-16T15:21:59.854Z"
+completed_at: "2026-11-16T15:21:59.854Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "knip 6.44.2, marked 18.1.3 and @sentry/node 10.78.0 are in package.json, pnpm-lock.yaml and the runtime lock; All six GitHub Actions updates are applied and the workflow contract spec pins the new commit SHAs; Dependabot ignores @sentry/node semver-major updates with a pointer to pm-jy61mz; Full CI, quality:static, the package-artifact gate and the Sentry instrumentation specs pass; Dependabot PRs 1737, 1738 and 1739 are closed as superseded with a link to the adopting PR"
 parent: pm-u9d0
 risk: medium
 confidence: high
-expected_result: All three dependency updates land through one green PR with no behavior change
-actual_result: "Two of the three Dependabot PRs are red: workflow SHA pins, and Sentry 11's removed enableLogs plus its native-binding runtime closure"
+resolution: "knip 6.44.2, marked 18.1.3 and @sentry/node 10.78.0 in package.json, the lockfile and the runtime lock; six GitHub Actions patch releases applied, with the workflow contract SHA pins moved; Dependabot ignores @sentry/node majors until pm-jy61mz; Dependabot PRs 1737-1739 closed as superseded"
+expected_result: "All matured updates land through one reviewed PR without behavior change, and the major is held with a documented reason"
+actual_result: "quality:static, package-artifact, retrieval-eval and 185/185 Sentry/telemetry/contract specs pass on the branch; the Sentry 11 trial failed package-artifact and the stderr contract, so 10.78.0 was adopted"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-2h8ohq,related,"2026-11-16T14:55:36.707Z","harness:claude-code","cli:create:dep",detected
   pm-4dz7,related,"2026-11-16T14:55:47.551Z","harness:claude-code","cli:update:dep",detected
   pm-98f0ec,related,"2026-11-16T14:55:47.551Z","harness:claude-code","cli:update:dep",detected
   pm-jy61mz,related,"2026-11-16T15:09:21.864Z","harness:claude-code","cli:update:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-16T15:09:44.719Z","harness:claude-code","Trial of @sentry/node 11.11.0 on this branch: the build passed after dropping enableLogs. tests/integration/telemetry/extension-error-provenance.spec.ts then failed because Sentry 11 printed a stderr warning (beforeSendTransaction and ignoreTransactions are ignored under traceLifecycle stream), and quality:package-artifact failed with Missing tested runtime package: @oxc-parser/binding-android-arm-eabi. The runtime closure had grown to 88 packages through @sentry/bundler-plugins and oxc-parser. Reverted to the 10.x line at 10.78.0: the closure is 42 packages, package-artifact is ok, and 185/185 Sentry, telemetry and workflow-contract specs pass. The Sentry 11 adoption is pm-jy61mz."
+  "2026-11-16T15:21:57.061Z","harness:claude-code","Delivered in PR 1742. Dependabot PRs 1737, 1738 and 1739 are closed as superseded, each with one comment linking PR 1742 and this item; 1739's comment explains the held major and links pm-jy61mz."
 files[6]{path,scope,note}:
   .github/dependabot.yml,project,Sentry major ignore
   .github/workflows/ci.yml,project,action bumps
@@ -33,4 +35,5 @@ files[6]{path,scope,note}:
   tests/integration/ci-workflow-contract.spec.ts,project,action SHA pins
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test tests/unit/core/sentry tests/integration/ci-workflow-contract.spec.ts tests/integration/telemetry,project,900,"harness:claude-code","2026-11-16T15:09:42.469Z",local_mutation,chore/adopt-dependency-updates-2026-11-16
+close_reason: Adopted the matured 2026-11-16 dependency updates; the Sentry 11 major is held behind pm-jy61mz
 body: ""
