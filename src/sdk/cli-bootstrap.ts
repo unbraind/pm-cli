@@ -688,6 +688,11 @@ function parseBareKeyValueToken(
   if (value.length === 0) {
     return null;
   }
+  // The shell already grouped a whitespace-bearing token, so "Docs: adopt X" is
+  // text such as a title; only unquoted-shape `key:value` tokens are shorthand (GH-1741).
+  if (match[2] === ":" && /\s/u.test(token)) {
+    return null;
+  }
   return {
     key,
     value,

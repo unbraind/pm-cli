@@ -1,4 +1,6 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { renderPmCommand } from "../../../src/sdk/command-line.js";
+import { currentInvocationPromotions, recordInvocationPromotions } from "../../../src/cli/runtime/invocation-rewrites.js";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { Command } from "commander";
@@ -2101,6 +2103,32 @@ describe("mutation command actions", () => {
       "looks like an item type",
     );
     expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
+  });
+
+  it("names a promoted title token and retries with --title instead of the attempted command (GH-1741)", async () => {
+    recordInvocationPromotions([]);
+    const generic = await runCli("create", "Epic").catch((error: unknown) => error) as PmCliError;
+    expect(generic.message.length).toBeLessThanOrEqual(120);
+    // The retry keeps the invocation's tracker scope.
+    expect(generic.context.nextSteps).toEqual([`Pass the title as an option: ${renderPmCommand(["create", "Epic", "--title", "<title>", "--pm-path", tmpRoot])}`]);
+    expect(generic.context.examples?.[0]).toBe('pm create Epic --title "Wire up SSO for the agent harness"');
+
+    // The bootstrap normalizer promoted docs:README to --doc before Commander parsed the command.
+    recordInvocationPromotions([
+      { from: "docs:README", to: ["--doc", "README"], reason: "bare_key_value" },
+      { from: "--statu", to: ["--status"], reason: "flag_typo" },
+    ]);
+    try {
+      const named = await runCli("create", "issue", "--doc", "README").catch((error: unknown) => error) as PmCliError;
+      // The rewrite note sits on its own line, so the first line (the problem title) stays complete.
+      const [firstLine, noteLine] = named.message.split("\n");
+      expect(firstLine!.length).toBeLessThanOrEqual(120);
+      expect(noteLine).toBe('The CLI read "docs:README" as --doc; pass --title to keep text as the title.');
+      expect(named.context.nextSteps).toEqual([`Keep "docs:README" as the title: ${renderPmCommand(["create", "issue", "--title", "docs:README", "--pm-path", tmpRoot])}`]);
+    } finally {
+      recordInvocationPromotions([]);
+    }
+    expect(currentInvocationPromotions()).toEqual([]);
   });
 
   it("maps copy, update, and append option surfaces", async () => {
