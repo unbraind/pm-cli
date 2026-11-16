@@ -1,4 +1,5 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { renderPmCommand } from "../../../src/sdk/command-line.js";
 import { currentInvocationPromotions, recordInvocationPromotions } from "../../../src/cli/runtime/invocation-rewrites.js";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -2109,7 +2110,7 @@ describe("mutation command actions", () => {
     const generic = await runCli("create", "Epic").catch((error: unknown) => error) as PmCliError;
     expect(generic.message.length).toBeLessThanOrEqual(120);
     // The retry keeps the invocation's tracker scope.
-    expect(generic.context.nextSteps).toEqual([`Pass the title as an option: pm create Epic --title "<title>" --pm-path ${tmpRoot}`]);
+    expect(generic.context.nextSteps).toEqual([`Pass the title as an option: ${renderPmCommand(["create", "Epic", "--title", "<title>", "--pm-path", tmpRoot])}`]);
     expect(generic.context.examples?.[0]).toBe('pm create Epic --title "Wire up SSO for the agent harness"');
 
     // The bootstrap normalizer promoted docs:README to --doc before Commander parsed the command.
@@ -2123,7 +2124,7 @@ describe("mutation command actions", () => {
       const [firstLine, noteLine] = named.message.split("\n");
       expect(firstLine!.length).toBeLessThanOrEqual(120);
       expect(noteLine).toBe('The CLI read "docs:README" as --doc; pass --title to keep text as the title.');
-      expect(named.context.nextSteps).toEqual([`Keep "docs:README" as the title: pm create issue --title docs:README --pm-path ${tmpRoot}`]);
+      expect(named.context.nextSteps).toEqual([`Keep "docs:README" as the title: ${renderPmCommand(["create", "issue", "--title", "docs:README", "--pm-path", tmpRoot])}`]);
     } finally {
       recordInvocationPromotions([]);
     }

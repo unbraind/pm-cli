@@ -1,4 +1,5 @@
 import path from "node:path";
+import { renderPmCommand } from "../../src/sdk/command-line.js";
 import { describe, expect, it } from "vitest";
 import { writeTestExtension } from "../helpers/extensions.js";
 import {
@@ -577,16 +578,15 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         expect(created.code, created.stderr).toBe(0);
         expect((created.json as { item: { title: string; type: string } }).item).toMatchObject({ title: `${prefix}: adopt X`, type: "Issue" });
       }
-      const refused = context.runCli(["create", "issue", "Docs:README", "--json"]);
+      // An explicit tracker keeps its spelling, so the expected retry is built with the CLI's own quoting.
+      const refused = context.runCli(["create", "issue", "Docs:README", "--pm-path", context.pmPath, "--json"]);
       expect(refused.code).toBe(2);
       const envelope = parseJsonErrorEnvelope(refused.stderr);
       expect(envelope.code).toBe("create_positional_type_without_title");
       expect(envelope.detail).toContain('The CLI read "Docs:README" as --doc');
       expect(envelope.title).not.toContain("...");
-      // The retry targets the same tracker the refused invocation used (rendered relative to the working directory).
-      expect(envelope.next_steps).toHaveLength(1);
-      expect(envelope.next_steps![0]).toMatch(/^Keep "Docs:README" as the title: pm create issue --title Docs:README --pm-path \S+$/u);
-      expect(envelope.next_steps![0]!.endsWith(`${path.basename(path.dirname(path.dirname(context.pmPath)))}/.agents/pm`)).toBe(true);
+      // The retry targets the same tracker the refused invocation used.
+      expect(envelope.next_steps).toEqual([`Keep "Docs:README" as the title: ${renderPmCommand(["create", "issue", "--title", "Docs:README", "--pm-path", context.pmPath])}`]);
     });
   });
 
