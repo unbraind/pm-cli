@@ -1222,14 +1222,16 @@ export async function runRegisteredMutationGuardForTest(
   if ((hooks.beforeMutation?.length ?? 0) === 0) {
     throw new Error("Expected a registered before_mutation hook to invoke");
   }
-  const { actor, author, dry_run: dryRun, ...context } = options.context;
+  const { actor, author, dry_run: dryRun, compensation, ...context } = options.context;
   const { resolveMutationActor } = await import("../core/extensions/mutation-actor.js");
   const overrides = await runBeforeMutationHooks(hooks, {
     ...context,
     actor: actor ?? resolveMutationActor(author ?? "unknown"),
     dry_run: dryRun === true,
+    // A host never exempts a dry run, so a dry-run rollback context still fails closed.
+    ...(compensation === undefined || dryRun === true ? {} : { compensation }),
   });
-  return context.compensation === undefined ? undefined : overrides;
+  return compensation === undefined ? undefined : overrides;
 }
 
 /**

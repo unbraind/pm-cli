@@ -20,6 +20,7 @@ import { EXIT_CODE, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS, SETTINGS_FILENAME } 
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { runWithItemMutationPrecondition, type OwnedTransactionCompensation } from "../core/store/item-mutation-precondition.js";
+import { isCoordinatorCompensating } from "../core/store/transaction-coordinator-scope.js";
 import { hashDocument, hashHistoryStream } from "../core/history/history.js";
 import { historyVersionOffset } from "../core/history/version-address.js";
 import { isConfigurationOnlySettingsRead, readSettings } from "../core/store/settings.js";
@@ -542,6 +543,8 @@ async function compensateByRestore(
   if (current === undefined) return;
   const history = await readHistoryEntries(path.join(config.pmRoot, "history", `${current.id}.jsonl`), current.id);
   const expectedHistory = receipt.target_history_hash;
+  // Only a receipt bound to the immutable history prefix proves what the restore undoes (pm-wb6ktl).
+  const journalBound = typeof expectedHistory === "string";
   if (typeof expectedHistory === "string") {
     if (!hasOwnedCompensationEffects(history, { expectedHistory, length: receipt.target_history_length, version: receipt.target_version }, { ...config, itemId: current.id, stepId })) return;
   } else {
@@ -561,12 +564,24 @@ async function compensateByRestore(
   // Ownership is proven, so guards and workflow policies judge this rollback without being able to wedge it (pm-wb6ktl).
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: current.id, validate: (document) => {
     if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, current.id, stepId);
-  }, compensation: ownedCompensation(config.transactionId, stepId, "restore") }, applyRestore);
+  }, compensation: ownedCompensation(config, stepId, "restore", journalBound) }, applyRestore);
 }
 
-/** The rollback scope the coordinator opens once history proves a step's effects are its own. */
-function ownedCompensation(transactionId: string, stepId: string, operation: "close" | "delete" | "restore"): OwnedTransactionCompensation {
-  return { transaction_id: transactionId, step_id: stepId, operations: [operation], overrides: [] };
+/**
+ * The rollback scope opened once history proves a step's effects are its own.
+ * It is granted only while the coordinator itself compensates this step, and
+ * only for proof bound to immutable history; a direct helper call, or a legacy
+ * receipt identified by a free-form message alone, keeps normal guard and
+ * policy enforcement (pm-wb6ktl).
+ */
+function ownedCompensation(
+  config: { pmRoot: string; transactionId: string },
+  stepId: string,
+  operation: "close" | "delete" | "restore",
+  historyBound: boolean,
+): OwnedTransactionCompensation | undefined {
+  if (!historyBound || !isCoordinatorCompensating(config.pmRoot, config.transactionId, stepId)) return undefined;
+  return { transaction_id: config.transactionId, step_id: stepId, operations: [operation], overrides: [] };
 }
 
 /** Build the workspace-transaction step for one item creation. */
@@ -642,7 +657,7 @@ async function compensateCreatedItem(config: BulkMutationStepConfig, id: string,
   if (latestMarker === undefined || !history.every(entry => isTransactionHistoryEntry(entry, config.transactionId))) throw partialMutationError(config, snapshot.id, stepId);
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: snapshot.id, validate: document => {
     if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, snapshot.id, stepId);
-  }, compensation: ownedCompensation(config.transactionId, stepId, config.createCompensation === "delete" ? "delete" : "close") }, async () => {
+  }, compensation: ownedCompensation(config, stepId, config.createCompensation === "delete" ? "delete" : "close", true) }, async () => {
     const options = { force: true, author: config.author, message: compensationMarker };
     if (config.createCompensation === "delete") await deleteItem(id, options, { pmRoot: config.pmRoot });
     // A rollback close completes no work, so close validation (evidence, deferred fields) must not refuse it (GH-1713).

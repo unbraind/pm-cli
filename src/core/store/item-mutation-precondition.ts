@@ -45,6 +45,8 @@ export interface OwnedTransactionCompensation {
   operations: readonly string[];
   /** Refusals recorded while the rollback ran; filled by the guard and policy evaluators. */
   overrides: CompensationOverride[];
+  /** Set once the ownership validator passed against the locked item whose storage id is the scoped id. */
+  validated_storage_id?: string;
 }
 
 const preconditions = new AsyncLocalStorage<readonly ItemMutationPrecondition[]>();
@@ -398,7 +400,11 @@ function trackRefusal(pmRoot: string, error: PmCliError): PmCliError {
  */
 export function assertItemMutationPreconditions(pmRoot: string, document: ItemDocument, targetId: string = document.metadata.id): void {
   assertItemRevisionExpectations(pmRoot, document, targetId);
-  for (const condition of conditionsFor(pmRoot, [targetId, document.metadata.id])) condition.validate(document);
+  for (const condition of conditionsFor(pmRoot, [targetId, document.metadata.id])) {
+    condition.validate(document);
+    // The exemption binds to the locked storage identity the ownership proof just held for (pm-wb6ktl).
+    if (condition.compensation !== undefined && targetId === condition.id) condition.compensation.validated_storage_id = targetId;
+  }
 }
 
 /** Scoped transaction guards bound to either identity of the locked item (probe spelling or embedded id). */
@@ -427,13 +433,18 @@ export function advanceItemMutationPreconditions(pmRoot: string, document: ItemD
 }
 
 /**
- * The journal-proven rollback scoped to this write, if any: it must name this
- * tracker, either identity of the locked item and this operation, so a write to
- * another item, or another operation, inside the same scope is judged as an
- * ordinary mutation (pm-wb6ktl).
+ * The journal-proven rollback scoped to this write, if any. Every identity the
+ * write carries (its stored and proposed ids) must be the scoped id, the
+ * operation must be the rollback's, and the ownership validator must already
+ * have held against the locked item stored under that id. A write to another
+ * item, one that proposes the scoped id for another item, or another operation
+ * inside the same scope is judged as an ordinary mutation (pm-wb6ktl).
  */
 export function ownedTransactionCompensation(pmRoot: string, ids: readonly unknown[], operation: string): OwnedTransactionCompensation | undefined {
-  return conditionsFor(pmRoot, ids).find((condition) => condition.compensation?.operations.includes(operation) === true)?.compensation;
+  const identities = ids.filter((id) => id !== undefined);
+  if (identities.some((id) => id !== identities[0])) return undefined;
+  return conditionsFor(pmRoot, [identities[0]]).find((condition) =>
+    condition.compensation?.operations.includes(operation) === true && condition.compensation.validated_storage_id === condition.id)?.compensation;
 }
 
 /** History attribution for a rollback that overrode a refusal; empty when nothing was overridden. */

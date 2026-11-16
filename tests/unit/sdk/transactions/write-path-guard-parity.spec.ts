@@ -11,6 +11,7 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { describe, expect, it } from "vitest";
 import { PmClient } from "../../../../src/sdk/runtime.js";
+import { _testOnlyItemTransaction } from "../../../../src/sdk/item-transaction.js";
 import { commitImportedItem, runWithActiveExtensions } from "../../../../src/sdk/index.js";
 import { activateExtensionForTest, createExtensionTestHarness, runRegisteredMutationGuardForTest } from "../../../../src/sdk/testing.js";
 import { runWorkflowPolicyAction } from "../../../../src/sdk/governance/workflow-policy.js";
@@ -243,6 +244,65 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
     });
   });
 
+  it("grants no exemption to a compensation helper called outside the coordinator", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch" });
+      const created = await client.create({ id: "pm-forged", title: "Original title", type: "Task" });
+      // A caller allowed to update forges the step marker, then calls the exported helper directly.
+      await client.update("pm-forged", { title: "Forged update", message: "bulk-item-transaction forged step-1 apply" });
+      const config = { pmRoot: context.pmPath, author: "agent-batch", transactionId: "forged" };
+      await expect(runWithActiveExtensions({ path: context.pmPath }, () =>
+        _testOnlyItemTransaction.compensateByRestore(config, "pm-forged", "step-1", { target_updated_at: created.item.updated_at as string }),
+      )).rejects.toMatchObject({ code: "restore_denied" });
+
+      // A history-bound create step proven to be the transaction's own is still enforced outside the coordinator.
+      const committed = await client.commitItemMutations({ transactionId: "tx-own", mutations: [{ op: "create", id: "pm-own", options: { title: "Own", type: "Task" } }] });
+      expect(committed.status).toBe("committed");
+      const marker = (await readHistoryEntries(path.join(context.pmPath, "history", "pm-own.jsonl"), "pm-own"))[0]!.message!;
+      const stepId = marker.split(" ")[2]!;
+      const step = _testOnlyItemTransaction.buildCreateStep(
+        { ...config, transactionId: "tx-own", createCompensation: "close", uniqueIndex: undefined as never },
+        { op: "create", id: "pm-own", options: { title: "Own", type: "Task" } },
+        stepId,
+      );
+      await expect(runWithActiveExtensions({ path: context.pmPath }, () => step.compensate())).rejects.toMatchObject({ code: "close_denied" });
+      await expect(client.get("pm-own")).resolves.toMatchObject({ item: { status: "open" } });
+      await expect(client.get("pm-forged")).resolves.toMatchObject({ item: { title: "Forged update" } });
+    });
+  });
+
+  it("binds the exemption to the validated storage identity, never to a proposed id", async () => {
+    await withTempPmPath(async (context) => {
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch", noExtensions: true });
+      const owned = (await client.create({ id: "pm-scope-a", title: "Scoped A", type: "Task" })).item;
+      const other = (await client.create({ id: "pm-scope-b", title: "Other B", type: "Task" })).item;
+      const denying = createEmptyExtensionHookRegistry();
+      denying.beforeMutation = [{ layer: "project", name: "identity-check", run: () => ({ allow: false, code: "identity_denied", remediation: "Never." }) }];
+      const judge = (before: typeof owned, afterId: string) => runActiveBeforeMutationHooks({
+        pm_root: context.pmPath, operation: "close", before: { metadata: before, body: "" }, after: { metadata: { ...before, id: afterId, status: "closed" }, body: "" },
+        changed_fields: ["status"], author: "agent-batch", sdk: { get: async () => null, list: async () => [] },
+      });
+      const unvalidated = { transaction_id: "scoped", step_id: "step", operations: ["close"], overrides: [] };
+      const validated = { ...unvalidated, overrides: [], validated_storage_id: "pm-scope-a" };
+      setActiveExtensionHooks(denying);
+      try {
+        // Without a passed ownership proof for the locked item, the scope grants nothing.
+        await expect(runWithItemMutationPrecondition({ pmRoot: context.pmPath, id: "pm-scope-a", validate: () => {}, compensation: unvalidated },
+          () => judge(owned, "pm-scope-a"))).rejects.toMatchObject({ code: "identity_denied" });
+        // A write to B that proposes A's id cannot borrow A's validated rollback.
+        await expect(runWithItemMutationPrecondition({ pmRoot: context.pmPath, id: "pm-scope-a", validate: () => {}, compensation: validated },
+          () => judge(other, "pm-scope-a"))).rejects.toMatchObject({ code: "identity_denied" });
+        expect(validated.overrides).toEqual([]);
+        // The validated write to A itself is the rollback, and its denial is recorded.
+        await runWithItemMutationPrecondition({ pmRoot: context.pmPath, id: "pm-scope-a", validate: () => {}, compensation: validated }, () => judge(owned, "pm-scope-a"));
+        expect(validated.overrides).toEqual([{ source: "mutation_guard", guard: "project:identity-check", code: "identity_denied" }]);
+      } finally {
+        setActiveExtensionHooks(null);
+      }
+    });
+  });
+
   it("lets a package test observe a guard's rollback branch through runRegisteredMutationGuardForTest", async () => {
     const seen: unknown[] = [];
     const guardModule = {
@@ -267,6 +327,10 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
     await expect(allowing.runMutationGuard({ context: base })).resolves.toBeUndefined();
     await expect(allowing.runMutationGuard({ context: { ...base, compensation: { transaction_id: "t", step_id: "s" } } })).resolves.toEqual([]);
     expect(seen).toEqual([null, { transaction_id: "t", step_id: "s" }, { transaction_id: "t", step_id: "s" }]);
+    // As on a host, a dry run is never exempted: the guard sees no compensation and its denial refuses.
+    await expect(runRegisteredMutationGuardForTest(activation.hooks, { context: { ...base, dry_run: true, compensation: { transaction_id: "t", step_id: "s" } } }))
+      .rejects.toMatchObject({ code: "always_denied" });
+    expect(seen.at(-1)).toBeNull();
     // A guard that throws its own code-less typed error during a rollback is recorded as a guard failure.
     const codeless = await createExtensionTestHarness({ activate(api: ExtensionApi) { api.hooks.beforeMutation(() => { throw new PmCliError("Guard storage unavailable", 4); }); } }, { capabilities: ["hooks"] });
     await expect(codeless.runMutationGuard({ context: base })).rejects.toThrow("Guard storage unavailable");
