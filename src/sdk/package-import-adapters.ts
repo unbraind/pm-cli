@@ -17,7 +17,7 @@ import {
   appendHistoryEntry,
   createHistoryEntry,
 } from "../core/history/history.js";
-import { acquireLock } from "../core/lock/lock.js";
+import { acquireLockLease, type LockLease } from "../core/lock/lock.js";
 import { enforceWorkflowMutation } from "../core/policy/workflow-policy-store.js";
 import { parseTags } from "../core/item/parse.js";
 import { normalizeStatusInput } from "../core/item/status.js";
@@ -29,7 +29,7 @@ import {
   writeFileAtomic,
 } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations, runActiveBeforeMutationHooks, runActiveOnWriteHooks } from "../core/extensions/index.js";
-import { createMutationGuardSdk } from "../core/store/item-store.js";
+import { createMutationGuardSdk, locateItem } from "../core/store/item-store.js";
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -608,7 +608,20 @@ function importedChangedFields(document: ItemDocument): string[] {
   return [...fields, ...(document.body.length > 0 ? ["body"] : [])].sort();
 }
 
-/** Performs the shared item write/commit sequence: acquire the per-item lock, atomically write the TOON document, append the import history entry, and run on-write hooks. On a lock CONFLICT it returns a `conflictWarning` (using the caller-supplied prefix) instead of throwing; any other error removes the partially written file and rethrows. */
+/**
+ * Performs the shared item write/commit sequence: acquire the per-item lock as a
+ * lease, judge the import with workflow policies and mutation guards, then
+ * atomically write the TOON document and append the import history entry inside
+ * the lease's fence, and run on-write hooks. A held lock, or an item a
+ * concurrent writer committed under the lock after the caller's existence
+ * check, returns a `conflictWarning` (using the caller-supplied prefix) instead
+ * of throwing. With pm's native file locks, a lease lost while the policies or
+ * guards ran (a TTL takeover) refuses with `lock_lost` and writes nothing, so
+ * it never overwrites the writer that took the lock over (pm-0m64xk). An
+ * extension that handles `lock_acquire` owns its lock lifecycle: its leases
+ * commit unfenced, so it must supply its own stale-writer protection. Any
+ * other error removes the partially written file and rethrows.
+ */
 export async function commitImportedItem(
   params: CommitImportedItemParams,
 ): Promise<CommitImportedItemResult> {
@@ -622,9 +635,9 @@ export async function commitImportedItem(
   const document = canonicalDocument(stamped);
   const historyPath = getHistoryPath(pmRoot, id);
   const beforeDocument = emptyImportedDocument();
-  let releaseLock: () => Promise<void>;
+  let lease: LockLease;
   try {
-    releaseLock = await acquireLock(
+    lease = await acquireLockLease(
       pmRoot,
       id,
       settings.locks.ttl_seconds,
@@ -645,6 +658,11 @@ export async function commitImportedItem(
     throw error;
   }
   try {
+    const typeToFolder = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder;
+    // The caller's existence check ran before the lock: a concurrent importer that committed this id first wins.
+    if (await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder)) {
+      return { committed: false, conflictWarning: `${conflictWarningPrefix}:${id}` };
+    }
     const workflowPolicy = await enforceWorkflowMutation({
       pmRoot, settings, operation: "import", author, before: null, after: document,
     });
@@ -656,56 +674,55 @@ export async function commitImportedItem(
       after: document,
       changed_fields: importedChangedFields(document),
       author,
-      sdk: createMutationGuardSdk({
-        pmRoot,
-        settings,
-        typeToFolder: resolveItemTypeRegistry(settings, getActiveExtensionRegistrations()).type_to_folder,
-      }),
+      sdk: createMutationGuardSdk({ pmRoot, settings, typeToFolder }),
     });
-    await writeFileAtomic(
-      itemPath,
-      serializeItemDocument(document, { format: "toon" }),
-    );
-    try {
-      const entry = createHistoryEntry({
-        nowIso: nowIso(),
-        author,
+    // Policies and guards may outlast the lock TTL; commit only while this lease still owns the lock.
+    await lease.fence(async () => {
+      await writeFileAtomic(
+        itemPath,
+        serializeItemDocument(document, { format: "toon" }),
+      );
+      try {
+        const entry = createHistoryEntry({
+          nowIso: nowIso(),
+          author,
+          op: "import",
+          before: beforeDocument,
+          after: document,
+          message,
+          context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
+        });
+        await appendHistoryEntry(historyPath, entry);
+      } catch (error: unknown) {
+        await removeFileIfExists(itemPath);
+        throw error;
+      }
+    });
+    const writeWarnings = [
+      ...workflowPolicy.warnings,
+      ...(await runActiveOnWriteHooks({
+        path: itemPath,
+        scope: "project",
         op: "import",
+        item_id: document.metadata.id,
+        item_type: document.metadata.type,
         before: beforeDocument,
         after: document,
-        message,
-        context: workflowPolicy.decisions.length === 0 ? undefined : { workflow_policies: workflowPolicy.decisions },
-      });
-      await appendHistoryEntry(historyPath, entry);
-      const writeWarnings = [
-        ...workflowPolicy.warnings,
-        ...(await runActiveOnWriteHooks({
-          path: itemPath,
-          scope: "project",
-          op: "import",
-          item_id: document.metadata.id,
-          item_type: document.metadata.type,
-          before: beforeDocument,
-          after: document,
-          changed_fields: ["imported"],
-        })),
-        ...(await runActiveOnWriteHooks({
-          path: historyPath,
-          scope: "project",
-          op: "import:history",
-          item_id: document.metadata.id,
-          item_type: document.metadata.type,
-          before: beforeDocument,
-          after: document,
-          changed_fields: ["imported"],
-        })),
-      ];
-      return { committed: true, writeWarnings };
-    } catch (error: unknown) {
-      await removeFileIfExists(itemPath);
-      throw error;
-    }
+        changed_fields: ["imported"],
+      })),
+      ...(await runActiveOnWriteHooks({
+        path: historyPath,
+        scope: "project",
+        op: "import:history",
+        item_id: document.metadata.id,
+        item_type: document.metadata.type,
+        before: beforeDocument,
+        after: document,
+        changed_fields: ["imported"],
+      })),
+    ];
+    return { committed: true, writeWarnings };
   } finally {
-    await releaseLock();
+    await lease.release();
   }
 }

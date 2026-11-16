@@ -2160,7 +2160,36 @@ api.hooks.beforeMutation(({ operation, before, actor }) => {
 
 Hosts never supply a placeholder: an unattributed write reports
 `author: "unknown"` with `author_source: "unknown"`. `runRegisteredMutationGuardForTest`
-resolves an omitted test `actor` from the context's `author` the same way. Preview cost is proportional to the tracker data
+resolves an omitted test `actor` from the context's `author` the same way.
+
+#### Transaction rollbacks
+
+A guard that denies `close`, `delete` or `restore` must not wedge a refused
+batch half-applied (pm-wb6ktl). When a later step of `commitItemMutations` is
+refused, the coordinator compensates the steps it applied. It closes or deletes
+the items it created and restores the items it updated. The exemption needs
+three proofs. The coordinator itself must be compensating that step, and the
+step must be one the SDK built from the batch plan for that item and operation,
+never a step a caller supplied to `commitWorkspaceTransaction`. The item's immutable history must prove the effects are the step's own:
+a create whose whole history belongs to the transaction, or a restore receipt
+bound to the history prefix the journal captured. Finally, the ownership check
+must have held against the locked item stored under that id. Only that write
+carries `compensation: { transaction_id, step_id }` in the guard context, which
+the host builds from an allowlist, so a caller cannot supply the field.
+Guards still judge it. A denial, a thrown error or a timeout is recorded instead
+of refusing the rollback, and so is an unsatisfied workflow-policy refusal. The
+rollback's history entry lists each one under
+`context.transaction_compensation.overridden`, for example
+`{ source: "mutation_guard", guard: "project:claimant-close", code: "close_requires_claimant" }`.
+The batch then reports the original refusal. All of the following are judged
+normally: a write to another item, a write that proposes the scoped id for a
+different stored item, another operation, an ordinary close that reuses the
+compensation history message, a direct call of a compensation helper, a
+caller-supplied coordinator step that calls one, and a legacy receipt identified
+by its message alone. Pass `compensation` to `runRegisteredMutationGuardForTest` (or
+`harness.runMutationGuard`) to exercise a guard's rollback branch: it then
+resolves the recorded overrides instead of refusing, while an ordinary context
+still resolves `undefined`. As on a host, a dry-run context is never exempted. Preview cost is proportional to the tracker data
 staged, rather than unrelated root-layout project content.
 
 `itemDocumentToMutationOptions` is the companion full-document adapter. It
@@ -4269,8 +4298,16 @@ deferrals as curation work, and strict close refuses the item with
 `close_validation_deferred_fields` until every deferred field has a value.
 Package import adapters (`commitImportedItem`) now run the tracker's
 `beforeMutation` guards as operation `import`, with the importer's actor. A
-guard denial propagates as a refusal; only a held item lock returns the
-skippable `conflictWarning`.
+guard denial propagates as a refusal. Only a held item lock, or an id that a
+concurrent importer committed under the lock after the caller's own existence
+check, returns the skippable `conflictWarning`. The adapter holds its lock as a
+lease and fences the item write and history append with it (pm-0m64xk). With
+pm's native file locks, if policies or guards outlast `locks.ttl_seconds` and
+another writer takes the lock over, the import refuses with `lock_lost` and
+writes nothing, so the other writer's item is never overwritten. `create` and
+`pm copy` fence their writes the same way. An extension that handles
+`lock_acquire` owns its lock lifecycle: its leases commit unfenced, so it must
+supply its own stale-writer protection.
 
 By default the auto-created command only has a handler. Pass an optional third
 `ImportExportRegistrationOptions` argument to make it a first-class command with a

@@ -2,11 +2,13 @@ id: pm-womkyw
 title: "pm copy writes a new item without evaluating workflow policies, while create, update, delete, restore and imports all run enforceWorkflowMutation"
 description: "Found while implementing pm-gh1719 (2026-11-14). Every item writer runs enforceWorkflowMutation before persistence and records its decisions in the history entry context (workflow_policies): create, the item-store mutate and delete paths, restore, and the package import adapter. runCopy in src/sdk/lifecycle/copy.ts writes the copied item and its op create history entry without it, so a workflow policy that refuses or annotates creation (for example a per-type creation rule or a required-field policy) is bypassed by copying an existing item, and the copy's history carries no workflow_policies decisions. pm-gh1719 added the missing beforeMutation guard call to copy but left workflow policy enforcement unchanged to keep that change scoped. Proposal: call enforceWorkflowMutation in runCopy with operation create, before null and after the copied document, and record its decisions in the history context exactly as create does. Duplicate check: searched copy workflow policy enforce bypass; pm-mj42og (closed) delivered the policy engine without naming copy."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: "area:sdk",copy,governance,workflow-policy
 created_at: "2026-11-14T04:31:19.556Z"
-updated_at: "2026-11-14T04:31:19.556Z"
+updated_at: "2026-11-16T05:30:42.590Z"
+closed_at: "2026-11-16T05:30:38.829Z"
+completed_at: "2026-11-16T05:30:38.829Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: pm copy evaluates the workspace workflow policies with operation create and refuses a copy that create would refuse; The copy's history entry records the workflow_policies decisions like a create; A spec proves a refusing policy blocks both create and copy
@@ -14,9 +16,28 @@ parent: pm-33cw
 risk: low
 confidence: high
 severity: low
-expected_result: Copy is judged by the same workflow policies as create
-actual_result: Copy bypasses workflow policies entirely
+resolution: "runCopy calls enforceWorkflowMutation with operation create before the guards, records workflow_policies in the copy's create history entry and returns policy warnings"
+expected_result: "A copy that create would refuse is refused, and an accepted copy records its policy decisions"
+actual_result: "Verified by write-path-guard-parity.spec.ts: an authors-only create policy refuses both create and copy by another agent with workflow_policy_refused and writes nothing; the allowed copy records the satisfied decision; fails on unmodified main"
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1719,discovered_from,"2026-11-14T04:31:19.556Z","harness:claude-code","cli:create:dep",detected
   pm-mj42og,related,"2026-11-14T04:31:19.556Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-16T03:33:30.234Z","harness:claude-code","Implementation note (2026-11-16): runCopy now calls enforceWorkflowMutation with operation create, before:null and the copied document, before the GH-1719 guards, records workflow_policies in the copy's create history entry, and returns the policy warnings. Spec: an authors-only create policy in refuse mode refuses both create and copy by another agent (workflow_policy_refused, policy_violations creators/authors), writes nothing, and an allowed copy records the satisfied decision. Fails on unmodified main (copy was admitted)."
+files[2]{path,scope,note}:
+  src/sdk/lifecycle/copy.ts,project,copy enforces workflow policies as create
+  tests/unit/sdk/transactions/write-path-guard-parity.spec.ts,project,regression spec
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/sdk/transactions/write-path-guard-parity.spec.ts,project,300,"harness:claude-code","2026-11-16T03:33:11.974Z",local_mutation,fix/write-path-guard-parity
+docs[1]{path,scope,note}:
+  docs/WORKFLOW_POLICIES.md,project,copy judged as create
+close_reason: pm copy is judged by workflow policies exactly like create
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-womkyw
+  gate_id: copy-workflow-policy-parity
+  negative_control: node scripts/run-tests.mjs test tests/unit/sdk/transactions/write-path-guard-parity.spec.ts (on unmodified main the copy by a non-allowed author is admitted)
+  local_checks[2]: node scripts/run-tests.mjs test tests/unit/sdk/transactions/write-path-guard-parity.spec.ts,node scripts/run-tests.mjs test tests/integration/copy-command.spec.ts tests/unit/sdk/policy/workflow-policy-runtime.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

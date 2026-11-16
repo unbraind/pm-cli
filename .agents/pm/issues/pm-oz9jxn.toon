@@ -1,0 +1,22 @@
+id: pm-oz9jxn
+title: "The SDK surface gate classifies every signature text change as breaking, so an optional field added to a host-built context needs the same acknowledgement as a removed export"
+description: "Found while landing pm-wb6ktl (2026-11-16). scripts/sdk-surface-snapshot.mjs compares each exported symbol's printed signature text, and any difference is reported as breaking. Adding an optional, host-set field to BeforeMutationHookContext was reported as breaking. The gate gives no reason, so a reviewer cannot tell whether the change breaks only keyof-derived consumers (it does) or nothing at all, and every textual change needs the same recorded acknowledgement as a removed export. The gate's own acceptance criteria (pm-e6tm5c) classify changes as additive, compatible or breaking, but no signature change is ever classed as compatible. As a result, breaking_acknowledgements mix real breaks with changes no consumer can observe, which hides the breaks reviewers and release notes must see. Reviews of PR 1740 showed that hand-written variance rules cannot fix this, because each rule has a counterexample: Promise<void> widened to a value-bearing promise; a plain void return changed to a value, which breaks `const result: void = f()`; an optional property that conflicts with a same-named, differently typed property a caller value already carries; an optional property that changes keyof-derived types such as Record<keyof Context, string>; and a callback parameter made optional, which breaks implementations that require it under strict function types. Proposal: classify by proof, not by rule. A change is compatible only when the classifier proves that every consumer program in a declared corpus still type-checks after the change, for example by compiling generated consumer probes (assignment, implementation, keyof and return-use positions) against both declaration sets. Anything it cannot prove stays breaking, with the failing probe recorded as the reason. Duplicate check: searched sdk surface snapshot breaking signature optional property additive. pm-e6tm5c (closed) delivered the gate; no open item covers classification precision."
+type: Issue
+status: open
+priority: 3
+tags[5]: "area:sdk",contracts,developer-experience,release-notes,sdk-surface
+created_at: "2026-11-16T04:20:04.606Z"
+updated_at: "2026-11-16T09:11:32.714Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: "A signature change is classified compatible only when generated consumer probes that compile against the old declarations also compile against the new ones; otherwise it is breaking; The probe generator declares its coverage (assignment, implementation, keyof, return-use, and conditional or derived types over parameters and return values such as Exclude<ReturnType<typeof f>, \"x\">); a change that reaches any type position outside the declared coverage is classified breaking; Each breaking classification records the failing probe or the uncovered position as its reason, and each compatible one records the probes it passed; The spec corpus includes every PR 1740 counterexample as a negative control: Promise<void> widening, void-to-value return, a conflicting optional property, a keyof-derived consumer, a callback parameter made optional, and a return narrowing observed through a derived type; The PR 1740 BeforeMutationHookContext change is a corpus example whose class the probes decide; its keyof probe fails, so it stays breaking with that probe as the reason"
+parent: pm-ugqx
+risk: low
+confidence: medium
+severity: low
+expected_result: Only caller-visible incompatibilities require a breaking acknowledgement
+actual_result: "Any signature text difference, including an added optional field, is reported as breaking"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-e6tm5c,related,"2026-11-16T04:20:04.606Z","harness:claude-code","cli:create:dep",detected
+  pm-wb6ktl,discovered_from,"2026-11-16T04:20:04.606Z","harness:claude-code","cli:create:dep",detected
+body: ""

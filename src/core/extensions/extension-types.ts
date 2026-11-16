@@ -569,8 +569,24 @@ export interface BeforeMutationHookContext {
   actor: Readonly<MutationActor>;
   /** True when the host evaluates the guard for a preview or dry run that persists nothing. */
   dry_run: boolean;
+  /**
+   * Present only when the host proved, from the transaction's immutable history,
+   * that this write rolls back that transaction's own step (pm-wb6ktl). The guard
+   * still runs and may observe it, but a denial or failure is recorded in the
+   * rollback's history entry instead of refusing it, so no guard can leave a
+   * batch half-applied.
+   */
+  compensation?: Readonly<MutationCompensation>;
   /** Host-bound read-only SDK services. */
   sdk: ExtensionMutationGuardSdk;
+}
+
+/** The transaction step a journal-proven rollback write undoes. */
+export interface MutationCompensation {
+  /** Transaction whose own step is being undone. */
+  transaction_id: string;
+  /** Step whose effects the write undoes. */
+  step_id: string;
 }
 
 /** Stable decision returned by a transactional extension mutation guard. */

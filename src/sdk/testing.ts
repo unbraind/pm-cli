@@ -90,6 +90,11 @@ import {
   runServiceOverride,
 } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
+import type { MutationGuardOverride } from "../core/extensions/extension-hook-runtime.js";
+import type { MutationCompensation } from "../core/extensions/extension-types.js";
+
+/** A guard refusal a journal-proven rollback recorded instead of obeying (pm-wb6ktl). */
+export type { MutationGuardOverride };
 import {
   getMigrationRuntimeDefinition,
   resolveRegisteredSearchProvider,
@@ -346,8 +351,10 @@ function refuseOmittedForBudget(command: string): never {
  * optional so tests written before GH-1719 keep compiling: an omitted actor is
  * resolved from `author` exactly as a host resolves it (an omitted author is
  * the unattributed `unknown` actor), and an omitted `dry_run` is `false`.
+ * It never carries `compensation`: a rollback context is the
+ * {@link RunRegisteredMutationGuardRollbackForTestOptions} context instead.
  */
-export type MutationGuardTestContext = Omit<BeforeMutationHookContext, "actor" | "dry_run"> & {
+export type MutationGuardTestContext = Omit<BeforeMutationHookContext, "actor" | "dry_run" | "compensation"> & {
   /** Actor the guard should see; overrides `author`. */
   actor?: MutationActor;
   /** Author to resolve the actor from when `actor` is omitted. */
@@ -1188,21 +1195,47 @@ export async function runRegisteredCommandForTest(
   return await admitRegisteredReadOutputResult(registrations, commands, context, outcome);
 }
 
-/** Invoke registered transactional mutation guards through the same fail-closed runtime used by real writes. */
+/** Guard-test options whose context is a journal-proven transaction rollback (pm-wb6ktl). */
+export interface RunRegisteredMutationGuardRollbackForTestOptions extends RunRegisteredMutationGuardForTestOptions {
+  /** Synthetic rollback context: `compensation` names the transaction step being undone. */
+  context: MutationGuardTestContext & { compensation: MutationCompensation };
+}
+
+/**
+ * Invoke registered transactional mutation guards through the same fail-closed
+ * runtime used by real writes: a denial or failure refuses. A context carrying
+ * `compensation` is a journal-proven rollback instead (pm-wb6ktl): each denial
+ * or failure is recorded rather than refused, and the helper resolves the list
+ * a host records in the rollback's history entry.
+ */
+export function runRegisteredMutationGuardForTest(
+  hooks: ExtensionHookRegistry,
+  options: RunRegisteredMutationGuardRollbackForTestOptions,
+): Promise<MutationGuardOverride[]>;
+/** Invoke the guards for an ordinary write; a denial or failure refuses. */
+export function runRegisteredMutationGuardForTest(
+  hooks: ExtensionHookRegistry,
+  options: RunRegisteredMutationGuardForTestOptions,
+): Promise<void>;
+/** Shared implementation of both guard-test overloads. */
 export async function runRegisteredMutationGuardForTest(
   hooks: ExtensionHookRegistry,
   options: RunRegisteredMutationGuardForTestOptions,
-): Promise<void> {
+): Promise<MutationGuardOverride[] | void> {
   if ((hooks.beforeMutation?.length ?? 0) === 0) {
     throw new Error("Expected a registered before_mutation hook to invoke");
   }
-  const { actor, author, dry_run: dryRun, ...context } = options.context;
+  // Only the rollback overload's context carries compensation; an ordinary context never does.
+  const { actor, author, dry_run: dryRun, compensation, ...context } = options.context as RunRegisteredMutationGuardRollbackForTestOptions["context"] | (MutationGuardTestContext & { compensation?: undefined });
   const { resolveMutationActor } = await import("../core/extensions/mutation-actor.js");
-  await runBeforeMutationHooks(hooks, {
+  const overrides = await runBeforeMutationHooks(hooks, {
     ...context,
     actor: actor ?? resolveMutationActor(author ?? "unknown"),
     dry_run: dryRun === true,
+    // A host never exempts a dry run, so a dry-run rollback context still fails closed.
+    ...(compensation === undefined || dryRun === true ? {} : { compensation }),
   });
+  return compensation === undefined ? undefined : overrides;
 }
 
 /**
@@ -2838,6 +2871,8 @@ export interface ExtensionTestHarness {
   ): Promise<CommandHandlerResult>;
   /** Bound {@link runRegisteredHookForTest} over `activation.hooks`. */
   runHook(options: RunRegisteredHookForTestOptions): Promise<string[]>;
+  /** Bound transactional mutation-guard runner over `activation.hooks`; a rollback context resolves the recorded overrides. */
+  runMutationGuard(options: RunRegisteredMutationGuardRollbackForTestOptions): Promise<MutationGuardOverride[]>;
   /** Bound transactional mutation-guard runner over `activation.hooks`. */
   runMutationGuard(options: RunRegisteredMutationGuardForTestOptions): Promise<void>;
   /** Bound {@link runRegisteredCommandOverrideForTest} over `activation.commands`. */
@@ -3045,9 +3080,9 @@ export async function createExtensionTestHarness(
     runHook(runOptions) {
       return runRegisteredHookForTest(activation.hooks, runOptions);
     },
-    runMutationGuard(runOptions) {
-      return runRegisteredMutationGuardForTest(activation.hooks, runOptions);
-    },
+    // One implementation serves both overloads; the runtime result already matches each.
+    runMutationGuard: ((runOptions: RunRegisteredMutationGuardRollbackForTestOptions) =>
+      runRegisteredMutationGuardForTest(activation.hooks, runOptions)) as ExtensionTestHarness["runMutationGuard"],
     runCommandOverride(context) {
       return runRegisteredCommandOverrideForTest(activation.commands, context);
     },

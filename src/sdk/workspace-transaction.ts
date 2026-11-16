@@ -14,6 +14,7 @@ import { isFileMissingError, writeFileAtomic } from "../core/fs/fs-utils.js";
 import { nowIso } from "../core/shared/time.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { runAsCoordinatorCompensation } from "../core/store/transaction-coordinator-scope.js";
 
 /** Durable state reported by a transaction step inspection. */
 export type WorkspaceTransactionStepState =
@@ -622,7 +623,11 @@ async function compensateAppliedSteps(
     }
     if (shouldCompensate) {
       await emitTransition(options, journal, "step_compensating", step.id);
-      await step.compensate(journal.compensationData[step.id]);
+      // Only the coordinator's own compensation may claim a rollback exemption (pm-wb6ktl).
+      await runAsCoordinatorCompensation(
+        { pmRoot: options.pmRoot, transactionId: journal.transactionId, step },
+        () => step.compensate(journal.compensationData[step.id]),
+      );
     }
     completed.delete(step.id);
     started.delete(step.id);

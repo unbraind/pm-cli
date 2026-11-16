@@ -2,11 +2,13 @@ id: pm-0m64xk
 title: "commitImportedItem holds a plain item lock while workflow policies and mutation guards run, so a short lock TTL lets a second importer reclaim the lock and write the same id before the first writes"
 description: "Follow-up from the PR #1725 review of pm-gh1719 (2026-11-14). commitImportedItem acquires the item lock with acquireLock and then awaits workflow policies and, since pm-gh1719, the beforeMutation guards (up to the 5-second guard timeout) before writing the item and its history. The mutate path fences its write with the lease (commitLockedItemWrite re-verifies the lease when used); the import adapter does not. With locks.ttl_seconds shorter than a guard's run time and force_required_for_stale_lock false, a second importer can reclaim the expired lock and commit the same id during the first importer's guard wait, and then the first importer overwrites it. The window existed before for workflow policies; guard time widens it. Proposal: acquire a lease (acquireLockLease) in commitImportedItem and verify it immediately before the item write and the history append, refusing with the same lease-lost refusal the mutate path uses. Duplicate check: searched import lock lease fencing; the closed lease-fencing work covered the item-store mutate path only."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: concurrency,extensions,importers,locks
 created_at: "2026-11-14T15:21:44.228Z"
-updated_at: "2026-11-14T15:21:44.228Z"
+updated_at: "2026-11-16T09:12:27.887Z"
+closed_at: "2026-11-16T05:30:40.321Z"
+completed_at: "2026-11-16T05:30:40.321Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: commitImportedItem fences the item write and the history append with its lock lease; A spec with a short TTL and a slow allowing guard proves the second importer's write is never overwritten and the first importer receives a typed lease-lost refusal; Lock-conflict skips keep returning conflictWarning
@@ -14,8 +16,33 @@ parent: pm-dj98
 risk: medium
 confidence: high
 severity: medium
-expected_result: An import write is fenced by its lock lease
-actual_result: A slow guard plus a short TTL lets two importers write the same id
+resolution: "commitImportedItem holds an acquireLockLease lease, re-checks the id under the lock, and writes the item plus history inside lease.fence; create and pm copy fence their writes the same way; a lease lost to a TTL takeover refuses with lock_lost and writes nothing"
+expected_result: A slow guard plus a short lock TTL never lets one writer overwrite another writer's item
+actual_result: "Verified by write-path-guard-parity.spec.ts with ttl_seconds=1 and a gated slow guard: the slow importer and creator refuse with lock_lost, the fast writer's item and single history entry survive, and a serialized duplicate import returns conflictWarning; all fail on unmodified main"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1719,discovered_from,"2026-11-14T15:21:44.228Z","harness:claude-code","cli:create:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-11-16T03:33:31.774Z","harness:claude-code","Implementation note (2026-11-16): commitImportedItem acquires acquireLockLease and runs the item write + history append inside lease.fence; on-write hooks run after the fence. It also re-checks the id under the lock (locateItem) before policies and guards, because the callers' existence check runs before the lock: two importers of the same id serialized on the lock and the second overwrote the first even without any TTL expiry (spec reproduces on main). That case returns the existing conflictWarning shape. create and pm copy had the same unfenced acquireLock window and now fence their writes the same way. Specs with ttl_seconds=1 + force_required_for_stale_lock=false + a gated slow guard: the slow importer/creator refuses with lock_lost, the fast writer's item and single history entry survive. Both races fail on main (the slow writer overwrote the fast one)."
+  "2026-11-16T05:51:07.684Z","harness:claude-code","Review fix (PR 1740, Codex round 1 P2 and Greptile P2): the takeover specs started their 1.2 s TTL wait before the slow writer provably held the lock, so a loaded runner could let the fast writer commit first. The slow guard now signals entry (guards run under the item lock) and the spec waits for that signal before waiting out the TTL."
+  "2026-11-16T06:35:31.109Z","harness:claude-code","Review fix (PR 1740, Codex round 3 P2): the takeover specs no longer sleep out a 1 s TTL while a guard is blocked. They age the slow writer's lock record to simulate expiry and park the fast writer in its own guard until the slow writer's fence refuses, which keeps both guard waits far below the 5 s guard timeout on a loaded runner."
+  "2026-11-16T08:12:05.188Z","harness:claude-code","Review fix (PR 1740, CodeRabbit, Minor): the fencing guarantee holds for pm's native file locks. An extension that handles lock_acquire owns its lock lifecycle and its lease commits unfenced (the LockLease contract already says so), so docs/SDK.md and the commitImportedItem TSDoc now state that such a provider must supply its own stale-writer protection."
+  "2026-11-16T09:12:27.887Z","harness:claude-code","Review fix (PR 1740, CodeRabbit full review of 5cd3a4818, Minor): both lease-takeover specs now run in try/finally. The finally block opens both guard gates before settling either writer (Promise.allSettled), so a failed assertion can neither leave a writer parked in its guard after the fixture ends nor be replaced by a writer's rejection."
+files[4]{path,scope,note}:
+  src/sdk/lifecycle/copy.ts,project,copy fences its write
+  src/sdk/lifecycle/create.ts,project,create fences its write
+  src/sdk/package-import-adapters.ts,project,lease fence + under-lock existence check
+  tests/unit/sdk/transactions/write-path-guard-parity.spec.ts,project,regression spec
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/sdk/transactions/write-path-guard-parity.spec.ts,project,300,"harness:claude-code","2026-11-16T03:33:16.082Z",local_mutation,fix/write-path-guard-parity
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,import adapter lease fencing
+close_reason: "Imports, create and copy fence their item write with the lock lease"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-0m64xk
+  gate_id: import-lease-fencing
+  negative_control: node scripts/run-tests.mjs test tests/unit/sdk/transactions/write-path-guard-parity.spec.ts (on unmodified main the second importer overwrites the first and both TTL races overwrite the fast writer)
+  local_checks[2]: node scripts/run-tests.mjs test tests/unit/sdk/transactions/write-path-guard-parity.spec.ts,node scripts/run-tests.mjs test tests/unit/core/lock/lock-lease-fencing.spec.ts tests/unit/packages/package-import-adapters.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

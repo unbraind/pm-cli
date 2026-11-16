@@ -96,6 +96,29 @@ does not claim a completed append. This disclosure is tracked by
 Accepted mutations attach bounded policy decisions to their normal
 history event. Diagnostics contain policy ids and missing field paths, without
 copying reviewed content into errors.
+
+Every item writer evaluates the policies before it persists anything: create,
+update, close, delete, restore, package imports (operation `import`) and
+`pm copy`. A copy is judged with operation `create`, so a policy that refuses a
+creation also refuses copying an existing item into that shape, and the copy's
+history event carries the same decisions a create records
+([pm-womkyw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-womkyw.toon),
+a repository-only tracker record excluded from npm).
+
+A transaction's own rollback is the one write a refusal cannot stop. When
+`commitItemMutations` compensates a failed batch, it closes or deletes the
+items it created and restores the items it updated. It does so only while the
+coordinator itself compensates a step the SDK built from the batch plan, after the item's immutable history
+proves those effects are the step's own, and only for the locked item stored
+under that id. The policies
+still evaluate that rollback, and its history event records their decisions. An
+unsatisfied refusal is listed under `transaction_compensation.overridden` and is
+not enforced. Otherwise a policy that refuses closing, deleting or restoring
+would leave the batch half-applied. A write to any other item, any other
+operation, a compensation helper called directly, or a caller-supplied
+coordinator step is judged normally
+([pm-wb6ktl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wb6ktl.toon),
+a repository-only tracker record excluded from npm).
 If the mandatory refusal audit cannot be appended, the mutation instead raises
 `workflow_policy_audit_failed` and preserves the original failure in the SDK
 error's `cause`. Item data remains unchanged; resolve the workspace history lock
