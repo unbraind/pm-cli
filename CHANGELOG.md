@@ -8,6 +8,10 @@
 - pm copy writes a new item without evaluating workflow policies, while create, update, delete, restore and imports all run enforceWorkflowMutation ([pm-womkyw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-womkyw.toon))
 - A beforeMutation guard that denies close also denies the transaction's own create compensation, so a refused batch fails with compensation failed and keeps its earlier creates ([pm-wb6ktl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wb6ktl.toon))
 
+### Other
+
+- Adopt the 2026-11-16 Dependabot updates: knip 6.44.2, marked 18.1.3, six GitHub Actions patch releases and @sentry/node 10.78.0, holding the Sentry 11 major ([pm-3czc4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3czc4m.toon))
+
 ## 2026.11.16 - 2026-11-16
 
 ### Changed (SDK contract)

@@ -1,0 +1,24 @@
+id: pm-jy61mz
+title: "Sentry 11's @sentry/node pulls @sentry/bundler-plugins and native oxc-parser bindings into pm's runtime closure, so the package-artifact gate cannot stage it and every install would carry native binaries"
+description: "Found while adopting the 2026-11-16 Dependabot updates (pm-3czc4m). Dependabot PR 1739 proposed @sentry/node 10.76.2 to 11.11.0. Sentry 11's @sentry/node adds @sentry/bundler-plugins as a runtime dependency, and that package depends on oxc-parser, which ships native per-platform bindings as optional packages. pm stages its locked runtime closure into the published package, and the package-artifact gate verifies every locked runtime package. The gate fails with \"Missing tested runtime package: @oxc-parser/binding-android-arm-eabi\", because only the host's binding is installed. The runtime closure grows from 42 to 88 packages and would put native binaries into every npm, npx and bunx install, although the CLI never bundles code. Migration notes for when the dependency question is solved. First, Sentry 11 removed the enableLogs option and captures logs without a gate (_INTERNAL_captureLog reads only release, environment and beforeSendLog). Second, under traceLifecycle stream, Sentry 11 ignores beforeSendTransaction and ignoreTransactions and prints a stderr warning. That warning breaks the CLI's machine-readable stderr, so instrument.ts must drop beforeSendTransaction; spans are already scrubbed through beforeSendSpan. The Dependabot config now ignores @sentry/node semver-major updates until this item is resolved, and pm-3czc4m adopted 10.78.0, the newest 10.x. Duplicate check: searched sentry node 11 bundler plugins oxc native bindings runtime staging; no existing item."
+type: Issue
+status: open
+priority: 3
+tags[5]: dependencies,packaging,sentry,supply-chain,telemetry
+created_at: "2026-11-16T15:09:01.047Z"
+updated_at: "2026-11-16T15:09:43.397Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "pm runs on a Sentry 11 line (or a lighter Sentry 11 package) whose runtime closure the package-artifact gate stages without platform-specific native bindings, or the distribution model explicitly supports platform-optional bindings with a bounded install size; instrument.ts drops enableLogs and beforeSendTransaction for Sentry 11, and the CLI's JSON stderr carries no Sentry warning (tests/integration/telemetry/extension-error-provenance.spec.ts parses it); The @sentry/node semver-major ignore rule is removed from .github/dependabot.yml when the major is adopted"
+parent: pm-5oj5
+risk: medium
+confidence: medium
+severity: low
+expected_result: Sentry 11 can be adopted without native binaries in pm's runtime install
+actual_result: Sentry 11.11.0 adds 46 runtime packages including oxc-parser native bindings and fails the package-artifact gate
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3czc4m,discovered_from,"2026-11-16T15:09:01.047Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope,note}:
+  .github/dependabot.yml,project,major ignore to remove on adoption
+  src/core/sentry/instrument.ts,project,enableLogs and beforeSendTransaction to drop for Sentry 11
+body: ""

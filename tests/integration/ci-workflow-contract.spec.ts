@@ -192,7 +192,7 @@ describe("GitHub workflow contract", () => {
     expect(benchmarkJob?.["runs-on"]).toBe("ubuntu-22.04");
     expect(setupNodeStep?.with).toMatchObject({ "node-version": 24 });
     expect(codSpeedStep?.uses).toBe(
-      "CodSpeedHQ/action@61efe07e57e55bedeab750c434504de272a56e8c",
+      "CodSpeedHQ/action@af75f77f17a054769abefaa42fe8dc2975469b5f",
     );
     expect(codSpeedOptions).toMatchObject({
       mode: "simulation",
@@ -1098,7 +1098,7 @@ describe("GitHub workflow contract", () => {
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-github-release --npm-attempts 360 --json',
       'node scripts/release/verify-installed-agent-session.mjs --version "${RELEASE_TAG#v}" --manager both --json',
       'node scripts/release/verify-published-release.mjs --tag "${RELEASE_TAG}" --skip-package --json',
-      "uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64",
+      "uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3",
       "tag_name: ${{ env.RELEASE_TAG }}",
       PINNED_ACTIONS.uploadArtifact,
       "path: coverage",

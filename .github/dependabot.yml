@@ -12,6 +12,11 @@ updates:
     # dependabot PRs don't fail CI install on freshly published versions.
     cooldown:
       default-days: 7
+    ignore:
+      # Sentry 11's @sentry/node pulls @sentry/bundler-plugins and native oxc-parser
+      # bindings into the runtime closure pm stages; hold the major until pm-jy61mz.
+      - dependency-name: "@sentry/node"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         dependency-type: development
