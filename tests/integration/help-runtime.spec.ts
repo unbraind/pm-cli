@@ -1,4 +1,5 @@
 import path from "node:path";
+import { renderPmCommand } from "../../src/sdk/command-line.js";
 import { describe, expect, it } from "vitest";
 import { writeTestExtension } from "../helpers/extensions.js";
 import {
@@ -567,6 +568,25 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.examples).toEqual(
         expect.arrayContaining([expect.stringContaining('pm create Epic "')]),
       );
+    });
+  });
+
+  it("keeps a Word: title intact and names a promoted shorthand token in the refusal (GH-1741)", async () => {
+    await withTempPmPath(async (context) => {
+      for (const prefix of ["Docs", "Release", "Test", "Files", "Comment", "Note"]) {
+        const created = context.runCli(["create", "issue", `${prefix}: adopt X`, "--json"], { expectJson: true });
+        expect(created.code, created.stderr).toBe(0);
+        expect((created.json as { item: { title: string; type: string } }).item).toMatchObject({ title: `${prefix}: adopt X`, type: "Issue" });
+      }
+      // An explicit tracker keeps its spelling, so the expected retry is built with the CLI's own quoting.
+      const refused = context.runCli(["create", "issue", "Docs:README", "--pm-path", context.pmPath, "--json"]);
+      expect(refused.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(refused.stderr);
+      expect(envelope.code).toBe("create_positional_type_without_title");
+      expect(envelope.detail).toContain('The CLI read "Docs:README" as --doc');
+      expect(envelope.title).not.toContain("...");
+      // The retry targets the same tracker the refused invocation used.
+      expect(envelope.next_steps).toEqual([`Keep "Docs:README" as the title: ${renderPmCommand(["create", "issue", "--title", "Docs:README", "--pm-path", context.pmPath])}`]);
     });
   });
 

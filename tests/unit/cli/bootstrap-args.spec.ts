@@ -753,6 +753,19 @@ describe("normalizeBootstrapInvocation", () => {
     ).toHaveLength(3);
   });
 
+  it("keeps a whitespace-bearing Word: token as text and promotes only unquoted-shape key:value tokens (GH-1741)", () => {
+    for (const prefix of ["Docs", "Release", "Test", "Files", "Comment", "Note"]) {
+      const normalized = normalizeBootstrapInvocation(["create", "issue", `${prefix}: adopt X`]);
+      expect(normalized.argv).toEqual(["create", "issue", `${prefix}: adopt X`]);
+      expect(normalized.trace.filter((entry) => entry.reason === "bare_key_value")).toHaveLength(0);
+    }
+    // Whitespace anywhere in a colon token means the shell grouped it as one value.
+    expect(normalizeBootstrapInvocation(["create", "description:Hello world"]).argv).toEqual(["create", "description:Hello world"]);
+    // Unquoted-shape colon shorthand and the equals form keep their promotion.
+    expect(normalizeBootstrapInvocation(["create", "issue", "docs:README.md"]).argv).toEqual(["create", "issue", "--doc", "README.md"]);
+    expect(normalizeBootstrapInvocation(["create", "title=Hello world"]).argv).toEqual(["create", "--title", "Hello world"]);
+  });
+
   it("does not reinterpret key=value tokens when they are values for an explicit option", () => {
     const normalized = normalizeBootstrapInvocation([
       "comments",

@@ -164,7 +164,9 @@ describe("agent evidence consistency", () => {
 
   it("preserves annotation evidence in the public bootstrap normalizer", () => {
     for (const command of ["comments", "notes", "learnings"]) {
-      for (const literal of ["TDD: prefix proof", "add: literal annotation", "text: structured annotation"]) {
+      // Whitespace-bearing colon text is never shorthand (GH-1741); the whitespace-free, flag-shaped
+      // literal is the one only the annotation exclusion keeps, so the control mutant stays detectable.
+      for (const literal of ["TDD: prefix proof", "add: literal annotation", "text: structured annotation", "add:literal", "file=evidence.txt"]) {
         expect(normalizeBootstrapInvocation([command, "pm-example", literal]).argv.slice(-2)).toEqual(["pm-example", literal]);
       }
     }
