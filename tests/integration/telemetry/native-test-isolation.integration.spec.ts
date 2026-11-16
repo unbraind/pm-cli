@@ -10,7 +10,9 @@ import { withTempDir } from "../../helpers/temp.js";
 const execute = promisify(execFile);
 const sdk = new URL("../../../dist/sdk/index.js", import.meta.url).href;
 
-it.each(["suppressed", "consented", "override", "hard-opt-out"])("isolates real node --test SDK children: %s", async (mode) => {
+// "override" opts in with the explicit test context; "inherited" carries a harness's automation context, which no longer
+// opts test children in (GH-1735), so its children stay as silent as "suppressed" ones.
+it.each(["suppressed", "consented", "override", "inherited", "hard-opt-out"])("isolates real node --test SDK children: %s", async (mode) => {
   await withTempDir("pm-native-test-", async (root) => {
     const received: Array<{ event_type: string; payload: { source_context: string } }> = [];
     const server = createServer((request, response) => {
@@ -34,7 +36,7 @@ it.each(["suppressed", "consented", "override", "hard-opt-out"])("isolates real 
       await writeSettings(globalRoot, configured);
       const settings = await readFile(path.join(globalRoot, "settings.json"), "utf8");
       const allowed = mode === "consented" || mode === "override";
-      const source = mode === "override" ? "dogfood" : "test";
+      const source = "test";
       const fixture = path.join(root, "native.test.mjs");
       await writeFile(fixture, `
 import test from 'node:test';
@@ -55,7 +57,8 @@ test('native SDK telemetry lifecycle', async () => {
       for (const key of ["VITEST", "VITEST_WORKER_ID", "NODE_ENV", "NODE_TEST_CONTEXT", "PM_TELEMETRY_SOURCE_CONTEXT", "PM_TELEMETRY_SEND_TEST_EVENTS", "PM_TELEMETRY_INLINE_FLUSH", "PM_TELEMETRY_FLUSH_CHILD", "PM_SENTRY_DISABLED"]) delete env[key];
       Object.assign(env, { PM_PATH: path.join(root, "project"), PM_GLOBAL_PATH: globalRoot, PM_TELEMETRY_DISABLED: "0", PM_NO_TELEMETRY: "0", DO_NOT_TRACK: mode === "hard-opt-out" ? "1" : "0", PM_TELEMETRY_OTEL_DISABLED: "1", PM_AGENT_PROBES: "0" });
       if (mode === "consented" || mode === "hard-opt-out") env.PM_TELEMETRY_SEND_TEST_EVENTS = "1";
-      if (mode === "override") env.PM_TELEMETRY_SOURCE_CONTEXT = "dogfood";
+      if (mode === "override") env.PM_TELEMETRY_SOURCE_CONTEXT = "test";
+      if (mode === "inherited") env.PM_TELEMETRY_SOURCE_CONTEXT = "automation";
       await execute(process.execPath, ["--test", fixture], { cwd: root, env, timeout: 30_000 }).catch((error: unknown) => {
         const result = error as { stdout?: string; stderr?: string };
         throw new Error(`Native test child failed:\n${result.stdout}\n${result.stderr}`, { cause: error });

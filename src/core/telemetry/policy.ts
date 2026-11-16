@@ -19,24 +19,34 @@ export function resolveTelemetrySourceAttribution(
   interactive = process.stdin.isTTY === true && process.stdout.isTTY === true,
 ): { source_context: typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES[number]; source_context_source: "env_override" | "inferred" | "env_override_rejected" } {
   const override = (env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim().toLowerCase();
-  if (SOURCE_CONTEXTS.has(override)) return {
+  const inferredTest = isTelemetryTestEnvironment(env);
+  // Inside a test runner only `test` labels explicitly (GH-1735): an inherited non-test context
+  // labels whoever exported it, not the test children that inherited it.
+  if (SOURCE_CONTEXTS.has(override) && (!inferredTest || override === "test")) return {
     source_context: override as typeof PM_TELEMETRY_SOURCE_CONTEXT_VALUES[number],
     source_context_source: "env_override",
   };
-  const source = override ? "env_override_rejected" : "inferred";
-  if (isTelemetryTestEnvironment(env)) return { source_context: "test", source_context_source: source };
+  const source = override && !SOURCE_CONTEXTS.has(override) ? "env_override_rejected" : "inferred";
+  if (inferredTest) return { source_context: "test", source_context_source: source };
   const automated = !interactive || telemetryEnvironmentFlag("CI", env) || options.json === true || options.quiet === true;
   return { source_context: automated ? "automation" : "user", source_context_source: source };
+}
+
+/** The environment variable that marks the process as running inside a test runner, or undefined. */
+export function telemetryTestEnvironmentSignal(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): "VITEST" | "VITEST_WORKER_ID" | "NODE_TEST_CONTEXT" | "NODE_ENV" | undefined {
+  if (typeof env.VITEST === "string") return "VITEST";
+  if (typeof env.VITEST_WORKER_ID === "string") return "VITEST_WORKER_ID";
+  if (typeof env.NODE_TEST_CONTEXT === "string") return "NODE_TEST_CONTEXT";
+  return (env.NODE_ENV ?? "").trim().toLowerCase() === "test" ? "NODE_ENV" : undefined;
 }
 
 /** Share native and package test signals across consent, attribution and flush lifetime. */
 export function isTelemetryTestEnvironment(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): boolean {
-  return typeof env.VITEST === "string" ||
-    typeof env.VITEST_WORKER_ID === "string" ||
-    typeof env.NODE_TEST_CONTEXT === "string" ||
-    (env.NODE_ENV ?? "").trim().toLowerCase() === "test";
+  return telemetryTestEnvironmentSignal(env) !== undefined;
 }
 /** Fixed core reads eligible only after runtime ownership has been established. */
 export const TELEMETRY_SAMPLEABLE_READS: ReadonlySet<string> = new Set([
@@ -122,7 +132,41 @@ export function effectiveTelemetryEndpoint(
   return resolveTelemetryEndpointOverride(env).endpoint ?? configured;
 }
 
-/** Explain process opt-outs and the event endpoint override without reading settings or creating installation identity. */
+/** The environment input that decided process telemetry consent (`env:<VARIABLE>`). */
+export type TelemetryEnvironmentDecision =
+  | "env:DO_NOT_TRACK"
+  | "env:PM_TELEMETRY_DISABLED"
+  | "env:PM_NO_TELEMETRY"
+  | "env:PM_TELEMETRY_ENDPOINT"
+  | "env:VITEST"
+  | "env:VITEST_WORKER_ID"
+  | "env:NODE_TEST_CONTEXT"
+  | "env:NODE_ENV"
+  | "env:PM_TELEMETRY_SOURCE_CONTEXT"
+  | "env:PM_TELEMETRY_SEND_TEST_EVENTS";
+
+/** The first hard opt-out set in the environment, in precedence order. */
+function hardTelemetryOptOut(
+  env: Readonly<Record<string, string | undefined>>,
+  endpointInvalid: boolean,
+): TelemetryEnvironmentDecision | undefined {
+  if (telemetryEnvironmentFlag("DO_NOT_TRACK", env)) return "env:DO_NOT_TRACK";
+  if (telemetryEnvironmentFlag("PM_TELEMETRY_DISABLED", env)) return "env:PM_TELEMETRY_DISABLED";
+  if (telemetryEnvironmentFlag("PM_NO_TELEMETRY", env)) return "env:PM_NO_TELEMETRY";
+  return endpointInvalid ? "env:PM_TELEMETRY_ENDPOINT" : undefined;
+}
+
+/**
+ * Explain process opt-outs and the event endpoint override without reading
+ * settings or creating installation identity. Inside a detected test runner
+ * only an explicit test opt-in (`PM_TELEMETRY_SOURCE_CONTEXT=test` or
+ * `PM_TELEMETRY_SEND_TEST_EVENTS`) re-enables telemetry: an inherited
+ * `automation`, `user` or `dogfood` context labels whoever exported it, not
+ * the test children that inherited it (GH-1735). `decided_by` names the input
+ * that settled consent: a hard opt-out, the test-runner signal that
+ * suppressed it, or the test opt-in that allowed it; null when no environment
+ * input decides and settings do.
+ */
 export function resolveTelemetryEnvironmentPolicy(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): {
@@ -131,20 +175,23 @@ export function resolveTelemetryEnvironmentPolicy(
   test_suppressed: boolean;
   endpoint_override: string | null;
   endpoint_override_invalid: boolean;
+  decided_by: TelemetryEnvironmentDecision | null;
 } {
-  const doNotTrack = telemetryEnvironmentFlag("DO_NOT_TRACK", env);
   const endpoint = resolveTelemetryEndpointOverride(env);
   const override = (env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim().toLowerCase();
-  const inferredTest = isTelemetryTestEnvironment(env);
-  const testSuppressed = inferredTest && !SOURCE_CONTEXTS.has(override) &&
-    !telemetryEnvironmentFlag("PM_TELEMETRY_SEND_TEST_EVENTS", env);
+  const testSignal = telemetryTestEnvironmentSignal(env);
+  const testOptIn: TelemetryEnvironmentDecision | undefined = override === "test"
+    ? "env:PM_TELEMETRY_SOURCE_CONTEXT"
+    : telemetryEnvironmentFlag("PM_TELEMETRY_SEND_TEST_EVENTS", env) ? "env:PM_TELEMETRY_SEND_TEST_EVENTS" : undefined;
+  const testSuppressed = testSignal !== undefined && testOptIn === undefined;
+  const optOut = hardTelemetryOptOut(env, endpoint.invalid);
+  const testDecision = testSignal === undefined ? undefined : testOptIn ?? (`env:${testSignal}` as const);
   return {
-    telemetry_disabled: doNotTrack || testSuppressed || endpoint.invalid ||
-      telemetryEnvironmentFlag("PM_TELEMETRY_DISABLED", env) ||
-      telemetryEnvironmentFlag("PM_NO_TELEMETRY", env),
-    do_not_track: doNotTrack,
+    telemetry_disabled: optOut !== undefined || testSuppressed,
+    do_not_track: optOut === "env:DO_NOT_TRACK",
     test_suppressed: testSuppressed,
     endpoint_override: endpoint.endpoint === null ? null : redactTelemetryEndpoint(endpoint.endpoint),
     endpoint_override_invalid: endpoint.invalid,
+    decided_by: optOut ?? testDecision ?? null,
   };
 }
