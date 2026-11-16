@@ -48,7 +48,8 @@ function guardLog(): GuardLogEntry[] {
 }
 
 /** Denies every close, delete and restore; crashes on items titled "Throw"; denies updates titled "Denied update". */
-const ROLLBACK_DENYING_GUARD = `import { appendFileSync, unlinkSync } from "node:fs";
+const ROLLBACK_DENYING_GUARD = `import { appendFileSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 export default {
   activate(api) {
     // Armed by a test: the created item's rollback proof read gains a foreign line right after its bytes are read.
@@ -57,7 +58,11 @@ export default {
       if (!armed || !read.path.endsWith(armed.id + ".jsonl") || !new Error().stack.includes("compensateCreatedItem")) return;
       globalThis.${ABA_ARM_KEY} = undefined;
       if (armed.mode === "delete") unlinkSync(read.path);
-      else appendFileSync(read.path, "\\n");
+      else if (armed.mode === "edit-item") {
+        // An unlocked edit of the item file that leaves its history untouched.
+        const itemPath = join(dirname(dirname(read.path)), "tasks", armed.id + ".toon");
+        writeFileSync(itemPath, readFileSync(itemPath, "utf8").replace("Batch edit", "Batch edited elsewhere"));
+      } else appendFileSync(read.path, "\\n");
     });
     api.hooks.beforeMutation(async (context) => {
       const document = context.after ?? context.before;
@@ -71,6 +76,7 @@ export default {
       if (context.operation === "update" && context.after?.metadata.title === "Denied update") {
         if (document?.metadata.id === "pm-batch-aba") globalThis.${ABA_ARM_KEY} = { id: "pm-batch-aba", mode: "append" };
         if (document?.metadata.id === "pm-batch-gone") globalThis.${ABA_ARM_KEY} = { id: "pm-batch-gone", mode: "delete" };
+        if (document?.metadata.id === "pm-batch-edit") globalThis.${ABA_ARM_KEY} = { id: "pm-batch-edit", mode: "edit-item" };
         return { allow: false, code: "update_denied", remediation: "Use another title." };
       }
       // Guards run under the item lock, so entering here proves the writer holds it.
@@ -305,6 +311,18 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
       }).catch((error: unknown) => error) as AggregateError;
       expect(vanished.message).toContain("compensation failed");
       expect(vanished.errors.at(-1)).toMatchObject({ code: "transaction_partial_mutation", cause: { code: "ENOENT" } });
+
+      // An unlocked item edit that leaves the history byte-identical still fails the locked ownership check.
+      const edited = await client.commitItemMutations({
+        transactionId: "wb6ktl-edit",
+        mutations: [
+          { op: "create", id: "pm-batch-edit", options: { title: "Batch edit", type: "Task" } },
+          { op: "update", id: "pm-batch-edit", options: { title: "Denied update" } },
+        ],
+      }).catch((error: unknown) => error) as AggregateError;
+      expect(edited.message).toContain("compensation failed");
+      expect(edited.errors.at(-1)).toMatchObject({ code: "transaction_partial_mutation" });
+      await expect(client.get("pm-batch-edit")).resolves.toMatchObject({ item: { status: "open", title: "Batch edited elsewhere" } });
     });
   });
 

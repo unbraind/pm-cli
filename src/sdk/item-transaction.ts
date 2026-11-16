@@ -531,21 +531,22 @@ function hasOwnedCompensationEffects(
  * that lands after the proof, even one that later restores the same document
  * hash, refuses the rollback instead of granting it on stale history.
  */
-async function readOwnershipHistory(pmRoot: string, id: string): Promise<{ history: HistoryEntry[]; assertUnchangedUnderLock: (refusal: () => PmCliError) => void }> {
+async function readOwnershipHistory(pmRoot: string, id: string): Promise<{ history: HistoryEntry[]; assertOwnedUnderLock: (document: ItemDocument, refusal: () => PmCliError) => void }> {
   const historyPath = path.join(pmRoot, "history", `${id}.jsonl`);
   const snapshot = await readHistorySnapshot(historyPath, id);
   return {
     history: snapshot.entries,
-    assertUnchangedUnderLock: (refusal) => {
-      let unchanged: boolean;
+    assertOwnedUnderLock: (document, refusal) => {
+      let owned: boolean;
       try {
-        // Byte equality, never decoded text. A stream absent at proof time has no captured bytes, so the comparison throws.
-        unchanged = readFileSync(historyPath).equals(snapshot.raw_bytes!);
+        // The stream is byte-identical to the proof (never decoded text; a stream absent at proof time has no captured
+        // bytes, so the comparison throws), and the locked document is the state its newest entry produced.
+        owned = readFileSync(historyPath).equals(snapshot.raw_bytes!) && hashDocument(document) === snapshot.entries.at(-1)!.after_hash;
       } catch (cause: unknown) {
         // An unreadable or vanished stream is the same typed refusal, keeping the filesystem error as its cause.
         throw Object.assign(refusal(), { cause });
       }
-      if (!unchanged) throw refusal();
+      if (!owned) throw refusal();
     },
   };
 }
@@ -567,7 +568,7 @@ async function compensateByRestore(
   const target = receipt.target_updated_at;
   const current = await readItemSnapshot(config.pmRoot, itemId);
   if (current === undefined) return;
-  const { history, assertUnchangedUnderLock } = await readOwnershipHistory(config.pmRoot, current.id);
+  const { history, assertOwnedUnderLock } = await readOwnershipHistory(config.pmRoot, current.id);
   const expectedHistory = receipt.target_history_hash;
   // Only a receipt bound to the immutable history prefix proves what the restore undoes (pm-wb6ktl).
   const journalBound = typeof expectedHistory === "string";
@@ -589,8 +590,7 @@ async function compensateByRestore(
   );
   // Ownership is proven, so guards and workflow policies judge this rollback without being able to wedge it (pm-wb6ktl).
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: current.id, validate: (document) => {
-    assertUnchangedUnderLock(() => partialMutationError(config, current.id, stepId));
-    if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, current.id, stepId);
+    assertOwnedUnderLock(document, () => partialMutationError(config, current.id, stepId));
   }, compensation: ownedCompensation(config, itemId, stepId, "restore", journalBound) }, applyRestore);
 }
 
@@ -691,15 +691,14 @@ function buildCreateStep(
 async function compensateCreatedItem(config: BulkMutationStepConfig, id: string, stepId: string): Promise<void> {
   const snapshot = await readItemSnapshot(config.pmRoot, id);
   if (snapshot === undefined || (config.createCompensation === "close" && snapshot.closedAt !== undefined)) return;
-  const { history, assertUnchangedUnderLock } = await readOwnershipHistory(config.pmRoot, snapshot.id);
+  const { history, assertOwnedUnderLock } = await readOwnershipHistory(config.pmRoot, snapshot.id);
   const applyMarker = bulkHistoryMarker(config.transactionId, stepId, "apply");
   const compensationMarker = bulkHistoryMarker(config.transactionId, stepId, "compensate");
   const latestMarker = history.filter(entry => isStepMarkerMessage(entry.message, applyMarker) || entry.message === compensationMarker).at(-1);
   if (latestMarker?.message === compensationMarker) return;
   if (latestMarker === undefined || !history.every(entry => isTransactionHistoryEntry(entry, config.transactionId))) throw partialMutationError(config, snapshot.id, stepId);
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: snapshot.id, validate: document => {
-    assertUnchangedUnderLock(() => partialMutationError(config, snapshot.id, stepId));
-    if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, snapshot.id, stepId);
+    assertOwnedUnderLock(document, () => partialMutationError(config, snapshot.id, stepId));
   }, compensation: ownedCompensation(config, id, stepId, config.createCompensation === "delete" ? "delete" : "close", true) }, async () => {
     const options = { force: true, author: config.author, message: compensationMarker };
     if (config.createCompensation === "delete") await deleteItem(id, options, { pmRoot: config.pmRoot });
