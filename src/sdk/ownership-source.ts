@@ -184,8 +184,8 @@ async function readOwnershipEvidence(
 }
 
 /** Whether a time is unreadable or at or after the claim, so the event it dates may follow the claim. */
-function atOrAfter(timestamp: unknown, claimedMs: number): boolean {
-  const ms = typeof timestamp === "string" ? Date.parse(timestamp) : Number.NaN;
+function atOrAfter(timestamp: string, claimedMs: number): boolean {
+  const ms = Date.parse(timestamp);
   return !Number.isFinite(ms) || ms >= claimedMs;
 }
 
@@ -248,20 +248,20 @@ export async function resolveItemOwnershipActivity(
   assignee: string,
   options: ClaimActivityOptions,
 ): Promise<ItemOwnershipActivity> {
-  const evidence = await readOwnershipEvidence(pmRoot, itemId, assignee);
-  const { conflict, history, readable } = evidence;
-  // `since` is the claim record's time whenever the stream proved one (unproven is then undefined).
-  const unproven =
-    evidence.unproven ??
-    (readable && (await workspaceRestoredSince(pmRoot, conflict.since as string)) ? "workspace_restored" : undefined);
-  return {
-    ...conflict,
-    activity: evaluateClaimActivity(conflict.since, latestHistoryTimestamp(history), {
+  const { conflict, history, readable, unproven } = await readOwnershipEvidence(pmRoot, itemId, assignee);
+  const judge = (reason: UnprovenActivityReason | undefined) =>
+    evaluateClaimActivity(conflict.since, latestHistoryTimestamp(history), {
       ...options,
       ...(readable ? {} : { history_unreadable: true }),
-      ...(unproven === undefined ? {} : { unproven_activity: unproven }),
-    }),
-  };
+      ...(reason === undefined ? {} : { unproven_activity: reason }),
+    });
+  const activity = judge(unproven);
+  // A restore can only withhold eligibility, so the workspace stream (often megabytes) is read only for a
+  // claim that is otherwise stale; `since` is then the anchor's time, because a proven anchor sets it.
+  if (!activity.stale_policy.stale || !(await workspaceRestoredSince(pmRoot, conflict.since as string))) {
+    return { ...conflict, activity };
+  }
+  return { ...conflict, activity: judge("workspace_restored") };
 }
 
 /** Describe the current ownership source for an atomic claim conflict. */

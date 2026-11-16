@@ -209,6 +209,9 @@ describe("claim activity evidence (GH-1336)", () => {
       // A principal-only claim is evidence only when the holder name it kept is the current holder.
       await write("pm-principal-diverged", [{ ...claimRecord, patch: [{ op: "add", path: "/metadata/assignee", value: "agent-z" }] }, principalClaim]);
       expect(await judge("pm-principal-diverged")).toMatchObject({ source: "unknown", since: null, activity: { unproven_activity: "claim_record_unavailable" } });
+      // A newest assignee change that removed the holder (a release) proves no current claim.
+      await write("pm-released", [claimRecord, { ts: "2026-07-02T00:00:00.000Z", op: "release", patch: [{ op: "remove", path: "/metadata/assignee" }] }]);
+      expect(await judge("pm-released")).toMatchObject({ source: "unknown", since: null, activity: { unproven_activity: "claim_record_unavailable" } });
       // A holder no record sets (silent history) is unproven too.
       await write("pm-silent", [{ ts: "2026-07-01T00:00:00.000Z", op: "comment_add", patch: [] }]);
       expect((await judge("pm-silent")).activity).toMatchObject({ unproven_activity: "claim_record_unavailable", stale_policy: { stale: false } });
@@ -258,6 +261,12 @@ describe("claim activity evidence (GH-1336)", () => {
       ]) {
         expect(await restoreAt(lines)).toMatchObject({ unproven_activity: "workspace_restored", stale_policy: { stale: false } });
       }
+      // Only an otherwise-stale claim reads the workspace stream: an active claim is judged without it, even when it is unreadable.
+      await writeFile(workspacePath, "not-json\n");
+      await write("pm-active", [{ ...claimRecord, ts: "2026-07-04T23:00:00.000Z" }]);
+      const active = (await judge("pm-active")).activity;
+      expect(active).toMatchObject({ idle_hours: 1, stale_policy: { stale: false, eligible_at: "2026-07-07T23:00:00.000Z" } });
+      expect(active).not.toHaveProperty("unproven_activity");
     } finally {
       await rm(pmRoot, { recursive: true, force: true });
     }
