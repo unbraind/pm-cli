@@ -96,6 +96,12 @@ function armGuardGate(lane: "Slow" | "Fast"): { entered: Promise<void>; open: ()
   return { entered, open };
 }
 
+/** Open every gate first, then settle every writer, so a failed assertion never leaves one parked in its guard. */
+async function releaseParkedWriters(gates: ReadonlyArray<{ open: () => void }>, writers: ReadonlyArray<Promise<unknown> | undefined>): Promise<void> {
+  for (const gate of gates) gate.open();
+  await Promise.allSettled(writers.filter((writer): writer is Promise<unknown> => writer !== undefined));
+}
+
 /** Make a held lock read as expired without waiting out its TTL, so the next writer takes it over. */
 async function ageLock(pmPath: string, id: string): Promise<void> {
   const lockPath = getLockPath(pmPath, id);
@@ -453,15 +459,20 @@ describe("lease-fenced import, create and copy writes (pm-0m64xk)", () => {
         conflictWarningPrefix: "parity_import_lock_conflict",
       }));
       const slow = importAs("Slow import", "agent-slow").catch((error: unknown) => error);
-      await slowGate.entered;
-      // The slow writer's lease expires while its guard runs; the fast writer takes the lock over and parks in its guard.
-      await ageLock(context.pmPath, "pm-race");
-      const fast = importAs("Fast import", "agent-fast");
-      await fastGate.entered;
-      slowGate.open();
-      await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
-      fastGate.open();
-      await expect(fast).resolves.toMatchObject({ committed: true });
+      let fast: Promise<unknown> | undefined;
+      try {
+        await slowGate.entered;
+        // The slow writer's lease expires while its guard runs; the fast writer takes the lock over and parks in its guard.
+        await ageLock(context.pmPath, "pm-race");
+        fast = importAs("Fast import", "agent-fast");
+        await fastGate.entered;
+        slowGate.open();
+        await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
+        fastGate.open();
+        await expect(fast).resolves.toMatchObject({ committed: true });
+      } finally {
+        await releaseParkedWriters([slowGate, fastGate], [slow, fast]);
+      }
       const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
       await expect(client.get("pm-race")).resolves.toMatchObject({ item: { title: "Fast import" } });
       const history = await readHistoryEntries(path.join(context.pmPath, "history", "pm-race.jsonl"), "pm-race");
@@ -480,14 +491,19 @@ describe("lease-fenced import, create and copy writes (pm-0m64xk)", () => {
       const slowClient = new PmClient({ pmRoot: context.pmPath, author: "agent-slow" });
       const fastClient = new PmClient({ pmRoot: context.pmPath, author: "agent-fast" });
       const slow = slowClient.create({ id: "pm-race-create", title: "Slow create", type: "Task" }).catch((error: unknown) => error);
-      await slowGate.entered;
-      await ageLock(context.pmPath, "pm-race-create");
-      const fast = fastClient.create({ id: "pm-race-create", title: "Fast create", type: "Task" });
-      await fastGate.entered;
-      slowGate.open();
-      await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
-      fastGate.open();
-      await expect(fast).resolves.toMatchObject({ item: { title: "Fast create" } });
+      let fast: Promise<unknown> | undefined;
+      try {
+        await slowGate.entered;
+        await ageLock(context.pmPath, "pm-race-create");
+        fast = fastClient.create({ id: "pm-race-create", title: "Fast create", type: "Task" });
+        await fastGate.entered;
+        slowGate.open();
+        await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
+        fastGate.open();
+        await expect(fast).resolves.toMatchObject({ item: { title: "Fast create" } });
+      } finally {
+        await releaseParkedWriters([slowGate, fastGate], [slow, fast]);
+      }
       await expect(fastClient.get("pm-race-create")).resolves.toMatchObject({ item: { title: "Fast create" } });
       const history = await readHistoryEntries(path.join(context.pmPath, "history", "pm-race-create.jsonl"), "pm-race-create");
       expect(history.map((entry) => entry.author)).toEqual(["agent-fast"]);

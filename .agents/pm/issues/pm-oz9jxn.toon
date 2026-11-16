@@ -6,10 +6,10 @@ status: open
 priority: 3
 tags[5]: "area:sdk",contracts,developer-experience,release-notes,sdk-surface
 created_at: "2026-11-16T04:20:04.606Z"
-updated_at: "2026-11-16T07:32:19.274Z"
+updated_at: "2026-11-16T09:11:32.714Z"
 author: "harness:claude-code"
 estimated_minutes: 150
-acceptance_criteria: "A signature change is classified compatible only when generated consumer probes (assignment, implementation, keyof and return-use positions) that compile against the old declarations also compile against the new ones; otherwise it is breaking; Each breaking classification records the failing probe as its reason, and each compatible one records the probes it passed; The spec corpus includes every PR 1740 counterexample as a negative control: Promise<void> widening, void-to-value return, a conflicting optional property, a keyof-derived consumer, and a callback parameter made optional; The PR 1740 BeforeMutationHookContext change is a corpus example whose class the probes decide; its keyof probe fails, so it stays breaking with that probe as the reason"
+acceptance_criteria: "A signature change is classified compatible only when generated consumer probes that compile against the old declarations also compile against the new ones; otherwise it is breaking; The probe generator declares its coverage (assignment, implementation, keyof, return-use, and conditional or derived types over parameters and return values such as Exclude<ReturnType<typeof f>, \"x\">); a change that reaches any type position outside the declared coverage is classified breaking; Each breaking classification records the failing probe or the uncovered position as its reason, and each compatible one records the probes it passed; The spec corpus includes every PR 1740 counterexample as a negative control: Promise<void> widening, void-to-value return, a conflicting optional property, a keyof-derived consumer, a callback parameter made optional, and a return narrowing observed through a derived type; The PR 1740 BeforeMutationHookContext change is a corpus example whose class the probes decide; its keyof probe fails, so it stays breaking with that probe as the reason"
 parent: pm-ugqx
 risk: low
 confidence: medium
