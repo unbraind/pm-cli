@@ -351,7 +351,9 @@ Interaction rules:
 
 Test environments inferred from `VITEST`, `VITEST_WORKER_ID`, `NODE_TEST_CONTEXT`
 (native `node --test` children), or `NODE_ENV=test` suppress telemetry and Sentry
-before identity creation. Only an explicit test opt-in permits intentional test
+before identity creation. `bun test` exports no runner-specific variable (there is
+no `BUN_TEST`). It sets `NODE_ENV=test` unless `NODE_ENV` is already set, so Bun is
+covered by the `NODE_ENV` signal. Only an explicit test opt-in permits intentional test
 delivery: `PM_TELEMETRY_SOURCE_CONTEXT=test` or `PM_TELEMETRY_SEND_TEST_EVENTS=1`.
 Either way the events are labelled `test`. A test that only wants the label must
 also set `PM_TELEMETRY_DISABLED=1`.

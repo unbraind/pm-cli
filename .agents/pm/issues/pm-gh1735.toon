@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: agent-ux,"gh:1735",observability,telemetry
 created_at: "2026-11-15T21:50:02.937Z"
-updated_at: "2026-11-16T01:55:12.779Z"
+updated_at: "2026-11-16T02:12:51.485Z"
 closed_at: "2026-11-16T01:11:20.596Z"
 completed_at: "2026-11-16T01:11:20.596Z"
 author: "harness:claude-code"
@@ -22,10 +22,12 @@ dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-745epp,related,"2026-11-15T21:50:02.937Z","harness:claude-code","cli:create:dep",detected
 notes[1]{created_at,author,text}:
   "2026-11-16T01:11:13.317Z","harness:claude-code","Implemented in resolveTelemetryEnvironmentPolicy and resolveTelemetrySourceAttribution (src/core/telemetry/policy.ts).\n\nInside a detected test runner (VITEST, VITEST_WORKER_ID, NODE_TEST_CONTEXT, or NODE_ENV=test), only an explicit test opt-in re-enables telemetry: PM_TELEMETRY_SOURCE_CONTEXT=test or PM_TELEMETRY_SEND_TEST_EVENTS. Those events are labelled test. An inherited automation, user or dogfood context is ignored there, and its attribution source reads inferred. A new enum value was deliberately not added, because remote telemetry consumers validate the closed source_context_source set.\n\nenv_overrides.decided_by names the deciding input:\n- a hard opt-out: env:DO_NOT_TRACK, env:PM_TELEMETRY_DISABLED, env:PM_NO_TELEMETRY, or an invalid env:PM_TELEMETRY_ENDPOINT;\n- the test-runner signal that suppressed delivery: env:VITEST, env:VITEST_WORKER_ID, env:NODE_TEST_CONTEXT, or env:NODE_ENV;\n- the test opt-in that allowed it;\n- null when settings decide.\n\nOutside a test runner nothing changes. Because Sentry instrumentation reads the same policy, test children no longer reach Sentry through an inherited context either.\n\nVerified on the built CLI in an isolated global root:\n- NODE_TEST_CONTEXT=child with an inherited automation context gives enabled=false, decided_by=env:NODE_TEST_CONTEXT.\n- The same with test gives enabled=true, decided_by=env:PM_TELEMETRY_SOURCE_CONTEXT.\n- automation alone gives enabled=true, decided_by=null."
-files[5]{path,scope,note}:
+files[7]{path,scope,note}:
   docs/CONFIGURATION.md,project,Test-runner telemetry precedence and decided_by
   src/core/telemetry/policy.ts,project,Explicit test opt-in inside test runners; decided_by
+  src/sdk/governance/health.ts,project,Health reports an override only when shared attribution honours it
   tests/integration/telemetry/native-test-isolation.integration.spec.ts,project,Real node --test child with an inherited automation context stays silent
+  tests/unit/commands/governance/health-command.spec.ts,project,Health override regression
   tests/unit/core/telemetry/telemetry-policy.spec.ts,project,"Consent table, decided_by and attribution regressions"
   tests/unit/core/telemetry/telemetry-runtime.spec.ts,project,Override propagation and in-runner attribution
 tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

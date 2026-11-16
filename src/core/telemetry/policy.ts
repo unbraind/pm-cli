@@ -32,7 +32,12 @@ export function resolveTelemetrySourceAttribution(
   return { source_context: automated ? "automation" : "user", source_context_source: source };
 }
 
-/** The environment variable that marks the process as running inside a test runner, or undefined. */
+/**
+ * The environment variable that marks the process as running inside a test
+ * runner, or undefined. Bun's `bun test` exports no runner-specific variable
+ * (there is no BUN_TEST); it sets NODE_ENV=test unless NODE_ENV is already
+ * set, so the NODE_ENV signal covers it.
+ */
 export function telemetryTestEnvironmentSignal(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): "VITEST" | "VITEST_WORKER_ID" | "NODE_TEST_CONTEXT" | "NODE_ENV" | undefined {

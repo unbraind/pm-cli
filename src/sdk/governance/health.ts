@@ -17,7 +17,7 @@ import { runInitAgentGuidance } from "../init-agent-guidance.js";
 import { extensionVersionRemediation } from "../../core/extensions/version-diagnostics.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { effectiveTelemetryEndpoint, redactTelemetryEndpoint, resolveTelemetryEnvironmentPolicy, stripUrlCredentials, telemetryRuntimeFileName } from "../../core/telemetry/policy.js";
+import { effectiveTelemetryEndpoint, redactTelemetryEndpoint, resolveTelemetryEnvironmentPolicy, resolveTelemetrySourceAttribution, stripUrlCredentials, telemetryRuntimeFileName } from "../../core/telemetry/policy.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -77,7 +77,6 @@ import {
   listAllItemMetadataWithBody,
 } from "../../core/store/item-store.js";
 import {
-  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
   TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS,
   TELEMETRY_SCHEMA_VERSION,
 } from "../../core/telemetry/runtime.js";
@@ -161,10 +160,6 @@ import {
   inspectStatusRoleAssignments,
   type StatusRoleDiagnostics,
 } from "./status-role-diagnostics.js";
-
-const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(
-  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
-);
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
@@ -1506,13 +1501,11 @@ function telemetryEnvFlagEnabled(
 
 /* c8 ignore start -- environment override permutations are covered by runtime integration tests */
 function telemetrySourceContextOverride(): string | null {
-  // Only report an override the runtime actually honours: runtime.ts ignores any
-  // value outside the enum and falls back to the inferred context, so health must
-  // report null for an unrecognized value rather than implying it took effect.
-  const value = (process.env.PM_TELEMETRY_SOURCE_CONTEXT ?? "")
-    .trim()
-    .toLowerCase();
-  return PM_TELEMETRY_SOURCE_CONTEXT_SET.has(value) ? value : null;
+  // Only report an override the runtime actually honours. Shared attribution ignores a
+  // value outside the enum, and inside a test runner any context but test (GH-1735), so
+  // health reports null rather than implying the override took effect.
+  const attribution = resolveTelemetrySourceAttribution();
+  return attribution.source_context_source === "env_override" ? attribution.source_context : null;
 }
 /* c8 ignore stop */
 
