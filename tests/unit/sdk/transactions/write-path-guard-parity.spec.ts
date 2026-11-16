@@ -39,6 +39,7 @@ interface GuardLogEntry {
 
 const GUARD_LOG_KEY = "__pmWb6ktlGuardLog";
 const GATE_KEY_PREFIX = JSON.stringify("__pmGuardParity");
+const ABA_ARM_KEY = "__pmGuardParityAbaArm";
 
 function guardLog(): GuardLogEntry[] {
   const store = globalThis as unknown as Record<string, GuardLogEntry[] | undefined>;
@@ -47,8 +48,16 @@ function guardLog(): GuardLogEntry[] {
 }
 
 /** Denies every close, delete and restore; crashes on items titled "Throw"; denies updates titled "Denied update". */
-const ROLLBACK_DENYING_GUARD = `export default {
+const ROLLBACK_DENYING_GUARD = `import { appendFileSync } from "node:fs";
+export default {
   activate(api) {
+    // Armed by a test: the created item's rollback proof read gains a foreign line right after its bytes are read.
+    api.hooks.onRead((read) => {
+      const armed = globalThis.${ABA_ARM_KEY};
+      if (!armed || !read.path.endsWith(armed + ".jsonl") || !new Error().stack.includes("compensateCreatedItem")) return;
+      globalThis.${ABA_ARM_KEY} = undefined;
+      appendFileSync(read.path, "\\n");
+    });
     api.hooks.beforeMutation(async (context) => {
       const document = context.after ?? context.before;
       (globalThis.${GUARD_LOG_KEY} ??= []).push({
@@ -59,6 +68,7 @@ const ROLLBACK_DENYING_GUARD = `export default {
       });
       const title = document?.metadata.title ?? "";
       if (context.operation === "update" && context.after?.metadata.title === "Denied update") {
+        if (document?.metadata.id === "pm-batch-aba") globalThis.${ABA_ARM_KEY} = "pm-batch-aba";
         return { allow: false, code: "update_denied", remediation: "Use another title." };
       }
       // Guards run under the item lock, so entering here proves the writer holds it.
@@ -262,6 +272,26 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
       expect(guardLog().filter((logged) => logged.operation !== "create").map((logged) => logged.compensation)).toEqual([null, null, null]);
       await expect(client.get("pm-owned")).resolves.toMatchObject({ item: { status: "open" } });
       await expect(client.get("pm-unowned")).resolves.toMatchObject({ item: { status: "open" } });
+    });
+  });
+
+  it("refuses the rollback when the item's history changes between the ownership proof and the locked write", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch" });
+      const historyPath = path.join(context.pmPath, "history", "pm-batch-aba.jsonl");
+      const failure = await client.commitItemMutations({
+        transactionId: "wb6ktl-aba",
+        mutations: [
+          { op: "create", id: "pm-batch-aba", options: { title: "Batch ABA", type: "Task" } },
+          { op: "update", id: "pm-batch-aba", options: { title: "Denied update" } },
+        ],
+      }).catch((error: unknown) => error) as AggregateError;
+      // The proof read history, a foreign line landed after it, and the locked recheck refused instead of granting the exemption.
+      expect(failure.message).toContain("compensation failed");
+      expect(failure.errors.at(-1)).toMatchObject({ code: "transaction_partial_mutation" });
+      await expect(client.get("pm-batch-aba")).resolves.toMatchObject({ item: { status: "open" } });
+      expect((await readFile(historyPath, "utf8")).endsWith("\n\n")).toBe(true);
     });
   });
 

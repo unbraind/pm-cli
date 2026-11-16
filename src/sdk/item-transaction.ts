@@ -7,7 +7,7 @@
  */
 import crypto from "node:crypto";
 import { runGet, type GetResult } from "./query/get.js";
-import { constants, type Stats } from "node:fs";
+import { constants, readFileSync, type Stats } from "node:fs";
 import { isFileMissingError, readRegularFile, transactionPreviewNonRegularFileError } from "../core/fs/fs-utils.js";
 import { cp, lstat, mkdir, mkdtemp, open, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -34,6 +34,7 @@ import { stableUpsertValue, type ItemMutationUpsertCandidate } from "./structure
 import { stableStringify } from "../core/shared/serialization.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 import { readHistoryEntries } from "./history-read.js";
+import { readHistorySnapshot } from "../core/history/read.js";
 import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
 import {
   close,
@@ -524,6 +525,18 @@ function hasOwnedCompensationEffects(
   return true;
 }
 
+/**
+ * Read the history a compensation's ownership proof decides on, bound to the
+ * exact bytes read. The locked write rechecks those bytes, so a foreign write
+ * that lands after the proof, even one that later restores the same document
+ * hash, refuses the rollback instead of granting it on stale history.
+ */
+async function readOwnershipHistory(pmRoot: string, id: string): Promise<{ history: HistoryEntry[]; unchangedUnderLock: () => boolean }> {
+  const historyPath = path.join(pmRoot, "history", `${id}.jsonl`);
+  const snapshot = await readHistorySnapshot(historyPath, id);
+  return { history: snapshot.entries, unchangedUnderLock: () => readFileSync(historyPath, "utf8") === snapshot.raw };
+}
+
 /** Idempotently restore an item to its captured pre-mutation version. */
 async function compensateByRestore(
   config: { pmRoot: string; author: string; transactionId: string },
@@ -541,7 +554,7 @@ async function compensateByRestore(
   const target = receipt.target_updated_at;
   const current = await readItemSnapshot(config.pmRoot, itemId);
   if (current === undefined) return;
-  const history = await readHistoryEntries(path.join(config.pmRoot, "history", `${current.id}.jsonl`), current.id);
+  const { history, unchangedUnderLock } = await readOwnershipHistory(config.pmRoot, current.id);
   const expectedHistory = receipt.target_history_hash;
   // Only a receipt bound to the immutable history prefix proves what the restore undoes (pm-wb6ktl).
   const journalBound = typeof expectedHistory === "string";
@@ -563,7 +576,7 @@ async function compensateByRestore(
   );
   // Ownership is proven, so guards and workflow policies judge this rollback without being able to wedge it (pm-wb6ktl).
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: current.id, validate: (document) => {
-    if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, current.id, stepId);
+    if (!unchangedUnderLock() || hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, current.id, stepId);
   }, compensation: ownedCompensation(config, itemId, stepId, "restore", journalBound) }, applyRestore);
 }
 
@@ -664,14 +677,14 @@ function buildCreateStep(
 async function compensateCreatedItem(config: BulkMutationStepConfig, id: string, stepId: string): Promise<void> {
   const snapshot = await readItemSnapshot(config.pmRoot, id);
   if (snapshot === undefined || (config.createCompensation === "close" && snapshot.closedAt !== undefined)) return;
-  const history = await readHistoryEntries(path.join(config.pmRoot, "history", `${snapshot.id}.jsonl`), snapshot.id);
+  const { history, unchangedUnderLock } = await readOwnershipHistory(config.pmRoot, snapshot.id);
   const applyMarker = bulkHistoryMarker(config.transactionId, stepId, "apply");
   const compensationMarker = bulkHistoryMarker(config.transactionId, stepId, "compensate");
   const latestMarker = history.filter(entry => isStepMarkerMessage(entry.message, applyMarker) || entry.message === compensationMarker).at(-1);
   if (latestMarker?.message === compensationMarker) return;
   if (latestMarker === undefined || !history.every(entry => isTransactionHistoryEntry(entry, config.transactionId))) throw partialMutationError(config, snapshot.id, stepId);
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: snapshot.id, validate: document => {
-    if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, snapshot.id, stepId);
+    if (!unchangedUnderLock() || hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, snapshot.id, stepId);
   }, compensation: ownedCompensation(config, id, stepId, config.createCompensation === "delete" ? "delete" : "close", true) }, async () => {
     const options = { force: true, author: config.author, message: compensationMarker };
     if (config.createCompensation === "delete") await deleteItem(id, options, { pmRoot: config.pmRoot });
