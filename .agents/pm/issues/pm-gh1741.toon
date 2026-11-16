@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli",bootstrap,create,"gh:1741"
 created_at: "2026-11-16T16:52:55.478Z"
-updated_at: "2026-11-16T18:08:47.296Z"
+updated_at: "2026-11-16T19:13:41.320Z"
 closed_at: "2026-11-16T16:55:17.631Z"
 completed_at: "2026-11-16T16:55:17.631Z"
 author: "harness:claude-code"
@@ -22,11 +22,12 @@ actual_result: "All six listed prefixes create Issues with intact titles on the 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-7vm9,related,"2026-11-16T16:52:55.478Z","harness:claude-code","cli:create:dep",detected
   pm-8sr3,related,"2026-11-16T16:52:55.478Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-16T16:55:16.674Z","harness:claude-code","Implementation note (2026-11-16): parseBareKeyValueToken now returns null for a colon token that contains any whitespace, so a shell-grouped token such as \"Docs: adopt X\" stays text, while whitespace-free shorthand (docs:README.md) and the equals form keep their promotion. main.ts records the invocation's bare_key_value promotions in src/cli/runtime/invocation-rewrites.ts. The create positional-type refusal names each promoted token and suggests renderPmCommand([create, <type>, --title, <token>]), and otherwise suggests the --title form, never the attempted command. Its message was shortened to stay within the 120-character problem title. Verified on a scratch tracker: all six listed prefixes create Issues with their titles intact, and pm create issue Docs:README refuses with next step 'Keep \"Docs:README\" as the title: pm create issue --title Docs:README'."
   "2026-11-16T17:56:10.641Z","harness:claude-code","Review fix (PR 1744, CodeRabbit). Major: the suggested --title retry dropped the invocation's tracker and extension scope, so run from another directory it could create the item in a different tracker. The refusal now appends resolvePmCommandScopeArgs(globalOptions), as other recovery commands do (for example --pm-path <tracker>, --no-extensions). Minor: with a promoted token the rewrite note pushed the message's first line, which is the problem title, past 120 characters. The note is now a second line, so the title stays complete. Specs assert the scoped retry and the line split."
   "2026-11-16T18:08:47.295Z","harness:claude-code","Review fix (PR 1744, Codex round 2, P2): the new scope assertions assumed / separators and unquoted tracker paths, so they would fail on Windows or with a space in the temporary path. Both specs now build the expected retry with renderPmCommand, the CLI's own quoting, and the integration spec passes an explicit --pm-path, whose spelling the scope helper preserves."
-files[7]{path,scope,note}:
+  "2026-11-16T19:13:41.319Z","harness:claude-code","Hosted CI on 112f533b9: the agent-evidence-consistency negative control failed on Linux shard 2 and on Windows. One of its 15 source mutants drops comments, notes and learnings from the bare-key exclusion list in cli-bootstrap.ts and expects 'preserves annotation evidence in the public bootstrap normalizer' to fail. Every literal in that spec has whitespace after the colon, so the GH-1741 rule now keeps them literal with or without the exclusion, and the mutant survived. The spec now adds the whitespace-free, flag-shaped literals add:literal and file=evidence.txt, which only the exclusion protects. The negative control kills all 15 mutants again, and the control spec plus the regression spec pass (26/26)."
+files[8]{path,scope,note}:
   src/cli/main.ts,project,records promotions
   src/cli/register-mutation.ts,project,"refusal names promotion, retries with --title"
   src/cli/runtime/invocation-rewrites.ts,project,per-invocation promotion record
@@ -34,6 +35,7 @@ files[7]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,end-to-end spec
   tests/unit/cli/bootstrap-args.spec.ts,project,normalizer spec
   tests/unit/commands/register-commands.spec.ts,project,refusal spec
+  tests/unit/regressions/agent-evidence-consistency.spec.ts,project,keeps the annotation-exclusion mutant detectable
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test tests/unit/cli/bootstrap-args.spec.ts tests/unit/commands/register-commands.spec.ts tests/integration/help-runtime.spec.ts,project,600,"harness:claude-code","2026-11-16T16:53:39.569Z",local_mutation,fix/gh1741-colon-title-shorthand
 docs[1]{path,scope,note}:
