@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: dependencies,github-actions,quality,sentry
 created_at: "2026-11-16T14:55:36.707Z"
-updated_at: "2026-11-16T15:44:24.928Z"
+updated_at: "2026-11-16T20:15:46.202Z"
 closed_at: "2026-11-16T15:21:59.854Z"
 completed_at: "2026-11-16T15:21:59.854Z"
 author: "harness:claude-code"
@@ -23,10 +23,11 @@ dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-4dz7,related,"2026-11-16T14:55:47.551Z","harness:claude-code","cli:update:dep",detected
   pm-98f0ec,related,"2026-11-16T14:55:47.551Z","harness:claude-code","cli:update:dep",detected
   pm-jy61mz,related,"2026-11-16T15:09:21.864Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-16T15:09:44.719Z","harness:claude-code","Trial of @sentry/node 11.11.0 on this branch: the build passed after dropping enableLogs. tests/integration/telemetry/extension-error-provenance.spec.ts then failed because Sentry 11 printed a stderr warning (beforeSendTransaction and ignoreTransactions are ignored under traceLifecycle stream), and quality:package-artifact failed with Missing tested runtime package: @oxc-parser/binding-android-arm-eabi. The runtime closure had grown to 88 packages through @sentry/bundler-plugins and oxc-parser. Reverted to the 10.x line at 10.78.0: the closure is 42 packages, package-artifact is ok, and 185/185 Sentry, telemetry and workflow-contract specs pass. The Sentry 11 adoption is pm-jy61mz."
   "2026-11-16T15:21:57.061Z","harness:claude-code","Delivered in PR 1742. Dependabot PRs 1737, 1738 and 1739 are closed as superseded, each with one comment linking PR 1742 and this item; 1739's comment explains the held major and links pm-jy61mz."
   "2026-11-16T15:44:24.928Z","harness:claude-code","Review fix (PR 1742, Greptile): tests/unit/packages/package-manifest.spec.ts pins the approved packed-consumer-safe Sentry release and still required 10.76.2. It now requires 10.78.0. The spec, the package-distribution and release-readiness runtime specs, and the build spec pass (99/99), and the packed TypeScript consumer proof runs in the hosted smoke and coverage jobs."
+  "2026-11-16T20:15:46.201Z","harness:claude-code","Follow-up the same day: Dependabot PR 1743 (dev-dependencies group, typescript-eslint 8.72.1 to 8.72.2, lockfile only) opened at 17:08Z, after this chore closed. It is adopted directly on its own PR, with main merged in and a full ESLint run passing on the new linter version."
 files[6]{path,scope,note}:
   .github/dependabot.yml,project,Sentry major ignore
   .github/workflows/ci.yml,project,action bumps
