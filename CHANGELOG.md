@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2026.11.16 - 2026-11-16
 
 ### Changed (SDK contract)
 
