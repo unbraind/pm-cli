@@ -2168,8 +2168,9 @@ A guard that denies `close`, `delete` or `restore` must not wedge a refused
 batch half-applied (pm-wb6ktl). When a later step of `commitItemMutations` is
 refused, the coordinator compensates the steps it applied. It closes or deletes
 the items it created and restores the items it updated. The exemption needs
-three proofs. The coordinator itself must be compensating that step of its
-journal. The item's immutable history must prove the effects are the step's own:
+three proofs. The coordinator itself must be compensating that step, and the
+step must be one the SDK built from the batch plan for that item and operation,
+never a step a caller supplied to `commitWorkspaceTransaction`. The item's immutable history must prove the effects are the step's own:
 a create whose whole history belongs to the transaction, or a restore receipt
 bound to the history prefix the journal captured. Finally, the ownership check
 must have held against the locked item stored under that id. Only that write
@@ -2183,8 +2184,9 @@ rollback's history entry lists each one under
 The batch then reports the original refusal. All of the following are judged
 normally: a write to another item, a write that proposes the scoped id for a
 different stored item, another operation, an ordinary close that reuses the
-compensation history message, a direct call of a compensation helper outside the
-coordinator, and a legacy receipt identified by its message alone. Pass `compensation` to `runRegisteredMutationGuardForTest` (or
+compensation history message, a direct call of a compensation helper, a
+caller-supplied coordinator step that calls one, and a legacy receipt identified
+by its message alone. Pass `compensation` to `runRegisteredMutationGuardForTest` (or
 `harness.runMutationGuard`) to exercise a guard's rollback branch: it then
 resolves the recorded overrides instead of refusing, while an ordinary context
 still resolves `undefined`. As on a host, a dry-run context is never exempted. Preview cost is proportional to the tracker data

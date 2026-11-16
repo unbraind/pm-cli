@@ -1215,6 +1215,7 @@ export function runRegisteredMutationGuardForTest(
   hooks: ExtensionHookRegistry,
   options: RunRegisteredMutationGuardForTestOptions,
 ): Promise<void>;
+/** Shared implementation of both guard-test overloads. */
 export async function runRegisteredMutationGuardForTest(
   hooks: ExtensionHookRegistry,
   options: RunRegisteredMutationGuardForTestOptions,

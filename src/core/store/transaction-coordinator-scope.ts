@@ -2,29 +2,30 @@
  * @module core/store/transaction-coordinator-scope
  *
  * Marks the workspace-transaction coordinator's own compensation of one step,
- * so a rollback exemption is granted only to the coordinator undoing a step of
- * its journal, never to a direct call of a compensation helper (pm-wb6ktl).
- * Only the coordinator opens this scope; nothing outside the store and SDK
- * transaction modules imports it.
+ * carrying the step object it is compensating. A rollback exemption is granted
+ * only when that object is a step the SDK built for the item, operation and
+ * transaction being undone, so neither a direct call of a compensation helper
+ * nor a caller-supplied step can claim it (pm-wb6ktl). Only the coordinator
+ * opens this scope.
  */
 import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 
-interface CoordinatorCompensationIdentity {
+interface CoordinatorCompensation {
   pmRoot: string;
   transactionId: string;
-  stepId: string;
+  step: object;
 }
 
-const coordinatorCompensation = new AsyncLocalStorage<CoordinatorCompensationIdentity>();
+const coordinatorCompensation = new AsyncLocalStorage<CoordinatorCompensation>();
 
-/** Run one step's compensation as the coordinator undoing its own journal step. */
-export function runAsCoordinatorCompensation<T>(identity: CoordinatorCompensationIdentity, run: () => Promise<T>): Promise<T> {
-  return coordinatorCompensation.run({ ...identity, pmRoot: path.resolve(identity.pmRoot) }, run);
+/** Run one step's compensation as the coordinator undoing that step of its journal. */
+export function runAsCoordinatorCompensation<T>(compensation: CoordinatorCompensation, run: () => Promise<T>): Promise<T> {
+  return coordinatorCompensation.run({ ...compensation, pmRoot: path.resolve(compensation.pmRoot) }, run);
 }
 
-/** True only while the coordinator compensates exactly this transaction step on this tracker. */
-export function isCoordinatorCompensating(pmRoot: string, transactionId: string, stepId: string): boolean {
+/** The step the coordinator is compensating for this tracker and transaction, if any. */
+export function activeCoordinatorStep(pmRoot: string, transactionId: string): object | undefined {
   const active = coordinatorCompensation.getStore();
-  return active !== undefined && active.pmRoot === path.resolve(pmRoot) && active.transactionId === transactionId && active.stepId === stepId;
+  return active !== undefined && active.pmRoot === path.resolve(pmRoot) && active.transactionId === transactionId ? active.step : undefined;
 }

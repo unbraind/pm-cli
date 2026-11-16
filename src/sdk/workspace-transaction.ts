@@ -625,7 +625,7 @@ async function compensateAppliedSteps(
       await emitTransition(options, journal, "step_compensating", step.id);
       // Only the coordinator's own compensation may claim a rollback exemption (pm-wb6ktl).
       await runAsCoordinatorCompensation(
-        { pmRoot: options.pmRoot, transactionId: journal.transactionId, stepId: step.id },
+        { pmRoot: options.pmRoot, transactionId: journal.transactionId, step },
         () => step.compensate(journal.compensationData[step.id]),
       );
     }

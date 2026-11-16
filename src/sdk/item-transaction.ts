@@ -20,7 +20,7 @@ import { EXIT_CODE, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS, SETTINGS_FILENAME } 
 import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { listAllItemMetadataLight } from "../core/store/item-store.js";
 import { runWithItemMutationPrecondition, type OwnedTransactionCompensation } from "../core/store/item-mutation-precondition.js";
-import { isCoordinatorCompensating } from "../core/store/transaction-coordinator-scope.js";
+import { activeCoordinatorStep } from "../core/store/transaction-coordinator-scope.js";
 import { hashDocument, hashHistoryStream } from "../core/history/history.js";
 import { historyVersionOffset } from "../core/history/version-address.js";
 import { isConfigurationOnlySettingsRead, readSettings } from "../core/store/settings.js";
@@ -564,23 +564,38 @@ async function compensateByRestore(
   // Ownership is proven, so guards and workflow policies judge this rollback without being able to wedge it (pm-wb6ktl).
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: current.id, validate: (document) => {
     if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, current.id, stepId);
-  }, compensation: ownedCompensation(config, stepId, "restore", journalBound) }, applyRestore);
+  }, compensation: ownedCompensation(config, itemId, stepId, "restore", journalBound) }, applyRestore);
 }
+
+/** What one SDK-built transaction step may undo: registered only by buildStepForMutation. */
+interface CoordinatorOwnedStep {
+  transactionId: string;
+  stepId: string;
+  itemId: string;
+  operation: "close" | "delete" | "restore";
+}
+
+/** Steps the SDK built for a transaction plan; caller-supplied and test-only steps are never registered. */
+const coordinatorOwnedSteps = new WeakMap<object, CoordinatorOwnedStep>();
 
 /**
  * The rollback scope opened once history proves a step's effects are its own.
- * It is granted only while the coordinator itself compensates this step, and
- * only for proof bound to immutable history; a direct helper call, or a legacy
- * receipt identified by a free-form message alone, keeps normal guard and
- * policy enforcement (pm-wb6ktl).
+ * It is granted only while the coordinator compensates a step the SDK built
+ * for exactly this transaction, step, item and operation, and only for proof
+ * bound to immutable history. A direct helper call, a caller-supplied step, or
+ * a legacy receipt identified by a free-form message alone keeps normal guard
+ * and policy enforcement (pm-wb6ktl).
  */
 function ownedCompensation(
   config: { pmRoot: string; transactionId: string },
+  itemId: string,
   stepId: string,
-  operation: "close" | "delete" | "restore",
+  operation: CoordinatorOwnedStep["operation"],
   historyBound: boolean,
 ): OwnedTransactionCompensation | undefined {
-  if (!historyBound || !isCoordinatorCompensating(config.pmRoot, config.transactionId, stepId)) return undefined;
+  const step = historyBound ? activeCoordinatorStep(config.pmRoot, config.transactionId) : undefined;
+  const owner = step === undefined ? undefined : coordinatorOwnedSteps.get(step);
+  if (owner?.stepId !== stepId || owner.itemId !== itemId || owner.operation !== operation) return undefined;
   return { transaction_id: config.transactionId, step_id: stepId, operations: [operation], overrides: [] };
 }
 
@@ -657,7 +672,7 @@ async function compensateCreatedItem(config: BulkMutationStepConfig, id: string,
   if (latestMarker === undefined || !history.every(entry => isTransactionHistoryEntry(entry, config.transactionId))) throw partialMutationError(config, snapshot.id, stepId);
   await runWithItemMutationPrecondition({ pmRoot: config.pmRoot, id: snapshot.id, validate: document => {
     if (hashDocument(document) !== history.at(-1)!.after_hash) throw partialMutationError(config, snapshot.id, stepId);
-  }, compensation: ownedCompensation(config, stepId, config.createCompensation === "delete" ? "delete" : "close", true) }, async () => {
+  }, compensation: ownedCompensation(config, id, stepId, config.createCompensation === "delete" ? "delete" : "close", true) }, async () => {
     const options = { force: true, author: config.author, message: compensationMarker };
     if (config.createCompensation === "delete") await deleteItem(id, options, { pmRoot: config.pmRoot });
     // A rollback close completes no work, so close validation (evidence, deferred fields) must not refuse it (GH-1713).
@@ -837,6 +852,23 @@ function buildStepForMutation(
   index: number,
 ): WorkspaceTransactionStep {
   const stepId = deriveStepId(mutation, index);
+  const step = buildPlannedStep(config, mutation, stepId);
+  // Only steps built here from the plan may claim a rollback exemption while the coordinator compensates them.
+  coordinatorOwnedSteps.set(step, {
+    transactionId: config.transactionId,
+    stepId,
+    itemId: mutation.id,
+    operation: mutation.op !== "create" ? "restore" : config.createCompensation === "delete" ? "delete" : "close",
+  });
+  return step;
+}
+
+/** Build the workspace-transaction step for one planned mutation. */
+function buildPlannedStep(
+  config: BulkMutationStepConfig,
+  mutation: BulkItemMutation,
+  stepId: string,
+): WorkspaceTransactionStep {
   switch (mutation.op) {
     case "create":
       return buildCreateStep(config, mutation, stepId);

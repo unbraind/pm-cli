@@ -8,16 +8,19 @@
  *   lock lease, and an import re-checks the id under the lock.
  */
 import path from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { PmClient } from "../../../../src/sdk/runtime.js";
 import { _testOnlyItemTransaction } from "../../../../src/sdk/item-transaction.js";
+import { commitWorkspaceTransaction } from "../../../../src/sdk/workspace-transaction.js";
+import { hashHistoryStream } from "../../../../src/core/history/history.js";
+import { historyVersionOffset } from "../../../../src/core/history/version-address.js";
 import { commitImportedItem, runWithActiveExtensions } from "../../../../src/sdk/index.js";
 import { activateExtensionForTest, createExtensionTestHarness, runRegisteredMutationGuardForTest } from "../../../../src/sdk/testing.js";
 import { runWorkflowPolicyAction } from "../../../../src/sdk/governance/workflow-policy.js";
 import { readHistoryEntries } from "../../../../src/core/history/read.js";
 import { readSettings, writeSettings } from "../../../../src/core/store/settings.js";
-import { getItemPath } from "../../../../src/core/store/paths.js";
+import { getItemPath, getLockPath } from "../../../../src/core/store/paths.js";
 import { runWithItemMutationPrecondition } from "../../../../src/core/store/item-mutation-precondition.js";
 import { enforceWorkflowMutation } from "../../../../src/core/policy/workflow-policy-store.js";
 import { createEmptyExtensionHookRegistry, runActiveBeforeMutationHooks, setActiveExtensionHooks } from "../../../../src/core/extensions/index.js";
@@ -35,8 +38,7 @@ interface GuardLogEntry {
 }
 
 const GUARD_LOG_KEY = "__pmWb6ktlGuardLog";
-const SLOW_GATE_KEY = "__pmGuardParitySlowGate";
-const SLOW_ENTERED_KEY = "__pmGuardParitySlowEntered";
+const GATE_KEY_PREFIX = JSON.stringify("__pmGuardParity");
 
 function guardLog(): GuardLogEntry[] {
   const store = globalThis as unknown as Record<string, GuardLogEntry[] | undefined>;
@@ -59,10 +61,12 @@ const ROLLBACK_DENYING_GUARD = `export default {
       if (context.operation === "update" && context.after?.metadata.title === "Denied update") {
         return { allow: false, code: "update_denied", remediation: "Use another title." };
       }
-      if ((context.operation === "create" || context.operation === "import") && title.startsWith("Slow")) {
-        // Guards run under the item lock, so entering here proves the slow writer holds it.
-        globalThis.${SLOW_ENTERED_KEY}?.();
-        await globalThis.${SLOW_GATE_KEY};
+      // Guards run under the item lock, so entering here proves the writer holds it.
+      for (const lane of ["Slow", "Fast"]) {
+        if ((context.operation === "create" || context.operation === "import") && title.startsWith(lane)) {
+          globalThis[${GATE_KEY_PREFIX} + lane + "Entered"]?.();
+          await globalThis[${GATE_KEY_PREFIX} + lane + "Gate"];
+        }
       }
       if (!["close", "delete", "restore"].includes(context.operation)) return { allow: true };
       if (title.startsWith("Throw")) throw new Error("guard crashed");
@@ -82,13 +86,22 @@ async function installGuard(context: TempPmContext): Promise<void> {
   guardLog().length = 0;
 }
 
-/** Close the slow guard's gate, and resolve once a slow writer is inside its guard (holding the item lock). */
-function armSlowGuard(): { entered: Promise<void>; open: () => void } {
+/** Close one writer lane's guard gate; `entered` resolves once that writer is inside its guard, holding the item lock. */
+function armGuardGate(lane: "Slow" | "Fast"): { entered: Promise<void>; open: () => void } {
   const store = globalThis as Record<string, unknown>;
+  const prefix = JSON.parse(GATE_KEY_PREFIX) as string;
   let open!: () => void;
-  store[SLOW_GATE_KEY] = new Promise<void>((resolve) => { open = resolve; });
-  const entered = new Promise<void>((resolve) => { store[SLOW_ENTERED_KEY] = resolve; });
+  store[`${prefix}${lane}Gate`] = new Promise<void>((resolve) => { open = resolve; });
+  const entered = new Promise<void>((resolve) => { store[`${prefix}${lane}Entered`] = resolve; });
   return { entered, open };
+}
+
+/** Make a held lock read as expired without waiting out its TTL, so the next writer takes it over. */
+async function ageLock(pmPath: string, id: string): Promise<void> {
+  const lockPath = getLockPath(pmPath, id);
+  const lock = JSON.parse(await readFile(lockPath, "utf8")) as { created_at: string };
+  lock.created_at = new Date(Date.now() - 3_600_000).toISOString();
+  await writeFile(lockPath, JSON.stringify(lock));
 }
 
 async function lastEntry(pmPath: string, id: string) {
@@ -272,6 +285,38 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
     });
   });
 
+  it("grants no exemption to a caller-supplied coordinator step that calls a compensation helper", async () => {
+    await withTempPmPath(async (context) => {
+      await installGuard(context);
+      const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch" });
+      const created = await client.create({ id: "pm-custom", title: "Original title", type: "Task" });
+      const prefix = await readHistoryEntries(path.join(context.pmPath, "history", "pm-custom.jsonl"), "pm-custom");
+      // A history-bound receipt computed by the caller, then a forged step-marker update it is allowed to make.
+      const receipt = {
+        target_updated_at: created.item.updated_at as string,
+        target_version: String(historyVersionOffset(prefix) + prefix.length),
+        target_history_hash: hashHistoryStream(prefix),
+        target_history_length: prefix.length,
+      };
+      await client.update("pm-custom", { title: "Forged update", message: "bulk-item-transaction custom-tx s1 apply" });
+      let applied = false;
+      const config = { pmRoot: context.pmPath, author: "agent-batch", transactionId: "custom-tx" };
+      await expect(runWithActiveExtensions({ path: context.pmPath }, () => commitWorkspaceTransaction({
+        pmRoot: context.pmPath, transactionId: "custom-tx", author: "agent-batch",
+        steps: [
+          {
+            id: "s1",
+            inspect: async () => ({ state: applied ? "applied" : "pending" }),
+            apply: async () => { applied = true; return null; },
+            compensate: async () => { await _testOnlyItemTransaction.compensateByRestore(config, "pm-custom", "s1", receipt); },
+          },
+          { id: "s2", inspect: async () => ({ state: "pending" }), apply: async () => { throw new Error("Later step refused"); }, compensate: async () => {} },
+        ],
+      }))).rejects.toThrow("compensation failed");
+      await expect(client.get("pm-custom")).resolves.toMatchObject({ item: { title: "Forged update" } });
+    });
+  });
+
   it("binds the exemption to the validated storage identity, never to a proposed id", async () => {
     await withTempPmPath(async (context) => {
       const client = new PmClient({ pmRoot: context.pmPath, author: "agent-batch", noExtensions: true });
@@ -394,21 +439,24 @@ describe("lease-fenced import, create and copy writes (pm-0m64xk)", () => {
     await withTempPmPath(async (context) => {
       await installGuard(context);
       const settings = await readSettings(context.pmPath);
-      settings.locks.ttl_seconds = 1;
       settings.governance.force_required_for_stale_lock = false;
-      const gate = armSlowGuard();
+      const slowGate = armGuardGate("Slow");
+      const fastGate = armGuardGate("Fast");
       const importAs = (title: string, author: string) => runWithActiveExtensions({ path: context.pmPath }, () => commitImportedItem({
         pmRoot: context.pmPath, id: "pm-race", itemPath: getItemPath(context.pmPath, "Task", "pm-race", "toon"),
         document: importDocument("pm-race", title) as never, author, message: "Import", settings,
         conflictWarningPrefix: "parity_import_lock_conflict",
       }));
       const slow = importAs("Slow import", "agent-slow").catch((error: unknown) => error);
-      // The TTL runs from lock creation, which precedes the guard: wait it out only once the lock is provably held.
-      await gate.entered;
-      await sleep(1_200);
-      await expect(importAs("Fast import", "agent-fast")).resolves.toMatchObject({ committed: true });
-      gate.open();
+      await slowGate.entered;
+      // The slow writer's lease expires while its guard runs; the fast writer takes the lock over and parks in its guard.
+      await ageLock(context.pmPath, "pm-race");
+      const fast = importAs("Fast import", "agent-fast");
+      await fastGate.entered;
+      slowGate.open();
       await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
+      fastGate.open();
+      await expect(fast).resolves.toMatchObject({ committed: true });
       const client = new PmClient({ pmRoot: context.pmPath, noExtensions: true });
       await expect(client.get("pm-race")).resolves.toMatchObject({ item: { title: "Fast import" } });
       const history = await readHistoryEntries(path.join(context.pmPath, "history", "pm-race.jsonl"), "pm-race");
@@ -420,18 +468,21 @@ describe("lease-fenced import, create and copy writes (pm-0m64xk)", () => {
     await withTempPmPath(async (context) => {
       await installGuard(context);
       const settings = await readSettings(context.pmPath);
-      settings.locks.ttl_seconds = 1;
       settings.governance.force_required_for_stale_lock = false;
       await writeSettings(context.pmPath, settings);
-      const gate = armSlowGuard();
+      const slowGate = armGuardGate("Slow");
+      const fastGate = armGuardGate("Fast");
       const slowClient = new PmClient({ pmRoot: context.pmPath, author: "agent-slow" });
       const fastClient = new PmClient({ pmRoot: context.pmPath, author: "agent-fast" });
       const slow = slowClient.create({ id: "pm-race-create", title: "Slow create", type: "Task" }).catch((error: unknown) => error);
-      await gate.entered;
-      await sleep(1_200);
-      await expect(fastClient.create({ id: "pm-race-create", title: "Fast create", type: "Task" })).resolves.toMatchObject({ item: { title: "Fast create" } });
-      gate.open();
+      await slowGate.entered;
+      await ageLock(context.pmPath, "pm-race-create");
+      const fast = fastClient.create({ id: "pm-race-create", title: "Fast create", type: "Task" });
+      await fastGate.entered;
+      slowGate.open();
       await expect(slow).resolves.toMatchObject({ code: "lock_lost" });
+      fastGate.open();
+      await expect(fast).resolves.toMatchObject({ item: { title: "Fast create" } });
       await expect(fastClient.get("pm-race-create")).resolves.toMatchObject({ item: { title: "Fast create" } });
       const history = await readHistoryEntries(path.join(context.pmPath, "history", "pm-race-create.jsonl"), "pm-race-create");
       expect(history.map((entry) => entry.author)).toEqual(["agent-fast"]);

@@ -108,15 +108,15 @@ a repository-only tracker record excluded from npm).
 A transaction's own rollback is the one write a refusal cannot stop. When
 `commitItemMutations` compensates a failed batch, it closes or deletes the
 items it created and restores the items it updated. It does so only while the
-coordinator itself compensates that step, after the item's immutable history
+coordinator itself compensates a step the SDK built from the batch plan, after the item's immutable history
 proves those effects are the step's own, and only for the locked item stored
 under that id. The policies
 still evaluate that rollback, and its history event records their decisions. An
 unsatisfied refusal is listed under `transaction_compensation.overridden` and is
 not enforced. Otherwise a policy that refuses closing, deleting or restoring
 would leave the batch half-applied. A write to any other item, any other
-operation, or a compensation helper called outside the coordinator is judged
-normally
+operation, a compensation helper called directly, or a caller-supplied
+coordinator step is judged normally
 ([pm-wb6ktl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wb6ktl.toon),
 a repository-only tracker record excluded from npm).
 If the mandatory refusal audit cannot be appended, the mutation instead raises
