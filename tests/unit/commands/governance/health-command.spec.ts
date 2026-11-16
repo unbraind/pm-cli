@@ -3828,3 +3828,23 @@ it("does not probe telemetry endpoints when DO_NOT_TRACK is active", async () =>
     }
   });
 });
+
+it("reports a source-context override only when the shared attribution honours it (GH-1735)", async () => {
+  try {
+    await withTempPmPath(async (context) => {
+      const reported = async (value: string) => {
+        vi.stubEnv("PM_TELEMETRY_SOURCE_CONTEXT", value);
+        const health = await runHealth({ path: context.pmPath });
+        return health.checks.find((check) => check.name === "telemetry")?.details as {
+          env_overrides: { telemetry_source_context: string | null; decided_by: string | null };
+        };
+      };
+      // Inside this test runner an inherited automation context is ignored; the explicit test context is the override.
+      expect((await reported("automation")).env_overrides.telemetry_source_context).toBeNull();
+      expect((await reported("test")).env_overrides).toMatchObject({ telemetry_source_context: "test" });
+      expect((await reported("bogus")).env_overrides.telemetry_source_context).toBeNull();
+    });
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

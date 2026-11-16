@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags: []
 created_at: "2026-10-25T19:40:57.328Z"
-updated_at: "2026-10-28T20:55:00.034Z"
+updated_at: "2026-11-16T01:11:44.313Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Identify the producing automation and whether termination or ingestion explains each unmatched start; Reproduce any confirmed lifecycle defect with isolated positive and negative controls; Preserve sampling and distinguish intentional interruption from missing finalization without fabricating success
@@ -15,8 +15,9 @@ risk: medium
 confidence: medium
 expected_result: Identify why each of the four 2026.10.24 automation aggregate starts lacks a matching finish; record termination evidence or a reproducible defect with a canonical owner and paired lifecycle controls.
 actual_result: "Latest complete bounded installation audit through2026-10-27T11:27:56.303Z, from08:41:00Z:143starts/142finishes, exactly one unequal history group at09:23:31.637UTC, independently re-read. All seven native history-reader processes in the original closure audit exited0; actual causation remains unproven. Fresh11:23UTC history start/finish ingestion0.738039/0.601494seconds and Sentry pm history root27.091ms are visible; span attribute enrichment is unavailable. Required observability gate passes at5.51percent errors<=6 with zero missing codes or blocking Sentry issues. Client event/OTLP queues are empty; last broker snapshot has0ready/1unacknowledged message, so no global drainage claim. Earlier post-source10/9,82/81 checkpoints, older388/387 changelog window and original four2026.10.24 starts remain separate unresolved observations. No synthetic terminal event or lifecycle repair."
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-wrdctq,related,"2026-10-25T20:35:11.340Z","harness:codex","cli:update:dep",detected
+  pm-gh1735,related,"2026-11-16T01:11:44.029Z","harness:claude-code","cli:update:dep",detected
 comments[19]{created_at,author,text}:
   "2026-10-25T19:40:57.328Z","harness:codex","Duplicate check: strict complete3115-item all-status corpus plus refreshed open/in_progress inventories and request-specific aggregate telemetry pairing search; full live pm-5oj5 and closed paired-sampling lineage pm-wrdctq were read. No canonical owner matched this newly observed four-row cohort. Intake only and unclaimed."
   "2026-10-25T19:41:57.802Z","harness:codex","Refined source attribution: the four unmatched aggregate starts all report pm_version2026.10.24 and source_context automation. No current2026.10.25 mismatch is established by that cohort. Keep the intake open/unclaimed and retain termination or timeout as an unverified explanation rather than asserting ingestion loss."
@@ -37,6 +38,8 @@ comments[19]{created_at,author,text}:
   "2026-10-28T17:20:25.175Z","harness:codex","Post-change delivery probe at 2026-10-28 17:19 UTC: context command_start and successful command_finish were both persisted independently in the remote telemetry database with 0.855s and 0.709s ingestion lag. SDK flush completed and the remote queue had zero ready/unacknowledged messages. These current delivery facts do not clear the separately reported aggregate error-rate and historical pairing limitations."
   "2026-10-28T20:02:08.311Z","harness:codex","Current live required-mode Sentry/telemetry gate passes: no blocking Sentry issues; rolling weighted telemetry finish error rate5.94% against unchanged6% threshold; zero failures missing error codes. A new pm.command context span is visible. A separate10-minute context sample has6 paired sessions and1 unmatched session, with maximum observed ingestion lag4.144seconds. This passing threshold does not resolve historical pairing debt or certify every action."
   "2026-10-28T20:55:00.033Z","harness:codex","Current bounded observability evidence: zero unresolved Sentry issues; a recent remote context/automation sample has 6 sessions, 6 matched start/finish pairs, zero unmatched and maximum ingestion lag 2.395836 seconds. Physical broker queue was 0 messages / 0 ready / 0 unacknowledged. A broader recent interval had 313 automation starts and finishes with lag <=5.831581 seconds; the 163-second outlier was explicitly source_context=test, so it is not attributed to user-command ingestion. These samples and the passing 5.94 percent weighted-error gate do not prove complete historical pairing or remove this existing debt."
+notes[1]{created_at,author,text}:
+  "2026-11-16T01:11:43.364Z","harness:claude-code","Candidate explanation, unverified: pm-gh1735 found that an inherited automation source context re-enabled telemetry inside test runners. Under that bug, pm children spawned by package test suites emitted command_start labelled automation. A test runner that times out or kills such a child leaves the start without a finish, which matches the unmatched automation aggregate starts this item records. Verify against the four rows: check whether their installation ids are fixture roots (temp PM_GLOBAL_PATH installations), and whether such rows stop appearing from the first release carrying the pm-gh1735 fix."
 files[1]{path,scope}:
   tests/unit/core/telemetry/telemetry-worker-lifecycle.spec.ts,project
 body: ""

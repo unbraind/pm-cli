@@ -1,0 +1,27 @@
+id: pm-2h8ohq
+title: "Refresh matured runtime and test dependencies: commander 15.1.0, semver 7.8.6, vitest and coverage-v8 5.1.0, jscpd 5.4.3, parse5 8.1.1"
+description: "Six dependencies passed the seven-day release-age window on 2026-11-16: commander 15.1.0 (8 days), semver 7.8.6 (13), vitest and @vitest/coverage-v8 5.1.0 (13), jscpd 5.4.3 (7) and parse5 8.1.1 (8). The weekly Dependabot run has not proposed them yet. @codspeed/vitest-plugin 6.1.1 is held back because the repository's pnpm patch is pinned to @codspeed/core 6.1.0. typescript-eslint 8.72.2, marked 18.2.0, gpt-tokenizer 4.1.2, tar 7.5.23, knip 6.45.1 and eslint 10.15.0 are still inside the window."
+type: Chore
+status: closed
+priority: 2
+tags[2]: dependencies,quality
+created_at: "2026-11-16T01:19:28.872Z"
+updated_at: "2026-11-16T01:55:14.624Z"
+closed_at: "2026-11-16T01:55:14.605Z"
+completed_at: "2026-11-16T01:55:14.605Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "Every changed package is verified past the seven-day publication window, and the manifest range policy and frozen install are kept; quality:static, the full test suite, exact coverage, contract and help baselines pass, along with exact-head hosted checks; The held-back codspeed bump is recorded with its reason"
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "commander 15.1.0, semver 7.8.6, vitest and coverage-v8 5.1.0, jscpd 5.4.3 and parse5 8.1.1 adopted with a reproducible lockfile and runtime lock; quality:static and the full suite pass"
+expected_result: Matured versions adopted with unchanged strict checks
+actual_result: "quality:static and the full suite pass locally; codspeed 6.1.1 held back with its reason recorded"
+notes[1]{created_at,author,text}:
+  "2026-11-16T01:55:13.924Z","harness:claude-code","Adopted: commander ^15.1.0 and semver 7.8.6 (runtime; runtime-dependencies.json re-applied through scripts/release/runtime-lock.mjs apply), and vitest ^5.1.0, @vitest/coverage-v8 ^5.1.0, jscpd ^5.4.3 and parse5 8.1.1 (dev). Publication ages on 2026-11-16: 8, 13, 13, 13, 7 and 8 days.\n\nHeld back: @codspeed/vitest-plugin 6.1.1. The repository's pnpm patchedDependencies entry is pinned to @codspeed/core 6.1.0, and pnpm refuses the bump with ERR_PNPM_UNUSED_PATCH. Port or retire that patch first. Also still inside the seven-day window: typescript-eslint 8.72.2, marked 18.2.0, gpt-tokenizer 4.1.2, tar 7.5.23, knip 6.45.1 and eslint 10.15.0.\n\nLocal proof: the full pnpm quality:static chain passes, including mutation testing (356 of 363 killed, 7 equivalent). The full test suite passes after the GH-1735 test updates."
+files[2]{path,scope,note}:
+  package.json,project,Bumped ranges
+  pnpm-lock.yaml,project,Lockfile
+close_reason: Adopted the six matured dependencies; codspeed held back on its pinned patch
+body: ""

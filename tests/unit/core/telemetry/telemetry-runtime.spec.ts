@@ -984,7 +984,8 @@ describe("core/telemetry/runtime", () => {
 
   it("honors PM_TELEMETRY_SOURCE_CONTEXT override in start and finish payloads", async () => {
     await withTempGlobalRoot(async () => {
-      process.env.PM_TELEMETRY_SOURCE_CONTEXT = "dogfood";
+      // Inside a test runner only the explicit test context labels as an override (GH-1735).
+      process.env.PM_TELEMETRY_SOURCE_CONTEXT = "test";
       globalThis.fetch = vi.fn(async () => {
         throw new Error("network_down");
       }) as unknown as typeof fetch;
@@ -1004,7 +1005,7 @@ describe("core/telemetry/runtime", () => {
         pm_root: "/tmp/project/.agents/pm",
       });
       expect(active).not.toBeNull();
-      expect(active?.source_context).toBe("dogfood");
+      expect(active?.source_context).toBe("test");
       expect(active?.source_context_source).toBe("env_override");
 
       await finishTelemetryCommand(active, {
@@ -1026,9 +1027,9 @@ describe("core/telemetry/runtime", () => {
       const startEvent = queuedEntries.find((entry) => entry.event.event_type === "command_start");
       const finishEvent = queuedEntries.find((entry) => entry.event.event_type === "command_finish");
 
-      expect(startEvent?.event.payload.source_context).toBe("dogfood");
+      expect(startEvent?.event.payload.source_context).toBe("test");
       expect(startEvent?.event.payload.source_context_source).toBe("env_override");
-      expect(finishEvent?.event.payload.source_context).toBe("dogfood");
+      expect(finishEvent?.event.payload.source_context).toBe("test");
       expect(finishEvent?.event.payload.source_context_source).toBe("env_override");
     });
   });
@@ -2314,16 +2315,21 @@ describe("core/telemetry/runtime", () => {
       const stdinDescriptor = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
       const stdoutDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
       try {
+        // Inside the test runner an inherited non-test context labels nothing; outside it, it is the override.
         process.env.PM_TELEMETRY_SOURCE_CONTEXT = "dogfood";
+        expect(_testOnly.resolveTelemetrySourceContext({})).toEqual({
+          source_context: "test",
+          source_context_source: "inferred",
+        });
+        delete process.env.VITEST;
+        delete process.env.VITEST_WORKER_ID;
+        delete process.env.NODE_ENV;
         expect(_testOnly.resolveTelemetrySourceContext({})).toEqual({
           source_context: "dogfood",
           source_context_source: "env_override",
         });
 
         delete process.env.PM_TELEMETRY_SOURCE_CONTEXT;
-        delete process.env.VITEST;
-        delete process.env.VITEST_WORKER_ID;
-        delete process.env.NODE_ENV;
         process.env.CI = "true";
         expect(_testOnly.resolveTelemetrySourceContext({})).toEqual({
           source_context: "automation",

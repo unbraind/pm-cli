@@ -294,7 +294,7 @@ When enabled, these environment variables tune runtime behaviour. All boolean kn
 | ------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PM_TELEMETRY_DISABLED`              | boolean                                       | Hard-disable all telemetry for this process, ignoring settings.                                                                                 |
 | `DO_NOT_TRACK` | boolean | Hard-disable event capture, identity creation, flush workers, endpoint probes, and Sentry, regardless of persisted preferences. |
-| `PM_TELEMETRY_SEND_TEST_EVENTS` | boolean | Explicitly allow inferred test events. Hard opt-outs still take precedence. |
+| `PM_TELEMETRY_SEND_TEST_EVENTS` | boolean | Explicitly allow inferred test events, labelled `test`. Hard opt-outs still take precedence. |
 | `PM_TELEMETRY_READ_SAMPLE_RATE` | number greater than `0` and at most `1` | Override automatic successful-read sampling; `1`, empty, or invalid values retain every invocation. Omit for automatic frequency bounding. |
 | `PM_NO_TELEMETRY`                    | boolean                                       | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks).                                                                                |
 | `PM_TELEMETRY_OTEL_DISABLED`         | boolean                                       | Disable only OTLP trace-span export; the event queue still flushes.                                                                             |
@@ -351,17 +351,30 @@ Interaction rules:
 
 Test environments inferred from `VITEST`, `VITEST_WORKER_ID`, `NODE_TEST_CONTEXT`
 (native `node --test` children), or `NODE_ENV=test` suppress telemetry and Sentry
-before identity creation. A valid explicit `PM_TELEMETRY_SOURCE_CONTEXT`,
-including `test`, or `PM_TELEMETRY_SEND_TEST_EVENTS=1` permits intentional test
-delivery, so a test that only wants the label must also set
-`PM_TELEMETRY_DISABLED=1`. Point such tests at a local collector: set
+before identity creation. `bun test` exports no runner-specific variable (there is
+no `BUN_TEST`). It sets `NODE_ENV=test` unless `NODE_ENV` is already set, so Bun is
+covered by the `NODE_ENV` signal. Only an explicit test opt-in permits intentional test
+delivery: `PM_TELEMETRY_SOURCE_CONTEXT=test` or `PM_TELEMETRY_SEND_TEST_EVENTS=1`.
+Either way the events are labelled `test`. A test that only wants the label must
+also set `PM_TELEMETRY_DISABLED=1`.
+
+Any other source context is ignored inside a test runner. That includes an
+`automation`, `user` or `dogfood` value a harness or release script exported to
+attribute its own tracker writes. The context labels whoever exported it, and
+does not re-enable telemetry for the test children that inherit it (GH-1735). Point such tests at a local collector: set
 `PM_TELEMETRY_ENDPOINT` for events, `SENTRY_DSN` for errors, and
 `OTEL_EXPORTER_OTLP_*` for spans. Inferred tests use inline telemetry flushing even
 after an opt in, so CLI delivery settles before process exit and disposable-root
 cleanup. SDK telemetry completion also awaits inline delivery before returning.
 Neither setting overrides a hard opt-out. `pm telemetry status` exposes effective `enabled`, persisted
 `configured_enabled`, and `env_overrides` so an empty queue is distinguishable
-from disabled delivery.
+from disabled delivery. `env_overrides.decided_by` names the environment input
+that settled consent, or is null when settings decide. It can be a hard opt-out
+(`env:DO_NOT_TRACK`, `env:PM_TELEMETRY_DISABLED`, `env:PM_NO_TELEMETRY`, or an
+invalid `env:PM_TELEMETRY_ENDPOINT`), the test-runner signal that suppressed
+delivery (`env:VITEST`, `env:VITEST_WORKER_ID`, `env:NODE_TEST_CONTEXT`,
+`env:NODE_ENV`), or the test opt-in that allowed it
+(`env:PM_TELEMETRY_SOURCE_CONTEXT`, `env:PM_TELEMETRY_SEND_TEST_EVENTS`).
 
 SDK consumers that previously used `TelemetryStatusSummary.enabled` to display the saved preference should read `configured_enabled` instead. Use `enabled` to determine whether this process permits delivery.
 

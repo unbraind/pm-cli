@@ -1,6 +1,6 @@
 import { runWithWorkspaceHarnessSignalDescriptors } from "../../../../src/core/shared/author.js";
 import crypto from "node:crypto";
-import { effectiveTelemetryEndpoint, redactUrlsInText, resolveTelemetryEndpointOverride, resolveTelemetryEnvironmentPolicy, resolveTelemetryReadSampleRate } from "../../../../src/core/telemetry/policy.js";
+import { effectiveTelemetryEndpoint, redactUrlsInText, resolveTelemetryEndpointOverride, resolveTelemetryEnvironmentPolicy, resolveTelemetryReadSampleRate, resolveTelemetrySourceAttribution } from "../../../../src/core/telemetry/policy.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -62,18 +62,53 @@ it.each([
   [{ NODE_TEST_CONTEXT: "child-v8" }, true],
   [{ NODE_TEST_CONTEXT: "" }, true],
   [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "invalid" }, true],
-  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "dogfood" }, false],
+  // Inside a test runner only an explicit test opt-in re-enables telemetry; an inherited context does not (GH-1735).
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "dogfood" }, true],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "automation" }, true],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: " Test " }, false],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "automation", PM_TELEMETRY_SEND_TEST_EVENTS: "1" }, false],
   [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SEND_TEST_EVENTS: "true" }, false],
   [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SEND_TEST_EVENTS: "1", DO_NOT_TRACK: "1" }, true],
   [{ NODE_ENV: " TEST " }, true],
   [{ NODE_ENV: "test", PM_TELEMETRY_SOURCE_CONTEXT: "invalid" }, true],
-  [{ NODE_ENV: "test", PM_TELEMETRY_SOURCE_CONTEXT: "dogfood" }, false],
+  [{ NODE_ENV: "test", PM_TELEMETRY_SOURCE_CONTEXT: "dogfood" }, true],
+  [{ VITEST: "true", PM_TELEMETRY_SOURCE_CONTEXT: "user" }, true],
+  [{ PM_TELEMETRY_SOURCE_CONTEXT: "automation" }, false],
   [{ NODE_ENV: "test", PM_TELEMETRY_SEND_TEST_EVENTS: "true" }, false],
   [{ PM_TELEMETRY_DISABLED: "yes" }, true],
   [{ PM_NO_TELEMETRY: "ON" }, true],
   [{ DO_NOT_TRACK: "1", PM_TELEMETRY_SOURCE_CONTEXT: "user" }, true],
 ] as const)("resolves process consent %j", (env, disabled) => {
   expect(resolveTelemetryEnvironmentPolicy(env).telemetry_disabled).toBe(disabled);
+});
+
+it.each([
+  [{}, null],
+  [{ PM_TELEMETRY_SOURCE_CONTEXT: "automation" }, null],
+  [{ DO_NOT_TRACK: "1", PM_TELEMETRY_DISABLED: "1" }, "env:DO_NOT_TRACK"],
+  [{ PM_TELEMETRY_DISABLED: "1", NODE_ENV: "test" }, "env:PM_TELEMETRY_DISABLED"],
+  [{ PM_NO_TELEMETRY: "1" }, "env:PM_NO_TELEMETRY"],
+  [{ PM_TELEMETRY_ENDPOINT: "not a url", PM_TELEMETRY_SOURCE_CONTEXT: "test", VITEST: "" }, "env:PM_TELEMETRY_ENDPOINT"],
+  [{ VITEST: "", VITEST_WORKER_ID: "1" }, "env:VITEST"],
+  [{ VITEST_WORKER_ID: "1", PM_TELEMETRY_SOURCE_CONTEXT: "automation" }, "env:VITEST_WORKER_ID"],
+  [{ NODE_TEST_CONTEXT: "child-v8" }, "env:NODE_TEST_CONTEXT"],
+  [{ NODE_ENV: "test", PM_TELEMETRY_SOURCE_CONTEXT: "dogfood" }, "env:NODE_ENV"],
+  [{ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "test", PM_TELEMETRY_SEND_TEST_EVENTS: "1" }, "env:PM_TELEMETRY_SOURCE_CONTEXT"],
+  [{ NODE_ENV: "test", PM_TELEMETRY_SOURCE_CONTEXT: "automation", PM_TELEMETRY_SEND_TEST_EVENTS: "1" }, "env:PM_TELEMETRY_SEND_TEST_EVENTS"],
+] as const)("names the environment input that decided consent %j", (env, decidedBy) => {
+  expect(resolveTelemetryEnvironmentPolicy(env).decided_by).toBe(decidedBy);
+});
+
+it("labels test-runner events test even when a non-test source context is inherited (GH-1735)", () => {
+  const attribution = (env: Record<string, string>) => resolveTelemetrySourceAttribution({}, env, false);
+  expect(attribution({ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "automation", PM_TELEMETRY_SEND_TEST_EVENTS: "1" }))
+    .toEqual({ source_context: "test", source_context_source: "inferred" });
+  expect(attribution({ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "test" }))
+    .toEqual({ source_context: "test", source_context_source: "env_override" });
+  expect(attribution({ NODE_TEST_CONTEXT: "child-v8", PM_TELEMETRY_SOURCE_CONTEXT: "bogus" }))
+    .toEqual({ source_context: "test", source_context_source: "env_override_rejected" });
+  // Outside a test runner an automation context labels exactly as before.
+  expect(attribution({ PM_TELEMETRY_SOURCE_CONTEXT: "automation" })).toEqual({ source_context: "automation", source_context_source: "env_override" });
 });
 
 it("uses native Node test attribution and inline lifetime after an explicit opt in", () => {

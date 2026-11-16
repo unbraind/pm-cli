@@ -231,10 +231,10 @@
   "dependencies": {
     "@sentry/node": "10.76.2",
     "@toon-format/toon": "^4.4.0",
-    "commander": "^15.0.0",
+    "commander": "^15.1.0",
     "fast-json-patch": "^3.1.1",
     "npm-package-arg": "^13.0.2",
-    "semver": "7.8.5",
+    "semver": "7.8.6",
     "tar": "7.5.22",
     "tinyglobby": "^0.2.17",
     "yaml": "^2.9.1"
@@ -257,7 +257,7 @@
     "@types/node": "26.6.6",
     "@types/npm-package-arg": "^6.1.4",
     "@types/semver": "7.8.0",
-    "@vitest/coverage-v8": "^5.0.5",
+    "@vitest/coverage-v8": "^5.1.0",
     "cross-spawn": "7.0.6",
     "esbuild": "0.28.2",
     "eslint": "10.14.0",
@@ -267,13 +267,13 @@
     "github-slugger": "2.0.0",
     "gpt-tokenizer": "4.1.0",
     "greptile": "^3.7.0",
-    "jscpd": "^5.4.2",
+    "jscpd": "^5.4.3",
     "knip": "6.44.1",
     "marked": "18.1.2",
-    "parse5": "8.1.0",
+    "parse5": "8.1.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   }
 }
