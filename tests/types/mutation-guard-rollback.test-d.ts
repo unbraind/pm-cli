@@ -1,6 +1,6 @@
 /** Guard test helpers keep their void contract for ordinary writes and resolve overrides for rollbacks (pm-wb6ktl). */
 import type { ExtensionHookRegistry } from "../../src/core/extensions/extension-types.js";
-import type { ExtensionTestHarness, MutationGuardOverride, MutationGuardTestContext } from "../../src/sdk/testing.js";
+import type { ExtensionTestHarness, MutationGuardOverride, MutationGuardTestContext, RunRegisteredMutationGuardForTestOptions } from "../../src/sdk/testing.js";
 import { runRegisteredMutationGuardForTest } from "../../src/sdk/testing.js";
 declare const hooks: ExtensionHookRegistry;
 declare const harness: ExtensionTestHarness;
@@ -19,3 +19,6 @@ void [ordinary, ordinaryHarness, rollback, harnessRollback];
 // @ts-expect-error An ordinary context resolves no override list.
 const misread: Promise<MutationGuardOverride[]> = runRegisteredMutationGuardForTest(hooks, { context });
 void misread;
+// @ts-expect-error An ordinary guard-test context cannot carry compensation; use the rollback overload's context.
+const ordinaryWithCompensation: RunRegisteredMutationGuardForTestOptions = { context: { ...context, compensation } };
+void ordinaryWithCompensation;

@@ -3442,13 +3442,15 @@
         "signature ./sdk:BeforeMutationHookContext",
         "signature ./sdk:BeforeMutationHookInput",
         "signature ./sdk:ExtensionTestHarness",
+        "signature ./sdk:MutationGuardTestContext",
         "signature ./sdk:runRegisteredMutationGuardForTest",
         "signature ./sdk/authoring:BeforeMutationHookContext",
         "signature ./sdk/testing:ExtensionTestHarness",
+        "signature ./sdk/testing:MutationGuardTestContext",
         "signature ./sdk/testing:runRegisteredMutationGuardForTest"
       ],
       "package_version": "2026.11.16",
-      "reason": "pm-wb6ktl: BeforeMutationHookContext gains the optional host-set compensation field (BeforeMutationHookInput omits it, and the host builds the guard context from an allowlist so callers cannot supply it); runRegisteredMutationGuardForTest and ExtensionTestHarness.runMutationGuard gain a rollback overload resolving the recorded overrides while the ordinary overload keeps Promise<void>. Source-compatible for guards and package tests."
+      "reason": "pm-wb6ktl: BeforeMutationHookContext gains the optional host-set compensation field (BeforeMutationHookInput omits it, and the host builds the guard context from an allowlist so callers cannot supply it); this breaks only keyof-derived consumers of the context. runRegisteredMutationGuardForTest and ExtensionTestHarness.runMutationGuard gain a rollback overload whose context carries compensation and resolves the recorded overrides; MutationGuardTestContext keeps its pre-change shape without compensation, and the ordinary overload keeps Promise<void>."
     }
   ],
   "entrypoints": {
@@ -13215,7 +13217,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "MutationGuardTestContext",
-          "signature": "export type MutationGuardTestContext = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\"> & { actor?: MutationActor; author?: string; dry_run?: boolean; };"
+          "signature": "export type MutationGuardTestContext = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\" | \"compensation\"> & { actor?: MutationActor; author?: string; dry_run?: boolean; };"
         },
         {
           "classification": "supported",
@@ -40233,7 +40235,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "MutationGuardTestContext",
-          "signature": "export type MutationGuardTestContext = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\"> & { actor?: MutationActor; author?: string; dry_run?: boolean; };"
+          "signature": "export type MutationGuardTestContext = Omit<BeforeMutationHookContext, \"actor\" | \"dry_run\" | \"compensation\"> & { actor?: MutationActor; author?: string; dry_run?: boolean; };"
         },
         {
           "classification": "supported",

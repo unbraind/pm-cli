@@ -48,15 +48,16 @@ function guardLog(): GuardLogEntry[] {
 }
 
 /** Denies every close, delete and restore; crashes on items titled "Throw"; denies updates titled "Denied update". */
-const ROLLBACK_DENYING_GUARD = `import { appendFileSync } from "node:fs";
+const ROLLBACK_DENYING_GUARD = `import { appendFileSync, unlinkSync } from "node:fs";
 export default {
   activate(api) {
     // Armed by a test: the created item's rollback proof read gains a foreign line right after its bytes are read.
     api.hooks.onRead((read) => {
       const armed = globalThis.${ABA_ARM_KEY};
-      if (!armed || !read.path.endsWith(armed + ".jsonl") || !new Error().stack.includes("compensateCreatedItem")) return;
+      if (!armed || !read.path.endsWith(armed.id + ".jsonl") || !new Error().stack.includes("compensateCreatedItem")) return;
       globalThis.${ABA_ARM_KEY} = undefined;
-      appendFileSync(read.path, "\\n");
+      if (armed.mode === "delete") unlinkSync(read.path);
+      else appendFileSync(read.path, "\\n");
     });
     api.hooks.beforeMutation(async (context) => {
       const document = context.after ?? context.before;
@@ -68,7 +69,8 @@ export default {
       });
       const title = document?.metadata.title ?? "";
       if (context.operation === "update" && context.after?.metadata.title === "Denied update") {
-        if (document?.metadata.id === "pm-batch-aba") globalThis.${ABA_ARM_KEY} = "pm-batch-aba";
+        if (document?.metadata.id === "pm-batch-aba") globalThis.${ABA_ARM_KEY} = { id: "pm-batch-aba", mode: "append" };
+        if (document?.metadata.id === "pm-batch-gone") globalThis.${ABA_ARM_KEY} = { id: "pm-batch-gone", mode: "delete" };
         return { allow: false, code: "update_denied", remediation: "Use another title." };
       }
       // Guards run under the item lock, so entering here proves the writer holds it.
@@ -292,6 +294,17 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
       expect(failure.errors.at(-1)).toMatchObject({ code: "transaction_partial_mutation" });
       await expect(client.get("pm-batch-aba")).resolves.toMatchObject({ item: { status: "open" } });
       expect((await readFile(historyPath, "utf8")).endsWith("\n\n")).toBe(true);
+
+      // A stream that vanishes after the proof read is the same typed refusal, with the filesystem error as its cause.
+      const vanished = await client.commitItemMutations({
+        transactionId: "wb6ktl-gone",
+        mutations: [
+          { op: "create", id: "pm-batch-gone", options: { title: "Batch gone", type: "Task" } },
+          { op: "update", id: "pm-batch-gone", options: { title: "Denied update" } },
+        ],
+      }).catch((error: unknown) => error) as AggregateError;
+      expect(vanished.message).toContain("compensation failed");
+      expect(vanished.errors.at(-1)).toMatchObject({ code: "transaction_partial_mutation", cause: { code: "ENOENT" } });
     });
   });
 

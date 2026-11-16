@@ -351,8 +351,10 @@ function refuseOmittedForBudget(command: string): never {
  * optional so tests written before GH-1719 keep compiling: an omitted actor is
  * resolved from `author` exactly as a host resolves it (an omitted author is
  * the unattributed `unknown` actor), and an omitted `dry_run` is `false`.
+ * It never carries `compensation`: a rollback context is the
+ * {@link RunRegisteredMutationGuardRollbackForTestOptions} context instead.
  */
-export type MutationGuardTestContext = Omit<BeforeMutationHookContext, "actor" | "dry_run"> & {
+export type MutationGuardTestContext = Omit<BeforeMutationHookContext, "actor" | "dry_run" | "compensation"> & {
   /** Actor the guard should see; overrides `author`. */
   actor?: MutationActor;
   /** Author to resolve the actor from when `actor` is omitted. */
@@ -1223,7 +1225,8 @@ export async function runRegisteredMutationGuardForTest(
   if ((hooks.beforeMutation?.length ?? 0) === 0) {
     throw new Error("Expected a registered before_mutation hook to invoke");
   }
-  const { actor, author, dry_run: dryRun, compensation, ...context } = options.context;
+  // Only the rollback overload's context carries compensation; an ordinary context never does.
+  const { actor, author, dry_run: dryRun, compensation, ...context } = options.context as RunRegisteredMutationGuardRollbackForTestOptions["context"] | (MutationGuardTestContext & { compensation?: undefined });
   const { resolveMutationActor } = await import("../core/extensions/mutation-actor.js");
   const overrides = await runBeforeMutationHooks(hooks, {
     ...context,
