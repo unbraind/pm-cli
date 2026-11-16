@@ -337,6 +337,24 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
       "The history stream exceeds the configured compaction threshold; compact it (pm history-compact --all-streams sweeps every over-threshold stream in one pass).",
   },
   {
+    code: "stale_in_progress_items",
+    command: "pm list --status in_progress --assignee-filter unassigned --updated-before -72h",
+    summary:
+      "List unowned in-progress candidates idle past mutation_guard.stale_in_progress_hours by metadata time (pm health substitutes the configured status id and threshold); claim each with pm claim <id> or return it to open with pm update <id> --status open.",
+  },
+  {
+    code: "in_progress_unowned",
+    command: "pm list --status in_progress --assignee-filter unassigned",
+    summary:
+      "List in-progress items nobody holds (pm health substitutes the configured status id); claim each with pm claim <id> or return it to open with pm update <id> --status open.",
+  },
+  {
+    code: "in_progress_idle",
+    command: "pm list --status in_progress --updated-before -72h",
+    summary:
+      "List in-progress candidates not updated within mutation_guard.stale_in_progress_hours (pm health substitutes the configured status id and threshold; a restored item can appear although its history is recent); resume, release or return each one, or take another holder's with pm claim <id> --takeover-stale, which re-judges under the item lock.",
+  },
+  {
     code: "history_unknown_author_events",
     command:
       'pm history-author-acknowledge --all-actionable --attributed-author "<principal>" --reviewer "<reviewer>" --reason "<evidence>"',

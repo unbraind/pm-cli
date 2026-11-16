@@ -63,6 +63,8 @@ import {
   recordContextUsageServing,
 } from "../context-usage.js";
 import { applyNextReadyBudget, type NextReadyBudgetReceipt } from "./next-ready-budget.js";
+import { resolveItemOwnershipActivity } from "../ownership-source.js";
+import { redactIdentityCredentials } from "../../core/shared/url-credentials.js";
 import {
   readWorkspaceContextSignals,
   type ContextSignalStoreReadResult,
@@ -179,6 +181,24 @@ export interface NextRecommendation extends NextActionableItem {
   reasons: string[];
 }
 
+/** One ready item another author holds, as the next-item occupancy view reports it (GH-1336). */
+export interface NextHeldRow {
+  /** Stable item identifier. */
+  id: string;
+  /** Current holder, with URL credentials an older version stored redacted (GH-1707). */
+  assignee: string;
+  /** When the holder took the item, from the latest assignee change; null when history is silent. */
+  claimed_at: string | null;
+  /**
+   * Whole hours since the item's last recorded activity; null when no valid activity time exists.
+   * The exact timestamp is in the `claim_activity` of a refused `pm claim`, so the row stays narrow
+   * enough that a bounded next read keeps its actionable rows.
+   */
+  idle_hours: number | null;
+  /** Whether `pm claim <id> --takeover-stale` may take it under `mutation_guard.stale_in_progress_hours`. */
+  stale: boolean;
+}
+
 interface NextSummary {
   recommended: boolean;
   ready: number;
@@ -209,8 +229,8 @@ export interface NextResult {
   containers?: NextActionableItem[];
   /** Value that configures or reports blocked for this contract. */
   blocked: NextActionableItem[];
-  /** Value that configures or reports held by others for this contract. */
-  held_by_others: Array<{ id: string; assignee: string }>;
+  /** Ready work another author holds, with the holder's claim age and activity under the stale-work policy. */
+  held_by_others: NextHeldRow[];
   /** Value that configures or reports summary for this contract. */
   summary: NextSummary;
   /** Value that configures or reports filters for this contract. */
@@ -367,22 +387,48 @@ function buildRecommendationReasons(
   return reasons;
 }
 
+/** Attach claim age and activity to the returned held rows only: one history stream per row. */
+async function describeHeldRows(
+  pmRoot: string,
+  rows: ReadonlyArray<{ id: string; assignee: string; updated_at: string | undefined }>,
+  thresholdHours: number,
+  now: string,
+): Promise<NextHeldRow[]> {
+  return Promise.all(
+    rows.map(async (row) => {
+      const { since, activity } = await resolveItemOwnershipActivity(pmRoot, row.id, row.assignee, {
+        updated_at: row.updated_at,
+        threshold_hours: thresholdHours,
+        now: new Date(now),
+      });
+      return {
+        id: row.id,
+        // Occupancy rows never echo URL userinfo an older version stored in an identity (GH-1707).
+        assignee: redactIdentityCredentials(row.assignee),
+        claimed_at: since,
+        idle_hours: activity.idle_hours,
+        stale: activity.stale_policy.stale,
+      };
+    }),
+  );
+}
+
 function partitionCallerOwnedReady(
   ready: ActionableEntry[],
   fallbackAuthor: string,
   explicitAuthor?: string,
 ): {
   available: ActionableEntry[];
-  held: Array<{ id: string; assignee: string }>;
+  held: Array<{ id: string; assignee: string; updated_at: string | undefined }>;
 } {
   const caller = resolveAuthor(explicitAuthor, fallbackAuthor);
   const available: ActionableEntry[] = [];
-  const held: Array<{ id: string; assignee: string }> = [];
+  const held: Array<{ id: string; assignee: string; updated_at: string | undefined }> = [];
   for (const entry of ready) {
     const assignee =
       typeof entry.item.assignee === "string" ? entry.item.assignee.trim() : "";
     const isForeignWork = assignee.length > 0 && assignee !== caller;
-    if (isForeignWork) held.push({ id: entry.item.id, assignee });
+    if (isForeignWork) held.push({ id: entry.item.id, assignee, updated_at: entry.item.updated_at });
     else available.push(entry);
   }
   return { available, held };
@@ -931,7 +977,12 @@ export async function runNext(
     gate_needed: gateRows.slice(0, limit),
     containers: containerRows.slice(0, limit),
     blocked: readyOnly ? [] : blockedRows.slice(0, blockedLimit),
-    held_by_others: callerPartition.held.slice(0, limit),
+    held_by_others: await describeHeldRows(
+      pmRoot,
+      callerPartition.held.slice(0, limit),
+      settings.mutation_guard.stale_in_progress_hours,
+      now,
+    ),
     summary: {
       recommended: recommended !== null,
       ready: readyRows.length,

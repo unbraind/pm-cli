@@ -416,6 +416,8 @@ export {
   mutateItem,
   mutateItemWithHistoryContext,
   readLocatedItem,
+  type ItemMutationCallback,
+  type ItemMutationLocation,
 } from "../core/store/item-store.js";
 export {
   isTerminalPlanMode,

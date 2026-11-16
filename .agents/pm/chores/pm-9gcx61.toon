@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[3]: agent-ux,diagnostics,security
 created_at: "2026-11-09T08:31:50.013Z"
-updated_at: "2026-11-09T08:48:42.162Z"
+updated_at: "2026-11-15T04:04:47.373Z"
 author: "harness:codex"
 estimated_minutes: 90
 acceptance_criteria: Unavailable feeds expose bounded safe reason codes and transport categories for actionable recovery; Raw request and response data and credentials are never persisted; Positive and negative controls preserve all-version independent feed coverage and fail-closed decisions
@@ -14,8 +14,11 @@ parent: pm-u9d0
 risk: low
 confidence: high
 expected_result: An unavailable advisory source produces safe actionable transport reasons while independent coverage and fail-closed security decisions remain intact.
-dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-eqxjzl,discovered_from,"2026-11-09T08:31:50.013Z","harness:codex","cli:create:dep",detected
+  pm-amy32s,related,"2026-11-15T04:04:47.155Z","harness:claude-code","cli:update:dep",detected
 comments[1]{created_at,author,text}:
   "2026-11-09T08:31:50.013Z","harness:codex","Duplicate check: full strict all-status corpus plus keyword AND search for advisory feeds unavailable registry timeout OSV found only closed pm-eqxjzl. This is a diagnostic follow-up, not a reopened advisory implementation or permission to pass unavailable evidence."
+notes[1]{created_at,author,text}:
+  "2026-11-15T04:04:46.606Z","harness:claude-code","Recurrence 2026-11-15 around 03:20Z, during local merge verification of PR #1732: the WAN uplink was saturated (ping RTT 1.2-2.7 s, TCP connect 3-14 s), so pnpm audit exceeded the collector's 60 s bound and OSV querybatch the 15 s per-batch bound. The receipt again recorded only status unavailable for both feeds, with no reason code, so telling a slow-but-reachable network from an outage took manual curl and ping probes. Because repository-static-quality also declares repository-dependency-advisories-required, the advisory verdict blocked the whole static assurance gate, and the merge proceeded on pinned evidence instead (lockfile identical to main, 0 Dependabot alerts, a hosted pass on the same lockfile). A bounded reason code (connect_timeout vs deadline_exceeded vs http_status) would have made that call immediate. Related: pm-amy32s (local merge evidence)."
 body: ""

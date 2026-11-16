@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- GH-1336: a claim held by an ended agent blocks everyone until --force; refusals and pm next omit its age and last activity, and no policy permits a stale takeover: already_claimed_by carried claimed_by, claimed_at and claim_source only; held_by_others rows were {id, assignee}; --force was the only way past another holder, active or abandoned → already_claimed_by and the new stale_claim_takeover_refused carry claim_activity {last_activity_at, claim_age_hours, idle_hours, stale_policy}; held_by_others rows add claimed_at, idle_hours and stale; --takeover-stale takes over only a claim idle for mutation_guard.stale_in_progress_hours (default 72), refuses an active one without writing, and records context.stale_claim_takeover in the claim history entry. Migrate: Code that constructs NextResult or held_by_others rows supplies claimed_at, idle_hours and stale; consumers pinning the tool-parameters schema version accept 4.28.0; take over abandoned claims with --takeover-stale instead of --force ([pm-gh1336](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1336.toon))
+- GH-1724: in_progress items with no owner stay counted as active work; health flags them only after the 72-hour idle window, and context and list cannot separate them: pm health flagged only unowned in-progress items idle past mutation_guard.stale_in_progress_hours (stale_in_progress_items, with no registry remedy), and pm context counted every in-progress item as active work → pm health adds the advisories in_progress_unowned and in_progress_idle, details.in_progress_work (bounded ids, each group sweep, per-item recoveries) and registry remedies that are exact pm list sweeps; pm context adds in_progress_unowned and in_progress_idle to its summary when non-zero. Migrate: Treat the new codes like stale_in_progress_items: severity advisory, health ok unchanged; read sweep commands from remediation_map instead of hard-coding them, and read the new summary counts as optional ([pm-gh1724](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1724.toon))
+
 ## 2026.11.15 - 2026-11-15
 
 ### Changed (SDK contract)

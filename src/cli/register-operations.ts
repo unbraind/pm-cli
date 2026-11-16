@@ -731,6 +731,7 @@ async function runClaimAction(
   const lifecycleOptions = {
     ...buildLifecycleMutationOptions(options),
     ifAvailable: options.ifAvailable === true,
+    ...(options.takeoverStale === true ? { takeoverStale: true } : {}),
     maxAttempts: options.maxAttempts as string | number | undefined,
     ...(start ? { start: true } : {}),
   };
@@ -832,7 +833,7 @@ async function runStartTaskAction(
   await printLifecycleAliasHint(command);
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
-  const result = await runStartTask(id, { ...buildLifecycleMutationOptions(options), force: Boolean(options.force), next: options.next === true, ifAvailable: options.ifAvailable === true }, globalOptions);
+  const result = await runStartTask(id, { ...buildLifecycleMutationOptions(options), force: Boolean(options.force), next: options.next === true, ifAvailable: options.ifAvailable === true, ...(options.takeoverStale === true ? { takeoverStale: true } : {}) }, globalOptions);
   await invalidateSearchCachesForMutation(globalOptions, result.update);
   printResult(result, globalOptions);
   if (globalOptions.profile) {
@@ -1339,6 +1340,10 @@ export function registerOperationCommands(program: Command): void {
       "Skip another author's claim (skipped=true)",
     )
     .option(
+      "--takeover-stale",
+      "Take over an idle claim (stale-work policy)",
+    )
+    .option(
       "--next",
       "Atomically claim the next caller-available actionable item",
     )
@@ -1410,6 +1415,10 @@ export function registerOperationCommands(program: Command): void {
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership or terminal override when required")
+    .option(
+      "--takeover-stale",
+      "Take over an idle claim (stale-work policy)",
+    )
     .description("Lifecycle alias: claim an item and move it to in_progress.")
     .action(runStartTaskAction);
   addHiddenOption(

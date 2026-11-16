@@ -48,7 +48,14 @@ is refused with `missing_required_argument`, and `claim <id> --next` with
 `ambiguous_option_combination`; their next steps never tell the caller to pass
 a flag that is already present. `claim <id> --start --next` (or
 `--if-available`) is refused by the explicit-start composition with
-`invalid_argument_value`, whose recovery names the flags to remove. `release --pause` moves work to the configured
+`invalid_argument_value`, whose recovery names the flags to remove.
+`claim <id> --start --takeover-stale` (and the `start-task` alias) takes over
+an idle claim before starting it, under the same stale-work policy as plain
+`claim --takeover-stale`. `--takeover-stale` with `--force` is refused with
+`ambiguous_option_combination` on every form, as is plain
+`claim --takeover-stale --next`. The start forms refuse `--next` before any
+claim runs: `claim --start` with `invalid_argument_value`, and `start-task`,
+which has no `--next`, with `unknown_option`. `release --pause` moves work to the configured
 open status, then releases ownership. `close --release-assignment` records the
 close and its inline evidence, then releases ownership.
 

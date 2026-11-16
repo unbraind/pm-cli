@@ -1,0 +1,148 @@
+id: pm-gh1336
+title: "GH-1336: a claim held by an ended agent blocks everyone until --force; refusals and pm next omit its age and last activity, and no policy permits a stale takeover"
+description: "GH-1336 (filed 2026-09-28) reports claims left behind by ended agents across nine repositories. Today a held item refuses pm claim with already_claimed_by, which carries claimed_by, claimed_at and claim_source but neither the last recorded activity nor how long the item has been idle. pm next lists foreign work under held_by_others as bare {id, assignee} rows. The only way past an abandoned claim is --force, which takes over an active claim just as readily, so agents either wait forever or override work in progress. This tranche of pm-szv11n delivers the standalone claim criteria from that story: holder, claim age and last activity in the refusal and the next-item occupancy view, an explicit stale-claim policy that permits a conditional takeover without --force, and auditable takeover history. The inactivity clock is the item's last recorded mutation (max of updated_at and the newest history entry), and the threshold is the existing mutation_guard.stale_in_progress_hours setting that pm health already uses for stale in-progress work, so the item health calls stale is the item a takeover may claim. The cross-branch claim race (GH-1406) and the merge-composition scenarios stay on pm-szv11n. Duplicate check: searched claim takeover stale dead agent, read pm-szv11n, pm-8t5x, pm-05u4, pm-w9w4, pm-d4bo, pm-gh1706 and pm-1wujzi (bulk occupancy derived state, not per-item diagnostics); none owns the standalone stale-takeover tranche."
+type: Issue
+status: closed
+priority: 2
+tags[6]: agent-ux,claims,"gh:1336",multi-agent,ownership,stale-work
+created_at: "2026-11-15T07:09:59.771Z"
+updated_at: "2026-11-15T22:45:14.159Z"
+closed_at: "2026-11-15T08:35:01.496Z"
+completed_at: "2026-11-15T08:35:01.496Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "The already_claimed_by refusal reports the holder, claimed_at, claim_age_hours, last_activity_at, idle_hours and the stale-claim policy (threshold_hours, the setting key, whether the claim is stale and when it becomes eligible), computed under the item lock; pm next held_by_others rows report claimed_at, idle_hours and stale while reading at most one history stream per returned row (the exact last_activity_at stays in the refusal so a bounded next read keeps its actionable rows); pm claim <id> --takeover-stale takes over a non-terminal claim only when its idle time meets mutation_guard.stale_in_progress_hours, refuses an active or too-recent claim with stale_claim_takeover_refused and no mutation, behaves as a plain claim for an unclaimed or self-held item, and is refused in combination with --force or --next; A permitted takeover records previous_holder, new_holder, last_activity_at, idle_hours, threshold_hours and the policy key in the claim history entry's structured context, and the claim result carries the same takeover receipt; Isolated CLI, SDK and MCP scenarios cover active, stale, released, unclaimed and renewed claims, including a claim renewed after a refusal being refused again on retry"
+parent: pm-szv11n
+risk: medium
+confidence: high
+resolution: "already_claimed_by carries claim_activity (last activity, claim age, idle hours, stale policy); held_by_others rows add claimed_at, idle_hours and stale; pm claim --takeover-stale (claim --start, start-task, MCP and SDK takeoverStale) takes over only a claim idle for mutation_guard.stale_in_progress_hours under the item lock, refuses active ones with stale_claim_takeover_refused without writing, and seals the takeover receipt into the claim history context"
+expected_result: "An agent meeting another agent's claim sees how long it has been idle and can take over an abandoned claim under an explicit policy that refuses active ones, with the takeover recorded in history"
+actual_result: "Isolated scenarios for active, stale, renewed, unclaimed, self-held, if-available, start and combination cases pass on CLI, SDK and MCP paths; the claim history entry records previous_holder, new_holder, idle_hours, threshold_hours and the policy"
+dependencies[8]{id,kind,created_at,author,source_kind,author_source}:
+  pm-05u4,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
+  pm-1wujzi,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
+  pm-8t5x,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
+  pm-d4bo,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
+  pm-gh1706,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
+  pm-w9w4,related,"2026-11-15T07:10:27.392Z","harness:claude-code","cli:update:dep",detected
+  pm-7zs0,related,"2026-11-15T09:53:21.552Z","harness:claude-code","cli:update:dep",detected
+  pm-td81nb,related,"2026-11-15T09:53:21.552Z","harness:claude-code","cli:update:dep",detected
+comments[11]{created_at,author,text}:
+  "2026-11-15T08:35:00.796Z","harness:claude-code","Verification evidence (2026-11-15, branch feat/stale-work-visibility-and-takeover). The isolated scenarios in `tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts` pin only the wall clock, so the real lock, history and CLI paths run:\n\n- An active claim (5h idle) refuses with `stale_claim_takeover_refused`. The refusal carries `claim_activity` and a specific `required` text, names the claim's `eligible_at`, and leaves the history stream byte-identical.\n- An idle claim (96h) is taken over. `takeover` and `context.stale_claim_takeover` match field by field, and the warning reads `claim_stale_takeover:agent-a->agent-b:idle_hours=96`.\n- A holder that renews at T+100h makes a takeover at T+101h refuse (`idle_hours` 1, `claim_age_hours` 101).\n- With `--if-available`, an active claim is skipped and a stale one is taken over.\n- Unclaimed and self-held items behave as plain claims (no `takeover` key).\n- A plain `already_claimed_by` names `--takeover-stale` in its next steps only once the claim is stale.\n- `--force` and `--next` combinations refuse before any write.\n- `pm claim --start` and `start-task` take over and start. `takeoverStale` does not leak into the status update (register-commands spec).\n- `pm next` `held_by_others` rows carry `claimed_at`, `idle_hours` and `stale`.\n- No valid activity time means fail-closed: never stale, and the next steps point at history.\n\nParity: CLI, MCP (strict schema 4.28.0, with `takeoverStale` on claim and start-task plus mutual-exclusion groups) and the SDK (`runClaim` and `runStartTask`). Completions cover bash, zsh and fish. The flag lexicon budget is claim 40 and start-task 24, and the help baselines were raised by hand without an inventory rewrite.\n\nNarrowed row: `last_activity_at` was removed from `NextHeldRow` because the execute intent's bounded read lost two `decision_needed` rows to the wider held rows. The exact timestamp stays in the refusal. The calibration re-approval moves next from 9 to 8 rows, keeps all 5 ready rows, and makes the session spend fewer tokens.\n\n`pm test pm-gh1336 --run` passed (run test-local-mwhkv9vw-6tp7ji).\n"
+  "2026-11-15T09:03:19.063Z","harness:claude-code","Codex review round 1 (gpt-6.1-sol xhigh, PR #1734 head 229317c4a) returned 5 findings. I verified each and fixed all 5 in the follow-up commit:\n\n1. **[P1] Corrupt history made the takeover fail open.** Old metadata plus a recent history entry followed by a malformed line made the history read return empty, so the takeover was judged from `updated_at` alone.\n   - Root cause: the clock took the newest of `updated_at` and history.\n   - Fix: the clock is now `updated_at` itself. Every recorded mutation advances it, and the merge driver resolves it to the later side. History stands in only when `updated_at` does not parse, and unreadable history in that fallback yields no activity, so the claim is never judged stale.\n2. **[P2] Flat MCP `start-task` dropped `takeoverStale`.** Fix: `HOISTED_ACTION_OPTION_KEYS` gains a `start-task` entry. A transport test now drives `runAction` for both claim and start-task.\n3. **[P2] Sweeps and health disagreed** when history was newer than metadata. Fixed by the same clock change: `--updated-before` now filters on exactly the value the advisories judge.\n4. **[P2] Status ids were unquoted in remedies**, so `doing(done)` broke the shell. Fix: sweeps use `renderPmCommand`, and `return_to_open` uses `quoteCommandArg`.\n5. **[P3] A threshold accepted by settings (3e9 hours) threw a RangeError** in `eligible_at`. Fix: `staleEligibleAt` returns null past the Date range.\n\nThe clock change also makes health and context read history only for items whose `updated_at` does not parse.\n"
+  "2026-11-15T09:19:49.759Z","harness:claude-code","Review round 2 on PR #1734 (Greptile, on heads 79de4c330 and a8dc9c7e4) returned two P1 findings. Both are verified and fixed:\n\n1. **Idle health rows copied the stored assignee verbatim**, so a holder identity that an older version stored with URL userinfo leaked into `details.in_progress_work`. Fix: the classifier redacts it with `redactIdentityCredentials`, matching the GH-1707 rule for claim refusals. `pm next` `held_by_others` rows redact the same way. Specs plant a legacy credentialed holder directly in the item file.\n2. **Restored claims looked abandoned** once round 1 reduced the clock to `updated_at`. `pm restore` writes the historical document, keeping its old `updated_at`, and appends a new `restore` entry. Fix: the clock is again the newer of `updated_at` and the latest history entry, so a restore counts as activity. Codex round 1 finding #1 (corrupt history failing open) is now fixed directly instead of through the clock:\n   - A history stream that exists but cannot be parsed marks `claim_activity.history_unreadable` and is never judged stale.\n   - The refusal says the stream could not be read and names `pm history <id> --verify`.\n\nRound 1 finding #3 (sweep vs health mismatch) stands as documented behaviour: the `--updated-before` sweeps are candidate lists by metadata time, a superset when history runs ahead, and the takeover re-judges with the full clock. New scenarios cover a holder's restore and a corrupt stream refusing the takeover.\n"
+  "2026-11-15T09:46:23.099Z","harness:claude-code","Review round 3 on PR #1734 (Greptile on c800079e8, CodeRabbit full review). All findings were verified, and each is fixed:\n\n- **Greptile P1: compaction made abandoned claims look active.** The fresh `history_compact` entry reset the idle time.\n  - Fix: the clock counts only substantive history entries, using the existing `classifyHistoryEvent` policy. `history_compact`, `history_repair`, `history_redact` and the other maintenance ops are excluded, and `restore` still counts.\n- **CodeRabbit: a `null` history line escaped the advisory fallback.**\n  - Fix: `latestHistoryTimestamp` skips decoded values that are not records.\n  - Ownership evidence treats a stream with any non-record line (`null`, a string, a record without `ts` or `patch`) as unreadable, so the takeover fails closed.\n- **CodeRabbit: idle rows held by another agent had no working remedy.**\n  - Fix: `item_remedies` gains `take_over_idle: pm claim <id> --takeover-stale`, while `pm claim <id>` stays for unowned work.\n- **CodeRabbit, docs:**\n  - The unreadable-history case is the refusal code `stale_claim_takeover_refused`, with `claim_activity.history_unreadable` as evidence.\n  - The lock serializes the takeover with renewals. A renewal recorded before the takeover takes the lock refuses it; that is not \"renewal always wins\".\n- **CodeRabbit, tracker:**\n  - pm-7zs0's elapsed reminder is re-armed for 2026-11-16T07:00Z with its original text.\n  - pm-td81nb's acceptance criteria now cover main advancing before sealing.\n"
+  "2026-11-15T10:24:55.446Z","harness:claude-code","Codex review round 3 (gpt-6.1-sol xhigh, head d99a53a6d) returned five verified findings. All are fixed:\n\n1. **[P1] Compaction erased substantive activity.** A restore folded into a `history_compact_baseline` was discarded as maintenance, so the old `updated_at` made the claim look idle (1h became 97h).\n   - Fix: the baseline counts as activity. It carries the time of the last pruned entry, which bounds the work it replaced. The `history_compact` audit entry (compaction time) still does not count.\n2. **[P2] Record validation was too loose.** A record without `op`, or with patch entries that were null or lacked a string `path`, slipped through and was skipped (failing open) or crashed the classifier.\n   - Fix: one shared `isWellFormedHistoryRecord` validator (string `ts` and `op`, every patch operation a record with a string `path`). Advisory reads skip anything else, and the takeover treats the stream as unreadable.\n3. **[P2] Remedies ignored the selected tracker.** Fix: they now carry `--pm-path` through `resolvePmCommandScopeArgs` when the diagnosed tracker was selected explicitly or via `PM_PATH`.\n4. **[P2] Unowned detail rows published metadata-only activity.** Fix: the scan reads history for every unowned in-progress item, since its row is published, so `age_hours` and `last_activity_at` are exact. Owned items still skip history while `updated_at` is fresh.\n5. **[P2] Markdown context dropped the new counts.** Fix: `renderContextMarkdown` prints `in_progress_unowned` and `in_progress_idle` beside `in_progress` when they are non-zero.\n\nExact 100% coverage passed locally on d99a53a6d (12,816 tests), and focused coverage of the touched modules is 100/100/100/100.\n"
+  "2026-11-15T10:54:24.663Z","harness:claude-code","Codex review round 4 (head 25f2fef3a) found one issue: the stale judgement read history under the embedded id, while the store locks and appends under the storage id taken from the file name. On a case-sensitive filesystem, an item stored as PM-A with an embedded id pm-a would have been judged from the missing pm-a stream, so it would read as idle. Fix: mutateItem's callback receives an ItemMutationLocation {storageId} as a new optional second argument; existing one-argument callbacks are unaffected. The claim reads the stream the lock guards. A spec drives the decision with a storage id whose stream holds recent work and a differently-cased embedded id. Exact coverage passed on 25f2fef3a (12,817 tests)."
+  "2026-11-15T11:01:25.303Z","harness:claude-code","Bot review on head f09768f34 (Greptile and a CodeRabbit full review) found three valid issues. All are fixed:\n\n1. **Greptile: repeated compaction renewed abandoned claims.** A baseline's timestamp is the time of its last pruned entry, and a second compaction folds the first compaction's audit entry into its prefix, so maintenance time came back.\n   - Fix: compaction now records the prefix's newest substantive time as `context.history_compaction.last_activity_at` (null when the prefix held no work), carried through nested baselines. The clock reads that value.\n   - A legacy baseline without the field still counts with its own timestamp, a conservative upper bound.\n   - An integration test compacts twice and keeps the original work time.\n2. **CodeRabbit: a well-formed record with an unparseable timestamp kept the stream readable.** The record was skipped, so the takeover could fail open. Fix: the takeover requires every record to carry a parseable timestamp, otherwise the stream is unreadable.\n3. **CodeRabbit: a nested snake_case `takeover_stale` did not override the flat `takeoverStale` on MCP claim.** Fix: claim and start-task join the actions whose declared nested snake_case options are renamed to camelCase, which also covers nested `if_available` and the other claim parameters.\n"
+  "2026-11-15T11:12:38.173Z","harness:claude-code","Codex review round 5 ran pinned to f09768f34. Findings 1 (unparseable timestamps) and 2 (repeated compaction) had already been fixed in 61bfe9b13. Finding 3 (P2 minor) is resolved as a limitation, not fixed: when an item's storage file name and embedded id differ in case, the diagnostic reads in health, context and pm next look up history under the embedded id, so their idle numbers can disagree with the takeover. The takeover itself reads the stream the lock guards (fixed in f09768f34). That state is already an integrity failure: history validation refuses it as item_identity_conflict, and health reports the stream under the embedded id as missing. Carrying storage ids through the list layer for advisory counts in a corrupt-identity state is out of proportion."
+  "2026-11-15T11:25:27.341Z","harness:claude-code","Codex review round 6 (head 61bfe9b13) found one issue: malformed compaction receipts were trusted. A recent baseline recording last_activity_at \"invalid\" was silently dropped, so the takeover proceeded, and history_compaction: null threw a TypeError in advisory scans. Fix: isJudgeableHistoryRecord requires a parseable timestamp and, for a baseline, a receipt that is either absent (legacy) or well formed, meaning last_activity_at is null or a parseable time. A stream with any other record is unreadable for a takeover. Advisory reads never throw: a malformed receipt degrades to the baseline's own time, the conservative bound. Specs cover null and non-object contexts and receipts, invalid and non-string values, and a legacy baseline without the field. Focused coverage of stale-work and ownership-source is 100/100/100/100."
+  "2026-11-15T11:50:52.500Z","harness:claude-code","Codex review round 7 (head c0a293891) found one minor issue: array-valued compaction containers (context: [] or history_compaction: []) passed the record checks and were treated as legacy. Fix: both containers must be non-array records, otherwise the receipt is malformed. A takeover then refuses with history_unreadable, and advisory reads use the baseline's own time. The exact-coverage run on c0a293891 passed 12,819 tests but aborted on one unrelated spec that timed out under load (dependency-advisories feeds.spec, refuses an unbounded population). That spec passes in isolation in 1.2 s."
+  "2026-11-15T14:39:07.026Z","harness:claude-code","CodeRabbit review on 17d608c7c found two issues, both fixed. (1) Major: compaction pruned entries whose timestamps did not parse under every boundary except --before <timestamp>. The new baseline then recorded only the remaining valid activity, laundering damage that a takeover would otherwise refuse. history-compact now refuses before any write when a record it would prune has an unparseable timestamp. An integration test covers default compaction and checks that the stream bytes are unchanged. (2) Minor: the docs now say advisory results (health, context, scans, held rows) can call an item idle while the takeover refuses it over unreadable history, and that eligibility comes only from resolveItemOwnershipActivity or the locked takeover. Exact coverage on 10e2521bd passed (12,820 tests, 100/100/100/100). The full quality:static chain and the CI static and smoke replicas passed on the following tree."
+notes[2]{created_at,author,text}:
+  "2026-11-15T07:37:48.377Z","harness:claude-code","Implementation decisions (2026-11-15):\n\n- **Clock.** One activity clock: the newest of `updated_at` and the newest history entry. Every recorded mutation advances `updated_at`; I verified create, comment_add, note_add, files_add and claim on a sandbox. History covers trackers whose metadata and stream diverged. A claim with no valid activity time is never stale (fail-closed).\n- **Threshold.** The existing `mutation_guard.stale_in_progress_hours` (default 72), reused rather than adding a second knob. The item health calls stale is the item `--takeover-stale` may take.\n- **Race safety.** The decision runs inside the claim's `mutate` callback under the item lock. A holder's renewal is a mutation that has to wait for that lock, so it either lands before the decision (and is seen) or after the takeover.\n- **Evidence.** `mutateItemWithHistoryContextResolver` seals `context.stale_claim_takeover` into the same claim entry. The result carries the same receipt as `takeover`.\n- **Combinations.** `--takeover-stale` with `--force` and with `--next` are both refused (`ambiguous_option_combination`) before any read. `--if-available` turns an active-claim refusal into a skip.\n- **Ownership-source split.** `resolveItemOwnershipActivity` always returns activity, so the claim path carries no unreachable optional branches. `resolveItemOwnershipConflict` keeps its signature.\n- **pm next.** It reads one stream per returned `held_by_others` row (bounded by `--limit`), never per held item in the corpus. Bulk occupancy stays with pm-1wujzi."
+  "2026-11-15T16:38:22.349Z","harness:claude-code","Review follow-up: history-compact now refuses before any write when any record in the pruned prefix is not judgeable (the isJudgeableHistoryRecord rule the takeover applies), not only one with an unparseable timestamp. A prior baseline with a malformed compaction receipt previously compacted into a baseline that recorded its own timestamp as last_activity_at, which made an unreadable stream judgeable and eligible for --takeover-stale. The refusal names the damage (invalid timestamp, or a malformed record or compaction receipt). Regression: tests/integration/history-compact-command.spec.ts (malformed receipt refusal)."
+learnings[2]:
+  - created_at: "2026-11-15T07:37:51.949Z"
+    author: "harness:claude-code"
+    text: "A new field on a mutation result is invisible on `pm <cmd> --json` until `src/core/output/mutation-projection.ts` lets it through. The lean mutation envelope copies only allowlisted plain-object keys (`recovery`, `follow_up`, `handoff`, `completion`, `start`, and now `takeover`), so the SDK result had the receipt while the CLI JSON silently dropped it. Check every new result key against the CLI JSON, not just the SDK return value."
+  - created_at: "2026-11-15T21:46:10.542Z"
+    author: "harness:claude-code"
+    text: "Fail-closed decisions must ANCHOR on positive evidence. They must not try to enumerate every writer that could hide evidence.\n\nFixing writers one at a time did not converge. Each review round on PR #1734 found one more writer that discards, folds or rewrites history and so hides the holder's recent work:\n- a legacy compaction baseline whose own timestamp does not bound its pruned prefix (CodeRabbit);\n- a history-repair --salvage-tail that discards a record of unknown time (Codex round 1);\n- a merge dedup that drops a baseline receipt, a patch repair that reclassifies a rewritten update as maintenance, and a workspace snapshot restore that replaces the stream wholesale (Codex round 2).\n\nThe convergent design anchors on the holder's own claim record: the newest original entry that set the current assignee. Records before it cannot be the holder's work, so a compacted, salvaged, legacy or merged prefix never matters. unprovenClaimActivity refuses in four cases:\n1. claim_record_unavailable: the record is missing, or was folded into a compaction baseline.\n2. discarded_history_tail: a history_salvage follows the claim.\n3. rewritten_history: a history_repair, history_redact or merge_reconcile audit follows the claim.\n4. workspace_restored: the _workspace stream holds a workspace_snapshot_restore at or after the claim time, or cannot be read.\n\nThis let the compaction receipt drop its extra unproven_activity field: compaction no longer has to carry uncertainty forward. A holder can release, and a new claim starts a provable record.\n\nRule: when each review round finds one more hiding writer, stop patching writers. Ask which single record must exist, unmodified, for the decision to be safe, and refuse whenever it is absent or anything after it is a rewrite."
+    edited_at: "2026-11-15T22:45:11.391Z"
+files[29]:
+  - path: docs/MUTATION_INTEGRITY.md
+    scope: project
+    note: Activity clock and legacy-baseline takeover refusal
+  - path: scripts/release/flag-help-baseline.json
+    scope: project
+  - path: sdk/public-surface.json
+    scope: project
+  - path: src/cli/error-guidance.ts
+    scope: project
+  - path: src/cli/help-content.ts
+    scope: project
+  - path: src/cli/register-operations.ts
+    scope: project
+  - path: src/core/output/mutation-projection.ts
+    scope: project
+  - path: src/core/shared/errors.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/flag-lexicon-contracts.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-parameter-tables.ts
+    scope: project
+  - path: src/sdk/cli-contracts/tool-schema.ts
+    scope: project
+  - path: src/sdk/completion/bash.ts
+    scope: project
+  - path: src/sdk/completion/fish.ts
+    scope: project
+  - path: src/sdk/completion/zsh.ts
+    scope: project
+  - path: src/sdk/flag-invocation-contracts.ts
+    scope: project
+  - path: src/sdk/governance.ts
+    scope: project
+  - path: src/sdk/governance/stale-work.ts
+    scope: project
+    note: "unprovenClaimActivity: the claim-anchored takeover evidence"
+  - path: src/sdk/index.ts
+    scope: project
+  - path: src/sdk/lifecycle/claim.ts
+    scope: project
+  - path: src/sdk/lifecycle/task-composition.ts
+    scope: project
+  - path: src/sdk/ownership-source.ts
+    scope: project
+  - path: src/sdk/query/next.ts
+    scope: project
+  - path: src/sdk/runtime-input.ts
+    scope: project
+  - path: tests/integration/history-compact-command.spec.ts
+    scope: project
+    note: Compaction laundering regressions
+  - path: tests/unit/cli/error-guidance.spec.ts
+    scope: project
+  - path: tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts
+    scope: project
+  - path: tests/unit/commands/query/next-command.spec.ts
+    scope: project
+  - path: tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts
+    scope: project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,project,600,"harness:claude-code","2026-11-15T07:51:04.783Z",local_mutation,feat/stale-work-visibility-and-takeover
+test_runs[1]:
+  - run_id: test-local-mwhkv9vw-6tp7ji
+    kind: test
+    status: passed
+    started_at: "2026-11-15T08:33:28.695Z"
+    finished_at: "2026-11-15T08:33:41.324Z"
+    recorded_at: "2026-11-15T08:33:41.324Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts,schema,schema,source,local_source_ref
+docs[4]{path,scope}:
+  docs/AGENT_GUIDE.md,project
+  docs/COMMANDS.md,project
+  docs/LIFECYCLE_COMMANDS.md,project
+  docs/SDK.md,project
+close_reason: "Claim refusals and pm next report claim age and idleness, and an idle claim can be taken over under the stale-work policy with audited history"
+contract_change:
+  api: "pm claim --takeover-stale (claim --start, start-task, MCP and SDK takeoverStale); already_claimed_by refusal context; NextResult.held_by_others (NextHeldRow); ClaimResult.takeover; strict tool-parameters schema 4.28.0"
+  before: "already_claimed_by carried claimed_by, claimed_at and claim_source only; held_by_others rows were {id, assignee}; --force was the only way past another holder, active or abandoned"
+  after: "already_claimed_by and the new stale_claim_takeover_refused carry claim_activity {last_activity_at, claim_age_hours, idle_hours, stale_policy}; held_by_others rows add claimed_at, idle_hours and stale; --takeover-stale takes over only a claim idle for mutation_guard.stale_in_progress_hours (default 72), refuses an active one without writing, and records context.stale_claim_takeover in the claim history entry"
+  migrate: "Code that constructs NextResult or held_by_others rows supplies claimed_at, idle_hours and stale; consumers pinning the tool-parameters schema version accept 4.28.0; take over abandoned claims with --takeover-stale instead of --force"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1336
+  gate_id: stale-claim-takeover
+  negative_control: "node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts (before the fix --takeover-stale is an unknown option, the refusal has no claim_activity, held_by_others rows have no idle evidence and an active claim can only be refused or forced)"
+  local_checks[1]: node scripts/run-tests.mjs test tests/unit/commands/lifecycle/claim-stale-takeover.spec.ts tests/unit/sdk/lifecycle/claim-ownership-activity.spec.ts tests/unit/cli/error-guidance.spec.ts tests/unit/commands/query/next-command.spec.ts tests/unit/commands/lifecycle/claim-command.spec.ts tests/unit/sdk/action-schema-parity.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
+body: ""

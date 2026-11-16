@@ -62,8 +62,17 @@ describe("action-scoped MCP schema parity", () => {
     expect(schema.properties?.definition).toMatchObject({ type: ["object", "string"] });
     expect(PM_TOOL_PARAMETER_PROPERTIES.definition).toEqual({ type: "object" });
   });
+  it("accepts the policy-gated stale takeover on claim and its start-task alias (GH-1336)", () => {
+    for (const action of ["claim", "start-task"] as const) {
+      const schema = _testOnlyCliContracts.buildActionScopedToolSchema(action) as SchemaWithProperties;
+      expect(schema.properties?.takeoverStale).toMatchObject({
+        type: "boolean",
+        description: expect.stringContaining("stale_claim_takeover_refused"),
+      });
+    }
+  });
   it("versions additive lifecycle and focus contracts", () => {
-    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.27.0");
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("4.28.0");
     expect(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION).toBe("1.12.0");
     const release = _testOnlyCliContracts.buildActionScopedToolSchema("release") as SchemaWithProperties & { allOf: Array<{ if?: { required?: string[] }; then?: unknown }> };
     expect(release.properties?.handoff).toMatchObject({ type: "string" });

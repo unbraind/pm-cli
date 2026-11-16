@@ -988,6 +988,7 @@ export const CLAIM_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--message" },
   { flag: "--force" },
   { flag: "--if-available" },
+  { flag: "--takeover-stale" },
   { flag: "--next" },
   { flag: "--type" },
   { flag: "--tag" },
@@ -1037,6 +1038,7 @@ export const START_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author", aliases: ["--assignee"] },
   { flag: "--message" },
   { flag: "--force" },
+  { flag: "--takeover-stale" },
 ];
 
 /** Public contract for pause task flag contracts, shared by SDK and presentation-layer consumers. */

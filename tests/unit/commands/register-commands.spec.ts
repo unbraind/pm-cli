@@ -2032,6 +2032,26 @@ describe("operation command actions", () => {
     expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
   });
 
+  it("maps --takeover-stale onto claim and both start compositions without leaking it into the status update (GH-1336)", async () => {
+    await runCli("claim", "pm-1", "--takeover-stale");
+    expect(vi.mocked(runClaim)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: undefined,
+      message: undefined,
+      ifAvailable: false,
+      takeoverStale: true,
+    });
+    for (const args of [["start-task", "pm-1", "--takeover-stale"], ["claim", "pm-1", "--start", "--takeover-stale"]]) {
+      // Each composition must make its own calls; stale calls from the previous one never satisfy it.
+      vi.mocked(runClaim).mockClear();
+      vi.mocked(runUpdate).mockClear();
+      await runCli(...args);
+      expect(vi.mocked(runClaim)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(runUpdate)).toHaveBeenCalledTimes(1);
+      expect(lastCallArg<Record<string, unknown>>(vi.mocked(runClaim) as never, 3).takeoverStale).toBe(true);
+      expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1)).not.toHaveProperty("takeoverStale");
+    }
+  });
+
   it("composes lifecycle aliases from claim/update/close/release", async () => {
     await runCli("start-task", "pm-1", "--author", "agent");
     expect(vi.mocked(runClaim)).toHaveBeenCalledTimes(1);

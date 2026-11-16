@@ -184,7 +184,7 @@
     "src/sdk/query/item-filter-options.ts": 28,
     "src/sdk/query/list-filter-shared.ts": 2,
     "src/sdk/query/list.ts": 34,
-    "src/sdk/query/next.ts": 29,
+    "src/sdk/query/next.ts": 28,
     "src/sdk/query/parsers.ts": 3,
     "src/sdk/query/search-contracts.ts": 13,
     "src/sdk/query/search.ts": 1,

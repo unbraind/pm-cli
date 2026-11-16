@@ -36,7 +36,71 @@ Defaults preserve author compatibility while providing secret advice:
 | ------------------------------------------ | -------- | -------------------------------------------------------- |
 | `mutation_guard.require_attributed_author` | `false`  | When enabled, reject an effective author of `unknown`.   |
 | `mutation_guard.secret_guard`              | `advise` | `off`, stderr/structured `advise`, or pre-write `block`. |
-| `mutation_guard.stale_in_progress_hours`   | `72`     | Age threshold for unclaimed active work in `pm health`.  |
+| `mutation_guard.stale_in_progress_hours`   | `72`     | Inactivity threshold for stale work: `pm health` advisories, `pm context` idle counts, and `pm claim --takeover-stale`. |
+
+One activity clock serves every stale-work consumer: the newer of an item's
+`updated_at` and its latest substantive history entry. Ordinary mutations
+advance both; `pm restore` writes the historical document, with its older
+`updated_at`, and appends a new entry, so the stream counts too. Maintenance
+entries (`history-compact`, `history-repair`, `history-redact`) preserve the
+record without working on the item and do not count. A compaction baseline
+stands for its pruned prefix and records that prefix's newest substantive
+time as `context.history_compaction.last_activity_at`, so repeated
+compaction never renews an abandoned claim. A baseline written before that
+field existed carries only its own timestamp, the last pruned entry's time,
+which does not bound the pruned work because history keeps caller-supplied
+timestamps without an ordering check. Advisory reads approximate its activity
+with that timestamp.
+
+A takeover trusts no summary or rewrite. It anchors on the holder's own claim
+record: the newest original entry that set the current assignee, or a claim
+that moved only `claim_principal` (another session of the same principal took
+the item). Records
+before it cannot be the holder's work, so a compacted, salvaged or legacy
+prefix never matters. The takeover refuses (`claim_activity.unproven_activity`)
+in these cases:
+
+| Reason | Cause |
+| --- | --- |
+| `claim_record_unavailable` | No original record sets the holder: the history is silent, missing, or folded the claim into a compaction baseline. |
+| `discarded_history_tail` | A `history-repair --salvage-tail` after the claim discarded a record whose time is unknown. |
+| `rewritten_history` | A `history-repair`, `history-redact` or merge reconcile after the claim rewrote records, or `reanchor_evidence` on the claim or a later record shows a changed patch (a merge rebase leaves no audit entry). |
+| `workspace_restored` | A workspace snapshot restore at or after the claim may have replaced the holder's later work. Also when a salvage, repair, redaction or merge reconcile of the workspace stream is dated at or after the claim, when a compacted workspace stream's baseline cannot bound its pruned records before the claim, or when the workspace stream cannot be read to rule a restore out. |
+
+The holder can release such an item; a new claim starts a provable record.
+Restore precedence uses wall-clock time and assumes the restoring host's clock
+does not run behind the holder's. Ordering restores by a durable generation
+instead is tracked as pm-8su89a. A restore that activates while a takeover is
+between its reads and its commit is not yet fenced; that gap affects every
+item writer and is tracked as pm-vgk0nj. Rewrite detection also trusts the
+history merge driver to keep provenance: its dedup identity omits `context`,
+`event_class` and `reanchor_evidence`, so two records that match on everything
+else collapse into one. That is tracked as pm-0574of. A
+stream any of whose records lacks a parseable timestamp, or holds a baseline
+with a malformed receipt, is unreadable for a takeover, and `history-compact`
+refuses to prune such a record (it would launder the damage into a judgeable
+stream). A takeover refuses when
+the stream exists but cannot be read (`claim_activity.history_unreadable`),
+because recent work may hide behind it. A threshold too large for the Date range reports
+`eligible_at: null` rather than failing. `pm health` reports three advisories
+in the storage check, none of which fails the verdict:
+
+| Warning                       | Population                                               | Remedy printed by `pm health`                                            |
+| ----------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `in_progress_unowned:<n>`     | in-progress items with no assignee (so no live claim)    | `pm list --status <in_progress> --assignee-filter unassigned`            |
+| `in_progress_idle:<n>`        | in-progress items idle past the threshold, owned or not  | `pm list --status <in_progress> --updated-before -<hours>h`              |
+| `stale_in_progress_items:<n>` | both: unowned and idle                                   | `pm list --status <in_progress> --assignee-filter unassigned --updated-before -<hours>h` |
+
+The storage check's `details.in_progress_work` lists up to 25 ids per group
+with each group's sweep, plus the per-item recoveries `pm claim <id>` (unowned
+work), `pm claim <id> --takeover-stale` (another holder's idle claim) and
+`pm update <id> --status <open>`. Sweeps and recoveries carry `--pm-path` when
+the diagnosed tracker was selected explicitly or through `PM_PATH`. A sweep is a candidate list by metadata
+time: it can include an item whose history is newer than its `updated_at`
+(for example after a restore), which the advisory does not count;
+`pm claim <id> --takeover-stale` re-judges each one under the item lock. `pm context` reports `in_progress_unowned`
+and `in_progress_idle` next to `in_progress` in its summary when they are
+non-zero, so unattended work is not read as active work.
 
 A blocking secret policy may be bypassed only by an explicit `--force` on a
 force-capable mutation. The warning records that an override occurred while
@@ -49,7 +113,9 @@ Package hosts can apply the exact runtime policy before dispatch:
 ```ts
 import {
   evaluateMutationGuard,
+  inspectInProgressWork,
   inspectStaleInProgressItems,
+  resolveRuntimeStatusRegistry,
   scanMutationSecrets,
 } from "@unbrained/pm-cli/sdk";
 
@@ -65,7 +131,19 @@ const stale = inspectStaleInProgressItems(items, {
     projectSettings.schema.workflow.in_progress_status ?? "in_progress",
   threshold_hours: projectSettings.mutation_guard.stale_in_progress_hours,
 });
+// Unowned, idle and stale groups from one pass; scanInProgressWork(pmRoot, ...)
+// also reads history, but only for items whose metadata already looks idle.
+// The registry resolves stored status aliases, as the in-progress counters do.
+const work = inspectInProgressWork(items, {
+  status_registry: resolveRuntimeStatusRegistry(projectSettings.schema),
+  threshold_hours: projectSettings.mutation_guard.stale_in_progress_hours,
+});
 ```
+
+`resolveItemOwnershipActivity(pmRoot, id, holder, { updated_at, threshold_hours })`
+returns the same claim evidence a refused `pm claim` reports, and
+`buildInProgressSweepCommands(status, hours)` returns the exact list sweeps
+`pm health` prints.
 
 `evaluateMutationGuard` returns stable warning codes, redacted findings, and
 whether a blocking policy was explicitly overridden. `scanMutationSecrets` is

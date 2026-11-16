@@ -327,7 +327,8 @@ export const HOISTED_ACTION_OPTION_KEYS: Readonly<Record<string, readonly string
     update: ["parent", "allowMissingParent", "completedAt"],
     copy: ["allowDuplicate"],
     close: ["duplicateOf", "completedAt", "releaseAssignment"],
-    claim: ["start", "next", "ifAvailable"],
+    claim: ["start", "next", "ifAvailable", "takeoverStale"],
+    "start-task": ["takeoverStale"],
     release: ["pause", "handoff"],
     comments: ["ifAbsent"],
     notes: ["ifAbsent"],
@@ -388,6 +389,8 @@ function declaredContractActionOptionKeys(action: string): readonly string[] {
 
 /** Annotation, linked-artifact and linked-test actions whose handlers read only camelCase option keys. */
 const CAMEL_CASE_NORMALIZED_ACTIONS: ReadonlySet<string> = new Set([
+  "claim",
+  "start-task",
   "comments",
   "notes",
   "learnings",

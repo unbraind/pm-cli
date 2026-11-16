@@ -119,9 +119,14 @@ import {
   collectUnknownCapabilityGuidance,
 } from "../extension/doctor.js";
 import {
-  scanStaleInProgressItems,
+  scanInProgressWork,
   type StaleInProgressScan,
 } from "./stale-work.js";
+import {
+  buildInProgressWorkHealthSummary,
+  type InProgressWorkHealthDetails,
+} from "./in-progress-work-health.js";
+import { resolvePmCommandScopeArgs } from "../command-line.js";
 import { scanTrackedRuntimeCache } from "./tracked-runtime-cache.js";
 import {
   buildMergeReceiptEvidenceWarnings,
@@ -361,6 +366,8 @@ function isAdvisoryHealthWarning(
     warning.startsWith("history_stream_over_compact_threshold:") ||
     warning.startsWith("integrity_legacy_hierarchy_") ||
     warning.startsWith("stale_in_progress_items:") ||
+    warning.startsWith("in_progress_unowned:") ||
+    warning.startsWith("in_progress_idle:") ||
     warning.startsWith("provenance_resolver_zero_success:") ||
     warning.startsWith("provenance_value_domain_invalid:") ||
     (!requireMergeDrivers &&
@@ -2628,6 +2635,7 @@ function buildStorageHealthCheck(
   authorAttribution: HistoryAuthorAttributionScan,
   staleInProgress: StaleInProgressScan,
   provenance: ProvenanceResolverHealthScan,
+  inProgressWork?: InProgressWorkHealthDetails,
 ): HealthCheck {
   const unknownAuthorEventCount =
     resolveUnknownAuthorEventCount(authorAttribution);
@@ -2635,21 +2643,21 @@ function buildStorageHealthCheck(
     resolveActionableUnknownAuthorEventCount(authorAttribution);
   const hasAuthorEvents = unknownAuthorEventCount > 0;
   const hasActionableAuthorWarnings = actionableUnknownAuthorEventCount > 0;
-  const hasStaleInProgressItems = staleInProgress.count > 0;
+  const hasInProgressWorkFindings = staleInProgress.count > 0 || inProgressWork !== undefined;
   return {
     name: "storage",
     status:
       historySummary.over_threshold.length === 0 &&
       historySummary.orphaned.length === 0 &&
       !hasActionableAuthorWarnings &&
-      !hasStaleInProgressItems
+      !hasInProgressWorkFindings
         ? "ok"
         : "warn",
     ok:
       historySummary.over_threshold.length === 0 &&
       historySummary.orphaned.length === 0 &&
       !hasActionableAuthorWarnings &&
-      !hasStaleInProgressItems,
+      !hasInProgressWorkFindings,
     details: {
       items: items.length,
       history_streams: historySummary.count,
@@ -2666,9 +2674,10 @@ function buildStorageHealthCheck(
         truncated: historySummary.orphaned.length > 25,
       },
       ...(hasAuthorEvents ? { author_attribution: authorAttribution } : {}),
-      ...(hasStaleInProgressItems
+      ...(staleInProgress.count > 0
         ? { stale_in_progress: staleInProgress }
         : {}),
+      ...(inProgressWork === undefined ? {} : { in_progress_work: inProgressWork }),
       ...(provenance.outcomes.length > 0
         ? { provenance_resolver_outcomes: provenance.outcomes }
         : {}),
@@ -2871,6 +2880,8 @@ function attachHealthRemediationMaps(params: {
   remediationSources: Record<HealthCheck["name"], string[]>;
   historyDriftedCount: number;
   overThresholdCount: number;
+  /** Workspace-specific storage remedies that replace registry defaults for codes present. */
+  storageRemediation: Record<string, string>;
 }): void {
   for (const check of params.checks) {
     const remediationMap = buildRemediationMap(
@@ -2882,6 +2893,9 @@ function attachHealthRemediationMaps(params: {
       historyDriftedCount: params.historyDriftedCount,
       overThresholdCount: params.overThresholdCount,
     });
+    for (const [code, command] of Object.entries(check.name === "storage" ? params.storageRemediation : {})) {
+      if (Object.hasOwn(remediationMap, code)) remediationMap[code] = command;
+    }
     if (Object.keys(remediationMap).length > 0) {
       check.details = { ...check.details, remediation_map: remediationMap };
     }
@@ -3046,12 +3060,18 @@ export async function runHealth(
     actionableUnknownAuthorEventCount > 0
       ? [`history_unknown_author_events:${actionableUnknownAuthorEventCount}`]
       : [];
-  const staleInProgress = buildStaleInProgressHealthSummary(
-    await scanStaleInProgressItems(pmRoot, items, {
-      in_progress_status: settings.schema.workflow.in_progress_status,
-      threshold_hours: settings.mutation_guard.stale_in_progress_hours,
-    }),
-  );
+  const workStatuses = resolveRuntimeStatusRegistry(settings.schema);
+  const inProgressWork = await scanInProgressWork(pmRoot, items, {
+    in_progress_status: workStatuses.in_progress_status,
+    status_registry: workStatuses,
+    threshold_hours: settings.mutation_guard.stale_in_progress_hours,
+  });
+  const staleInProgress = buildStaleInProgressHealthSummary(inProgressWork.stale);
+  const inProgressWorkHealth = buildInProgressWorkHealthSummary(inProgressWork, {
+    in_progress: workStatuses.in_progress_status,
+    open: workStatuses.open_status,
+  }, resolvePmCommandScopeArgs(global));
+  const staleWorkWarnings = [...staleInProgress.warnings, ...inProgressWorkHealth.warnings];
   const provenanceResolverHealth = await scanProvenanceResolverHealth(pmRoot);
   const provenanceWarnings = provenanceResolverHealth.warnings;
   const locksCheck = await buildLocksCheck(pmRoot);
@@ -3117,6 +3137,7 @@ export async function runHealth(
       authorAttribution,
       staleInProgress.scan,
       provenanceResolverHealth,
+      inProgressWorkHealth.details,
     ),
     locksCheck.check,
     integrityCheck.check,
@@ -3134,7 +3155,7 @@ export async function runHealth(
     historyPolicyWarnings: historyPolicy.warnings,
     historySummary,
     authorAttributionWarnings,
-    staleInProgressWarnings: staleInProgress.warnings,
+    staleInProgressWarnings: staleWorkWarnings,
     provenanceWarnings,
     locksCheck,
     integrityCheck,
@@ -3151,7 +3172,7 @@ export async function runHealth(
     historyPolicyWarnings: historyPolicy.warnings,
     historySummary,
     authorAttributionWarnings,
-    staleInProgressWarnings: staleInProgress.warnings,
+    staleInProgressWarnings: staleWorkWarnings,
     provenanceWarnings,
     locksCheck,
     integrityCheck,
@@ -3163,6 +3184,7 @@ export async function runHealth(
     remediationSources,
     historyDriftedCount: extractHistoryDriftedCount(historyDriftCheck),
     overThresholdCount: historySummary.over_threshold.length,
+    storageRemediation: inProgressWorkHealth.remediation,
   });
   // Telemetry is an opt-out, non-critical observability feature. Its operational
   // state (queue backlog, unreachable endpoint, corrupt local state) is advisory:

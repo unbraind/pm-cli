@@ -57,10 +57,10 @@
       "item_count": 2243,
       "intents": {
         "context": {
-          "delivered_bytes": 4128,
+          "delivered_bytes": 4150,
           "delivered_rows": 6,
           "declared_tokens": 3000,
-          "measured_tokens": 1032,
+          "measured_tokens": 1038,
           "degradation": "bounded_sections"
         },
         "get": {
@@ -78,10 +78,10 @@
           "degradation": "budget_row_compaction"
         },
         "next": {
-          "delivered_bytes": 4544,
-          "delivered_rows": 9,
+          "delivered_bytes": 4565,
+          "delivered_rows": 8,
           "declared_tokens": 1200,
-          "measured_tokens": 1136,
+          "measured_tokens": 1142,
           "degradation": "budget_row_compaction"
         },
         "search": {
@@ -95,11 +95,11 @@
       "session_orientation": {
         "command_count": 5,
         "token_budget": 20000,
-        "spent_tokens": 8210,
-        "remaining_tokens": 11790,
-        "seen_item_count": 83,
+        "spent_tokens": 8182,
+        "remaining_tokens": 11818,
+        "seen_item_count": 82,
         "suppressed_repeat_count": 8,
-        "delivered_bytes": 32834
+        "delivered_bytes": 32724
       },
       "cursor_walks": {
         "list": {

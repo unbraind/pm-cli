@@ -319,6 +319,30 @@ export interface PmCliErrorContext {
   claimed_at?: string | null;
   /** Whether the holder arrived through an explicit claim or a metadata assignment; `unknown` when history cannot say. */
   claim_source?: "claim" | "assignment" | "unknown";
+  /** Holder activity and stale-claim policy behind an `already_claimed_by` or `stale_claim_takeover_refused` refusal (GH-1336). */
+  claim_activity?: {
+    /** Most recent valid item `updated_at` or history timestamp, or null when neither parses. */
+    last_activity_at: string | null;
+    /** Present when the history stream exists but could not be read: idleness cannot be established, so the claim is never judged stale. */
+    history_unreadable?: true;
+    /** Present when the readable stream cannot prove the holder's idleness: no original record sets the holder, or after it a salvage discarded, a repair, redaction or merge reconcile rewrote, or a workspace restore replaced records. The claim is then never judged stale. */
+    unproven_activity?: "claim_record_unavailable" | "discarded_history_tail" | "rewritten_history" | "workspace_restored";
+    /** Whole hours since `claimed_at`, or null when the claim time is unknown. */
+    claim_age_hours: number | null;
+    /** Whole hours since `last_activity_at`, or null when the activity time is unknown. */
+    idle_hours: number | null;
+    /** The stale-work policy the claim was judged against. */
+    stale_policy: {
+      /** Setting that owns the inactivity threshold. */
+      setting: "mutation_guard.stale_in_progress_hours";
+      /** Configured threshold in whole hours. */
+      threshold_hours: number;
+      /** Whether the claim's idle time meets the threshold, so `--takeover-stale` may take it. */
+      stale: boolean;
+      /** When the claim becomes eligible for `--takeover-stale` if nothing else is recorded; null when unknown or beyond the Date range. */
+      eligible_at: string | null;
+    };
+  };
   /** Lease a refused `lock_lost` commit held when it tried to commit. */
   lease?: {
     /** Principal recorded as the lease owner. */

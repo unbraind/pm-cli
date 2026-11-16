@@ -264,6 +264,7 @@ const BOOLEAN_FLAG_NAMES = new Set([
   "--semantic",
   "--shared-host-safe",
   "--storage",
+  "--takeover-stale",
   "--title-exact",
   "--token-accounting",
   "--trace",

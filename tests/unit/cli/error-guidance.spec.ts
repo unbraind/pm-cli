@@ -464,6 +464,33 @@ describe("pm cli error guidance context plumbing", () => {
       expect(Buffer.byteLength(lean, "utf8")).toBeLessThan(Buffer.byteLength(full, "utf8"));
     });
 
+    it("renders the holder's idle time and stale verdict and keeps claim_activity in JSON (GH-1336)", () => {
+      const activity = (stale: boolean, idle: number | null) => ({
+        last_activity_at: idle === null ? null : "2026-10-31T00:17:38.745Z",
+        claim_age_hours: idle,
+        idle_hours: idle,
+        stale_policy: {
+          setting: "mutation_guard.stale_in_progress_hours" as const,
+          threshold_hours: 72,
+          stale,
+          eligible_at: idle === null ? null : "2026-11-03T00:17:38.745Z",
+        },
+      });
+      const stale = formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: activity(true, 96) });
+      expect(stale).toContain(
+        "Held by: agent-a (claim since 2026-10-31T00:17:38.745Z); idle 96h, stale under mutation_guard.stale_in_progress_hours=72",
+      );
+      const active = formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: activity(false, 3) }, { lean: true });
+      expect(active).toContain("; idle 3h, active under mutation_guard.stale_in_progress_hours=72");
+      const unknown = formatPmCliErrorForDisplay(claimMessage, { ...claimContext, claim_activity: activity(false, null) });
+      expect(unknown).toContain("Held by: agent-a (claim since 2026-10-31T00:17:38.745Z)\n");
+      expect(unknown).not.toContain("; idle");
+      const envelope = formatPmCliErrorForJson(claimMessage, 4, { ...claimContext, claim_activity: activity(true, 96) });
+      expect(envelope).toMatchObject({ claimed_by: "agent-a", claim_activity: activity(true, 96) });
+      expect(projectLeanErrorEnvelope(envelope)).toMatchObject({ claim_activity: activity(true, 96) });
+      expect(formatPmCliErrorForJson(claimMessage, 4, claimContext)).not.toHaveProperty("claim_activity");
+    });
+
     it("keeps code-specific recovery and a specific requirement in lean text", () => {
       const lean = formatPmCliErrorForDisplay("Unknown field 'owner' is not declared on Issue", {
         code: "invalid_argument_value",

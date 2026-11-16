@@ -4,6 +4,7 @@
  * Implements the pm context command surface and its agent-facing runtime behavior.
  */
 import type { PmReadOutputMetadata } from "../read-output-contracts.js";
+import { scanInProgressWork, type InProgressWorkScan } from "../governance/stale-work.js";
 import {
   SETTINGS_DEFAULTS,
   EXIT_CODE,
@@ -403,6 +404,10 @@ interface ContextSummary {
   focus_row_states?: Record<string, string>;
   active_items: number;
   in_progress: number;
+  /** In-progress items with no assignee, so no live claim; omitted when zero (GH-1724). */
+  in_progress_unowned?: number;
+  /** In-progress items idle past `mutation_guard.stale_in_progress_hours`, owned or not; omitted when zero (GH-1724). */
+  in_progress_idle?: number;
   open: number;
   blocked: number;
   blocked_fallback_used: boolean;
@@ -1958,6 +1963,14 @@ function pushEmptyContextSuggestions(
   lines.push("- `pm aggregate` for a full project status overview");
 }
 
+/** The unowned and idle in-progress counts, rendered only when non-zero like their JSON keys (GH-1724). */
+function renderUnattendedCounts(summary: ContextSummary): string {
+  return [
+    summary.in_progress_unowned === undefined ? "" : `, in_progress_unowned: ${summary.in_progress_unowned}`,
+    summary.in_progress_idle === undefined ? "" : `, in_progress_idle: ${summary.in_progress_idle}`,
+  ].join("");
+}
+
 /** Implements render context markdown for the public runtime surface of this module. */
 export function renderContextMarkdown(result: ContextResult): string {
   const lines: string[] = [];
@@ -1974,7 +1987,7 @@ export function renderContextMarkdown(result: ContextResult): string {
     lines.push(`- scope: subtree of ${result.filters.parent}`);
   }
   lines.push(
-    `- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}, open: ${result.summary.open})`,
+    `- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}${renderUnattendedCounts(result.summary)}, open: ${result.summary.open})`,
   );
   if (result.summary.total_items !== undefined) {
     lines.push(
@@ -2608,7 +2621,8 @@ function buildContextSummaryExtras(
   allItems: ItemMetadata[],
   statusRegistry: RuntimeStatusRegistry,
   blockedIds: ReadonlySet<string>,
-): Pick<ContextSummary, "scope" | "active_items" | "open" | "in_progress" | "blocked" | "total_items" | "closed" | "canceled"> {
+  inProgressWork: InProgressWorkScan,
+): Pick<ContextSummary, "scope" | "active_items" | "open" | "in_progress" | "in_progress_unowned" | "in_progress_idle" | "blocked" | "total_items" | "closed" | "canceled"> {
   const canceledStatus = normalizeStatusInput("canceled", statusRegistry);
   const activeItems = allItems.filter((item) =>
     statusRegistry.active_statuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
@@ -2619,6 +2633,8 @@ function buildContextSummaryExtras(
     active_items: activeItems.length,
     open: activeItems.length - inProgress,
     in_progress: inProgress,
+    ...(inProgressWork.unowned.count > 0 ? { in_progress_unowned: inProgressWork.unowned.count } : {}),
+    ...(inProgressWork.idle.count > 0 ? { in_progress_idle: inProgressWork.idle.count } : {}),
     blocked: allItems.filter((item) => blockedIds.has(item.id.trim().toLowerCase())).length,
     total_items: allItems.length,
     closed: allItems.filter((item) =>
@@ -2923,6 +2939,13 @@ export async function runContext(
     corpus.allItems,
     runtime.statusRegistry,
     blockedIds,
+    // Unattended in-progress work is counted apart from active work (GH-1724).
+    await scanInProgressWork(pmRoot, corpus.allItems, {
+      in_progress_status: runtime.statusRegistry.in_progress_status,
+      status_registry: runtime.statusRegistry,
+      threshold_hours: runtime.settings.mutation_guard.stale_in_progress_hours,
+      now: new Date(agendaContext.agenda.now),
+    }),
   );
 
   const result: ContextResult = {

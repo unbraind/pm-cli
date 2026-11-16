@@ -20,7 +20,12 @@ import {
 } from "../runtime-primitives.js";
 import { wrapOwnershipConflict } from "../annotations.js";
 import { renderPmCommand, resolvePmCommandScopeArgs } from "../command-line.js";
-import { resolveItemOwnershipConflict } from "../ownership-source.js";
+import {
+  resolveItemOwnershipActivity,
+  type ClaimActivityEvidence,
+  type ItemOwnershipActivity,
+} from "../ownership-source.js";
+import { mutateItemWithHistoryContextResolver } from "../../core/store/item-store.js";
 import { applyReleaseHandoff, resolveReleaseHandoff } from "./release-handoff.js";
 import { enforceTypeWorkflowTransition } from "./workflow-transition.js";
 import { admitExplicitStartClaim, admitStartTransition, START_BLOCKED_REFUSAL_CODE } from "./start-blockers.js";
@@ -42,6 +47,27 @@ import { redactIdentityCredentials, redactIdentityFields, redactOptionalIdentity
 /** Stable warning/error code for an exhausted atomic next-work walk. */
 export const NO_AVAILABLE_NEXT_ITEM_CODE = "no_available_next_item";
 
+/** Stable refusal code when `--takeover-stale` meets a claim the stale-work policy still treats as active (GH-1336). */
+export const STALE_CLAIM_TAKEOVER_REFUSED_CODE = "stale_claim_takeover_refused";
+
+/** Audited evidence of a policy-permitted stale-claim takeover, recorded in the claim's history context (GH-1336). */
+export interface StaleClaimTakeoverReceipt {
+  /** Holder whose idle claim was taken over, redacted like every echoed identity. */
+  previous_holder: string;
+  /** Author that took the claim. */
+  new_holder: string;
+  /** When the previous holder took the item, or null when history was silent. */
+  claimed_at: string | null;
+  /** Most recent recorded item activity the policy judged. */
+  last_activity_at: string;
+  /** Whole idle hours at the takeover. */
+  idle_hours: number;
+  /** Threshold the idle time met. */
+  threshold_hours: number;
+  /** Setting that owns the threshold. */
+  policy: ClaimActivityEvidence["stale_policy"]["setting"];
+}
+
 /** Documents the claim result payload exchanged by command, SDK, and package integrations. */
 export interface ClaimResult {
   /** Value that configures or reports item for this contract. */
@@ -62,6 +88,8 @@ export interface ClaimResult {
   start?: ClaimStartReceipt;
   /** What a post-commit warning left unrecorded and how to clear its cause; the claim itself is saved. */
   suggestions?: string[];
+  /** Present when `takeoverStale` took over an idle claim; the same evidence is in the history entry. */
+  takeover?: StaleClaimTakeoverReceipt;
 }
 
 /** Status transition recorded by a claim that also started its item. */
@@ -177,6 +205,13 @@ export interface ClaimMutationOptions {
   message?: string;
   /** Value that configures or reports if available for this contract. */
   ifAvailable?: boolean;
+  /**
+   * Take over another holder's claim only when its idle time meets
+   * `mutation_guard.stale_in_progress_hours`; an active claim is refused with
+   * `stale_claim_takeover_refused` (or skipped with `ifAvailable`). Explicit item only,
+   * never combined with `force` (GH-1336).
+   */
+  takeoverStale?: boolean;
   /** Maximum ranked candidates attempted by `claim --next`. */
   maxAttempts?: string | number;
   /**
@@ -209,12 +244,15 @@ export async function runClaim(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = resolveAuthor(options.author, settings.author_default);
   const claimPrincipal = resolveClaimPrincipal(author);
+  const takeoverStale = options.takeoverStale === true;
+  assertTakeoverStaleCombination(takeoverStale, force);
   let previousAssignee: string | null = null;
   let skipped = false;
   let startEvidence: Pick<ClaimResult, "start"> = {};
+  let takeover: StaleClaimTakeoverReceipt | undefined;
   const mutationWarnings: string[] = [];
 
-  const result = await mutateItem({
+  const result = await mutateItemWithHistoryContextResolver({
     pmRoot,
     settings,
     id,
@@ -223,7 +261,10 @@ export async function runClaim(
     message: options.message,
     force,
     skipNoop: true,
-    async mutate(document) {
+    // The takeover evidence is decided under the item lock, then sealed into this claim's history entry.
+    resolveHistoryContext: () =>
+      takeover === undefined ? undefined : { stale_claim_takeover: takeover },
+    async mutate(document, location) {
       const currentAssignee = document.metadata.assignee;
       const currentAssigneeText = currentAssignee ?? "";
       // Compared exactly so distinct legacy holders stay distinct; echoed redacted (GH-1707).
@@ -243,36 +284,24 @@ export async function runClaim(
       const heldByOther =
         previousAssignee !== null && currentClaimPrincipal !== claimPrincipal;
       if (heldByOther) {
-        if (options.ifAvailable === true) {
+        const decision = await decideHeldClaim({
+          pmRoot,
+          storageId: location.storageId,
+          metadata: document.metadata,
+          holder: currentAssigneeText,
+          author,
+          thresholdHours: settings.mutation_guard.stale_in_progress_hours,
+          force,
+          ifAvailable: options.ifAvailable === true,
+          takeoverStale,
+        });
+        if (decision.kind === "skip") {
           skipped = true;
-          mutationWarnings.push(`claim_skipped_held_by:${redactOptionalIdentityCredentials(previousAssignee)}`);
+          mutationWarnings.push(`claim_skipped_held_by:${redactOptionalIdentityCredentials(currentAssigneeText)}`);
           return { changedFields: [] };
         }
-        if (!force) {
-          const ownership = await resolveItemOwnershipConflict(
-            pmRoot,
-            document.metadata.id,
-            currentAssigneeText,
-          );
-          throw new PmCliError(
-            `Item ${document.metadata.id} is already ${ownership.phrase}. Use --force to take over, or --if-available to skip without failing.`,
-            EXIT_CODE.CONFLICT,
-            {
-              code: "already_claimed_by",
-              item_id: document.metadata.id,
-              claimed_by: ownership.holder,
-              claimed_at: ownership.since,
-              claim_source: ownership.source,
-              why: "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.",
-              nextSteps: [
-                "Run pm next to pick a different unclaimed item.",
-                "Re-run with --if-available to treat a held item as a no-op skip.",
-                "Re-run with --force only when taking over the item is coordinated.",
-              ],
-            },
-          );
-        }
-        mutationWarnings.push(`claim_takeover:${redactOptionalIdentityCredentials(previousAssignee)}->${author}`);
+        takeover = decision.takeover;
+        mutationWarnings.push(decision.warning);
       }
       const ownership = { assignee: author, claim_principal: claimPrincipal };
       const changedFields = (["assignee", "claim_principal"] as const).filter(
@@ -317,7 +346,171 @@ export async function runClaim(
     ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
     ...nonEmptyList("suggestions", attribution.suggestions),
     ...startEvidence,
+    ...(takeover === undefined ? {} : { takeover }),
   };
+}
+
+/** How a claim proceeds against another holder: skip it, or take it with a warning (and, for a stale takeover, a receipt). */
+type HeldClaimDecision =
+  | { kind: "skip" }
+  | { kind: "take"; warning: string; takeover?: StaleClaimTakeoverReceipt };
+
+/**
+ * Decide a claim on an item another principal holds. Runs under the item lock,
+ * so a holder's renewal (any recorded mutation) is either seen here or lands
+ * after this claim; it can never interleave with the stale judgement.
+ */
+async function decideHeldClaim(params: {
+  pmRoot: string;
+  /** Storage identity whose history stream the store locks and appends to. */
+  storageId: string;
+  metadata: Pick<ItemMetadata, "id" | "updated_at">;
+  holder: string;
+  author: string;
+  thresholdHours: number;
+  force: boolean;
+  ifAvailable: boolean;
+  takeoverStale: boolean;
+}): Promise<HeldClaimDecision> {
+  if (params.ifAvailable && !params.takeoverStale) return { kind: "skip" };
+  if (params.force) {
+    return { kind: "take", warning: `claim_takeover:${redactOptionalIdentityCredentials(params.holder)}->${params.author}` };
+  }
+  // Read the stream the lock guards, not one derived from the embedded id, which can differ.
+  const ownership = await resolveItemOwnershipActivity(params.pmRoot, params.storageId, params.holder, {
+    updated_at: params.metadata.updated_at,
+    threshold_hours: params.thresholdHours,
+  });
+  const takeover = params.takeoverStale ? staleTakeoverReceipt(ownership, params.author) : undefined;
+  if (takeover !== undefined) {
+    return {
+      kind: "take",
+      warning: `claim_stale_takeover:${takeover.previous_holder}->${params.author}:idle_hours=${takeover.idle_hours}`,
+      takeover,
+    };
+  }
+  if (params.takeoverStale && params.ifAvailable) return { kind: "skip" };
+  throw claimConflictRefusal(params.metadata.id, ownership, params.takeoverStale);
+}
+
+/** Refuse `--takeover-stale` with `--force`: one is policy-gated, the other an unconditional override. */
+function assertTakeoverStaleCombination(takeoverStale: boolean, force: boolean): void {
+  if (!takeoverStale || !force) return;
+  throw new PmCliError(
+    "--takeover-stale cannot be combined with --force",
+    EXIT_CODE.USAGE,
+    {
+      code: "ambiguous_option_combination",
+      required: "Pass --takeover-stale to take over only an idle claim, or --force for a coordinated unconditional takeover.",
+      nextSteps: ["Drop --force to let the stale-work policy decide, or drop --takeover-stale for a coordinated override."],
+    },
+  );
+}
+
+/** Build the takeover receipt when the conflict's activity meets the stale-work policy, else undefined. */
+function staleTakeoverReceipt(
+  ownership: ItemOwnershipActivity,
+  author: string,
+): StaleClaimTakeoverReceipt | undefined {
+  const activity = ownership.activity;
+  if (!activity.stale_policy.stale) return undefined;
+  return {
+    previous_holder: ownership.holder,
+    new_holder: author,
+    claimed_at: ownership.since,
+    // `stale` is true only when a valid activity time produced the idle hours.
+    last_activity_at: activity.last_activity_at as string,
+    idle_hours: activity.idle_hours as number,
+    threshold_hours: activity.stale_policy.threshold_hours,
+    policy: activity.stale_policy.setting,
+  };
+}
+
+/** What left work of unknown time in a readable history stream, phrased for a refusal. */
+const UNPROVEN_ACTIVITY_CAUSE: Record<NonNullable<ClaimActivityEvidence["unproven_activity"]>, string> = {
+  claim_record_unavailable: "no original history record shows when the holder took it",
+  discarded_history_tail: "a history salvage after the claim discarded a record whose time is unknown",
+  rewritten_history: "a history repair, redaction or merge reconcile after the claim rewrote its records",
+  workspace_restored: "a workspace snapshot restore at or after the claim may have replaced the holder's work",
+};
+
+/** Why a claim is not stale, and the one step that can change that, for a refused `--takeover-stale`. */
+function describeNotStale(
+  itemId: string,
+  activity: ClaimActivityEvidence,
+): { reason: string; nextStep: string } {
+  if (activity.history_unreadable === true) {
+    return {
+      reason: "its history stream could not be read, so idleness cannot be established",
+      nextStep: `Repair the history stream of ${itemId} (pm history ${itemId} --verify), then retry --takeover-stale.`,
+    };
+  }
+  if (activity.unproven_activity !== undefined) {
+    return {
+      reason: `${UNPROVEN_ACTIVITY_CAUSE[activity.unproven_activity]}, so idleness cannot be proven`,
+      nextStep: `Ask the holder to release ${itemId} (pm release ${itemId}); a new claim starts a provable record.`,
+    };
+  }
+  if (activity.stale_policy.eligible_at === null) {
+    return {
+      reason: activity.idle_hours === null ? "no valid activity time is recorded" : `idle ${activity.idle_hours}h of ${activity.stale_policy.threshold_hours}h`,
+      nextStep: `No eligibility time can be computed for ${itemId}; inspect pm history ${itemId}.`,
+    };
+  }
+  return {
+    reason: `idle ${activity.idle_hours}h of ${activity.stale_policy.threshold_hours}h`,
+    nextStep: `Retry with --takeover-stale after ${activity.stale_policy.eligible_at} if nothing else is recorded on ${itemId}.`,
+  };
+}
+
+/** The typed refusal for a held item: plain contention, or a stale takeover the policy did not permit. */
+function claimConflictRefusal(
+  itemId: string,
+  ownership: ItemOwnershipActivity,
+  takeoverStale: boolean,
+): PmCliError {
+  const activity = ownership.activity;
+  const policy = activity.stale_policy;
+  const evidence = {
+    item_id: itemId,
+    claimed_by: ownership.holder,
+    claimed_at: ownership.since,
+    claim_source: ownership.source,
+    claim_activity: activity,
+  };
+  const why = "Claim is an atomic test-and-set so parallel agents never proceed believing they own the same item.";
+  const forceStep = "Re-run with --force only when taking over the item is coordinated.";
+  if (takeoverStale) {
+    const notStale = describeNotStale(itemId, activity);
+    return new PmCliError(
+      `Item ${itemId} is ${ownership.phrase}, and its claim is not stale under ${policy.setting} (${notStale.reason}).`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "stale_claim_takeover_refused",
+        ...evidence,
+        required: `The claim must be idle for at least ${policy.threshold_hours}h (${policy.setting}) before --takeover-stale may take it.`,
+        why: `${why} A stale takeover needs recorded evidence that the claim has been idle for the configured threshold, so an active claim is never taken over.`,
+        nextSteps: [notStale.nextStep, "Run pm next to pick a different unclaimed item.", forceStep],
+      },
+    );
+  }
+  return new PmCliError(
+    `Item ${itemId} is already ${ownership.phrase}. Use --force to take over, or --if-available to skip without failing.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "already_claimed_by",
+      ...evidence,
+      why,
+      nextSteps: [
+        "Run pm next to pick a different unclaimed item.",
+        "Re-run with --if-available to treat a held item as a no-op skip.",
+        ...(policy.stale
+          ? [`Re-run with --takeover-stale: the claim has been idle ${activity.idle_hours}h, past ${policy.setting}=${policy.threshold_hours}.`]
+          : []),
+        forceStep,
+      ],
+    },
+  );
 }
 
 /** Stable warning when session attribution could not be recorded for a claim that already committed. */
@@ -451,6 +644,17 @@ export async function runClaimNext(
   options: ClaimMutationOptions = {},
   nextOptions: NextOptions = {},
 ): Promise<ClaimNextResult> {
+  if (options.takeoverStale === true) {
+    throw new PmCliError(
+      "--takeover-stale cannot be combined with --next",
+      EXIT_CODE.USAGE,
+      {
+        code: "ambiguous_option_combination",
+        required: "Pass an explicit item id with --takeover-stale; --next only selects work no other author holds.",
+        nextSteps: ["Retry as pm claim <id> --takeover-stale for the held item, or drop --takeover-stale to select with --next."],
+      },
+    );
+  }
   const maxAttempts = parseClaimNextAttempts(options.maxAttempts);
   const settings = await readSettings(
     resolvePmRoot(process.cwd(), global.path),
@@ -673,3 +877,10 @@ function releaseHandoffAdvice(
       }
     : { warnings: [], suggestions: [] };
 }
+
+/** Test-only access to the stale-takeover decision helpers. */
+export const _testOnlyClaimCommand = {
+  claimConflictRefusal,
+  decideHeldClaim,
+  staleTakeoverReceipt,
+};

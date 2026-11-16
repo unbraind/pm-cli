@@ -980,6 +980,7 @@ complete -c pm -n '__pm_history_operation claim release start-task pause-task cl
 complete -c pm -n '__pm_history_operation claim release start-task pause-task close close-task delete' -l message -d 'History message' -r
 complete -c pm -n '__pm_history_operation claim release start-task pause-task close close-task delete' -l force -d 'Force override'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l if-available -d 'Skip work held by another author'
+complete -c pm -n '__fish_seen_subcommand_from claim start-task' -l takeover-stale -d 'Take over a claim idle past the stale-work threshold'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l next -d 'Atomically claim the next actionable item'
 complete -c pm -n '__fish_seen_subcommand_from claim' -l token-budget -d 'Bound ranked candidate tokens' -r
 complete -c pm -n '__fish_seen_subcommand_from claim' -l explain-ranking -d 'Include ranking provenance'

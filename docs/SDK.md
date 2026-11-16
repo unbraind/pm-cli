@@ -1270,6 +1270,34 @@ filters, and bound the race-loss candidate walk with `maxAttempts` (1 through
 100 inclusive), so custom SDK
 tools do not need to reproduce CLI concurrency policy.
 
+Stale work uses one activity clock and one threshold
+(`mutation_guard.stale_in_progress_hours`, exported as
+`STALE_WORK_THRESHOLD_SETTING`) everywhere. Advisory results (`pm health`,
+`pm context`, `inspectInProgressWork`/`scanInProgressWork`, `held_by_others`)
+can still call an item idle when the takeover would refuse it: advisory reads
+degrade an unreadable history stream to metadata activity, while the ownership
+evaluation fails closed (`claim_activity.history_unreadable`, never stale).
+The takeover anchors on the holder's own claim record. A readable stream that
+cannot prove the holder's idleness from that record onward also fails closed
+(`claim_activity.unproven_activity`, never stale). The reasons are
+`claim_record_unavailable`, `discarded_history_tail`, `rewritten_history` and
+`workspace_restored`. `unprovenClaimActivity()` returns the reason a stream
+gives, and `UNPROVEN_ACTIVITY_REASONS` lists all of them. Establish takeover eligibility only through `resolveItemOwnershipActivity()` or
+the locked `pm claim --takeover-stale` decision, never from an advisory row. Each `held_by_others` row is a
+`NextHeldRow` with `claimed_at`, `idle_hours` and `stale`.
+`runClaim(id, false, global, { takeoverStale: true })` takes over only an idle
+claim and returns a `StaleClaimTakeoverReceipt` as `takeover`; an active claim
+throws `STALE_CLAIM_TAKEOVER_REFUSED_CODE` (`stale_claim_takeover_refused`) with
+`context.claim_activity`. `evaluateClaimActivity()` returns that evidence
+directly; `resolveItemOwnershipActivity()` returns an `ItemOwnershipActivity`
+(holder, `source` and `since`) that carries it as `.activity`, so read
+`.activity.history_unreadable`, `.activity.unproven_activity` and
+`.activity.stale_policy` there. `inspectInProgressWork()`
+and `scanInProgressWork()` classify in-progress work into `unowned`, `idle` and
+`stale` groups (pass `status_registry` so stored status aliases resolve the way
+the `in_progress` counters resolve them), and `buildInProgressSweepCommands()` returns the exact list
+sweeps `pm health` prints.
+
 Lifecycle convenience methods and the matching top-level functions (`create`,
 `update`, `reopen`, `close`, `claim`, `release`, `copy`, `deleteItem`, `restore`,
 `focus`, `startTask`, `pauseTask`, and `closeTask`) use the same mutation paths

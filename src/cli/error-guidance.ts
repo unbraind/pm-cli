@@ -57,6 +57,8 @@ interface GuidanceMessage {
   claimedAt?: string | null;
   /** Whether the holder arrived through a claim or an assignment. */
   claimSource?: PmCliErrorContext["claim_source"];
+  /** Holder activity and stale-claim policy behind a claim refusal (GH-1336). */
+  claimActivity?: PmCliErrorContext["claim_activity"];
   /** Revision a refused compare-and-set write expected. */
   expectedRevision?: PmCliErrorContext["expected_revision"];
   /** Revision a refused compare-and-set write found. */
@@ -140,6 +142,8 @@ export interface StructuredRefusalDiagnostics {
   claimed_at?: string | null;
   /** Whether the holder arrived through an explicit claim or a metadata assignment. */
   claim_source?: PmCliErrorContext["claim_source"];
+  /** Holder activity and stale-claim policy behind a claim refusal. */
+  claim_activity?: PmCliErrorContext["claim_activity"];
   /** Revision a refused compare-and-set write expected, or null when it required absence. */
   expected_revision?: PmCliErrorContext["expected_revision"];
   /** Revision a refused compare-and-set write found, or null when the target was absent. */
@@ -748,7 +752,11 @@ function renderClaimHolderLine(message: GuidanceMessage): string | undefined {
     holder.length > CLAIM_HOLDER_TEXT_MAX_CODE_POINTS
       ? `${holder.slice(0, CLAIM_HOLDER_TEXT_MAX_CODE_POINTS).join("")}...`
       : message.claimedBy;
-  return `Held by: ${name} (${message.claimSource ?? "unknown"}${since})`;
+  const activity = message.claimActivity;
+  const idle = activity === undefined || activity.idle_hours === null
+    ? ""
+    : `; idle ${activity.idle_hours}h, ${activity.stale_policy.stale ? "stale" : "active"} under ${activity.stale_policy.setting}=${activity.stale_policy.threshold_hours}`;
+  return `Held by: ${name} (${message.claimSource ?? "unknown"}${since})${idle}`;
 }
 
 /** Headline, requirement, next steps, the non-duplicated detail and typed holder evidence. */
@@ -969,6 +977,7 @@ function attachItemDiagnostics(
     payload.claimed_at = message.claimedAt ?? null;
     // An origin the producer did not prove is never reported as an explicit claim.
     payload.claim_source = message.claimSource ?? "unknown";
+    if (message.claimActivity !== undefined) payload.claim_activity = message.claimActivity;
     payload.item_id = message.itemId;
   }
   // Compare-and-set refusals (item revisions, settings sections) return both
@@ -1429,6 +1438,7 @@ function applyPmCliErrorContext(
     claimedBy: context.claimed_by,
     claimedAt: context.claimed_at,
     claimSource: context.claim_source,
+    claimActivity: context.claim_activity,
     expectedRevision: context.expected_revision,
     currentRevision: context.current_revision,
     availableDependencies: context.available_dependencies,

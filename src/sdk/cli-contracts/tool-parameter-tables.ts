@@ -520,6 +520,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   noCheckpoint: { type: "boolean" },
   force: { type: "boolean" },
   ifAvailable: { type: "boolean" },
+  takeoverStale: { type: "boolean" },
   ifAbsent: { type: "boolean" },
   expectAt: { type: "string", minLength: 1 },
   next: { type: "boolean" },
@@ -933,6 +934,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<
   force: {
     description:
       "Allow the selected action to override its supported ownership, terminal-state, or destructive-operation guard.",
+  },
+  takeoverStale: {
+    description:
+      "Take over another holder's claim only when it has been idle for mutation_guard.stale_in_progress_hours; an active claim is refused with stale_claim_takeover_refused. Not combinable with force or next.",
   },
   limit: {
     description: "Maximum number of rows returned by the selected action.",

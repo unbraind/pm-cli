@@ -1,5 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { latestHistoryTimestamp } from "../../src/sdk/governance/stale-work.js";
 import { describe, expect, it, vi } from "vitest";
 import { runHistory } from "../../src/cli/commands/history/history.js";
 import {
@@ -131,6 +132,24 @@ describe("history-compact command", () => {
         expectJson: true,
       });
       expect(restore.code).toBe(0);
+    });
+  });
+
+  it("records the pruned prefix's latest work so repeated compaction never renews idle time (GH-1336)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Compact twice");
+      expect(context.runCli(["append", id, "--body", "real work"]).code).toBe(0);
+      const work = await runHistory(id, { full: true }, { path: context.pmPath });
+      const workTs = work.history.at(-1)!.ts;
+      await runHistoryCompact(id, { author: "test-author", message: "first" }, { path: context.pmPath });
+      const first = JSON.parse((await readFile(getHistoryPath(context, id), "utf8")).split("\n")[0]!) as HistoryEntry;
+      expect(first.context?.history_compaction).toMatchObject({ last_activity_at: workTs });
+      // The second compaction folds the first audit entry into its prefix; that maintenance is not work.
+      await runHistoryCompact(id, { author: "test-author", message: "second" }, { path: context.pmPath });
+      const lines = (await readFile(getHistoryPath(context, id), "utf8")).trim().split("\n");
+      const second = JSON.parse(lines[0]!) as HistoryEntry;
+      expect(second.context?.history_compaction).toMatchObject({ last_activity_at: workTs });
+      expect(latestHistoryTimestamp(lines.map((line) => JSON.parse(line) as unknown))).toBe(workTs);
     });
   });
 
@@ -278,6 +297,53 @@ describe("history-compact command", () => {
         exitCode: EXIT_CODE.GENERIC_FAILURE,
         message: expect.stringContaining("invalid timestamp"),
       });
+    });
+  });
+
+  it("refuses to prune an unparseable timestamp under every boundary, so compaction cannot launder damaged activity (GH-1336)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Compact Damaged Prefix");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      const historyFile = getHistoryPath(context, id);
+      await rewriteEntryTimestamps(historyFile, ["invalid-timestamp-token"]);
+      const before = await readFile(historyFile, "utf8");
+      // Default (full) compaction would prune the damaged first entry.
+      await expect(
+        runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: "History for this item contains invalid timestamp at entry 1.",
+      });
+      expect(await readFile(historyFile, "utf8")).toBe(before);
+    });
+  });
+
+  it("refuses to prune a baseline whose compaction receipt is malformed, so a second compaction cannot launder it (GH-1336)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Compact Damaged Receipt");
+      expect(context.runCli(["append", id, "--body", "real work"]).code).toBe(0);
+      await runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath });
+      const historyFile = getHistoryPath(context, id);
+      const lines = (await readFile(historyFile, "utf8")).trim().split("\n");
+      const baseline = JSON.parse(lines[0]!) as HistoryEntry;
+      expect(baseline.op).toBe("history_compact_baseline");
+      // A valid baseline timestamp with a garbage receipt: the takeover reads this stream as unreadable.
+      lines[0] = JSON.stringify(
+        sealHistoryRecord({
+          ...baseline,
+          context: { ...baseline.context, history_compaction: { ...baseline.context?.history_compaction, last_activity_at: "garbage" } },
+        } as HistoryEntry),
+      );
+      await writeFile(historyFile, `${lines.join("\n")}\n`, "utf8");
+      expect(context.runCli(["append", id, "--body", "more work"]).code).toBe(0);
+      const before = await readFile(historyFile, "utf8");
+      await expect(
+        runHistoryCompact(id, { author: "test-author" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: "History for this item contains a malformed record or compaction receipt at entry 1.",
+      });
+      expect(await readFile(historyFile, "utf8")).toBe(before);
     });
   });
 
