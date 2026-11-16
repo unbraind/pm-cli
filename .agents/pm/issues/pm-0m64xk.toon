@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: concurrency,extensions,importers,locks
 created_at: "2026-11-14T15:21:44.228Z"
-updated_at: "2026-11-16T06:35:31.110Z"
+updated_at: "2026-11-16T08:12:05.189Z"
 closed_at: "2026-11-16T05:30:40.321Z"
 completed_at: "2026-11-16T05:30:40.321Z"
 author: "harness:claude-code"
@@ -21,10 +21,11 @@ expected_result: A slow guard plus a short lock TTL never lets one writer overwr
 actual_result: "Verified by write-path-guard-parity.spec.ts with ttl_seconds=1 and a gated slow guard: the slow importer and creator refuse with lock_lost, the fast writer's item and single history entry survive, and a serialized duplicate import returns conflictWarning; all fail on unmodified main"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1719,discovered_from,"2026-11-14T15:21:44.228Z","harness:claude-code","cli:create:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-16T03:33:31.774Z","harness:claude-code","Implementation note (2026-11-16): commitImportedItem acquires acquireLockLease and runs the item write + history append inside lease.fence; on-write hooks run after the fence. It also re-checks the id under the lock (locateItem) before policies and guards, because the callers' existence check runs before the lock: two importers of the same id serialized on the lock and the second overwrote the first even without any TTL expiry (spec reproduces on main). That case returns the existing conflictWarning shape. create and pm copy had the same unfenced acquireLock window and now fence their writes the same way. Specs with ttl_seconds=1 + force_required_for_stale_lock=false + a gated slow guard: the slow importer/creator refuses with lock_lost, the fast writer's item and single history entry survive. Both races fail on main (the slow writer overwrote the fast one)."
   "2026-11-16T05:51:07.684Z","harness:claude-code","Review fix (PR 1740, Codex round 1 P2 and Greptile P2): the takeover specs started their 1.2 s TTL wait before the slow writer provably held the lock, so a loaded runner could let the fast writer commit first. The slow guard now signals entry (guards run under the item lock) and the spec waits for that signal before waiting out the TTL."
   "2026-11-16T06:35:31.109Z","harness:claude-code","Review fix (PR 1740, Codex round 3 P2): the takeover specs no longer sleep out a 1 s TTL while a guard is blocked. They age the slow writer's lock record to simulate expiry and park the fast writer in its own guard until the slow writer's fence refuses, which keeps both guard waits far below the 5 s guard timeout on a loaded runner."
+  "2026-11-16T08:12:05.188Z","harness:claude-code","Review fix (PR 1740, CodeRabbit, Minor): the fencing guarantee holds for pm's native file locks. An extension that handles lock_acquire owns its lock lifecycle and its lease commits unfenced (the LockLease contract already says so), so docs/SDK.md and the commitImportedItem TSDoc now state that such a provider must supply its own stale-writer protection."
 files[4]{path,scope,note}:
   src/sdk/lifecycle/copy.ts,project,copy fences its write
   src/sdk/lifecycle/create.ts,project,create fences its write

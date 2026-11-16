@@ -4301,11 +4301,13 @@ Package import adapters (`commitImportedItem`) now run the tracker's
 guard denial propagates as a refusal. Only a held item lock, or an id that a
 concurrent importer committed under the lock after the caller's own existence
 check, returns the skippable `conflictWarning`. The adapter holds its lock as a
-lease and fences the item write and history append with it (pm-0m64xk). If
-policies or guards outlast `locks.ttl_seconds` and another writer takes the lock
-over, the import refuses with `lock_lost` and writes nothing, so the other
-writer's item is never overwritten. `create` and `pm copy` fence their writes
-the same way.
+lease and fences the item write and history append with it (pm-0m64xk). With
+pm's native file locks, if policies or guards outlast `locks.ttl_seconds` and
+another writer takes the lock over, the import refuses with `lock_lost` and
+writes nothing, so the other writer's item is never overwritten. `create` and
+`pm copy` fence their writes the same way. An extension that handles
+`lock_acquire` owns its lock lifecycle: its leases commit unfenced, so it must
+supply its own stale-writer protection.
 
 By default the auto-created command only has a handler. Pass an optional third
 `ImportExportRegistrationOptions` argument to make it a first-class command with a

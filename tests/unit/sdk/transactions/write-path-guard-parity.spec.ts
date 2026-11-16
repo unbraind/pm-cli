@@ -376,6 +376,11 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
     await expect(runRegisteredMutationGuardForTest(activation.hooks, { context: { ...base, dry_run: true, compensation: { transaction_id: "t", step_id: "s" } } }))
       .rejects.toMatchObject({ code: "always_denied" });
     expect(seen.at(-1)).toBeNull();
+    // A decision whose accessor throws a non-error value is a guard failure, refused normally and recorded in a rollback.
+    const throwing = await createExtensionTestHarness({ activate(api: ExtensionApi) { api.hooks.beforeMutation(() => ({ get allow(): boolean { throw null; } }) as never); } }, { capabilities: ["hooks"] });
+    await expect(throwing.runMutationGuard({ context: base })).rejects.toMatchObject({ code: "extension_mutation_guard_failed" });
+    await expect(throwing.runMutationGuard({ context: { ...base, compensation: { transaction_id: "t", step_id: "s" } } }))
+      .resolves.toEqual([{ guard: expect.any(String), code: "extension_mutation_guard_failed" }]);
     // A guard that throws its own code-less typed error during a rollback is recorded as a guard failure.
     const codeless = await createExtensionTestHarness({ activate(api: ExtensionApi) { api.hooks.beforeMutation(() => { throw new PmCliError("Guard storage unavailable", 4); }); } }, { capabilities: ["hooks"] });
     await expect(codeless.runMutationGuard({ context: base })).rejects.toThrow("Guard storage unavailable");

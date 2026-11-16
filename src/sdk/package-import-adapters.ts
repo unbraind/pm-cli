@@ -615,10 +615,12 @@ function importedChangedFields(document: ItemDocument): string[] {
  * the lease's fence, and run on-write hooks. A held lock, or an item a
  * concurrent writer committed under the lock after the caller's existence
  * check, returns a `conflictWarning` (using the caller-supplied prefix) instead
- * of throwing. A lease lost while the policies or guards ran (a TTL takeover)
- * refuses with `lock_lost` and writes nothing, so it never overwrites the
- * writer that took the lock over (pm-0m64xk). Any other error removes the
- * partially written file and rethrows.
+ * of throwing. With pm's native file locks, a lease lost while the policies or
+ * guards ran (a TTL takeover) refuses with `lock_lost` and writes nothing, so
+ * it never overwrites the writer that took the lock over (pm-0m64xk). An
+ * extension that handles `lock_acquire` owns its lock lifecycle: its leases
+ * commit unfenced, so it must supply its own stale-writer protection. Any
+ * other error removes the partially written file and rethrows.
  */
 export async function commitImportedItem(
   params: CommitImportedItemParams,

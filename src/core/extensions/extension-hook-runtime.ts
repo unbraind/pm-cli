@@ -213,6 +213,8 @@ async function evaluateMutationGuard(
         timeoutHandle.unref?.();
       }),
     ]);
+    // Reading the decision runs guard code too (an accessor can throw anything), so it is normalized with the call.
+    enforceMutationGuardDecision(decision, entry, context.operation);
   } catch (error: unknown) {
     if (error instanceof PmCliError) throw error;
     throw new PmCliError(
@@ -227,7 +229,6 @@ async function evaluateMutationGuard(
   } finally {
     clearTimeout(timeoutHandle as ReturnType<typeof setTimeout>);
   }
-  enforceMutationGuardDecision(decision, entry, context.operation);
 }
 
 /** Implements run after command hooks for the public runtime surface of this module. */
