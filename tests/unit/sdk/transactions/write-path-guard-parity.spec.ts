@@ -214,16 +214,18 @@ describe("transaction rollbacks under refusing guards and policies (pm-wb6ktl)",
         workflow_policies: [{ policy_id: "release-close", satisfied: false, effect: "refuse" }],
         transaction_compensation: { transaction_id: "wb6ktl-policy", overridden: [{ source: "workflow_policy", policy_id: "release-close", rule: "authors" }] },
       });
-      // A dry-run evaluation inside a rollback scope is never exempted.
+      // A validated rollback scope exempts the real write but never a dry run of it.
       const before = (await client.get("pm-ordinary")).item;
       const settings = await readSettings(context.pmPath);
-      await expect(runWithItemMutationPrecondition({
-        pmRoot: context.pmPath, id: "pm-ordinary", validate: () => {},
-        compensation: { transaction_id: "scoped", step_id: "step", operations: ["close"], overrides: [] },
-      }, () => enforceWorkflowMutation({
+      const scope = { transaction_id: "scoped", step_id: "step", operations: ["close"], overrides: [] as unknown[], validated_storage_id: "pm-ordinary" };
+      const evaluate = (dryRun: boolean) => runWithItemMutationPrecondition({ pmRoot: context.pmPath, id: "pm-ordinary", validate: () => {}, compensation: scope as never }, () => enforceWorkflowMutation({
         pmRoot: context.pmPath, settings, operation: "close", author: "agent-batch",
-        before: { metadata: before, body: "" }, after: { metadata: { ...before, status: "closed" }, body: "" }, dryRun: true,
-      }))).rejects.toMatchObject({ code: "workflow_policy_refused" });
+        before: { metadata: before, body: "" }, after: { metadata: { ...before, status: "closed" }, body: "" }, dryRun,
+      }));
+      await expect(evaluate(false)).resolves.toMatchObject({ allowed: false });
+      expect(scope.overrides).toEqual([{ source: "workflow_policy", policy_id: "release-close", rule: "authors" }]);
+      await expect(evaluate(true)).rejects.toMatchObject({ code: "workflow_policy_refused" });
+      expect(scope.overrides).toHaveLength(1);
     });
   });
 
