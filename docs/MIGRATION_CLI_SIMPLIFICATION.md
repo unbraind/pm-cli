@@ -10,7 +10,7 @@ This note documents behavioral and output-shape changes introduced in the conser
 
 - long-flag shape normalization (`--foo_bar` / camel variants -> canonical kebab flags)
 - high-confidence typo normalization for long flags
-- `key=value` / `key:value` promotion into canonical `--flag value` tokens when unambiguous
+- `key=value` / `key:value` promotion into canonical `--flag value` tokens when unambiguous. A `key:value` token promotes only when it contains no whitespace. The shell already grouped a token such as `"Docs: adopt X"`, so it stays text, for example a `pm create` title. A create refusal names any token it promoted and retries with `--title` ([GH-1741](https://github.com/unbraind/pm-cli/issues/1741))
 - legacy `pm extension <action>` shorthand normalization to explicit action flags
 
 Normalization runs across command families and preserves a normalization trace for diagnostics and recovery.

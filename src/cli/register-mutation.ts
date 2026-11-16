@@ -3,6 +3,8 @@
  *
  * Provides CLI runtime support for Register Mutation.
  */
+import { renderPmCommand } from "../sdk/command-line.js";
+import { currentInvocationPromotions } from "./runtime/invocation-rewrites.js";
 import type { Command } from "commander";
 import {
   type GlobalOptions,
@@ -555,8 +557,15 @@ function assertCreatePositionalTypeHasTitle(
     return;
   }
   const matchedType = positionalTitle.trim();
+  // A title token promoted to a flag (for example docs:README) is named, and the
+  // retry passes it with --title instead of repeating the command (GH-1741).
+  const promoted = currentInvocationPromotions();
+  const rewriteNote = promoted.length === 0
+    ? ""
+    : ` The CLI read ${promoted.map((token) => `"${token.from}" as ${token.flag}`).join(", ")}; pass --title to keep text as the title.`;
+  // Kept under the 120-character problem title, so no reader gets a command cut mid-word (GH-1741).
   throw new PmCliError(
-    `pm create needs a title — "${matchedType}" looks like an item type, not a title. Use either: pm create ${matchedType} "<title>" or pm create "<title>" --type ${matchedType}.`,
+    `pm create needs a title: "${matchedType}" looks like an item type. Pass the title with --title or as a second positional.${rewriteNote}`,
     EXIT_CODE.USAGE,
     {
       code: "create_positional_type_without_title",
@@ -565,12 +574,13 @@ function assertCreatePositionalTypeHasTitle(
         matchedType +
         '".',
       examples: [
+        `pm create ${matchedType} --title "Wire up SSO for the agent harness"`,
         `pm create ${matchedType} "Wire up SSO for the agent harness"`,
         `pm create "Wire up SSO for the agent harness" --type ${matchedType}`,
       ],
-      nextSteps: [
-        `Re-run with both type and title: pm create ${matchedType} "<title>"`,
-      ],
+      nextSteps: promoted.length === 0
+        ? [`Pass the title as an option: ${renderPmCommand(["create", matchedType, "--title", "<title>"])}`]
+        : promoted.map((token) => `Keep "${token.from}" as the title: ${renderPmCommand(["create", matchedType, "--title", token.from])}`),
     },
   );
 }

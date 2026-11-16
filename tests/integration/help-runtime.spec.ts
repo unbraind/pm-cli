@@ -570,6 +570,22 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("keeps a Word: title intact and names a promoted shorthand token in the refusal (GH-1741)", async () => {
+    await withTempPmPath(async (context) => {
+      for (const prefix of ["Docs", "Release", "Test", "Files", "Comment", "Note"]) {
+        const created = context.runCli(["create", "issue", `${prefix}: adopt X`, "--json"], { expectJson: true });
+        expect(created.code, created.stderr).toBe(0);
+        expect((created.json as { item: { title: string; type: string } }).item).toMatchObject({ title: `${prefix}: adopt X`, type: "Issue" });
+      }
+      const refused = context.runCli(["create", "issue", "Docs:README", "--json"]);
+      expect(refused.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(refused.stderr);
+      expect(envelope.code).toBe("create_positional_type_without_title");
+      expect(envelope.detail).toContain('The CLI read "Docs:README" as --doc');
+      expect(envelope.next_steps).toEqual(['Keep "Docs:README" as the title: pm create issue --title Docs:README']);
+    });
+  });
+
   it("still creates a Task when the sole positional is plain text (pm-edge #1 regression guard)", async () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(

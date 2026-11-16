@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- GH-1741: pm create rewrites a positional title such as "Docs: adopt X" into an option, and the refusal repeats the failed command ([pm-gh1741](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1741.toon))
 - commitImportedItem holds a plain item lock while workflow policies and mutation guards run, so a short lock TTL lets a second importer reclaim the lock and write the same id before the first writes ([pm-0m64xk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0m64xk.toon))
 - pm copy writes a new item without evaluating workflow policies, while create, update, delete, restore and imports all run enforceWorkflowMutation ([pm-womkyw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-womkyw.toon))
 - A beforeMutation guard that denies close also denies the transaction's own create compensation, so a refused batch fails with compensation failed and keeps its earlier creates ([pm-wb6ktl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wb6ktl.toon))

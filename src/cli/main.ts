@@ -198,6 +198,7 @@ import { activationCommandMatchesProbe,buildBootstrapActivationProbe,buildRuntim
 import { captureCommandOptionTokens,refuseConflictingCommandOptionSpellings,resolveExtensionCommandRefusalListing,collectExtensionFlagDefinitionsForCommand,collectExtensionFlagDefinitionsForInvocation,copyReadOutputInvocationProvenance,dynamicCommandArguments,extractCommandScopedOptions,forwardReadOutputIncludeModes,isImporterOrExporterCommandPath,recordCliReadOutputInvocationProvenance,refuseUndeclaredRootOnlyOptions,validateDynamicExtensionCommandArgs,validateDynamicExtensionCommandInvocation } from "./runtime/invocation-options.js";
 import type { CoreCommandRegistrationSelection } from "./runtime/selection.js";
 import { LIST_QUERY_COMMAND_NAMES,enforceExplicitRetryForFlagTypos,invocationRequestsVersion,isStaticExtensionInventoryInvocation,resolveStructuredMutationPreviewInvocation,resolveCoreCommandRegistrationSelection,shouldAttachRichHelpTextForInvocation,shouldRegisterDynamicExtensionPaths,shouldRegisterRuntimeSchemaFlags } from "./runtime/selection.js";
+import { recordInvocationPromotions } from "./runtime/invocation-rewrites.js";
 import { buildPostActionTelemetryOutcome,inferPostActionErrorCode,inferPostActionFailureMessage,normalizeTelemetryCommandResolution,normalizeTelemetryErrorCategory,normalizeTelemetryResolutionStage,readRecordBoolean,readRecordNumber,readRecordString } from "./runtime/telemetry-outcome.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -2266,6 +2267,7 @@ async function runPmCliInReproducibleContext(rawArgv: string[], settingsPolicy: 
   try {
     const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
     invocationArgv = bootstrapInvocation.argv;
+    recordInvocationPromotions(bootstrapInvocation.trace);
     captureInvokedDeprecatedAlias(program, rawArgv);
     const invocationProcessArgv = buildInvocationProcessArgv(invocationArgv);
     const isBareInvocation = invocationArgv.length === 0;
