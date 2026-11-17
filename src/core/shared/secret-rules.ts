@@ -817,9 +817,11 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
   // Inside a rejected reference value, a closing parenthesis or brace ends the
-  // reference the match sat in (`"$(get --password=$PW)"`), so the enclosing
-  // quote may follow it. At the top level such a character is literal data.
-  if (closed === -1) return INNER_MATCHES.has(match) && /^[)}]/u.test(input.slice(start, after)) && isQuote(input[after]);
+  // reference the match sat in (`"$(get --password=$PW)"`,
+  // `"$(get --password="$PW")"`), so the enclosing quote may follow it. At the
+  // top level such a character is literal data.
+  if (INNER_MATCHES.has(match) && /^[)}]/u.test(input.slice(start, after)) && isQuote(input[after])) return true;
+  if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
   // comma and a quoted piece continue the shell word (`password="$PW","…"`).
@@ -849,8 +851,8 @@ const WORD_END_BOUND = 64;
 
 /** A call's opening parenthesis, after at most a short run of blanks (`getToken ()`). */
 const CALL_AFTER = /^[ \t]{0,16}\(/u;
-/** Code that continues an expression after a type assertion: an optional call or chain, a nullish fallback, or a statement end. */
-const ASSERTION_CONTINUES = /^[ \t]{0,16}(?:\?\.|\?\?|;)/u;
+/** An assignment's `=` (not `==`) and blanks directly before a value. */
+const ASSIGNED_BEFORE = /(?<![=!<>])=[ \t]{0,16}$/u;
 
 /** A literal that starts with member access, as code leaves after a reference (`${X}.trim`, `$T.length+1`). */
 const MEMBER_ACCESS = /^\.[A-Za-z_$]/u;
@@ -880,9 +882,11 @@ const SPELLING_SENSITIVE = /[$<"']/u;
 function codeAfterReference(match: RegExpMatchArray): "call" | "source" | undefined {
   if (DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match)) || !/^[$<]/u.test(match[1])) return undefined;
   const end = match.index! + match[0].length;
-  const after = match.input!.slice(end, end + 18);
-  // A value led by an angle span is a TypeScript assertion when an expression continues it (`<T>name?.()`, `<T>NAME;`).
-  return CALL_AFTER.test(after) || (match[1][0] === "<" && ASSERTION_CONTINUES.test(after)) ? "call" : "source";
+  // After `=`, a value led by an angle span is a TypeScript type assertion or
+  // generic (`const token = <string>getToken()`) or a shell redirection, never a
+  // placeholder; after `:` (YAML, prose) `<x>literal` is still judged.
+  if (match[1][0] === "<" && ASSIGNED_BEFORE.test(match.input!.slice(Math.max(0, end - match[1].length - 18), end - match[1].length))) return "call";
+  return CALL_AFTER.test(match.input!.slice(end, end + 17)) ? "call" : "source";
 }
 
 /**

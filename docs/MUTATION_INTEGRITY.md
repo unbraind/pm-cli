@@ -206,9 +206,10 @@ or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by a
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
 source a literal that starts with member access on a reference
 (`${X}.trim`, `$TOKEN.length+1`), or that a call's parenthesis follows
-(`<string>getToken()`, `<string>getToken ()`), or, after a type assertion, an
-optional call, a nullish fallback or a statement end (`<string>getToken?.()`),
-is code, and the constant
+(`<string>getToken()`, `<string>getToken ()`), is code. After `=`, a value led
+by an angle span is a TypeScript type assertion or a shell redirection
+(`const token = <string>auth_token || fallback`), never a placeholder; after
+`:` (YAML, prose) `<x>…` is still judged. The constant
 statement exclusion judges the literal (`<string>DEFAULT_TOKEN;`); in a quoted
 value or payload data it is still judged. The literal
 left once its references expand is then judged by the same grammar, length,

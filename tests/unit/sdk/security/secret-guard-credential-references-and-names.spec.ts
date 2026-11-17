@@ -124,6 +124,10 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     // Codex round 15: an optional call or nullish fallback after a type assertion is code.
     ["optional call after a type assertion", "const token = <string>get_auth_token?.();"],
     ["nullish fallback after a type assertion", "const token = <string>getAuthTokenValue ?? fallback;"],
+    // Codex round 16: after `=`, every value led by a type assertion is code.
+    ["logical fallback after a type assertion", "const token = <string>auth_token || fallback;"],
+    ["index after a type assertion", "const token = <string>auth_token[0];"],
+    ["shell redirection after an assignment", "api_key=<input_file_name"],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -258,9 +262,14 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(`${passwordKey}=$PW_PREFIX}"${literal}"`)).toEqual(["password_assignment"]);
     expect(textRules(`${passwordKey}=$PW_PREFIX)"${literal}"`)).toEqual(["password_assignment"]);
     // Codex round 14: a variable that ends a command substitution ends its word at the closing parenthesis.
-    const nested = `${passwordKey}="$(get-secret --${passwordKey}=$VAULT_PASSWORD)"`;
-    expect(await gateRules(nested)).toEqual([]);
-    expect(textRules(nested)).toEqual([]);
+    for (const nested of [
+      `${passwordKey}="$(get-secret --${passwordKey}=$VAULT_PASSWORD)"`,
+      // Codex round 16: a quoted inner variable ends its word at the substitution's closing parenthesis too.
+      `${passwordKey}="$(get-secret --${passwordKey}="$VAULT_PASSWORD")"`,
+    ]) {
+      expect(await gateRules(nested), nested).toEqual([]);
+      expect(textRules(nested), nested).toEqual([]);
+    }
     // Codex round 13: a number counts only as a complete token that a delimiter ends.
     expect(textRules(`${passwordKey}="$DB_PASSWORD"][1${credential}]`)).toEqual(["password_assignment"]);
     expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},[1.5e3, 2]]`)).toEqual([]);
