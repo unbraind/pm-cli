@@ -353,6 +353,12 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD|filter)`,
       `${passwordKey}=$(get --${passwordKey}="$VAULT_PASSWORD"||fallback)`,
       `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD; next)`,
+      // Codex round 33: a redirection, and a control operator the value grammar reads, end the inner word too.
+      `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD>/dev/null)`,
+      `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD&&handle_error)`,
+      // A quoted piece or nested reference before the operator is skipped whole.
+      `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD'a&b'&&handle_error)`,
+      `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD$(x&y)&&handle_error)`,
       // Codex round 29: a key word that names a braced reference's parameter is not an assignment.
       `${passwordKey}=\${${passwordKey.toUpperCase()}:START_OFFSET:8}`,
       `${passwordKey}=\${#${passwordKey.toUpperCase()}:0:8}`,

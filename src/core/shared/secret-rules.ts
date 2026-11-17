@@ -902,10 +902,30 @@ const DECODED_DATA_MATCHES = new WeakSet<RegExpMatchArray>();
  * capture (a credential-key value), so only their references expand.
  */
 function judgedLiteral(match: RegExpMatchArray): string {
-  const variables = wordComplete(match);
+  // Inside a command substitution, the inner value ends at its first shell operator (`$PW&&next`).
+  const word = INNER_CLOSE_AT.has(match) ? shellWordPrefix(match[1]) : undefined;
+  const text = word ?? match[1];
+  const variables = word !== undefined || wordComplete(match);
   return DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match))
-    ? expandRuntimeReferences(match[1], variables)
-    : literalAfterReferences(match[1], variables);
+    ? expandRuntimeReferences(text, variables)
+    : literalAfterReferences(text, variables);
+}
+
+/**
+ * The part of a value before its first unquoted shell operator (`|`, `&`,
+ * `;`, `<`, `>`) outside nested references, or undefined when it has none.
+ * Read only for a key inside a command substitution, where shell syntax
+ * applies; one linear pass.
+ */
+function shellWordPrefix(text: string): string | undefined {
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index]!;
+    // A captured value holds no top-level backslash: quoted pieces and references are skipped whole.
+    if (character === "'" || character === "\"") index = quotedSpanEnd(text, index);
+    else if (character === "$" && (text[index + 1] === "{" || text[index + 1] === "(")) index = Math.max(index, referenceEnd(text, index) - 1);
+    else if (/[|&;<>]/u.test(character)) return text.slice(0, index);
+  }
+  return undefined;
 }
 
 /** A bounded run of structure after a value (`;` `,` `)` `}` `]`); only ASCII is read, so positions are exact. */
@@ -940,9 +960,9 @@ function wordComplete(match: RegExpMatchArray): boolean {
   // Any other parenthesis or brace, and one at the top level, is literal data
   // (`${A:?password=$PW)literal}`).
   if (INNER_CLOSE_AT.get(match) === start) return true;
-  // Inside a command substitution, shell control operators end a word too (`--password=$PW|filter`).
+  // Inside a command substitution, shell control operators and redirections end a word too (`--password=$PW|filter`, `$PW>/dev/null`).
   // (The end of the input has already returned above, so a character stands at `start`.)
-  if (INNER_CLOSE_AT.has(match) && /[|&;]/u.test(input[start]!)) return true;
+  if (INNER_CLOSE_AT.has(match) && /[|&;<>]/u.test(input[start]!)) return true;
   if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
