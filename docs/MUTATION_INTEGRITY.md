@@ -213,7 +213,8 @@ judged as a reference-free value. References and quoted pieces are
 whitespace-free, as every credential-key value is, so a spaced command
 substitution is never read as one value, and a key inside it keeps its own
 verdict. The rule also scans its unchanged reference-free grammar as a
-baseline reading, and a value is reported when either reading reports it. So
+baseline reading, judged on the captured text exactly as before, and a value
+is reported when either reading reports it. So
 the referenced reading only adds findings, and every key the reference-free
 scan visits, including one inside a rejected referenced value, keeps its
 verdict.
@@ -222,7 +223,9 @@ One `$NAME` policy holds for every key-named rule. A `$NAME` reference
 expands to nothing when NAME is CONSTANT_CASE, the environment-variable
 convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
 in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
-quotes or not (a bare `$password`). Any other `$` text is literal, so a
+quotes or not (a bare `$password`). Either way the value grammar must have
+read the whole word: a value it cuts short (one that continues with `:`, `/`
+or `?`) keeps its `$NAME` text literal. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
 `\$`, keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain

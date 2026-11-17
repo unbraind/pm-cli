@@ -177,9 +177,11 @@ export interface SecretRule {
   literalValue?: RegExp;
   /**
    * A narrower reading scanned as well: its own flat pattern and structured
-   * value grammar, with the same keys, judges and predicates. A value is a
+   * value grammar, with the same keys, judged on the captured text by the
+   * rule's value and entropy predicates but without the literal minimum or
+   * literal grammar, as the narrower rule always judged it. A value is a
    * finding when either reading reports it, so widening `regex` and
-   * `structured.value` never drops a finding the narrower grammar made, and
+   * `structured.value` never drops a finding the narrower rule made, and
    * every key the narrower scan visits is still visited (pm-hw00c2).
    */
   baseline?: SecretRuleReading;
@@ -416,15 +418,31 @@ export function* findSecretRuleMatches(rule: SecretRule, content: string): Gener
     return;
   }
   for (const reading of ruleReadings(rule)) {
-    yield* flatMatches(rule, reading.regex, content);
-    if (rule.structured) yield* findStructuredSpellingMatches(rule, { ...rule.structured, value: reading.value }, content);
+    yield* flatMatches(reading, content);
+    if (reading.structured) yield* findStructuredSpellingMatches(reading, reading.structured, content);
   }
 }
 
-/** The rule's own reading, then its baseline reading when it declares one. */
-function ruleReadings(rule: SecretRule): SecretRuleReading[] {
-  const own = { regex: rule.regex, value: rule.structured?.value ?? "" };
-  return rule.baseline === undefined ? [own] : [own, rule.baseline];
+/** Baseline readings derived once per rule. */
+const baselineRules = new WeakMap<SecretRule, SecretRule>();
+
+/**
+ * The rule itself, then the rule that judges its baseline reading. The
+ * baseline judges captured text exactly as the narrower grammar always did:
+ * with the rule's keys, value and entropy predicates, but without the literal
+ * minimum or literal grammar that read references, so its findings are the
+ * narrower rule's findings.
+ */
+function ruleReadings(rule: SecretRule): readonly SecretRule[] {
+  const baseline = rule.baseline;
+  if (baseline === undefined) return [rule];
+  let judged = baselineRules.get(rule);
+  if (judged === undefined) {
+    judged = { ...rule, regex: baseline.regex, minimumLiteralLength: undefined, literalValue: undefined, baseline: undefined };
+    if (rule.structured) judged.structured = { ...rule.structured, value: baseline.value };
+    baselineRules.set(rule, judged);
+  }
+  return [rule, judged];
 }
 
 /** A reference or placeholder opener inside a captured value. */
@@ -441,7 +459,8 @@ const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
  * reject a value whose top-level text holds keys; it declares a baseline
  * reading instead, whose scan visits every key the narrower grammar visits.
  */
-function* flatMatches(rule: SecretRule, regex: RegExp, content: string): Generator<SecretRuleMatch> {
+function* flatMatches(rule: SecretRule, content: string): Generator<SecretRuleMatch> {
+  const regex = rule.regex;
   regex.lastIndex = 0;
   const rescans = rule.minimumLiteralLength !== undefined && rule.minimumEntropy === undefined
     && rule.literalValue === undefined && rule.rejectValue === undefined && rule.baseline === undefined;
@@ -737,9 +756,24 @@ const DECODED_DATA_MATCHES = new WeakSet<RegExpMatchArray>();
  * capture (a credential-key value), so only their references expand.
  */
 function judgedLiteral(match: RegExpMatchArray): string {
+  const variables = wordComplete(match);
   return DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match))
-    ? expandRuntimeReferences(match[1])
-    : literalAfterReferences(match[1]);
+    ? expandRuntimeReferences(match[1], variables)
+    : literalAfterReferences(match[1], variables);
+}
+
+/** A character that ends a shell word after a captured value. */
+const WORD_END = /[\s;,)}\]"'`&|<>]/u;
+
+/**
+ * Whether the value grammar read the whole word: the match ends the input or a
+ * word-ending character follows it. A word the grammar cut short (a value that
+ * continues with `:`, `/` or `?`) is not known to be a bare or leading
+ * variable, so its `$NAME` text stays literal.
+ */
+function wordComplete(match: RegExpMatchArray): boolean {
+  const next = match.input![match.index! + match[0].length];
+  return next === undefined || WORD_END.test(next);
 }
 
 /**
@@ -807,9 +841,8 @@ export function acceptsStructuredValue(rule: SecretRule, value: string, compact:
   // A serialized payload string is complete data, so it is always judged as
   // decoded data, never by the source-text rules for values the grammar cuts.
   // Either reading of the rule reports it, as in text.
-  const spelling = rule.structured;
   return ruleReadings(rule).some((reading) =>
-    createValueJudge(rule, compileSpelling({ ...spelling, value: reading.value }).value, content, true).accepts(compact)(0));
+    createValueJudge(reading, compileSpelling(reading.structured!).value, content, true).accepts(compact)(0));
 }
 
 /**
@@ -1100,7 +1133,7 @@ function quotedStep(text: string, index: number, frame: ReferenceFrame): number 
 }
 
 /** Consume the reference, delimiter, placeholder span or character at `index`; returns the next index. */
-function expandStep(text: string, index: number, frames: ReferenceFrame[], rootQuotesAreSyntax: boolean): number {
+function expandStep(text: string, index: number, frames: ReferenceFrame[], rootQuotesAreSyntax: boolean, variables: boolean): number {
   const innermost = frames.at(-1)!;
   // A run of characters with no meaning to the walker in any state is text,
   // appended at once, so a long value costs one step per run.
@@ -1121,7 +1154,7 @@ function expandStep(text: string, index: number, frames: ReferenceFrame[], rootQ
   if (opened !== -1) return opened;
   const top = frames.at(-1)!;
   const character = text[index]!;
-  const variable = character === "$" ? variableStep(text, index, top) : -1;
+  const variable = variables && character === "$" ? variableStep(text, index, top) : -1;
   if (variable !== -1) return variable;
   if (frames.length > 1 && character === top.close) {
     closeReference(frames, character);
@@ -1159,13 +1192,13 @@ function rootQuoteStep(character: string, root: ReferenceFrame): boolean {
  * can expand to, and every quote delimiter is identified exactly once, so no
  * later pass can mistake data for a delimiter.
  */
-function expandWords(text: string, rootQuotesAreSyntax: boolean): string {
+function expandWords(text: string, rootQuotesAreSyntax: boolean, variables: boolean): string {
   // A bare `$name` is a reference whatever its case, because it is the whole
   // value; judged on the source, so a concatenation never reads as one name.
-  if (BARE_VARIABLE.test(text) || (rootQuotesAreSyntax && QUOTED_BARE_VARIABLE.test(text))) return "";
+  if (variables && (BARE_VARIABLE.test(text) || (rootQuotesAreSyntax && QUOTED_BARE_VARIABLE.test(text)))) return "";
   const root: ReferenceFrame = { close: "}", keep: true, raw: "", literal: "" };
   const frames: ReferenceFrame[] = [root];
-  for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax);
+  for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax, variables);
   // A reference that never closes is not a reference: its source text is
   // literal. One exception, in text only: a quoted piece ends at its first
   // closing quote, so a reference that opens the piece and holds its own quote
@@ -1189,10 +1222,10 @@ function expandWords(text: string, rootQuotesAreSyntax: boolean): string {
  * `${NAME:-word}` contributes its own expansion with the shell's quote removal
  * (`${PW:-"x"}` contributes `x`; `${PW:-${FALLBACK}}` contributes nothing). A
  * reference that never closes, and a `<` without a `>` before the next `<`,
- * stay literal text.
+ * stay literal text. With `variables` false, `$NAME` text is always literal.
  */
-export function expandRuntimeReferences(text: string): string {
-  return expandWords(text, false);
+export function expandRuntimeReferences(text: string, variables = true): string {
+  return expandWords(text, false, variables);
 }
 
 /**
@@ -1203,8 +1236,8 @@ export function expandRuntimeReferences(text: string): string {
  * literal. Both happen in the same pass, so a reference may hold quotes
  * (`${PW:-""}`) and a default word's data quotes stay data.
  */
-export function literalAfterReferences(value: string): string {
-  return expandWords(value, true);
+export function literalAfterReferences(value: string, variables = true): string {
+  return expandWords(value, true, variables);
 }
 
 /**

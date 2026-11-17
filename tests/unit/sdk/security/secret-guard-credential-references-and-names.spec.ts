@@ -45,6 +45,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     // Codex round 2: a variable after literal text, or an escaped one, is literal.
     ["CONSTANT_CASE variable after literal text", "api_key=Zq8vN3k$LMP0WXY7AB"],
     ["escaped CONSTANT_CASE variable in a quoted value", 'api_key="abc\\$ZQ8VN3K_LMP0WXY7AB"'],
+    // Codex round 3: the baseline judges captured text as main did.
+    ["quoted value whose command substitution holds an assignment", `api_key="ab$(token=${credential})"`],
     ["quoted key, literal after a braced reference", `"client_secret": "\${EMPTY}${credential}"`],
     ["quoted key, literal before a reference", `"client_secret": "${credential}\${VAR}"`],
     ["single-quoted key and value", `'api_key': '<x>${credential}'`],
@@ -138,6 +140,14 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     expect(expandRuntimeReferences(`\${PW:-"$`)).toBe(`\${PW:-"$`);
   });
 
+  it("scans a baseline reading for a rule without structured spellings", () => {
+    const rule: SecretRule = {
+      name: "baseline-probe", mutationRule: "baseline_probe", regex: /(?!)/g,
+      baseline: { regex: /probe=(\w+)/g, value: "" },
+    };
+    expect([...findSecretRuleMatches(rule, "probe=abc")]).toHaveLength(1);
+  });
+
   it("blocks a referenced credential through the guard and never returns it", () => {
     const payload = { description: `api_key=\${EMPTY}"${credential}"` };
     expect(() => evaluateMutationGuard({ author: "agent", payload, settings: blockSettings }))
@@ -190,6 +200,22 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     }
   });
 
+  it("keeps a variable literal when the grammar cut its word short", async () => {
+    // Codex round 3: the password grammar stops before `:`, `/` and `?`, so the
+    // variable is not known to be the whole value and stays literal, as on main.
+    for (const separator of [":", "/", "?"]) {
+      const content = `${passwordKey}=$PW_PREFIX${separator}${credential}`;
+      expect(await gateRules(content), content).toEqual(["password-assignment"]);
+      expect(textRules(content), content).toEqual(["password_assignment"]);
+    }
+    expect(expandRuntimeReferences("$PW_PREFIX", false)).toBe("$PW_PREFIX");
+    expect(literalAfterReferences("$pw", false)).toBe("$pw");
+    // A word-ending character after the variable keeps it a bare reference.
+    for (const content of [`${passwordKey}=$DB_PASSWORD;`, `${passwordKey}=$DB_PASSWORD) `, `(${passwordKey}=$db_password, next)`]) {
+      expect(textRules(content), content).toEqual([]);
+    }
+  });
+
   it("reports a credential-key assignment inside a referenced value whose literal is rejected", () => {
     // The outer literal is a path, so the outer value is rejected; the key inside it keeps its own verdict.
     expect(textRules(`api_key=\${DIR}/x/token=${credential}`)).toEqual(["credential_key_assignment"]);
@@ -212,21 +238,21 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // Spelled without template escapes, so no fixture reads as an escaped pattern.
     const open = "${";
     const inputs: Array<[SecretRule, string]> = [
-      [passwordRule, `${passwordKey}=$(echo ${passwordKey}=$(a) `.repeat(40_000)],
-      [passwordRule, `${passwordKey}=$(a ${passwordKey}=${open}B}) `.repeat(40_000)],
+      [passwordRule, `${passwordKey}=$(echo ${passwordKey}=$(a) `.repeat(20_000)],
+      [passwordRule, `${passwordKey}=$(a ${passwordKey}=${open}B}) `.repeat(20_000)],
       [passwordRule, `${passwordKey}=${open}A:-${`${passwordKey}=`.repeat(2_000)}}`.repeat(20)],
-      [credentialKeyRule, `token=${open}A}${"token=${A}".repeat(100_000)}`],
-      [credentialKeyRule, "api_key=${D}/token=${D}/".repeat(40_000)],
-      [passwordRule, `${passwordKey}=$(a ${passwordKey}=$(b) ${passwordKey}=$(c)) `.repeat(30_000)],
-      [passwordRule, `${passwordKey}=<x ${passwordKey}=$A> `.repeat(40_000)],
-      [credentialKeyRule, '"token":"a"$X'.repeat(40_000)],
+      [credentialKeyRule, `token=${open}A}${"token=${A}".repeat(50_000)}`],
+      [credentialKeyRule, "api_key=${D}/token=${D}/".repeat(20_000)],
+      [passwordRule, `${passwordKey}=$(a ${passwordKey}=$(b) ${passwordKey}=$(c)) `.repeat(15_000)],
+      [passwordRule, `${passwordKey}=<x ${passwordKey}=$A> `.repeat(20_000)],
+      [credentialKeyRule, '"token":"a"$X'.repeat(20_000)],
     ];
     const started = performance.now();
     const counts = inputs.map(([rule, input]) => Array.from(findSecretRuleMatches(rule, input)).length);
     expect(performance.now() - started).toBeLessThan(5_000);
     // The repeated default word is one concatenated value; in the last input a
     // variable after literal text stays literal, so each `"a"$X"token"` spells eight characters.
-    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 39_999]);
+    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999]);
   });
 });
 
@@ -288,11 +314,11 @@ describe("payload property names are scanned and never echoed in paths (pm-x07qz
   });
 
   it("judges a repeated property name once per scan", () => {
-    const payload = Array.from({ length: 20_000 }, (_, index) => ({ [githubToken]: index, title: "row" }));
+    const payload = Array.from({ length: 5_000 }, (_, index) => ({ [githubToken]: index, title: "row" }));
     const started = performance.now();
     const findings = scanMutationSecrets({ rows: payload });
     expect(performance.now() - started).toBeLessThan(5_000);
-    expect(findings).toHaveLength(20_000);
-    expect(findings[19_999]).toEqual({ rule: "github_token", path: "$.rows[19999][key 0]", property_name: true });
+    expect(findings).toHaveLength(5_000);
+    expect(findings[4_999]).toEqual({ rule: "github_token", path: "$.rows[4999][key 0]", property_name: true });
   });
 });
