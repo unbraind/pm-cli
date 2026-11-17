@@ -211,8 +211,9 @@ reported, while a bare `${API_KEY}`, `$(op read key)`, `<placeholder>`, an
 empty default, and a literal that is a path, URL or word stay clean. At most
 64 literal characters may come before the first reference; a longer prefix is
 judged as a reference-free value. References and quoted pieces are
-whitespace-free, as every credential-key value is, so a spaced command
-substitution is never read as one value, and a key inside it keeps its own
+whitespace-free, as every credential-key value is, and the shell control
+operators `|` and `&` end one (`$(get_key)||fallback` spells nothing), so a
+spaced command substitution is never read as one value, and a key inside it keeps its own
 verdict. The rule also scans its unchanged reference-free grammar as a
 baseline reading, judged on the captured text exactly as before, and a value
 is reported when either reading reports it. So

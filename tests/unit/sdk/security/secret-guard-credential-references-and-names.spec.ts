@@ -99,6 +99,10 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["quoted reference followed by a method call", 'const api_key = "${API_KEY}".toUpperCase();'],
     ["quoted reference followed by an operator", 'token="${PREFIX}"+suffixValue'],
     ["reference followed by a member chain", "token=${X}.toUpperCase()"],
+    // Codex round 5: shell control operators end a referenced value.
+    ["command substitution followed by ||", "api_key=$(get_api_key)||handle_error"],
+    ["reference followed by &&", "api_key=${KEY}&&run_next_step"],
+    ["variable piped to a command", "token=$TOKEN|tee_output_file"],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {

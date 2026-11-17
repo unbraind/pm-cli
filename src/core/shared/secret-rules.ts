@@ -299,9 +299,12 @@ const CREDENTIAL_MINIMUM_LITERAL_LENGTH = 8;
 // pieces are whitespace-free, as every credential value is, so a spaced
 // command substitution is never read as one value, and every repeated group
 // is bounded as in the password grammar.
-const CREDENTIAL_RUN = String.raw`[A-Za-z0-9!@#%^&*._+\-=/~]`;
-// Directly after `=`, `?`, `:` and `|` are value characters too, as in CREDENTIAL_PLAIN.
-const CREDENTIAL_RUN_AFTER_EQUALS = String.raw`[A-Za-z0-9!@#%^&*._+\-=/~?:|]`;
+// `|` and `&` are shell control operators (`$(get_key)||fallback`,
+// `${X}&&next`), so they end a referenced value; a reference-free value keeps
+// reading them through the baseline grammar.
+const CREDENTIAL_RUN = String.raw`[A-Za-z0-9!@#%^*._+\-=/~]`;
+// Directly after `=`, `?` and `:` are value characters too, as in CREDENTIAL_PLAIN.
+const CREDENTIAL_RUN_AFTER_EQUALS = String.raw`[A-Za-z0-9!@#%^*._+\-=/~?:]`;
 const CREDENTIAL_LEADING_LITERAL = 64;
 const CREDENTIAL_REFERENCE_SPAN = String.raw`'[^'\s]*'|"[^"\\\s]*(?:\\\S[^"\\\s]*){0,${PASSWORD_REPEAT_BOUND}}"`;
 const CREDENTIAL_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\\s]`)}|\\\S|${CREDENTIAL_REFERENCE_SPAN}|\$(?!\{)|\$\{[^{}\s]*\}){0,${PASSWORD_REPEAT_BOUND}}\}`
