@@ -13,7 +13,7 @@ const spawn = vi.hoisted(() => vi.fn());
 vi.mock("node:child_process", async (importOriginal) => ({ ...await importOriginal<typeof import("node:child_process")>(), spawnSync: spawn }));
 type ReceiptFixture = {
   version: number; status: string; inputs: Record<string, string>; scope: string; started_at: string; completed_at: string;
-  feeds: { osv: { observed_at: string; database_updated_at: string | null; endpoint: string; rows: { ids: string[] | null }[] }; registry: { counts: Record<string, number>; ids: string[] } };
+  feeds: { osv: { observed_at: string; database_updated_at: string | null; endpoint: string; rows: { ids: string[] | null }[] }; registry: { counts: Record<string, number>; ids: string[]; advisories: unknown } };
 };
 /** Locate advisory evidence inside the disposable project rather than the source tracker. */
 const receiptPath = (root: string) => path.join(root, ".cache/dependency-security/receipt.json");
@@ -82,7 +82,7 @@ describe("dependency advisory evidence", () => {
     });
   });
   it.each([
-    (r: ReceiptFixture) => { r.version = 2; }, (r: ReceiptFixture) => { r.status = "collecting"; },
+    (r: ReceiptFixture) => { r.version = 1; }, (r: ReceiptFixture) => { r.status = "collecting"; },
     (r: ReceiptFixture) => { r.inputs["package.json"] = "old"; }, (r: ReceiptFixture) => { r.scope = "production-only"; },
     (r: ReceiptFixture) => { r.started_at = new Date(Date.now() - MAX_AGE_MS - 1).toISOString(); },
     (r: ReceiptFixture) => { r.completed_at = "invalid"; }, (r: ReceiptFixture) => { r.started_at = new Date(Date.now() + 10000).toISOString(); },
@@ -91,6 +91,12 @@ describe("dependency advisory evidence", () => {
     (r: ReceiptFixture) => { r.feeds.osv.endpoint = "https://unknown.invalid"; }, (r: ReceiptFixture) => { r.feeds.osv.rows = []; },
     (r: ReceiptFixture) => { r.feeds.osv.rows[0].ids = null; }, (r: ReceiptFixture) => { r.feeds.registry.counts.info = 1; },
     (r: ReceiptFixture) => { r.feeds.registry.ids = ["hidden"]; },
+    (r: ReceiptFixture) => { r.feeds.registry.advisories = undefined; },
+    (r: ReceiptFixture) => { r.feeds.registry.advisories = [{ id: "hidden" }]; },
+    (r: ReceiptFixture) => { r.feeds.osv.rows[0].ids = [7 as unknown as string]; },
+    (r: ReceiptFixture) => { delete r.feeds.registry.counts.low; },
+    (r: ReceiptFixture) => { r.feeds.registry.counts.low = -1; },
+    (r: ReceiptFixture) => { r.feeds.registry.counts = null as unknown as Record<string, number>; },
   ])("rejects invalid evidence at the local-only provider boundary", async (change) => {
     await withTempDir("pm-advisory-", async (root) => {
       await fixture(root); await main([], root); await mutate(root, change);
@@ -99,6 +105,112 @@ describe("dependency advisory evidence", () => {
       expect(fetch).not.toHaveBeenCalled();
     });
   });
+  describe("recorded advisory waivers (pm-03q389)", () => {
+    const zero = { info: 0, low: 0, moderate: 0, high: 0, critical: 0 };
+    const advisory = "GHSA-abcd-efgh-ijkl";
+    /** Report one high advisory for the fixture package from the registry feed. */
+    const registryPositive = (details: Record<string, unknown> = {}) => spawn.mockReturnValue({
+      status: 1,
+      stdout: JSON.stringify({
+        advisories: { "7": { module_name: "fixture", severity: "high", github_advisory_id: advisory, findings: [{ version: "1.2.3" }], ...details } },
+        metadata: { vulnerabilities: { ...zero, high: 1 } },
+      }),
+    });
+    /** Report the same advisory for the fixture package from the independent feed. */
+    const osvPositive = (id = advisory) => vi.mocked(fetch).mockResolvedValue({ ok: true, json: async () => ({ results: [{ vulns: [{ id }] }] }) } as Response);
+    /** Declare waivers for the disposable project. */
+    const declare = async (root: string, waivers: object[], extra: Record<string, unknown> = {}) => {
+      await mkdir(path.join(root, "config"), { recursive: true });
+      await writeFile(path.join(root, "config/dependency-advisory-waivers.json"), JSON.stringify({ version: 1, waiver_notice_days: 3, waivers, ...extra }));
+    };
+    const waiver = (overrides: Record<string, unknown> = {}) => ({
+      advisory, package: "fixture", versions: ["1.2.3"], owner: "pm-fixture",
+      reason: "No patched release exists for the fixture advisory.",
+      expires_at: new Date(Date.now() + 86_400_000).toISOString(), ...overrides,
+    });
+
+    it("passes an advisory both feeds report only while an exact live waiver covers it, and discloses it", async () => {
+      await withTempDir("pm-advisory-waiver-", async (root) => {
+        await fixture(root); registryPositive(); osvPositive();
+        await expect(main([], root)).rejects.toThrow("Dependency advisory gate blocked: Independent source reports vulnerable dependencies: fixture@1.2.3 GHSA-abcd-efgh-ijkl;");
+        const receipt = JSON.parse(await readFile(receiptPath(root), "utf8"));
+        expect(receipt.feeds.registry.advisories).toEqual([{ id: "7", package: "fixture", severity: "high", advisory, versions: ["1.2.3"] }]);
+        const covering = waiver();
+        await declare(root, [covering, waiver({ package: "unused" })]);
+        await expect(main([], root)).resolves.toMatchObject({
+          verdict: "pass",
+          waived: [{ advisory, package: "fixture", versions: ["1.2.3"], owner: "pm-fixture", expires_at: covering.expires_at, sources: ["osv", "registry"] }],
+          unused_waivers: [`${advisory} in unused`],
+        });
+        await expect(main(["--verify-receipt"], root)).resolves.toMatchObject({ verdict: "pass" });
+        await expect(main([], root)).resolves.toMatchObject({ waived: [{ sources: ["osv", "registry"] }] });
+      });
+    });
+
+    it("blocks a report the waiver does not name exactly", async () => {
+      await withTempDir("pm-advisory-waiver-", async (root) => {
+        await fixture(root); await declare(root, [waiver()]);
+        registryPositive(); osvPositive("GHSA-zzzz-zzzz-zzzz");
+        await expect(main([], root)).rejects.toThrow("Independent source reports vulnerable dependencies: fixture@1.2.3 GHSA-zzzz-zzzz-zzzz");
+        osvPositive();
+        registryPositive({ github_advisory_id: undefined });
+        await expect(main([], root)).rejects.toThrow("Registry reports vulnerable dependencies: fixture@1.2.3 7");
+        registryPositive({ findings: [{ version: "1.2.3" }, { version: "unknown" }] });
+        await expect(main([], root)).rejects.toThrow("Registry reports vulnerable dependencies: fixture@unknown version GHSA-abcd-efgh-ijkl");
+        registryPositive({ module_name: "other" });
+        await expect(main([], root)).rejects.toThrow("Registry reports vulnerable dependencies: other@1.2.3");
+        await declare(root, [waiver({ versions: ["1.2.4"] })]);
+        registryPositive();
+        await expect(main([], root)).rejects.toThrow("Independent source reports vulnerable dependencies: fixture@1.2.3");
+      });
+    });
+
+    it("refuses expired, over-long and malformed waivers even when nothing needs them", async () => {
+      await withTempDir("pm-advisory-waiver-", async (root) => {
+        await fixture(root);
+        for (const waivers of [[waiver({ expires_at: new Date(Date.now() - 1000).toISOString() })], [waiver({ expires_at: new Date(Date.now() + 31 * 86_400_000).toISOString() })], [waiver({ owner: "" })]]) {
+          await declare(root, waivers);
+          await expect(main([], root)).rejects.toThrow("Dependency advisory gate blocked: Refused dependency advisory waiver:");
+        }
+        await declare(root, [], { waiver_notice_days: 31 });
+        await expect(main(["--verify-receipt"], root)).rejects.toThrow("Refused dependency advisory waiver: config/dependency-advisory-waivers.json must hold exactly version 1");
+        await writeFile(path.join(root, "config/dependency-advisory-waivers.json"), "{");
+        await expect(main([], root)).rejects.toThrow(/^Dependency advisory gate blocked; inspect/u);
+      });
+    });
+
+    it("refuses a waiver for a package the published runtime graph installs (pm-gh1748)", async () => {
+      await withTempDir("pm-advisory-waiver-", async (root) => {
+        await fixture(root); await declare(root, [waiver()]); registryPositive(); osvPositive();
+        await expect(main([], root)).resolves.toMatchObject({ verdict: "pass" });
+        const ledger = { packages: { "": { name: "root" }, "node_modules/other": { version: "1.2.3" }, "node_modules/parent/node_modules/fixture": { version: "1.2.3" } } };
+        await writeFile(path.join(root, "runtime-dependencies.json"), JSON.stringify(ledger));
+        await expect(main([], root)).rejects.toThrow(`Refused dependency advisory waiver: ${advisory} in fixture waiver covers fixture@1.2.3, which the published package installs (runtime-dependencies.json)`);
+      });
+    });
+
+    it("keeps registry counts and advisories mutually consistent", async () => {
+      await withTempDir("pm-advisory-waiver-", async (root) => {
+        await fixture(root); await declare(root, [waiver()]); registryPositive(); osvPositive();
+        await main([], root);
+        for (const change of [
+          (r: ReceiptFixture) => { (r.feeds.registry.advisories as { severity: string }[])[0]!.severity = "low"; },
+          (r: ReceiptFixture) => { r.feeds.registry.counts.critical = 1; },
+          (r: ReceiptFixture) => { (r.feeds.registry.advisories as { versions: unknown }[])[0]!.versions = [7]; },
+          (r: ReceiptFixture) => { (r.feeds.registry.advisories as { severity: string }[])[0]!.severity = "urgent"; },
+        ]) {
+          await main([], root); await mutate(root, change);
+          await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow();
+        }
+        await main([], root);
+        await mutate(root, (r) => { (r.feeds.registry.advisories as { severity: null | string }[])[0]!.severity = null; });
+        await expect(verifyReceipt(root, receiptPath(root))).resolves.toMatchObject({ verdict: "pass" });
+        await mutate(root, (r) => { (r.feeds.registry.advisories as { versions: null | string[] }[])[0]!.versions = []; });
+        await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow("Registry reports vulnerable dependencies: fixture@unknown version");
+      });
+    });
+  });
+
   it("rejects missing receipts and unknown flags", async () => {
     await withTempDir("pm-advisory-", async (root) => {
       await expect(main(["--verify-receipt"], root)).rejects.toThrow();

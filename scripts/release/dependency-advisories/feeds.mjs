@@ -1,9 +1,29 @@
 /** Bounded registry and OSV evidence adapters; no severity suppressions (pm-eqxjzl). */
+// Exceptions are exact recorded waivers judged by the receipt verifier (pm-03q389).
 import assert from "node:assert/strict";
 import { runCommand } from "../utils.mjs";
+import { isAdvisoryId, isExactVersion, isPackageName } from "./waivers.mjs";
 
 export const OSV_ENDPOINT = "https://api.osv.dev/v1/querybatch";
-const SEVERITIES = ["info", "low", "moderate", "high", "critical"];
+export const SEVERITIES = ["info", "low", "moderate", "high", "critical"];
+
+/**
+ * Keep only the validated fields a waiver can match on. A detail that is absent
+ * or malformed becomes null, so the advisory stays recorded as a positive but no
+ * waiver can cover it; one malformed finding version voids every version.
+ */
+export function registryAdvisory(id, entry) {
+  const record = entry !== null && typeof entry === "object" && !Array.isArray(entry) ? entry : {};
+  const findings = Array.isArray(record.findings) ? record.findings : [];
+  const valid = findings.length > 0 && findings.length <= 5000 && findings.every((finding) => isExactVersion(finding?.version));
+  return {
+    id,
+    package: isPackageName(record.module_name) ? record.module_name : null,
+    severity: SEVERITIES.includes(record.severity) ? record.severity : null,
+    advisory: isAdvisoryId(record.github_advisory_id) ? record.github_advisory_id : null,
+    versions: valid ? [...new Set(findings.map((finding) => finding.version))].sort() : null,
+  };
+}
 
 /** Preserve pnpm's all-dependency, all-severity policy and reject unknown outcomes. */
 export function queryRegistry(root) {
@@ -20,7 +40,9 @@ export function queryRegistry(root) {
   assert.ok(report.advisories && typeof report.advisories === "object" && !Array.isArray(report.advisories), "Missing registry advisories");
   const ids = Object.keys(report.advisories).sort();
   assert.equal(ids.length === 0, count === 0, "Contradictory registry audit counts");
-  return { status: "complete", counts, ids, observed_at: new Date().toISOString(), database_updated_at: null };
+  assert.ok(ids.length <= 1000, "Registry advisories outside bounded coverage");
+  const advisories = ids.map((id) => registryAdvisory(id, report.advisories[id]));
+  return { status: "complete", counts, ids, advisories, observed_at: new Date().toISOString(), database_updated_at: null };
 }
 
 /** Query every locked npm version once; incomplete pages or failures cannot pass. */

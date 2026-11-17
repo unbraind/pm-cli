@@ -509,8 +509,8 @@
       "id": "dependency-advisory-evidence",
       "owner": "pm-eqxjzl",
       "pipelines": ["ci.yml#gates", "nightly.yml#quality", "release.yml#release"],
-      "failure_taxonomy": ["independent_advisory_positive", "advisory_source_unavailable", "advisory_coverage_incomplete", "advisory_receipt_stale"],
-      "bypass": { "allowed": false, "audit": "All locked production, development and optional npm packages require complete registry and OSV evidence. Retrieval time does not certify database freshness. No severity or source exception is permitted." },
+      "failure_taxonomy": ["independent_advisory_positive", "advisory_source_unavailable", "advisory_coverage_incomplete", "advisory_receipt_stale", "advisory_waiver_invalid"],
+      "bypass": { "allowed": false, "audit": "All locked production, development and optional npm packages require complete registry and OSV evidence. Retrieval time does not certify database freshness. No severity or source exception is permitted; the only accepted exception is a recorded waiver in config/dependency-advisory-waivers.json naming one advisory id, package and exact locked versions, an owning pm item, a reason and an expiry at most 30 days ahead (pm-03q389)." },
       "negative_control": {
         "test": "tests/unit/scripts/release/dependency-advisories/gate.spec.ts",
         "assertion": "blocks a zero registry audit with positive independent evidence and rejects missing, stale, incomplete or unavailable receipts"

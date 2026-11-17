@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /** Repository advisory collector and read-only SDK provider adapter (pm-eqxjzl). */
+import { AssertionError } from "node:assert";
 import { mkdir, realpath, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { repoRoot } from "../utils.mjs";
@@ -37,10 +38,14 @@ export async function main(argv, root) {
     receipt.completed_at = new Date().toISOString();
     await writeReceipt(receiptPath, receipt);
     return await verifyReceipt(root, receiptPath);
-  } catch {
+  } catch (error) {
     if (receipt.status === "collecting") receipt.status = "unavailable";
     await writeReceipt(receiptPath, receipt);
-    throw new Error("Dependency advisory gate blocked; inspect .cache/dependency-security/receipt.json (no feed success is inferred from unavailable evidence)");
+    // A verifier refusal names validated advisory fields only, so it is safe to
+    // print; a collection failure stays generic and never echoes upstream text.
+    // The cause stays in-process: the executable boundary prints the message only.
+    const reason = receipt.status === "complete" && error instanceof AssertionError ? `: ${error.message}` : "";
+    throw new Error(`Dependency advisory gate blocked${reason}; inspect .cache/dependency-security/receipt.json (no feed success is inferred from unavailable evidence)`, { cause: error });
   }
 }
 
