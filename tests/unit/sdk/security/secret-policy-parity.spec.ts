@@ -385,6 +385,9 @@ describe("structured credential spellings (GH-1699)", () => {
     const started = performance.now();
     const counts = inputs.map((input) => Array.from(findSecretRuleMatches(rule, input)).length);
     expect(performance.now() - started).toBeLessThan(5_000);
-    expect(counts).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 2, 1]);
+    // Each repeated key's value reads as a shell concatenation of an empty
+    // quoted piece and the eight-character word after it (pm-ycgb5g); the scan
+    // stays linear.
+    expect(counts).toEqual([0, 0, 0, 0, 39_999, 0, 0, 0, 2, 1]);
   });
 });

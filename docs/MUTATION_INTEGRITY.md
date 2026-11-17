@@ -13,8 +13,9 @@ argument parsing or exposing detected values.
 - Every mutation should have a stable author. Precedence remains explicit
   invocation author, `PM_AUTHOR`, configured `author_default`, detected
   harness identity, then `unknown`.
-- The secret guard inspects string leaves and returns only detector names and
-  object paths. It never returns the matched value.
+- The secret guard inspects string leaves and the property names that label
+  them, and returns only detector names and object paths. It never returns
+  the matched value.
 - `pm health` reports old, unclaimed in-progress work as advisory governance
   data. It does not change ownership or status.
 - Historical unknown-author events remain immutable. Maintainers can append an
@@ -204,9 +205,9 @@ spellings are covered:
   key, at any depth;
 - for password and credential-key assignments, element content such as
   `<password>…</password>` or `<client_secret>…</client_secret>`. Element
-  content is judged like a quoted value of an exact key: at least eight
-  characters after trimming, with the `${…}` and `$(…)` placeholder
-  exclusions.
+  content is judged like a quoted value of an exact key: a password element
+  must spell at least eight literal characters after trimming, once its
+  references expand (see below).
 
 An *exact* key is the key word alone (`"password"`, `<password>`). A
 *prefixed* key has other key text before the word, such as `reset-password`,
@@ -216,8 +217,13 @@ member's value inside a container, count only when they contain no
 whitespace, because labels and JSON Schema descriptions are prose. Array
 elements under an exact key keep passphrases.
 
+A quoted value with escapes is matched in a neutralized reading, where its
+own quote characters and line breaks cannot end it early, and the rule's
+predicates (literal length, references, entropy) then judge the same span of
+the decoded original, so a decoded quote keeps its meaning.
+
 Each candidate key/value is judged by the rule's own value grammar. The
-eight-character minimum, the `<…`, `${…}` and `$(…)` placeholder exclusions
+password rule's literal minimum, the credential-key placeholder exclusions
 and the high-entropy predicate therefore carry over. Bare tokens inside a
 container are never judged, so `password=[scrubbed]` stays clean. A
 structured string literal that spans a raw line break is a host-language
@@ -226,6 +232,60 @@ walked container still get their own scalar check. Each container is walked
 at most twice: once for an exact key, whose lenient walk covers everything
 inside it, and once for a prefixed key, whose compact walk covers only
 other prefixed keys.
+
+A password reference is a placeholder only when it is the whole value
+([pm-ycgb5g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycgb5g.toon);
+tracker record excluded from npm). The password rule captures the whole
+value and judges the literal it spells once every run-time reference
+expands, in one linear pass that follows nesting: `${NAME}`,
+`${NAME:?message}`, `$(command)` and `<placeholder>` contribute nothing, and
+the word of `${NAME:-word}`, `${NAME:=word}` or `${NAME:+word}` contributes
+its own expansion. Quoted text inside a reference never closes it, so
+`$(printf ')')` is one reference. An unquoted value's references may nest one
+level (`${PW:-${FALLBACK}}`); deeper nesting is followed inside quoted values
+and elements. The value must spell at least eight literal characters.
+So `password=${BUILD_PASSWORD}`, `password=$(op read pw)`,
+`password=<placeholder>`, `password=${PREFIX}${SUFFIX}`,
+`password=${PRIMARY:-${SECONDARY}}` and an empty default stay clean, while a
+literal before or after a reference (`password=${EMPTY}"…"`,
+`password=$VAR"…"`, `password="${EMPTY}"…`, `password=…${VAR}`) or a literal
+default is reported. A value may hold up to four whitespace-free quoted
+pieces, as a shell concatenates them; in source code the quote after a value
+usually closes the enclosing string literal, so spaced code after it is never
+read as part of the value. A quoted value that holds whitespace (a
+passphrase) is that quoted literal alone. A prefixed key's whitespace check
+reads the literal, so spaces inside `$(op read pw)` never hide a compact
+credential. Element content keeps its quote characters as text, and may hold
+markup or placeholder spans (`<password><x>…</password>`). Every scan stays
+linear.
+
+Structured SDK and MCP payloads carry a key as a property name rather than in
+the text
+([pm-3fbj1f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3fbj1f.toon);
+tracker record excluded from npm). A string leaf under a property whose name
+ends with a key-named rule's key is judged as that key's value, exactly as the
+structured pass judges the payload's JSON spelling `{"<name>": <value>}`: the
+same key pattern reads the name, and the rule's own value judge reads the
+leaf. A name is read as written, with camelCase words split (`accessToken`
+reads as `access_Token`), and with only a prefix split before each of its
+last three word boundaries, so `passPhrase`, `APIkey`, `dbPassPhrase` and
+`clientAPIkey` keep their keys. As in the JSON spelling, a leaf is judged leniently when its own
+exact key names it or when it is an array element under an exact key, and
+compactly (whitespace-free) under a prefixed key or as an object member's
+value under any credential key above it. The finding reports the leaf's path,
+never its value. `{ api_key: "…" }`, `{ clientSecret: "…" }` and
+`{ password: ["…"] }` are therefore judged like `{"api_key":"…"}`, and pm's
+own fields such as `token_budget`, `max_tokens` and numeric counts stay clean.
+Only strings are judged: a number, boolean, null or boxed value under a
+credential key is not a credential, and the pass never serializes a value or
+calls `toJSON`. Each leaf is judged once per rule, so the pass is linear in
+the payload. Both passes walk the payload with their own stack, so payload
+depth is not limited by the call stack, and a deeply nested credential is
+blocked like a shallow one
+([pm-wq9njf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wq9njf.toon);
+tracker record excluded from npm). A value that is clean only as unquoted code, such as a call or a
+statement constant, is a string literal in a payload, as it already is in its
+JSON spelling.
 
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals

@@ -2,11 +2,13 @@ id: pm-3627y1
 title: "The user-at-private-host secret rule rescans every hyphen or dot run, so 32 KB of hyphenated text costs about a second in mutation preflight"
 description: "Found 2026-11-12 while answering a Codex review of pm-gh1704. The pre-existing user_at_private_host rule in src/core/shared/secret-rules.ts is a word boundary followed by [A-Za-z0-9._-]+@ and a private address. Every '-' or '.' inside a long run creates a new word boundary, so the engine restarts the greedy run at each one and the scan is quadratic in the run length. Measured with findSecretRuleMatches on credential-free input: 'a-' repeated 16,000 times takes about 1,169 ms, 'token-' repeated 8,000 times about 966 ms; every other rule stays under 20 ms. The rule runs synchronously in mutation preflight (advise mode included) and in the repository scan, so a pasted log can stall the CLI or a shared MCP process. Fix: start the local part only at the beginning of a run, for example a negative lookbehind for [A-Za-z0-9._-], keeping detection of a run that starts with a dot or hyphen, and add a linear-time regression test like the one pm-gh1704 added for credential_key_assignment."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[4]: performance,regex,secret-guard,security
 created_at: "2026-11-12T09:35:59.020Z"
-updated_at: "2026-11-12T09:35:59.020Z"
+updated_at: "2026-11-16T23:29:17.518Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#9a30eec154ff7d7937b394af"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "Scanning 32 KB of hyphenated or dotted text with user_at_private_host finishes in linear time (well under 100 ms); Every existing user_at_private_host detection, including a local part that starts with a dot or hyphen, still matches in both the SDK guard and the repository scan; A regression test bounds the scan time"
@@ -18,4 +20,11 @@ expected_result: Secret scanning cost stays linear in input size for every rule
 actual_result: user_at_private_host takes about a second on 32 KB of hyphenated text
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1704,discovered_from,"2026-11-12T09:35:59.020Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text,edited_at}:
+  "2026-11-16T23:28:58.941Z","harness:claude-code","Implementation (branch fix/secret-guard-grammar-and-payload-keys): the user_at_private_host local part now starts with a negative lookbehind for [A-Za-z0-9._-] instead of a word boundary, so each run is tried from its first character only and the greedy run backtracks once per run. Measured with findSecretRuleMatches before and after on credential-free input: five pathological inputs of 32 to 48 KB (a- x16000, token- x8000, a. x16000, x_ x16000, a-b@ x8000) took 3,128 ms in total before and stay under the 20 ms per-rule report threshold after; every other rule was already under 20 ms. A run that starts with a dot or hyphen is matched from that character (the new pattern detects a superset of the old one). The spec proves this by comparing against the word-boundary pattern over 1,080 generated spellings (prefix x local part x suffix x three private hosts) and pins linear bounds for 32 KB (under 250 ms in total) and a 512 KB run (under 1 s; quadratic would take minutes). node scripts/check-secrets.mjs stays clean over every tracked file.","2026-11-16T23:29:17.517Z"
+files[2]{path,scope,note}:
+  src/core/shared/secret-rules.ts,project,"user_at_private_host local part starts only at a run start (negative lookbehind), so the scan is linear"
+  tests/unit/sdk/security/secret-guard-references-and-members.spec.ts,project,linear-time bounds for 32 KB and 512 KB runs plus a superset proof against the word-boundary pattern
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test tests/unit/sdk/security/secret-guard-references-and-members.spec.ts tests/unit/sdk/security/secret-policy-parity.spec.ts tests/unit/sdk/mutation-guard.spec.ts,project,"harness:claude-code","2026-11-16T23:28:07.977Z",local_mutation,fix/secret-guard-grammar-and-payload-keys
 body: ""

@@ -91,11 +91,14 @@ describe("SDK mutation guard", () => {
   });
 
   it("advises, blocks, overrides, and disables through one contract", () => {
+    // The `token` property name is judged too (pm-3fbj1f), so the value
+    // reports its own token format and the key-named assignment rules, as
+    // its JSON spelling {"token": "..."} does.
     const payload = { token: GITHUB_TOKEN_SAMPLE };
     expect(
       evaluateMutationGuard({ author: "agent", payload, settings }),
     ).toMatchObject({
-      warnings: ["secret_guard_detected:1:rules=github_token"],
+      warnings: ["secret_guard_detected:3:rules=credential_key_assignment,github_token,high_entropy_assignment"],
       override_applied: false,
     });
     expect(() =>
@@ -114,7 +117,7 @@ describe("SDK mutation guard", () => {
       }),
     ).toMatchObject({
       warnings: [
-        "secret_guard_detected:1:rules=github_token",
+        "secret_guard_detected:3:rules=credential_key_assignment,github_token,high_entropy_assignment",
         "secret_guard_force_override",
       ],
       override_applied: true,
