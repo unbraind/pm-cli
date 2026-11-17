@@ -210,7 +210,8 @@ follows its leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).lengt
 `$TOKEN+suffix`) or a call's parenthesis follows it (`<string>getToken()`,
 `<string>getToken ()`), and a value led by an angle span is code when the
 span holds a TypeScript type (`<string>`, `<T>`, `<APIKey>`, `<auth.Token>`,
-`<string|undefined>`, `<T[]>`, a literal type such as `<"bearer">`; a
+`<string|undefined>`, `<T[]>`, `<{value:string}>`, a literal type such as
+`<"bearer">`; a
 lowercase word such as `<x>` and an ALL-CAPS
 name such as `<TOKEN>` are placeholders) or expression code
 follows it (`{ token: <t>name ?? fallback }`); a letter,

@@ -1160,7 +1160,7 @@ function quotedSpanEnd(text: string, start: number): number {
 }
 
 /** The text of a TypeScript type expression, as one captured angle piece holds it (no nesting, no whitespace). */
-const TYPE_TEXT = /^[\w$.[\]|&,]+$/u;
+const TYPE_TEXT = /^[\w$.[\]|&,{}:;?]+$/u;
 /** A TypeScript literal type, or a union that starts with one (`<"bearer">`, `<1|2>`, `<"a"|undefined>`). */
 // Each member alternative starts with a different character (quote, digit or sign, letter), so no member can be read two ways.
 const LITERAL_TYPE = /^(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?)(?:\|(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|[A-Za-z_$][\w$.]*))*$/u;
@@ -1182,7 +1182,8 @@ function isTypeAssertion(value: string): boolean {
   if (LITERAL_TYPE.test(type)) return true;
   if (!TYPE_TEXT.test(type)) return false;
   // Two independent linear checks: a capitalized name, and a lowercase letter in it or a single letter.
-  return PRIMITIVE_TYPE.test(type) || /[.|&[]/u.test(type) || (/^[A-Z][\w$]*$/u.test(type) && (type.length === 1 || /[a-z]/u.test(type)));
+  // A structural type (`<{value:string}>`, `<Token&{}>`) holds an object type literal.
+  return PRIMITIVE_TYPE.test(type) || /[.|&[{]/u.test(type) || (/^[A-Z][\w$]*$/u.test(type) && (type.length === 1 || /[a-z]/u.test(type)));
 }
 
 /** A binary operator or member access that continues an expression after a reference (`&` is bitwise AND there); `! @ # ~` stay literal data. */
