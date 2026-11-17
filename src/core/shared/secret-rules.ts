@@ -328,11 +328,13 @@ const credentialConcatenated = (run: string): string => String.raw`(?:${credenti
 const credentialUnquoted = (build: (run: string) => string): string => String.raw`(?<!["'])(?:${build(CREDENTIAL_RUN)})`;
 // A quoted piece opens a concatenation when a reference or another quoted
 // piece follows it directly, or when it holds a reference and a letter, digit
-// or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted piece followed
-// by an operator is code (`"<literal>".trim()`, `"${KEY}".toUpperCase()`,
-// `"Bearer"+value`) and stays a quoted value.
+// or non-operator symbol (`_ @ # % ~`, or a `!` that no operator, member
+// access or call follows) follows. A quoted piece followed by an operator is
+// code (`"<literal>".trim()`, `"${KEY}".toUpperCase()`, `"${KEY}"!.length`,
+// `"${KEY}"^mask`, `"Bearer"+value`) and stays a quoted value.
+const CREDENTIAL_CONCATENATION_CONTINUES = String.raw`(?:[\w@#%~]|!(?![.+\-*/%=^!(]))`;
 const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"']`
-  + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"[\w!@#%^~-]|'(?=[^'\s]*[$<])[^'\s]*'[\w!@#%^~-])`;
+  + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"${CREDENTIAL_CONCATENATION_CONTINUES}|'(?=[^'\s]*[$<])[^'\s]*'${CREDENTIAL_CONCATENATION_CONTINUES})`;
 // A quoted body that holds a reference opener is captured whole up to its closing quote.
 const CREDENTIAL_QUOTED_REFERENCED = String.raw`(?<=")(?=[^"\s]*[$<])[^"\s]+|(?<=')(?=[^'\s]*[$<])[^'\s]+`;
 const CREDENTIAL_VALUE = new RegExp(

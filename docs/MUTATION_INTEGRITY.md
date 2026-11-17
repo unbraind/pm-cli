@@ -202,7 +202,8 @@ tracker record excluded from npm). A value that holds `${…}`, `$(…)`,
 `$NAME` or `<…>` is captured whole. So is a value that opens with a quoted
 piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
 another quoted piece follows it, or it holds a reference and a letter, digit
-or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by an operator (`"…".trim()`,
+or non-operator symbol (`_ @ # % ~`, or a `!` that no operator follows)
+follows. A quoted value followed by an operator (`"…".trim()`,
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
 source a value is code when a binary operator (including `^`) or member access
 follows its leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
