@@ -160,6 +160,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     // CodeRabbit and Greptile: member access after a nested reference, and XOR after a reference, are code.
     ["member access after a nested braced reference", "token=${A:-${B}}.length+1"],
     ["XOR after a reference", "const token=$TOKEN^maskValue;"],
+    // Codex round 26: a non-null assertion before an operator or member access is code.
+    ["non-null assertion before member access", "const token = $TOKEN!.access_token;"],
+    ["non-null assertion before an operator", "const token = $TOKEN!+tokenSuffix;"],
     // A lowercase angle span after `=`, or before expression code, is code too.
     ["placeholder-shaped assertion after an assignment", `api_key=<t>${credential}`],
     ["placeholder-shaped assertion before expression code", "({ token: <t>auth_token ?? fallback })"],

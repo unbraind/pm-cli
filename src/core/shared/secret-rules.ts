@@ -998,7 +998,10 @@ function isCodeAfterReference(match: RegExpMatchArray): boolean {
     // In an object property or argument, a type assertion is followed by expression code (`{ token: <T>name ?? x }`).
     if (EXPRESSION_AFTER.test(after)) return true;
   }
-  return CODE_OPERATOR.test(match[1][leadingReferencesEnd(match[1])] ?? "") || CALL_AFTER.test(after);
+  // A postfix `!` (a TypeScript non-null assertion) passes over to the operator after it (`$TOKEN!.x`).
+  const lead = leadingReferencesEnd(match[1]);
+  const operator = match[1][lead] === "!" ? match[1][lead + 1] : match[1][lead];
+  return CODE_OPERATOR.test(operator ?? "") || CALL_AFTER.test(after);
 }
 
 /**
