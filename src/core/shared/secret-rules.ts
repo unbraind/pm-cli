@@ -812,15 +812,16 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  return closed !== -1 && structure > 0 && NEXT_MEMBER.test(input.slice(after, after + 8));
+  return closed !== -1 && structure > 0 && NEXT_MEMBER.test(input.slice(after, after + 40));
 }
 
 /**
  * The start of the next JSON member or element: a quote, or `{` / `[` that
- * opens structure or a JSON value (a number, `true`, `false`, `null`), never
- * word text (`][literal`, `][trueSecret`).
+ * opens structure or a complete JSON value (a number, `true`, `false`, `null`)
+ * that a delimiter ends, never word text (`][literal`, `][trueSecret`,
+ * `][1literal`). A value longer than the bounded look-ahead is not recognized.
  */
-const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|-?\d|(?:true|false|null)(?!\w)|$))/u;
+const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|$|(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)[\s,\]}]))/u;
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;
@@ -845,12 +846,14 @@ function isQuote(character: string | undefined): character is "\"" | "'" {
 const SPELLING_SENSITIVE = /[$<"']/u;
 
 /**
- * Whether a captured value is unquoted source text that starts with a
- * reference, where member access right after the reference is code. A literal
- * that starts before the reference (`.ab${X}cd`) is never member access.
+ * How unquoted source text that starts with a reference continues: "call"
+ * when an opening parenthesis follows the value (`<string>getToken()`),
+ * "source" otherwise, and undefined for a quoted value, payload data or a
+ * value that starts with literal text (`.ab${X}cd` is never member access).
  */
-function isCodeAfterReference(match: RegExpMatchArray): boolean {
-  return !DECODED_DATA_MATCHES.has(match) && !isQuote(captureOpener(match)) && /^[$<]/u.test(match[1]);
+function codeAfterReference(match: RegExpMatchArray): "call" | "source" | undefined {
+  if (DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match)) || !/^[$<]/u.test(match[1])) return undefined;
+  return match.input![match.index! + match[0].length] === "(" ? "call" : "source";
 }
 
 /**
@@ -859,10 +862,11 @@ function isCodeAfterReference(match: RegExpMatchArray): boolean {
  * as one double-quoted literal whose own `"` characters become `'`, as an
  * element body is: every non-space character counts, and the grammar's path,
  * URL, word and member-path exclusions judge it whole. In unquoted source a
- * literal that starts with member access is the code after a reference.
+ * literal that starts with member access, or that a call's parenthesis
+ * follows, is the code after a reference.
  */
-function literalMatches(grammar: RegExp, literal: string, code: boolean): boolean {
-  if (code && MEMBER_ACCESS.test(literal)) return false;
+function literalMatches(grammar: RegExp, literal: string, code: "call" | "source" | undefined): boolean {
+  if (code === "call" || (code !== undefined && MEMBER_ACCESS.test(literal))) return false;
   const body = literal.replaceAll("\"", "'");
   grammar.lastIndex = 0;
   return grammar.exec(`"${body}"`)?.[1] === body;
@@ -1312,7 +1316,7 @@ export function literalAfterReferences(value: string, variables = true): string 
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
   const value = rule.minimumLiteralLength === undefined ? match[1] : judgedLiteral(match);
   if (rule.minimumLiteralLength !== undefined && value.length < rule.minimumLiteralLength) return false;
-  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, isCodeAfterReference(match))) return false;
+  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, codeAfterReference(match))) return false;
   if (rule.rejectValue?.test(value) === true) return false;
   if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;

@@ -116,6 +116,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["compact JSON with a bare variable", '{"api_key":"$API_KEY","other":"x"}'],
     // Codex round 8: member access on a reference, even before an operator, is code.
     ["arithmetic on a reference member", "const token = $TOKEN.length+1;"],
+    // Codex round 13: a call after a type assertion is code.
+    ["call after a type assertion", "const api_key = <string>get_auth_token();"],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -243,6 +245,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       expect(textRules(`[{'${passwordKey}':'$DB_PASSWORD'},${element}]`), element).toEqual([]);
     }
     expect(textRules(`${passwordKey}="$DB_PASSWORD"][trueSecret${literal}`)).toEqual(["password_assignment"]);
+    // Codex round 13: a number counts only as a complete token that a delimiter ends.
+    expect(textRules(`${passwordKey}="$DB_PASSWORD"][1${credential}]`)).toEqual(["password_assignment"]);
+    expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},[1.5e3, 2]]`)).toEqual([]);
     // Greptile: structure followed by more word text is still one shell word.
     expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
     // Codex round 10: a quote after an unquoted value may open a concatenated piece, so

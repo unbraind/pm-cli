@@ -205,8 +205,9 @@ another quoted piece follows it, or it holds a reference and a letter, digit
 or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by an operator (`"…".trim()`,
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
 source a literal that starts with member access on a reference
-(`${X}.trim`, `$TOKEN.length+1`) is code; in a quoted value or payload data it
-is still judged. The literal
+(`${X}.trim`, `$TOKEN.length+1`), or that a call's parenthesis follows
+(`<string>getToken()`), is code; in a quoted value or payload data it is still
+judged. The literal
 left once its references expand is then judged by the same grammar, length,
 entropy and exclusions as a reference-free value, read in the value's own
 quote context. So `api_key=${EMPTY}"…"`, `api_key=$VAR"…"`, `token: <x>…`,
