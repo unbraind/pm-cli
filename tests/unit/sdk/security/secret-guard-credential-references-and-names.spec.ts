@@ -62,6 +62,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["referenced credential inside a rejected referenced value", `api_key=\${DIR}/token=\${X}${credential}`],
     ["punctuation-led literal after a quoted reference", `api_key="\${EMPTY}"!${credential}`],
     ["quoted dotted literal after a reference", `"api_key": "\${EMPTY}.${credential}"`],
+    // Greptile: a single `&` is data; only `&&`, `||` and `|` end a referenced value.
+    ["YAML literal holding a single ampersand after a reference", `api_key: \${EMPTY}Zq8&vN3kLmP0wXy7Ab`],
   ])("flags a %s", (_label, content) => {
     expect(textRules(content)).toEqual(["credential_key_assignment"]);
   });
@@ -225,6 +227,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(`{"${passwordKey}":"$DB_PASSWORD","other":"x"}`)).toEqual([]);
     expect(textRules(`{"other":"x","${passwordKey}":"$DB_PASSWORD"}`)).toEqual([]);
     expect(textRules(`{"${passwordKey}":"$DB_PASSWORD"]x`)).toEqual(["password_assignment"]);
+    // Greptile: structure followed by more word text is still one shell word.
+    expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
+    expect(textRules(`["${passwordKey}=$DB_PASSWORD"], "next"`)).toEqual([]);
     for (const separator of [":", "/", "?", "]", "}", ",", ")"]) {
       const content = `${passwordKey}=$PW_PREFIX${separator}${credential}`;
       expect(await gateRules(content), content).toEqual(["password-assignment"]);

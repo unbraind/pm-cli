@@ -213,7 +213,8 @@ empty default, and a literal that is a path, URL or word stay clean. At most
 64 literal characters may come before the first reference; a longer prefix is
 judged as a reference-free value. References and quoted pieces are
 whitespace-free, as every credential-key value is, and the shell control
-operators `|` and `&` end one (`$(get_key)||fallback` spells nothing), as do
+operators `|`, `||` and `&&` end one (`$(get_key)||fallback` spells nothing;
+a single `&` is data, as in YAML), as do
 `?` and `:`, which after a reference are code (`$TOKEN?.x`, `$TOKEN??y`), so a
 spaced command substitution is never read as one value, and a key inside it keeps its own
 verdict. The rule also scans its unchanged reference-free grammar as a
@@ -232,8 +233,9 @@ in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
 read the whole word: only punctuation (a closing quote, bracket or `;`) may
 follow it before whitespace or the end of the text, within a 64-code-unit
-look-ahead, or the value is a closed quoted piece followed by structure, as in
-compact JSON (`{"password":"$DB_PASSWORD","other":…}`). A value it cuts short
+look-ahead, or the value is a closed quoted piece followed by structure and
+then whitespace, another quote or the end, as in compact JSON
+(`{"password":"$DB_PASSWORD","other":…}`). A value it cuts short
 (`$PW:…`, `$PW]…`) keeps its `$NAME` text literal. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
 `\$`, keeps its characters. No rule is silently

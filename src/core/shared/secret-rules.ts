@@ -299,11 +299,13 @@ const CREDENTIAL_MINIMUM_LITERAL_LENGTH = 8;
 // pieces are whitespace-free, as every credential value is, so a spaced
 // command substitution is never read as one value, and every repeated group
 // is bounded as in the password grammar.
-// `|` and `&` are shell control operators (`$(get_key)||fallback`,
-// `${X}&&next`), and after a reference `?` and `:` are code (`$TOKEN?.x`,
-// `$TOKEN??fallback`), so they end a referenced value; a reference-free value
-// keeps reading them through the baseline grammar.
-const CREDENTIAL_RUN = String.raw`[A-Za-z0-9!@#%^*._+\-=/~]`;
+// The shell control operators `|`, `||` and `&&` (`$(get_key)||fallback`,
+// `${X}&&next`) end a referenced value, and so do `?` and `:`, which after a
+// reference are code (`$TOKEN?.x`, `$TOKEN??fallback`). A single `&` is data
+// (`${EMPTY}ab&cd…` in YAML). A reference-free value keeps reading all of them
+// through the baseline grammar. Each alternative is one character, so a run
+// still cannot be split.
+const CREDENTIAL_RUN = String.raw`(?:[A-Za-z0-9!@#%^*._+\-=/~]|&(?!&))`;
 const CREDENTIAL_LEADING_LITERAL = 64;
 const CREDENTIAL_REFERENCE_SPAN = String.raw`'[^'\s]*'|"[^"\\\s]*(?:\\\S[^"\\\s]*){0,${PASSWORD_REPEAT_BOUND}}"`;
 const CREDENTIAL_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\\s]`)}|\\\S|${CREDENTIAL_REFERENCE_SPAN}|\$(?!\{)|\$\{[^{}\s]*\}){0,${PASSWORD_REPEAT_BOUND}}\}`
@@ -784,8 +786,8 @@ function judgedLiteral(match: RegExpMatchArray): string {
 const WORD_TAIL_BOUND = 64;
 /** A run of characters that are neither letters, digits nor whitespace. */
 const PUNCTUATION_RUN = /^[^\s\p{L}\p{N}]*/u;
-/** After a closed quoted value, structure that ends it (`"$PW",` or `"$PW"}` in JSON). */
-const STRUCTURE_AFTER_QUOTE = /^[,;:)}\]](?:[\s"',;:)}\]]|$)|^\s|^$/u;
+/** Structure after a closed quoted value (`,` `]` `}` in JSON), bounded like the word look-ahead. */
+const STRUCTURE_RUN = /^[,;:)}\]]{0,64}/u;
 
 /**
  * Whether the value grammar read the whole word. It did when only punctuation
@@ -802,9 +804,13 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const run = PUNCTUATION_RUN.exec(input.slice(end, end + WORD_TAIL_BOUND))![0];
   const next = end + run.length;
   if (next === input.length || /\s/u.test(input[next]!)) return true;
-  // A closing quote ends the value when structure, not more word, follows it.
+  // A closing quote ends the value when structure, then whitespace, another
+  // quoted member or the end follows it (`"$PW","x"`), never more word text
+  // (`"$PW"],literal` is one shell word).
   const closer = isQuote(match[0].at(-1)) ? end : isQuote(input[end]) ? end + 1 : -1;
-  return closer !== -1 && STRUCTURE_AFTER_QUOTE.test(input.slice(closer, closer + 2));
+  if (closer === -1) return false;
+  const after = closer + STRUCTURE_RUN.exec(input.slice(closer, closer + WORD_TAIL_BOUND))![0].length;
+  return after === input.length || /[\s"']/u.test(input[after]!);
 }
 
 /** A literal that is only a member chain, as code leaves after a reference (`${X}.trim`). */
