@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",credential-redaction,placeholders,secret-guard,security
 created_at: "2026-11-16T23:30:24.532Z"
-updated_at: "2026-11-17T15:10:25.314Z"
+updated_at: "2026-11-17T15:30:15.213Z"
 closed_at: "2026-11-17T09:04:47.334Z"
 completed_at: "2026-11-17T09:04:47.334Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1l85at,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-jcz7qz,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-ycgb5g,discovered_from,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
-comments[26]:
+comments[27]:
   - created_at: "2026-11-17T08:37:14.716Z"
     author: "harness:claude-code"
     text: "Design (implementation on branch fix/secret-guard-reference-literals-and-property-names). credential_key_assignment now captures a value whole when it holds a run-time reference (braced, command, dollar-name or angle placeholder) or opens with a quoted piece concatenated to more text, and judges the literal left once references expand with CREDENTIAL_LITERAL_VALUE: the unchanged reference-free grammar (paths, URLs, words, member paths, key-file names excluded; 8+ characters; entropy 3) read as one double-quoted literal, because the literal is data. The rule gains minimumLiteralLength 8 and a new declarative SecretRule field literalValue; acceptsSecretMatch judges the literal (not the captured text) for entropy and rejectValue whenever a rule declares a literal minimum. judgedLiteral treats a capture whose quotes the grammar read outside it (a quoted credential-key body) as data, so its quote characters are literal. Bounds: at most 64 literal characters before the first reference (a longer prefix is judged as a reference-free value), references and quoted pieces are whitespace-free (so a spaced command substitution is never one value and a key inside it keeps its own verdict), every repeated group is bounded at 4096 and quoted pieces at 4, as in the password grammar. Bare dollar-name policy (one policy for both key-named rules): a dollar-name reference expands to nothing when the name is CONSTANT_CASE (environment-variable convention) or when it is the whole value, quoted or not; bareness is judged on the source text, so a concatenation never reads as one name. Any other dollar text is literal, so a credential that merely contains a dollar sign keeps its characters."
@@ -104,6 +104,9 @@ comments[26]:
   - created_at: "2026-11-17T15:10:25.311Z"
     author: "harness:claude-code"
     text: "Codex review round 24 on PR 1746: skipping a double-quoted span wholesale hid a command substitution nested inside it, so a password variable inside that nested substitution was mapped to the outer closer and reported. The span walk now keeps quote state per open reference, as the expansion walker does: inside a reference a single-quoted span is inert, and a double-quoted span ignores the reference's closer but still opens nested references, each with its own quote state."
+  - created_at: "2026-11-17T15:30:15.213Z"
+    author: "harness:claude-code"
+    text: "Codex review round 25 on PR 1746, two fixes. (1) Qualified and union TypeScript types (a dotted name, a union with undefined) were not recognized. Assertion recognition now reads the angle piece's text: a primitive keyword, a qualified name, a union or intersection, an array type, a type parameter or a capitalized name holding a lowercase letter is a type; a lowercase word, a hyphenated placeholder and an ALL-CAPS name stay placeholders. (2) Performance: each command substitution the value grammar cut short searched its own 4,096-character window, so 256,000 unmatched openers took about 8 seconds against 76 ms on main. All cut references are now resolved by one continuation of the same span walk with one shared 4,096-character budget; the same input now takes about 0.2 seconds, and a pinned row keeps it in the linear-time controls."
 files[3]{path,scope}:
   src/core/shared/secret-rules.ts,project
   tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project

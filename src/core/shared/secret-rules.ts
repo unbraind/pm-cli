@@ -472,20 +472,33 @@ const CUT_REFERENCE_BOUND = 4096;
 function referenceSpans(content: string, offset: number, text: string): ReferenceSpan[] {
   const spans: ReferenceSpan[] = [];
   const open: OpenReference[] = [];
-  for (let index = 0; index < text.length; index += 1) {
+  const end = offset + text.length;
+  walkReferences(content, offset, end, open, spans);
+  // References the value grammar cut short close where the following text
+  // closes them; one shared, bounded continuation resolves all of them.
+  walkReferences(content, end, Math.min(content.length, end + CUT_REFERENCE_BOUND), open);
+  return spans;
+}
+
+/**
+ * Walk `content` from `start` to `end`, opening and closing references on the
+ * `open` stack. A reference opened while `spans` is given is recorded there;
+ * an unclosed one keeps the end of the value as its close. Stops early once
+ * every reference opened by a recording walk has closed.
+ */
+function walkReferences(content: string, start: number, end: number, open: OpenReference[], spans?: ReferenceSpan[]): void {
+  for (let index = start; index < end && (spans !== undefined || open.length > 0); index += 1) {
     const frame = open.at(-1);
-    const character = text[index]!;
-    if (character === "$" && (text[index + 1] === "{" || text[index + 1] === "(") && frame?.quoted !== "'") {
-      const span = { open: offset + index, close: offset + text.length };
-      spans.push(span);
-      open.push({ span, closer: text[index + 1] === "{" ? "}" : ")" });
+    if (content[index] === "$" && (content[index + 1] === "{" || content[index + 1] === "(") && frame?.quoted !== "'") {
+      // A span opened by the continuation is never recorded; only its pairing matters.
+      const span = { open: index, close: end };
+      spans?.push(span);
+      open.push({ span, closer: content[index + 1] === "{" ? "}" : ")" });
       index += 1;
     } else if (frame !== undefined) {
-      index = referenceStep(text, index, offset, open);
+      index = referenceStep(content, index, open);
     }
   }
-  resolveCutReferences(content, open);
-  return spans;
 }
 
 /** One reference still open during the span walk, with the quote it is inside of, if any. */
@@ -501,7 +514,7 @@ interface OpenReference {
  * hide its closer: a single-quoted span is inert, and a double-quoted span
  * still opens nested references (`"$(get …)"`) but never closes this one.
  */
-function referenceStep(text: string, index: number, offset: number, open: OpenReference[]): number {
+function referenceStep(text: string, index: number, open: OpenReference[]): number {
   const frame = open.at(-1)!;
   const character = text[index];
   if (character === "\\" && frame.quoted !== "'") return index + 1;
@@ -510,17 +523,9 @@ function referenceStep(text: string, index: number, offset: number, open: OpenRe
   } else if (character === "'" || character === "\"") {
     frame.quoted = character;
   } else if (character === frame.closer) {
-    open.pop()!.span.close = offset + index;
+    open.pop()!.span.close = index;
   }
   return index;
-}
-
-/** Close each reference the captured value left open where the following text closes it, a bounded distance on. */
-function resolveCutReferences(content: string, open: ReadonlyArray<{ span: ReferenceSpan; closer: string }>): void {
-  for (const { span, closer } of open) {
-    const resolved = bracketedEnd(content.slice(span.open, span.open + CUT_REFERENCE_BOUND), 1, closer === "}" ? "{" : "(");
-    if (resolved !== -1) span.close = span.open + resolved - 1;
-  }
 }
 
 /**
@@ -988,7 +993,7 @@ function isCodeAfterReference(match: RegExpMatchArray): boolean {
   const after = match.input!.slice(end, end + 18);
   if (match[1][0] === "<") {
     // An angle span that holds a TypeScript type is a type assertion, whatever follows (`<string>name as T`).
-    if (TYPE_ASSERTION.test(match[1])) return true;
+    if (isTypeAssertion(match[1])) return true;
     if (ASSIGNED_BEFORE.test(match.input!.slice(Math.max(0, valueStart - 18), valueStart))) return true;
     // In an object property or argument, a type assertion is followed by expression code (`{ token: <T>name ?? x }`).
     if (EXPRESSION_AFTER.test(after)) return true;
@@ -1055,13 +1060,25 @@ function quotedSpanEnd(text: string, start: number): number {
   return text.length;
 }
 
+/** The text of a TypeScript type expression, as one captured angle piece holds it (no nesting, no whitespace). */
+const TYPE_TEXT = /^[\w$.[\]|&,]+$/u;
+/** A TypeScript primitive type keyword. */
+const PRIMITIVE_TYPE = /\b(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|undefined|null)\b/u;
+
 /**
- * A TypeScript type in an angle span: a primitive keyword, a type parameter
- * (`<T>`) or a capitalized name that holds a lowercase letter (`<Record>`,
- * `<APIKey>`, `<IAuthToken>`), optionally generic or an array type. An
- * ALL-CAPS name (`<TOKEN>`, `<API_KEY>`) is a placeholder by convention.
+ * Whether a value starts with an angle span that holds a TypeScript type: a
+ * primitive keyword, a qualified name (`<auth.Token>`), a union or
+ * intersection (`<string|undefined>`), a type parameter (`<T>`), a generic or
+ * array type, or a capitalized name that holds a lowercase letter
+ * (`<Record>`, `<APIKey>`). A lowercase word (`<x>`, `<credential>`) and an
+ * ALL-CAPS name (`<TOKEN>`, `<API_KEY>`) are placeholders by convention.
  */
-const TYPE_ASSERTION = /^<(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|[A-Z](?:(?=[\w$.]*[a-z])[\w$.]+)?(?:<[\w$.,\s]*>)?)(?:\[\])*>/u;
+function isTypeAssertion(value: string): boolean {
+  // An angle-led capture starts with one closed `<...>` piece of the value grammar.
+  const type = value.slice(1, value.indexOf(">"));
+  if (!TYPE_TEXT.test(type)) return false;
+  return PRIMITIVE_TYPE.test(type) || /[.|&[]/u.test(type) || /^[A-Z](?:[\w$]*[a-z][\w$]*)?$/u.test(type);
+}
 
 /** A binary operator or member access that continues an expression after a reference; `! @ # ~` stay literal data. */
 const CODE_OPERATOR = /[.+\-*/%=^]/u;

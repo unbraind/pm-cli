@@ -208,8 +208,9 @@ source a value is code when a binary operator (including `^`) or member access
 follows its leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
 `$TOKEN+suffix`) or a call's parenthesis follows it (`<string>getToken()`,
 `<string>getToken ()`), and a value led by an angle span is code when the
-span holds a TypeScript type (`<string>`, `<T>`, `<Record<K, V>>`, `<T[]>`;
-an ALL-CAPS name such as `<TOKEN>` is a placeholder) or expression code
+span holds a TypeScript type (`<string>`, `<T>`, `<APIKey>`, `<auth.Token>`,
+`<string|undefined>`, `<T[]>`; a lowercase word such as `<x>` and an ALL-CAPS
+name such as `<TOKEN>` are placeholders) or expression code
 follows it (`{ token: <t>name ?? fallback }`); a letter,
 digit, quoted piece or other punctuation (`!`, `@`, `#`) after a reference is
 still a literal concatenation. After `=`, a value led

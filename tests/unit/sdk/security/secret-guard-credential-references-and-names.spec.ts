@@ -70,6 +70,7 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["flow-YAML literal after an angle placeholder", `{token: <x>${credential}, other: 1}`],
     ["YAML literal after an ALL-CAPS placeholder", `api_key: <TOKEN>${credential}`],
     ["YAML literal after a CONSTANT_CASE placeholder", `api_key: <API_KEY>${credential}`],
+    ["YAML literal after a hyphenated placeholder", `api_key: <your-key>${credential}`],
     // Greptile: a literal that starts before the reference is never member access on it.
     ["dotted literal that starts before a reference", `token=.Zq8\${EMPTY}vN3k-LmP0wXy7Ab`],
   ])("flags a %s", (_label, content) => {
@@ -152,6 +153,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     // Codex round 23: acronym-prefixed type names are TypeScript types too.
     ["acronym-prefixed type assertion", "({ token: <APIKey>auth_token })"],
     ["interface-prefixed type assertion", "({ token: <IAuthToken>auth_token })"],
+    // Codex round 25: qualified and union types are TypeScript types too.
+    ["qualified type assertion", "({ token: <auth.Token>auth_token })"],
+    ["union type assertion", "({ token: <string|undefined>auth_token })"],
     ["quoted parenthesis inside a command substitution", "const token = $('(').length+1;"],
     // CodeRabbit and Greptile: member access after a nested reference, and XOR after a reference, are code.
     ["member access after a nested braced reference", "token=${A:-${B}}.length+1"],
@@ -410,13 +414,16 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       [passwordRule, `${passwordKey}=$(a ${passwordKey}=$(b) ${passwordKey}=$(c)) `.repeat(15_000)],
       [passwordRule, `${passwordKey}=<x ${passwordKey}=$A> `.repeat(20_000)],
       [credentialKeyRule, '"token":"a"$X'.repeat(20_000)],
+      // Codex round 25: many cut references share one bounded look-ahead.
+      [passwordRule, `${passwordKey}="${"$(".repeat(256_000)}${passwordKey}=$VAULT_PASSWORD"`],
     ];
     const started = performance.now();
     const counts = inputs.map(([rule, input]) => Array.from(findSecretRuleMatches(rule, input)).length);
     expect(performance.now() - started).toBeLessThan(5_000);
     // The repeated default word is one concatenated value; in the last input a
     // variable after literal text stays literal, so each `"a"$X"token"` spells eight characters.
-    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999]);
+    // In the cut-reference input no opener ever closes, so the inner variable keeps main's literal reading.
+    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999, 1]);
   });
 });
 
