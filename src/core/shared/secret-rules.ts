@@ -1003,31 +1003,42 @@ function wordComplete(match: RegExpMatchArray): boolean {
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
   // comma and a quoted piece continue the shell word (`password="$PW","…"`).
-  return structure > 0 && hasQuotedKey(match, closed === end + 1) && NEXT_MEMBER.test(input.slice(after, after + 40));
+  if (structure === 0) return false;
+  const context = structuredContext(match, closed === end + 1);
+  const next = input.slice(after, after + 40);
+  // A bare scalar sibling (`,1`) is structure only after an actual array element; after a quoted
+  // key alone (`--'password'="$PW",1,…` in a shell) it continues the word.
+  return context !== undefined && (NEXT_MEMBER.test(next) || (context === "element" && BARE_SCALAR_MEMBER.test(next)));
 }
 
 /**
- * Whether the value sits in structured text: its key ends with a quote, as in
- * JSON, YAML flow or a Python dict, or it is an array element; looking back a
- * bounded distance.
+ * Whether the value sits in structured text, looking back a bounded distance:
+ * "element" for an array element (after `[` or `,`), "key" when its key ends
+ * with a quote, as in JSON, YAML flow or a Python dict, or undefined.
  */
-function hasQuotedKey(match: RegExpMatchArray, openerOutsideCapture: boolean): boolean {
+function structuredContext(match: RegExpMatchArray, openerOutsideCapture: boolean): "key" | "element" | undefined {
   const input = match.input!;
   const valueStart = match.index! + match[0].length - match[1].length - (openerOutsideCapture ? 1 : 0);
-  return QUOTED_KEY_BEFORE.test(input.slice(Math.max(0, valueStart - 64), valueStart));
+  const before = input.slice(Math.max(0, valueStart - 64), valueStart);
+  if (ARRAY_ELEMENT_BEFORE.test(before)) return "element";
+  return QUOTED_KEY_BEFORE.test(before) ? "key" : undefined;
 }
 
-/** A quoted key and its separator, or an array's `[` or `,`, directly before a value. */
-const QUOTED_KEY_BEFORE = /(?:["']\s*[:=]|[[,])\s*$/u;
+/** A quoted key and its separator directly before a value. */
+const QUOTED_KEY_BEFORE = /["']\s*[:=]\s*$/u;
+/** An array's `[` or `,` directly before a value. */
+const ARRAY_ELEMENT_BEFORE = /[[,]\s*$/u;
 
 /**
- * The start of the next JSON member or element: a quote, `{` / `[` that opens
- * structure, or a complete JSON scalar (a number, `true`, `false`, `null`),
- * bare or after `{` / `[`, that a delimiter ends (`["$PW",1]`); never word
- * text (`][literal`, `][trueSecret`, `,1literal`). A value longer than the
- * bounded look-ahead is not recognized.
+ * The start of the next JSON member or element: a quote, or `{` / `[` that
+ * opens structure or a complete JSON scalar (a number, `true`, `false`,
+ * `null`) that a delimiter ends; never word text (`][literal`,
+ * `][trueSecret`). A value longer than the bounded look-ahead is not
+ * recognized.
  */
-const NEXT_MEMBER = /^(?:["'`]|(?:[{[](?:[\s"'`{[\]}]|$))|[{[]?(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)[\s,\]}])/u;
+const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|$|(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)[\s,\]}]))/u;
+/** A bare JSON scalar that a delimiter ends, the next element of an array (`["$PW",1]`). */
+const BARE_SCALAR_MEMBER = /^(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)[\s,\]}]/u;
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;

@@ -338,6 +338,8 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       expect(textRules(`{"${passwordKey}":["$DB_PASSWORD",${sibling}]}`), sibling).toEqual([]);
     }
     expect(textRules(`{"${passwordKey}":["$DB_PASSWORD",1${literal}]}`)).toEqual(["password_assignment"]);
+    // Greptile: after a quoted option name alone, a bare scalar and literal continue the shell argument.
+    expect(textRules(`mysql --'${passwordKey}'="$DB_PASSWORD",1,${literal}`)).toEqual(["password_assignment"]);
     // Greptile: an array that starts with a JSON number or literal is structure too.
     for (const element of ["[1]", "[-2]", "[true]", "[null]", "{}"]) {
       expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},${element}]`), element).toEqual([]);
