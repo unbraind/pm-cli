@@ -64,6 +64,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["quoted dotted literal after a reference", `"api_key": "\${EMPTY}.${credential}"`],
     // Greptile: a single `&` is data; only `&&`, `||` and `|` end a referenced value.
     ["YAML literal holding a single ampersand after a reference", `api_key: \${EMPTY}Zq8&vN3kLmP0wXy7Ab`],
+    // Greptile: a literal that starts before the reference is never member access on it.
+    ["dotted literal that starts before a reference", `token=.Zq8\${EMPTY}vN3k-LmP0wXy7Ab`],
   ])("flags a %s", (_label, content) => {
     expect(textRules(content)).toEqual(["credential_key_assignment"]);
   });
@@ -233,7 +235,11 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(`{"${passwordKey}":"$DB_PASSWORD"]x`)).toEqual(["password_assignment"]);
     // Greptile: structure followed by more word text is still one shell word.
     expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
-    expect(textRules(`["${passwordKey}=$DB_PASSWORD"], "next"`)).toEqual([]);
+    // Codex round 10: a quote after an unquoted value may open a concatenated piece, so
+    // the variable keeps main's literal reading, even where the quote closes a string.
+    expect(textRules(`${passwordKey}=$DB_PASSWORD" correct horse battery staple"`)).toEqual(["password_assignment"]);
+    expect(textRules(`["${passwordKey}=$DB_PASSWORD"], "next"`)).toEqual(["password_assignment"]);
+    expect(textRules(`{"cmd": "${passwordKey}=$DB_PASSWORD"}`)).toEqual(["password_assignment"]);
     // Codex round 8: literal punctuation after the variable is part of its word.
     expect(await gateRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password-assignment"]);
     expect(textRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password_assignment"]);
@@ -252,7 +258,7 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // A word-ending character after the variable keeps it a bare reference.
     for (const content of [
       `${passwordKey}=$DB_PASSWORD;`, `${passwordKey}=$DB_PASSWORD) `, `(${passwordKey}=$db_password, next)`,
-      `{"cmd": "${passwordKey}=$DB_PASSWORD"}`, `${passwordKey}=$DB_PASSWORD${";".repeat(80)}`.slice(0, 30),
+      `${passwordKey}=$DB_PASSWORD${";".repeat(80)}`.slice(0, 30),
     ]) {
       expect(textRules(content), content).toEqual([]);
     }

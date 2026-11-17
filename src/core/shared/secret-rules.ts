@@ -482,6 +482,9 @@ function* flatMatches(rule: SecretRule, content: string): Generator<SecretRuleMa
  * bounded number of levels. Any other rule with a literal minimum judges each
  * inner key once and resumes after it ("shallow"), so each character is read
  * at most twice; its baseline reading covers keys the narrower grammar visits.
+ * A shallow rescan reaches one level: a referenced credential nested inside a
+ * rejected inner value two references deep is not judged by the referenced
+ * reading (a recorded limit; the reference-free grammar never judged it).
  */
 function rescanDepth(rule: SecretRule): "deep" | "shallow" | undefined {
   if (rule.minimumLiteralLength === undefined) return undefined;
@@ -788,18 +791,22 @@ const STRUCTURE_RUN = /^[;,)}\]]{0,64}/u;
 /**
  * Whether the value grammar read the whole word. An unquoted value did when
  * whitespace or the end of the text follows it, optionally after structure
- * such as `;` or `)` (`password=$PW;`). A quoted value, whose closing quote
- * ends the capture or directly follows it, did as well when structure and
+ * such as `;` or `)` (`password=$PW;`). A value the grammar read as quoted
+ * (its capture ends with the closing quote, or its opening quote precedes the
+ * capture and the closing quote follows it) did as well when structure and
  * then the next member or element follows (`"$PW","x"`, `"$PW"},{`), as in
  * compact JSON. Any other text after the match (`$PW:literal`, `$PW[literal`,
- * `$PW,"literal"`, `"$PW""literal"`) is part of the same word, so the value is
- * not known to be a bare or leading variable, and its `$NAME` text stays
- * literal. The look-ahead is bounded, so judging stays linear.
+ * `$PW,"literal"`, `"$PW""literal"`) is part of the same word. So is a quote
+ * after an unquoted value, which may open a concatenated piece
+ * (`$PW" spaced literal"`) as well as close an enclosing string. In either
+ * case the value is not known to be a bare or leading variable, and its
+ * `$NAME` text stays literal. The look-ahead is bounded, so judging stays
+ * linear.
  */
 function wordComplete(match: RegExpMatchArray): boolean {
   const input = match.input!;
   const end = match.index! + match[0].length;
-  const closed = isQuote(input[end]) ? end + 1 : isQuote(match[0].at(-1)) ? end : -1;
+  const closed = isQuote(captureOpener(match)) && isQuote(input[end]) ? end + 1 : isQuote(match[0].at(-1)) ? end : -1;
   const start = closed === -1 ? end : closed;
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
@@ -829,9 +836,13 @@ function isQuote(character: string | undefined): character is "\"" | "'" {
 /** Captured text that a reference, a placeholder or a quoted piece can make spell something else. */
 const SPELLING_SENSITIVE = /[$<"']/u;
 
-/** Whether a captured value is unquoted source text, where a member chain after a reference is code. */
-function isCode(match: RegExpMatchArray): boolean {
-  return !DECODED_DATA_MATCHES.has(match) && !isQuote(captureOpener(match)) && !isQuote(match[1][0]);
+/**
+ * Whether a captured value is unquoted source text that starts with a
+ * reference, where member access right after the reference is code. A literal
+ * that starts before the reference (`.ab${X}cd`) is never member access.
+ */
+function isCodeAfterReference(match: RegExpMatchArray): boolean {
+  return !DECODED_DATA_MATCHES.has(match) && !isQuote(captureOpener(match)) && /^[$<]/u.test(match[1]);
 }
 
 /**
@@ -1293,7 +1304,7 @@ export function literalAfterReferences(value: string, variables = true): string 
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
   const value = rule.minimumLiteralLength === undefined ? match[1] : judgedLiteral(match);
   if (rule.minimumLiteralLength !== undefined && value.length < rule.minimumLiteralLength) return false;
-  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, isCode(match))) return false;
+  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, isCodeAfterReference(match))) return false;
   if (rule.rejectValue?.test(value) === true) return false;
   if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;

@@ -225,7 +225,8 @@ the referenced reading only adds findings, and every key the reference-free
 scan visits, including one inside a rejected referenced value, keeps its
 verdict. A key inside a rejected referenced value is also judged once by the
 referenced reading, and the scan then resumes after it, so each character is
-read at most twice.
+read at most twice. That rescan reaches one level, so a referenced credential
+two references deep is judged only as the reference-free grammar judges it.
 
 One `$NAME` policy holds for every key-named rule. A `$NAME` reference
 expands to nothing when NAME is CONSTANT_CASE, the environment-variable
@@ -237,8 +238,14 @@ text follows it, optionally after structure such as `;` or `)`. A quoted value
 did as well when structure and then the next member or element follows, as in
 compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
 `[{"password":"$DB_PASSWORD"},{…}]`). Any other text after it (`$PW:…`,
-`$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, so the value keeps
-its `$NAME` text literal. Any other `$` text is literal, so a
+`$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote
+after an unquoted value, which may open a concatenated piece
+(`$PW" spaced literal"`) as well as close an enclosing string. In those cases
+the value keeps its `$NAME` text literal, so a bare variable directly before
+the closing quote of a string that holds a whole assignment is judged as
+before.
+A credential-key value led by a lowercase `$name` keeps the reference-free
+reading, in which a `$`-led literal is a placeholder. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
 `\$`, keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
