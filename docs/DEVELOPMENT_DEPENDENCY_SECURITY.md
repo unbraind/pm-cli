@@ -7,7 +7,9 @@ Tracked by [pm-r61juc](../.agents/pm/issues/pm-r61juc.toon) and
 
 Development tools execute during tests, benchmarks and release preparation.
 Their dependencies have the same admission requirement as production packages:
-no known advisory may pass the required static gate. Run:
+no known advisory may pass the required static gate unless an exact,
+time-bounded waiver records it (see
+[Time-bounded advisory waivers](#time-bounded-advisory-waivers)). Run:
 
 ```bash
 pnpm install --frozen-lockfile
@@ -39,7 +41,93 @@ its network deadlines.
 CI retains this single receipt after successful and failed static jobs, with a
 separate artifact name for each run attempt and seven-day retention. Inspect both
 feeds before diagnosing a blocked collector: a positive advisory is a refusal,
-even when the other feed is clean.
+even when the other feed is clean. A refusal reached after both feeds completed
+names its cause, for example
+`Independent source reports vulnerable dependencies: <package>@<version> <advisory id>`,
+built only from validated lockfile and advisory fields. A collection failure
+keeps the generic message and never echoes upstream text.
+
+## Time-bounded advisory waivers
+
+An advisory that has no patched release cannot be fixed by a lockfile change,
+yet the gate refuses every branch and the scheduled release until one exists.
+[pm-03q389](../.agents/pm/issues/pm-03q389.toon) adds the only exception the
+gate accepts: a recorded waiver in `config/dependency-advisory-waivers.json`.
+
+```json
+{
+  "version": 1,
+  "waiver_notice_days": 3,
+  "waivers": [
+    {
+      "advisory": "GHSA-xxxx-xxxx-xxxx",
+      "package": "example-package",
+      "versions": ["1.2.3"],
+      "owner": "pm-xxxxxx",
+      "reason": "Why no fix can be taken yet, how the advisory reaches pm, and when it was re-verified.",
+      "expires_at": "2026-12-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+- A waiver covers one GitHub advisory id, one npm package and its listed
+  exact locked versions. A report is covered only when all three match one
+  waiver, so a different version, package or advisory id (including `MAL-`
+  malware ids and CVE aliases) still blocks.
+- Both feeds are judged: OSV rows by advisory id, package and version, and
+  registry advisories by their `github_advisory_id`, `module_name` and
+  every finding version. A registry advisory with a missing or malformed
+  detail can never be waived. Receipt version 2 records those validated
+  fields, and the verifier checks that the counts, the ids and the advisory
+  list agree, so a waived advisory cannot stand in for an unlisted one.
+- The expiry is an RFC 3339 UTC instant at most 30 days past the run that
+  judges it. Renew a waiver only after re-verifying it, and record that
+  verification on the owner. The owner is a pm item id and the reason must be
+  at least 20 characters.
+- A waiver never covers a package that the published artifact installs, as
+  listed in `runtime-dependencies.json`. Consumers audit that graph
+  themselves and cannot rely on this repository's exception
+  ([pm-gh1748](../.agents/pm/issues/pm-gh1748.toon)), so the fix for a
+  runtime package is to remove it from the runtime graph.
+- A malformed file, waiver or notice window, a duplicate, an expired waiver,
+  one that reaches past 30 days and one that covers a runtime package all
+  refuse the gate, even when nothing needs the waiver. An absent file
+  declares no waivers.
+- A passing verdict lists every applied waiver under `waived` with the
+  feeds it covered, and every waiver that matched nothing under
+  `unused_waivers`, so a retired advisory's waiver is visible before it
+  expires.
+
+The scheduled `Waiver notice window` step (`defect-evidence-gate.mjs
+--waiver-notice`) judges the same file without network access. It fails
+while a waiver is inside `waiver_notice_days` of its expiry, on any finding
+above, and when a waiver's owner is no longer an open tracker item. Closing
+the owner therefore requires retiring the waiver too. See
+[Waiver Notice Window](DEFECT_RECURRENCE.md#waiver-notice-window).
+
+## Unpatched picomatch extglob ReDoS
+
+[pm-03q389](../.agents/pm/issues/pm-03q389.toon) tracks
+[GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf)
+(npm advisory 1247710, high: picomatch through 4.0.7 backtracks
+exponentially on single-branch repeated extglobs such as `+(*)`). GitHub
+widened the advisory on 2026-11-17 to cover 4.0.7, the latest release, with
+no patched version, and both feeds reported it on the next run, so Gates
+(static) failed on every branch, `main` included. pm reaches picomatch through
+`tinyglobby`, which expands the linked-artifact globs the local caller
+supplies, and through `fdir` and Vite in development tooling. A crafted
+pattern can therefore stall only the caller's own process.
+[pm-gh1748](../.agents/pm/issues/pm-gh1748.toon) removes the runtime path:
+`--add-glob` now uses a built-in, linear-time matcher (`src/core/fs/file-glob.ts`)
+and `tinyglobby` moved to the development dependencies. A consumer's
+`npm audit --omit=dev` therefore no longer reports picomatch through pm.
+Development tooling still resolves picomatch through `tinyglobby` (repository
+scripts and the parity test), `fdir` and Vite. The waiver
+covers picomatch 4.0.7 until 2026-12-01 with a three-day notice window.
+Replace it with the patched release once upstream publishes one (fix pull
+requests opened on 2026-11-17) and satisfies the dependency cooldown, then
+delete the waiver in the same pull request.
 
 The command then verifies the installed CodSpeed bundle policy. Network/audit errors,
 missing packages, incomplete policy entries, changed package files, and unreviewed

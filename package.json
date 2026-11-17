@@ -236,7 +236,6 @@
     "npm-package-arg": "^13.0.2",
     "semver": "7.8.6",
     "tar": "7.5.22",
-    "tinyglobby": "^0.2.17",
     "yaml": "^2.9.1"
   },
   "peerDependencies": {
@@ -271,6 +270,7 @@
     "knip": "6.44.2",
     "marked": "18.1.3",
     "parse5": "8.1.1",
+    "tinyglobby": "^0.2.17",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.0",

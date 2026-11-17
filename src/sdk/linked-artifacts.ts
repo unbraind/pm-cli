@@ -6,7 +6,7 @@
 import { assertInitializedTracker } from "./environment/tracker-preflight.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { glob } from "tinyglobby";
+import { expandFileGlob } from "../core/fs/file-glob.js";
 import { isFileAbsentError } from "../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
@@ -735,17 +735,9 @@ export async function expandAddGlobEntries(
 ): Promise<LinkedArtifact[]> {
   const expanded: LinkedArtifact[] = [];
   for (const entry of entries) {
-    // A literal invocation directory cannot match a file; tinyglobby otherwise normalizes it to an invalid empty pattern.
+    // A literal invocation directory cannot match a file.
     if (path.resolve(invocationRoot, entry.pattern) === path.resolve(invocationRoot)) continue;
-    const absolutePattern = path.isAbsolute(entry.pattern);
-    const matches = await glob(entry.pattern, {
-      cwd: invocationRoot,
-      absolute: absolutePattern,
-      onlyFiles: true,
-      dot: true,
-      expandDirectories: false,
-      followSymbolicLinks: true,
-    });
+    const matches = await expandFileGlob(entry.pattern, invocationRoot);
     const sortedMatches = [
       ...new Set(
         matches.map((match) =>
