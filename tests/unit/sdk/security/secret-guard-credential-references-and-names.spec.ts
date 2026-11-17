@@ -325,6 +325,8 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       // CodeRabbit: only the closer of the enclosing reference ends the inner word (asserted below).
       // Codex round 23: a double-quoted closer inside the substitution is not its closer.
       `${passwordKey}=$(printf ")"; get --${passwordKey}=$VAULT_PASSWORD)\${SUFFIX}`,
+      // Codex round 24: a substitution nested inside double quotes is still a reference with its own closer.
+      `${passwordKey}=$(get --x="$(get --${passwordKey}=$VAULT_PASSWORD)")`,
       // An escaped closer inside the substitution is not its closer either.
       `${passwordKey}=$(printf \\); get --${passwordKey}=$VAULT_PASSWORD)\${SUFFIX}`,
       // A sibling substitution before the enclosing one is not the inner key's reference.

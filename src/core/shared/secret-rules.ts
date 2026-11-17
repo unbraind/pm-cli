@@ -471,24 +471,48 @@ const CUT_REFERENCE_BOUND = 4096;
  */
 function referenceSpans(content: string, offset: number, text: string): ReferenceSpan[] {
   const spans: ReferenceSpan[] = [];
-  const open: Array<{ span: ReferenceSpan; closer: string }> = [];
+  const open: OpenReference[] = [];
   for (let index = 0; index < text.length; index += 1) {
-    const character = text[index];
-    if (character === "$" && (text[index + 1] === "{" || text[index + 1] === "(")) {
+    const frame = open.at(-1);
+    const character = text[index]!;
+    if (character === "$" && (text[index + 1] === "{" || text[index + 1] === "(") && frame?.quoted !== "'") {
       const span = { open: offset + index, close: offset + text.length };
       spans.push(span);
       open.push({ span, closer: text[index + 1] === "{" ? "}" : ")" });
       index += 1;
-    } else if (open.length > 0 && character === "\\") {
-      index += 1;
-    } else if (open.length > 0 && (character === "'" || character === "\"")) {
-      index = quotedSpanEnd(text, index);
-    } else if (character === open.at(-1)?.closer) {
-      open.pop()!.span.close = offset + index;
+    } else if (frame !== undefined) {
+      index = referenceStep(text, index, offset, open);
     }
   }
   resolveCutReferences(content, open);
   return spans;
+}
+
+/** One reference still open during the span walk, with the quote it is inside of, if any. */
+interface OpenReference {
+  span: ReferenceSpan;
+  closer: string;
+  quoted?: "\"" | "'";
+}
+
+/**
+ * Advance the span walk inside the innermost open reference by one character
+ * (two for an escape). As in the expansion walker, quotes inside a reference
+ * hide its closer: a single-quoted span is inert, and a double-quoted span
+ * still opens nested references (`"$(get …)"`) but never closes this one.
+ */
+function referenceStep(text: string, index: number, offset: number, open: OpenReference[]): number {
+  const frame = open.at(-1)!;
+  const character = text[index];
+  if (character === "\\" && frame.quoted !== "'") return index + 1;
+  if (frame.quoted !== undefined) {
+    if (character === frame.quoted) frame.quoted = undefined;
+  } else if (character === "'" || character === "\"") {
+    frame.quoted = character;
+  } else if (character === frame.closer) {
+    open.pop()!.span.close = offset + index;
+  }
+  return index;
 }
 
 /** Close each reference the captured value left open where the following text closes it, a bounded distance on. */
