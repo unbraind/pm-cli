@@ -232,7 +232,12 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     const content = `api_key=\${${"x".repeat(16_000_000)}}${credential}`;
     const started = performance.now();
     expect([...findSecretRuleMatches(rule, content)].length).toBeGreaterThan(0);
-    expect(performance.now() - started).toBeLessThan(10_000);
+    // Codex round 27: a literal run of millions of characters after a reference is one character class too.
+    expect(() => [...findSecretRuleMatches(rule, `api_key=\${X}${"a".repeat(16_000_000)}`)]).not.toThrow();
+    expect(() => [...findSecretRuleMatches(rule, `api_key=\${X}${"a&".repeat(4_000_000)}`)]).not.toThrow();
+    // A quoted value of millions of characters, which overflowed even before the referenced reading.
+    expect(() => [...findSecretRuleMatches(rule, `api_key="${"a".repeat(16_000_000)}"`)]).not.toThrow();
+    expect(performance.now() - started).toBeLessThan(15_000);
   });
 
   it("finds where leading references end, stopping at anything that is not a closed reference", () => {

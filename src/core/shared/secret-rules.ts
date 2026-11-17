@@ -279,9 +279,12 @@ const CREDENTIAL_KEYS =
 // member path only when the whole literal is one (`"process.env.TOKEN"`), so
 // `"svc.app:secretX09"` still counts. Entropy then rejects masks.
 // The quote that opens a reference-free value, or none (see CREDENTIAL_PLAIN).
-const CREDENTIAL_OPEN = String.raw`"(?=[^"\s]{8,}")|'(?=[^'\s]{8,}')|(?!["'])`;
+// Every "at least eight" count on a negated class is spelled `{8}` then `*`:
+// V8 compiles `[^\s"]{8,}` with a backtrack entry per character, so a value of
+// millions of characters overflowed the stack and the guard failed open.
+const CREDENTIAL_OPEN = String.raw`"(?=[^"\s]{8}[^"\s]*")|'(?=[^'\s]{8}[^'\s]*')|(?!["'])`;
 const CREDENTIAL_PLAIN =
-  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+)*|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+)*|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8,}|(?<=')[^\s']{8,}|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
+  String.raw`(?![<[$/]|~\/|\.\.?\/|[A-Za-z][\w+.-]*:\/\/|%[A-Za-z_]\w*%|[A-Za-z]:[\\/]|(?<=")(?:(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+)*|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})"|(?<=')(?:(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*|[A-Za-z]+(?:-[A-Za-z]+)*|(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4})'|(?<!["'])[A-Za-z]+(?:-[A-Za-z]+)*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*(?![\w!@#$%^&*.+\-=/~])|(?<!["'])(?:[\w.-]+\/)+[\w.-]+\.[A-Za-z][A-Za-z0-9]{0,4}(?=[\s,;)}\]]|$)|(?<!["'])[\w$.]+\()(?:(?<=")[^\s"]{8}[^\s"]*|(?<=')[^\s']{8}[^\s']*|(?<==)[A-Za-z0-9!@#$%^&*._+\-=/~?:|]{8,}|(?<!["'=])[A-Za-z0-9!@#$%^&*._+\-=/~]{8,})`;
 // The grammar a reference-free value is judged by. A referenced value's literal
 // is judged by it too, read as one double-quoted literal (literalValue).
 const CREDENTIAL_LITERAL_VALUE = new RegExp(`(?:${CREDENTIAL_OPEN})(${CREDENTIAL_PLAIN})`, "iy");
@@ -302,20 +305,23 @@ const CREDENTIAL_MINIMUM_LITERAL_LENGTH = 8;
 // The shell control operators `|`, `||` and `&&` (`$(get_key)||fallback`,
 // `${X}&&next`) end a referenced value, and so do `?` and `:`, which after a
 // reference are code (`$TOKEN?.x`, `$TOKEN??fallback`). A single `&` is data
-// (`${EMPTY}ab&cd…` in YAML). A reference-free value keeps reading all of them
-// through the baseline grammar. Each alternative is one character, so a run
-// still cannot be split.
-const CREDENTIAL_RUN = String.raw`(?:[A-Za-z0-9!@#%^*._+\-=/~]|&(?!&))`;
+// (`${EMPTY}ab&cd…` in YAML), read as its own piece so every literal run stays
+// one character class: a run repeated through an alternation grows the regex
+// stack per character and a long value would make the guard fail open. A
+// reference-free value keeps reading all of them through the baseline grammar.
+const CREDENTIAL_RUN = String.raw`[A-Za-z0-9!@#%^*._+\-=/~]`;
+/** A single `&`, which is data; `&&` is a control operator. */
+const CREDENTIAL_AMPERSAND = String.raw`&(?!&)`;
 const CREDENTIAL_LEADING_LITERAL = 64;
 const CREDENTIAL_REFERENCE_SPAN = String.raw`'[^'\s]*'|"[^"\\\s]*(?:\\\S[^"\\\s]*){0,${PASSWORD_REPEAT_BOUND}}"`;
 const CREDENTIAL_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\\s]`)}|\\\S|${CREDENTIAL_REFERENCE_SPAN}|\$(?!\{)|\$\{[^{}\s]*\}){0,${PASSWORD_REPEAT_BOUND}}\}`
   + String.raw`|\$\((?:${maximalRun(String.raw`[^()$'"\\\s]`)}|\\\S|${CREDENTIAL_REFERENCE_SPAN}|\$(?!\()|\$\([^()\s]*\)){0,${PASSWORD_REPEAT_BOUND}}\)`
   + String.raw`|<[^<>\s]*>|\$[A-Za-z_]\w*(?!\w)`;
-const credentialPiece = (run: string): string => String.raw`${CREDENTIAL_REFERENCE}|${maximalRun(run)}|\$(?![{(A-Za-z_])`;
+const credentialPiece = (run: string): string => String.raw`${CREDENTIAL_REFERENCE}|${maximalRun(run)}|${CREDENTIAL_AMPERSAND}|\$(?![{(A-Za-z_])`;
 const credentialQuotedPiece = (run: string): string =>
   String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}`;
 const credentialReferenced = (run: string): string =>
-  String.raw`(?:${run}{1,${CREDENTIAL_LEADING_LITERAL}}(?=[$<]))?(?:${CREDENTIAL_REFERENCE})`
+  String.raw`(?:(?:${run}|${CREDENTIAL_AMPERSAND}){1,${CREDENTIAL_LEADING_LITERAL}}(?=[$<]))?(?:${CREDENTIAL_REFERENCE})`
   + String.raw`(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}(?:${credentialQuotedPiece(run)}){0,${PASSWORD_QUOTED_PIECES}}`;
 const credentialConcatenated = (run: string): string => String.raw`(?:${credentialQuotedPiece(run)}){1,${PASSWORD_QUOTED_PIECES}}`;
 /** An unquoted value grammar: one that does not start right after a quote. */
