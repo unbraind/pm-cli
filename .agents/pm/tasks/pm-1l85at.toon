@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: assurance,false-positives,measurement,secret-guard,security
 created_at: "2026-11-12T12:19:58.221Z"
-updated_at: "2026-11-12T12:19:58.221Z"
+updated_at: "2026-11-17T08:39:03.308Z"
 author: "harness:claude-code"
 estimated_minutes: 180
 acceptance_criteria: "A redacted corpus of real agent text is committed with capture provenance; An assurance measurement reports the credential_key_assignment false-positive rate over it, and an assertion bounds that rate; Each newly found false positive is added to the corpus with its fix"
@@ -17,4 +17,6 @@ expected_result: False positives are found by measurement over representative te
 actual_result: False positives were found one review round at a time
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1704,discovered_from,"2026-11-12T12:19:58.221Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-17T08:39:03.289Z","harness:claude-code","Scope note from the pm-hw00c2 work (2026-11-17): the tracker itself is a ready corpus of real agent text with capture provenance (git). Parsing every item document with parseItemDocument and scanning title, description, acceptance criteria, close fields, repro and result fields, comments, notes and learnings with scanMutationSecrets gives 47,292 texts across 3,323 items. On the 2026.11.17 build that measured 8 credential_key_assignment and 4 password_assignment hits. Every hit is a synthetic sample quoted in the secret-guard items themselves, so the measured false-positive rate on real prose is zero. Fit with the assurance model: .agents/pm/assurance.json already declares provider measurements (source kind provider, provider repository-quality, one key per receipt). A secret-guard key that reports per-rule finding counts over tracker text, bounded by a ceiling assertion with a negative control, would meet the second criterion without a bespoke gate script. The first criterion (a separate redacted corpus) is then optional, because the tracker text is already committed."
 body: ""

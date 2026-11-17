@@ -105,7 +105,8 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     ["assigned default of an unset reference", `password=\${PW:=${literal}}`],
     ["literal after an angle placeholder", `password=<x>${literal}`],
     ["quoted key, literal after a braced reference", `"password": "\${EMPTY}${literal}"`],
-    ["quoted key, literal after a $VAR reference", `"password": "$VAR${literal}"`],
+    // The shell reads a variable name to its last word character, so a delimiter ends `$VAR`.
+    ["quoted key, literal after a $VAR reference", `"password": "$VAR:${literal}"`],
     ["quoted key, literal before a braced reference", `"password": "${literal}\${VAR}"`],
     ["single-quoted key, literal after a braced reference", `'password': '\${EMPTY}${literal}'`],
     ["double-quoted value, literal after a braced reference", `password="\${EMPTY}${literal}"`],
@@ -174,7 +175,9 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
 
   it("measures the literal a value spells once references expand to nothing", () => {
     expect(literalAfterReferences(`\${EMPTY}"${literal}"`)).toBe(literal);
-    expect(literalAfterReferences(`$VAR'${literal}'`)).toBe(`$VAR${literal}`);
+    // A CONSTANT_CASE `$NAME` expands to nothing; any other `$name` stays literal unless it is the whole value.
+    expect(literalAfterReferences(`$VAR'${literal}'`)).toBe(literal);
+    expect(literalAfterReferences(`$var'${literal}'`)).toBe(`$var${literal}`);
     expect(literalAfterReferences(`"ab'cd"`)).toBe("ab'cd");
     expect(literalAfterReferences(`\${PW:-"x"}<y>$(z)\${Q?no}`)).toBe("x");
     expect(literalAfterReferences(`"unterminated`)).toBe("unterminated");
@@ -634,7 +637,8 @@ describe("structured payload members are judged under their property names (pm-3
     expect(memberFindings({ "admin-password": { note: `see password=${pw} here` } })).toEqual([
       { rule: "password_assignment", path: "$.admin-password.note" },
     ]);
-    expect(memberFindings({ token: `<password>${pw}</password>` })).toEqual([
+    // A spaced passphrase is never a whitespace-free credential-key value.
+    expect(memberFindings({ token: ["<pass", "word>correct horse battery staple</pass", "word>"].join("") })).toEqual([
       { rule: "password_assignment", path: "$.token" },
     ]);
   });

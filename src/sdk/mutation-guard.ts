@@ -26,11 +26,23 @@ export interface MutationGuardSettings {
 export interface SecretGuardFinding {
   /** Stable detector identifier suitable for tests and telemetry. */
   rule: (typeof SECRET_RULES)[number]["mutationRule"];
-  /** Object path or argument index containing the match. */
+  /**
+   * Object path or argument index containing the match. A property name that a
+   * rule matches is never repeated in a path: its segment is the positional
+   * placeholder `[key <n>]`, its index among the object's own entries
+   * (pm-x07qz2). Other property names appear as written, including a name
+   * that merely equals a value another rule flags.
+   */
   path: string;
+  /** The match is in the property name at `path`, not in the value it holds. */
+  property_name?: true;
   /** Detection-only transformations, without original or decoded coordinate values. */
   normalizations?: SecretNormalizationKind[];
-  /** Remaining encoded input exceeded the finite inspection envelope and requires explicit review. */
+  /**
+   * The value could not be inspected completely and requires explicit review:
+   * remaining encoded input exceeded the finite inspection envelope, or the
+   * value was too large for the rule's pattern to judge.
+   */
   normalization_incomplete?: true;
 }
 
@@ -51,9 +63,10 @@ export interface EvaluateMutationGuardOptions {
   /** Effective mutation author after normal CLI/SDK precedence resolution. */
   author: string;
   /**
-   * Arbitrary mutation payload. String leaves are inspected on their own, and
-   * a leaf under a property whose name ends with a credential key is also
-   * judged as that key's value, as in its JSON spelling `{"<name>": <value>}`.
+   * Arbitrary mutation payload. String leaves and property names are
+   * inspected on their own, and a leaf under a property whose name ends with a
+   * credential key is also judged as that key's value, as in its JSON spelling
+   * `{"<name>": <value>}`.
    */
   payload: unknown;
   /** Workspace guard settings. */
@@ -152,8 +165,55 @@ function isArrayIndex(key: string): boolean {
   return ARRAY_INDEX.test(key) && Number(key) <= MAX_ARRAY_INDEX;
 }
 
-/** Own entries of each object, read once per scan and shared by every pass. */
-type EntryCache = WeakMap<object, ReadonlyArray<readonly [string, unknown]>>;
+/** One rule that matches a string, with its inspection provenance. */
+interface RuleMatch {
+  /** The matching rule. */
+  readonly rule: (typeof SECRET_RULES)[number];
+  /** The first match, carrying any normalization provenance. */
+  readonly match: SecretRuleMatch;
+}
+
+/** One own entry of an array or object, read once per scan. */
+interface PayloadEntry {
+  /** Property name, or the array index as a string. */
+  readonly name: string;
+  /** Entry value. */
+  readonly value: unknown;
+  /**
+   * Path segment: `[<index>]` for an array element, `.<name>` for a property,
+   * and the positional placeholder `[key <n>]` for a property name that a rule
+   * matches, so a finding path never repeats credential text (pm-x07qz2).
+   */
+  readonly segment: string;
+  /** Rules that match the property name itself; always empty for an array element. */
+  readonly nameMatches: readonly RuleMatch[];
+}
+
+/** Per-scan state shared by both passes: each object's entries, and each distinct property name's matches. */
+interface ScanCache {
+  readonly entries: WeakMap<object, readonly PayloadEntry[]>;
+  readonly names: Map<string, readonly RuleMatch[]>;
+}
+
+/** Every rule that matches `value` on its own text, in inventory order. */
+function ruleMatches(value: string): RuleMatch[] {
+  const matches: RuleMatch[] = [];
+  for (const rule of SECRET_RULES) {
+    const match = preflightRuleMatch(rule, value);
+    if (match) matches.push({ rule, match });
+  }
+  return matches;
+}
+
+/** A property name is judged once per scan, however many objects repeat it. */
+function nameMatches(name: string, cache: ScanCache): readonly RuleMatch[] {
+  let matches = cache.names.get(name);
+  if (matches === undefined) {
+    matches = ruleMatches(name);
+    cache.names.set(name, matches);
+  }
+  return matches;
+}
 
 /**
  * The own entries of an array or object, in order, read once per scan, so
@@ -164,43 +224,28 @@ type EntryCache = WeakMap<object, ReadonlyArray<readonly [string, unknown]>>;
  * methods, so holes are skipped and a sparse array with a huge length costs
  * only its present elements.
  */
-function ownEntries(value: object, cache: EntryCache): ReadonlyArray<readonly [string, unknown]> {
-  let entries = cache.get(value);
+function ownEntries(value: object, cache: ScanCache): readonly PayloadEntry[] {
+  let entries = cache.entries.get(value);
   if (entries === undefined) {
     entries = Array.isArray(value)
-      ? Object.getOwnPropertyNames(value).filter(isArrayIndex).map((key) => [key, (value as unknown[])[Number(key)]] as const)
-      : Object.entries(value);
-    cache.set(value, entries);
+      ? Object.getOwnPropertyNames(value).filter(isArrayIndex)
+        .map((name) => ({ name, value: (value as unknown[])[Number(name)], segment: `[${name}]`, nameMatches: [] }))
+      : Object.entries(value).map(([name, entry], position) => {
+        const matches = nameMatches(name, cache);
+        return { name, value: entry, segment: matches.length > 0 ? `[key ${position}]` : `.${name}`, nameMatches: matches };
+      });
+    cache.entries.set(value, entries);
   }
   return entries;
 }
 
-/** The direct children of an array or object, with their payload paths. */
-function childSteps(value: object, path: string, cache: EntryCache): PayloadStep[] {
-  const indexed = Array.isArray(value);
-  return ownEntries(value, cache).map(([key, entry]) => ({ value: entry, path: indexed ? `${path}[${key}]` : `${path}.${key}` }));
-}
-
-/**
- * Collect string leaves with payload paths, depth first, visiting each object
- * only once. The walk keeps its own stack, so payload depth is never limited
- * by the call stack (pm-wq9njf) and a deep payload cannot make the scan fail
- * open.
- */
-function stringLeaves(payload: unknown, cache: EntryCache): Array<{ path: string; value: string }> {
-  const leaves: Array<{ path: string; value: string }> = [];
-  const seen = new WeakSet<object>();
-  const pending: PayloadStep[] = [{ value: payload, path: "$" }];
-  for (let step = pending.pop(); step !== undefined; step = pending.pop()) {
-    const { value, path } = step;
-    if (typeof value === "string") {
-      leaves.push({ path, value });
-    } else if (typeof value === "object" && value !== null && !seen.has(value)) {
-      seen.add(value);
-      pushReversed(pending, childSteps(value, path, cache));
-    }
-  }
-  return leaves;
+/** A finding for `match`, at `path`, keeping its inspection provenance. */
+function findingFor({ rule, match }: RuleMatch, path: string, propertyName: boolean): SecretGuardFinding {
+  const finding: SecretGuardFinding = { rule: rule.mutationRule, path };
+  if (propertyName) finding.property_name = true;
+  if (match.normalizations) finding.normalizations = match.normalizations;
+  if (match.normalization_incomplete) finding.normalization_incomplete = true;
+  return finding;
 }
 
 /** Push in reverse, one at a time, so the first child is walked first and a wide object never spreads into one call. */
@@ -210,6 +255,26 @@ function pushReversed<T>(pending: T[], children: readonly T[]): void {
 
 /** Keep credential matching lazy while preserving incomplete inspection anywhere in a home-path leaf. */
 function preflightRuleMatch(rule: SecretRule, value: string): SecretRuleMatch | undefined {
+  try {
+    return firstRuleMatch(rule, value);
+  } catch (error) {
+    return judgeTooLarge(error);
+  }
+}
+
+/**
+ * A rule whose pattern exhausts the regex stack on a value (a value of
+ * millions of characters) cannot judge it. That value is reported for review
+ * under the rule, so one oversized leaf fails closed for itself instead of the
+ * error making the whole scan fail open. Any other error still propagates.
+ */
+function judgeTooLarge(error: unknown): SecretRuleMatch {
+  if (!(error instanceof RangeError)) throw error;
+  return { index: 0, normalization_incomplete: true };
+}
+
+/** The first match of a rule, keeping incomplete inspection anywhere in a home-path leaf. */
+function firstRuleMatch(rule: SecretRule, value: string): SecretRuleMatch | undefined {
   const matches = findSecretRuleMatches(rule, value);
   const first = matches.next().value;
   if (!first || rule.mutationRule !== "absolute_home_path" || first.normalization_incomplete) return first;
@@ -225,18 +290,28 @@ function preflightRuleMatch(rule: SecretRule, value: string): SecretRuleMatch | 
   return first;
 }
 
-/** Each string leaf judged by every rule on its own text. */
-function scanStringLeaves(payload: unknown, cache: EntryCache): SecretGuardFinding[] {
+/**
+ * Judge every string leaf and every property name by every rule on its own
+ * text, depth first, visiting each object only once; a property name is
+ * judged where its object is entered, before the values under it. The walk
+ * keeps its own stack, so payload depth is never limited by the call stack
+ * (pm-wq9njf) and a deep payload cannot make the scan fail open.
+ */
+function scanStringLeaves(payload: unknown, cache: ScanCache): SecretGuardFinding[] {
   const findings: SecretGuardFinding[] = [];
-  for (const leaf of stringLeaves(payload, cache)) {
-    for (const rule of SECRET_RULES) {
-      const match = preflightRuleMatch(rule, leaf.value);
-      if (match) {
-        const finding: SecretGuardFinding = { rule: rule.mutationRule, path: leaf.path };
-        if (match.normalizations) finding.normalizations = match.normalizations;
-        if (match.normalization_incomplete) finding.normalization_incomplete = true;
-        findings.push(finding);
+  const seen = new WeakSet<object>();
+  const pending: PayloadStep[] = [{ value: payload, path: "$" }];
+  for (let step = pending.pop(); step !== undefined; step = pending.pop()) {
+    const { value, path } = step;
+    if (typeof value === "string") {
+      for (const match of ruleMatches(value)) findings.push(findingFor(match, path, false));
+    } else if (typeof value === "object" && value !== null && !seen.has(value)) {
+      seen.add(value);
+      const entries = ownEntries(value, cache);
+      for (const entry of entries) {
+        for (const match of entry.nameMatches) findings.push(findingFor(match, `${path}${entry.segment}`, true));
       }
+      pushReversed(pending, entries.map((entry) => ({ value: entry.value, path: `${path}${entry.segment}` })));
     }
   }
   return findings;
@@ -320,16 +395,17 @@ interface MemberStep extends PayloadStep {
 const NO_JUDGMENTS: readonly LeafJudgment[] = KEY_NAMED_RULES.map(() => undefined);
 
 /** The child steps of an array or object, with the key context each child inherits. */
-function memberChildSteps(value: object, path: string, contexts: readonly KeyContext[], cache: EntryCache): MemberStep[] {
+function memberChildSteps(value: object, path: string, contexts: readonly KeyContext[], cache: ScanCache): MemberStep[] {
+  const entries = ownEntries(value, cache);
   if (Array.isArray(value)) {
     const judgments = contexts.map(({ named, exact }): LeafJudgment => (exact ? "lenient" : named ? "compact" : undefined));
-    return childSteps(value, path, cache).map((child) => ({ ...child, contexts, judgments }));
+    return entries.map((entry) => ({ value: entry.value, path: `${path}${entry.segment}`, contexts, judgments }));
   }
-  return ownEntries(value, cache).map(([name, entry]) => {
+  return entries.map(({ name, value: entry, segment }) => {
     const shapes = memberKeyShapes(name);
     return {
       value: entry,
-      path: `${path}.${name}`,
+      path: `${path}${segment}`,
       contexts: contexts.map(({ named, exact }, index) => ({
         named: named || shapes[index] !== undefined,
         exact: exact || shapes[index] === "exact",
@@ -355,7 +431,7 @@ function memberChildSteps(value: object, path: string, contexts: readonly KeyCon
  * so the pass is linear, never serializes or converts a value, and keeps its
  * own stack so payload depth is unbounded.
  */
-function scanPayloadMembers(payload: unknown, cache: EntryCache): SecretGuardFinding[] {
+function scanPayloadMembers(payload: unknown, cache: ScanCache): SecretGuardFinding[] {
   const findings: SecretGuardFinding[] = [];
   // Revisit a shared object only under a context it has not been judged in;
   // each rule has three context states, so an object is visited a bounded
@@ -367,9 +443,16 @@ function scanPayloadMembers(payload: unknown, cache: EntryCache): SecretGuardFin
     if (typeof value === "string") {
       judgments.forEach((judgment, index) => {
         const rule = KEY_NAMED_RULES[index]!;
-        if (judgment !== undefined && acceptsStructuredValue(rule, value, judgment === "compact")) {
-          findings.push({ rule: rule.mutationRule, path });
+        if (judgment === undefined) return;
+        let accepted: boolean;
+        try {
+          accepted = acceptsStructuredValue(rule, value, judgment === "compact");
+        } catch (error) {
+          judgeTooLarge(error);
+          findings.push({ rule: rule.mutationRule, path, normalization_incomplete: true });
+          return;
         }
+        if (accepted) findings.push({ rule: rule.mutationRule, path });
       });
       continue;
     }
@@ -384,14 +467,15 @@ function scanPayloadMembers(payload: unknown, cache: EntryCache): SecretGuardFin
 }
 
 /**
- * Detect credential-shaped string leaves and credential-named members without
- * returning matched values.
+ * Detect credential-shaped string leaves, property names and credential-named
+ * members without returning matched values: a flagged property name appears
+ * in a path only as its positional placeholder.
  */
 export function scanMutationSecrets(payload: unknown): SecretGuardFinding[] {
   const reported = new Set<string>();
-  const cache: EntryCache = new WeakMap();
+  const cache: ScanCache = { entries: new WeakMap(), names: new Map() };
   return [...scanStringLeaves(payload, cache), ...scanPayloadMembers(payload, cache)].filter((finding) => {
-    const key = `${finding.rule}\u0000${finding.path}`;
+    const key = `${finding.rule}\u0000${finding.path}\u0000${finding.property_name === true}`;
     if (reported.has(key)) return false;
     reported.add(key);
     return true;

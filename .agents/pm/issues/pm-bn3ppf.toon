@@ -1,0 +1,45 @@
+id: pm-bn3ppf
+title: "A key-named assignment inside a rejected reference value is never judged: the whole-value password grammar consumes a spaced command substitution, so the flat scan skips a password assignment written inside it"
+description: "Found 2026-11-17 while fixing pm-hw00c2. Since the whole-value password grammar (pm-ycgb5g, merged after the 2026.11.17 cut, so not yet released), password_assignment captures a value that is a spaced command substitution whole; it spells nothing, the match is rejected, and the flat scan resumes after the match, so a password assignment written inside that command (an echo of another password key with a literal value) is never visited. The published 2026.11.17 package reports that shape (measured against the npm tarball with scanMutationSecrets), and main does not, so this is a detection regression that would ship in the next cut. The structured pass is unaffected because it judges every key on its own. Fix direction: after a rejected flat match whose value holds a reference, judge each later key inside that value once, without rescanning inside those inner matches, so each character is scanned at most twice. Duplicate check: searched password command substitution inner assignment rejected value rescan; pm-ycgb5g (closed, introduced the grammar) and pm-jcz7qz (adversarial residuals) are related, and neither owns judging keys inside a rejected value."
+type: Issue
+status: closed
+priority: 1
+tags[5]: "area:sdk",credential-redaction,regression,secret-guard,security
+created_at: "2026-11-17T08:43:52.133Z"
+updated_at: "2026-11-17T09:26:20.656Z"
+closed_at: "2026-11-17T09:05:23.580Z"
+completed_at: "2026-11-17T09:05:23.580Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "A key-named assignment written inside a rejected reference value is judged at its own key in the flat scan, for every key-named rule; The rescan runs only for a rejected match whose value holds a reference and never recurses, so the linear-time controls still pass; The published 2026.11.17 verdict for a password assignment inside a spaced command substitution is restored"
+parent: pm-qwoy
+risk: medium
+confidence: high
+severity: medium
+resolution: "secret-rules.ts findSecretRuleMatches: after a rejected flat match of a rule with a literal minimum whose value holds a reference opener, keysInsideRejectedValue judges each key that starts inside that value once with a per-scan copy of the flat pattern; inner matches are never rescanned, so each character is read at most twice. Applies to password_assignment and credential_key_assignment. Documented in docs/MUTATION_INTEGRITY.md."
+expected_result: "A password assignment written inside a spaced command substitution of another password value is reported in the repository scan and the SDK guard, as in 2026.11.17, and the scan stays linear"
+actual_result: "The pm-bn3ppf cases pass in both consumers (inner password assignment, inner credential key after a rejected path-shaped literal, clean reference values, five pinned linear-time inputs), the security suites and pnpm quality:static pass, and the inner-assignment case fails on main 94773473b while the published 2026.11.17 tarball reports it"
+component: secret-guard
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-hw00c2,discovered_from,"2026-11-17T08:43:52.133Z","harness:claude-code","cli:create:dep",detected
+  pm-ycgb5g,related,"2026-11-17T08:43:52.133Z","harness:claude-code","cli:create:dep",detected
+  pm-jcz7qz,related,"2026-11-17T08:43:59.566Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-17T09:26:20.656Z","harness:claude-code","Codex review round 1 on PR 1746 widened this fix. The rescan now triggers for every reference or placeholder opener (dollar-brace, dollar-paren, dollar-name, angle), not only command and braced references. A rejected inner value that holds a reference is entered in turn, so a password assignment two references deep, or inside a placeholder or a required-variable message, is reached. Linearity: the rescan runs only for a rule whose sole predicate is its literal minimum (password_assignment). Such a rejected value spells fewer literal characters than any key of the rule with its separator, so every key inside it sits in a reference body, and bodies nest a bounded number of levels. credential_key_assignment, which also rejects on entropy and its literal grammar, uses its baseline reading instead. Pinned linear-time rows cover nested siblings and placeholder chains."
+files[2]{path,scope}:
+  src/core/shared/secret-rules.ts,project
+  tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project,"harness:claude-code","2026-11-17T08:47:10.221Z",local_mutation,fix/secret-guard-reference-literals-and-property-names
+docs[1]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+close_reason: "A key inside a rejected reference value is judged at its own key again, restoring the 2026.11.17 verdict before the regression shipped"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-bn3ppf
+  gate_id: secret-guard-rejected-value-keys
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts -t \"rejected reference value\" on main 94773473b: a password assignment inside a spaced command substitution of another password value is reported by neither consumer, while the published 2026.11.17 package reports it"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/security,node scripts/check-secrets.mjs,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
+body: ""

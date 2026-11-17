@@ -4,6 +4,9 @@
 
 ### Security
 
+- A key-named assignment inside a rejected reference value is never judged: the whole-value password grammar consumes a spaced command substitution, so the flat scan skips a password assignment written inside it ([pm-bn3ppf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bn3ppf.toon))
+- Payload property names are never scanned for credentials, and a credential-shaped property name is echoed verbatim in SDK finding paths ([pm-x07qz2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x07qz2.toon))
+- credential_key_assignment still treats a value that starts with a reference as a placeholder, so api_key=${EMPTY}"<credential\>" and literal defaults pass, and the key-named rules disagree on a bare $VAR ([pm-hw00c2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw00c2.toon))
 - A mutation payload nested about 2,000 levels deep overflows the secret guard's recursive leaf walk, so block mode fails open and lets a nested credential through ([pm-wq9njf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wq9njf.toon))
 - scanMutationSecrets drops object keys, so an SDK payload such as { api_key: "<credential\>" } passes every key-based secret rule ([pm-3fbj1f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3fbj1f.toon))
 - password_assignment treats any value starting with a ${...} or $(...) reference as a placeholder, so a literal concatenated with a reference passes the guard ([pm-ycgb5g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycgb5g.toon))

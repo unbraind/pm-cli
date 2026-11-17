@@ -14,8 +14,11 @@ argument parsing or exposing detected values.
   invocation author, `PM_AUTHOR`, configured `author_default`, detected
   harness identity, then `unknown`.
 - The secret guard inspects string leaves and the property names that label
-  them, and returns only detector names and object paths. It never returns
-  the matched value.
+  them, and returns only detector names and object paths, never the matched
+  text of a leaf. A flagged property name appears in a path only as a
+  positional placeholder (`[key <n>]`). Unflagged property names appear in
+  paths as written, so a name that merely equals a credential held elsewhere
+  in the payload is not redacted.
 - `pm health` reports old, unclaimed in-progress work as advisory governance
   data. It does not change ownership or status.
 - Historical unknown-author events remain immutable. Maintainers can append an
@@ -190,7 +193,83 @@ whole
 element body must satisfy the same grammar. `token_budget`, `max_tokens`, numeric
 counts, masks such as `********` and prose stay clean. A key starts only at the
 beginning of an identifier, so the scan stays linear. Plain and hyphenated
-password keys remain with the password rule, so each value is reported once. No rule is silently
+password keys remain with the password rule, so each value is reported once.
+
+A credential-key value that holds a run-time reference is judged by the
+literal it spells
+([pm-hw00c2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw00c2.toon);
+tracker record excluded from npm). A value that holds `${…}`, `$(…)`,
+`$NAME` or `<…>` is captured whole. So is a value that opens with a quoted
+piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
+another quoted piece follows it, or it holds a reference and a letter, digit
+or non-operator symbol (`_ @ # ~`, or a `!` that no operator follows)
+follows. A quoted value followed by an operator (`"…".trim()`,
+`"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
+source a value is code when a binary operator (including `^` and `&`) or member access
+follows its leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
+`$TOKEN+suffix`) or a call's parenthesis follows it (`<string>getToken()`,
+`<string>getToken ()`), and a value led by an angle span is code when the
+span holds a TypeScript type (`<string>`, `<T>`, `<APIKey>`, `<auth.Token>`,
+`<string|undefined>`, `<T[]>`, `<{value:string}>`, a literal type such as
+`<"bearer">`; a
+lowercase word such as `<x>` and an ALL-CAPS
+name such as `<TOKEN>` are placeholders) or expression code
+follows it (`{ token: <t>name ?? fallback }`); a letter,
+digit, quoted piece or other punctuation (`!`, `@`, `#`) after a reference is
+still a literal concatenation. After `=`, a value led
+by an angle span is a TypeScript type assertion or a shell redirection
+(`const token = <string>auth_token || fallback`), never a placeholder; after
+`:` (YAML, prose) `<x>…` is still judged. The constant
+statement exclusion judges the literal (`<string>DEFAULT_TOKEN;`); in a quoted
+value or payload data it is still judged. The literal
+left once its references expand is then judged by the same grammar, length,
+entropy and exclusions as a reference-free value, read in the value's own
+quote context. So `api_key=${EMPTY}"…"`, `api_key=$VAR"…"`, `token: <x>…`,
+`"client_secret": "${EMPTY}…"` and the literal default `${KEY:-…}` are
+reported, while a bare `${API_KEY}`, `$(op read key)`, `<placeholder>`, an
+empty default, and a literal that is a path, URL or word stay clean. At most
+64 literal characters may come before the first reference; a longer prefix is
+judged as a reference-free value. References and quoted pieces are
+whitespace-free, as every credential-key value is, and the shell control
+operators `|`, `||` and `&&` end one (`$(get_key)||fallback` spells nothing;
+a single `&` is data, as in YAML), as do
+`?` and `:`, which after a reference are code (`$TOKEN?.x`, `$TOKEN??y`), so a
+spaced command substitution is never read as one value, and a key inside it keeps its own
+verdict. The rule also scans its unchanged reference-free grammar as a
+baseline reading, judged on the captured text exactly as before, and a value
+is reported when either reading reports it. So
+the referenced reading only adds findings, and every key the reference-free
+scan visits, including one inside a rejected referenced value, keeps its
+verdict. A key inside a rejected referenced value is also judged once by the
+referenced reading, and the scan then resumes after it, so each character is
+read at most twice. That rescan reaches one level, so a referenced credential
+two references deep is judged only as the reference-free grammar judges it.
+
+One `$NAME` policy holds for every key-named rule. A `$NAME` reference
+expands to nothing when NAME is CONSTANT_CASE, the environment-variable
+convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
+in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
+quotes or not (a bare `$password`). Either way the value grammar must have
+read the whole word. An unquoted value did when whitespace or the end of the
+text follows it, optionally after structure such as `;` or `)`, or, for a key
+found inside a rejected reference value, at the closer of the reference that
+encloses it, whatever follows, or, inside a command substitution and outside
+its quoted text, at a shell control operator or redirection (`|`, `&`, `;`,
+`<`, `>`), where its judged value also ends. In a braced reference's word or
+quoted text those characters are data, and any other parenthesis or brace is
+literal data. A quoted value under a quoted key did as well when structure
+and then the next member or element follows, as in compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
+`[{"password":"$DB_PASSWORD"},{"other":…}]`). Any other text after it (`$PW:…`,
+`$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote
+after an unquoted value, which may open a concatenated piece
+(`$PW" spaced literal"`) as well as close an enclosing string. In those cases
+the value keeps its `$NAME` text literal, so a bare variable directly before
+the closing quote of a string that holds a whole assignment is judged as
+before.
+A credential-key value led by a lowercase `$name` keeps the reference-free
+reading, in which a `$`-led literal is a placeholder. Any other `$` text is literal, so a
+credential that merely contains `$`, after other characters or escaped as
+`\$`, keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
@@ -220,7 +299,8 @@ elements under an exact key keep passphrases.
 A quoted value with escapes is matched in a neutralized reading, where its
 own quote characters and line breaks cannot end it early, and the rule's
 predicates (literal length, references, entropy) then judge the same span of
-the decoded original, so a decoded quote keeps its meaning.
+the decoded original, so a decoded quote keeps its meaning. An escaped `\$`
+decodes to `$`, as JSON and JavaScript readers decode it.
 
 Each candidate key/value is judged by the rule's own value grammar. The
 password rule's literal minimum, the credential-key placeholder exclusions
@@ -262,6 +342,19 @@ credential. Element content keeps its quote characters as text, and may hold
 markup or placeholder spans (`<password><x>…</password>`). Every scan stays
 linear.
 
+A key inside a rejected value keeps its own verdict
+([pm-bn3ppf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bn3ppf.toon);
+tracker record excluded from npm). A whole-value reference such as a spaced
+command substitution spells nothing, so its match is rejected. Each key that
+starts inside it is then judged once, so a password assignment written inside
+`$(echo …)`, `${…:?…}` or `<…>` is still reported; a key word that names a
+braced reference's parameter (`${PASSWORD:OFFSET:8}`) is not an assignment. A rejected inner value
+that holds a reference is entered in turn, so a deeper assignment is reached
+too. A rejected password value spells fewer literal characters than a key, so
+every key inside it sits in a reference body; bodies nest a bounded number of
+levels, and the rescan stays linear. Rules with other predicates rely on their
+baseline reading instead.
+
 Structured SDK and MCP payloads carry a key as a property name rather than in
 the text
 ([pm-3fbj1f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3fbj1f.toon);
@@ -293,6 +386,26 @@ blocked like a shallow one
 tracker record excluded from npm). A value that is clean only as unquoted code, such as a call or a
 statement constant, is a string literal in a payload, as it already is in its
 JSON spelling.
+
+Property names are text too
+([pm-x07qz2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x07qz2.toon);
+tracker record excluded from npm). Every property name in a payload is judged
+by every rule as its own leaf, so `{ metadata: { "<token>": true } }` is
+reported. A finding for a name carries `property_name: true`. A path never
+repeats a flagged name: its segment becomes the positional placeholder
+`[key <n>]`, the name's index among its object's own entries, in the name's
+own finding and in every finding under it (`$.metadata[key 0].password`).
+Paths for other names are unchanged, and array indices are positions, never
+judged as names. Each distinct name is judged once per scan. Only a name that
+a rule flags on its own is replaced: a name that is not credential-shaped by
+itself stays in the path even when it equals a value that another rule flags.
+
+A value too large for a rule's pattern to judge (one of millions of
+characters that exhausts the regex stack) fails closed for itself: the guard
+reports it under that rule with `normalization_incomplete: true` for explicit
+review, and keeps scanning every other leaf, instead of letting the error make
+the whole scan fail open. Any other detector error still yields the
+`secret_guard_scan_failed_open` advisory.
 
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals
