@@ -4,6 +4,8 @@
 
 ### Security
 
+- Accept only exact, time-bounded, owned advisory waivers in the dependency advisory gate, never for a package the published artifact installs ([pm-3mdmtd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3mdmtd.toon))
+- GH-1748: drop tinyglobby, fdir and picomatch from the SDK runtime graph so consumers' production audits pass while GHSA-fc5q-39xc-vjpf has no patched picomatch ([pm-gh1748](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1748.toon))
 - A key-named assignment inside a rejected reference value is never judged: the whole-value password grammar consumes a spaced command substitution, so the flat scan skips a password assignment written inside it ([pm-bn3ppf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bn3ppf.toon))
 - Payload property names are never scanned for credentials, and a credential-shaped property name is echoed verbatim in SDK finding paths ([pm-x07qz2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x07qz2.toon))
 - credential_key_assignment still treats a value that starts with a reference as a placeholder, so api_key=${EMPTY}"<credential\>" and literal defaults pass, and the key-named rules disagree on a bare $VAR ([pm-hw00c2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw00c2.toon))

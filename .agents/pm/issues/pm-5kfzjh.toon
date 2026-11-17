@@ -1,0 +1,23 @@
+id: pm-5kfzjh
+title: "Managed npm update checks report a subprocess timeout as npm_registry_lookup_failed, and the fixed 10 s npm view budget makes the Windows nightly extension-freshness test flaky"
+description: "Nightly run 44087418672 (GitHub alert issue 1747, windows-latest Node 24 shard 4/4) failed tests/integration/extensions/extension-diagnostic-purity.integration.spec.ts in both the initial attempt and the retry (21.6 s for two attempts) at its first registry-backed freshness check: update_check_status was failed instead of checked. The test passes in 5.3 s on green Windows nights (run 43867277935) while spawning npm view several times, so each failing attempt spent the full GITHUB_UPDATE_CHECK_TIMEOUT_MS (10 s) on one cold npm view through the Windows command shell. runNpmUpdateQuery in src/sdk/extension/update-check.ts maps every failure, including that timeout, to the stable code npm_registry_lookup_failed, so neither the nightly log nor a user's pm extension --manage output can tell a slow npm from an unavailable registry. Proposed: report a distinct stable code for a timed-out lookup (killed subprocess with ETIMEDOUT or SIGTERM) without echoing npm's command, stderr or environment, name the budget in the diagnostic, and give the integration test a deterministic registry check budget so Windows cold npm starts do not fail it. Related evidence work: pm-q7c36n kept subprocess timeout and signal evidence for registry install acceptance; pm-2zjs0g measures nightly family rates."
+type: Issue
+status: open
+priority: 2
+tags[7]: diagnostics,extensions,flaky-test,"gh:1747",nightly,update-check,windows
+created_at: "2026-11-17T21:58:53.463Z"
+updated_at: "2026-11-17T21:58:53.463Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "A timed-out npm update lookup reports a distinct stable code (no npm command, stderr or environment in the output) and the diagnostic names the budget; the extension-diagnostic-purity integration test no longer depends on a cold Windows npm start finishing inside 10 s; unit tests cover the timeout and failure classifications"
+parent: pm-doxj
+risk: low
+confidence: medium
+severity: low
+expected_result: "A slow npm view is reported as a timeout distinct from an unavailable registry, and the Windows nightly freshness test is deterministic"
+actual_result: "Every lookup failure, including the 10 s timeout, is npm_registry_lookup_failed, and the Windows nightly test failed twice at the timeout"
+component: extensions
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,related,"2026-11-17T21:58:53.463Z","harness:claude-code","cli:create:dep",detected
+  pm-q7c36n,related,"2026-11-17T21:58:53.463Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[6]: advisory,dependency,github-alert,picomatch,release-blocker,security
 created_at: "2026-11-17T20:50:14.563Z"
-updated_at: "2026-11-17T20:50:14.563Z"
+updated_at: "2026-11-17T22:41:04.367Z"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "A patched picomatch is in the lockfile, or an explicit recorded decision covers the interim; node scripts/release/dependency-advisories/gate.mjs passes with both feeds clean; hosted Gates (static) passes on main and the daily release is not blocked"
@@ -19,4 +19,17 @@ actual_result: "Both advisory feeds report picomatch 4.0.7 (GHSA-fc5q-39xc-vjpf,
 component: dependencies
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-eqxjzl,related,"2026-11-17T20:50:14.563Z","harness:claude-code","cli:create:dep",detected
+notes[2]{created_at,author,text}:
+  "2026-11-17T21:32:17.484Z","harness:claude-code","Owner decision 2026-11-17: admin-merge PR 1746 despite the environmental advisory failure, and add a time-bounded waiver so the daily release continues while upstream has no patch. Design (this PR): config/dependency-advisory-waivers.json declares exact waivers (GitHub advisory id + npm package + exact locked versions + pm owner + reason >= 20 chars + RFC 3339 UTC expiry at most 30 days past the judging run; notice window 0 to 30 days). scripts/release/dependency-advisories/waivers.mjs validates them with no dist import (the gate runs before pnpm build in quality:static). Receipt version 2 records each registry advisory's validated package, severity, GitHub id and finding versions; a malformed detail voids the advisory's waivability. verifyReceipt checks counts, ids and advisory list agree, then covers each OSV row id and each registry finding version only by an exact live waiver; the verdict discloses waived and unused_waivers. Any malformed, duplicate, expired or over-long waiver refuses even when unused. The gate's refusal now names the uncovered package@version advisory (validated fields only) instead of the generic message. defect-evidence-gate --waiver-notice gained a dependency_advisory check: same validity rules, the declared notice window through the SDK waiverNoticeFor primitive, and an owner that must be an open tracker item; its negative control seeds an advisory waiver an hour from expiry."
+  "2026-11-17T22:39:29.038Z","harness:claude-code","Runtime side: pm-gh1748 removed tinyglobby (and so fdir and picomatch) from the published runtime graph, so consumers' production audits are clean; picomatch remains only in development tooling. The waiver mechanism is tracked by child pm-3mdmtd; this item stays open as the waiver's owner until a patched picomatch is in the lockfile and the waiver is deleted (the scheduled notice gate fails if this item closes while the waiver exists)."
+files[5]{path,scope,note}:
+  config/dependency-advisory-waivers.json,project,declared picomatch waiver
+  scripts/release/defect-evidence-gate.mjs,project,notice-mode advisory waiver check
+  scripts/release/dependency-advisories/receipt.mjs,project,receipt v2 verification with waivers
+  scripts/release/dependency-advisories/waivers.mjs,project,waiver validation and exact matching
+  tests/unit/scripts/release/dependency-advisories/waivers.spec.ts,project,"waiver validation, matching and registry file tests"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories tests/unit/scripts/release/defect-evidence-gate.spec.ts,project,600,"harness:claude-code","2026-11-17T21:32:19.140Z",local_mutation,fix/advisory-gate-time-bounded-waiver
+docs[1]{path,scope,note}:
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project,Time-bounded advisory waivers and the picomatch section
 body: ""

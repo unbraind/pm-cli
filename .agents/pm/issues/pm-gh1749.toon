@@ -1,0 +1,23 @@
+id: pm-gh1749
+title: "GH-1749: adding a secret-guard rule breaks typed consumers' exhaustive Record<SecretGuardFinding['rule'], ...> policy maps; offer a stable category per rule and a default-plus-overrides policy helper"
+description: "GitHub issue 1749 (fleet report): extensions that type a per-rule secret guard policy as an exhaustive Record over SecretGuardFinding['rule'] failed tsc with TS2741 on the 2026.11.13 bump, when the rule union gained credential_key_assignment. The detector was additive, but for exhaustive typed consumers it is a breaking type change that the release notes did not flag. Proposed: export a stable category per rule (for example credential, identity, path, network) and a policy helper such as a default decision plus partial overrides with a decide function, so a new credential rule inherits refuse without breaking compilation; and list new rule literals under a typed-consumers note in release notes. Related: the secret-guard family pm-hw00c2 (credential-key reference literals) and pm-x07qz2 (property names) changed the same finding type."
+type: Issue
+status: open
+priority: 2
+tags[5]: api-design,"gh:1749",sdk,secret-guard,typed-consumers
+created_at: "2026-11-17T21:58:37.940Z"
+updated_at: "2026-11-17T21:58:37.940Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "The SDK exports a stable per-rule category map and a policy helper that decides a finding from a default plus partial overrides, typed so adding a rule never breaks a consumer that uses it; the SDK surface snapshot records the addition; release notes or the SDK migration notes call out new rule literals for exhaustive consumers; tests prove a newly added rule inherits the category default"
+parent: pm-doxj
+risk: low
+confidence: medium
+severity: medium
+expected_result: "Adding a detector does not break typed consumers on a calendar bump, or the SDK offers a supported default-plus-overrides policy"
+actual_result: An exhaustive Record over the rule union fails TS2741 whenever a rule is added
+component: sdk
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-hw00c2,related,"2026-11-17T21:58:37.940Z","harness:claude-code","cli:create:dep",detected
+  pm-x07qz2,related,"2026-11-17T21:58:37.940Z","harness:claude-code","cli:create:dep",detected
+body: ""
