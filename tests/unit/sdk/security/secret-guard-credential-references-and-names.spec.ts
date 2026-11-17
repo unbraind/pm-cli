@@ -118,6 +118,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["arithmetic on a reference member", "const token = $TOKEN.length+1;"],
     // Codex round 13: a call after a type assertion is code.
     ["call after a type assertion", "const api_key = <string>get_auth_token();"],
+    // Codex round 14: a spaced call and a constant after a type assertion are code too.
+    ["spaced call after a type assertion", "const api_key = <string>get_auth_token ();"],
+    ["constant after a type assertion", "const api_key = <string>DEFAULT_TOKEN;"],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -245,6 +248,13 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       expect(textRules(`[{'${passwordKey}':'$DB_PASSWORD'},${element}]`), element).toEqual([]);
     }
     expect(textRules(`${passwordKey}="$DB_PASSWORD"][trueSecret${literal}`)).toEqual(["password_assignment"]);
+    // Codex round 14: after an unquoted key, a comma and a quoted piece continue the shell word.
+    expect(await gateRules(`${passwordKey}="$PW_PREFIX","${credential}"`)).toEqual(["password-assignment"]);
+    expect(textRules(`${passwordKey}="$PW_PREFIX","${credential}"`)).toEqual(["password_assignment"]);
+    // Codex round 14: a variable that ends a command substitution ends its word at the closing parenthesis.
+    const nested = `${passwordKey}="$(get-secret --${passwordKey}=$VAULT_PASSWORD)"`;
+    expect(await gateRules(nested)).toEqual([]);
+    expect(textRules(nested)).toEqual([]);
     // Codex round 13: a number counts only as a complete token that a delimiter ends.
     expect(textRules(`${passwordKey}="$DB_PASSWORD"][1${credential}]`)).toEqual(["password_assignment"]);
     expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},[1.5e3, 2]]`)).toEqual([]);

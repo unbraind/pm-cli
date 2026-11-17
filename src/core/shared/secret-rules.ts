@@ -812,8 +812,24 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  return closed !== -1 && structure > 0 && NEXT_MEMBER.test(input.slice(after, after + 40));
+  // A closing parenthesis or brace ends the reference an unquoted value sat in
+  // (`"$(get --password=$PW)"`), so the enclosing quote may follow it.
+  if (closed === -1) return /^[)}]/u.test(input.slice(start, after)) && isQuote(input[after]);
+  // The next-member shortcut holds only in structured text, where the value's
+  // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
+  // comma and a quoted piece continue the shell word (`password="$PW","…"`).
+  return structure > 0 && hasQuotedKey(match, closed === end + 1) && NEXT_MEMBER.test(input.slice(after, after + 40));
 }
+
+/** Whether the value's key ends with a quote, as in JSON, YAML flow or a Python dict, looking back a bounded distance. */
+function hasQuotedKey(match: RegExpMatchArray, openerOutsideCapture: boolean): boolean {
+  const input = match.input!;
+  const valueStart = match.index! + match[0].length - match[1].length - (openerOutsideCapture ? 1 : 0);
+  return QUOTED_KEY_BEFORE.test(input.slice(Math.max(0, valueStart - 64), valueStart));
+}
+
+/** A quoted key and its separator directly before a value. */
+const QUOTED_KEY_BEFORE = /["']\s*[:=]\s*$/u;
 
 /**
  * The start of the next JSON member or element: a quote, or `{` / `[` that
@@ -825,6 +841,9 @@ const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|$|(?:-?\d+(?:\.\d+)?(?:[eE][+
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;
+
+/** A call's opening parenthesis, after at most a short run of blanks (`getToken ()`). */
+const CALL_AFTER = /^[ \t]{0,16}\(/u;
 
 /** A literal that starts with member access, as code leaves after a reference (`${X}.trim`, `$T.length+1`). */
 const MEMBER_ACCESS = /^\.[A-Za-z_$]/u;
@@ -853,7 +872,8 @@ const SPELLING_SENSITIVE = /[$<"']/u;
  */
 function codeAfterReference(match: RegExpMatchArray): "call" | "source" | undefined {
   if (DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match)) || !/^[$<]/u.test(match[1])) return undefined;
-  return match.input![match.index! + match[0].length] === "(" ? "call" : "source";
+  const end = match.index! + match[0].length;
+  return CALL_AFTER.test(match.input!.slice(end, end + 17)) ? "call" : "source";
 }
 
 /**
@@ -1044,9 +1064,9 @@ function elementValueJudge(
 }
 
 /** An unquoted captured value matching the reference shape whose statement a `;` ends. */
-function isStatementReference(shape: RegExp, match: RegExpMatchArray): boolean {
+function isStatementReference(shape: RegExp, match: RegExpMatchArray, value: string): boolean {
   const end = match.index! + match[0].length;
-  return /^[ \t]*;/u.test(match.input!.slice(end, end + 64)) && !isQuote(captureOpener(match)) && shape.test(match[1]);
+  return /^[ \t]*;/u.test(match.input!.slice(end, end + 64)) && !isQuote(captureOpener(match)) && shape.test(value);
 }
 
 // `${NAME:-word}`, `${NAME-word}`, `${NAME:=word}`, `${NAME=word}` and
@@ -1318,7 +1338,8 @@ export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): b
   if (rule.minimumLiteralLength !== undefined && value.length < rule.minimumLiteralLength) return false;
   if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, codeAfterReference(match))) return false;
   if (rule.rejectValue?.test(value) === true) return false;
-  if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
+  // The statement shape judges the literal, so `<string>DEFAULT_TOKEN;` is a constant reference too.
+  if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match, value)) return false;
   if (rule.minimumEntropy === undefined) return true;
   // Count and divide by code points alike, so astral characters are not undercounted.
   const characters = [...value];
