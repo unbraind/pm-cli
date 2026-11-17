@@ -53,6 +53,8 @@ const PARITY_PATTERNS = [
   "**/deep/*", "**/**", "*/**", "**/child/*", "\\a.ts", "a.ts/", "{,child/}n.ts", "{a,{b,1}}.*", ".*", "{a,}.ts", "{,}.ts",
   "{}.ts", "{01..03}.ts", "{a..c}.ts", "{a..c}*", "??.ts", "{x.ts", "a,b.ts", "app/[slug]/*.tsx", "*/[slug]/*", "app/*/page.tsx",
   "../other/*.ts", "../other/o.ts", "missing/**", "missing", "a.ts/*",
+  "*/./n.ts", "child/*/../n.ts", "child//n.ts", "*//n.ts", "c*/./deep/d.ts", "./*/deep/../n.ts", "@(**/d.ts|*.md)",
+  "child/@(**/d.ts|n.ts)", "app/@(**/page.tsx)", "*(**/d.ts)", "*/@(**|x)", "*/@(x|**)", "{**,x}/n.ts",
   ...(posix ? ["@(q.ts", "a|b.ts", "linkdir/*", "linkdir/../a.ts", "link.ts", "dangling.ts", "*link*", "**/d.ts"] : []),
 ];
 
@@ -179,11 +181,34 @@ describe("file glob semantics", () => {
   });
 
   it("resets the bounded DFA cache without changing results", () => {
-    const matcher = _testOnly.compile("*(a|b)c", 2);
+    const matcher = _testOnly.compile("*(a|b)c", { nodes: 2, edges: 4, stateIds: 100 });
     let node = matcher.start;
     for (const char of "ababab") node = matcher.step(node, char.codePointAt(0)!);
     expect(matcher.advance(node, "c").accepting).toBe(true);
     expect(matcher.advance(matcher.start, "abx").states).toEqual([]);
     expect(matcher.advance(matcher.advance(matcher.start, "abx"), "c").accepting).toBe(false);
+  });
+
+  it("bounds every node, transition and state id the DFA retains, not just its index", () => {
+    // "*a" then fourteen "?": distinct a/b names reach a fresh subset per suffix.
+    const limits = { nodes: 64, edges: 256, stateIds: 2_000 };
+    const matcher = _testOnly.compile(`*a${"?".repeat(14)}`, limits);
+    const reference = /^.*a.{14}$/u;
+    let peak = { nodes: 0, edges: 0, stateIds: 0 };
+    for (let value = 0; value < 4096; value += 1) {
+      const name = Array.from({ length: 15 }, (_, bit) => ((value * 2654435761) >>> bit) & 1 ? "a" : "b").join("");
+      expect(matcher.advance(matcher.start, name).accepting).toBe(reference.test(name));
+      const retained = matcher.retained();
+      peak = { nodes: Math.max(peak.nodes, retained.nodes), edges: Math.max(peak.edges, retained.edges), stateIds: Math.max(peak.stateIds, retained.stateIds) };
+    }
+    expect(peak.nodes).toBeLessThanOrEqual(limits.nodes);
+    expect(peak.edges).toBeLessThanOrEqual(limits.edges);
+    expect(peak.stateIds).toBeLessThanOrEqual(limits.stateIds);
+    const tight = _testOnly.compile("*a?", { nodes: 100, edges: 100, stateIds: 3 });
+    expect(tight.advance(tight.start, "xab").accepting).toBe(true);
+    expect(tight.retained().stateIds).toBeLessThanOrEqual(3);
+    const fewEdges = _testOnly.compile("*a?", { nodes: 1_000, edges: 2, stateIds: 100_000 });
+    for (const name of ["xab", "aab", "bab", "abb"]) expect(fewEdges.advance(fewEdges.start, name).accepting).toBe(/a.$/u.test(name));
+    expect(fewEdges.retained().edges).toBeLessThanOrEqual(2);
   });
 });

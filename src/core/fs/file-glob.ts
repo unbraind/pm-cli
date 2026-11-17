@@ -31,8 +31,17 @@ const MAX_NESTING = 32;
 const MAX_RANGE_SIZE = 1000;
 /** Largest accepted NFA; larger patterns match nothing. */
 const MAX_STATES = 50_000;
-/** Cached DFA nodes before the cache is reset, bounding memory on any pattern. */
-const MAX_DFA_NODES = 10_000;
+/**
+ * What the lazily built DFA may retain before it drops its cache: interned
+ * nodes, cached transitions and the NFA state ids those nodes hold. Nodes a
+ * walk still holds stay valid after a reset; they are simply no longer cached.
+ */
+interface DfaLimits {
+  nodes: number;
+  edges: number;
+  stateIds: number;
+}
+const DFA_LIMITS: DfaLimits = { nodes: 10_000, edges: 40_000, stateIds: 2_000_000 };
 const SLASH = 0x2f;
 
 type Node =
@@ -286,16 +295,18 @@ class Parser {
     }
     if (char === "/") return { nodes: [{ kind: "char", value: SLASH }], next: index + 1, segmentStart: true };
     const closer = this.closers.get(index);
-    if (closer !== undefined) return char === "{" ? this.brace(index, closer, segmentStart) : this.extglob(char, index, closer);
+    if (closer !== undefined) {
+      return char === "{" ? this.brace(index, closer, segmentStart) : this.extglob(char, index, closer, segmentStart);
+    }
     const bracket = this.brackets.get(index);
     if (bracket !== undefined) return { nodes: [parseClass(this.chars, index, bracket)], next: bracket, segmentStart: false };
     if (char === "*") return this.stars(index, end, separator, segmentStart);
     return { nodes: char === "?" ? [{ kind: "any" }] : literalNodes(char), next: index + 1, segmentStart: false };
   }
 
-  /** Parse an extglob whose operator is at `index` and whose ")" is at `closer`. */
-  private extglob(operator: string, index: number, closer: number): Token {
-    const options = this.alternatives(index + 2, closer, "|", false);
+  /** Parse an extglob whose operator is at `index` and whose ")" is at `closer`; a globstar alternative at a segment start stays a globstar. */
+  private extglob(operator: string, index: number, closer: number, segmentStart: boolean): Token {
+    const options = this.alternatives(index + 2, closer, "|", segmentStart);
     const node: Node = operator === "@"
       ? { kind: "alt", options }
       : { kind: "repeat", optional: operator !== "+", many: operator !== "?", options };
@@ -319,7 +330,9 @@ class Parser {
     const after = index + run < end ? this.chars[index + run] : undefined;
     const globstar = run === 2 && segmentStart;
     if (globstar && after === "/") return { nodes: [{ kind: "segments" }], next: index + run + 1, segmentStart: true };
-    const rest = globstar && (after === undefined || after === separator);
+    // A trailing globstar spans directories at the top level and in a brace
+    // alternative; one that ends an extglob alternative is a single star.
+    const rest = globstar && separator !== "|" && (after === undefined || after === separator);
     return { nodes: [rest ? { kind: "rest" } : { kind: "star" }], next: index + run, segmentStart: false };
   }
 }
@@ -429,24 +442,47 @@ function accepts(test: EdgeTest, codePoint: number): boolean {
 }
 
 interface DfaNode {
+  /** Identity within its generation; transitions are cached by (id, code point). */
+  id: number;
+  generation: number;
   states: number[];
   accepting: boolean;
-  next: Map<number, DfaNode>;
 }
 
-/** Lazily determinized matcher; each DFA node is one epsilon-closed NFA state set. */
+/**
+ * Lazily determinized matcher; each DFA node is one epsilon-closed NFA state
+ * set. Nodes and transitions live in generation-scoped tables, so a reset
+ * releases everything the matcher retains, not only its index.
+ */
 class PathMatcher {
-  private cache = new Map<string, DfaNode>();
+  private generation = 0;
+  private nextId = 0;
+  private nodes = new Map<string, DfaNode>();
+  private edges = new Map<string, DfaNode>();
+  private stateIds = 0;
   private readonly nfa: Nfa;
   private readonly acceptState: number;
-  private readonly maxNodes: number;
+  private readonly limits: DfaLimits;
   readonly start: DfaNode;
 
-  constructor(nfa: Nfa, startState: number, acceptState: number, maxNodes: number) {
+  constructor(nfa: Nfa, startState: number, acceptState: number, limits: DfaLimits) {
     this.nfa = nfa;
     this.acceptState = acceptState;
-    this.maxNodes = maxNodes;
+    this.limits = limits;
     this.start = this.node(this.closure([startState]));
+  }
+
+  /** Report what the matcher currently retains. */
+  retained(): { nodes: number; edges: number; stateIds: number } {
+    return { nodes: this.nodes.size, edges: this.edges.size, stateIds: this.stateIds };
+  }
+
+  /** Drop every cached node and transition and start a new generation. */
+  private reset(): void {
+    this.generation += 1;
+    this.nodes = new Map();
+    this.edges = new Map();
+    this.stateIds = 0;
   }
 
   /** Close a state set over epsilon edges, iteratively. */
@@ -461,20 +497,23 @@ class PathMatcher {
     return [...seen].sort((left, right) => left - right);
   }
 
-  /** Intern a closed state set, resetting the cache at its bound. */
+  /** Intern a closed state set, resetting first when it would exceed a retention bound. */
   private node(states: number[]): DfaNode {
     const key = states.join(",");
-    const cached = this.cache.get(key);
+    const cached = this.nodes.get(key);
     if (cached !== undefined) return cached;
-    if (this.cache.size >= this.maxNodes) this.cache = new Map();
-    const created: DfaNode = { states, accepting: states.includes(this.acceptState), next: new Map() };
-    this.cache.set(key, created);
+    if (this.nodes.size >= this.limits.nodes || this.stateIds + states.length > this.limits.stateIds) this.reset();
+    const created: DfaNode = { id: this.nextId, generation: this.generation, states, accepting: states.includes(this.acceptState) };
+    this.nextId += 1;
+    this.nodes.set(key, created);
+    this.stateIds += states.length;
     return created;
   }
 
-  /** Advance one code point. */
+  /** Advance one code point, caching the transition only while `from` belongs to the current generation. */
   step(from: DfaNode, codePoint: number): DfaNode {
-    const known = from.next.get(codePoint);
+    const key = `${from.id}:${codePoint}`;
+    const known = from.generation === this.generation ? this.edges.get(key) : undefined;
     if (known !== undefined) return known;
     const reached: number[] = [];
     for (const state of from.states) {
@@ -483,7 +522,8 @@ class PathMatcher {
       }
     }
     const next = this.node(this.closure(reached));
-    from.next.set(codePoint, next);
+    if (this.edges.size >= this.limits.edges) this.reset();
+    if (from.generation === this.generation) this.edges.set(key, next);
     return next;
   }
 
@@ -499,14 +539,14 @@ class PathMatcher {
 }
 
 /** Compile a pattern remainder (relative to the walk root) into a matcher. */
-function compile(text: string, maxDfaNodes = MAX_DFA_NODES): PathMatcher {
+function compile(text: string, limits: DfaLimits = DFA_LIMITS): PathMatcher {
   const chars = Array.from(text);
   const { closers, brackets } = pairConstructs(chars);
   const nodes = new Parser(chars, closers, brackets).sequence(0, chars.length, undefined, true).nodes;
   const nfa = new Nfa();
   const start = nfa.add();
   const accept = nfa.build(nodes, start);
-  return new PathMatcher(nfa, start, accept, maxDfaNodes);
+  return new PathMatcher(nfa, start, accept, limits);
 }
 
 /** Return whether a path segment can be resolved as literal text without matching. */
@@ -611,7 +651,8 @@ function compileWithinBounds(text: string): PathMatcher | undefined {
 }
 
 /**
- * Expand a file glob from `cwd`. Relative patterns return `/`-separated paths
+ * Expand a file glob from `cwd`. The pattern is first normalized lexically
+ * (`a/./b`, `a/x/../b` and `a//b` become `a/b`, as before). Relative patterns return `/`-separated paths
  * relative to `cwd` (a leading `../` is kept), absolute patterns return
  * absolute paths. Only files are returned, symbolic links are followed and a
  * literal directory never expands. A pattern past a declared bound matches
@@ -620,7 +661,8 @@ function compileWithinBounds(text: string): PathMatcher | undefined {
 export async function expandFileGlob(pattern: string, cwd: string): Promise<string[]> {
   if (pattern.startsWith("!")) throw negationRefusal();
   if (Array.from(pattern).length > MAX_PATTERN_LENGTH) return [];
-  const text = trimTrailingSeparators(pattern);
+  // Normalize "./", "../" and repeated separators lexically, as the previous expansion did.
+  const text = trimTrailingSeparators(path.posix.normalize(pattern));
   const parts = splitStatic(text, cwd);
   if (parts === undefined) return literalMatch(text, cwd);
   const matcher = compileWithinBounds(parts.rest);
