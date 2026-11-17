@@ -279,8 +279,12 @@ value under any credential key above it. The finding reports the leaf's path,
 never its value. `{ api_key: "…" }`, `{ clientSecret: "…" }` and
 `{ password: ["…"] }` are therefore judged like `{"api_key":"…"}`, and pm's
 own fields such as `token_budget`, `max_tokens` and numeric counts stay clean.
-Only strings are judged: a number, boolean, null or boxed value under a
-credential key is not a credential, and the pass never serializes a value or
+A payload string is complete data, so it is judged as a decoded literal
+whether or not its JSON spelling needs escapes: its quote characters are
+data, and an unclosed reference in it is literal text (the source-text rule
+for a reference cut by the grammar never applies). Only strings are judged: a
+number, boolean, null or boxed value under a credential key is not a
+credential, and the pass never serializes a value or
 calls `toJSON`. Each leaf is judged once per rule, so the pass is linear in
 the payload. Both passes walk the payload with their own stack, so payload
 depth is not limited by the call stack, and a deeply nested credential is

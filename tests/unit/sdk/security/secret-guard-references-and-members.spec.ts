@@ -268,6 +268,11 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     const cv = ["abc", "${defgh"].join("");
     expect(textRules(JSON.stringify({ [["pass", "word"].join("")]: cv }))).toContain("password_assignment");
     expect(scanMutationSecrets({ password: cv })).toContainEqual({ rule: "password_assignment", path: "$.password" });
+    // A payload string is complete data, with or without an escape, so its unclosed reference is literal.
+    const opener = ["$", "{abcdefgh"].join("");
+    for (const value of [opener, `${opener}\n`]) {
+      expect(scanMutationSecrets({ password: value }), JSON.stringify(value)).toContainEqual({ rule: "password_assignment", path: "$.password" });
+    }
     // A reference that opens a quoted piece and is cut at its own inner quote contributes nothing.
     expect(literalAfterReferences(["\"$(op read ", "\""].join(""))).toBe("");
     expect(literalAfterReferences(["\"ab$(op read ", "\""].join(""))).toBe("ab$(op read \"");

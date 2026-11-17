@@ -529,8 +529,12 @@ interface ValueJudge {
   accepts(compact: boolean): (at: number) => boolean;
 }
 
-/** Bind a rule's value grammar to one content string. */
-function createValueJudge(rule: SecretRule, value: RegExp, content: string): ValueJudge {
+/**
+ * Bind a rule's value grammar to one content string. With `alwaysDecode`, a
+ * quoted literal is judged as decoded data even when it holds no escape, as
+ * for a serialized payload string, which is always complete.
+ */
+function createValueJudge(rule: SecretRule, value: RegExp, content: string, alwaysDecode = false): ValueJudge {
   // A JSON, Python or YAML-flow string literal never spans a raw line break, so
   // a structured value that does is a host-language artifact, not a credential.
   // With an `original`, the grammar reads `text` but the predicates judge the
@@ -557,7 +561,7 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     if (content[at] !== "\"" && content[at] !== "'") return undefined;
     const { end, terminated } = scanQuoted(content, at);
     const literal = content.slice(at, end);
-    if (!literal.includes("\\")) return undefined;
+    if (!alwaysDecode && !literal.includes("\\")) return undefined;
     // A raw line break is a host-language artifact before any escape is decoded.
     if (LINE_BREAK.test(literal)) return [];
     const decoded = decodeQuotedLiteral(literal, terminated);
@@ -631,7 +635,9 @@ export function acceptsStructuredValue(rule: SecretRule, value: string, compact:
   // host-language artifact in text. In a payload string they are data, so they
   // are escaped like `\n` and judged in the decoded reading.
   const content = JSON.stringify(value).replaceAll("\u2028", "\\u2028").replaceAll("\u2029", "\\u2029");
-  return createValueJudge(rule, compileSpelling(rule.structured).value, content).accepts(compact)(0);
+  // A serialized payload string is complete data, so it is always judged as
+  // decoded data, never by the source-text rules for values the grammar cuts.
+  return createValueJudge(rule, compileSpelling(rule.structured).value, content, true).accepts(compact)(0);
 }
 
 /**
