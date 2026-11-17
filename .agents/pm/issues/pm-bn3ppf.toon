@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:sdk",credential-redaction,regression,secret-guard,security
 created_at: "2026-11-17T08:43:52.133Z"
-updated_at: "2026-11-17T09:05:26.721Z"
+updated_at: "2026-11-17T09:26:20.656Z"
 closed_at: "2026-11-17T09:05:23.580Z"
 completed_at: "2026-11-17T09:05:23.580Z"
 author: "harness:claude-code"
@@ -24,6 +24,8 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-hw00c2,discovered_from,"2026-11-17T08:43:52.133Z","harness:claude-code","cli:create:dep",detected
   pm-ycgb5g,related,"2026-11-17T08:43:52.133Z","harness:claude-code","cli:create:dep",detected
   pm-jcz7qz,related,"2026-11-17T08:43:59.566Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-17T09:26:20.656Z","harness:claude-code","Codex review round 1 on PR 1746 widened this fix. The rescan now triggers for every reference or placeholder opener (dollar-brace, dollar-paren, dollar-name, angle), not only command and braced references. A rejected inner value that holds a reference is entered in turn, so a password assignment two references deep, or inside a placeholder or a required-variable message, is reached. Linearity: the rescan runs only for a rule whose sole predicate is its literal minimum (password_assignment). Such a rejected value spells fewer literal characters than any key of the rule with its separator, so every key inside it sits in a reference body, and bodies nest a bounded number of levels. credential_key_assignment, which also rejects on entropy and its literal grammar, uses its baseline reading instead. Pinned linear-time rows cover nested siblings and placeholder chains."
 files[2]{path,scope}:
   src/core/shared/secret-rules.ts,project
   tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project

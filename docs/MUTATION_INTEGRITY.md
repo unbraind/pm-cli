@@ -197,8 +197,11 @@ A credential-key value that holds a run-time reference is judged by the
 literal it spells
 ([pm-hw00c2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw00c2.toon);
 tracker record excluded from npm). A value that holds `${…}`, `$(…)`,
-`$NAME` or `<…>`, or that opens with a quoted piece concatenated to more
-text as a shell concatenates `"${EMPTY}"…`, is captured whole. The literal
+`$NAME` or `<…>` is captured whole. So is a value that opens with a quoted
+piece concatenated as a shell concatenates `"${EMPTY}"…`: the quoted piece
+holds a reference, or a reference or another quoted piece follows it. A
+reference-free quoted value followed by code (`"…".trim()`, `"Bearer"+x`)
+stays a quoted value. The literal
 left once its references expand is then judged by the same grammar, length,
 entropy and exclusions as a reference-free value, read in the value's own
 quote context. So `api_key=${EMPTY}"…"`, `api_key=$VAR"…"`, `token: <x>…`,
@@ -209,6 +212,10 @@ empty default, and a literal that is a path, URL or word stay clean. At most
 judged as a reference-free value. References and quoted pieces are
 whitespace-free, as every credential-key value is, so a spaced command
 substitution is never read as one value, and a key inside it keeps its own
+verdict. The rule also scans its unchanged reference-free grammar as a
+baseline reading, and a value is reported when either reading reports it. So
+the referenced reading only adds findings, and every key the reference-free
+scan visits, including one inside a rejected referenced value, keeps its
 verdict.
 
 One `$NAME` policy holds for every key-named rule. A `$NAME` reference
@@ -292,8 +299,12 @@ A key inside a rejected value keeps its own verdict
 tracker record excluded from npm). A whole-value reference such as a spaced
 command substitution spells nothing, so its match is rejected. Each key that
 starts inside it is then judged once, so a password assignment written inside
-`$(echo …)` is still reported. Inner matches are never rescanned, so each
-character is read at most twice.
+`$(echo …)`, `${…:?…}` or `<…>` is still reported. A rejected inner value
+that holds a reference is entered in turn, so a deeper assignment is reached
+too. A rejected password value spells fewer literal characters than a key, so
+every key inside it sits in a reference body; bodies nest a bounded number of
+levels, and the rescan stays linear. Rules with other predicates rely on their
+baseline reading instead.
 
 Structured SDK and MCP payloads carry a key as a property name rather than in
 the text

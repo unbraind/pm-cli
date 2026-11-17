@@ -49,6 +49,12 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["escaped quoted value", ['{"api_key": "\\u0024{EMPTY}', credential, '"}'].join("")],
     ["element", `<client_secret>\${X}${credential}</client_secret>`],
     ["credential inside a spaced command substitution, at its own key", `api_key=$(echo api_key=${credential})`],
+    // Codex round 1: the baseline reading keeps every finding of the reference-free grammar.
+    ["quoted credential followed by member access", `const api_key = "${credential}".trim();`],
+    ["credential after a rejected variable-led path", `api_key=$BASE/token=${credential}`],
+    ["credential inside a rejected angle placeholder", `api_key=<token=${credential}>`],
+    ["credential two references deep", `api_key=$(token=$(token=${credential}))`],
+    ["literal before a reference that leaves a word", `api_key=abcdefgh\${X}-ijk`],
   ])("flags a %s", (_label, content) => {
     expect(textRules(content)).toEqual(["credential_key_assignment"]);
   });
@@ -84,6 +90,7 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["short literal after a reference", "api_key=${KEY}abc"],
     ["embedded CONSTANT_CASE variable leaving a short literal", "api_key=Zq8vN3k$LMP0WXY7AB"],
     ["generic type argument", "token: Array<string>"],
+    ["quoted prefix concatenated with code", 'token="Bearer"+tokenValue'],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -163,13 +170,28 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(content)).toEqual(["password_assignment"]);
   });
 
+  it("reaches a password assignment two references deep, and inside a placeholder or variable-led value", async () => {
+    for (const content of [
+      `${passwordKey}=$(echo ${passwordKey}=$(echo ${passwordKey}=${literal}))`,
+      `${passwordKey}=<x ${passwordKey}=${literal}>`,
+      `${passwordKey}=\${A:?${passwordKey}=${literal}}`,
+    ]) {
+      expect(await gateRules(content), content).toEqual(["password-assignment"]);
+      expect(textRules(content), content).toEqual(["password_assignment"]);
+    }
+  });
+
   it("reports a credential-key assignment inside a referenced value whose literal is rejected", () => {
     // The outer literal is a path, so the outer value is rejected; the key inside it keeps its own verdict.
     expect(textRules(`api_key=\${DIR}/x/token=${credential}`)).toEqual(["credential_key_assignment"]);
   });
 
   it("keeps reference values without an inner assignment clean", async () => {
-    for (const content of [`${passwordKey}=$(op read vault/item)`, `${passwordKey}=\${A:-\${B}} and more`, "api_key=${DIR}/x/y"]) {
+    for (const content of [
+      `${passwordKey}=$(op read vault/item)`, `${passwordKey}=\${A:-\${B}} and more`, "api_key=${DIR}/x/y",
+      // An inner assignment whose own value is too short is judged and stays clean.
+      `${passwordKey}=$(echo ${passwordKey}=short)`,
+    ]) {
       expect(await gateRules(content), content).toEqual([]);
       expect(textRules(content), content).toEqual([]);
     }
@@ -184,12 +206,15 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       [passwordRule, `${passwordKey}=\${A:-${`${passwordKey}=`.repeat(2_000)}}`.repeat(20)],
       [credentialKeyRule, `token=\${A}${"token=${A}".repeat(100_000)}`],
       [credentialKeyRule, "api_key=${D}/token=${D}/".repeat(40_000)],
+      [passwordRule, `${passwordKey}=$(a ${passwordKey}=$(b) ${passwordKey}=$(c)) `.repeat(30_000)],
+      [passwordRule, `${passwordKey}=<x ${passwordKey}=$A> `.repeat(40_000)],
+      [credentialKeyRule, '"token":"a"$X'.repeat(40_000)],
     ];
     const started = performance.now();
     const counts = inputs.map(([rule, input]) => Array.from(findSecretRuleMatches(rule, input)).length);
     expect(performance.now() - started).toBeLessThan(5_000);
     // Only the repeated default word spells a literal; it is one concatenated value.
-    expect(counts).toEqual([0, 0, 1, 0, 0]);
+    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 0]);
   });
 });
 

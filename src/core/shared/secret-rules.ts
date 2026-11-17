@@ -175,6 +175,22 @@ export interface SecretRule {
    * referenced value be judged by the same grammar as a reference-free one.
    */
   literalValue?: RegExp;
+  /**
+   * A narrower reading scanned as well: its own flat pattern and structured
+   * value grammar, with the same keys, judges and predicates. A value is a
+   * finding when either reading reports it, so widening `regex` and
+   * `structured.value` never drops a finding the narrower grammar made, and
+   * every key the narrower scan visits is still visited (pm-hw00c2).
+   */
+  baseline?: SecretRuleReading;
+}
+
+/** A flat pattern and the structured value grammar that go with it. */
+export interface SecretRuleReading {
+  /** Global flat pattern, as {@link SecretRule.regex}. */
+  regex: RegExp;
+  /** Structured value grammar (regular-expression source), as {@link SecretStructuredSpelling.value}. */
+  value: string;
 }
 
 const PASSWORD_KEYS = "password|passphrase";
@@ -298,8 +314,12 @@ const credentialConcatenated = (run: string): string => String.raw`(?:${credenti
 /** An unquoted value grammar, with the wider character run directly after `=`. */
 const credentialUnquoted = (build: (run: string) => string): string =>
   String.raw`(?<==)(?:${build(CREDENTIAL_RUN_AFTER_EQUALS)})|(?<![="'])(?:${build(CREDENTIAL_RUN)})`;
-// A quoted piece followed directly by more value text opens a concatenation.
-const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"'A-Za-z0-9!@#%^&*._+\-=/~])`;
+// A quoted piece opens a concatenation when a reference or another quoted
+// piece follows it directly, or when it holds a reference and more value text
+// follows. A reference-free quoted piece followed by other text is code
+// (`"<literal>".trim()`, `"Bearer"+value`) and stays a quoted value.
+const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"']`
+  + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"[A-Za-z0-9!@#%^&*._+\-=/~]|'(?=[^'\s]*[$<])[^'\s]*'[A-Za-z0-9!@#%^&*._+\-=/~])`;
 // A quoted body that holds a reference opener is captured whole up to its closing quote.
 const CREDENTIAL_QUOTED_REFERENCED = String.raw`(?<=")(?=[^"\s]*[$<])[^"\s]+|(?<=')(?=[^'\s]*[$<])[^'\s]+`;
 const CREDENTIAL_VALUE = new RegExp(
@@ -376,6 +396,11 @@ export const SECRET_RULES = [
     minimumEntropy: 3,
     minimumLiteralLength: CREDENTIAL_MINIMUM_LITERAL_LENGTH,
     literalValue: CREDENTIAL_LITERAL_VALUE,
+    // The reference-free grammar is scanned too, so the referenced reading only adds findings.
+    baseline: {
+      regex: new RegExp(String.raw`\b(?:${CREDENTIAL_KEYS})\s*[:=]\s*` + CREDENTIAL_LITERAL_VALUE.source, "gi"),
+      value: CREDENTIAL_LITERAL_VALUE.source,
+    },
     // SSH key-file names (`keys/id_ed25519`) are references, never credentials.
     rejectValue: /^(?:[\w.-]+\/)*id_(?:rsa|dsa|ecdsa|ed25519)(?:_sk)?(?:\.pub)?$/u,
     // `= DEFAULT_TOKEN;` names a constant; `"ZQVNKR_LMPWXYAB"` or `KEY=ZQVNKR_LMPWXYAB` may be a literal.
@@ -389,36 +414,59 @@ export function* findSecretRuleMatches(rule: SecretRule, content: string): Gener
     yield* findPrivateHomePathMatches(content, rule.regex);
     return;
   }
-  rule.regex.lastIndex = 0;
+  for (const reading of ruleReadings(rule)) {
+    yield* flatMatches(rule, reading.regex, content);
+    if (rule.structured) yield* findStructuredSpellingMatches(rule, { ...rule.structured, value: reading.value }, content);
+  }
+}
+
+/** The rule's own reading, then its baseline reading when it declares one. */
+function ruleReadings(rule: SecretRule): SecretRuleReading[] {
+  const own = { regex: rule.regex, value: rule.structured?.value ?? "" };
+  return rule.baseline === undefined ? [own] : [own, rule.baseline];
+}
+
+/** A reference or placeholder opener inside a captured value. */
+const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
+
+/**
+ * Flat matches of one reading. A rule whose only predicate is its literal
+ * minimum also judges the keys inside a rejected referenced value, because a
+ * whole-value reference hides them from a scan that resumes after the match
+ * (pm-bn3ppf). Such a rejected value spells fewer literal characters than any
+ * of the rule's keys with its separator, so every key inside it sits in a
+ * reference body, and bodies nest a bounded number of levels: the rescan
+ * stays linear. A rule with other predicates (entropy, a literal grammar) can
+ * reject a value whose top-level text holds keys; it declares a baseline
+ * reading instead, whose scan visits every key the narrower grammar visits.
+ */
+function* flatMatches(rule: SecretRule, regex: RegExp, content: string): Generator<SecretRuleMatch> {
+  regex.lastIndex = 0;
+  const rescans = rule.minimumLiteralLength !== undefined && rule.minimumEntropy === undefined
+    && rule.literalValue === undefined && rule.rejectValue === undefined && rule.baseline === undefined;
   // A scanner for keys inside rejected values, created on first use; every scan owns its own cursor.
   let inner: RegExp | undefined;
-  for (const match of content.matchAll(rule.regex)) {
+  for (const match of content.matchAll(regex)) {
     if (acceptsSecretMatch(rule, match)) {
       yield { index: match.index! };
-    } else if (rule.minimumLiteralLength !== undefined && VALUE_REFERENCE.test(match[1])) {
-      inner ??= new RegExp(rule.regex);
+    } else if (rescans && VALUE_REFERENCE.test(match[1])) {
+      inner ??= new RegExp(regex);
       yield* keysInsideRejectedValue(rule, inner, content, match);
     }
   }
-  if (rule.structured) yield* findStructuredSpellingMatches(rule, rule.structured, content);
 }
 
-/** A reference opener inside a captured value. */
-const VALUE_REFERENCE = /\$[({]/u;
-
 /**
- * Judge each key that starts inside a rejected value (pm-bn3ppf). A value
- * captured whole may be a reference that holds another assignment of the same
- * rule (`password=$(echo password=…)`), and the flat scan resumes after the
- * rejected match, so without this pass that inner key is never visited. Inner
- * matches are judged once and never rescanned, so each character is scanned
- * at most twice and the scan stays linear.
+ * Judge each key that starts inside a rejected value (`password=$(echo
+ * password=…)`). A rejected inner value that holds a reference is entered in
+ * turn, so a deeper assignment is reached too; each key is judged once.
  */
 function* keysInsideRejectedValue(rule: SecretRule, inner: RegExp, content: string, match: RegExpMatchArray): Generator<SecretRuleMatch> {
   const end = match.index! + match[0].length;
   inner.lastIndex = end - match[1].length;
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
     if (acceptsSecretMatch(rule, found)) yield { index: found.index };
+    else if (VALUE_REFERENCE.test(found[1])) inner.lastIndex = found.index + found[0].length - found[1].length;
   }
 }
 
@@ -757,7 +805,10 @@ export function acceptsStructuredValue(rule: SecretRule, value: string, compact:
   const content = JSON.stringify(value).replaceAll("\u2028", "\\u2028").replaceAll("\u2029", "\\u2029");
   // A serialized payload string is complete data, so it is always judged as
   // decoded data, never by the source-text rules for values the grammar cuts.
-  return createValueJudge(rule, compileSpelling(rule.structured).value, content, true).accepts(compact)(0);
+  // Either reading of the rule reports it, as in text.
+  const spelling = rule.structured;
+  return ruleReadings(rule).some((reading) =>
+    createValueJudge(rule, compileSpelling({ ...spelling, value: reading.value }).value, content, true).accepts(compact)(0));
 }
 
 /**
