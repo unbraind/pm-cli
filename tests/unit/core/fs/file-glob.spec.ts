@@ -56,6 +56,7 @@ const PARITY_PATTERNS = [
   "*/./n.ts", "child/*/../n.ts", "child//n.ts", "*//n.ts", "c*/./deep/d.ts", "./*/deep/../n.ts", "@(**/d.ts|*.md)",
   "child/@(**/d.ts|n.ts)", "app/@(**/page.tsx)", "*(**/d.ts)", "*/@(**|x)", "*/@(x|**)", "{**,x}/n.ts",
   "*[[:ascii:]].ts", "[![:ascii:]]*.ts", "[[:ascii:]].ts",
+  "{child/,x}**/d.ts", "+(child/)**/d.ts", "?(child/)**/d.ts", "@(*/)**/d.ts", "c**", "chi**/n.ts", "a**.ts",
   ...(posix ? ["@(q.ts", "a|b.ts", "linkdir/*", "linkdir/../a.ts", "link.ts", "dangling.ts", "*link*", "**/d.ts"] : []),
 ];
 
@@ -81,6 +82,34 @@ describe("file glob parity with the previous tinyglobby expansion (pm-gh1748)", 
 });
 
 describe("file glob semantics", () => {
+  it("treats a brace or extglob as the union of its expansions, so a globstar after an alternative ending in / spans zero or more directories", async () => {
+    // tinyglobby required at least one directory after an extglob here and
+    // lost matches after a brace; each construct-free expansion still matches it.
+    const constructs: Array<[string, string[]]> = [
+      ["@(child/|sub/)**/*", ["child/**/*", "sub/**/*"]],
+      ["@(child/|app/)**/*.ts*", ["child/**/*.ts*", "app/**/*.ts*"]],
+      ["{child/,sub/}**/*", ["child/**/*", "sub/**/*"]],
+      ["{child/,c}**", ["child/**", "c*"]],
+      ["@(child/|x)**/*.ts", ["child/**/*.ts", "x*/*.ts"]],
+      ["*(app/|child/)**/*", ["**/*"]],
+      ["{,child/}**/d.ts", ["**/d.ts", "child/**/d.ts"]],
+    ];
+    await withTempDir("pm-glob-union-", async (root) => {
+      const workspace = await fixture(root);
+      for (const [pattern, expansions] of constructs) {
+        const union = new Set<string>();
+        for (const expansion of expansions) {
+          const files = await expanded(expansion, workspace);
+          expect({ expansion, files }).toEqual({ expansion, files: await reference(expansion, workspace) });
+          for (const file of files) union.add(file);
+        }
+        const files = await expanded(pattern, workspace);
+        expect({ pattern, files }).toEqual({ pattern, files: [...union].sort() });
+        expect(files).toEqual(expect.arrayContaining(await reference(pattern, workspace)));
+      }
+    });
+  });
+
   it("refuses negation, whether leading or as a closed extglob", async () => {
     await withTempDir("pm-glob-negation-", async (root) => {
       for (const pattern of ["!a.ts", "!", "!(a).ts", "src/!(a|b)/*.ts", "{x,!(a)}.ts"]) {
@@ -137,7 +166,7 @@ describe("file glob semantics", () => {
       expect(await expanded(`${"@(".repeat(33)}a${")".repeat(33)}.ts`, root)).toEqual([]);
       expect(await expanded("{1..1001}.ts", root)).toEqual([]);
       expect(await expanded("{1..1000}.ts", root)).toEqual(["1.ts"]);
-      expect(await expanded("{1..1000}".repeat(14), root)).toEqual([]);
+      expect(await expanded("{1..1000}".repeat(20), root)).toEqual([]);
       expect(await expanded("{z..a}.ts", root)).toEqual(["a.ts"]);
       // A "[:" without a closing ":]" is an ordinary member, never a POSIX class.
       expect(await expanded("[[:ab].ts", root)).toEqual(["a.ts"]);

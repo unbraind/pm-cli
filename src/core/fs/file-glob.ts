@@ -44,12 +44,16 @@ interface DfaLimits {
 const DFA_LIMITS: DfaLimits = { nodes: 10_000, edges: 40_000, stateIds: 2_000_000 };
 const SLASH = 0x2f;
 
+/**
+ * Parsed pattern. A `globstar` is a run of exactly two stars followed by "/"
+ * (`slash`) or by the end of the pattern or of a brace alternative. Whether it
+ * spans directories is decided where it is reached (see Nfa), not here.
+ */
 type Node =
   | { kind: "char"; value: number }
   | { kind: "any" }
   | { kind: "star" }
-  | { kind: "segments" }
-  | { kind: "rest" }
+  | { kind: "globstar"; slash: boolean }
   | { kind: "class"; negated: boolean; ranges: Array<[number, number]>; literal: number[] }
   | { kind: "alt"; options: Node[][] }
   | { kind: "repeat"; optional: boolean; many: boolean; options: Node[][] };
@@ -247,7 +251,6 @@ function parseClass(chars: string[], start: number, end: number): Node {
 interface Token {
   nodes: Node[];
   next: number;
-  segmentStart: boolean;
 }
 
 /** Recursive-descent parser over pre-paired constructs; recursion depth is bounded by MAX_NESTING. */
@@ -263,11 +266,11 @@ class Parser {
   }
 
   /** Parse `[start, end)` into alternatives split at top-level `separator` characters. */
-  alternatives(start: number, end: number, separator: string | undefined, segmentStart: boolean): Node[][] {
+  alternatives(start: number, end: number, separator: string | undefined): Node[][] {
     const options: Node[][] = [];
     let cursor = start;
     for (;;) {
-      const { nodes, stop } = this.sequence(cursor, end, separator, segmentStart);
+      const { nodes, stop } = this.sequence(cursor, end, separator);
       options.push(nodes);
       if (stop >= end) return options;
       cursor = stop + 1;
@@ -275,71 +278,86 @@ class Parser {
   }
 
   /** Parse one sequence until `end` or an unnested `separator`, returning where it stopped. */
-  sequence(start: number, end: number, separator: string | undefined, segmentStart: boolean): { nodes: Node[]; stop: number } {
+  sequence(start: number, end: number, separator: string | undefined): { nodes: Node[]; stop: number } {
     const nodes: Node[] = [];
     let index = start;
-    let atSegmentStart = segmentStart;
     while (index < end) {
       if (this.chars[index] === separator) return { nodes, stop: index };
-      const token = this.token(index, end, separator, atSegmentStart);
+      const token = this.token(index, end, separator);
       nodes.push(...token.nodes);
       index = token.next;
-      atSegmentStart = token.segmentStart;
     }
     return { nodes, stop: end };
   }
 
   /** Parse the token at `index`. */
-  private token(index: number, end: number, separator: string | undefined, segmentStart: boolean): Token {
+  private token(index: number, end: number, separator: string | undefined): Token {
     const char = this.chars[index]!;
-    if (char === "\\") {
-      return { nodes: literalNodes(index + 1 < end ? this.chars[index + 1]! : "\\"), next: index + 2, segmentStart: false };
-    }
-    if (char === "/") return { nodes: [{ kind: "char", value: SLASH }], next: index + 1, segmentStart: true };
+    if (char === "\\") return { nodes: literalNodes(index + 1 < end ? this.chars[index + 1]! : "\\"), next: index + 2 };
     const closer = this.closers.get(index);
-    if (closer !== undefined) {
-      return char === "{" ? this.brace(index, closer, segmentStart) : this.extglob(char, index, closer, segmentStart);
-    }
+    if (closer !== undefined) return char === "{" ? this.brace(index, closer) : this.extglob(char, index, closer);
     const bracket = this.brackets.get(index);
-    if (bracket !== undefined) return { nodes: [parseClass(this.chars, index, bracket)], next: bracket, segmentStart: false };
-    if (char === "*") return this.stars(index, end, separator, segmentStart);
-    return { nodes: char === "?" ? [{ kind: "any" }] : literalNodes(char), next: index + 1, segmentStart: false };
+    if (bracket !== undefined) return { nodes: [parseClass(this.chars, index, bracket)], next: bracket };
+    if (char === "*") return this.stars(index, end, separator);
+    return { nodes: char === "?" ? [{ kind: "any" }] : literalNodes(char), next: index + 1 };
   }
 
-  /** Parse an extglob whose operator is at `index` and whose ")" is at `closer`; a globstar alternative at a segment start stays a globstar. */
-  private extglob(operator: string, index: number, closer: number, segmentStart: boolean): Token {
-    const options = this.alternatives(index + 2, closer, "|", segmentStart);
+  /** Parse an extglob whose operator is at `index` and whose ")" is at `closer`. */
+  private extglob(operator: string, index: number, closer: number): Token {
+    const options = this.alternatives(index + 2, closer, "|");
     const node: Node = operator === "@"
       ? { kind: "alt", options }
       : { kind: "repeat", optional: operator !== "+", many: operator !== "?", options };
-    return { nodes: [node], next: closer + 1, segmentStart: false };
+    return { nodes: [node], next: closer + 1 };
   }
 
   /** Parse a paired brace: alternation, a range, or (with one part) literal braces around a pattern. */
-  private brace(index: number, closer: number, segmentStart: boolean): Token {
-    const options = this.alternatives(index + 1, closer, ",", segmentStart);
+  private brace(index: number, closer: number): Token {
+    const options = this.alternatives(index + 1, closer, ",");
     const next = closer + 1;
-    if (options.length > 1) return { nodes: [{ kind: "alt", options }], next, segmentStart: false };
+    if (options.length > 1) return { nodes: [{ kind: "alt", options }], next };
     const range = braceRange(this.chars.slice(index + 1, closer).join(""));
-    if (range !== undefined) return { nodes: [{ kind: "alt", options: range.map(literalNodes) }], next, segmentStart: false };
-    return { nodes: [...literalNodes("{"), ...options[0]!, ...literalNodes("}")], next, segmentStart: false };
+    if (range !== undefined) return { nodes: [{ kind: "alt", options: range.map(literalNodes) }], next };
+    return { nodes: [...literalNodes("{"), ...options[0]!, ...literalNodes("}")], next };
   }
 
-  /** Parse a run of stars: exactly two at a segment start are a globstar, anything else one star. */
-  private stars(index: number, end: number, separator: string | undefined, segmentStart: boolean): Token {
+  /**
+   * Parse a run of stars. Exactly two followed by "/" are a globstar that
+   * consumes the "/"; exactly two at the end of the pattern or of a brace
+   * alternative are a trailing globstar. Two that end an extglob alternative,
+   * and every other run, are one star, as in the previous expansion.
+   */
+  private stars(index: number, end: number, separator: string | undefined): Token {
     let run = 1;
     while (this.chars[index + run] === "*" && index + run < end && !this.closers.has(index + run)) run += 1;
     const after = index + run < end ? this.chars[index + run] : undefined;
-    const globstar = run === 2 && segmentStart;
-    if (globstar && after === "/") return { nodes: [{ kind: "segments" }], next: index + run + 1, segmentStart: true };
-    // A trailing globstar spans directories at the top level and in a brace
-    // alternative; one that ends an extglob alternative is a single star.
-    const rest = globstar && separator !== "|" && (after === undefined || after === separator);
-    return { nodes: [rest ? { kind: "rest" } : { kind: "star" }], next: index + run, segmentStart: false };
+    if (run === 2 && after === "/") return { nodes: [{ kind: "globstar", slash: true }], next: index + run + 1 };
+    const trailing = run === 2 && separator !== "|" && (after === undefined || after === separator);
+    return { nodes: [trailing ? { kind: "globstar", slash: false } : { kind: "star" }], next: index + run };
   }
 }
 
-/** Thompson construction with a hard state bound. */
+/**
+ * The open ends of an NFA fragment: the state reached at a segment start (the
+ * pattern start, or just after "/") and the state reached inside a segment.
+ * Keeping them apart lets a globstar span directories exactly when it is
+ * reached at a segment start, whichever alternative of an enclosing brace or
+ * extglob reached it.
+ */
+interface Ends {
+  segment?: number;
+  inside?: number;
+}
+
+const END_KINDS = ["segment", "inside"] as const;
+const ANY: EdgeTest = { kind: "any" };
+
+/** Return the defined states of a fragment's ends. */
+function entriesOf(ends: Ends): number[] {
+  return END_KINDS.flatMap((kind) => (ends[kind] === undefined ? [] : [ends[kind]]));
+}
+
+/** Thompson construction with a hard state bound and segment-aware fragment ends. */
 class Nfa {
   readonly states: State[] = [];
 
@@ -350,80 +368,118 @@ class Nfa {
     return this.states.length - 1;
   }
 
-  /** Add a consuming edge from `from` to a new state and return it. */
-  private edge(from: number, test: EdgeTest): number {
+  /** Add an epsilon edge. */
+  epsilon(from: number, to: number): void {
+    this.states[from]!.epsilon.push(to);
+  }
+
+  /**
+   * Consume one code point matching `test` from every end, arriving at one new
+   * end of `kind`. Fragments are never empty: the walk starts at a segment
+   * end, and every node built from a non-empty fragment yields one.
+   */
+  private consume(from: Ends, test: EdgeTest, kind: keyof Ends): Ends {
     const to = this.add();
-    this.states[from]!.edges.push({ test, to });
-    return to;
+    for (const entry of entriesOf(from)) this.states[entry]!.edges.push({ test, to });
+    return { [kind]: to };
   }
 
-  /** Build `options` as an alternation starting at `from` and return the shared end state. */
-  private alternation(from: number, options: Node[][]): number {
-    const end = this.add();
-    for (const option of options) {
-      const start = this.add();
-      this.states[from]!.epsilon.push(start);
-      this.states[this.build(option, start)]!.epsilon.push(end);
+  /** Merge fragments' ends of each kind into one state per kind. */
+  private join(parts: Ends[]): Ends {
+    const joined: Ends = {};
+    for (const kind of END_KINDS) {
+      const states = parts.flatMap((part) => (part[kind] === undefined ? [] : [part[kind]]));
+      if (states.length === 1) joined[kind] = states[0];
+      if (states.length > 1) {
+        const merged = this.add();
+        for (const state of states) this.epsilon(state, merged);
+        joined[kind] = merged;
+      }
     }
-    return end;
+    return joined;
   }
 
-  /** Build `nodes` from state `from` and return the final state. */
-  build(nodes: Node[], from: number): number {
+  /** Feed each defined end into the matching end of `loop`. */
+  private feed(ends: Ends, loop: Required<Ends>): void {
+    for (const kind of END_KINDS) if (ends[kind] !== undefined) this.epsilon(ends[kind], loop[kind]);
+  }
+
+  /** Build `nodes` from `from` and return the open ends. */
+  build(nodes: Node[], from: Ends): Ends {
     let current = from;
     for (const node of nodes) current = this.node(node, current);
     return current;
   }
 
-  /** Build one node from state `from` and return its end state. */
-  private node(node: Node, from: number): number {
+  /** Build each option from `from` and merge their ends. */
+  private alternation(options: Node[][], from: Ends): Ends {
+    return this.join(options.map((option) => this.build(option, from)));
+  }
+
+  /** Zero or more non-separator code points. */
+  private star(from: Ends): Ends {
+    const loop = this.add();
+    for (const entry of entriesOf(from)) this.epsilon(entry, loop);
+    this.states[loop]!.edges.push({ test: ANY, to: loop });
+    return { inside: loop };
+  }
+
+  /**
+   * At a segment start, `**` + "/" spans zero or more whole segments and a
+   * trailing `**` matches any remaining text. Inside a segment both are one
+   * star (followed by "/" when `slash`).
+   */
+  private globstar(from: Ends, slash: boolean): Ends {
+    const parts: Ends[] = [];
+    if (from.segment !== undefined) {
+      const loop = this.add();
+      this.epsilon(from.segment, loop);
+      if (slash) {
+        const inside = this.add();
+        this.states[loop]!.edges.push({ test: ANY, to: inside });
+        this.states[inside]!.edges.push({ test: ANY, to: inside }, { test: { kind: "char", value: SLASH }, to: loop });
+        parts.push({ segment: loop });
+      } else {
+        this.states[loop]!.edges.push({ test: { kind: "all" }, to: loop });
+        parts.push({ inside: loop });
+      }
+    }
+    if (from.inside !== undefined) {
+      const star = this.star({ inside: from.inside });
+      parts.push(slash ? this.consume(star, { kind: "char", value: SLASH }, "segment") : star);
+    }
+    return this.join(parts);
+  }
+
+  /** `?(…)`, `*(…)` and `+(…)`: an optional pass or a loop over the alternatives. */
+  private repeat(node: Extract<Node, { kind: "repeat" }>, from: Ends): Ends {
+    if (!node.many) return this.join([from, this.alternation(node.options, from)]);
+    const loop = { segment: this.add(), inside: this.add() };
+    this.feed(node.optional ? from : this.alternation(node.options, from), loop);
+    this.feed(this.alternation(node.options, loop), loop);
+    return loop;
+  }
+
+  /** Build one node from `from` and return its ends. */
+  private node(node: Node, from: Ends): Ends {
     switch (node.kind) {
       case "char":
-        return this.edge(from, { kind: "char", value: node.value });
+        return this.consume(from, { kind: "char", value: node.value }, node.value === SLASH ? "segment" : "inside");
       case "any":
-        return this.edge(from, { kind: "any" });
-      case "star": {
-        const loop = this.add();
-        this.states[from]!.epsilon.push(loop);
-        this.states[loop]!.edges.push({ test: { kind: "any" }, to: loop });
-        return loop;
-      }
-      case "segments": {
-        // Zero or more whole segments, each any non-separator text and a "/".
-        const between = this.add();
-        this.states[from]!.epsilon.push(between);
-        const inside = this.edge(between, { kind: "any" });
-        this.states[inside]!.edges.push({ test: { kind: "any" }, to: inside });
-        this.states[inside]!.edges.push({ test: { kind: "char", value: SLASH }, to: between });
-        return between;
-      }
-      case "rest": {
-        const loop = this.add();
-        this.states[from]!.epsilon.push(loop);
-        this.states[loop]!.edges.push({ test: { kind: "all" }, to: loop });
-        return loop;
-      }
-      case "class": {
-        const end = this.add();
-        const classEnd = this.edge(from, { kind: "class", negated: node.negated, ranges: node.ranges });
-        this.states[classEnd]!.epsilon.push(end);
-        this.states[this.build(node.literal.map((value) => ({ kind: "char", value }) as Node), from)]!.epsilon.push(end);
-        return end;
-      }
+        return this.consume(from, ANY, "inside");
+      case "star":
+        return this.star(from);
+      case "globstar":
+        return this.globstar(from, node.slash);
+      case "class":
+        return this.join([
+          this.consume(from, { kind: "class", negated: node.negated, ranges: node.ranges }, "inside"),
+          this.build(node.literal.map((value) => ({ kind: "char", value }) as Node), from),
+        ]);
       case "alt":
-        return this.alternation(from, node.options);
-      case "repeat": {
-        const first = node.optional ? from : this.alternation(from, node.options);
-        const end = this.add();
-        this.states[first]!.epsilon.push(end);
-        if (node.many) {
-          const again = this.alternation(end, node.options);
-          this.states[again]!.epsilon.push(end);
-        } else {
-          this.states[this.alternation(first, node.options)]!.epsilon.push(end);
-        }
-        return end;
-      }
+        return this.alternation(node.options, from);
+      case "repeat":
+        return this.repeat(node, from);
     }
   }
 }
@@ -544,10 +600,11 @@ class PathMatcher {
 function compile(text: string, limits: DfaLimits = DFA_LIMITS): PathMatcher {
   const chars = Array.from(text);
   const { closers, brackets } = pairConstructs(chars);
-  const nodes = new Parser(chars, closers, brackets).sequence(0, chars.length, undefined, true).nodes;
+  const nodes = new Parser(chars, closers, brackets).sequence(0, chars.length, undefined).nodes;
   const nfa = new Nfa();
   const start = nfa.add();
-  const accept = nfa.build(nodes, start);
+  const accept = nfa.add();
+  for (const end of entriesOf(nfa.build(nodes, { segment: start }))) nfa.epsilon(end, accept);
   return new PathMatcher(nfa, start, accept, limits);
 }
 
