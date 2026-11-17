@@ -1,0 +1,22 @@
+id: pm-03q389
+title: "picomatch through 4.0.7 has a high ReDoS advisory with no patched release (GHSA-fc5q-39xc-vjpf), so the dependency advisory gate blocks Gates (static) on every branch and the next release"
+description: "Found 2026-11-17 on PR 1746 when hosted Gates (static) failed at scripts/release/dependency-advisories/gate.mjs. GitHub updated advisory GHSA-fc5q-39xc-vjpf (npm advisory 1247710, high, ReDoS through single-branch repeated extglobs such as +(*)) on 2026-11-17 15:56Z to cover picomatch through 4.0.7, which is the latest release; first_patched_version is null. Both independent feeds report it (registry high count 1; OSV row picomatch 4.0.7), and the gate's all-severity policy (pm-eqxjzl: do not suppress actionable advisories) therefore blocks every run, including main, independent of any branch change; the lockfile is unchanged by PR 1746. Paths: tinyglobby (runtime, used by src/sdk/linked-artifacts.ts for linked-file globs), fdir via tinyglobby, and vite via @codspeed/vitest-plugin (dev). Exposure in pm: a caller-supplied linked-artifact glob compiled by picomatch could stall the process (self-inflicted). Upstream micromatch/picomatch opened fix PRs 257 to 261 on 2026-11-17 around 20:10Z; none is merged or released yet. Dependabot shows no open alert yet. Plan: when a patched picomatch is published, update the lockfile (direct pnpm update or an override to the patched version), confirm both feeds clear with node scripts/release/dependency-advisories/gate.mjs, and land it in a reviewed PR before the daily release cut; if no patch arrives, decide explicitly whether a time-bounded, recorded waiver belongs in the gate (it has none today)."
+type: Issue
+status: open
+priority: 1
+tags[6]: advisory,dependency,github-alert,picomatch,release-blocker,security
+created_at: "2026-11-17T20:50:14.563Z"
+updated_at: "2026-11-17T20:50:14.563Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "A patched picomatch is in the lockfile, or an explicit recorded decision covers the interim; node scripts/release/dependency-advisories/gate.mjs passes with both feeds clean; hosted Gates (static) passes on main and the daily release is not blocked"
+parent: pm-i7w2
+risk: medium
+confidence: high
+severity: high
+expected_result: The dependency advisory gate passes with no actionable advisory in the lockfile
+actual_result: "Both advisory feeds report picomatch 4.0.7 (GHSA-fc5q-39xc-vjpf, no patched release) and the gate blocks every branch"
+component: dependencies
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-eqxjzl,related,"2026-11-17T20:50:14.563Z","harness:claude-code","cli:create:dep",detected
+body: ""
