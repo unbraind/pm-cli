@@ -333,6 +333,11 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // Greptile: a quoted array element is structured too, in either position.
     expect(textRules(`{"${passwordKey}":["$DB_PASSWORD","x"]}`)).toEqual([]);
     expect(textRules(`{"${passwordKey}":["x","$DB_PASSWORD"]}`)).toEqual([]);
+    // CodeRabbit: a JSON scalar sibling after a quoted array element is structure too, a digit-led word is not.
+    for (const sibling of ["1", "-2.5", "true", "false", "null"]) {
+      expect(textRules(`{"${passwordKey}":["$DB_PASSWORD",${sibling}]}`), sibling).toEqual([]);
+    }
+    expect(textRules(`{"${passwordKey}":["$DB_PASSWORD",1${literal}]}`)).toEqual(["password_assignment"]);
     // Greptile: an array that starts with a JSON number or literal is structure too.
     for (const element of ["[1]", "[-2]", "[true]", "[null]", "{}"]) {
       expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},${element}]`), element).toEqual([]);

@@ -8,6 +8,9 @@ import { describe, expect, it, vi } from "vitest";
 
 const OVERFLOW = "overflow-sentinel";
 const BROKEN = "broken-sentinel";
+// Raised only by the member judge, so the member pass's own handling is what the test observes.
+const MEMBER_OVERFLOW = "judge-only-range";
+const MEMBER_BROKEN = "judge-only-type";
 
 vi.mock("../../../../src/core/shared/secret-rules.js", async (importOriginal) => {
   const original = await importOriginal<typeof import("../../../../src/core/shared/secret-rules.js")>();
@@ -23,6 +26,8 @@ vi.mock("../../../../src/core/shared/secret-rules.js", async (importOriginal) =>
     },
     acceptsStructuredValue: (rule: Parameters<typeof original.acceptsStructuredValue>[0], value: string, compact: boolean) => {
       raise(value);
+      if (value === MEMBER_OVERFLOW) throw new RangeError("Maximum call stack size exceeded");
+      if (value === MEMBER_BROKEN) throw new TypeError("unexpected");
       return original.acceptsStructuredValue(rule, value, compact);
     },
   };
@@ -37,8 +42,12 @@ describe("an oversized value fails closed for itself (Codex round 34)", () => {
     const findings = scanMutationSecrets({ description: OVERFLOW, notes: githubToken });
     expect(findings).toContainEqual({ rule: "github_token", path: "$.notes" });
     expect(findings).toContainEqual({ rule: "credential_key_assignment", path: "$.description", normalization_incomplete: true });
-    // A credential-named member is judged by the member pass, which fails closed the same way.
-    expect(scanMutationSecrets({ api_key: OVERFLOW })).toContainEqual({ rule: "credential_key_assignment", path: "$.api_key", normalization_incomplete: true });
+    // A credential-named member is judged by the member pass, which fails closed the same way on its own.
+    // Both key-named rules that read `api_key` judge the member, and each fails closed for it.
+    expect(scanMutationSecrets({ api_key: MEMBER_OVERFLOW })).toEqual([
+      { rule: "high_entropy_assignment", path: "$.api_key", normalization_incomplete: true },
+      { rule: "credential_key_assignment", path: "$.api_key", normalization_incomplete: true },
+    ]);
   });
 
   it("blocks instead of failing open", () => {
@@ -48,7 +57,7 @@ describe("an oversized value fails closed for itself (Codex round 34)", () => {
 
   it("still lets any other error reach the guard's fail-open advisory", () => {
     expect(() => scanMutationSecrets({ description: BROKEN })).toThrow(TypeError);
-    expect(() => scanMutationSecrets({ api_key: BROKEN })).toThrow(TypeError);
+    expect(() => scanMutationSecrets({ api_key: MEMBER_BROKEN })).toThrow(TypeError);
     expect(evaluateMutationGuard({ author: "agent", payload: { description: BROKEN }, settings: blockSettings }).warnings)
       .toEqual(["secret_guard_scan_failed_open"]);
   });

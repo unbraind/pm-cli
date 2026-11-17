@@ -1021,12 +1021,13 @@ function hasQuotedKey(match: RegExpMatchArray, openerOutsideCapture: boolean): b
 const QUOTED_KEY_BEFORE = /(?:["']\s*[:=]|[[,])\s*$/u;
 
 /**
- * The start of the next JSON member or element: a quote, or `{` / `[` that
- * opens structure or a complete JSON value (a number, `true`, `false`, `null`)
- * that a delimiter ends, never word text (`][literal`, `][trueSecret`,
- * `][1literal`). A value longer than the bounded look-ahead is not recognized.
+ * The start of the next JSON member or element: a quote, `{` / `[` that opens
+ * structure, or a complete JSON scalar (a number, `true`, `false`, `null`),
+ * bare or after `{` / `[`, that a delimiter ends (`["$PW",1]`); never word
+ * text (`][literal`, `][trueSecret`, `,1literal`). A value longer than the
+ * bounded look-ahead is not recognized.
  */
-const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|$|(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)[\s,\]}]))/u;
+const NEXT_MEMBER = /^(?:["'`]|(?:[{[](?:[\s"'`{[\]}]|$))|[{[]?(?:-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null)[\s,\]}])/u;
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;

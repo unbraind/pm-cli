@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",credential-redaction,placeholders,secret-guard,security
 created_at: "2026-11-16T23:30:24.532Z"
-updated_at: "2026-11-17T18:00:38.272Z"
+updated_at: "2026-11-17T18:28:42.150Z"
 closed_at: "2026-11-17T09:04:47.334Z"
 completed_at: "2026-11-17T09:04:47.334Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1l85at,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-jcz7qz,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-ycgb5g,discovered_from,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
-comments[37]:
+comments[38]:
   - created_at: "2026-11-17T08:37:14.716Z"
     author: "harness:claude-code"
     text: "Design (implementation on branch fix/secret-guard-reference-literals-and-property-names). credential_key_assignment now captures a value whole when it holds a run-time reference (braced, command, dollar-name or angle placeholder) or opens with a quoted piece concatenated to more text, and judges the literal left once references expand with CREDENTIAL_LITERAL_VALUE: the unchanged reference-free grammar (paths, URLs, words, member paths, key-file names excluded; 8+ characters; entropy 3) read as one double-quoted literal, because the literal is data. The rule gains minimumLiteralLength 8 and a new declarative SecretRule field literalValue; acceptsSecretMatch judges the literal (not the captured text) for entropy and rejectValue whenever a rule declares a literal minimum. judgedLiteral treats a capture whose quotes the grammar read outside it (a quoted credential-key body) as data, so its quote characters are literal. Bounds: at most 64 literal characters before the first reference (a longer prefix is judged as a reference-free value), references and quoted pieces are whitespace-free (so a spaced command substitution is never one value and a key inside it keeps its own verdict), every repeated group is bounded at 4096 and quoted pieces at 4, as in the password grammar. Bare dollar-name policy (one policy for both key-named rules): a dollar-name reference expands to nothing when the name is CONSTANT_CASE (environment-variable convention) or when it is the whole value, quoted or not; bareness is judged on the source text, so a concatenation never reads as one name. Any other dollar text is literal, so a credential that merely contains a dollar sign keeps its characters."
@@ -137,6 +137,9 @@ comments[37]:
   - created_at: "2026-11-17T18:00:38.271Z"
     author: "harness:claude-code"
     text: "CodeQL and Greptile on a647d3e5c, three fixes. (1) CodeQL alert 62 and a Greptile P1: the literal-type union pattern let a numeric member match two alternatives, so a crafted union backtracked exponentially (24 members took about 2.7 seconds). Every member alternative now starts with a different character class, so the union is read one way; 5,000 members take a few milliseconds. (2) An operator inside quoted text within a command substitution, and (3) an operator inside a braced reference's word, were taken for shell separators. Each reference span now records its kind and its own quoted ranges; an inner match is in shell context only when its innermost enclosing reference is a command substitution and the match lies outside that reference's quoted ranges (binary search), and only then do shell operators end or cut its word."
+  - created_at: "2026-11-17T18:28:42.150Z"
+    author: "harness:claude-code"
+    text: "CodeRabbit full review of 2f31e7fcd, two fixes. (1) A JSON scalar sibling (a number, true, false or null) after a quoted array element was not taken for structure, so a compact JSON array holding a bare variable followed by a scalar was flagged; a complete scalar that a delimiter ends now starts the next element, bare or after an opening brace or bracket, while a digit-led word still continues the shell word. (2) Test isolation: the member-pass error assertions could pass through the leaf pass; member-only sentinels now throw only in the member judge, and the assertions pin the member pass's own fail-closed findings (both key-named rules that read the name) and its error propagation."
 files[5]{path,scope}:
   src/core/shared/secret-rules.ts,project
   src/sdk/mutation-guard.ts,project
