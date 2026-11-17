@@ -792,20 +792,23 @@ function quotedStep(text: string, index: number, frame: ReferenceFrame): number 
   // Double quotes still expand a nested reference (`${PW:-"${FALLBACK}"}`); single quotes do not.
   if (quote === "\"" && character === "$" && (text[index + 1] === "{" || text[index + 1] === "(")) return -1;
   let length = 1;
+  // What the character adds to a default word: the shell removes a word's
+  // quote delimiters and escaping backslashes, so `${PW:-"x"}` contributes `x`.
+  let contributed = character;
   if (character === "\\" && quote !== "'" && index + 1 < text.length) {
     // A backslash escapes the next character outside quotes and in double quotes (`$(printf \))`).
     length = 2;
+    contributed = text[index + 1]!;
   } else if (quote === undefined) {
     if (character !== "\"" && character !== "'") return -1;
     frame.quote = character;
+    contributed = "";
   } else if (character === quote) {
     frame.quote = undefined;
+    contributed = "";
   }
-  // A default word (`${PW:-"x"}`) keeps its quoted text with its quotes, which
-  // literalAfterReferences removes later; other references drop it.
-  const consumed = text.slice(index, index + length);
-  frame.raw += consumed;
-  if (frame.keep) frame.literal += consumed;
+  frame.raw += text.slice(index, index + length);
+  if (frame.keep) frame.literal += contributed;
   return index + length;
 }
 

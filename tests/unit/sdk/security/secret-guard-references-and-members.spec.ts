@@ -188,24 +188,24 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     expect(expandRuntimeReferences("x<y")).toBe("x<y");
     expect(expandRuntimeReferences("abc'def")).toBe("abc'def");
     expect(expandRuntimeReferences("}$)$")).toBe("}$)$");
-    // Quoted text inside a reference never closes it; a default word keeps its quotes.
+    // Quoted text inside a reference never closes it; a default word loses its quote delimiters, as in the shell.
     expect(expandRuntimeReferences("$(printf ')x')y")).toBe("y");
     expect(expandRuntimeReferences('$(printf "a\\")b")y')).toBe("y");
     expect(expandRuntimeReferences("${A:?'}'}y")).toBe("y");
-    expect(expandRuntimeReferences('${PW:-"x"}')).toBe('"x"');
+    expect(expandRuntimeReferences('${PW:-"x"}')).toBe("x");
     expect(expandRuntimeReferences("$(printf 'open")).toBe("$(printf 'open");
     expect(expandRuntimeReferences('$(printf "a\\')).toBe('$(printf "a\\');
-    // A default word keeps quoted text with its quotes; double quotes still expand references.
-    expect(expandRuntimeReferences("${PW:-'}'}x")).toBe("'}'x");
-    expect(expandRuntimeReferences('${PW:-"${FALLBACK}"}')).toBe('""');
-    expect(expandRuntimeReferences("${PW:-'${X}'}")).toBe("'${X}'");
+    // A default word keeps its quoted text without the delimiters; double quotes still expand references.
+    expect(expandRuntimeReferences("${PW:-'}'}x")).toBe("}x");
+    expect(expandRuntimeReferences('${PW:-"${FALLBACK}"}')).toBe("");
+    expect(expandRuntimeReferences("${PW:-'${X}'}")).toBe("${X}");
     // Double quotes inside a reference still open a nested command substitution; a plain `$` there is text.
     expect(expandRuntimeReferences('$(a "$(b)" c)y')).toBe("y");
     expect(expandRuntimeReferences('$(echo "$x")y')).toBe("y");
     expect(expandRuntimeReferences("x${")).toBe("x${");
     // A backslash escapes the next character outside quotes and in double quotes, never in single quotes.
     expect(expandRuntimeReferences("$(printf \\)x)y")).toBe("y");
-    expect(expandRuntimeReferences("${PW:-a\\}b}")).toBe("a\\}b");
+    expect(expandRuntimeReferences("${PW:-a\\}b}")).toBe("a}b");
     expect(expandRuntimeReferences("$(printf '\\')y")).toBe("y");
     expect(expandRuntimeReferences("$(printf \\")).toBe("$(printf \\");
     const started = performance.now();
@@ -303,6 +303,33 @@ describe("structured payload members are judged under their property names (pm-3
     const findings = memberFindings({ fields: { api_key: credential } });
     expect(findings).toEqual([{ rule: "credential_key_assignment", path: "$.fields.api_key" }]);
     expect(JSON.stringify(findings)).not.toContain(credential);
+  });
+
+  it("reads each object once per scan, so a getter that throws on a later read cannot discard findings", () => {
+    const npm = ["np", "m_", "a".repeat(24)].join("");
+    let reads = 0;
+    const payload: Record<string, unknown> = { description: npm };
+    Object.defineProperty(payload, "flaky", {
+      enumerable: true,
+      get() {
+        reads += 1;
+        if (reads > 1) throw new Error("second read refused");
+        return { note: "short" };
+      },
+    });
+    expect(() => evaluateMutationGuard({ author: "agent", payload, settings: blockSettings }))
+      .toThrow(/Mutation blocked by secret guard \(npm_token\)/);
+    expect(reads).toBe(1);
+  });
+
+  it("measures a default word without its quote delimiters", () => {
+    // Six characters inside the delimiters stay clean; eight are reported, for both quote kinds.
+    const eight = ["abcd", "efgh"].join("");
+    for (const [open, close] of [["\"", "\""], ["'", "'"]]) {
+      expect(memberFindings({ password: ["${PW:-", open, "abcdef", close, "}"].join("") })).toEqual([]);
+      expect(memberFindings({ password: ["${PW:-", open, eight, close, "}"].join("") }))
+        .toContainEqual({ rule: "password_assignment", path: "$.password" });
+    }
   });
 
   it("counts a structured password's quote characters as data", () => {

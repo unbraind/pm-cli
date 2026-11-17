@@ -152,20 +152,33 @@ function isArrayIndex(key: string): boolean {
   return ARRAY_INDEX.test(key) && Number(key) <= MAX_ARRAY_INDEX;
 }
 
+/** Own entries of each object, read once per scan and shared by every pass. */
+type EntryCache = WeakMap<object, ReadonlyArray<readonly [string, unknown]>>;
+
 /**
- * The direct children of an array or of an object's own enumerable
- * properties, in order. An array is read through its own index properties,
- * enumerable or not (as a length-based walk or JSON.stringify reads them),
- * never through its own (possibly overridden) methods, so holes are skipped
- * and a sparse array with a huge length costs only its present elements.
+ * The own entries of an array or object, in order, read once per scan, so
+ * both passes judge the same values and a getter that changes or throws on a
+ * later read cannot discard findings already made. An array is read through
+ * its own index properties, enumerable or not (as a length-based walk or
+ * JSON.stringify reads them), never through its own (possibly overridden)
+ * methods, so holes are skipped and a sparse array with a huge length costs
+ * only its present elements.
  */
-function childSteps(value: object, path: string): PayloadStep[] {
-  if (Array.isArray(value)) {
-    return Object.getOwnPropertyNames(value)
-      .filter(isArrayIndex)
-      .map((key) => ({ value: (value as unknown[])[Number(key)], path: `${path}[${key}]` }));
+function ownEntries(value: object, cache: EntryCache): ReadonlyArray<readonly [string, unknown]> {
+  let entries = cache.get(value);
+  if (entries === undefined) {
+    entries = Array.isArray(value)
+      ? Object.getOwnPropertyNames(value).filter(isArrayIndex).map((key) => [key, (value as unknown[])[Number(key)]] as const)
+      : Object.entries(value);
+    cache.set(value, entries);
   }
-  return Object.entries(value).map(([key, entry]) => ({ value: entry as unknown, path: `${path}.${key}` }));
+  return entries;
+}
+
+/** The direct children of an array or object, with their payload paths. */
+function childSteps(value: object, path: string, cache: EntryCache): PayloadStep[] {
+  const indexed = Array.isArray(value);
+  return ownEntries(value, cache).map(([key, entry]) => ({ value: entry, path: indexed ? `${path}[${key}]` : `${path}.${key}` }));
 }
 
 /**
@@ -174,7 +187,7 @@ function childSteps(value: object, path: string): PayloadStep[] {
  * by the call stack (pm-wq9njf) and a deep payload cannot make the scan fail
  * open.
  */
-function stringLeaves(payload: unknown): Array<{ path: string; value: string }> {
+function stringLeaves(payload: unknown, cache: EntryCache): Array<{ path: string; value: string }> {
   const leaves: Array<{ path: string; value: string }> = [];
   const seen = new WeakSet<object>();
   const pending: PayloadStep[] = [{ value: payload, path: "$" }];
@@ -184,7 +197,7 @@ function stringLeaves(payload: unknown): Array<{ path: string; value: string }> 
       leaves.push({ path, value });
     } else if (typeof value === "object" && value !== null && !seen.has(value)) {
       seen.add(value);
-      pushReversed(pending, childSteps(value, path));
+      pushReversed(pending, childSteps(value, path, cache));
     }
   }
   return leaves;
@@ -213,9 +226,9 @@ function preflightRuleMatch(rule: SecretRule, value: string): SecretRuleMatch | 
 }
 
 /** Each string leaf judged by every rule on its own text. */
-function scanStringLeaves(payload: unknown): SecretGuardFinding[] {
+function scanStringLeaves(payload: unknown, cache: EntryCache): SecretGuardFinding[] {
   const findings: SecretGuardFinding[] = [];
-  for (const leaf of stringLeaves(payload)) {
+  for (const leaf of stringLeaves(payload, cache)) {
     for (const rule of SECRET_RULES) {
       const match = preflightRuleMatch(rule, leaf.value);
       if (match) {
@@ -307,12 +320,12 @@ interface MemberStep extends PayloadStep {
 const NO_JUDGMENTS: readonly LeafJudgment[] = KEY_NAMED_RULES.map(() => undefined);
 
 /** The child steps of an array or object, with the key context each child inherits. */
-function memberChildSteps(value: object, path: string, contexts: readonly KeyContext[]): MemberStep[] {
+function memberChildSteps(value: object, path: string, contexts: readonly KeyContext[], cache: EntryCache): MemberStep[] {
   if (Array.isArray(value)) {
     const judgments = contexts.map(({ named, exact }): LeafJudgment => (exact ? "lenient" : named ? "compact" : undefined));
-    return childSteps(value, path).map((child) => ({ ...child, contexts, judgments }));
+    return childSteps(value, path, cache).map((child) => ({ ...child, contexts, judgments }));
   }
-  return Object.entries(value).map(([name, entry]) => {
+  return ownEntries(value, cache).map(([name, entry]) => {
     const shapes = memberKeyShapes(name);
     return {
       value: entry,
@@ -342,7 +355,7 @@ function memberChildSteps(value: object, path: string, contexts: readonly KeyCon
  * so the pass is linear, never serializes or converts a value, and keeps its
  * own stack so payload depth is unbounded.
  */
-function scanPayloadMembers(payload: unknown): SecretGuardFinding[] {
+function scanPayloadMembers(payload: unknown, cache: EntryCache): SecretGuardFinding[] {
   const findings: SecretGuardFinding[] = [];
   // Revisit a shared object only under a context it has not been judged in;
   // each rule has three context states, so an object is visited a bounded
@@ -365,7 +378,7 @@ function scanPayloadMembers(payload: unknown): SecretGuardFinding[] {
     const signatures = visited.get(value) ?? new Set<string>();
     if (signatures.has(signature)) continue;
     visited.set(value, signatures.add(signature));
-    pushReversed(pending, memberChildSteps(value, path, contexts));
+    pushReversed(pending, memberChildSteps(value, path, contexts, cache));
   }
   return findings;
 }
@@ -376,7 +389,8 @@ function scanPayloadMembers(payload: unknown): SecretGuardFinding[] {
  */
 export function scanMutationSecrets(payload: unknown): SecretGuardFinding[] {
   const reported = new Set<string>();
-  return [...scanStringLeaves(payload), ...scanPayloadMembers(payload)].filter((finding) => {
+  const cache: EntryCache = new WeakMap();
+  return [...scanStringLeaves(payload, cache), ...scanPayloadMembers(payload, cache)].filter((finding) => {
     const key = `${finding.rule}\u0000${finding.path}`;
     if (reported.has(key)) return false;
     reported.add(key);
