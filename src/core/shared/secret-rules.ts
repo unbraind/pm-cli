@@ -853,8 +853,8 @@ const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|$|(?:-?\d+(?:\.\d+)?(?:[eE][+
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;
 
-/** A call's opening parenthesis, after at most a short run of blanks (`getToken ()`). */
-const CALL_AFTER = /^[ \t]{0,16}\(/u;
+/** A call's opening parenthesis, after at most a short run of whitespace (`getToken ()`). */
+const CALL_AFTER = /^\s{0,16}\(/u;
 /** An assignment's `=` (not `==`) and blanks directly before a value. */
 const ASSIGNED_BEFORE = /(?<![=!<>])=[ \t]{0,16}$/u;
 
@@ -897,16 +897,48 @@ function isCodeAfterReference(match: RegExpMatchArray): boolean {
     // In an object property or argument, a type assertion is followed by expression code (`{ token: <T>name ?? x }`).
     if (EXPRESSION_AFTER.test(after)) return true;
   }
-  const lead = LEADING_REFERENCES.exec(match[1])![0];
-  return CODE_OPERATOR.test(match[1][lead.length] ?? "") || CALL_AFTER.test(after);
+  return CODE_OPERATOR.test(match[1][leadingReferencesEnd(match[1])] ?? "") || CALL_AFTER.test(after);
 }
 
-/** The references that lead a value, each nesting at most one level (`$($(cmd))`, `${A:-${B}}`). */
-const LEADING_REFERENCES = /^(?:\$\{(?:[^{}]|\{[^{}]*\})*\}|\$\((?:[^()]|\([^()]*\))*\)|\$[A-Za-z_]\w*|<[^<>]*>)*/u;
+/**
+ * Where the references that lead a value end (`$($(cmd))`, `${A:-${B}}`,
+ * `$NAME`, `<x>`). An iterative scan, so no reference length can exhaust the
+ * regex backtrack stack and make the guard fail open; each character is read
+ * once.
+ */
+function leadingReferencesEnd(text: string): number {
+  let index = 0;
+  for (let next = referenceEnd(text, index); next !== -1; next = referenceEnd(text, index)) index = next;
+  return index;
+}
+
+/** The index after the reference that starts at `start`, or -1 when none starts there or it never closes. */
+function referenceEnd(text: string, start: number): number {
+  const opener = text[start];
+  if (opener === "<") {
+    const close = text.indexOf(">", start + 1);
+    const reopen = text.indexOf("<", start + 1);
+    return close !== -1 && (reopen === -1 || close < reopen) ? close + 1 : -1;
+  }
+  if (opener !== "$") return -1;
+  const bracket = text[start + 1];
+  if (bracket === "{" || bracket === "(") {
+    const closer = bracket === "{" ? "}" : ")";
+    let depth = 0;
+    for (let index = start + 1; index < text.length; index += 1) {
+      if (text[index] === bracket) depth += 1;
+      else if (text[index] === closer && --depth === 0) return index + 1;
+    }
+    return -1;
+  }
+  VARIABLE_REFERENCE.lastIndex = start;
+  const variable = VARIABLE_REFERENCE.exec(text)?.[0];
+  return variable === undefined ? -1 : start + variable.length;
+}
 /** A binary operator or member access that continues an expression after a reference; `! @ # ^ ~` stay literal data. */
 const CODE_OPERATOR = /[.+\-*/%=]/u;
 /** Expression code after a value: an optional chain, a nullish or logical operator, a call or index, or a delimiter. */
-const EXPRESSION_AFTER = /^[ \t]{0,16}(?:\?\.|\?\?|\|\||&&|[([;,)}])/u;
+const EXPRESSION_AFTER = /^\s{0,16}(?:\?\.|\?\?|\|\||&&|[([;,)}])/u;
 
 /**
  * Whether the literal a referenced value spells matches the rule's literal
@@ -1385,3 +1417,6 @@ export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): b
   }
   return entropy >= rule.minimumEntropy;
 }
+
+/** Internal scanners exposed for unit tests only; not part of any public surface. */
+export const _testOnly = { leadingReferencesEnd };

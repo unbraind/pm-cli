@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { evaluateMutationGuard, scanMutationSecrets } from "../../../../src/sdk/mutation-guard.js";
-import { SECRET_RULES, expandRuntimeReferences, findSecretRuleMatches, literalAfterReferences, type SecretRule } from "../../../../src/core/shared/secret-rules.js";
+import { SECRET_RULES, _testOnly, expandRuntimeReferences, findSecretRuleMatches, literalAfterReferences, type SecretRule } from "../../../../src/core/shared/secret-rules.js";
 import { createScriptHarness } from "../../../helpers/scriptModule.js";
 
 const harness = createScriptHarness();
@@ -138,6 +138,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["type assertion in an object property", "({ token: <string>auth_token ?? fallback })"],
     ["optional call in an object property", "({ token: <string>get_auth_token?.() })"],
     ["member access after nested references", "const token = $($(getToken)).length+1;"],
+    // Codex round 20: expression code after a type assertion may sit on the next line.
+    ["type assertion before a closing brace on the next line", "const config = {\n  token: <string>auth_token\n};"],
     ["compact JSON array of bare variables", '{"password":["$DB_PASSWORD","x"]}'],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
@@ -197,6 +199,22 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     expect(() => evaluateMutationGuard({ author: "agent", payload, settings: blockSettings }))
       .toThrow(/Mutation blocked by secret guard \(credential_key_assignment\)/);
     expect(JSON.stringify(scanMutationSecrets(payload))).not.toContain(credential);
+  });
+
+  it("reads a reference of millions of characters without exhausting the stack (Codex round 20)", () => {
+    const rule = ruleNamed("credential_key_assignment");
+    const content = `api_key=\${${"x".repeat(16_000_000)}}${credential}`;
+    const started = performance.now();
+    expect([...findSecretRuleMatches(rule, content)].length).toBeGreaterThan(0);
+    expect(performance.now() - started).toBeLessThan(10_000);
+  });
+
+  it("finds where leading references end, stopping at anything that is not a closed reference", () => {
+    const { leadingReferencesEnd } = _testOnly;
+    expect(leadingReferencesEnd("${A:-${B}}$C<x>rest")).toBe("${A:-${B}}$C<x>".length);
+    expect(leadingReferencesEnd("$($(a))x")).toBe(7);
+    // An unclosed bracket, an angle span reopened before it closes, an unclosed angle span and `$` without a name are not references.
+    for (const text of ["${unclosed", "$(unclosed", "<a<b>", "<a", "$1x", "plain"]) expect(leadingReferencesEnd(text), text).toBe(0);
   });
 
   it("keeps every new value grammar path linear", () => {
