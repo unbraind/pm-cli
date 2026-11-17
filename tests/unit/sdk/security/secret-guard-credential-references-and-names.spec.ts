@@ -338,6 +338,12 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       expect(textRules(`{"${passwordKey}":["$DB_PASSWORD",${sibling}]}`), sibling).toEqual([]);
     }
     expect(textRules(`{"${passwordKey}":["$DB_PASSWORD",1${literal}]}`)).toEqual(["password_assignment"]);
+    // Greptile: a bare scalar after a closed container, a long quoted key, and pretty-printed JSON are structured too.
+    for (const element of ["1", "true", "null"]) {
+      expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},${element}]`), element).toEqual([]);
+    }
+    expect(textRules(`{"production-database-connection-readonly-account-${passwordKey}":"$DB_PASSWORD","x":1}`)).toEqual([]);
+    expect(textRules(`{${" ".repeat(80)}"${passwordKey}":"$DB_PASSWORD","x":1}`)).toEqual([]);
     // Greptile: after a quoted option name alone, a bare scalar and literal continue the shell argument.
     expect(textRules(`mysql --'${passwordKey}'="$DB_PASSWORD",1,${literal}`)).toEqual(["password_assignment"]);
     // Codex round 38: a quoted shell option is not an object member, so a quoted suffix continues the argument.
@@ -443,6 +449,11 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     ]) {
       expect(textRules(content), content).toEqual([]);
     }
+  });
+
+  it("keeps a quoted inner credential value intact (CodeRabbit)", () => {
+    // The quoted body is data, so its `&` is not a shell operator and the credential after the reference is judged.
+    expect(textRules(`api_key=$(token="\${EMPTY}abc&${credential}")`)).toContain("credential_key_assignment");
   });
 
   it("reports a credential-key assignment inside a referenced value whose literal is rejected", () => {

@@ -51,7 +51,8 @@ describe("an oversized value fails closed for itself (Codex round 34)", () => {
   });
 
   it("blocks instead of failing open", () => {
-    expect(() => evaluateMutationGuard({ author: "agent", payload: { description: OVERFLOW, notes: githubToken }, settings: blockSettings }))
+    // Only the oversized value: the block must come from its own fail-closed finding.
+    expect(() => evaluateMutationGuard({ author: "agent", payload: { description: OVERFLOW }, settings: blockSettings }))
       .toThrow(/Mutation blocked by secret guard/);
   });
 

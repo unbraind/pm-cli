@@ -939,7 +939,8 @@ const DECODED_DATA_MATCHES = new WeakSet<RegExpMatchArray>();
  */
 function judgedLiteral(match: RegExpMatchArray): string {
   // Inside a command substitution, the inner value ends at its first shell operator (`$PW&&next`).
-  const word = INNER_SHELL_MATCHES.has(match) ? shellWordPrefix(match[1]) : undefined;
+  // A quoted value's body is data, never shell syntax, so only an unquoted inner value is cut.
+  const word = INNER_SHELL_MATCHES.has(match) && !isQuote(captureOpener(match)) ? shellWordPrefix(match[1]) : undefined;
   const text = word ?? match[1];
   const variables = word !== undefined || wordComplete(match);
   return DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match))
@@ -1008,7 +1009,9 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const next = input.slice(after, after + 40);
   // A bare scalar sibling (`,1`) is structure only after an actual array element; after a quoted
   // key alone (`--'password'="$PW",1,…` in a shell) it continues the word.
-  return context !== undefined && (NEXT_MEMBER.test(next) || (context === "element" && BARE_SCALAR_MEMBER.test(next)));
+  // After a closing brace or bracket the value's container has closed, so a bare scalar is the parent's next element.
+  const closedContainer = /[}\]]/u.test(input.slice(start, after));
+  return context !== undefined && (NEXT_MEMBER.test(next) || ((context === "element" || closedContainer) && BARE_SCALAR_MEMBER.test(next)));
 }
 
 /**
@@ -1019,13 +1022,15 @@ function wordComplete(match: RegExpMatchArray): boolean {
 function structuredContext(match: RegExpMatchArray, openerOutsideCapture: boolean): "key" | "element" | undefined {
   const input = match.input!;
   const valueStart = match.index! + match[0].length - match[1].length - (openerOutsideCapture ? 1 : 0);
-  const before = input.slice(Math.max(0, valueStart - 64), valueStart);
+  const before = input.slice(Math.max(0, valueStart - STRUCTURED_LOOK_BACK), valueStart);
   if (ARRAY_ELEMENT_BEFORE.test(before)) return "element";
   return QUOTED_KEY_BEFORE.test(before) ? "key" : undefined;
 }
 
+/** How far back the structured context of a value is read: room for a long quoted key and pretty-printed indentation. */
+const STRUCTURED_LOOK_BACK = 512;
 /** An object member's quoted key (after `{` or `,`) and its separator directly before a value; a quoted shell option (`--'password'=`) is not one. */
-const QUOTED_KEY_BEFORE = /[{,]\s*(["'])[^"'\r\n]{1,48}\1\s*[:=]\s*$/u;
+const QUOTED_KEY_BEFORE = /[{,]\s*(["'])[^"'\r\n]{1,256}\1\s*[:=]\s*$/u;
 /** An array's `[` or `,` directly before a value. */
 const ARRAY_ELEMENT_BEFORE = /[[,]\s*$/u;
 
