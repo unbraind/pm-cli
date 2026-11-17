@@ -232,11 +232,13 @@ expands to nothing when NAME is CONSTANT_CASE, the environment-variable
 convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
 in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
-read the whole word: whitespace or the end of the text follows the match,
-optionally after its closing quote and structure such as `;`, `)` or the `,`
-before the next JSON member (`{"password":"$DB_PASSWORD","other":…}`). Any
-other text after it (`$PW:…`, `$PW]…`, `$PW/++`) belongs to the same word,
-so the value keeps its `$NAME` text literal. Any other `$` text is literal, so a
+read the whole word. An unquoted value did when whitespace or the end of the
+text follows it, optionally after structure such as `;` or `)`. A quoted value
+did as well when structure and then the next member or element follows, as in
+compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
+`[{"password":"$DB_PASSWORD"},{…}]`). Any other text after it (`$PW:…`,
+`$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, so the value keeps
+its `$NAME` text literal. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
 `\$`, keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain

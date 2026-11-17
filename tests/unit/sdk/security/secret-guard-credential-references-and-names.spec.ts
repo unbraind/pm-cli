@@ -228,6 +228,8 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // Greptile: a closed quoted value followed by JSON structure ends its word.
     expect(textRules(`{"${passwordKey}":"$DB_PASSWORD","other":"x"}`)).toEqual([]);
     expect(textRules(`{"other":"x","${passwordKey}":"$DB_PASSWORD"}`)).toEqual([]);
+    expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},{"other":true}]`)).toEqual([]);
+    expect(textRules(`{"${passwordKey}":"$DB_PASSWORD","list":[1]}`)).toEqual([]);
     expect(textRules(`{"${passwordKey}":"$DB_PASSWORD"]x`)).toEqual(["password_assignment"]);
     // Greptile: structure followed by more word text is still one shell word.
     expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
@@ -235,6 +237,11 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // Codex round 8: literal punctuation after the variable is part of its word.
     expect(await gateRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password-assignment"]);
     expect(textRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password_assignment"]);
+    // Codex round 9: an opening bracket, brace or quoted piece after an unquoted variable continues its word.
+    for (const suffix of [`[${credential}]`, `{${credential}}`, `,"${credential}"`]) {
+      expect(textRules(`${passwordKey}=$PW_PREFIX${suffix}`), suffix).toEqual(["password_assignment"]);
+    }
+    expect(textRules(`${passwordKey}="$PW_PREFIX""${credential}"`)).toEqual(["password_assignment"]);
     for (const separator of [":", "/", "?", "]", "}", ",", ")"]) {
       const content = `${passwordKey}=$PW_PREFIX${separator}${credential}`;
       expect(await gateRules(content), content).toEqual(["password-assignment"]);

@@ -782,28 +782,33 @@ function judgedLiteral(match: RegExpMatchArray): string {
     : literalAfterReferences(match[1], variables);
 }
 
-/**
- * What may follow a value that ends its word: an optional closing quote, then
- * a bounded run of structure (`;` `,` `)` `}` `]`), before whitespace, another
- * quote or the end of the text. Only ASCII is read, so positions are exact.
- */
-const WORD_END = /^["'`]?[;,)}\]]{0,64}/u;
+/** A bounded run of structure after a value (`;` `,` `)` `}` `]`); only ASCII is read, so positions are exact. */
+const STRUCTURE_RUN = /^[;,)}\]]{0,64}/u;
 
 /**
- * Whether the value grammar read the whole word. It did when the match is
- * followed by whitespace or the end of the text, optionally after its closing
- * quote and structure such as `;`, `)` or the `,` before the next JSON member
- * (`"$PW","x"`). Any other text after the match (`$PW:literal`, `$PW]literal`,
- * `$PW/++`) is part of the same word, so the value is not known to be a bare or
- * leading variable, and its `$NAME` text stays literal. The look-ahead is
- * bounded, so judging stays linear.
+ * Whether the value grammar read the whole word. An unquoted value did when
+ * whitespace or the end of the text follows it, optionally after structure
+ * such as `;` or `)` (`password=$PW;`). A quoted value, whose closing quote
+ * ends the capture or directly follows it, did as well when structure and
+ * then the next member or element follows (`"$PW","x"`, `"$PW"},{`), as in
+ * compact JSON. Any other text after the match (`$PW:literal`, `$PW[literal`,
+ * `$PW,"literal"`, `"$PW""literal"`) is part of the same word, so the value is
+ * not known to be a bare or leading variable, and its `$NAME` text stays
+ * literal. The look-ahead is bounded, so judging stays linear.
  */
 function wordComplete(match: RegExpMatchArray): boolean {
   const input = match.input!;
   const end = match.index! + match[0].length;
-  const after = end + WORD_END.exec(input.slice(end, end + 66))![0].length;
-  return after === input.length || /[\s"'`]/u.test(input[after]!);
+  const closed = isQuote(input[end]) ? end + 1 : isQuote(match[0].at(-1)) ? end : -1;
+  const start = closed === -1 ? end : closed;
+  const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
+  const after = start + structure;
+  if (after === input.length || /\s/u.test(input[after]!)) return true;
+  return closed !== -1 && structure > 0 && /["'`{[]/u.test(input[after]!);
 }
+
+/** Code units of structure read after a value before its word is taken as cut short. */
+const WORD_END_BOUND = 64;
 
 /** A literal that starts with member access, as code leaves after a reference (`${X}.trim`, `$T.length+1`). */
 const MEMBER_ACCESS = /^\.[A-Za-z_$]/u;
