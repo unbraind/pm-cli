@@ -95,6 +95,10 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["short literal after a reference", "api_key=${KEY}abc"],
     ["generic type argument", "token: Array<string>"],
     ["quoted prefix concatenated with code", 'token="Bearer"+tokenValue'],
+    // Codex round 4: code after a reference is never literal credential text.
+    ["quoted reference followed by a method call", 'const api_key = "${API_KEY}".toUpperCase();'],
+    ["quoted reference followed by an operator", 'token="${PREFIX}"+suffixValue'],
+    ["reference followed by a member chain", "token=${X}.toUpperCase()"],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -203,7 +207,7 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
   it("keeps a variable literal when the grammar cut its word short", async () => {
     // Codex round 3: the password grammar stops before `:`, `/` and `?`, so the
     // variable is not known to be the whole value and stays literal, as on main.
-    for (const separator of [":", "/", "?"]) {
+    for (const separator of [":", "/", "?", "]", "}", ",", ")"]) {
       const content = `${passwordKey}=$PW_PREFIX${separator}${credential}`;
       expect(await gateRules(content), content).toEqual(["password-assignment"]);
       expect(textRules(content), content).toEqual(["password_assignment"]);
@@ -211,7 +215,10 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(expandRuntimeReferences("$PW_PREFIX", false)).toBe("$PW_PREFIX");
     expect(literalAfterReferences("$pw", false)).toBe("$pw");
     // A word-ending character after the variable keeps it a bare reference.
-    for (const content of [`${passwordKey}=$DB_PASSWORD;`, `${passwordKey}=$DB_PASSWORD) `, `(${passwordKey}=$db_password, next)`]) {
+    for (const content of [
+      `${passwordKey}=$DB_PASSWORD;`, `${passwordKey}=$DB_PASSWORD) `, `(${passwordKey}=$db_password, next)`,
+      `{"cmd": "${passwordKey}=$DB_PASSWORD"}`, `${passwordKey}=$DB_PASSWORD${";".repeat(80)}`.slice(0, 30),
+    ]) {
       expect(textRules(content), content).toEqual([]);
     }
   });

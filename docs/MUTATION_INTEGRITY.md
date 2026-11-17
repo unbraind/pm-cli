@@ -198,10 +198,11 @@ literal it spells
 ([pm-hw00c2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw00c2.toon);
 tracker record excluded from npm). A value that holds `${…}`, `$(…)`,
 `$NAME` or `<…>` is captured whole. So is a value that opens with a quoted
-piece concatenated as a shell concatenates `"${EMPTY}"…`: the quoted piece
-holds a reference, or a reference or another quoted piece follows it. A
-reference-free quoted value followed by code (`"…".trim()`, `"Bearer"+x`)
-stays a quoted value. The literal
+piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
+another quoted piece follows it, or it holds a reference and a letter, digit
+or `_` follows. A quoted value followed by an operator (`"…".trim()`,
+`"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and a literal
+that is only a member chain left after a reference (`${X}.trim`) is code. The literal
 left once its references expand is then judged by the same grammar, length,
 entropy and exclusions as a reference-free value, read in the value's own
 quote context. So `api_key=${EMPTY}"…"`, `api_key=$VAR"…"`, `token: <x>…`,
@@ -224,8 +225,9 @@ expands to nothing when NAME is CONSTANT_CASE, the environment-variable
 convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
 in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
-read the whole word: a value it cuts short (one that continues with `:`, `/`
-or `?`) keeps its `$NAME` text literal. Any other `$` text is literal, so a
+read the whole word, so only punctuation (a closing quote, bracket or `;`)
+may follow it before whitespace or the end of the text. A value it cuts short
+(`$PW:…`, `$PW]…`) keeps its `$NAME` text literal. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
 `\$`, keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain

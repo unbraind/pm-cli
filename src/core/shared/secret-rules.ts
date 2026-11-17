@@ -318,11 +318,12 @@ const credentialConcatenated = (run: string): string => String.raw`(?:${credenti
 const credentialUnquoted = (build: (run: string) => string): string =>
   String.raw`(?<==)(?:${build(CREDENTIAL_RUN_AFTER_EQUALS)})|(?<![="'])(?:${build(CREDENTIAL_RUN)})`;
 // A quoted piece opens a concatenation when a reference or another quoted
-// piece follows it directly, or when it holds a reference and more value text
-// follows. A reference-free quoted piece followed by other text is code
-// (`"<literal>".trim()`, `"Bearer"+value`) and stays a quoted value.
+// piece follows it directly, or when it holds a reference and a letter, digit
+// or `_` follows. A quoted piece followed by an operator is code
+// (`"<literal>".trim()`, `"${KEY}".toUpperCase()`, `"Bearer"+value`) and
+// stays a quoted value.
 const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"']`
-  + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"[A-Za-z0-9!@#%^&*._+\-=/~]|'(?=[^'\s]*[$<])[^'\s]*'[A-Za-z0-9!@#%^&*._+\-=/~])`;
+  + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"\w|'(?=[^'\s]*[$<])[^'\s]*'\w)`;
 // A quoted body that holds a reference opener is captured whole up to its closing quote.
 const CREDENTIAL_QUOTED_REFERENCED = String.raw`(?<=")(?=[^"\s]*[$<])[^"\s]+|(?<=')(?=[^'\s]*[$<])[^'\s]+`;
 const CREDENTIAL_VALUE = new RegExp(
@@ -762,19 +763,23 @@ function judgedLiteral(match: RegExpMatchArray): string {
     : literalAfterReferences(match[1], variables);
 }
 
-/** A character that ends a shell word after a captured value. */
-const WORD_END = /[\s;,)}\]"'`&|<>]/u;
+/** Text after a value that ends its word: no letter or digit before whitespace or the end, within a bound. */
+const WORD_TAIL = /^[^\s\p{L}\p{N}]{0,64}(?:\s|$)/u;
 
 /**
- * Whether the value grammar read the whole word: the match ends the input or a
- * word-ending character follows it. A word the grammar cut short (a value that
- * continues with `:`, `/` or `?`) is not known to be a bare or leading
- * variable, so its `$NAME` text stays literal.
+ * Whether the value grammar read the whole word: only punctuation such as a
+ * closing quote, bracket or `;` follows the match before whitespace or the end
+ * of the input. A word the grammar cut short (`$PW:literal`, `$PW]literal`) is
+ * not known to be a bare or leading variable, so its `$NAME` text stays
+ * literal. The look-ahead is bounded, so judging stays linear.
  */
 function wordComplete(match: RegExpMatchArray): boolean {
-  const next = match.input![match.index! + match[0].length];
-  return next === undefined || WORD_END.test(next);
+  const end = match.index! + match[0].length;
+  return WORD_TAIL.test(match.input!.slice(end, end + 65));
 }
+
+/** A literal that is only a member chain, as code leaves after a reference (`${X}.trim`). */
+const MEMBER_CHAIN = /^(?:\.[A-Za-z_$][\w$]*)+$/u;
 
 /**
  * The character just before the value capture. Every match handed to a judge
@@ -800,6 +805,7 @@ const SPELLING_SENSITIVE = /[$<"']/u;
  * URL, word and member-path exclusions judge it whole.
  */
 function literalMatches(grammar: RegExp, literal: string): boolean {
+  if (MEMBER_CHAIN.test(literal)) return false;
   const body = literal.replaceAll("\"", "'");
   grammar.lastIndex = 0;
   return grammar.exec(`"${body}"`)?.[1] === body;
