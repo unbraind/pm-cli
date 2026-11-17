@@ -205,7 +205,7 @@ describe("dependency advisory evidence", () => {
         await main([], root);
         // An advisory of unknown severity leaves its count unaccounted for.
         await mutate(root, (r) => { (r.feeds.registry.advisories as { severity: null | string }[])[0]!.severity = null; });
-        await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow("Registry counts high advisories it does not list");
+        await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow("Registry lists an advisory of unknown severity");
         await main([], root);
         await mutate(root, (r) => { (r.feeds.registry.advisories as { versions: null | string[] }[])[0]!.versions = []; });
         await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow("Registry reports vulnerable dependencies: fixture@unknown version");
@@ -226,6 +226,19 @@ describe("dependency advisory evidence", () => {
           }),
         });
         await expect(main([], root)).rejects.toThrow("Dependency advisory gate blocked: Registry counts high advisories it does not list");
+        // An unknown severity cannot be reconciled, even when every advisory is waived.
+        await declare(root, [waiver(), waiver({ advisory: "GHSA-zzzz-zzzz-zzzz" })]);
+        spawn.mockReturnValue({
+          status: 1,
+          stdout: JSON.stringify({
+            advisories: {
+              "7": { module_name: "fixture", severity: "high", github_advisory_id: advisory, findings: [{ version: "1.2.3" }] },
+              "8": { module_name: "fixture", severity: "urgent", github_advisory_id: "GHSA-zzzz-zzzz-zzzz", findings: [{ version: "1.2.3" }] },
+            },
+            metadata: { vulnerabilities: { ...zero, high: 1 } },
+          }),
+        });
+        await expect(main([], root)).rejects.toThrow("Dependency advisory gate blocked: Registry lists an advisory of unknown severity");
       });
     });
   });

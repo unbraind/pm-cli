@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: consumer-audit,dependency,"gh:1748",picomatch,sdk,security
 created_at: "2026-11-17T21:58:35.180Z"
-updated_at: "2026-11-17T22:41:18.481Z"
+updated_at: "2026-11-17T23:49:30.368Z"
 closed_at: "2026-11-17T22:40:38.313Z"
 completed_at: "2026-11-17T22:40:38.313Z"
 author: "harness:claude-code"
@@ -24,9 +24,10 @@ dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-03q389,related,"2026-11-17T21:58:35.180Z","harness:claude-code","cli:create:dep",detected
 notes[1]{created_at,author,text}:
   "2026-11-17T22:19:48.524Z","harness:claude-code","Implementation: src/core/fs/file-glob.ts replaces tinyglobby in expandAddGlobEntries. Design: one linear pre-pass pairs braces and extglob parentheses (so unclosed constructs never trigger re-parsing), a recursive-descent parser bounded at 32 nesting levels builds an AST, Thompson construction builds an NFA bounded at 50,000 states, and the directory walk advances a lazily built DFA (cache bounded at 10,000 nodes) one code point at a time, pruning any directory whose path can no longer match. No regular expression is involved, so repeated extglobs such as +(*) and star chains stay linear. Parity semantics found by probing tinyglobby 0.2.17 with the previous options (onlyFiles, dot, expandDirectories false, followSymbolicLinks): every bracket expression also matches its literal text (picomatch's default literalBrackets fallback, which is what makes app/[slug]/*.tsx reach a [slug] directory), trailing slashes and a leading ./ are ignored, ../ prefixes are kept, numeric and single-letter brace ranges expand, single-part braces stay literal, POSIX classes work, a run of three stars is a single star, leading ! made tinyglobby return nothing. Deliberate differences, documented in docs/COMMANDS.md: negation is a usage error instead of an empty result; a symlink to a directory already on the walk path is not re-entered (tinyglobby listed a self-loop once); stepped ranges are literal (tinyglobby ignored the step); an escaped leading \\! matches a literal !. tinyglobby moved to devDependencies (repository scripts and the parity test still use it). Side effect found: TypeScript 6 no longer includes @types automatically and the program only received Node types through tinyglobby's declarations, so tsconfig.json now declares types: [node] like the packages and examples configs."
-files[4]{path,scope,note}:
+files[5]{path,scope,note}:
   src/core/fs/file-glob.ts,project,bounded NFA/DFA glob matcher and walk
   src/sdk/linked-artifacts.ts,project,expandAddGlobEntries uses expandFileGlob
+  tests/unit/core/fs/file-glob-literal-case.spec.ts,project,exact-case literal match on case-insensitive listings
   tests/unit/core/fs/file-glob.spec.ts,project,tinyglobby parity fixture and bound tests
   tsconfig.json,project,declare Node types explicitly (TypeScript 6)
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:

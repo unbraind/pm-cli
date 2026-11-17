@@ -678,11 +678,18 @@ function trimTrailingSeparators(pattern: string): string {
   return text;
 }
 
-/** Resolve a pattern without glob syntax as a literal path; only an existing file matches. */
+/**
+ * Resolve a pattern without glob syntax as a literal path; only an existing
+ * file matches. Its name must appear exactly in its directory's listing, so a
+ * case-insensitive file system cannot link `readme.md` for `README.md`; the
+ * walker and the previous expansion were case-sensitive too.
+ */
 async function literalMatch(text: string, cwd: string): Promise<string[]> {
   const target = path.resolve(cwd, text);
   const found = await stat(target).catch(() => undefined);
   if (found === undefined || !found.isFile()) return [];
+  const names = await readdir(path.dirname(target)).catch((): string[] => []);
+  if (!names.includes(path.basename(target))) return [];
   return [path.isAbsolute(text) ? target.replaceAll("\\", "/") : path.posix.normalize(text)];
 }
 

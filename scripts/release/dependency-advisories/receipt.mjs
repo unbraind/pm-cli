@@ -24,13 +24,14 @@ function isStoredAdvisory(entry) {
  * 2026-11-18: one high advisory with three vulnerable versions plus another
  * high advisory counted high: 2), so each severity's count must equal the
  * number of listed advisories with that severity. A waived advisory can
- * therefore never stand in for an unlisted one, and an advisory whose
- * severity is unknown leaves a count unaccounted for and refuses.
+ * therefore never stand in for an unlisted one. An advisory of unknown
+ * severity cannot be accounted for at all and refuses.
  */
 function assertRegistryConsistent(registry) {
   assert.deepEqual(registry.counts !== null && typeof registry.counts === "object" ? Object.keys(registry.counts).sort() : null, [...SEVERITIES].sort(), "Incomplete registry audit counts");
   assert.ok(Array.isArray(registry.advisories) && registry.advisories.every(isStoredAdvisory), "Registry reports vulnerable dependencies");
   assert.deepEqual(registry.advisories.map(({ id }) => id), registry.ids, "Registry reports vulnerable dependencies");
+  assert.ok(registry.advisories.every(({ severity }) => severity !== null), "Registry lists an advisory of unknown severity");
   for (const severity of SEVERITIES) {
     const listed = registry.advisories.filter((advisory) => advisory.severity === severity).length;
     assert.ok(registry.counts[severity] === listed, `Registry counts ${severity} advisories it does not list`);
