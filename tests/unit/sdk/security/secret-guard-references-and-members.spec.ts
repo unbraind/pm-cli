@@ -323,9 +323,18 @@ describe("structured payload members are judged under their property names (pm-3
   });
 
   it("measures a default word without its quote delimiters", () => {
+    // A data quote and a backslash the shell keeps still count, as text and as a member.
+    for (const word of [["abc'", "defg"].join(""), ["abcd\\", "efg"].join("")]) {
+      const value = ["${PW:-\"", word, "\"}"].join("");
+      expect(textRules(["pass", "word=", value].join("")), value).toContain("password_assignment");
+      expect(memberFindings({ password: value }), value).toContainEqual({ rule: "password_assignment", path: "$.password" });
+    }
+    expect(literalAfterReferences(["${PW:-\"", "abc'defg", "\"}"].join(""))).toBe("abc'defg");
+    expect(expandRuntimeReferences(["${PW:-\"", "a\\$b", "\"}"].join(""))).toBe("a$b");
     // Six characters inside the delimiters stay clean; eight are reported, for both quote kinds.
     const eight = ["abcd", "efgh"].join("");
     for (const [open, close] of [["\"", "\""], ["'", "'"]]) {
+      expect(textRules(["pass", "word=${PW:-", open, "abcdef", close, "}"].join(""))).toEqual([]);
       expect(memberFindings({ password: ["${PW:-", open, "abcdef", close, "}"].join("") })).toEqual([]);
       expect(memberFindings({ password: ["${PW:-", open, eight, close, "}"].join("") }))
         .toContainEqual({ rule: "password_assignment", path: "$.password" });

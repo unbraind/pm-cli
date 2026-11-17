@@ -781,10 +781,14 @@ function closeReference(frames: ReferenceFrame[], character: string): void {
   if (frame.keep) parent.literal += frame.literal;
 }
 
+/** Characters a backslash escapes inside double quotes, as in the shell. */
+const DOUBLE_QUOTE_ESCAPABLE = "$`\"\\\n";
+
 /**
- * Consume quoted text inside an open reference: nothing in it opens or closes a
- * reference, and a backslash escapes the next character in double quotes.
- * Returns the next index, or -1 when the character is not quoted text.
+ * Consume quoted or escaped text inside an open reference: nothing in it opens
+ * or closes a reference, and a default word receives what the shell's quote
+ * removal leaves of it. Returns the next index, or -1 when the character is
+ * ordinary reference text.
  */
 function quotedStep(text: string, index: number, frame: ReferenceFrame): number {
   const character = text[index]!;
@@ -796,9 +800,12 @@ function quotedStep(text: string, index: number, frame: ReferenceFrame): number 
   // quote delimiters and escaping backslashes, so `${PW:-"x"}` contributes `x`.
   let contributed = character;
   if (character === "\\" && quote !== "'" && index + 1 < text.length) {
-    // A backslash escapes the next character outside quotes and in double quotes (`$(printf \))`).
+    // A backslash escapes the next character outside quotes (`$(printf \))`).
+    // In double quotes it escapes only `$`, a backtick, `"`, `\` and a line
+    // break, and otherwise stays part of the word (`"abcd\efg"`).
     length = 2;
-    contributed = text[index + 1]!;
+    const next = text[index + 1]!;
+    contributed = quote === "\"" && !DOUBLE_QUOTE_ESCAPABLE.includes(next) ? `${character}${next}` : next;
   } else if (quote === undefined) {
     if (character !== "\"" && character !== "'") return -1;
     frame.quote = character;
@@ -813,12 +820,14 @@ function quotedStep(text: string, index: number, frame: ReferenceFrame): number 
 }
 
 /** Consume the reference, delimiter, placeholder span or character at `index`; returns the next index. */
-function expandStep(text: string, index: number, frames: ReferenceFrame[]): number {
+function expandStep(text: string, index: number, frames: ReferenceFrame[], rootQuotesAreSyntax: boolean): number {
   const innermost = frames.at(-1)!;
   // Quoted text inside a reference never opens or closes a reference.
   if (frames.length > 1) {
     const quoted = quotedStep(text, index, innermost);
     if (quoted !== -1) return quoted;
+  } else if (rootQuotesAreSyntax && rootQuoteStep(text[index]!, innermost)) {
+    return index + 1;
   }
   const opened = openReference(text, index, frames);
   if (opened !== -1) return opened;
@@ -838,17 +847,31 @@ function expandStep(text: string, index: number, frames: ReferenceFrame[]): numb
 }
 
 /**
- * Expand run-time references to the literal text they can contribute, in one
- * linear pass with nesting: `${NAME}`, `${NAME:?message}`, `$(command)` and
- * `<placeholder>` contribute nothing, and the default word of `${NAME:-word}`
- * contributes its own expansion (`${PW:-${FALLBACK}}` contributes nothing). A
- * reference that never closes, and a `<` without a `>` before the next `<`,
- * stay literal text.
+ * Handle a quote at the top level of a text value, where quotes delimit quoted
+ * pieces: an opening or closing delimiter contributes nothing, and a quote of
+ * the other kind inside a piece is literal. Returns whether the character was
+ * a delimiter.
  */
-export function expandRuntimeReferences(text: string): string {
+function rootQuoteStep(character: string, root: ReferenceFrame): boolean {
+  if (character !== "\"" && character !== "'") return false;
+  if (root.quote === undefined) {
+    root.quote = character;
+    return true;
+  }
+  if (character !== root.quote) return false;
+  root.quote = undefined;
+  return true;
+}
+
+/**
+ * One linear pass over a value with nesting: references contribute what they
+ * can expand to, and every quote delimiter is identified exactly once, so no
+ * later pass can mistake data for a delimiter.
+ */
+function expandWords(text: string, rootQuotesAreSyntax: boolean): string {
   const root: ReferenceFrame = { close: "}", keep: true, raw: "", literal: "" };
   const frames: ReferenceFrame[] = [root];
-  for (let index = 0; index < text.length; ) index = expandStep(text, index, frames);
+  for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax);
   // An unclosed reference is not a reference: its source text is literal.
   for (let depth = frames.length - 1; depth > 0; depth -= 1) {
     const frame = frames[depth]!;
@@ -860,30 +883,28 @@ export function expandRuntimeReferences(text: string): string {
 }
 
 /**
- * The literal a captured value spells once every run-time reference expands
- * (see {@link expandRuntimeReferences}). References expand first, because a
- * reference may itself hold quotes (`${PW:-""}`). The quote characters that
- * delimit each quoted piece are then removed, as a shell or configuration
- * reader removes them; a quote of the other kind inside a piece is part of the
- * literal.
+ * Expand run-time references in data, such as a decoded literal or an element
+ * body, whose own quote characters are literal: `${NAME}`, `${NAME:?message}`,
+ * `$(command)` and `<placeholder>` contribute nothing, and the default word of
+ * `${NAME:-word}` contributes its own expansion with the shell's quote removal
+ * (`${PW:-"x"}` contributes `x`; `${PW:-${FALLBACK}}` contributes nothing). A
+ * reference that never closes, and a `<` without a `>` before the next `<`,
+ * stay literal text.
+ */
+export function expandRuntimeReferences(text: string): string {
+  return expandWords(text, false);
+}
+
+/**
+ * The literal a captured text value spells: references expand as in
+ * {@link expandRuntimeReferences}, and the quote characters that delimit each
+ * top-level quoted piece are removed, as a shell or configuration reader
+ * removes them; a quote of the other kind inside a piece is part of the
+ * literal. Both happen in the same pass, so a reference may hold quotes
+ * (`${PW:-""}`) and a default word's data quotes stay data.
  */
 export function literalAfterReferences(value: string): string {
-  const expanded = expandRuntimeReferences(value);
-  let literal = "";
-  let index = 0;
-  while (index < expanded.length) {
-    const quote = expanded[index];
-    if (quote === "\"" || quote === "'") {
-      const close = expanded.indexOf(quote, index + 1);
-      const end = close === -1 ? expanded.length : close;
-      literal += expanded.slice(index + 1, end);
-      index = end + 1;
-    } else {
-      literal += quote;
-      index += 1;
-    }
-  }
-  return literal;
+  return expandWords(value, true);
 }
 
 /** Accept a pattern match, applying the declared literal-length and entropy predicates when present. */
