@@ -237,7 +237,7 @@ read the whole word. An unquoted value did when whitespace or the end of the
 text follows it, optionally after structure such as `;` or `)`. A quoted value
 did as well when structure and then the next member or element follows, as in
 compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
-`[{"password":"$DB_PASSWORD"},{…}]`). Any other text after it (`$PW:…`,
+`[{"password":"$DB_PASSWORD"},{"other":…}]`). Any other text after it (`$PW:…`,
 `$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote
 after an unquoted value, which may open a concatenated piece
 (`$PW" spaced literal"`) as well as close an enclosing string. In those cases

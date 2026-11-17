@@ -794,8 +794,9 @@ const STRUCTURE_RUN = /^[;,)}\]]{0,64}/u;
  * such as `;` or `)` (`password=$PW;`). A value the grammar read as quoted
  * (its capture ends with the closing quote, or its opening quote precedes the
  * capture and the closing quote follows it) did as well when structure and
- * then the next member or element follows (`"$PW","x"`, `"$PW"},{`), as in
- * compact JSON. Any other text after the match (`$PW:literal`, `$PW[literal`,
+ * then the next member or element follows (`"$PW","x"`, `"$PW"},{"y"`), as in
+ * compact JSON; a brace or bracket counts only when structure, not word text,
+ * comes after it. Any other text after the match (`$PW:literal`, `$PW[literal`,
  * `$PW,"literal"`, `"$PW""literal"`) is part of the same word. So is a quote
  * after an unquoted value, which may open a concatenated piece
  * (`$PW" spaced literal"`) as well as close an enclosing string. In either
@@ -811,8 +812,11 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  return closed !== -1 && structure > 0 && /["'`{[]/u.test(input[after]!);
+  return closed !== -1 && structure > 0 && NEXT_MEMBER.test(input.slice(after, after + 2));
 }
+
+/** The start of the next JSON member or element: a quote, or `{` / `[` that opens structure, not word text (`][literal`). */
+const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|$))/u;
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;

@@ -233,6 +233,10 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},{"other":true}]`)).toEqual([]);
     expect(textRules(`{"${passwordKey}":"$DB_PASSWORD","list":[1]}`)).toEqual([]);
     expect(textRules(`{"${passwordKey}":"$DB_PASSWORD"]x`)).toEqual(["password_assignment"]);
+    // Greptile: a bracket after structure starts an element only when structure follows it.
+    expect(textRules(`${passwordKey}="$DB_PASSWORD"][${literal}`)).toEqual(["password_assignment"]);
+    expect(textRules(`${passwordKey}="$DB_PASSWORD"],{${literal}`)).toEqual(["password_assignment"]);
+    expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},["x"]]`)).toEqual([]);
     // Greptile: structure followed by more word text is still one shell word.
     expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
     // Codex round 10: a quote after an unquoted value may open a concatenated piece, so
