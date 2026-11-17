@@ -622,8 +622,12 @@ function* keysInsideRejectedValue(
   // enclosing reference; the spans are walked only once a key is found inside.
   let closerAt: ((position: number) => number | undefined) | undefined;
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
-    // A key word that names a braced reference's parameter (`${PASSWORD:OFFSET:8}`) is not an assignment.
-    if (isParameterName(content, found.index)) continue;
+    // A key word that names a braced reference's parameter (`${PASSWORD:OFFSET:8}`) is not an
+    // assignment, but its word may hold one (`${PASSWORD:-$(echo password=…)}`): scan on from the key.
+    if (isParameterName(content, found.index)) {
+      inner.lastIndex = found.index + 1;
+      continue;
+    }
     closerAt ??= enclosingCloser(referenceSpans(content, end - match[1].length, match[1]));
     const close = closerAt(found.index);
     if (close !== undefined) INNER_CLOSE_AT.set(found, close);

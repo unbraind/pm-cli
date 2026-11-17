@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",credential-redaction,placeholders,secret-guard,security
 created_at: "2026-11-16T23:30:24.532Z"
-updated_at: "2026-11-17T16:22:24.334Z"
+updated_at: "2026-11-17T16:34:34.224Z"
 closed_at: "2026-11-17T09:04:47.334Z"
 completed_at: "2026-11-17T09:04:47.334Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1l85at,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-jcz7qz,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-ycgb5g,discovered_from,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
-comments[31]:
+comments[32]:
   - created_at: "2026-11-17T08:37:14.716Z"
     author: "harness:claude-code"
     text: "Design (implementation on branch fix/secret-guard-reference-literals-and-property-names). credential_key_assignment now captures a value whole when it holds a run-time reference (braced, command, dollar-name or angle placeholder) or opens with a quoted piece concatenated to more text, and judges the literal left once references expand with CREDENTIAL_LITERAL_VALUE: the unchanged reference-free grammar (paths, URLs, words, member paths, key-file names excluded; 8+ characters; entropy 3) read as one double-quoted literal, because the literal is data. The rule gains minimumLiteralLength 8 and a new declarative SecretRule field literalValue; acceptsSecretMatch judges the literal (not the captured text) for entropy and rejectValue whenever a rule declares a literal minimum. judgedLiteral treats a capture whose quotes the grammar read outside it (a quoted credential-key body) as data, so its quote characters are literal. Bounds: at most 64 literal characters before the first reference (a longer prefix is judged as a reference-free value), references and quoted pieces are whitespace-free (so a spaced command substitution is never one value and a key inside it keeps its own verdict), every repeated group is bounded at 4096 and quoted pieces at 4, as in the password grammar. Bare dollar-name policy (one policy for both key-named rules): a dollar-name reference expands to nothing when the name is CONSTANT_CASE (environment-variable convention) or when it is the whole value, quoted or not; bareness is judged on the source text, so a concatenation never reads as one name. Any other dollar text is literal, so a credential that merely contains a dollar sign keeps its characters."
@@ -119,6 +119,9 @@ comments[31]:
   - created_at: "2026-11-17T16:22:24.333Z"
     author: "harness:claude-code"
     text: "Codex review round 29 on PR 1746, two fixes. (1) The rescan read a key word that names a braced reference's parameter as an inner assignment, so a bash substring expression whose parameter is a password variable was reported; a key that starts at the parameter-name position of a braced reference (after the opening brace, or after a length or indirection sign) is now skipped. (2) A remainder operator after a quoted reference opened a concatenation; the percent sign no longer continues it."
+  - created_at: "2026-11-17T16:34:34.223Z"
+    author: "harness:claude-code"
+    text: "Greptile on the latest heads of PR 1746 (three P1s, none a regression against main). Fixed: skipping a parameter-name key also skipped its value, so a password assignment inside the default word of that reference was missed; the rescan now resumes right after the skipped key. Declined, recorded on pm-jcz7qz: a YAML literal that starts with an exclamation mark and a dot right after a reference reads as a non-null assertion and member access, and a referenced credential-key value with more than 2,048 single ampersands is read up to the 4,096-piece bound."
 files[3]{path,scope}:
   src/core/shared/secret-rules.ts,project
   tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project

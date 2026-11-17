@@ -363,6 +363,10 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(`${passwordKey}="\${A:?--${passwordKey}="$VAULT_PASSWORD"}"`)).toEqual([]);
     expect(textRules(`${passwordKey}="\${A:?--${passwordKey}="$VAULT_PASSWORD" x}"`)).toEqual([]);
     expect(textRules(`${passwordKey}="$(get --${passwordKey}="$VAULT_PASSWORD" and more`)).toEqual([]);
+    // Greptile: skipping a parameter name still scans the word after it for an inner assignment.
+    const defaulted = `${passwordKey}=\${${passwordKey.toUpperCase()}:-$(echo ${passwordKey}=${literal})}`;
+    expect(await gateRules(defaulted)).toEqual(["password-assignment"]);
+    expect(textRules(defaulted)).toEqual(["password_assignment"]);
     // CodeRabbit: a parenthesis inside a braced reference is literal data, not the reference's closer.
     const mismatched = `${passwordKey}=\${A:?${passwordKey}=$VAULT_PASSWORD)${credential}}`;
     expect(await gateRules(mismatched)).toEqual(["password-assignment"]);
