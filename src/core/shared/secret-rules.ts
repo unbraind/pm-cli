@@ -818,9 +818,9 @@ function wordComplete(match: RegExpMatchArray): boolean {
   if (after === input.length || /\s/u.test(input[after]!)) return true;
   // Inside a rejected reference value, a closing parenthesis or brace ends the
   // reference the match sat in (`"$(get --password=$PW)"`,
-  // `"$(get --password="$PW")"`), so the enclosing quote may follow it. At the
-  // top level such a character is literal data.
-  if (INNER_MATCHES.has(match) && /^[)}]/u.test(input.slice(start, after)) && isQuote(input[after])) return true;
+  // `"$(get --password="$PW")${SUFFIX}"`), so the word ends there whatever
+  // follows. At the top level such a character is literal data.
+  if (INNER_MATCHES.has(match) && /^[)}]/u.test(input.slice(start, after))) return true;
   if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a

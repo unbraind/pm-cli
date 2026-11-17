@@ -243,8 +243,8 @@ in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
 read the whole word. An unquoted value did when whitespace or the end of the
 text follows it, optionally after structure such as `;` or `)`, or, for a key
-found inside a rejected reference value, when the closing parenthesis or brace
-of that reference is followed by the enclosing quote. A quoted value under a quoted key did as well when structure
+found inside a rejected reference value, at the closing parenthesis or brace
+of that reference, whatever follows it. A quoted value under a quoted key did as well when structure
 and then the next member or element follows, as in compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
 `[{"password":"$DB_PASSWORD"},{"other":…}]`). Any other text after it (`$PW:…`,
 `$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote

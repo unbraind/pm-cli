@@ -270,6 +270,8 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       `${passwordKey}="$(get-secret --${passwordKey}=$VAULT_PASSWORD)"`,
       // Codex round 16: a quoted inner variable ends its word at the substitution's closing parenthesis too.
       `${passwordKey}="$(get-secret --${passwordKey}="$VAULT_PASSWORD")"`,
+      // Codex round 18: the inner word ends at the substitution even when another reference follows.
+      `${passwordKey}="$(get-secret --${passwordKey}=$VAULT_PASSWORD)\${SUFFIX}"`,
     ]) {
       expect(await gateRules(nested), nested).toEqual([]);
       expect(textRules(nested), nested).toEqual([]);
