@@ -79,8 +79,10 @@ gate accepts: a recorded waiver in `config/dependency-advisory-waivers.json`.
   registry advisories by their `github_advisory_id`, `module_name` and
   every finding version. A registry advisory with a missing or malformed
   detail can never be waived. Receipt version 2 records those validated
-  fields, and the verifier checks that the counts, the ids and the advisory
-  list agree, so a waived advisory cannot stand in for an unlisted one.
+  fields. pnpm counts one per advisory, not per vulnerable version, so the
+  verifier requires each severity's count to equal the number of listed
+  advisories with that severity. A waived advisory therefore cannot stand in
+  for an unlisted one, and an advisory of unknown severity refuses.
 - The expiry is an RFC 3339 UTC instant at most 30 days past the run that
   judges it. Renew a waiver only after re-verifying it, and record that
   verification on the owner. The owner is a pm item id and the reason must be

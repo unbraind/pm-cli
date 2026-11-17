@@ -55,6 +55,7 @@ const PARITY_PATTERNS = [
   "../other/*.ts", "../other/o.ts", "missing/**", "missing", "a.ts/*",
   "*/./n.ts", "child/*/../n.ts", "child//n.ts", "*//n.ts", "c*/./deep/d.ts", "./*/deep/../n.ts", "@(**/d.ts|*.md)",
   "child/@(**/d.ts|n.ts)", "app/@(**/page.tsx)", "*(**/d.ts)", "*/@(**|x)", "*/@(x|**)", "{**,x}/n.ts",
+  "*[[:ascii:]].ts", "[![:ascii:]]*.ts", "[[:ascii:]].ts",
   ...(posix ? ["@(q.ts", "a|b.ts", "linkdir/*", "linkdir/../a.ts", "link.ts", "dangling.ts", "*link*", "**/d.ts"] : []),
 ];
 
@@ -157,6 +158,11 @@ describe("file glob semantics", () => {
       expect(await expanded("[\\", root)).toEqual([]);
       expect(await expanded("a\\", root)).toEqual([]);
       expect(await expanded("[[:word:]].ts", root)).toEqual(["B.ts", "_.ts", "a.ts", "z.ts"]);
+      // Inherited object members are unknown class names, never ranges.
+      for (const name of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+        expect(await expanded(`[[:${name}:]].ts`, root)).toEqual([]);
+        expect(await expanded(`[![:${name}:]].ts`, root)).toEqual(["-.ts", "B.ts", "].ts", "_.ts", "a.ts", "z.ts"]);
+      }
     });
   });
 

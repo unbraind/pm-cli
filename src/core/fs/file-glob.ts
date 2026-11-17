@@ -68,9 +68,11 @@ interface State {
 /** Raised when a pattern exceeds a declared bound; the expansion then matches nothing. */
 class GlobTooComplex extends Error {}
 
-const POSIX_CLASSES: Readonly<Record<string, Array<[number, number]>>> = {
+/** POSIX bracket classes; a Map, so names such as `constructor` are unknown rather than inherited. */
+const POSIX_CLASSES: ReadonlyMap<string, Array<[number, number]>> = new Map(Object.entries({
   alnum: [[48, 57], [65, 90], [97, 122]],
   alpha: [[65, 90], [97, 122]],
+  ascii: [[0, 127]],
   blank: [[9, 9], [32, 32]],
   cntrl: [[0, 31], [127, 127]],
   digit: [[48, 57]],
@@ -82,7 +84,7 @@ const POSIX_CLASSES: Readonly<Record<string, Array<[number, number]>>> = {
   upper: [[65, 90]],
   word: [[48, 57], [65, 90], [95, 95], [97, 122]],
   xdigit: [[48, 57], [65, 70], [97, 102]],
-};
+} satisfies Record<string, Array<[number, number]>>));
 
 /** Refuse negation, which a linked-artifact list cannot express as a set of added files. */
 function negationRefusal(): PmCliError {
@@ -193,7 +195,7 @@ function posixClassAt(chars: string[], index: number): { ranges: Array<[number, 
   if (chars[index] !== "[" || chars[index + 1] !== ":") return undefined;
   const colon = chars.indexOf(":", index + 2);
   if (colon === -1 || chars[colon + 1] !== "]") return undefined;
-  return { ranges: POSIX_CLASSES[chars.slice(index + 2, colon).join("")] ?? [], next: colon + 2 };
+  return { ranges: POSIX_CLASSES.get(chars.slice(index + 2, colon).join("")) ?? [], next: colon + 2 };
 }
 
 /** Read one bracket member at `index`, resolving an escape that is not the closer itself. */

@@ -19,20 +19,21 @@ function isStoredAdvisory(entry) {
 }
 
 /**
- * Check that the registry's advisory list agrees with its ids and counts: every
- * severity with a positive count has an advisory and every advisory severity is
- * counted, so a waived advisory can never stand in for an unlisted one.
+ * Check that the registry's advisory list accounts for every counted advisory.
+ * pnpm counts one per advisory, not per vulnerable version or path (measured
+ * 2026-11-18: one high advisory with three vulnerable versions plus another
+ * high advisory counted high: 2), so each severity's count must equal the
+ * number of listed advisories with that severity. A waived advisory can
+ * therefore never stand in for an unlisted one, and an advisory whose
+ * severity is unknown leaves a count unaccounted for and refuses.
  */
 function assertRegistryConsistent(registry) {
   assert.deepEqual(registry.counts !== null && typeof registry.counts === "object" ? Object.keys(registry.counts).sort() : null, [...SEVERITIES].sort(), "Incomplete registry audit counts");
   assert.ok(Array.isArray(registry.advisories) && registry.advisories.every(isStoredAdvisory), "Registry reports vulnerable dependencies");
   assert.deepEqual(registry.advisories.map(({ id }) => id), registry.ids, "Registry reports vulnerable dependencies");
-  const severities = new Set(registry.advisories.map(({ severity }) => severity));
   for (const severity of SEVERITIES) {
-    const counted = Number.isSafeInteger(registry.counts[severity]) && registry.counts[severity] > 0;
-    assert.ok(Number.isSafeInteger(registry.counts[severity]) && registry.counts[severity] >= 0, "Incomplete registry audit counts");
-    assert.ok(!counted || severities.has(severity) || severities.has(null), "Registry reports vulnerable dependencies");
-    assert.ok(counted || !severities.has(severity), "Contradictory registry audit counts");
+    const listed = registry.advisories.filter((advisory) => advisory.severity === severity).length;
+    assert.ok(registry.counts[severity] === listed, `Registry counts ${severity} advisories it does not list`);
   }
 }
 

@@ -203,10 +203,29 @@ describe("dependency advisory evidence", () => {
           await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow();
         }
         await main([], root);
+        // An advisory of unknown severity leaves its count unaccounted for.
         await mutate(root, (r) => { (r.feeds.registry.advisories as { severity: null | string }[])[0]!.severity = null; });
-        await expect(verifyReceipt(root, receiptPath(root))).resolves.toMatchObject({ verdict: "pass" });
+        await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow("Registry counts high advisories it does not list");
+        await main([], root);
         await mutate(root, (r) => { (r.feeds.registry.advisories as { versions: null | string[] }[])[0]!.versions = []; });
         await expect(verifyReceipt(root, receiptPath(root))).rejects.toThrow("Registry reports vulnerable dependencies: fixture@unknown version");
+      });
+    });
+
+    it("refuses a registry count that the listed advisories do not account for, even when every listed one is waived", async () => {
+      await withTempDir("pm-advisory-waiver-", async (root) => {
+        await fixture(root); await declare(root, [waiver()]); osvPositive();
+        // One waived high advisory with three vulnerable versions counts once.
+        registryPositive({ findings: [{ version: "1.2.3" }, { version: "1.2.3" }] });
+        await expect(main([], root)).resolves.toMatchObject({ verdict: "pass" });
+        spawn.mockReturnValue({
+          status: 1,
+          stdout: JSON.stringify({
+            advisories: { "7": { module_name: "fixture", severity: "high", github_advisory_id: advisory, findings: [{ version: "1.2.3" }] } },
+            metadata: { vulnerabilities: { ...zero, high: 2 } },
+          }),
+        });
+        await expect(main([], root)).rejects.toThrow("Dependency advisory gate blocked: Registry counts high advisories it does not list");
       });
     });
   });
