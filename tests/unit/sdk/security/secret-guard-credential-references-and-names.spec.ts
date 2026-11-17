@@ -167,6 +167,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["non-null assertion after a quoted reference", 'const token="${TOKEN}"!.length+1;'],
     ["XOR after a quoted reference", 'const token="${TOKEN}"^maskValue;'],
     ["subtraction after a quoted reference", 'const token="${TOKEN}"-tokenOffset;'],
+    // Codex round 29: remainder after a quoted reference is code too.
+    ["remainder after a quoted reference", 'const token="${TOKEN}"%maskValue;'],
     // A lowercase angle span after `=`, or before expression code, is code too.
     ["placeholder-shaped assertion after an assignment", `api_key=<t>${credential}`],
     ["placeholder-shaped assertion before expression code", "({ token: <t>auth_token ?? fallback })"],
@@ -339,6 +341,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       // Codex round 16: a quoted inner variable ends its word at the substitution's closing parenthesis too.
       `${passwordKey}="$(get-secret --${passwordKey}="$VAULT_PASSWORD")"`,
       // CodeRabbit: only the closer of the enclosing reference ends the inner word (asserted below).
+      // Codex round 29: a key word that names a braced reference's parameter is not an assignment.
+      `${passwordKey}=\${${passwordKey.toUpperCase()}:START_OFFSET:8}`,
+      `${passwordKey}=\${#${passwordKey.toUpperCase()}:0:8}`,
       // Codex round 23: a double-quoted closer inside the substitution is not its closer.
       `${passwordKey}=$(printf ")"; get --${passwordKey}=$VAULT_PASSWORD)\${SUFFIX}`,
       // Codex round 24: a substitution nested inside double quotes is still a reference with its own closer.

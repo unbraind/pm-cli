@@ -328,11 +328,11 @@ const credentialConcatenated = (run: string): string => String.raw`(?:${credenti
 const credentialUnquoted = (build: (run: string) => string): string => String.raw`(?<!["'])(?:${build(CREDENTIAL_RUN)})`;
 // A quoted piece opens a concatenation when a reference or another quoted
 // piece follows it directly, or when it holds a reference and a letter, digit
-// or non-operator symbol (`_ @ # % ~`, or a `!` that no operator, member
+// or non-operator symbol (`_ @ # ~`, or a `!` that no operator, member
 // access or call follows) follows. A quoted piece followed by an operator is
 // code (`"<literal>".trim()`, `"${KEY}".toUpperCase()`, `"${KEY}"!.length`,
 // `"${KEY}"^mask`, `"Bearer"+value`) and stays a quoted value.
-const CREDENTIAL_CONCATENATION_CONTINUES = String.raw`(?:[\w@#%~]|!(?![.+\-*/%=^!(]))`;
+const CREDENTIAL_CONCATENATION_CONTINUES = String.raw`(?:[\w@#~]|!(?![.+\-*/%=^!(]))`;
 const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"']`
   + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"${CREDENTIAL_CONCATENATION_CONTINUES}|'(?=[^'\s]*[$<])[^'\s]*'${CREDENTIAL_CONCATENATION_CONTINUES})`;
 // A quoted body that holds a reference opener is captured whole up to its closing quote.
@@ -455,6 +455,12 @@ function ruleReadings(rule: SecretRule): readonly SecretRule[] {
     baselineRules.set(rule, judged);
   }
   return [rule, judged];
+}
+
+/** Whether `index` starts the parameter name of a braced reference: `${NAME`, `${#NAME` or `${!NAME`. */
+function isParameterName(content: string, index: number): boolean {
+  const name = content[index - 1] === "#" || content[index - 1] === "!" ? index - 1 : index;
+  return content[name - 1] === "{" && content[name - 2] === "$";
 }
 
 /** For a match the rescan found inside a rejected reference value, where that reference's own closer stands. */
@@ -616,6 +622,8 @@ function* keysInsideRejectedValue(
   // enclosing reference; the spans are walked only once a key is found inside.
   let closerAt: ((position: number) => number | undefined) | undefined;
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
+    // A key word that names a braced reference's parameter (`${PASSWORD:OFFSET:8}`) is not an assignment.
+    if (isParameterName(content, found.index)) continue;
     closerAt ??= enclosingCloser(referenceSpans(content, end - match[1].length, match[1]));
     const close = closerAt(found.index);
     if (close !== undefined) INNER_CLOSE_AT.set(found, close);

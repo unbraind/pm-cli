@@ -202,7 +202,7 @@ tracker record excluded from npm). A value that holds `${…}`, `$(…)`,
 `$NAME` or `<…>` is captured whole. So is a value that opens with a quoted
 piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
 another quoted piece follows it, or it holds a reference and a letter, digit
-or non-operator symbol (`_ @ # % ~`, or a `!` that no operator follows)
+or non-operator symbol (`_ @ # ~`, or a `!` that no operator follows)
 follows. A quoted value followed by an operator (`"…".trim()`,
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
 source a value is code when a binary operator (including `^`) or member access
@@ -341,7 +341,8 @@ A key inside a rejected value keeps its own verdict
 tracker record excluded from npm). A whole-value reference such as a spaced
 command substitution spells nothing, so its match is rejected. Each key that
 starts inside it is then judged once, so a password assignment written inside
-`$(echo …)`, `${…:?…}` or `<…>` is still reported. A rejected inner value
+`$(echo …)`, `${…:?…}` or `<…>` is still reported; a key word that names a
+braced reference's parameter (`${PASSWORD:OFFSET:8}`) is not an assignment. A rejected inner value
 that holds a reference is entered in turn, so a deeper assignment is reached
 too. A rejected password value spells fewer literal characters than a key, so
 every key inside it sits in a reference body; bodies nest a bounded number of
