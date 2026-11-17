@@ -149,6 +149,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["type assertion before as", "({ token: <string>auth_token as string })"],
     ["generic type assertion", "({ token: <Record<string, string>>token_map })"],
     ["array type assertion", "({ token: <string[]>token_list })"],
+    // Codex round 23: acronym-prefixed type names are TypeScript types too.
+    ["acronym-prefixed type assertion", "({ token: <APIKey>auth_token })"],
+    ["interface-prefixed type assertion", "({ token: <IAuthToken>auth_token })"],
     ["quoted parenthesis inside a command substitution", "const token = $('(').length+1;"],
     // CodeRabbit and Greptile: member access after a nested reference, and XOR after a reference, are code.
     ["member access after a nested braced reference", "token=${A:-${B}}.length+1"],
@@ -320,6 +323,10 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       // Codex round 16: a quoted inner variable ends its word at the substitution's closing parenthesis too.
       `${passwordKey}="$(get-secret --${passwordKey}="$VAULT_PASSWORD")"`,
       // CodeRabbit: only the closer of the enclosing reference ends the inner word (asserted below).
+      // Codex round 23: a double-quoted closer inside the substitution is not its closer.
+      `${passwordKey}=$(printf ")"; get --${passwordKey}=$VAULT_PASSWORD)\${SUFFIX}`,
+      // An escaped closer inside the substitution is not its closer either.
+      `${passwordKey}=$(printf \\); get --${passwordKey}=$VAULT_PASSWORD)\${SUFFIX}`,
       // A sibling substitution before the enclosing one is not the inner key's reference.
       `${passwordKey}="$(prep)$(get-secret --${passwordKey}=$VAULT_PASSWORD)"`,
       // Codex round 18: the inner word ends at the substitution even when another reference follows.
@@ -331,6 +338,7 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // A braced reference the quoted piece cuts short closes where the text closes it. In one that never
     // closes, the inner quoted variable is still a whole word, because whitespace follows it.
     expect(textRules(`${passwordKey}="\${A:?--${passwordKey}="$VAULT_PASSWORD"}"`)).toEqual([]);
+    expect(textRules(`${passwordKey}="\${A:?--${passwordKey}="$VAULT_PASSWORD" x}"`)).toEqual([]);
     expect(textRules(`${passwordKey}="$(get --${passwordKey}="$VAULT_PASSWORD" and more`)).toEqual([]);
     // CodeRabbit: a parenthesis inside a braced reference is literal data, not the reference's closer.
     const mismatched = `${passwordKey}=\${A:?${passwordKey}=$VAULT_PASSWORD)${credential}}`;

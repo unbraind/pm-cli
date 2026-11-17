@@ -463,8 +463,8 @@ const CUT_REFERENCE_BOUND = 4096;
 
 /**
  * The braced and command references in a captured value, in opening order,
- * found in one linear walk. Inside a reference, single-quoted spans and
- * escapes never close it. A reference the value grammar cut short (a quoted
+ * found in one linear walk. Inside a reference, quoted spans and escapes
+ * never close it (`$(printf ")"; …)`). A reference the value grammar cut short (a quoted
  * piece ends at its first closing quote, so a command substitution holding a
  * quoted argument is cut there) closes where the text closes it, searched a
  * bounded distance; otherwise it extends to the end of the value.
@@ -481,7 +481,7 @@ function referenceSpans(content: string, offset: number, text: string): Referenc
       index += 1;
     } else if (open.length > 0 && character === "\\") {
       index += 1;
-    } else if (open.length > 0 && character === "'") {
+    } else if (open.length > 0 && (character === "'" || character === "\"")) {
       index = quotedSpanEnd(text, index);
     } else if (character === open.at(-1)?.closer) {
       open.pop()!.span.close = offset + index;
@@ -575,9 +575,11 @@ function* keysInsideRejectedValue(
 ): Generator<SecretRuleMatch> {
   const end = match.index! + match[0].length;
   inner.lastIndex = end - match[1].length;
-  // Matches arrive in increasing order, so one sweep finds each one's innermost enclosing reference.
-  const closerAt = enclosingCloser(referenceSpans(content, end - match[1].length, match[1]));
+  // Matches arrive in increasing order, so one sweep finds each one's innermost
+  // enclosing reference; the spans are walked only once a key is found inside.
+  let closerAt: ((position: number) => number | undefined) | undefined;
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
+    closerAt ??= enclosingCloser(referenceSpans(content, end - match[1].length, match[1]));
     const close = closerAt(found.index);
     if (close !== undefined) INNER_CLOSE_AT.set(found, close);
     if (acceptsSecretMatch(rule, found)) yield { index: found.index };
@@ -1031,10 +1033,11 @@ function quotedSpanEnd(text: string, start: number): number {
 
 /**
  * A TypeScript type in an angle span: a primitive keyword, a type parameter
- * (`<T>`) or a PascalCase name, optionally generic or an array type. An
+ * (`<T>`) or a capitalized name that holds a lowercase letter (`<Record>`,
+ * `<APIKey>`, `<IAuthToken>`), optionally generic or an array type. An
  * ALL-CAPS name (`<TOKEN>`, `<API_KEY>`) is a placeholder by convention.
  */
-const TYPE_ASSERTION = /^<(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|[A-Z](?:[a-z][\w$.]*)?(?:<[\w$.,\s]*>)?)(?:\[\])*>/u;
+const TYPE_ASSERTION = /^<(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|[A-Z](?:(?=[\w$.]*[a-z])[\w$.]+)?(?:<[\w$.,\s]*>)?)(?:\[\])*>/u;
 
 /** A binary operator or member access that continues an expression after a reference; `! @ # ~` stay literal data. */
 const CODE_OPERATOR = /[.+\-*/%=^]/u;
