@@ -156,6 +156,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     // Codex round 25: qualified and union types are TypeScript types too.
     ["qualified type assertion", "({ token: <auth.Token>auth_token })"],
     ["union type assertion", "({ token: <string|undefined>auth_token })"],
+    // Codex round 32: literal types are TypeScript types too.
+    ["string literal type assertion", 'const config = { token: <"bearer">auth_token };'],
+    ["numeric literal union type assertion", "const config = { token: <1|2>auth_token };"],
     ["quoted parenthesis inside a command substitution", "const token = $('(').length+1;"],
     // CodeRabbit and Greptile: member access after a nested reference, and XOR after a reference, are code.
     ["member access after a nested braced reference", "token=${A:-${B}}.length+1"],
@@ -346,6 +349,10 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       // Codex round 16: a quoted inner variable ends its word at the substitution's closing parenthesis too.
       `${passwordKey}="$(get-secret --${passwordKey}="$VAULT_PASSWORD")"`,
       // CodeRabbit: only the closer of the enclosing reference ends the inner word (asserted below).
+      // Codex round 32: inside a substitution, a shell control operator ends the inner word.
+      `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD|filter)`,
+      `${passwordKey}=$(get --${passwordKey}="$VAULT_PASSWORD"||fallback)`,
+      `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD; next)`,
       // Codex round 29: a key word that names a braced reference's parameter is not an assignment.
       `${passwordKey}=\${${passwordKey.toUpperCase()}:START_OFFSET:8}`,
       `${passwordKey}=\${#${passwordKey.toUpperCase()}:0:8}`,

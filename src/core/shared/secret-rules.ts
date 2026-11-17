@@ -940,6 +940,9 @@ function wordComplete(match: RegExpMatchArray): boolean {
   // Any other parenthesis or brace, and one at the top level, is literal data
   // (`${A:?password=$PW)literal}`).
   if (INNER_CLOSE_AT.get(match) === start) return true;
+  // Inside a command substitution, shell control operators end a word too (`--password=$PW|filter`).
+  // (The end of the input has already returned above, so a character stands at `start`.)
+  if (INNER_CLOSE_AT.has(match) && /[|&;]/u.test(input[start]!)) return true;
   if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
@@ -1085,6 +1088,9 @@ function quotedSpanEnd(text: string, start: number): number {
 
 /** The text of a TypeScript type expression, as one captured angle piece holds it (no nesting, no whitespace). */
 const TYPE_TEXT = /^[\w$.[\]|&,]+$/u;
+/** A TypeScript literal type, or a union that starts with one (`<"bearer">`, `<1|2>`, `<"a"|undefined>`). */
+const LITERAL_TYPE = /^(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?)(?:\|(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|[\w$.]+))*$/u;
+
 /** A TypeScript primitive type keyword. */
 const PRIMITIVE_TYPE = /\b(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|undefined|null)\b/u;
 
@@ -1099,6 +1105,7 @@ const PRIMITIVE_TYPE = /\b(?:string|number|boolean|bigint|symbol|any|unknown|obj
 function isTypeAssertion(value: string): boolean {
   // An angle-led capture starts with one closed `<...>` piece of the value grammar.
   const type = value.slice(1, value.indexOf(">"));
+  if (LITERAL_TYPE.test(type)) return true;
   if (!TYPE_TEXT.test(type)) return false;
   return PRIMITIVE_TYPE.test(type) || /[.|&[]/u.test(type) || /^[A-Z](?:[\w$]*[a-z][\w$]*)?$/u.test(type);
 }
