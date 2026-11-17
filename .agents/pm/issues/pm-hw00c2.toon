@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",credential-redaction,placeholders,secret-guard,security
 created_at: "2026-11-16T23:30:24.532Z"
-updated_at: "2026-11-17T13:26:40.481Z"
+updated_at: "2026-11-17T13:40:04.679Z"
 closed_at: "2026-11-17T09:04:47.334Z"
 completed_at: "2026-11-17T09:04:47.334Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1l85at,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-jcz7qz,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-ycgb5g,discovered_from,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
-comments[18]:
+comments[19]:
   - created_at: "2026-11-17T08:37:14.716Z"
     author: "harness:claude-code"
     text: "Design (implementation on branch fix/secret-guard-reference-literals-and-property-names). credential_key_assignment now captures a value whole when it holds a run-time reference (braced, command, dollar-name or angle placeholder) or opens with a quoted piece concatenated to more text, and judges the literal left once references expand with CREDENTIAL_LITERAL_VALUE: the unchanged reference-free grammar (paths, URLs, words, member paths, key-file names excluded; 8+ characters; entropy 3) read as one double-quoted literal, because the literal is data. The rule gains minimumLiteralLength 8 and a new declarative SecretRule field literalValue; acceptsSecretMatch judges the literal (not the captured text) for entropy and rejectValue whenever a rule declares a literal minimum. judgedLiteral treats a capture whose quotes the grammar read outside it (a quoted credential-key body) as data, so its quote characters are literal. Bounds: at most 64 literal characters before the first reference (a longer prefix is judged as a reference-free value), references and quoted pieces are whitespace-free (so a spaced command substitution is never one value and a key inside it keeps its own verdict), every repeated group is bounded at 4096 and quoted pieces at 4, as in the password grammar. Bare dollar-name policy (one policy for both key-named rules): a dollar-name reference expands to nothing when the name is CONSTANT_CASE (environment-variable convention) or when it is the whole value, quoted or not; bareness is judged on the source text, so a concatenation never reads as one name. Any other dollar text is literal, so a credential that merely contains a dollar sign keeps its characters."
@@ -80,6 +80,9 @@ comments[18]:
   - created_at: "2026-11-17T13:26:40.481Z"
     author: "harness:claude-code"
     text: "Codex review round 16 on PR 1746: the type-assertion findings kept arriving one operator at a time (call, optional call, nullish, logical fallback, index), so the family is now closed structurally. After an assignment's equals sign, a value led by an angle span is a TypeScript type assertion or generic, or a shell redirection, never a placeholder, so the referenced reading treats it as code. After a colon (YAML, prose) an angle placeholder before a literal is still judged, which keeps the acceptance example. The inner-match closing-delimiter shortcut now also covers a quoted inner variable inside a command substitution."
+  - created_at: "2026-11-17T13:40:04.679Z"
+    author: "harness:claude-code"
+    text: "Codex review round 17 on PR 1746: a binary operator after a reference in unquoted source was read as the start of a credential literal. The code-after-reference rules are now one rule. In unquoted source a value is code when an operator or member access follows its leading references, when a call's parenthesis follows it, or, after an equals sign, when an angle span leads it. A letter, digit or quoted piece after a reference is still a literal concatenation. This subsumes the member-access check. One policy row now spells the CONSTANT_CASE concatenation with a quoted piece, because a hyphen after a reference reads as subtraction."
 files[3]{path,scope}:
   src/core/shared/secret-rules.ts,project
   tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project

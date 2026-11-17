@@ -854,8 +854,6 @@ const CALL_AFTER = /^[ \t]{0,16}\(/u;
 /** An assignment's `=` (not `==`) and blanks directly before a value. */
 const ASSIGNED_BEFORE = /(?<![=!<>])=[ \t]{0,16}$/u;
 
-/** A literal that starts with member access, as code leaves after a reference (`${X}.trim`, `$T.length+1`). */
-const MEMBER_ACCESS = /^\.[A-Za-z_$]/u;
 
 /**
  * The character just before the value capture. Every match handed to a judge
@@ -874,32 +872,41 @@ function isQuote(character: string | undefined): character is "\"" | "'" {
 const SPELLING_SENSITIVE = /[$<"']/u;
 
 /**
- * How unquoted source text that starts with a reference continues: "call"
- * when an opening parenthesis follows the value (`<string>getToken()`),
- * "source" otherwise, and undefined for a quoted value, payload data or a
- * value that starts with literal text (`.ab${X}cd` is never member access).
+ * Whether unquoted source text that starts with a reference is code rather
+ * than a literal concatenated to the reference. It is code when an operator
+ * follows the leading references (`$TOKEN.length`, `$TOKEN+suffix`,
+ * `${X}*2`), when a call's parenthesis follows the value
+ * (`<string>getToken()`), and, after `=`, when an angle span leads it (a
+ * TypeScript type assertion or generic, or a shell redirection, never a
+ * placeholder; after `:` in YAML or prose `<x>literal` is still judged). A
+ * quoted value, payload data, a value that starts with literal text
+ * (`.ab${X}cd`) and a reference followed by a letter, digit or quoted piece
+ * (`${EMPTY}literal`, `$VAR"literal"`) are never code.
  */
-function codeAfterReference(match: RegExpMatchArray): "call" | "source" | undefined {
-  if (DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match)) || !/^[$<]/u.test(match[1])) return undefined;
+function isCodeAfterReference(match: RegExpMatchArray): boolean {
+  if (DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match)) || !/^[$<]/u.test(match[1])) return false;
   const end = match.index! + match[0].length;
-  // After `=`, a value led by an angle span is a TypeScript type assertion or
-  // generic (`const token = <string>getToken()`) or a shell redirection, never a
-  // placeholder; after `:` (YAML, prose) `<x>literal` is still judged.
-  if (match[1][0] === "<" && ASSIGNED_BEFORE.test(match.input!.slice(Math.max(0, end - match[1].length - 18), end - match[1].length))) return "call";
-  return CALL_AFTER.test(match.input!.slice(end, end + 17)) ? "call" : "source";
+  const valueStart = end - match[1].length;
+  if (match[1][0] === "<" && ASSIGNED_BEFORE.test(match.input!.slice(Math.max(0, valueStart - 18), valueStart))) return true;
+  const lead = LEADING_REFERENCES.exec(match[1])![0];
+  return CODE_OPERATOR.test(match[1][lead.length] ?? "") || CALL_AFTER.test(match.input!.slice(end, end + 17));
 }
+
+/** The references that lead a value, read flat (a nested reference ends the run). */
+const LEADING_REFERENCES = /^(?:\$\{[^{}]*\}|\$\([^()]*\)|\$[A-Za-z_]\w*|<[^<>]*>)*/u;
+/** An operator or member access that continues an expression after a reference. */
+const CODE_OPERATOR = /[.+\-*/%=!@#^~]/u;
 
 /**
  * Whether the literal a referenced value spells matches the rule's literal
  * grammar whole. The literal is data, as a program receives it, so it is read
  * as one double-quoted literal whose own `"` characters become `'`, as an
  * element body is: every non-space character counts, and the grammar's path,
- * URL, word and member-path exclusions judge it whole. In unquoted source a
- * literal that starts with member access, or that a call's parenthesis
- * follows, is the code after a reference.
+ * URL, word and member-path exclusions judge it whole. Code after a reference
+ * (see isCodeAfterReference) spells no literal.
  */
-function literalMatches(grammar: RegExp, literal: string, code: "call" | "source" | undefined): boolean {
-  if (code === "call" || (code !== undefined && MEMBER_ACCESS.test(literal))) return false;
+function literalMatches(grammar: RegExp, literal: string, code: boolean): boolean {
+  if (code) return false;
   const body = literal.replaceAll("\"", "'");
   grammar.lastIndex = 0;
   return grammar.exec(`"${body}"`)?.[1] === body;
@@ -1349,7 +1356,7 @@ export function literalAfterReferences(value: string, variables = true): string 
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
   const value = rule.minimumLiteralLength === undefined ? match[1] : judgedLiteral(match);
   if (rule.minimumLiteralLength !== undefined && value.length < rule.minimumLiteralLength) return false;
-  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, codeAfterReference(match))) return false;
+  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, isCodeAfterReference(match))) return false;
   if (rule.rejectValue?.test(value) === true) return false;
   // The statement shape judges the literal, so `<string>DEFAULT_TOKEN;` is a constant reference too.
   if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match, value)) return false;

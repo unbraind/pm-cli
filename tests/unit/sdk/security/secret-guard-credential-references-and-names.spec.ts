@@ -116,6 +116,10 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["compact JSON with a bare variable", '{"api_key":"$API_KEY","other":"x"}'],
     // Codex round 8: member access on a reference, even before an operator, is code.
     ["arithmetic on a reference member", "const token = $TOKEN.length+1;"],
+    // Codex round 17: a binary operator after a reference is code.
+    ["sum after a reference", "const token=$TOKEN+tokenSuffix;"],
+    ["difference after a reference", "const token=$TOKEN-tokenOffset;"],
+    ["product after a reference", "const token=${COUNT}*multiplierValue;"],
     // Codex round 13: a call after a type assertion is code.
     ["call after a type assertion", "const api_key = <string>get_auth_token();"],
     // Codex round 14: a spaced call and a constant after a type assertion are code too.
@@ -152,7 +156,7 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     }
     // A CONSTANT_CASE variable expands to nothing, so the literal after it is judged by both rules.
     expect(textRules(assign(passwordKey, `$VAR-${literal}`))).toEqual(["password_assignment"]);
-    expect(textRules(assign("api_key", `$VAR-${credential}`))).toEqual(["credential_key_assignment"]);
+    expect(textRules(assign("api_key", `$VAR"${credential}"`))).toEqual(["credential_key_assignment"]);
     // Any other `$name` inside a longer value is literal text in both rules, CONSTANT_CASE or not.
     expect(literalAfterReferences(`ab$cd${literal}`)).toBe(`ab$cd${literal}`);
     expect(expandRuntimeReferences(`ab$CD:${literal}`)).toBe(`ab$CD:${literal}`);
