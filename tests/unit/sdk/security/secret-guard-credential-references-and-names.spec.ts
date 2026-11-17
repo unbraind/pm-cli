@@ -66,6 +66,10 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["YAML literal holding a single ampersand after a reference", `api_key: \${EMPTY}Zq8&vN3kLmP0wXy7Ab`],
     // Greptile: punctuation that is not a binary operator stays literal data after a reference.
     ["YAML literal led by an exclamation mark after a reference", `api_key: \${EMPTY}!${credential}`],
+    // Greptile: a field separator alone ends flow-YAML data, and an ALL-CAPS angle name is a placeholder.
+    ["flow-YAML literal after an angle placeholder", `{token: <x>${credential}, other: 1}`],
+    ["YAML literal after an ALL-CAPS placeholder", `api_key: <TOKEN>${credential}`],
+    ["YAML literal after a CONSTANT_CASE placeholder", `api_key: <API_KEY>${credential}`],
     // Greptile: a literal that starts before the reference is never member access on it.
     ["dotted literal that starts before a reference", `token=.Zq8\${EMPTY}vN3k-LmP0wXy7Ab`],
   ])("flags a %s", (_label, content) => {
@@ -146,6 +150,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["generic type assertion", "({ token: <Record<string, string>>token_map })"],
     ["array type assertion", "({ token: <string[]>token_list })"],
     ["quoted parenthesis inside a command substitution", "const token = $('(').length+1;"],
+    // CodeRabbit and Greptile: member access after a nested reference, and XOR after a reference, are code.
+    ["member access after a nested braced reference", "token=${A:-${B}}.length+1"],
+    ["XOR after a reference", "const token=$TOKEN^maskValue;"],
     // A lowercase angle span after `=`, or before expression code, is code too.
     ["placeholder-shaped assertion after an assignment", `api_key=<t>${credential}`],
     ["placeholder-shaped assertion before expression code", "({ token: <t>auth_token ?? fallback })"],
@@ -312,12 +319,23 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       `${passwordKey}="$(get-secret --${passwordKey}=$VAULT_PASSWORD)"`,
       // Codex round 16: a quoted inner variable ends its word at the substitution's closing parenthesis too.
       `${passwordKey}="$(get-secret --${passwordKey}="$VAULT_PASSWORD")"`,
+      // CodeRabbit: only the closer of the enclosing reference ends the inner word (asserted below).
+      // A sibling substitution before the enclosing one is not the inner key's reference.
+      `${passwordKey}="$(prep)$(get-secret --${passwordKey}=$VAULT_PASSWORD)"`,
       // Codex round 18: the inner word ends at the substitution even when another reference follows.
       `${passwordKey}="$(get-secret --${passwordKey}=$VAULT_PASSWORD)\${SUFFIX}"`,
     ]) {
       expect(await gateRules(nested), nested).toEqual([]);
       expect(textRules(nested), nested).toEqual([]);
     }
+    // A braced reference the quoted piece cuts short closes where the text closes it. In one that never
+    // closes, the inner quoted variable is still a whole word, because whitespace follows it.
+    expect(textRules(`${passwordKey}="\${A:?--${passwordKey}="$VAULT_PASSWORD"}"`)).toEqual([]);
+    expect(textRules(`${passwordKey}="$(get --${passwordKey}="$VAULT_PASSWORD" and more`)).toEqual([]);
+    // CodeRabbit: a parenthesis inside a braced reference is literal data, not the reference's closer.
+    const mismatched = `${passwordKey}=\${A:?${passwordKey}=$VAULT_PASSWORD)${credential}}`;
+    expect(await gateRules(mismatched)).toEqual(["password-assignment"]);
+    expect(textRules(mismatched)).toEqual(["password_assignment"]);
     // Codex round 13: a number counts only as a complete token that a delimiter ends.
     expect(textRules(`${passwordKey}="$DB_PASSWORD"][1${credential}]`)).toEqual(["password_assignment"]);
     expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},[1.5e3, 2]]`)).toEqual([]);

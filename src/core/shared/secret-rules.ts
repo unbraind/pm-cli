@@ -449,8 +449,73 @@ function ruleReadings(rule: SecretRule): readonly SecretRule[] {
   return [rule, judged];
 }
 
-/** Matches the rescan found inside a rejected reference value. */
-const INNER_MATCHES = new WeakSet<RegExpMatchArray>();
+/** For a match the rescan found inside a rejected reference value, where that reference's own closer stands. */
+const INNER_CLOSE_AT = new WeakMap<RegExpMatchArray, number>();
+
+/** One `${...}` or `$(...)` reference inside a captured value, by absolute offsets. */
+interface ReferenceSpan {
+  open: number;
+  close: number;
+}
+
+/** Characters searched past a captured value for the closer of a reference the value grammar cut short. */
+const CUT_REFERENCE_BOUND = 4096;
+
+/**
+ * The braced and command references in a captured value, in opening order,
+ * found in one linear walk. Inside a reference, single-quoted spans and
+ * escapes never close it. A reference the value grammar cut short (a quoted
+ * piece ends at its first closing quote, so a command substitution holding a
+ * quoted argument is cut there) closes where the text closes it, searched a
+ * bounded distance; otherwise it extends to the end of the value.
+ */
+function referenceSpans(content: string, offset: number, text: string): ReferenceSpan[] {
+  const spans: ReferenceSpan[] = [];
+  const open: Array<{ span: ReferenceSpan; closer: string }> = [];
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === "$" && (text[index + 1] === "{" || text[index + 1] === "(")) {
+      const span = { open: offset + index, close: offset + text.length };
+      spans.push(span);
+      open.push({ span, closer: text[index + 1] === "{" ? "}" : ")" });
+      index += 1;
+    } else if (open.length > 0 && character === "\\") {
+      index += 1;
+    } else if (open.length > 0 && character === "'") {
+      index = quotedSpanEnd(text, index);
+    } else if (character === open.at(-1)?.closer) {
+      open.pop()!.span.close = offset + index;
+    }
+  }
+  resolveCutReferences(content, open);
+  return spans;
+}
+
+/** Close each reference the captured value left open where the following text closes it, a bounded distance on. */
+function resolveCutReferences(content: string, open: ReadonlyArray<{ span: ReferenceSpan; closer: string }>): void {
+  for (const { span, closer } of open) {
+    const resolved = bracketedEnd(content.slice(span.open, span.open + CUT_REFERENCE_BOUND), 1, closer === "}" ? "{" : "(");
+    if (resolved !== -1) span.close = span.open + resolved - 1;
+  }
+}
+
+/**
+ * A lookup of the innermost reference enclosing each position, for positions
+ * asked in increasing order: one sweep over the spans, so the rescan stays
+ * linear. Returns where that reference's closer stands, or undefined.
+ */
+function enclosingCloser(spans: readonly ReferenceSpan[]): (position: number) => number | undefined {
+  const active: number[] = [];
+  let next = 0;
+  return (position) => {
+    for (; next < spans.length && spans[next]!.open < position; next += 1) {
+      while (active.length > 0 && active.at(-1)! < spans[next]!.open) active.pop();
+      active.push(spans[next]!.close);
+    }
+    while (active.length > 0 && active.at(-1)! < position) active.pop();
+    return active.at(-1);
+  };
+}
 
 /** A reference or placeholder opener inside a captured value. */
 const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
@@ -510,8 +575,11 @@ function* keysInsideRejectedValue(
 ): Generator<SecretRuleMatch> {
   const end = match.index! + match[0].length;
   inner.lastIndex = end - match[1].length;
+  // Matches arrive in increasing order, so one sweep finds each one's innermost enclosing reference.
+  const closerAt = enclosingCloser(referenceSpans(content, end - match[1].length, match[1]));
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
-    INNER_MATCHES.add(found);
+    const close = closerAt(found.index);
+    if (close !== undefined) INNER_CLOSE_AT.set(found, close);
     if (acceptsSecretMatch(rule, found)) yield { index: found.index };
     else if (deep && VALUE_REFERENCE.test(found[1])) inner.lastIndex = found.index + found[0].length - found[1].length;
   }
@@ -816,11 +884,11 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  // Inside a rejected reference value, a closing parenthesis or brace ends the
-  // reference the match sat in (`"$(get --password=$PW)"`,
-  // `"$(get --password="$PW")${SUFFIX}"`), so the word ends there whatever
-  // follows. At the top level such a character is literal data.
-  if (INNER_MATCHES.has(match) && /^[)}]/u.test(input.slice(start, after))) return true;
+  // Inside a rejected reference value, the closer of the reference the match
+  // sat in ends its word whatever follows (`"$(get --password=$PW)${SUFFIX}"`).
+  // Any other parenthesis or brace, and one at the top level, is literal data
+  // (`${A:?password=$PW)literal}`).
+  if (INNER_CLOSE_AT.get(match) === start) return true;
   if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
@@ -961,13 +1029,17 @@ function quotedSpanEnd(text: string, start: number): number {
   return text.length;
 }
 
-/** A TypeScript type in an angle span: a primitive keyword or a PascalCase name, optionally generic or an array type. */
-const TYPE_ASSERTION = /^<(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|[A-Z][\w$.]*(?:<[\w$.,\s]*>)?)(?:\[\])*>/u;
+/**
+ * A TypeScript type in an angle span: a primitive keyword, a type parameter
+ * (`<T>`) or a PascalCase name, optionally generic or an array type. An
+ * ALL-CAPS name (`<TOKEN>`, `<API_KEY>`) is a placeholder by convention.
+ */
+const TYPE_ASSERTION = /^<(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|[A-Z](?:[a-z][\w$.]*)?(?:<[\w$.,\s]*>)?)(?:\[\])*>/u;
 
-/** A binary operator or member access that continues an expression after a reference; `! @ # ^ ~` stay literal data. */
-const CODE_OPERATOR = /[.+\-*/%=]/u;
-/** Expression code after a value: an optional chain, a nullish or logical operator, a call or index, or a delimiter. */
-const EXPRESSION_AFTER = /^\s{0,16}(?:\?\.|\?\?|\|\||&&|[([;,)}])/u;
+/** A binary operator or member access that continues an expression after a reference; `! @ # ~` stay literal data. */
+const CODE_OPERATOR = /[.+\-*/%=^]/u;
+/** Expression code after a value: an optional chain, a nullish or logical operator, or a call or index; a delimiter alone may end YAML data. */
+const EXPRESSION_AFTER = /^\s{0,16}(?:\?\.|\?\?|\|\||&&|[([])/u;
 
 /**
  * Whether the literal a referenced value spells matches the rule's literal

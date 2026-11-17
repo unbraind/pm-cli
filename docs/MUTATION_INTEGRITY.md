@@ -204,12 +204,13 @@ piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
 another quoted piece follows it, or it holds a reference and a letter, digit
 or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by an operator (`"…".trim()`,
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
-source a value is code when a binary operator or member access follows its
-leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
+source a value is code when a binary operator (including `^`) or member access
+follows its leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
 `$TOKEN+suffix`) or a call's parenthesis follows it (`<string>getToken()`,
 `<string>getToken ()`), and a value led by an angle span is code when the
-span holds a TypeScript type (`<string>`, `<Record<K, V>>`, `<T[]>`) or
-expression code follows it (`{ token: <t>name ?? fallback }`); a letter,
+span holds a TypeScript type (`<string>`, `<T>`, `<Record<K, V>>`, `<T[]>`;
+an ALL-CAPS name such as `<TOKEN>` is a placeholder) or expression code
+follows it (`{ token: <t>name ?? fallback }`); a letter,
 digit, quoted piece or other punctuation (`!`, `@`, `#`) after a reference is
 still a literal concatenation. After `=`, a value led
 by an angle span is a TypeScript type assertion or a shell redirection
@@ -247,8 +248,9 @@ in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
 read the whole word. An unquoted value did when whitespace or the end of the
 text follows it, optionally after structure such as `;` or `)`, or, for a key
-found inside a rejected reference value, at the closing parenthesis or brace
-of that reference, whatever follows it. A quoted value under a quoted key did as well when structure
+found inside a rejected reference value, at the closer of the reference that
+encloses it, whatever follows; any other parenthesis or brace is literal
+data. A quoted value under a quoted key did as well when structure
 and then the next member or element follows, as in compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
 `[{"password":"$DB_PASSWORD"},{"other":…}]`). Any other text after it (`$PW:…`,
 `$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote
