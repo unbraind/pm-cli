@@ -121,6 +121,11 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     ["element, literal after an angle placeholder", `<password><x>${literal}</password>`],
     ["element, literal inside markup", `<password><b>${literal}</b></password>`],
     ["prefixed key, literal after a spaced command substitution", `{"admin-password": "$(op read pw)${literal}"}`],
+    // An unquoted key whose escaped value also matches as written is the flat rule's finding.
+    ["unquoted key, escaped value that also matches as written", ["pass", "word: \"abcdefghij\\\"x\""].join("")],
+    // Decoded quotes are data, never delimiters: these spell exactly eight characters.
+    ["escaped value whose only escape is a quote", ["{\"pass", "word\": \"ab\\\"cdefg\"}"].join("")],
+    ["escaped value with a quote after three characters", ["{\"pass", "word\": \"abc\\\"defg\"}"].join("")],
   ])("refuses a %s in both consumers", async (_label, content) => {
     expect(await bothConsumers(content)).toEqual({ gate: true, mutation: true });
   });
@@ -156,6 +161,9 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     ["seven literal characters before an over-nested reference", ["pass", "word=\"\"abcdefg", "${A:-${B:-${C}}}"].join("")],
     ["default word that is a double-quoted reference", ["pass", "word=${PW:-\"${FALLBACK}\"}"].join("")],
     ["quoted key, command substitution holding a decoded quote", ["{\"pass", "word\": \"$(printf \\\"x')", "abcdefgh", "\\\")\"}"].join("")],
+    ["command substitution holding an escaped closing parenthesis", ["pass", "word=$(printf \\)", "abcdefgh)"].join("")],
+    // A prefixed unquoted key judges its escaped value compactly, so decoded prose stays clean.
+    ["prefixed unquoted key with an escaped value holding whitespace", ["reset-pass", "word: \"ab\\\"cd efghij\""].join("")],
   ])("allows a %s in both consumers", async (_label, content) => {
     expect(await bothConsumers(content)).toEqual({ gate: false, mutation: false });
   });
@@ -191,6 +199,15 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     expect(expandRuntimeReferences("${PW:-'}'}x")).toBe("'}'x");
     expect(expandRuntimeReferences('${PW:-"${FALLBACK}"}')).toBe('""');
     expect(expandRuntimeReferences("${PW:-'${X}'}")).toBe("'${X}'");
+    // Double quotes inside a reference still open a nested command substitution; a plain `$` there is text.
+    expect(expandRuntimeReferences('$(a "$(b)" c)y')).toBe("y");
+    expect(expandRuntimeReferences('$(echo "$x")y')).toBe("y");
+    expect(expandRuntimeReferences("x${")).toBe("x${");
+    // A backslash escapes the next character outside quotes and in double quotes, never in single quotes.
+    expect(expandRuntimeReferences("$(printf \\)x)y")).toBe("y");
+    expect(expandRuntimeReferences("${PW:-a\\}b}")).toBe("a\\}b");
+    expect(expandRuntimeReferences("$(printf '\\')y")).toBe("y");
+    expect(expandRuntimeReferences("$(printf \\")).toBe("$(printf \\");
     const started = performance.now();
     expandRuntimeReferences("${A:-".repeat(50_000));
     expandRuntimeReferences("<a".repeat(100_000));
@@ -288,6 +305,12 @@ describe("structured payload members are judged under their property names (pm-3
     expect(JSON.stringify(findings)).not.toContain(credential);
   });
 
+  it("reports a rule once per path when the leaf text and its key both match", () => {
+    // The leaf's own text and its credential-named key both yield credential_key_assignment here.
+    expect(memberFindings({ api_key: `api_key=${credential}` }).filter(({ rule }) => rule === "credential_key_assignment"))
+      .toEqual([{ rule: "credential_key_assignment", path: "$.api_key" }]);
+  });
+
   it("blocks a structured credential through the guard the CLI and MCP adapters use", () => {
     expect(() => evaluateMutationGuard({
       author: "agent", payload: { options: { client_secret: credential } }, settings: blockSettings,
@@ -371,6 +394,13 @@ describe("structured payload members are judged under their property names (pm-3
     const started = performance.now();
     expect(memberFindings({ sparse })).toEqual([{ rule: "npm_token", path: "$.sparse[7]" }]);
     expect(performance.now() - started).toBeLessThan(1_000);
+    // A non-enumerable element is still an element, as a length-based walk and JSON.stringify read it.
+    const hidden: unknown[] = [];
+    Object.defineProperty(hidden, "0", { value: npm, enumerable: false });
+    expect(memberFindings({ hidden })).toEqual([{ rule: "npm_token", path: "$.hidden[0]" }]);
+    // 2^32 - 1 is not an array index, so that property is not an element.
+    const outOfRange = Object.assign([] as unknown[], { [String(2 ** 32 - 1)]: npm });
+    expect(memberFindings({ outOfRange })).toEqual([]);
     const withProperty = Object.assign([npm], { label: npm });
     expect(memberFindings({ withProperty }).map(({ path }) => path)).toEqual(["$.withProperty[0]"]);
   });

@@ -144,17 +144,25 @@ interface PayloadStep {
 
 /** A canonical array index property name (`0`, `17`), never `01`, `-1` or `length`. */
 const ARRAY_INDEX = /^(?:0|[1-9]\d*)$/u;
+/** Array indices stop below 2^32 - 1; a larger numeric key is an ordinary property. */
+const MAX_ARRAY_INDEX = 2 ** 32 - 2;
+
+/** Whether an own property name of an array is one of its elements. */
+function isArrayIndex(key: string): boolean {
+  return ARRAY_INDEX.test(key) && Number(key) <= MAX_ARRAY_INDEX;
+}
 
 /**
  * The direct children of an array or of an object's own enumerable
- * properties, in order. An array is read through its own index keys, never
- * through its own (possibly overridden) methods, so holes are skipped and a
- * sparse array with a huge length costs only its present elements.
+ * properties, in order. An array is read through its own index properties,
+ * enumerable or not (as a length-based walk or JSON.stringify reads them),
+ * never through its own (possibly overridden) methods, so holes are skipped
+ * and a sparse array with a huge length costs only its present elements.
  */
 function childSteps(value: object, path: string): PayloadStep[] {
   if (Array.isArray(value)) {
-    return Object.keys(value)
-      .filter((key) => ARRAY_INDEX.test(key))
+    return Object.getOwnPropertyNames(value)
+      .filter(isArrayIndex)
       .map((key) => ({ value: (value as unknown[])[Number(key)], path: `${path}[${key}]` }));
   }
   return Object.entries(value).map(([key, entry]) => ({ value: entry as unknown, path: `${path}.${key}` }));

@@ -197,8 +197,8 @@ const PASSWORD_QUOTED_PIECES = 4;
 // expandRuntimeReferences. A literal `$` never starts a reference the grammar
 // cannot follow, so an over-nested reference is never half-read as literal.
 const PASSWORD_QUOTED_SPAN = String.raw`'[^'\r\n]*'|"(?:[^"\\\r\n]|\\.)*"`;
-const PASSWORD_PIECE = String.raw`\$\{(?:[^{}$'"\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\{)|\$\{[^{}\r\n]*\})*\}`
-  + String.raw`|\$\((?:[^()$'"\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\()|\$\([^()\r\n]*\))*\)`
+const PASSWORD_PIECE = String.raw`\$\{(?:[^{}$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\{)|\$\{[^{}\r\n]*\})*\}`
+  + String.raw`|\$\((?:[^()$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\()|\$\([^()\r\n]*\))*\)`
   + String.raw`|<[^<>\r\n]*>|[A-Za-z0-9!@#%^&*._+\-=]|\$(?![{(])`;
 const PASSWORD_QUOTED = String.raw`"[^"]*"|'[^']*'`;
 const PASSWORD_QUOTED_PIECE = String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${PASSWORD_PIECE})*`;
@@ -446,7 +446,12 @@ function decodeQuotedLiteral(literal: string, terminated: boolean): DecodedLiter
   });
   const neutral = body.replaceAll(quote, quote === "\"" ? "'" : "\"").replaceAll(/[\r\n\u2028\u2029]/gu, " ");
   const close = terminated ? quote : "";
-  return { reading: `${quote}${neutral}${close}`, original: `${quote}${body}${close}` };
+  return { reading: `${quote}${neutral}${close}`, ...literalBody(`${quote}${body}${close}`, terminated) };
+}
+
+/** A literal read as written: its delimiters are syntax and everything between them is data. */
+function literalBody(original: string, terminated: boolean): Omit<DecodedLiteral, "reading"> {
+  return { original, bodyStart: 1, bodyEnd: original.length - (terminated ? 1 : 0) };
 }
 
 /**
@@ -460,6 +465,10 @@ interface DecodedLiteral {
   reading: string;
   /** Decoded literal with its own quote characters and line breaks. */
   original: string;
+  /** Offset of the first data character, after the opening delimiter. */
+  bodyStart: number;
+  /** Offset after the last data character, before the closing delimiter when there is one. */
+  bodyEnd: number;
 }
 /** Longest prefix scanned back to the opening quote of a prefixed quoted key. */
 const MAX_KEY_PREFIX = 64;
@@ -498,12 +507,17 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
   // a structured value that does is a host-language artifact, not a credential.
   // With an `original`, the grammar reads `text` but the predicates judge the
   // same span of the decoded original (see DecodedLiteral).
-  const valueMatch = (text: string, at: number, original?: string): RegExpExecArray | null => {
+  const valueMatch = (text: string, at: number, decoded?: DecodedLiteral): RegExpExecArray | null => {
     value.lastIndex = at;
     const match = value.exec(text);
     if (match === null || LINE_BREAK.test(match[0])) return null;
     const span = match.indices?.[1];
-    if (original !== undefined && span !== undefined) match[1] = original.slice(span[0], span[1]);
+    if (decoded !== undefined && span !== undefined) {
+      // The literal's own delimiters are syntax; every decoded character
+      // between them, quotes included, is data.
+      match[1] = decoded.original.slice(Math.max(span[0], decoded.bodyStart), Math.min(span[1], decoded.bodyEnd));
+      DECODED_DATA_MATCHES.add(match);
+    }
     return acceptsSecretMatch(rule, match) ? match : null;
   };
   // The value grammar is quote-blind, so a literal with escapes is judged in
@@ -519,8 +533,8 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     // A raw line break is a host-language artifact before any escape is decoded.
     if (LINE_BREAK.test(literal)) return [];
     const decoded = decodeQuotedLiteral(literal, terminated);
-    const readings = content[at] === "'" ? [decoded, { reading: literal, original: literal }] : [decoded];
-    return readings.map(({ reading, original }) => valueMatch(reading, 0, original)).filter((match): match is RegExpExecArray => match !== null);
+    const readings = content[at] === "'" ? [decoded, { reading: literal, ...literalBody(literal, terminated) }] : [decoded];
+    return readings.map((reading) => valueMatch(reading.reading, 0, reading)).filter((match): match is RegExpExecArray => match !== null);
   };
   const valuesAt = (at: number): RegExpExecArray[] => {
     const escaped = escapedMatches(at);
@@ -541,7 +555,19 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
 
 /** The text a prefixed key's whitespace check reads: the literal for literal-judged rules, else the whole match. */
 function compactReading(rule: SecretRule, match: RegExpExecArray): string {
-  return rule.minimumLiteralLength === undefined ? match[0] : literalAfterReferences(match[1]);
+  return rule.minimumLiteralLength === undefined ? match[0] : judgedLiteral(match);
+}
+
+/** Matches whose capture is a decoded literal's data, judged without shell quote removal. */
+const DECODED_DATA_MATCHES = new WeakSet<RegExpMatchArray>();
+
+/**
+ * The literal a matched value spells. Text quotes delimit quoted pieces, but a
+ * decoded literal's characters are all data (`"ab\"cdefg"` spells eight), so
+ * only its references expand.
+ */
+function judgedLiteral(match: RegExpMatchArray): string {
+  return DECODED_DATA_MATCHES.has(match) ? expandRuntimeReferences(match[1]) : literalAfterReferences(match[1]);
 }
 
 /**
@@ -690,8 +716,8 @@ function isStatementReference(shape: RegExp, match: RegExpMatchArray): boolean {
 }
 
 // `${NAME:-word}`, `${NAME-word}`, `${NAME:=word}`, `${NAME=word}` and
-// `${NAME:+word}` can expand to `word`, so their word stays literal text.
-const DEFAULTED_REFERENCE_PREFIX = /[A-Za-z_]\w*:?[-=+]/uy;
+// `${NAME:+word}` can expand to `word`, so their word stays literal text
+// (see defaultedPrefixLength).
 
 /** One open `${...}` or `$(...)` reference while references are expanded. */
 interface ReferenceFrame {
@@ -726,10 +752,25 @@ function appendText(frame: ReferenceFrame, text: string): void {
 function openReference(text: string, index: number, frames: ReferenceFrame[]): number {
   const next = text[index + 1];
   if (text[index] !== "$" || (next !== "{" && next !== "(")) return -1;
-  DEFAULTED_REFERENCE_PREFIX.lastIndex = index + 2;
-  const prefix = next === "{" ? (DEFAULTED_REFERENCE_PREFIX.exec(text)?.[0] ?? "") : "";
+  const prefix = next === "{" ? text.slice(index + 2, index + 2 + defaultedPrefixLength(text, index + 2)) : "";
   frames.push({ close: next === "{" ? "}" : ")", keep: prefix !== "", raw: `$${next}${prefix}`, literal: "" });
   return index + 2 + prefix.length;
+}
+
+const NAME_START = /[A-Za-z_]/u;
+const NAME_PART = /\w/u;
+
+/**
+ * Length of a `NAME:-`, `NAME-`, `NAME:=`, `NAME=` or `NAME:+` prefix at
+ * `start`, or 0. A single forward scan, so no input can make it backtrack.
+ */
+function defaultedPrefixLength(text: string, start: number): number {
+  if (!NAME_START.test(text[start] ?? "")) return 0;
+  let index = start + 1;
+  while (index < text.length && NAME_PART.test(text[index]!)) index += 1;
+  if (text[index] === ":") index += 1;
+  const operator = text[index];
+  return operator === "-" || operator === "=" || operator === "+" ? index + 1 - start : 0;
 }
 
 /** Fold the innermost frame, closed by `character`, into its parent. */
@@ -747,11 +788,19 @@ function closeReference(frames: ReferenceFrame[], character: string): void {
  */
 function quotedStep(text: string, index: number, frame: ReferenceFrame): number {
   const character = text[index]!;
-  if (frame.quote === undefined && character !== "\"" && character !== "'") return -1;
+  const quote = frame.quote;
   // Double quotes still expand a nested reference (`${PW:-"${FALLBACK}"}`); single quotes do not.
-  if (frame.quote === "\"" && character === "$" && (text[index + 1] === "{" || text[index + 1] === "(")) return -1;
-  const length = frame.quote === "\"" && character === "\\" && index + 1 < text.length ? 2 : 1;
-  if (length === 1) frame.quote = frame.quote === undefined ? (character as "\"" | "'") : character === frame.quote ? undefined : frame.quote;
+  if (quote === "\"" && character === "$" && (text[index + 1] === "{" || text[index + 1] === "(")) return -1;
+  let length = 1;
+  if (character === "\\" && quote !== "'" && index + 1 < text.length) {
+    // A backslash escapes the next character outside quotes and in double quotes (`$(printf \))`).
+    length = 2;
+  } else if (quote === undefined) {
+    if (character !== "\"" && character !== "'") return -1;
+    frame.quote = character;
+  } else if (character === quote) {
+    frame.quote = undefined;
+  }
   // A default word (`${PW:-"x"}`) keeps its quoted text with its quotes, which
   // literalAfterReferences removes later; other references drop it.
   const consumed = text.slice(index, index + length);
@@ -836,7 +885,7 @@ export function literalAfterReferences(value: string): string {
 
 /** Accept a pattern match, applying the declared literal-length and entropy predicates when present. */
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
-  if (rule.minimumLiteralLength !== undefined && literalAfterReferences(match[1]).length < rule.minimumLiteralLength) return false;
+  if (rule.minimumLiteralLength !== undefined && judgedLiteral(match).length < rule.minimumLiteralLength) return false;
   if (rule.rejectValue?.test(match[1]) === true) return false;
   if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;
