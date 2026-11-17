@@ -206,7 +206,9 @@ or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by a
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
 source a literal that starts with member access on a reference
 (`${X}.trim`, `$TOKEN.length+1`), or that a call's parenthesis follows
-(`<string>getToken()`, `<string>getToken ()`), is code, and the constant
+(`<string>getToken()`, `<string>getToken ()`), or, after a type assertion, an
+optional call, a nullish fallback or a statement end (`<string>getToken?.()`),
+is code, and the constant
 statement exclusion judges the literal (`<string>DEFAULT_TOKEN;`); in a quoted
 value or payload data it is still judged. The literal
 left once its references expand is then judged by the same grammar, length,
@@ -238,9 +240,9 @@ convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
 in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
 read the whole word. An unquoted value did when whitespace or the end of the
-text follows it, optionally after structure such as `;` or `)`, or when the
-closing parenthesis or brace of the reference it sat in is followed by the
-enclosing quote. A quoted value under a quoted key did as well when structure
+text follows it, optionally after structure such as `;` or `)`, or, for a key
+found inside a rejected reference value, when the closing parenthesis or brace
+of that reference is followed by the enclosing quote. A quoted value under a quoted key did as well when structure
 and then the next member or element follows, as in compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
 `[{"password":"$DB_PASSWORD"},{"other":…}]`). Any other text after it (`$PW:…`,
 `$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote

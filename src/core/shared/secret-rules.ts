@@ -449,6 +449,9 @@ function ruleReadings(rule: SecretRule): readonly SecretRule[] {
   return [rule, judged];
 }
 
+/** Matches the rescan found inside a rejected reference value. */
+const INNER_MATCHES = new WeakSet<RegExpMatchArray>();
+
 /** A reference or placeholder opener inside a captured value. */
 const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
 
@@ -508,6 +511,7 @@ function* keysInsideRejectedValue(
   const end = match.index! + match[0].length;
   inner.lastIndex = end - match[1].length;
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
+    INNER_MATCHES.add(found);
     if (acceptsSecretMatch(rule, found)) yield { index: found.index };
     else if (deep && VALUE_REFERENCE.test(found[1])) inner.lastIndex = found.index + found[0].length - found[1].length;
   }
@@ -812,9 +816,10 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  // A closing parenthesis or brace ends the reference an unquoted value sat in
-  // (`"$(get --password=$PW)"`), so the enclosing quote may follow it.
-  if (closed === -1) return /^[)}]/u.test(input.slice(start, after)) && isQuote(input[after]);
+  // Inside a rejected reference value, a closing parenthesis or brace ends the
+  // reference the match sat in (`"$(get --password=$PW)"`), so the enclosing
+  // quote may follow it. At the top level such a character is literal data.
+  if (closed === -1) return INNER_MATCHES.has(match) && /^[)}]/u.test(input.slice(start, after)) && isQuote(input[after]);
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
   // comma and a quoted piece continue the shell word (`password="$PW","…"`).
@@ -844,6 +849,8 @@ const WORD_END_BOUND = 64;
 
 /** A call's opening parenthesis, after at most a short run of blanks (`getToken ()`). */
 const CALL_AFTER = /^[ \t]{0,16}\(/u;
+/** Code that continues an expression after a type assertion: an optional call or chain, a nullish fallback, or a statement end. */
+const ASSERTION_CONTINUES = /^[ \t]{0,16}(?:\?\.|\?\?|;)/u;
 
 /** A literal that starts with member access, as code leaves after a reference (`${X}.trim`, `$T.length+1`). */
 const MEMBER_ACCESS = /^\.[A-Za-z_$]/u;
@@ -873,7 +880,9 @@ const SPELLING_SENSITIVE = /[$<"']/u;
 function codeAfterReference(match: RegExpMatchArray): "call" | "source" | undefined {
   if (DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match)) || !/^[$<]/u.test(match[1])) return undefined;
   const end = match.index! + match[0].length;
-  return CALL_AFTER.test(match.input!.slice(end, end + 17)) ? "call" : "source";
+  const after = match.input!.slice(end, end + 18);
+  // A value led by an angle span is a TypeScript assertion when an expression continues it (`<T>name?.()`, `<T>NAME;`).
+  return CALL_AFTER.test(after) || (match[1][0] === "<" && ASSERTION_CONTINUES.test(after)) ? "call" : "source";
 }
 
 /**
