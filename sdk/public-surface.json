@@ -3451,6 +3451,14 @@
       ],
       "package_version": "2026.11.16",
       "reason": "pm-wb6ktl: BeforeMutationHookContext gains the optional host-set compensation field (BeforeMutationHookInput omits it, and the host builds the guard context from an allowlist so callers cannot supply it); this breaks only keyof-derived consumers of the context. runRegisteredMutationGuardForTest and ExtensionTestHarness.runMutationGuard gain a rollback overload whose context carries compensation and resolves the recorded overrides; MutationGuardTestContext keeps its pre-change shape without compensation, and the ordinary overload keeps Promise<void>."
+    },
+    {
+      "changes": [
+        "signature ./sdk:SecretGuardFinding",
+        "signature ./sdk/governance:SecretGuardFinding"
+      ],
+      "package_version": "2026.11.17",
+      "reason": "SecretGuardFinding gains an optional property_name flag for a match in a payload property name, whose path segment is the positional placeholder [key n]; existing fields and callers are unaffected (pm-x07qz2)"
     }
   ],
   "entrypoints": {
@@ -21701,7 +21709,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
+          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; property_name?: true; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
         },
         {
           "classification": "supported",
@@ -31877,7 +31885,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
-          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
+          "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; property_name?: true; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
         },
         {
           "classification": "supported",

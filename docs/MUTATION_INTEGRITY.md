@@ -15,7 +15,8 @@ argument parsing or exposing detected values.
   harness identity, then `unknown`.
 - The secret guard inspects string leaves and the property names that label
   them, and returns only detector names and object paths. It never returns
-  the matched value.
+  the matched value, and a flagged property name appears in a path only as a
+  positional placeholder (`[key <n>]`).
 - `pm health` reports old, unclaimed in-progress work as advisory governance
   data. It does not change ownership or status.
 - Historical unknown-author events remain immutable. Maintainers can append an
@@ -190,7 +191,31 @@ whole
 element body must satisfy the same grammar. `token_budget`, `max_tokens`, numeric
 counts, masks such as `********` and prose stay clean. A key starts only at the
 beginning of an identifier, so the scan stays linear. Plain and hyphenated
-password keys remain with the password rule, so each value is reported once. No rule is silently
+password keys remain with the password rule, so each value is reported once.
+
+A credential-key value that holds a run-time reference is judged by the
+literal it spells
+([pm-hw00c2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw00c2.toon);
+tracker record excluded from npm). A value that holds `${…}`, `$(…)`,
+`$NAME` or `<…>`, or that opens with a quoted piece concatenated to more
+text as a shell concatenates `"${EMPTY}"…`, is captured whole. The literal
+left once its references expand is then judged by the same grammar, length,
+entropy and exclusions as a reference-free value, read in the value's own
+quote context. So `api_key=${EMPTY}"…"`, `api_key=$VAR"…"`, `token: <x>…`,
+`"client_secret": "${EMPTY}…"` and the literal default `${KEY:-…}` are
+reported, while a bare `${API_KEY}`, `$(op read key)`, `<placeholder>`, an
+empty default, and a literal that is a path, URL or word stay clean. At most
+64 literal characters may come before the first reference; a longer prefix is
+judged as a reference-free value. References and quoted pieces are
+whitespace-free, as every credential-key value is, so a spaced command
+substitution is never read as one value, and a key inside it keeps its own
+verdict.
+
+One `$NAME` policy holds for every key-named rule. A `$NAME` reference
+expands to nothing when NAME is CONSTANT_CASE, the environment-variable
+convention (`$DB_PASSWORD`, `$API_KEY`), or when it is the whole value, in
+quotes or not (a bare `$password`). Any other `$` text is literal, so a
+credential that merely contains `$` keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
@@ -262,6 +287,14 @@ credential. Element content keeps its quote characters as text, and may hold
 markup or placeholder spans (`<password><x>…</password>`). Every scan stays
 linear.
 
+A key inside a rejected value keeps its own verdict
+([pm-bn3ppf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bn3ppf.toon);
+tracker record excluded from npm). A whole-value reference such as a spaced
+command substitution spells nothing, so its match is rejected. Each key that
+starts inside it is then judged once, so a password assignment written inside
+`$(echo …)` is still reported. Inner matches are never rescanned, so each
+character is read at most twice.
+
 Structured SDK and MCP payloads carry a key as a property name rather than in
 the text
 ([pm-3fbj1f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3fbj1f.toon);
@@ -293,6 +326,17 @@ blocked like a shallow one
 tracker record excluded from npm). A value that is clean only as unquoted code, such as a call or a
 statement constant, is a string literal in a payload, as it already is in its
 JSON spelling.
+
+Property names are text too
+([pm-x07qz2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-x07qz2.toon);
+tracker record excluded from npm). Every property name in a payload is judged
+by every rule as its own leaf, so `{ metadata: { "<token>": true } }` is
+reported. A finding for a name carries `property_name: true`. A path never
+repeats a flagged name: its segment becomes the positional placeholder
+`[key <n>]`, the name's index among its object's own entries, in the name's
+own finding and in every finding under it (`$.metadata[key 0].password`).
+Paths for other names are unchanged, and array indices are positions, never
+judged as names. Each distinct name is judged once per scan.
 
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals

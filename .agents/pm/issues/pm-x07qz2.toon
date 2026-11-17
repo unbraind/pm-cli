@@ -2,11 +2,13 @@ id: pm-x07qz2
 title: "Payload property names are never scanned for credentials, and a credential-shaped property name is echoed verbatim in SDK finding paths"
 description: "Found 2026-11-17 while fixing pm-3fbj1f. scanMutationSecrets in src/sdk/mutation-guard.ts scans string values and, since pm-3fbj1f, judges a credential-named member as its JSON spelling, but it never scans a property name as text. A payload such as { metadata: { \"<GitHub token>\": \"x\" } } therefore produces no finding (measured with scanMutationSecrets on the 2026-11-16 build). Separately, finding paths are built by joining property names, so when another rule flags the value under such a name, the path itself repeats the credential: the SDK result (MutationGuardResult.findings) and any consumer that prints paths would disclose it, although the guard's contract is that matched text is never returned. CLI warnings print only rule ids, so the CLI is unaffected; SDK and MCP callers that log findings are not. Fix direction: run the token-format rules over each property name as its own leaf, and replace a flagged name's path segment with a positional placeholder (for example [key 0]) in every finding under it, so paths stay stable and never echo a credential. Duplicate check: searched secret guard property name path leak object key scanned; pm-3fbj1f (member values under credential keys), pm-pim7 (write-time advisory, closed) and pm-m0fh (tracked-file redaction, closed) are related, and none scans property names or redacts paths."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:sdk",mcp,redaction,secret-guard,security
 created_at: "2026-11-16T23:30:31.511Z"
-updated_at: "2026-11-16T23:30:55.380Z"
+updated_at: "2026-11-17T09:05:25.495Z"
+closed_at: "2026-11-17T09:04:57.856Z"
+completed_at: "2026-11-17T09:04:57.856Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Every property name in a mutation payload is scanned by the token-format rules, and a credential-shaped name produces a finding; A finding under a flagged property name reports a positional placeholder segment instead of the name, so no finding path repeats credential text; Paths for ordinary property names are unchanged, and the pm-3fbj1f member judgment keeps its paths"
@@ -14,11 +16,33 @@ parent: pm-qwoy
 risk: medium
 confidence: high
 severity: medium
-expected_result: No credential reaches the tracker through a property name and no finding path discloses one
-actual_result: Property names are never scanned and are copied into finding paths verbatim
+resolution: "mutation-guard.ts: each object's own entries are read once per scan into PayloadEntry rows (name, value, path segment, name matches) shared by the leaf pass and the member pass. Every property name is judged by every rule as its own leaf, memoized per distinct name per scan; a name finding carries the new optional SecretGuardFinding.property_name flag and the dedupe key includes it. A flagged name's segment becomes [key n], its index among the object's own entries, in its own finding and every finding under it in both passes. Array indices stay positions. sdk/public-surface.json acknowledges the additive SecretGuardFinding signature change. Documented in docs/MUTATION_INTEGRITY.md."
+expected_result: "A credential-shaped property name is reported, no finding path repeats a flagged name, and paths for ordinary names and the member judgment are unchanged"
+actual_result: "The seven property-name cases pass (placeholder paths, nested findings, name and value apart, every rule on names, guard blocking without echo, 20,000 repeated names judged once in about a second at most), the security suites pass (723 tests), mutation-guard.ts is 100% covered, the SDK surface snapshot check passes with an acknowledgement, and all seven cases fail on main 94773473b"
 component: secret-guard
 dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-3fbj1f,discovered_from,"2026-11-16T23:30:31.511Z","harness:claude-code","cli:create:dep",detected
   pm-pim7,related,"2026-11-16T23:30:31.511Z","harness:claude-code","cli:create:dep",detected
   pm-m0fh,related,"2026-11-16T23:30:54.676Z","harness:claude-code","cli:update:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-17T08:37:30.937Z","harness:claude-code","Design (branch fix/secret-guard-reference-literals-and-property-names). scanMutationSecrets now reads each object's own entries once per scan into PayloadEntry rows (name, value, path segment, name matches) shared by the leaf pass and the member pass. Every property name is judged by every rule as its own leaf (token formats, private-context rules and the key-named rules alike), memoized per distinct name per scan. A flagged name's path segment becomes the positional placeholder [key n], its index among the object's own entries, and that segment is used for the name's own finding and for every finding under it in both passes, so paths stay stable and never repeat the name. A name finding carries the new optional SecretGuardFinding field property_name: true; the dedupe key includes it, so a name and its value matching the same rule at the same path are both reported. Array indices stay positions and are never judged as names. CLI warnings still print only rule ids."
+  "2026-11-17T09:05:13.968Z","harness:claude-code","Correction to the close actual_result: the 20,000-row repeated-name scan was not measured when that text was written. Measured afterwards on this host with the built SDK, scanMutationSecrets over 20,000 objects that share one credential-shaped property name returned 20,000 findings in 1,240 ms; the spec bounds it at 5,000 ms. The name itself is judged once per scan; the remaining cost is the per-object leaf scan that existed before."
+files[4]{path,scope}:
+  sdk/public-surface.json,project
+  src/sdk/mutation-guard.ts,project
+  tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project
+  tests/unit/sdk/security/secret-guard-references-and-members.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts,project,"harness:claude-code","2026-11-17T08:25:45.994Z",local_mutation,fix/secret-guard-reference-literals-and-property-names
+docs[1]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+close_reason: "Payload property names are scanned by every rule, and a flagged name appears in finding paths only as a positional placeholder"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-x07qz2
+  gate_id: secret-guard-property-names
+  negative_control: "node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts -t \"property names\" on main 94773473b: a credential-shaped property name produces no finding and a finding under it repeats the name in its path"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/sdk/security tests/unit/sdk/mutation-guard.spec.ts tests/unit/sdk/mutation-guard-adapters.spec.ts,node scripts/sdk-surface-snapshot.mjs --check,"pnpm quality:static"
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

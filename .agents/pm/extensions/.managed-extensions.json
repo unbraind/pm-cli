@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-16T05:33:38.597Z",
+  "updated_at": "2026-11-17T09:06:22.558Z",
   "entries": [
     {
       "name": "builtin-calendar",
@@ -68,7 +68,7 @@
       "name": "pm-changelog",
       "directory": "pm-changelog",
       "scope": "project",
-      "manifest_version": "2026.11.14",
+      "manifest_version": "2026.11.16",
       "manifest_entry": "./dist/extension.js",
       "capabilities": [
         "commands",
@@ -161,13 +161,13 @@
         "preflight_ownership": []
       },
       "installed_at": "2026-05-23T20:26:03.509Z",
-      "updated_at": "2026-11-16T05:32:32.325Z",
+      "updated_at": "2026-11-17T09:06:22.315Z",
       "source": {
         "kind": "npm",
         "input": "npm:pm-changelog",
         "location": "package",
         "package": "pm-changelog",
-        "version": "2026.11.14"
+        "version": "2026.11.16"
       }
     }
   ]
