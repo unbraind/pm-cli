@@ -893,6 +893,8 @@ function isCodeAfterReference(match: RegExpMatchArray): boolean {
   const valueStart = end - match[1].length;
   const after = match.input!.slice(end, end + 18);
   if (match[1][0] === "<") {
+    // An angle span that holds a TypeScript type is a type assertion, whatever follows (`<string>name as T`).
+    if (TYPE_ASSERTION.test(match[1])) return true;
     if (ASSIGNED_BEFORE.test(match.input!.slice(Math.max(0, valueStart - 18), valueStart))) return true;
     // In an object property or argument, a type assertion is followed by expression code (`{ token: <T>name ?? x }`).
     if (EXPRESSION_AFTER.test(after)) return true;
@@ -915,26 +917,53 @@ function leadingReferencesEnd(text: string): number {
 /** The index after the reference that starts at `start`, or -1 when none starts there or it never closes. */
 function referenceEnd(text: string, start: number): number {
   const opener = text[start];
-  if (opener === "<") {
-    const close = text.indexOf(">", start + 1);
-    const reopen = text.indexOf("<", start + 1);
-    return close !== -1 && (reopen === -1 || close < reopen) ? close + 1 : -1;
-  }
+  if (opener === "<") return angleSpanEnd(text, start);
   if (opener !== "$") return -1;
   const bracket = text[start + 1];
-  if (bracket === "{" || bracket === "(") {
-    const closer = bracket === "{" ? "}" : ")";
-    let depth = 0;
-    for (let index = start + 1; index < text.length; index += 1) {
-      if (text[index] === bracket) depth += 1;
-      else if (text[index] === closer && --depth === 0) return index + 1;
-    }
-    return -1;
-  }
+  if (bracket === "{" || bracket === "(") return bracketedEnd(text, start + 1, bracket);
   VARIABLE_REFERENCE.lastIndex = start;
   const variable = VARIABLE_REFERENCE.exec(text)?.[0];
   return variable === undefined ? -1 : start + variable.length;
 }
+
+/** The index after the `>` that closes the `<` at `start`, or -1 when another `<` or the end comes first. */
+function angleSpanEnd(text: string, start: number): number {
+  const close = text.indexOf(">", start + 1);
+  const reopen = text.indexOf("<", start + 1);
+  return close !== -1 && (reopen === -1 || close < reopen) ? close + 1 : -1;
+}
+
+/**
+ * The index after the delimiter that closes the `{` or `(` at `start`,
+ * following nesting; quoted spans and escapes never open or close it, as in
+ * the expansion walker (`$('(')`). Returns -1 when it never closes.
+ */
+function bracketedEnd(text: string, start: number, bracket: "{" | "("): number {
+  const closer = bracket === "{" ? "}" : ")";
+  let depth = 0;
+  for (let index = start; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === "\\") index += 1;
+    else if (character === "'" || character === "\"") index = quotedSpanEnd(text, index);
+    else if (character === bracket) depth += 1;
+    else if (character === closer && --depth === 0) return index + 1;
+  }
+  return -1;
+}
+
+/** The index of the quote that closes the span opened at `start` (honoring backslashes in double quotes), or the end of the text. */
+function quotedSpanEnd(text: string, start: number): number {
+  const quote = text[start];
+  for (let index = start + 1; index < text.length; index += 1) {
+    if (text[index] === quote) return index;
+    if (quote === "\"" && text[index] === "\\") index += 1;
+  }
+  return text.length;
+}
+
+/** A TypeScript type in an angle span: a primitive keyword or a PascalCase name, optionally generic or an array type. */
+const TYPE_ASSERTION = /^<(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|[A-Z][\w$.]*(?:<[\w$.,\s]*>)?)(?:\[\])*>/u;
+
 /** A binary operator or member access that continues an expression after a reference; `! @ # ^ ~` stay literal data. */
 const CODE_OPERATOR = /[.+\-*/%=]/u;
 /** Expression code after a value: an optional chain, a nullish or logical operator, a call or index, or a delimiter. */

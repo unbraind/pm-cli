@@ -207,8 +207,9 @@ or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by a
 source a value is code when a binary operator or member access follows its
 leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
 `$TOKEN+suffix`) or a call's parenthesis follows it (`<string>getToken()`,
-`<string>getToken ()`), and a value led by an angle span is code when
-expression code follows it (`{ token: <string>name ?? fallback }`); a letter,
+`<string>getToken ()`), and a value led by an angle span is code when the
+span holds a TypeScript type (`<string>`, `<Record<K, V>>`, `<T[]>`) or
+expression code follows it (`{ token: <t>name ?? fallback }`); a letter,
 digit, quoted piece or other punctuation (`!`, `@`, `#`) after a reference is
 still a literal concatenation. After `=`, a value led
 by an angle span is a TypeScript type assertion or a shell redirection

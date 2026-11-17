@@ -140,6 +140,15 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["member access after nested references", "const token = $($(getToken)).length+1;"],
     // Codex round 20: expression code after a type assertion may sit on the next line.
     ["type assertion before a closing brace on the next line", "const config = {\n  token: <string>auth_token\n};"],
+    // Codex round 21: an angle span holding a TypeScript type is an assertion whatever follows it.
+    ["type assertion before an operator in an object property", "({ token: <string>auth_token + suffix })"],
+    ["type assertion before as", "({ token: <string>auth_token as string })"],
+    ["generic type assertion", "({ token: <Record<string, string>>token_map })"],
+    ["array type assertion", "({ token: <string[]>token_list })"],
+    ["quoted parenthesis inside a command substitution", "const token = $('(').length+1;"],
+    // A lowercase angle span after `=`, or before expression code, is code too.
+    ["placeholder-shaped assertion after an assignment", `api_key=<t>${credential}`],
+    ["placeholder-shaped assertion before expression code", "({ token: <t>auth_token ?? fallback })"],
     ["compact JSON array of bare variables", '{"password":["$DB_PASSWORD","x"]}'],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
@@ -215,6 +224,11 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     expect(leadingReferencesEnd("$($(a))x")).toBe(7);
     // An unclosed bracket, an angle span reopened before it closes, an unclosed angle span and `$` without a name are not references.
     for (const text of ["${unclosed", "$(unclosed", "<a<b>", "<a", "$1x", "plain"]) expect(leadingReferencesEnd(text), text).toBe(0);
+    // Quoted spans and escapes never close a reference.
+    expect(leadingReferencesEnd("$(')')x")).toBe(6);
+    expect(leadingReferencesEnd('$("a\\")b")x')).toBe('$("a\\")b")'.length);
+    expect(leadingReferencesEnd("$(a\\)b)x")).toBe("$(a\\)b)".length);
+    expect(leadingReferencesEnd("$('open")).toBe(0);
   });
 
   it("keeps every new value grammar path linear", () => {
