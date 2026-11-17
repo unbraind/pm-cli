@@ -42,6 +42,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["quoted punctuated literal after a reference", `api_key=\${X}"${["q7!A", ",9#z"].join("")}"`],
     ["punctuated literal default", `api_key=\${KEY:-${["q7!A", "(9#z"].join("")}}`],
     ["mixed-case variable name kept as literal text", `api_key=Zq8vN3k$LmP0wXy7Ab`],
+    // Codex round 2: a variable after literal text, or an escaped one, is literal.
+    ["CONSTANT_CASE variable after literal text", "api_key=Zq8vN3k$LMP0WXY7AB"],
+    ["escaped CONSTANT_CASE variable in a quoted value", 'api_key="abc\\$ZQ8VN3K_LMP0WXY7AB"'],
     ["quoted key, literal after a braced reference", `"client_secret": "\${EMPTY}${credential}"`],
     ["quoted key, literal before a reference", `"client_secret": "${credential}\${VAR}"`],
     ["single-quoted key and value", `'api_key': '<x>${credential}'`],
@@ -88,7 +91,6 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["literal that is a hyphenated word", "token: ${PREFIX}not-configured"],
     ["literal that is a URL", "token: ${SCHEME}https://example.com/callback"],
     ["short literal after a reference", "api_key=${KEY}abc"],
-    ["embedded CONSTANT_CASE variable leaving a short literal", "api_key=Zq8vN3k$LMP0WXY7AB"],
     ["generic type argument", "token: Array<string>"],
     ["quoted prefix concatenated with code", 'token="Bearer"+tokenValue'],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
@@ -116,9 +118,16 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     // A CONSTANT_CASE variable expands to nothing, so the literal after it is judged by both rules.
     expect(textRules(assign(passwordKey, `$VAR-${literal}`))).toEqual(["password_assignment"]);
     expect(textRules(assign("api_key", `$VAR-${credential}`))).toEqual(["credential_key_assignment"]);
-    // Any other `$name` inside a longer value is literal text in both rules.
+    // Any other `$name` inside a longer value is literal text in both rules, CONSTANT_CASE or not.
     expect(literalAfterReferences(`ab$cd${literal}`)).toBe(`ab$cd${literal}`);
-    expect(expandRuntimeReferences(`ab$CD:${literal}`)).toBe(`ab:${literal}`);
+    expect(expandRuntimeReferences(`ab$CD:${literal}`)).toBe(`ab$CD:${literal}`);
+    expect(expandRuntimeReferences(`\${EMPTY}<x>$CD:${literal}`)).toBe(`:${literal}`);
+    // Codex round 2: an escaped dollar keeps the variable after it literal in every spelling.
+    const escaped = ["abc\\$", "ZQ8VN3K_LMP0WXY7AB"].join("");
+    expect(textRules(`${passwordKey}="${escaped}"`)).toEqual(["password_assignment"]);
+    expect(scanMutationSecrets({ [passwordKey]: ["abc$", "ZQ8VN3K_LMP0WXY7AB"].join("") })).toEqual([
+      { rule: "password_assignment", path: `$.${passwordKey}` },
+    ]);
     // A bare name is judged on the source, so a concatenation never reads as one name.
     expect(literalAfterReferences(`$var'${literal}'`)).toBe(`$var${literal}`);
     expect(expandRuntimeReferences("$_")).toBe("");
@@ -200,11 +209,13 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
   it("rescans each rejected value once, so the scan stays linear", () => {
     const passwordRule = ruleNamed("password_assignment");
     const credentialKeyRule = ruleNamed("credential_key_assignment");
+    // Spelled without template escapes, so no fixture reads as an escaped pattern.
+    const open = "${";
     const inputs: Array<[SecretRule, string]> = [
       [passwordRule, `${passwordKey}=$(echo ${passwordKey}=$(a) `.repeat(40_000)],
-      [passwordRule, `${passwordKey}=$(a ${passwordKey}=\${B}) `.repeat(40_000)],
-      [passwordRule, `${passwordKey}=\${A:-${`${passwordKey}=`.repeat(2_000)}}`.repeat(20)],
-      [credentialKeyRule, `token=\${A}${"token=${A}".repeat(100_000)}`],
+      [passwordRule, `${passwordKey}=$(a ${passwordKey}=${open}B}) `.repeat(40_000)],
+      [passwordRule, `${passwordKey}=${open}A:-${`${passwordKey}=`.repeat(2_000)}}`.repeat(20)],
+      [credentialKeyRule, `token=${open}A}${"token=${A}".repeat(100_000)}`],
       [credentialKeyRule, "api_key=${D}/token=${D}/".repeat(40_000)],
       [passwordRule, `${passwordKey}=$(a ${passwordKey}=$(b) ${passwordKey}=$(c)) `.repeat(30_000)],
       [passwordRule, `${passwordKey}=<x ${passwordKey}=$A> `.repeat(40_000)],
@@ -213,8 +224,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     const started = performance.now();
     const counts = inputs.map(([rule, input]) => Array.from(findSecretRuleMatches(rule, input)).length);
     expect(performance.now() - started).toBeLessThan(5_000);
-    // Only the repeated default word spells a literal; it is one concatenated value.
-    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 0]);
+    // The repeated default word is one concatenated value; in the last input a
+    // variable after literal text stays literal, so each `"a"$X"token"` spells eight characters.
+    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 39_999]);
   });
 });
 

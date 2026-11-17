@@ -207,9 +207,10 @@ const PASSWORD_KEYS = "password|passphrase";
 //
 // One `$NAME` policy for every key-named rule (pm-hw00c2): a `$NAME` reference
 // expands to nothing when NAME is CONSTANT_CASE, the environment-variable
-// convention (`$DB_PASSWORD`, `$API_KEY`), or when it is all the literal a
-// value spells (a bare `$password`). Any other `$` text is literal, so a
-// credential that merely contains `$` keeps its characters.
+// convention (`$DB_PASSWORD`, `$API_KEY`), and nothing literal comes before it
+// in its word (`$VAR"<literal>"`), or when it is the whole value (a bare
+// `$password`). Any other `$` text is literal, so a credential that merely
+// contains `$` (`abc$XYZ…`, an escaped `\$`) keeps its characters.
 //
 // A value is a run of references, literal characters and up to
 // PASSWORD_QUOTED_PIECES whitespace-free quoted pieces, as a shell
@@ -1011,14 +1012,15 @@ const QUOTED_BARE_VARIABLE = /^(["'])\$[A-Za-z_]\w*\1$/u;
 
 /**
  * Consume a `$NAME` reference at `index`; returns the next index, or -1 when
- * no variable name follows the `$`. A CONSTANT_CASE name expands to nothing;
+ * no variable name follows the `$`. A CONSTANT_CASE name that no literal text
+ * precedes in its word (the value, or a default word) expands to nothing;
  * any other name stays literal text (see expandWords for a bare `$name`).
  */
 function variableStep(text: string, index: number, frame: ReferenceFrame): number {
   VARIABLE_REFERENCE.lastIndex = index;
   const variable = VARIABLE_REFERENCE.exec(text)?.[0];
   if (variable === undefined) return -1;
-  if (CONSTANT_NAME.test(variable.slice(1))) frame.raw += variable;
+  if (frame.literal === "" && CONSTANT_NAME.test(variable.slice(1))) frame.raw += variable;
   else appendText(frame, variable);
   return index + variable.length;
 }
@@ -1182,8 +1184,8 @@ function expandWords(text: string, rootQuotesAreSyntax: boolean): string {
 /**
  * Expand run-time references in data, such as a decoded literal or an element
  * body, whose own quote characters are literal: `${NAME}`, `${NAME:?message}`,
- * `$(command)`, a CONSTANT_CASE `$NAME` and `<placeholder>` contribute nothing
- * (a value that spells only one `$name` of any case spells nothing), and the default word of
+ * `$(command)`, a leading CONSTANT_CASE `$NAME` and `<placeholder>` contribute
+ * nothing (a value that is only one `$name` of any case spells nothing), and the default word of
  * `${NAME:-word}` contributes its own expansion with the shell's quote removal
  * (`${PW:-"x"}` contributes `x`; `${PW:-${FALLBACK}}` contributes nothing). A
  * reference that never closes, and a `<` without a `>` before the next `<`,

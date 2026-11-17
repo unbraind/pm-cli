@@ -220,9 +220,11 @@ verdict.
 
 One `$NAME` policy holds for every key-named rule. A `$NAME` reference
 expands to nothing when NAME is CONSTANT_CASE, the environment-variable
-convention (`$DB_PASSWORD`, `$API_KEY`), or when it is the whole value, in
+convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
+in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Any other `$` text is literal, so a
-credential that merely contains `$` keeps its characters. No rule is silently
+credential that merely contains `$`, after other characters or escaped as
+`\$`, keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
 underscore names. Adding a pattern therefore changes both consumers together.
 
