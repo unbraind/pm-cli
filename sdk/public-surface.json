@@ -3458,7 +3458,7 @@
         "signature ./sdk/governance:SecretGuardFinding"
       ],
       "package_version": "2026.11.17",
-      "reason": "SecretGuardFinding gains an optional property_name flag for a match in a payload property name, whose path segment is the positional placeholder [key n]; existing fields are unchanged and readers of findings need no change, but a consumer that derives a required mapping from keyof SecretGuardFinding (for example Record<keyof SecretGuardFinding, string>) must add a property_name entry (pm-x07qz2)"
+      "reason": "SecretGuardFinding gains an optional property_name flag for a match in a payload property name, whose path segment is the positional placeholder [key n]; existing fields are unchanged, but a consumer that derives a required mapping from keyof SecretGuardFinding (for example Record<keyof SecretGuardFinding, string>) must add a property_name entry, and a consumer that resolves path by property name must expect the [key n] segment for a flagged name and for every finding under it (pm-x07qz2)"
     }
   ],
   "entrypoints": {

@@ -22,7 +22,6 @@ const payloadRules = (payload: unknown) => scanMutationSecrets(payload).map(({ r
 
 // Built at runtime so this file stays clean under the repository scan.
 const credential = ["Zq8vN3k", "LmP0wXy7Ab"].join("");
-const punctuated = ["q7!A", "?9#z"].join("");
 const githubToken = ["ghp_", "Ab12Cd34Ef56Gh78Ij90Kl12Mn34Op56"].join("");
 const literal = ["Synthetic", "Only123"].join("");
 
@@ -37,7 +36,6 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["literal after a command substitution", `api_key=$(cat)${credential}`],
     ["literal after a quoted reference", `api_key="\${EMPTY}"${credential}`],
     ["literal split over two quoted pieces", `api_key="Zq8v""N3kLmP0w"`],
-    ["punctuated literal after a reference directly after =", `CLIENT_SECRET=\${X}${punctuated}`],
     // The literal is data: a quoted piece's punctuation counts as in a quoted value.
     ["quoted punctuated literal after a reference", `api_key=\${X}"${["q7!A", ",9#z"].join("")}"`],
     ["punctuated literal default", `api_key=\${KEY:-${["q7!A", "(9#z"].join("")}}`],
@@ -60,6 +58,10 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["credential inside a rejected angle placeholder", `api_key=<token=${credential}>`],
     ["credential two references deep", `api_key=$(token=$(token=${credential}))`],
     ["literal before a reference that leaves a word", `api_key=abcdefgh\${X}-ijk`],
+    // Greptile: referenced credentials inside rejected values, punctuation-led and quoted data.
+    ["referenced credential inside a rejected referenced value", `api_key=\${DIR}/token=\${X}${credential}`],
+    ["punctuation-led literal after a quoted reference", `api_key="\${EMPTY}"!${credential}`],
+    ["quoted dotted literal after a reference", `"api_key": "\${EMPTY}.${credential}"`],
   ])("flags a %s", (_label, content) => {
     expect(textRules(content)).toEqual(["credential_key_assignment"]);
   });
@@ -68,6 +70,7 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["braced reference", { api_key: `\${EMPTY}${credential}` }],
     ["angle placeholder", { client_secret: `<x>${credential}` }],
     ["literal default", { apiKey: `\${KEY:-${credential}}` }],
+    ["dotted literal after a reference", { api_key: `\${EMPTY}.${credential}` }],
     ["array element", { access_token: [`\${EMPTY}${credential}`] }],
   ])("flags a payload member whose %s hides a literal", (_label, payload) => {
     expect(payloadRules(payload)).toEqual(["credential_key_assignment"]);
@@ -103,6 +106,10 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["command substitution followed by ||", "api_key=$(get_api_key)||handle_error"],
     ["reference followed by &&", "api_key=${KEY}&&run_next_step"],
     ["variable piped to a command", "token=$TOKEN|tee_output_file"],
+    // Codex round 6: optional chaining and nullish coalescing after a reference are code.
+    ["optional chain after a variable", "const api_key=$TOKEN?.access_token;"],
+    ["nullish fallback after a variable", "const api_key=$TOKEN??getDefaultToken();"],
+    ["compact JSON with a bare variable", '{"api_key":"$API_KEY","other":"x"}'],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -211,6 +218,13 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
   it("keeps a variable literal when the grammar cut its word short", async () => {
     // Codex round 3: the password grammar stops before `:`, `/` and `?`, so the
     // variable is not known to be the whole value and stays literal, as on main.
+    // Codex round 6: the look-ahead bound counts code units, so astral characters cannot end it early.
+    const astral = `${passwordKey}=$PW_PREFIX]${"\u{1F600}".repeat(40)}${credential}`;
+    expect(textRules(astral)).toEqual(["password_assignment"]);
+    // Greptile: a closed quoted value followed by JSON structure ends its word.
+    expect(textRules(`{"${passwordKey}":"$DB_PASSWORD","other":"x"}`)).toEqual([]);
+    expect(textRules(`{"other":"x","${passwordKey}":"$DB_PASSWORD"}`)).toEqual([]);
+    expect(textRules(`{"${passwordKey}":"$DB_PASSWORD"]x`)).toEqual(["password_assignment"]);
     for (const separator of [":", "/", "?", "]", "}", ",", ")"]) {
       const content = `${passwordKey}=$PW_PREFIX${separator}${credential}`;
       expect(await gateRules(content), content).toEqual(["password-assignment"]);

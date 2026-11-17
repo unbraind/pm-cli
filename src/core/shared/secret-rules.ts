@@ -300,11 +300,10 @@ const CREDENTIAL_MINIMUM_LITERAL_LENGTH = 8;
 // command substitution is never read as one value, and every repeated group
 // is bounded as in the password grammar.
 // `|` and `&` are shell control operators (`$(get_key)||fallback`,
-// `${X}&&next`), so they end a referenced value; a reference-free value keeps
-// reading them through the baseline grammar.
+// `${X}&&next`), and after a reference `?` and `:` are code (`$TOKEN?.x`,
+// `$TOKEN??fallback`), so they end a referenced value; a reference-free value
+// keeps reading them through the baseline grammar.
 const CREDENTIAL_RUN = String.raw`[A-Za-z0-9!@#%^*._+\-=/~]`;
-// Directly after `=`, `?` and `:` are value characters too, as in CREDENTIAL_PLAIN.
-const CREDENTIAL_RUN_AFTER_EQUALS = String.raw`[A-Za-z0-9!@#%^*._+\-=/~?:]`;
 const CREDENTIAL_LEADING_LITERAL = 64;
 const CREDENTIAL_REFERENCE_SPAN = String.raw`'[^'\s]*'|"[^"\\\s]*(?:\\\S[^"\\\s]*){0,${PASSWORD_REPEAT_BOUND}}"`;
 const CREDENTIAL_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\\s]`)}|\\\S|${CREDENTIAL_REFERENCE_SPAN}|\$(?!\{)|\$\{[^{}\s]*\}){0,${PASSWORD_REPEAT_BOUND}}\}`
@@ -317,16 +316,15 @@ const credentialReferenced = (run: string): string =>
   String.raw`(?:${run}{1,${CREDENTIAL_LEADING_LITERAL}}(?=[$<]))?(?:${CREDENTIAL_REFERENCE})`
   + String.raw`(?:${credentialPiece(run)}){0,${PASSWORD_REPEAT_BOUND}}(?:${credentialQuotedPiece(run)}){0,${PASSWORD_QUOTED_PIECES}}`;
 const credentialConcatenated = (run: string): string => String.raw`(?:${credentialQuotedPiece(run)}){1,${PASSWORD_QUOTED_PIECES}}`;
-/** An unquoted value grammar, with the wider character run directly after `=`. */
-const credentialUnquoted = (build: (run: string) => string): string =>
-  String.raw`(?<==)(?:${build(CREDENTIAL_RUN_AFTER_EQUALS)})|(?<![="'])(?:${build(CREDENTIAL_RUN)})`;
+/** An unquoted value grammar: one that does not start right after a quote. */
+const credentialUnquoted = (build: (run: string) => string): string => String.raw`(?<!["'])(?:${build(CREDENTIAL_RUN)})`;
 // A quoted piece opens a concatenation when a reference or another quoted
 // piece follows it directly, or when it holds a reference and a letter, digit
-// or `_` follows. A quoted piece followed by an operator is code
-// (`"<literal>".trim()`, `"${KEY}".toUpperCase()`, `"Bearer"+value`) and
-// stays a quoted value.
+// or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted piece followed
+// by an operator is code (`"<literal>".trim()`, `"${KEY}".toUpperCase()`,
+// `"Bearer"+value`) and stays a quoted value.
 const CREDENTIAL_CONCATENATION_OPEN = String.raw`(?=(?:"[^"\s]*"|'[^'\s]*')[$<"']`
-  + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"\w|'(?=[^'\s]*[$<])[^'\s]*'\w)`;
+  + String.raw`|"(?=[^"\s]*[$<])[^"\s]*"[\w!@#%^~-]|'(?=[^'\s]*[$<])[^'\s]*'[\w!@#%^~-])`;
 // A quoted body that holds a reference opener is captured whole up to its closing quote.
 const CREDENTIAL_QUOTED_REFERENCED = String.raw`(?<=")(?=[^"\s]*[$<])[^"\s]+|(?<=')(?=[^'\s]*[$<])[^'\s]+`;
 const CREDENTIAL_VALUE = new RegExp(
@@ -453,44 +451,60 @@ function ruleReadings(rule: SecretRule): readonly SecretRule[] {
 const VALUE_REFERENCE = /\$[({A-Za-z_]|</u;
 
 /**
- * Flat matches of one reading. A rule whose only predicate is its literal
- * minimum also judges the keys inside a rejected referenced value, because a
- * whole-value reference hides them from a scan that resumes after the match
- * (pm-bn3ppf). Such a rejected value spells fewer literal characters than any
- * of the rule's keys with its separator, so every key inside it sits in a
- * reference body, and bodies nest a bounded number of levels: the rescan
- * stays linear. A rule with other predicates (entropy, a literal grammar) can
- * reject a value whose top-level text holds keys; it declares a baseline
- * reading instead, whose scan visits every key the narrower grammar visits.
+ * Flat matches of one reading. A rule with a literal minimum also judges the
+ * keys inside a rejected referenced value, because a whole-value reference
+ * hides them from a scan that resumes after the match (pm-bn3ppf); see
+ * rescanDepth for how far it reaches while staying linear.
  */
 function* flatMatches(rule: SecretRule, content: string): Generator<SecretRuleMatch> {
   const regex = rule.regex;
   regex.lastIndex = 0;
-  const rescans = rule.minimumLiteralLength !== undefined && rule.minimumEntropy === undefined
-    && rule.literalValue === undefined && rule.rejectValue === undefined && rule.baseline === undefined;
+  const rescan = rescanDepth(rule);
   // A scanner for keys inside rejected values, created on first use; every scan owns its own cursor.
   let inner: RegExp | undefined;
   for (const match of content.matchAll(regex)) {
     if (acceptsSecretMatch(rule, match)) {
       yield { index: match.index! };
-    } else if (rescans && VALUE_REFERENCE.test(match[1])) {
+    } else if (rescan !== undefined && VALUE_REFERENCE.test(match[1])) {
       inner ??= new RegExp(regex);
-      yield* keysInsideRejectedValue(rule, inner, content, match);
+      yield* keysInsideRejectedValue(rule, inner, content, match, rescan === "deep");
     }
   }
 }
 
 /**
- * Judge each key that starts inside a rejected value (`password=$(echo
- * password=…)`). A rejected inner value that holds a reference is entered in
- * turn, so a deeper assignment is reached too; each key is judged once.
+ * How a rule rescans a rejected referenced value. A rule whose only predicate
+ * is its literal minimum enters rejected inner values too ("deep"): its
+ * rejected value spells fewer literal characters than any of its keys with a
+ * separator, so every key inside sits in a reference body, and bodies nest a
+ * bounded number of levels. Any other rule with a literal minimum judges each
+ * inner key once and resumes after it ("shallow"), so each character is read
+ * at most twice; its baseline reading covers keys the narrower grammar visits.
  */
-function* keysInsideRejectedValue(rule: SecretRule, inner: RegExp, content: string, match: RegExpMatchArray): Generator<SecretRuleMatch> {
+function rescanDepth(rule: SecretRule): "deep" | "shallow" | undefined {
+  if (rule.minimumLiteralLength === undefined) return undefined;
+  const literalOnly = rule.minimumEntropy === undefined && rule.literalValue === undefined && rule.rejectValue === undefined;
+  return literalOnly ? "deep" : "shallow";
+}
+
+/**
+ * Judge each key that starts inside a rejected value (`password=$(echo
+ * password=…)`). With `deep`, a rejected inner value that holds a reference is
+ * entered in turn, so a deeper assignment is reached too; each key is judged
+ * once.
+ */
+function* keysInsideRejectedValue(
+  rule: SecretRule,
+  inner: RegExp,
+  content: string,
+  match: RegExpMatchArray,
+  deep: boolean,
+): Generator<SecretRuleMatch> {
   const end = match.index! + match[0].length;
   inner.lastIndex = end - match[1].length;
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
     if (acceptsSecretMatch(rule, found)) yield { index: found.index };
-    else if (VALUE_REFERENCE.test(found[1])) inner.lastIndex = found.index + found[0].length - found[1].length;
+    else if (deep && VALUE_REFERENCE.test(found[1])) inner.lastIndex = found.index + found[0].length - found[1].length;
   }
 }
 
@@ -766,19 +780,31 @@ function judgedLiteral(match: RegExpMatchArray): string {
     : literalAfterReferences(match[1], variables);
 }
 
-/** Text after a value that ends its word: no letter or digit before whitespace or the end, within a bound. */
-const WORD_TAIL = /^[^\s\p{L}\p{N}]{0,64}(?:\s|$)/u;
+/** Code units of punctuation read after a value before its word is taken as cut short. */
+const WORD_TAIL_BOUND = 64;
+/** A run of characters that are neither letters, digits nor whitespace. */
+const PUNCTUATION_RUN = /^[^\s\p{L}\p{N}]*/u;
+/** After a closed quoted value, structure that ends it (`"$PW",` or `"$PW"}` in JSON). */
+const STRUCTURE_AFTER_QUOTE = /^[,;:)}\]](?:[\s"',;:)}\]]|$)|^\s|^$/u;
 
 /**
- * Whether the value grammar read the whole word: only punctuation such as a
- * closing quote, bracket or `;` follows the match before whitespace or the end
- * of the input. A word the grammar cut short (`$PW:literal`, `$PW]literal`) is
+ * Whether the value grammar read the whole word. It did when only punctuation
+ * such as a closing quote, bracket or `;` follows the match before whitespace
+ * or the end of the input, within a bounded look-ahead measured in code units,
+ * or when the value is a closed quoted piece followed by structure, as in
+ * compact JSON. A word the grammar cut short (`$PW:literal`, `$PW]literal`) is
  * not known to be a bare or leading variable, so its `$NAME` text stays
  * literal. The look-ahead is bounded, so judging stays linear.
  */
 function wordComplete(match: RegExpMatchArray): boolean {
+  const input = match.input!;
   const end = match.index! + match[0].length;
-  return WORD_TAIL.test(match.input!.slice(end, end + 65));
+  const run = PUNCTUATION_RUN.exec(input.slice(end, end + WORD_TAIL_BOUND))![0];
+  const next = end + run.length;
+  if (next === input.length || /\s/u.test(input[next]!)) return true;
+  // A closing quote ends the value when structure, not more word, follows it.
+  const closer = isQuote(match[0].at(-1)) ? end : isQuote(input[end]) ? end + 1 : -1;
+  return closer !== -1 && STRUCTURE_AFTER_QUOTE.test(input.slice(closer, closer + 2));
 }
 
 /** A literal that is only a member chain, as code leaves after a reference (`${X}.trim`). */
@@ -800,15 +826,21 @@ function isQuote(character: string | undefined): character is "\"" | "'" {
 /** Captured text that a reference, a placeholder or a quoted piece can make spell something else. */
 const SPELLING_SENSITIVE = /[$<"']/u;
 
+/** Whether a captured value is unquoted source text, where a member chain after a reference is code. */
+function isCode(match: RegExpMatchArray): boolean {
+  return !DECODED_DATA_MATCHES.has(match) && !isQuote(captureOpener(match)) && !isQuote(match[1][0]);
+}
+
 /**
  * Whether the literal a referenced value spells matches the rule's literal
  * grammar whole. The literal is data, as a program receives it, so it is read
  * as one double-quoted literal whose own `"` characters become `'`, as an
  * element body is: every non-space character counts, and the grammar's path,
- * URL, word and member-path exclusions judge it whole.
+ * URL, word and member-path exclusions judge it whole. In unquoted source a
+ * literal that is only a member chain is the code after a reference.
  */
-function literalMatches(grammar: RegExp, literal: string): boolean {
-  if (MEMBER_CHAIN.test(literal)) return false;
+function literalMatches(grammar: RegExp, literal: string, code: boolean): boolean {
+  if (code && MEMBER_CHAIN.test(literal)) return false;
   const body = literal.replaceAll("\"", "'");
   grammar.lastIndex = 0;
   return grammar.exec(`"${body}"`)?.[1] === body;
@@ -1258,7 +1290,7 @@ export function literalAfterReferences(value: string, variables = true): string 
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
   const value = rule.minimumLiteralLength === undefined ? match[1] : judgedLiteral(match);
   if (rule.minimumLiteralLength !== undefined && value.length < rule.minimumLiteralLength) return false;
-  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value)) return false;
+  if (rule.literalValue && SPELLING_SENSITIVE.test(match[1]) && !literalMatches(rule.literalValue, value, isCode(match))) return false;
   if (rule.rejectValue?.test(value) === true) return false;
   if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;

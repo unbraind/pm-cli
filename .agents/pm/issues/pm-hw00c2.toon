@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",credential-redaction,placeholders,secret-guard,security
 created_at: "2026-11-16T23:30:24.532Z"
-updated_at: "2026-11-17T10:26:34.498Z"
+updated_at: "2026-11-17T10:42:50.248Z"
 closed_at: "2026-11-17T09:04:47.334Z"
 completed_at: "2026-11-17T09:04:47.334Z"
 author: "harness:claude-code"
@@ -24,7 +24,7 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-1l85at,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-jcz7qz,related,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
   pm-ycgb5g,discovered_from,"2026-11-16T23:30:24.532Z","harness:claude-code","cli:create:dep",detected
-comments[7]:
+comments[8]:
   - created_at: "2026-11-17T08:37:14.716Z"
     author: "harness:claude-code"
     text: "Design (implementation on branch fix/secret-guard-reference-literals-and-property-names). credential_key_assignment now captures a value whole when it holds a run-time reference (braced, command, dollar-name or angle placeholder) or opens with a quoted piece concatenated to more text, and judges the literal left once references expand with CREDENTIAL_LITERAL_VALUE: the unchanged reference-free grammar (paths, URLs, words, member paths, key-file names excluded; 8+ characters; entropy 3) read as one double-quoted literal, because the literal is data. The rule gains minimumLiteralLength 8 and a new declarative SecretRule field literalValue; acceptsSecretMatch judges the literal (not the captured text) for entropy and rejectValue whenever a rule declares a literal minimum. judgedLiteral treats a capture whose quotes the grammar read outside it (a quoted credential-key body) as data, so its quote characters are literal. Bounds: at most 64 literal characters before the first reference (a longer prefix is judged as a reference-free value), references and quoted pieces are whitespace-free (so a spaced command substitution is never one value and a key inside it keeps its own verdict), every repeated group is bounded at 4096 and quoted pieces at 4, as in the password grammar. Bare dollar-name policy (one policy for both key-named rules): a dollar-name reference expands to nothing when the name is CONSTANT_CASE (environment-variable convention) or when it is the whole value, quoted or not; bareness is judged on the source text, so a concatenation never reads as one name. Any other dollar text is literal, so a credential that merely contains a dollar sign keeps its characters."
@@ -47,6 +47,9 @@ comments[7]:
   - created_at: "2026-11-17T10:26:34.498Z"
     author: "harness:claude-code"
     text: "Codex review round 5 on PR 1746 found a new false positive, fixed. After the equals sign, the referenced reading read the shell control operators as value characters, so a command substitution followed directly by a double pipe and a fallback command spelled the fallback as a credential. The bar and ampersand now end a referenced value, because they end a shell word. The baseline reading still reads them in a reference-free value, as main does. Rows were added for a double pipe, a double ampersand and a pipe after a variable."
+  - created_at: "2026-11-17T10:42:50.248Z"
+    author: "harness:claude-code"
+    text: "Review round on PR 1746 (Greptile four P1s on intermediate heads, Codex round 6 two P2s), all fixed. (1) A referenced credential inside a rejected referenced value was no longer judged once rescans were limited to the password rule. credential_key_assignment now rescans a rejected referenced value shallowly: each inner key is judged once with the referenced grammar and the scan resumes after it, so each character is read at most twice. The password rule keeps the deep rescan. (2) A punctuation-led literal after a quoted reference was dropped by the alphanumeric-only continuation; the continuation now also accepts the non-operator symbols _ ! @ # % ^ ~ -. (3) The member-chain exclusion applied to payload data and quoted values too; it now applies only to unquoted source text. (4) In compact JSON the word look-ahead ran into the next member, so a bare variable was flagged. A closed quoted value followed by structure (a comma, colon, bracket, brace or semicolon, then whitespace, a quote, more structure or the end) now ends its word. (5) The 64-character look-ahead matched code points but was bounded in code units, so astral characters could make a truncated slice read as the end of the input. It now finds the punctuation run and checks the input at that exact code-unit position. (6) Question marks and colons after a reference are code (optional chaining, nullish coalescing, ternary), so they now end a referenced value, as the bar and ampersand do. Rows were added for every shape, including both JSON member orders."
 files[3]{path,scope}:
   src/core/shared/secret-rules.ts,project
   tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project

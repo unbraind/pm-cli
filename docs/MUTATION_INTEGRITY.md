@@ -200,9 +200,10 @@ tracker record excluded from npm). A value that holds `${…}`, `$(…)`,
 `$NAME` or `<…>` is captured whole. So is a value that opens with a quoted
 piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
 another quoted piece follows it, or it holds a reference and a letter, digit
-or `_` follows. A quoted value followed by an operator (`"…".trim()`,
-`"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and a literal
-that is only a member chain left after a reference (`${X}.trim`) is code. The literal
+or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by an operator (`"…".trim()`,
+`"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
+source a literal that is only a member chain left after a reference
+(`${X}.trim`) is code; in a quoted value or payload data it is still judged. The literal
 left once its references expand is then judged by the same grammar, length,
 entropy and exclusions as a reference-free value, read in the value's own
 quote context. So `api_key=${EMPTY}"…"`, `api_key=$VAR"…"`, `token: <x>…`,
@@ -212,22 +213,27 @@ empty default, and a literal that is a path, URL or word stay clean. At most
 64 literal characters may come before the first reference; a longer prefix is
 judged as a reference-free value. References and quoted pieces are
 whitespace-free, as every credential-key value is, and the shell control
-operators `|` and `&` end one (`$(get_key)||fallback` spells nothing), so a
+operators `|` and `&` end one (`$(get_key)||fallback` spells nothing), as do
+`?` and `:`, which after a reference are code (`$TOKEN?.x`, `$TOKEN??y`), so a
 spaced command substitution is never read as one value, and a key inside it keeps its own
 verdict. The rule also scans its unchanged reference-free grammar as a
 baseline reading, judged on the captured text exactly as before, and a value
 is reported when either reading reports it. So
 the referenced reading only adds findings, and every key the reference-free
 scan visits, including one inside a rejected referenced value, keeps its
-verdict.
+verdict. A key inside a rejected referenced value is also judged once by the
+referenced reading, and the scan then resumes after it, so each character is
+read at most twice.
 
 One `$NAME` policy holds for every key-named rule. A `$NAME` reference
 expands to nothing when NAME is CONSTANT_CASE, the environment-variable
 convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
 in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
-read the whole word, so only punctuation (a closing quote, bracket or `;`)
-may follow it before whitespace or the end of the text. A value it cuts short
+read the whole word: only punctuation (a closing quote, bracket or `;`) may
+follow it before whitespace or the end of the text, within a 64-code-unit
+look-ahead, or the value is a closed quoted piece followed by structure, as in
+compact JSON (`{"password":"$DB_PASSWORD","other":…}`). A value it cuts short
 (`$PW:…`, `$PW]…`) keeps its `$NAME` text literal. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
 `\$`, keeps its characters. No rule is silently
