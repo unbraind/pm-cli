@@ -1103,8 +1103,8 @@ function isTypeAssertion(value: string): boolean {
   return PRIMITIVE_TYPE.test(type) || /[.|&[]/u.test(type) || /^[A-Z](?:[\w$]*[a-z][\w$]*)?$/u.test(type);
 }
 
-/** A binary operator or member access that continues an expression after a reference; `! @ # ~` stay literal data. */
-const CODE_OPERATOR = /[.+\-*/%=^]/u;
+/** A binary operator or member access that continues an expression after a reference (`&` is bitwise AND there); `! @ # ~` stay literal data. */
+const CODE_OPERATOR = /[.+\-*/%=^&]/u;
 /** Expression code after a value: an optional chain, a nullish or logical operator, or a call or index; a delimiter alone may end YAML data. */
 const EXPRESSION_AFTER = /^\s{0,16}(?:\?\.|\?\?|\|\||&&|[([])/u;
 

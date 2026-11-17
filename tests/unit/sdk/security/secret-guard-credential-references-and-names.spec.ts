@@ -167,6 +167,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["non-null assertion after a quoted reference", 'const token="${TOKEN}"!.length+1;'],
     ["XOR after a quoted reference", 'const token="${TOKEN}"^maskValue;'],
     ["subtraction after a quoted reference", 'const token="${TOKEN}"-tokenOffset;'],
+    // CodeRabbit: bitwise AND directly after a reference is code.
+    ["bitwise AND after a reference", "const token=$TOKEN&maskValue;"],
     // Codex round 29: remainder after a quoted reference is code too.
     ["remainder after a quoted reference", 'const token="${TOKEN}"%maskValue;'],
     // A lowercase angle span after `=`, or before expression code, is code too.
@@ -202,6 +204,9 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     expect(literalAfterReferences(`ab$cd${literal}`)).toBe(`ab$cd${literal}`);
     expect(expandRuntimeReferences(`ab$CD:${literal}`)).toBe(`ab$CD:${literal}`);
     expect(expandRuntimeReferences(`\${EMPTY}<x>$CD:${literal}`)).toBe(`:${literal}`);
+    // An escaped dollar in a decoded string literal decodes to `$`, as JSON and JavaScript readers do, so a
+    // whole-value variable stays a placeholder (a template-literal fixture's escaped interpolation reads the same).
+    expect(textRules(['const cfg = {"', passwordKey, '":"\\$', "DB_PASSWORD", '"};'].join(""))).toEqual([]);
     // Codex round 2: an escaped dollar keeps the variable after it literal in every spelling.
     const escaped = ["abc\\$", "ZQ8VN3K_LMP0WXY7AB"].join("");
     expect(textRules(`${passwordKey}="${escaped}"`)).toEqual(["password_assignment"]);

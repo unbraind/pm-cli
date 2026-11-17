@@ -205,7 +205,7 @@ another quoted piece follows it, or it holds a reference and a letter, digit
 or non-operator symbol (`_ @ # ~`, or a `!` that no operator follows)
 follows. A quoted value followed by an operator (`"…".trim()`,
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
-source a value is code when a binary operator (including `^`) or member access
+source a value is code when a binary operator (including `^` and `&`) or member access
 follows its leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
 `$TOKEN+suffix`) or a call's parenthesis follows it (`<string>getToken()`,
 `<string>getToken ()`), and a value led by an angle span is code when the
@@ -294,7 +294,8 @@ elements under an exact key keep passphrases.
 A quoted value with escapes is matched in a neutralized reading, where its
 own quote characters and line breaks cannot end it early, and the rule's
 predicates (literal length, references, entropy) then judge the same span of
-the decoded original, so a decoded quote keeps its meaning.
+the decoded original, so a decoded quote keeps its meaning. An escaped `\$`
+decodes to `$`, as JSON and JavaScript readers decode it.
 
 Each candidate key/value is judged by the rule's own value grammar. The
 password rule's literal minimum, the credential-key placeholder exclusions
