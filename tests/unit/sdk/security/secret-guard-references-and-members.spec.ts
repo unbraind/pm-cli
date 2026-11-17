@@ -238,6 +238,19 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     expect(JSON.stringify(scanMutationSecrets({ description: content }))).not.toContain(literal);
   });
 
+  it("scans element bodies far longer than a repeated regex group could hold", () => {
+    const rule = ruleNamed("password_assignment");
+    const [open, close] = [["<pass", "word>"].join(""), ["</pass", "word>"].join("")];
+    // A repeated per-character group overflowed the V8 backtrack stack near 16 million characters.
+    expect([...findSecretRuleMatches(rule, `${open}${"x".repeat(20_000_000)}${close}`)]).toHaveLength(1);
+    expect([...findSecretRuleMatches(rule, `${open}${"<x>".repeat(2_000_000)}${close}`)]).toEqual([]);
+    expect([...findSecretRuleMatches(rule, `${open}${"<x>".repeat(2_000_000)}${literal}${close}`)]).toHaveLength(1);
+    // A tag of the same keys inside the body, or a `<` that never closes, ends nothing.
+    expect([...findSecretRuleMatches(rule, `${open}a${open}${literal}${close}`)]).toHaveLength(1);
+    expect([...findSecretRuleMatches(rule, `${open}a < b and more text${close}`)]).toEqual([]);
+    expect([...findSecretRuleMatches(rule, `${open}${literal}`)]).toEqual([]);
+  });
+
   it("judges element content by its literal for a rule without its own literal minimum", () => {
     const rule: SecretRule = {
       name: "element-probe", mutationRule: "element_probe", regex: /(?!)/g,
@@ -338,6 +351,15 @@ describe("structured payload members are judged under their property names (pm-3
       expect(memberFindings({ password: ["${PW:-", open, "abcdef", close, "}"].join("") })).toEqual([]);
       expect(memberFindings({ password: ["${PW:-", open, eight, close, "}"].join("") }))
         .toContainEqual({ rule: "password_assignment", path: "$.password" });
+    }
+  });
+
+  it("judges a payload string holding U+2028 or U+2029 like one holding a line feed", () => {
+    for (const separator of ["\n", " ", " "]) {
+      const value = ["Synth", separator, "eticOnly1"].join("");
+      expect(memberFindings({ password: value }), JSON.stringify(separator)).toContainEqual({ rule: "password_assignment", path: "$.password" });
+      // A prefixed key's compact judgment treats each separator as whitespace.
+      expect(memberFindings({ "admin-password": value }), JSON.stringify(separator)).toEqual([]);
     }
   });
 

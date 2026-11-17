@@ -325,7 +325,14 @@ export function* findSecretRuleMatches(rule: SecretRule, content: string): Gener
 interface CompiledSpelling {
   key: RegExp;
   value: RegExp;
-  element?: RegExp;
+  element?: CompiledElement;
+}
+
+/** Element spelling patterns: the opening tag, and sticky closing-tag and markup-span patterns for the body scan. */
+interface CompiledElement {
+  open: RegExp;
+  close: RegExp;
+  span: RegExp;
 }
 
 const compiledSpellings = new Map<string, CompiledSpelling>();
@@ -343,8 +350,16 @@ function compileSpelling(spelling: SecretStructuredSpelling): CompiledSpelling {
       // An element body may hold placeholder or markup spans such as `<x>`
       // (`<password><x>literal</password>`), never another element of the
       // same keys, so the body still ends at the first closing credential tag.
+      // The body is scanned in code (elementBodyEnd), never by a repeated
+      // regex group, so its length cannot exhaust the regex backtrack stack.
       ...(spelling.element
-        ? { element: new RegExp(String.raw`<(?:${spelling.keys})(?:\s[^<>]*)?>((?:[^<]|<(?!\/?(?:${spelling.keys})\b)[^<>]*>)*)<\/(?:${spelling.keys})\s*>`, "gi") }
+        ? {
+          element: {
+            open: new RegExp(String.raw`<(?:${spelling.keys})(?:\s[^<>]*)?>`, "gi"),
+            close: new RegExp(String.raw`<\/(?:${spelling.keys})\s*>`, "iy"),
+            span: new RegExp(String.raw`<(?!\/?(?:${spelling.keys})\b)[^<>]*>`, "iy"),
+          },
+        }
         : {}),
     };
     compiledSpellings.set(cacheKey, compiled);
@@ -599,7 +614,10 @@ export function structuredKeyShape(rule: SecretRule, name: string): "exact" | "p
  */
 export function acceptsStructuredValue(rule: SecretRule, value: string, compact: boolean): boolean {
   if (!rule.structured) return false;
-  const content = JSON.stringify(value);
+  // JSON.stringify leaves U+2028 and U+2029 raw, and a raw line break marks a
+  // host-language artifact in text. In a payload string they are data, so they
+  // are escaped like `\n` and judged in the decoded reading.
+  const content = JSON.stringify(value).replaceAll("\u2028", "\\u2028").replaceAll("\u2029", "\\u2029");
   return createValueJudge(rule, compileSpelling(rule.structured).value, content).accepts(compact)(0);
 }
 
@@ -608,11 +626,39 @@ export function acceptsStructuredValue(rule: SecretRule, value: string, compact:
  * of the literal it spells, or by the rule's own value grammar and entropy
  * predicate when the spelling declares `elementValue`.
  */
-function* elementMatches(element: RegExp, content: string, judge: (value: string) => boolean): Generator<SecretRuleMatch> {
-  element.lastIndex = 0;
-  for (const match of content.matchAll(element)) {
-    if (judge(match[1].trim())) yield { index: match.index! };
+function* elementMatches(element: CompiledElement, content: string, judge: (value: string) => boolean): Generator<SecretRuleMatch> {
+  // The opening pattern's cursor survives each yield, so every scan owns its own copy.
+  const open = new RegExp(element.open);
+  for (let match = open.exec(content); match; match = open.exec(content)) {
+    const bodyStart = match.index + match[0].length;
+    const body = elementBodyEnd(element, content, bodyStart);
+    if (body === undefined) {
+      // As a whole-element pattern would, retry from the next position.
+      open.lastIndex = match.index + 1;
+      continue;
+    }
+    if (judge(content.slice(bodyStart, body.start).trim())) yield { index: match.index };
+    open.lastIndex = body.end;
   }
+}
+
+/**
+ * Where an element body that starts at `start` ends: at the first closing tag
+ * of the spelling's keys, skipping markup spans of other names. Undefined when
+ * a tag of the same keys opens first, a `<` never closes, or no closing tag
+ * follows. One forward scan; the sticky patterns run synchronously.
+ */
+function elementBodyEnd(element: CompiledElement, content: string, start: number): { start: number; end: number } | undefined {
+  for (let index = content.indexOf("<", start); index !== -1; ) {
+    element.close.lastIndex = index;
+    const close = element.close.exec(content);
+    if (close !== null) return { start: index, end: index + close[0].length };
+    element.span.lastIndex = index;
+    const span = element.span.exec(content);
+    if (span === null) return undefined;
+    index = content.indexOf("<", index + span[0].length);
+  }
+  return undefined;
 }
 
 /** An exact key's walk covers everything inside it; a prefixed key's compact walk covers only prefixed keys. */
@@ -781,6 +827,9 @@ function closeReference(frames: ReferenceFrame[], character: string): void {
   if (frame.keep) parent.literal += frame.literal;
 }
 
+/** Characters that never open, close, quote or escape anything in the reference walker. */
+const PLAIN_RUN = /[^$<"'\\})]+/uy;
+
 /** Characters a backslash escapes inside double quotes, as in the shell. */
 const DOUBLE_QUOTE_ESCAPABLE = "$`\"\\\n";
 
@@ -822,6 +871,14 @@ function quotedStep(text: string, index: number, frame: ReferenceFrame): number 
 /** Consume the reference, delimiter, placeholder span or character at `index`; returns the next index. */
 function expandStep(text: string, index: number, frames: ReferenceFrame[], rootQuotesAreSyntax: boolean): number {
   const innermost = frames.at(-1)!;
+  // A run of characters with no meaning to the walker in any state is text,
+  // appended at once, so a long value costs one step per run.
+  PLAIN_RUN.lastIndex = index;
+  const run = PLAIN_RUN.exec(text)?.[0];
+  if (run !== undefined) {
+    appendText(innermost, run);
+    return index + run.length;
+  }
   // Quoted text inside a reference never opens or closes a reference.
   if (frames.length > 1) {
     const quoted = quotedStep(text, index, innermost);
