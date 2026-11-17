@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: sdk,secret-guard,security
 created_at: "2026-11-10T17:54:39.600Z"
-updated_at: "2026-11-17T04:13:03.826Z"
+updated_at: "2026-11-17T04:52:59.670Z"
 closed_at: "2026-11-17T02:01:25.985Z"
 completed_at: "2026-11-17T02:01:25.985Z"
 author: "harness:claude-code"
@@ -21,7 +21,7 @@ actual_result: "Must-refuse and must-allow tables pass in both consumers, check-
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1699,discovered_from,"2026-11-10T17:54:39.600Z","harness:claude-code","cli:create:dep",detected
   pm-jcz7qz,related,"2026-11-17T00:44:51.247Z","harness:claude-code","cli:update:dep",detected
-comments[9]:
+comments[10]:
   - created_at: "2026-11-16T23:29:00.310Z"
     author: "harness:claude-code"
     text: "Implementation (branch fix/secret-guard-grammar-and-payload-keys): PASSWORD_VALUE now captures the whole value, and the rule declares minimumLiteralLength: 8, which acceptsSecretMatch applies to literalAfterReferences(match[1]). That helper expands run-time references to nothing (${NAME}, ${NAME:?message}, $(command), <placeholder>), keeps the default of ${NAME:-word} / ${NAME:=word} as literal text, and then removes the delimiting quotes of each quoted piece. A value that starts with a quote is that quoted literal alone (JSON and YAML semantics); an unquoted value is a run of references and literal characters that may hold one whitespace-free quoted piece, as a shell concatenates $VAR\"literal\". Two design corrections came from running the gates: (1) letting a quoted piece concatenate freely made a value spill across later JSON keys and flagged 39,999 keys of the existing pathological-input test, so a quoted start is now the literal alone and only one inner piece is allowed, which also keeps the structured pass linear; (2) the repository scan flagged tests/unit/core/sentry/instrument.spec.ts, where the quote after password=<private-value> closes the enclosing JS string, so the inner piece must be whitespace-free. Element content (<password>...</password>) now uses the same literal judgment, so <password>${X}literal</password> is refused and <password>${X}</password> stays clean. Must-refuse and must-allow tables run through both consumers (scripts/check-secrets-lib.mjs scanContent and scanMutationSecrets). node scripts/check-secrets.mjs is clean over every tracked file, and the existing GH-1699 and GH-1704 specs (227 tests) pass unchanged. Behavior kept on purpose: a bare $VAR reference is still read as literal text, as before, because the acceptance criteria name only ${...}, $(...), <...> and empty fallbacks as must-allow.\n"
@@ -50,6 +50,9 @@ comments[9]:
   - created_at: "2026-11-17T04:13:03.825Z"
     author: "harness:claude-code"
     text: "Follow-up after close, from the Greptile review of 201e65363 (PR 1745), fixed: the plain-run fast path used a sticky regex with the u flag. After an escape consumed the first half of a surrogate pair, a match could start one code unit early, inside the pair, and advancing by its length skipped the next quote. A whole command reference escaping an astral character was then read as unclosed literal text and reported. PLAIN_RUN drops the u flag, so a sticky match starts exactly at lastIndex. Restoring the u flag fails three of the new regression tests.\n"
+  - created_at: "2026-11-17T04:52:59.670Z"
+    author: "harness:claude-code"
+    text: "Follow-up after close, from the CodeRabbit review of d950c9c63 (PR 1745): a spaced, double-quoted command reference holding its own double quotes was cut at the inner quote by the quoted-value grammar. The walker then read the truncated reference as literal text and reported a credential (main excluded the spelling). A reference-aware quoted grammar was tried and rejected, because it collided with the decoded path's quote neutralization. The fix: in text mode an unclosed reference contributes nothing, because a captured value can end inside a reference the grammar cannot follow. In data mode, which holds whole decoded literals and element bodies, an unclosed reference stays literal. Known limit, documented: a literal after such an inner quote is not measured.\n"
 files[2]{path,scope,note}:
   src/core/shared/secret-rules.ts,project,PASSWORD_VALUE captures the whole value; minimumLiteralLength judges literalAfterReferences; element judge uses the same literal
   tests/unit/sdk/security/secret-guard-references-and-members.spec.ts,project,must-refuse and must-allow tables in both consumers (repository scan and SDK guard)

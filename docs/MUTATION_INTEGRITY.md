@@ -243,7 +243,10 @@ the word of `${NAME:-word}`, `${NAME:=word}` or `${NAME:+word}` contributes
 its own expansion. Quoted text inside a reference never closes it, so
 `$(printf ')')` is one reference. An unquoted value's references may nest one
 level (`${PW:-${FALLBACK}}`); deeper nesting is followed inside quoted values
-and elements. The value must spell at least eight literal characters.
+and elements. A quoted value ends at its first closing quote, even inside a
+reference (`"$(op read "item")"`); the reference it cuts contributes nothing,
+so the value stays a placeholder, and a literal after that inner quote is not
+measured. The value must spell at least eight literal characters.
 So `password=${BUILD_PASSWORD}`, `password=$(op read pw)`,
 `password=<placeholder>`, `password=${PREFIX}${SUFFIX}`,
 `password=${PRIMARY:-${SECONDARY}}` and an empty default stay clean, while a

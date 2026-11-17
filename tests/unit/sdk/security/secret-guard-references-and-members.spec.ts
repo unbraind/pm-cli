@@ -163,6 +163,8 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     ["quoted key, command substitution holding a decoded quote", ["{\"pass", "word\": \"$(printf \\\"x')", "abcdefgh", "\\\")\"}"].join("")],
     ["command substitution holding an escaped closing parenthesis", ["pass", "word=$(printf \\)", "abcdefgh)"].join("")],
     ["command substitution escaping an astral character", ["pass", "word=$(printf \"\\", "\u{1F600}", "\")"].join("")],
+    ["spaced double-quoted command reference holding quotes", ["pass", "word=\"$(op read \"vault/", "item\")\""].join("")],
+    ["spaced double-quoted braced reference holding quotes", ["pass", "word=\"${PW:?\"must ", "be set\"}\""].join("")],
     ["quoted key, command substitution escaping an astral character", ["{\"pass", "word\": \"$(printf \\\"\\\\", "\u{1F600}", "\\\")\"}"].join("")],
     // A prefixed unquoted key judges its escaped value compactly, so decoded prose stays clean.
     ["prefixed unquoted key with an escaped value holding whitespace", ["reset-pass", "word: \"ab\\\"cd efghij\""].join("")],
@@ -351,10 +353,12 @@ describe("structured payload members are judged under their property names (pm-3
     expect(expandRuntimeReferences(["${PW:-\"", "a\\$b", "\"}"].join(""))).toBe("a$b");
     // Six characters inside the delimiters stay clean; eight are reported, for both quote kinds.
     const eight = ["abcd", "efgh"].join("");
+    // Built from parts so this source never spells a reference across array elements.
+    const dw = (open: string, word: string, close: string) => ["$", "{PW:-", open, word, close, "}"].join("");
     for (const [open, close] of [["\"", "\""], ["'", "'"]]) {
-      expect(textRules(["pass", "word=${PW:-", open, "abcdef", close, "}"].join(""))).toEqual([]);
-      expect(memberFindings({ password: ["${PW:-", open, "abcdef", close, "}"].join("") })).toEqual([]);
-      expect(memberFindings({ password: ["${PW:-", open, eight, close, "}"].join("") }))
+      expect(textRules(["pass", "word=", dw(open!, "abcdef", close!)].join(""))).toEqual([]);
+      expect(memberFindings({ password: dw(open!, "abcdef", close!) })).toEqual([]);
+      expect(memberFindings({ password: dw(open!, eight, close!) }))
         .toContainEqual({ rule: "password_assignment", path: "$.password" });
     }
   });

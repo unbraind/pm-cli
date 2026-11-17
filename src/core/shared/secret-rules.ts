@@ -197,9 +197,12 @@ const PASSWORD_QUOTED_PIECES = 4;
 // expandRuntimeReferences. A literal `$` never starts a reference the grammar
 // cannot follow, so an over-nested reference is never half-read as literal.
 const PASSWORD_QUOTED_SPAN = String.raw`'[^'\r\n]*'|"(?:[^"\\\r\n]|\\.)*"`;
-const PASSWORD_PIECE = String.raw`\$\{(?:[^{}$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\{)|\$\{[^{}\r\n]*\})*\}`
-  + String.raw`|\$\((?:[^()$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\()|\$\([^()\r\n]*\))*\)`
-  + String.raw`|<[^<>\r\n]*>|[A-Za-z0-9!@#%^&*._+\-=]|\$(?![{(])`;
+const PASSWORD_REFERENCE = String.raw`\$\{(?:[^{}$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\{)|\$\{[^{}\r\n]*\})*\}`
+  + String.raw`|\$\((?:[^()$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\()|\$\([^()\r\n]*\))*\)`;
+const PASSWORD_PIECE = String.raw`${PASSWORD_REFERENCE}|<[^<>\r\n]*>|[A-Za-z0-9!@#%^&*._+\-=]|\$(?![{(])`;
+// A quoted piece ends at its first closing quote, even inside a reference
+// (`"$(op read "item")"` captures `"$(op read "`); the reference it cuts then
+// stays unclosed and contributes nothing (see literalAfterReferences).
 const PASSWORD_QUOTED = String.raw`"[^"]*"|'[^']*'`;
 const PASSWORD_QUOTED_PIECE = String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${PASSWORD_PIECE})*`;
 const PASSWORD_VALUE = new RegExp(
@@ -440,9 +443,10 @@ const SIMPLE_ESCAPES: Readonly<Record<string, string>> = { n: "\n", r: "\r", t: 
 /**
  * Decode a quoted literal (JSON, YAML and Python escapes, including
  * eight-digit `\\U` code points and octal escapes) so the value grammar judges what it represents:
- * its length, whitespace, placeholder prefix and entropy. A decoded quote of
- * the literal's own kind becomes the other quote, and a line break produced
- * by an escape becomes a space. The caller rejects raw line breaks first.
+ * its length, whitespace, placeholder prefix and entropy. In the grammar's
+ * reading a decoded quote of the literal's own kind becomes the other quote
+ * and a line break produced by an escape becomes a space; the original keeps
+ * both. The caller rejects raw line breaks first.
  */
 function decodeQuotedLiteral(literal: string, terminated: boolean): DecodedLiteral {
   const quote = literal[0]!;
@@ -933,12 +937,16 @@ function expandWords(text: string, rootQuotesAreSyntax: boolean): string {
   const root: ReferenceFrame = { close: "}", keep: true, raw: "", literal: "" };
   const frames: ReferenceFrame[] = [root];
   for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax);
-  // An unclosed reference is not a reference: its source text is literal.
+  // In data the whole value is present, so a reference that never closes is
+  // not a reference and its source text is literal. A captured text value can
+  // end inside a reference the value grammar cannot follow (a quoted piece
+  // ends at the reference's own inner quote), so there an unclosed reference
+  // contributes nothing, as a complete one would.
   for (let depth = frames.length - 1; depth > 0; depth -= 1) {
     const frame = frames[depth]!;
     const parent = frames[depth - 1]!;
     parent.raw += frame.raw;
-    parent.literal += frame.raw;
+    if (!rootQuotesAreSyntax) parent.literal += frame.raw;
   }
   return root.literal;
 }
