@@ -9,6 +9,13 @@
 - pm copy writes a new item without evaluating workflow policies, while create, update, delete, restore and imports all run enforceWorkflowMutation ([pm-womkyw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-womkyw.toon))
 - A beforeMutation guard that denies close also denies the transaction's own create compensation, so a refused batch fails with compensation failed and keeps its earlier creates ([pm-wb6ktl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wb6ktl.toon))
 
+### Security
+
+- A mutation payload nested about 2,000 levels deep overflows the secret guard's recursive leaf walk, so block mode fails open and lets a nested credential through ([pm-wq9njf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wq9njf.toon))
+- scanMutationSecrets drops object keys, so an SDK payload such as { api_key: "<credential\>" } passes every key-based secret rule ([pm-3fbj1f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3fbj1f.toon))
+- password_assignment treats any value starting with a ${...} or $(...) reference as a placeholder, so a literal concatenated with a reference passes the guard ([pm-ycgb5g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycgb5g.toon))
+- The user-at-private-host secret rule rescans every hyphen or dot run, so 32 KB of hyphenated text costs about a second in mutation preflight ([pm-3627y1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3627y1.toon))
+
 ### Other
 
 - Adopt the 2026-11-16 Dependabot updates: knip 6.44.2, marked 18.1.3, six GitHub Actions patch releases and @sentry/node 10.78.0, holding the Sentry 11 major ([pm-3czc4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3czc4m.toon))

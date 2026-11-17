@@ -305,6 +305,14 @@ describe("structured payload members are judged under their property names (pm-3
     expect(JSON.stringify(findings)).not.toContain(credential);
   });
 
+  it("counts a structured password's quote characters as data", () => {
+    // Eight characters each; JSON.stringify escapes the quote, and the decoded quote is data.
+    for (const value of [["ab", "\"cdefg"].join(""), ["abc", "\"defg"].join(""), ["a'b", "\"cdefg"].join("").slice(0, 8)]) {
+      expect(memberFindings({ password: value }), value).toContainEqual({ rule: "password_assignment", path: "$.password" });
+    }
+    expect(memberFindings({ password: ["ab", "\"cdef"].join("") })).toEqual([]);
+  });
+
   it("reports a rule once per path when the leaf text and its key both match", () => {
     // The leaf's own text and its credential-named key both yield credential_key_assignment here.
     expect(memberFindings({ api_key: `api_key=${credential}` }).filter(({ rule }) => rule === "credential_key_assignment"))
