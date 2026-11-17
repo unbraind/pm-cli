@@ -251,6 +251,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     expect(() => [...findSecretRuleMatches(rule, `api_key=\${X}${"a&".repeat(4_000_000)}`)]).not.toThrow();
     // A quoted value of millions of characters, which overflowed even before the referenced reading.
     expect(() => [...findSecretRuleMatches(rule, `api_key="${"a".repeat(16_000_000)}"`)]).not.toThrow();
+    // Codex round 34: millions of member segments after a reference no longer exhaust the stack.
+    expect(() => [...findSecretRuleMatches(rule, `api_key=\${X}"${"a.".repeat(8_000_000)}a"`)]).not.toThrow();
     expect(performance.now() - started).toBeLessThan(15_000);
   });
 

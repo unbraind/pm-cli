@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: adversarial,assurance,redaction,secret-guard,security
 created_at: "2026-11-12T14:41:22.089Z"
-updated_at: "2026-11-17T16:58:49.331Z"
+updated_at: "2026-11-17T17:45:59.561Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "A declared adversarial corpus with a measured escape rate exists for credential_key_assignment and URL-userinfo redaction; Escaped JSON literals are judged for entropy on their decoded original value; Env-style lines with an all-caps key detect unquoted credentials holding ? : or | without re-flagging code"
@@ -22,7 +22,7 @@ dependencies[6]{id,kind,created_at,author,source_kind,author_source}:
   pm-3fbj1f,related,"2026-11-17T00:45:03.324Z","harness:claude-code","cli:update:dep",detected
   pm-hw00c2,related,"2026-11-17T00:45:03.324Z","harness:claude-code","cli:update:dep",detected
   pm-ycgb5g,related,"2026-11-17T00:45:03.324Z","harness:claude-code","cli:update:dep",detected
-comments[10]:
+comments[11]:
   - created_at: "2026-11-17T00:41:32.325Z"
     author: "harness:claude-code"
     text: "Residuals for the adversarial corpus, from the pm-ycgb5g and pm-3fbj1f review loop (Codex rounds 1 to 3, 2026-11-17). (1) password_assignment follows references nested one level in an unquoted value. A literal default nested three or more levels deep (password=${A:-${B:-${C:-<literal>}}}), or a literal after such a reference, is missed in the flat and quoted-key spellings, while quoted values and elements follow any depth through expandRuntimeReferences. Closing it needs a code tokenizer in place of the declared regex value grammar. (2) An unquoted password value may hold at most four whitespace-free quoted pieces; a literal spread over more pieces is missed. That bound keeps each structured scan to a few later keys. (3) A bare $VAR is still read as literal text by password_assignment and as a reference by credential_key_assignment; pm-hw00c2 owns aligning the two.\n"
@@ -54,4 +54,7 @@ comments[10]:
   - created_at: "2026-11-17T16:58:49.330Z"
     author: "harness:claude-code"
     text: "Residual (15), from the CodeRabbit review of PR 1746: an escaped dollar sign in a decoded string literal decodes to a dollar sign, so a whole-value escaped variable reads as a bare variable and is a placeholder. A shell reader would keep that dollar literal, but a JavaScript string or template literal yields the plain dollar sign; preserving the escape flagged template-literal fixtures with escaped interpolation. Closing it needs the host language of the surrounding text."
+  - created_at: "2026-11-17T17:45:59.560Z"
+    author: "harness:claude-code"
+    text: "Residual (16), from Codex review round 34 on PR 1746: some credential-key exclusion patterns (hyphenated words, paths, unquoted member chains) still exhaust the regex stack on values of millions of characters, as they already did in 2026.11.17. Since PR 1746 such a value fails closed for itself (reported under the rule with normalization_incomplete) instead of failing the whole scan open. Making those exclusions stack-safe, for example by scanning them in code, would remove the review noise for such values."
 body: ""

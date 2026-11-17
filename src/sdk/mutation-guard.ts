@@ -38,7 +38,11 @@ export interface SecretGuardFinding {
   property_name?: true;
   /** Detection-only transformations, without original or decoded coordinate values. */
   normalizations?: SecretNormalizationKind[];
-  /** Remaining encoded input exceeded the finite inspection envelope and requires explicit review. */
+  /**
+   * The value could not be inspected completely and requires explicit review:
+   * remaining encoded input exceeded the finite inspection envelope, or the
+   * value was too large for the rule's pattern to judge.
+   */
   normalization_incomplete?: true;
 }
 
@@ -251,6 +255,26 @@ function pushReversed<T>(pending: T[], children: readonly T[]): void {
 
 /** Keep credential matching lazy while preserving incomplete inspection anywhere in a home-path leaf. */
 function preflightRuleMatch(rule: SecretRule, value: string): SecretRuleMatch | undefined {
+  try {
+    return firstRuleMatch(rule, value);
+  } catch (error) {
+    return judgeTooLarge(error);
+  }
+}
+
+/**
+ * A rule whose pattern exhausts the regex stack on a value (a value of
+ * millions of characters) cannot judge it. That value is reported for review
+ * under the rule, so one oversized leaf fails closed for itself instead of the
+ * error making the whole scan fail open. Any other error still propagates.
+ */
+function judgeTooLarge(error: unknown): SecretRuleMatch {
+  if (!(error instanceof RangeError)) throw error;
+  return { index: 0, normalization_incomplete: true };
+}
+
+/** The first match of a rule, keeping incomplete inspection anywhere in a home-path leaf. */
+function firstRuleMatch(rule: SecretRule, value: string): SecretRuleMatch | undefined {
   const matches = findSecretRuleMatches(rule, value);
   const first = matches.next().value;
   if (!first || rule.mutationRule !== "absolute_home_path" || first.normalization_incomplete) return first;
@@ -419,9 +443,16 @@ function scanPayloadMembers(payload: unknown, cache: ScanCache): SecretGuardFind
     if (typeof value === "string") {
       judgments.forEach((judgment, index) => {
         const rule = KEY_NAMED_RULES[index]!;
-        if (judgment !== undefined && acceptsStructuredValue(rule, value, judgment === "compact")) {
-          findings.push({ rule: rule.mutationRule, path });
+        if (judgment === undefined) return;
+        let accepted: boolean;
+        try {
+          accepted = acceptsStructuredValue(rule, value, judgment === "compact");
+        } catch (error) {
+          judgeTooLarge(error);
+          findings.push({ rule: rule.mutationRule, path, normalization_incomplete: true });
+          return;
         }
+        if (accepted) findings.push({ rule: rule.mutationRule, path });
       });
       continue;
     }

@@ -397,6 +397,13 @@ judged as names. Each distinct name is judged once per scan. Only a name that
 a rule flags on its own is replaced: a name that is not credential-shaped by
 itself stays in the path even when it equals a value that another rule flags.
 
+A value too large for a rule's pattern to judge (one of millions of
+characters that exhausts the regex stack) fails closed for itself: the guard
+reports it under that rule with `normalization_incomplete: true` for explicit
+review, and keeps scanning every other leaf, instead of letting the error make
+the whole scan fail open. Any other detector error still yields the
+`secret_guard_scan_failed_open` advisory.
+
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals
 with references or explicitly review a force override. CLI routing paths and
