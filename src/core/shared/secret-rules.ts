@@ -1024,8 +1024,8 @@ function structuredContext(match: RegExpMatchArray, openerOutsideCapture: boolea
   return QUOTED_KEY_BEFORE.test(before) ? "key" : undefined;
 }
 
-/** A quoted key and its separator directly before a value. */
-const QUOTED_KEY_BEFORE = /["']\s*[:=]\s*$/u;
+/** An object member's quoted key (after `{` or `,`) and its separator directly before a value; a quoted shell option (`--'password'=`) is not one. */
+const QUOTED_KEY_BEFORE = /[{,]\s*(["'])[^"'\r\n]{1,48}\1\s*[:=]\s*$/u;
 /** An array's `[` or `,` directly before a value. */
 const ARRAY_ELEMENT_BEFORE = /[[,]\s*$/u;
 
