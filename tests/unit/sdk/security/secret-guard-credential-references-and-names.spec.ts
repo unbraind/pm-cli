@@ -475,6 +475,8 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       [passwordRule, `${passwordKey}=$(a ${passwordKey}=$(b) ${passwordKey}=$(c)) `.repeat(15_000)],
       [passwordRule, `${passwordKey}=<x ${passwordKey}=$A> `.repeat(20_000)],
       [credentialKeyRule, '"token":"a"$X'.repeat(20_000)],
+      // Codex round 39: a long capitalized angle name with a trailing comma is judged in linear time.
+      [credentialKeyRule, `api_key: <A${"a".repeat(64_000)},>Zq8vN3kLmP0wXy7Ab`],
       // CodeQL and Greptile: a literal type union is read without trying members two ways.
       [credentialKeyRule, `token: <1${"|123".repeat(5_000)}!>Zq8vN3kLmP0wXy7Ab`],
       // Codex round 25: many cut references share one bounded look-ahead.
@@ -485,9 +487,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(performance.now() - started).toBeLessThan(5_000);
     // The repeated default word is one concatenated value; in the last input a
     // variable after literal text stays literal, so each `"a"$X"token"` spells eight characters.
-    // The literal-type input is a placeholder followed by a credential. In the cut-reference input no
-    // opener ever closes, so the inner variable keeps main's literal reading.
-    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999, 1, 1]);
+    // The long angle-name and literal-type inputs are placeholders followed by a credential. In the
+    // cut-reference input no opener ever closes, so the inner variable keeps main's literal reading.
+    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999, 1, 1, 1]);
   });
 });
 

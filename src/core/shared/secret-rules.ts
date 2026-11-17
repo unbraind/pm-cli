@@ -1176,7 +1176,8 @@ function isTypeAssertion(value: string): boolean {
   const type = value.slice(1, value.indexOf(">"));
   if (LITERAL_TYPE.test(type)) return true;
   if (!TYPE_TEXT.test(type)) return false;
-  return PRIMITIVE_TYPE.test(type) || /[.|&[]/u.test(type) || /^[A-Z](?:[\w$]*[a-z][\w$]*)?$/u.test(type);
+  // Two independent linear checks: a capitalized name, and a lowercase letter in it or a single letter.
+  return PRIMITIVE_TYPE.test(type) || /[.|&[]/u.test(type) || (/^[A-Z][\w$]*$/u.test(type) && (type.length === 1 || /[a-z]/u.test(type)));
 }
 
 /** A binary operator or member access that continues an expression after a reference (`&` is bitwise AND there); `! @ # ~` stay literal data. */
