@@ -14,9 +14,11 @@ argument parsing or exposing detected values.
   invocation author, `PM_AUTHOR`, configured `author_default`, detected
   harness identity, then `unknown`.
 - The secret guard inspects string leaves and the property names that label
-  them, and returns only detector names and object paths. It never returns
-  the matched value, and a flagged property name appears in a path only as a
-  positional placeholder (`[key <n>]`).
+  them, and returns only detector names and object paths, never the matched
+  text of a leaf. A flagged property name appears in a path only as a
+  positional placeholder (`[key <n>]`). Unflagged property names appear in
+  paths as written, so a name that merely equals a credential held elsewhere
+  in the payload is not redacted.
 - `pm health` reports old, unclaimed in-progress work as advisory governance
   data. It does not change ownership or status.
 - Historical unknown-author events remain immutable. Maintainers can append an
@@ -372,7 +374,9 @@ repeats a flagged name: its segment becomes the positional placeholder
 `[key <n>]`, the name's index among its object's own entries, in the name's
 own finding and in every finding under it (`$.metadata[key 0].password`).
 Paths for other names are unchanged, and array indices are positions, never
-judged as names. Each distinct name is judged once per scan.
+judged as names. Each distinct name is judged once per scan. Only a name that
+a rule flags on its own is replaced: a name that is not credential-shaped by
+itself stays in the path even when it equals a value that another rule flags.
 
 A private address or host path can be legitimate project context. The default
 remains advisory; a workspace selecting `block` must replace those literals

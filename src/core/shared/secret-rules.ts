@@ -812,11 +812,15 @@ function wordComplete(match: RegExpMatchArray): boolean {
   const structure = STRUCTURE_RUN.exec(input.slice(start, start + WORD_END_BOUND))![0].length;
   const after = start + structure;
   if (after === input.length || /\s/u.test(input[after]!)) return true;
-  return closed !== -1 && structure > 0 && NEXT_MEMBER.test(input.slice(after, after + 2));
+  return closed !== -1 && structure > 0 && NEXT_MEMBER.test(input.slice(after, after + 8));
 }
 
-/** The start of the next JSON member or element: a quote, or `{` / `[` that opens structure, not word text (`][literal`). */
-const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|$))/u;
+/**
+ * The start of the next JSON member or element: a quote, or `{` / `[` that
+ * opens structure or a JSON value (a number, `true`, `false`, `null`), never
+ * word text (`][literal`, `][trueSecret`).
+ */
+const NEXT_MEMBER = /^(?:["'`]|[{[](?:[\s"'`{[\]}]|-?\d|(?:true|false|null)(?!\w)|$))/u;
 
 /** Code units of structure read after a value before its word is taken as cut short. */
 const WORD_END_BOUND = 64;

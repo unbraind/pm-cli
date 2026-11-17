@@ -237,6 +237,12 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(`${passwordKey}="$DB_PASSWORD"][${literal}`)).toEqual(["password_assignment"]);
     expect(textRules(`${passwordKey}="$DB_PASSWORD"],{${literal}`)).toEqual(["password_assignment"]);
     expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},["x"]]`)).toEqual([]);
+    // Greptile: an array that starts with a JSON number or literal is structure too.
+    for (const element of ["[1]", "[-2]", "[true]", "[null]", "{}"]) {
+      expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},${element}]`), element).toEqual([]);
+      expect(textRules(`[{'${passwordKey}':'$DB_PASSWORD'},${element}]`), element).toEqual([]);
+    }
+    expect(textRules(`${passwordKey}="$DB_PASSWORD"][trueSecret${literal}`)).toEqual(["password_assignment"]);
     // Greptile: structure followed by more word text is still one shell word.
     expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
     // Codex round 10: a quote after an unquoted value may open a concatenated piece, so

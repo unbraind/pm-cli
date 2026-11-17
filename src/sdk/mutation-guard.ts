@@ -30,7 +30,8 @@ export interface SecretGuardFinding {
    * Object path or argument index containing the match. A property name that a
    * rule matches is never repeated in a path: its segment is the positional
    * placeholder `[key <n>]`, its index among the object's own entries
-   * (pm-x07qz2).
+   * (pm-x07qz2). Other property names appear as written, including a name
+   * that merely equals a value another rule flags.
    */
   path: string;
   /** The match is in the property name at `path`, not in the value it holds. */

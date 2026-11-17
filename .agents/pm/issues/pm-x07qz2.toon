@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "area:sdk",mcp,redaction,secret-guard,security
 created_at: "2026-11-16T23:30:31.511Z"
-updated_at: "2026-11-17T10:42:51.005Z"
+updated_at: "2026-11-17T12:36:58.682Z"
 closed_at: "2026-11-17T09:04:57.856Z"
 completed_at: "2026-11-17T09:04:57.856Z"
 author: "harness:claude-code"
@@ -24,10 +24,11 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-3fbj1f,discovered_from,"2026-11-16T23:30:31.511Z","harness:claude-code","cli:create:dep",detected
   pm-pim7,related,"2026-11-16T23:30:31.511Z","harness:claude-code","cli:create:dep",detected
   pm-m0fh,related,"2026-11-16T23:30:54.676Z","harness:claude-code","cli:update:dep",detected
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-11-17T08:37:30.937Z","harness:claude-code","Design (branch fix/secret-guard-reference-literals-and-property-names). scanMutationSecrets now reads each object's own entries once per scan into PayloadEntry rows (name, value, path segment, name matches) shared by the leaf pass and the member pass. Every property name is judged by every rule as its own leaf (token formats, private-context rules and the key-named rules alike), memoized per distinct name per scan. A flagged name's path segment becomes the positional placeholder [key n], its index among the object's own entries, and that segment is used for the name's own finding and for every finding under it in both passes, so paths stay stable and never repeat the name. A name finding carries the new optional SecretGuardFinding field property_name: true; the dedupe key includes it, so a name and its value matching the same rule at the same path are both reported. Array indices stay positions and are never judged as names. CLI warnings still print only rule ids."
   "2026-11-17T09:05:13.968Z","harness:claude-code","Correction to the close actual_result: the 20,000-row repeated-name scan was not measured when that text was written. Measured afterwards on this host with the built SDK, scanMutationSecrets over 20,000 objects that share one credential-shaped property name returned 20,000 findings in 1,240 ms; the spec bounds it at 5,000 ms. The name itself is judged once per scan; the remaining cost is the per-object leaf scan that existed before."
   "2026-11-17T10:42:51.005Z","harness:claude-code","CodeRabbit on PR 1746: the SDK surface acknowledgement now also names the path change. A consumer that resolves a finding path by property name must expect the [key n] segment for a flagged name and for every finding under it, and a consumer that derives a required mapping from keyof SecretGuardFinding must add a property_name entry."
+  "2026-11-17T12:36:58.682Z","harness:claude-code","CodeRabbit on c529018a9: the no-disclosure statement is narrowed to what the guard guarantees, in docs/MUTATION_INTEGRITY.md and the SecretGuardFinding.path docs. The guard never returns a leaf's matched text, and a property name that a rule flags on its own appears only as its positional placeholder. A name that is not credential-shaped by itself stays in the path even when it equals a value another rule flags elsewhere in the payload. Redacting such names would mean comparing every path segment with every matched span, which the guard deliberately never extracts. Recorded here as the documented boundary of this item."
 files[4]{path,scope}:
   sdk/public-surface.json,project
   src/sdk/mutation-guard.ts,project
