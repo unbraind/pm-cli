@@ -192,22 +192,31 @@ const PASSWORD_KEYS = "password|passphrase";
 // scan reaches at most a fixed number of later keys, and the structured pass
 // stays linear. A reference may nest one level (`${PW:-${FALLBACK}}`).
 const PASSWORD_QUOTED_PIECES = 4;
+// Every repeated group runs over character runs and is bounded, so no value
+// length can exhaust the regex backtrack stack (a group repeated once per
+// character overflows it near 16 million characters); a reference or value
+// longer than the bound is read in part.
+const PASSWORD_REPEAT_BOUND = 4096;
 // A reference skips quoted spans, so a quoted `)` or `}` inside it
 // (`$(printf ')')`, `${PW:?'}'}`) never ends it early, as in
 // expandRuntimeReferences. A literal `$` never starts a reference the grammar
 // cannot follow, so an over-nested reference is never half-read as literal.
-const PASSWORD_QUOTED_SPAN = String.raw`'[^'\r\n]*'|"(?:[^"\\\r\n]|\\.)*"`;
-const PASSWORD_REFERENCE = String.raw`\$\{(?:[^{}$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\{)|\$\{[^{}\r\n]*\})*\}`
-  + String.raw`|\$\((?:[^()$'"\\\r\n]|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\()|\$\([^()\r\n]*\))*\)`;
-const PASSWORD_PIECE = String.raw`${PASSWORD_REFERENCE}|<[^<>\r\n]*>|[A-Za-z0-9!@#%^&*._+\-=]|\$(?![{(])`;
+// Each run is maximal (a negative lookahead forbids its own class next), so no
+// run can be split across iterations and a failed reference never backtracks
+// into exponentially many splits.
+const maximalRun = (characterClass: string): string => `${characterClass}+(?!${characterClass})`;
+const PASSWORD_QUOTED_SPAN = String.raw`'[^'\r\n]*'|"[^"\\\r\n]*(?:\\.[^"\\\r\n]*){0,${PASSWORD_REPEAT_BOUND}}"`;
+const PASSWORD_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\\r\n]`)}|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\{)|\$\{[^{}\r\n]*\}){0,${PASSWORD_REPEAT_BOUND}}\}`
+  + String.raw`|\$\((?:${maximalRun(String.raw`[^()$'"\\\r\n]`)}|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\()|\$\([^()\r\n]*\)){0,${PASSWORD_REPEAT_BOUND}}\)`;
+const PASSWORD_PIECE = String.raw`${PASSWORD_REFERENCE}|<[^<>\r\n]*>|${maximalRun(String.raw`[A-Za-z0-9!@#%^&*._+\-=]`)}|\$(?![{(])`;
 // A quoted piece ends at its first closing quote, even inside a reference
-// (`"$(op read "item")"` captures `"$(op read "`); the reference it cuts then
-// stays unclosed and contributes nothing (see literalAfterReferences).
+// (`"$(op read "item")"` captures `"$(op read "`); a reference that opens the
+// piece and is cut there contributes nothing (see literalAfterReferences).
 const PASSWORD_QUOTED = String.raw`"[^"]*"|'[^']*'`;
-const PASSWORD_QUOTED_PIECE = String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${PASSWORD_PIECE})*`;
+const PASSWORD_QUOTED_PIECE = String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${PASSWORD_PIECE}){0,${PASSWORD_REPEAT_BOUND}}`;
 const PASSWORD_VALUE = new RegExp(
   String.raw`(?!config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))`
-    + `((?:${PASSWORD_PIECE})+(?:${PASSWORD_QUOTED_PIECE}){0,${PASSWORD_QUOTED_PIECES}}`
+    + `((?:${PASSWORD_PIECE}){1,${PASSWORD_REPEAT_BOUND}}(?:${PASSWORD_QUOTED_PIECE}){0,${PASSWORD_QUOTED_PIECES}}`
     + `|(?:${PASSWORD_QUOTED_PIECE}){1,${PASSWORD_QUOTED_PIECES}}|${PASSWORD_QUOTED})`,
 );
 const PASSWORD_MINIMUM_LITERAL_LENGTH = 8;
@@ -781,6 +790,10 @@ interface ReferenceFrame {
   literal: string;
   /** Open quote inside the reference, so a quoted delimiter (`$(printf ')')`) never closes it. */
   quote?: "\"" | "'";
+  /** Root only: literal length when the current top-level quoted piece opened. */
+  pieceStart?: number;
+  /** The reference opened a top-level quoted piece, before any of its text. */
+  opensPiece?: boolean;
 }
 
 /** The `>` that closes the `<` at `start`, or -1 when another `<` or the end comes first. */
@@ -803,7 +816,9 @@ function openReference(text: string, index: number, frames: ReferenceFrame[]): n
   const next = text[index + 1];
   if (text[index] !== "$" || (next !== "{" && next !== "(")) return -1;
   const prefix = next === "{" ? text.slice(index + 2, index + 2 + defaultedPrefixLength(text, index + 2)) : "";
-  frames.push({ close: next === "{" ? "}" : ")", keep: prefix !== "", raw: `$${next}${prefix}`, literal: "" });
+  const root = frames[0]!;
+  const opensPiece = frames.length === 1 && root.quote !== undefined && root.literal.length === root.pieceStart;
+  frames.push({ close: next === "{" ? "}" : ")", keep: prefix !== "", raw: `$${next}${prefix}`, literal: "", opensPiece });
   return index + 2 + prefix.length;
 }
 
@@ -842,6 +857,18 @@ const PLAIN_RUN = /[^$<"'\\})]+/y;
 const DOUBLE_QUOTE_ESCAPABLE = "$`\"\\\n";
 
 /**
+ * What a backslash and the character after it add to a default word. Outside
+ * quotes the backslash escapes the next character (`$(printf \))`); in double
+ * quotes it escapes only `$`, a backtick, `"`, `\` and a line break, and
+ * otherwise stays part of the word (`"abcd\efg"`). Before a line break it is a
+ * line continuation, and both go.
+ */
+function escapedContribution(next: string, quote: "\"" | undefined): string {
+  if (next === "\n") return "";
+  return quote === "\"" && !DOUBLE_QUOTE_ESCAPABLE.includes(next) ? `\\${next}` : next;
+}
+
+/**
  * Consume quoted or escaped text inside an open reference: nothing in it opens
  * or closes a reference, and a default word receives what the shell's quote
  * removal leaves of it. Returns the next index, or -1 when the character is
@@ -857,12 +884,8 @@ function quotedStep(text: string, index: number, frame: ReferenceFrame): number 
   // quote delimiters and escaping backslashes, so `${PW:-"x"}` contributes `x`.
   let contributed = character;
   if (character === "\\" && quote !== "'" && index + 1 < text.length) {
-    // A backslash escapes the next character outside quotes (`$(printf \))`).
-    // In double quotes it escapes only `$`, a backtick, `"`, `\` and a line
-    // break, and otherwise stays part of the word (`"abcd\efg"`).
     length = 2;
-    const next = text[index + 1]!;
-    contributed = quote === "\"" && !DOUBLE_QUOTE_ESCAPABLE.includes(next) ? `${character}${next}` : next;
+    contributed = escapedContribution(text[index + 1]!, quote);
   } else if (quote === undefined) {
     if (character !== "\"" && character !== "'") return -1;
     frame.quote = character;
@@ -921,6 +944,7 @@ function rootQuoteStep(character: string, root: ReferenceFrame): boolean {
   if (character !== "\"" && character !== "'") return false;
   if (root.quote === undefined) {
     root.quote = character;
+    root.pieceStart = root.literal.length;
     return true;
   }
   if (character !== root.quote) return false;
@@ -937,16 +961,17 @@ function expandWords(text: string, rootQuotesAreSyntax: boolean): string {
   const root: ReferenceFrame = { close: "}", keep: true, raw: "", literal: "" };
   const frames: ReferenceFrame[] = [root];
   for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax);
-  // In data the whole value is present, so a reference that never closes is
-  // not a reference and its source text is literal. A captured text value can
-  // end inside a reference the value grammar cannot follow (a quoted piece
-  // ends at the reference's own inner quote), so there an unclosed reference
-  // contributes nothing, as a complete one would.
+  // A reference that never closes is not a reference: its source text is
+  // literal. One exception, in text only: a quoted piece ends at its first
+  // closing quote, so a reference that opens the piece and holds its own quote
+  // (`"$(op read "item")"`) is cut there by the value grammar; that cut
+  // reference contributes nothing, as a value that starts with a reference
+  // always did.
   for (let depth = frames.length - 1; depth > 0; depth -= 1) {
     const frame = frames[depth]!;
     const parent = frames[depth - 1]!;
     parent.raw += frame.raw;
-    if (!rootQuotesAreSyntax) parent.literal += frame.raw;
+    if (!(rootQuotesAreSyntax && depth === 1 && frame.opensPiece === true)) parent.literal += frame.raw;
   }
   return root.literal;
 }

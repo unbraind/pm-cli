@@ -215,6 +215,10 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     expect(expandRuntimeReferences("${PW:-a\\}b}")).toBe("a}b");
     expect(expandRuntimeReferences("$(printf '\\')y")).toBe("y");
     expect(expandRuntimeReferences("$(printf \\")).toBe("$(printf \\");
+    // A backslash before a line break is a line continuation, outside quotes and in double quotes.
+    expect(expandRuntimeReferences("${PW:-abc\\\ndef}")).toBe("abcdef");
+    expect(expandRuntimeReferences("${PW:-\"abc\\\ndef\"}")).toBe("abcdef");
+    expect(scanMutationSecrets({ password: ["${PW:-\"", "abcdefg", "\\\n\"}"].join("") })).toEqual([]);
     const started = performance.now();
     expandRuntimeReferences("${A:-".repeat(50_000));
     expandRuntimeReferences("<a".repeat(100_000));
@@ -243,6 +247,30 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     expect(() => evaluateMutationGuard({ author: "agent", payload: { description: content }, settings: blockSettings }))
       .toThrow(/Mutation blocked by secret guard \(password_assignment\)/);
     expect(JSON.stringify(scanMutationSecrets({ description: content }))).not.toContain(literal);
+  });
+
+  it("keeps every repeated group of the value grammar on bounded, unsplittable runs", () => {
+    const rule = ruleNamed("password_assignment");
+    const assign = ["pass", "word="].join("");
+    const started = performance.now();
+    // Long reference bodies, values and quoted spans never exhaust the backtrack stack.
+    expect([...findSecretRuleMatches(rule, `${assign}\${PW:?${"x".repeat(16_000_000)}}`)]).toEqual([]);
+    expect([...findSecretRuleMatches(rule, `${assign}${"a".repeat(16_000_000)}`)]).toHaveLength(1);
+    expect([...findSecretRuleMatches(rule, `${assign}$(printf "${"x".repeat(16_000_000)}")`)]).toEqual([]);
+    // An unclosed reference of many runs fails without trying exponentially many splits.
+    expect([...findSecretRuleMatches(rule, `${assign}\${${"ab\\c".repeat(100_000)}`)]).toEqual([]);
+    expect([...findSecretRuleMatches(rule, `${assign}${"a$".repeat(1_000_000)}`)]).toHaveLength(1);
+    expect(performance.now() - started).toBeLessThan(5_000);
+  });
+
+  it("keeps an unclosed reference literal unless the value grammar cut it at its own quote", () => {
+    // A complete value with an unclosed reference after other text is literal data.
+    const cv = ["abc", "${defgh"].join("");
+    expect(textRules(JSON.stringify({ [["pass", "word"].join("")]: cv }))).toContain("password_assignment");
+    expect(scanMutationSecrets({ password: cv })).toContainEqual({ rule: "password_assignment", path: "$.password" });
+    // A reference that opens a quoted piece and is cut at its own inner quote contributes nothing.
+    expect(literalAfterReferences(["\"$(op read ", "\""].join(""))).toBe("");
+    expect(literalAfterReferences(["\"ab$(op read ", "\""].join(""))).toBe("ab$(op read \"");
   });
 
   it("scans element bodies far longer than a repeated regex group could hold", () => {
