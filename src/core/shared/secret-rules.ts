@@ -828,15 +828,19 @@ function wordComplete(match: RegExpMatchArray): boolean {
   return structure > 0 && hasQuotedKey(match, closed === end + 1) && NEXT_MEMBER.test(input.slice(after, after + 40));
 }
 
-/** Whether the value's key ends with a quote, as in JSON, YAML flow or a Python dict, looking back a bounded distance. */
+/**
+ * Whether the value sits in structured text: its key ends with a quote, as in
+ * JSON, YAML flow or a Python dict, or it is an array element; looking back a
+ * bounded distance.
+ */
 function hasQuotedKey(match: RegExpMatchArray, openerOutsideCapture: boolean): boolean {
   const input = match.input!;
   const valueStart = match.index! + match[0].length - match[1].length - (openerOutsideCapture ? 1 : 0);
   return QUOTED_KEY_BEFORE.test(input.slice(Math.max(0, valueStart - 64), valueStart));
 }
 
-/** A quoted key and its separator directly before a value. */
-const QUOTED_KEY_BEFORE = /["']\s*[:=]\s*$/u;
+/** A quoted key and its separator, or an array's `[` or `,`, directly before a value. */
+const QUOTED_KEY_BEFORE = /(?:["']\s*[:=]|[[,])\s*$/u;
 
 /**
  * The start of the next JSON member or element: a quote, or `{` / `[` that
@@ -887,15 +891,22 @@ function isCodeAfterReference(match: RegExpMatchArray): boolean {
   if (DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match)) || !/^[$<]/u.test(match[1])) return false;
   const end = match.index! + match[0].length;
   const valueStart = end - match[1].length;
-  if (match[1][0] === "<" && ASSIGNED_BEFORE.test(match.input!.slice(Math.max(0, valueStart - 18), valueStart))) return true;
+  const after = match.input!.slice(end, end + 18);
+  if (match[1][0] === "<") {
+    if (ASSIGNED_BEFORE.test(match.input!.slice(Math.max(0, valueStart - 18), valueStart))) return true;
+    // In an object property or argument, a type assertion is followed by expression code (`{ token: <T>name ?? x }`).
+    if (EXPRESSION_AFTER.test(after)) return true;
+  }
   const lead = LEADING_REFERENCES.exec(match[1])![0];
-  return CODE_OPERATOR.test(match[1][lead.length] ?? "") || CALL_AFTER.test(match.input!.slice(end, end + 17));
+  return CODE_OPERATOR.test(match[1][lead.length] ?? "") || CALL_AFTER.test(after);
 }
 
-/** The references that lead a value, read flat (a nested reference ends the run). */
-const LEADING_REFERENCES = /^(?:\$\{[^{}]*\}|\$\([^()]*\)|\$[A-Za-z_]\w*|<[^<>]*>)*/u;
-/** An operator or member access that continues an expression after a reference. */
-const CODE_OPERATOR = /[.+\-*/%=!@#^~]/u;
+/** The references that lead a value, each nesting at most one level (`$($(cmd))`, `${A:-${B}}`). */
+const LEADING_REFERENCES = /^(?:\$\{(?:[^{}]|\{[^{}]*\})*\}|\$\((?:[^()]|\([^()]*\))*\)|\$[A-Za-z_]\w*|<[^<>]*>)*/u;
+/** A binary operator or member access that continues an expression after a reference; `! @ # ^ ~` stay literal data. */
+const CODE_OPERATOR = /[.+\-*/%=]/u;
+/** Expression code after a value: an optional chain, a nullish or logical operator, a call or index, or a delimiter. */
+const EXPRESSION_AFTER = /^[ \t]{0,16}(?:\?\.|\?\?|\|\||&&|[([;,)}])/u;
 
 /**
  * Whether the literal a referenced value spells matches the rule's literal

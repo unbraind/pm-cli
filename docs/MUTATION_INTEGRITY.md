@@ -204,10 +204,13 @@ piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
 another quoted piece follows it, or it holds a reference and a letter, digit
 or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by an operator (`"…".trim()`,
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
-source a value is code when an operator follows its leading references
-(`${X}.trim`, `$TOKEN.length+1`, `$TOKEN+suffix`) or a call's parenthesis
-follows it (`<string>getToken()`, `<string>getToken ()`); a letter, digit or
-quoted piece after a reference is still a literal concatenation. After `=`, a value led
+source a value is code when a binary operator or member access follows its
+leading references (`${X}.trim`, `$TOKEN.length+1`, `$($(cmd)).length`,
+`$TOKEN+suffix`) or a call's parenthesis follows it (`<string>getToken()`,
+`<string>getToken ()`), and a value led by an angle span is code when
+expression code follows it (`{ token: <string>name ?? fallback }`); a letter,
+digit, quoted piece or other punctuation (`!`, `@`, `#`) after a reference is
+still a literal concatenation. After `=`, a value led
 by an angle span is a TypeScript type assertion or a shell redirection
 (`const token = <string>auth_token || fallback`), never a placeholder; after
 `:` (YAML, prose) `<x>…` is still judged. The constant

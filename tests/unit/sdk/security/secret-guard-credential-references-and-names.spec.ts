@@ -64,6 +64,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["quoted dotted literal after a reference", `"api_key": "\${EMPTY}.${credential}"`],
     // Greptile: a single `&` is data; only `&&`, `||` and `|` end a referenced value.
     ["YAML literal holding a single ampersand after a reference", `api_key: \${EMPTY}Zq8&vN3kLmP0wXy7Ab`],
+    // Greptile: punctuation that is not a binary operator stays literal data after a reference.
+    ["YAML literal led by an exclamation mark after a reference", `api_key: \${EMPTY}!${credential}`],
     // Greptile: a literal that starts before the reference is never member access on it.
     ["dotted literal that starts before a reference", `token=.Zq8\${EMPTY}vN3k-LmP0wXy7Ab`],
   ])("flags a %s", (_label, content) => {
@@ -132,6 +134,11 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["logical fallback after a type assertion", "const token = <string>auth_token || fallback;"],
     ["index after a type assertion", "const token = <string>auth_token[0];"],
     ["shell redirection after an assignment", "api_key=<input_file_name"],
+    // Greptile: a type assertion in an object property, and member access after nested references, are code.
+    ["type assertion in an object property", "({ token: <string>auth_token ?? fallback })"],
+    ["optional call in an object property", "({ token: <string>get_auth_token?.() })"],
+    ["member access after nested references", "const token = $($(getToken)).length+1;"],
+    ["compact JSON array of bare variables", '{"password":["$DB_PASSWORD","x"]}'],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -253,6 +260,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(textRules(`${passwordKey}="$DB_PASSWORD"][${literal}`)).toEqual(["password_assignment"]);
     expect(textRules(`${passwordKey}="$DB_PASSWORD"],{${literal}`)).toEqual(["password_assignment"]);
     expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},["x"]]`)).toEqual([]);
+    // Greptile: a quoted array element is structured too, in either position.
+    expect(textRules(`{"${passwordKey}":["$DB_PASSWORD","x"]}`)).toEqual([]);
+    expect(textRules(`{"${passwordKey}":["x","$DB_PASSWORD"]}`)).toEqual([]);
     // Greptile: an array that starts with a JSON number or literal is structure too.
     for (const element of ["[1]", "[-2]", "[true]", "[null]", "{}"]) {
       expect(textRules(`[{"${passwordKey}":"$DB_PASSWORD"},${element}]`), element).toEqual([]);
