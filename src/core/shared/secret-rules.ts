@@ -161,6 +161,12 @@ export interface SecretRule {
   rejectStatementReference?: RegExp;
   /** Quoted-key, nested-container and element spellings judged by the same value grammar. */
   structured?: SecretStructuredSpelling;
+  /**
+   * Minimum length of the literal left in the captured value once every
+   * run-time reference expands to nothing (see {@link literalAfterReferences}).
+   * A reference is a placeholder only when it is the whole value.
+   */
+  minimumLiteralLength?: number;
 }
 
 const PASSWORD_KEYS = "password|passphrase";
@@ -168,8 +174,52 @@ const PASSWORD_KEYS = "password|passphrase";
 // credential only when they end the expression, including bounded trailing
 // comments. A block comment cannot consume code beyond its first closing
 // delimiter; composed, continued and nonempty fallbacks remain detectable.
-const PASSWORD_VALUE =
-  /(?:(?!<|\$\{|\$\(|config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))[A-Za-z0-9!@#$%^&*._+\-=]{8,}|"(?!<|\$\{|\$\()[^"]{8,}"|'(?!<|\$\{|\$\()[^']{8,}')/;
+//
+// GH-1699 follow-up (pm-ycgb5g): the value is captured whole and the rule's
+// minimumLiteralLength judges what is left once run-time references
+// (`${...}`, `$(...)`, `<...>`) expand to nothing. A bare reference stays a
+// placeholder, while a literal before or after one (`${EMPTY}"<literal>"`,
+// `$VAR"<literal>"`, `<literal>${VAR}`) is still a credential.
+//
+// A value is a run of references, literal characters and up to
+// PASSWORD_QUOTED_PIECES whitespace-free quoted pieces, as a shell
+// concatenates `$VAR"<literal>"` or `"${EMPTY}"<literal>`. A quoted piece must
+// be whitespace-free because in code the quote after a value usually closes
+// the enclosing string literal, and the text up to the next quote is code,
+// not part of the value. A quoted value that holds whitespace (a passphrase)
+// is that quoted literal alone, as in JSON or YAML. Bounding the quoted pieces
+// keeps every scan local: a quoted key sits in a quoted piece, so one value
+// scan reaches at most a fixed number of later keys, and the structured pass
+// stays linear. A reference may nest one level (`${PW:-${FALLBACK}}`).
+const PASSWORD_QUOTED_PIECES = 4;
+// Every repeated group runs over character runs and is bounded, so no value
+// length can exhaust the regex backtrack stack (a group repeated once per
+// character overflows it near 16 million characters); a reference or value
+// longer than the bound is read in part.
+const PASSWORD_REPEAT_BOUND = 4096;
+// A reference skips quoted spans, so a quoted `)` or `}` inside it
+// (`$(printf ')')`, `${PW:?'}'}`) never ends it early, as in
+// expandRuntimeReferences. A literal `$` never starts a reference the grammar
+// cannot follow, so an over-nested reference is never half-read as literal.
+// Each run is maximal (a negative lookahead forbids its own class next), so no
+// run can be split across iterations and a failed reference never backtracks
+// into exponentially many splits.
+const maximalRun = (characterClass: string): string => `${characterClass}+(?!${characterClass})`;
+const PASSWORD_QUOTED_SPAN = String.raw`'[^'\r\n]*'|"[^"\\\r\n]*(?:\\.[^"\\\r\n]*){0,${PASSWORD_REPEAT_BOUND}}"`;
+const PASSWORD_REFERENCE = String.raw`\$\{(?:${maximalRun(String.raw`[^{}$'"\\\r\n]`)}|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\{)|\$\{[^{}\r\n]*\}){0,${PASSWORD_REPEAT_BOUND}}\}`
+  + String.raw`|\$\((?:${maximalRun(String.raw`[^()$'"\\\r\n]`)}|\\[^\r\n]|${PASSWORD_QUOTED_SPAN}|\$(?!\()|\$\([^()\r\n]*\)){0,${PASSWORD_REPEAT_BOUND}}\)`;
+const PASSWORD_PIECE = String.raw`${PASSWORD_REFERENCE}|<[^<>\r\n]*>|${maximalRun(String.raw`[A-Za-z0-9!@#%^&*._+\-=]`)}|\$(?![{(])`;
+// A quoted piece ends at its first closing quote, even inside a reference
+// (`"$(op read "item")"` captures `"$(op read "`); a reference that opens the
+// piece and is cut there contributes nothing (see literalAfterReferences).
+const PASSWORD_QUOTED = String.raw`"[^"]*"|'[^']*'`;
+const PASSWORD_QUOTED_PIECE = String.raw`(?:"[^"\s]*"|'[^'\s]*')(?:${PASSWORD_PIECE}){0,${PASSWORD_REPEAT_BOUND}}`;
+const PASSWORD_VALUE = new RegExp(
+  String.raw`(?!config\.auth\.password\s*(?:\|\|\s*(?:''|"")|\?\s*unescape\(encodeURIComponent\(config\.auth\.password\)\)\s*:\s*(?:''|""))(?=[ \t]*(?:\/\*(?:[^*]|\*(?!\/))*\*\/[ \t]*)*(?:;|$|\/\/[^\r\n\u2028\u2029]*(?:\r\n)?$)))`
+    + `((?:${PASSWORD_PIECE}){1,${PASSWORD_REPEAT_BOUND}}(?:${PASSWORD_QUOTED_PIECE}){0,${PASSWORD_QUOTED_PIECES}}`
+    + `|(?:${PASSWORD_QUOTED_PIECE}){1,${PASSWORD_QUOTED_PIECES}}|${PASSWORD_QUOTED})`,
+);
+const PASSWORD_MINIMUM_LITERAL_LENGTH = 8;
 const HIGH_ENTROPY_KEYS = "token|secret|password|passwd|api[_-]?key";
 // GH-1704: any key whose last word names a credential, including compound
 // keys (`DB_PASSWORD`, `aws_secret_access_key`, `GITHUB_TOKEN`). A compound
@@ -233,6 +283,7 @@ export const SECRET_RULES = [
     name: "password-assignment", mutationRule: "password_assignment",
     regex: new RegExp(String.raw`\b(?:${PASSWORD_KEYS})\s*[:=]\s*` + PASSWORD_VALUE.source, "gi"),
     structured: { keys: PASSWORD_KEYS, value: PASSWORD_VALUE.source, element: true },
+    minimumLiteralLength: PASSWORD_MINIMUM_LITERAL_LENGTH,
   },
   {
     name: "absolute-home-path", mutationRule: "absolute_home_path",
@@ -241,8 +292,13 @@ export const SECRET_RULES = [
   },
   {
     name: "user-at-private-host", mutationRule: "user_at_private_host",
+    // The local part starts only where a run of local-part characters starts,
+    // never at a `\b` inside it: every `-` or `.` in a long run would otherwise
+    // restart the greedy run and make the scan quadratic. A run that starts
+    // with a dot or hyphen (`-user@...`) is still matched from its first
+    // character.
     regex:
-      /\b[A-Za-z0-9._-]+@(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g,
+      /(?<![A-Za-z0-9._-])[A-Za-z0-9._-]+@(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g,
     excludeFiles: /^(?:tests\/|examples\/)/,
   },
   {
@@ -281,7 +337,14 @@ export function* findSecretRuleMatches(rule: SecretRule, content: string): Gener
 interface CompiledSpelling {
   key: RegExp;
   value: RegExp;
-  element?: RegExp;
+  element?: CompiledElement;
+}
+
+/** Element spelling patterns: the opening tag, and sticky closing-tag and markup-span patterns for the body scan. */
+interface CompiledElement {
+  open: RegExp;
+  close: RegExp;
+  span: RegExp;
 }
 
 const compiledSpellings = new Map<string, CompiledSpelling>();
@@ -294,9 +357,21 @@ function compileSpelling(spelling: SecretStructuredSpelling): CompiledSpelling {
   if (!compiled) {
     compiled = {
       key: new RegExp(String.raw`\b(?:${spelling.keys})(["']?)\s*[:=]\s*`, "gi"),
-      value: new RegExp(spelling.value, "iy"),
+      // `d` records capture offsets, so a decoded literal's original span can be judged.
+      value: new RegExp(spelling.value, "iyd"),
+      // An element body may hold placeholder or markup spans such as `<x>`
+      // (`<password><x>literal</password>`), never another element of the
+      // same keys, so the body still ends at the first closing credential tag.
+      // The body is scanned in code (elementBodyEnd), never by a repeated
+      // regex group, so its length cannot exhaust the regex backtrack stack.
       ...(spelling.element
-        ? { element: new RegExp(String.raw`<(?:${spelling.keys})(?:\s[^<>]*)?>([^<]*)<\/(?:${spelling.keys})\s*>`, "gi") }
+        ? {
+          element: {
+            open: new RegExp(String.raw`<(?:${spelling.keys})(?:\s[^<>]*)?>`, "gi"),
+            close: new RegExp(String.raw`<\/(?:${spelling.keys})\s*>`, "iy"),
+            span: new RegExp(String.raw`<(?!\/?(?:${spelling.keys})\b)[^<>]*>`, "iy"),
+          },
+        }
         : {}),
     };
     compiledSpellings.set(cacheKey, compiled);
@@ -377,11 +452,12 @@ const SIMPLE_ESCAPES: Readonly<Record<string, string>> = { n: "\n", r: "\r", t: 
 /**
  * Decode a quoted literal (JSON, YAML and Python escapes, including
  * eight-digit `\\U` code points and octal escapes) so the value grammar judges what it represents:
- * its length, whitespace, placeholder prefix and entropy. A decoded quote of
- * the literal's own kind becomes the other quote, and a line break produced
- * by an escape becomes a space. The caller rejects raw line breaks first.
+ * its length, whitespace, placeholder prefix and entropy. In the grammar's
+ * reading a decoded quote of the literal's own kind becomes the other quote
+ * and a line break produced by an escape becomes a space; the original keeps
+ * both. The caller rejects raw line breaks first.
  */
-function decodeQuotedLiteral(literal: string, terminated: boolean): string {
+function decodeQuotedLiteral(literal: string, terminated: boolean): DecodedLiteral {
   const quote = literal[0]!;
   const body = literal.slice(1, terminated ? -1 : undefined).replaceAll(ESCAPE_SEQUENCE, (sequence) => {
     const kind = sequence[1]!;
@@ -397,7 +473,30 @@ function decodeQuotedLiteral(literal: string, terminated: boolean): string {
     return SIMPLE_ESCAPES[kind] ?? kind;
   });
   const neutral = body.replaceAll(quote, quote === "\"" ? "'" : "\"").replaceAll(/[\r\n\u2028\u2029]/gu, " ");
-  return `${quote}${neutral}${terminated ? quote : ""}`;
+  const close = terminated ? quote : "";
+  return { reading: `${quote}${neutral}${close}`, ...literalBody(`${quote}${body}${close}`, terminated) };
+}
+
+/** A literal read as written: its delimiters are syntax and everything between them is data. */
+function literalBody(original: string, terminated: boolean): Omit<DecodedLiteral, "reading"> {
+  return { original, bodyStart: 1, bodyEnd: original.length - (terminated ? 1 : 0) };
+}
+
+/**
+ * A decoded quoted literal. The value grammar reads `reading`, whose own-kind
+ * quotes and line breaks are neutralized so they cannot end it early; every
+ * replacement is one character for one, so a capture's offsets also locate the
+ * decoded `original`, which the rule's predicates judge (pm-jcz7qz).
+ */
+interface DecodedLiteral {
+  /** Neutralized reading for the value grammar. */
+  reading: string;
+  /** Decoded literal with its own quote characters and line breaks. */
+  original: string;
+  /** Offset of the first data character, after the opening delimiter. */
+  bodyStart: number;
+  /** Offset after the last data character, before the closing delimiter when there is one. */
+  bodyEnd: number;
 }
 /** Longest prefix scanned back to the opening quote of a prefixed quoted key. */
 const MAX_KEY_PREFIX = 64;
@@ -430,14 +529,28 @@ interface ValueJudge {
   accepts(compact: boolean): (at: number) => boolean;
 }
 
-/** Bind a rule's value grammar to one content string. */
-function createValueJudge(rule: SecretRule, value: RegExp, content: string): ValueJudge {
+/**
+ * Bind a rule's value grammar to one content string. With `alwaysDecode`, a
+ * quoted literal is judged as decoded data even when it holds no escape, as
+ * for a serialized payload string, which is always complete.
+ */
+function createValueJudge(rule: SecretRule, value: RegExp, content: string, alwaysDecode = false): ValueJudge {
   // A JSON, Python or YAML-flow string literal never spans a raw line break, so
   // a structured value that does is a host-language artifact, not a credential.
-  const valueMatch = (text: string, at: number): RegExpExecArray | null => {
+  // With an `original`, the grammar reads `text` but the predicates judge the
+  // same span of the decoded original (see DecodedLiteral).
+  const valueMatch = (text: string, at: number, decoded?: DecodedLiteral): RegExpExecArray | null => {
     value.lastIndex = at;
     const match = value.exec(text);
-    return match !== null && !LINE_BREAK.test(match[0]) && acceptsSecretMatch(rule, match) ? match : null;
+    if (match === null || LINE_BREAK.test(match[0])) return null;
+    const span = match.indices?.[1];
+    if (decoded !== undefined && span !== undefined) {
+      // The literal's own delimiters are syntax; every decoded character
+      // between them, quotes included, is data.
+      match[1] = decoded.original.slice(Math.max(span[0], decoded.bodyStart), Math.min(span[1], decoded.bodyEnd));
+      DECODED_DATA_MATCHES.add(match);
+    }
+    return acceptsSecretMatch(rule, match) ? match : null;
   };
   // The value grammar is quote-blind, so a literal with escapes is judged in
   // its decoded form. Every common format decodes escapes in double quotes; in
@@ -448,11 +561,12 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     if (content[at] !== "\"" && content[at] !== "'") return undefined;
     const { end, terminated } = scanQuoted(content, at);
     const literal = content.slice(at, end);
-    if (!literal.includes("\\")) return undefined;
+    if (!alwaysDecode && !literal.includes("\\")) return undefined;
     // A raw line break is a host-language artifact before any escape is decoded.
     if (LINE_BREAK.test(literal)) return [];
-    const readings = content[at] === "'" ? [decodeQuotedLiteral(literal, terminated), literal] : [decodeQuotedLiteral(literal, terminated)];
-    return readings.map((reading) => valueMatch(reading, 0)).filter((match): match is RegExpExecArray => match !== null);
+    const decoded = decodeQuotedLiteral(literal, terminated);
+    const readings = content[at] === "'" ? [decoded, { reading: literal, ...literalBody(literal, terminated) }] : [decoded];
+    return readings.map((reading) => valueMatch(reading.reading, 0, reading)).filter((match): match is RegExpExecArray => match !== null);
   };
   const valuesAt = (at: number): RegExpExecArray[] => {
     const escaped = escapedMatches(at);
@@ -465,22 +579,105 @@ function createValueJudge(rule: SecretRule, value: RegExp, content: string): Val
     escaped: (at) => (escapedMatches(at)?.length ?? 0) > 0,
     // A prefixed key (`reset-password`, `"New password"`) labels prose as often
     // as it holds a credential, so only a whitespace-free reading counts for it.
-    accepts: (compact) => (at) => valuesAt(at).some((match) => !(compact && /\s/u.test(match[0]))),
+    // A rule judged by its literal checks the literal, so whitespace inside a
+    // reference such as `$(op read pw)` never hides a compact credential.
+    accepts: (compact) => (at) => valuesAt(at).some((match) => !(compact && /\s/u.test(compactReading(rule, match)))),
   };
 }
 
+/** The text a prefixed key's whitespace check reads: the literal for literal-judged rules, else the whole match. */
+function compactReading(rule: SecretRule, match: RegExpExecArray): string {
+  return rule.minimumLiteralLength === undefined ? match[0] : judgedLiteral(match);
+}
+
+/** Matches whose capture is a decoded literal's data, judged without shell quote removal. */
+const DECODED_DATA_MATCHES = new WeakSet<RegExpMatchArray>();
+
 /**
- * Element content such as `<password>value</password>`, judged by length and
- * placeholder shape, or by the rule's own value grammar and entropy predicate
- * when the spelling declares `elementValue`.
+ * The literal a matched value spells. Text quotes delimit quoted pieces, but a
+ * decoded literal's characters are all data (`"ab\"cdefg"` spells eight), so
+ * only its references expand.
  */
-function* elementMatches(element: RegExp, content: string, judge?: (value: string) => boolean): Generator<SecretRuleMatch> {
-  element.lastIndex = 0;
-  for (const match of content.matchAll(element)) {
-    const value = match[1].trim();
-    const accepted = judge ? judge(value) : value.length >= 8 && !value.startsWith("${") && !value.startsWith("$(");
-    if (accepted) yield { index: match.index! };
+function judgedLiteral(match: RegExpMatchArray): string {
+  return DECODED_DATA_MATCHES.has(match) ? expandRuntimeReferences(match[1]) : literalAfterReferences(match[1]);
+}
+
+/**
+ * How a structured key spelling `"<name>":` reads for a key-named rule:
+ * `exact` when the key word is the whole name, `prefixed` when other key text
+ * precedes it, and undefined when the name does not end with one of the rule's
+ * keys. The same key pattern and shape check judge quoted keys in text, so a
+ * payload property and its JSON spelling read alike.
+ */
+export function structuredKeyShape(rule: SecretRule, name: string): "exact" | "prefixed" | undefined {
+  if (!rule.structured) return undefined;
+  const content = `${JSON.stringify(name)}:`;
+  // The shared key pattern is used synchronously here, so resetting its cursor is safe.
+  const key = compileSpelling(rule.structured).key;
+  key.lastIndex = 0;
+  for (let match = key.exec(content); match; match = key.exec(content)) {
+    if (match.index + match[0].length !== content.length) continue;
+    const shape = keyShape(content, match.index, match[1]);
+    if (shape !== "malformed") return shape;
   }
+  return undefined;
+}
+
+/**
+ * Judge one string as a quoted structured value of a key-named rule, exactly
+ * as the structured pass judges a quoted value in text: `compact` for a
+ * prefixed key's value or an object member's value, lenient for an exact key's
+ * value or an array element.
+ */
+export function acceptsStructuredValue(rule: SecretRule, value: string, compact: boolean): boolean {
+  if (!rule.structured) return false;
+  // JSON.stringify leaves U+2028 and U+2029 raw, and a raw line break marks a
+  // host-language artifact in text. In a payload string they are data, so they
+  // are escaped like `\n` and judged in the decoded reading.
+  const content = JSON.stringify(value).replaceAll("\u2028", "\\u2028").replaceAll("\u2029", "\\u2029");
+  // A serialized payload string is complete data, so it is always judged as
+  // decoded data, never by the source-text rules for values the grammar cuts.
+  return createValueJudge(rule, compileSpelling(rule.structured).value, content, true).accepts(compact)(0);
+}
+
+/**
+ * Element content such as `<password>value</password>`, judged by the length
+ * of the literal it spells, or by the rule's own value grammar and entropy
+ * predicate when the spelling declares `elementValue`.
+ */
+function* elementMatches(element: CompiledElement, content: string, judge: (value: string) => boolean): Generator<SecretRuleMatch> {
+  // The opening pattern's cursor survives each yield, so every scan owns its own copy.
+  const open = new RegExp(element.open);
+  for (let match = open.exec(content); match; match = open.exec(content)) {
+    const bodyStart = match.index + match[0].length;
+    const body = elementBodyEnd(element, content, bodyStart);
+    if (body === undefined) {
+      // As a whole-element pattern would, retry from the next position.
+      open.lastIndex = match.index + 1;
+      continue;
+    }
+    if (judge(content.slice(bodyStart, body.start).trim())) yield { index: match.index };
+    open.lastIndex = body.end;
+  }
+}
+
+/**
+ * Where an element body that starts at `start` ends: at the first closing tag
+ * of the spelling's keys, skipping markup spans of other names. Undefined when
+ * a tag of the same keys opens first, a `<` never closes, or no closing tag
+ * follows. One forward scan; the sticky patterns run synchronously.
+ */
+function elementBodyEnd(element: CompiledElement, content: string, start: number): { start: number; end: number } | undefined {
+  for (let index = content.indexOf("<", start); index !== -1; ) {
+    element.close.lastIndex = index;
+    const close = element.close.exec(content);
+    if (close !== null) return { start: index, end: index + close[0].length };
+    element.span.lastIndex = index;
+    const span = element.span.exec(content);
+    if (span === null) return undefined;
+    index = content.indexOf("<", index + span[0].length);
+  }
+  return undefined;
 }
 
 /** An exact key's walk covers everything inside it; a prefixed key's compact walk covers only prefixed keys. */
@@ -540,13 +737,26 @@ function* findStructuredSpellingMatches(
   if (compiled.element) yield* elementMatches(compiled.element, content, elementValueJudge(rule, spelling, compiled));
 }
 
-/** The value-grammar judgment for element content when the spelling declares `elementValue`. */
+/** Element content shorter than this, once references expand, is never a credential. */
+const DEFAULT_ELEMENT_LITERAL_LENGTH = 8;
+
+/**
+ * The value-grammar judgment for element content when the spelling declares
+ * `elementValue`; otherwise the literal-length judgment, so
+ * `<password>${X}literal</password>` is judged like `password=${X}literal`
+ * and a bare `<password>${X}</password>` stays a placeholder.
+ */
 function elementValueJudge(
   rule: SecretRule,
   spelling: SecretStructuredSpelling,
   compiled: CompiledSpelling,
-): ((value: string) => boolean) | undefined {
-  if (!spelling.elementValue) return undefined;
+): (value: string) => boolean {
+  if (!spelling.elementValue) {
+    // Element text has no shell quoting: an apostrophe or quote in the body is
+    // a literal character, so only references expand.
+    const minimum = rule.minimumLiteralLength ?? DEFAULT_ELEMENT_LITERAL_LENGTH;
+    return (value) => expandRuntimeReferences(value).length >= minimum;
+  }
   // The whole trimmed body must be one value, so element prose never counts. It
   // is judged as a double-quoted literal: an element body has no code to confuse
   // it with, and its own `"` characters become `'` so they cannot end it early.
@@ -570,8 +780,236 @@ function isStatementReference(shape: RegExp, match: RegExpMatchArray): boolean {
   return /^[ \t]*;/u.test(match.input!.slice(end, end + 64)) && opener !== "\"" && opener !== "'" && shape.test(match[1]);
 }
 
-/** Accept a pattern match, applying the declared entropy predicate when present. */
+// `${NAME:-word}`, `${NAME-word}`, `${NAME:=word}`, `${NAME=word}` and
+// `${NAME:+word}` can expand to `word`, so their word stays literal text
+// (see defaultedPrefixLength).
+
+/** One open `${...}` or `$(...)` reference while references are expanded. */
+interface ReferenceFrame {
+  /** Closing delimiter. */
+  close: "}" | ")";
+  /** Whether the frame's text is literal (a default word) or expands to nothing. */
+  keep: boolean;
+  /** Source text, used when the frame never closes. */
+  raw: string;
+  /** Expanded literal text. */
+  literal: string;
+  /** Open quote inside the reference, so a quoted delimiter (`$(printf ')')`) never closes it. */
+  quote?: "\"" | "'";
+  /** Root only: literal length when the current top-level quoted piece opened. */
+  pieceStart?: number;
+  /** The reference opened a top-level quoted piece, before any of its text. */
+  opensPiece?: boolean;
+}
+
+/** The `>` that closes the `<` at `start`, or -1 when another `<` or the end comes first. */
+function indexOfAngleClose(text: string, start: number): number {
+  for (let index = start + 1; index < text.length; index += 1) {
+    if (text[index] === ">") return index;
+    if (text[index] === "<") return -1;
+  }
+  return -1;
+}
+
+/** Append plain source text to the innermost open frame. */
+function appendText(frame: ReferenceFrame, text: string): void {
+  frame.raw += text;
+  frame.literal += text;
+}
+
+/** Open a `${...}` or `$(...)` frame at `index`; returns the next index, or -1 when no reference starts there. */
+function openReference(text: string, index: number, frames: ReferenceFrame[]): number {
+  const next = text[index + 1];
+  if (text[index] !== "$" || (next !== "{" && next !== "(")) return -1;
+  const prefix = next === "{" ? text.slice(index + 2, index + 2 + defaultedPrefixLength(text, index + 2)) : "";
+  const root = frames[0]!;
+  const opensPiece = frames.length === 1 && root.quote !== undefined && root.literal.length === root.pieceStart;
+  frames.push({ close: next === "{" ? "}" : ")", keep: prefix !== "", raw: `$${next}${prefix}`, literal: "", opensPiece });
+  return index + 2 + prefix.length;
+}
+
+const NAME_START = /[A-Za-z_]/u;
+const NAME_PART = /\w/u;
+
+/**
+ * Length of a `NAME:-`, `NAME-`, `NAME:=`, `NAME=` or `NAME:+` prefix at
+ * `start`, or 0. A single forward scan, so no input can make it backtrack.
+ */
+function defaultedPrefixLength(text: string, start: number): number {
+  if (!NAME_START.test(text[start] ?? "")) return 0;
+  let index = start + 1;
+  while (index < text.length && NAME_PART.test(text[index]!)) index += 1;
+  if (text[index] === ":") index += 1;
+  const operator = text[index];
+  return operator === "-" || operator === "=" || operator === "+" ? index + 1 - start : 0;
+}
+
+/** Fold the innermost frame, closed by `character`, into its parent. */
+function closeReference(frames: ReferenceFrame[], character: string): void {
+  const frame = frames.pop()!;
+  const parent = frames.at(-1)!;
+  parent.raw += `${frame.raw}${character}`;
+  if (frame.keep) parent.literal += frame.literal;
+}
+
+/**
+ * Characters that never open, close, quote or escape anything in the reference
+ * walker. Without the `u` flag a sticky match starts exactly at `lastIndex`,
+ * even inside a surrogate pair, so the walker's positions never drift.
+ */
+const PLAIN_RUN = /[^$<"'\\})]+/y;
+
+/** Characters a backslash escapes inside double quotes, as in the shell. */
+const DOUBLE_QUOTE_ESCAPABLE = "$`\"\\\n";
+
+/**
+ * What a backslash and the character after it add to a default word. Outside
+ * quotes the backslash escapes the next character (`$(printf \))`); in double
+ * quotes it escapes only `$`, a backtick, `"`, `\` and a line break, and
+ * otherwise stays part of the word (`"abcd\efg"`). Before a line break it is a
+ * line continuation, and both go.
+ */
+function escapedContribution(next: string, quote: "\"" | undefined): string {
+  if (next === "\n") return "";
+  return quote === "\"" && !DOUBLE_QUOTE_ESCAPABLE.includes(next) ? `\\${next}` : next;
+}
+
+/**
+ * Consume quoted or escaped text inside an open reference: nothing in it opens
+ * or closes a reference, and a default word receives what the shell's quote
+ * removal leaves of it. Returns the next index, or -1 when the character is
+ * ordinary reference text.
+ */
+function quotedStep(text: string, index: number, frame: ReferenceFrame): number {
+  const character = text[index]!;
+  const quote = frame.quote;
+  // Double quotes still expand a nested reference (`${PW:-"${FALLBACK}"}`); single quotes do not.
+  if (quote === "\"" && character === "$" && (text[index + 1] === "{" || text[index + 1] === "(")) return -1;
+  let length = 1;
+  // What the character adds to a default word: the shell removes a word's
+  // quote delimiters and escaping backslashes, so `${PW:-"x"}` contributes `x`.
+  let contributed = character;
+  if (character === "\\" && quote !== "'" && index + 1 < text.length) {
+    length = 2;
+    contributed = escapedContribution(text[index + 1]!, quote);
+  } else if (quote === undefined) {
+    if (character !== "\"" && character !== "'") return -1;
+    frame.quote = character;
+    contributed = "";
+  } else if (character === quote) {
+    frame.quote = undefined;
+    contributed = "";
+  }
+  frame.raw += text.slice(index, index + length);
+  if (frame.keep) frame.literal += contributed;
+  return index + length;
+}
+
+/** Consume the reference, delimiter, placeholder span or character at `index`; returns the next index. */
+function expandStep(text: string, index: number, frames: ReferenceFrame[], rootQuotesAreSyntax: boolean): number {
+  const innermost = frames.at(-1)!;
+  // A run of characters with no meaning to the walker in any state is text,
+  // appended at once, so a long value costs one step per run.
+  PLAIN_RUN.lastIndex = index;
+  const run = PLAIN_RUN.exec(text)?.[0];
+  if (run !== undefined) {
+    appendText(innermost, run);
+    return index + run.length;
+  }
+  // Quoted text inside a reference never opens or closes a reference.
+  if (frames.length > 1) {
+    const quoted = quotedStep(text, index, innermost);
+    if (quoted !== -1) return quoted;
+  } else if (rootQuotesAreSyntax && rootQuoteStep(text[index]!, innermost)) {
+    return index + 1;
+  }
+  const opened = openReference(text, index, frames);
+  if (opened !== -1) return opened;
+  const top = frames.at(-1)!;
+  const character = text[index]!;
+  if (frames.length > 1 && character === top.close) {
+    closeReference(frames, character);
+    return index + 1;
+  }
+  const angleClose = character === "<" ? indexOfAngleClose(text, index) : -1;
+  if (angleClose !== -1) {
+    top.raw += text.slice(index, angleClose + 1);
+    return angleClose + 1;
+  }
+  appendText(top, character);
+  return index + 1;
+}
+
+/**
+ * Handle a quote at the top level of a text value, where quotes delimit quoted
+ * pieces: an opening or closing delimiter contributes nothing, and a quote of
+ * the other kind inside a piece is literal. Returns whether the character was
+ * a delimiter.
+ */
+function rootQuoteStep(character: string, root: ReferenceFrame): boolean {
+  if (character !== "\"" && character !== "'") return false;
+  if (root.quote === undefined) {
+    root.quote = character;
+    root.pieceStart = root.literal.length;
+    return true;
+  }
+  if (character !== root.quote) return false;
+  root.quote = undefined;
+  return true;
+}
+
+/**
+ * One linear pass over a value with nesting: references contribute what they
+ * can expand to, and every quote delimiter is identified exactly once, so no
+ * later pass can mistake data for a delimiter.
+ */
+function expandWords(text: string, rootQuotesAreSyntax: boolean): string {
+  const root: ReferenceFrame = { close: "}", keep: true, raw: "", literal: "" };
+  const frames: ReferenceFrame[] = [root];
+  for (let index = 0; index < text.length; ) index = expandStep(text, index, frames, rootQuotesAreSyntax);
+  // A reference that never closes is not a reference: its source text is
+  // literal. One exception, in text only: a quoted piece ends at its first
+  // closing quote, so a reference that opens the piece and holds its own quote
+  // (`"$(op read "item")"`) is cut there by the value grammar; that cut
+  // reference contributes nothing, as a value that starts with a reference
+  // always did.
+  for (let depth = frames.length - 1; depth > 0; depth -= 1) {
+    const frame = frames[depth]!;
+    const parent = frames[depth - 1]!;
+    parent.raw += frame.raw;
+    if (!(rootQuotesAreSyntax && depth === 1 && frame.opensPiece === true)) parent.literal += frame.raw;
+  }
+  return root.literal;
+}
+
+/**
+ * Expand run-time references in data, such as a decoded literal or an element
+ * body, whose own quote characters are literal: `${NAME}`, `${NAME:?message}`,
+ * `$(command)` and `<placeholder>` contribute nothing, and the default word of
+ * `${NAME:-word}` contributes its own expansion with the shell's quote removal
+ * (`${PW:-"x"}` contributes `x`; `${PW:-${FALLBACK}}` contributes nothing). A
+ * reference that never closes, and a `<` without a `>` before the next `<`,
+ * stay literal text.
+ */
+export function expandRuntimeReferences(text: string): string {
+  return expandWords(text, false);
+}
+
+/**
+ * The literal a captured text value spells: references expand as in
+ * {@link expandRuntimeReferences}, and the quote characters that delimit each
+ * top-level quoted piece are removed, as a shell or configuration reader
+ * removes them; a quote of the other kind inside a piece is part of the
+ * literal. Both happen in the same pass, so a reference may hold quotes
+ * (`${PW:-""}`) and a default word's data quotes stay data.
+ */
+export function literalAfterReferences(value: string): string {
+  return expandWords(value, true);
+}
+
+/** Accept a pattern match, applying the declared literal-length and entropy predicates when present. */
 export function acceptsSecretMatch(rule: SecretRule, match: RegExpMatchArray): boolean {
+  if (rule.minimumLiteralLength !== undefined && judgedLiteral(match).length < rule.minimumLiteralLength) return false;
   if (rule.rejectValue?.test(match[1]) === true) return false;
   if (rule.rejectStatementReference && isStatementReference(rule.rejectStatementReference, match)) return false;
   if (rule.minimumEntropy === undefined) return true;

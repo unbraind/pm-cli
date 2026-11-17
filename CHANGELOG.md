@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- A mutation payload nested about 2,000 levels deep overflows the secret guard's recursive leaf walk, so block mode fails open and lets a nested credential through ([pm-wq9njf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wq9njf.toon))
+- scanMutationSecrets drops object keys, so an SDK payload such as { api_key: "<credential\>" } passes every key-based secret rule ([pm-3fbj1f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3fbj1f.toon))
+- password_assignment treats any value starting with a ${...} or $(...) reference as a placeholder, so a literal concatenated with a reference passes the guard ([pm-ycgb5g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ycgb5g.toon))
+- The user-at-private-host secret rule rescans every hyphen or dot run, so 32 KB of hyphenated text costs about a second in mutation preflight ([pm-3627y1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3627y1.toon))
+
 ## 2026.11.17 - 2026-11-17
 
 ### Fixed

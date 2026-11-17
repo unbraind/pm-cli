@@ -1,0 +1,24 @@
+id: pm-x07qz2
+title: "Payload property names are never scanned for credentials, and a credential-shaped property name is echoed verbatim in SDK finding paths"
+description: "Found 2026-11-17 while fixing pm-3fbj1f. scanMutationSecrets in src/sdk/mutation-guard.ts scans string values and, since pm-3fbj1f, judges a credential-named member as its JSON spelling, but it never scans a property name as text. A payload such as { metadata: { \"<GitHub token>\": \"x\" } } therefore produces no finding (measured with scanMutationSecrets on the 2026-11-16 build). Separately, finding paths are built by joining property names, so when another rule flags the value under such a name, the path itself repeats the credential: the SDK result (MutationGuardResult.findings) and any consumer that prints paths would disclose it, although the guard's contract is that matched text is never returned. CLI warnings print only rule ids, so the CLI is unaffected; SDK and MCP callers that log findings are not. Fix direction: run the token-format rules over each property name as its own leaf, and replace a flagged name's path segment with a positional placeholder (for example [key 0]) in every finding under it, so paths stay stable and never echo a credential. Duplicate check: searched secret guard property name path leak object key scanned; pm-3fbj1f (member values under credential keys), pm-pim7 (write-time advisory, closed) and pm-m0fh (tracked-file redaction, closed) are related, and none scans property names or redacts paths."
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:sdk",mcp,redaction,secret-guard,security
+created_at: "2026-11-16T23:30:31.511Z"
+updated_at: "2026-11-16T23:30:55.380Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Every property name in a mutation payload is scanned by the token-format rules, and a credential-shaped name produces a finding; A finding under a flagged property name reports a positional placeholder segment instead of the name, so no finding path repeats credential text; Paths for ordinary property names are unchanged, and the pm-3fbj1f member judgment keeps its paths"
+parent: pm-qwoy
+risk: medium
+confidence: high
+severity: medium
+expected_result: No credential reaches the tracker through a property name and no finding path discloses one
+actual_result: Property names are never scanned and are copied into finding paths verbatim
+component: secret-guard
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3fbj1f,discovered_from,"2026-11-16T23:30:31.511Z","harness:claude-code","cli:create:dep",detected
+  pm-pim7,related,"2026-11-16T23:30:31.511Z","harness:claude-code","cli:create:dep",detected
+  pm-m0fh,related,"2026-11-16T23:30:54.676Z","harness:claude-code","cli:update:dep",detected
+body: ""
