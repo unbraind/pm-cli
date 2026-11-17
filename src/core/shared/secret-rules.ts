@@ -827,8 +827,12 @@ function closeReference(frames: ReferenceFrame[], character: string): void {
   if (frame.keep) parent.literal += frame.literal;
 }
 
-/** Characters that never open, close, quote or escape anything in the reference walker. */
-const PLAIN_RUN = /[^$<"'\\})]+/uy;
+/**
+ * Characters that never open, close, quote or escape anything in the reference
+ * walker. Without the `u` flag a sticky match starts exactly at `lastIndex`,
+ * even inside a surrogate pair, so the walker's positions never drift.
+ */
+const PLAIN_RUN = /[^$<"'\\})]+/y;
 
 /** Characters a backslash escapes inside double quotes, as in the shell. */
 const DOUBLE_QUOTE_ESCAPABLE = "$`\"\\\n";

@@ -162,6 +162,8 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     ["default word that is a double-quoted reference", ["pass", "word=${PW:-\"${FALLBACK}\"}"].join("")],
     ["quoted key, command substitution holding a decoded quote", ["{\"pass", "word\": \"$(printf \\\"x')", "abcdefgh", "\\\")\"}"].join("")],
     ["command substitution holding an escaped closing parenthesis", ["pass", "word=$(printf \\)", "abcdefgh)"].join("")],
+    ["command substitution escaping an astral character", ["pass", "word=$(printf \"\\", "\u{1F600}", "\")"].join("")],
+    ["quoted key, command substitution escaping an astral character", ["{\"pass", "word\": \"$(printf \\\"\\\\", "\u{1F600}", "\\\")\"}"].join("")],
     // A prefixed unquoted key judges its escaped value compactly, so decoded prose stays clean.
     ["prefixed unquoted key with an escaped value holding whitespace", ["reset-pass", "word: \"ab\\\"cd efghij\""].join("")],
   ])("allows a %s in both consumers", async (_label, content) => {
@@ -199,6 +201,9 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
     expect(expandRuntimeReferences("${PW:-'}'}x")).toBe("}x");
     expect(expandRuntimeReferences('${PW:-"${FALLBACK}"}')).toBe("");
     expect(expandRuntimeReferences("${PW:-'${X}'}")).toBe("${X}");
+    // An escape that consumes half of a surrogate pair never shifts the walker's position.
+    expect(expandRuntimeReferences(["$(printf \"\\", "\u{1F600}", "\")"].join(""))).toBe("");
+    expect(expandRuntimeReferences(["${PW:-\"\\", "\u{1F600}", "x\"}"].join(""))).toBe("\\\u{1F600}x");
     // Double quotes inside a reference still open a nested command substitution; a plain `$` there is text.
     expect(expandRuntimeReferences('$(a "$(b)" c)y')).toBe("y");
     expect(expandRuntimeReferences('$(echo "$x")y')).toBe("y");
