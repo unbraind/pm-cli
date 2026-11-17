@@ -468,6 +468,9 @@ function isParameterName(content: string, index: number): boolean {
   return content[name - 1] === "{" && content[name - 2] === "$";
 }
 
+/** Inner matches in shell context: inside a command substitution and outside its quoted text. */
+const INNER_SHELL_MATCHES = new WeakSet<RegExpMatchArray>();
+
 /** For a match the rescan found inside a rejected reference value, where that reference's own closer stands. */
 const INNER_CLOSE_AT = new WeakMap<RegExpMatchArray, number>();
 
@@ -475,6 +478,10 @@ const INNER_CLOSE_AT = new WeakMap<RegExpMatchArray, number>();
 interface ReferenceSpan {
   open: number;
   close: number;
+  /** A command substitution `$(...)`, where shell syntax applies; a braced reference's word is plain text. */
+  command: boolean;
+  /** Quoted ranges `[start, end]` directly inside this reference (not inside a nested one), in order. */
+  quoted: Array<[number, number]>;
 }
 
 /** Characters searched past a captured value for the closer of a reference the value grammar cut short. */
@@ -510,7 +517,7 @@ function walkReferences(content: string, start: number, end: number, open: OpenR
     const frame = open.at(-1);
     if (content[index] === "$" && (content[index + 1] === "{" || content[index + 1] === "(") && frame?.quoted !== "'") {
       // A span opened by the continuation is never recorded; only its pairing matters.
-      const span = { open: index, close: end };
+      const span: ReferenceSpan = { open: index, close: end, command: content[index + 1] === "(", quoted: [] };
       spans?.push(span);
       open.push({ span, closer: content[index + 1] === "{" ? "}" : ")" });
       index += 1;
@@ -525,6 +532,8 @@ interface OpenReference {
   span: ReferenceSpan;
   closer: string;
   quoted?: "\"" | "'";
+  /** Where the current quoted range started. */
+  quoteStart?: number;
 }
 
 /**
@@ -538,9 +547,13 @@ function referenceStep(text: string, index: number, open: OpenReference[]): numb
   const character = text[index];
   if (character === "\\" && frame.quoted !== "'") return index + 1;
   if (frame.quoted !== undefined) {
-    if (character === frame.quoted) frame.quoted = undefined;
+    if (character === frame.quoted) {
+      frame.span.quoted.push([frame.quoteStart!, index]);
+      frame.quoted = undefined;
+    }
   } else if (character === "'" || character === "\"") {
     frame.quoted = character;
+    frame.quoteStart = index;
   } else if (character === frame.closer) {
     open.pop()!.span.close = index;
   }
@@ -550,19 +563,33 @@ function referenceStep(text: string, index: number, open: OpenReference[]): numb
 /**
  * A lookup of the innermost reference enclosing each position, for positions
  * asked in increasing order: one sweep over the spans, so the rescan stays
- * linear. Returns where that reference's closer stands, or undefined.
+ * linear. Returns that reference, or undefined.
  */
-function enclosingCloser(spans: readonly ReferenceSpan[]): (position: number) => number | undefined {
-  const active: number[] = [];
+function enclosingCloser(spans: readonly ReferenceSpan[]): (position: number) => ReferenceSpan | undefined {
+  const active: ReferenceSpan[] = [];
   let next = 0;
   return (position) => {
     for (; next < spans.length && spans[next]!.open < position; next += 1) {
-      while (active.length > 0 && active.at(-1)! < spans[next]!.open) active.pop();
-      active.push(spans[next]!.close);
+      while (active.length > 0 && active.at(-1)!.close < spans[next]!.open) active.pop();
+      active.push(spans[next]!);
     }
-    while (active.length > 0 && active.at(-1)! < position) active.pop();
+    while (active.length > 0 && active.at(-1)!.close < position) active.pop();
     return active.at(-1);
   };
+}
+
+/** Whether `position` lies in one of a reference's own quoted ranges (sorted, disjoint); a binary search. */
+function insideQuotedRange(span: ReferenceSpan, position: number): boolean {
+  let low = 0;
+  let high = span.quoted.length - 1;
+  while (low <= high) {
+    const middle = (low + high) >> 1;
+    const [start, end] = span.quoted[middle]!;
+    if (position < start) high = middle - 1;
+    else if (position > end) low = middle + 1;
+    else return true;
+  }
+  return false;
 }
 
 /** A reference or placeholder opener inside a captured value. */
@@ -625,7 +652,7 @@ function* keysInsideRejectedValue(
   inner.lastIndex = end - match[1].length;
   // Matches arrive in increasing order, so one sweep finds each one's innermost
   // enclosing reference; the spans are walked only once a key is found inside.
-  let closerAt: ((position: number) => number | undefined) | undefined;
+  let closerAt: ((position: number) => ReferenceSpan | undefined) | undefined;
   for (let found = inner.exec(content); found !== null && found.index < end; found = inner.exec(content)) {
     // A key word that names a braced reference's parameter (`${PASSWORD:OFFSET:8}`) is not an
     // assignment, but its word may hold one (`${PASSWORD:-$(echo password=…)}`): scan on from the key.
@@ -634,8 +661,12 @@ function* keysInsideRejectedValue(
       continue;
     }
     closerAt ??= enclosingCloser(referenceSpans(content, end - match[1].length, match[1]));
-    const close = closerAt(found.index);
-    if (close !== undefined) INNER_CLOSE_AT.set(found, close);
+    const span = closerAt(found.index);
+    if (span !== undefined) {
+      INNER_CLOSE_AT.set(found, span.close);
+      // Shell syntax applies only in a command substitution, outside its quoted text.
+      if (span.command && !insideQuotedRange(span, found.index)) INNER_SHELL_MATCHES.add(found);
+    }
     if (acceptsSecretMatch(rule, found)) yield { index: found.index };
     else if (deep && VALUE_REFERENCE.test(found[1])) inner.lastIndex = found.index + found[0].length - found[1].length;
   }
@@ -908,7 +939,7 @@ const DECODED_DATA_MATCHES = new WeakSet<RegExpMatchArray>();
  */
 function judgedLiteral(match: RegExpMatchArray): string {
   // Inside a command substitution, the inner value ends at its first shell operator (`$PW&&next`).
-  const word = INNER_CLOSE_AT.has(match) ? shellWordPrefix(match[1]) : undefined;
+  const word = INNER_SHELL_MATCHES.has(match) ? shellWordPrefix(match[1]) : undefined;
   const text = word ?? match[1];
   const variables = word !== undefined || wordComplete(match);
   return DECODED_DATA_MATCHES.has(match) || isQuote(captureOpener(match))
@@ -967,7 +998,7 @@ function wordComplete(match: RegExpMatchArray): boolean {
   if (INNER_CLOSE_AT.get(match) === start) return true;
   // Inside a command substitution, shell control operators and redirections end a word too (`--password=$PW|filter`, `$PW>/dev/null`).
   // (The end of the input has already returned above, so a character stands at `start`.)
-  if (INNER_CLOSE_AT.has(match) && /[|&;<>]/u.test(input[start]!)) return true;
+  if (INNER_SHELL_MATCHES.has(match) && /[|&;<>]/u.test(input[start]!)) return true;
   if (closed === -1) return false;
   // The next-member shortcut holds only in structured text, where the value's
   // own key is quoted (`{"password":"$PW","x":…}`); after an unquoted key a
@@ -1114,7 +1145,8 @@ function quotedSpanEnd(text: string, start: number): number {
 /** The text of a TypeScript type expression, as one captured angle piece holds it (no nesting, no whitespace). */
 const TYPE_TEXT = /^[\w$.[\]|&,]+$/u;
 /** A TypeScript literal type, or a union that starts with one (`<"bearer">`, `<1|2>`, `<"a"|undefined>`). */
-const LITERAL_TYPE = /^(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?)(?:\|(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|[\w$.]+))*$/u;
+// Each member alternative starts with a different character (quote, digit or sign, letter), so no member can be read two ways.
+const LITERAL_TYPE = /^(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?)(?:\|(?:"[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|[A-Za-z_$][\w$.]*))*$/u;
 
 /** A TypeScript primitive type keyword. */
 const PRIMITIVE_TYPE = /\b(?:string|number|boolean|bigint|symbol|any|unknown|object|never|void|undefined|null)\b/u;

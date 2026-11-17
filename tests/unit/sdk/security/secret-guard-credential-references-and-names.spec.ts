@@ -355,6 +355,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD|filter)`,
       `${passwordKey}=$(get --${passwordKey}="$VAULT_PASSWORD"||fallback)`,
       `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD; next)`,
+      // Quoted text elsewhere in the substitution leaves the inner key in shell context.
+      `${passwordKey}=$(echo "a" "b" --${passwordKey}=$VAULT_PASSWORD|filter)`,
+      `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD|filter "a" "b")`,
       // Codex round 33: a redirection, and a control operator the value grammar reads, end the inner word too.
       `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD>/dev/null)`,
       `${passwordKey}=$(get --${passwordKey}=$VAULT_PASSWORD&&handle_error)`,
@@ -387,6 +390,14 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     const defaulted = `${passwordKey}=\${${passwordKey.toUpperCase()}:-$(echo ${passwordKey}=${literal})}`;
     expect(await gateRules(defaulted)).toEqual(["password-assignment"]);
     expect(textRules(defaulted)).toEqual(["password_assignment"]);
+    // Greptile: an operator inside quoted text, or inside a braced reference's word, is data, not a shell separator.
+    for (const content of [
+      `${passwordKey}=$(echo "${passwordKey}=$VAULT_PASSWORD|${literal}")`,
+      `${passwordKey}=\${A:?${passwordKey}=abc&defghijk}`,
+    ]) {
+      expect(await gateRules(content), content).toEqual(["password-assignment"]);
+      expect(textRules(content), content).toEqual(["password_assignment"]);
+    }
     // CodeRabbit: a parenthesis inside a braced reference is literal data, not the reference's closer.
     const mismatched = `${passwordKey}=\${A:?${passwordKey}=$VAULT_PASSWORD)${credential}}`;
     expect(await gateRules(mismatched)).toEqual(["password-assignment"]);
@@ -455,6 +466,8 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
       [passwordRule, `${passwordKey}=$(a ${passwordKey}=$(b) ${passwordKey}=$(c)) `.repeat(15_000)],
       [passwordRule, `${passwordKey}=<x ${passwordKey}=$A> `.repeat(20_000)],
       [credentialKeyRule, '"token":"a"$X'.repeat(20_000)],
+      // CodeQL and Greptile: a literal type union is read without trying members two ways.
+      [credentialKeyRule, `token: <1${"|123".repeat(5_000)}!>Zq8vN3kLmP0wXy7Ab`],
       // Codex round 25: many cut references share one bounded look-ahead.
       [passwordRule, `${passwordKey}="${"$(".repeat(256_000)}${passwordKey}=$VAULT_PASSWORD"`],
     ];
@@ -463,8 +476,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     expect(performance.now() - started).toBeLessThan(5_000);
     // The repeated default word is one concatenated value; in the last input a
     // variable after literal text stays literal, so each `"a"$X"token"` spells eight characters.
-    // In the cut-reference input no opener ever closes, so the inner variable keeps main's literal reading.
-    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999, 1]);
+    // The literal-type input is a placeholder followed by a credential. In the cut-reference input no
+    // opener ever closes, so the inner variable keeps main's literal reading.
+    expect(counts).toEqual([0, 0, 1, 0, 0, 0, 0, 19_999, 1, 1]);
   });
 });
 

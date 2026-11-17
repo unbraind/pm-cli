@@ -252,9 +252,11 @@ quotes or not (a bare `$password`). Either way the value grammar must have
 read the whole word. An unquoted value did when whitespace or the end of the
 text follows it, optionally after structure such as `;` or `)`, or, for a key
 found inside a rejected reference value, at the closer of the reference that
-encloses it, whatever follows, or at a shell control operator or redirection
-(`|`, `&`, `;`, `<`, `>`), where its judged value also ends; any other
-parenthesis or brace is literal data. A quoted value under a quoted key did as well when structure
+encloses it, whatever follows, or, inside a command substitution and outside
+its quoted text, at a shell control operator or redirection (`|`, `&`, `;`,
+`<`, `>`), where its judged value also ends. In a braced reference's word or
+quoted text those characters are data, and any other parenthesis or brace is
+literal data. A quoted value under a quoted key did as well when structure
 and then the next member or element follows, as in compact JSON (`{"password":"$DB_PASSWORD","other":…}`,
 `[{"password":"$DB_PASSWORD"},{"other":…}]`). Any other text after it (`$PW:…`,
 `$PW[…`, `$PW,"…"`, `"$PW""…"`) belongs to the same word, and so does a quote
