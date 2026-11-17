@@ -782,39 +782,31 @@ function judgedLiteral(match: RegExpMatchArray): string {
     : literalAfterReferences(match[1], variables);
 }
 
-/** Code units of punctuation read after a value before its word is taken as cut short. */
-const WORD_TAIL_BOUND = 64;
-/** A run of characters that are neither letters, digits nor whitespace. */
-const PUNCTUATION_RUN = /^[^\s\p{L}\p{N}]*/u;
-/** Structure after a closed quoted value (`,` `]` `}` in JSON), bounded like the word look-ahead. */
-const STRUCTURE_RUN = /^[,;:)}\]]{0,64}/u;
+/**
+ * What may follow a value that ends its word: an optional closing quote, then
+ * a bounded run of structure (`;` `,` `)` `}` `]`), before whitespace, another
+ * quote or the end of the text. Only ASCII is read, so positions are exact.
+ */
+const WORD_END = /^["'`]?[;,)}\]]{0,64}/u;
 
 /**
- * Whether the value grammar read the whole word. It did when only punctuation
- * such as a closing quote, bracket or `;` follows the match before whitespace
- * or the end of the input, within a bounded look-ahead measured in code units,
- * or when the value is a closed quoted piece followed by structure, as in
- * compact JSON. A word the grammar cut short (`$PW:literal`, `$PW]literal`) is
- * not known to be a bare or leading variable, so its `$NAME` text stays
- * literal. The look-ahead is bounded, so judging stays linear.
+ * Whether the value grammar read the whole word. It did when the match is
+ * followed by whitespace or the end of the text, optionally after its closing
+ * quote and structure such as `;`, `)` or the `,` before the next JSON member
+ * (`"$PW","x"`). Any other text after the match (`$PW:literal`, `$PW]literal`,
+ * `$PW/++`) is part of the same word, so the value is not known to be a bare or
+ * leading variable, and its `$NAME` text stays literal. The look-ahead is
+ * bounded, so judging stays linear.
  */
 function wordComplete(match: RegExpMatchArray): boolean {
   const input = match.input!;
   const end = match.index! + match[0].length;
-  const run = PUNCTUATION_RUN.exec(input.slice(end, end + WORD_TAIL_BOUND))![0];
-  const next = end + run.length;
-  if (next === input.length || /\s/u.test(input[next]!)) return true;
-  // A closing quote ends the value when structure, then whitespace, another
-  // quoted member or the end follows it (`"$PW","x"`), never more word text
-  // (`"$PW"],literal` is one shell word).
-  const closer = isQuote(match[0].at(-1)) ? end : isQuote(input[end]) ? end + 1 : -1;
-  if (closer === -1) return false;
-  const after = closer + STRUCTURE_RUN.exec(input.slice(closer, closer + WORD_TAIL_BOUND))![0].length;
-  return after === input.length || /[\s"']/u.test(input[after]!);
+  const after = end + WORD_END.exec(input.slice(end, end + 66))![0].length;
+  return after === input.length || /[\s"'`]/u.test(input[after]!);
 }
 
-/** A literal that is only a member chain, as code leaves after a reference (`${X}.trim`). */
-const MEMBER_CHAIN = /^(?:\.[A-Za-z_$][\w$]*)+$/u;
+/** A literal that starts with member access, as code leaves after a reference (`${X}.trim`, `$T.length+1`). */
+const MEMBER_ACCESS = /^\.[A-Za-z_$]/u;
 
 /**
  * The character just before the value capture. Every match handed to a judge
@@ -843,10 +835,10 @@ function isCode(match: RegExpMatchArray): boolean {
  * as one double-quoted literal whose own `"` characters become `'`, as an
  * element body is: every non-space character counts, and the grammar's path,
  * URL, word and member-path exclusions judge it whole. In unquoted source a
- * literal that is only a member chain is the code after a reference.
+ * literal that starts with member access is the code after a reference.
  */
 function literalMatches(grammar: RegExp, literal: string, code: boolean): boolean {
-  if (code && MEMBER_CHAIN.test(literal)) return false;
+  if (code && MEMBER_ACCESS.test(literal)) return false;
   const body = literal.replaceAll("\"", "'");
   grammar.lastIndex = 0;
   return grammar.exec(`"${body}"`)?.[1] === body;

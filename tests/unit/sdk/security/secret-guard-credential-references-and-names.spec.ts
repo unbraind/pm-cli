@@ -112,6 +112,8 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
     ["optional chain after a variable", "const api_key=$TOKEN?.access_token;"],
     ["nullish fallback after a variable", "const api_key=$TOKEN??getDefaultToken();"],
     ["compact JSON with a bare variable", '{"api_key":"$API_KEY","other":"x"}'],
+    // Codex round 8: member access on a reference, even before an operator, is code.
+    ["arithmetic on a reference member", "const token = $TOKEN.length+1;"],
     ["element with a bare reference", "<client_secret>${X}</client_secret>"],
     ["element with a bare variable", "<client_secret>$CLIENT_SECRET</client_secret>"],
   ])("keeps a %s clean", (_label, content) => {
@@ -230,6 +232,9 @@ describe("a key inside a rejected reference value is still judged (pm-bn3ppf)", 
     // Greptile: structure followed by more word text is still one shell word.
     expect(textRules(`${passwordKey}="$PW_PREFIX"],${literal}`)).toEqual(["password_assignment"]);
     expect(textRules(`["${passwordKey}=$DB_PASSWORD"], "next"`)).toEqual([]);
+    // Codex round 8: literal punctuation after the variable is part of its word.
+    expect(await gateRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password-assignment"]);
+    expect(textRules(`${passwordKey}=$DB_PASSWORD/++//++/`)).toEqual(["password_assignment"]);
     for (const separator of [":", "/", "?", "]", "}", ",", ")"]) {
       const content = `${passwordKey}=$PW_PREFIX${separator}${credential}`;
       expect(await gateRules(content), content).toEqual(["password-assignment"]);

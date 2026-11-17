@@ -202,8 +202,9 @@ piece concatenated as a shell concatenates `"${EMPTY}"…`: a reference or
 another quoted piece follows it, or it holds a reference and a letter, digit
 or non-operator symbol (`_ ! @ # % ^ ~ -`) follows. A quoted value followed by an operator (`"…".trim()`,
 `"${KEY}".toUpperCase()`, `"Bearer"+x`) stays a quoted value, and in unquoted
-source a literal that is only a member chain left after a reference
-(`${X}.trim`) is code; in a quoted value or payload data it is still judged. The literal
+source a literal that starts with member access on a reference
+(`${X}.trim`, `$TOKEN.length+1`) is code; in a quoted value or payload data it
+is still judged. The literal
 left once its references expand is then judged by the same grammar, length,
 entropy and exclusions as a reference-free value, read in the value's own
 quote context. So `api_key=${EMPTY}"…"`, `api_key=$VAR"…"`, `token: <x>…`,
@@ -231,12 +232,11 @@ expands to nothing when NAME is CONSTANT_CASE, the environment-variable
 convention (`$DB_PASSWORD`, `$API_KEY`), and no literal text comes before it
 in its word (`$VAR"…"`, `${EMPTY}$VAR…`), or when it is the whole value, in
 quotes or not (a bare `$password`). Either way the value grammar must have
-read the whole word: only punctuation (a closing quote, bracket or `;`) may
-follow it before whitespace or the end of the text, within a 64-code-unit
-look-ahead, or the value is a closed quoted piece followed by structure and
-then whitespace, another quote or the end, as in compact JSON
-(`{"password":"$DB_PASSWORD","other":…}`). A value it cuts short
-(`$PW:…`, `$PW]…`) keeps its `$NAME` text literal. Any other `$` text is literal, so a
+read the whole word: whitespace or the end of the text follows the match,
+optionally after its closing quote and structure such as `;`, `)` or the `,`
+before the next JSON member (`{"password":"$DB_PASSWORD","other":…}`). Any
+other text after it (`$PW:…`, `$PW]…`, `$PW/++`) belongs to the same word,
+so the value keeps its `$NAME` text literal. Any other `$` text is literal, so a
 credential that merely contains `$`, after other characters or escaped as
 `\$`, keeps its characters. No rule is silently
 gate-only. Repository diagnostics retain hyphenated names; SDK findings retain
