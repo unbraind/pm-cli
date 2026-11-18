@@ -2,11 +2,13 @@ id: pm-9x9drr
 title: "pm package manage --fix-managed-state holds the extension state lock across every remote update lookup, so a raised update-check budget lengthens how long concurrent package actions wait"
 description: "Raised by CodeRabbit on PR 1752 (outside-diff comment on src/sdk/extension.ts, the prepareExploreManageState path). With --fix-managed-state, dispatchExtensionAction wraps the whole manage handler in withExtensionInstallLock. That handler adopts unmanaged packages and then calls refreshManagedExtensionUpdates, so the lock stays held while every npm view and git ls-remote runs, four at a time. The refresh never persists its result, so it does not need the lock. Behaviour is unchanged at the default 10-second budget, but PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS (pm-5kfzjh) can raise each lookup to 120 seconds. A concurrent install, uninstall or adopt then waits longer for the lock and can fail with a lock conflict. Proposed: keep only the adoption read and write under the lock, and run the refresh and runtime probe after it is released."
 type: Issue
-status: open
+status: in_progress
 priority: 3
 tags[4]: concurrency,extensions,locking,update-check
 created_at: "2026-11-18T10:52:10.869Z"
-updated_at: "2026-11-18T10:52:10.869Z"
+updated_at: "2026-11-18T11:09:40.162Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#928e5cd9a3bda9591c204f9f"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "manage --fix-managed-state holds the extension state lock only for the adoption read and write; the remote update refresh and runtime probe run after the lock is released, with the same results and offline behaviour; a test proves a concurrent locked package action is not blocked by a slow lookup; manage without --fix-managed-state is unchanged"
@@ -19,4 +21,13 @@ actual_result: "With --fix-managed-state the lock spans every remote update look
 component: extensions
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5kfzjh,discovered_from,"2026-11-18T10:52:10.869Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-18T11:09:40.162Z","harness:claude-code","Implemented in PR 1752. runExtensionExploreManageAction calls prepareExploreManageState(ctx, settings), which runs readAndAdoptExploreManageState (read managed state, list installed packages, adopt unmanaged ones) under withExtensionInstallLock only when manage adopts (--fix-managed-state). refreshManagedExtensionUpdates then runs after the lock is released. requiresExtensionStateLock no longer wraps manage --fix-managed-state at dispatch; doctor --fix-managed-state is unchanged. Nothing after adoption writes state: the second inventory listing, the runtime probe and triage only read. Test: tests/integration/extensions/manage-lock-scope.integration.spec.ts runs manage --fix-managed-state with a stalled npm on PATH, waits until the lookup has started, and acquires the scope lock with a single attempt, which succeeds. Negative control: moving the refresh back inside the lock makes that acquisition fail.\n"
+files[2]{path,scope}:
+  src/sdk/extension.ts,project
+  tests/integration/extensions/manage-lock-scope.integration.spec.ts,project
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/extensions/manage-lock-scope.integration.spec.ts,project,300,"harness:claude-code","2026-11-18T11:09:21.430Z",local_mutation,feat/sdk-stable-consumer-classifications
+docs[1]{path,scope}:
+  docs/PACKAGE_EVIDENCE.md,project
 body: ""

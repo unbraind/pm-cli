@@ -7,11 +7,13 @@ import type { ManagedExtensionSource } from "../../../src/sdk/extension/managed-
 // environment.
 const spawnMock = vi.hoisted(() => vi.fn());
 const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number) => undefined));
+const untrackMock = vi.hoisted(() => vi.fn());
+const trackMock = vi.hoisted(() => vi.fn((_pid: number | undefined) => untrackMock));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
   spawn: spawnMock,
 }));
-vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock }));
+vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock, trackDetachedProcessGroup: trackMock }));
 
 const {
   EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
@@ -43,6 +45,8 @@ class FakeChild extends EventEmitter {
   readonly stdout = new FakeStream();
   readonly stderr = new FakeStream();
   readonly kill = vi.fn(() => true);
+  exitCode: number | null = null;
+  signalCode: NodeJS.Signals | null = null;
   constructor(readonly pid: number | undefined = 4242) {
     super();
   }
@@ -88,6 +92,8 @@ afterEach(() => {
   spawnMock.mockReset();
   killProcessTreeMock.mockReset();
   killProcessTreeMock.mockImplementation(async () => undefined);
+  trackMock.mockClear();
+  untrackMock.mockClear();
   children = [];
   vi.unstubAllEnvs();
 });
@@ -105,6 +111,32 @@ describe("npm update lookup budget", () => {
     expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
     expect(children[0]?.stdout.destroy).toHaveBeenCalled();
     expect(children[0]?.stderr.destroy).toHaveBeenCalled();
+    expect(trackMock).toHaveBeenCalledWith(4242);
+    expect(untrackMock).toHaveBeenCalledTimes(1);
+    // The tree teardown ran; a direct child still running is killed as well.
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+  });
+
+  it("does not signal a direct child that already exited after the tree teardown", async () => {
+    vi.useFakeTimers();
+    hang();
+    killProcessTreeMock.mockImplementationOnce(async () => {
+      children[0]!.signalCode = "SIGKILL";
+    });
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("still kills the direct child when the tree teardown fails", async () => {
+    vi.useFakeTimers();
+    hang();
+    killProcessTreeMock.mockImplementationOnce(async () => {
+      throw new Error("taskkill unavailable");
+    });
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    await vi.waitFor(() => expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL"));
   });
 
   it("kills the child itself when it has no process id", async () => {
@@ -116,8 +148,9 @@ describe("npm update lookup budget", () => {
       return child;
     });
     expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
-    expect(children[0]?.kill).toHaveBeenCalled();
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
     expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(trackMock).toHaveBeenCalledWith(undefined);
   });
 
   it("keeps the timed-out result when the provider exits cleanly with partial output after the deadline", async () => {
@@ -172,6 +205,7 @@ describe("npm update lookup budget", () => {
     });
     expect(children[0]?.stderr.resume).toHaveBeenCalled();
     expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(untrackMock).toHaveBeenCalledTimes(1);
   });
 
   it("passes the configured budget to an injected GitHub runner", async () => {

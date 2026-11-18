@@ -6,7 +6,7 @@
 import { nowIso } from "../../core/shared/time.js";
 import { spawn } from "node:child_process";
 import npa from "npm-package-arg";
-import { killProcessTree } from "../../core/shared/process-tree.js";
+import { killProcessTree, trackDetachedProcessGroup } from "../../core/shared/process-tree.js";
 import type { ManagedExtensionSource } from "./managed-state.js";
 import { resolveNpmCommandName, shouldRunNpmCommandInShell } from "./install-sources.js";
 
@@ -102,7 +102,9 @@ interface UpdateQuerySpec {
  * reaches the descendants of a launcher that is still running, as `cmd.exe`
  * and `git` are while they wait for npm and the remote helper. A child that exits after the deadline,
  * cleanly or not, cannot replace the timed-out result with partial output.
- * Any other failure, including stdout beyond `maxBuffer`, reports the failed
+ * When the tree teardown cannot run, the direct child is still killed. While
+ * the lookup runs, the host's exit or interruption also stops its process
+ * group, which a detached child would otherwise survive. Any other failure, including stdout beyond `maxBuffer`, reports the failed
  * reason. stdin is closed and stderr is discarded, so the provider's command
  * line, stderr and environment never reach the reason.
  */
@@ -119,14 +121,18 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       return;
     }
     const lookup = child;
+    const untrack = trackDetachedProcessGroup(lookup.pid);
     let settled = false;
     let stdout = "";
     let stdoutBytes = 0;
+    const killDirectChild = (): void => {
+      if (lookup.exitCode === null && lookup.signalCode === null) lookup.kill("SIGKILL");
+    };
     const stop = (): void => {
       lookup.stdout.destroy();
       lookup.stderr.destroy();
-      if (lookup.pid === undefined) lookup.kill();
-      else void killProcessTree(lookup.pid);
+      if (lookup.pid === undefined) killDirectChild();
+      else void killProcessTree(lookup.pid).then(killDirectChild, killDirectChild);
     };
     const deadline = setTimeout(() => {
       settle(new UpdateQueryError(spec.timedOut, timeout));
@@ -136,6 +142,7 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (settled) return;
       settled = true;
       clearTimeout(deadline);
+      untrack();
       if (error) reject(error);
       else resolve(stdout.trim());
     }

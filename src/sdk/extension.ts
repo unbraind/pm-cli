@@ -3496,34 +3496,68 @@ const runExtensionDescribeAction = async (
 };
 
 /* c8 ignore start -- explore/manage action split is validated by dedicated command-action tests */
-/** Apply manage-only adoption and remote update checks to managed extension state. */
-const prepareExploreManageState = async (
+/** Whether this explore or manage invocation adopts unmanaged packages, the only part of it that writes state. */
+const adoptsUnmanagedExtensions = (ctx: ExtensionActionContext): boolean =>
+  [ctx.action === "manage", ctx.options.fixManagedState === true].every(Boolean);
+
+/**
+ * Read managed state and the installed inventory, then apply manage-only
+ * adoption. Only this step needs the extension state lock: the remote update
+ * refresh that follows persists nothing, so it runs after the lock is released
+ * and a slow lookup never holds the lock (pm-9x9drr).
+ */
+const readAndAdoptExploreManageState = async (
   ctx: ExtensionActionContext,
-  installed: ManagedExtensionSummary[],
-  initialState: ManagedExtensionState,
+  settings: PmSettings,
 ): Promise<{
+  warnings: string[];
   state: ManagedExtensionState;
   fix: AdoptUnmanagedExtensionsResult | null;
 }> => {
-  let state = initialState;
-  let fix: AdoptUnmanagedExtensionsResult | null = null;
-  if (
-    [ctx.action === "manage", ctx.options.fixManagedState === true].every(
-      Boolean,
-    )
-  ) {
-    fix = await adoptUnmanagedExtensions(
-      ctx.resolvedRoots.selected_root,
-      ctx.scope,
-      installed,
-      initialState,
-    );
-    state = fix.state;
+  const { resolvedRoots, scope } = ctx;
+  const managedStateRead = await readManagedExtensionState(
+    resolvedRoots.selected_root,
+  );
+  const installed = await listInstalledExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    settings,
+    managedStateRead.state,
+  );
+  const warnings = [...managedStateRead.warnings, ...installed.warnings];
+  if (!adoptsUnmanagedExtensions(ctx)) {
+    return { warnings, state: managedStateRead.state, fix: null };
   }
-  if (ctx.action === "manage") {
-    state = await refreshManagedExtensionUpdates(state, ctx.options.offline);
-  }
-  return { state, fix };
+  const fix = await adoptUnmanagedExtensions(
+    resolvedRoots.selected_root,
+    scope,
+    installed.extensions,
+    managedStateRead.state,
+  );
+  return { warnings, state: fix.state, fix };
+};
+
+/** Apply manage-only adoption under the state lock, then the remote update checks outside it. */
+const prepareExploreManageState = async (
+  ctx: ExtensionActionContext,
+  settings: PmSettings,
+): Promise<{
+  warnings: string[];
+  state: ManagedExtensionState;
+  fix: AdoptUnmanagedExtensionsResult | null;
+}> => {
+  const prepared = adoptsUnmanagedExtensions(ctx)
+    ? await withExtensionInstallLock(
+        ctx.resolvedRoots.settings_root,
+        `${ctx.action}-state`,
+        () => readAndAdoptExploreManageState(ctx, settings),
+      )
+    : await readAndAdoptExploreManageState(ctx, settings);
+  if (ctx.action !== "manage") return prepared;
+  return {
+    ...prepared,
+    state: await refreshManagedExtensionUpdates(prepared.state, ctx.options.offline),
+  };
 };
 
 /** Runtime-probe explore and manage so lifecycle status always reflects activation truth. */
@@ -3604,24 +3638,9 @@ const runExtensionExploreManageAction = async (
   const configuredPolicy = buildExtensionPolicyDetails(
     settings.extensions.policy,
   );
-  const managedStateRead = await readManagedExtensionState(
-    resolvedRoots.selected_root,
-  );
-  warnings.push(...managedStateRead.warnings);
-  const installed = await listInstalledExtensions(
-    resolvedRoots.selected_root,
-    scope,
-    settings,
-    managedStateRead.state,
-  );
-  warnings.push(...installed.warnings);
-
-  const { state: managedState, fix: managedStateFix } =
-    await prepareExploreManageState(
-      ctx,
-      installed.extensions,
-      managedStateRead.state,
-    );
+  const prepared = await prepareExploreManageState(ctx, settings);
+  warnings.push(...prepared.warnings);
+  const { state: managedState, fix: managedStateFix } = prepared;
 
   const refreshedInstalled = await listInstalledExtensions(
     resolvedRoots.selected_root,
@@ -3720,9 +3739,9 @@ const requiresExtensionStateLock = (ctx: ExtensionActionContext): boolean =>
     ctx.action === "activate",
     ctx.action === "deactivate",
     ctx.action === "migrate",
-    [["doctor", "manage"].includes(ctx.action), ctx.options.fixManagedState === true].every(
-      Boolean,
-    ),
+    // manage --fix-managed-state takes the lock itself around adoption only,
+    // so its remote update lookups never hold it (pm-9x9drr).
+    [ctx.action === "doctor", ctx.options.fixManagedState === true].every(Boolean),
   ].some(Boolean);
 
 /** Dispatch one normalized lifecycle action through the complete handler table. */
