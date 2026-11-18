@@ -114,9 +114,11 @@ out. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
 default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
 (clamped to 1000–120000) for a slow registry, proxy or cold start, for example
 on a Windows runner. The deadline settles the check without waiting for the
-provider's pipes and stops its whole process tree, so a launcher such as
-`cmd.exe` or an npm shim cannot extend it by exiting while a descendant keeps
-running; a lookup still running at its deadline is reported as timed out even
+provider's pipes, so a launcher such as `cmd.exe` or an npm shim cannot extend
+it by exiting while a descendant keeps running. It then stops the provider's
+process tree: its process group on POSIX, and on Windows the descendants of a
+launcher that is still running (`taskkill /T` cannot reach a descendant whose
+launcher already exited); a lookup still running at its deadline is reported as timed out even
 if the provider then exits cleanly. A recorded `update_check_timeout_ms` is
 kept only beside a timed-out reason. The GitHub lookup runs with
 `GIT_TERMINAL_PROMPT=0` and `GCM_INTERACTIVE=never`, so a remote that asks for

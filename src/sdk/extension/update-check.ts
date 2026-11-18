@@ -99,7 +99,8 @@ interface UpdateQuerySpec {
  * because a launcher (`cmd.exe`, an npm shim, `git`) can exit while a
  * descendant still holds them. It then tears down the whole process tree: on
  * POSIX the child leads its own process group, and on Windows `taskkill /T`
- * reaches the shell's descendants. A child that exits after the deadline,
+ * reaches the descendants of a launcher that is still running, as `cmd.exe`
+ * and `git` are while they wait for npm and the remote helper. A child that exits after the deadline,
  * cleanly or not, cannot replace the timed-out result with partial output.
  * Any other failure, including stdout beyond `maxBuffer`, reports the failed
  * reason. stdin is closed and stderr is discarded, so the provider's command
