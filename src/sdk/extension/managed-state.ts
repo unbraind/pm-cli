@@ -299,11 +299,13 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
     last_update_check_at: optionalString(entry.last_update_check_at),
     last_update_remote_commit: optionalString(entry.last_update_remote_commit),
     last_update_remote_version: optionalString(entry.last_update_remote_version),
+    // A timed-out lookup decided nothing, so its availability is unknown.
     update_available:
-      typeof entry.update_available === "boolean" ||
-      entry.update_available === null
-        ? entry.update_available
-        : undefined,
+      typeof entry.update_error === "string" && TIMED_OUT_UPDATE_ERROR.test(entry.update_error)
+        ? null
+        : typeof entry.update_available === "boolean" || entry.update_available === null
+          ? entry.update_available
+          : undefined,
     update_error: optionalString(entry.update_error),
     ...optionalTimeoutBudget(entry.update_error, entry.update_check_timeout_ms),
   };

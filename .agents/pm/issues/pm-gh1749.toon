@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: api-design,"gh:1749",sdk,secret-guard,typed-consumers
 created_at: "2026-11-17T21:58:37.940Z"
-updated_at: "2026-11-18T14:05:29.393Z"
+updated_at: "2026-11-18T15:16:09.590Z"
 closed_at: "2026-11-18T11:25:57.049Z"
 completed_at: "2026-11-18T11:25:57.049Z"
 author: "harness:claude-code"
@@ -18,7 +18,7 @@ confidence: medium
 severity: medium
 resolution: "Every SecretRule declares a required credential, network or path category. The SDK root and governance entrypoints export SecretGuardRule, the literal SecretGuardRuleCategory union, SECRET_GUARD_RULE_CATEGORIES, secretGuardRuleCategory and SecretGuardPolicy plus decideSecretGuardFinding (rule, then category, then default; own properties only; undefined counts as absent; malformed input throws TypeError; the decision type is inferred from the default). A compile-time check ties the SDK union to the rule inventory, and the surface snapshot records the literals. docs/MUTATION_INTEGRITY.md documents category policies, and docs/RELEASING.md documents contract_change declarations, including that a new detector is one."
 expected_result: "A consumer that adopts the policy helper does not break when a detector is added, and the SDK offers a supported default-plus-overrides policy; an unchanged exhaustive Record over the rule union still needs migrating"
-actual_result: "A category-only SecretGuardPolicy compiles whatever the rule union holds (type tests); a mocked future detector inherits its category decision (unit test); a rule this SDK does not know has no category, so an exact own rules entry for it decides it and otherwise the default does; prototype names and inherited keys never decide anything; the release notes list the change under Changed (SDK contract) through its contract_change"
+actual_result: "A category-only SecretGuardPolicy compiles whatever the rule union holds (type tests); a mocked future detector inherits its category decision (unit test); a rule this SDK does not know has no category, so an exact own rules entry for it decides it and otherwise the default does; inherited keys never decide anything, while an explicit own entry, even one named like a prototype member such as constructor, is an exact override; the release notes list the change under Changed (SDK contract) through its contract_change"
 component: sdk
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-hw00c2,related,"2026-11-17T21:58:37.940Z","harness:claude-code","cli:create:dep",detected
@@ -51,7 +51,7 @@ close_reason: "Secret-guard findings have a stable category per rule and a defau
 contract_change:
   api: "SecretGuardRule, SecretGuardRuleCategory, SecretGuardPolicy, SECRET_GUARD_RULE_CATEGORIES, secretGuardRuleCategory and decideSecretGuardFinding"
   before: "Typed consumers kept an exhaustive Record over the SecretGuardFinding rule union, so every new detector failed their compilation with TS2741"
-  after: "Every detector has a stable credential, network or path category, and decideSecretGuardFinding decides a finding from a default plus optional category and rule decisions: a new detector takes its category's decision when the policy names one, and the default otherwise; an unchanged exhaustive Record over the rule union still breaks when a detector is added"
+  after: "Every detector has a stable credential, network or path category, and decideSecretGuardFinding decides a finding by precedence: an exact own rules entry, then the policy's entry for the rule's category, then the default, so a new detector without its own entry takes its category's decision or the default; an unchanged exhaustive Record over the rule union still breaks when a detector is added"
   migrate: "Replace an exhaustive Record over SecretGuardFinding['rule'] with a SecretGuardPolicy and decideSecretGuardFinding, or key an exhaustive map by SecretGuardRuleCategory"
 escape_class: production_defect
 gate_evidence:

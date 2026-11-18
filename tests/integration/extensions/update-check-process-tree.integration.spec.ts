@@ -132,6 +132,9 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
     const status = await checkGithubUpdate(GITHUB_SOURCE);
     const pids = await readPids(pidFile);
+    // Both the launcher and its recorded descendant, distinct and valid.
+    expect(new Set(pids).size).toBe(2);
+    for (const pid of pids) expect(Number.isSafeInteger(pid) && pid > 0).toBe(true);
     expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
     for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
   });

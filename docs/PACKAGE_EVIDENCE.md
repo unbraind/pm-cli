@@ -104,13 +104,19 @@ environment
 [pm-43p2c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-43p2c3.toon);
 tracker records excluded from npm):
 
-| Source | Lookup ran out of its budget | Any other lookup failure |
-| ------ | ---------------------------- | ------------------------ |
+| Source | Lookup ran out of its budget | Other provider execution failure |
+| ------ | ---------------------------- | -------------------------------- |
 | npm    | `npm_registry_lookup_timed_out` | `npm_registry_lookup_failed` |
 | GitHub | `github_remote_lookup_timed_out` | `github_remote_lookup_failed` |
 
-A timed-out check also carries `update_check_timeout_ms`, the budget that ran
-out. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
+A provider that runs but returns output that cannot be read reports its own
+validation code instead (for example `invalid_npm_registry_metadata` or
+`no_remote_reference_found`). A timed-out check also carries
+`update_check_timeout_ms`, the budget that ran out. Each lookup settles at its
+own deadline without waiting for teardown; `pm package manage` returns once
+every lookup has settled, and outside `--fix-managed-state` a queued lookup
+starts only when a timed-out provider's teardown frees one of the four
+provider slots. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
 default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
 (clamped to 1000–25000, below the extension state lock's 30-second wait) for
 a slow registry, proxy or cold start, for example on a Windows runner.

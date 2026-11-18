@@ -188,6 +188,8 @@ describe("killProcessTree", () => {
       kill.mockImplementation((pid) => {
         events.push(`kill ${String(pid)}`);
         if (pid === -4242) throw Object.assign(new Error("no group"), { code: "ESRCH" });
+        // A descendant that already exited must not stop the walk.
+        if (pid === 4300) throw Object.assign(new Error("already gone"), { code: "ESRCH" });
         return true;
       });
       const caller = { kill: vi.fn(() => events.push("root")), alive: vi.fn(() => true) };
@@ -241,6 +243,21 @@ describe("killProcessTree", () => {
       expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
       expect(spawnMock).toHaveBeenCalledTimes(drive ? 1 : 0);
       expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it("walks the snapshot and kills the root by pid when no caller root is given", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        return true;
+      });
+      answer("4300 4242\n");
+      await killProcessTree(4242);
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4300, "SIGKILL"], [4242, "SIGKILL"]]);
     } finally {
       restore();
     }

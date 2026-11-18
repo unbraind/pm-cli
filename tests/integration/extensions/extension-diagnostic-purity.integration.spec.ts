@@ -40,7 +40,14 @@ async function withRegistry(mode: RegistryMode, run: (requests: () => number) =>
     if (mode === "unavailable") { response.writeHead(404); response.end('{"error":"fixture_unavailable"}'); return; }
     response.end(JSON.stringify({ name: "freshness-registry-package", "dist-tags": { latest: mode === "update-available" ? "2.0.0" : "1.0.0" }, versions: { "1.0.0": { name: "freshness-registry-package", version: "1.0.0" }, "2.0.0": { name: "freshness-registry-package", version: "2.0.0" } } }));
   });
-  await new Promise<void>((resolve) => registry.listen(0, "127.0.0.1", resolve));
+  // A denied loopback bind rejects instead of leaving the test waiting.
+  await new Promise<void>((resolve, reject) => {
+    registry.once("error", reject);
+    registry.listen(0, "127.0.0.1", () => {
+      registry.off("error", reject);
+      resolve();
+    });
+  });
   const address = registry.address();
   if (address === null || typeof address === "string") throw new Error("Registry did not bind a TCP port");
   vi.stubEnv("npm_config_registry", `http://127.0.0.1:${address.port}`);

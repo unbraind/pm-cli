@@ -51,6 +51,7 @@ class FakeChild extends EventEmitter {
     });
     return true;
   });
+  readonly unref = vi.fn();
   exitCode: number | null = null;
   signalCode: NodeJS.Signals | null = null;
   constructor(readonly pid: number | undefined = 4242) {
@@ -214,8 +215,12 @@ describe("npm update lookup budget", () => {
     });
     await vi.advanceTimersByTimeAsync(1_999);
     expect(stuckDown).toBe(false);
+    expect(children[1]?.unref).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
     expect(stuckDown).toBe(true);
+    // A provider that never exited no longer keeps the host running.
+    expect(children[1]?.unref).toHaveBeenCalledTimes(1);
+    expect(children[0]?.unref).not.toHaveBeenCalled();
   });
 
   it("keeps stdout open, discarding its data, until the tree is captured", async () => {
@@ -517,9 +522,15 @@ describe("managed update status budget evidence", () => {
     expect(entry !== undefined && Object.hasOwn(entry, "update_check_timeout_ms")).toBe(expected !== undefined);
   });
 
-  it.each([NPM_REGISTRY_LOOKUP_TIMED_OUT, GITHUB_REMOTE_LOOKUP_TIMED_OUT])("keeps a recorded budget beside %s", (reason) => {
-    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500 })] });
+  it.each([NPM_REGISTRY_LOOKUP_TIMED_OUT, GITHUB_REMOTE_LOOKUP_TIMED_OUT])("keeps a recorded budget beside %s and leaves availability unknown", (reason) => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500, update_available: true })] });
     expect(state?.entries[0]?.update_check_timeout_ms).toBe(2500);
+    expect(state?.entries[0]?.update_available).toBeNull();
+  });
+
+  it("keeps availability beside a reason that is not a timeout", () => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_available: true }), managedEntry("npm-other", npmSource, { update_available: "yes" })] });
+    expect(state?.entries.map((entry) => entry.update_available)).toEqual([true, undefined]);
   });
 
   it.each([undefined, NPM_REGISTRY_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_FAILED, "no_remote_reference_found", `${NPM_REGISTRY_LOOKUP_TIMED_OUT}_stale`, 7])("drops a stale budget beside update_error %j", (reason) => {

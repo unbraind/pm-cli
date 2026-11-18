@@ -4,7 +4,7 @@
  * Provides bounded and annotated-tag-aware update checks for managed extensions.
  */
 import { nowIso } from "../../core/shared/time.js";
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import npa from "npm-package-arg";
 import { killProcessTree } from "../../core/shared/process-tree.js";
 import type { ManagedExtensionSource } from "./managed-state.js";
@@ -114,6 +114,56 @@ interface UpdateQuerySpec {
   failed: string;
 }
 
+/** The process side of one lookup: whether it exited, and how to stop it with its tree. */
+interface ProviderTeardown {
+  /** Start tearing the provider down; resolves once it is gone or the exit wait ran out. */
+  stop(): Promise<void>;
+}
+
+/**
+ * Tear down one provider. stdout stays open, its data discarded, until the
+ * tree is captured: closing it first could SIGPIPE the provider and orphan its
+ * helpers before ps lists them. Once the launcher has exited its PID may
+ * already belong to another process, so only a live launcher's tree is torn
+ * down by PID, and its root is killed through Node's handle. The teardown ends
+ * once Node reports the provider's exit (bounded, in case the kill cannot take
+ * effect), so a caller limiting live providers never counts a provider as
+ * gone while it still runs; without a PID, spawn never created a process and
+ * no exit will come.
+ */
+function createProviderTeardown(lookup: ChildProcess): ProviderTeardown {
+  const exited = (): boolean => lookup.exitCode !== null || lookup.signalCode !== null;
+  const killDirectChild = (): void => {
+    if (!exited()) lookup.kill("SIGKILL");
+  };
+  const awaitExit = (): Promise<void> => {
+    if (exited() || lookup.pid === undefined) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      // A provider still alive when the wait runs out (an uninterruptible
+      // kernel wait) is unreferenced, so it cannot keep the host running.
+      const bound = setTimeout(() => {
+        lookup.unref();
+        resolve();
+      }, PROVIDER_EXIT_WAIT_MS);
+      lookup.once("exit", () => {
+        clearTimeout(bound);
+        resolve();
+      });
+    });
+  };
+  const finish = (): Promise<void> => {
+    killDirectChild();
+    lookup.stdout?.destroy();
+    return awaitExit();
+  };
+  return {
+    stop: () =>
+      exited() || lookup.pid === undefined
+        ? Promise.resolve().then(finish)
+        : killProcessTree(lookup.pid, { kill: killDirectChild, alive: () => !exited() }).then(finish, finish),
+  };
+}
+
 /**
  * Run one provider lookup under an explicit deadline. The deadline settles the
  * lookup as timed out on its own, without waiting for the child's pipes,
@@ -151,38 +201,10 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     let settled = false;
     let stdout = "";
     let stdoutBytes = 0;
-    const exited = (): boolean => lookup.exitCode !== null || lookup.signalCode !== null;
-    const killDirectChild = (): void => {
-      if (!exited()) lookup.kill("SIGKILL");
-    };
+    const provider = createProviderTeardown(lookup);
     let teardown: Promise<void> | undefined;
     const stop = (): Promise<void> => {
-      if (teardown) return teardown;
-      // stdout stays open, its data discarded, until the tree is captured:
-      // closing it first could SIGPIPE the provider and orphan its helpers
-      // before ps lists them.
-      // The teardown ends once Node reports the provider's exit (bounded, in
-      // case the kill cannot take effect), so a caller limiting live providers
-      // never counts a provider as gone while it still runs.
-      const finish = (): Promise<void> => {
-        killDirectChild();
-        lookup.stdout?.destroy();
-        // No PID means spawn never created a process, so no exit will come.
-        if (exited() || lookup.pid === undefined) return Promise.resolve();
-        return new Promise<void>((resolve) => {
-          const bound = setTimeout(resolve, PROVIDER_EXIT_WAIT_MS);
-          lookup.once("exit", () => {
-            clearTimeout(bound);
-            resolve();
-          });
-        });
-      };
-      // Once the launcher has exited its PID may already belong to another
-      // process, so only a live launcher's tree is torn down by PID; its root
-      // is killed through Node's handle.
-      teardown = exited() || lookup.pid === undefined
-        ? Promise.resolve().then(finish)
-        : killProcessTree(lookup.pid, { kill: killDirectChild, alive: () => !exited() }).then(finish, finish);
+      teardown = provider.stop();
       return teardown;
     };
     const deadline = setTimeout(() => {
