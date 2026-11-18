@@ -37,6 +37,11 @@ const undefinedDefault: SecretGuardPolicy<boolean | undefined> = { default: unde
 void undefinedDefault;
 const optionalDecisions: SecretGuardPolicy<boolean | undefined> = { default: true, rules: { private_ip: undefined } };
 void optionalDecisions;
+// @ts-expect-error an unknown decision type still needs a defined default
+const unknownUndefinedDefault: SecretGuardPolicy<unknown> = { default: undefined };
+void unknownUndefinedDefault;
+const nullDefault: SecretGuardPolicy<string | null> = { default: null };
+void nullDefault;
 
 const withRules: SecretGuardPolicy<"refuse" | "allow"> = {
   default: "refuse",
@@ -47,6 +52,14 @@ const withRules: SecretGuardPolicy<"refuse" | "allow"> = {
 declare const finding: SecretGuardFinding;
 const decision: "refuse" | "allow" = decideSecretGuardFinding(withRules, finding);
 void decision;
+// An unannotated default-only policy infers its decision type from the default.
+const inferredBoolean: boolean = decideSecretGuardFinding({ default: true }, finding);
+const inferredString: string = decideSecretGuardFinding({ default: "refuse" }, finding);
+// @ts-expect-error the inferred decision type is not widened to unknown
+const inferredNotUnknown: number = decideSecretGuardFinding({ default: true }, finding);
+void inferredBoolean;
+void inferredString;
+void inferredNotUnknown;
 // A finding decoded from JSON carries only a string rule.
 const decoded: boolean = decideSecretGuardFinding(byCategory, { rule: "rule-from-a-newer-host" });
 void decoded;

@@ -260,6 +260,8 @@ describe("managed update status budget evidence", () => {
     expect(checked).toMatchObject({ update_available: false, last_update_remote_commit: "abc123" });
     expect(checked).not.toHaveProperty("update_check_timeout_ms");
     const offline = await refreshManagedExtensionUpdates(refreshed, true);
+    expect(offline.entries.map((entry) => entry.name)).toEqual(refreshed.entries.map((entry) => entry.name));
+    expect(offline.entries).toHaveLength(2);
     for (const entry of offline.entries) expect(entry).not.toHaveProperty("update_check_timeout_ms");
   });
 
@@ -276,6 +278,8 @@ describe("managed update status budget evidence", () => {
   ])("normalizes a recorded budget of %j to %j", (recorded, expected) => {
     const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT, update_check_timeout_ms: recorded })] });
     const entry = state?.entries[0];
+    expect(state?.entries).toHaveLength(1);
+    expect(entry).toMatchObject({ name: "npm-example", update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT, source: { package: "@scope/example" } });
     expect(entry?.update_check_timeout_ms).toBe(expected);
     expect(entry !== undefined && Object.hasOwn(entry, "update_check_timeout_ms")).toBe(expected !== undefined);
   });
@@ -287,6 +291,8 @@ describe("managed update status budget evidence", () => {
 
   it.each([undefined, NPM_REGISTRY_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_FAILED, "no_remote_reference_found", `${NPM_REGISTRY_LOOKUP_TIMED_OUT}_stale`, 7])("drops a stale budget beside update_error %j", (reason) => {
     const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500 })] });
+    expect(state?.entries).toHaveLength(1);
+    expect(state?.entries[0]).toMatchObject({ name: "npm-example" });
     expect(state?.entries[0]).not.toHaveProperty("update_check_timeout_ms");
   });
 });

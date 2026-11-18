@@ -630,8 +630,12 @@ export function secretGuardRuleCategory(rule: string): SecretGuardRuleCategory |
  * ignored, so a policy written for a newer SDK still applies.
  */
 export interface SecretGuardPolicy<Decision> {
-  /** Decision for a finding that no category or rule entry decides; never `undefined`. */
-  default: Exclude<Decision, undefined>;
+  /**
+   * Decision for a finding that no category or rule entry decides; never
+   * `undefined`, even when `Decision` allows it, while `null` stays allowed.
+   * The decision type is inferred from it when no override names one.
+   */
+  default: Decision & ({} | null);
   /** Decisions for whole detector families. */
   categories?: Partial<Record<SecretGuardRuleCategory, Decision>>;
   /** Decisions for single detectors; they override their category's decision. */
@@ -671,18 +675,21 @@ export function decideSecretGuardFinding<Decision>(
   if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {
     throw new TypeError("Secret guard policy must be an object with a default decision.");
   }
-  if (!Object.hasOwn(policy, "default") || policy.default === undefined) {
+  // Each field is read once, so the value validated is the value used.
+  const fallback: Decision | undefined = Object.hasOwn(policy, "default") ? policy.default : undefined;
+  if (fallback === undefined) {
     throw new TypeError("Secret guard policy requires a default decision.");
   }
   const categories = ownPolicyEntries<Decision>(policy, "categories");
   const rules = ownPolicyEntries<Decision>(policy, "rules");
-  if (typeof finding !== "object" || finding === null || typeof finding.rule !== "string") {
+  const rule: unknown = typeof finding === "object" && finding !== null ? finding.rule : undefined;
+  if (typeof rule !== "string") {
     throw new TypeError("Secret guard finding must have a string rule.");
   }
-  const ruleDecision = ownPolicyEntry(rules, finding.rule);
+  const ruleDecision = ownPolicyEntry(rules, rule);
   if (ruleDecision !== undefined) return ruleDecision;
-  const categoryDecision = ownPolicyEntry(categories, secretGuardRuleCategory(finding.rule));
-  return categoryDecision === undefined ? policy.default : categoryDecision;
+  const categoryDecision = ownPolicyEntry(categories, secretGuardRuleCategory(rule));
+  return categoryDecision === undefined ? fallback : categoryDecision;
 }
 
 /** Identify native actions that can persist tracker or workspace state. */

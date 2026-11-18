@@ -24,12 +24,15 @@ describe("managed extension diagnostic purity", () => {
       let requests = 0;
       let available = true;
       let registryFailure = false;
-      let registryDelayMs = 0;
+      let holdRegistry = false;
+      let heldRequests = 0;
       const registry = createServer((_request, response) => {
         requests += 1;
         response.setHeader("content-type", "application/json");
         if (registryFailure) { response.writeHead(404); response.end('{"error":"fixture_unavailable"}'); return; }
-        if (registryDelayMs > 0) { setTimeout(() => { response.writeHead(404); response.end('{"error":"fixture_slow"}'); }, registryDelayMs); return; }
+        // A held request is answered only when the server closes, so a lookup
+        // that reaches it can finish only by running out of its budget.
+        if (holdRegistry) { heldRequests += 1; return; }
         response.end(JSON.stringify({ name: "freshness-registry-package", "dist-tags": { latest: available ? "2.0.0" : "1.0.0" }, versions: { "1.0.0": { name: "freshness-registry-package", version: "1.0.0" }, "2.0.0": { name: "freshness-registry-package", version: "2.0.0" } } }));
       });
       await new Promise<void>((resolve) => registry.listen(0, "127.0.0.1", resolve));
@@ -38,7 +41,8 @@ describe("managed extension diagnostic purity", () => {
       const previousRegistry = process.env.npm_config_registry;
       process.env.npm_config_registry = `http://127.0.0.1:${address.port}`;
       // pm-5kfzjh: a cold npm start on a Windows runner can take longer than
-      // the 10 s default, so registry-backed checks get a generous budget here.
+      // the 10 s default, so registry-backed checks get a generous budget
+      // here; the test timeout covers three of them plus the held lookup.
       vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "60000");
       try {
         for (const options of [{ explore: true }, { doctor: true }, { manage: true, offline: true }]) {
@@ -60,12 +64,14 @@ describe("managed extension diagnostic purity", () => {
         const failedLookup = (await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details as { extensions: Record<string, unknown>[] };
         expect(failedLookup).toMatchObject({ extensions: [{ update_check_status: "failed", update_available: null, update_error: "npm_registry_lookup_failed" }] });
         expect(failedLookup.extensions[0]?.update_check_timeout_ms).toBeUndefined();
-        // A registry slower than the smallest budget is reported as a timeout
-        // that names the budget, not as an unavailable registry.
+        // A registry that never answers is reported as a timeout that names
+        // the budget, not as an unavailable registry. The budget leaves a
+        // warm npm time to reach the registry, and the held request proves it did.
         registryFailure = false;
-        registryDelayMs = 3000;
-        vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
-        expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_check_reason: "npm_registry_lookup_timed_out", update_available: null, update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 1000 }] });
+        holdRegistry = true;
+        vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "8000");
+        expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_check_reason: "npm_registry_lookup_timed_out", update_available: null, update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 8000 }] });
+        expect(heldRequests).toBe(1);
         expect(requests).toBeGreaterThan(0);
         expect(await readFile(managedPath, "utf8")).toBe(before);
         expect((await stat(managedPath)).mtimeMs).toBe(beforeStat.mtimeMs);
@@ -77,5 +83,5 @@ describe("managed extension diagnostic purity", () => {
         await new Promise<void>((resolve, reject) => registry.close((error) => error ? reject(error) : resolve()));
       }
     });
-  }, 120_000);
+  }, 300_000);
 });

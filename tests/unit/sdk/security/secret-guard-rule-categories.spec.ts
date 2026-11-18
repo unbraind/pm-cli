@@ -115,6 +115,16 @@ describe("decideSecretGuardFinding", () => {
     expect(decideSecretGuardFinding(forward, { rule: "future_token" })).toBe("future");
   });
 
+  it("reads the finding's rule and the policy's default once", () => {
+    let ruleReads = 0;
+    const finding = { get rule() { ruleReads += 1; if (ruleReads > 1) throw new Error("rule read twice"); return "private_ip"; } };
+    expect(decideSecretGuardFinding({ default: "default", categories: { network: "network" } }, finding)).toBe("network");
+    let defaultReads = 0;
+    const policy = { get default() { defaultReads += 1; return defaultReads > 1 ? undefined : "own"; } } as unknown as SecretGuardPolicy<string>;
+    expect(decideSecretGuardFinding(policy, { rule: "private_ip" })).toBe("own");
+    expect(defaultReads).toBe(1);
+  });
+
   it("reads only the policy's own default, categories and rules", () => {
     const inheritedDefault = Object.create({ default: "inherited" }) as SecretGuardPolicy<string>;
     expect(() => decideSecretGuardFinding(inheritedDefault, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy requires a default decision."));
@@ -152,6 +162,9 @@ describe("decideSecretGuardFinding", () => {
 
 describe("a detector added after a consumer wrote its policy", () => {
   it("inherits its category decision without any policy change", async () => {
+    // Drop the guard the static import loaded, so the mocked inventory applies
+    // even when this test runs alone.
+    vi.resetModules();
     const futureRule: SecretRule = { name: "future-token", mutationRule: "future_token", category: "credential", regex: /\bfuture_[a-z]{12}\b/g };
     vi.doMock("../../../../src/core/shared/secret-rules.js", async (importOriginal) => {
       const original = await importOriginal<typeof import("../../../../src/core/shared/secret-rules.js")>();
