@@ -115,12 +115,12 @@ default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
 (clamped to 1000–120000) for a slow registry, proxy or cold start, for example
 on a Windows runner. The deadline settles the check without waiting for the
 provider's pipes, so a launcher such as `cmd.exe` or an npm shim cannot extend
-it by exiting while a descendant keeps running. It then stops the provider's
-process tree: its process group on POSIX, and on Windows the descendants of a
-launcher that is still running (`taskkill /T` cannot reach a descendant whose
-launcher already exited); a lookup still running at its deadline is reported as timed out even
-if the provider then exits cleanly. A recorded `update_check_timeout_ms` is
-kept only beside a timed-out reason. The GitHub lookup runs with
+it by exiting while a descendant keeps running. It then kills the provider and
+its live descendants (`taskkill /T` on Windows, a `ps` tree walk elsewhere); a
+descendant whose launcher already exited is not reached, but it no longer
+delays the result. A lookup still running at its deadline is reported as timed
+out even if the provider then exits cleanly. A recorded `update_check_timeout_ms`
+is kept only beside a timed-out reason. The GitHub lookup runs with
 `GIT_TERMINAL_PROMPT=0` and `GCM_INTERACTIVE=never`, so a remote that asks for
 credentials through Git's terminal prompt or Git Credential Manager fails at
 once; another askpass program or credential helper that prompts can still hold
@@ -129,9 +129,9 @@ A GitHub remote that resolves no reference still reports
 `no_remote_reference_found`, and one checked without an installed commit
 reports `missing_installed_commit`.
 
-While a lookup runs, interrupting `pm` (SIGINT, SIGTERM or SIGHUP) stops the
-lookup's process tree too; a host that handles the signal itself keeps its own
-shutdown.
+Lookups are not detached: they stay in `pm`'s process group, so a terminal
+Ctrl-C reaches them as it reaches `pm`, and `pm` installs no signal handlers
+for them.
 
 Use `pm package doctor --project --detail deep --json` to inspect activation
 alongside update-check status totals. A strict doctor run may fail for partial

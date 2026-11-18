@@ -7,13 +7,11 @@ import type { ManagedExtensionSource } from "../../../src/sdk/extension/managed-
 // environment.
 const spawnMock = vi.hoisted(() => vi.fn());
 const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number) => undefined));
-const untrackMock = vi.hoisted(() => vi.fn());
-const trackMock = vi.hoisted(() => vi.fn((_pid: number | undefined) => untrackMock));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
   spawn: spawnMock,
 }));
-vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock, trackDetachedProcessGroup: trackMock }));
+vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock }));
 
 const {
   EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
@@ -92,8 +90,7 @@ afterEach(() => {
   spawnMock.mockReset();
   killProcessTreeMock.mockReset();
   killProcessTreeMock.mockImplementation(async () => undefined);
-  trackMock.mockClear();
-  untrackMock.mockClear();
+
   children = [];
   vi.unstubAllEnvs();
 });
@@ -111,8 +108,6 @@ describe("npm update lookup budget", () => {
     expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
     expect(children[0]?.stdout.destroy).toHaveBeenCalled();
     expect(children[0]?.stderr.destroy).toHaveBeenCalled();
-    expect(trackMock).toHaveBeenCalledWith(4242);
-    expect(untrackMock).toHaveBeenCalledTimes(1);
     // The tree teardown ran; a direct child still running is killed as well.
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
   });
@@ -150,7 +145,7 @@ describe("npm update lookup budget", () => {
     expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
     expect(killProcessTreeMock).not.toHaveBeenCalled();
-    expect(trackMock).toHaveBeenCalledWith(undefined);
+
   });
 
   it("keeps the timed-out result when the provider exits cleanly with partial output after the deadline", async () => {
@@ -193,19 +188,19 @@ describe("npm update lookup budget", () => {
     expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 45000 });
   });
 
-  it("runs npm detached with closed stdin, discarded stderr and no lifecycle scripts, and clears its deadline", async () => {
+  it("runs npm attached with closed stdin, discarded stderr and no lifecycle scripts, and clears its deadline", async () => {
     vi.useFakeTimers();
     succeedWith('"2.0.0"\n');
     expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: true, remote_version: "2.0.0" });
     expect(vi.getTimerCount()).toBe(0);
     expect(spawnMock.mock.calls[0]?.[1]).toEqual(["view", "@scope/example", "dist-tags.latest", "--json", "--ignore-scripts"]);
     expect(spawnOptions()).toMatchObject({
-      stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32", windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
       env: expect.objectContaining({ npm_config_ignore_scripts: "true" }),
     });
     expect(children[0]?.stderr.resume).toHaveBeenCalled();
     expect(killProcessTreeMock).not.toHaveBeenCalled();
-    expect(untrackMock).toHaveBeenCalledTimes(1);
+
   });
 
   it("passes the configured budget to an injected GitHub runner", async () => {
@@ -222,10 +217,11 @@ describe("GitHub update lookup reasons", () => {
     expect(await checkGithubUpdate(github)).toEqual({ checked_at: expect.any(String), available: true, remote_commit: "def456" });
     expect(spawnMock.mock.calls[0]?.slice(0, 2)).toEqual(["git", ["ls-remote", "https://github.com/o/r.git", "HEAD", "HEAD^{}"]]);
     expect(spawnOptions()).toMatchObject({
-      stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32", windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
       env: expect.objectContaining({ GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" }),
     });
     expect(spawnOptions().shell).toBeUndefined();
+    expect(spawnOptions()).not.toHaveProperty("detached");
   });
 
   it("reports a lookup still running at its budget as timed out and names the budget", async () => {

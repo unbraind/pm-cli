@@ -7,9 +7,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithubUpdate } from "../../../src/sdk/extension/update-check.js";
 
 // pm-5kfzjh and pm-43p2c3: the deadline must settle the lookup even when the
-// launcher exits while a descendant still holds its pipes, and must tear the
-// descendant down with it; interrupting the host must stop the detached
-// lookup group as well.
+// launcher exits while a descendant still holds its pipes, must kill a live
+// provider tree, and must leave the provider where a terminal Ctrl-C reaches
+// it with the host.
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const distUpdateCheck = pathToFileURL(path.join(repoRoot, "dist", "sdk", "extension", "update-check.js")).href;
 const GITHUB_SOURCE = { kind: "github", input: "github:o/r", location: "o/r", repository: "https://github.com/o/r.git", commit: "abc123" } as const;
@@ -60,62 +60,98 @@ async function fakeGit(tail: string): Promise<{ root: string; pidFile: string }>
   return { root, pidFile };
 }
 
+/** Kill leftovers by pid so a failed assertion never leaves a sleep behind. */
+function killQuietly(pids: number[]): void {
+  for (const pid of pids) {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {
+      // Already gone.
+    }
+  }
+}
+
+async function readPids(pidFile: string, limitMs = 15_000): Promise<number[]> {
+  return (await waitForFile(pidFile, limitMs)).trim().split(/\s+/u).map(Number);
+}
+
+/**
+ * A fake git whose descendant runs in the foreground, as a remote helper
+ * does. A background job of a non-interactive shell ignores SIGINT by POSIX
+ * rule, so it would not model a terminal Ctrl-C.
+ */
+async function fakeGitWithForegroundHelper(): Promise<{ root: string; launcherFile: string; helperFile: string }> {
+  const root = await mkdtemp(path.join(os.tmpdir(), "pm-update-interrupt-"));
+  tempRoots.push(root);
+  const launcherFile = path.join(root, "launcher.pid");
+  const helperFile = path.join(root, "helper.pid");
+  await writeFile(path.join(root, "git"), `#!/bin/sh\necho "$$" > "${launcherFile}"\nsh -c 'echo "$$" > "${helperFile}"; exec sleep 30'\n`);
+  await chmod(path.join(root, "git"), 0o755);
+  return { root, launcherFile, helperFile };
+}
+
 describe.skipIf(process.platform === "win32")("update lookup deadline over a real process tree", () => {
-  it("settles at its budget after the launcher exits and kills the descendant holding the pipes", async () => {
+  it("settles at its budget when the launcher exits while a descendant still holds the pipes", async () => {
     const { root, pidFile } = await fakeGit("exit 0");
     vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
     vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
     const started = Date.now();
-    const status = await checkGithubUpdate(GITHUB_SOURCE);
-    const elapsed = Date.now() - started;
-    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
-    expect(elapsed).toBeGreaterThanOrEqual(900);
-    expect(elapsed).toBeLessThan(10_000);
-    const [, descendant] = (await readFile(pidFile, "utf8")).trim().split(" ").map(Number);
-    expect(Number.isInteger(descendant) && descendant! > 0).toBe(true);
-    expect(await waitUntilStopped(descendant!, 5000)).toBe(true);
+    let pids: number[] = [];
+    try {
+      const status = await checkGithubUpdate(GITHUB_SOURCE);
+      const elapsed = Date.now() - started;
+      pids = await readPids(pidFile);
+      expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
+      expect(elapsed).toBeGreaterThanOrEqual(900);
+      expect(elapsed).toBeLessThan(10_000);
+    } finally {
+      // The re-parented descendant is outside the live tree the deadline
+      // walks; it no longer delays the result and is cleaned up here.
+      killQuietly(pids);
+    }
   });
 
-  /** Run the built SDK's lookup against a stalled fake git in a host process, then signal the host. */
-  async function interruptHost(hostSetup: string, signal: NodeJS.Signals): Promise<{ exit: { code: number | null; signal: NodeJS.Signals | null }; root: string; pids: number[] }> {
+  it("kills a still-running launcher and its descendant at the deadline", async () => {
     const { root, pidFile } = await fakeGit("sleep 30");
+    vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
+    vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
+    let pids: number[] = [];
+    try {
+      const status = await checkGithubUpdate(GITHUB_SOURCE);
+      pids = await readPids(pidFile);
+      expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
+      for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
+    } finally {
+      killQuietly(pids);
+    }
+  });
+
+  it("leaves the lookup in the host's process group, so a terminal Ctrl-C stops it with the host", async () => {
+    const { root, launcherFile, helperFile } = await fakeGitWithForegroundHelper();
+    // The host leads its own group, as a shell's foreground job does; Ctrl-C
+    // signals that whole group.
     const host = spawn(process.execPath, ["--input-type=module", "-e", [
       `import { checkGithubUpdate } from ${JSON.stringify(distUpdateCheck)};`,
-      hostSetup,
       `void checkGithubUpdate(${JSON.stringify(GITHUB_SOURCE)});`,
       "setInterval(() => undefined, 1000);",
     ].join("\n")], {
-      env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "60000", PM_HOST_MARKER: path.join(root, "shutdown") },
+      detached: true,
+      env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "60000" },
       stdio: "ignore",
     });
-    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("exit", (code, exitSignal) => resolve({ code, signal: exitSignal })));
+    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("exit", (code, signal) => resolve({ code, signal })));
+    let pids: number[] = [];
     try {
-      const pids = (await waitForFile(pidFile, 15_000)).trim().split(" ").map(Number);
-      expect(isRunning(pids[0]!)).toBe(true);
-      host.kill(signal);
-      return { exit: await exited, root, pids };
+      const helper = await readPids(helperFile);
+      pids = [...(await readPids(launcherFile)), ...helper];
+      for (const pid of pids) expect(isRunning(pid)).toBe(true);
+      process.kill(-host.pid!, "SIGINT");
+      expect(await exited).toEqual({ code: null, signal: "SIGINT" });
+      for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
     } finally {
-      // Never leave the host behind, whatever failed above.
       if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
       await exited;
+      killQuietly(pids);
     }
-  }
-
-  it("stops the detached lookup group when the host is interrupted before the deadline", async () => {
-    const { exit, pids } = await interruptHost("", "SIGINT");
-    expect(exit).toEqual({ code: null, signal: "SIGINT" });
-    for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
-  }, 30_000);
-
-  it("keeps a host's one-shot shutdown handler in charge of the signal", async () => {
-    // The host's handler is registered before the lookup and removes itself
-    // when it runs; it must still finish its asynchronous shutdown.
-    const { exit, root, pids } = await interruptHost([
-      `import { writeFileSync } from "node:fs";`,
-      `process.once("SIGTERM", () => setTimeout(() => { writeFileSync(process.env.PM_HOST_MARKER, "done"); process.exit(0); }, 200));`,
-    ].join("\n"), "SIGTERM");
-    expect(exit).toEqual({ code: 0, signal: null });
-    expect(await readFile(path.join(root, "shutdown"), "utf8")).toBe("done");
-    for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
   }, 30_000);
 });

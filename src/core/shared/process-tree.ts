@@ -1,11 +1,10 @@
 /**
  * @module core/shared/process-tree
  *
- * Tears down a child process together with its descendants, so a deadline
- * leaves no grandchild running or holding the parent's pipes, and ties the
- * process groups of detached children to the host's own exit and interruption.
+ * Tears down a child process together with its live descendants, so a
+ * deadline leaves no grandchild running or holding the parent's pipes.
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 
 /* c8 ignore start -- process-tree teardown paths are highly platform-dependent. */
 /** Kill `pid` itself, treating a process that is already gone as stopped. */
@@ -18,13 +17,38 @@ function killProcess(pid: number): void {
 }
 
 /**
+ * List the live descendants of `pid`, deepest first, from one `ps` snapshot.
+ * A process whose parent already exited has been re-parented and is not
+ * listed. Returns an empty list when `ps` is unavailable.
+ */
+function listPosixDescendants(pid: number): number[] {
+  const snapshot = spawnSync("ps", ["-A", "-o", "pid=,ppid="], { encoding: "utf8", timeout: 5_000 });
+  if (snapshot.status !== 0 || typeof snapshot.stdout !== "string") return [];
+  const children = new Map<number, number[]>();
+  for (const line of snapshot.stdout.split("\n")) {
+    const [child, parent] = line.trim().split(/\s+/u).map(Number);
+    if (!Number.isInteger(child) || !Number.isInteger(parent)) continue;
+    children.set(parent!, [...(children.get(parent!) ?? []), child!]);
+  }
+  const descendants: number[] = [];
+  const pending = [...(children.get(pid) ?? [])];
+  while (pending.length > 0) {
+    const next = pending.shift()!;
+    if (descendants.includes(next) || next === pid) continue;
+    descendants.push(next);
+    pending.push(...(children.get(next) ?? []));
+  }
+  return descendants.reverse();
+}
+
+/**
  * Kill the process tree rooted at `pid`. On Windows this runs
- * `taskkill /T /F`, which walks the tree from the live root, so a descendant
- * whose launcher already exited is not reached; when `taskkill` cannot start
- * or fails, the root itself is still killed. Elsewhere it signals the process
- * group led by `pid` (the child must have been spawned with `detached: true`),
- * which reaches such a descendant too, and falls back to the process itself.
- * A process that is already gone is not an error.
+ * `taskkill /T /F`; when `taskkill` cannot start or fails, the root itself is
+ * still killed. Elsewhere it signals the process group led by `pid` when the
+ * child was spawned with `detached: true`; otherwise it kills the live
+ * descendants found by `ps`, then the process itself. Either way the tree is
+ * walked from the live root, so a descendant whose launcher already exited is
+ * not reached. A process that is already gone is not an error.
  */
 export async function killProcessTree(pid: number): Promise<void> {
   if (!Number.isInteger(pid) || pid <= 0) {
@@ -46,65 +70,9 @@ export async function killProcessTree(pid: number): Promise<void> {
     process.kill(-pid, "SIGKILL");
     return;
   } catch {
-    // Fall back to direct child kill when no process group is available.
+    // Not a process-group leader: walk its live descendants instead.
   }
+  for (const descendant of listPosixDescendants(pid)) killProcess(descendant);
   killProcess(pid);
 }
 /* c8 ignore stop */
-
-/** Signals that end the host by default and must take tracked groups with them. */
-const TERMINATING_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
-const trackedGroups = new Set<number>();
-
-/** Kill every tracked process group synchronously; the host's exit path runs nothing asynchronous. */
-function killTrackedGroups(): void {
-  for (const pid of trackedGroups) {
-    try {
-      process.kill(-pid, "SIGKILL");
-    } catch {
-      // The group can already be gone.
-    }
-  }
-}
-
-function onTerminatingSignal(signal: NodeJS.Signals): void {
-  // This listener is prepended, so it runs before the host's own listeners
-  // and before Node removes a host's `once` listener: the count still sees
-  // every handler the host registered for this signal.
-  const hostHandlesSignal = process.listenerCount(signal) > 1;
-  killTrackedGroups();
-  trackedGroups.clear();
-  uninstallGroupCleanup();
-  // With this listener gone the signal's default action applies again, so
-  // re-raising it ends the host exactly as it would have without tracking;
-  // a host that handles the signal keeps its own handling.
-  if (!hostHandlesSignal) process.kill(process.pid, signal);
-}
-
-function installGroupCleanup(): void {
-  process.on("exit", killTrackedGroups);
-  for (const signal of TERMINATING_SIGNALS) process.prependListener(signal, onTerminatingSignal);
-}
-
-function uninstallGroupCleanup(): void {
-  process.off("exit", killTrackedGroups);
-  for (const signal of TERMINATING_SIGNALS) process.off(signal, onTerminatingSignal);
-}
-
-/**
- * Tie the process group of a child spawned with `detached: true` to the host:
- * while it is tracked, the host's exit or a SIGINT, SIGTERM or SIGHUP kills
- * the group, which a detached group would otherwise survive because it no
- * longer shares the terminal's foreground process group. The returned function
- * stops tracking it; listeners exist only while some group is tracked. Windows
- * children are never detached, so nothing is tracked there.
- */
-export function trackDetachedProcessGroup(pid: number | undefined): () => void {
-  if (process.platform === "win32" || pid === undefined) return () => undefined;
-  if (trackedGroups.size === 0) installGroupCleanup();
-  trackedGroups.add(pid);
-  return () => {
-    if (!trackedGroups.delete(pid)) return;
-    if (trackedGroups.size === 0) uninstallGroupCleanup();
-  };
-}

@@ -21740,7 +21740,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardPolicy",
-          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision & ({} | null); categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
+          "signature": "export interface SecretGuardPolicy<Decision> { default: NonNullable<Decision> | Extract<Decision, null>; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
         },
         {
           "classification": "supported",
@@ -31952,7 +31952,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardPolicy",
-          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision & ({} | null); categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
+          "signature": "export interface SecretGuardPolicy<Decision> { default: NonNullable<Decision> | Extract<Decision, null>; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
         },
         {
           "classification": "supported",

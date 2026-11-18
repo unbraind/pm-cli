@@ -6,7 +6,7 @@
 import { nowIso } from "../../core/shared/time.js";
 import { spawn } from "node:child_process";
 import npa from "npm-package-arg";
-import { killProcessTree, trackDetachedProcessGroup } from "../../core/shared/process-tree.js";
+import { killProcessTree } from "../../core/shared/process-tree.js";
 import type { ManagedExtensionSource } from "./managed-state.js";
 import { resolveNpmCommandName, shouldRunNpmCommandInShell } from "./install-sources.js";
 
@@ -97,31 +97,30 @@ interface UpdateQuerySpec {
  * Run one provider lookup under an explicit deadline. The deadline settles the
  * lookup as timed out on its own, without waiting for the child's pipes,
  * because a launcher (`cmd.exe`, an npm shim, `git`) can exit while a
- * descendant still holds them. It then tears down the whole process tree: on
- * POSIX the child leads its own process group, and on Windows `taskkill /T`
- * reaches the descendants of a launcher that is still running, as `cmd.exe`
- * and `git` are while they wait for npm and the remote helper. A child that exits after the deadline,
- * cleanly or not, cannot replace the timed-out result with partial output.
- * When the tree teardown cannot run, the direct child is still killed. While
- * the lookup runs, the host's exit or interruption also stops its process
- * group, which a detached child would otherwise survive. Any other failure, including stdout beyond `maxBuffer`, reports the failed
- * reason. stdin is closed and stderr is discarded, so the provider's command
- * line, stderr and environment never reach the reason.
+ * descendant still holds them. It then kills the provider and its live
+ * descendants (`taskkill /T` on Windows, a `ps` tree walk elsewhere), which
+ * reaches the helpers of a launcher that is still running, as `cmd.exe` and
+ * `git` are while they wait for npm and the remote helper; when that teardown
+ * cannot run, the direct child is still killed. A child that exits after the
+ * deadline, cleanly or not, cannot replace the timed-out result with partial
+ * output. The child is not detached, so it stays in the host's process group
+ * and a terminal Ctrl-C reaches it as it reaches the host. Any other
+ * failure, including stdout beyond `maxBuffer`, reports the failed reason.
+ * stdin is closed and stderr is discarded, so the provider's command line,
+ * stderr and environment never reach the reason.
  */
 function runBoundedUpdateQuery(file: string, args: string[], timeout: number, spec: UpdateQuerySpec): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     let child;
     try {
       child = spawn(file, args, {
-        env: spec.env, shell: spec.shell, stdio: ["ignore", "pipe", "pipe"],
-        detached: process.platform !== "win32", windowsHide: true,
+        env: spec.env, shell: spec.shell, stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
       });
     } catch {
       reject(new UpdateQueryError(spec.failed));
       return;
     }
     const lookup = child;
-    const untrack = trackDetachedProcessGroup(lookup.pid);
     let settled = false;
     let stdout = "";
     let stdoutBytes = 0;
@@ -142,7 +141,6 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (settled) return;
       settled = true;
       clearTimeout(deadline);
-      untrack();
       if (error) reject(error);
       else resolve(stdout.trim());
     }
