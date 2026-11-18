@@ -19,6 +19,9 @@ const EXTENSION_UPDATE_CHECK_TIMEOUT_MIN_MS = 1_000;
 // one lookup run under that lock cannot outlast a concurrent package action.
 const EXTENSION_UPDATE_CHECK_TIMEOUT_MAX_MS = 25_000;
 
+/** Longest a teardown waits for a killed provider to report its exit. */
+const PROVIDER_EXIT_WAIT_MS = 2_000;
+
 /** Stable reason for an npm lookup that failed for any reason other than its budget. */
 export const NPM_REGISTRY_LOOKUP_FAILED = "npm_registry_lookup_failed";
 /** Stable reason for an npm lookup killed when its budget ran out (pm-5kfzjh). */
@@ -158,9 +161,20 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       // stdout stays open, its data discarded, until the tree is captured:
       // closing it first could SIGPIPE the provider and orphan its helpers
       // before ps lists them.
-      const finish = (): void => {
+      // The teardown ends once Node reports the provider's exit (bounded, in
+      // case the kill cannot take effect), so a caller limiting live providers
+      // never counts a provider as gone while it still runs.
+      const finish = (): Promise<void> => {
         killDirectChild();
         lookup.stdout?.destroy();
+        if (exited()) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          const bound = setTimeout(resolve, PROVIDER_EXIT_WAIT_MS);
+          lookup.once("exit", () => {
+            clearTimeout(bound);
+            resolve();
+          });
+        });
       };
       // Once the launcher has exited its PID may already belong to another
       // process, so only a live launcher's tree is torn down by PID; its root

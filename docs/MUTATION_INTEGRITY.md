@@ -174,8 +174,12 @@ const policy: SecretGuardPolicy<boolean> = {
   categories: { network: false, path: false },
   rules: { private_ssh_target: true },
 };
-const refused = scanMutationSecrets(mutationInput).some((finding) =>
-  decideSecretGuardFinding(policy, finding),
+// A finding whose inspection did not complete needs review, whatever the
+// policy says about its category.
+const refused = scanMutationSecrets(mutationInput).some(
+  (finding) =>
+    finding.normalization_incomplete === true ||
+    decideSecretGuardFinding(policy, finding),
 );
 ```
 
@@ -185,13 +189,15 @@ IPv4 addresses, private SSH targets and user-at-private-host addresses) or
 `path` (absolute home-directory paths). The most specific entry wins: a `rules`
 entry, then the finding's `categories` entry, then `default`. A detector added
 later joins an existing category and takes that category's decision, or the
-default, without a policy change. A rule the running SDK does not know, such as
+default when the policy names no such category, without a policy change. A rule the running SDK does not know, such as
 one in a finding decoded from a newer host, has no category: an exact `rules`
 entry for it still applies, and otherwise it takes the default. Entries whose
-value is `undefined` count as absent, and other keys that name no rule or
-category are ignored. Only the policy's own `default`, `categories` and `rules`
-are read, never inherited ones. A policy that is not an object, has no own
-`default` or holds non-object `categories` or `rules`, or a finding without a
+value is `undefined` count as absent; a `rules` entry may name a rule this SDK
+does not ship yet, and other keys that name no rule or category are ignored.
+Only the policy's own `default`, `categories` and `rules` are read, never
+inherited ones. The default must be defined (`null` is a valid decision); a
+policy that is not an object, has no own `default` or has `default:
+undefined`, holds non-object `categories` or `rules`, or a finding without a
 string `rule`, throws a `TypeError`.
 
 `SECRET_GUARD_RULE_CATEGORIES` maps every shipped rule to its category and

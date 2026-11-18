@@ -122,11 +122,10 @@ result that arrives after the deadline counts as a timeout even if the host's
 event loop was busy when the deadline passed. The deadline settles the check without waiting for the
 provider's pipes, so a launcher such as `cmd.exe` or an npm shim cannot extend
 it by exiting while a descendant keeps running. It then makes a best-effort
-attempt to stop the provider and its live descendants (`taskkill /T` on
-Windows, a tree walk over the system `ps` elsewhere): the provider itself is
-always killed, but a descendant is missed when that tool cannot run, and one
-whose launcher already exited is not reached. The timeout result never depends
-on the teardown. A lookup still running at its deadline is reported as timed
+attempt to stop a provider that is still running and its live descendants
+(`taskkill /T` on Windows, a tree walk over the system `ps` elsewhere): a
+descendant is missed when that tool cannot run, and one whose launcher already
+exited is not reached. The timeout result never depends on the teardown. A lookup still running at its deadline is reported as timed
 out even if the provider then exits cleanly. A recorded `update_check_timeout_ms`
 is kept only beside a timed-out reason. A provider that exits with a failure
 is reported as failed at once, even while a descendant still holds its output.

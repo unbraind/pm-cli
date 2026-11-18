@@ -1,12 +1,12 @@
 id: pm-9x9drr
-title: "pm package manage --fix-managed-state holds the extension state lock across every remote update lookup, so a raised update-check budget lengthens how long concurrent package actions wait"
+title: "pm package manage --fix-managed-state holds the extension state lock across every remote update lookup, so a scan with several batches can outlast a concurrent package action's lock wait"
 description: "Raised by CodeRabbit and Codex on PR 1752 (src/sdk/extension.ts, the prepareExploreManageState path). With --fix-managed-state, dispatchExtensionAction wraps the whole manage handler in withExtensionInstallLock. That handler adopts unmanaged packages and then calls refreshManagedExtensionUpdates, so the lock stays held while every npm view and git ls-remote runs, four at a time. The refresh never persists its result, so it does not need the lock. The lock wait is 30 seconds (120 attempts of 250 ms). As an interim mitigation, PR 1752 makes manage --fix-managed-state ignore PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS and keep the 10-second default, while the override (clamped to 25 seconds) applies everywhere else. At that default, more than eight managed npm or GitHub packages (three or more batches at concurrency four) can still keep the lock past a concurrent install, uninstall or adopt's 30-second wait, which then fails with a lock conflict. Proposed: keep only the adoption read and write under the lock, and run the refresh and runtime probe after it is released, while meeting the two design requirements recorded in this item's comments: a consistent freshness snapshot, and the host-error boundary."
 type: Issue
 status: open
 priority: 3
 tags[4]: concurrency,extensions,locking,update-check
 created_at: "2026-11-18T10:52:10.869Z"
-updated_at: "2026-11-18T13:00:20.957Z"
+updated_at: "2026-11-18T14:02:16.903Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "manage --fix-managed-state holds the extension state lock only for the adoption read and write; the remote update refresh and runtime probe run after the lock is released, with the same results and offline behaviour; a test proves a concurrent locked package action is not blocked by a slow lookup; manage without --fix-managed-state is unchanged"
@@ -15,7 +15,7 @@ risk: medium
 confidence: medium
 severity: low
 expected_result: A slow or long-budget update lookup never holds the extension state lock
-actual_result: "With --fix-managed-state the lock spans every remote update lookup, up to the configured budget per lookup"
+actual_result: "With --fix-managed-state the lock spans the whole remote refresh at the default 10-second lookup budget (the override does not apply there), and each batch's teardown can add up to about 2 seconds, so three or more batches can exceed the 30-second lock wait"
 component: extensions
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5kfzjh,discovered_from,"2026-11-18T10:52:10.869Z","harness:claude-code","cli:create:dep",detected

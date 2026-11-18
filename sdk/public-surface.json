@@ -21740,7 +21740,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardPolicy",
-          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision & (NonNullable<Decision> | null); categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined; }; rules?: { [Rule in SecretGuardRule]?: Decision | undefined; }; }"
+          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision & (NonNullable<Decision> | null); categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined; }; rules?: { [Rule in SecretGuardRule]?: Decision | undefined; } & { readonly [rule: string]: Decision | undefined; }; }"
         },
         {
           "classification": "supported",
@@ -31952,7 +31952,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardPolicy",
-          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision & (NonNullable<Decision> | null); categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined; }; rules?: { [Rule in SecretGuardRule]?: Decision | undefined; }; }"
+          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision & (NonNullable<Decision> | null); categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined; }; rules?: { [Rule in SecretGuardRule]?: Decision | undefined; } & { readonly [rule: string]: Decision | undefined; }; }"
         },
         {
           "classification": "supported",

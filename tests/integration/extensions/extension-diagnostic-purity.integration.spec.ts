@@ -87,9 +87,12 @@ describe("managed extension diagnostic purity", () => {
       // A stalled npm on PATH makes this deterministic: no npm start-up time
       // decides the outcome, and no registry is contacted.
       const stalledBin = path.join(context.tempRoot, "stalled-npm-bin");
+      const started = path.join(context.tempRoot, "stalled-npm-started");
       await mkdir(stalledBin);
-      await writeFile(path.join(stalledBin, "npm"), "#!/bin/sh\nsleep 30\n", { mode: 0o755 });
-      await writeFile(path.join(stalledBin, "npm.cmd"), "@ping -n 31 127.0.0.1 >nul\r\n");
+      // Each invocation records that the fixture itself ran, then stalls.
+      await writeFile(path.join(stalledBin, "npm"), '#!/bin/sh\necho started >> "$PM_STALLED_NPM_MARKER"\nsleep 30\n', { mode: 0o755 });
+      await writeFile(path.join(stalledBin, "npm.cmd"), '@echo started>> "%PM_STALLED_NPM_MARKER%"\r\n@ping -n 31 127.0.0.1 >nul\r\n');
+      vi.stubEnv("PM_STALLED_NPM_MARKER", started);
       vi.stubEnv("PATH", `${stalledBin}${path.delimiter}${process.env.PATH ?? ""}`);
       vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "2000");
       const stalledStarted = Date.now();
@@ -101,6 +104,7 @@ describe("managed extension diagnostic purity", () => {
       const lockedStarted = Date.now();
       expect((await runExtension(undefined, { manage: true, project: true, fixManagedState: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 10_000 }] });
       expect(Date.now() - lockedStarted).toBeGreaterThanOrEqual(9_000);
+      expect((await readFile(started, "utf8")).trim().split(/\r?\n/u)).toHaveLength(2);
     });
   });
 });

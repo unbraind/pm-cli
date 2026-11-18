@@ -24,9 +24,14 @@ void everyCategory;
 const unknownCategory: SecretGuardPolicy<boolean> = { default: true, categories: { identity: false } };
 void unknownCategory;
 
-// @ts-expect-error a rule entry must name a shipped detector
-const unknownRule: SecretGuardPolicy<boolean> = { default: true, rules: { future_token: false } };
-void unknownRule;
+// A rule this SDK does not ship yet may already be decided, for a newer host.
+const forwardRule: SecretGuardPolicy<boolean> = { default: true, rules: { future_token: false } };
+void forwardRule;
+// Every rule entry is a decision, even one assigned through a variable.
+const mixedRules = { private_ip: false, future_token: "refuse" };
+// @ts-expect-error an entry that is not a decision is rejected
+const mixedPolicy: SecretGuardPolicy<boolean> = { default: true, rules: mixedRules };
+void mixedPolicy;
 
 // @ts-expect-error the default decision is required
 const noDefault: SecretGuardPolicy<boolean> = { categories: { network: false } };

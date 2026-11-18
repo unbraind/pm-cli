@@ -24,8 +24,10 @@ afterEach(async () => {
 function isRunning(pid: number): boolean {
   try {
     process.kill(pid, 0);
-  } catch {
-    return false;
+  } catch (error) {
+    // Only ESRCH proves absence; EPERM means it exists but is not ours.
+    if ((error as NodeJS.ErrnoException).code === "ESRCH") return false;
+    throw error;
   }
   const state = spawnSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8" });
   const row = state.stdout?.trim() ?? "";
@@ -37,8 +39,15 @@ function isRunning(pid: number): boolean {
 }
 
 /** Wait for a subprocess to exit, or report `undefined` after `limitMs` so the caller's cleanup still runs. */
-function exitWithin<T>(exited: Promise<T>, limitMs: number): Promise<T | undefined> {
-  return Promise.race([exited, new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), limitMs))]);
+async function exitWithin<T>(exited: Promise<T>, limitMs: number): Promise<T | undefined> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([exited, new Promise<undefined>((resolve) => {
+      timer = setTimeout(() => resolve(undefined), limitMs);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function waitUntilStopped(pid: number, limitMs: number): Promise<boolean> {
@@ -60,13 +69,18 @@ async function waitForFile(file: string, limitMs: number): Promise<string> {
   throw new Error(`Timed out waiting for ${file}`);
 }
 
-/** A fake git on a private PATH entry: it records its pids, leaves `sleep 30` on its pipes and then `tail` runs. */
+/**
+ * A fake git on a private PATH entry: it records its pids, leaves `sleep 30`
+ * on its pipes and then `tail` runs. The pid file path reaches the script as
+ * data (PM_FIXTURE_PID_FILE), never interpolated into its text.
+ */
 async function fakeGit(tail: string): Promise<{ root: string; pidFile: string }> {
   const root = await mkdtemp(path.join(os.tmpdir(), "pm-update-deadline-"));
   tempRoots.push(root);
   const pidFile = path.join(root, "pids");
-  await writeFile(path.join(root, "git"), `#!/bin/sh\nsleep 30 &\necho "$$ $!" > "${pidFile}"\n${tail}\n`);
+  await writeFile(path.join(root, "git"), `#!/bin/sh\nsleep 30 &\necho "$$ $!" > "$PM_FIXTURE_PID_FILE"\n${tail}\n`);
   await chmod(path.join(root, "git"), 0o755);
+  vi.stubEnv("PM_FIXTURE_PID_FILE", pidFile);
   return { root, pidFile };
 }
 
@@ -101,7 +115,8 @@ async function fakeGitWithForegroundHelper(): Promise<{ root: string; launcherFi
   tempRoots.push(root);
   const launcherFile = path.join(root, "launcher.pid");
   const helperFile = path.join(root, "helper.pid");
-  await writeFile(path.join(root, "git"), `#!/bin/sh\necho "$$" > "${launcherFile}"\nsh -c 'echo "$$" > "${helperFile}"; exec sleep 30'\n`);
+  // The pid file paths reach the scripts as data, never interpolated.
+  await writeFile(path.join(root, "git"), `#!/bin/sh\necho "$$" > "$PM_FIXTURE_LAUNCHER_FILE"\nsh -c 'echo "$$" > "$PM_FIXTURE_HELPER_FILE"; exec sleep 30'\n`);
   await chmod(path.join(root, "git"), 0o755);
   return { root, launcherFile, helperFile };
 }
@@ -122,8 +137,9 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
       expect(elapsed).toBeLessThan(10_000);
     } finally {
       // The re-parented descendant is outside the live tree the deadline
-      // walks; it no longer delays the result and is cleaned up here.
-      killQuietly(pids);
+      // walks; it no longer delays the result and is cleaned up here. The
+      // launcher exited long ago, so its pid is never signalled.
+      killQuietly(pids.slice(1));
     }
   });
 
@@ -154,7 +170,10 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
       "setInterval(() => undefined, 1000);",
     ].join("\n")], {
       detached: true,
-      env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "25000" },
+      env: {
+        ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "25000",
+        PM_FIXTURE_LAUNCHER_FILE: launcherFile, PM_FIXTURE_HELPER_FILE: helperFile,
+      },
       stdio: "ignore",
     });
     // close follows exit, and also follows a failed launch that emits only

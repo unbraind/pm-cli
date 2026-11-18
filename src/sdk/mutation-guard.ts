@@ -638,8 +638,13 @@ export interface SecretGuardPolicy<Decision> {
   default: Decision & (NonNullable<Decision> | null);
   /** Decisions for whole detector families; an `undefined` entry counts as absent. */
   categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined };
-  /** Decisions for single detectors, overriding their category's decision; an `undefined` entry counts as absent. */
-  rules?: { [Rule in SecretGuardRule]?: Decision | undefined };
+  /**
+   * Decisions for single detectors, overriding their category's decision; an
+   * `undefined` entry counts as absent. Any rule name may appear, including
+   * one this SDK does not ship, so a policy can already decide a detector a
+   * newer host reports; every entry is therefore typed as a decision.
+   */
+  rules?: { [Rule in SecretGuardRule]?: Decision | undefined } & { readonly [rule: string]: Decision | undefined };
 }
 
 function ownPolicyEntry<Decision>(

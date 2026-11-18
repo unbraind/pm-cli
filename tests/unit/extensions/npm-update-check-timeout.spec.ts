@@ -24,6 +24,7 @@ const {
   checkGithubUpdate,
   checkNpmUpdate,
   resolveExtensionUpdateCheckTimeoutMs,
+  updateCheckTeardown,
 } = await import("../../../src/sdk/extension/update-check.js");
 const { normalizeManagedState } = await import("../../../src/sdk/extension/managed-state.js");
 const { refreshManagedExtensionUpdates } = await import("../../../src/sdk/extension/managed-update-status.js");
@@ -43,7 +44,13 @@ class FakeStream extends EventEmitter {
 class FakeChild extends EventEmitter {
   readonly stdout = new FakeStream();
   readonly stderr = new FakeStream();
-  readonly kill = vi.fn(() => true);
+  /** SIGKILL takes effect: Node reports the exit shortly after the request. */
+  readonly kill = vi.fn((_signal?: NodeJS.Signals) => {
+    queueMicrotask(() => {
+      if (this.exitCode === null && this.signalCode === null) this.exit(null, "SIGKILL");
+    });
+    return true;
+  });
   exitCode: number | null = null;
   signalCode: NodeJS.Signals | null = null;
   constructor(readonly pid: number | undefined = 4242) {
@@ -94,6 +101,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.useRealTimers();
   spawnMock.mockReset();
   killProcessTreeMock.mockReset();
@@ -142,14 +150,17 @@ describe("npm update lookup budget", () => {
     hang();
     let root: TreeRoot | undefined;
     let aliveDuringTeardown: boolean | undefined;
+    let killsByRoot: unknown[][] = [];
     killProcessTreeMock.mockImplementationOnce(async (_pid: number, treeRoot?: TreeRoot) => {
       root = treeRoot;
       aliveDuringTeardown = treeRoot?.alive();
       treeRoot?.kill();
+      // Recorded before the runner's own fallback can kill the child.
+      killsByRoot = [...(children[0]?.kill.mock.calls ?? [])];
     });
     expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
     expect(aliveDuringTeardown).toBe(true);
-    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+    expect(killsByRoot).toEqual([["SIGKILL"]]);
     // Once Node reports the exit, the root no longer counts as the spawned process.
     children[0]?.exit(null, "SIGKILL");
     expect(root?.alive()).toBe(false);
@@ -157,7 +168,9 @@ describe("npm update lookup budget", () => {
 
   it("registers its error listener before touching stdio, so a spawn without stdout fails cleanly", async () => {
     spawnMock.mockImplementation(() => {
-      const child = new FakeChild();
+      // A spawn that failed before launch has neither stdio nor a PID.
+      const child = new FakeChild(undefined);
+      Object.defineProperty(child, "pid", { value: undefined });
       Object.defineProperty(child, "stdout", { value: null });
       children.push(child);
       // Node reports the spawn failure on the next tick.
@@ -165,7 +178,37 @@ describe("npm update lookup budget", () => {
       return child;
     });
     expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
-    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.anything());
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+  });
+
+  it("holds the teardown until Node reports the provider's exit, bounded when it never comes", async () => {
+    vi.useFakeTimers();
+    hang();
+    const status = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source));
+    expect(status).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    let tornDown = false;
+    void updateCheckTeardown(status).then(() => {
+      tornDown = true;
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    // The fake SIGKILL took effect, so the teardown is done.
+    expect(tornDown).toBe(true);
+    // A provider whose kill never takes effect holds the teardown for 2 s.
+    spawnMock.mockImplementation(() => {
+      const child = new FakeChild();
+      child.kill.mockImplementation(() => true);
+      children.push(child);
+      return child;
+    });
+    const stuck = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source));
+    let stuckDown = false;
+    void updateCheckTeardown(stuck).then(() => {
+      stuckDown = true;
+    });
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(stuckDown).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(stuckDown).toBe(true);
   });
 
   it("keeps stdout open, discarding its data, until the tree is captured", async () => {

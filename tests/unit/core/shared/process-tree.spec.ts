@@ -184,12 +184,18 @@ describe("killProcessTree", () => {
         return true;
       });
       answer("4242 1\n4300 4242\n4301 4300\n9999 1\n");
-      const caller = root();
+      const events: string[] = [];
+      kill.mockImplementation((pid) => {
+        events.push(`kill ${String(pid)}`);
+        if (pid === -4242) throw Object.assign(new Error("no group"), { code: "ESRCH" });
+        return true;
+      });
+      const caller = { kill: vi.fn(() => events.push("root")), alive: vi.fn(() => true) };
       await killProcessTree(4242, caller);
       expect(spawnMock).toHaveBeenCalledWith("/bin/ps", ["-A", "-o", "pid=", "-o", "ppid="], expect.objectContaining({ env: { PATH: "/usr/bin:/bin", LC_ALL: "C" } }));
-      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4301, "SIGKILL"], [4300, "SIGKILL"]]);
+      // Descendants deepest first, and the root last, so none is orphaned first.
+      expect(events).toEqual(["kill -4242", "kill 4301", "kill 4300", "root"]);
       expect(caller.alive).toHaveBeenCalled();
-      expect(caller.kill).toHaveBeenCalledTimes(1);
     } finally {
       restore();
     }
@@ -277,8 +283,14 @@ describe("killProcessTree", () => {
   it("does not kill a Windows root by its possibly reused PID once it exited while taskkill ran", async () => {
     const restore = withPlatform("win32");
     try {
-      answer("", 128);
-      const caller = { kill: vi.fn(), alive: vi.fn(() => false) };
+      vi.stubEnv("SystemRoot", "C:\\Windows");
+      // The root is alive when taskkill starts and exits while it runs.
+      let rootAlive = true;
+      provide((helper) => {
+        rootAlive = false;
+        helper.emit("close", 128);
+      });
+      const caller = { kill: vi.fn(), alive: vi.fn(() => rootAlive) };
       await killProcessTree(4242, caller);
       expect(caller.alive).toHaveBeenCalled();
       expect(caller.kill).not.toHaveBeenCalled();
