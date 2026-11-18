@@ -4,7 +4,7 @@
  * Provides bounded and annotated-tag-aware update checks for managed extensions.
  */
 import { nowIso } from "../../core/shared/time.js";
-import { execFile } from "node:child_process";
+import { execFile, type ExecFileOptions } from "node:child_process";
 import { promisify } from "node:util";
 import npa from "npm-package-arg";
 import type { ManagedExtensionSource } from "./managed-state.js";
@@ -81,15 +81,43 @@ function failedUpdateStatus(checkedAt: string, error: unknown): GithubUpdateStat
   return status;
 }
 
+/** Stable reasons one provider reports for a lookup that ran out of its budget or failed otherwise. */
+interface UpdateQueryReasons {
+  timedOut: string;
+  failed: string;
+}
+
 /**
- * Whether execFile killed the child because its `timeout` ran out. Node sets
- * `killed` only when it sent the kill itself, which here is either the timeout
- * or an overflowing output buffer.
+ * Run one provider lookup under an explicit deadline that aborts the child.
+ * A lookup still running when the deadline passes is reported as timed out
+ * even if the child then exits cleanly, so a provider that handles the
+ * signal cannot pass partial output off as a result. Any other failure,
+ * including an overflowing output buffer, reports the failed reason. The
+ * provider's command line, stderr and environment never reach the reason.
  */
-function isExecTimeout(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const failure = error as { killed?: unknown; code?: unknown };
-  return failure.killed === true && failure.code !== "ERR_CHILD_PROCESS_STDIO_MAXBUFFER";
+async function runBoundedUpdateQuery(
+  file: string,
+  args: string[],
+  options: Omit<ExecFileOptions, "encoding" | "signal" | "timeout">,
+  timeout: number,
+  reasons: UpdateQueryReasons,
+): Promise<string> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const deadline = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeout);
+  let stdout: string;
+  try {
+    ({ stdout } = await execFileAsync(file, args, { ...options, encoding: "utf8", signal: controller.signal }));
+  } catch {
+    throw timedOut ? new UpdateQueryError(reasons.timedOut, timeout) : new UpdateQueryError(reasons.failed);
+  } finally {
+    clearTimeout(deadline);
+  }
+  if (timedOut) throw new UpdateQueryError(reasons.timedOut, timeout);
+  return stdout.trim();
 }
 
 /** Resolve an exact registry version without reflecting untrusted provenance or metadata in diagnostics. */
@@ -105,43 +133,29 @@ function resolveExactNpmVersion(packageName: string, version: unknown, errorCode
   throw new Error(errorCode);
 }
 
-/** Query npm's configured registry with bounded execution and no lifecycle scripts. */
-const runNpmUpdateQuery: UpdateQueryRunner = async (args, timeout) => {
-  try {
-    const result = await execFileAsync(resolveNpmCommandName(), args, {
-      encoding: "utf8", timeout, maxBuffer: 64 * 1024,
-      shell: shouldRunNpmCommandInShell(),
-      env: { ...process.env, npm_config_ignore_scripts: "true" },
-    });
-    return result.stdout.trim();
-  } catch (error: unknown) {
-    // Registry configuration can contain credentials; public diagnostics carry
-    // a stable failure code rather than npm's command, stderr, or environment.
-    throw isExecTimeout(error)
-      ? new UpdateQueryError(NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout)
-      : new UpdateQueryError(NPM_REGISTRY_LOOKUP_FAILED);
-  }
-};
+/**
+ * Query npm's configured registry with bounded execution and no lifecycle
+ * scripts. Registry configuration can contain credentials, so only the stable
+ * reasons are reported.
+ */
+const runNpmUpdateQuery: UpdateQueryRunner = (args, timeout) =>
+  runBoundedUpdateQuery(resolveNpmCommandName(), args, {
+    maxBuffer: 64 * 1024,
+    shell: shouldRunNpmCommandInShell(),
+    env: { ...process.env, npm_config_ignore_scripts: "true" },
+  }, timeout, { timedOut: NPM_REGISTRY_LOOKUP_TIMED_OUT, failed: NPM_REGISTRY_LOOKUP_FAILED });
 
 /**
- * Query a GitHub remote with bounded execution and no terminal prompt, so a
- * credential prompt fails fast instead of holding the budget.
+ * Query a GitHub remote with bounded execution. Git's terminal prompt and Git
+ * Credential Manager's interactive prompts are disabled, so a remote that asks
+ * for credentials through them fails at once; git's command line and stderr can
+ * name the remote, a proxy or a local path, so only the stable reasons are
+ * reported.
  */
-const runGitUpdateQuery: UpdateQueryRunner = async (args, timeout) => {
-  try {
-    const result = await execFileAsync("git", args, {
-      encoding: "utf8", timeout,
-      env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
-    });
-    return result.stdout.trim();
-  } catch (error: unknown) {
-    // git's command line and stderr can name the remote, a proxy or a local
-    // path; public diagnostics carry a stable failure code instead.
-    throw isExecTimeout(error)
-      ? new UpdateQueryError(GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout)
-      : new UpdateQueryError(GITHUB_REMOTE_LOOKUP_FAILED);
-  }
-};
+const runGitUpdateQuery: UpdateQueryRunner = (args, timeout) =>
+  runBoundedUpdateQuery("git", args, {
+    env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" },
+  }, timeout, { timedOut: GITHUB_REMOTE_LOOKUP_TIMED_OUT, failed: GITHUB_REMOTE_LOOKUP_FAILED });
 
 /** Compare recorded npm provenance without persisting diagnostic results or guessing missing versions. */
 export async function checkNpmUpdate(

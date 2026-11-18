@@ -32,6 +32,12 @@ void unknownRule;
 const noDefault: SecretGuardPolicy<boolean> = { categories: { network: false } };
 void noDefault;
 
+// @ts-expect-error the default can never be undefined, even when the decision type allows it
+const undefinedDefault: SecretGuardPolicy<boolean | undefined> = { default: undefined };
+void undefinedDefault;
+const optionalDecisions: SecretGuardPolicy<boolean | undefined> = { default: true, rules: { private_ip: undefined } };
+void optionalDecisions;
+
 const withRules: SecretGuardPolicy<"refuse" | "allow"> = {
   default: "refuse",
   categories: { network: "allow" },

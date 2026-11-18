@@ -623,8 +623,8 @@ export function secretGuardRuleCategory(rule: string): SecretGuardRuleCategory |
  * ignored, so a policy written for a newer SDK still applies.
  */
 export interface SecretGuardPolicy<Decision> {
-  /** Decision for a finding that no category or rule entry decides. */
-  default: Decision;
+  /** Decision for a finding that no category or rule entry decides; never `undefined`. */
+  default: Exclude<Decision, undefined>;
   /** Decisions for whole detector families. */
   categories?: Partial<Record<SecretGuardRuleCategory, Decision>>;
   /** Decisions for single detectors; they override their category's decision. */
@@ -638,16 +638,20 @@ function ownPolicyEntry<Decision>(
   return entries !== undefined && key !== undefined && Object.hasOwn(entries, key) ? entries[key] : undefined;
 }
 
-function requirePolicyEntries(policy: object, field: "categories" | "rules"): void {
-  const entries: unknown = (policy as Record<string, unknown>)[field];
+/** Read an own `categories` or `rules` map of a policy, refusing one that is not an object. */
+function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules"): Partial<Record<string, Decision>> | undefined {
+  const entries: unknown = Object.hasOwn(policy, field) ? (policy as Record<string, unknown>)[field] : undefined;
   if (entries !== undefined && (typeof entries !== "object" || entries === null || Array.isArray(entries))) {
     throw new TypeError(`Secret guard policy ${field} must be an object keyed by ${field === "rules" ? "rule" : "category"}.`);
   }
+  return entries as Partial<Record<string, Decision>> | undefined;
 }
 
 /**
  * Decide one finding under a {@link SecretGuardPolicy}. The finding needs only
- * its `rule`, so a finding decoded from JSON is accepted as well.
+ * its `rule`, so a finding decoded from JSON is accepted as well. Only the
+ * policy's own `default`, `categories` and `rules` are read, never inherited
+ * ones.
  *
  * @throws {TypeError} When the policy is not an object, has no `default`
  * decision, or holds `categories` or `rules` that are not objects, or when the
@@ -660,17 +664,17 @@ export function decideSecretGuardFinding<Decision>(
   if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {
     throw new TypeError("Secret guard policy must be an object with a default decision.");
   }
-  if (policy.default === undefined) {
+  if (!Object.hasOwn(policy, "default") || policy.default === undefined) {
     throw new TypeError("Secret guard policy requires a default decision.");
   }
-  requirePolicyEntries(policy, "categories");
-  requirePolicyEntries(policy, "rules");
+  const categories = ownPolicyEntries<Decision>(policy, "categories");
+  const rules = ownPolicyEntries<Decision>(policy, "rules");
   if (typeof finding !== "object" || finding === null || typeof finding.rule !== "string") {
     throw new TypeError("Secret guard finding must have a string rule.");
   }
-  const ruleDecision = ownPolicyEntry(policy.rules, finding.rule);
+  const ruleDecision = ownPolicyEntry(rules, finding.rule);
   if (ruleDecision !== undefined) return ruleDecision;
-  const categoryDecision = ownPolicyEntry(policy.categories, secretGuardRuleCategory(finding.rule));
+  const categoryDecision = ownPolicyEntry(categories, secretGuardRuleCategory(finding.rule));
   return categoryDecision === undefined ? policy.default : categoryDecision;
 }
 

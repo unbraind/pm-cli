@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[7]: diagnostics,extensions,flaky-test,"gh:1747",nightly,update-check,windows
 created_at: "2026-11-17T21:58:53.463Z"
-updated_at: "2026-11-18T09:37:39.872Z"
+updated_at: "2026-11-18T10:27:28.957Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#928e5cd9a3bda9591c204f9f"
 author: "harness:claude-code"
@@ -22,6 +22,10 @@ component: extensions
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-2zjs0g,related,"2026-11-17T21:58:53.463Z","harness:claude-code","cli:create:dep",detected
   pm-q7c36n,related,"2026-11-17T21:58:53.463Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-18T10:27:28.957Z","harness:claude-code","Implemented on branch feat/sdk-stable-consumer-classifications. runNpmUpdateQuery now runs under runBoundedUpdateQuery's explicit deadline. A lookup still running when the budget passes reports npm_registry_lookup_timed_out, and every other failure reports npm_registry_lookup_failed. checkNpmUpdate carries timeout_ms; the managed record and the extension summary carry it as update_check_timeout_ms, present only on a timeout. PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS sets the budget for both providers (resolveExtensionUpdateCheckTimeoutMs: integer ms, default 10000, clamped to 1000-120000, and the default for a value that is not finite). The GH-1747 integration test (extension-diagnostic-purity) gives registry-backed checks a 60 s budget, so a cold Windows npm start no longer fails it. It also proves the timeout path end to end: a local registry that answers after 3 s under a 1 s budget reports npm_registry_lookup_timed_out with update_check_timeout_ms 1000. The local run is green in 2.5 s.\n"
+notes[1]{created_at,author,text}:
+  "2026-11-18T10:27:13.785Z","harness:claude-code","Codex review round 1 (gpt-6.2-sol, xhigh, on f0cbdfc88). The update-check findings and how each was fixed:\n- P2: the timeout was inferred from execFile's rejection (killed, and not a maxBuffer overflow). A provider that handles SIGTERM and exits 0 would resolve with partial output. Fix: runBoundedUpdateQuery owns the deadline, a setTimeout that aborts the child through an AbortSignal. A lookup still running when the deadline passes is reported as *_timed_out even when the child then exits cleanly. isExecTimeout and execFile's timeout option are gone. A unit test makes the child exit 0 with partial output on abort.\n- P2: the behaviour change had no contract_change declaration. Fix: declared on pm-5kfzjh and pm-43p2c3.\n- P3: the summary always carried an update_check_timeout_ms key, as undefined. Fix: the refresh, the normalizer and the summary add the key only when a lookup timed out (withUpdateCheckTimeout, optionalTimeoutBudget). Tests assert the key is absent with not.toHaveProperty.\n- P3: the default-budget tests inherited a PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS exported by the shell. Fix: they stub it unset and restore it.\n- P3: the docs overstated GIT_TERMINAL_PROMPT=0. Fix: git also runs with GCM_INTERACTIVE=never, and the docs say that another askpass program or credential helper that prompts can still hold the lookup until its budget runs out.\nAbort semantics on Windows: an execFile abort emits an error that destroys the child's stdio and settles at once. It does not wait for a grandchild still holding the pipe, which the timeout option did with shell: true."
 files[7]{path,scope}:
   sdk/public-surface.json,project
   src/sdk/extension.ts,project
@@ -35,4 +39,9 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
 docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/PACKAGE_EVIDENCE.md,project
+contract_change:
+  api: "Managed npm update checks: update_error, update_check_reason, update_check_timeout_ms and PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS"
+  before: "An npm update lookup that ran out of its fixed 10-second budget reported npm_registry_lookup_failed, like an unavailable registry"
+  after: "It reports npm_registry_lookup_timed_out with update_check_timeout_ms naming the budget, other failures still report npm_registry_lookup_failed, and PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS sets the budget (default 10000, clamped to 1000-120000)"
+  migrate: "Match npm_registry_lookup_timed_out wherever npm_registry_lookup_failed is matched, and raise PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS for a slow registry or cold start"
 body: ""

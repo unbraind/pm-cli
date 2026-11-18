@@ -171,9 +171,9 @@ function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-/** Narrow `value` to a positive safe integer, or `undefined` for any other value. */
-function optionalPositiveInteger(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : undefined;
+/** Keep a recorded update-check budget only when it is a positive safe integer; otherwise omit the field. */
+function optionalTimeoutBudget(value: unknown): { update_check_timeout_ms?: number } {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? { update_check_timeout_ms: value } : {};
 }
 
 /**
@@ -291,7 +291,7 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
         ? entry.update_available
         : undefined,
     update_error: optionalString(entry.update_error),
-    update_check_timeout_ms: optionalPositiveInteger(entry.update_check_timeout_ms),
+    ...optionalTimeoutBudget(entry.update_check_timeout_ms),
   };
 }
 

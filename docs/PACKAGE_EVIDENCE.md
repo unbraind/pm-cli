@@ -113,8 +113,12 @@ A timed-out check also carries `update_check_timeout_ms`, the budget that ran
 out. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
 default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
 (clamped to 1000–120000) for a slow registry, proxy or cold start, for example
-on a Windows runner. The GitHub lookup runs with `GIT_TERMINAL_PROMPT=0`, so a
-remote that asks for credentials fails at once instead of holding the budget.
+on a Windows runner. A lookup still running at its deadline is reported as
+timed out even if the provider then exits cleanly. The GitHub lookup runs with
+`GIT_TERMINAL_PROMPT=0` and `GCM_INTERACTIVE=never`, so a remote that asks for
+credentials through Git's terminal prompt or Git Credential Manager fails at
+once; another askpass program or credential helper that prompts can still hold
+the lookup until its budget runs out.
 A GitHub remote that resolves no reference still reports
 `no_remote_reference_found`, and one checked without an installed commit
 reports `missing_installed_commit`.

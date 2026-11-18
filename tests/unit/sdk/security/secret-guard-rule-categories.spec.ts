@@ -116,6 +116,15 @@ describe("decideSecretGuardFinding", () => {
     expect(decideSecretGuardFinding(forward, { rule: "future_token" })).toBe("future");
   });
 
+  it("reads only the policy's own default, categories and rules", () => {
+    const inheritedDefault = Object.create({ default: "inherited" }) as SecretGuardPolicy<string>;
+    expect(() => decideSecretGuardFinding(inheritedDefault, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy requires a default decision."));
+    const inheritedMaps = Object.assign(Object.create({ categories: { network: "inherited" }, rules: { private_ip: "inherited" } }), { default: "own" }) as SecretGuardPolicy<string>;
+    expect(decideSecretGuardFinding(inheritedMaps, { rule: "private_ip" })).toBe("own");
+    const inheritedInvalid = Object.assign(Object.create({ categories: "not-an-object" }), { default: "own" }) as SecretGuardPolicy<string>;
+    expect(decideSecretGuardFinding(inheritedInvalid, { rule: "private_ip" })).toBe("own");
+  });
+
   it("decides real scanner findings", () => {
     const findings = scanMutationSecrets({ host: PRIVATE_ADDRESS, token: GITHUB_SHAPED });
     expect(findings.map((finding) => [finding.rule, decideSecretGuardFinding({ default: "refuse", categories: { network: "allow" } }, finding)])).toEqual(

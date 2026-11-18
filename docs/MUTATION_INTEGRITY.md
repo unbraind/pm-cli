@@ -186,11 +186,13 @@ IPv4 addresses, private SSH targets and user-at-private-host addresses) or
 entry, then the finding's `categories` entry, then `default`. A detector added
 later joins an existing category and takes that category's decision, or the
 default, without a policy change. A rule the running SDK does not know, such as
-one in a finding decoded from a newer host, takes the default. Entries whose
-value is `undefined` count as absent, and keys that name no rule or category
-are ignored. A policy that is not an object, lacks `default` or holds
-non-object `categories` or `rules`, or a finding without a string `rule`,
-throws a `TypeError`.
+one in a finding decoded from a newer host, has no category: an exact `rules`
+entry for it still applies, and otherwise it takes the default. Entries whose
+value is `undefined` count as absent, and other keys that name no rule or
+category are ignored. Only the policy's own `default`, `categories` and `rules`
+are read, never inherited ones. A policy that is not an object, has no own
+`default` or holds non-object `categories` or `rules`, or a finding without a
+string `rule`, throws a `TypeError`.
 
 `SECRET_GUARD_RULE_CATEGORIES` maps every shipped rule to its category and
 `secretGuardRuleCategory(rule)` returns `undefined` for an unknown one.

@@ -3465,7 +3465,7 @@
         "signature ./sdk:ManagedExtensionRecord"
       ],
       "package_version": "2026.11.18",
-      "reason": "pm-5kfzjh: ManagedExtensionRecord gains the optional update_check_timeout_ms field, set only by a diagnostic update check whose lookup ran out of its budget (update_error npm_registry_lookup_timed_out) and never persisted; existing fields are unchanged, so only a consumer that derives a required mapping from keyof ManagedExtensionRecord must add the entry."
+      "reason": "pm-5kfzjh: ManagedExtensionRecord gains the optional update_check_timeout_ms field, present only after a diagnostic update check whose lookup ran out of its budget (update_error npm_registry_lookup_timed_out or github_remote_lookup_timed_out) and never persisted by a diagnostic; existing fields are unchanged, so only a consumer that derives a required mapping from keyof ManagedExtensionRecord must add the entry."
     }
   ],
   "entrypoints": {
@@ -21740,7 +21740,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardPolicy",
-          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
+          "signature": "export interface SecretGuardPolicy<Decision> { default: Exclude<Decision, undefined>; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
         },
         {
           "classification": "supported",
@@ -31952,7 +31952,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardPolicy",
-          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
+          "signature": "export interface SecretGuardPolicy<Decision> { default: Exclude<Decision, undefined>; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
         },
         {
           "classification": "supported",

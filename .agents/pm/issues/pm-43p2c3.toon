@@ -6,7 +6,7 @@ status: in_progress
 priority: 3
 tags[5]: diagnostics,extensions,github,stable-codes,update-check
 created_at: "2026-11-18T09:38:17.161Z"
-updated_at: "2026-11-18T09:42:04.327Z"
+updated_at: "2026-11-18T10:27:28.225Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#928e5cd9a3bda9591c204f9f"
 author: "harness:claude-code"
@@ -21,6 +21,8 @@ actual_result: "update_error carries 'Git command failed: git ls-remote <reposit
 component: extensions
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5kfzjh,discovered_from,"2026-11-18T09:38:17.161Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-18T10:27:28.224Z","harness:claude-code","Implemented on branch feat/sdk-stable-consumer-classifications, together with pm-5kfzjh. checkGithubUpdate's default runner no longer goes through runGitCommand. runGitUpdateQuery runs git ls-remote under the shared runBoundedUpdateQuery deadline, with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never. It reports github_remote_lookup_timed_out with update_check_timeout_ms when the deadline passes, and github_remote_lookup_failed for any other failure, never git's command line, the repository URL or stderr. An injected runner now has the npm runner's signature (args, timeoutMs). no_remote_reference_found and missing_installed_commit are unchanged. Tests are in tests/unit/extensions/npm-update-check-timeout.spec.ts (the GitHub describe block) and the existing annotated-tag case in extension-command.spec.ts.\n"
 files[4]{path,scope}:
   src/sdk/extension/managed-update-status.ts,project
   src/sdk/extension/update-check.ts,project
@@ -31,4 +33,9 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
 docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/PACKAGE_EVIDENCE.md,project
+contract_change:
+  api: "Managed GitHub update checks: update_error and update_check_reason"
+  before: "A failed git ls-remote reported git's command line and stderr, starting 'Git command failed: git ls-remote', as update_error"
+  after: "It reports github_remote_lookup_timed_out with update_check_timeout_ms when the budget ran out and github_remote_lookup_failed otherwise, and git runs with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never"
+  migrate: "Match the two stable codes instead of parsing git's message, and run git ls-remote directly to see git's own error"
 body: ""

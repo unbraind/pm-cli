@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: api-design,"gh:1749",sdk,secret-guard,typed-consumers
 created_at: "2026-11-17T21:58:37.940Z"
-updated_at: "2026-11-18T09:42:40.270Z"
+updated_at: "2026-11-18T10:27:14.479Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#928e5cd9a3bda9591c204f9f"
 author: "harness:claude-code"
@@ -24,6 +24,8 @@ dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-x07qz2,related,"2026-11-17T21:58:37.940Z","harness:claude-code","cli:create:dep",detected
 comments[1]{created_at,author,text}:
   "2026-11-18T09:42:40.269Z","harness:claude-code","Implementation (branch feat/sdk-stable-consumer-classifications). Every SecretRule in src/core/shared/secret-rules.ts now declares a required category (credential, network or path), so a new detector cannot ship without one. The SDK (src/sdk/mutation-guard.ts, exported from the root, governance and runtime entrypoints) adds:\n- SecretGuardRule, an alias of SecretGuardFinding['rule'];\n- SecretGuardRuleCategory, the stable union;\n- SECRET_GUARD_RULE_CATEGORIES, a frozen map from rule to category;\n- secretGuardRuleCategory(rule), which returns undefined for an unknown or prototype name;\n- SecretGuardPolicy<Decision> = { default, categories?, rules? } and decideSecretGuardFinding(policy, finding).\n\nPrecedence: the rule entry, then the category entry, then the default. An undefined entry counts as absent, and null or false decisions are honoured. Only own properties are read, and keys that name no rule or category are ignored so that a policy written for a newer SDK still applies. A malformed policy or finding throws a TypeError.\n\nCategories: 17 rules are credential; private_ip, private_ssh_target and user_at_private_host are network; absolute_home_path is path. That reproduces the issue's example map exactly.\n\nSecretGuardFinding's signature is unchanged, so the surface snapshot records only additive symbols. Tests: tests/unit/sdk/security/secret-guard-rule-categories.spec.ts pins the full category map, the precedence and the TypeErrors, and mocks a future detector to prove it inherits its category decision unchanged. tests/types/secret-guard-policy.test-d.ts proves that a category-only policy compiles whatever the rule union holds and that unknown rule or category keys are type errors.\n\nDocs: docs/MUTATION_INTEGRITY.md has a new \"Deciding findings by category\" section. docs/RELEASING.md documents the contract_change declaration and states that a new detector is a declared contract change.\n"
+notes[1]{created_at,author,text}:
+  "2026-11-18T10:27:14.479Z","harness:claude-code","Codex review round 1 (gpt-6.2-sol, xhigh, on f0cbdfc88). The policy findings and how each was fixed:\n- P2: the policy's default, categories and rules were read even when inherited. Fix: decideSecretGuardFinding requires an own default, and reads categories and rules only as own properties. A test builds policies on a prototype.\n- P3: SecretGuardPolicy<Decision> allowed an undefined default whenever Decision includes undefined. Fix: default is Exclude<Decision, undefined>, with a type test.\n- P3: the docs said an unknown rule always takes the default. Fix: docs/MUTATION_INTEGRITY.md says an exact rules entry for it still applies, which is what the unit test already pinned."
 files[9]{path,scope}:
   sdk/public-surface.json,project
   src/core/shared/secret-rules.ts,project
@@ -40,4 +42,9 @@ tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
 docs[2]{path,scope}:
   docs/MUTATION_INTEGRITY.md,project
   docs/RELEASING.md,project
+contract_change:
+  api: "SecretGuardRule, SecretGuardRuleCategory, SecretGuardPolicy, SECRET_GUARD_RULE_CATEGORIES, secretGuardRuleCategory and decideSecretGuardFinding"
+  before: "Typed consumers kept an exhaustive Record over the SecretGuardFinding rule union, so every new detector failed their compilation with TS2741"
+  after: "Every detector has a stable credential, network or path category, and decideSecretGuardFinding decides a finding from a default plus optional category and rule decisions, so a new detector takes its category's decision"
+  migrate: "Replace an exhaustive Record over SecretGuardFinding['rule'] with a SecretGuardPolicy and decideSecretGuardFinding, or key an exhaustive map by SecretGuardRuleCategory"
 body: ""

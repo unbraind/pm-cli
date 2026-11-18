@@ -1065,7 +1065,7 @@ const buildInstalledExtensionSummary = (
     last_update_remote_commit: managed.last_update_remote_commit,
     last_update_remote_version: managed.last_update_remote_version,
     update_error: managed.update_error,
-    update_check_timeout_ms: managed.update_check_timeout_ms,
+    ...(managed.update_check_timeout_ms === undefined ? {} : { update_check_timeout_ms: managed.update_check_timeout_ms }),
     update_check_status: updateCheck.status,
     update_check_reason: updateCheck.reason,
   };
