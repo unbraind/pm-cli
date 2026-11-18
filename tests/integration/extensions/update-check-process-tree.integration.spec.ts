@@ -17,6 +17,7 @@ const tempRoots: string[] = [];
 
 afterEach(async () => {
   vi.unstubAllEnvs();
+  fixtureStartTimes.clear();
   await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -84,15 +85,24 @@ async function fakeGit(tail: string): Promise<{ root: string; pidFile: string }>
   return { root, pidFile };
 }
 
+/** The start time `ps` reports for `pid`, which a recycled PID cannot share; `undefined` once it is gone. */
+function startTimeOf(pid: number): string | undefined {
+  const row = spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", env: { PATH: "/usr/bin:/bin", LC_ALL: "C" } }).stdout?.trim();
+  return row ? row : undefined;
+}
+
+/** Start times captured when each fixture pid was read, so cleanup can prove a pid is still that process. */
+const fixtureStartTimes = new Map<number, string>();
+
 /**
  * Kill fixture leftovers so a failed assertion never leaves a sleep behind,
- * but only a pid that still runs a fixture command: on a busy runner a
- * recorded pid may already belong to an unrelated process.
+ * but only a pid whose start time still matches the one captured when it was
+ * read: on a busy runner a recorded pid may already belong to another process.
  */
 function killQuietly(pids: number[]): void {
   for (const pid of pids) {
-    const command = spawnSync("ps", ["-o", "comm=", "-p", String(pid)], { encoding: "utf8" }).stdout?.trim() ?? "";
-    if (!["sleep", "sh", "git"].includes(path.basename(command))) continue;
+    const recorded = fixtureStartTimes.get(pid);
+    if (recorded === undefined || startTimeOf(pid) !== recorded) continue;
     try {
       process.kill(pid, "SIGKILL");
     } catch {
@@ -102,7 +112,12 @@ function killQuietly(pids: number[]): void {
 }
 
 async function readPids(pidFile: string, limitMs = 15_000): Promise<number[]> {
-  return (await waitForFile(pidFile, limitMs)).trim().split(/\s+/u).map(Number);
+  const pids = (await waitForFile(pidFile, limitMs)).trim().split(/\s+/u).map(Number);
+  for (const pid of pids) {
+    const started = startTimeOf(pid);
+    if (started !== undefined) fixtureStartTimes.set(pid, started);
+  }
+  return pids;
 }
 
 /**
