@@ -7,6 +7,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // and never walks a PID that may have been reused.
 const spawnMock = vi.hoisted(() => vi.fn());
 const existsSyncMock = vi.hoisted(() => vi.fn((file: string) => file === "/bin/ps"));
+// No real /proc is read: a fake pid could belong to a real process on the host.
+const readFileSyncMock = vi.hoisted(() => vi.fn((_file: string, _encoding?: string): string => {
+  throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+}));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
   spawn: spawnMock,
@@ -14,9 +18,10 @@ vi.mock("node:child_process", async (importOriginal) => ({
 vi.mock("node:fs", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:fs")>()),
   existsSync: existsSyncMock,
+  readFileSync: readFileSyncMock,
 }));
 
-const { descendantsFromProcessTable, killProcessTree, resolveTrustedPs, resolveWindowsSystemRoot, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
+const { descendantEntriesFromProcessTable, descendantsFromProcessTable, killProcessTree, parentStillMatches, resolveTrustedPs, resolveWindowsSystemRoot, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
 
 class FakeStream extends EventEmitter {
   readonly setEncoding = vi.fn();
@@ -26,6 +31,7 @@ class FakeStream extends EventEmitter {
 class FakeHelper extends EventEmitter {
   stdout: FakeStream | null = new FakeStream();
   readonly kill = vi.fn(() => true);
+  readonly unref = vi.fn();
 }
 
 let helpers: FakeHelper[] = [];
@@ -60,7 +66,32 @@ afterEach(() => {
   vi.unstubAllEnvs();
   spawnMock.mockReset();
   existsSyncMock.mockImplementation((file: string) => file === "/bin/ps");
+  readFileSyncMock.mockImplementation(() => {
+    throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+  });
   helpers = [];
+});
+
+describe("parentStillMatches", () => {
+  it("reads the parent after the parenthesised command name, which may hold spaces and parentheses", () => {
+    const stat = (ppid: number) => () => `4300 (a (b) c) S ${ppid} 4300 4300 0 -1 4194560`;
+    expect(parentStillMatches({ pid: 4300, parent: 4242 }, stat(4242))).toBe(true);
+    // A pid reused after the snapshot has another parent and is skipped.
+    expect(parentStillMatches({ pid: 4300, parent: 4242 }, stat(1))).toBe(false);
+  });
+
+  it("skips a pid that vanished on a host with procfs and trusts the snapshot without procfs", () => {
+    existsSyncMock.mockImplementation((file: string) => file === "/proc/self/stat");
+    expect(parentStillMatches({ pid: 4300, parent: 4242 }, () => undefined)).toBe(false);
+    existsSyncMock.mockImplementation(() => false);
+    expect(parentStillMatches({ pid: 4300, parent: 4242 }, () => undefined)).toBe(true);
+  });
+
+  it("reads /proc/<pid>/stat by default", () => {
+    readFileSyncMock.mockImplementation(() => "4300 (sleep) S 4242 1 1 0");
+    expect(parentStillMatches({ pid: 4300, parent: 4242 })).toBe(true);
+    expect(readFileSyncMock).toHaveBeenCalledWith("/proc/4300/stat", "utf8");
+  });
 });
 
 describe("resolveWindowsSystemRoot", () => {
@@ -111,6 +142,14 @@ describe("descendantsFromProcessTable", () => {
     expect(performance.now() - started).toBeLessThan(1_000);
   });
 
+  it("records the snapshot parent of each descendant", () => {
+    expect(descendantEntriesFromProcessTable("200 100\n300 200\n301 100\n", 100)).toEqual([
+      { pid: 300, parent: 200 },
+      { pid: 301, parent: 100 },
+      { pid: 200, parent: 100 },
+    ]);
+  });
+
   it("does not list a process re-parented away from the root", () => {
     // The launcher 100 exited, so its former helper 200 now belongs to init.
     expect(descendantsFromProcessTable("200 1\n300 200\n", 100)).toEqual([]);
@@ -146,6 +185,8 @@ describe("runTeardownHelper", () => {
     expect(await pending).toBeUndefined();
     expect(helpers[0]?.kill).toHaveBeenCalledWith("SIGKILL");
     expect(helpers[0]?.stdout?.destroy).toHaveBeenCalled();
+    // An abandoned helper never keeps the host running.
+    expect(helpers[0]?.unref).toHaveBeenCalledTimes(1);
     // A late close changes nothing.
     helpers[0]?.emit("close", 0);
   });
@@ -198,6 +239,26 @@ describe("killProcessTree", () => {
       // Descendants deepest first, and the root last, so none is orphaned first.
       expect(events).toEqual(["kill -4242", "kill 4301", "kill 4300", "root"]);
       expect(caller.alive).toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it("skips a descendant whose parent no longer matches the snapshot", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        return true;
+      });
+      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat");
+      // 4300 still belongs to the root; 4301 was reused by a process of init.
+      readFileSyncMock.mockImplementation((file: string) => file === "/proc/4300/stat" ? "4300 (sleep) S 4242 0" : "4301 (other) S 1 0");
+      answer("4300 4242\n4301 4242\n");
+      const caller = root();
+      await killProcessTree(4242, caller);
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4300, "SIGKILL"]]);
+      expect(caller.kill).toHaveBeenCalledTimes(1);
     } finally {
       restore();
     }

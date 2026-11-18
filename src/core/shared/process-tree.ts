@@ -5,7 +5,7 @@
  * deadline leaves no grandchild running or holding the parent's pipes.
  */
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 /**
@@ -27,14 +27,20 @@ export interface ProcessTreeRoot {
   alive(): boolean;
 }
 
+/** One descendant from a process table, with the parent it had in that snapshot. */
+export interface ProcessTableDescendant {
+  pid: number;
+  parent: number;
+}
+
 /**
  * Read the live descendants of `root`, deepest first, from a process table in
- * `ps -A -o pid= -o ppid=` form (one `pid ppid` pair per line). Malformed
- * lines are skipped, and each process is listed once even if the table holds
- * a cycle. A process whose parent already exited has been re-parented, so it
- * is not a descendant.
+ * `ps -A -o pid= -o ppid=` form (one `pid ppid` pair per line), each with its
+ * parent in that snapshot. Malformed lines are skipped, and each process is
+ * listed once even if the table holds a cycle. A process whose parent already
+ * exited has been re-parented, so it is not a descendant.
  */
-export function descendantsFromProcessTable(table: string, root: number): number[] {
+export function descendantEntriesFromProcessTable(table: string, root: number): ProcessTableDescendant[] {
   // Linear in the table: children are appended in place and the queue is
   // walked by index, so a host with many processes never stalls teardown.
   const children = new Map<number, number[]>();
@@ -48,16 +54,47 @@ export function descendantsFromProcessTable(table: string, root: number): number
     else children.set(parent, [child]);
   }
   const seen = new Set<number>([root]);
-  const descendants: number[] = [];
-  const pending = children.get(root) ?? [];
+  const descendants: ProcessTableDescendant[] = [];
+  const pending: ProcessTableDescendant[] = (children.get(root) ?? []).map((pid) => ({ pid, parent: root }));
   for (let index = 0; index < pending.length; index += 1) {
-    const next = pending[index] as number;
-    if (seen.has(next)) continue;
-    seen.add(next);
+    const next = pending[index] as ProcessTableDescendant;
+    if (seen.has(next.pid)) continue;
+    seen.add(next.pid);
     descendants.push(next);
-    for (const grandchild of children.get(next) ?? []) pending.push(grandchild);
+    for (const grandchild of children.get(next.pid) ?? []) pending.push({ pid: grandchild, parent: next.pid });
   }
   return descendants.reverse();
+}
+
+/** The live descendants of `root`, deepest first, as PIDs; see {@link descendantEntriesFromProcessTable}. */
+export function descendantsFromProcessTable(table: string, root: number): number[] {
+  return descendantEntriesFromProcessTable(table, root).map((entry) => entry.pid);
+}
+
+/**
+ * Whether `pid` still has the parent the snapshot recorded, read from
+ * `/proc/<pid>/stat` right before it is signalled. A PID that exited and was
+ * reused after the snapshot almost always has another parent, so it is
+ * skipped. Without procfs (macOS, BSD) the snapshot is trusted as it stands.
+ */
+export function parentStillMatches(
+  entry: ProcessTableDescendant,
+  readStat: (file: string) => string | undefined = readProcStat,
+): boolean {
+  const stat = readStat(`/proc/${entry.pid}/stat`);
+  if (stat === undefined) return !existsSync("/proc/self/stat");
+  // The command name is parenthesised and may hold spaces or parentheses, so
+  // the fields are read after its last closing parenthesis: state, then ppid.
+  const fields = stat.slice(stat.lastIndexOf(")") + 1).trim().split(/\s+/u);
+  return Number(fields[1]) === entry.parent;
+}
+
+function readProcStat(file: string): string | undefined {
+  try {
+    return readFileSync(file, "utf8");
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -116,6 +153,8 @@ export function runTeardownHelper(
       settle(undefined);
       helper.stdout?.destroy();
       helper.kill("SIGKILL");
+      // A helper that cannot die (a blocked kernel call) must not keep the host running.
+      helper.unref();
     }, TEARDOWN_HELPER_TIMEOUT_MS);
     function settle(result: { code: number | null; stdout: string } | undefined): void {
       if (settled) return;
@@ -152,9 +191,10 @@ export function runTeardownHelper(
  * bounded), then the root. The snapshot is used only when that `ps` exits
  * cleanly and `root.alive()` still holds after it is taken, so a PID reused
  * while `ps` ran is never walked; otherwise only the root is stopped. A
- * descendant can still exit and have its PID reused in the microseconds
- * between the snapshot and the signal, which PID-based signalling cannot rule
- * out. Either way the tree is walked from the live root,
+ * descendant is signalled only while `/proc` still names the parent the
+ * snapshot recorded (on Linux), so a PID reused after the snapshot is skipped;
+ * reuse in the microseconds between that check and the signal, or on a system
+ * without procfs, is what PID-based signalling cannot rule out. Either way the tree is walked from the live root,
  * so a descendant whose launcher already exited is not reached. Without
  * `root`, the root is killed by PID and is assumed to stay alive. A process
  * that is already gone is not an error.
@@ -167,16 +207,7 @@ export async function killProcessTree(
     return;
   }
   if (process.platform === "win32") {
-    const systemRoot = resolveWindowsSystemRoot();
-    if (systemRoot === undefined) {
-      // No fully qualified system directory: never guess a taskkill path.
-      if (root.alive()) root.kill();
-      return;
-    }
-    const taskkill = path.win32.join(systemRoot, "System32", "taskkill.exe");
-    const result = await runTeardownHelper(taskkill, ["/pid", String(pid), "/T", "/F"]);
-    // A root that exited while taskkill ran may have a reused PID by now.
-    if (result?.code !== 0 && root.alive()) root.kill();
+    await killWindowsTree(pid, root);
     return;
   }
   try {
@@ -185,11 +216,32 @@ export async function killProcessTree(
   } catch {
     // Not a process-group leader: walk its live descendants instead.
   }
-  const ps = resolveTrustedPs();
-  // A fixed environment: procps rejects -A under PS_PERSONALITY=bsd or CMD_ENV=bsd.
-  const table = ps === undefined ? undefined : await runTeardownHelper(ps, ["-A", "-o", "pid=", "-o", "ppid="], PS_ENV);
-  if (table?.code === 0 && root.alive()) {
-    for (const descendant of descendantsFromProcessTable(table.stdout, pid)) killProcess(descendant);
-  }
+  await killPosixDescendants(pid, root);
   root.kill();
+}
+
+/** Run the System32 `taskkill /T /F`, killing the root itself when that cannot run or fails. */
+async function killWindowsTree(pid: number, root: ProcessTreeRoot): Promise<void> {
+  const systemRoot = resolveWindowsSystemRoot();
+  if (systemRoot === undefined) {
+    // No fully qualified system directory: never guess a taskkill path.
+    if (root.alive()) root.kill();
+    return;
+  }
+  const taskkill = path.win32.join(systemRoot, "System32", "taskkill.exe");
+  const result = await runTeardownHelper(taskkill, ["/pid", String(pid), "/T", "/F"]);
+  // A root that exited while taskkill ran may have a reused PID by now.
+  if (result?.code !== 0 && root.alive()) root.kill();
+}
+
+/** Kill the live descendants of a root that is not a group leader, from one system `ps` snapshot. */
+async function killPosixDescendants(pid: number, root: ProcessTreeRoot): Promise<void> {
+  const ps = resolveTrustedPs();
+  if (ps === undefined) return;
+  // A fixed environment: procps rejects -A under PS_PERSONALITY=bsd or CMD_ENV=bsd.
+  const table = await runTeardownHelper(ps, ["-A", "-o", "pid=", "-o", "ppid="], PS_ENV);
+  if (table?.code !== 0 || !root.alive()) return;
+  for (const descendant of descendantEntriesFromProcessTable(table.stdout, pid)) {
+    if (parentStillMatches(descendant)) killProcess(descendant.pid);
+  }
 }
