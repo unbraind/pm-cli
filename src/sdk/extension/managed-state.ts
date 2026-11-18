@@ -191,7 +191,8 @@ const TIMED_OUT_UPDATE_ERROR = /^(?:npm_registry|github_remote)_lookup_timed_out
  */
 function stableUpdateError(source: ManagedExtensionSource, value: unknown): string | undefined {
   const error = optionalString(value);
-  if (error === undefined || source.kind !== "github") return error;
+  // A blank reason has always meant "no error"; only real free text is legacy.
+  if (error === undefined || source.kind !== "github" || error.trim().length === 0) return error;
   return /^[a-z0-9_]+$/u.test(error.trim()) ? error : "github_remote_lookup_failed";
 }
 

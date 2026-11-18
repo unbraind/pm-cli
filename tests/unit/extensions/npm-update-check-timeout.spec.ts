@@ -589,10 +589,12 @@ describe("managed update status budget evidence", () => {
     const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [
       managedEntry("github-legacy", githubSource, { update_error: legacy }),
       managedEntry("github-stable", githubSource, { update_error: "no_remote_reference_found" }),
+      managedEntry("github-blank", githubSource, { update_error: "   " }),
       managedEntry("npm-text", npmSource, { update_error: "offline fixture" }),
     ] });
     const byName = Object.fromEntries((state?.entries ?? []).map((entry) => [entry.name, entry.update_error]));
-    expect(byName).toEqual({ "github-legacy": GITHUB_REMOTE_LOOKUP_FAILED, "github-stable": "no_remote_reference_found", "npm-text": "offline fixture" });
+    // A blank reason stays a non-error, as the update-check resolver reads it.
+    expect(byName).toEqual({ "github-legacy": GITHUB_REMOTE_LOOKUP_FAILED, "github-stable": "no_remote_reference_found", "github-blank": "   ", "npm-text": "offline fixture" });
     expect(JSON.stringify(state)).not.toContain("private-fixture-value");
   });
 
