@@ -101,6 +101,13 @@ const derived: true | "allow" = {} as SecretGuardPolicyDecision<typeof mixedKind
 void fromOptional;
 void unknownDecision;
 void derived;
+// A union of policy types keeps an override that only one member declares.
+declare const eitherPolicy: { default: boolean } | { default: boolean; categories: { network: "review" } };
+const fromEither: boolean | "review" = decideSecretGuardFinding(eitherPolicy, finding);
+// @ts-expect-error the override of one union member is not dropped
+const eitherNotBoolean: boolean = decideSecretGuardFinding(eitherPolicy, finding);
+void fromEither;
+void eitherNotBoolean;
 // The call site still validates the policy shape.
 // @ts-expect-error the default decision is required at the call site
 decideSecretGuardFinding({ categories: { network: false } }, finding);

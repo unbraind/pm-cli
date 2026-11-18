@@ -659,11 +659,14 @@ type PolicyEntries<Policy, Field extends "categories" | "rules"> = Field extends
  * rule entry. For a `SecretGuardPolicy<D>` this is `D` without `undefined`;
  * for a policy declared with `satisfies`, or written inline, it is the union of
  * the decisions it names, even when they mix kinds such as `true | "allow"`.
+ * A union of policy types yields every member's decisions.
  */
-export type SecretGuardPolicyDecision<Policy> =
-  | (Policy extends { readonly default: infer Default } ? Default : never)
-  | PolicyEntryDecisions<PolicyEntries<Policy, "categories">>
-  | PolicyEntryDecisions<PolicyEntries<Policy, "rules">>;
+export type SecretGuardPolicyDecision<Policy> = Policy extends unknown
+  ? // Distributed per member, so a key only one member declares still counts.
+    | (Policy extends { readonly default: infer Default } ? Default : never)
+    | PolicyEntryDecisions<PolicyEntries<Policy, "categories">>
+    | PolicyEntryDecisions<PolicyEntries<Policy, "rules">>
+  : never;
 
 function ownPolicyEntry<Decision>(
   entries: Partial<Record<string, Decision>> | undefined,

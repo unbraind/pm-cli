@@ -100,8 +100,8 @@ describe("decideSecretGuardFinding", () => {
   it("treats an undefined entry as absent but honours null and false decisions", () => {
     expect(decideSecretGuardFinding({ default: "default", categories: { network: "network" }, rules: { private_ip: undefined } }, { rule: "private_ip" })).toBe("network");
     expect(decideSecretGuardFinding({ default: "default", categories: { network: undefined } }, { rule: "private_ip" })).toBe("default");
-    expect(decideSecretGuardFinding<string | null>({ default: "default", rules: { private_ip: null } }, { rule: "private_ip" })).toBeNull();
-    expect(decideSecretGuardFinding<string | null>({ default: "default", categories: { network: null } }, { rule: "private_ip" })).toBeNull();
+    expect(decideSecretGuardFinding({ default: "default", rules: { private_ip: null } }, { rule: "private_ip" })).toBeNull();
+    expect(decideSecretGuardFinding({ default: "default", categories: { network: null } }, { rule: "private_ip" })).toBeNull();
     expect(decideSecretGuardFinding({ default: true, categories: { network: false } }, { rule: "private_ip" })).toBe(false);
     expect(decideSecretGuardFinding({ default: false }, { rule: "github_token" })).toBe(false);
   });

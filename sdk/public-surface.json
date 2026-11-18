@@ -21746,7 +21746,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "SecretGuardPolicyDecision",
-          "signature": "export type SecretGuardPolicyDecision<Policy> = (Policy extends { readonly default: infer Default; } ? Default : never) | PolicyEntryDecisions<PolicyEntries<Policy, \"categories\">> | PolicyEntryDecisions<PolicyEntries<Policy, \"rules\">>;"
+          "signature": "export type SecretGuardPolicyDecision<Policy> = Policy extends unknown ? (Policy extends { readonly default: infer Default; } ? Default : never) | PolicyEntryDecisions<PolicyEntries<Policy, \"categories\">> | PolicyEntryDecisions<PolicyEntries<Policy, \"rules\">> : never;"
         },
         {
           "classification": "supported",
@@ -31964,7 +31964,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "SecretGuardPolicyDecision",
-          "signature": "export type SecretGuardPolicyDecision<Policy> = (Policy extends { readonly default: infer Default; } ? Default : never) | PolicyEntryDecisions<PolicyEntries<Policy, \"categories\">> | PolicyEntryDecisions<PolicyEntries<Policy, \"rules\">>;"
+          "signature": "export type SecretGuardPolicyDecision<Policy> = Policy extends unknown ? (Policy extends { readonly default: infer Default; } ? Default : never) | PolicyEntryDecisions<PolicyEntries<Policy, \"categories\">> | PolicyEntryDecisions<PolicyEntries<Policy, \"rules\">> : never;"
         },
         {
           "classification": "supported",

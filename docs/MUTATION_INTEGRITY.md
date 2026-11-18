@@ -201,7 +201,8 @@ helper infers the policy's own type and returns every decision it can hold
 (`SecretGuardPolicyDecision<typeof policy>`): `D` for a
 `SecretGuardPolicy<D>`, and the union of the named decisions for an inline
 policy or one declared with `satisfies`, even when they mix kinds such as
-`true | "allow"` or a string default with `null` overrides; a
+`true | "allow"` or a string default with `null` overrides (a union of policy
+types yields every member's decisions); a
 policy that is not an object, has no own `default` or has `default:
 undefined`, holds non-object `categories` or `rules`, or a finding without a
 string `rule`, throws a `TypeError`.
