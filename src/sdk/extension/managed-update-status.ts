@@ -39,16 +39,20 @@ function withUpdateCheckTimeout(entry: ManagedExtensionRecord, timeoutMs: number
 /**
  * Return transient provider evidence while preserving the caller's recorded
  * installation state. `timeoutMs` is the budget of each lookup, by default the
- * one `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` configures.
+ * one `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` configures. With
+ * `holdPermitsThroughTeardown` (the default) a timed-out provider keeps its
+ * permit until its teardown finishes, so no more than the limit are ever
+ * alive; a caller holding a lock passes `false` so the next lookup never waits
+ * for a teardown inside it, as before teardowns existed.
  */
 export async function refreshManagedExtensionUpdates(
   state: ManagedExtensionState,
   offline = false,
   timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
+  holdPermitsThroughTeardown = true,
 ): Promise<ManagedExtensionState> {
-  // A provider holds its permit from launch until its teardown finishes, so
-  // no more than the limit are ever alive; results are reported as soon as
-  // each lookup settles, never after a teardown.
+  // Results are reported as soon as each lookup settles, never after a
+  // teardown.
   const providers = createPermits(MANAGED_UPDATE_CHECK_CONCURRENCY);
   const entries = await mapWithFixedConcurrency(state.entries, MANAGED_UPDATE_CHECK_CONCURRENCY, async (entry) => {
     if (!["github", "npm"].includes(entry.source.kind)) return entry;
@@ -60,7 +64,8 @@ export async function refreshManagedExtensionUpdates(
     const updateStatus = entry.source.kind === "github"
       ? await checkGithubUpdate(entry.source, undefined, timeoutMs)
       : await checkNpmUpdate(entry.source, undefined, timeoutMs);
-    void updateCheckTeardown(updateStatus).then(providers.release);
+    if (holdPermitsThroughTeardown) void updateCheckTeardown(updateStatus).then(providers.release);
+    else providers.release();
     return withUpdateCheckTimeout({
       ...entry,
       last_update_check_at: updateStatus.checked_at,

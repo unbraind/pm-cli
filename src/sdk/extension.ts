@@ -3533,10 +3533,14 @@ const prepareExploreManageState = async (
     // lock, so it keeps the default budget rather than the override: a raised
     // budget would let the lookups outlast a concurrent package action's lock
     // wait. Moving the refresh out of the lock is pm-9x9drr.
+    // Under the lock, later lookups also never wait for an earlier
+    // provider's teardown, so the locked scan takes no longer than on main.
+    const locked = ctx.options.fixManagedState === true;
     state = await refreshManagedExtensionUpdates(
       state,
       ctx.options.offline,
-      ctx.options.fixManagedState === true ? EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS : resolveExtensionUpdateCheckTimeoutMs(),
+      locked ? EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS : resolveExtensionUpdateCheckTimeoutMs(),
+      !locked,
     );
   }
   return { state, fix };

@@ -177,8 +177,15 @@ describe("npm update lookup budget", () => {
       queueMicrotask(() => child.emit("error", new Error(`spawn EMFILE ${PRIVATE_FIXTURE}`)));
       return child;
     });
-    expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    const status = await checkNpmUpdate(source);
+    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(killProcessTreeMock).not.toHaveBeenCalled();
+    // No process was created, so the teardown waits for no exit.
+    let tornDown = false;
+    await updateCheckTeardown(status).then(() => {
+      tornDown = true;
+    });
+    expect(tornDown).toBe(true);
   });
 
   it("holds the teardown until Node reports the provider's exit, bounded when it never comes", async () => {
@@ -461,6 +468,25 @@ describe("managed update status budget evidence", () => {
     expect(releases).toHaveLength(5);
     expect(refreshed?.entries.map((entry) => entry.update_error)).toEqual(Array(5).fill(NPM_REGISTRY_LOOKUP_TIMED_OUT));
     for (const release of releases.slice(1)) release();
+  });
+
+  it("lets a locked caller release permits as lookups settle, never waiting for a teardown", async () => {
+    vi.useFakeTimers();
+    hang();
+    const releases: Array<() => void> = [];
+    killProcessTreeMock.mockImplementation(() => new Promise<undefined>((resolve) => {
+      releases.push(() => resolve(undefined));
+    }));
+    const entries = ["a", "b", "c", "d", "e"].map((name) => managedEntry(`npm-${name}`, { ...npmSource, package: `@scope/${name}`, input: `npm:@scope/${name}`, location: `@scope/${name}` }));
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries })!;
+    const pending = refreshManagedExtensionUpdates(state, false, EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, false);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    // Four teardowns are still pending, yet the fifth lookup already started.
+    expect(releases).toHaveLength(4);
+    expect(spawnMock).toHaveBeenCalledTimes(5);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect((await pending).entries).toHaveLength(5);
+    for (const release of releases) release();
   });
 
   it("passes an explicit refresh budget to every lookup", async () => {

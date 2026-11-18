@@ -167,7 +167,8 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       const finish = (): Promise<void> => {
         killDirectChild();
         lookup.stdout?.destroy();
-        if (exited()) return Promise.resolve();
+        // No PID means spawn never created a process, so no exit will come.
+        if (exited() || lookup.pid === undefined) return Promise.resolve();
         return new Promise<void>((resolve) => {
           const bound = setTimeout(resolve, PROVIDER_EXIT_WAIT_MS);
           lookup.once("exit", () => {

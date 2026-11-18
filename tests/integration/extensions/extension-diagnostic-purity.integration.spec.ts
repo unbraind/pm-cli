@@ -24,32 +24,41 @@ async function installManagedNpmFixture(context: { tempRoot: string; pmPath: str
   return { managedPath, before };
 }
 
+type RegistryMode = "update-available" | "up-to-date" | "unavailable";
+
+/**
+ * Serve one fake npm registry for `run`, pointing npm at it with the largest
+ * lookup budget: a cold npm start on a Windows runner can exceed the 10 s
+ * default (pm-5kfzjh). Each scenario performs one registry-backed lookup, so
+ * it fits CI's 30-second per-test limit.
+ */
+async function withRegistry(mode: RegistryMode, run: (requests: () => number) => Promise<void>): Promise<void> {
+  let requests = 0;
+  const registry = createServer((_request, response) => {
+    requests += 1;
+    response.setHeader("content-type", "application/json");
+    if (mode === "unavailable") { response.writeHead(404); response.end('{"error":"fixture_unavailable"}'); return; }
+    response.end(JSON.stringify({ name: "freshness-registry-package", "dist-tags": { latest: mode === "update-available" ? "2.0.0" : "1.0.0" }, versions: { "1.0.0": { name: "freshness-registry-package", version: "1.0.0" }, "2.0.0": { name: "freshness-registry-package", version: "2.0.0" } } }));
+  });
+  await new Promise<void>((resolve) => registry.listen(0, "127.0.0.1", resolve));
+  const address = registry.address();
+  if (address === null || typeof address === "string") throw new Error("Registry did not bind a TCP port");
+  vi.stubEnv("npm_config_registry", `http://127.0.0.1:${address.port}`);
+  vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "25000");
+  try {
+    await run(() => requests);
+  } finally {
+    registry.closeAllConnections();
+    await new Promise<void>((resolve, reject) => registry.close((error) => error ? reject(error) : resolve()));
+  }
+}
+
 describe("managed extension diagnostic purity", () => {
-  // Up to three real npm lookups, each bounded by the 25 s maximum budget a
-  // cold Windows runner may need (pm-5kfzjh), plus setup.
-  it("checks npm provenance transiently, honors offline mode, and preserves managed bytes and mtime", async () => {
+  it("honors offline mode everywhere, then checks npm provenance transiently and preserves managed bytes and mtime", async () => {
     await withTempPmPath(async (context) => {
       const { managedPath, before } = await installManagedNpmFixture(context);
       const beforeStat = await stat(managedPath);
-      let requests = 0;
-      let available = true;
-      let registryFailure = false;
-
-      const registry = createServer((_request, response) => {
-        requests += 1;
-        response.setHeader("content-type", "application/json");
-        if (registryFailure) { response.writeHead(404); response.end('{"error":"fixture_unavailable"}'); return; }
-        response.end(JSON.stringify({ name: "freshness-registry-package", "dist-tags": { latest: available ? "2.0.0" : "1.0.0" }, versions: { "1.0.0": { name: "freshness-registry-package", version: "1.0.0" }, "2.0.0": { name: "freshness-registry-package", version: "2.0.0" } } }));
-      });
-      await new Promise<void>((resolve) => registry.listen(0, "127.0.0.1", resolve));
-      const address = registry.address();
-      if (address === null || typeof address === "string") throw new Error("Registry did not bind a TCP port");
-      const previousRegistry = process.env.npm_config_registry;
-      process.env.npm_config_registry = `http://127.0.0.1:${address.port}`;
-      // pm-5kfzjh: a cold npm start on a Windows runner can take longer than
-      // the 10 s default, so registry-backed checks get the largest budget.
-      vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "25000");
-      try {
+      await withRegistry("update-available", async (requests) => {
         for (const options of [{ explore: true }, { doctor: true }, { manage: true, offline: true }]) {
           await runExtension(undefined, { ...options, project: true }, { path: context.pmPath });
         }
@@ -58,28 +67,40 @@ describe("managed extension diagnostic purity", () => {
             details: { extensions: [{ update_check_status: "not_checked", update_check_reason: "offline_requested", update_available: null }] },
           });
         }
-        expect(requests).toBe(0);
+        expect(requests()).toBe(0);
         const managed = await runAction({ action: "package-manage", offline: true, path: context.pmPath, noExtensions: true, options: { project: true, offline: false } });
         expect(managed).toMatchObject({ details: { extensions: [{ source: { package: "freshness-registry-package", version: "1.0.0" }, update_check_status: "checked", update_available: true, last_update_remote_version: "2.0.0" }] } });
-        available = false;
+        expect(requests()).toBeGreaterThan(0);
+      });
+      expect(await readFile(managedPath, "utf8")).toBe(before);
+      expect((await stat(managedPath)).mtimeMs).toBe(beforeStat.mtimeMs);
+    });
+  });
+
+  it("reports an up-to-date package and then honors an offline override", async () => {
+    await withTempPmPath(async (context) => {
+      const { managedPath, before } = await installManagedNpmFixture(context);
+      await withRegistry("up-to-date", async () => {
         expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "checked", update_available: false }] });
         const offline = await runExtension(undefined, { manage: true, project: true, offline: true }, { path: context.pmPath });
         expect(offline.details).toMatchObject({ extensions: [{ update_check_status: "not_checked", update_check_reason: "offline_requested", update_available: null }] });
-        registryFailure = true;
+      });
+      expect(await readFile(managedPath, "utf8")).toBe(before);
+    });
+  });
+
+  it("reports an unavailable registry as a failed lookup without a timeout budget", async () => {
+    await withTempPmPath(async (context) => {
+      const { managedPath, before } = await installManagedNpmFixture(context);
+      await withRegistry("unavailable", async (requests) => {
         const failedLookup = (await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details as { extensions: Record<string, unknown>[] };
         expect(failedLookup).toMatchObject({ extensions: [{ update_check_status: "failed", update_available: null, update_error: "npm_registry_lookup_failed" }] });
         expect(failedLookup.extensions[0]).not.toHaveProperty("update_check_timeout_ms");
-        expect(requests).toBeGreaterThan(0);
-        expect(await readFile(managedPath, "utf8")).toBe(before);
-        expect((await stat(managedPath)).mtimeMs).toBe(beforeStat.mtimeMs);
-      } finally {
-        if (previousRegistry === undefined) delete process.env.npm_config_registry;
-        else process.env.npm_config_registry = previousRegistry;
-        registry.closeAllConnections();
-        await new Promise<void>((resolve, reject) => registry.close((error) => error ? reject(error) : resolve()));
-      }
+        expect(requests()).toBeGreaterThan(0);
+      });
+      expect(await readFile(managedPath, "utf8")).toBe(before);
     });
-  }, 90_000);
+  });
 
   it("reports a provider still running at its budget as a timeout, keeping the default budget under the state lock", async () => {
     await withTempPmPath(async (context) => {
