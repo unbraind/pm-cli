@@ -258,6 +258,13 @@ describe("file glob semantics", () => {
       ["{child/**,sub/**}{,.bak}", ["child/**", "sub/**", "child/*.bak", "sub/*.bak"]],
       ["child/**?(/d.ts)", ["child/**", "child/**/d.ts"]],
       ["{child,sub}/**{,/*.md}", ["child/**", "sub/**", "child/**/*.md", "sub/**/*.md"]],
+      // Written text that only matches empty is not empty text: `**{*,x}` spells
+      // `***` (one star) or `**x`, and `**{*/,x}` spells `***/` or `**x`.
+      ["child/**{*,x}", ["child/*", "child/*x"]],
+      ["child/**{*/,x}*", ["child/*/*", "child/*x*"]],
+      ["**{?(x),*}.ts", ["**.ts", "**x.ts", "*.ts"]],
+      // Two empty alternatives reach the same join twice without consuming.
+      ["child/**{,}", ["child/**"]],
     ];
     await withTempDir("pm-glob-union-", async (root) => {
       const workspace = await fixture(root);
@@ -270,7 +277,8 @@ describe("file glob semantics", () => {
         }
         const files = await expanded(pattern, workspace);
         expect({ pattern, files }).toEqual({ pattern, files: [...union].sort() });
-        expect(files).toEqual(expect.arrayContaining(await reference(pattern, workspace)));
+        // The superset guarantee excludes the documented "**"-adjacency family.
+        if (!adjacentGlobstar(pattern)) expect(files).toEqual(expect.arrayContaining(await reference(pattern, workspace)));
       }
     });
   });

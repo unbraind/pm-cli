@@ -66,7 +66,14 @@ type EdgeTest =
   | { kind: "class"; negated: boolean; ranges: Array<[number, number]> };
 
 interface State {
+  /** Every epsilon edge, which matching follows. */
   epsilon: number[];
+  /**
+   * The epsilon edges that stand for empty pattern text (a join, an empty
+   * alternative, zero repetitions, the pattern end), not a zero-length match
+   * of written syntax such as a star. Globstar resolution follows only these.
+   */
+  syntactic: number[];
   edges: Array<{ test: EdgeTest; to: number }>;
 }
 
@@ -376,13 +383,14 @@ class Nfa {
   /** Allocate one state, refusing patterns past MAX_STATES. */
   add(): number {
     if (this.states.length >= MAX_STATES) throw new GlobTooComplex();
-    this.states.push({ epsilon: [], edges: [] });
+    this.states.push({ epsilon: [], syntactic: [], edges: [] });
     return this.states.length - 1;
   }
 
   /** Add an epsilon edge. */
-  epsilon(from: number, to: number): void {
+  epsilon(from: number, to: number, syntactic = true): void {
     this.states[from]!.epsilon.push(to);
+    if (syntactic) this.states[from]!.syntactic.push(to);
   }
 
   /**
@@ -431,7 +439,7 @@ class Nfa {
   /** Zero or more non-separator code points. */
   private star(from: Ends): Ends {
     const loop = this.add();
-    for (const entry of entriesOf(from)) this.epsilon(entry, loop);
+    for (const entry of entriesOf(from)) this.epsilon(entry, loop, false);
     this.states[loop]!.edges.push({ test: ANY, to: loop });
     return { inside: loop };
   }
@@ -439,7 +447,7 @@ class Nfa {
   /** A loop of zero or more whole segments, each non-separator text and a "/", entered from `from`. */
   private segments(from: number): number {
     const between = this.add();
-    this.epsilon(from, between);
+    this.epsilon(from, between, false);
     const inside = this.add();
     this.states[between]!.edges.push({ test: ANY, to: inside });
     this.states[inside]!.edges.push({ test: ANY, to: inside }, { test: { kind: "char", value: SLASH }, to: between });
@@ -464,7 +472,7 @@ class Nfa {
     const star = this.star(from);
     if (from.segment !== undefined) {
       const rest = this.add();
-      this.epsilon(from.segment, rest);
+      this.epsilon(from.segment, rest, false);
       this.states[rest]!.edges.push({ test: { kind: "all" }, to: rest });
       this.globstars.push({ continuation: star.inside!, segments: this.segments(from.segment), rest });
     }
@@ -474,12 +482,12 @@ class Nfa {
   /** Globstars whose meaning depends on what can follow them. */
   readonly globstars: Array<{ continuation: number; segments: number; rest: number }> = [];
 
-  /** Close a state set over epsilon edges. */
-  closure(seed: number[]): Set<number> {
+  /** Close a state set over the syntactic epsilon edges: the text that can follow without consuming. */
+  private syntacticClosure(seed: number[]): Set<number> {
     const seen = new Set<number>(seed);
     const stack = [...seed];
     while (stack.length > 0) {
-      for (const next of this.states[stack.pop()!]!.epsilon) {
+      for (const next of this.states[stack.pop()!]!.syntactic) {
         if (!seen.has(next)) { seen.add(next); stack.push(next); }
       }
     }
@@ -487,44 +495,26 @@ class Nfa {
   }
 
   /**
-   * Decide each globstar from its continuation, the automaton that follows it.
-   * Its segment loop skips to every state the continuation reaches by
-   * consuming "/", which is `**` + "/" with zero or more segments; its
-   * any-text loop accepts when the continuation can end the pattern without
-   * consuming, which is a trailing `**`. Repeated until nothing changes,
-   * because one globstar's new edges can make another's continuation nullable.
+   * Decide each globstar from its continuation, the pattern text that can
+   * follow it. Its segment loop skips to every state the continuation reaches
+   * by consuming "/" after only empty text, which is `**` + "/" with zero or
+   * more segments; its any-text loop accepts when only empty text separates
+   * it from the pattern end, which is a trailing `**`. Text that merely
+   * matches empty, such as the `*` in `**{*,x}` (written `***`), does not
+   * count. The edges added here are not syntactic, so one pass decides all.
    */
   resolveGlobstars(accept: number): void {
-    for (let changed = true; changed;) {
-      changed = false;
-      for (const { continuation, segments, rest } of this.globstars) {
-        changed = this.link(segments, rest, accept, this.targets(continuation, accept)) || changed;
+    for (const { continuation, segments, rest } of this.globstars) {
+      const reachable = this.syntacticClosure([continuation]);
+      if (reachable.has(accept)) this.epsilon(rest, accept, false);
+      const targets = new Set<number>();
+      for (const state of reachable) {
+        for (const { test, to } of this.states[state]!.edges) if (accepts(test, SLASH)) targets.add(to);
       }
+      for (const target of targets) this.epsilon(segments, target, false);
     }
   }
 
-  /** States the continuation reaches by consuming "/", plus -1 when it can end the pattern without consuming. */
-  private targets(continuation: number, accept: number): Set<number> {
-    const reachable = this.closure([continuation]);
-    const targets = new Set<number>(reachable.has(accept) ? [-1] : []);
-    for (const state of reachable) {
-      for (const { test, to } of this.states[state]!.edges) if (accepts(test, SLASH)) targets.add(to);
-    }
-    return targets;
-  }
-
-  /** Add the epsilon edges resolveGlobstars decided, returning whether any was new. */
-  private link(segments: number, rest: number, accept: number, targets: Set<number>): boolean {
-    let added = false;
-    for (const target of targets) {
-      const [from, to] = target === -1 ? [rest, accept] : [segments, target];
-      if (!this.states[from]!.epsilon.includes(to)) {
-        this.epsilon(from, to);
-        added = true;
-      }
-    }
-    return added;
-  }
 
   /** `?(…)`, `*(…)` and `+(…)`: an optional pass or a loop over the alternatives. */
   private repeat(node: Extract<Node, { kind: "repeat" }>, from: Ends): Ends {
