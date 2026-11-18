@@ -166,27 +166,38 @@ describe("processTableSharesNamespace", () => {
 });
 
 describe("resolveWindowsSystemRoot", () => {
+  const anyTaskkill = (): boolean => true;
   it("matches the variable names case-insensitively, as a worker thread's env copy needs", () => {
-    expect(resolveWindowsSystemRoot({ SYSTEMROOT: "C:\\Windows" })).toBe("C:\\Windows");
-    expect(resolveWindowsSystemRoot({ WINDIR: "D:\\Windows" })).toBe("D:\\Windows");
+    expect(resolveWindowsSystemRoot({ SYSTEMROOT: "C:\\Windows" }, anyTaskkill)).toBe("C:\\Windows");
+    expect(resolveWindowsSystemRoot({ WINDIR: "D:\\Windows" }, anyTaskkill)).toBe("D:\\Windows");
   });
 
   it("accepts only a fully qualified drive path, from SystemRoot and then windir", () => {
-    expect(resolveWindowsSystemRoot({ SystemRoot: "C:\\Windows" })).toBe("C:\\Windows");
-    expect(resolveWindowsSystemRoot({ SystemRoot: "D:/WinRoot", windir: "C:\\Windows" })).toBe("D:/WinRoot");
-    expect(resolveWindowsSystemRoot({ SystemRoot: "", windir: "C:\\Windows" })).toBe("C:\\Windows");
+    expect(resolveWindowsSystemRoot({ SystemRoot: "C:\\Windows" }, anyTaskkill)).toBe("C:\\Windows");
+    expect(resolveWindowsSystemRoot({ SystemRoot: "D:/WinRoot", windir: "C:\\Windows" }, anyTaskkill)).toBe("D:/WinRoot");
+    expect(resolveWindowsSystemRoot({ SystemRoot: "", windir: "C:\\Windows" }, anyTaskkill)).toBe("C:\\Windows");
+    const onlyUnsafe = (file: string): boolean => !file.startsWith("C:\\Windows");
     for (const unsafe of ["", "Windows", ".\\Windows", "\\\\server\\share", "C:", "C:Windows"]) {
-      expect(resolveWindowsSystemRoot({ SystemRoot: unsafe })).toBeUndefined();
+      expect(resolveWindowsSystemRoot({ SystemRoot: unsafe }, onlyUnsafe)).toBeUndefined();
     }
     expect(resolveWindowsSystemRoot({}, () => false)).toBeUndefined();
+  });
+
+  it("skips a qualified but stale directory whose taskkill is missing", () => {
+    const realWindows = (file: string): boolean => file === "E:\\Windows\\System32\\taskkill.exe";
+    expect(resolveWindowsSystemRoot({ SystemRoot: "D:\\Stale", windir: "E:\\Windows" }, realWindows)).toBe("E:\\Windows");
+    // With both variables stale, the standard directory is still tried.
+    const standardOnly = (file: string): boolean => file === "C:\\Windows\\System32\\taskkill.exe";
+    expect(resolveWindowsSystemRoot({ SystemRoot: "D:\\Stale", windir: "E:\\Stale" }, standardOnly)).toBe("C:\\Windows");
   });
 
   it("falls back to the standard directory only when its System32 taskkill exists", () => {
     const standardTaskkill = (file: string): boolean => file === "C:\\Windows\\System32\\taskkill.exe";
     expect(resolveWindowsSystemRoot({}, standardTaskkill)).toBe("C:\\Windows");
     expect(resolveWindowsSystemRoot({ SystemRoot: "relative" }, standardTaskkill)).toBe("C:\\Windows");
-    // A qualified variable still wins over the standard location.
-    expect(resolveWindowsSystemRoot({ SystemRoot: "D:\\Win" }, standardTaskkill)).toBe("D:\\Win");
+    // A qualified variable still wins over the standard location when its taskkill exists.
+    expect(resolveWindowsSystemRoot({ SystemRoot: "D:\\Win" }, () => true)).toBe("D:\\Win");
+    expect(resolveWindowsSystemRoot({ SystemRoot: "D:\\Win" }, standardTaskkill)).toBe("C:\\Windows");
     existsSyncMock.mockImplementation(() => false);
     expect(resolveWindowsSystemRoot({})).toBeUndefined();
   });
@@ -528,6 +539,7 @@ describe("killProcessTree", () => {
     const restore = withPlatform("win32");
     try {
       vi.stubEnv("SystemRoot", "D:\\WinRoot");
+      existsSyncMock.mockImplementation((file: string) => file.endsWith("taskkill.exe"));
       answer("", code);
       const caller = root();
       await killProcessTree(4242, caller);
@@ -544,6 +556,7 @@ describe("killProcessTree", () => {
     try {
       vi.useFakeTimers();
       vi.stubEnv("SystemRoot", "C:\\Windows");
+      existsSyncMock.mockImplementation((file: string) => file.endsWith("taskkill.exe"));
       provide(() => undefined);
       const bounded = root();
       const boundedKill = killProcessTree(4242, bounded);
@@ -574,6 +587,7 @@ describe("killProcessTree", () => {
     const restore = withPlatform("win32");
     try {
       vi.stubEnv("SystemRoot", "C:\\Windows");
+      existsSyncMock.mockImplementation((file: string) => file.endsWith("taskkill.exe"));
       // The root is alive when taskkill starts and exits while it runs.
       let rootAlive = true;
       provide((helper) => {
@@ -594,6 +608,7 @@ describe("killProcessTree", () => {
     try {
       vi.stubEnv("SystemRoot", "Windows");
       vi.stubEnv("windir", "C:\\Windows");
+      existsSyncMock.mockImplementation((file: string) => file.endsWith("taskkill.exe"));
       provide((helper) => helper.emit("error", new Error("spawn ENOENT")));
       const caller = root();
       await killProcessTree(4242, caller);

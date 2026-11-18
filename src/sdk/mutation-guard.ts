@@ -707,9 +707,23 @@ function ownPolicyEntry<Decision>(
 const OBJECT_PROTOTYPE_KEYS: ReadonlySet<PropertyKey> = new Set(Reflect.ownKeys(Object.prototype));
 
 /**
+ * Whether a null-prototype object is another realm's `Object.prototype`: it
+ * carries exactly `Object.prototype`'s own keys, and its `constructor` is a
+ * function whose own `prototype` is that object. Both are read as data
+ * descriptors, so no getter runs.
+ */
+function isForeignObjectPrototype(prototype: object): boolean {
+  const keys = Reflect.ownKeys(prototype);
+  if (keys.length !== OBJECT_PROTOTYPE_KEYS.size) return false;
+  if (!keys.every((key) => OBJECT_PROTOTYPE_KEYS.has(key))) return false;
+  const constructor: unknown = Object.getOwnPropertyDescriptor(prototype, "constructor")?.value;
+  return typeof constructor === "function" && Object.getOwnPropertyDescriptor(constructor, "prototype")?.value === prototype;
+}
+
+/**
  * Whether a value is a plain property map: its prototype is `null`, this
- * realm's `Object.prototype`, or another realm's, recognised as a
- * null-prototype object that carries only `Object.prototype`'s own keys. Any
+ * realm's `Object.prototype`, another realm's (see
+ * {@link isForeignObjectPrototype}), or an empty null-prototype object. Any
  * other object (an array, `Map`, `Set`, `URLSearchParams`, a class instance,
  * or a map inheriting from a dictionary with entries) may hold entries an
  * own-property lookup never finds, so it is never read as overrides. The
@@ -718,7 +732,9 @@ const OBJECT_PROTOTYPE_KEYS: ReadonlySet<PropertyKey> = new Set(Reflect.ownKeys(
 function isPlainPropertyMap(value: object): boolean {
   const prototype = Object.getPrototypeOf(value) as object | null;
   if (prototype === null || prototype === Object.prototype) return true;
-  return Object.getPrototypeOf(prototype) === null && Reflect.ownKeys(prototype).every((key) => OBJECT_PROTOTYPE_KEYS.has(key));
+  if (Object.getPrototypeOf(prototype) !== null) return false;
+  // An empty null-prototype parent holds nothing a lookup could drop.
+  return Reflect.ownKeys(prototype).length === 0 || isForeignObjectPrototype(prototype);
 }
 
 /**

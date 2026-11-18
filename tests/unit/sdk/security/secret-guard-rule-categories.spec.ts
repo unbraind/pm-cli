@@ -117,6 +117,17 @@ describe("decideSecretGuardFinding", () => {
     // A null-prototype dictionary with entries is not a realm's Object.prototype.
     const dictionary = Object.assign(Object.create(null) as Record<string, string>, { private_ip: "deny" });
     expect(() => decideSecretGuardFinding({ default: "allow", rules: Object.create(dictionary) as Record<string, string> }, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy rules must be an object keyed by rule."));
+    // A dictionary is not a realm's Object.prototype just because its keys are built-in names.
+    const constructorOnly = Object.assign(Object.create(null) as Record<string, string>, { constructor: "deny" });
+    const builtInNames = Object.create(null) as Record<PropertyKey, unknown>;
+    for (const key of Reflect.ownKeys(Object.prototype)) Object.defineProperty(builtInNames, key, { value: "deny", enumerable: true });
+    const renamedKey = Object.create(null) as Record<PropertyKey, unknown>;
+    for (const key of Reflect.ownKeys(Object.prototype)) Object.defineProperty(renamedKey, key === "valueOf" ? "private_ip" : key, { value: "deny" });
+    const foreignConstructor = Object.create(null) as Record<PropertyKey, unknown>;
+    for (const key of Reflect.ownKeys(Object.prototype)) Object.defineProperty(foreignConstructor, key, { value: key === "constructor" ? function Unrelated() {} : "deny" });
+    for (const parent of [constructorOnly, builtInNames, renamedKey, foreignConstructor]) {
+      expect(() => decideSecretGuardFinding({ default: "allow", rules: Object.create(parent) as Record<string, string> }, { rule: "constructor" })).toThrow(new TypeError("Secret guard policy rules must be an object keyed by rule."));
+    }
     // An empty null-prototype parent holds nothing that could be dropped.
     const emptyParent = Object.assign(Object.create(Object.create(null) as object) as Record<string, string>, { private_ip: "deny" });
     expect(decideSecretGuardFinding({ default: "allow", rules: emptyParent }, { rule: "private_ip" })).toBe("deny");

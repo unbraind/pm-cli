@@ -168,11 +168,11 @@ export function resolveTrustedPs(exists: (file: string) => boolean = existsSync)
 const DEFAULT_WINDOWS_ROOT = "C:\\Windows";
 
 /**
- * The fully qualified Windows directory from `SystemRoot` or `windir`, or,
- * when neither names an absolute drive path, the standard `C:\\Windows` if its
- * System32 `taskkill.exe` exists; otherwise `undefined`. An empty, relative or
- * UNC value is never used, since it would let `taskkill.exe` resolve somewhere
- * the host does not control.
+ * The first Windows directory whose System32 `taskkill.exe` exists, tried in
+ * order from `SystemRoot`, `windir` and the standard `C:\\Windows`; otherwise
+ * `undefined`. A stale variable therefore falls through to the next
+ * candidate. An empty, relative or UNC value is never tried, since it would
+ * let `taskkill.exe` resolve somewhere the host does not control.
  */
 export function resolveWindowsSystemRoot(
   env: NodeJS.ProcessEnv = process.env,
@@ -181,13 +181,10 @@ export function resolveWindowsSystemRoot(
   // Keys are matched case-insensitively: a worker thread's env copy is case-sensitive.
   const valueOf = (name: string): string | undefined =>
     Object.entries(env).find(([key]) => key.toLowerCase() === name)?.[1];
-  const fromEnv = [valueOf("systemroot"), valueOf("windir")].find(
-    (candidate): candidate is string => typeof candidate === "string" && /^[A-Za-z]:[\\/]/u.test(candidate),
+  return [valueOf("systemroot"), valueOf("windir"), DEFAULT_WINDOWS_ROOT].find(
+    (candidate): candidate is string =>
+      typeof candidate === "string" && /^[A-Za-z]:[\\/]/u.test(candidate) && exists(path.win32.join(candidate, "System32", "taskkill.exe")),
   );
-  if (fromEnv !== undefined) return fromEnv;
-  // A minimal environment may drop both: the standard location is still a
-  // fixed, fully qualified path, used only when its taskkill really exists.
-  return exists(path.win32.join(DEFAULT_WINDOWS_ROOT, "System32", "taskkill.exe")) ? DEFAULT_WINDOWS_ROOT : undefined;
 }
 
 /** Kill `pid` itself, treating a process that is already gone as stopped. */
@@ -251,9 +248,10 @@ export function runTeardownHelper(
 
 /**
  * Kill the process tree rooted at `pid`. On Windows this runs the system
- * `taskkill /T /F` from the System32 directory under a fully qualified
- * `SystemRoot` or `windir`, never a `taskkill` found through the working
- * directory or `PATH`; when no such directory is known, or taskkill cannot run
+ * `taskkill /T /F` from the System32 directory of the first fully qualified
+ * `SystemRoot`, `windir` or standard `C:\\Windows` where it exists (see
+ * {@link resolveWindowsSystemRoot}), never a `taskkill` found through the
+ * working directory or `PATH`; when no such directory is known, or taskkill cannot run
  * or fails, the root itself is still killed. `taskkill` names the root by PID, so a root that exits and has its
  * PID reused in the moment before `taskkill` opens it cannot be told apart;
  * only an OS containment mechanism (a job object) would close that window, and
