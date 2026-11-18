@@ -214,9 +214,11 @@ that TypeScript's own assignability rules let through, such as a
 assigned to a typed policy, so validate untyped input before annotating it as
 `SecretGuardPolicy<D>`, or type it as `SecretGuardPolicy<unknown>`; a
 policy that is not an object, has no own `default` or has `default:
-undefined`, holds `categories` or `rules` that are not plain objects (a `Map`,
-`Set` or array keeps its entries where an own-property lookup never finds
-them), or a finding without a string `rule`, throws a `TypeError`.
+undefined`, holds `categories` or `rules` that are not plain objects (their
+prototype must be `Object.prototype`, of any realm, or `null`: an array,
+`Map`, `URLSearchParams`, class instance or a map that inherits entries keeps
+them where an own-property lookup never finds them), or a finding without a
+string `rule`, throws a `TypeError`.
 
 `SECRET_GUARD_RULE_CATEGORIES` maps every shipped rule to its category and
 `secretGuardRuleCategory(rule)` returns `undefined` for an unknown one.

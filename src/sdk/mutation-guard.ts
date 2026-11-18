@@ -6,7 +6,6 @@
  */
 import { SECRET_RULES, acceptsStructuredValue, findSecretRuleMatches, structuredKeyShape, type SecretNormalizationKind, type SecretRule, type SecretRuleCategory, type SecretRuleMatch } from "../core/shared/secret-rules.js";
 export type { SecretNormalizationKind } from "../core/shared/secret-rules.js";
-import { isMap, isSet, isWeakMap, isWeakSet } from "node:util/types";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -704,21 +703,26 @@ function ownPolicyEntry<Decision>(
   return entries !== undefined && key !== undefined && Object.hasOwn(entries, key) ? entries[key] : undefined;
 }
 
-/** Whether a value keeps its entries where an own-property lookup never finds them. */
-function isEntryContainer(value: object): boolean {
-  // Checked by internal slot, so neither a Symbol.toStringTag nor another realm changes the answer.
-  return Array.isArray(value) || isMap(value) || isSet(value) || isWeakMap(value) || isWeakSet(value);
+/**
+ * Whether a value is a plain property map: its prototype is `Object.prototype`
+ * (of this or another realm) or `null`. Any other object (an array, `Map`,
+ * `Set`, `URLSearchParams` or class instance) may hold its entries where an
+ * own-property lookup never finds them, so it is never read as overrides.
+ * The prototype decides, so a `Symbol.toStringTag` changes nothing.
+ */
+function isPlainPropertyMap(value: object): boolean {
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return prototype === null || Object.getPrototypeOf(prototype) === null;
 }
 
 /**
  * Read an own `categories` or `rules` map of a policy, refusing one that is
- * not an object, and an array, `Map`, `Set`, `WeakMap` or `WeakSet`: those
- * hold their entries where an own-property lookup never finds them, so a
- * configured decision would be ignored.
+ * not a plain property map, so a configured decision is never silently
+ * ignored.
  */
 function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules"): Partial<Record<string, Decision>> | undefined {
   const entries: unknown = Object.hasOwn(policy, field) ? (policy as Record<string, unknown>)[field] : undefined;
-  if (entries !== undefined && (typeof entries !== "object" || entries === null || isEntryContainer(entries))) {
+  if (entries !== undefined && (typeof entries !== "object" || entries === null || !isPlainPropertyMap(entries))) {
     throw new TypeError(`Secret guard policy ${field} must be an object keyed by ${field === "rules" ? "rule" : "category"}.`);
   }
   return entries as Partial<Record<string, Decision>> | undefined;
@@ -734,8 +738,9 @@ function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules
  * wrapper, returns `D` without `undefined`.
  *
  * @throws {TypeError} When the policy is not an object, has no `default`
- * decision, or holds `categories` or `rules` that are not plain objects (a
- * `Map`, `Set` or array is refused), or when the finding has no string `rule`.
+ * decision, or holds `categories` or `rules` that are not plain objects (an
+ * array, `Map`, `URLSearchParams` or class instance is refused), or when the
+ * finding has no string `rule`.
  */
 export function decideSecretGuardFinding<Decision>(
   policy: SecretGuardPolicy<Decision>,

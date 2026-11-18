@@ -1,3 +1,4 @@
+import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SECRET_RULES, type SecretRule } from "../../../../src/core/shared/secret-rules.js";
 import {
@@ -106,10 +107,13 @@ describe("decideSecretGuardFinding", () => {
     expect(decideSecretGuardFinding({ default: false }, { rule: "github_token" })).toBe(false);
   });
 
-  it("ignores inherited entries and keys that name no rule or category", () => {
+  it("refuses maps that inherit entries, and ignores keys that name no rule or category", () => {
+    // An inherited entry is a configured decision an own-property lookup
+    // would drop, so such a map is refused rather than read without it.
     const inherited = Object.create({ private_ip: "inherited" }) as Partial<Record<"private_ip", string>>;
     const categories = Object.create({ network: "inherited" }) as Partial<Record<"network", string>>;
-    expect(decideSecretGuardFinding({ default: "default", rules: inherited, categories }, { rule: "private_ip" })).toBe("default");
+    expect(() => decideSecretGuardFinding({ default: "default", rules: inherited }, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy rules must be an object keyed by rule."));
+    expect(() => decideSecretGuardFinding({ default: "default", categories }, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy categories must be an object keyed by category."));
     const forward = { default: "default", rules: { future_token: "future" }, categories: { identity: "identity" } } as unknown as SecretGuardPolicy<string>;
     expect(decideSecretGuardFinding(forward, { rule: "private_ip" })).toBe("default");
     expect(decideSecretGuardFinding(forward, { rule: "future_token" })).toBe("future");
@@ -157,6 +161,8 @@ describe("decideSecretGuardFinding", () => {
     ["a Set of rules", { default: "allow", rules: new Set(["private_ip"]) }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
     ["a WeakMap of rules", { default: "allow", rules: new WeakMap() }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
     ["a WeakSet of categories", { default: "allow", categories: new WeakSet() }, { rule: "private_ip" }, "Secret guard policy categories must be an object keyed by category."],
+    ["URLSearchParams categories", { default: "allow", categories: new URLSearchParams("network=deny") }, { rule: "private_ip" }, "Secret guard policy categories must be an object keyed by category."],
+    ["a class instance of rules", { default: "allow", rules: new (class RuleOverrides { private_ip = "deny"; })() }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
     ["a null finding", { default: true }, null, "Secret guard finding must have a string rule."],
     ["a string finding", { default: true }, "private_ip", "Secret guard finding must have a string rule."],
     ["a finding without a rule", { default: true }, {}, "Secret guard finding must have a string rule."],
@@ -170,6 +176,10 @@ describe("decideSecretGuardFinding", () => {
     expect(decideSecretGuardFinding({ default: "allow", rules }, { rule: "private_ip" })).toBe("deny");
     const tagged = { network: "deny", [Symbol.toStringTag]: "PolicyCategories" };
     expect(decideSecretGuardFinding({ default: "allow", categories: tagged }, { rule: "private_ip" })).toBe("deny");
+    // A plain object from another realm, such as a vm context, is read too.
+    const foreign = runInNewContext("({ private_ip: 'deny' })") as Record<string, string>;
+    expect(Object.getPrototypeOf(foreign)).not.toBe(Object.prototype);
+    expect(decideSecretGuardFinding({ default: "allow", rules: foreign }, { rule: "private_ip" })).toBe("deny");
   });
 });
 
