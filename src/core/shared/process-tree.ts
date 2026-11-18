@@ -10,6 +10,18 @@ import path from "node:path";
 /** Longest a teardown helper (`ps`, `taskkill`) may run before it is abandoned. */
 const TEARDOWN_HELPER_TIMEOUT_MS = 10_000;
 
+/** How the caller identifies and kills the root it spawned. */
+export interface ProcessTreeRoot {
+  /** Kill the root, for example through Node's `ChildProcess` handle. */
+  kill(): void;
+  /**
+   * Whether the root is still the process this caller spawned. A `ChildProcess`
+   * that has not reported its exit is still unreaped, so its PID cannot have
+   * been reused.
+   */
+  alive(): boolean;
+}
+
 /**
  * Read the live descendants of `root`, deepest first, from a process table in
  * `ps -A -o pid= -o ppid=` form (one `pid ppid` pair per line). Malformed
@@ -39,7 +51,6 @@ export function descendantsFromProcessTable(table: string, root: number): number
   return descendants.reverse();
 }
 
-/* c8 ignore start -- process-tree teardown paths are highly platform-dependent. */
 /** Kill `pid` itself, treating a process that is already gone as stopped. */
 function killProcess(pid: number): void {
   try {
@@ -49,46 +60,72 @@ function killProcess(pid: number): void {
   }
 }
 
-/** Run a teardown helper with bounded time and collect its stdout; failures resolve to `undefined`. */
-function runTeardownHelper(file: string, args: string[]): Promise<{ code: number | null; stdout: string } | undefined> {
+/**
+ * Run a teardown helper and collect its stdout. It settles on the helper's
+ * exit or after a hard deadline, never waiting for pipes, and resolves to
+ * `undefined` when the helper cannot start, fails to start or stalls.
+ */
+export function runTeardownHelper(file: string, args: string[]): Promise<{ code: number | null; stdout: string } | undefined> {
   return new Promise((resolve) => {
+    let settled = false;
     let stdout = "";
-    let helper;
+    let helper: ReturnType<typeof spawn>;
     try {
-      helper = spawn(file, args, { stdio: ["ignore", "pipe", "ignore"], windowsHide: true, timeout: TEARDOWN_HELPER_TIMEOUT_MS });
+      helper = spawn(file, args, { stdio: ["ignore", "pipe", "ignore"], windowsHide: true });
     } catch {
       resolve(undefined);
+      return;
+    }
+    const deadline = setTimeout(() => {
+      settle(undefined);
+      helper.stdout?.destroy();
+      helper.kill("SIGKILL");
+    }, TEARDOWN_HELPER_TIMEOUT_MS);
+    function settle(result: { code: number | null; stdout: string } | undefined): void {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      resolve(result);
+    }
+    // The error listener comes first: a spawn that ran out of descriptors can
+    // return a child without stdio and report the error on the next tick.
+    helper.on("error", () => settle(undefined));
+    if (!helper.stdout) {
+      settle(undefined);
       return;
     }
     helper.stdout.setEncoding("utf8");
     helper.stdout.on("data", (chunk: string) => {
       stdout += chunk;
     });
-    helper.on("error", () => resolve(undefined));
-    helper.on("close", (code) => resolve({ code, stdout }));
+    helper.on("close", (code: number | null) => settle({ code, stdout }));
   });
 }
 
 /**
  * Kill the process tree rooted at `pid`. On Windows this runs the system
- * `taskkill /T /F` from System32, never a `taskkill` found through the
- * working directory or `PATH`; when it cannot run or fails, the root itself is
- * still killed. Elsewhere it signals the process group led by `pid` when the
- * child was spawned with `detached: true`; otherwise it kills the live
- * descendants listed by an asynchronous, bounded `ps`, then the root. Either
- * way the tree is walked from the live root, so a descendant whose launcher
- * already exited is not reached. `killRoot` replaces the PID-based kill of the
- * root, so a caller that holds the child's handle can kill it through that
- * handle. A process that is already gone is not an error.
+ * `taskkill /T /F` from System32, never a `taskkill` found through the working
+ * directory or `PATH`; when it cannot run or fails, the root itself is still
+ * killed. Elsewhere it signals the process group led by `pid` when the child
+ * was spawned with `detached: true`; otherwise it kills the live descendants
+ * listed by an asynchronous, bounded `ps`, then the root. The snapshot is used
+ * only if `root.alive()` still holds after it is taken, so a PID reused while
+ * `ps` ran is never walked. Either way the tree is walked from the live root,
+ * so a descendant whose launcher already exited is not reached. Without
+ * `root`, the root is killed by PID and is assumed to stay alive. A process
+ * that is already gone is not an error.
  */
-export async function killProcessTree(pid: number, killRoot: () => void = () => killProcess(pid)): Promise<void> {
+export async function killProcessTree(
+  pid: number,
+  root: ProcessTreeRoot = { kill: () => killProcess(pid), alive: () => true },
+): Promise<void> {
   if (!Number.isInteger(pid) || pid <= 0) {
     return;
   }
   if (process.platform === "win32") {
     const taskkill = path.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe");
     const result = await runTeardownHelper(taskkill, ["/pid", String(pid), "/T", "/F"]);
-    if (result?.code !== 0) killRoot();
+    if (result?.code !== 0) root.kill();
     return;
   }
   try {
@@ -98,7 +135,8 @@ export async function killProcessTree(pid: number, killRoot: () => void = () => 
     // Not a process-group leader: walk its live descendants instead.
   }
   const table = await runTeardownHelper("ps", ["-A", "-o", "pid=", "-o", "ppid="]);
-  for (const descendant of descendantsFromProcessTable(table?.stdout ?? "", pid)) killProcess(descendant);
-  killRoot();
+  if (root.alive()) {
+    for (const descendant of descendantsFromProcessTable(table?.stdout ?? "", pid)) killProcess(descendant);
+  }
+  root.kill();
 }
-/* c8 ignore stop */

@@ -6,7 +6,8 @@ import type { ManagedExtensionSource } from "../../../src/sdk/extension/managed-
 // own stable reason and the budget, never the provider's command, stderr or
 // environment.
 const spawnMock = vi.hoisted(() => vi.fn());
-const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number, _killRoot?: () => void) => undefined));
+type TreeRoot = { kill(): void; alive(): boolean };
+const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number, _root?: { kill(): void; alive(): boolean }) => undefined));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
   spawn: spawnMock,
@@ -112,7 +113,7 @@ describe("npm update lookup budget", () => {
     await vi.advanceTimersByTimeAsync(1);
     const status = await pending;
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
-    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.any(Function));
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
     expect(children[0]?.stdout.destroy).toHaveBeenCalled();
     // The tree teardown ran; a direct child still running is killed as well.
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
@@ -139,9 +140,30 @@ describe("npm update lookup budget", () => {
   it("kills the root through its handle when the tree teardown asks for it", async () => {
     vi.useFakeTimers();
     hang();
-    killProcessTreeMock.mockImplementationOnce(async (_pid: number, killRoot?: () => void) => killRoot?.());
+    let root: TreeRoot | undefined;
+    killProcessTreeMock.mockImplementationOnce(async (_pid: number, treeRoot?: TreeRoot) => {
+      root = treeRoot;
+      expect(treeRoot?.alive()).toBe(true);
+      treeRoot?.kill();
+    });
     expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+    // Once Node reports the exit, the root no longer counts as the spawned process.
+    children[0]?.exit(null, "SIGKILL");
+    expect(root?.alive()).toBe(false);
+  });
+
+  it("registers its error listener before touching stdio, so a spawn without stdout fails cleanly", async () => {
+    spawnMock.mockImplementation(() => {
+      const child = new FakeChild();
+      Object.defineProperty(child, "stdout", { value: null });
+      children.push(child);
+      // Node reports the spawn failure on the next tick.
+      queueMicrotask(() => child.emit("error", new Error(`spawn EMFILE ${PRIVATE_FIXTURE}`)));
+      return child;
+    });
+    expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.anything());
   });
 
   it("does not signal a direct child that already exited after the tree teardown", async () => {
@@ -199,7 +221,7 @@ describe("npm update lookup budget", () => {
     const status = await checkNpmUpdate(source);
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toContain("private-fixture-value");
-    if (label === "stdout beyond its buffer") expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.any(Function));
+    if (label === "stdout beyond its buffer") expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
   });
 
   it("reports a spawn that throws as a failed lookup", async () => {
@@ -262,7 +284,7 @@ describe("GitHub update lookup reasons", () => {
     hang();
     const status = await settleAfter(3000, () => checkGithubUpdate(github));
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 3000 });
-    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.any(Function));
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
   });
 
   it.each([

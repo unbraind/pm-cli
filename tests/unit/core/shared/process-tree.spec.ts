@@ -1,8 +1,62 @@
-import { describe, expect, it } from "vitest";
-import { descendantsFromProcessTable } from "../../../../src/core/shared/process-tree.js";
+import { EventEmitter } from "node:events";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // pm-5kfzjh: the deadline teardown walks a provider's live descendants from a
-// `ps -A -o pid= -o ppid=` snapshot.
+// `ps -A -o pid= -o ppid=` snapshot, runs its helpers under a hard deadline,
+// and never walks a PID that may have been reused.
+const spawnMock = vi.hoisted(() => vi.fn());
+vi.mock("node:child_process", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:child_process")>()),
+  spawn: spawnMock,
+}));
+
+const { descendantsFromProcessTable, killProcessTree, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
+
+class FakeStream extends EventEmitter {
+  readonly setEncoding = vi.fn();
+  readonly destroy = vi.fn();
+}
+
+class FakeHelper extends EventEmitter {
+  stdout: FakeStream | null = new FakeStream();
+  readonly kill = vi.fn(() => true);
+}
+
+let helpers: FakeHelper[] = [];
+
+/** Spawn fake helpers and drive each one once its listeners are attached. */
+function provide(drive: (helper: FakeHelper) => void, withoutStdout = false): void {
+  spawnMock.mockImplementation(() => {
+    const helper = new FakeHelper();
+    if (withoutStdout) helper.stdout = null;
+    helpers.push(helper);
+    queueMicrotask(() => drive(helper));
+    return helper;
+  });
+}
+
+function answer(stdout: string, code: number | null = 0): void {
+  provide((helper) => {
+    helper.stdout?.emit("data", stdout);
+    helper.emit("close", code);
+  });
+}
+
+function withPlatform(platform: NodeJS.Platform): () => void {
+  const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
+  Object.defineProperty(process, "platform", { value: platform });
+  return () => Object.defineProperty(process, "platform", descriptor);
+}
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+  spawnMock.mockReset();
+  helpers = [];
+});
+
 describe("descendantsFromProcessTable", () => {
   it("lists every live descendant deepest first", () => {
     const table = ["  100     1", "  200   100", "  300   200", "  301   200", "  400   100", "  500     1", ""].join("\n");
@@ -24,5 +78,148 @@ describe("descendantsFromProcessTable", () => {
   it("does not list a process re-parented away from the root", () => {
     // The launcher 100 exited, so its former helper 200 now belongs to init.
     expect(descendantsFromProcessTable("200 1\n300 200\n", 100)).toEqual([]);
+  });
+});
+
+describe("runTeardownHelper", () => {
+  it("collects the helper's stdout and exit code from a hidden, stdin- and stderr-free child", async () => {
+    answer("1 0\n");
+    expect(await runTeardownHelper("ps", ["-A"])).toEqual({ code: 0, stdout: "1 0\n" });
+    expect(spawnMock).toHaveBeenCalledWith("ps", ["-A"], { stdio: ["ignore", "pipe", "ignore"], windowsHide: true });
+    expect(helpers[0]?.stdout?.setEncoding).toHaveBeenCalledWith("utf8");
+  });
+
+  it("resolves undefined when the helper cannot start, errors or has no stdout", async () => {
+    spawnMock.mockImplementation(() => {
+      throw new Error("spawn EMFILE");
+    });
+    expect(await runTeardownHelper("ps", [])).toBeUndefined();
+    provide((helper) => helper.emit("error", new Error("spawn ENOENT")));
+    expect(await runTeardownHelper("ps", [])).toBeUndefined();
+    provide((helper) => helper.emit("error", new Error("spawn EMFILE")), true);
+    expect(await runTeardownHelper("ps", [])).toBeUndefined();
+  });
+
+  it("abandons a stalled helper at its hard deadline instead of waiting for its pipes", async () => {
+    vi.useFakeTimers();
+    provide(() => undefined);
+    const pending = runTeardownHelper("ps", []);
+    await vi.advanceTimersByTimeAsync(9_999);
+    expect(helpers[0]?.kill).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await pending).toBeUndefined();
+    expect(helpers[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+    expect(helpers[0]?.stdout?.destroy).toHaveBeenCalled();
+    // A late close changes nothing.
+    helpers[0]?.emit("close", 0);
+  });
+});
+
+describe("killProcessTree", () => {
+  const root = () => ({ kill: vi.fn(), alive: vi.fn(() => true) });
+
+  it("ignores a pid that cannot name a process", async () => {
+    const kill = vi.spyOn(process, "kill").mockImplementation(() => true);
+    for (const pid of [0, -1, 1.5, Number.NaN]) await killProcessTree(pid);
+    expect(kill).not.toHaveBeenCalled();
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("signals the process group of a detached child without listing processes", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation(() => true);
+      const caller = root();
+      await killProcessTree(4242, caller);
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
+      expect(spawnMock).not.toHaveBeenCalled();
+      expect(caller.kill).not.toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it("kills the live descendants deepest first, then the root through the caller", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw Object.assign(new Error("no group"), { code: "ESRCH" });
+        if (pid === 4300) throw Object.assign(new Error("already gone"), { code: "ESRCH" });
+        return true;
+      });
+      answer("4242 1\n4300 4242\n4301 4300\n9999 1\n");
+      const caller = root();
+      await killProcessTree(4242, caller);
+      expect(spawnMock).toHaveBeenCalledWith("ps", ["-A", "-o", "pid=", "-o", "ppid="], expect.anything());
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4301, "SIGKILL"], [4300, "SIGKILL"]]);
+      expect(caller.alive).toHaveBeenCalled();
+      expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it("discards the snapshot when the root exited while ps ran, so a reused pid is never walked", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        return true;
+      });
+      answer("4300 4242\n");
+      const caller = { kill: vi.fn(), alive: vi.fn(() => false) };
+      await killProcessTree(4242, caller);
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
+      expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it("kills only the root when ps cannot run, and by pid without a caller", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        if (pid === 4242) throw new Error("already gone");
+        return true;
+      });
+      provide((helper) => helper.emit("error", new Error("spawn ENOENT")));
+      await killProcessTree(4242);
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4242, "SIGKILL"]]);
+    } finally {
+      restore();
+    }
+  });
+
+  it.each([
+    ["succeeds", 0, false],
+    ["fails", 128, true],
+  ])("runs the System32 taskkill on Windows and kills the root when it %s", async (_label, code, rootKilled) => {
+    const restore = withPlatform("win32");
+    try {
+      vi.stubEnv("SystemRoot", "D:\\WinRoot");
+      answer("", code);
+      const caller = root();
+      await killProcessTree(4242, caller);
+      expect(spawnMock).toHaveBeenCalledWith(path.join("D:\\WinRoot", "System32", "taskkill.exe"), ["/pid", "4242", "/T", "/F"], expect.anything());
+      expect(caller.kill).toHaveBeenCalledTimes(rootKilled ? 1 : 0);
+    } finally {
+      restore();
+    }
+  });
+
+  it("falls back to the default Windows directory and kills the root when taskkill cannot run", async () => {
+    const restore = withPlatform("win32");
+    try {
+      vi.stubEnv("SystemRoot", undefined);
+      provide((helper) => helper.emit("error", new Error("spawn ENOENT")));
+      const caller = root();
+      await killProcessTree(4242, caller);
+      expect(spawnMock.mock.calls[0]?.[0]).toBe(path.join("C:\\Windows", "System32", "taskkill.exe"));
+      expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
   });
 });

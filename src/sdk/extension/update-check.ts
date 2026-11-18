@@ -131,12 +131,12 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (!exited()) lookup.kill("SIGKILL");
     };
     const stop = (): void => {
-      lookup.stdout.destroy();
+      lookup.stdout?.destroy();
       // Once the launcher has exited its PID may already belong to another
       // process, so only a live launcher's tree is torn down by PID; its root
       // is killed through Node's handle.
       if (exited() || lookup.pid === undefined) killDirectChild();
-      else void killProcessTree(lookup.pid, killDirectChild).then(killDirectChild, killDirectChild);
+      else void killProcessTree(lookup.pid, { kill: killDirectChild, alive: () => !exited() }).then(killDirectChild, killDirectChild);
     };
     const deadline = setTimeout(() => {
       settle(new UpdateQueryError(spec.timedOut, timeout));
@@ -149,6 +149,14 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (error) reject(error);
       else resolve(stdout.trim());
     }
+    // The error listener comes first: a spawn that ran out of descriptors can
+    // return a child without stdio and report the error on the next tick.
+    lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
+    if (!lookup.stdout) {
+      settle(new UpdateQueryError(spec.failed));
+      stop();
+      return;
+    }
     lookup.stdout.setEncoding("utf8");
     lookup.stdout.on("data", (chunk: string) => {
       stdoutBytes += Buffer.byteLength(chunk);
@@ -159,7 +167,6 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       }
       stdout += chunk;
     });
-    lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
     // A provider that fails has nothing more to say: settle at its exit even
     // if a descendant still holds stdout. A successful exit waits for close,
     // so the result is the complete output.
