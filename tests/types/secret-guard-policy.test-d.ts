@@ -134,6 +134,17 @@ const fromDictionary: string | null = decideSecretGuardFinding(dictionary, findi
 const dictionaryNotNull: string = decideSecretGuardFinding(dictionary, finding);
 void fromDictionary;
 void dictionaryNotNull;
+// A rules map typed by a named interface, which has no index signature, is accepted.
+interface RuleOverrides {
+  private_ip?: boolean;
+  github_token?: "review";
+}
+declare const overrides: RuleOverrides;
+const fromInterface: boolean | "review" = decideSecretGuardFinding({ default: true, rules: overrides }, finding);
+// @ts-expect-error the interface's decisions stay in the result
+const interfaceNarrow: boolean = decideSecretGuardFinding({ default: true, rules: overrides }, finding);
+void fromInterface;
+void interfaceNarrow;
 // A symbol-keyed rules entry is never looked up by a rule name, so it adds no decision.
 declare const ruleMetadata: unique symbol;
 declare const withSymbol: { default: true; rules: { [ruleMetadata]: "allow" } };

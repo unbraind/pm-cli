@@ -24,6 +24,7 @@ const {
   checkGithubUpdate,
   checkNpmUpdate,
   resolveExtensionUpdateCheckTimeoutMs,
+  settleWorkerUpdateCheckTeardowns,
   updateCheckTeardown,
 } = await import("../../../src/sdk/extension/update-check.js");
 const { normalizeManagedState } = await import("../../../src/sdk/extension/managed-state.js");
@@ -154,6 +155,17 @@ describe("npm update lookup budget", () => {
     await flushTeardown();
     await vi.advanceTimersByTimeAsync(10);
     expect(process.listeners("exit")).toEqual(before);
+  });
+
+  it("never makes a main-thread action wait for a running teardown", async () => {
+    vi.useFakeTimers();
+    hang();
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    // The teardown has not run yet; the main thread relies on its exit listener.
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+    await expect(settleWorkerUpdateCheckTeardowns()).resolves.toBeUndefined();
   });
 
   it("delivers the timeout before the teardown starts", async () => {

@@ -1,13 +1,15 @@
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { processTableSharesNamespace } from "../../../src/core/shared/process-tree.js";
+import { runExtension } from "../../../src/sdk/extension.js";
 import { GITHUB_REMOTE_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithubUpdate } from "../../../src/sdk/extension/update-check.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
 // pm-5kfzjh and pm-43p2c3: the deadline must settle the lookup even when the
 // launcher exits while a descendant still holds its pipes, must kill a live
@@ -15,6 +17,7 @@ import { GITHUB_REMOTE_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithu
 // it with the host.
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const distUpdateCheck = pathToFileURL(path.join(repoRoot, "dist", "sdk", "extension", "update-check.js")).href;
+const distExtension = pathToFileURL(path.join(repoRoot, "dist", "sdk", "extension.js")).href;
 const GITHUB_SOURCE = { kind: "github", input: "github:o/r", location: "o/r", repository: "https://github.com/o/r.git", commit: "abc123" } as const;
 const tempRoots: string[] = [];
 
@@ -157,31 +160,50 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
   });
 
-  // A worker thread runs no exit listener when it is terminated, so the tree
-  // must already be gone when the worker hands back its timed-out result.
-  it.skipIf((!existsSync("/bin/ps") && !existsSync("/usr/bin/ps")) || !processTableSharesNamespace())("stops the provider tree before a worker hands back a timeout, so terminating the worker at once leaks nothing", async () => {
-    const { root, pidFile } = await fakeGit("wait");
-    vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
-    const worker = new Worker([
-      'const { parentPort } = require("node:worker_threads");',
-      `import(${JSON.stringify(distUpdateCheck)}).then(async ({ checkGithubUpdate }) => {`,
-      `  parentPort.postMessage(await checkGithubUpdate(${JSON.stringify(GITHUB_SOURCE)}, undefined, 1000));`,
-      // Only terminate() ends this worker.
-      "  setInterval(() => undefined, 1000);",
-      "});",
-    ].join("\n"), { eval: true });
-    const status = await new Promise((resolve, reject) => {
-      worker.once("error", reject);
-      worker.once("message", (message) => {
-        // The host terminates the worker the moment the result arrives.
-        void worker.terminate();
-        resolve(message);
+  // A worker thread runs no exit listener when it is terminated, so a
+  // package action there must finish its provider teardowns before returning.
+  it.skipIf((!existsSync("/bin/ps") && !existsSync("/usr/bin/ps")) || !processTableSharesNamespace())("finishes the provider tree's teardown before a worker's package manage returns, so terminating the worker at once leaks nothing", async () => {
+    await withTempPmPath(async (context) => {
+      const fixture = path.join(context.tempRoot, "worker-extension");
+      await mkdir(fixture);
+      await writeFile(path.join(fixture, "manifest.json"), JSON.stringify({ name: "worker-extension", version: "1.0.0", entry: "index.mjs", capabilities: ["commands"] }));
+      await writeFile(path.join(fixture, "index.mjs"), "export function activate(api) { api.registerCommand({ name: 'worker-probe', description: 'Worker fixture', run: () => ({ ok: true }) }); }\n");
+      await runExtension(fixture, { install: true, project: true }, { path: context.pmPath });
+      const managedPath = path.join(context.pmPath, "extensions", ".managed-extensions.json");
+      const state = JSON.parse(await readFile(managedPath, "utf8"));
+      state.entries[0].source = { kind: "npm", input: "npm:worker-registry-package", location: "worker-registry-package", package: "worker-registry-package", version: "1.0.0" };
+      await writeFile(managedPath, JSON.stringify(state));
+      // A stalled npm that records itself and the descendant it waits for.
+      const bin = path.join(context.tempRoot, "stalled-npm-bin");
+      const pidFile = path.join(context.tempRoot, "npm.pids");
+      await mkdir(bin);
+      await writeFile(path.join(bin, "npm"), '#!/bin/sh\nsleep 30 &\necho "$$ $!" > "$PM_FIXTURE_PID_FILE"\nwait\n', { mode: 0o755 });
+      const worker = new Worker([
+        'const { parentPort, workerData } = require("node:worker_threads");',
+        `import(${JSON.stringify(distExtension)}).then(async ({ runExtension }) => {`,
+        "  const result = await runExtension(undefined, { manage: true, project: true }, { path: workerData.pmPath });",
+        "  parentPort.postMessage(result.details.extensions[0]);",
+        // Only terminate() ends this worker.
+        "  setInterval(() => undefined, 1000);",
+        "});",
+      ].join("\n"), {
+        eval: true,
+        workerData: { pmPath: context.pmPath },
+        env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "1000", PM_FIXTURE_PID_FILE: pidFile },
       });
+      const extension = await new Promise((resolve, reject) => {
+        worker.once("error", reject);
+        worker.once("message", (message) => {
+          // The host terminates the worker the moment the result arrives.
+          void worker.terminate();
+          resolve(message);
+        });
+      });
+      expect(extension).toMatchObject({ update_check_status: "failed", update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 1000 });
+      const pids = await readPids(pidFile);
+      expect(new Set(pids).size).toBe(2);
+      for (const pid of pids) expect(await waitUntilStopped(pid, 1000)).toBe(true);
     });
-    expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
-    const pids = await readPids(pidFile);
-    expect(new Set(pids).size).toBe(2);
-    for (const pid of pids) expect(await waitUntilStopped(pid, 1000)).toBe(true);
   });
 
   // The liveness probe reads ps, which needs this PID namespace's process table.

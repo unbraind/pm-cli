@@ -136,6 +136,20 @@ function killPendingProviders(): void {
   for (const kill of pendingProviderKills) kill();
 }
 
+/** Teardowns still running, so a worker-thread action can finish them before it returns. */
+const pendingTeardowns = new Set<Promise<void>>();
+
+/**
+ * Inside a worker thread, wait for every provider teardown still running;
+ * on the main thread, resolve at once. A worker has no shutdown hook that is
+ * sure to run (`terminate()` runs no exit listener), so an extension action
+ * there finishes its teardowns before it returns, after releasing the
+ * extension state lock; the main thread relies on the exit listener instead.
+ */
+export function settleWorkerUpdateCheckTeardowns(): Promise<void> {
+  return isMainThread ? Promise.resolve() : Promise.all(pendingTeardowns).then(() => undefined);
+}
+
 function trackPendingProviderKill(kill: () => void): () => void {
   if (pendingProviderKills.size === 0) process.on("exit", killPendingProviders);
   pendingProviderKills.add(kill);
@@ -236,32 +250,21 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     // the overdue path reports it too.
     const deferTeardown = (): Promise<void> => {
       const untrack = trackPendingProviderKill(provider.killNow);
-      teardown = new Promise<void>((resolve) => {
+      const running: Promise<void> = new Promise<void>((resolve) => {
         setTimeout(() => {
           void provider.stop().then(resolve, resolve);
         }, 0);
-      }).finally(untrack);
-      return teardown;
+      }).finally(() => {
+        untrack();
+        pendingTeardowns.delete(running);
+      });
+      pendingTeardowns.add(running);
+      teardown = running;
+      return running;
     };
-    // On the main thread a host that exits right after the result is covered
-    // by the exit listener. A worker thread has no shutdown hook that is sure
-    // to run (terminate() runs no exit listener), so there the teardown
-    // finishes before the outcome is handed back; the outcome is classified
-    // first, so a timeout is still reported as one.
-    // Callers run only while unsettled: the deadline is cleared on settling
-    // and output after settling is ignored.
-    const settleAfterTeardown = (reason: string, budget?: number): void => {
-      const pending = deferTeardown();
-      if (isMainThread) {
-        settle(new UpdateQueryError(reason, budget, pending));
-        return;
-      }
-      settled = true;
-      clearTimeout(deadline);
-      const overdue = performance.now() >= deadlineAt;
-      void pending.then(() => reject(overdue ? new UpdateQueryError(spec.timedOut, timeout, pending) : new UpdateQueryError(reason, budget, pending)));
-    };
-    const deadline = setTimeout(() => settleAfterTeardown(spec.timedOut, timeout), timeout);
+    const deadline = setTimeout(() => {
+      settle(new UpdateQueryError(spec.timedOut, timeout, deferTeardown()));
+    }, timeout);
     function settle(error?: UpdateQueryError): void {
       if (settled) return;
       settled = true;
@@ -274,7 +277,7 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     // return a child without stdio and report the error on the next tick.
     lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
     if (!lookup.stdout) {
-      settleAfterTeardown(spec.failed);
+      settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
       return;
     }
     lookup.stdout.setEncoding("utf8");
@@ -282,7 +285,7 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (settled) return;
       stdoutBytes += Buffer.byteLength(chunk);
       if (stdoutBytes > spec.maxBuffer) {
-        settleAfterTeardown(spec.failed);
+        settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
         return;
       }
       stdout += chunk;

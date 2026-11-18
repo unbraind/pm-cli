@@ -7370,7 +7370,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "decideSecretGuardFinding",
-          "signature": "{ <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }): Exclude<Decision, undefined>; <Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }): SecretGuardPolicyDecision<Policy>; } | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Exclude<Decision, undefined> ; <Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy>"
+          "signature": "{ <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }): Exclude<Decision, undefined>; <Policy extends Omit<SecretGuardPolicy<unknown>, \"rules\"> & { readonly rules?: object; }>(policy: Policy, finding: { readonly rule: string; }): SecretGuardPolicyDecision<Policy>; } | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Exclude<Decision, undefined> ; <Policy extends Omit<SecretGuardPolicy<unknown>, \"rules\"> & { readonly rules?: object; }>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy>"
         },
         {
           "classification": "supported",
@@ -30806,7 +30806,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "decideSecretGuardFinding",
-          "signature": "{ <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }): Exclude<Decision, undefined>; <Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }): SecretGuardPolicyDecision<Policy>; } | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Exclude<Decision, undefined> ; <Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy>"
+          "signature": "{ <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }): Exclude<Decision, undefined>; <Policy extends Omit<SecretGuardPolicy<unknown>, \"rules\"> & { readonly rules?: object; }>(policy: Policy, finding: { readonly rule: string; }): SecretGuardPolicyDecision<Policy>; } | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Exclude<Decision, undefined> ; <Policy extends Omit<SecretGuardPolicy<unknown>, \"rules\"> & { readonly rules?: object; }>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy>"
         },
         {
           "classification": "supported",

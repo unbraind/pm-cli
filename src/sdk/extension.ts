@@ -94,6 +94,7 @@ import {
   checkGithubUpdate,
   EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
   resolveExtensionUpdateCheckTimeoutMs,
+  settleWorkerUpdateCheckTeardowns,
 } from "./extension/update-check.js";
 import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
@@ -1886,7 +1887,14 @@ export const runExtension = async (
     ...actionContext,
     withResult,
   };
-  return await dispatchExtensionAction(ctx);
+  try {
+    return await dispatchExtensionAction(ctx);
+  } finally {
+    // In a worker thread, every update-lookup teardown finishes before the
+    // action returns, so a host may terminate the worker at once; this runs
+    // after the state lock is released, so the locked scan keeps its timing.
+    await settleWorkerUpdateCheckTeardowns();
+  }
 };
 
 /** Build copy-pasteable setup and validation guidance for a fresh scaffold. */

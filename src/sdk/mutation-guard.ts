@@ -725,11 +725,12 @@ export function decideSecretGuardFinding<Decision>(
  * inline policy, one declared with `satisfies`, or a union of policy types.
  * A wrapper generic over the policy type itself passes it explicitly
  * (`decideSecretGuardFinding<P>(policy, finding)`) to get
- * `SecretGuardPolicyDecision<P>`.
+ * `SecretGuardPolicyDecision<P>`. A `rules` map may be any object type,
+ * including a named interface without an index signature.
  *
  * @throws {TypeError} As for the overload above.
  */
-export function decideSecretGuardFinding<Policy extends SecretGuardPolicy<unknown>>(
+export function decideSecretGuardFinding<Policy extends Omit<SecretGuardPolicy<unknown>, "rules"> & { readonly rules?: object }>(
   policy: Policy,
   finding: { readonly rule: string },
 ): SecretGuardPolicyDecision<Policy>;

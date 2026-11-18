@@ -24,7 +24,7 @@ vi.mock("node:worker_threads", async (importOriginal) => ({
 }));
 vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock }));
 
-const { NPM_REGISTRY_LOOKUP_FAILED, NPM_REGISTRY_LOOKUP_TIMED_OUT, checkNpmUpdate } = await import("../../../src/sdk/extension/update-check.js");
+const { NPM_REGISTRY_LOOKUP_TIMED_OUT, checkNpmUpdate, settleWorkerUpdateCheckTeardowns } = await import("../../../src/sdk/extension/update-check.js");
 
 const source: ManagedExtensionSource = { kind: "npm", input: "npm:example@1.0.0", location: "example@1.0.0", package: "example", version: "1.0.0" };
 
@@ -72,59 +72,31 @@ afterEach(async () => {
 });
 
 describe("update lookups inside a worker thread", () => {
-  it("hands back a timeout only after the provider's teardown finished", async () => {
+  it("still settles a lookup at its budget, and lets the action wait for the teardown before it returns", async () => {
     vi.useFakeTimers();
     stall();
     let outcome: unknown;
     void checkNpmUpdate(source, undefined, 1_000).then((status) => {
       outcome = status;
     });
-    await vi.advanceTimersByTimeAsync(1_001);
-    // The teardown has started, but the outcome waits for it.
+    await vi.advanceTimersByTimeAsync(1_000);
+    // The outcome is not held for the teardown, so a lock holder keeps its timing.
+    expect(outcome).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 1_000 });
+    await vi.advanceTimersByTimeAsync(1);
     expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.anything());
-    expect(outcome).toBeUndefined();
-    // A late exit or output from the provider changes nothing.
-    children[0]?.emit("close", 0, null);
+    let settledTeardowns = false;
+    void settleWorkerUpdateCheckTeardowns().then(() => {
+      settledTeardowns = true;
+    });
+    await vi.advanceTimersByTimeAsync(1);
+    expect(settledTeardowns).toBe(false);
     teardownDone.release?.();
     await vi.advanceTimersByTimeAsync(1);
-    expect(outcome).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 1_000 });
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+    expect(settledTeardowns).toBe(true);
   });
 
-  it("finishes the teardown before reporting an overflow, and reports it as a timeout once the deadline passed", async () => {
-    vi.useFakeTimers();
-    stall((child) => child.stdout.emit("data", "x".repeat(70 * 1024)));
-    let overflow: unknown;
-    void checkNpmUpdate(source, undefined, 1_000).then((status) => {
-      overflow = status;
-    });
-    await vi.advanceTimersByTimeAsync(1);
-    expect(killProcessTreeMock).toHaveBeenCalledTimes(1);
-    expect(overflow).toBeUndefined();
-    teardownDone.release?.();
-    await vi.advanceTimersByTimeAsync(1);
-    expect(overflow).toMatchObject({ error: NPM_REGISTRY_LOOKUP_FAILED });
-    expect(overflow).not.toHaveProperty("timeout_ms");
-
-    // The same overflow classified after the deadline is a timeout.
-    let lateOverflow: unknown;
-    stall();
-    void checkNpmUpdate(source, undefined, 1_000).then((status) => {
-      lateOverflow = status;
-    });
-    await vi.advanceTimersByTimeAsync(1);
-    const now = performance.now();
-    const clock = vi.spyOn(performance, "now").mockReturnValue(now + 5_000);
-    try {
-      children[1]?.stdout.emit("data", "x".repeat(70 * 1024));
-    } finally {
-      clock.mockRestore();
-    }
-    // The deferred teardown starts on the next tick; the outcome waits for it.
-    await vi.advanceTimersByTimeAsync(1);
-    expect(killProcessTreeMock).toHaveBeenCalledTimes(2);
-    expect(lateOverflow).toBeUndefined();
-    teardownDone.release?.();
-    await vi.advanceTimersByTimeAsync(1);
-    expect(lateOverflow).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 1_000 });
+  it("resolves at once when no teardown is running", async () => {
+    await expect(settleWorkerUpdateCheckTeardowns()).resolves.toBeUndefined();
   });
 });
