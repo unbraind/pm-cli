@@ -91,16 +91,19 @@ export function parentStillMatches(
 
 /**
  * Whether the process table describes this process's own PID namespace. With
- * procfs, `/proc/self` must name this process: a `/proc` inherited from an
- * outer namespace lists PIDs that `process.kill` would read differently.
+ * procfs, the `NSpid` line of `/proc/self/status` must hold a single entry
+ * equal to this process's PID: more entries mean this `/proc` belongs to an
+ * outer namespace, whose PIDs `process.kill` would read differently, and a
+ * kernel without `NSpid` gives no evidence either way, so neither is walked.
  * Without procfs there are no PID namespaces to confuse.
  */
 export function processTableSharesNamespace(
-  readStat: (file: string) => string | undefined = readProcStat,
+  readStatus: (file: string) => string | undefined = readProcStat,
 ): boolean {
-  const stat = readStat("/proc/self/stat");
-  if (stat === undefined) return !existsSync("/proc/self/stat");
-  return Number(stat.trim().split(/\s+/u)[0]) === process.pid;
+  const status = readStatus("/proc/self/status");
+  if (status === undefined) return !existsSync("/proc/self/status");
+  const nspid = /^NSpid:\s*(.*)$/mu.exec(status)?.[1]?.trim().split(/\s+/u);
+  return nspid?.length === 1 && Number(nspid[0]) === process.pid;
 }
 
 function readProcStat(file: string): string | undefined {

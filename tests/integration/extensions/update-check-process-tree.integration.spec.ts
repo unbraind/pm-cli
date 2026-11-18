@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -124,7 +125,9 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     expect(elapsed).toBeLessThan(10_000);
   });
 
-  it("kills a still-running launcher and its descendant at the deadline", async () => {
+  // Descendant teardown needs the system ps; without it (for example on NixOS,
+  // where ps lives only on PATH) only the launcher is stopped, by design.
+  it.skipIf(!existsSync("/bin/ps") && !existsSync("/usr/bin/ps"))("kills a still-running launcher and its descendant at the deadline", async () => {
     // The launcher waits for its recorded descendant, so the whole fixture
     // tree is the launcher and that one sleep.
     const { root, pidFile } = await fakeGit("wait");

@@ -95,16 +95,22 @@ describe("parentStillMatches", () => {
 });
 
 describe("processTableSharesNamespace", () => {
-  it("trusts procfs only when /proc/self names this process", () => {
-    expect(processTableSharesNamespace(() => `${process.pid} (node) S 1 0`)).toBe(true);
-    // A /proc inherited from an outer PID namespace names another pid.
-    expect(processTableSharesNamespace(() => `${process.pid + 1} (node) S 1 0`)).toBe(false);
-    existsSyncMock.mockImplementation((file: string) => file === "/proc/self/stat");
+  it("trusts procfs only when NSpid holds this process's pid alone", () => {
+    const status = (nspid: string | undefined) => () => `Name:\tnode\nPid:\t${process.pid}\n${nspid === undefined ? "" : `NSpid:\t${nspid}\n`}PPid:\t1\n`;
+    expect(processTableSharesNamespace(status(`${process.pid}`))).toBe(true);
+    // A /proc from an outer namespace lists this process in both namespaces,
+    // even when the numbers happen to match.
+    expect(processTableSharesNamespace(status(`${process.pid} ${process.pid}`))).toBe(false);
+    expect(processTableSharesNamespace(status(`${process.pid + 1}`))).toBe(false);
+    // A kernel without NSpid gives no evidence.
+    expect(processTableSharesNamespace(status(undefined))).toBe(false);
+    existsSyncMock.mockImplementation((file: string) => file === "/proc/self/status");
     expect(processTableSharesNamespace(() => undefined)).toBe(false);
     existsSyncMock.mockImplementation(() => false);
     expect(processTableSharesNamespace(() => undefined)).toBe(true);
-    readFileSyncMock.mockImplementation(() => `${process.pid} (node) S 1 0`);
+    readFileSyncMock.mockImplementation(() => `NSpid:\t${process.pid}\n`);
     expect(processTableSharesNamespace()).toBe(true);
+    expect(readFileSyncMock).toHaveBeenCalledWith("/proc/self/status", "utf8");
   });
 
   it("skips the descendant walk when the process table is from another namespace", async () => {
@@ -114,8 +120,8 @@ describe("processTableSharesNamespace", () => {
         if (pid === -4242) throw new Error("no group");
         return true;
       });
-      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat");
-      readFileSyncMock.mockImplementation(() => "1 (init) S 0 0");
+      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/status");
+      readFileSyncMock.mockImplementation(() => `NSpid:\t${process.pid}\t1\n`);
       const caller = { kill: vi.fn(), alive: vi.fn(() => true) };
       await killProcessTree(4242, caller);
       expect(spawnMock).not.toHaveBeenCalled();
@@ -289,10 +295,10 @@ describe("killProcessTree", () => {
         if (pid === -4242) throw new Error("no group");
         return true;
       });
-      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat");
+      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat" || file === "/proc/self/status");
       // 4300 still belongs to the root; 4301 was reused by a process of init.
       readFileSyncMock.mockImplementation((file: string) => {
-        if (file === "/proc/self/stat") return `${process.pid} (node) S 1 0`;
+        if (file === "/proc/self/status") return `NSpid:\t${process.pid}\n`;
         return file === "/proc/4300/stat" ? "4300 (sleep) S 4242 0" : "4301 (other) S 1 0";
       });
       answer("4300 4242\n4301 4242\n");

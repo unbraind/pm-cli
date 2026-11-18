@@ -113,7 +113,10 @@ A provider that runs but returns output that cannot be read reports its own
 validation code instead (for example `invalid_npm_registry_metadata` or
 `no_remote_reference_found`). A timed-out check also carries
 `update_check_timeout_ms`, the budget that ran out. Each lookup settles at its
-own deadline without waiting for teardown; `pm package manage` returns once
+own deadline without waiting for teardown, so an SDK caller has its result at
+once; the `pm` process itself may stay alive up to about four more seconds
+while a timed-out provider is torn down (a teardown helper is bounded to two
+seconds, and the wait for the killed provider to exit to two more); `pm package manage` returns once
 every lookup has settled, and outside `--fix-managed-state` a queued lookup
 starts only when a timed-out provider's teardown frees one of the four
 provider slots. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
