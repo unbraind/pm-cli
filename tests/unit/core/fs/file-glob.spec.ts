@@ -443,6 +443,19 @@ describe("file glob semantics", () => {
     });
   });
 
+  it("never keeps a directory-spanning state alive for a globstar that cannot span directories", () => {
+    // The walk descends only while a state survives "/", so this bounds what it reads.
+    const afterDirectory = (pattern: string) => {
+      const matcher = _testOnly.compile(pattern);
+      return matcher.step(matcher.advance(matcher.start, "node_modules"), "/".codePointAt(0)!).states.length;
+    };
+    expect(afterDirectory("**.ts")).toBe(0);
+    expect(afterDirectory("**x")).toBe(0);
+    expect(afterDirectory("**/*.ts")).toBeGreaterThan(0);
+    expect(afterDirectory("**")).toBeGreaterThan(0);
+    expect(afterDirectory("{**,x}/n.ts")).toBeGreaterThan(0);
+  });
+
   it("resets the bounded DFA cache without changing results", () => {
     const matcher = _testOnly.compile("*(a|b)c", { nodes: 2, edges: 4, stateIds: 100 });
     let node = matcher.start;

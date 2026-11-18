@@ -129,7 +129,9 @@ scripts and the parity test), `fdir` and Vite. The waiver
 covers picomatch 4.0.7 until 2026-12-01 with a three-day notice window.
 Replace it with the patched release once upstream publishes one (fix pull
 requests opened on 2026-11-17) and satisfies the dependency cooldown, then
-delete the waiver in the same pull request.
+delete the waiver and its mirrored `.trivyignore` entry
+(`CVE-2026-112366`) in the same pull request; the waiver spec fails while a
+`.trivyignore` entry has no declared waiver to mirror.
 
 The command then verifies the installed CodSpeed bundle policy. Network/audit errors,
 missing packages, incomplete policy entries, changed package files, and unreviewed

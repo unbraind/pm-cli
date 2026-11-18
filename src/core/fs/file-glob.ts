@@ -457,10 +457,10 @@ class Nfa {
   /**
    * A globstar. With `slash` (`**` + "/"): at a segment start, zero or more
    * whole segments; inside a segment, one star and the "/". Without it, a
-   * single star always applies, and at a segment start two more readings are
-   * recorded for resolveGlobstars: zero or more whole segments that skip the
-   * next "/" the continuation consumes (as `**` + "/"), and any remaining text
-   * when the continuation can end the pattern (as a trailing `**`).
+   * single star always applies, and at a segment start resolveGlobstars may
+   * add two more readings: zero or more whole segments that skip the next "/"
+   * the continuation consumes (as `**` + "/"), and any remaining text when the
+   * continuation can end the pattern (as a trailing `**`).
    */
   private globstar(from: Ends, slash: boolean): Ends {
     if (slash) {
@@ -470,17 +470,12 @@ class Nfa {
       return this.join(parts);
     }
     const star = this.star(from);
-    if (from.segment !== undefined) {
-      const rest = this.add();
-      this.epsilon(from.segment, rest, false);
-      this.states[rest]!.edges.push({ test: { kind: "all" }, to: rest });
-      this.globstars.push({ continuation: star.inside!, segments: this.segments(from.segment), rest });
-    }
+    if (from.segment !== undefined) this.globstars.push({ continuation: star.inside!, entry: from.segment });
     return star;
   }
 
-  /** Globstars whose meaning depends on what can follow them. */
-  readonly globstars: Array<{ continuation: number; segments: number; rest: number }> = [];
+  /** Globstars reached at a segment start, whose further readings depend on what can follow them. */
+  readonly globstars: Array<{ continuation: number; entry: number }> = [];
 
   /** Close a state set over the syntactic epsilon edges: the text that can follow without consuming. */
   private syntacticClosure(seed: number[]): Set<number> {
@@ -504,13 +499,22 @@ class Nfa {
    * count. The edges added here are not syntactic, so one pass decides all.
    */
   resolveGlobstars(accept: number): void {
-    for (const { continuation, segments, rest } of this.globstars) {
+    for (const { continuation, entry } of this.globstars) {
       const reachable = this.syntacticClosure([continuation]);
-      if (reachable.has(accept)) this.epsilon(rest, accept, false);
+      if (reachable.has(accept)) {
+        const rest = this.add();
+        this.epsilon(entry, rest, false);
+        this.states[rest]!.edges.push({ test: { kind: "all" }, to: rest });
+        this.epsilon(rest, accept, false);
+      }
       const targets = new Set<number>();
       for (const state of reachable) {
         for (const { test, to } of this.states[state]!.edges) if (accepts(test, SLASH)) targets.add(to);
       }
+      // A loop is attached only when it can lead somewhere, so `**.ts` never
+      // keeps a directory-spanning state alive and the walk stays at the root.
+      if (targets.size === 0) continue;
+      const segments = this.segments(entry);
       for (const target of targets) this.epsilon(segments, target, false);
     }
   }
