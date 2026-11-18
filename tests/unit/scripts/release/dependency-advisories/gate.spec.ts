@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -122,6 +122,8 @@ describe("dependency advisory evidence", () => {
     const declare = async (root: string, waivers: object[], extra: Record<string, unknown> = {}) => {
       await mkdir(path.join(root, "config"), { recursive: true });
       await writeFile(path.join(root, "config/dependency-advisory-waivers.json"), JSON.stringify({ version: 1, waiver_notice_days: 3, waivers, ...extra }));
+      // An empty published runtime graph: the fixture package is development-only.
+      await writeFile(path.join(root, "runtime-dependencies.json"), JSON.stringify({ packages: {} }));
     };
     const waiver = (overrides: Record<string, unknown> = {}) => ({
       advisory, package: "fixture", versions: ["1.2.3"], owner: "pm-fixture",
@@ -186,6 +188,8 @@ describe("dependency advisory evidence", () => {
         const ledger = { packages: { "": { name: "root" }, "node_modules/other": { version: "1.2.3" }, "node_modules/parent/node_modules/fixture": { version: "1.2.3" } } };
         await writeFile(path.join(root, "runtime-dependencies.json"), JSON.stringify(ledger));
         await expect(main([], root)).rejects.toThrow(`Refused dependency advisory waiver: ${advisory} in fixture waiver covers fixture@1.2.3, which the published package installs (runtime-dependencies.json)`);
+        await rm(path.join(root, "runtime-dependencies.json"));
+        await expect(main([], root)).rejects.toThrow("Refused dependency advisory waiver: runtime-dependencies.json is missing");
       });
     });
 

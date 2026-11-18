@@ -377,6 +377,7 @@ describe("defect evidence repository gate", () => {
           JSON.stringify({ version: 1, inventory_scope: "Advisory waivers", boundaries: [] }),
         ),
         writeFile(path.join(tempRoot, "config/defect-recurrence-policy.json"), JSON.stringify(policy)),
+        writeFile(path.join(tempRoot, "runtime-dependencies.json"), JSON.stringify({ packages: {} })),
       ]);
       const writeWaivers = (registry: object) =>
         writeFile(path.join(tempRoot, "config/dependency-advisory-waivers.json"), JSON.stringify(registry));

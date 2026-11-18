@@ -116,30 +116,40 @@ function bracketEnd(chars: string[], start: number): number {
   return -1;
 }
 
+/**
+ * An open construct: a brace, an extglob, or (only inside an extglob) a plain
+ * parenthesis. Parentheses that do not form an extglob are literal characters
+ * (so a Next.js route group such as `app/(marketing)/` matches its directory);
+ * inside an extglob they nest, so an inner ")" cannot close the extglob.
+ */
 interface Opener {
   index: number;
-  kind: "{" | "(";
+  kind: "{" | "(" | "plain";
 }
 
-/** Return the construct a character opens at `index`: a brace, or an extglob whose operator precedes `(`. */
-function openerAt(chars: string[], index: number): Opener | undefined {
+/** Return the construct a character opens at `index`, given the constructs already open. */
+function openerAt(chars: string[], index: number, open: Opener[]): Opener | undefined {
   const char = chars[index];
   if (char === "{") return { index, kind: "{" };
+  if (char !== "(") return undefined;
   const operator = chars[index - 1];
-  if (char === "(" && operator !== undefined && "@?*+!".includes(operator) && !isEscaped(chars, index - 1)) {
-    return { index: index - 1, kind: "(" };
-  }
-  return undefined;
+  if (operator !== undefined && "@?*+!".includes(operator) && !isEscaped(chars, index - 1)) return { index: index - 1, kind: "(" };
+  return open.some((opener) => opener.kind === "(") ? { index, kind: "plain" } : undefined;
 }
 
 /** Close the innermost opener when the character at `index` closes its kind, refusing a closed negation. */
 function closeAt(chars: string[], index: number, open: Opener[], closers: Map<number, number>): void {
   const char = chars[index];
+  const top = open.at(-1);
+  if (char === ")" && top?.kind === "plain") {
+    open.pop();
+    return;
+  }
   const kind = char === "}" ? "{" : char === ")" ? "(" : undefined;
-  if (kind === undefined || open.at(-1)?.kind !== kind) return;
-  const opener = open.pop()!;
-  closers.set(opener.index, index);
-  if (chars[opener.index] === "!") throw negationRefusal();
+  if (kind === undefined || top?.kind !== kind) return;
+  open.pop();
+  closers.set(top.index, index);
+  if (chars[top.index] === "!") throw negationRefusal();
 }
 
 /**
@@ -156,7 +166,7 @@ function pairConstructs(chars: string[]): { closers: Map<number, number>; bracke
     if (chars[index] === "\\") { index += 2; continue; }
     const end = chars[index] === "[" ? bracketEnd(chars, index) : -1;
     if (end !== -1) { brackets.set(index, end); index = end; continue; }
-    const opener = openerAt(chars, index);
+    const opener = openerAt(chars, index, open);
     if (opener !== undefined) open.push(opener);
     else closeAt(chars, index, open, closers);
     if (open.length > MAX_NESTING) throw new GlobTooComplex();

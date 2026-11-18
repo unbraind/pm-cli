@@ -99,6 +99,8 @@ describe("dependency advisory waiver matching", () => {
     expect(describeReport({ package: "picomatch", version: "4.0.7", advisory: "GHSA-fc5q-39xc-vjpf" })).toBe("picomatch@4.0.7 GHSA-fc5q-39xc-vjpf");
     expect(describeReport({ package: null, version: null, advisory: null, id: "9" })).toBe("unknown package@unknown version 9");
     expect(describeReport({ package: null, version: null, advisory: null })).toBe("unknown package@unknown version unknown advisory");
+    // An unvalidated registry key is never printed.
+    expect(describeReport({ package: null, version: null, advisory: null, id: "9\u001b[2Jinjected" })).toBe("unknown package@unknown version unknown advisory");
   });
 });
 
@@ -120,7 +122,13 @@ describe("dependency advisory waiver file", () => {
 
   it("reads the published runtime graph and refuses a waiver that covers any of it", async () => {
     await withTempDir("pm-advisory-runtime-", async (root) => {
-      await expect(readRuntimePackages(root)).resolves.toEqual(new Set());
+      await expect(readRuntimePackages(root)).resolves.toBeUndefined();
+      // Without a ledger, a live waiver cannot be shown clear of the runtime graph.
+      expect(runtimeFindings([], undefined)).toEqual([]);
+      expect(runtimeFindings([waiver], undefined)).toEqual([{ kind: "runtime_ledger_missing", detail: expect.stringContaining("runtime-dependencies.json is missing") }]);
+      await mkdir(path.join(root, "config"));
+      await writeFile(path.join(root, WAIVERS_PATH), JSON.stringify(registry([waiver])));
+      await expect(judgeWaivers(root, now)).resolves.toMatchObject({ findings: [{ kind: "runtime_ledger_missing" }] });
       await writeFile(path.join(root, RUNTIME_LEDGER_PATH), JSON.stringify({ packages: {
         "": { name: "root", version: "1.0.0" },
         "node_modules/picomatch": { version: "4.0.7" },
@@ -132,8 +140,6 @@ describe("dependency advisory waiver file", () => {
       expect(runtimeFindings([waiver, { ...waiver, package: "other" }], runtime)).toEqual([
         { kind: "waiver_covers_runtime_dependency", subject_id: "GHSA-fc5q-39xc-vjpf in picomatch", detail: expect.stringContaining("covers picomatch@4.0.7, which the published package installs") },
       ]);
-      await mkdir(path.join(root, "config"));
-      await writeFile(path.join(root, WAIVERS_PATH), JSON.stringify(registry([waiver])));
       await expect(judgeWaivers(root, now)).resolves.toMatchObject({ live: [waiver], findings: [{ kind: "waiver_covers_runtime_dependency" }] });
       await writeFile(path.join(root, RUNTIME_LEDGER_PATH), "{");
       await expect(readRuntimePackages(root)).rejects.toThrow(SyntaxError);
@@ -147,7 +153,9 @@ describe("dependency advisory waiver file", () => {
   it("keeps the repository's declared waivers clear of the published runtime graph", async () => {
     const declared = await readWaiverRegistry(process.cwd());
     const live = declared.waivers.filter((entry: { expires_at: string }) => evaluateWaivers({ ...declared, waivers: [entry] }, Date.parse(entry.expires_at) - 3_600_000).findings.length === 0);
-    expect(runtimeFindings(live, await readRuntimePackages(process.cwd()))).toEqual([]);
+    const runtime = await readRuntimePackages(process.cwd());
+    expect(runtime?.size).toBeGreaterThan(0);
+    expect(runtimeFindings(live, runtime)).toEqual([]);
   });
 
   it("keeps the repository's declared waivers well formed independent of the run date", async () => {

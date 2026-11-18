@@ -1,4 +1,4 @@
-import { chmod, mkdir, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readdir, symlink, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import path from "node:path";
 import { glob } from "tinyglobby";
@@ -57,6 +57,7 @@ const PARITY_PATTERNS = [
   "child/@(**/d.ts|n.ts)", "app/@(**/page.tsx)", "*(**/d.ts)", "*/@(**|x)", "*/@(x|**)", "{**,x}/n.ts",
   "*[[:ascii:]].ts", "[![:ascii:]]*.ts", "[[:ascii:]].ts",
   "{child/,x}**/d.ts", "+(child/)**/d.ts", "?(child/)**/d.ts", "@(*/)**/d.ts", "c**", "chi**/n.ts", "a**.ts",
+  "@(x(y)|b).md", "*(x(y)|a).ts", "@(((p))|c).ts",
   ...(posix ? ["@(q.ts", "a|b.ts", "linkdir/*", "linkdir/../a.ts", "link.ts", "dangling.ts", "*link*", "**/d.ts"] : []),
 ];
 
@@ -110,6 +111,24 @@ describe("file glob semantics", () => {
     });
   });
 
+  it("keeps parentheses literal outside an extglob and balanced inside one, so route-group directories match", async () => {
+    // tinyglobby compiled bare parentheses to a regex group: app/(marketing)/**
+    // matched app/marketing/ and missed the Next.js route group itself.
+    await withTempDir("pm-glob-parens-", async (root) => {
+      for (const file of ["app/(marketing)/page.tsx", "app/(marketing)/about/page.tsx", "app/marketing/page.tsx", "(p).ts", "a.ts", "fs-utils.ts"]) {
+        await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+        await writeFile(path.join(root, file), file);
+      }
+      expect(await expanded("app/(marketing)/**/*.tsx", root)).toEqual(["app/(marketing)/about/page.tsx", "app/(marketing)/page.tsx"]);
+      expect(await expanded("app/(*)/page.tsx", root)).toEqual(["app/(marketing)/page.tsx"]);
+      expect(await expanded("(p)*", root)).toEqual(["(p).ts"]);
+      // Inside an extglob an inner group nests, so it cannot close the extglob early.
+      expect(await expanded("@(x(y)|fs-utils).ts", root)).toEqual(["fs-utils.ts"]);
+      expect(await expanded("@((p)|a).ts", root)).toEqual(["(p).ts", "a.ts"]);
+      expect(await expanded("@(a|(p).ts", root)).toEqual([]);
+    });
+  });
+
   it("refuses negation, whether leading or as a closed extglob", async () => {
     await withTempDir("pm-glob-negation-", async (root) => {
       for (const pattern of ["!a.ts", "!", "!(a).ts", "src/!(a|b)/*.ts", "{x,!(a)}.ts"]) {
@@ -148,7 +167,9 @@ describe("file glob semantics", () => {
         await writeFile(path.join(root, "locked", "hidden.sock"), "x");
         await chmod(path.join(root, "locked"), 0o000);
         expect(await expanded("*.sock", root)).toEqual([]);
-        expect(await expanded("**/*", root)).toEqual([]);
+        // A privileged process (root, CAP_DAC_OVERRIDE) can still list it.
+        const readable = await readdir(path.join(root, "locked")).then(() => true, () => false);
+        expect(await expanded("**/*", root)).toEqual(readable ? ["locked/hidden.sock"] : []);
       } finally {
         await chmod(path.join(root, "locked"), 0o700);
         await new Promise<void>((resolve) => server.close(() => resolve()));

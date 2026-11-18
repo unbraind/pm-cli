@@ -204,7 +204,7 @@ An expiring waiver is a forcing function: once `waiver_expires_at` passes, the g
 
 - `waiver_notice_days` in the recurrence policy (`config/defect-recurrence-policy.json`) covers `explicit_waiver` gate evidence on governed terminal defects;
 - `waiver_notice_days` in the boundary registry (`config/boundary-fixtures.json`) covers boundary waivers;
-- `waiver_notice_days` in the dependency advisory waiver registry (`config/dependency-advisory-waivers.json`, 0 to 30 days) covers recorded advisory waivers. See [Time-bounded advisory waivers](DEVELOPMENT_DEPENDENCY_SECURITY.md#time-bounded-advisory-waivers).
+- `waiver_notice_days` in the dependency advisory waiver registry (`config/dependency-advisory-waivers.json`, 0 to 30 days) covers recorded advisory waivers. See [Time-bounded advisory waivers](https://github.com/unbraind/pm-cli/blob/main/docs/DEVELOPMENT_DEPENDENCY_SECURITY.md#time-bounded-advisory-waivers) (repository documentation, not shipped in the npm package).
 
 The value is a whole number of days from `0` to `366`; absent means `0`. `evaluateDefectGateEvidence` and `evaluateBoundaryFixtures` return each valid live waiver whose expiry falls inside the window under `waiver_notices` (`subject_id`, `owner`, `expires_at`, `days_remaining`). Notices never change `ok`: the evidence gate, pull-request CI and the release keep passing, and the text output lists every notice under the findings. `isWaiverNoticeDays`, `waiverNoticeFor` and `sortWaiverNotices` are exported so a package can apply the same window to its own waiver registry.
 

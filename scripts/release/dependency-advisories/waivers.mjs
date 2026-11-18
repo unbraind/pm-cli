@@ -21,6 +21,7 @@ const ADVISORY_ID = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/u;
 const PACKAGE_NAME = /^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/u;
 const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;
 const OWNER = /^pm-[a-z0-9]{1,64}$/u;
+const REGISTRY_ID = /^\d{1,12}$/u;
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u;
 const WAIVER_KEYS = ["advisory", "expires_at", "owner", "package", "reason", "versions"];
 
@@ -98,13 +99,13 @@ export async function readWaiverRegistry(root) {
   return JSON.parse(text);
 }
 
-/** Read every name@version the published package installs; an absent ledger lists none. */
+/** Read every name@version the published package installs, or undefined when there is no ledger. */
 export async function readRuntimePackages(root) {
   let text;
   try {
     text = await readFile(path.join(root, RUNTIME_LEDGER_PATH), "utf8");
   } catch (error) {
-    if (error?.code === "ENOENT") return new Set();
+    if (error?.code === "ENOENT") return undefined;
     throw error;
   }
   const packages = new Set();
@@ -121,6 +122,13 @@ export async function readRuntimePackages(root) {
  * (pm-gh1748), so the fix is to remove the package from the runtime graph.
  */
 export function runtimeFindings(live, runtime) {
+  // Without the ledger nothing proves a waiver stays clear of the runtime graph.
+  if (runtime === undefined) {
+    return live.length === 0 ? [] : [{
+      kind: "runtime_ledger_missing",
+      detail: `${RUNTIME_LEDGER_PATH} is missing, so no waiver can be shown to stay clear of the published runtime graph; restore it with node scripts/release/runtime-lock.mjs apply.`,
+    }];
+  }
   return live.flatMap((waiver) => waiver.versions
     .filter((version) => runtime.has(`${waiver.package}@${version}`))
     .map((version) => ({
@@ -217,5 +225,7 @@ export function applyWaivers(reports, live) {
 export function describeReport(report) {
   const name = report.package ?? "unknown package";
   const version = report.version ?? "unknown version";
-  return `${name}@${version} ${report.advisory ?? report.id ?? "unknown advisory"}`;
+  // A registry key is printed only in the numeric form npm uses; anything else could carry control text.
+  const id = typeof report.id === "string" && REGISTRY_ID.test(report.id) ? report.id : undefined;
+  return `${name}@${version} ${report.advisory ?? id ?? "unknown advisory"}`;
 }
