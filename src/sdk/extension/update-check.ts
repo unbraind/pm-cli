@@ -15,7 +15,9 @@ export const PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV = "PM_EXTENSION_UPDATE_CHE
 /** Default budget of one managed-extension update lookup. */
 export const EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS = 10_000;
 const EXTENSION_UPDATE_CHECK_TIMEOUT_MIN_MS = 1_000;
-const EXTENSION_UPDATE_CHECK_TIMEOUT_MAX_MS = 120_000;
+// Below the extension state lock's 30-second wait (120 attempts of 250 ms), so
+// one lookup run under that lock cannot outlast a concurrent package action.
+const EXTENSION_UPDATE_CHECK_TIMEOUT_MAX_MS = 25_000;
 
 /** Stable reason for an npm lookup that failed for any reason other than its budget. */
 export const NPM_REGISTRY_LOOKUP_FAILED = "npm_registry_lookup_failed";
@@ -28,7 +30,7 @@ export const GITHUB_REMOTE_LOOKUP_TIMED_OUT = "github_remote_lookup_timed_out";
 
 /**
  * Resolve the budget of one update lookup: `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS`
- * as integer milliseconds, clamped to 1000–120000, or the 10000 ms default when
+ * as integer milliseconds, clamped to 1000–25000, or the 10000 ms default when
  * it is unset or not a finite number.
  */
 export function resolveExtensionUpdateCheckTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {

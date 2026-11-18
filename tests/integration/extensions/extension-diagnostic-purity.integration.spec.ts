@@ -37,9 +37,9 @@ describe("managed extension diagnostic purity", () => {
       const previousRegistry = process.env.npm_config_registry;
       process.env.npm_config_registry = `http://127.0.0.1:${address.port}`;
       // pm-5kfzjh: a cold npm start on a Windows runner can take longer than
-      // the 10 s default, so registry-backed checks get a generous budget
+      // the 10 s default, so registry-backed checks get the largest budget
       // here; the test timeout covers three of them plus the stalled lookup.
-      vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "60000");
+      vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "25000");
       try {
         for (const options of [{ explore: true }, { doctor: true }, { manage: true, offline: true }]) {
           await runExtension(undefined, { ...options, project: true }, { path: context.pmPath });

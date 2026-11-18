@@ -5,6 +5,7 @@
  * deadline leaves no grandchild running or holding the parent's pipes.
  */
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 /** Longest a teardown helper (`ps`, `taskkill`) may run before it is abandoned. */
@@ -49,6 +50,17 @@ export function descendantsFromProcessTable(table: string, root: number): number
     pending.push(...(children.get(next) ?? []));
   }
   return descendants.reverse();
+}
+
+/**
+ * The system `ps`, never one found through `PATH`: its output decides which
+ * processes receive SIGKILL, so a workspace or toolchain must not shadow it.
+ */
+const TRUSTED_PS_PATHS = ["/bin/ps", "/usr/bin/ps"] as const;
+
+/** Return the first trusted `ps` that exists, or `undefined` when none does. */
+export function resolveTrustedPs(exists: (file: string) => boolean = existsSync): string | undefined {
+  return TRUSTED_PS_PATHS.find((file) => exists(file));
 }
 
 /** Kill `pid` itself, treating a process that is already gone as stopped. */
@@ -108,9 +120,13 @@ export function runTeardownHelper(file: string, args: string[]): Promise<{ code:
  * directory or `PATH`; when it cannot run or fails, the root itself is still
  * killed. Elsewhere it signals the process group led by `pid` when the child
  * was spawned with `detached: true`; otherwise it kills the live descendants
- * listed by an asynchronous, bounded `ps`, then the root. The snapshot is used
- * only if `root.alive()` still holds after it is taken, so a PID reused while
- * `ps` ran is never walked. Either way the tree is walked from the live root,
+ * listed by the system `ps` (`/bin/ps` or `/usr/bin/ps`, asynchronous and
+ * bounded), then the root. The snapshot is used only when that `ps` exits
+ * cleanly and `root.alive()` still holds after it is taken, so a PID reused
+ * while `ps` ran is never walked; otherwise only the root is stopped. A
+ * descendant can still exit and have its PID reused in the microseconds
+ * between the snapshot and the signal, which PID-based signalling cannot rule
+ * out. Either way the tree is walked from the live root,
  * so a descendant whose launcher already exited is not reached. Without
  * `root`, the root is killed by PID and is assumed to stay alive. A process
  * that is already gone is not an error.
@@ -134,9 +150,10 @@ export async function killProcessTree(
   } catch {
     // Not a process-group leader: walk its live descendants instead.
   }
-  const table = await runTeardownHelper("ps", ["-A", "-o", "pid=", "-o", "ppid="]);
-  if (root.alive()) {
-    for (const descendant of descendantsFromProcessTable(table?.stdout ?? "", pid)) killProcess(descendant);
+  const ps = resolveTrustedPs();
+  const table = ps === undefined ? undefined : await runTeardownHelper(ps, ["-A", "-o", "pid=", "-o", "ppid="]);
+  if (table?.code === 0 && root.alive()) {
+    for (const descendant of descendantsFromProcessTable(table.stdout, pid)) killProcess(descendant);
   }
   root.kill();
 }

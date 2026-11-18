@@ -6,12 +6,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // `ps -A -o pid= -o ppid=` snapshot, runs its helpers under a hard deadline,
 // and never walks a PID that may have been reused.
 const spawnMock = vi.hoisted(() => vi.fn());
+const existsSyncMock = vi.hoisted(() => vi.fn((file: string) => file === "/bin/ps"));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
   spawn: spawnMock,
 }));
+vi.mock("node:fs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:fs")>()),
+  existsSync: existsSyncMock,
+}));
 
-const { descendantsFromProcessTable, killProcessTree, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
+const { descendantsFromProcessTable, killProcessTree, resolveTrustedPs, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
 
 class FakeStream extends EventEmitter {
   readonly setEncoding = vi.fn();
@@ -54,7 +59,18 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   spawnMock.mockReset();
+  existsSyncMock.mockImplementation((file: string) => file === "/bin/ps");
   helpers = [];
+});
+
+describe("resolveTrustedPs", () => {
+  it("prefers /bin/ps, falls back to /usr/bin/ps and never searches PATH", () => {
+    expect(resolveTrustedPs(() => true)).toBe("/bin/ps");
+    expect(resolveTrustedPs((file) => file === "/usr/bin/ps")).toBe("/usr/bin/ps");
+    expect(resolveTrustedPs(() => false)).toBeUndefined();
+    existsSyncMock.mockImplementation(() => false);
+    expect(resolveTrustedPs()).toBeUndefined();
+  });
 });
 
 describe("descendantsFromProcessTable", () => {
@@ -150,7 +166,7 @@ describe("killProcessTree", () => {
       answer("4242 1\n4300 4242\n4301 4300\n9999 1\n");
       const caller = root();
       await killProcessTree(4242, caller);
-      expect(spawnMock).toHaveBeenCalledWith("ps", ["-A", "-o", "pid=", "-o", "ppid="], expect.anything());
+      expect(spawnMock).toHaveBeenCalledWith("/bin/ps", ["-A", "-o", "pid=", "-o", "ppid="], expect.anything());
       expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4301, "SIGKILL"], [4300, "SIGKILL"]]);
       expect(caller.alive).toHaveBeenCalled();
       expect(caller.kill).toHaveBeenCalledTimes(1);
@@ -170,6 +186,28 @@ describe("killProcessTree", () => {
       const caller = { kill: vi.fn(), alive: vi.fn(() => false) };
       await killProcessTree(4242, caller);
       expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
+      expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it.each([
+    ["exits with a failure", (helper: FakeHelper) => { helper.stdout?.emit("data", "4300 4242\n"); helper.emit("close", 1); }],
+    ["is not installed in a trusted location", undefined],
+  ])("kills only the root when the system ps %s", async (_label, drive) => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        return true;
+      });
+      if (drive) provide(drive);
+      else existsSyncMock.mockImplementation(() => false);
+      const caller = root();
+      await killProcessTree(4242, caller);
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
+      expect(spawnMock).toHaveBeenCalledTimes(drive ? 1 : 0);
       expect(caller.kill).toHaveBeenCalledTimes(1);
     } finally {
       restore();

@@ -232,14 +232,14 @@ describe("npm update lookup budget", () => {
   });
 
   it("applies the configured budget and names it when it runs out", async () => {
-    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "45000");
+    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "20000");
     vi.useFakeTimers();
     hang();
     const pending = checkNpmUpdate(source);
-    await vi.advanceTimersByTimeAsync(44_999);
+    await vi.advanceTimersByTimeAsync(19_999);
     expect(killProcessTreeMock).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
-    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 45000 });
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 20000 });
   });
 
   it("runs npm attached with closed stdin, discarded stderr and no lifecycle scripts, and clears its deadline", async () => {
@@ -305,11 +305,12 @@ describe("resolveExtensionUpdateCheckTimeoutMs", () => {
     ["   ", 10000],
     ["not-a-number", 10000],
     ["Infinity", 10000],
-    ["30000", 30000],
+    ["20000", 20000],
     [" 2500.9 ", 2500],
     ["1", 1000],
     ["-5", 1000],
-    ["999999", 120000],
+    ["999999", 25000],
+    ["25001", 25000],
   ])("resolves %j to %i ms", (raw, expected) => {
     expect(resolveExtensionUpdateCheckTimeoutMs(raw === undefined ? {} : { [PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV]: raw })).toBe(expected);
   });

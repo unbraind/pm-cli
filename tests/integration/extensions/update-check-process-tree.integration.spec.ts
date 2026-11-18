@@ -144,7 +144,7 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
       "setInterval(() => undefined, 1000);",
     ].join("\n")], {
       detached: true,
-      env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "60000" },
+      env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "25000" },
       stdio: "ignore",
     });
     const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("exit", (code, signal) => resolve({ code, signal })));

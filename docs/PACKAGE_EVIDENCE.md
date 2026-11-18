@@ -112,7 +112,7 @@ tracker records excluded from npm):
 A timed-out check also carries `update_check_timeout_ms`, the budget that ran
 out. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
 default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
-(clamped to 1000–120000) for a slow registry, proxy or cold start, for example
+(clamped to 1000–25000) for a slow registry, proxy or cold start, for example
 on a Windows runner. The deadline settles the check without waiting for the
 provider's pipes, so a launcher such as `cmd.exe` or an npm shim cannot extend
 it by exiting while a descendant keeps running. It then kills the provider and
