@@ -145,6 +145,19 @@ const fromInterface: boolean | "review" = decideSecretGuardFinding({ default: tr
 const interfaceNarrow: boolean = decideSecretGuardFinding({ default: true, rules: overrides }, finding);
 void fromInterface;
 void interfaceNarrow;
+// A map typed only as `object` hides its keys, so any decision may come from it.
+declare const opaqueRules: object;
+const fromOpaque: unknown = decideSecretGuardFinding({ default: true as const, rules: opaqueRules }, finding);
+// @ts-expect-error an opaque map's decisions are not narrowed to the default
+const opaqueNarrow: true = decideSecretGuardFinding({ default: true as const, rules: opaqueRules }, finding);
+// @ts-expect-error an opaque categories map widens the result too
+const opaqueCategories: true = decideSecretGuardFinding({ default: true as const, categories: opaqueRules }, finding);
+// An empty override map holds no decision.
+const fromEmpty: true = decideSecretGuardFinding({ default: true as const, rules: {} }, finding);
+void fromOpaque;
+void opaqueNarrow;
+void opaqueCategories;
+void fromEmpty;
 // A symbol-keyed rules entry is never looked up by a rule name, so it adds no decision.
 declare const ruleMetadata: unique symbol;
 declare const withSymbol: { default: true; rules: { [ruleMetadata]: "allow" } };

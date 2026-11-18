@@ -24,7 +24,7 @@ vi.mock("node:worker_threads", async (importOriginal) => ({
 }));
 vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock }));
 
-const { NPM_REGISTRY_LOOKUP_TIMED_OUT, checkNpmUpdate, settleWorkerUpdateCheckTeardowns } = await import("../../../src/sdk/extension/update-check.js");
+const { NPM_REGISTRY_LOOKUP_TIMED_OUT, checkNpmUpdate, withUpdateCheckTeardownScope } = await import("../../../src/sdk/extension/update-check.js");
 
 const source: ManagedExtensionSource = { kind: "npm", input: "npm:example@1.0.0", location: "example@1.0.0", package: "example", version: "1.0.0" };
 
@@ -72,31 +72,46 @@ afterEach(async () => {
 });
 
 describe("update lookups inside a worker thread", () => {
-  it("still settles a lookup at its budget, and lets the action wait for the teardown before it returns", async () => {
+  it("settles each lookup at its budget, and the action only once the teardown it started finished", async () => {
     vi.useFakeTimers();
     stall();
     let outcome: unknown;
-    void checkNpmUpdate(source, undefined, 1_000).then((status) => {
-      outcome = status;
+    let actionDone = false;
+    void withUpdateCheckTeardownScope(async () => {
+      outcome = await checkNpmUpdate(source, undefined, 1_000);
+      return outcome;
+    }).then(() => {
+      actionDone = true;
     });
     await vi.advanceTimersByTimeAsync(1_000);
-    // The outcome is not held for the teardown, so a lock holder keeps its timing.
+    // The lookup is not held for its teardown, so a lock holder keeps its timing.
     expect(outcome).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 1_000 });
     await vi.advanceTimersByTimeAsync(1);
     expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.anything());
-    let settledTeardowns = false;
-    void settleWorkerUpdateCheckTeardowns().then(() => {
-      settledTeardowns = true;
-    });
-    await vi.advanceTimersByTimeAsync(1);
-    expect(settledTeardowns).toBe(false);
+    expect(actionDone).toBe(false);
+    // Another action in the same worker that started no provider is not held.
+    await expect(withUpdateCheckTeardownScope(async () => "describe")).resolves.toBe("describe");
+    expect(actionDone).toBe(false);
     teardownDone.release?.();
     await vi.advanceTimersByTimeAsync(1);
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
-    expect(settledTeardowns).toBe(true);
+    expect(actionDone).toBe(true);
   });
 
-  it("resolves at once when no teardown is running", async () => {
-    await expect(settleWorkerUpdateCheckTeardowns()).resolves.toBeUndefined();
+  it("waits for the teardowns of an action that threw, then rethrows", async () => {
+    vi.useFakeTimers();
+    stall();
+    let rejected: unknown;
+    void withUpdateCheckTeardownScope(async () => {
+      await checkNpmUpdate(source, undefined, 1_000);
+      throw new Error("action failed");
+    }).catch((error: unknown) => {
+      rejected = error;
+    });
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(rejected).toBeUndefined();
+    teardownDone.release?.();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(rejected).toMatchObject({ message: "action failed" });
   });
 });

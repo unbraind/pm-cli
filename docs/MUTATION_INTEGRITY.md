@@ -207,7 +207,8 @@ overrides. A union of policy types yields every member's decisions, and a
 `categories` key that names no category adds none. A wrapper generic over the
 policy type itself calls `decideSecretGuardFinding<P>(policy, finding)` to
 return `SecretGuardPolicyDecision<P>`, and a `rules` map typed by a named
-interface passes to the helper as it is; a
+interface passes to the helper as it is. A map typed only as `object` hides
+its keys, so it widens the result to `unknown`; a
 policy that is not an object, has no own `default` or has `default:
 undefined`, holds non-object `categories` or `rules`, or a finding without a
 string `rule`, throws a `TypeError`.

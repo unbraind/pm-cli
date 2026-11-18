@@ -5,6 +5,7 @@
  */
 import { nowIso } from "../../core/shared/time.js";
 import { spawn, type ChildProcess } from "node:child_process";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { isMainThread } from "node:worker_threads";
 import npa from "npm-package-arg";
 import { killProcessTree } from "../../core/shared/process-tree.js";
@@ -136,18 +137,25 @@ function killPendingProviders(): void {
   for (const kill of pendingProviderKills) kill();
 }
 
-/** Teardowns still running, so a worker-thread action can finish them before it returns. */
-const pendingTeardowns = new Set<Promise<void>>();
+/** The teardowns each scoped invocation started, followed through its awaits and timers. */
+const invocationTeardowns = new AsyncLocalStorage<Set<Promise<void>>>();
 
 /**
- * Inside a worker thread, wait for every provider teardown still running;
- * on the main thread, resolve at once. A worker has no shutdown hook that is
- * sure to run (`terminate()` runs no exit listener), so an extension action
- * there finishes its teardowns before it returns, after releasing the
- * extension state lock; the main thread relies on the exit listener instead.
+ * Run one SDK action so that, inside a worker thread, every provider
+ * teardown it started has finished before it settles; on the main thread
+ * nothing is waited for. A worker has no shutdown hook that is sure to run
+ * (`terminate()` runs no exit listener), so its host may terminate it as soon
+ * as the result arrives; the main thread relies on the exit listener. Only
+ * this invocation's own teardowns are awaited, never another action's, and
+ * the wait runs after `run` settles, so a lock `run` holds is released first.
  */
-export function settleWorkerUpdateCheckTeardowns(): Promise<void> {
-  return isMainThread ? Promise.resolve() : Promise.all(pendingTeardowns).then(() => undefined);
+export async function withUpdateCheckTeardownScope<T>(run: () => Promise<T>): Promise<T> {
+  const started = new Set<Promise<void>>();
+  try {
+    return await invocationTeardowns.run(started, run);
+  } finally {
+    if (!isMainThread) await Promise.all(started);
+  }
 }
 
 function trackPendingProviderKill(kill: () => void): () => void {
@@ -242,6 +250,9 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     let stdout = "";
     let stdoutBytes = 0;
     const provider = createProviderTeardown(lookup);
+    // The invocation's scope is read once, as the lookup starts, so a
+    // teardown started later from a timer is still recorded against it.
+    const scope = invocationTeardowns.getStore();
     let teardown: Promise<void> | undefined;
     // Every outcome is classified first; the teardown, whose first steps are
     // synchronous process and filesystem checks, starts on a later turn of
@@ -254,11 +265,8 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
         setTimeout(() => {
           void provider.stop().then(resolve, resolve);
         }, 0);
-      }).finally(() => {
-        untrack();
-        pendingTeardowns.delete(running);
-      });
-      pendingTeardowns.add(running);
+      }).finally(untrack);
+      scope?.add(running);
       teardown = running;
       return running;
     };

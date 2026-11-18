@@ -152,8 +152,9 @@ recorded as git's own command line and stderr is read back as
 deferred teardown runs, the provider itself is still killed through its
 handle as the host exits. Inside a worker thread, where `terminate()` runs no
 exit listener, the package action (`runExtension`, and `runAction` through it)
-finishes every provider teardown before it returns, so a host may terminate
-the worker as soon as the result arrives. Each lookup still settles at its
+finishes the provider teardowns it started before it returns, so a host may
+terminate the worker as soon as the result arrives; a concurrent action that
+started no provider never waits for another action's teardown. Each lookup still settles at its
 budget, and the wait happens after the extension state lock is released, so
 the locked `--fix-managed-state` scan keeps its timing; the action itself
 returns up to about 4 seconds later.

@@ -654,8 +654,21 @@ export interface SecretGuardPolicy<Decision> {
  * symbol-keyed entry is never read.
  */
 type PolicyEntryDecisions<Entries> = Entries extends object
-  ? Exclude<Entries[Exclude<keyof Entries, symbol>], undefined>
+  ? OpaqueEntries<Entries> extends true
+    ? unknown
+    : Exclude<Entries[Exclude<keyof Entries, symbol>], undefined>
   : never;
+
+/**
+ * Whether a map type hides its keys (`object`, or an interface without
+ * members), so any decision may sit in it at runtime: its decisions are then
+ * `unknown`. An empty object literal type, which holds none, is not opaque.
+ */
+type OpaqueEntries<Entries> = [keyof Entries] extends [never]
+  ? Entries extends { readonly [key: string]: never }
+    ? false
+    : true
+  : false;
 
 /**
  * The decisions a `categories` map holds under each stable category, which is
@@ -663,7 +676,9 @@ type PolicyEntryDecisions<Entries> = Entries extends object
  * signature that covers one counts, while a key naming no category does not.
  */
 type PolicyCategoryDecisions<Entries> = Entries extends object
-  ? Exclude<{ [Category in SecretGuardRuleCategory]: Category extends keyof Entries ? Entries[Category] : never }[SecretGuardRuleCategory], undefined>
+  ? OpaqueEntries<Entries> extends true
+    ? unknown
+    : Exclude<{ [Category in SecretGuardRuleCategory]: Category extends keyof Entries ? Entries[Category] : never }[SecretGuardRuleCategory], undefined>
   : never;
 
 /** A policy's own `categories` or `rules` map type, or `never` when the policy type has none. */
