@@ -362,6 +362,31 @@ describe("killProcessTree", () => {
     }
   });
 
+  it("rereads an intermediate's own link right before its signal, even after a deeper check cached it", async () => {
+    const restore = withPlatform("linux");
+    try {
+      let intermediateReused = false;
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        // Killing the leaf makes its launcher exit; its pid is then reused.
+        if (pid === 4400) intermediateReused = true;
+        return true;
+      });
+      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/status");
+      readFileSyncMock.mockImplementation((file: string) => {
+        if (file === "/proc/self/status") return `NSpid:\t${process.pid}\n`;
+        if (file === "/proc/4400/stat") return "4400 (helper) S 4300 0";
+        return intermediateReused ? "4300 (other) S 1 0" : "4300 (git) S 4242 0";
+      });
+      answer("4300 4242\n4400 4300\n");
+      await killProcessTree(4242, root());
+      // The leaf was verified and killed; the reused intermediate was not.
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4400, "SIGKILL"]]);
+    } finally {
+      restore();
+    }
+  });
+
   it("discards the snapshot when the root exited while ps ran, so a reused pid is never walked", async () => {
     const restore = withPlatform("linux");
     try {

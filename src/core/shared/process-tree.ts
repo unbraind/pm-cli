@@ -304,6 +304,10 @@ async function killPosixDescendants(pid: number, root: ProcessTreeRoot): Promise
   const parentOf = new Map(descendants.map((entry) => [entry.pid, entry.parent]));
   const verified = new Map<number, boolean>();
   for (const descendant of descendants) {
-    if (ancestryStillMatches(descendant.pid, pid, parentOf, parentStillMatches, verified)) killProcess(descendant.pid);
+    // The target's own link is reread right before its signal: a cached
+    // result from checking a deeper descendant may predate its exit and reuse.
+    if (parentStillMatches(descendant) && ancestryStillMatches(descendant.pid, pid, parentOf, parentStillMatches, verified)) {
+      killProcess(descendant.pid);
+    }
   }
 }
