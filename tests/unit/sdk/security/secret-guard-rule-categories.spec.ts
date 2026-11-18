@@ -155,6 +155,8 @@ describe("decideSecretGuardFinding", () => {
     ["a Map of rules", { default: "allow", rules: new Map([["private_ip", "deny"]]) }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
     ["a Map of categories", { default: "allow", categories: new Map([["network", "deny"]]) }, { rule: "private_ip" }, "Secret guard policy categories must be an object keyed by category."],
     ["a Set of rules", { default: "allow", rules: new Set(["private_ip"]) }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
+    ["a WeakMap of rules", { default: "allow", rules: new WeakMap() }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
+    ["a WeakSet of categories", { default: "allow", categories: new WeakSet() }, { rule: "private_ip" }, "Secret guard policy categories must be an object keyed by category."],
     ["a null finding", { default: true }, null, "Secret guard finding must have a string rule."],
     ["a string finding", { default: true }, "private_ip", "Secret guard finding must have a string rule."],
     ["a finding without a rule", { default: true }, {}, "Secret guard finding must have a string rule."],
@@ -163,9 +165,11 @@ describe("decideSecretGuardFinding", () => {
     expect(() => decideSecretGuardFinding(input as SecretGuardPolicy<boolean>, finding as { rule: string })).toThrow(new TypeError(message));
   });
 
-  it("reads a null-prototype map, which is still a plain object", () => {
+  it("reads a null-prototype map and one with a custom Symbol.toStringTag, which are still plain objects", () => {
     const rules = Object.assign(Object.create(null) as Record<string, string>, { private_ip: "deny" });
     expect(decideSecretGuardFinding({ default: "allow", rules }, { rule: "private_ip" })).toBe("deny");
+    const tagged = { network: "deny", [Symbol.toStringTag]: "PolicyCategories" };
+    expect(decideSecretGuardFinding({ default: "allow", categories: tagged }, { rule: "private_ip" })).toBe("deny");
   });
 });
 

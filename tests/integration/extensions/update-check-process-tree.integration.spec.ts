@@ -191,14 +191,21 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
         workerData: { pmPath: context.pmPath },
         env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "1000", PM_FIXTURE_PID_FILE: pidFile },
       });
-      const extension = await new Promise((resolve, reject) => {
-        worker.once("error", reject);
-        worker.once("message", (message) => {
-          // The host terminates the worker the moment the result arrives.
-          void worker.terminate();
-          resolve(message);
-        });
-      });
+      let extension: unknown;
+      try {
+        // Bounded, so a regression that leaves the action pending still
+        // reaches the cleanup below instead of leaving the worker live.
+        extension = await exitWithin(new Promise((resolve, reject) => {
+          worker.once("error", reject);
+          worker.once("message", (message) => {
+            // The host terminates the worker the moment the result arrives.
+            void worker.terminate();
+            resolve(message);
+          });
+        }), 20_000);
+      } finally {
+        await worker.terminate();
+      }
       expect(extension).toMatchObject({ update_check_status: "failed", update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 1000 });
       const pids = await readPids(pidFile);
       expect(new Set(pids).size).toBe(2);

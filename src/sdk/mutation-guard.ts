@@ -6,6 +6,7 @@
  */
 import { SECRET_RULES, acceptsStructuredValue, findSecretRuleMatches, structuredKeyShape, type SecretNormalizationKind, type SecretRule, type SecretRuleCategory, type SecretRuleMatch } from "../core/shared/secret-rules.js";
 export type { SecretNormalizationKind } from "../core/shared/secret-rules.js";
+import { isMap, isSet, isWeakMap, isWeakSet } from "node:util/types";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 
@@ -703,14 +704,21 @@ function ownPolicyEntry<Decision>(
   return entries !== undefined && key !== undefined && Object.hasOwn(entries, key) ? entries[key] : undefined;
 }
 
+/** Whether a value keeps its entries where an own-property lookup never finds them. */
+function isEntryContainer(value: object): boolean {
+  // Checked by internal slot, so neither a Symbol.toStringTag nor another realm changes the answer.
+  return Array.isArray(value) || isMap(value) || isSet(value) || isWeakMap(value) || isWeakSet(value);
+}
+
 /**
  * Read an own `categories` or `rules` map of a policy, refusing one that is
- * not a plain object: a `Map`, `Set` or array holds its entries where an own
- * property lookup never finds them, so a configured decision would be ignored.
+ * not an object, and an array, `Map`, `Set`, `WeakMap` or `WeakSet`: those
+ * hold their entries where an own-property lookup never finds them, so a
+ * configured decision would be ignored.
  */
 function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules"): Partial<Record<string, Decision>> | undefined {
   const entries: unknown = Object.hasOwn(policy, field) ? (policy as Record<string, unknown>)[field] : undefined;
-  if (entries !== undefined && (typeof entries !== "object" || entries === null || Object.prototype.toString.call(entries) !== "[object Object]")) {
+  if (entries !== undefined && (typeof entries !== "object" || entries === null || isEntryContainer(entries))) {
     throw new TypeError(`Secret guard policy ${field} must be an object keyed by ${field === "rules" ? "rule" : "category"}.`);
   }
   return entries as Partial<Record<string, Decision>> | undefined;
