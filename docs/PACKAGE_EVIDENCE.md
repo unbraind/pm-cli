@@ -112,13 +112,21 @@ tracker records excluded from npm):
 A timed-out check also carries `update_check_timeout_ms`, the budget that ran
 out. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
 default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
-(clamped to 1000–25000) for a slow registry, proxy or cold start, for example
-on a Windows runner. The deadline settles the check without waiting for the
+(clamped to 1000–25000, below the extension state lock's 30-second wait) for
+a slow registry, proxy or cold start, for example on a Windows runner.
+`pm package manage --fix-managed-state` runs its lookups while it holds that
+lock, so it keeps the 10-second default and ignores the override
+([pm-9x9drr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9x9drr.toon)
+tracks moving them out of the lock; tracker record excluded from npm). A
+result that arrives after the deadline counts as a timeout even if the host's
+event loop was busy when the deadline passed. The deadline settles the check without waiting for the
 provider's pipes, so a launcher such as `cmd.exe` or an npm shim cannot extend
-it by exiting while a descendant keeps running. It then kills the provider and
-its live descendants (`taskkill /T` on Windows, a `ps` tree walk elsewhere); a
-descendant whose launcher already exited is not reached, but it no longer
-delays the result. A lookup still running at its deadline is reported as timed
+it by exiting while a descendant keeps running. It then makes a best-effort
+attempt to stop the provider and its live descendants (`taskkill /T` on
+Windows, a tree walk over the system `ps` elsewhere): the provider itself is
+always killed, but a descendant is missed when that tool cannot run, and one
+whose launcher already exited is not reached. The timeout result never depends
+on the teardown. A lookup still running at its deadline is reported as timed
 out even if the provider then exits cleanly. A recorded `update_check_timeout_ms`
 is kept only beside a timed-out reason. A provider that exits with a failure
 is reported as failed at once, even while a descendant still holds its output.

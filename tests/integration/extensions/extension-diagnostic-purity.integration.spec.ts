@@ -76,6 +76,11 @@ describe("managed extension diagnostic purity", () => {
         expect(requests).toBeGreaterThan(0);
         expect(await readFile(managedPath, "utf8")).toBe(before);
         expect((await stat(managedPath)).mtimeMs).toBe(beforeStat.mtimeMs);
+        // --fix-managed-state runs its lookups under the extension state lock,
+        // so it keeps the default budget and ignores the raised override.
+        const lockedStarted = Date.now();
+        expect((await runExtension(undefined, { manage: true, project: true, fixManagedState: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 10_000 }] });
+        expect(Date.now() - lockedStarted).toBeGreaterThanOrEqual(9_000);
       } finally {
         vi.unstubAllEnvs();
         if (previousRegistry === undefined) delete process.env.npm_config_registry;

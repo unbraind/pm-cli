@@ -118,7 +118,10 @@ export function runTeardownHelper(file: string, args: string[]): Promise<{ code:
  * Kill the process tree rooted at `pid`. On Windows this runs the system
  * `taskkill /T /F` from System32, never a `taskkill` found through the working
  * directory or `PATH`; when it cannot run or fails, the root itself is still
- * killed. Elsewhere it signals the process group led by `pid` when the child
+ * killed. `taskkill` names the root by PID, so a root that exits and has its
+ * PID reused in the moment before `taskkill` opens it cannot be told apart;
+ * only an OS containment mechanism (a job object) would close that window, and
+ * Node exposes none. Elsewhere it signals the process group led by `pid` when the child
  * was spawned with `detached: true`; otherwise it kills the live descendants
  * listed by the system `ps` (`/bin/ps` or `/usr/bin/ps`, asynchronous and
  * bounded), then the root. The snapshot is used only when that `ps` exits
@@ -141,7 +144,8 @@ export async function killProcessTree(
   if (process.platform === "win32") {
     const taskkill = path.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe");
     const result = await runTeardownHelper(taskkill, ["/pid", String(pid), "/T", "/F"]);
-    if (result?.code !== 0) root.kill();
+    // A root that exited while taskkill ran may have a reused PID by now.
+    if (result?.code !== 0 && root.alive()) root.kill();
     return;
   }
   try {

@@ -125,6 +125,10 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       return;
     }
     const lookup = child;
+    // A monotonic deadline: if the host's event loop was blocked across it, a
+    // queued exit or close may run before the overdue timer, and must still be
+    // reported as a timeout.
+    const deadlineAt = performance.now() + timeout;
     let settled = false;
     let stdout = "";
     let stdoutBytes = 0;
@@ -148,7 +152,8 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (settled) return;
       settled = true;
       clearTimeout(deadline);
-      if (error) reject(error);
+      if (performance.now() >= deadlineAt) reject(new UpdateQueryError(spec.timedOut, timeout));
+      else if (error) reject(error);
       else resolve(stdout.trim());
     }
     // The error listener comes first: a spawn that ran out of descriptors can
@@ -227,6 +232,7 @@ const runGitUpdateQuery: UpdateQueryRunner = (args, timeout) =>
 export async function checkNpmUpdate(
   source: ManagedExtensionSource,
   npmRunner: UpdateQueryRunner = runNpmUpdateQuery,
+  timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<NpmUpdateStatus> {
   const checkedAt = nowIso();
   try {
@@ -234,7 +240,7 @@ export async function checkNpmUpdate(
       throw new Error("missing_or_invalid_npm_package_identity");
     }
     const installedVersion = resolveExactNpmVersion(source.package, source.version, "missing_or_invalid_installed_npm_version");
-    const registryOutput = await npmRunner(["view", source.package, "dist-tags.latest", "--json", "--ignore-scripts"], resolveExtensionUpdateCheckTimeoutMs());
+    const registryOutput = await npmRunner(["view", source.package, "dist-tags.latest", "--json", "--ignore-scripts"], timeoutMs);
     let output: unknown;
     try {
       output = JSON.parse(registryOutput);
@@ -292,6 +298,7 @@ const resolveGithubUpdateOutput = (
 export const checkGithubUpdate = async (
   source: ManagedExtensionSource,
   gitCommandRunner: UpdateQueryRunner = runGitUpdateQuery,
+  timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<GithubUpdateStatus> => {
   const checkedAt = nowIso();
   if (source.kind !== "github" || !source.repository) {
@@ -305,7 +312,7 @@ export const checkGithubUpdate = async (
     const ref = [source.ref?.trim(), "HEAD"].find(Boolean) as string;
     const output = await gitCommandRunner(
       ["ls-remote", source.repository, ref, `${ref}^{}`],
-      resolveExtensionUpdateCheckTimeoutMs(),
+      timeoutMs,
     );
     return resolveGithubUpdateOutput(output, source.commit, checkedAt);
   } catch (error: unknown) {

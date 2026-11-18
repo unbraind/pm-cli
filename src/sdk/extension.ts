@@ -90,7 +90,11 @@ import { mapWithFixedConcurrency } from "./extension/concurrency.js";
 import { summarizeRuntimeCommandPathsForExtension } from "./extension/runtime-summary.js";
 import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ownership.js";
 import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
-import { checkGithubUpdate } from "./extension/update-check.js";
+import {
+  checkGithubUpdate,
+  EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
+  resolveExtensionUpdateCheckTimeoutMs,
+} from "./extension/update-check.js";
 import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
 import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
@@ -3525,7 +3529,15 @@ const prepareExploreManageState = async (
     state = fix.state;
   }
   if (ctx.action === "manage") {
-    state = await refreshManagedExtensionUpdates(state, ctx.options.offline);
+    // With --fix-managed-state this refresh runs under the extension state
+    // lock, so it keeps the default budget rather than the override: a raised
+    // budget would let the lookups outlast a concurrent package action's lock
+    // wait. Moving the refresh out of the lock is pm-9x9drr.
+    state = await refreshManagedExtensionUpdates(
+      state,
+      ctx.options.offline,
+      ctx.options.fixManagedState === true ? EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS : resolveExtensionUpdateCheckTimeoutMs(),
+    );
   }
   return { state, fix };
 };

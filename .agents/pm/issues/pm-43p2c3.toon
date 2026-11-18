@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: diagnostics,extensions,github,stable-codes,update-check
 created_at: "2026-11-18T09:38:17.161Z"
-updated_at: "2026-11-18T11:26:01.910Z"
+updated_at: "2026-11-18T13:21:13.880Z"
 closed_at: "2026-11-18T11:26:00.887Z"
 completed_at: "2026-11-18T11:26:00.887Z"
 author: "harness:claude-code"
@@ -24,13 +24,15 @@ dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5kfzjh,discovered_from,"2026-11-18T09:38:17.161Z","harness:claude-code","cli:create:dep",detected
 comments[1]{created_at,author,text}:
   "2026-11-18T10:27:28.224Z","harness:claude-code","Implemented on branch feat/sdk-stable-consumer-classifications, together with pm-5kfzjh. checkGithubUpdate's default runner no longer goes through runGitCommand. runGitUpdateQuery runs git ls-remote under the shared runBoundedUpdateQuery deadline, with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never. It reports github_remote_lookup_timed_out with update_check_timeout_ms when the deadline passes, and github_remote_lookup_failed for any other failure, never git's command line, the repository URL or stderr. An injected runner now has the npm runner's signature (args, timeoutMs). no_remote_reference_found and missing_installed_commit are unchanged. Tests are in tests/unit/extensions/npm-update-check-timeout.spec.ts (the GitHub describe block) and the existing annotated-tag case in extension-command.spec.ts.\n"
-files[4]{path,scope}:
+files[5]{path,scope}:
   src/sdk/extension/managed-update-status.ts,project
   src/sdk/extension/update-check.ts,project
+  tests/integration/extensions/update-check-process-tree.integration.spec.ts,project
   tests/unit/extensions/extension-command.spec.ts,project
   tests/unit/extensions/npm-update-check-timeout.spec.ts,project
-tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/extensions/npm-update-check-timeout.spec.ts tests/unit/extensions/extension-command.spec.ts,project,600,"harness:claude-code","2026-11-18T09:42:04.120Z",local_mutation,feat/sdk-stable-consumer-classifications
+  node scripts/run-tests.mjs test -- tests/integration/extensions/update-check-process-tree.integration.spec.ts,project,300,"harness:claude-code","2026-11-18T13:21:13.844Z",local_mutation,feat/sdk-stable-consumer-classifications
 docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/PACKAGE_EVIDENCE.md,project
@@ -45,7 +47,7 @@ gate_evidence:
   disposition: gate_added
   owner: pm-43p2c3
   gate_id: extension-update-check-reasons
-  negative_control: "tests/unit/extensions/npm-update-check-timeout.spec.ts asserts a failed GitHub lookup's status never contains ls-remote, the repository host or stderr; the previous runGitCommand path, which reported 'Git command failed: git ls-remote <repository> ...' plus stderr, fails that assertion"
-  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/npm-update-check-timeout.spec.ts tests/unit/extensions/extension-command.spec.ts
+  negative_control: "tests/integration/extensions/update-check-process-tree.integration.spec.ts runs a fake git on PATH that writes a credential-shaped marker to stderr and exits 128, and asserts the status is github_remote_lookup_failed and never contains the marker. tests/unit/extensions/npm-update-check-timeout.spec.ts asserts a failed GitHub status never contains ls-remote or the repository host. The previous runGitCommand path, which reported 'Git command failed: git ls-remote <repository> ...' plus stderr, fails both"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/npm-update-check-timeout.spec.ts tests/unit/extensions/extension-command.spec.ts tests/integration/extensions/update-check-process-tree.integration.spec.ts
   hosted_checks[1]: Gates (coverage)
 body: ""

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithubUpdate } from "../../../src/sdk/extension/update-check.js";
+import { GITHUB_REMOTE_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithubUpdate } from "../../../src/sdk/extension/update-check.js";
 
 // pm-5kfzjh and pm-43p2c3: the deadline must settle the lookup even when the
 // launcher exits while a descendant still holds its pipes, must kill a live
@@ -28,10 +28,12 @@ function isRunning(pid: number): boolean {
     return false;
   }
   const state = spawnSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8" });
-  if (state.error) throw new Error(`ps could not probe pid ${pid}: ${state.error.message}`);
-  // ps exits 1 with no row when the pid disappeared between the two probes.
-  if (state.status !== 0) return state.stdout.trim().length > 0;
-  return state.stdout.trim().length > 0 && !state.stdout.trim().startsWith("Z");
+  const row = state.stdout?.trim() ?? "";
+  // ps exits 1 with no row when the pid disappeared between the two probes;
+  // any other outcome that is not a clean answer cannot prove anything.
+  if (state.status === 1 && row.length === 0) return false;
+  if (state.error || state.status !== 0 || row.length === 0) throw new Error(`ps could not probe pid ${pid}: ${state.error?.message ?? `status ${state.status}, signal ${state.signal}`}`);
+  return !row.startsWith("Z");
 }
 
 /** Wait for a subprocess to exit, or report `undefined` after `limitMs` so the caller's cleanup still runs. */
@@ -120,7 +122,9 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
   });
 
   it("kills a still-running launcher and its descendant at the deadline", async () => {
-    const { root, pidFile } = await fakeGit("sleep 30");
+    // The launcher waits for its recorded descendant, so the whole fixture
+    // tree is the launcher and that one sleep.
+    const { root, pidFile } = await fakeGit("wait");
     vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
     vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
     let pids: number[] = [];
@@ -147,19 +151,39 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
       env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "25000" },
       stdio: "ignore",
     });
-    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("exit", (code, signal) => resolve({ code, signal })));
-    let pids: number[] = [];
+    // close follows exit, and also follows a failed launch that emits only
+    // error, so the cleanup wait always ends.
+    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("close", (code, signal) => resolve({ code, signal })));
+    let launchError: Error | undefined;
+    host.on("error", (error) => {
+      launchError = error;
+    });
+    const pids: number[] = [];
     try {
-      const helper = await readPids(helperFile);
-      pids = [...(await readPids(launcherFile)), ...helper];
+      pids.push(...(await readPids(helperFile)));
+      pids.push(...(await readPids(launcherFile)));
+      expect(launchError).toBeUndefined();
       for (const pid of pids) expect(isRunning(pid)).toBe(true);
       process.kill(-host.pid!, "SIGINT");
       expect(await exitWithin(exited, 10_000)).toEqual({ code: null, signal: "SIGINT" });
       for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
     } finally {
       if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
-      await exited;
+      await exitWithin(exited, 10_000);
       killQuietly(pids);
     }
   }, 30_000);
+
+  it("never reports the provider's stderr in a failed lookup", async () => {
+    // A provider that writes a credential-shaped marker to stderr, then fails.
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-update-stderr-"));
+    tempRoots.push(root);
+    const marker = ["stderr-marker", "private-fixture-value"].join("-");
+    await writeFile(path.join(root, "git"), `#!/bin/sh\necho "fatal: ${marker}" >&2\nexit 128\n`);
+    await chmod(path.join(root, "git"), 0o755);
+    vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
+    const status = await checkGithubUpdate(GITHUB_SOURCE);
+    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
+    expect(JSON.stringify(status)).not.toContain(marker);
+  });
 });

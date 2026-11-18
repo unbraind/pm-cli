@@ -182,8 +182,14 @@ describe("killProcessTree", () => {
         if (pid === -4242) throw new Error("no group");
         return true;
       });
-      answer("4300 4242\n");
-      const caller = { kill: vi.fn(), alive: vi.fn(() => false) };
+      // The root is alive when teardown starts and exits while ps runs.
+      let rootAlive = true;
+      provide((helper) => {
+        helper.stdout?.emit("data", "4300 4242\n");
+        rootAlive = false;
+        helper.emit("close", 0);
+      });
+      const caller = { kill: vi.fn(), alive: vi.fn(() => rootAlive) };
       await killProcessTree(4242, caller);
       expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
       expect(caller.kill).toHaveBeenCalledTimes(1);
@@ -242,6 +248,19 @@ describe("killProcessTree", () => {
       await killProcessTree(4242, caller);
       expect(spawnMock).toHaveBeenCalledWith(path.join("D:\\WinRoot", "System32", "taskkill.exe"), ["/pid", "4242", "/T", "/F"], expect.anything());
       expect(caller.kill).toHaveBeenCalledTimes(rootKilled ? 1 : 0);
+    } finally {
+      restore();
+    }
+  });
+
+  it("does not kill a Windows root by its possibly reused PID once it exited while taskkill ran", async () => {
+    const restore = withPlatform("win32");
+    try {
+      answer("", 128);
+      const caller = { kill: vi.fn(), alive: vi.fn(() => false) };
+      await killProcessTree(4242, caller);
+      expect(caller.alive).toHaveBeenCalled();
+      expect(caller.kill).not.toHaveBeenCalled();
     } finally {
       restore();
     }

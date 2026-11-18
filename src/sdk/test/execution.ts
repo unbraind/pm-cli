@@ -1248,6 +1248,14 @@ function createLinkedTestTerminationRequester(
     }
     terminationRequested = true;
     const pid = child.pid;
+    // The root is identified by its handle: once Node reports its exit, its
+    // PID may belong to another process and is never signalled again.
+    const childRoot = {
+      alive: (): boolean => child.exitCode === null && child.signalCode === null,
+      kill: (): void => {
+        if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+      },
+    };
     if (!pid || pid <= 0) {
       try {
         child.kill("SIGTERM");
@@ -1257,7 +1265,7 @@ function createLinkedTestTerminationRequester(
       return;
     }
     if (process.platform === "win32") {
-      await killProcessTree(pid);
+      await killProcessTree(pid, childRoot);
       return;
     }
     try {
@@ -1272,7 +1280,7 @@ function createLinkedTestTerminationRequester(
     }
     /* c8 ignore next 3 -- exercised only when timeout escalation triggers force-kill fallback. */
     timers.forceKillTimer = setTimeout(() => {
-      void killProcessTree(pid);
+      void killProcessTree(pid, childRoot);
     }, linkedTestTimeoutForceKillDelayMs());
     timers.forceKillTimer.unref?.();
   };

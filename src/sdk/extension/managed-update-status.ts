@@ -5,7 +5,7 @@
  */
 import { mapWithFixedConcurrency } from "./concurrency.js";
 import { sortManagedEntries, type ManagedExtensionState } from "./managed-state.js";
-import { checkGithubUpdate, checkNpmUpdate } from "./update-check.js";
+import { checkGithubUpdate, checkNpmUpdate, resolveExtensionUpdateCheckTimeoutMs } from "./update-check.js";
 import type { ManagedExtensionRecord } from "./managed-state.js";
 
 const MANAGED_UPDATE_CHECK_CONCURRENCY = 4;
@@ -16,10 +16,15 @@ function withUpdateCheckTimeout(entry: ManagedExtensionRecord, timeoutMs: number
   return timeoutMs === undefined ? rest : { ...rest, update_check_timeout_ms: timeoutMs };
 }
 
-/** Return transient provider evidence while preserving the caller's recorded installation state. */
+/**
+ * Return transient provider evidence while preserving the caller's recorded
+ * installation state. `timeoutMs` is the budget of each lookup, by default the
+ * one `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` configures.
+ */
 export async function refreshManagedExtensionUpdates(
   state: ManagedExtensionState,
   offline = false,
+  timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<ManagedExtensionState> {
   const entries = await mapWithFixedConcurrency(state.entries, MANAGED_UPDATE_CHECK_CONCURRENCY, async (entry) => {
     if (!["github", "npm"].includes(entry.source.kind)) return entry;
@@ -28,8 +33,8 @@ export async function refreshManagedExtensionUpdates(
       last_update_remote_version: undefined, update_available: null, update_error: undefined,
     }, undefined);
     const updateStatus = entry.source.kind === "github"
-      ? await checkGithubUpdate(entry.source)
-      : await checkNpmUpdate(entry.source);
+      ? await checkGithubUpdate(entry.source, undefined, timeoutMs)
+      : await checkNpmUpdate(entry.source, undefined, timeoutMs);
     return withUpdateCheckTimeout({
       ...entry,
       last_update_check_at: updateStatus.checked_at,
