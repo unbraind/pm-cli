@@ -80,6 +80,8 @@ export interface ManagedExtensionRecord {
   update_available?: boolean | null;
   /** Value that configures or reports update error for this contract. */
   update_error?: string;
+  /** Budget in milliseconds that a diagnostic lookup ran out of; diagnostics never persist this field. */
+  update_check_timeout_ms?: number;
 }
 
 /** Documents the managed extension state payload exchanged by command, SDK, and package integrations. */
@@ -167,6 +169,11 @@ export function managedExtensionSourcesEquivalent(
 /** Narrow `value` to a string, or `undefined` for any other type — the normalization applied to every optional managed-state string field so an absent or malformed value is dropped rather than carried through as `unknown`. */
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+/** Narrow `value` to a positive safe integer, or `undefined` for any other value. */
+function optionalPositiveInteger(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : undefined;
 }
 
 /**
@@ -284,6 +291,7 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
         ? entry.update_available
         : undefined,
     update_error: optionalString(entry.update_error),
+    update_check_timeout_ms: optionalPositiveInteger(entry.update_check_timeout_ms),
   };
 }
 

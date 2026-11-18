@@ -775,7 +775,7 @@ describe("extension command runtime", () => {
           ref: "v1.0.0",
           commit: "peeled-commit",
         } as never,
-        async (args, _runner, timeoutMs) => {
+        async (args, timeoutMs) => {
           githubRunnerArgs = args;
           githubRunnerTimeout = timeoutMs;
           return "tag-object\trefs/tags/v1.0.0\npeeled-commit\trefs/tags/v1.0.0^{}\n";

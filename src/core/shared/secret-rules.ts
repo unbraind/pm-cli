@@ -139,12 +139,24 @@ export interface SecretStructuredSpelling {
   elementValue?: true;
 }
 
+/**
+ * What a detector protects: `credential` for secrets that grant access,
+ * `network` for private infrastructure addresses and `path` for local
+ * filesystem paths that reveal an account. A policy can decide a whole family
+ * at once, so a new rule inherits its category's decision (pm-gh1749). The set
+ * is part of the public SDK contract: a new rule joins an existing category,
+ * and a new category is a declared contract change.
+ */
+export type SecretRuleCategory = "credential" | "network" | "path";
+
 /** One detector and any explicit repository-only scope exception. */
 export interface SecretRule {
   /** Repository diagnostic identifier. */
   name: string;
   /** Compatible SDK diagnostic identifier. */
   mutationRule: string;
+  /** Stable family of the detector; see {@link SecretRuleCategory}. */
+  category: SecretRuleCategory;
   /** Global pattern; consumers reset lastIndex before each scan. */
   regex: RegExp;
   /** Repository paths with deliberate fixture exemptions. */
@@ -351,47 +363,47 @@ const HIGH_ENTROPY_VALUE = /["']?([A-Za-z0-9+/=_-]{24,})/;
 
 /** Canonical patterns; repository exemptions never exempt mutation payloads. */
 export const SECRET_RULES = [
-  { name: "private-key", mutationRule: "private_key", regex: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/g },
-  { name: "github-token", mutationRule: "github_token", regex: /\b(?:gh[opsru]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g },
-  { name: "npm-token", mutationRule: "npm_token", regex: /\bnpm_[A-Za-z0-9]{20,}\b/g },
-  { name: "aws-access-key", mutationRule: "aws_access_key", regex: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
-  { name: "google-api-key", mutationRule: "google_api_key", regex: /\bAIza[0-9A-Za-z_-]{35}\b/g },
-  { name: "slack-token", mutationRule: "slack_token", regex: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g },
-  { name: "anthropic-api-key", mutationRule: "anthropic_api_key", regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/g },
+  { name: "private-key", mutationRule: "private_key", category: "credential", regex: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/g },
+  { name: "github-token", mutationRule: "github_token", category: "credential", regex: /\b(?:gh[opsru]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g },
+  { name: "npm-token", mutationRule: "npm_token", category: "credential", regex: /\bnpm_[A-Za-z0-9]{20,}\b/g },
+  { name: "aws-access-key", mutationRule: "aws_access_key", category: "credential", regex: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g },
+  { name: "google-api-key", mutationRule: "google_api_key", category: "credential", regex: /\bAIza[0-9A-Za-z_-]{35}\b/g },
+  { name: "slack-token", mutationRule: "slack_token", category: "credential", regex: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g },
+  { name: "anthropic-api-key", mutationRule: "anthropic_api_key", category: "credential", regex: /\bsk-ant-[A-Za-z0-9_-]{20,}\b/g },
   // Matches bare sk-, sk-proj-, and sk-svcacct- OpenAI key formats. A prefix
   // alternation would be redundant here: the prefixes' characters are a subset
   // of the payload class, so backtracking makes them absorbable either way.
-  { name: "openai-api-key", mutationRule: "openai_api_key", regex: /\bsk-(?!ant-)[A-Za-z0-9_-]{20,}\b/g },
+  { name: "openai-api-key", mutationRule: "openai_api_key", category: "credential", regex: /\bsk-(?!ant-)[A-Za-z0-9_-]{20,}\b/g },
   // Dot included for GitLab's newer routable PAT format (glpat-<base64>.<len>.<crc>).
-  { name: "gitlab-token", mutationRule: "gitlab_token", regex: /\bglpat-[A-Za-z0-9_.-]{20,}\b/g },
-  { name: "jwt-like-token", mutationRule: "jwt_like_token", regex: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g },
-  { name: "npm-auth-token-assignment", mutationRule: "npm_auth_token_assignment", regex: /_authToken\s*=\s*\S+/g },
-  { name: "sentry-user-token", mutationRule: "sentry_user_token", regex: /\bsntryu_[A-Za-z0-9]{20,}\b/g },
-  { name: "sentry-org-token", mutationRule: "sentry_org_token", regex: /\bsntrys_[A-Za-z0-9_-]{20,}\b/g },
+  { name: "gitlab-token", mutationRule: "gitlab_token", category: "credential", regex: /\bglpat-[A-Za-z0-9_.-]{20,}\b/g },
+  { name: "jwt-like-token", mutationRule: "jwt_like_token", category: "credential", regex: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g },
+  { name: "npm-auth-token-assignment", mutationRule: "npm_auth_token_assignment", category: "credential", regex: /_authToken\s*=\s*\S+/g },
+  { name: "sentry-user-token", mutationRule: "sentry_user_token", category: "credential", regex: /\bsntryu_[A-Za-z0-9]{20,}\b/g },
+  { name: "sentry-org-token", mutationRule: "sentry_org_token", category: "credential", regex: /\bsntrys_[A-Za-z0-9_-]{20,}\b/g },
   {
-    name: "private-ip", mutationRule: "private_ip",
+    name: "private-ip", mutationRule: "private_ip", category: "network",
     regex:
       /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g,
   },
   {
-    name: "private-ssh-target", mutationRule: "private_ssh_target",
+    name: "private-ssh-target", mutationRule: "private_ssh_target", category: "network",
     regex:
       /\b(?:ssh|scp|rsync)\s+[A-Za-z0-9._-]+@(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g,
   },
-  { name: "sshpass-inline-password", mutationRule: "sshpass_inline_password", regex: /\bsshpass\s+-p\s+["'][^"']{6,}["']/g },
+  { name: "sshpass-inline-password", mutationRule: "sshpass_inline_password", category: "credential", regex: /\bsshpass\s+-p\s+["'][^"']{6,}["']/g },
   {
-    name: "password-assignment", mutationRule: "password_assignment",
+    name: "password-assignment", mutationRule: "password_assignment", category: "credential",
     regex: new RegExp(String.raw`\b(?:${PASSWORD_KEYS})\s*[:=]\s*` + PASSWORD_VALUE.source, "gi"),
     structured: { keys: PASSWORD_KEYS, value: PASSWORD_VALUE.source, element: true },
     minimumLiteralLength: PASSWORD_MINIMUM_LITERAL_LENGTH,
   },
   {
-    name: "absolute-home-path", mutationRule: "absolute_home_path",
+    name: "absolute-home-path", mutationRule: "absolute_home_path", category: "path",
     regex: PRIVATE_HOME_PATH_PATTERN,
     excludeFiles: /^(?:tests\/|examples\/)/,
   },
   {
-    name: "user-at-private-host", mutationRule: "user_at_private_host",
+    name: "user-at-private-host", mutationRule: "user_at_private_host", category: "network",
     // The local part starts only where a run of local-part characters starts,
     // never at a `\b` inside it: every `-` or `.` in a long run would otherwise
     // restart the greedy run and make the scan quadratic. A run that starts
@@ -402,14 +414,14 @@ export const SECRET_RULES = [
     excludeFiles: /^(?:tests\/|examples\/)/,
   },
   {
-    name: "high-entropy-assignment", mutationRule: "high_entropy_assignment",
+    name: "high-entropy-assignment", mutationRule: "high_entropy_assignment", category: "credential",
     regex: new RegExp(String.raw`\b(?:${HIGH_ENTROPY_KEYS})\s*[:=]\s*` + HIGH_ENTROPY_VALUE.source, "gi"),
     structured: { keys: HIGH_ENTROPY_KEYS, value: HIGH_ENTROPY_VALUE.source },
     mutationOnlyReason: "Generic assignments in source code are not credentials; preserve the existing mutation heuristic without treating source identifiers as secrets.",
     minimumEntropy: 3.5,
   },
   {
-    name: "credential-key-assignment", mutationRule: "credential_key_assignment",
+    name: "credential-key-assignment", mutationRule: "credential_key_assignment", category: "credential",
     regex: new RegExp(String.raw`\b(?:${CREDENTIAL_KEYS})\s*[:=]\s*` + CREDENTIAL_VALUE.source, "gi"),
     structured: { keys: CREDENTIAL_KEYS, value: CREDENTIAL_VALUE.source, element: true, elementValue: true },
     mutationOnlyReason: "Key-named assignments in source code and test fixtures are identifiers and synthetic data; repository scans keep the token-format rules, which recognize real credentials there.",

@@ -316,6 +316,8 @@ export interface ManagedExtensionSummary {
   last_update_remote_version?: string;
   /** Value that configures or reports update error for this contract. */
   update_error?: string;
+  /** Budget in milliseconds that the update lookup ran out of, present only when it timed out. */
+  update_check_timeout_ms?: number;
   /** Outcome of the registry update check for this extension. */
   update_check_status: ExtensionUpdateCheckStatus;
   /** Value that configures or reports update check reason for this contract. */
@@ -1063,6 +1065,7 @@ const buildInstalledExtensionSummary = (
     last_update_remote_commit: managed.last_update_remote_commit,
     last_update_remote_version: managed.last_update_remote_version,
     update_error: managed.update_error,
+    update_check_timeout_ms: managed.update_check_timeout_ms,
     update_check_status: updateCheck.status,
     update_check_reason: updateCheck.reason,
   };

@@ -2,11 +2,13 @@ id: pm-gh1749
 title: "GH-1749: adding a secret-guard rule breaks typed consumers' exhaustive Record<SecretGuardFinding['rule'], ...> policy maps; offer a stable category per rule and a default-plus-overrides policy helper"
 description: "GitHub issue 1749 (fleet report): extensions that type a per-rule secret guard policy as an exhaustive Record over SecretGuardFinding['rule'] failed tsc with TS2741 on the 2026.11.13 bump, when the rule union gained credential_key_assignment. The detector was additive, but for exhaustive typed consumers it is a breaking type change that the release notes did not flag. Proposed: export a stable category per rule (for example credential, identity, path, network) and a policy helper such as a default decision plus partial overrides with a decide function, so a new credential rule inherits refuse without breaking compilation; and list new rule literals under a typed-consumers note in release notes. Related: the secret-guard family pm-hw00c2 (credential-key reference literals) and pm-x07qz2 (property names) changed the same finding type."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[5]: api-design,"gh:1749",sdk,secret-guard,typed-consumers
 created_at: "2026-11-17T21:58:37.940Z"
-updated_at: "2026-11-17T21:58:37.940Z"
+updated_at: "2026-11-18T09:42:40.270Z"
+assignee: "harness:claude-code"
+claim_principal: "harness:claude-code#928e5cd9a3bda9591c204f9f"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "The SDK exports a stable per-rule category map and a policy helper that decides a finding from a default plus partial overrides, typed so adding a rule never breaks a consumer that uses it; the SDK surface snapshot records the addition; release notes or the SDK migration notes call out new rule literals for exhaustive consumers; tests prove a newly added rule inherits the category default"
@@ -20,4 +22,22 @@ component: sdk
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-hw00c2,related,"2026-11-17T21:58:37.940Z","harness:claude-code","cli:create:dep",detected
   pm-x07qz2,related,"2026-11-17T21:58:37.940Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-18T09:42:40.269Z","harness:claude-code","Implementation (branch feat/sdk-stable-consumer-classifications). Every SecretRule in src/core/shared/secret-rules.ts now declares a required category (credential, network or path), so a new detector cannot ship without one. The SDK (src/sdk/mutation-guard.ts, exported from the root, governance and runtime entrypoints) adds:\n- SecretGuardRule, an alias of SecretGuardFinding['rule'];\n- SecretGuardRuleCategory, the stable union;\n- SECRET_GUARD_RULE_CATEGORIES, a frozen map from rule to category;\n- secretGuardRuleCategory(rule), which returns undefined for an unknown or prototype name;\n- SecretGuardPolicy<Decision> = { default, categories?, rules? } and decideSecretGuardFinding(policy, finding).\n\nPrecedence: the rule entry, then the category entry, then the default. An undefined entry counts as absent, and null or false decisions are honoured. Only own properties are read, and keys that name no rule or category are ignored so that a policy written for a newer SDK still applies. A malformed policy or finding throws a TypeError.\n\nCategories: 17 rules are credential; private_ip, private_ssh_target and user_at_private_host are network; absolute_home_path is path. That reproduces the issue's example map exactly.\n\nSecretGuardFinding's signature is unchanged, so the surface snapshot records only additive symbols. Tests: tests/unit/sdk/security/secret-guard-rule-categories.spec.ts pins the full category map, the precedence and the TypeErrors, and mocks a future detector to prove it inherits its category decision unchanged. tests/types/secret-guard-policy.test-d.ts proves that a category-only policy compiles whatever the rule union holds and that unknown rule or category keys are type errors.\n\nDocs: docs/MUTATION_INTEGRITY.md has a new \"Deciding findings by category\" section. docs/RELEASING.md documents the contract_change declaration and states that a new detector is a declared contract change.\n"
+files[9]{path,scope}:
+  sdk/public-surface.json,project
+  src/core/shared/secret-rules.ts,project
+  src/sdk/index.ts,project
+  src/sdk/mutation-guard.ts,project
+  src/sdk/runtime-primitives.ts,project
+  tests/types/secret-guard-policy.test-d.ts,project
+  tests/unit/sdk/security/secret-guard-credential-references-and-names.spec.ts,project
+  tests/unit/sdk/security/secret-guard-references-and-members.spec.ts,project
+  tests/unit/sdk/security/secret-guard-rule-categories.spec.ts,project
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/security/secret-guard-rule-categories.spec.ts,project,300,"harness:claude-code","2026-11-18T09:37:24.455Z",local_mutation,feat/sdk-stable-consumer-classifications
+  pnpm exec tsc --noEmit -p tsconfig.typetests.json,project,600,"harness:claude-code","2026-11-18T09:37:24.455Z",local_mutation,feat/sdk-stable-consumer-classifications
+docs[2]{path,scope}:
+  docs/MUTATION_INTEGRITY.md,project
+  docs/RELEASING.md,project
 body: ""

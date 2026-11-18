@@ -296,7 +296,7 @@ describe("password placeholders are whole-value references (pm-ycgb5g)", () => {
 
   it("judges element content by its literal for a rule without its own literal minimum", () => {
     const rule: SecretRule = {
-      name: "element-probe", mutationRule: "element_probe", regex: /(?!)/g,
+      name: "element-probe", mutationRule: "element_probe", category: "credential", regex: /(?!)/g,
       structured: { keys: "probe", value: String.raw`("[^"]*")`, element: true },
     };
     expect([...findSecretRuleMatches(rule, `<probe>\${X}${literal}</probe>`)]).toHaveLength(1);

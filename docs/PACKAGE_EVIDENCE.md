@@ -97,6 +97,28 @@ or npm sources. Expected host-owned built-ins remain exempt from unmanaged
 adoption warnings and adoption remediation. Runtime activation health and update freshness are separate
 verdicts; inspect both before claiming that installed packages are current.
 
+A failed check reports a stable `update_error` (also its
+`update_check_reason`) and never the provider's command line, stderr or
+environment
+([pm-5kfzjh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5kfzjh.toon),
+[pm-43p2c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-43p2c3.toon);
+tracker records excluded from npm):
+
+| Source | Lookup ran out of its budget | Any other lookup failure |
+| ------ | ---------------------------- | ------------------------ |
+| npm    | `npm_registry_lookup_timed_out` | `npm_registry_lookup_failed` |
+| GitHub | `github_remote_lookup_timed_out` | `github_remote_lookup_failed` |
+
+A timed-out check also carries `update_check_timeout_ms`, the budget that ran
+out. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
+default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
+(clamped to 1000–120000) for a slow registry, proxy or cold start, for example
+on a Windows runner. The GitHub lookup runs with `GIT_TERMINAL_PROMPT=0`, so a
+remote that asks for credentials fails at once instead of holding the budget.
+A GitHub remote that resolves no reference still reports
+`no_remote_reference_found`, and one checked without an installed commit
+reports `missing_installed_commit`.
+
 Use `pm package doctor --project --detail deep --json` to inspect activation
 alongside update-check status totals. A strict doctor run may fail for partial
 update coverage even when activation succeeds. Empty scopes and applicable

@@ -4,7 +4,7 @@
  * Provides SDK-first pre-write provenance and secret-detection guardrails for
  * CLI, MCP, and package-owned mutation dispatchers.
  */
-import { SECRET_RULES, acceptsStructuredValue, findSecretRuleMatches, structuredKeyShape, type SecretNormalizationKind, type SecretRule, type SecretRuleMatch } from "../core/shared/secret-rules.js";
+import { SECRET_RULES, acceptsStructuredValue, findSecretRuleMatches, structuredKeyShape, type SecretNormalizationKind, type SecretRule, type SecretRuleCategory, type SecretRuleMatch } from "../core/shared/secret-rules.js";
 export type { SecretNormalizationKind } from "../core/shared/secret-rules.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -22,9 +22,24 @@ export interface MutationGuardSettings {
   stale_in_progress_hours: number;
 }
 
+/**
+ * Stable identifier of one secret-guard detector. The union gains a member
+ * whenever a detector is added, so decide findings through
+ * {@link SecretGuardPolicy} instead of an exhaustive record over it.
+ */
+export type SecretGuardRule = SecretGuardFinding["rule"];
+
+/**
+ * Stable family of a detector: `credential` for secrets that grant access,
+ * `network` for private infrastructure addresses and `path` for local paths
+ * that reveal an account. A new detector joins an existing category, and a new
+ * category is a declared SDK contract change (pm-gh1749).
+ */
+export type SecretGuardRuleCategory = SecretRuleCategory;
+
 /** One redacted credential-shaped match. Secret values are never returned. */
 export interface SecretGuardFinding {
-  /** Stable detector identifier suitable for tests and telemetry. */
+  /** Stable detector identifier suitable for tests and telemetry; see {@link SecretGuardRule}. */
   rule: (typeof SECRET_RULES)[number]["mutationRule"];
   /**
    * Object path or argument index containing the match. A property name that a
@@ -572,6 +587,91 @@ export function evaluateMutationGuard(
     override_applied:
       options.settings.secret_guard === "block" && options.force === true,
   };
+}
+
+/**
+ * Category of every detector this SDK ships, keyed by rule (pm-gh1749). Read
+ * it to group or label findings; to decide them, prefer
+ * {@link decideSecretGuardFinding}, which also handles a rule this SDK does
+ * not know yet.
+ */
+export const SECRET_GUARD_RULE_CATEGORIES: Readonly<Record<SecretGuardRule, SecretGuardRuleCategory>> =
+  Object.freeze(
+    Object.fromEntries(SECRET_RULES.map((rule) => [rule.mutationRule, rule.category])) as Record<
+      SecretGuardRule,
+      SecretGuardRuleCategory
+    >,
+  );
+
+/**
+ * Return the category of a detector, or `undefined` for a rule this SDK does
+ * not ship, such as one reported by a newer host.
+ */
+export function secretGuardRuleCategory(rule: string): SecretGuardRuleCategory | undefined {
+  return Object.hasOwn(SECRET_GUARD_RULE_CATEGORIES, rule)
+    ? SECRET_GUARD_RULE_CATEGORIES[rule as SecretGuardRule]
+    : undefined;
+}
+
+/**
+ * One decision for every secret-guard finding, so adding a detector never
+ * breaks a typed consumer (pm-gh1749). The most specific entry wins: a
+ * decision under `rules`, then one under `categories` for the rule's
+ * category, then `default`. A rule added later, or one this SDK does not know,
+ * takes its category's decision or the default. An entry whose value is
+ * `undefined` counts as absent; keys that name no rule or category are
+ * ignored, so a policy written for a newer SDK still applies.
+ */
+export interface SecretGuardPolicy<Decision> {
+  /** Decision for a finding that no category or rule entry decides. */
+  default: Decision;
+  /** Decisions for whole detector families. */
+  categories?: Partial<Record<SecretGuardRuleCategory, Decision>>;
+  /** Decisions for single detectors; they override their category's decision. */
+  rules?: Partial<Record<SecretGuardRule, Decision>>;
+}
+
+function ownPolicyEntry<Decision>(
+  entries: Partial<Record<string, Decision>> | undefined,
+  key: string | undefined,
+): Decision | undefined {
+  return entries !== undefined && key !== undefined && Object.hasOwn(entries, key) ? entries[key] : undefined;
+}
+
+function requirePolicyEntries(policy: object, field: "categories" | "rules"): void {
+  const entries: unknown = (policy as Record<string, unknown>)[field];
+  if (entries !== undefined && (typeof entries !== "object" || entries === null || Array.isArray(entries))) {
+    throw new TypeError(`Secret guard policy ${field} must be an object keyed by ${field === "rules" ? "rule" : "category"}.`);
+  }
+}
+
+/**
+ * Decide one finding under a {@link SecretGuardPolicy}. The finding needs only
+ * its `rule`, so a finding decoded from JSON is accepted as well.
+ *
+ * @throws {TypeError} When the policy is not an object, has no `default`
+ * decision, or holds `categories` or `rules` that are not objects, or when the
+ * finding has no string `rule`.
+ */
+export function decideSecretGuardFinding<Decision>(
+  policy: SecretGuardPolicy<Decision>,
+  finding: { readonly rule: string },
+): Decision {
+  if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {
+    throw new TypeError("Secret guard policy must be an object with a default decision.");
+  }
+  if (policy.default === undefined) {
+    throw new TypeError("Secret guard policy requires a default decision.");
+  }
+  requirePolicyEntries(policy, "categories");
+  requirePolicyEntries(policy, "rules");
+  if (typeof finding !== "object" || finding === null || typeof finding.rule !== "string") {
+    throw new TypeError("Secret guard finding must have a string rule.");
+  }
+  const ruleDecision = ownPolicyEntry(policy.rules, finding.rule);
+  if (ruleDecision !== undefined) return ruleDecision;
+  const categoryDecision = ownPolicyEntry(policy.categories, secretGuardRuleCategory(finding.rule));
+  return categoryDecision === undefined ? policy.default : categoryDecision;
 }
 
 /** Identify native actions that can persist tracker or workspace state. */

@@ -262,6 +262,28 @@ Practical examples:
 
 If a changelog routing rule appears incorrect, fix classifier behavior in the `pm-changelog` package/repo and then consume the updated package here. Do not patch generator internals in this repository.
 
+### Declaring an SDK or CLI contract change
+
+A change that callers can observe — a new or changed public SDK type member, a
+new rule or reason literal, a changed default or output field — needs a
+migration line, not only a Fixed or Added entry
+([pm-gh1657](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1657.toon);
+tracker record excluded from npm). Record it on the item before closing it:
+
+```bash
+pm update <id> --field 'contract_change={"api":"<symbol or surface>","before":"<old behaviour>","after":"<new behaviour>","migrate":"<what a caller changes>"}'
+```
+
+`before`, `after` and `migrate` are all required; `api` names the symbol or
+surface. `pm-changelog` renders every declaration once under
+`### Changed (SDK contract)` as `before → after. Migrate: …`, carries it in
+`--changelog-json`, and `pm changelog audit` reports a declaration with a
+missing part. A change that the SDK surface snapshot classifies as breaking
+also needs its `--acknowledge-breaking` reason in `sdk/public-surface.json`;
+use the same before, after and migrate wording in both. A new secret-guard
+detector is a contract change, because its rule literal widens
+`SecretGuardRule` (see [Mutation Integrity](MUTATION_INTEGRITY.md#deciding-findings-by-category)).
+
 ## Local Release Parity Checklist
 
 1. Confirm the UTC calendar date. Do not use an ordinal diagnostic as a

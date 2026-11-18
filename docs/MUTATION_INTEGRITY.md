@@ -154,6 +154,50 @@ whether a blocking policy was explicitly overridden. `scanMutationSecrets` is
 available separately for package-specific preflight UIs. Cyclic inputs are
 safe; scanner failures fail open with `secret_guard_scan_failed_open`.
 
+### Deciding findings by category
+
+`SecretGuardFinding["rule"]` (exported as `SecretGuardRule`) gains a member
+whenever a detector is added, so an exhaustive
+`Record<SecretGuardRule, Decision>` breaks compilation on a routine upgrade
+([pm-gh1749](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1749.toon);
+tracker record excluded from npm). Decide findings with a policy instead:
+
+```ts
+import {
+  decideSecretGuardFinding,
+  scanMutationSecrets,
+  type SecretGuardPolicy,
+} from "@unbrained/pm-cli/sdk";
+
+const policy: SecretGuardPolicy<boolean> = {
+  default: true, // refuse
+  categories: { network: false, path: false },
+  rules: { private_ssh_target: true },
+};
+const refused = scanMutationSecrets(mutationInput).some((finding) =>
+  decideSecretGuardFinding(policy, finding),
+);
+```
+
+Every detector belongs to one stable category: `credential` (tokens, keys,
+password, high-entropy and credential-key assignments), `network` (private
+IPv4 addresses, private SSH targets and user-at-private-host addresses) or
+`path` (absolute home-directory paths). The most specific entry wins: a `rules`
+entry, then the finding's `categories` entry, then `default`. A detector added
+later joins an existing category and takes that category's decision, or the
+default, without a policy change. A rule the running SDK does not know, such as
+one in a finding decoded from a newer host, takes the default. Entries whose
+value is `undefined` count as absent, and keys that name no rule or category
+are ignored. A policy that is not an object, lacks `default` or holds
+non-object `categories` or `rules`, or a finding without a string `rule`,
+throws a `TypeError`.
+
+`SECRET_GUARD_RULE_CATEGORIES` maps every shipped rule to its category and
+`secretGuardRuleCategory(rule)` returns `undefined` for an unknown one.
+`Record<SecretGuardRuleCategory, Decision>` is the stable exhaustive key: a new
+category is released as a declared SDK contract change, and so is every new
+rule, so the release notes list the new literal under Changed (SDK contract).
+
 Direct SDK persistence does not automatically apply this host preflight.
 Integrations that require the policy must evaluate it before dispatching their
 SDK mutations. CLI and MCP adapters already do this.

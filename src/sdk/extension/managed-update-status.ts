@@ -19,6 +19,7 @@ export async function refreshManagedExtensionUpdates(
     if (offline) return {
       ...entry, last_update_check_at: undefined, last_update_remote_commit: undefined,
       last_update_remote_version: undefined, update_available: null, update_error: undefined,
+      update_check_timeout_ms: undefined,
     };
     const updateStatus = entry.source.kind === "github"
       ? await checkGithubUpdate(entry.source)
@@ -30,6 +31,7 @@ export async function refreshManagedExtensionUpdates(
       last_update_remote_version: "remote_version" in updateStatus ? updateStatus.remote_version : undefined,
       update_available: updateStatus.available,
       update_error: updateStatus.error,
+      update_check_timeout_ms: "timeout_ms" in updateStatus ? updateStatus.timeout_ms : undefined,
     };
   });
   return { ...state, entries: sortManagedEntries(entries) };

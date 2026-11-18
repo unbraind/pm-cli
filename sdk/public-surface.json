@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2157,
+    "covered_symbols": 2163,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2158
+    "required_symbols": 2164
   },
   "breaking_acknowledgements": [
     {
@@ -3459,6 +3459,13 @@
       ],
       "package_version": "2026.11.17",
       "reason": "SecretGuardFinding gains an optional property_name flag for a match in a payload property name, whose path segment is the positional placeholder [key n]; existing fields are unchanged, but a consumer that derives a required mapping from keyof SecretGuardFinding (for example Record<keyof SecretGuardFinding, string>) must add a property_name entry, and a consumer that resolves path by property name must expect the [key n] segment for a flagged name and for every finding under it (pm-x07qz2)"
+    },
+    {
+      "changes": [
+        "signature ./sdk:ManagedExtensionRecord"
+      ],
+      "package_version": "2026.11.18",
+      "reason": "pm-5kfzjh: ManagedExtensionRecord gains the optional update_check_timeout_ms field, set only by a diagnostic update check whose lookup ran out of its budget (update_error npm_registry_lookup_timed_out) and never persisted; existing fields are unchanged, so only a consumer that derives a required mapping from keyof ManagedExtensionRecord must add the entry."
     }
   ],
   "entrypoints": {
@@ -7358,6 +7365,12 @@
           "kind": "interface",
           "name": "DeadlineScheduleRow",
           "signature": "export interface DeadlineScheduleRow { id: string; deadline_id: string; latest_start: string; slack_minutes: number | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "decideSecretGuardFinding",
+          "signature": "<Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision"
         },
         {
           "classification": "supported",
@@ -12829,7 +12842,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ManagedExtensionRecord",
-          "signature": "export interface ManagedExtensionRecord { name: string; directory: string; scope: ExtensionScope; manifest_version: string; manifest_entry: string; capabilities: string[]; contributions?: ExtensionContributionInventory; installed_at: string; updated_at: string; source: ManagedExtensionSource; last_update_check_at?: string; last_update_remote_commit?: string; last_update_remote_version?: string; update_available?: boolean | null; update_error?: string; }"
+          "signature": "export interface ManagedExtensionRecord { name: string; directory: string; scope: ExtensionScope; manifest_version: string; manifest_entry: string; capabilities: string[]; contributions?: ExtensionContributionInventory; installed_at: string; updated_at: string; source: ManagedExtensionSource; last_update_check_at?: string; last_update_remote_commit?: string; last_update_remote_version?: string; update_available?: boolean | null; update_error?: string; update_check_timeout_ms?: number; }"
         },
         {
           "classification": "advanced_export",
@@ -21707,6 +21720,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "SECRET_GUARD_RULE_CATEGORIES",
+          "signature": "Readonly<Record<\"absolute_home_path\" | \"anthropic_api_key\" | \"aws_access_key\" | \"credential_key_assignment\" | \"github_token\" | \"gitlab_token\" | \"google_api_key\" | \"high_entropy_assignment\" | \"jwt_like_token\" | \"npm_auth_token_assignment\" | \"npm_token\" | \"openai_api_key\" | \"password_assignment\" | \"private_ip\" | \"private_key\" | \"private_ssh_target\" | \"sentry_org_token\" | \"sentry_user_token\" | \"slack_token\" | \"sshpass_inline_password\" | \"user_at_private_host\", SecretRuleCategory>>"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
           "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; property_name?: true; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
@@ -21716,6 +21735,30 @@
           "kind": "type",
           "name": "SecretGuardMode",
           "signature": "export type SecretGuardMode = \"off\" | \"advise\" | \"block\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SecretGuardPolicy",
+          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SecretGuardRule",
+          "signature": "export type SecretGuardRule = SecretGuardFinding[\"rule\"];"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "secretGuardRuleCategory",
+          "signature": "(rule: string) => SecretGuardRuleCategory | undefined | calls: (rule: string) => SecretGuardRuleCategory | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SecretGuardRuleCategory",
+          "signature": "export type SecretGuardRuleCategory = SecretRuleCategory;"
         },
         {
           "classification": "supported",
@@ -30755,6 +30798,12 @@
         },
         {
           "classification": "supported",
+          "kind": "function",
+          "name": "decideSecretGuardFinding",
+          "signature": "<Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision"
+        },
+        {
+          "classification": "supported",
           "kind": "value",
           "name": "DEFECT_ESCAPE_CLASSES",
           "signature": "readonly [\"production_defect\", \"nightly_regression\", \"scanner_finding\", \"review_caught_late\"]"
@@ -31883,6 +31932,12 @@
         },
         {
           "classification": "supported",
+          "kind": "value",
+          "name": "SECRET_GUARD_RULE_CATEGORIES",
+          "signature": "Readonly<Record<\"absolute_home_path\" | \"anthropic_api_key\" | \"aws_access_key\" | \"credential_key_assignment\" | \"github_token\" | \"gitlab_token\" | \"google_api_key\" | \"high_entropy_assignment\" | \"jwt_like_token\" | \"npm_auth_token_assignment\" | \"npm_token\" | \"openai_api_key\" | \"password_assignment\" | \"private_ip\" | \"private_key\" | \"private_ssh_target\" | \"sentry_org_token\" | \"sentry_user_token\" | \"slack_token\" | \"sshpass_inline_password\" | \"user_at_private_host\", SecretRuleCategory>>"
+        },
+        {
+          "classification": "supported",
           "kind": "interface",
           "name": "SecretGuardFinding",
           "signature": "export interface SecretGuardFinding { rule: (typeof SECRET_RULES)[number][\"mutationRule\"]; path: string; property_name?: true; normalizations?: SecretNormalizationKind[]; normalization_incomplete?: true; }"
@@ -31892,6 +31947,30 @@
           "kind": "type",
           "name": "SecretGuardMode",
           "signature": "export type SecretGuardMode = \"off\" | \"advise\" | \"block\";"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "SecretGuardPolicy",
+          "signature": "export interface SecretGuardPolicy<Decision> { default: Decision; categories?: Partial<Record<SecretGuardRuleCategory, Decision>>; rules?: Partial<Record<SecretGuardRule, Decision>>; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SecretGuardRule",
+          "signature": "export type SecretGuardRule = SecretGuardFinding[\"rule\"];"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
+          "name": "secretGuardRuleCategory",
+          "signature": "(rule: string) => SecretGuardRuleCategory | undefined | calls: (rule: string) => SecretGuardRuleCategory | undefined"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SecretGuardRuleCategory",
+          "signature": "export type SecretGuardRuleCategory = SecretRuleCategory;"
         },
         {
           "classification": "supported",
@@ -41207,10 +41286,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1349,
-      "checked_values": 400,
+      "checked_functions": 1351,
+      "checked_values": 401,
       "exempt_test_seams": 15,
-      "referenced_types": 1053
+      "referenced_types": 1056
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -41231,10 +41310,10 @@
       "referenced_types": 103
     },
     "./sdk/governance": {
-      "checked_functions": 115,
-      "checked_values": 27,
+      "checked_functions": 117,
+      "checked_values": 28,
       "exempt_test_seams": 4,
-      "referenced_types": 119
+      "referenced_types": 122
     },
     "./sdk/graph": {
       "checked_functions": 76,

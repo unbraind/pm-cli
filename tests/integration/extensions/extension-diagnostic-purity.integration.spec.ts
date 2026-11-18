@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runExtension } from "../../../src/sdk/extension.js";
 import { runAction } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
@@ -24,10 +24,12 @@ describe("managed extension diagnostic purity", () => {
       let requests = 0;
       let available = true;
       let registryFailure = false;
+      let registryDelayMs = 0;
       const registry = createServer((_request, response) => {
         requests += 1;
         response.setHeader("content-type", "application/json");
         if (registryFailure) { response.writeHead(404); response.end('{"error":"fixture_unavailable"}'); return; }
+        if (registryDelayMs > 0) { setTimeout(() => { response.writeHead(404); response.end('{"error":"fixture_slow"}'); }, registryDelayMs); return; }
         response.end(JSON.stringify({ name: "freshness-registry-package", "dist-tags": { latest: available ? "2.0.0" : "1.0.0" }, versions: { "1.0.0": { name: "freshness-registry-package", version: "1.0.0" }, "2.0.0": { name: "freshness-registry-package", version: "2.0.0" } } }));
       });
       await new Promise<void>((resolve) => registry.listen(0, "127.0.0.1", resolve));
@@ -35,6 +37,9 @@ describe("managed extension diagnostic purity", () => {
       if (address === null || typeof address === "string") throw new Error("Registry did not bind a TCP port");
       const previousRegistry = process.env.npm_config_registry;
       process.env.npm_config_registry = `http://127.0.0.1:${address.port}`;
+      // pm-5kfzjh: a cold npm start on a Windows runner can take longer than
+      // the 10 s default, so registry-backed checks get a generous budget here.
+      vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "60000");
       try {
         for (const options of [{ explore: true }, { doctor: true }, { manage: true, offline: true }]) {
           await runExtension(undefined, { ...options, project: true }, { path: context.pmPath });
@@ -52,15 +57,25 @@ describe("managed extension diagnostic purity", () => {
         const offline = await runExtension(undefined, { manage: true, project: true, offline: true }, { path: context.pmPath });
         expect(offline.details).toMatchObject({ extensions: [{ update_check_status: "not_checked", update_check_reason: "offline_requested", update_available: null }] });
         registryFailure = true;
-        expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_available: null, update_error: "npm_registry_lookup_failed" }] });
+        const failedLookup = (await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details as { extensions: Record<string, unknown>[] };
+        expect(failedLookup).toMatchObject({ extensions: [{ update_check_status: "failed", update_available: null, update_error: "npm_registry_lookup_failed" }] });
+        expect(failedLookup.extensions[0]?.update_check_timeout_ms).toBeUndefined();
+        // A registry slower than the smallest budget is reported as a timeout
+        // that names the budget, not as an unavailable registry.
+        registryFailure = false;
+        registryDelayMs = 3000;
+        vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
+        expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_check_reason: "npm_registry_lookup_timed_out", update_available: null, update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 1000 }] });
         expect(requests).toBeGreaterThan(0);
         expect(await readFile(managedPath, "utf8")).toBe(before);
         expect((await stat(managedPath)).mtimeMs).toBe(beforeStat.mtimeMs);
       } finally {
+        vi.unstubAllEnvs();
         if (previousRegistry === undefined) delete process.env.npm_config_registry;
         else process.env.npm_config_registry = previousRegistry;
+        registry.closeAllConnections();
         await new Promise<void>((resolve, reject) => registry.close((error) => error ? reject(error) : resolve()));
       }
     });
-  });
+  }, 120_000);
 });

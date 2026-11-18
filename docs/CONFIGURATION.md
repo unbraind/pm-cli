@@ -245,6 +245,7 @@ underscore aliases remain accepted for compatibility.
 | `PM_OLLAMA_MODEL`                 | choose default Ollama embedding model                                                                                    |
 | `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults                                                                                  |
 | `PM_CONTEXT_USAGE_DISABLED`       | set to `1` to disable the derived context/next usage-feedback ledger with zero filesystem reads or writes                |
+| `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` | budget of each managed-package update lookup (`npm view` or `git ls-remote`) in integer milliseconds; default `10000`, clamped to `1000`–`120000`. A lookup that runs out reports `npm_registry_lookup_timed_out` or `github_remote_lookup_timed_out` with `update_check_timeout_ms` |
 
 For command-level tracker targeting, prefer `--pm-path <tracker-root>`. The old
 `--path` flag is still accepted, but it means the pm tracker storage directory
