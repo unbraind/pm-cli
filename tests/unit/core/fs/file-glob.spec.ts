@@ -348,6 +348,19 @@ describe("file glob semantics", () => {
       expect(await expanded("{1..1000}.ts", root)).toEqual(["1.ts"]);
       expect(await expanded("{1..1000}".repeat(20), root)).toEqual([]);
       expect(await expanded("{z..a}.ts", root)).toEqual(["a.ts"]);
+      // Nested repeats followed by "/" copy their options at every level; the
+      // node budget refuses that growth before it can exhaust memory.
+      let nested = "a";
+      for (let level = 0; level < 32; level += 1) nested = `*(${nested})/`;
+      const started = performance.now();
+      expect(await expanded(`${nested}x`, root)).toEqual([]);
+      expect(await expanded(`${"{1..1000}".repeat(80)}`, root)).toEqual([]);
+      expect(performance.now() - started).toBeLessThan(5_000);
+      // Within the budget, nested repeats still match: one or more "a/" then "x".
+      await mkdir(path.join(root, "a", "a"), { recursive: true });
+      await writeFile(path.join(root, "a", "a", "x"), "x");
+      expect(await expanded("+(+(a/))x", root)).toEqual(["a/a/x"]);
+      expect(await expanded("+(+(a)/)x", root)).toEqual(["a/a/x"]);
       // A "[:" without a closing ":]" is an ordinary member, never a POSIX class.
       expect(await expanded("[[:ab].ts", root)).toEqual(["a.ts"]);
       expect(await expanded("[[:a:x].ts", root)).toEqual(["a.ts"]);

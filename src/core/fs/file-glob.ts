@@ -266,11 +266,29 @@ interface Token {
   next: number;
 }
 
+/**
+ * Nodes one pattern may build, counting every copy that settling and slash
+ * distribution make: nested repeats copy their options, so without this a
+ * short pattern could grow exponentially before the NFA bound applies.
+ */
+const MAX_AST_NODES = 200_000;
+
+interface Budget {
+  remaining: number;
+}
+
+/** Spend `count` nodes, refusing the pattern once the budget is exhausted. */
+function spend(budget: Budget, count: number): void {
+  budget.remaining -= count;
+  if (budget.remaining < 0) throw new GlobTooComplex();
+}
+
 /** Turn every pending globstar into the single star it is when text other than "/" follows its construct. */
-function settle(nodes: Node[]): Node[] {
+function settle(nodes: Node[], budget: Budget): Node[] {
+  spend(budget, nodes.length);
   return nodes.map((node): Node => {
     if (node.kind === "globstar" && node.pending) return { kind: "star" };
-    if (node.kind === "alt" || node.kind === "repeat") return { ...node, options: node.options.map(settle) };
+    if (node.kind === "alt" || node.kind === "repeat") return { ...node, options: node.options.map((option) => settle(option, budget)) };
     return node;
   });
 }
@@ -281,13 +299,14 @@ function settle(nodes: Node[]): Node[] {
  * plus `**\/x`. A pending globstar becomes a `**\/` globstar; a nested
  * alternation at the end receives the "/" in each of its own alternatives.
  */
-function distributeSlash(nodes: Node[]): Node[] {
+function distributeSlash(nodes: Node[], budget: Budget): Node[] {
+  spend(budget, 1);
   const last = nodes.at(-1);
-  const head = settle(nodes.slice(0, -1));
+  const head = settle(nodes.slice(0, -1), budget);
   if (last?.kind === "globstar" && last.pending) return [...head, { kind: "globstar", slash: true }];
-  if (last?.kind === "alt") return [...head, { kind: "alt", options: last.options.map(distributeSlash) }];
-  if (last?.kind === "repeat") return [...head, ...repeatWithSlash(last)];
-  return [...settle(nodes), { kind: "char", value: SLASH }];
+  if (last?.kind === "alt") return [...head, { kind: "alt", options: last.options.map((option) => distributeSlash(option, budget)) }];
+  if (last?.kind === "repeat") return [...head, ...repeatWithSlash(last, budget)];
+  return [...settle(nodes, budget), { kind: "char", value: SLASH }];
 }
 
 /**
@@ -296,9 +315,11 @@ function distributeSlash(nodes: Node[]): Node[] {
  * `?(X)/` is "/" or `X/`; `+(X)/` is zero or more `X` then `X/`; `*(X)/` is
  * "/" or `+(X)/`.
  */
-function repeatWithSlash(node: Extract<Node, { kind: "repeat" }>): Node[] {
-  const last: Node = { kind: "alt", options: node.options.map(distributeSlash) };
-  const repeated: Node[] = node.many ? [{ kind: "repeat", optional: true, many: true, options: node.options.map(settle) }, last] : [last];
+function repeatWithSlash(node: Extract<Node, { kind: "repeat" }>, budget: Budget): Node[] {
+  const last: Node = { kind: "alt", options: node.options.map((option) => distributeSlash(option, budget)) };
+  const repeated: Node[] = node.many
+    ? [{ kind: "repeat", optional: true, many: true, options: node.options.map((option) => settle(option, budget)) }, last]
+    : [last];
   return node.optional ? [{ kind: "alt", options: [[{ kind: "char", value: SLASH }], repeated] }] : repeated;
 }
 
@@ -307,6 +328,7 @@ class Parser {
   private readonly chars: string[];
   private readonly closers: Map<number, number>;
   private readonly brackets: Map<number, number>;
+  private readonly budget: Budget = { remaining: MAX_AST_NODES };
 
   constructor(chars: string[], closers: Map<number, number>, brackets: Map<number, number>) {
     this.chars = chars;
@@ -366,9 +388,9 @@ class Parser {
     const parsed = char === "{" ? this.brace(index, closer, endsSequence && atEnd) : this.extglob(char, index, closer, endsSequence && atEnd);
     const [node] = parsed;
     if (following === "/" && parsed.length === 1 && (node!.kind === "alt" || node!.kind === "repeat")) {
-      return { nodes: distributeSlash(parsed), next: closer + 2 };
+      return { nodes: distributeSlash(parsed, this.budget), next: closer + 2 };
     }
-    return { nodes: endsSequence ? parsed : settle(parsed), next: closer + 1 };
+    return { nodes: endsSequence ? parsed : settle(parsed, this.budget), next: closer + 1 };
   }
 
   /** Parse an extglob whose operator is at `index` and whose ")" is at `closer`. */
@@ -384,9 +406,12 @@ class Parser {
     const options = this.alternatives(index + 1, closer, ",", atEnd);
     if (options.length > 1) return [{ kind: "alt", options }];
     const range = braceRange(this.chars.slice(index + 1, closer).join(""));
-    if (range !== undefined) return [{ kind: "alt", options: range.map(literalNodes) }];
+    if (range !== undefined) {
+      spend(this.budget, range.reduce((total, value) => total + value.length, 0));
+      return [{ kind: "alt", options: range.map(literalNodes) }];
+    }
     // Literal braces: the inner text is followed by "}", so its globstars are single stars.
-    return [...literalNodes("{"), ...settle(options[0]!), ...literalNodes("}")];
+    return [...literalNodes("{"), ...settle(options[0]!, this.budget), ...literalNodes("}")];
   }
 
   /**
