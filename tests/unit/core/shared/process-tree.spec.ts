@@ -418,6 +418,33 @@ describe("killProcessTree", () => {
     }
   });
 
+  it("lets an intermediate's fresh read qualify it after a failed read skipped its child", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        return true;
+      });
+      // With procfs present, an unreadable stat is a failed check, not "no procfs".
+      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat" || file === "/proc/self/status");
+      let intermediateReads = 0;
+      readFileSyncMock.mockImplementation((file: string) => {
+        if (file === "/proc/self/status") return `NSpid:\t${process.pid}\n`;
+        if (file === "/proc/4400/stat") return "4400 (helper) S 4300 0";
+        intermediateReads += 1;
+        // The first read, while checking the child, fails; the fresh one succeeds.
+        if (intermediateReads === 1) throw Object.assign(new Error("EACCES"), { code: "EACCES" });
+        return "4300 (git) S 4242 0";
+      });
+      answer("4300 4242\n4400 4300\n");
+      await killProcessTree(4242, root());
+      // The child stayed unverified and was skipped; the intermediate was killed.
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4300, "SIGKILL"]]);
+    } finally {
+      restore();
+    }
+  });
+
   it("discards the snapshot when the root exited while ps ran, so a reused pid is never walked", async () => {
     const restore = withPlatform("linux");
     try {

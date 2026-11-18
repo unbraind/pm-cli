@@ -648,12 +648,16 @@ export interface SecretGuardPolicy<Decision> {
   rules?: { [Rule in SecretGuardRule]?: Decision | undefined } & { readonly [rule: string]: Decision | undefined };
 }
 
+/** The decisions an optional `rules` map holds, without the `undefined` of an absent entry. */
+type PolicyEntryDecisions<Entries> = Entries extends object ? Exclude<Entries[keyof Entries], undefined> : never;
+
 /**
- * The decisions an optional `categories` or `rules` map holds under the keys
- * the helper reads, without the `undefined` of an absent entry.
+ * The decisions a `categories` map holds under each stable category, which is
+ * all the helper reads. Each category is looked up as a key, so an index
+ * signature that covers one counts, while a key naming no category does not.
  */
-type PolicyEntryDecisions<Entries, Read extends PropertyKey = PropertyKey> = Entries extends object
-  ? Exclude<Entries[Extract<keyof Entries, Read>], undefined>
+type PolicyCategoryDecisions<Entries> = Entries extends object
+  ? Exclude<{ [Category in SecretGuardRuleCategory]: Category extends keyof Entries ? Entries[Category] : never }[SecretGuardRuleCategory], undefined>
   : never;
 
 /** A policy's own `categories` or `rules` map type, or `never` when the policy type has none. */
@@ -671,7 +675,7 @@ type PolicyEntries<Policy, Field extends "categories" | "rules"> = Field extends
 export type SecretGuardPolicyDecision<Policy> = Policy extends unknown
   ? // Distributed per member, so a key only one member declares still counts.
     | (Policy extends { readonly default: infer Default } ? Default : never)
-    | PolicyEntryDecisions<PolicyEntries<Policy, "categories">, SecretGuardRuleCategory>
+    | PolicyCategoryDecisions<PolicyEntries<Policy, "categories">>
     | PolicyEntryDecisions<PolicyEntries<Policy, "rules">>
   : never;
 
@@ -713,6 +717,9 @@ export function decideSecretGuardFinding<Decision>(
  * inferred, so the result is every decision it can hold
  * ({@link SecretGuardPolicyDecision}), even when they mix kinds, as for an
  * inline policy, one declared with `satisfies`, or a union of policy types.
+ * A wrapper generic over the policy type itself passes it explicitly
+ * (`decideSecretGuardFinding<P>(policy, finding)`) to get
+ * `SecretGuardPolicyDecision<P>`.
  *
  * @throws {TypeError} As for the overload above.
  */

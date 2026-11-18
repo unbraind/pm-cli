@@ -269,10 +269,10 @@ new rule or reason literal, a changed default or output field — needs a
 migration line, not only a Fixed or Added entry
 ([pm-gh1657](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1657.toon);
 tracker record excluded from npm). The `contract_change` field is registered
-by the `pm-changelog` package, so a fresh clone installs it first
-(`pnpm changelog:pm:install`, which runs
-`pm package install npm:pm-changelog --project`). Record it on the item before
-closing it:
+by the `pm-changelog` package, so a fresh clone builds the CLI and installs
+the package first (`pnpm build`, then `pnpm changelog:pm:install`, which runs
+`node dist/cli.js package install npm:pm-changelog --project`). Record it on
+the item before closing it:
 
 ```bash
 pm update <id> --field 'contract_change={"api":"<symbol or surface>","before":"<old behaviour>","after":"<new behaviour>","migrate":"<what a caller changes>"}'

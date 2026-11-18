@@ -114,6 +114,26 @@ function decideWith<D>(policy: SecretGuardPolicy<D>): Exclude<D, undefined> {
 }
 const wrapped: boolean = decideWith<boolean | undefined>({ default: true });
 void wrapped;
+// A wrapper generic over the policy type passes it explicitly and keeps every decision.
+function decideAny<P extends SecretGuardPolicy<unknown>>(policy: P): SecretGuardPolicyDecision<P> {
+  return decideSecretGuardFinding<P>(policy, finding);
+}
+const wrappedMixed: true | "allow" = decideAny(mixedKinds);
+void wrappedMixed;
+// A categories index signature that covers a category counts, as the helper reads it.
+declare const templated: { default: true; categories: { [key: `net${string}`]: "allow" } & { path: "review" } };
+const fromTemplated: true | "allow" | "review" = decideSecretGuardFinding(templated, finding);
+// @ts-expect-error the decision under the index signature is not dropped
+const templatedNarrow: true | "review" = decideSecretGuardFinding(templated, finding);
+void fromTemplated;
+void templatedNarrow;
+// A string-indexed categories map covers every category, so its decisions count.
+declare const dictionary: { default: string; categories: Record<string, null> };
+const fromDictionary: string | null = decideSecretGuardFinding(dictionary, finding);
+// @ts-expect-error the null under the string index is not dropped
+const dictionaryNotNull: string = decideSecretGuardFinding(dictionary, finding);
+void fromDictionary;
+void dictionaryNotNull;
 // A categories key that names no stable category is ignored, in the result type too.
 const ignoredCategory: boolean = decideSecretGuardFinding({ default: true, categories: { network: false, identity: 3 } }, finding);
 void ignoredCategory;

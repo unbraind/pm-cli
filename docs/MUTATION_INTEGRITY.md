@@ -204,7 +204,9 @@ type can hold (`SecretGuardPolicyDecision<typeof policy>`): the union of the
 named decisions for an inline policy or one declared with `satisfies`, even
 when they mix kinds such as `true | "allow"` or a string default with `null`
 overrides. A union of policy types yields every member's decisions, and a
-`categories` key that names no category adds none; a
+`categories` key that names no category adds none. A wrapper generic over the
+policy type itself calls `decideSecretGuardFinding<P>(policy, finding)` to
+return `SecretGuardPolicyDecision<P>`; a
 policy that is not an object, has no own `default` or has `default:
 undefined`, holds non-object `categories` or `rules`, or a finding without a
 string `rule`, throws a `TypeError`.
