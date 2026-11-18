@@ -201,13 +201,15 @@ function killProcess(pid: number): void {
 
 /**
  * Run a teardown helper and collect its stdout. It settles on the helper's
- * exit or after a hard deadline, never waiting for pipes, and resolves to
- * `undefined` when the helper cannot start, fails to start or stalls.
+ * exit or after a hard deadline of `timeoutMs`, never waiting for pipes, and
+ * resolves to `undefined` when the helper cannot start, fails to start or
+ * stalls. A `null` deadline waits for the helper to exit, however long.
  */
 export function runTeardownHelper(
   file: string,
   args: string[],
   env?: NodeJS.ProcessEnv,
+  timeoutMs: number | null = TEARDOWN_HELPER_TIMEOUT_MS,
 ): Promise<{ code: number | null; stdout: string } | undefined> {
   return new Promise((resolve) => {
     let settled = false;
@@ -219,13 +221,13 @@ export function runTeardownHelper(
       resolve(undefined);
       return;
     }
-    const deadline = setTimeout(() => {
+    const deadline = timeoutMs === null ? undefined : setTimeout(() => {
       settle(undefined);
       helper.stdout?.destroy();
       helper.kill("SIGKILL");
       // A helper that cannot die (a blocked kernel call) must not keep the host running.
       helper.unref();
-    }, TEARDOWN_HELPER_TIMEOUT_MS);
+    }, timeoutMs);
     function settle(result: { code: number | null; stdout: string } | undefined): void {
       if (settled) return;
       settled = true;
@@ -267,17 +269,21 @@ export function runTeardownHelper(
  * without procfs, is what PID-based signalling cannot rule out. Either way the tree is walked from the live root,
  * so a descendant whose launcher already exited is not reached. Without
  * `root`, the root is killed by PID and is assumed to stay alive. A process
- * that is already gone is not an error.
+ * that is already gone is not an error. `options.taskkillTimeoutMs` bounds
+ * `taskkill` (by default the 2-second helper deadline an update lookup's
+ * teardown needs); `null` waits for it to finish, as linked-test cleanup does,
+ * so a slow but working `taskkill` still stops the whole tree.
  */
 export async function killProcessTree(
   pid: number,
   root: ProcessTreeRoot = { kill: () => killProcess(pid), alive: () => true },
+  options: { readonly taskkillTimeoutMs?: number | null } = {},
 ): Promise<void> {
   if (!Number.isInteger(pid) || pid <= 0) {
     return;
   }
   if (process.platform === "win32") {
-    await killWindowsTree(pid, root);
+    await killWindowsTree(pid, root, options.taskkillTimeoutMs === undefined ? TEARDOWN_HELPER_TIMEOUT_MS : options.taskkillTimeoutMs);
     return;
   }
   try {
@@ -291,7 +297,7 @@ export async function killProcessTree(
 }
 
 /** Run the System32 `taskkill /T /F`, killing the root itself when that cannot run or fails. */
-async function killWindowsTree(pid: number, root: ProcessTreeRoot): Promise<void> {
+async function killWindowsTree(pid: number, root: ProcessTreeRoot, taskkillTimeoutMs: number | null): Promise<void> {
   const systemRoot = resolveWindowsSystemRoot();
   if (systemRoot === undefined) {
     // No fully qualified system directory: never guess a taskkill path.
@@ -299,7 +305,7 @@ async function killWindowsTree(pid: number, root: ProcessTreeRoot): Promise<void
     return;
   }
   const taskkill = path.win32.join(systemRoot, "System32", "taskkill.exe");
-  const result = await runTeardownHelper(taskkill, ["/pid", String(pid), "/T", "/F"]);
+  const result = await runTeardownHelper(taskkill, ["/pid", String(pid), "/T", "/F"], undefined, taskkillTimeoutMs);
   // A root that exited while taskkill ran may have a reused PID by now.
   if (result?.code !== 0 && root.alive()) root.kill();
 }

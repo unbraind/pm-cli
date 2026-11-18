@@ -20,6 +20,9 @@ import { countFailureCategories, createLinkedTestSetupGate, isLinkedTestSetup, o
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
 import { killProcessTree } from "../../core/shared/process-tree.js";
+
+/** Linked-test cleanup lets a slow `taskkill` finish rather than abandoning the tree. */
+const LINKED_TEST_TREE_KILL = { taskkillTimeoutMs: null } as const;
 import {
   cp,
   mkdir,
@@ -1264,8 +1267,10 @@ function createLinkedTestTerminationRequester(
       }
       return;
     }
+    // Linked-test cleanup waits for taskkill to finish, as it always did:
+    // only an update lookup's teardown needs the short helper deadline.
     if (process.platform === "win32") {
-      await killProcessTree(pid, childRoot);
+      await killProcessTree(pid, childRoot, LINKED_TEST_TREE_KILL);
       return;
     }
     try {
@@ -1280,7 +1285,7 @@ function createLinkedTestTerminationRequester(
     }
     /* c8 ignore next 3 -- exercised only when timeout escalation triggers force-kill fallback. */
     timers.forceKillTimer = setTimeout(() => {
-      void killProcessTree(pid, childRoot);
+      void killProcessTree(pid, childRoot, LINKED_TEST_TREE_KILL);
     }, linkedTestTimeoutForceKillDelayMs());
     timers.forceKillTimer.unref?.();
   };

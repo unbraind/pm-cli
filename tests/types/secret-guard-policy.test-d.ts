@@ -108,6 +108,15 @@ const fromEither: boolean | "review" = decideSecretGuardFinding(eitherPolicy, fi
 const eitherNotBoolean: boolean = decideSecretGuardFinding(eitherPolicy, finding);
 void fromEither;
 void eitherNotBoolean;
+// A generic wrapper keeps the defined result type of its SecretGuardPolicy<D>.
+function decideWith<D>(policy: SecretGuardPolicy<D>): Exclude<D, undefined> {
+  return decideSecretGuardFinding(policy, finding);
+}
+const wrapped: boolean = decideWith<boolean | undefined>({ default: true });
+void wrapped;
+// A categories key that names no stable category is ignored, in the result type too.
+const ignoredCategory: boolean = decideSecretGuardFinding({ default: true, categories: { network: false, identity: 3 } }, finding);
+void ignoredCategory;
 // The call site still validates the policy shape.
 // @ts-expect-error the default decision is required at the call site
 decideSecretGuardFinding({ categories: { network: false } }, finding);

@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: diagnostics,extensions,github,stable-codes,update-check
 created_at: "2026-11-18T09:38:17.161Z"
-updated_at: "2026-11-18T16:09:23.983Z"
+updated_at: "2026-11-18T20:06:50.903Z"
 closed_at: "2026-11-18T11:26:00.887Z"
 completed_at: "2026-11-18T11:26:00.887Z"
 author: "harness:claude-code"
@@ -24,6 +24,8 @@ dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5kfzjh,discovered_from,"2026-11-18T09:38:17.161Z","harness:claude-code","cli:create:dep",detected
 comments[1]{created_at,author,text}:
   "2026-11-18T10:27:28.224Z","harness:claude-code","Implemented on branch feat/sdk-stable-consumer-classifications, together with pm-5kfzjh. checkGithubUpdate's default runner no longer goes through runGitCommand. runGitUpdateQuery runs git ls-remote under the shared runBoundedUpdateQuery deadline, with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never. It reports github_remote_lookup_timed_out with update_check_timeout_ms when the deadline passes, and github_remote_lookup_failed for any other failure, never git's command line, the repository URL or stderr. An injected runner now has the npm runner's signature (args, timeoutMs). no_remote_reference_found and missing_installed_commit are unchanged. Tests are in tests/unit/extensions/npm-update-check-timeout.spec.ts (the GitHub describe block) and the existing annotated-tag case in extension-command.spec.ts.\n"
+notes[1]{created_at,author,text}:
+  "2026-11-18T20:06:50.903Z","harness:claude-code","Codex review of febd36714, P2: the shared killProcessTree bounded the Windows taskkill at the 2 s helper deadline for linked tests too. On main, linked-test cleanup waited for taskkill to finish, so a slow but working taskkill could now be abandoned and leave test workers running. killProcessTree takes options.taskkillTimeoutMs (default 2 s for update lookups; null waits), runTeardownHelper accepts a null deadline, and sdk/test/execution.ts passes null in both of its tree kills. Unit tests cover a caller deadline, a null deadline that waits 60 s of fake time until the helper closes, and the default bound versus the patient Windows path. process-tree.ts stays at 100% coverage."
 files[5]{path,scope}:
   src/sdk/extension/managed-update-status.ts,project
   src/sdk/extension/update-check.ts,project

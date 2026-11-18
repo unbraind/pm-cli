@@ -648,8 +648,13 @@ export interface SecretGuardPolicy<Decision> {
   rules?: { [Rule in SecretGuardRule]?: Decision | undefined } & { readonly [rule: string]: Decision | undefined };
 }
 
-/** The decisions an optional `categories` or `rules` map holds, without the `undefined` of an absent entry. */
-type PolicyEntryDecisions<Entries> = Entries extends object ? Exclude<Entries[keyof Entries], undefined> : never;
+/**
+ * The decisions an optional `categories` or `rules` map holds under the keys
+ * the helper reads, without the `undefined` of an absent entry.
+ */
+type PolicyEntryDecisions<Entries, Read extends PropertyKey = PropertyKey> = Entries extends object
+  ? Exclude<Entries[Extract<keyof Entries, Read>], undefined>
+  : never;
 
 /** A policy's own `categories` or `rules` map type, or `never` when the policy type has none. */
 type PolicyEntries<Policy, Field extends "categories" | "rules"> = Field extends keyof Policy ? NonNullable<Policy[Field]> : never;
@@ -659,12 +664,14 @@ type PolicyEntries<Policy, Field extends "categories" | "rules"> = Field extends
  * rule entry. For a `SecretGuardPolicy<D>` this is `D` without `undefined`;
  * for a policy declared with `satisfies`, or written inline, it is the union of
  * the decisions it names, even when they mix kinds such as `true | "allow"`.
- * A union of policy types yields every member's decisions.
+ * A union of policy types yields every member's decisions. A `categories` key
+ * that names no stable category is ignored, as the helper ignores it; every
+ * `rules` key counts, since any rule name may be decided.
  */
 export type SecretGuardPolicyDecision<Policy> = Policy extends unknown
   ? // Distributed per member, so a key only one member declares still counts.
     | (Policy extends { readonly default: infer Default } ? Default : never)
-    | PolicyEntryDecisions<PolicyEntries<Policy, "categories">>
+    | PolicyEntryDecisions<PolicyEntries<Policy, "categories">, SecretGuardRuleCategory>
     | PolicyEntryDecisions<PolicyEntries<Policy, "rules">>
   : never;
 
@@ -690,28 +697,44 @@ function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules
  * policy's own `default`, `categories` and `rules` are read, never inherited
  * ones.
  *
- * The policy's own type is inferred, so the result is every decision it can
- * hold ({@link SecretGuardPolicyDecision}), even when they mix kinds.
+ * A policy typed as `SecretGuardPolicy<D>`, including one in a generic
+ * wrapper, returns `D` without `undefined`.
  *
  * @throws {TypeError} When the policy is not an object, has no `default`
  * decision, or holds `categories` or `rules` that are not objects, or when the
  * finding has no string `rule`.
  */
+export function decideSecretGuardFinding<Decision>(
+  policy: SecretGuardPolicy<Decision>,
+  finding: { readonly rule: string },
+): Exclude<Decision, undefined>;
+/**
+ * Decide one finding under any other policy shape: the policy's own type is
+ * inferred, so the result is every decision it can hold
+ * ({@link SecretGuardPolicyDecision}), even when they mix kinds, as for an
+ * inline policy, one declared with `satisfies`, or a union of policy types.
+ *
+ * @throws {TypeError} As for the overload above.
+ */
 export function decideSecretGuardFinding<Policy extends SecretGuardPolicy<unknown>>(
   policy: Policy,
   finding: { readonly rule: string },
-): SecretGuardPolicyDecision<Policy> {
-  type Decision = SecretGuardPolicyDecision<Policy>;
+): SecretGuardPolicyDecision<Policy>;
+/** Implementation shared by both overloads: rule entry, then category entry, then default. */
+export function decideSecretGuardFinding(
+  policy: SecretGuardPolicy<unknown>,
+  finding: { readonly rule: string },
+): unknown {
   if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {
     throw new TypeError("Secret guard policy must be an object with a default decision.");
   }
   // Each field is read once, so the value validated is the value used.
-  const fallback = (Object.hasOwn(policy, "default") ? policy.default : undefined) as Decision | undefined;
+  const fallback: unknown = Object.hasOwn(policy, "default") ? policy.default : undefined;
   if (fallback === undefined) {
     throw new TypeError("Secret guard policy requires a default decision.");
   }
-  const categories = ownPolicyEntries<Decision>(policy, "categories");
-  const rules = ownPolicyEntries<Decision>(policy, "rules");
+  const categories = ownPolicyEntries<unknown>(policy, "categories");
+  const rules = ownPolicyEntries<unknown>(policy, "rules");
   const rule: unknown = typeof finding === "object" && finding !== null ? finding.rule : undefined;
   if (typeof rule !== "string") {
     throw new TypeError("Secret guard finding must have a string rule.");

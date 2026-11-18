@@ -197,12 +197,14 @@ value is `undefined` count as absent; a `rules` entry may name a rule this SDK
 does not ship yet, and other keys that name no rule or category are ignored.
 Only the policy's own `default`, `categories` and `rules` are read, never
 inherited ones. The default must be defined (`null` is a valid decision). The
-helper infers the policy's own type and returns every decision it can hold
-(`SecretGuardPolicyDecision<typeof policy>`): `D` for a
-`SecretGuardPolicy<D>`, and the union of the named decisions for an inline
-policy or one declared with `satisfies`, even when they mix kinds such as
-`true | "allow"` or a string default with `null` overrides (a union of policy
-types yields every member's decisions); a
+helper returns `D` without `undefined` for a policy typed as
+`SecretGuardPolicy<D>`, including inside a generic wrapper. For any other
+policy shape it infers the policy's own type and returns every decision that
+type can hold (`SecretGuardPolicyDecision<typeof policy>`): the union of the
+named decisions for an inline policy or one declared with `satisfies`, even
+when they mix kinds such as `true | "allow"` or a string default with `null`
+overrides. A union of policy types yields every member's decisions, and a
+`categories` key that names no category adds none; a
 policy that is not an object, has no own `default` or has `default:
 undefined`, holds non-object `categories` or `rules`, or a finding without a
 string `rule`, throws a `TypeError`.

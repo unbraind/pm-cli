@@ -276,6 +276,25 @@ describe("runTeardownHelper", () => {
     // A late close changes nothing.
     helpers[0]?.emit("close", 0);
   });
+
+  it("honours a caller's deadline, and waits for the helper's exit with a null one", async () => {
+    vi.useFakeTimers();
+    provide(() => undefined);
+    const bounded = runTeardownHelper("ps", [], undefined, 500);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(await bounded).toBeUndefined();
+    provide(() => undefined);
+    let unboundedResult: unknown = "pending";
+    void runTeardownHelper("taskkill", [], undefined, null).then((result) => {
+      unboundedResult = result;
+    });
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(unboundedResult).toBe("pending");
+    expect(helpers[1]?.kill).not.toHaveBeenCalled();
+    helpers[1]?.emit("close", 0);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(unboundedResult).toEqual({ code: 0, stdout: "" });
+  });
 });
 
 describe("killProcessTree", () => {
@@ -488,6 +507,37 @@ describe("killProcessTree", () => {
       expect(spawnMock).toHaveBeenCalledWith(path.win32.join("D:\\WinRoot", "System32", "taskkill.exe"), ["/pid", "4242", "/T", "/F"], expect.anything());
       expect(spawnMock.mock.calls[0]?.[2]).not.toHaveProperty("env");
       expect(caller.kill).toHaveBeenCalledTimes(rootKilled ? 1 : 0);
+    } finally {
+      restore();
+    }
+  });
+
+  it("bounds taskkill by default and lets a caller wait for it to finish", async () => {
+    const restore = withPlatform("win32");
+    try {
+      vi.useFakeTimers();
+      vi.stubEnv("SystemRoot", "C:\\Windows");
+      provide(() => undefined);
+      const bounded = root();
+      const boundedKill = killProcessTree(4242, bounded);
+      await vi.advanceTimersByTimeAsync(2_000);
+      await boundedKill;
+      // The stalled taskkill was abandoned at 2 s, and the root killed instead.
+      expect(helpers[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+      expect(bounded.kill).toHaveBeenCalledTimes(1);
+      provide(() => undefined);
+      const patient = root();
+      let finished = false;
+      void killProcessTree(4242, patient, { taskkillTimeoutMs: null }).then(() => {
+        finished = true;
+      });
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(finished).toBe(false);
+      expect(helpers[1]?.kill).not.toHaveBeenCalled();
+      helpers[1]?.emit("close", 0);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(finished).toBe(true);
+      expect(patient.kill).not.toHaveBeenCalled();
     } finally {
       restore();
     }
