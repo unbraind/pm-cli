@@ -171,9 +171,23 @@ function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-/** Keep a recorded update-check budget only when it is a positive safe integer; otherwise omit the field. */
-function optionalTimeoutBudget(value: unknown): { update_check_timeout_ms?: number } {
-  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? { update_check_timeout_ms: value } : {};
+/**
+ * The update-check reasons that carry a budget: `npm_registry_lookup_timed_out`
+ * and `github_remote_lookup_timed_out` from `./update-check.ts`, spelled here
+ * because that module reaches this one through its import graph.
+ */
+const TIMED_OUT_UPDATE_ERROR = /^(?:npm_registry|github_remote)_lookup_timed_out$/u;
+
+/**
+ * Keep a recorded update-check budget only beside a timed-out reason and only
+ * when it is a positive safe integer; otherwise omit the field, so a stale
+ * budget never reads as timeout evidence.
+ */
+function optionalTimeoutBudget(error: unknown, value: unknown): { update_check_timeout_ms?: number } {
+  return typeof error === "string" && TIMED_OUT_UPDATE_ERROR.test(error) &&
+    typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    ? { update_check_timeout_ms: value }
+    : {};
 }
 
 /**
@@ -291,7 +305,7 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
         ? entry.update_available
         : undefined,
     update_error: optionalString(entry.update_error),
-    ...optionalTimeoutBudget(entry.update_check_timeout_ms),
+    ...optionalTimeoutBudget(entry.update_error, entry.update_check_timeout_ms),
   };
 }
 

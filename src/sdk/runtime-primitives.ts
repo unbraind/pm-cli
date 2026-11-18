@@ -344,17 +344,11 @@ export {
   isMutationAction,
   listMutationActions,
   scanMutationSecrets,
-  decideSecretGuardFinding,
-  SECRET_GUARD_RULE_CATEGORIES,
-  secretGuardRuleCategory,
   type EvaluateMutationGuardOptions,
   type MutationGuardResult,
   type MutationGuardSettings,
   type SecretGuardFinding,
   type SecretGuardMode,
-  type SecretGuardPolicy,
-  type SecretGuardRule,
-  type SecretGuardRuleCategory,
   type SecretNormalizationKind,
 } from "./mutation-guard.js";
 export {

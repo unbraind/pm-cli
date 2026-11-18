@@ -1,14 +1,17 @@
+import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManagedExtensionSource } from "../../../src/sdk/extension/managed-state.js";
 
 // pm-5kfzjh and pm-43p2c3: a lookup that runs out of its budget reports its
 // own stable reason and the budget, never the provider's command, stderr or
 // environment.
-const execFileMock = vi.hoisted(() => vi.fn());
+const spawnMock = vi.hoisted(() => vi.fn());
+const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number) => undefined));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
-  execFile: execFileMock,
+  spawn: spawnMock,
 }));
+vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock }));
 
 const {
   EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
@@ -29,36 +32,44 @@ const github: ManagedExtensionSource = { kind: "github", input: "github:o/r", lo
 // Assembled from parts so the repository never holds a credential-shaped literal.
 const PRIVATE_FIXTURE = ["npm ERR! //registry.example.test/:", "_auth", "Token=", "private-fixture-value"].join("");
 
-type ExecCallback = (error: unknown, result?: { stdout: string; stderr: string }) => void;
-type ExecOptions = { signal?: AbortSignal; timeout?: number; env?: NodeJS.ProcessEnv };
-
-function abortError(): Error {
-  return Object.assign(new Error(`The operation was aborted\n${PRIVATE_FIXTURE}`), { name: "AbortError", code: "ABORT_ERR" });
+class FakeStream extends EventEmitter {
+  readonly setEncoding = vi.fn();
+  readonly destroy = vi.fn();
+  readonly resume = vi.fn();
 }
 
-/** A child that runs until the deadline aborts it, then fails as Node reports an abort. */
-function hangUntilAborted(): void {
-  execFileMock.mockImplementation((_file: string, _args: string[], options: ExecOptions, callback: ExecCallback) => {
-    options.signal?.addEventListener("abort", () => callback(abortError()), { once: true });
+/** A spawned provider whose events the test drives. */
+class FakeChild extends EventEmitter {
+  readonly stdout = new FakeStream();
+  readonly stderr = new FakeStream();
+  readonly kill = vi.fn(() => true);
+  constructor(readonly pid: number | undefined = 4242) {
+    super();
+  }
+
+  /** Write stdout and stderr, then close with `code` and `signal`. */
+  finish(code: number | null, signal: NodeJS.Signals | null = null, stdout = "", stderr = PRIVATE_FIXTURE): void {
+    if (stdout) this.stdout.emit("data", stdout);
+    this.stderr.emit("data", stderr);
+    this.emit("close", code, signal);
+  }
+}
+
+let children: FakeChild[] = [];
+
+/** Spawn fake children and drive each one once its listeners are attached. */
+function provide(drive: (child: FakeChild, file: string) => void): void {
+  spawnMock.mockImplementation((file: string) => {
+    const child = new FakeChild();
+    children.push(child);
+    queueMicrotask(() => drive(child, file));
+    return child;
   });
 }
 
-/** A child that handles the deadline's signal and exits cleanly with partial output. */
-function exitCleanlyWhenAborted(stdout: string): void {
-  execFileMock.mockImplementation((_file: string, _args: string[], options: ExecOptions, callback: ExecCallback) => {
-    options.signal?.addEventListener("abort", () => callback(null, { stdout, stderr: "" }), { once: true });
-  });
-}
-
-function failExecWith(failure: Record<string, unknown>): void {
-  execFileMock.mockImplementation((_file: string, _args: string[], _options: ExecOptions, callback: ExecCallback) => {
-    callback(Object.assign(new Error(`Command failed: provider lookup\n${PRIVATE_FIXTURE}`), { stderr: PRIVATE_FIXTURE, ...failure }));
-  });
-}
-
-function succeedWith(stdout: string): void {
-  execFileMock.mockImplementation((_file: string, _args: string[], _options: ExecOptions, callback: ExecCallback) => callback(null, { stdout, stderr: "" }));
-}
+const succeedWith = (stdout: string): void => provide((child) => child.finish(0, null, stdout));
+const hang = (): void => provide(() => undefined);
+const spawnOptions = (call = 0): Record<string, unknown> => spawnMock.mock.calls[call]?.[2] as Record<string, unknown>;
 
 /** Run a lookup under fake timers, advancing past `budget` while it is pending. */
 async function settleAfter<T>(budget: number, lookup: () => Promise<T>): Promise<T> {
@@ -74,66 +85,93 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
-  execFileMock.mockReset();
+  spawnMock.mockReset();
+  killProcessTreeMock.mockReset();
+  killProcessTreeMock.mockImplementation(async () => undefined);
+  children = [];
   vi.unstubAllEnvs();
 });
 
 describe("npm update lookup budget", () => {
-  it("aborts a lookup at its budget and reports it as timed out with the budget", async () => {
+  it("settles a lookup at its budget as timed out with the budget and tears down its process tree", async () => {
     vi.useFakeTimers();
-    hangUntilAborted();
+    hang();
     const pending = checkNpmUpdate(source);
     await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS - 1);
-    expect((execFileMock.mock.calls[0]?.[2] as ExecOptions).signal?.aborted).toBe(false);
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
     const status = await pending;
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
-    expect(JSON.stringify(status)).not.toContain("private-fixture-value");
-    expect(execFileMock.mock.calls[0]?.[2]).not.toHaveProperty("timeout");
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
+    expect(children[0]?.stdout.destroy).toHaveBeenCalled();
+    expect(children[0]?.stderr.destroy).toHaveBeenCalled();
   });
 
-  it("reports a lookup that exits cleanly after its deadline as timed out, not as its partial output", async () => {
+  it("kills the child itself when it has no process id", async () => {
     vi.useFakeTimers();
-    exitCleanlyWhenAborted('"2.0');
+    spawnMock.mockImplementation(() => {
+      const child = new FakeChild();
+      Object.defineProperty(child, "pid", { value: undefined });
+      children.push(child);
+      return child;
+    });
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.kill).toHaveBeenCalled();
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the timed-out result when the provider exits cleanly with partial output after the deadline", async () => {
+    vi.useFakeTimers();
+    hang();
+    killProcessTreeMock.mockImplementationOnce(async () => children[0]?.finish(0, null, '"2.0'));
     expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toEqual({
       checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
     });
   });
 
   it.each([
-    ["an exit status", { code: 1 }],
-    ["an external signal", { killed: false, signal: "SIGKILL", code: null }],
-    ["an overflowing output buffer", { killed: true, signal: "SIGTERM", code: "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" }],
-  ])("reports %s before the deadline as a failed lookup without a budget", async (_label, failure) => {
-    failExecWith(failure);
+    ["an exit status", (child: FakeChild) => child.finish(1)],
+    ["a signal", (child: FakeChild) => child.finish(null, "SIGKILL")],
+    ["a spawn error", (child: FakeChild) => { child.emit("error", new Error(PRIVATE_FIXTURE)); child.emit("close", null, null); }],
+    ["stdout beyond its buffer", (child: FakeChild) => { child.stdout.emit("data", "x".repeat(64 * 1024 + 1)); child.finish(0, null, '"2.0.0"'); }],
+  ])("reports %s before the deadline as a failed lookup without a budget", async (label, drive) => {
+    provide(drive);
     const status = await checkNpmUpdate(source);
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toContain("private-fixture-value");
+    if (label === "stdout beyond its buffer") expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
   });
 
-  it("reports a non-object rejection as a failed lookup", async () => {
-    execFileMock.mockImplementation((_file: string, _args: string[], _options: ExecOptions, callback: ExecCallback) => callback("refused"));
-    expect(await checkNpmUpdate(source)).toMatchObject({ available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+  it("reports a spawn that throws as a failed lookup", async () => {
+    spawnMock.mockImplementation(() => {
+      throw new Error(PRIVATE_FIXTURE);
+    });
+    expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
   });
 
   it("applies the configured budget and names it when it runs out", async () => {
     vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "45000");
     vi.useFakeTimers();
-    hangUntilAborted();
+    hang();
     const pending = checkNpmUpdate(source);
     await vi.advanceTimersByTimeAsync(44_999);
-    expect((execFileMock.mock.calls[0]?.[2] as ExecOptions).signal?.aborted).toBe(false);
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
     expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 45000 });
-    expect(execFileMock.mock.calls[0]?.[2]).toMatchObject({ maxBuffer: 64 * 1024, env: expect.objectContaining({ npm_config_ignore_scripts: "true" }) });
   });
 
-  it("reads the registry version when the lookup completes and clears its deadline", async () => {
+  it("runs npm detached with closed stdin, discarded stderr and no lifecycle scripts, and clears its deadline", async () => {
     vi.useFakeTimers();
     succeedWith('"2.0.0"\n');
     expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: true, remote_version: "2.0.0" });
     expect(vi.getTimerCount()).toBe(0);
-    expect((execFileMock.mock.calls[0]?.[2] as ExecOptions).signal?.aborted).toBe(false);
+    expect(spawnMock.mock.calls[0]?.[1]).toEqual(["view", "@scope/example", "dist-tags.latest", "--json", "--ignore-scripts"]);
+    expect(spawnOptions()).toMatchObject({
+      stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32", windowsHide: true,
+      env: expect.objectContaining({ npm_config_ignore_scripts: "true" }),
+    });
+    expect(children[0]?.stderr.resume).toHaveBeenCalled();
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
   });
 
   it("passes the configured budget to an injected GitHub runner", async () => {
@@ -148,33 +186,28 @@ describe("GitHub update lookup reasons", () => {
   it("runs a bounded git ls-remote without interactive prompts and compares the peeled commit", async () => {
     succeedWith("def456\tHEAD\n");
     expect(await checkGithubUpdate(github)).toEqual({ checked_at: expect.any(String), available: true, remote_commit: "def456" });
-    expect(execFileMock.mock.calls[0]?.slice(0, 3)).toEqual([
-      "git",
-      ["ls-remote", "https://github.com/o/r.git", "HEAD", "HEAD^{}"],
-      expect.objectContaining({ signal: expect.any(AbortSignal), env: expect.objectContaining({ GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" }) }),
-    ]);
+    expect(spawnMock.mock.calls[0]?.slice(0, 2)).toEqual(["git", ["ls-remote", "https://github.com/o/r.git", "HEAD", "HEAD^{}"]]);
+    expect(spawnOptions()).toMatchObject({
+      stdio: ["ignore", "pipe", "pipe"], detached: process.platform !== "win32", windowsHide: true,
+      env: expect.objectContaining({ GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" }),
+    });
+    expect(spawnOptions().shell).toBeUndefined();
   });
 
-  it("reports a lookup aborted at its budget as timed out and names the budget", async () => {
+  it("reports a lookup still running at its budget as timed out and names the budget", async () => {
     vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "3000");
     vi.useFakeTimers();
-    hangUntilAborted();
+    hang();
     const status = await settleAfter(3000, () => checkGithubUpdate(github));
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 3000 });
-    expect(JSON.stringify(status)).not.toContain("private-fixture-value");
-  });
-
-  it("reports a lookup that exits cleanly after its deadline as timed out", async () => {
-    vi.useFakeTimers();
-    exitCleanlyWhenAborted("def456\tHEAD\n");
-    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkGithubUpdate(github))).toMatchObject({ available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT });
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
   });
 
   it.each([
-    ["an exit status", { code: 128 }],
-    ["an overflowing output buffer", { killed: true, signal: "SIGTERM", code: "ERR_CHILD_PROCESS_STDIO_MAXBUFFER" }],
-  ])("reports %s as a failed lookup without git's command line or stderr", async (_label, failure) => {
-    failExecWith(failure);
+    ["an exit status", (child: FakeChild) => child.finish(128)],
+    ["stdout beyond its buffer", (child: FakeChild) => child.stdout.emit("data", "x".repeat(1024 * 1024 + 1))],
+  ])("reports %s as a failed lookup without git's command line or stderr", async (_label, drive) => {
+    provide(drive);
     const status = await checkGithubUpdate(github);
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toMatch(/private-fixture-value|ls-remote|github\.com/u);
@@ -216,11 +249,11 @@ describe("managed update status budget evidence", () => {
 
   it("carries the budget only for a timed-out lookup and drops it offline and on the next completed check", async () => {
     vi.useFakeTimers();
-    execFileMock.mockImplementation((file: string, _args: string[], options: ExecOptions, callback: ExecCallback) => {
-      if (file === "git") callback(null, { stdout: "abc123\tHEAD\n", stderr: "" });
-      else options.signal?.addEventListener("abort", () => callback(abortError()), { once: true });
+    provide((child, file) => {
+      if (file === "git") child.finish(0, null, "abc123\tHEAD\n");
     });
-    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource), managedEntry("github-example", githubSource, { update_check_timeout_ms: 5000 })] })!;
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource), managedEntry("github-example", githubSource, { update_error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, update_check_timeout_ms: 5000 })] })!;
+    expect(state.entries.find((entry) => entry.name === "github-example")?.update_check_timeout_ms).toBe(5000);
     const refreshed = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => refreshManagedExtensionUpdates(state));
     expect(refreshed.entries.find((entry) => entry.name === "npm-example")).toMatchObject({ update_available: null, update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT, update_check_timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
     const checked = refreshed.entries.find((entry) => entry.name === "github-example");
@@ -245,5 +278,15 @@ describe("managed update status budget evidence", () => {
     const entry = state?.entries[0];
     expect(entry?.update_check_timeout_ms).toBe(expected);
     expect(entry !== undefined && Object.hasOwn(entry, "update_check_timeout_ms")).toBe(expected !== undefined);
+  });
+
+  it.each([NPM_REGISTRY_LOOKUP_TIMED_OUT, GITHUB_REMOTE_LOOKUP_TIMED_OUT])("keeps a recorded budget beside %s", (reason) => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500 })] });
+    expect(state?.entries[0]?.update_check_timeout_ms).toBe(2500);
+  });
+
+  it.each([undefined, NPM_REGISTRY_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_FAILED, "no_remote_reference_found", `${NPM_REGISTRY_LOOKUP_TIMED_OUT}_stale`, 7])("drops a stale budget beside update_error %j", (reason) => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500 })] });
+    expect(state?.entries[0]).not.toHaveProperty("update_check_timeout_ms");
   });
 });

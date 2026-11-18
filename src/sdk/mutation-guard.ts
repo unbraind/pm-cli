@@ -35,7 +35,14 @@ export type SecretGuardRule = SecretGuardFinding["rule"];
  * that reveal an account. A new detector joins an existing category, and a new
  * category is a declared SDK contract change (pm-gh1749).
  */
-export type SecretGuardRuleCategory = SecretRuleCategory;
+export type SecretGuardRuleCategory = "credential" | "network" | "path";
+
+// Spelled out above so the SDK surface snapshot records the literals; this
+// fails to compile when the rule inventory's category set drifts from it.
+const CATEGORY_SETS_MATCH: [SecretRuleCategory] extends [SecretGuardRuleCategory]
+  ? [SecretGuardRuleCategory] extends [SecretRuleCategory] ? true : never
+  : never = true;
+void CATEGORY_SETS_MATCH;
 
 /** One redacted credential-shaped match. Secret values are never returned. */
 export interface SecretGuardFinding {

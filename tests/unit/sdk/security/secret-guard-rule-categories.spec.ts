@@ -9,7 +9,6 @@ import {
 } from "../../../../src/sdk/mutation-guard.js";
 import * as sdk from "../../../../src/sdk/index.js";
 import * as governance from "../../../../src/sdk/governance.js";
-import * as runtime from "../../../../src/sdk/runtime-primitives.js";
 
 // pm-gh1749: a stable category per detector and a default-plus-overrides
 // policy, so adding a detector never breaks a typed consumer.
@@ -61,8 +60,8 @@ describe("secret guard rule categories", () => {
     }
   });
 
-  it("is exported from the root, governance and runtime SDK entrypoints", () => {
-    for (const entrypoint of [sdk, governance, runtime]) {
+  it("is exported from the root and governance SDK entrypoints", () => {
+    for (const entrypoint of [sdk, governance]) {
       expect(entrypoint.SECRET_GUARD_RULE_CATEGORIES).toBe(SECRET_GUARD_RULE_CATEGORIES);
       expect(entrypoint.decideSecretGuardFinding).toBe(decideSecretGuardFinding);
       expect(entrypoint.secretGuardRuleCategory).toBe(secretGuardRuleCategory);

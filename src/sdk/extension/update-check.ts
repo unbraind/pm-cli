@@ -4,13 +4,11 @@
  * Provides bounded and annotated-tag-aware update checks for managed extensions.
  */
 import { nowIso } from "../../core/shared/time.js";
-import { execFile, type ExecFileOptions } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import npa from "npm-package-arg";
+import { killProcessTree } from "../../core/shared/process-tree.js";
 import type { ManagedExtensionSource } from "./managed-state.js";
 import { resolveNpmCommandName, shouldRunNpmCommandInShell } from "./install-sources.js";
-
-const execFileAsync = promisify(execFile);
 
 /** Environment variable that overrides the per-lookup update-check budget. */
 export const PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV = "PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS";
@@ -81,43 +79,79 @@ function failedUpdateStatus(checkedAt: string, error: unknown): GithubUpdateStat
   return status;
 }
 
-/** Stable reasons one provider reports for a lookup that ran out of its budget or failed otherwise. */
-interface UpdateQueryReasons {
+/** How one provider lookup runs and which stable reasons it reports. */
+interface UpdateQuerySpec {
+  /** Environment of the provider process. */
+  env: NodeJS.ProcessEnv;
+  /** Run through the platform shell (the Windows npm shim needs it). */
+  shell?: boolean;
+  /** Largest stdout accepted, in bytes; more is a failed lookup. */
+  maxBuffer: number;
+  /** Reason for a lookup still running at its deadline. */
   timedOut: string;
+  /** Reason for any other failure. */
   failed: string;
 }
 
 /**
- * Run one provider lookup under an explicit deadline that aborts the child.
- * A lookup still running when the deadline passes is reported as timed out
- * even if the child then exits cleanly, so a provider that handles the
- * signal cannot pass partial output off as a result. Any other failure,
- * including an overflowing output buffer, reports the failed reason. The
- * provider's command line, stderr and environment never reach the reason.
+ * Run one provider lookup under an explicit deadline. The deadline settles the
+ * lookup as timed out on its own, without waiting for the child's pipes,
+ * because a launcher (`cmd.exe`, an npm shim, `git`) can exit while a
+ * descendant still holds them. It then tears down the whole process tree: on
+ * POSIX the child leads its own process group, and on Windows `taskkill /T`
+ * reaches the shell's descendants. A child that exits after the deadline,
+ * cleanly or not, cannot replace the timed-out result with partial output.
+ * Any other failure, including stdout beyond `maxBuffer`, reports the failed
+ * reason. stdin is closed and stderr is discarded, so the provider's command
+ * line, stderr and environment never reach the reason.
  */
-async function runBoundedUpdateQuery(
-  file: string,
-  args: string[],
-  options: Omit<ExecFileOptions, "encoding" | "signal" | "timeout">,
-  timeout: number,
-  reasons: UpdateQueryReasons,
-): Promise<string> {
-  const controller = new AbortController();
-  let timedOut = false;
-  const deadline = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, timeout);
-  let stdout: string;
-  try {
-    ({ stdout } = await execFileAsync(file, args, { ...options, encoding: "utf8", signal: controller.signal }));
-  } catch {
-    throw timedOut ? new UpdateQueryError(reasons.timedOut, timeout) : new UpdateQueryError(reasons.failed);
-  } finally {
-    clearTimeout(deadline);
-  }
-  if (timedOut) throw new UpdateQueryError(reasons.timedOut, timeout);
-  return stdout.trim();
+function runBoundedUpdateQuery(file: string, args: string[], timeout: number, spec: UpdateQuerySpec): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    let child;
+    try {
+      child = spawn(file, args, {
+        env: spec.env, shell: spec.shell, stdio: ["ignore", "pipe", "pipe"],
+        detached: process.platform !== "win32", windowsHide: true,
+      });
+    } catch {
+      reject(new UpdateQueryError(spec.failed));
+      return;
+    }
+    const lookup = child;
+    let settled = false;
+    let stdout = "";
+    let stdoutBytes = 0;
+    const stop = (): void => {
+      lookup.stdout.destroy();
+      lookup.stderr.destroy();
+      if (lookup.pid === undefined) lookup.kill();
+      else void killProcessTree(lookup.pid);
+    };
+    const deadline = setTimeout(() => {
+      settle(new UpdateQueryError(spec.timedOut, timeout));
+      stop();
+    }, timeout);
+    function settle(error?: UpdateQueryError): void {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      if (error) reject(error);
+      else resolve(stdout.trim());
+    }
+    lookup.stdout.setEncoding("utf8");
+    lookup.stdout.on("data", (chunk: string) => {
+      stdoutBytes += Buffer.byteLength(chunk);
+      if (stdoutBytes > spec.maxBuffer) {
+        settle(new UpdateQueryError(spec.failed));
+        stop();
+        return;
+      }
+      stdout += chunk;
+    });
+    lookup.stderr.resume();
+    lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
+    lookup.on("close", (code, signal) => settle(code === 0 && signal === null ? undefined : new UpdateQueryError(spec.failed)));
+  });
 }
 
 /** Resolve an exact registry version without reflecting untrusted provenance or metadata in diagnostics. */
@@ -139,11 +173,13 @@ function resolveExactNpmVersion(packageName: string, version: unknown, errorCode
  * reasons are reported.
  */
 const runNpmUpdateQuery: UpdateQueryRunner = (args, timeout) =>
-  runBoundedUpdateQuery(resolveNpmCommandName(), args, {
-    maxBuffer: 64 * 1024,
-    shell: shouldRunNpmCommandInShell(),
+  runBoundedUpdateQuery(resolveNpmCommandName(), args, timeout, {
     env: { ...process.env, npm_config_ignore_scripts: "true" },
-  }, timeout, { timedOut: NPM_REGISTRY_LOOKUP_TIMED_OUT, failed: NPM_REGISTRY_LOOKUP_FAILED });
+    shell: shouldRunNpmCommandInShell(),
+    maxBuffer: 64 * 1024,
+    timedOut: NPM_REGISTRY_LOOKUP_TIMED_OUT,
+    failed: NPM_REGISTRY_LOOKUP_FAILED,
+  });
 
 /**
  * Query a GitHub remote with bounded execution. Git's terminal prompt and Git
@@ -153,9 +189,12 @@ const runNpmUpdateQuery: UpdateQueryRunner = (args, timeout) =>
  * reported.
  */
 const runGitUpdateQuery: UpdateQueryRunner = (args, timeout) =>
-  runBoundedUpdateQuery("git", args, {
+  runBoundedUpdateQuery("git", args, timeout, {
     env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" },
-  }, timeout, { timedOut: GITHUB_REMOTE_LOOKUP_TIMED_OUT, failed: GITHUB_REMOTE_LOOKUP_FAILED });
+    maxBuffer: 1024 * 1024,
+    timedOut: GITHUB_REMOTE_LOOKUP_TIMED_OUT,
+    failed: GITHUB_REMOTE_LOOKUP_FAILED,
+  });
 
 /** Compare recorded npm provenance without persisting diagnostic results or guessing missing versions. */
 export async function checkNpmUpdate(

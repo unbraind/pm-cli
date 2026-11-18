@@ -21722,7 +21722,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "SECRET_GUARD_RULE_CATEGORIES",
-          "signature": "Readonly<Record<\"absolute_home_path\" | \"anthropic_api_key\" | \"aws_access_key\" | \"credential_key_assignment\" | \"github_token\" | \"gitlab_token\" | \"google_api_key\" | \"high_entropy_assignment\" | \"jwt_like_token\" | \"npm_auth_token_assignment\" | \"npm_token\" | \"openai_api_key\" | \"password_assignment\" | \"private_ip\" | \"private_key\" | \"private_ssh_target\" | \"sentry_org_token\" | \"sentry_user_token\" | \"slack_token\" | \"sshpass_inline_password\" | \"user_at_private_host\", SecretRuleCategory>>"
+          "signature": "Readonly<Record<\"absolute_home_path\" | \"anthropic_api_key\" | \"aws_access_key\" | \"credential_key_assignment\" | \"github_token\" | \"gitlab_token\" | \"google_api_key\" | \"high_entropy_assignment\" | \"jwt_like_token\" | \"npm_auth_token_assignment\" | \"npm_token\" | \"openai_api_key\" | \"password_assignment\" | \"private_ip\" | \"private_key\" | \"private_ssh_target\" | \"sentry_org_token\" | \"sentry_user_token\" | \"slack_token\" | \"sshpass_inline_password\" | \"user_at_private_host\", SecretGuardRuleCategory>>"
         },
         {
           "classification": "supported",
@@ -21758,7 +21758,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "SecretGuardRuleCategory",
-          "signature": "export type SecretGuardRuleCategory = SecretRuleCategory;"
+          "signature": "export type SecretGuardRuleCategory = \"credential\" | \"network\" | \"path\";"
         },
         {
           "classification": "supported",
@@ -31934,7 +31934,7 @@
           "classification": "supported",
           "kind": "value",
           "name": "SECRET_GUARD_RULE_CATEGORIES",
-          "signature": "Readonly<Record<\"absolute_home_path\" | \"anthropic_api_key\" | \"aws_access_key\" | \"credential_key_assignment\" | \"github_token\" | \"gitlab_token\" | \"google_api_key\" | \"high_entropy_assignment\" | \"jwt_like_token\" | \"npm_auth_token_assignment\" | \"npm_token\" | \"openai_api_key\" | \"password_assignment\" | \"private_ip\" | \"private_key\" | \"private_ssh_target\" | \"sentry_org_token\" | \"sentry_user_token\" | \"slack_token\" | \"sshpass_inline_password\" | \"user_at_private_host\", SecretRuleCategory>>"
+          "signature": "Readonly<Record<\"absolute_home_path\" | \"anthropic_api_key\" | \"aws_access_key\" | \"credential_key_assignment\" | \"github_token\" | \"gitlab_token\" | \"google_api_key\" | \"high_entropy_assignment\" | \"jwt_like_token\" | \"npm_auth_token_assignment\" | \"npm_token\" | \"openai_api_key\" | \"password_assignment\" | \"private_ip\" | \"private_key\" | \"private_ssh_target\" | \"sentry_org_token\" | \"sentry_user_token\" | \"slack_token\" | \"sshpass_inline_password\" | \"user_at_private_host\", SecretGuardRuleCategory>>"
         },
         {
           "classification": "supported",
@@ -31970,7 +31970,7 @@
           "classification": "supported",
           "kind": "type",
           "name": "SecretGuardRuleCategory",
-          "signature": "export type SecretGuardRuleCategory = SecretRuleCategory;"
+          "signature": "export type SecretGuardRuleCategory = \"credential\" | \"network\" | \"path\";"
         },
         {
           "classification": "supported",
