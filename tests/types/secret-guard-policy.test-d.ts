@@ -42,6 +42,9 @@ const unknownUndefinedDefault: SecretGuardPolicy<unknown> = { default: undefined
 void unknownUndefinedDefault;
 const nullDefault: SecretGuardPolicy<string | null> = { default: null };
 void nullDefault;
+// null stays a valid default even when the decision type is unknown.
+const unknownNullDefault: SecretGuardPolicy<unknown> = { default: null };
+void unknownNullDefault;
 
 const withRules: SecretGuardPolicy<"refuse" | "allow"> = {
   default: "refuse",

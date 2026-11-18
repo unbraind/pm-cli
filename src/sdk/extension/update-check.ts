@@ -101,21 +101,23 @@ interface UpdateQuerySpec {
  * descendants (`taskkill /T` on Windows, a `ps` tree walk elsewhere), which
  * reaches the helpers of a launcher that is still running, as `cmd.exe` and
  * `git` are while they wait for npm and the remote helper; when that teardown
- * cannot run, the direct child is still killed. A child that exits after the
- * deadline, cleanly or not, cannot replace the timed-out result with partial
- * output. The child is not detached, so it stays in the host's process group
- * and a terminal Ctrl-C reaches it as it reaches the host. Any other
+ * cannot run, the direct child is still killed through its handle. A launcher
+ * that already exited is never torn down by its possibly reused PID. A child
+ * that exits after the deadline, cleanly or not, cannot replace the timed-out
+ * result with partial output, and a failed exit settles at once even while a
+ * descendant holds stdout. The child is neither detached nor hidden from the
+ * console, so a terminal Ctrl-C reaches it as it reaches the host. Any other
  * failure, including stdout beyond `maxBuffer`, reports the failed reason.
- * stdin is closed and stderr is discarded, so the provider's command line,
- * stderr and environment never reach the reason.
+ * stdin and stderr are ignored, so the provider's command line, stderr and
+ * environment never reach the reason.
  */
 function runBoundedUpdateQuery(file: string, args: string[], timeout: number, spec: UpdateQuerySpec): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     let child;
     try {
-      child = spawn(file, args, {
-        env: spec.env, shell: spec.shell, stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
-      });
+      // stderr is ignored rather than piped, so a descendant that inherits
+      // only stderr cannot hold the lookup open.
+      child = spawn(file, args, { env: spec.env, shell: spec.shell, stdio: ["ignore", "pipe", "ignore"] });
     } catch {
       reject(new UpdateQueryError(spec.failed));
       return;
@@ -124,14 +126,17 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     let settled = false;
     let stdout = "";
     let stdoutBytes = 0;
+    const exited = (): boolean => lookup.exitCode !== null || lookup.signalCode !== null;
     const killDirectChild = (): void => {
-      if (lookup.exitCode === null && lookup.signalCode === null) lookup.kill("SIGKILL");
+      if (!exited()) lookup.kill("SIGKILL");
     };
     const stop = (): void => {
       lookup.stdout.destroy();
-      lookup.stderr.destroy();
-      if (lookup.pid === undefined) killDirectChild();
-      else void killProcessTree(lookup.pid).then(killDirectChild, killDirectChild);
+      // Once the launcher has exited its PID may already belong to another
+      // process, so only a live launcher's tree is torn down by PID; its root
+      // is killed through Node's handle.
+      if (exited() || lookup.pid === undefined) killDirectChild();
+      else void killProcessTree(lookup.pid, killDirectChild).then(killDirectChild, killDirectChild);
     };
     const deadline = setTimeout(() => {
       settle(new UpdateQueryError(spec.timedOut, timeout));
@@ -154,8 +159,15 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       }
       stdout += chunk;
     });
-    lookup.stderr.resume();
     lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
+    // A provider that fails has nothing more to say: settle at its exit even
+    // if a descendant still holds stdout. A successful exit waits for close,
+    // so the result is the complete output.
+    lookup.on("exit", (code, signal) => {
+      if (code === 0 && signal === null) return;
+      settle(new UpdateQueryError(spec.failed));
+      lookup.stdout.destroy();
+    });
     lookup.on("close", (code, signal) => settle(code === 0 && signal === null ? undefined : new UpdateQueryError(spec.failed)));
   });
 }

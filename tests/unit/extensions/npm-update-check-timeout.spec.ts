@@ -6,7 +6,7 @@ import type { ManagedExtensionSource } from "../../../src/sdk/extension/managed-
 // own stable reason and the budget, never the provider's command, stderr or
 // environment.
 const spawnMock = vi.hoisted(() => vi.fn());
-const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number) => undefined));
+const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number, _killRoot?: () => void) => undefined));
 vi.mock("node:child_process", async (importOriginal) => ({
   ...(await importOriginal<typeof import("node:child_process")>()),
   spawn: spawnMock,
@@ -49,10 +49,17 @@ class FakeChild extends EventEmitter {
     super();
   }
 
-  /** Write stdout and stderr, then close with `code` and `signal`. */
-  finish(code: number | null, signal: NodeJS.Signals | null = null, stdout = "", stderr = PRIVATE_FIXTURE): void {
+  /** Exit with `code` and `signal`, as Node reports it before the pipes close. */
+  exit(code: number | null, signal: NodeJS.Signals | null = null): void {
+    this.exitCode = code;
+    this.signalCode = signal;
+    this.emit("exit", code, signal);
+  }
+
+  /** Write stdout, exit, then close with `code` and `signal`. */
+  finish(code: number | null, signal: NodeJS.Signals | null = null, stdout = ""): void {
     if (stdout) this.stdout.emit("data", stdout);
-    this.stderr.emit("data", stderr);
+    this.exit(code, signal);
     this.emit("close", code, signal);
   }
 }
@@ -105,10 +112,35 @@ describe("npm update lookup budget", () => {
     await vi.advanceTimersByTimeAsync(1);
     const status = await pending;
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
-    expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.any(Function));
     expect(children[0]?.stdout.destroy).toHaveBeenCalled();
-    expect(children[0]?.stderr.destroy).toHaveBeenCalled();
     // The tree teardown ran; a direct child still running is killed as well.
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+  });
+
+  it("settles a failed exit at once while a descendant still holds stdout, without tearing down by PID", async () => {
+    provide((child) => child.exit(128));
+    const status = await checkNpmUpdate(source);
+    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(children[0]?.stdout.destroy).toHaveBeenCalled();
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("times out a launcher that exited cleanly while a descendant holds stdout, without reusing its PID", async () => {
+    vi.useFakeTimers();
+    provide((child) => child.exit(0));
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.stdout.destroy).toHaveBeenCalled();
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("kills the root through its handle when the tree teardown asks for it", async () => {
+    vi.useFakeTimers();
+    hang();
+    killProcessTreeMock.mockImplementationOnce(async (_pid: number, killRoot?: () => void) => killRoot?.());
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
   });
 
@@ -167,7 +199,7 @@ describe("npm update lookup budget", () => {
     const status = await checkNpmUpdate(source);
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toContain("private-fixture-value");
-    if (label === "stdout beyond its buffer") expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
+    if (label === "stdout beyond its buffer") expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.any(Function));
   });
 
   it("reports a spawn that throws as a failed lookup", async () => {
@@ -195,10 +227,9 @@ describe("npm update lookup budget", () => {
     expect(vi.getTimerCount()).toBe(0);
     expect(spawnMock.mock.calls[0]?.[1]).toEqual(["view", "@scope/example", "dist-tags.latest", "--json", "--ignore-scripts"]);
     expect(spawnOptions()).toMatchObject({
-      stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
+      stdio: ["ignore", "pipe", "ignore"],
       env: expect.objectContaining({ npm_config_ignore_scripts: "true" }),
     });
-    expect(children[0]?.stderr.resume).toHaveBeenCalled();
     expect(killProcessTreeMock).not.toHaveBeenCalled();
 
   });
@@ -217,11 +248,12 @@ describe("GitHub update lookup reasons", () => {
     expect(await checkGithubUpdate(github)).toEqual({ checked_at: expect.any(String), available: true, remote_commit: "def456" });
     expect(spawnMock.mock.calls[0]?.slice(0, 2)).toEqual(["git", ["ls-remote", "https://github.com/o/r.git", "HEAD", "HEAD^{}"]]);
     expect(spawnOptions()).toMatchObject({
-      stdio: ["ignore", "pipe", "pipe"], windowsHide: true,
+      stdio: ["ignore", "pipe", "ignore"],
       env: expect.objectContaining({ GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" }),
     });
     expect(spawnOptions().shell).toBeUndefined();
     expect(spawnOptions()).not.toHaveProperty("detached");
+    expect(spawnOptions()).not.toHaveProperty("windowsHide");
   });
 
   it("reports a lookup still running at its budget as timed out and names the budget", async () => {
@@ -230,7 +262,7 @@ describe("GitHub update lookup reasons", () => {
     hang();
     const status = await settleAfter(3000, () => checkGithubUpdate(github));
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 3000 });
-    expect(killProcessTreeMock).toHaveBeenCalledWith(4242);
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.any(Function));
   });
 
   it.each([

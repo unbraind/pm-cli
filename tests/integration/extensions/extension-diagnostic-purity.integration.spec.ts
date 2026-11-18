@@ -59,7 +59,7 @@ describe("managed extension diagnostic purity", () => {
         registryFailure = true;
         const failedLookup = (await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details as { extensions: Record<string, unknown>[] };
         expect(failedLookup).toMatchObject({ extensions: [{ update_check_status: "failed", update_available: null, update_error: "npm_registry_lookup_failed" }] });
-        expect(failedLookup.extensions[0]?.update_check_timeout_ms).toBeUndefined();
+        expect(failedLookup.extensions[0]).not.toHaveProperty("update_check_timeout_ms");
         // A provider still running at its budget is reported through the
         // manage summary as a timeout that names the budget, not as an
         // unavailable registry. A stalled npm on PATH makes this

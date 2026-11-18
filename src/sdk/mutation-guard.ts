@@ -635,11 +635,11 @@ export interface SecretGuardPolicy<Decision> {
    * `undefined`, even when `Decision` allows it, while `null` stays allowed.
    * The decision type is inferred from it when no override names one.
    */
-  default: NonNullable<Decision> | Extract<Decision, null>;
-  /** Decisions for whole detector families. */
-  categories?: Partial<Record<SecretGuardRuleCategory, Decision>>;
-  /** Decisions for single detectors; they override their category's decision. */
-  rules?: Partial<Record<SecretGuardRule, Decision>>;
+  default: Decision & (NonNullable<Decision> | null);
+  /** Decisions for whole detector families; an `undefined` entry counts as absent. */
+  categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined };
+  /** Decisions for single detectors, overriding their category's decision; an `undefined` entry counts as absent. */
+  rules?: { [Rule in SecretGuardRule]?: Decision | undefined };
 }
 
 function ownPolicyEntry<Decision>(

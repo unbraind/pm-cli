@@ -20,7 +20,7 @@ afterEach(async () => {
   await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
-/** A killed process counts as stopped once it is gone or only an unreaped zombie. */
+/** A killed process counts as stopped once it is gone or only an unreaped zombie; a probe that cannot run fails the test. */
 function isRunning(pid: number): boolean {
   try {
     process.kill(pid, 0);
@@ -28,7 +28,15 @@ function isRunning(pid: number): boolean {
     return false;
   }
   const state = spawnSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8" });
-  return state.status === 0 && state.stdout.trim().length > 0 && !state.stdout.trim().startsWith("Z");
+  if (state.error) throw new Error(`ps could not probe pid ${pid}: ${state.error.message}`);
+  // ps exits 1 with no row when the pid disappeared between the two probes.
+  if (state.status !== 0) return state.stdout.trim().length > 0;
+  return state.stdout.trim().length > 0 && !state.stdout.trim().startsWith("Z");
+}
+
+/** Wait for a subprocess to exit, or report `undefined` after `limitMs` so the caller's cleanup still runs. */
+function exitWithin<T>(exited: Promise<T>, limitMs: number): Promise<T | undefined> {
+  return Promise.race([exited, new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), limitMs))]);
 }
 
 async function waitUntilStopped(pid: number, limitMs: number): Promise<boolean> {
@@ -146,7 +154,7 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
       pids = [...(await readPids(launcherFile)), ...helper];
       for (const pid of pids) expect(isRunning(pid)).toBe(true);
       process.kill(-host.pid!, "SIGINT");
-      expect(await exited).toEqual({ code: null, signal: "SIGINT" });
+      expect(await exitWithin(exited, 10_000)).toEqual({ code: null, signal: "SIGINT" });
       for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
     } finally {
       if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");

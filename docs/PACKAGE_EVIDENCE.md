@@ -120,18 +120,20 @@ its live descendants (`taskkill /T` on Windows, a `ps` tree walk elsewhere); a
 descendant whose launcher already exited is not reached, but it no longer
 delays the result. A lookup still running at its deadline is reported as timed
 out even if the provider then exits cleanly. A recorded `update_check_timeout_ms`
-is kept only beside a timed-out reason. The GitHub lookup runs with
-`GIT_TERMINAL_PROMPT=0` and `GCM_INTERACTIVE=never`, so a remote that asks for
-credentials through Git's terminal prompt or Git Credential Manager fails at
-once; another askpass program or credential helper that prompts can still hold
-the lookup until its budget runs out.
+is kept only beside a timed-out reason. A provider that exits with a failure
+is reported as failed at once, even while a descendant still holds its output.
+The GitHub lookup runs with `GIT_TERMINAL_PROMPT=0` and
+`GCM_INTERACTIVE=never`, so neither Git's terminal prompt nor Git Credential
+Manager prompts interactively; a slow remote can still use up the budget, and
+another askpass program or credential helper that prompts can still hold the
+lookup until its budget runs out.
 A GitHub remote that resolves no reference still reports
 `no_remote_reference_found`, and one checked without an installed commit
 reports `missing_installed_commit`.
 
-Lookups are not detached: they stay in `pm`'s process group, so a terminal
-Ctrl-C reaches them as it reaches `pm`, and `pm` installs no signal handlers
-for them.
+Lookups are neither detached nor hidden from the console: they stay in `pm`'s
+process group (and console on Windows), so a terminal Ctrl-C reaches them as it
+reaches `pm`, and `pm` installs no signal handlers for them.
 
 Use `pm package doctor --project --detail deep --json` to inspect activation
 alongside update-check status totals. A strict doctor run may fail for partial
