@@ -392,23 +392,32 @@ describe("managed update status budget evidence", () => {
     for (const entry of offline.entries) expect(entry).not.toHaveProperty("update_check_timeout_ms");
   });
 
-  it("holds a refresh slot until the timed-out provider is torn down", async () => {
+  it("keeps at most four providers alive through teardown, yet reports results without waiting for it", async () => {
     vi.useFakeTimers();
     hang();
-    let releaseTeardown: () => void = () => undefined;
-    killProcessTreeMock.mockImplementationOnce(() => new Promise<undefined>((resolve) => {
-      releaseTeardown = () => resolve(undefined);
+    const releases: Array<() => void> = [];
+    killProcessTreeMock.mockImplementation(() => new Promise<undefined>((resolve) => {
+      releases.push(() => resolve(undefined));
     }));
-    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource)] })!;
+    const entries = ["a", "b", "c", "d", "e"].map((name) => managedEntry(`npm-${name}`, { ...npmSource, package: `@scope/${name}`, input: `npm:@scope/${name}`, location: `@scope/${name}` }));
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries })!;
     let refreshed: Awaited<ReturnType<typeof refreshManagedExtensionUpdates>> | undefined;
     const pending = refreshManagedExtensionUpdates(state).then((result) => {
       refreshed = result;
     });
     await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
-    expect(refreshed).toBeUndefined();
-    releaseTeardown();
+    // Four providers timed out and are still being torn down: the fifth waits.
+    expect(spawnMock).toHaveBeenCalledTimes(4);
+    expect(releases).toHaveLength(4);
+    releases[0]!();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(spawnMock).toHaveBeenCalledTimes(5);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
     await pending;
-    expect(refreshed?.entries[0]).toMatchObject({ update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    // Every result is reported while three teardowns and the fifth's are still running.
+    expect(releases).toHaveLength(5);
+    expect(refreshed?.entries.map((entry) => entry.update_error)).toEqual(Array(5).fill(NPM_REGISTRY_LOOKUP_TIMED_OUT));
+    for (const release of releases.slice(1)) release();
   });
 
   it("passes an explicit refresh budget to every lookup", async () => {

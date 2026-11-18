@@ -16,7 +16,7 @@ vi.mock("node:fs", async (importOriginal) => ({
   existsSync: existsSyncMock,
 }));
 
-const { descendantsFromProcessTable, killProcessTree, resolveTrustedPs, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
+const { descendantsFromProcessTable, killProcessTree, resolveTrustedPs, resolveWindowsSystemRoot, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
 
 class FakeStream extends EventEmitter {
   readonly setEncoding = vi.fn();
@@ -61,6 +61,18 @@ afterEach(() => {
   spawnMock.mockReset();
   existsSyncMock.mockImplementation((file: string) => file === "/bin/ps");
   helpers = [];
+});
+
+describe("resolveWindowsSystemRoot", () => {
+  it("accepts only a fully qualified drive path, from SystemRoot and then windir", () => {
+    expect(resolveWindowsSystemRoot({ SystemRoot: "C:\\Windows" })).toBe("C:\\Windows");
+    expect(resolveWindowsSystemRoot({ SystemRoot: "D:/WinRoot", windir: "C:\\Windows" })).toBe("D:/WinRoot");
+    expect(resolveWindowsSystemRoot({ SystemRoot: "", windir: "C:\\Windows" })).toBe("C:\\Windows");
+    for (const unsafe of ["", "Windows", ".\\Windows", "\\\\server\\share", "C:", "C:Windows"]) {
+      expect(resolveWindowsSystemRoot({ SystemRoot: unsafe })).toBeUndefined();
+    }
+    expect(resolveWindowsSystemRoot({})).toBeUndefined();
+  });
 });
 
 describe("resolveTrustedPs", () => {
@@ -246,7 +258,7 @@ describe("killProcessTree", () => {
       answer("", code);
       const caller = root();
       await killProcessTree(4242, caller);
-      expect(spawnMock).toHaveBeenCalledWith(path.join("D:\\WinRoot", "System32", "taskkill.exe"), ["/pid", "4242", "/T", "/F"], expect.anything());
+      expect(spawnMock).toHaveBeenCalledWith(path.win32.join("D:\\WinRoot", "System32", "taskkill.exe"), ["/pid", "4242", "/T", "/F"], expect.anything());
       expect(spawnMock.mock.calls[0]?.[2]).not.toHaveProperty("env");
       expect(caller.kill).toHaveBeenCalledTimes(rootKilled ? 1 : 0);
     } finally {
@@ -267,15 +279,34 @@ describe("killProcessTree", () => {
     }
   });
 
-  it("falls back to the default Windows directory and kills the root when taskkill cannot run", async () => {
+  it("uses windir when SystemRoot is not fully qualified, and kills the root when taskkill cannot run", async () => {
     const restore = withPlatform("win32");
     try {
-      vi.stubEnv("SystemRoot", undefined);
+      vi.stubEnv("SystemRoot", "Windows");
+      vi.stubEnv("windir", "C:\\Windows");
       provide((helper) => helper.emit("error", new Error("spawn ENOENT")));
       const caller = root();
       await killProcessTree(4242, caller);
-      expect(spawnMock.mock.calls[0]?.[0]).toBe(path.join("C:\\Windows", "System32", "taskkill.exe"));
+      expect(spawnMock.mock.calls[0]?.[0]).toBe(path.win32.join("C:\\Windows", "System32", "taskkill.exe"));
       expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it("never guesses a taskkill path without a fully qualified system directory", async () => {
+    const restore = withPlatform("win32");
+    try {
+      vi.stubEnv("SystemRoot", "");
+      vi.stubEnv("windir", undefined);
+      const caller = root();
+      await killProcessTree(4242, caller);
+      expect(spawnMock).not.toHaveBeenCalled();
+      expect(caller.kill).toHaveBeenCalledTimes(1);
+      caller.kill.mockClear();
+      caller.alive.mockReturnValue(false);
+      await killProcessTree(4242, caller);
+      expect(caller.kill).not.toHaveBeenCalled();
     } finally {
       restore();
     }

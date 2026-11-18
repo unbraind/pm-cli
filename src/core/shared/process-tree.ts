@@ -65,6 +65,16 @@ export function resolveTrustedPs(exists: (file: string) => boolean = existsSync)
   return TRUSTED_PS_PATHS.find((file) => exists(file));
 }
 
+/**
+ * The fully qualified Windows directory from `SystemRoot` or `windir`, or
+ * `undefined` when neither names an absolute drive path: an empty, relative
+ * or UNC value would let `taskkill.exe` resolve somewhere the host does not
+ * control.
+ */
+export function resolveWindowsSystemRoot(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return [env.SystemRoot, env.windir].find((candidate): candidate is string => typeof candidate === "string" && /^[A-Za-z]:[\\/]/u.test(candidate));
+}
+
 /** Kill `pid` itself, treating a process that is already gone as stopped. */
 function killProcess(pid: number): void {
   try {
@@ -122,9 +132,10 @@ export function runTeardownHelper(
 
 /**
  * Kill the process tree rooted at `pid`. On Windows this runs the system
- * `taskkill /T /F` from System32, never a `taskkill` found through the working
- * directory or `PATH`; when it cannot run or fails, the root itself is still
- * killed. `taskkill` names the root by PID, so a root that exits and has its
+ * `taskkill /T /F` from the System32 directory under a fully qualified
+ * `SystemRoot` or `windir`, never a `taskkill` found through the working
+ * directory or `PATH`; when no such directory is known, or taskkill cannot run
+ * or fails, the root itself is still killed. `taskkill` names the root by PID, so a root that exits and has its
  * PID reused in the moment before `taskkill` opens it cannot be told apart;
  * only an OS containment mechanism (a job object) would close that window, and
  * Node exposes none. Elsewhere it signals the process group led by `pid` when the child
@@ -148,7 +159,13 @@ export async function killProcessTree(
     return;
   }
   if (process.platform === "win32") {
-    const taskkill = path.join(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe");
+    const systemRoot = resolveWindowsSystemRoot();
+    if (systemRoot === undefined) {
+      // No fully qualified system directory: never guess a taskkill path.
+      if (root.alive()) root.kill();
+      return;
+    }
+    const taskkill = path.win32.join(systemRoot, "System32", "taskkill.exe");
     const result = await runTeardownHelper(taskkill, ["/pid", String(pid), "/T", "/F"]);
     // A root that exited while taskkill ran may have a reused PID by now.
     if (result?.code !== 0 && root.alive()) root.kill();

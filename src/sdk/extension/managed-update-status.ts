@@ -10,6 +10,26 @@ import type { ManagedExtensionRecord } from "./managed-state.js";
 
 const MANAGED_UPDATE_CHECK_CONCURRENCY = 4;
 
+/** A counting semaphore: `acquire` waits for a free permit, `release` hands it to the next waiter. */
+function createPermits(limit: number): { acquire(): Promise<void>; release(): void } {
+  let free = limit;
+  const waiters: Array<() => void> = [];
+  return {
+    acquire: () => {
+      if (free > 0) {
+        free -= 1;
+        return Promise.resolve();
+      }
+      return new Promise<void>((resolve) => waiters.push(resolve));
+    },
+    release: () => {
+      const next = waiters.shift();
+      if (next) next();
+      else free += 1;
+    },
+  };
+}
+
 /** Carry `update_check_timeout_ms` only when this check's lookup ran out of its budget. */
 function withUpdateCheckTimeout(entry: ManagedExtensionRecord, timeoutMs: number | undefined): ManagedExtensionRecord {
   const { update_check_timeout_ms: _previous, ...rest } = entry;
@@ -26,18 +46,21 @@ export async function refreshManagedExtensionUpdates(
   offline = false,
   timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<ManagedExtensionState> {
+  // A provider holds its permit from launch until its teardown finishes, so
+  // no more than the limit are ever alive; results are reported as soon as
+  // each lookup settles, never after a teardown.
+  const providers = createPermits(MANAGED_UPDATE_CHECK_CONCURRENCY);
   const entries = await mapWithFixedConcurrency(state.entries, MANAGED_UPDATE_CHECK_CONCURRENCY, async (entry) => {
     if (!["github", "npm"].includes(entry.source.kind)) return entry;
     if (offline) return withUpdateCheckTimeout({
       ...entry, last_update_check_at: undefined, last_update_remote_commit: undefined,
       last_update_remote_version: undefined, update_available: null, update_error: undefined,
     }, undefined);
+    await providers.acquire();
     const updateStatus = entry.source.kind === "github"
       ? await checkGithubUpdate(entry.source, undefined, timeoutMs)
       : await checkNpmUpdate(entry.source, undefined, timeoutMs);
-    // Hold this slot until a timed-out provider is torn down, so no more than
-    // the concurrency limit of providers is ever alive.
-    await updateCheckTeardown(updateStatus);
+    void updateCheckTeardown(updateStatus).then(providers.release);
     return withUpdateCheckTimeout({
       ...entry,
       last_update_check_at: updateStatus.checked_at,
