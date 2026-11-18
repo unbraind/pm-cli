@@ -17,7 +17,6 @@ const tempRoots: string[] = [];
 
 afterEach(async () => {
   vi.unstubAllEnvs();
-  fixtureStartTimes.clear();
   await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -85,39 +84,12 @@ async function fakeGit(tail: string): Promise<{ root: string; pidFile: string }>
   return { root, pidFile };
 }
 
-/** The start time `ps` reports for `pid`, which a recycled PID cannot share; `undefined` once it is gone. */
-function startTimeOf(pid: number): string | undefined {
-  const row = spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", env: { PATH: "/usr/bin:/bin", LC_ALL: "C" } }).stdout?.trim();
-  return row ? row : undefined;
-}
-
-/** Start times captured when each fixture pid was read, so cleanup can prove a pid is still that process. */
-const fixtureStartTimes = new Map<number, string>();
-
-/**
- * Kill fixture leftovers so a failed assertion never leaves a sleep behind,
- * but only a pid whose start time still matches the one captured when it was
- * read: on a busy runner a recorded pid may already belong to another process.
- */
-function killQuietly(pids: number[]): void {
-  for (const pid of pids) {
-    const recorded = fixtureStartTimes.get(pid);
-    if (recorded === undefined || startTimeOf(pid) !== recorded) continue;
-    try {
-      process.kill(pid, "SIGKILL");
-    } catch {
-      // Already gone.
-    }
-  }
-}
+// Fixture processes are never signalled by recorded PID during cleanup: a PID
+// sampled by the test may be recycled by then. Every fixture sleep is
+// `sleep 30`, so a leftover after a failed assertion ends on its own.
 
 async function readPids(pidFile: string, limitMs = 15_000): Promise<number[]> {
-  const pids = (await waitForFile(pidFile, limitMs)).trim().split(/\s+/u).map(Number);
-  for (const pid of pids) {
-    const started = startTimeOf(pid);
-    if (started !== undefined) fixtureStartTimes.set(pid, started);
-  }
-  return pids;
+  return (await waitForFile(pidFile, limitMs)).trim().split(/\s+/u).map(Number);
 }
 
 /**
@@ -142,20 +114,14 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
     vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
     const started = Date.now();
-    let pids: number[] = [];
-    try {
-      const status = await checkGithubUpdate(GITHUB_SOURCE);
-      const elapsed = Date.now() - started;
-      pids = await readPids(pidFile);
-      expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
-      expect(elapsed).toBeGreaterThanOrEqual(900);
-      expect(elapsed).toBeLessThan(10_000);
-    } finally {
-      // The re-parented descendant is outside the live tree the deadline
-      // walks; it no longer delays the result and is cleaned up here. The
-      // launcher exited long ago, so its pid is never signalled.
-      killQuietly(pids.slice(1));
-    }
+    const status = await checkGithubUpdate(GITHUB_SOURCE);
+    const elapsed = Date.now() - started;
+    // The re-parented descendant is outside the live tree the deadline walks;
+    // it no longer delays the result and ends on its own.
+    expect(await readPids(pidFile)).toHaveLength(2);
+    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
+    expect(elapsed).toBeGreaterThanOrEqual(900);
+    expect(elapsed).toBeLessThan(10_000);
   });
 
   it("kills a still-running launcher and its descendant at the deadline", async () => {
@@ -164,15 +130,10 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     const { root, pidFile } = await fakeGit("wait");
     vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
     vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
-    let pids: number[] = [];
-    try {
-      const status = await checkGithubUpdate(GITHUB_SOURCE);
-      pids = await readPids(pidFile);
-      expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
-      for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
-    } finally {
-      killQuietly(pids);
-    }
+    const status = await checkGithubUpdate(GITHUB_SOURCE);
+    const pids = await readPids(pidFile);
+    expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
+    for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
   });
 
   it("leaves the lookup in the host's process group, so a terminal Ctrl-C stops it with the host", async () => {
@@ -208,9 +169,17 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
       expect(await exitWithin(exited, 10_000)).toEqual({ code: null, signal: "SIGINT" });
       for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
     } finally {
-      if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+      // The host leads the fixture's own process group. While Node has not
+      // reaped the host its pid, and so the group id, cannot be reused, so
+      // this reaches only the fixture; after that, leftovers end on their own.
+      if (host.exitCode === null && host.signalCode === null) {
+        try {
+          process.kill(-host.pid!, "SIGKILL");
+        } catch {
+          // The whole group already ended.
+        }
+      }
       await exitWithin(exited, 10_000);
-      killQuietly(pids);
     }
   }, 30_000);
 
