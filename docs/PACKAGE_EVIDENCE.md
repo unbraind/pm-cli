@@ -136,8 +136,9 @@ attempt to stop a provider that is still running and its live descendants
 descendant is missed when that tool cannot run, and one whose launcher already
 exited is not reached. The timeout result never depends on the teardown. A lookup still running at its deadline is reported as timed
 out even if the provider then exits cleanly. A recorded `update_check_timeout_ms`
-is kept only beside a timed-out reason. A provider that exits with a failure
-is reported as failed at once, even while a descendant still holds its output.
+is kept only beside a timed-out reason. A provider whose failed exit is
+observed before the deadline is reported as failed at once, even while a
+descendant still holds its output.
 The GitHub lookup runs with `GIT_TERMINAL_PROMPT=0` and
 `GCM_INTERACTIVE=never`, so neither Git's terminal prompt nor Git Credential
 Manager prompts interactively; a slow remote can still use up the budget, and

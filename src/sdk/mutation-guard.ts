@@ -625,9 +625,11 @@ export function secretGuardRuleCategory(rule: string): SecretGuardRuleCategory |
  * breaks a typed consumer (pm-gh1749). The most specific entry wins: a
  * decision under `rules`, then one under `categories` for the rule's
  * category, then `default`. A rule added later, or one this SDK does not know,
- * takes its category's decision or the default. An entry whose value is
- * `undefined` counts as absent; keys that name no rule or category are
- * ignored, so a policy written for a newer SDK still applies.
+ * takes its defined own `rules` entry if it has one, and otherwise its
+ * category's decision or the default. An entry whose value is `undefined`
+ * counts as absent; a `rules` entry may name a rule this SDK does not ship
+ * yet, and keys that name no category are ignored, so a policy written for a
+ * newer SDK still applies.
  */
 export interface SecretGuardPolicy<Decision> {
   /**

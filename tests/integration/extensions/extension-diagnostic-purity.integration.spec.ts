@@ -87,9 +87,12 @@ describe("managed extension diagnostic purity", () => {
   it("reports an up-to-date package and then honors an offline override", async () => {
     await withTempPmPath(async (context) => {
       const { managedPath, before } = await installManagedNpmFixture(context);
-      await withRegistry("up-to-date", async () => {
+      await withRegistry("up-to-date", async (requests) => {
         expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "checked", update_available: false }] });
+        const requestsBeforeOffline = requests();
         const offline = await runExtension(undefined, { manage: true, project: true, offline: true }, { path: context.pmPath });
+        // The offline override never contacts the registry.
+        expect(requests()).toBe(requestsBeforeOffline);
         expect(offline.details).toMatchObject({ extensions: [{ update_check_status: "not_checked", update_check_reason: "offline_requested", update_available: null }] });
       });
       expect(await readFile(managedPath, "utf8")).toBe(before);

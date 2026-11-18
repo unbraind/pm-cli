@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[5]: diagnostics,extensions,github,stable-codes,update-check
 created_at: "2026-11-18T09:38:17.161Z"
-updated_at: "2026-11-18T13:21:13.880Z"
+updated_at: "2026-11-18T16:09:23.983Z"
 closed_at: "2026-11-18T11:26:00.887Z"
 completed_at: "2026-11-18T11:26:00.887Z"
 author: "harness:claude-code"
@@ -16,7 +16,7 @@ parent: pm-ugqx
 risk: low
 confidence: high
 severity: low
-resolution: "checkGithubUpdate's default runner runs git ls-remote through runBoundedUpdateQuery with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never. It reports github_remote_lookup_timed_out with update_check_timeout_ms when the deadline passes, and github_remote_lookup_failed for any other failure, never git's command line, the repository URL or stderr. An injected runner takes (args, timeoutMs). no_remote_reference_found and missing_installed_commit are unchanged. docs/PACKAGE_EVIDENCE.md lists the codes, and a contract_change declares the migration."
+resolution: "checkGithubUpdate's default runner runs git ls-remote through runBoundedUpdateQuery with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never. It reports github_remote_lookup_timed_out with update_check_timeout_ms when the deadline passes, and github_remote_lookup_failed for any other execution failure (a successful lookup that resolves no reference still reports no_remote_reference_found), never git's command line, the repository URL or stderr. An injected runner takes (args, timeoutMs). no_remote_reference_found and missing_installed_commit are unchanged. docs/PACKAGE_EVIDENCE.md lists the codes, and a contract_change declares the migration."
 expected_result: "A GitHub update check failure is a stable, private-data-free code that tells a timeout apart from an unavailable remote"
 actual_result: "Unit tests assert both codes and that a failed status contains no ls-remote, repository host or stderr; a real fake-git integration test settles a stalled lookup in about 1 s as github_remote_lookup_timed_out and kills its descendant"
 component: extensions
@@ -40,7 +40,7 @@ close_reason: GitHub managed-package update checks report stable github_remote_l
 contract_change:
   api: "Managed GitHub update checks: update_error and update_check_reason"
   before: "A failed git ls-remote reported git's command line and stderr, starting 'Git command failed: git ls-remote', as update_error"
-  after: "It reports github_remote_lookup_timed_out with update_check_timeout_ms when the budget ran out and github_remote_lookup_failed otherwise, and git runs with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never"
+  after: "It reports github_remote_lookup_timed_out with update_check_timeout_ms when the budget ran out and github_remote_lookup_failed for any other execution failure, while a git ls-remote that succeeds but resolves no reference still reports no_remote_reference_found; git runs with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never"
   migrate: "Match the two stable codes instead of parsing git's message, and run git ls-remote directly to see git's own error"
 escape_class: production_defect
 gate_evidence:

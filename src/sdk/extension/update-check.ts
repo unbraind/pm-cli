@@ -204,11 +204,22 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     const provider = createProviderTeardown(lookup);
     let teardown: Promise<void> | undefined;
     const stop = (): Promise<void> => {
-      teardown = provider.stop();
-      return teardown;
+      const started = provider.stop();
+      teardown ??= started;
+      return started;
     };
     const deadline = setTimeout(() => {
-      settle(new UpdateQueryError(spec.timedOut, timeout, stop()));
+      // The timeout is delivered first; the teardown, whose first steps are
+      // synchronous process and filesystem checks, starts on a later turn of
+      // the event loop so it can never hold up the caller.
+      const deferred = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          void stop().then(resolve, resolve);
+        }, 0);
+      });
+      // Recorded before settling, so the overdue path reports it too.
+      teardown = deferred;
+      settle(new UpdateQueryError(spec.timedOut, timeout, deferred));
     }, timeout);
     function settle(error?: UpdateQueryError): void {
       if (settled) return;

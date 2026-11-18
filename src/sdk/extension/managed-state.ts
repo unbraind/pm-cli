@@ -183,8 +183,13 @@ const TIMED_OUT_UPDATE_ERROR = /^(?:npm_registry|github_remote)_lookup_timed_out
  * when it is a positive safe integer; otherwise omit the field, so a stale
  * budget never reads as timeout evidence.
  */
+/** Whether a recorded reason is a timeout, read trimmed as the extension summary reads it. */
+function isTimedOutUpdateError(error: unknown): boolean {
+  return typeof error === "string" && TIMED_OUT_UPDATE_ERROR.test(error.trim());
+}
+
 function optionalTimeoutBudget(error: unknown, value: unknown): { update_check_timeout_ms?: number } {
-  return typeof error === "string" && TIMED_OUT_UPDATE_ERROR.test(error) &&
+  return isTimedOutUpdateError(error) &&
     typeof value === "number" && Number.isSafeInteger(value) && value > 0
     ? { update_check_timeout_ms: value }
     : {};
@@ -301,7 +306,7 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
     last_update_remote_version: optionalString(entry.last_update_remote_version),
     // A timed-out lookup decided nothing, so its availability is unknown.
     update_available:
-      typeof entry.update_error === "string" && TIMED_OUT_UPDATE_ERROR.test(entry.update_error)
+      isTimedOutUpdateError(entry.update_error)
         ? null
         : typeof entry.update_available === "boolean" || entry.update_available === null
           ? entry.update_available

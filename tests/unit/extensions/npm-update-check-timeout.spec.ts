@@ -93,7 +93,14 @@ const spawnOptions = (call = 0): Record<string, unknown> => spawnMock.mock.calls
 async function settleAfter<T>(budget: number, lookup: () => Promise<T>): Promise<T> {
   const pending = lookup();
   await vi.advanceTimersByTimeAsync(budget);
-  return pending;
+  const result = await pending;
+  await flushTeardown();
+  return result;
+}
+
+/** Run the teardown the deadline deferred to a later turn of the event loop. */
+async function flushTeardown(): Promise<void> {
+  await vi.advanceTimersByTimeAsync(1);
 }
 
 beforeEach(() => {
@@ -121,6 +128,7 @@ describe("npm update lookup budget", () => {
     expect(killProcessTreeMock).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
     const status = await pending;
+    await flushTeardown();
     expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
     expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
     expect(children[0]?.stdout.destroy).toHaveBeenCalled();
@@ -128,10 +136,22 @@ describe("npm update lookup budget", () => {
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
   });
 
+  it("delivers the timeout before the teardown starts", async () => {
+    vi.useFakeTimers();
+    hang();
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    // The teardown's synchronous first steps run on a later turn of the loop.
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    await flushTeardown();
+    expect(killProcessTreeMock).toHaveBeenCalledTimes(1);
+  });
+
   it("settles a failed exit at once while a descendant still holds stdout, without tearing down by PID", async () => {
     provide((child) => child.exit(128));
     const status = await checkNpmUpdate(source);
-    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(children[0]?.stdout.destroy).toHaveBeenCalled();
     expect(killProcessTreeMock).not.toHaveBeenCalled();
     expect(children[0]?.kill).not.toHaveBeenCalled();
@@ -179,7 +199,7 @@ describe("npm update lookup budget", () => {
       return child;
     });
     const status = await checkNpmUpdate(source);
-    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(killProcessTreeMock).not.toHaveBeenCalled();
     // No process was created, so the teardown waits for no exit.
     let tornDown = false;
@@ -198,7 +218,7 @@ describe("npm update lookup budget", () => {
     void updateCheckTeardown(status).then(() => {
       tornDown = true;
     });
-    await vi.advanceTimersByTimeAsync(0);
+    await flushTeardown();
     // The fake SIGKILL took effect, so the teardown is done.
     expect(tornDown).toBe(true);
     // A provider whose kill never takes effect holds the teardown for 2 s.
@@ -213,10 +233,11 @@ describe("npm update lookup budget", () => {
     void updateCheckTeardown(stuck).then(() => {
       stuckDown = true;
     });
-    await vi.advanceTimersByTimeAsync(1_999);
+    // The exit wait started with the deferred teardown, about 1 ms after the deadline.
+    await vi.advanceTimersByTimeAsync(1_990);
     expect(stuckDown).toBe(false);
     expect(children[1]?.unref).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
+    await vi.advanceTimersByTimeAsync(20);
     expect(stuckDown).toBe(true);
     // A provider that never exited no longer keeps the host running.
     expect(children[1]?.unref).toHaveBeenCalledTimes(1);
@@ -293,7 +314,7 @@ describe("npm update lookup budget", () => {
   ])("reports %s before the deadline as a failed lookup without a budget", async (label, drive) => {
     provide(drive);
     const status = await checkNpmUpdate(source);
-    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toContain("private-fixture-value");
     if (label === "stdout beyond its buffer") expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
   });
@@ -325,7 +346,7 @@ describe("npm update lookup budget", () => {
     spawnMock.mockImplementation(() => {
       throw new Error(PRIVATE_FIXTURE);
     });
-    expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(await checkNpmUpdate(source)).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
   });
 
   it("applies the configured budget and names it when it runs out", async () => {
@@ -342,7 +363,7 @@ describe("npm update lookup budget", () => {
   it("runs npm attached with closed stdin, discarded stderr and no lifecycle scripts, and clears its deadline", async () => {
     vi.useFakeTimers();
     succeedWith('"2.0.0"\n');
-    expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: true, remote_version: "2.0.0" });
+    expect(await checkNpmUpdate(source)).toStrictEqual({ checked_at: expect.any(String), available: true, remote_version: "2.0.0" });
     expect(vi.getTimerCount()).toBe(0);
     expect(spawnMock.mock.calls[0]?.[1]).toEqual(["view", "@scope/example", "dist-tags.latest", "--json", "--ignore-scripts"]);
     expect(spawnOptions()).toMatchObject({
@@ -364,7 +385,7 @@ describe("npm update lookup budget", () => {
 describe("GitHub update lookup reasons", () => {
   it("runs a bounded git ls-remote without interactive prompts and compares the peeled commit", async () => {
     succeedWith("def456\tHEAD\n");
-    expect(await checkGithubUpdate(github)).toEqual({ checked_at: expect.any(String), available: true, remote_commit: "def456" });
+    expect(await checkGithubUpdate(github)).toStrictEqual({ checked_at: expect.any(String), available: true, remote_commit: "def456" });
     expect(spawnMock.mock.calls[0]?.slice(0, 2)).toEqual(["git", ["ls-remote", "https://github.com/o/r.git", "HEAD", "HEAD^{}"]]);
     expect(spawnOptions()).toMatchObject({
       stdio: ["ignore", "pipe", "ignore"],
@@ -390,7 +411,7 @@ describe("GitHub update lookup reasons", () => {
   ])("reports %s as a failed lookup without git's command line or stderr", async (_label, drive) => {
     provide(drive);
     const status = await checkGithubUpdate(github);
-    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toMatch(/private-fixture-value|ls-remote|github\.com/u);
   });
 });
@@ -461,6 +482,7 @@ describe("managed update status budget evidence", () => {
       refreshed = result;
     });
     await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    await flushTeardown();
     // Four providers timed out and are still being torn down: the fifth waits.
     expect(spawnMock).toHaveBeenCalledTimes(4);
     expect(releases).toHaveLength(4);
@@ -469,6 +491,7 @@ describe("managed update status budget evidence", () => {
     expect(spawnMock).toHaveBeenCalledTimes(5);
     await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
     await pending;
+    await flushTeardown();
     // Every result is reported while three teardowns and the fifth's are still running.
     expect(releases).toHaveLength(5);
     expect(refreshed?.entries.map((entry) => entry.update_error)).toEqual(Array(5).fill(NPM_REGISTRY_LOOKUP_TIMED_OUT));
@@ -486,6 +509,7 @@ describe("managed update status budget evidence", () => {
     const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries })!;
     const pending = refreshManagedExtensionUpdates(state, false, EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, false);
     await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    await flushTeardown();
     // Four teardowns are still pending, yet the fifth lookup already started.
     expect(releases).toHaveLength(4);
     expect(spawnMock).toHaveBeenCalledTimes(5);

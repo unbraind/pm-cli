@@ -30,7 +30,8 @@ function isRunning(pid: number): boolean {
     if ((error as NodeJS.ErrnoException).code === "ESRCH") return false;
     throw error;
   }
-  const state = spawnSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8" });
+  // Bounded, so a hanging ps cannot block the test worker past its deadline.
+  const state = spawnSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8", timeout: 5_000, killSignal: "SIGKILL" });
   const row = state.stdout?.trim() ?? "";
   // ps exits 1 with no row when the pid disappeared between the two probes;
   // any other outcome that is not a clean answer cannot prove anything.
@@ -194,11 +195,16 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     const root = await mkdtemp(path.join(os.tmpdir(), "pm-update-stderr-"));
     tempRoots.push(root);
     const marker = ["stderr-marker", "private-fixture-value"].join("-");
-    await writeFile(path.join(root, "git"), `#!/bin/sh\necho "fatal: ${marker}" >&2\nexit 128\n`);
+    const ran = path.join(root, "fixture-ran");
+    // The fixture records that it ran after writing stderr, so a launch
+    // failure cannot pass for redaction.
+    await writeFile(path.join(root, "git"), `#!/bin/sh\necho "fatal: ${marker}" >&2\necho ran > "$PM_FIXTURE_RAN_FILE"\nexit 128\n`);
     await chmod(path.join(root, "git"), 0o755);
     vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
+    vi.stubEnv("PM_FIXTURE_RAN_FILE", ran);
     const status = await checkGithubUpdate(GITHUB_SOURCE);
-    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
+    expect(await readFile(ran, "utf8")).toBe("ran\n");
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toContain(marker);
   });
 });

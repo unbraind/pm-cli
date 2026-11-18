@@ -189,7 +189,8 @@ IPv4 addresses, private SSH targets and user-at-private-host addresses) or
 `path` (absolute home-directory paths). The most specific entry wins: a `rules`
 entry, then the finding's `categories` entry, then `default`. A detector added
 later joins an existing category and takes that category's decision, or the
-default when the policy names no such category, without a policy change. A rule the running SDK does not know, such as
+default when the policy names no such category, without a policy change, unless the
+policy already holds a defined own `rules` entry for it, which still wins. A rule the running SDK does not know, such as
 one in a finding decoded from a newer host, has no category: an exact `rules`
 entry for it still applies, and otherwise it takes the default. Entries whose
 value is `undefined` count as absent; a `rules` entry may name a rule this SDK

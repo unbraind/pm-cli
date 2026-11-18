@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[4]: concurrency,extensions,locking,update-check
 created_at: "2026-11-18T10:52:10.869Z"
-updated_at: "2026-11-18T14:02:16.903Z"
+updated_at: "2026-11-18T16:09:25.681Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "manage --fix-managed-state holds the extension state lock only for the adoption read and write; the remote update refresh and runtime probe run after the lock is released, with the same results and offline behaviour; a test proves a concurrent locked package action is not blocked by a slow lookup; manage without --fix-managed-state is unchanged"
@@ -15,7 +15,7 @@ risk: medium
 confidence: medium
 severity: low
 expected_result: A slow or long-budget update lookup never holds the extension state lock
-actual_result: "With --fix-managed-state the lock spans the whole remote refresh at the default 10-second lookup budget (the override does not apply there), and each batch's teardown can add up to about 2 seconds, so three or more batches can exceed the 30-second lock wait"
+actual_result: "With --fix-managed-state the lock spans the whole remote refresh at the default 10-second lookup budget (the override does not apply there, and permits are released as each lookup settles, so teardown adds no time under the lock), so three or more batches can exceed the 30-second lock wait"
 component: extensions
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5kfzjh,discovered_from,"2026-11-18T10:52:10.869Z","harness:claude-code","cli:create:dep",detected
