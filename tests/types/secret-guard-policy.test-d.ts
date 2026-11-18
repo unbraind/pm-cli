@@ -152,8 +152,20 @@ const fromOpaque: unknown = decideSecretGuardFinding({ default: true as const, r
 const opaqueNarrow: true = decideSecretGuardFinding({ default: true as const, rules: opaqueRules }, finding);
 // @ts-expect-error an opaque categories map widens the result too
 const opaqueCategories: true = decideSecretGuardFinding({ default: true as const, categories: opaqueRules }, finding);
-// An empty override map holds no decision.
-const fromEmpty: true = decideSecretGuardFinding({ default: true as const, rules: {} }, finding);
+// A map type naming no keys (`{}`, `Record<never, never>`) may hold any entries, so the decision type widens too.
+type KeylessRules = Record<never, never>;
+const fromEmpty: unknown = {} as SecretGuardPolicyDecision<{ default: true; rules: KeylessRules }>;
+// @ts-expect-error a keyless map is not narrowed to the default
+const emptyNarrow: true = {} as SecretGuardPolicyDecision<{ default: true; rules: KeylessRules }>;
+void emptyNarrow;
+// Iterable containers hold entries an own-property lookup never reads, so they are refused.
+// @ts-expect-error a Map is not a rules map
+decideSecretGuardFinding({ default: "allow", rules: new Map([["private_ip", "deny"]]) }, finding);
+// @ts-expect-error an array is not a rules map
+decideSecretGuardFinding({ default: "allow", rules: ["deny"] }, finding);
+// A rules object literal still passes the inference overload.
+const literalRules: string = decideSecretGuardFinding({ default: "allow", rules: { private_ip: "deny" } }, finding);
+void literalRules;
 void fromOpaque;
 void opaqueNarrow;
 void opaqueCategories;

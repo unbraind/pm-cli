@@ -208,10 +208,15 @@ overrides. A union of policy types yields every member's decisions, and a
 policy type itself calls `decideSecretGuardFinding<P>(policy, finding)` to
 return `SecretGuardPolicyDecision<P>`, and a `rules` map typed by a named
 interface passes to the helper as it is. A map typed only as `object` hides
-its keys, so it widens the result to `unknown`; a
+its keys, so it widens the result to `unknown`. The types cannot see entries
+that TypeScript's own assignability rules let through, such as a
+`Record<string, unknown>` from a configuration loader or a value typed `{}`
+assigned to a typed policy, so validate untyped input before annotating it as
+`SecretGuardPolicy<D>`, or type it as `SecretGuardPolicy<unknown>`; a
 policy that is not an object, has no own `default` or has `default:
-undefined`, holds non-object `categories` or `rules`, or a finding without a
-string `rule`, throws a `TypeError`.
+undefined`, holds `categories` or `rules` that are not plain objects (a `Map`,
+`Set` or array keeps its entries where an own-property lookup never finds
+them), or a finding without a string `rule`, throws a `TypeError`.
 
 `SECRET_GUARD_RULE_CATEGORIES` maps every shipped rule to its category and
 `secretGuardRuleCategory(rule)` returns `undefined` for an unknown one.

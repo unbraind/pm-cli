@@ -151,12 +151,21 @@ describe("decideSecretGuardFinding", () => {
     ["null categories", { default: true, categories: null }, { rule: "private_ip" }, "Secret guard policy categories must be an object keyed by category."],
     ["array categories", { default: true, categories: [] }, { rule: "private_ip" }, "Secret guard policy categories must be an object keyed by category."],
     ["string rules", { default: true, rules: "private_ip" }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
+    // A container whose entries an own-property lookup never finds would silently drop a configured decision.
+    ["a Map of rules", { default: "allow", rules: new Map([["private_ip", "deny"]]) }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
+    ["a Map of categories", { default: "allow", categories: new Map([["network", "deny"]]) }, { rule: "private_ip" }, "Secret guard policy categories must be an object keyed by category."],
+    ["a Set of rules", { default: "allow", rules: new Set(["private_ip"]) }, { rule: "private_ip" }, "Secret guard policy rules must be an object keyed by rule."],
     ["a null finding", { default: true }, null, "Secret guard finding must have a string rule."],
     ["a string finding", { default: true }, "private_ip", "Secret guard finding must have a string rule."],
     ["a finding without a rule", { default: true }, {}, "Secret guard finding must have a string rule."],
     ["a numeric rule", { default: true }, { rule: 7 }, "Secret guard finding must have a string rule."],
   ])("refuses %s", (_label, input, finding, message) => {
     expect(() => decideSecretGuardFinding(input as SecretGuardPolicy<boolean>, finding as { rule: string })).toThrow(new TypeError(message));
+  });
+
+  it("reads a null-prototype map, which is still a plain object", () => {
+    const rules = Object.assign(Object.create(null) as Record<string, string>, { private_ip: "deny" });
+    expect(decideSecretGuardFinding({ default: "allow", rules }, { rule: "private_ip" })).toBe("deny");
   });
 });
 

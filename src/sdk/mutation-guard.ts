@@ -660,15 +660,11 @@ type PolicyEntryDecisions<Entries> = Entries extends object
   : never;
 
 /**
- * Whether a map type hides its keys (`object`, or an interface without
- * members), so any decision may sit in it at runtime: its decisions are then
- * `unknown`. An empty object literal type, which holds none, is not opaque.
+ * Whether a map type names no keys (`object`, `{}` or a memberless
+ * interface). Any value with entries is assignable to such a type, so any
+ * decision may sit in it at runtime, and its decisions are then `unknown`.
  */
-type OpaqueEntries<Entries> = [keyof Entries] extends [never]
-  ? Entries extends { readonly [key: string]: never }
-    ? false
-    : true
-  : false;
+type OpaqueEntries<Entries> = [keyof Entries] extends [never] ? true : false;
 
 /**
  * The decisions a `categories` map holds under each stable category, which is
@@ -707,10 +703,14 @@ function ownPolicyEntry<Decision>(
   return entries !== undefined && key !== undefined && Object.hasOwn(entries, key) ? entries[key] : undefined;
 }
 
-/** Read an own `categories` or `rules` map of a policy, refusing one that is not an object. */
+/**
+ * Read an own `categories` or `rules` map of a policy, refusing one that is
+ * not a plain object: a `Map`, `Set` or array holds its entries where an own
+ * property lookup never finds them, so a configured decision would be ignored.
+ */
 function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules"): Partial<Record<string, Decision>> | undefined {
   const entries: unknown = Object.hasOwn(policy, field) ? (policy as Record<string, unknown>)[field] : undefined;
-  if (entries !== undefined && (typeof entries !== "object" || entries === null || Array.isArray(entries))) {
+  if (entries !== undefined && (typeof entries !== "object" || entries === null || Object.prototype.toString.call(entries) !== "[object Object]")) {
     throw new TypeError(`Secret guard policy ${field} must be an object keyed by ${field === "rules" ? "rule" : "category"}.`);
   }
   return entries as Partial<Record<string, Decision>> | undefined;
@@ -726,8 +726,8 @@ function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules
  * wrapper, returns `D` without `undefined`.
  *
  * @throws {TypeError} When the policy is not an object, has no `default`
- * decision, or holds `categories` or `rules` that are not objects, or when the
- * finding has no string `rule`.
+ * decision, or holds `categories` or `rules` that are not plain objects (a
+ * `Map`, `Set` or array is refused), or when the finding has no string `rule`.
  */
 export function decideSecretGuardFinding<Decision>(
   policy: SecretGuardPolicy<Decision>,
@@ -740,12 +740,15 @@ export function decideSecretGuardFinding<Decision>(
  * inline policy, one declared with `satisfies`, or a union of policy types.
  * A wrapper generic over the policy type itself passes it explicitly
  * (`decideSecretGuardFinding<P>(policy, finding)`) to get
- * `SecretGuardPolicyDecision<P>`. A `rules` map may be any object type,
- * including a named interface without an index signature.
+ * `SecretGuardPolicyDecision<P>`. A `rules` map may be any plain object type,
+ * including a named interface without an index signature, but not an
+ * iterable container such as a `Map` or an array.
  *
  * @throws {TypeError} As for the overload above.
  */
-export function decideSecretGuardFinding<Policy extends Omit<SecretGuardPolicy<unknown>, "rules"> & { readonly rules?: object }>(
+export function decideSecretGuardFinding<
+  Policy extends Omit<SecretGuardPolicy<unknown>, "rules"> & { readonly rules?: object & { readonly [Symbol.iterator]?: never } },
+>(
   policy: Policy,
   finding: { readonly rule: string },
 ): SecretGuardPolicyDecision<Policy>;
