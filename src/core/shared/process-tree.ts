@@ -108,6 +108,25 @@ export function processTableSharesNamespace(
   return nspid?.length === 1 && Number(nspid[0]) === process.pid;
 }
 
+/**
+ * Whether every link from `pid` up to `root` still has the parent the
+ * snapshot recorded, so a reused intermediate PID cannot make an unrelated
+ * process look like a descendant. Links are read right before the signal.
+ */
+export function ancestryStillMatches(
+  pid: number,
+  root: number,
+  parentOf: ReadonlyMap<number, number>,
+  matches: (entry: ProcessTableDescendant) => boolean = parentStillMatches,
+): boolean {
+  for (let current = pid; current !== root; ) {
+    const parent = parentOf.get(current);
+    if (parent === undefined || !matches({ pid: current, parent })) return false;
+    current = parent;
+  }
+  return true;
+}
+
 function readProcStat(file: string): string | undefined {
   try {
     return readFileSync(file, "utf8");
@@ -265,7 +284,9 @@ async function killPosixDescendants(pid: number, root: ProcessTreeRoot): Promise
   // A fixed environment: procps rejects -A under PS_PERSONALITY=bsd or CMD_ENV=bsd.
   const table = await runTeardownHelper(ps, ["-A", "-o", "pid=", "-o", "ppid="], PS_ENV);
   if (table?.code !== 0 || !root.alive()) return;
-  for (const descendant of descendantEntriesFromProcessTable(table.stdout, pid)) {
-    if (parentStillMatches(descendant)) killProcess(descendant.pid);
+  const descendants = descendantEntriesFromProcessTable(table.stdout, pid);
+  const parentOf = new Map(descendants.map((entry) => [entry.pid, entry.parent]));
+  for (const descendant of descendants) {
+    if (ancestryStillMatches(descendant.pid, pid, parentOf)) killProcess(descendant.pid);
   }
 }

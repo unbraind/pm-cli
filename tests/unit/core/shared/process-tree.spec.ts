@@ -21,7 +21,7 @@ vi.mock("node:fs", async (importOriginal) => ({
   readFileSync: readFileSyncMock,
 }));
 
-const { descendantEntriesFromProcessTable, descendantsFromProcessTable, killProcessTree, parentStillMatches, processTableSharesNamespace, resolveTrustedPs, resolveWindowsSystemRoot, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
+const { ancestryStillMatches, descendantEntriesFromProcessTable, descendantsFromProcessTable, killProcessTree, parentStillMatches, processTableSharesNamespace, resolveTrustedPs, resolveWindowsSystemRoot, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
 
 class FakeStream extends EventEmitter {
   readonly setEncoding = vi.fn();
@@ -91,6 +91,17 @@ describe("parentStillMatches", () => {
     readFileSyncMock.mockImplementation(() => "4300 (sleep) S 4242 1 1 0");
     expect(parentStillMatches({ pid: 4300, parent: 4242 })).toBe(true);
     expect(readFileSyncMock).toHaveBeenCalledWith("/proc/4300/stat", "utf8");
+  });
+});
+
+describe("ancestryStillMatches", () => {
+  const parentOf = new Map([[200, 100], [300, 200]]);
+  it("requires every link up to the root to keep its snapshot parent", () => {
+    expect(ancestryStillMatches(300, 100, parentOf, () => true)).toBe(true);
+    // The intermediate 200 was reused: its child 300 must not count as a descendant.
+    expect(ancestryStillMatches(300, 100, parentOf, (entry) => entry.pid !== 200)).toBe(false);
+    expect(ancestryStillMatches(400, 100, parentOf, () => true)).toBe(false);
+    expect(ancestryStillMatches(100, 100, parentOf, () => false)).toBe(true);
   });
 });
 
@@ -306,6 +317,27 @@ describe("killProcessTree", () => {
       await killProcessTree(4242, caller);
       expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4300, "SIGKILL"]]);
       expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
+  });
+
+  it("skips a grandchild whose intermediate parent was reused after the snapshot", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        return true;
+      });
+      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat" || file === "/proc/self/status");
+      readFileSyncMock.mockImplementation((file: string) => {
+        if (file === "/proc/self/status") return `NSpid:\t${process.pid}\n`;
+        // 4400 still names 4300 as its parent, but 4300 now belongs to init.
+        return file === "/proc/4400/stat" ? "4400 (helper) S 4300 0" : "4300 (other) S 1 0";
+      });
+      answer("4300 4242\n4400 4300\n");
+      await killProcessTree(4242, root());
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
     } finally {
       restore();
     }

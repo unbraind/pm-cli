@@ -108,7 +108,10 @@ beforeEach(() => {
   vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, undefined);
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Finish deferred teardowns (and drop their exit listeners) before the
+  // fake clock is discarded, so nothing leaks into the next test.
+  if (vi.isFakeTimers()) await vi.runAllTimersAsync();
   vi.restoreAllMocks();
   vi.useRealTimers();
   spawnMock.mockReset();
