@@ -1,0 +1,47 @@
+id: pm-gh1748
+title: "GH-1748: drop tinyglobby, fdir and picomatch from the SDK runtime graph so consumers' production audits pass while GHSA-fc5q-39xc-vjpf has no patched picomatch"
+description: "GitHub issue 1748 (fleet report): npm audit --omit=dev on a fresh install of @unbrained/pm-cli 2026.11.17 reports 4 high entries (pm-cli via tinyglobby, tinyglobby, fdir, picomatch) for GHSA-fc5q-39xc-vjpf, which marks picomatch through 4.0.7 vulnerable with no patched version. Every extension package that gates releases on a production audit is red without any change of its own, and consumers cannot fix it with overrides because no patched target exists. The only runtime consumer is expandAddGlobEntries in src/sdk/linked-artifacts.ts (pm files/docs/test --add-glob). Remediation: replace tinyglobby with a bounded in-repo directory walk plus an explicit glob matcher that keeps the current semantics (files only, dot files matched, symlinks followed with cycle protection, literal directories never expanded, relative or absolute output by pattern form, sorted and deduplicated) and proves parity against tinyglobby over a fixture tree. The repository-side advisory gate exception is pm-03q389."
+type: Issue
+status: closed
+priority: 1
+tags[6]: consumer-audit,dependency,"gh:1748",picomatch,sdk,security
+created_at: "2026-11-17T21:58:35.180Z"
+updated_at: "2026-11-18T02:32:38.513Z"
+closed_at: "2026-11-17T22:40:38.313Z"
+completed_at: "2026-11-17T22:40:38.313Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A fresh install of the packed artifact has no tinyglobby, fdir or picomatch in its production dependency graph and npm audit --omit=dev reports no entry for GHSA-fc5q-39xc-vjpf; --add-glob results are identical to the previous tinyglobby expansion on a parity fixture covering stars, globstars, classes, braces, dot files, symlinks, literal directories, absolute patterns and parent-relative patterns; refusal or bounded behavior for pathological patterns is tested; docs describe the supported glob syntax"
+parent: pm-i7w2
+risk: medium
+confidence: medium
+severity: high
+resolution: "src/core/fs/file-glob.ts expands --add-glob with a linear pre-pass, a bounded NFA and a lazily built DFA over a pruned directory walk; tests/unit/core/fs/file-glob.spec.ts proves identical results to tinyglobby on about 100 patterns; the grammar and deliberate differences (negation refused, symlink cycles not re-entered, stepped ranges literal, escaped leading ! literal) are in docs/COMMANDS.md; tinyglobby moved to devDependencies and runtime-dependencies.json dropped tinyglobby, fdir and picomatch; a fresh consumer install of the packed artifact reports 0 vulnerabilities in npm audit --omit=dev; the advisory gate now refuses any waiver covering a runtime package."
+expected_result: A clean SDK install passes a production npm audit
+actual_result: npm audit --omit=dev on a fresh install of the packed artifact reports 0 vulnerabilities and no glob dependency is installed
+component: sdk
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-03q389,related,"2026-11-17T21:58:35.180Z","harness:claude-code","cli:create:dep",detected
+notes[2]{created_at,author,text}:
+  "2026-11-17T22:19:48.524Z","harness:claude-code","Implementation: src/core/fs/file-glob.ts replaces tinyglobby in expandAddGlobEntries. Design: one linear pre-pass pairs braces and extglob parentheses (so unclosed constructs never trigger re-parsing), a recursive-descent parser bounded at 32 nesting levels builds an AST, Thompson construction builds an NFA bounded at 50,000 states, and the directory walk advances a lazily built DFA (cache bounded at 10,000 nodes) one code point at a time, pruning any directory whose path can no longer match. No regular expression is involved, so repeated extglobs such as +(*) and star chains stay linear. Parity semantics found by probing tinyglobby 0.2.17 with the previous options (onlyFiles, dot, expandDirectories false, followSymbolicLinks): every bracket expression also matches its literal text (picomatch's default literalBrackets fallback, which is what makes app/[slug]/*.tsx reach a [slug] directory), trailing slashes and a leading ./ are ignored, ../ prefixes are kept, numeric and single-letter brace ranges expand, single-part braces stay literal, POSIX classes work, a run of three stars is a single star, leading ! made tinyglobby return nothing. Deliberate differences, documented in docs/COMMANDS.md: negation is a usage error instead of an empty result; a symlink to a directory already on the walk path is not re-entered (tinyglobby listed a self-loop once); stepped ranges are literal (tinyglobby ignored the step); an escaped leading \\! matches a literal !. tinyglobby moved to devDependencies (repository scripts and the parity test still use it). Side effect found: TypeScript 6 no longer includes @types automatically and the program only received Node types through tinyglobby's declarations, so tsconfig.json now declares types: [node] like the packages and examples configs."
+  "2026-11-18T02:32:38.513Z","harness:claude-code","Review hardening on PR 1750 (Codex gpt-6.1-sol xhigh, 15 rounds; rounds 9 and 15 clean; also Greptile and CodeRabbit). Final design: a linear pre-pass pairs braces, extglobs and plain groups inside extglobs. The parser builds an AST with no copying. The Thompson NFA keeps two open ends per fragment: one at a segment start and one inside a segment. Each globstar not followed by '/' compiles to a star plus, at a segment start, a segment loop and an any-text loop; Nfa.resolveGlobstars then links them from the continuation's syntactic closure (epsilon edges that stand for empty pattern text, not zero-length matches like a star). Consequences: every brace or extglob equals the union of its textual expansions; results are a superset of tinyglobby's outside the documented picomatch 4.0.7 '**'-adjacency family; exact parity holds for construct-free patterns. Three deterministic property tests pin this: superset over 400 random patterns, parity over 200, union over 150. Other fixes from review: DFA retention bounded in nodes, edges and state ids; path normalization; UNC roots in input and output; nested extglob parentheses; exact-case literal names; POSIX classes as a Map, including ascii; 32-level nesting and 50,000-state bounds. Documented differences: negation refused; symlink cycles not re-entered; literal parentheses outside extglobs (Next.js route groups); x/** never returns a file x; superset results where tinyglobby was internally inconsistent."
+files[5]{path,scope,note}:
+  src/core/fs/file-glob.ts,project,bounded NFA/DFA glob matcher and walk
+  src/sdk/linked-artifacts.ts,project,expandAddGlobEntries uses expandFileGlob
+  tests/unit/core/fs/file-glob-literal-case.spec.ts,project,exact-case literal match on case-insensitive listings
+  tests/unit/core/fs/file-glob.spec.ts,project,tinyglobby parity fixture and bound tests
+  tsconfig.json,project,declare Node types explicitly (TypeScript 6)
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/fs/file-glob.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/commands/annotations/files-docs-command.spec.ts,project,600,"harness:claude-code","2026-11-17T22:19:50.246Z",local_mutation,fix/advisory-gate-time-bounded-waiver
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,"Linked Artifacts: --add-glob grammar, bounds and differences"
+close_reason: "Replaced tinyglobby with a built-in bounded glob matcher for --add-glob, proved identical on a parity fixture, moved tinyglobby to devDependencies; consumer production audit is clean."
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_added
+  owner: pm-gh1748
+  gate_id: dependency-advisory-runtime-graph
+  negative_control: "Judging config/dependency-advisory-waivers.json against main 3efa40a96 runtime-dependencies.json (tinyglobby in the runtime graph) refuses the picomatch waiver with waiver_covers_runtime_dependency, so the advisory gate blocks; the same waiver against this branch runtime ledger has no findings. tests/unit/scripts/release/dependency-advisories/gate.spec.ts and waivers.spec.ts assert the refusal."
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/core/fs/file-glob.spec.ts tests/unit/sdk/security/linked-artifact-glob.spec.ts tests/unit/commands/annotations,node scripts/release/dependency-advisories/gate.mjs,npm audit --omit=dev in a fresh consumer of the packed artifact (0 vulnerabilities),"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+body: ""

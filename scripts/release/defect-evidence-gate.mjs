@@ -6,7 +6,8 @@
  * controls, historical PM lineage, and structured evidence on new defects.
  * `--waiver-notice` instead fails while any time-bounded waiver is inside its
  * declared notice window or already expired, so a scheduled run can warn days
- * before an expiry blocks a release.
+ * before an expiry blocks a release. It also judges the dependency advisory
+ * waivers (pm-03q389), whose owners must be open tracker items.
  */
 import { readFile, realpath } from "node:fs/promises";
 import path from "node:path";
@@ -21,7 +22,16 @@ import {
   parseDefectRecurrencePolicy,
   resolvePmRoot,
   sortWaiverNotices,
+  waiverNoticeFor,
 } from "../../dist/sdk/index.js";
+import {
+  evaluateWaivers,
+  readRuntimePackages,
+  readWaiverRegistry,
+  runtimeFindings,
+  WAIVERS_PATH,
+  waiverSubject,
+} from "./dependency-advisories/waivers.mjs";
 
 function readScope(argv) {
   const args = new Set(argv);
@@ -196,6 +206,7 @@ function renderResult(result, json) {
       `Live boundary waivers: ${result.boundary.evaluated ? result.boundary.waived_count : "not evaluated"}`,
       `Governed terminal defects: ${result.defect_evidence.evaluated ? result.defect_evidence.governed_item_count : "not evaluated"}`,
       `Recurrence families: ${result.recurrence_policy.evaluated ? result.recurrence_policy.family_count : "not evaluated"}`,
+      `Live dependency advisory waivers: ${result.dependency_advisory.evaluated ? result.dependency_advisory.waiver_count : "not evaluated"}`,
       `Findings: ${findingCount}`,
       `Waiver notices: ${result.waiver_notices.length}`,
     ].join("\n") + "\n"
@@ -282,15 +293,63 @@ function reportsWithFindings(scope, boundaryReport, evidenceReport, recurrenceRe
   );
 }
 
+/** Seed one advisory waiver an hour from expiry, owned by an open item, for the notice control. */
+function advisoryNegativeControl(registry, now) {
+  return {
+    ...registry,
+    waiver_notice_days: Math.max(registry.waiver_notice_days, 1),
+    waivers: [...registry.waivers, {
+      advisory: "GHSA-0000-0000-0000", package: "negative-control", versions: ["0.0.0"],
+      owner: "pm-negativecontrol", reason: "Seeded inside the notice window.",
+      expires_at: new Date(now.getTime() + 3_600_000).toISOString(),
+    }],
+  };
+}
+
 /**
- * Notice mode fails on waivers inside their window and on every boundary or
- * defect-evidence finding: a malformed, duplicate or invalid record can hide
- * an expiry, so filtering findings would let the warning pass vacuously.
+ * Judge dependency advisory waivers without network access: the same validity,
+ * expiry and runtime-graph rules the advisory gate applies, the declared notice
+ * window, and an owner that must still be an open tracker item, so closing the
+ * owner without retiring its waiver is reported.
  */
-function waiverNoticeChecks(boundaryReport, evidenceReport) {
+async function advisoryWaiverReport(repositoryRoot, scope, context, terminalStatuses, now) {
+  if (!scope.waiverNotice) {
+    return { ok: true, evaluated: false, waiver_count: 0, waiver_notices: [], findings: [] };
+  }
+  const stored = await readWaiverRegistry(repositoryRoot);
+  const registry = scope.negativeControl ? advisoryNegativeControl(stored, now) : stored;
+  const { live, notice_days: noticeDays, findings } = evaluateWaivers(registry, now.getTime());
+  findings.push(...runtimeFindings(live, await readRuntimePackages(repositoryRoot)));
+  const terminal = new Set(terminalStatuses);
+  const open = new Set(context.items.filter((item) => !terminal.has(item.status)).map((item) => item.id));
+  if (scope.negativeControl) open.add("pm-negativecontrol");
+  const waiverNotices = [];
+  for (const waiver of live) {
+    if (!open.has(waiver.owner)) {
+      findings.push({
+        kind: "waiver_owner_not_open",
+        subject_id: waiverSubject(waiver),
+        detail: `${waiverSubject(waiver)} waiver in ${WAIVERS_PATH} is owned by ${waiver.owner}, which is not an open item; retire the waiver or re-own it.`,
+      });
+    }
+    // A live waiver implies the registry, and so its notice window, is valid.
+    const notice = waiverNoticeFor(waiverSubject(waiver), waiver.owner, waiver.expires_at, now.getTime(), noticeDays);
+    if (notice !== undefined) waiverNotices.push(notice);
+  }
+  return { ok: findings.length === 0, evaluated: true, waiver_count: live.length, waiver_notices: waiverNotices, findings };
+}
+
+/**
+ * Notice mode fails on waivers inside their window and on every boundary,
+ * defect-evidence or advisory-waiver finding: a malformed, duplicate or invalid
+ * record can hide an expiry, so filtering findings would let the warning pass
+ * vacuously.
+ */
+function waiverNoticeChecks(boundaryReport, evidenceReport, advisoryReport) {
   return [
     ["boundary", boundaryReport],
     ["defect_evidence", evidenceReport],
+    ["dependency_advisory", advisoryReport],
   ].map(([name, report]) => ({
     name,
     ok: report.findings.length === 0 && report.waiver_notices.length === 0,
@@ -361,16 +420,18 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     corpus,
     now,
   );
+  const terminalStatuses = context.terminal_statuses ?? ["closed", "canceled"];
   const evidenceReport = evidenceReportForScope(
     scope,
     evidenceItems,
     corpus.recurrencePolicy,
-    context.terminal_statuses ?? ["closed", "canceled"],
+    terminalStatuses,
     now,
   );
   const recurrenceReport = recurrenceReportForScope(scope, corpus.recurrencePolicy, context);
+  const advisoryReport = await advisoryWaiverReport(repositoryRoot, scope, context, terminalStatuses, now);
   const selectedReports = scope.waiverNotice
-    ? waiverNoticeChecks(boundaryReport, evidenceReport)
+    ? waiverNoticeChecks(boundaryReport, evidenceReport, advisoryReport)
     : reportsWithFindings(scope, boundaryReport, evidenceReport, recurrenceReport);
   const result = {
     ok: selectedReports.every((report) => report.ok),
@@ -379,10 +440,12 @@ export async function main(argv = process.argv.slice(2), options = {}) {
     waiver_notices: sortWaiverNotices([
       ...boundaryReport.waiver_notices,
       ...evidenceReport.waiver_notices,
+      ...advisoryReport.waiver_notices,
     ]),
     boundary: boundaryReport,
     defect_evidence: evidenceReport,
     recurrence_policy: recurrenceReport,
+    dependency_advisory: advisoryReport,
   };
   writeStdout(renderResult(result, scope.json));
   return result.ok ? 0 : 1;

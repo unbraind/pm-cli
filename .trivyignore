@@ -3,3 +3,10 @@
 # Keep this file empty by default. Add CVE or advisory IDs only for confirmed
 # false positives or genuinely unfixable findings, and include a short comment
 # with the owner and review/removal date directly above each ignored ID.
+
+# pm-03q389: picomatch <= 4.0.7 (GHSA-fc5q-39xc-vjpf) has no patched release.
+# It is reached only through development tooling; pm-gh1748 removed it from the
+# published runtime graph. This mirrors the time-bounded waiver for
+# GHSA-fc5q-39xc-vjpf in config/dependency-advisory-waivers.json and expires
+# with it: remove both once a patched picomatch is in the lockfile.
+CVE-2026-112366 exp:2026-12-01

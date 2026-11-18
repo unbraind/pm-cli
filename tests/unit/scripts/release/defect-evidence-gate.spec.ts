@@ -171,6 +171,7 @@ describe("defect evidence repository gate", () => {
         checks: [
           { name: "boundary", ok: false, findings: [] },
           { name: "defect_evidence", ok: false, findings: [] },
+          { name: "dependency_advisory", ok: true, findings: [] },
         ],
         waiver_notices: [
           { subject_id: "soon", owner: "pm-owner", expires_at: boundaryExpiry, days_remaining: 3 },
@@ -227,6 +228,7 @@ describe("defect evidence repository gate", () => {
         checks: [
           { name: "boundary", findings: [{ boundary_id: "soon", kind: "expired_waiver" }] },
           { name: "defect_evidence", findings: [] },
+          { name: "dependency_advisory", findings: [] },
         ],
         waiver_notices: [{ subject_id: "pm-waived", days_remaining: 4 }],
       });
@@ -317,6 +319,7 @@ describe("defect evidence repository gate", () => {
     const report = JSON.parse(stdout.join(""));
     expect(report.boundary.findings).toEqual([]);
     expect(report.waiver_notices.map((notice: { subject_id: string }) => notice.subject_id)).toEqual([
+      "GHSA-0000-0000-0000 in negative-control",
       "negative-control-waiver",
       "pm-negative-control",
     ]);
@@ -343,7 +346,7 @@ describe("defect evidence repository gate", () => {
           writeStdout: (value: string) => undeclared.push(value),
         }),
       ).resolves.toBe(1);
-      expect(JSON.parse(undeclared.join("")).waiver_notices).toHaveLength(2);
+      expect(JSON.parse(undeclared.join("")).waiver_notices).toHaveLength(3);
     });
 
     const conflict: string[] = [];
@@ -354,6 +357,101 @@ describe("defect evidence repository gate", () => {
       }),
     ).resolves.toBe(2);
     expect(conflict.join("")).toContain("--waiver-notice");
+  });
+
+  it("judges dependency advisory waivers in notice mode: window, validity and an open owner", async () => {
+    const now = new Date("2026-11-20T00:00:00.000Z");
+    const waiver = {
+      advisory: "GHSA-abcd-efgh-ijkl",
+      package: "fixture-glob",
+      versions: ["1.0.0"],
+      owner: "pm-advisoryowner",
+      reason: "No patched release exists for this fixture advisory.",
+      expires_at: "2026-11-22T12:00:00Z",
+    };
+    await withTempDir("pm-waiver-notice-advisory-", async (tempRoot) => {
+      await mkdir(path.join(tempRoot, "config"));
+      await Promise.all([
+        writeFile(
+          path.join(tempRoot, "config/boundary-fixtures.json"),
+          JSON.stringify({ version: 1, inventory_scope: "Advisory waivers", boundaries: [] }),
+        ),
+        writeFile(path.join(tempRoot, "config/defect-recurrence-policy.json"), JSON.stringify(policy)),
+        writeFile(path.join(tempRoot, "package.json"), "{}"),
+        writeFile(path.join(tempRoot, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n"),
+      ]);
+      const writeWaivers = (registry: object) =>
+        writeFile(path.join(tempRoot, "config/dependency-advisory-waivers.json"), JSON.stringify(registry));
+      const run = async (context: typeof completeContext, at = now) => {
+        const stdout: string[] = [];
+        const code = await main(["--waiver-notice", "--json"], {
+          repositoryRoot: tempRoot,
+          context,
+          now: at,
+          writeStdout: (value: string) => stdout.push(value),
+        });
+        return { code, report: JSON.parse(stdout.join("")) };
+      };
+      const ownerOpen = {
+        ...completeContext,
+        items: [...completeContext.items, { id: "pm-advisoryowner", status: "in_progress", type: "Issue" }],
+      };
+      const ownerClosed = {
+        ...completeContext,
+        items: [...completeContext.items, { id: "pm-advisoryowner", status: "closed", type: "Issue" }],
+      };
+
+      await writeWaivers({ version: 1, waiver_notice_days: 3, waivers: [waiver] });
+      const inside = await run(ownerOpen);
+      expect(inside.code).toBe(1);
+      expect(inside.report.checks[2]).toEqual({ name: "dependency_advisory", ok: false, findings: [] });
+      expect(inside.report.dependency_advisory).toMatchObject({ evaluated: true, waiver_count: 1 });
+      expect(inside.report.waiver_notices).toEqual([
+        { subject_id: "GHSA-abcd-efgh-ijkl in fixture-glob", owner: "pm-advisoryowner", expires_at: waiver.expires_at, days_remaining: 2 },
+      ]);
+
+      const outside = await run(ownerOpen, new Date("2026-11-18T00:00:00.000Z"));
+      expect(outside.code).toBe(0);
+      expect(outside.report.waiver_notices).toEqual([]);
+
+      const closedOwner = await run(ownerClosed, new Date("2026-11-18T00:00:00.000Z"));
+      expect(closedOwner.code).toBe(1);
+      expect(closedOwner.report.checks[2]).toMatchObject({
+        ok: false,
+        findings: [{ kind: "waiver_owner_not_open", subject_id: "GHSA-abcd-efgh-ijkl in fixture-glob" }],
+      });
+
+      const missingOwner = await run(completeContext, new Date("2026-11-18T00:00:00.000Z"));
+      expect(missingOwner.report.checks[2].findings[0].kind).toBe("waiver_owner_not_open");
+
+      await writeFile(path.join(tempRoot, "package.json"), JSON.stringify({ name: "probe", version: "1.0.0", dependencies: { "fixture-glob": "1.0.0" } }));
+      await writeFile(path.join(tempRoot, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\nimporters:\n  .:\n    dependencies:\n      fixture-glob: {specifier: 1.0.0, version: 1.0.0}\npackages:\n  'fixture-glob@1.0.0':\n    resolution: {integrity: sha512-fixture}\nsnapshots:\n  'fixture-glob@1.0.0': {}\n");
+      const runtime = await run(ownerOpen, new Date("2026-11-18T00:00:00.000Z"));
+      expect(runtime.report.checks[2].findings).toMatchObject([{ kind: "waiver_covers_runtime_dependency" }]);
+      await writeFile(path.join(tempRoot, "package.json"), "{}");
+
+      const expired = await run(ownerOpen, new Date("2026-11-23T00:00:00.000Z"));
+      expect(expired.code).toBe(1);
+      expect(expired.report.checks[2].findings).toMatchObject([{ kind: "expired_waiver" }]);
+      expect(expired.report.dependency_advisory.waiver_count).toBe(0);
+
+      await writeWaivers({ version: 2, waiver_notice_days: 3, waivers: [] });
+      const invalid = await run(ownerOpen);
+      expect(invalid.code).toBe(1);
+      expect(invalid.report.checks[2].findings).toMatchObject([{ kind: "invalid_registry" }]);
+
+      const human: string[] = [];
+      await main(["--waiver-notice"], { repositoryRoot: tempRoot, context: ownerOpen, now, writeStdout: (value: string) => human.push(value) });
+      expect(human.join("")).toContain("Finding [dependency_advisory] config/dependency-advisory-waivers.json must hold exactly version 1");
+      expect(human.join("")).toContain("Live dependency advisory waivers: 0");
+
+      const evidence: string[] = [];
+      await main(["--json"], { repositoryRoot: tempRoot, context: ownerOpen, now, writeStdout: (value: string) => evidence.push(value) });
+      expect(JSON.parse(evidence.join("")).dependency_advisory).toEqual({ ok: true, evaluated: false, waiver_count: 0, waiver_notices: [], findings: [] });
+      const evidenceText: string[] = [];
+      await main([], { repositoryRoot: tempRoot, context: ownerOpen, now, writeStdout: (value: string) => evidenceText.push(value) });
+      expect(evidenceText.join("")).toContain("Live dependency advisory waivers: not evaluated");
+    });
   });
 
   it("rejects fixture paths that escape the repository root", async () => {

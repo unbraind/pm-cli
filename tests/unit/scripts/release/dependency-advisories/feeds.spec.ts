@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inventoryLock } from "../../../../../scripts/release/dependency-advisories/inventory.mjs";
-import { queryOsv, queryRegistry, OSV_ENDPOINT } from "../../../../../scripts/release/dependency-advisories/feeds.mjs";
+import { queryOsv, queryRegistry, registryAdvisory, OSV_ENDPOINT } from "../../../../../scripts/release/dependency-advisories/feeds.mjs";
 
 const spawn = vi.hoisted(() => vi.fn());
 vi.mock("node:child_process", () => ({ spawnSync: spawn }));
@@ -37,7 +37,25 @@ describe("independent feed boundaries", () => {
     expect(queryRegistry("/fixture")).toMatchObject({ status: "complete", counts, ids: [], database_updated_at: null });
     expect(spawn).toHaveBeenCalledWith(process.platform === "win32" ? "cmd.exe" : "pnpm", process.platform === "win32" ? ["/d", "/s", "/c", "pnpm.cmd audit --json"] : ["audit", "--json"], expect.objectContaining({ cwd: "/fixture", timeout: 60000 }));
     spawn.mockReturnValue({ status: 1, stdout: JSON.stringify({ advisories: { "42": {} }, metadata: { vulnerabilities: { ...counts, low: 1 } } }) });
-    expect(queryRegistry("/fixture")).toMatchObject({ counts: { low: 1 }, ids: ["42"] });
+    expect(queryRegistry("/fixture")).toMatchObject({ counts: { low: 1 }, ids: ["42"], advisories: [{ id: "42", package: null, severity: null, advisory: null, versions: null }] });
+  });
+  it("records the validated fields a waiver can match and voids malformed details", () => {
+    const entry = { module_name: "picomatch", severity: "high", github_advisory_id: "GHSA-fc5q-39xc-vjpf", findings: [{ version: "4.0.7", paths: ["a"] }, { version: "4.0.7" }, { version: "4.0.6" }], title: "ignored" };
+    expect(registryAdvisory("1247710", entry)).toEqual({ id: "1247710", package: "picomatch", severity: "high", advisory: "GHSA-fc5q-39xc-vjpf", versions: ["4.0.6", "4.0.7"] });
+    expect(registryAdvisory("1", { ...entry, findings: [{ version: "4.0.7" }, { version: "latest" }] }).versions).toBeNull();
+    expect(registryAdvisory("1", { ...entry, findings: [{ version: "4.0.7" }, null] }).versions).toBeNull();
+    expect(registryAdvisory("1", { ...entry, findings: [] }).versions).toBeNull();
+    expect(registryAdvisory("1", { ...entry, findings: Array.from({ length: 5001 }, () => ({ version: "1.0.0" })) }).versions).toBeNull();
+    expect(registryAdvisory("1", { ...entry, findings: "4.0.7" }).versions).toBeNull();
+    expect(registryAdvisory("1", { ...entry, module_name: "Bad Name", severity: "urgent", github_advisory_id: "CVE-2026-1" })).toMatchObject({ package: null, severity: null, advisory: null });
+    for (const malformed of [null, [], "advisory"]) {
+      expect(registryAdvisory("2", malformed)).toEqual({ id: "2", package: null, severity: null, advisory: null, versions: null });
+    }
+  });
+  it("refuses an unbounded registry advisory list", () => {
+    const advisories = Object.fromEntries(Array.from({ length: 1001 }, (_, index) => [String(index), {}]));
+    spawn.mockReturnValue({ status: 1, stdout: JSON.stringify({ advisories, metadata: { vulnerabilities: { ...counts, low: 1001 } } }) });
+    expect(() => queryRegistry("/fixture")).toThrow("bounded coverage");
   });
   it("uses a fixed native command on Windows without interpolating the workspace", () => {
     vi.stubGlobal("process", { ...process, platform: "win32" });

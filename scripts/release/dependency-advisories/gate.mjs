@@ -5,7 +5,7 @@ import path from "node:path";
 import { repoRoot } from "../utils.mjs";
 import { queryOsv, queryRegistry } from "./feeds.mjs";
 import { readInputs } from "./inventory.mjs";
-import { RECEIPT_VERSION, verifyReceipt } from "./receipt.mjs";
+import { AdvisoryRefusal, RECEIPT_VERSION, verifyReceipt } from "./receipt.mjs";
 
 /** Replace previous clean evidence before collection, including on interrupted runs. */
 async function writeReceipt(receiptPath, receipt) {
@@ -37,10 +37,15 @@ export async function main(argv, root) {
     receipt.completed_at = new Date().toISOString();
     await writeReceipt(receiptPath, receipt);
     return await verifyReceipt(root, receiptPath);
-  } catch {
+  } catch (error) {
     if (receipt.status === "collecting") receipt.status = "unavailable";
     await writeReceipt(receiptPath, receipt);
-    throw new Error("Dependency advisory gate blocked; inspect .cache/dependency-security/receipt.json (no feed success is inferred from unavailable evidence)");
+    // A verifier refusal is built from fixed text and validated fields only, so
+    // it is printed; any other failure stays generic and never echoes upstream
+    // or receipt text. The cause stays in-process: the executable boundary
+    // prints the message only.
+    const reason = error instanceof AdvisoryRefusal ? `: ${error.message}` : "";
+    throw new Error(`Dependency advisory gate blocked${reason}; inspect .cache/dependency-security/receipt.json (no feed success is inferred from unavailable evidence)`, { cause: error });
   }
 }
 

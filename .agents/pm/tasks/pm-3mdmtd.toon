@@ -1,0 +1,47 @@
+id: pm-3mdmtd
+title: "Accept only exact, time-bounded, owned advisory waivers in the dependency advisory gate, never for a package the published artifact installs"
+description: "Interim mechanism for pm-03q389, decided by the owner on 2026-11-17: the dependency advisory gate (pm-eqxjzl) refused every branch and the daily release because GHSA-fc5q-39xc-vjpf has no patched picomatch. config/dependency-advisory-waivers.json now declares waivers by GitHub advisory id, npm package and exact locked versions, with a pm owner, a reason and an RFC 3339 UTC expiry at most 30 days past the judging run. Receipt version 2 records validated registry advisory details; both feeds are covered only by exact live waivers; malformed, duplicate, expired, over-long and runtime-covering waivers refuse; the verdict discloses waived and unused waivers; the refusal now names the uncovered package@version advisory. The scheduled waiver-notice gate judges the same file, the notice window and that the owner is still open. A waiver never covers a package listed in runtime-dependencies.json, because consumers audit the published graph themselves (pm-gh1748 removed picomatch from that graph)."
+type: Task
+status: closed
+priority: 1
+tags[5]: advisory-gate,dependency,release-blocker,security,waiver
+created_at: "2026-11-17T22:39:16.922Z"
+updated_at: "2026-11-17T22:41:51.746Z"
+closed_at: "2026-11-17T22:40:52.521Z"
+completed_at: "2026-11-17T22:40:52.521Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Gate passes with the declared picomatch waiver and refuses every malformed, expired, over-long or runtime-covering waiver; both feeds are matched exactly; notice mode reports the window, invalid records and a closed owner; 100% coverage of the advisory and notice scripts; docs describe the waiver contract"
+parent: pm-03q389
+risk: medium
+confidence: high
+resolution: "config/dependency-advisory-waivers.json, scripts/release/dependency-advisories/waivers.mjs and receipt version 2 implement exact advisory/package/version waivers with owner, reason and a 30-day maximum expiry; malformed, duplicate, expired, over-long and runtime-covering waivers refuse; both feeds are matched exactly; verdicts disclose waived and unused waivers and refusals name the uncovered advisory; defect-evidence-gate --waiver-notice judges the same file, the notice window and an open owner; 100% coverage of the changed scripts; docs/DEVELOPMENT_DEPENDENCY_SECURITY.md documents the contract."
+expected_result: "The dependency advisory gate accepts only exact, live, owned waivers outside the published runtime graph, and the notice gate warns before expiry"
+actual_result: "Gate passes with the picomatch waiver, refuses every malformed, expired, over-long or runtime-covering waiver, and notice mode reports window, invalid records and a closed owner"
+component: release
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-eqxjzl,related,"2026-11-17T22:39:16.922Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1748,related,"2026-11-17T22:39:16.922Z","harness:claude-code","cli:create:dep",detected
+files[7]{path,scope,note}:
+  config/dependency-advisory-waivers.json,project,declared picomatch waiver
+  scripts/release/defect-evidence-gate.mjs,project,notice-mode dependency_advisory check
+  scripts/release/dependency-advisories/feeds.mjs,project,validated registry advisory details
+  scripts/release/dependency-advisories/gate.mjs,project,refusal names the verifier reason
+  scripts/release/dependency-advisories/receipt.mjs,project,receipt v2 verification
+  scripts/release/dependency-advisories/waivers.mjs,project,"waiver validation, exact matching and runtime-graph refusal"
+  tests/unit/scripts/release/dependency-advisories/waivers.spec.ts,project,waiver unit tests
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories tests/unit/scripts/release/defect-evidence-gate.spec.ts,project,600,"harness:claude-code","2026-11-17T22:39:26.983Z",local_mutation,fix/advisory-gate-time-bounded-waiver
+docs[2]{path,scope,note}:
+  docs/DEFECT_RECURRENCE.md,project,"Waiver Notice Window: advisory registry"
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project,Time-bounded advisory waivers
+close_reason: "Exact, time-bounded, owned advisory waivers are accepted by the dependency advisory gate and judged by the scheduled notice gate."
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-3mdmtd
+  gate_id: dependency-advisory-evidence
+  negative_control: "The gate keeps refusing every advisory no exact live waiver covers (gate.spec.ts: a different advisory id, package or version, a registry advisory without a GitHub id or with a malformed finding version, and an expired, over-long, malformed or runtime-covering waiver all block), and judging the declared picomatch waiver against main 3efa40a96 runtime-dependencies.json refuses it with waiver_covers_runtime_dependency. The bounded exception it adds is one recorded waiver for GHSA-fc5q-39xc-vjpf in picomatch 4.0.7 until 2026-12-01, owned by pm-03q389."
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories tests/unit/scripts/release/defect-evidence-gate.spec.ts,node scripts/release/dependency-advisories/gate.mjs,node scripts/release/defect-evidence-gate.mjs --waiver-notice --negative-control,"pnpm quality:static"
+  hosted_checks[2]: Gates (static),Gates (coverage)
+body: ""
