@@ -1,9 +1,21 @@
 /** Local-only SDK provider receipt validation (pm-eqxjzl). */
-import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { isDeepStrictEqual } from "node:util";
 import { OSV_ENDPOINT, SEVERITIES } from "./feeds.mjs";
 import { readInputs } from "./inventory.mjs";
 import { applyWaivers, describeReport, judgeWaivers } from "./waivers.mjs";
+
+/**
+ * A verifier refusal. Its message is built only from fixed text and validated
+ * fields, so the gate may print it; Node's assertion messages would append
+ * diffs of unvalidated receipt or registry content.
+ */
+export class AdvisoryRefusal extends Error {}
+
+/** Refuse with a fixed, printable message unless `condition` holds. */
+function refuse(condition, message) {
+  if (!condition) throw new AdvisoryRefusal(message);
+}
 
 /** Version 2 records each registry advisory's package, GitHub id and locked versions (pm-03q389). */
 export const RECEIPT_VERSION = 2;
@@ -28,13 +40,13 @@ function isStoredAdvisory(entry) {
  * severity cannot be accounted for at all and refuses.
  */
 function assertRegistryConsistent(registry) {
-  assert.deepEqual(registry.counts !== null && typeof registry.counts === "object" ? Object.keys(registry.counts).sort() : null, [...SEVERITIES].sort(), "Incomplete registry audit counts");
-  assert.ok(Array.isArray(registry.advisories) && registry.advisories.every(isStoredAdvisory), "Registry reports vulnerable dependencies");
-  assert.deepEqual(registry.advisories.map(({ id }) => id), registry.ids, "Registry reports vulnerable dependencies");
-  assert.ok(registry.advisories.every(({ severity }) => severity !== null), "Registry lists an advisory of unknown severity");
+  refuse(isDeepStrictEqual(registry.counts !== null && typeof registry.counts === "object" ? Object.keys(registry.counts).sort() : null, [...SEVERITIES].sort()), "Incomplete registry audit counts");
+  refuse(Array.isArray(registry.advisories) && registry.advisories.every(isStoredAdvisory), "Registry reports vulnerable dependencies");
+  refuse(isDeepStrictEqual(registry.advisories.map(({ id }) => id), registry.ids), "Registry reports vulnerable dependencies");
+  refuse(registry.advisories.every(({ severity }) => severity !== null), "Registry lists an advisory of unknown severity");
   for (const severity of SEVERITIES) {
     const listed = registry.advisories.filter((advisory) => advisory.severity === severity).length;
-    assert.ok(registry.counts[severity] === listed, `Registry counts ${severity} advisories it does not list`);
+    refuse(registry.counts[severity] === listed, `Registry counts ${severity} advisories it does not list`);
   }
 }
 
@@ -51,29 +63,29 @@ function reportedAdvisories(registry, osv) {
 export async function verifyReceipt(root, receiptPath) {
   const receipt = JSON.parse(await readFile(receiptPath, "utf8"));
   const current = await readInputs(root);
-  assert.equal(receipt.version, RECEIPT_VERSION, "Unsupported advisory receipt");
-  assert.equal(receipt.status, "complete", "Dependency evidence unavailable");
-  assert.deepEqual(receipt.inputs, current.inputs, "Dependency inputs changed");
-  assert.equal(receipt.scope, "all-pnpm-lock-packages-including-dev-optional", "Incomplete dependency scope");
+  refuse(Object.is(receipt.version, RECEIPT_VERSION), "Unsupported advisory receipt");
+  refuse(Object.is(receipt.status, "complete"), "Dependency evidence unavailable");
+  refuse(isDeepStrictEqual(receipt.inputs, current.inputs), "Dependency inputs changed");
+  refuse(Object.is(receipt.scope, "all-pnpm-lock-packages-including-dev-optional"), "Incomplete dependency scope");
   const started = Date.parse(receipt.started_at);
   const completed = Date.parse(receipt.completed_at);
   const now = Date.now();
-  assert.ok(Number.isFinite(started) && Number.isFinite(completed) && started <= completed && completed <= now && now - started <= MAX_AGE_MS, "Stale or invalid advisory receipt");
+  refuse(Number.isFinite(started) && Number.isFinite(completed) && started <= completed && completed <= now && now - started <= MAX_AGE_MS, "Stale or invalid advisory receipt");
   const { registry, osv } = receipt.feeds;
   for (const feed of [registry, osv]) {
     const observed = Date.parse(feed.observed_at);
-    assert.ok(feed.status === "complete" && observed >= started && observed <= completed && feed.database_updated_at === null, "Unavailable or invalid advisory source");
+    refuse(feed.status === "complete" && observed >= started && observed <= completed && feed.database_updated_at === null, "Unavailable or invalid advisory source");
   }
-  assert.equal(osv.endpoint, OSV_ENDPOINT, "Unexpected advisory source");
-  assert.deepEqual(osv.rows.map(({ name, version }) => ({ name, version })), current.packages, "Incomplete independent advisory coverage");
-  assert.ok(osv.rows.every((row) => Array.isArray(row.ids) && row.ids.every((id) => typeof id === "string")), "Independent source reports vulnerable dependencies");
+  refuse(Object.is(osv.endpoint, OSV_ENDPOINT), "Unexpected advisory source");
+  refuse(isDeepStrictEqual(osv.rows.map(({ name, version }) => ({ name, version })), current.packages), "Incomplete independent advisory coverage");
+  refuse(osv.rows.every((row) => Array.isArray(row.ids) && row.ids.every((id) => typeof id === "string")), "Independent source reports vulnerable dependencies");
   assertRegistryConsistent(registry);
   const waivers = await judgeWaivers(root, now);
-  assert.ok(waivers.findings.length === 0, `Refused dependency advisory waiver: ${waivers.findings.map(({ detail }) => detail).join(" ")}`);
+  refuse(waivers.findings.length === 0, `Refused dependency advisory waiver: ${waivers.findings.map(({ detail }) => detail).join(" ")}`);
   const { open, waived, unused } = applyWaivers(reportedAdvisories(registry, osv), waivers.live);
   for (const [source, label] of [["osv", "Independent source"], ["registry", "Registry"]]) {
     const uncovered = open.filter((report) => report.source === source).map(describeReport);
-    assert.ok(uncovered.length === 0, `${label} reports vulnerable dependencies: ${uncovered.join(", ")}`);
+    refuse(uncovered.length === 0, `${label} reports vulnerable dependencies: ${uncovered.join(", ")}`);
   }
   return { verdict: "pass", packages: current.packages.length, inputs: current.inputs, started_at: receipt.started_at, completed_at: receipt.completed_at, database_freshness: "unknown", waived, unused_waivers: unused };
 }

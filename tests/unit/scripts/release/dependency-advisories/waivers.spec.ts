@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempDir } from "../../../../helpers/temp.js";
@@ -158,6 +158,24 @@ describe("dependency advisory waiver file", () => {
     const runtime = await readRuntimePackages(process.cwd());
     expect(runtime?.size).toBeGreaterThan(0);
     expect(runtimeFindings(live, runtime)).toEqual([]);
+  });
+
+  it("keeps every Trivy exception time-bounded and owned by a declared waiver that outlives it", async () => {
+    // The required Trivy gate reads .trivyignore; each entry must name the
+    // waiver it mirrors and expire no later than that waiver.
+    const declared = await readWaiverRegistry(process.cwd());
+    const lines = (await readFile(path.join(process.cwd(), ".trivyignore"), "utf8")).split(/\r?\n/u);
+    let comment = "";
+    for (const line of lines) {
+      if (line.startsWith("#")) { comment += `${line}\n`; continue; }
+      if (line.trim() === "") { comment = ""; continue; }
+      const entry = /^(\S+) exp:(\d{4}-\d{2}-\d{2})$/u.exec(line);
+      expect({ line, timeBounded: entry !== null }).toEqual({ line, timeBounded: true });
+      const owner = declared.waivers.find((candidate: { advisory: string }) => comment.includes(candidate.advisory));
+      expect({ line, mirrorsWaiver: owner !== undefined }).toEqual({ line, mirrorsWaiver: true });
+      expect(entry![2]! <= owner!.expires_at.slice(0, 10)).toBe(true);
+      comment = "";
+    }
   });
 
   it("keeps the repository's declared waivers well formed independent of the run date", async () => {

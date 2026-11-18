@@ -193,6 +193,25 @@ describe("dependency advisory evidence", () => {
       });
     });
 
+    it("never prints unvalidated registry or receipt content in a refusal", async () => {
+      await withTempDir("pm-advisory-waiver-", async (root) => {
+        await fixture(root);
+        spawn.mockReturnValue({
+          status: 1,
+          stdout: JSON.stringify({
+            advisories: { "7": { module_name: "fixture", severity: "high", github_advisory_id: advisory, findings: [{ version: "1.2.3" }] } },
+            metadata: { vulnerabilities: { ...zero, high: 1, "injected\u001b[2J-key": 0 } },
+          }),
+        });
+        const failure = await main([], root).then(() => undefined, (error: Error) => error);
+        expect(failure?.message).toMatch(/^Dependency advisory gate blocked: Incomplete registry audit counts; inspect/u);
+        expect(failure?.message).not.toContain("injected");
+        // Failures that are not verifier refusals stay generic.
+        await writeFile(receiptPath(root), "{");
+        await expect(main(["--verify-receipt"], root)).rejects.toThrow(SyntaxError);
+      });
+    });
+
     it("keeps registry counts and advisories mutually consistent", async () => {
       await withTempDir("pm-advisory-waiver-", async (root) => {
         await fixture(root); await declare(root, [waiver()]); registryPositive(); osvPositive();
