@@ -134,6 +134,20 @@ const fromDictionary: string | null = decideSecretGuardFinding(dictionary, findi
 const dictionaryNotNull: string = decideSecretGuardFinding(dictionary, finding);
 void fromDictionary;
 void dictionaryNotNull;
+// A merged map keeps both its index-signature and its named decisions.
+declare const loadedRules: Record<string, string>;
+const mergedRules = Object.assign({}, loadedRules, { private_ip: false as const });
+const fromMergedRules: string | false = decideSecretGuardFinding({ default: "allow", rules: mergedRules }, finding);
+// @ts-expect-error the named false override is not dropped
+const mergedRulesNarrow: string = decideSecretGuardFinding({ default: "allow", rules: mergedRules }, finding);
+const mergedCategories = Object.assign({}, loadedRules, { network: false as const });
+const fromMergedCategories: string | false = decideSecretGuardFinding({ default: "allow", categories: mergedCategories }, finding);
+// @ts-expect-error the named false category is not dropped
+const mergedCategoriesNarrow: string = decideSecretGuardFinding({ default: "allow", categories: mergedCategories }, finding);
+void fromMergedRules;
+void mergedRulesNarrow;
+void fromMergedCategories;
+void mergedCategoriesNarrow;
 // A rules map typed by a named interface, which has no index signature, is accepted.
 interface RuleOverrides {
   private_ip?: boolean;

@@ -656,8 +656,24 @@ export interface SecretGuardPolicy<Decision> {
 type PolicyEntryDecisions<Entries> = Entries extends object
   ? OpaqueEntries<Entries> extends true
     ? unknown
-    : Exclude<Entries[Exclude<keyof Entries, symbol>], undefined>
+    : Exclude<ExplicitEntries<Entries>[keyof ExplicitEntries<Entries>] | PatternEntries<Entries>[keyof PatternEntries<Entries>], undefined>
   : never;
+
+/**
+ * A map type's index-signature entries (`string`, `number` or template-literal
+ * patterns), kept apart from its named entries: a merged type such as
+ * `Record<string, string> & { private_ip: false }` reports only the index
+ * signature through `keyof`, and indexing it by a name intersects both value
+ * types, so each kind of key is read on its own. Symbol keys are never read.
+ */
+type PatternEntries<Entries> = {
+  [Key in keyof Entries as Key extends symbol ? never : Record<never, never> extends Record<Key, 1> ? Key : never]: Entries[Key];
+};
+
+/** A map type's named (literal-key) entries; see {@link PatternEntries}. */
+type ExplicitEntries<Entries> = {
+  [Key in keyof Entries as Key extends symbol ? never : Record<never, never> extends Record<Key, 1> ? never : Key]: Entries[Key];
+};
 
 /**
  * Whether a map type names no keys (`object`, `{}` or a memberless
@@ -674,7 +690,14 @@ type OpaqueEntries<Entries> = [keyof Entries] extends [never] ? true : false;
 type PolicyCategoryDecisions<Entries> = Entries extends object
   ? OpaqueEntries<Entries> extends true
     ? unknown
-    : Exclude<{ [Category in SecretGuardRuleCategory]: Category extends keyof Entries ? Entries[Category] : never }[SecretGuardRuleCategory], undefined>
+    : Exclude<
+        {
+          [Category in SecretGuardRuleCategory]:
+            | (Category extends keyof ExplicitEntries<Entries> ? ExplicitEntries<Entries>[Category] : never)
+            | (Category extends keyof PatternEntries<Entries> ? PatternEntries<Entries>[Category] : never);
+        }[SecretGuardRuleCategory],
+        undefined
+      >
   : never;
 
 /** A policy's own `categories` or `rules` map type, or `never` when the policy type has none. */
