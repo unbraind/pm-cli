@@ -145,7 +145,8 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
   });
 
-  it("leaves the lookup in the host's process group, so a terminal Ctrl-C stops it with the host", async () => {
+  // The liveness probe reads ps, which needs this PID namespace's process table.
+  it.skipIf(!processTableSharesNamespace())("leaves the lookup in the host's process group, so a terminal Ctrl-C stops it with the host", async () => {
     const { root, launcherFile, helperFile } = await fakeGitWithForegroundHelper();
     // The host leads its own group, as a shell's foreground job does; Ctrl-C
     // signals that whole group.
