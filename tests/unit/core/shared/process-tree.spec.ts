@@ -103,6 +103,14 @@ describe("descendantsFromProcessTable", () => {
     expect(descendantsFromProcessTable(table, 100)).toEqual([300, 200]);
   });
 
+  it("stays linear for a host with very many sibling processes", () => {
+    const rows = Array.from({ length: 30_000 }, (_unused, index) => `${10_000 + index} 1`);
+    rows.push("200 100", "300 200");
+    const started = performance.now();
+    expect(descendantsFromProcessTable(rows.join("\n"), 100)).toEqual([300, 200]);
+    expect(performance.now() - started).toBeLessThan(1_000);
+  });
+
   it("does not list a process re-parented away from the root", () => {
     // The launcher 100 exited, so its former helper 200 now belongs to init.
     expect(descendantsFromProcessTable("200 1\n300 200\n", 100)).toEqual([]);
@@ -132,7 +140,7 @@ describe("runTeardownHelper", () => {
     vi.useFakeTimers();
     provide(() => undefined);
     const pending = runTeardownHelper("ps", []);
-    await vi.advanceTimersByTimeAsync(9_999);
+    await vi.advanceTimersByTimeAsync(1_999);
     expect(helpers[0]?.kill).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1);
     expect(await pending).toBeUndefined();

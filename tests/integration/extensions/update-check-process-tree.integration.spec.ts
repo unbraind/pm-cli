@@ -70,9 +70,15 @@ async function fakeGit(tail: string): Promise<{ root: string; pidFile: string }>
   return { root, pidFile };
 }
 
-/** Kill leftovers by pid so a failed assertion never leaves a sleep behind. */
+/**
+ * Kill fixture leftovers so a failed assertion never leaves a sleep behind,
+ * but only a pid that still runs a fixture command: on a busy runner a
+ * recorded pid may already belong to an unrelated process.
+ */
 function killQuietly(pids: number[]): void {
   for (const pid of pids) {
+    const command = spawnSync("ps", ["-o", "comm=", "-p", String(pid)], { encoding: "utf8" }).stdout?.trim() ?? "";
+    if (!["sleep", "sh", "git"].includes(path.basename(command))) continue;
     try {
       process.kill(pid, "SIGKILL");
     } catch {

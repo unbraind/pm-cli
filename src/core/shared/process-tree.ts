@@ -8,8 +8,12 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-/** Longest a teardown helper (`ps`, `taskkill`) may run before it is abandoned. */
-const TEARDOWN_HELPER_TIMEOUT_MS = 10_000;
+/**
+ * Longest a teardown helper (`ps`, `taskkill`) may run before it is abandoned.
+ * Both normally finish in milliseconds; the bound keeps a lookup's permit, and
+ * any lock its caller holds, from waiting long on a stalled helper.
+ */
+const TEARDOWN_HELPER_TIMEOUT_MS = 2_000;
 
 /** How the caller identifies and kills the root it spawned. */
 export interface ProcessTreeRoot {
@@ -31,23 +35,27 @@ export interface ProcessTreeRoot {
  * is not a descendant.
  */
 export function descendantsFromProcessTable(table: string, root: number): number[] {
+  // Linear in the table: children are appended in place and the queue is
+  // walked by index, so a host with many processes never stalls teardown.
   const children = new Map<number, number[]>();
   for (const line of table.split("\n")) {
     const fields = line.trim().split(/\s+/u);
     if (fields.length !== 2) continue;
     const [child, parent] = fields.map(Number) as [number, number];
     if (!Number.isSafeInteger(child) || !Number.isSafeInteger(parent) || child <= 0) continue;
-    children.set(parent, [...(children.get(parent) ?? []), child]);
+    const siblings = children.get(parent);
+    if (siblings) siblings.push(child);
+    else children.set(parent, [child]);
   }
   const seen = new Set<number>([root]);
   const descendants: number[] = [];
-  const pending = [...(children.get(root) ?? [])];
-  while (pending.length > 0) {
-    const next = pending.shift() as number;
+  const pending = children.get(root) ?? [];
+  for (let index = 0; index < pending.length; index += 1) {
+    const next = pending[index] as number;
     if (seen.has(next)) continue;
     seen.add(next);
     descendants.push(next);
-    pending.push(...(children.get(next) ?? []));
+    for (const grandchild of children.get(next) ?? []) pending.push(grandchild);
   }
   return descendants.reverse();
 }

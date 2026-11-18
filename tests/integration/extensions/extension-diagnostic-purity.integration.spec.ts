@@ -1,25 +1,35 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runExtension } from "../../../src/sdk/extension.js";
 import { runAction } from "../../../src/sdk/index.js";
 import { withTempPmPath } from "../../helpers/withTempPmPath.js";
 
+afterEach(() => vi.unstubAllEnvs());
+
+/** Install a fixture extension and record it as managed from a fake npm package; returns the state path and its bytes. */
+async function installManagedNpmFixture(context: { tempRoot: string; pmPath: string }): Promise<{ managedPath: string; before: string }> {
+  const fixture = path.join(context.tempRoot, "freshness-extension");
+  await mkdir(fixture);
+  await writeFile(path.join(fixture, "manifest.json"), JSON.stringify({ name: "freshness-extension", version: "1.0.0", entry: "index.mjs", capabilities: ["commands"] }));
+  await writeFile(path.join(fixture, "index.mjs"), "export function activate(api) { api.registerCommand({ name: 'freshness-probe', description: 'Freshness fixture', run: () => ({ ok: true }) }); }\n");
+  await runExtension(fixture, { install: true, project: true }, { path: context.pmPath });
+  const managedPath = path.join(context.pmPath, "extensions", ".managed-extensions.json");
+  const state = JSON.parse(await readFile(managedPath, "utf8"));
+  state.entries[0].source = { kind: "npm", input: "npm:freshness-registry-package", location: "freshness-registry-package", package: "freshness-registry-package", version: "1.0.0" };
+  state.entries[0].contributions.commands.push("z-before-a", "a-after-z");
+  const before = JSON.stringify(state);
+  await writeFile(managedPath, before);
+  return { managedPath, before };
+}
+
 describe("managed extension diagnostic purity", () => {
+  // Up to three real npm lookups, each bounded by the 25 s maximum budget a
+  // cold Windows runner may need (pm-5kfzjh), plus setup.
   it("checks npm provenance transiently, honors offline mode, and preserves managed bytes and mtime", async () => {
     await withTempPmPath(async (context) => {
-      const fixture = path.join(context.tempRoot, "freshness-extension");
-      await mkdir(fixture);
-      await writeFile(path.join(fixture, "manifest.json"), JSON.stringify({ name: "freshness-extension", version: "1.0.0", entry: "index.mjs", capabilities: ["commands"] }));
-      await writeFile(path.join(fixture, "index.mjs"), "export function activate(api) { api.registerCommand({ name: 'freshness-probe', description: 'Freshness fixture', run: () => ({ ok: true }) }); }\n");
-      await runExtension(fixture, { install: true, project: true }, { path: context.pmPath });
-      const managedPath = path.join(context.pmPath, "extensions", ".managed-extensions.json");
-      const state = JSON.parse(await readFile(managedPath, "utf8"));
-      state.entries[0].source = { kind: "npm", input: "npm:freshness-registry-package", location: "freshness-registry-package", package: "freshness-registry-package", version: "1.0.0" };
-      state.entries[0].contributions.commands.push("z-before-a", "a-after-z");
-      const before = JSON.stringify(state);
-      await writeFile(managedPath, before);
+      const { managedPath, before } = await installManagedNpmFixture(context);
       const beforeStat = await stat(managedPath);
       let requests = 0;
       let available = true;
@@ -37,8 +47,7 @@ describe("managed extension diagnostic purity", () => {
       const previousRegistry = process.env.npm_config_registry;
       process.env.npm_config_registry = `http://127.0.0.1:${address.port}`;
       // pm-5kfzjh: a cold npm start on a Windows runner can take longer than
-      // the 10 s default, so registry-backed checks get the largest budget
-      // here; the test timeout covers three of them plus the stalled lookup.
+      // the 10 s default, so registry-backed checks get the largest budget.
       vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "25000");
       try {
         for (const options of [{ explore: true }, { doctor: true }, { manage: true, offline: true }]) {
@@ -60,34 +69,38 @@ describe("managed extension diagnostic purity", () => {
         const failedLookup = (await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details as { extensions: Record<string, unknown>[] };
         expect(failedLookup).toMatchObject({ extensions: [{ update_check_status: "failed", update_available: null, update_error: "npm_registry_lookup_failed" }] });
         expect(failedLookup.extensions[0]).not.toHaveProperty("update_check_timeout_ms");
-        // A provider still running at its budget is reported through the
-        // manage summary as a timeout that names the budget, not as an
-        // unavailable registry. A stalled npm on PATH makes this
-        // deterministic: no npm start-up time decides the outcome.
-        const stalledBin = path.join(context.tempRoot, "stalled-npm-bin");
-        await mkdir(stalledBin);
-        await writeFile(path.join(stalledBin, "npm"), "#!/bin/sh\nsleep 30\n", { mode: 0o755 });
-        await writeFile(path.join(stalledBin, "npm.cmd"), "@ping -n 31 127.0.0.1 >nul\r\n");
-        vi.stubEnv("PATH", `${stalledBin}${path.delimiter}${process.env.PATH ?? ""}`);
-        vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "2000");
-        const stalledStarted = Date.now();
-        expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_check_reason: "npm_registry_lookup_timed_out", update_available: null, update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 2000 }] });
-        expect(Date.now() - stalledStarted).toBeLessThan(25_000);
         expect(requests).toBeGreaterThan(0);
         expect(await readFile(managedPath, "utf8")).toBe(before);
         expect((await stat(managedPath)).mtimeMs).toBe(beforeStat.mtimeMs);
-        // --fix-managed-state runs its lookups under the extension state lock,
-        // so it keeps the default budget and ignores the raised override.
-        const lockedStarted = Date.now();
-        expect((await runExtension(undefined, { manage: true, project: true, fixManagedState: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 10_000 }] });
-        expect(Date.now() - lockedStarted).toBeGreaterThanOrEqual(9_000);
       } finally {
-        vi.unstubAllEnvs();
         if (previousRegistry === undefined) delete process.env.npm_config_registry;
         else process.env.npm_config_registry = previousRegistry;
         registry.closeAllConnections();
         await new Promise<void>((resolve, reject) => registry.close((error) => error ? reject(error) : resolve()));
       }
     });
-  }, 300_000);
+  }, 90_000);
+
+  it("reports a provider still running at its budget as a timeout, keeping the default budget under the state lock", async () => {
+    await withTempPmPath(async (context) => {
+      const { managedPath, before } = await installManagedNpmFixture(context);
+      // A stalled npm on PATH makes this deterministic: no npm start-up time
+      // decides the outcome, and no registry is contacted.
+      const stalledBin = path.join(context.tempRoot, "stalled-npm-bin");
+      await mkdir(stalledBin);
+      await writeFile(path.join(stalledBin, "npm"), "#!/bin/sh\nsleep 30\n", { mode: 0o755 });
+      await writeFile(path.join(stalledBin, "npm.cmd"), "@ping -n 31 127.0.0.1 >nul\r\n");
+      vi.stubEnv("PATH", `${stalledBin}${path.delimiter}${process.env.PATH ?? ""}`);
+      vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "2000");
+      const stalledStarted = Date.now();
+      expect((await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_check_reason: "npm_registry_lookup_timed_out", update_available: null, update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 2000 }] });
+      expect(Date.now() - stalledStarted).toBeLessThan(10_000);
+      expect(await readFile(managedPath, "utf8")).toBe(before);
+      // --fix-managed-state runs its lookups under the extension state lock,
+      // so it keeps the default budget and ignores the raised override.
+      const lockedStarted = Date.now();
+      expect((await runExtension(undefined, { manage: true, project: true, fixManagedState: true }, { path: context.pmPath })).details).toMatchObject({ extensions: [{ update_check_status: "failed", update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 10_000 }] });
+      expect(Date.now() - lockedStarted).toBeGreaterThanOrEqual(9_000);
+    });
+  });
 });
