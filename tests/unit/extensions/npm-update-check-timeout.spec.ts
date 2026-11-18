@@ -424,6 +424,8 @@ describe("GitHub update lookup reasons", () => {
   ])("reports %s as a failed lookup without git's command line or stderr", async (_label, drive) => {
     provide(drive);
     const status = await checkGithubUpdate(github);
+    // A deferred overflow teardown finishes here, never inside a later test.
+    await updateCheckTeardown(status);
     expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toMatch(/private-fixture-value|ls-remote|github\.com/u);
   });
