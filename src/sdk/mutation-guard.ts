@@ -703,16 +703,22 @@ function ownPolicyEntry<Decision>(
   return entries !== undefined && key !== undefined && Object.hasOwn(entries, key) ? entries[key] : undefined;
 }
 
+/** The own keys of `Object.prototype`, which every realm's copy carries and no more. */
+const OBJECT_PROTOTYPE_KEYS: ReadonlySet<PropertyKey> = new Set(Reflect.ownKeys(Object.prototype));
+
 /**
- * Whether a value is a plain property map: its prototype is `Object.prototype`
- * (of this or another realm) or `null`. Any other object (an array, `Map`,
- * `Set`, `URLSearchParams` or class instance) may hold its entries where an
- * own-property lookup never finds them, so it is never read as overrides.
- * The prototype decides, so a `Symbol.toStringTag` changes nothing.
+ * Whether a value is a plain property map: its prototype is `null`, this
+ * realm's `Object.prototype`, or another realm's, recognised as a
+ * null-prototype object that carries only `Object.prototype`'s own keys. Any
+ * other object (an array, `Map`, `Set`, `URLSearchParams`, a class instance,
+ * or a map inheriting from a dictionary with entries) may hold entries an
+ * own-property lookup never finds, so it is never read as overrides. The
+ * prototype decides, so a `Symbol.toStringTag` changes nothing.
  */
 function isPlainPropertyMap(value: object): boolean {
-  const prototype: unknown = Object.getPrototypeOf(value);
-  return prototype === null || Object.getPrototypeOf(prototype) === null;
+  const prototype = Object.getPrototypeOf(value) as object | null;
+  if (prototype === null || prototype === Object.prototype) return true;
+  return Object.getPrototypeOf(prototype) === null && Reflect.ownKeys(prototype).every((key) => OBJECT_PROTOTYPE_KEYS.has(key));
 }
 
 /**

@@ -114,6 +114,12 @@ describe("decideSecretGuardFinding", () => {
     const categories = Object.create({ network: "inherited" }) as Partial<Record<"network", string>>;
     expect(() => decideSecretGuardFinding({ default: "default", rules: inherited }, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy rules must be an object keyed by rule."));
     expect(() => decideSecretGuardFinding({ default: "default", categories }, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy categories must be an object keyed by category."));
+    // A null-prototype dictionary with entries is not a realm's Object.prototype.
+    const dictionary = Object.assign(Object.create(null) as Record<string, string>, { private_ip: "deny" });
+    expect(() => decideSecretGuardFinding({ default: "allow", rules: Object.create(dictionary) as Record<string, string> }, { rule: "private_ip" })).toThrow(new TypeError("Secret guard policy rules must be an object keyed by rule."));
+    // An empty null-prototype parent holds nothing that could be dropped.
+    const emptyParent = Object.assign(Object.create(Object.create(null) as object) as Record<string, string>, { private_ip: "deny" });
+    expect(decideSecretGuardFinding({ default: "allow", rules: emptyParent }, { rule: "private_ip" })).toBe("deny");
     const forward = { default: "default", rules: { future_token: "future" }, categories: { identity: "identity" } } as unknown as SecretGuardPolicy<string>;
     expect(decideSecretGuardFinding(forward, { rule: "private_ip" })).toBe("default");
     expect(decideSecretGuardFinding(forward, { rule: "future_token" })).toBe("future");
