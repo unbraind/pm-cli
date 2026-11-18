@@ -262,6 +262,19 @@ describe("file glob semantics", () => {
     });
   });
 
+  it("keeps a UNC root while normalizing the rest of the pattern", async () => {
+    expect(_testOnly.normalizePattern("//server/share/work/./src/../*.ts")).toBe("//server/share/work/*.ts");
+    expect(_testOnly.normalizePattern("///x//y/./z")).toBe("/x/y/z");
+    expect(_testOnly.normalizePattern("a//b/./c")).toBe("a/b/c");
+    if (!posix) return;
+    // POSIX treats a leading "//" like "/", so the same tree expands either way.
+    await withTempDir("pm-glob-unc-", async (root) => {
+      await writeFile(path.join(root, "a.ts"), "a");
+      expect(await expanded(`/${root}/*.ts`, root)).toEqual([`${root}/a.ts`]);
+      expect(await expanded(`/${root}/a.ts`, root)).toEqual([`${root}/a.ts`]);
+    });
+  });
+
   it("keeps an escaped trailing slash and matches nothing through it", async () => {
     await withTempDir("pm-glob-slash-", async (root) => {
       await writeFile(path.join(root, "a.ts"), "a");

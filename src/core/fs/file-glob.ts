@@ -681,6 +681,16 @@ async function walk(
   }
 }
 
+/**
+ * Normalize "./", "../" and repeated separators lexically, as the previous
+ * expansion did, keeping a leading "//": on Windows it opens a UNC root
+ * (`//server/share/…`) that collapsing would turn into a drive-relative path.
+ */
+function normalizePattern(pattern: string): string {
+  const normalized = path.posix.normalize(pattern);
+  return /^\/\/[^/]/u.test(pattern) ? `/${normalized}` : normalized;
+}
+
 /** Strip unescaped trailing separators; a lone "/" stays. */
 function trimTrailingSeparators(pattern: string): string {
   let text = pattern;
@@ -737,8 +747,7 @@ function compileWithinBounds(text: string): PathMatcher | undefined {
 export async function expandFileGlob(pattern: string, cwd: string): Promise<string[]> {
   if (pattern.startsWith("!")) throw negationRefusal();
   if (Array.from(pattern).length > MAX_PATTERN_LENGTH) return [];
-  // Normalize "./", "../" and repeated separators lexically, as the previous expansion did.
-  const text = trimTrailingSeparators(path.posix.normalize(pattern));
+  const text = trimTrailingSeparators(normalizePattern(pattern));
   const parts = splitStatic(text, cwd);
   if (parts === undefined) return literalMatch(text, cwd);
   const matcher = compileWithinBounds(parts.rest);
@@ -751,4 +760,4 @@ export async function expandFileGlob(pattern: string, cwd: string): Promise<stri
 }
 
 /** Internal hooks for bound and cache tests; not part of any public surface. */
-export const _testOnly = { compile };
+export const _testOnly = { compile, normalizePattern };
