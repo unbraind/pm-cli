@@ -21,7 +21,7 @@ vi.mock("node:fs", async (importOriginal) => ({
   readFileSync: readFileSyncMock,
 }));
 
-const { descendantEntriesFromProcessTable, descendantsFromProcessTable, killProcessTree, parentStillMatches, resolveTrustedPs, resolveWindowsSystemRoot, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
+const { descendantEntriesFromProcessTable, descendantsFromProcessTable, killProcessTree, parentStillMatches, processTableSharesNamespace, resolveTrustedPs, resolveWindowsSystemRoot, runTeardownHelper } = await import("../../../../src/core/shared/process-tree.js");
 
 class FakeStream extends EventEmitter {
   readonly setEncoding = vi.fn();
@@ -94,7 +94,45 @@ describe("parentStillMatches", () => {
   });
 });
 
+describe("processTableSharesNamespace", () => {
+  it("trusts procfs only when /proc/self names this process", () => {
+    expect(processTableSharesNamespace(() => `${process.pid} (node) S 1 0`)).toBe(true);
+    // A /proc inherited from an outer PID namespace names another pid.
+    expect(processTableSharesNamespace(() => `${process.pid + 1} (node) S 1 0`)).toBe(false);
+    existsSyncMock.mockImplementation((file: string) => file === "/proc/self/stat");
+    expect(processTableSharesNamespace(() => undefined)).toBe(false);
+    existsSyncMock.mockImplementation(() => false);
+    expect(processTableSharesNamespace(() => undefined)).toBe(true);
+    readFileSyncMock.mockImplementation(() => `${process.pid} (node) S 1 0`);
+    expect(processTableSharesNamespace()).toBe(true);
+  });
+
+  it("skips the descendant walk when the process table is from another namespace", async () => {
+    const restore = withPlatform("linux");
+    try {
+      const kill = vi.spyOn(process, "kill").mockImplementation((pid) => {
+        if (pid === -4242) throw new Error("no group");
+        return true;
+      });
+      existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat");
+      readFileSyncMock.mockImplementation(() => "1 (init) S 0 0");
+      const caller = { kill: vi.fn(), alive: vi.fn(() => true) };
+      await killProcessTree(4242, caller);
+      expect(spawnMock).not.toHaveBeenCalled();
+      expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"]]);
+      expect(caller.kill).toHaveBeenCalledTimes(1);
+    } finally {
+      restore();
+    }
+  });
+});
+
 describe("resolveWindowsSystemRoot", () => {
+  it("matches the variable names case-insensitively, as a worker thread's env copy needs", () => {
+    expect(resolveWindowsSystemRoot({ SYSTEMROOT: "C:\\Windows" })).toBe("C:\\Windows");
+    expect(resolveWindowsSystemRoot({ WINDIR: "D:\\Windows" })).toBe("D:\\Windows");
+  });
+
   it("accepts only a fully qualified drive path, from SystemRoot and then windir", () => {
     expect(resolveWindowsSystemRoot({ SystemRoot: "C:\\Windows" })).toBe("C:\\Windows");
     expect(resolveWindowsSystemRoot({ SystemRoot: "D:/WinRoot", windir: "C:\\Windows" })).toBe("D:/WinRoot");
@@ -253,7 +291,10 @@ describe("killProcessTree", () => {
       });
       existsSyncMock.mockImplementation((file: string) => file === "/bin/ps" || file === "/proc/self/stat");
       // 4300 still belongs to the root; 4301 was reused by a process of init.
-      readFileSyncMock.mockImplementation((file: string) => file === "/proc/4300/stat" ? "4300 (sleep) S 4242 0" : "4301 (other) S 1 0");
+      readFileSyncMock.mockImplementation((file: string) => {
+        if (file === "/proc/self/stat") return `${process.pid} (node) S 1 0`;
+        return file === "/proc/4300/stat" ? "4300 (sleep) S 4242 0" : "4301 (other) S 1 0";
+      });
       answer("4300 4242\n4301 4242\n");
       const caller = root();
       await killProcessTree(4242, caller);

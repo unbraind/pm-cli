@@ -89,6 +89,20 @@ export function parentStillMatches(
   return Number(fields[1]) === entry.parent;
 }
 
+/**
+ * Whether the process table describes this process's own PID namespace. With
+ * procfs, `/proc/self` must name this process: a `/proc` inherited from an
+ * outer namespace lists PIDs that `process.kill` would read differently.
+ * Without procfs there are no PID namespaces to confuse.
+ */
+export function processTableSharesNamespace(
+  readStat: (file: string) => string | undefined = readProcStat,
+): boolean {
+  const stat = readStat("/proc/self/stat");
+  if (stat === undefined) return !existsSync("/proc/self/stat");
+  return Number(stat.trim().split(/\s+/u)[0]) === process.pid;
+}
+
 function readProcStat(file: string): string | undefined {
   try {
     return readFileSync(file, "utf8");
@@ -117,7 +131,12 @@ export function resolveTrustedPs(exists: (file: string) => boolean = existsSync)
  * control.
  */
 export function resolveWindowsSystemRoot(env: NodeJS.ProcessEnv = process.env): string | undefined {
-  return [env.SystemRoot, env.windir].find((candidate): candidate is string => typeof candidate === "string" && /^[A-Za-z]:[\\/]/u.test(candidate));
+  // Keys are matched case-insensitively: a worker thread's env copy is case-sensitive.
+  const valueOf = (name: string): string | undefined =>
+    Object.entries(env).find(([key]) => key.toLowerCase() === name)?.[1];
+  return [valueOf("systemroot"), valueOf("windir")].find(
+    (candidate): candidate is string => typeof candidate === "string" && /^[A-Za-z]:[\\/]/u.test(candidate),
+  );
 }
 
 /** Kill `pid` itself, treating a process that is already gone as stopped. */
@@ -237,7 +256,7 @@ async function killWindowsTree(pid: number, root: ProcessTreeRoot): Promise<void
 /** Kill the live descendants of a root that is not a group leader, from one system `ps` snapshot. */
 async function killPosixDescendants(pid: number, root: ProcessTreeRoot): Promise<void> {
   const ps = resolveTrustedPs();
-  if (ps === undefined) return;
+  if (ps === undefined || !processTableSharesNamespace()) return;
   // A fixed environment: procps rejects -A under PS_PERSONALITY=bsd or CMD_ENV=bsd.
   const table = await runTeardownHelper(ps, ["-A", "-o", "pid=", "-o", "ppid="], PS_ENV);
   if (table?.code !== 0 || !root.alive()) return;
