@@ -534,6 +534,7 @@ describe("managed update status budget evidence", () => {
   });
 
   it("lets a locked caller release permits as lookups settle, never waiting for a teardown", async () => {
+    const exitListenersBefore = process.listenerCount("exit");
     vi.useFakeTimers();
     hang();
     const releases: Array<() => void> = [];
@@ -550,7 +551,13 @@ describe("managed update status budget evidence", () => {
     expect(spawnMock).toHaveBeenCalledTimes(5);
     await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
     expect((await pending).entries).toHaveLength(5);
+    // Start the fifth teardown too, then release and drain all five, so no
+    // teardown or exit listener outlives the test.
+    await flushTeardown();
+    expect(releases).toHaveLength(5);
     for (const release of releases) release();
+    await vi.runAllTimersAsync();
+    expect(process.listenerCount("exit")).toBe(exitListenersBefore);
   });
 
   it("passes an explicit refresh budget to every lookup", async () => {
