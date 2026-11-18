@@ -121,6 +121,83 @@ describe("file glob superset property (pm-gh1748)", () => {
   }, 60_000);
 });
 
+/** A pattern as tokens: literal text, or a construct with the alternatives it spells. */
+type PatternToken = string | { text: string; options: string[] };
+const PLAIN_TOKENS = ["a", "b", "c", "child", "sub", "deep", "app", "n", "d", ".ts", ".md", ".tsx", "*", "?", "[ab]", "[!a]", "[[:alpha:]]", "x"];
+const CONSTRUCT_TOKENS: Array<{ text: string; options: string[] }> = [
+  { text: "{a,b}", options: ["a", "b"] },
+  { text: "{child,sub}", options: ["child", "sub"] },
+  { text: "{child/,sub/}", options: ["child/", "sub/"] },
+  { text: "{,child/}", options: ["", "child/"] },
+  { text: "{**,x}", options: ["**", "x"] },
+  { text: "@(a|b)", options: ["a", "b"] },
+  { text: "@(child/|sub/)", options: ["child/", "sub/"] },
+  { text: "@(**|n)", options: ["**", "n"] },
+  { text: "@(child/**|*.md)", options: ["child/**", "*.md"] },
+];
+
+/** Draw one to four tokens from a seeded generator, never starting with "/". */
+function drawTokens(random: () => number): PatternToken[] {
+  const pick = <T,>(values: T[]): T => values[Math.floor(random() * values.length)]!;
+  const tokens: PatternToken[] = [];
+  const count = 1 + Math.floor(random() * 4);
+  for (let index = 0; index < count; index += 1) {
+    const roll = random();
+    tokens.push(roll < 0.5 ? pick(PLAIN_TOKENS) : roll < 0.75 ? pick(CONSTRUCT_TOKENS) : "/");
+  }
+  while (tokens[0] === "/") tokens.shift();
+  return tokens;
+}
+
+/** Spell tokens as a pattern, and expand every construct textually. */
+function spellAndExpand(tokens: PatternToken[]): { pattern: string; expansions: string[]; constructs: boolean } {
+  const pattern = tokens.map((token) => (typeof token === "string" ? token : token.text)).join("");
+  const expansions = tokens.reduce<string[]>(
+    (prefixes, token) => prefixes.flatMap((prefix) => (typeof token === "string" ? [prefix + token] : token.options.map((option) => prefix + option))),
+    [""],
+  );
+  return { pattern, expansions, constructs: tokens.some((token) => typeof token !== "string") };
+}
+
+/** "**" next to anything but "/" or an edge: the documented picomatch 4.0.7 difference. */
+const adjacentGlobstar = (pattern: string) => /[^/]\*\*|\*\*[^/]/u.test(pattern.replace(/\/+$/u, ""));
+
+/** Assert each expansion equals the previous expansion and return their union, or undefined when one is refused. */
+async function unionMatchingReference(expansions: string[], workspace: string): Promise<string[] | undefined> {
+  const union = new Set<string>();
+  for (const expansion of expansions) {
+    const previous = await reference(expansion, workspace).catch(() => undefined);
+    if (previous === undefined) return undefined;
+    const files = await expanded(expansion, workspace);
+    expect({ expansion, files }).toEqual({ expansion, files: previous });
+    for (const file of files) union.add(file);
+  }
+  return [...union].sort();
+}
+
+describe("file glob union and parity properties (pm-gh1748)", () => {
+  it("equals the previous expansion without constructs, and the union of its expansions with them", async () => {
+    let seed = 13;
+    const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    await withTempDir("pm-glob-union-property-", async (root) => {
+      const workspace = await fixture(root);
+      const seen = new Set<string>();
+      const checked = { parity: 0, unions: 0 };
+      while (checked.parity < 200 || checked.unions < 150) {
+        const { pattern, expansions, constructs } = spellAndExpand(drawTokens(random));
+        const usable = expansions.filter((expansion) => expansion !== "" && !expansion.startsWith("/"));
+        if (pattern === "" || seen.has(pattern) || usable.length === 0 || usable.some(adjacentGlobstar)) continue;
+        seen.add(pattern);
+        const union = await unionMatchingReference(usable, workspace);
+        if (union === undefined) continue;
+        if (!constructs) { checked.parity += 1; continue; }
+        checked.unions += 1;
+        expect({ pattern, files: await expanded(pattern, workspace) }).toEqual({ pattern, files: union });
+      }
+    });
+  }, 120_000);
+});
+
 describe("file glob semantics", () => {
   it("treats a brace or extglob as the union of its expansions, so a globstar after an alternative ending in / spans zero or more directories", async () => {
     // tinyglobby required at least one directory after an extglob here and
