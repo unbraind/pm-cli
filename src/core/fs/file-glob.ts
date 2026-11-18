@@ -333,16 +333,16 @@ class Parser {
 
   /**
    * Parse a run of stars. Exactly two followed by "/" are a globstar that
-   * consumes the "/"; exactly two at the end of the pattern or of a brace
-   * alternative are a trailing globstar. Two that end an extglob alternative,
-   * and every other run, are one star, as in the previous expansion.
+   * consumes the "/"; exactly two at the end of the pattern or of a brace or
+   * extglob alternative are a trailing globstar. Every other run is one star.
+   * Whether a globstar spans directories is decided where it is reached.
    */
   private stars(index: number, end: number, separator: string | undefined): Token {
     let run = 1;
     while (this.chars[index + run] === "*" && index + run < end && !this.closers.has(index + run)) run += 1;
     const after = index + run < end ? this.chars[index + run] : undefined;
     if (run === 2 && after === "/") return { nodes: [{ kind: "globstar", slash: true }], next: index + run + 1 };
-    const trailing = run === 2 && separator !== "|" && (after === undefined || after === separator);
+    const trailing = run === 2 && (after === undefined || after === separator);
     return { nodes: [trailing ? { kind: "globstar", slash: false } : { kind: "star" }], next: index + run };
   }
 }

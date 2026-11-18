@@ -1185,14 +1185,15 @@ Linked files and docs keep reviews reproducible. `deps` is read-only and project
 - Compatibility:
   - Results are identical to the previous tinyglobby expansion on the parity fixture in `tests/unit/core/fs/file-glob.spec.ts`.
   - The pattern is first normalized lexically, as before: `a/./b`, `a/*/../b` and `a//b` become `a/b`.
-  - A `**/` alternative inside an extglob at a segment start is still a globstar. A `**` that ends an extglob alternative is a single star, as before.
+  - A `**/` inside an extglob alternative at a segment start is still a globstar.
   - The known differences are:
     - A symbolic-link cycle was followed once before; it is not re-entered now.
     - Stepped ranges such as `{1..9..2}` are now literal text.
     - An escaped leading `\!` now matches a literal `!`.
     - A `**` that ends a brace alternative (`{src,**}`) now spans every directory level.
     - Parentheses that do not form an extglob are literal characters, so a Next.js route group such as `app/(marketing)/**/*.tsx` matches that directory. Inside an extglob, parentheses must balance. The previous expansion compiled bare parentheses to a regex group, which matched `app/marketing/` instead.
-    - A brace or extglob now matches exactly the union of its expansions. A `**/` after an alternative that ends in `/` therefore spans zero or more directories: `@(core/|sdk/)**/*.ts` equals `core/**/*.ts` plus `sdk/**/*.ts`. The previous expansion required at least one directory there after an extglob and lost matches after a brace.
+    - A brace or extglob now matches exactly the union of its expansions. A `**/` after an alternative that ends in `/` therefore spans zero or more directories: `@(core/|sdk/)**/*.ts` equals `core/**/*.ts` plus `sdk/**/*.ts`. A `**` that ends an alternative after `/` spans directories too: `@(core/**|sdk/**)` equals `core/**` plus `sdk/**`.
+    - The previous expansion was inconsistent here. It required at least one directory after an extglob and lost matches after a brace. It also treated a trailing `**` as a single star in an extglob with several alternatives, yet not in one with a single alternative. Results are now always a superset of the previous ones.
 
 A `files`, `docs` or `test` write (`--add`, `--add-json`, `--add-glob`, `--remove`, `--remove-index`, `--migrate`, or a linked-test `--update`/`--update-index` edit) returns only the entries it added or rewrote, so its reply no longer grows with the stored list ([pm-gh1700](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1700.toon); tracker record excluded from npm). `count` is the number of entries returned and `total_count` the number stored. `mutation_receipt` reports `changed_count`, `removed_count` and `full_history_included`, and `omission_receipt` names the `full_history` selector when stored entries were withheld, exactly as for comments. For `files` and `docs` adds, `mutation_receipt.link_outcomes` reports each requested link as `added`, `note_added`, `note_replaced`, `note_appended` or `unchanged`. A retried identical add, or an `--add-glob` that matches nothing, returns no entries and `changed_count: 0`; the receipt reports entries as storage saved them (normalized paths included). Pass `--full-history` (SDK `fullHistory`, MCP `full`) to receive the whole collection after a write. The implicit post-write path check validates the returned links; `--validate-paths` validates every stored path. `failure_categories` appears only when `pm test` ran linked tests.
 

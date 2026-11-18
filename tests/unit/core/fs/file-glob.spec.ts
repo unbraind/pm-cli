@@ -54,7 +54,7 @@ const PARITY_PATTERNS = [
   "{}.ts", "{01..03}.ts", "{a..c}.ts", "{a..c}*", "??.ts", "{x.ts", "a,b.ts", "app/[slug]/*.tsx", "*/[slug]/*", "app/*/page.tsx",
   "../other/*.ts", "../other/o.ts", "missing/**", "missing", "a.ts/*",
   "*/./n.ts", "child/*/../n.ts", "child//n.ts", "*//n.ts", "c*/./deep/d.ts", "./*/deep/../n.ts", "@(**/d.ts|*.md)",
-  "child/@(**/d.ts|n.ts)", "app/@(**/page.tsx)", "*(**/d.ts)", "*/@(**|x)", "*/@(x|**)", "{**,x}/n.ts",
+  "child/@(**/d.ts|n.ts)", "app/@(**/page.tsx)", "*(**/d.ts)", "{**,x}/n.ts", "@(child/**)", "+(child/**)", "{child/**,sub/**}",
   "*[[:ascii:]].ts", "[![:ascii:]]*.ts", "[[:ascii:]].ts",
   "{child/,x}**/d.ts", "+(child/)**/d.ts", "?(child/)**/d.ts", "@(*/)**/d.ts", "c**", "chi**/n.ts", "a**.ts",
   "@(x(y)|b).md", "*(x(y)|a).ts", "@(((p))|c).ts",
@@ -94,6 +94,13 @@ describe("file glob semantics", () => {
       ["@(child/|x)**/*.ts", ["child/**/*.ts", "x*/*.ts"]],
       ["*(app/|child/)**/*", ["**/*"]],
       ["{,child/}**/d.ts", ["**/d.ts", "child/**/d.ts"]],
+      // A trailing globstar inside an extglob alternative spans directories too.
+      ["@(child/**|sub/**)", ["child/**", "sub/**"]],
+      ["*/@(**|x)", ["*/**", "*/x"]],
+      ["*/@(x|**)", ["*/**", "*/x"]],
+      ["child/@(**|x)", ["child/**", "child/x"]],
+      ["@(child/**|*.md)", ["child/**", "*.md"]],
+      ["@(**|x)", ["**", "x"]],
     ];
     await withTempDir("pm-glob-union-", async (root) => {
       const workspace = await fixture(root);
