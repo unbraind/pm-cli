@@ -340,6 +340,7 @@ export {
   type SecretGuardFinding,
   type SecretGuardMode,
   type SecretGuardPolicy,
+  type SecretGuardPolicyDecision,
   type SecretGuardRule,
   type SecretGuardRuleCategory,
   type SecretNormalizationKind,

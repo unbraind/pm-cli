@@ -13,7 +13,9 @@ function defaultProcRead(file: string): string {
   if (file === "/proc/self/status") return `NSpid:\t${process.pid}\n`;
   throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
 }
-const readFileSyncMock = vi.hoisted(() => vi.fn((_file: string, _encoding?: string): string => {
+// The hoisted default matches defaultProcRead, so a test run alone sees it too.
+const readFileSyncMock = vi.hoisted(() => vi.fn((file: string, _encoding?: string): string => {
+  if (file === "/proc/self/status") return `NSpid:\t${process.pid}\n`;
   throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
 }));
 vi.mock("node:child_process", async (importOriginal) => ({

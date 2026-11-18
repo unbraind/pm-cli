@@ -635,7 +635,6 @@ export interface SecretGuardPolicy<Decision> {
   /**
    * Decision for a finding that no category or rule entry decides; never
    * `undefined`, even when `Decision` allows it, while `null` stays allowed.
-   * The decision type is inferred from it when no override names one.
    */
   default: Decision & (NonNullable<Decision> | null);
   /** Decisions for whole detector families; an `undefined` entry counts as absent. */
@@ -648,6 +647,23 @@ export interface SecretGuardPolicy<Decision> {
    */
   rules?: { [Rule in SecretGuardRule]?: Decision | undefined } & { readonly [rule: string]: Decision | undefined };
 }
+
+/** The decisions an optional `categories` or `rules` map holds, without the `undefined` of an absent entry. */
+type PolicyEntryDecisions<Entries> = Entries extends object ? Exclude<Entries[keyof Entries], undefined> : never;
+
+/** A policy's own `categories` or `rules` map type, or `never` when the policy type has none. */
+type PolicyEntries<Policy, Field extends "categories" | "rules"> = Field extends keyof Policy ? NonNullable<Policy[Field]> : never;
+
+/**
+ * Every decision a policy type can return: its default and each category and
+ * rule entry. For a `SecretGuardPolicy<D>` this is `D` without `undefined`;
+ * for a policy declared with `satisfies`, or written inline, it is the union of
+ * the decisions it names, even when they mix kinds such as `true | "allow"`.
+ */
+export type SecretGuardPolicyDecision<Policy> =
+  | (Policy extends { readonly default: infer Default } ? Default : never)
+  | PolicyEntryDecisions<PolicyEntries<Policy, "categories">>
+  | PolicyEntryDecisions<PolicyEntries<Policy, "rules">>;
 
 function ownPolicyEntry<Decision>(
   entries: Partial<Record<string, Decision>> | undefined,
@@ -671,21 +687,23 @@ function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules
  * policy's own `default`, `categories` and `rules` are read, never inherited
  * ones.
  *
+ * The policy's own type is inferred, so the result is every decision it can
+ * hold ({@link SecretGuardPolicyDecision}), even when they mix kinds.
+ *
  * @throws {TypeError} When the policy is not an object, has no `default`
  * decision, or holds `categories` or `rules` that are not objects, or when the
  * finding has no string `rule`.
  */
-export function decideSecretGuardFinding<Decision>(
-  // The plain `default` site lets TypeScript infer the union of the default
-  // and the override decisions, as for a policy declared with `satisfies`.
-  policy: SecretGuardPolicy<Decision> & { default: Decision },
+export function decideSecretGuardFinding<Policy extends SecretGuardPolicy<unknown>>(
+  policy: Policy,
   finding: { readonly rule: string },
-): Decision {
+): SecretGuardPolicyDecision<Policy> {
+  type Decision = SecretGuardPolicyDecision<Policy>;
   if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {
     throw new TypeError("Secret guard policy must be an object with a default decision.");
   }
   // Each field is read once, so the value validated is the value used.
-  const fallback: Decision | undefined = Object.hasOwn(policy, "default") ? policy.default : undefined;
+  const fallback = (Object.hasOwn(policy, "default") ? policy.default : undefined) as Decision | undefined;
   if (fallback === undefined) {
     throw new TypeError("Secret guard policy requires a default decision.");
   }

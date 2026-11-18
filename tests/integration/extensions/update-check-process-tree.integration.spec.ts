@@ -204,7 +204,7 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     }
   }, 30_000);
 
-  it("reports a deliberately surviving child as still running, so the stop assertions can fail", async () => {
+  it.skipIf(!processTableSharesNamespace())("reports a deliberately surviving child as still running, so the stop assertions can fail", async () => {
     const survivor = spawn("sleep", ["30"], { stdio: "ignore" });
     const exited = new Promise((resolve) => survivor.once("exit", resolve));
     try {

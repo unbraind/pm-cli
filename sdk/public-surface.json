@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2163,
+    "covered_symbols": 2164,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2164
+    "required_symbols": 2165
   },
   "breaking_acknowledgements": [
     {
@@ -7370,7 +7370,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "decideSecretGuardFinding",
-          "signature": "<Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision"
+          "signature": "<Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy> | calls: <Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy>"
         },
         {
           "classification": "supported",
@@ -21745,6 +21745,12 @@
         {
           "classification": "supported",
           "kind": "type",
+          "name": "SecretGuardPolicyDecision",
+          "signature": "export type SecretGuardPolicyDecision<Policy> = (Policy extends { readonly default: infer Default; } ? Default : never) | PolicyEntryDecisions<PolicyEntries<Policy, \"categories\">> | PolicyEntryDecisions<PolicyEntries<Policy, \"rules\">>;"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
           "name": "SecretGuardRule",
           "signature": "export type SecretGuardRule = SecretGuardFinding[\"rule\"];"
         },
@@ -30800,7 +30806,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "decideSecretGuardFinding",
-          "signature": "<Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision"
+          "signature": "<Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy> | calls: <Policy extends SecretGuardPolicy<unknown>>(policy: Policy, finding: { readonly rule: string; }) => SecretGuardPolicyDecision<Policy>"
         },
         {
           "classification": "supported",
@@ -31953,6 +31959,12 @@
           "kind": "interface",
           "name": "SecretGuardPolicy",
           "signature": "export interface SecretGuardPolicy<Decision> { default: Decision & (NonNullable<Decision> | null); categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined; }; rules?: { [Rule in SecretGuardRule]?: Decision | undefined; } & { readonly [rule: string]: Decision | undefined; }; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "type",
+          "name": "SecretGuardPolicyDecision",
+          "signature": "export type SecretGuardPolicyDecision<Policy> = (Policy extends { readonly default: infer Default; } ? Default : never) | PolicyEntryDecisions<PolicyEntries<Policy, \"categories\">> | PolicyEntryDecisions<PolicyEntries<Policy, \"rules\">>;"
         },
         {
           "classification": "supported",
@@ -41289,7 +41301,7 @@
       "checked_functions": 1351,
       "checked_values": 401,
       "exempt_test_seams": 15,
-      "referenced_types": 1056
+      "referenced_types": 1057
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -41313,7 +41325,7 @@
       "checked_functions": 117,
       "checked_values": 28,
       "exempt_test_seams": 4,
-      "referenced_types": 122
+      "referenced_types": 123
     },
     "./sdk/graph": {
       "checked_functions": 76,

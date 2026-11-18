@@ -6,6 +6,7 @@ import {
   secretGuardRuleCategory,
   type SecretGuardFinding,
   type SecretGuardPolicy,
+  type SecretGuardPolicyDecision,
   type SecretGuardRule,
   type SecretGuardRuleCategory,
 } from "@unbrained/pm-cli/sdk";
@@ -84,6 +85,29 @@ void inlineNotNull;
 // @ts-expect-error an inferred union is not narrowed to the default alone
 const onlyDefault: "refuse" = decideSecretGuardFinding(satisfied, finding);
 void onlyDefault;
+// Decisions of different kinds are kept together, inline or with `satisfies`.
+const mixedKinds = { default: true, categories: { network: "allow" } } satisfies SecretGuardPolicy<true | "allow">;
+const fromMixedKinds: true | "allow" = decideSecretGuardFinding(mixedKinds, finding);
+const inlineMixedKinds: boolean | string = decideSecretGuardFinding({ default: true, rules: { private_ip: "allow" } }, finding);
+// @ts-expect-error the string override stays in the inferred union
+const mixedNotBoolean: boolean = decideSecretGuardFinding({ default: true, rules: { private_ip: "allow" } }, finding);
+void fromMixedKinds;
+void inlineMixedKinds;
+void mixedNotBoolean;
+// An annotated policy returns its decision type without the `undefined` of an absent entry.
+const fromOptional: boolean = decideSecretGuardFinding(optionalDecisions, finding);
+const unknownDecision: unknown = decideSecretGuardFinding({} as SecretGuardPolicy<unknown>, finding);
+const derived: true | "allow" = {} as SecretGuardPolicyDecision<typeof mixedKinds>;
+void fromOptional;
+void unknownDecision;
+void derived;
+// The call site still validates the policy shape.
+// @ts-expect-error the default decision is required at the call site
+decideSecretGuardFinding({ categories: { network: false } }, finding);
+// @ts-expect-error an undefined default is rejected at the call site
+decideSecretGuardFinding({ default: undefined }, finding);
+// @ts-expect-error a categories map naming no stable category is rejected at the call site
+decideSecretGuardFinding({ default: true, categories: { identity: false } }, finding);
 // A finding decoded from JSON carries only a string rule.
 const decoded: boolean = decideSecretGuardFinding(byCategory, { rule: "rule-from-a-newer-host" });
 void decoded;
