@@ -150,7 +150,10 @@ reports `missing_installed_commit`. A GitHub failure that an earlier release
 recorded as git's own command line and stderr is read back as
 `github_remote_lookup_failed`. If a host exits before a timed-out provider's
 deferred teardown runs, the provider itself is still killed through its
-handle as the host exits.
+handle as the host exits. Inside a worker thread, where `terminate()` runs no
+exit listener, a lookup that needs a teardown finishes it before it hands back
+its outcome, so a host may terminate the worker as soon as the result arrives;
+that outcome arrives up to about 4 seconds after the budget.
 
 Lookups are neither detached nor hidden from the console: they stay in `pm`'s
 process group (and console on Windows), so a terminal Ctrl-C reaches them as it

@@ -312,20 +312,6 @@ describe("extension command runtime", () => {
       status: "skipped_non_github",
       reason: "managed_source_kind_local",
     });
-    // pm-5kfzjh: a recorded budget is timeout evidence only on a failed check.
-    const summaryIdentity = { name: "budget-probe", directory: "budget-probe", version: "1.0.0", entry: "index.mjs", enabled: true };
-    const staleLocal = {
-      name: "budget-probe", directory: "budget-probe", scope: "project", manifest_version: "1.0.0", manifest_entry: "index.mjs",
-      capabilities: [], installed_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z",
-      source: { kind: "local", input: "./local", location: "/tmp/local" },
-      update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 2500,
-    } as never;
-    expect(
-      extensionCommandTestOnly.buildInstalledExtensionSummary(summaryIdentity, "project", staleLocal, { status: "skipped_non_github", reason: "managed_source_kind_local" }),
-    ).not.toHaveProperty("update_check_timeout_ms");
-    expect(
-      extensionCommandTestOnly.buildInstalledExtensionSummary(summaryIdentity, "project", staleLocal, { status: "failed", reason: "npm_registry_lookup_timed_out" }),
-    ).toMatchObject({ update_check_status: "failed", update_check_timeout_ms: 2500 });
     expect(
       extensionCommandTestOnly.resolveUpdateCheckResolution({
         source: {

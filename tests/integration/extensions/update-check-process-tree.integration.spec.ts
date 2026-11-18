@@ -4,6 +4,7 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { Worker } from "node:worker_threads";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { processTableSharesNamespace } from "../../../src/core/shared/process-tree.js";
 import { GITHUB_REMOTE_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithubUpdate } from "../../../src/sdk/extension/update-check.js";
@@ -154,6 +155,33 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     for (const pid of pids) expect(Number.isSafeInteger(pid) && pid > 0).toBe(true);
     expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
     for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
+  });
+
+  // A worker thread runs no exit listener when it is terminated, so the tree
+  // must already be gone when the worker hands back its timed-out result.
+  it.skipIf((!existsSync("/bin/ps") && !existsSync("/usr/bin/ps")) || !processTableSharesNamespace())("stops the provider tree before a worker hands back a timeout, so terminating the worker at once leaks nothing", async () => {
+    const { root, pidFile } = await fakeGit("wait");
+    vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
+    const worker = new Worker([
+      'const { parentPort } = require("node:worker_threads");',
+      `import(${JSON.stringify(distUpdateCheck)}).then(async ({ checkGithubUpdate }) => {`,
+      `  parentPort.postMessage(await checkGithubUpdate(${JSON.stringify(GITHUB_SOURCE)}, undefined, 1000));`,
+      // Only terminate() ends this worker.
+      "  setInterval(() => undefined, 1000);",
+      "});",
+    ].join("\n"), { eval: true });
+    const status = await new Promise((resolve, reject) => {
+      worker.once("error", reject);
+      worker.once("message", (message) => {
+        // The host terminates the worker the moment the result arrives.
+        void worker.terminate();
+        resolve(message);
+      });
+    });
+    expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
+    const pids = await readPids(pidFile);
+    expect(new Set(pids).size).toBe(2);
+    for (const pid of pids) expect(await waitUntilStopped(pid, 1000)).toBe(true);
   });
 
   // The liveness probe reads ps, which needs this PID namespace's process table.

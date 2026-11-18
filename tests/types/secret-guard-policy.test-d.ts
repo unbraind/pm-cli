@@ -134,6 +134,11 @@ const fromDictionary: string | null = decideSecretGuardFinding(dictionary, findi
 const dictionaryNotNull: string = decideSecretGuardFinding(dictionary, finding);
 void fromDictionary;
 void dictionaryNotNull;
+// A symbol-keyed rules entry is never looked up by a rule name, so it adds no decision.
+declare const ruleMetadata: unique symbol;
+declare const withSymbol: { default: true; rules: { [ruleMetadata]: "allow" } };
+const fromSymbol: true = decideSecretGuardFinding(withSymbol, finding);
+void fromSymbol;
 // A categories key that names no stable category is ignored, in the result type too.
 const ignoredCategory: boolean = decideSecretGuardFinding({ default: true, categories: { network: false, identity: 3 } }, finding);
 void ignoredCategory;

@@ -3786,6 +3786,5 @@ export const _testOnly = {
   resolveManagedInstallTimestamps,
   resolveScope,
   resolveUpdateCheckResolution,
-  buildInstalledExtensionSummary,
   withExtensionInstallLock,
 };

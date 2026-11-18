@@ -5,6 +5,7 @@
  */
 import { nowIso } from "../../core/shared/time.js";
 import { spawn, type ChildProcess } from "node:child_process";
+import { isMainThread } from "node:worker_threads";
 import npa from "npm-package-arg";
 import { killProcessTree } from "../../core/shared/process-tree.js";
 import type { ManagedExtensionSource } from "./managed-state.js";
@@ -242,9 +243,25 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       }).finally(untrack);
       return teardown;
     };
-    const deadline = setTimeout(() => {
-      settle(new UpdateQueryError(spec.timedOut, timeout, deferTeardown()));
-    }, timeout);
+    // On the main thread a host that exits right after the result is covered
+    // by the exit listener. A worker thread has no shutdown hook that is sure
+    // to run (terminate() runs no exit listener), so there the teardown
+    // finishes before the outcome is handed back; the outcome is classified
+    // first, so a timeout is still reported as one.
+    // Callers run only while unsettled: the deadline is cleared on settling
+    // and output after settling is ignored.
+    const settleAfterTeardown = (reason: string, budget?: number): void => {
+      const pending = deferTeardown();
+      if (isMainThread) {
+        settle(new UpdateQueryError(reason, budget, pending));
+        return;
+      }
+      settled = true;
+      clearTimeout(deadline);
+      const overdue = performance.now() >= deadlineAt;
+      void pending.then(() => reject(overdue ? new UpdateQueryError(spec.timedOut, timeout, pending) : new UpdateQueryError(reason, budget, pending)));
+    };
+    const deadline = setTimeout(() => settleAfterTeardown(spec.timedOut, timeout), timeout);
     function settle(error?: UpdateQueryError): void {
       if (settled) return;
       settled = true;
@@ -257,7 +274,7 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     // return a child without stdio and report the error on the next tick.
     lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
     if (!lookup.stdout) {
-      settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
+      settleAfterTeardown(spec.failed);
       return;
     }
     lookup.stdout.setEncoding("utf8");
@@ -265,7 +282,7 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (settled) return;
       stdoutBytes += Buffer.byteLength(chunk);
       if (stdoutBytes > spec.maxBuffer) {
-        settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
+        settleAfterTeardown(spec.failed);
         return;
       }
       stdout += chunk;

@@ -112,6 +112,22 @@ describe("managed extension diagnostic purity", () => {
     });
   });
 
+  it("never reports a stale recorded budget for a check that did not fail", async () => {
+    await withTempPmPath(async (context) => {
+      const { managedPath } = await installManagedNpmFixture(context);
+      // An earlier timed-out check left its reason and budget on a record
+      // whose source is now local, so this check is skipped, not failed.
+      const state = JSON.parse(await readFile(managedPath, "utf8"));
+      state.entries[0].source = { kind: "local", input: "./freshness-extension", location: path.join(context.tempRoot, "freshness-extension") };
+      state.entries[0].update_error = "npm_registry_lookup_timed_out";
+      state.entries[0].update_check_timeout_ms = 2500;
+      await writeFile(managedPath, JSON.stringify(state));
+      const details = (await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath })).details as { extensions: Record<string, unknown>[] };
+      expect(details.extensions[0]).toMatchObject({ update_check_status: "skipped_non_github" });
+      expect(details.extensions[0]).not.toHaveProperty("update_check_timeout_ms");
+    });
+  });
+
   it("reports a provider still running at its budget as a timeout, keeping the default budget under the state lock", async () => {
     await withTempPmPath(async (context) => {
       const { managedPath, before } = await installManagedNpmFixture(context);

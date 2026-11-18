@@ -648,8 +648,14 @@ export interface SecretGuardPolicy<Decision> {
   rules?: { [Rule in SecretGuardRule]?: Decision | undefined } & { readonly [rule: string]: Decision | undefined };
 }
 
-/** The decisions an optional `rules` map holds, without the `undefined` of an absent entry. */
-type PolicyEntryDecisions<Entries> = Entries extends object ? Exclude<Entries[keyof Entries], undefined> : never;
+/**
+ * The decisions an optional `rules` map holds under the string and numeric
+ * keys a rule name can look up, without the `undefined` of an absent entry; a
+ * symbol-keyed entry is never read.
+ */
+type PolicyEntryDecisions<Entries> = Entries extends object
+  ? Exclude<Entries[Exclude<keyof Entries, symbol>], undefined>
+  : never;
 
 /**
  * The decisions a `categories` map holds under each stable category, which is
