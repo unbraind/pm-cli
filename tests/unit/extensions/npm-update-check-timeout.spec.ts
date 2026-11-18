@@ -148,6 +148,17 @@ describe("npm update lookup budget", () => {
     expect(killProcessTreeMock).toHaveBeenCalledTimes(1);
   });
 
+  it("never tears down by PID a provider that exited before its deferred teardown started", async () => {
+    provide((child) => {
+      child.stdout.emit("data", "x".repeat(64 * 1024 + 1));
+      child.finish(0);
+    });
+    expect(await checkNpmUpdate(source)).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
   it("settles a failed exit at once while a descendant still holds stdout, without tearing down by PID", async () => {
     provide((child) => child.exit(128));
     const status = await checkNpmUpdate(source);
@@ -310,13 +321,15 @@ describe("npm update lookup budget", () => {
     ["an exit status", (child: FakeChild) => child.finish(1)],
     ["a signal", (child: FakeChild) => child.finish(null, "SIGKILL")],
     ["a spawn error", (child: FakeChild) => { child.emit("error", new Error(PRIVATE_FIXTURE)); child.emit("close", null, null); }],
-    ["stdout beyond its buffer", (child: FakeChild) => { child.stdout.emit("data", "x".repeat(64 * 1024 + 1)); child.finish(0, null, '"2.0.0"'); }],
+    // The provider keeps running after the overflow; later output is discarded.
+    ["stdout beyond its buffer", (child: FakeChild) => { child.stdout.emit("data", "x".repeat(64 * 1024 + 1)); child.stdout.emit("data", '"2.0.0"'); }],
   ])("reports %s before the deadline as a failed lookup without a budget", async (label, drive) => {
     provide(drive);
     const status = await checkNpmUpdate(source);
     expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
     expect(JSON.stringify(status)).not.toContain("private-fixture-value");
-    if (label === "stdout beyond its buffer") expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
+    // The overflow is classified first; its teardown starts on a later turn.
+    if (label === "stdout beyond its buffer") await vi.waitFor(() => expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) })));
   });
 
   it("reports a result that arrives after its monotonic deadline as timed out, whatever ran first", async () => {

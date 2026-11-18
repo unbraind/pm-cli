@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { processTableSharesNamespace } from "../../../src/core/shared/process-tree.js";
 import { GITHUB_REMOTE_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithubUpdate } from "../../../src/sdk/extension/update-check.js";
 
 // pm-5kfzjh and pm-43p2c3: the deadline must settle the lookup even when the
@@ -126,9 +127,10 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     expect(elapsed).toBeLessThan(10_000);
   });
 
-  // Descendant teardown needs the system ps; without it (for example on NixOS,
-  // where ps lives only on PATH) only the launcher is stopped, by design.
-  it.skipIf(!existsSync("/bin/ps") && !existsSync("/usr/bin/ps"))("kills a still-running launcher and its descendant at the deadline", async () => {
+  // Descendant teardown needs the system ps and a process table from this PID
+  // namespace; without either (NixOS keeps ps only on PATH, a nested namespace
+  // may inherit an outer /proc) only the launcher is stopped, by design.
+  it.skipIf((!existsSync("/bin/ps") && !existsSync("/usr/bin/ps")) || !processTableSharesNamespace())("kills a still-running launcher and its descendant at the deadline", async () => {
     // The launcher waits for its recorded descendant, so the whole fixture
     // tree is the launcher and that one sleep.
     const { root, pidFile } = await fakeGit("wait");

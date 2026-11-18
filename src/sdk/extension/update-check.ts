@@ -203,23 +203,21 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     let stdoutBytes = 0;
     const provider = createProviderTeardown(lookup);
     let teardown: Promise<void> | undefined;
-    const stop = (): Promise<void> => {
-      const started = provider.stop();
-      teardown ??= started;
-      return started;
-    };
-    const deadline = setTimeout(() => {
-      // The timeout is delivered first; the teardown, whose first steps are
-      // synchronous process and filesystem checks, starts on a later turn of
-      // the event loop so it can never hold up the caller.
-      const deferred = new Promise<void>((resolve) => {
+    // Every outcome is classified first; the teardown, whose first steps are
+    // synchronous process and filesystem checks, starts on a later turn of
+    // the event loop so it can neither hold up the caller nor push the
+    // classification past the deadline. It is recorded before settling, so
+    // the overdue path reports it too.
+    const deferTeardown = (): Promise<void> => {
+      teardown = new Promise<void>((resolve) => {
         setTimeout(() => {
-          void stop().then(resolve, resolve);
+          void provider.stop().then(resolve, resolve);
         }, 0);
       });
-      // Recorded before settling, so the overdue path reports it too.
-      teardown = deferred;
-      settle(new UpdateQueryError(spec.timedOut, timeout, deferred));
+      return teardown;
+    };
+    const deadline = setTimeout(() => {
+      settle(new UpdateQueryError(spec.timedOut, timeout, deferTeardown()));
     }, timeout);
     function settle(error?: UpdateQueryError): void {
       if (settled) return;
@@ -233,7 +231,7 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     // return a child without stdio and report the error on the next tick.
     lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
     if (!lookup.stdout) {
-      settle(new UpdateQueryError(spec.failed, undefined, stop()));
+      settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
       return;
     }
     lookup.stdout.setEncoding("utf8");
@@ -241,7 +239,7 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
       if (settled) return;
       stdoutBytes += Buffer.byteLength(chunk);
       if (stdoutBytes > spec.maxBuffer) {
-        settle(new UpdateQueryError(spec.failed, undefined, stop()));
+        settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
         return;
       }
       stdout += chunk;
