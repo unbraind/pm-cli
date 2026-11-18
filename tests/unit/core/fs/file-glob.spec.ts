@@ -82,6 +82,45 @@ describe("file glob parity with the previous tinyglobby expansion (pm-gh1748)", 
   });
 });
 
+describe("file glob superset property (pm-gh1748)", () => {
+  it("never loses a file the previous expansion matched, over a deterministic random pattern corpus", async () => {
+    // A fixed linear congruential seed keeps the corpus reproducible.
+    let seed = 7;
+    const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const pick = <T,>(values: T[]): T => values[Math.floor(random() * values.length)]!;
+    const atoms = ["a", "b", "c", "child", "sub", "deep", "app", "s", "n", "d", "x", "1", ".ts", ".md", ".tsx", ".", "page", "[slug]"];
+    const magic = ["*", "?", "**", "[ab]", "[!a]", "[a-c]", "[[:alpha:]]", "[[:digit:]]", "{a,b}", "{child,sub}", "{child/,sub/}", "{,child/}",
+      "{1..2}", "@(a|b)", "@(child/|sub/)", "*(a)", "+(a)", "?(x)", "+(child/)", "@(**/d.ts|n.ts)", "@(child/**|sub/**)", "*(child/|sub/)"];
+    await withTempDir("pm-glob-superset-", async (root) => {
+      const workspace = await fixture(root);
+      const seen = new Set<string>();
+      let compared = 0;
+      while (compared < 400) {
+        let pattern = "";
+        const tokens = 1 + Math.floor(random() * 5);
+        for (let token = 0; token < tokens; token += 1) {
+          const roll = random();
+          pattern += roll < 0.4 ? pick(atoms) : roll < 0.75 ? pick(magic) : "/";
+        }
+        pattern = pattern.replace(/^\/+/u, "");
+        if (pattern === "" || pattern.startsWith("!") || seen.has(pattern)) continue;
+        seen.add(pattern);
+        // picomatch 4.0.7 sometimes spans directories for a "**" written next to
+        // anything but "/" (as in "**c" or "**?(x)"); upstream picomatch later made
+        // that a single star (commit 8f5ecc0), which is what this matcher does.
+        if (/[^/]\*\*|\*\*[^/]/u.test(pattern.replace(/\/+$/u, ""))) continue;
+        // tinyglobby refuses patterns that normalize to nothing, such as ".".
+        const previous = await reference(pattern, workspace).catch(() => undefined);
+        if (previous === undefined) continue;
+        compared += 1;
+        const files = await expanded(pattern, workspace);
+        const lost = previous.filter((file) => !files.includes(file));
+        expect({ pattern, lost }).toEqual({ pattern, lost: [] });
+      }
+    });
+  }, 60_000);
+});
+
 describe("file glob semantics", () => {
   it("treats a brace or extglob as the union of its expansions, so a globstar after an alternative ending in / spans zero or more directories", async () => {
     // tinyglobby required at least one directory after an extglob here and
