@@ -57,6 +57,8 @@ export function descendantsFromProcessTable(table: string, root: number): number
  * processes receive SIGKILL, so a workspace or toolchain must not shadow it.
  */
 const TRUSTED_PS_PATHS = ["/bin/ps", "/usr/bin/ps"] as const;
+/** The process-listing environment, independent of the caller's `ps` preferences. */
+const PS_ENV: NodeJS.ProcessEnv = { PATH: "/usr/bin:/bin", LC_ALL: "C" };
 
 /** Return the first trusted `ps` that exists, or `undefined` when none does. */
 export function resolveTrustedPs(exists: (file: string) => boolean = existsSync): string | undefined {
@@ -77,13 +79,17 @@ function killProcess(pid: number): void {
  * exit or after a hard deadline, never waiting for pipes, and resolves to
  * `undefined` when the helper cannot start, fails to start or stalls.
  */
-export function runTeardownHelper(file: string, args: string[]): Promise<{ code: number | null; stdout: string } | undefined> {
+export function runTeardownHelper(
+  file: string,
+  args: string[],
+  env?: NodeJS.ProcessEnv,
+): Promise<{ code: number | null; stdout: string } | undefined> {
   return new Promise((resolve) => {
     let settled = false;
     let stdout = "";
     let helper: ReturnType<typeof spawn>;
     try {
-      helper = spawn(file, args, { stdio: ["ignore", "pipe", "ignore"], windowsHide: true });
+      helper = spawn(file, args, { stdio: ["ignore", "pipe", "ignore"], windowsHide: true, ...(env === undefined ? {} : { env }) });
     } catch {
       resolve(undefined);
       return;
@@ -155,7 +161,8 @@ export async function killProcessTree(
     // Not a process-group leader: walk its live descendants instead.
   }
   const ps = resolveTrustedPs();
-  const table = ps === undefined ? undefined : await runTeardownHelper(ps, ["-A", "-o", "pid=", "-o", "ppid="]);
+  // A fixed environment: procps rejects -A under PS_PERSONALITY=bsd or CMD_ENV=bsd.
+  const table = ps === undefined ? undefined : await runTeardownHelper(ps, ["-A", "-o", "pid=", "-o", "ppid="], PS_ENV);
   if (table?.code === 0 && root.alive()) {
     for (const descendant of descendantsFromProcessTable(table.stdout, pid)) killProcess(descendant);
   }

@@ -166,7 +166,7 @@ describe("killProcessTree", () => {
       answer("4242 1\n4300 4242\n4301 4300\n9999 1\n");
       const caller = root();
       await killProcessTree(4242, caller);
-      expect(spawnMock).toHaveBeenCalledWith("/bin/ps", ["-A", "-o", "pid=", "-o", "ppid="], expect.anything());
+      expect(spawnMock).toHaveBeenCalledWith("/bin/ps", ["-A", "-o", "pid=", "-o", "ppid="], expect.objectContaining({ env: { PATH: "/usr/bin:/bin", LC_ALL: "C" } }));
       expect(kill.mock.calls).toEqual([[-4242, "SIGKILL"], [4301, "SIGKILL"], [4300, "SIGKILL"]]);
       expect(caller.alive).toHaveBeenCalled();
       expect(caller.kill).toHaveBeenCalledTimes(1);
@@ -247,6 +247,7 @@ describe("killProcessTree", () => {
       const caller = root();
       await killProcessTree(4242, caller);
       expect(spawnMock).toHaveBeenCalledWith(path.join("D:\\WinRoot", "System32", "taskkill.exe"), ["/pid", "4242", "/T", "/F"], expect.anything());
+      expect(spawnMock.mock.calls[0]?.[2]).not.toHaveProperty("env");
       expect(caller.kill).toHaveBeenCalledTimes(rootKilled ? 1 : 0);
     } finally {
       restore();

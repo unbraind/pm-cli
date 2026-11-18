@@ -5,7 +5,7 @@
  */
 import { mapWithFixedConcurrency } from "./concurrency.js";
 import { sortManagedEntries, type ManagedExtensionState } from "./managed-state.js";
-import { checkGithubUpdate, checkNpmUpdate, resolveExtensionUpdateCheckTimeoutMs } from "./update-check.js";
+import { checkGithubUpdate, checkNpmUpdate, resolveExtensionUpdateCheckTimeoutMs, updateCheckTeardown } from "./update-check.js";
 import type { ManagedExtensionRecord } from "./managed-state.js";
 
 const MANAGED_UPDATE_CHECK_CONCURRENCY = 4;
@@ -35,6 +35,9 @@ export async function refreshManagedExtensionUpdates(
     const updateStatus = entry.source.kind === "github"
       ? await checkGithubUpdate(entry.source, undefined, timeoutMs)
       : await checkNpmUpdate(entry.source, undefined, timeoutMs);
+    // Hold this slot until a timed-out provider is torn down, so no more than
+    // the concurrency limit of providers is ever alive.
+    await updateCheckTeardown(updateStatus);
     return withUpdateCheckTimeout({
       ...entry,
       last_update_check_at: updateStatus.checked_at,

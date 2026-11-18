@@ -66,18 +66,34 @@ type UpdateQueryRunner = (args: string[], timeoutMs: number) => Promise<string>;
 /** Bounded lookup failure whose message is a stable reason, never the provider's own output. */
 class UpdateQueryError extends Error {
   readonly timeout_ms: number | undefined;
+  /** Teardown of the provider's process tree still running when the lookup settled. */
+  readonly teardown: Promise<void> | undefined;
 
-  constructor(reason: string, timeoutMs?: number) {
+  constructor(reason: string, timeoutMs?: number, teardown?: Promise<void>) {
     super(reason);
     this.name = "UpdateQueryError";
     this.timeout_ms = timeoutMs;
+    this.teardown = teardown;
   }
+}
+
+/** Teardowns still running for failed statuses, kept off the serializable status itself. */
+const statusTeardowns = new WeakMap<object, Promise<void>>();
+
+/**
+ * Resolve once the provider teardown behind a failed status has finished; at
+ * once for any other status. A caller that bounds how many providers run at a
+ * time holds its slot until then, without delaying the status itself.
+ */
+export function updateCheckTeardown(status: object): Promise<void> {
+  return statusTeardowns.get(status) ?? Promise.resolve();
 }
 
 /** Project a lookup failure onto a status: its message, and the budget when one ran out. */
 function failedUpdateStatus(checkedAt: string, error: unknown): GithubUpdateStatus {
   const status: GithubUpdateStatus = { checked_at: checkedAt, available: null, error: error instanceof Error ? error.message : String(error) };
   if (error instanceof UpdateQueryError && error.timeout_ms !== undefined) status.timeout_ms = error.timeout_ms;
+  if (error instanceof UpdateQueryError && error.teardown !== undefined) statusTeardowns.set(status, error.teardown);
   return status;
 }
 
@@ -136,23 +152,32 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     const killDirectChild = (): void => {
       if (!exited()) lookup.kill("SIGKILL");
     };
-    const stop = (): void => {
-      lookup.stdout?.destroy();
+    let teardown: Promise<void> | undefined;
+    const stop = (): Promise<void> => {
+      if (teardown) return teardown;
+      // stdout stays open, its data discarded, until the tree is captured:
+      // closing it first could SIGPIPE the provider and orphan its helpers
+      // before ps lists them.
+      const finish = (): void => {
+        killDirectChild();
+        lookup.stdout?.destroy();
+      };
       // Once the launcher has exited its PID may already belong to another
       // process, so only a live launcher's tree is torn down by PID; its root
       // is killed through Node's handle.
-      if (exited() || lookup.pid === undefined) killDirectChild();
-      else void killProcessTree(lookup.pid, { kill: killDirectChild, alive: () => !exited() }).then(killDirectChild, killDirectChild);
+      teardown = exited() || lookup.pid === undefined
+        ? Promise.resolve().then(finish)
+        : killProcessTree(lookup.pid, { kill: killDirectChild, alive: () => !exited() }).then(finish, finish);
+      return teardown;
     };
     const deadline = setTimeout(() => {
-      settle(new UpdateQueryError(spec.timedOut, timeout));
-      stop();
+      settle(new UpdateQueryError(spec.timedOut, timeout, stop()));
     }, timeout);
     function settle(error?: UpdateQueryError): void {
       if (settled) return;
       settled = true;
       clearTimeout(deadline);
-      if (performance.now() >= deadlineAt) reject(new UpdateQueryError(spec.timedOut, timeout));
+      if (performance.now() >= deadlineAt) reject(new UpdateQueryError(spec.timedOut, timeout, teardown));
       else if (error) reject(error);
       else resolve(stdout.trim());
     }
@@ -160,16 +185,15 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     // return a child without stdio and report the error on the next tick.
     lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
     if (!lookup.stdout) {
-      settle(new UpdateQueryError(spec.failed));
-      stop();
+      settle(new UpdateQueryError(spec.failed, undefined, stop()));
       return;
     }
     lookup.stdout.setEncoding("utf8");
     lookup.stdout.on("data", (chunk: string) => {
+      if (settled) return;
       stdoutBytes += Buffer.byteLength(chunk);
       if (stdoutBytes > spec.maxBuffer) {
-        settle(new UpdateQueryError(spec.failed));
-        stop();
+        settle(new UpdateQueryError(spec.failed, undefined, stop()));
         return;
       }
       stdout += chunk;

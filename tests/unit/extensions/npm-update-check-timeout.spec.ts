@@ -168,6 +168,23 @@ describe("npm update lookup budget", () => {
     expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.anything());
   });
 
+  it("keeps stdout open, discarding its data, until the tree is captured", async () => {
+    vi.useFakeTimers();
+    hang();
+    let releaseTeardown: () => void = () => undefined;
+    killProcessTreeMock.mockImplementationOnce(() => new Promise<undefined>((resolve) => {
+      releaseTeardown = () => resolve(undefined);
+    }));
+    const status = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source));
+    // The timeout is delivered while the teardown is still running.
+    expect(status).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.stdout.destroy).not.toHaveBeenCalled();
+    children[0]?.stdout.emit("data", "x".repeat(64 * 1024 + 1));
+    expect(killProcessTreeMock).toHaveBeenCalledTimes(1);
+    releaseTeardown();
+    await vi.waitFor(() => expect(children[0]?.stdout.destroy).toHaveBeenCalled());
+  });
+
   it("does not signal a direct child that already exited after the tree teardown", async () => {
     vi.useFakeTimers();
     hang();
@@ -373,6 +390,25 @@ describe("managed update status budget evidence", () => {
     expect(offline.entries.map((entry) => entry.name)).toEqual(refreshed.entries.map((entry) => entry.name));
     expect(offline.entries).toHaveLength(2);
     for (const entry of offline.entries) expect(entry).not.toHaveProperty("update_check_timeout_ms");
+  });
+
+  it("holds a refresh slot until the timed-out provider is torn down", async () => {
+    vi.useFakeTimers();
+    hang();
+    let releaseTeardown: () => void = () => undefined;
+    killProcessTreeMock.mockImplementationOnce(() => new Promise<undefined>((resolve) => {
+      releaseTeardown = () => resolve(undefined);
+    }));
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource)] })!;
+    let refreshed: Awaited<ReturnType<typeof refreshManagedExtensionUpdates>> | undefined;
+    const pending = refreshManagedExtensionUpdates(state).then((result) => {
+      refreshed = result;
+    });
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(refreshed).toBeUndefined();
+    releaseTeardown();
+    await pending;
+    expect(refreshed?.entries[0]).toMatchObject({ update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
   });
 
   it("passes an explicit refresh budget to every lookup", async () => {
