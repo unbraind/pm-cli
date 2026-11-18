@@ -253,6 +253,11 @@ describe("file glob semantics", () => {
       ["+(child/**)/d.ts", ["child/**/d.ts"]],
       ["+(app/**)/page.tsx", ["app/**/page.tsx"]],
       ["+(child/|sub/)*", ["child/*", "sub/*", "child/child/*", "child/sub/*", "sub/child/*", "sub/sub/*"]],
+      // A globstar's meaning follows everything that can come after it, including
+      // a construct that can be empty: "" keeps it recursive, ".bak" makes it a star.
+      ["{child/**,sub/**}{,.bak}", ["child/**", "sub/**", "child/*.bak", "sub/*.bak"]],
+      ["child/**?(/d.ts)", ["child/**", "child/**/d.ts"]],
+      ["{child,sub}/**{,/*.md}", ["child/**", "sub/**", "child/**/*.md", "sub/**/*.md"]],
     ];
     await withTempDir("pm-glob-union-", async (root) => {
       const workspace = await fixture(root);
@@ -284,6 +289,11 @@ describe("file glob semantics", () => {
       // Inside an extglob an inner group nests, so it cannot close the extglob early.
       expect(await expanded("@(x(y)|fs-utils).ts", root)).toEqual(["fs-utils.ts"]);
       expect(await expanded("@((p)|a).ts", root)).toEqual(["(p).ts", "a.ts"]);
+      if (posix) {
+        // A "|" inside a literal group never splits the extglob around it.
+        for (const file of ["(a|b).ts", "(a.ts", "b).ts", "c.ts"]) await writeFile(path.join(root, file), file);
+        expect(await expanded("@((a|b)|c).ts", root)).toEqual(["(a|b).ts", "c.ts"]);
+      }
       expect(await expanded("@(a|(p).ts", root)).toEqual([]);
     });
   });
