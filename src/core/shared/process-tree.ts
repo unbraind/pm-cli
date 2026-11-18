@@ -97,13 +97,15 @@ export function parentStillMatches(
  * equal to this process's PID: more entries mean this `/proc` belongs to an
  * outer namespace, whose PIDs `process.kill` would read differently, and a
  * kernel without `NSpid` gives no evidence either way, so neither is walked.
- * Without procfs there are no PID namespaces to confuse.
+ * On Linux an unreadable `/proc/self/status` is unverified too; only a system
+ * without procfs, which has no PID namespaces to confuse, needs no evidence.
  */
 export function processTableSharesNamespace(
   readStatus: (file: string) => string | undefined = readProcStat,
+  platform: NodeJS.Platform = process.platform,
 ): boolean {
   const status = readStatus("/proc/self/status");
-  if (status === undefined) return !existsSync("/proc/self/status");
+  if (status === undefined) return platform !== "linux" && !existsSync("/proc/self/status");
   const nspid = /^NSpid:\s*(.*)$/mu.exec(status)?.[1]?.trim().split(/\s+/u);
   return nspid?.length === 1 && Number(nspid[0]) === process.pid;
 }
@@ -118,13 +120,27 @@ export function ancestryStillMatches(
   root: number,
   parentOf: ReadonlyMap<number, number>,
   matches: (entry: ProcessTableDescendant) => boolean = parentStillMatches,
+  verified: Map<number, boolean> = new Map(),
 ): boolean {
+  // Each link is read once per teardown, so a deep tree stays linear.
+  const chain: number[] = [];
+  let outcome = true;
   for (let current = pid; current !== root; ) {
+    const known = verified.get(current);
+    if (known !== undefined) {
+      outcome = known;
+      break;
+    }
+    chain.push(current);
     const parent = parentOf.get(current);
-    if (parent === undefined || !matches({ pid: current, parent })) return false;
+    if (parent === undefined || !matches({ pid: current, parent })) {
+      outcome = false;
+      break;
+    }
     current = parent;
   }
-  return true;
+  for (const link of chain) verified.set(link, outcome);
+  return outcome;
 }
 
 function readProcStat(file: string): string | undefined {
@@ -286,7 +302,8 @@ async function killPosixDescendants(pid: number, root: ProcessTreeRoot): Promise
   if (table?.code !== 0 || !root.alive()) return;
   const descendants = descendantEntriesFromProcessTable(table.stdout, pid);
   const parentOf = new Map(descendants.map((entry) => [entry.pid, entry.parent]));
+  const verified = new Map<number, boolean>();
   for (const descendant of descendants) {
-    if (ancestryStillMatches(descendant.pid, pid, parentOf)) killProcess(descendant.pid);
+    if (ancestryStillMatches(descendant.pid, pid, parentOf, parentStillMatches, verified)) killProcess(descendant.pid);
   }
 }

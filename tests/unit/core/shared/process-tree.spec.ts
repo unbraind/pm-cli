@@ -8,6 +8,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const spawnMock = vi.hoisted(() => vi.fn());
 const existsSyncMock = vi.hoisted(() => vi.fn((file: string) => file === "/bin/ps"));
 // No real /proc is read: a fake pid could belong to a real process on the host.
+// By default this host's own NSpid is verified and every other entry is absent.
+function defaultProcRead(file: string): string {
+  if (file === "/proc/self/status") return `NSpid:\t${process.pid}\n`;
+  throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+}
 const readFileSyncMock = vi.hoisted(() => vi.fn((_file: string, _encoding?: string): string => {
   throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
 }));
@@ -66,9 +71,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
   spawnMock.mockReset();
   existsSyncMock.mockImplementation((file: string) => file === "/bin/ps");
-  readFileSyncMock.mockImplementation(() => {
-    throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
-  });
+  readFileSyncMock.mockImplementation(defaultProcRead);
   helpers = [];
 });
 
@@ -103,6 +106,20 @@ describe("ancestryStillMatches", () => {
     expect(ancestryStillMatches(400, 100, parentOf, () => true)).toBe(false);
     expect(ancestryStillMatches(100, 100, parentOf, () => false)).toBe(true);
   });
+
+  it("reads each link once per teardown, so a deep tree stays linear", () => {
+    const depth = 1_000;
+    const chain = new Map(Array.from({ length: depth }, (_unused, index) => [index + 2, index + 1]));
+    const matches = vi.fn(() => true);
+    const verified = new Map<number, boolean>();
+    for (let pid = depth + 1; pid > 1; pid -= 1) expect(ancestryStillMatches(pid, 1, chain, matches, verified)).toBe(true);
+    expect(matches).toHaveBeenCalledTimes(depth);
+    // A failing link marks only itself and the links that pass through it.
+    const failing = new Map<number, boolean>();
+    expect(ancestryStillMatches(4, 1, chain, (entry) => entry.pid !== 3, failing)).toBe(false);
+    expect(ancestryStillMatches(2, 1, chain, () => true, failing)).toBe(true);
+    expect([...failing.entries()].sort()).toEqual([[2, true], [3, false], [4, false]]);
+  });
 });
 
 describe("processTableSharesNamespace", () => {
@@ -116,9 +133,11 @@ describe("processTableSharesNamespace", () => {
     // A kernel without NSpid gives no evidence.
     expect(processTableSharesNamespace(status(undefined))).toBe(false);
     existsSyncMock.mockImplementation((file: string) => file === "/proc/self/status");
-    expect(processTableSharesNamespace(() => undefined)).toBe(false);
+    expect(processTableSharesNamespace(() => undefined, "darwin")).toBe(false);
     existsSyncMock.mockImplementation(() => false);
-    expect(processTableSharesNamespace(() => undefined)).toBe(true);
+    // Linux without a readable status is unverified; a system without procfs needs no evidence.
+    expect(processTableSharesNamespace(() => undefined, "linux")).toBe(false);
+    expect(processTableSharesNamespace(() => undefined, "darwin")).toBe(true);
     readFileSyncMock.mockImplementation(() => `NSpid:\t${process.pid}\n`);
     expect(processTableSharesNamespace()).toBe(true);
     expect(readFileSyncMock).toHaveBeenCalledWith("/proc/self/status", "utf8");

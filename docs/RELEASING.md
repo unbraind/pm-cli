@@ -268,7 +268,11 @@ A change that callers can observe — a new or changed public SDK type member, a
 new rule or reason literal, a changed default or output field — needs a
 migration line, not only a Fixed or Added entry
 ([pm-gh1657](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gh1657.toon);
-tracker record excluded from npm). Record it on the item before closing it:
+tracker record excluded from npm). The `contract_change` field is registered
+by the `pm-changelog` package, so a fresh clone installs it first
+(`pnpm changelog:pm:install`, which runs
+`pm package install npm:pm-changelog --project`). Record it on the item before
+closing it:
 
 ```bash
 pm update <id> --field 'contract_change={"api":"<symbol or surface>","before":"<old behaviour>","after":"<new behaviour>","migrate":"<what a caller changes>"}'
