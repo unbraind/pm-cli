@@ -7370,7 +7370,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "decideSecretGuardFinding",
-          "signature": "<Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision"
+          "signature": "<Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision"
         },
         {
           "classification": "supported",
@@ -30800,7 +30800,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "decideSecretGuardFinding",
-          "signature": "<Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision>, finding: { readonly rule: string; }) => Decision"
+          "signature": "<Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision | calls: <Decision>(policy: SecretGuardPolicy<Decision> & { default: Decision; }, finding: { readonly rule: string; }) => Decision"
         },
         {
           "classification": "supported",

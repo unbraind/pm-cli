@@ -176,6 +176,16 @@ describe("resolveWindowsSystemRoot", () => {
     for (const unsafe of ["", "Windows", ".\\Windows", "\\\\server\\share", "C:", "C:Windows"]) {
       expect(resolveWindowsSystemRoot({ SystemRoot: unsafe })).toBeUndefined();
     }
+    expect(resolveWindowsSystemRoot({}, () => false)).toBeUndefined();
+  });
+
+  it("falls back to the standard directory only when its System32 taskkill exists", () => {
+    const standardTaskkill = (file: string): boolean => file === "C:\\Windows\\System32\\taskkill.exe";
+    expect(resolveWindowsSystemRoot({}, standardTaskkill)).toBe("C:\\Windows");
+    expect(resolveWindowsSystemRoot({ SystemRoot: "relative" }, standardTaskkill)).toBe("C:\\Windows");
+    // A qualified variable still wins over the standard location.
+    expect(resolveWindowsSystemRoot({ SystemRoot: "D:\\Win" }, standardTaskkill)).toBe("D:\\Win");
+    existsSyncMock.mockImplementation(() => false);
     expect(resolveWindowsSystemRoot({})).toBeUndefined();
   });
 });

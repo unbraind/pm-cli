@@ -676,7 +676,9 @@ function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules
  * finding has no string `rule`.
  */
 export function decideSecretGuardFinding<Decision>(
-  policy: SecretGuardPolicy<Decision>,
+  // The plain `default` site lets TypeScript infer the union of the default
+  // and the override decisions, as for a policy declared with `satisfies`.
+  policy: SecretGuardPolicy<Decision> & { default: Decision },
   finding: { readonly rule: string },
 ): Decision {
   if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {

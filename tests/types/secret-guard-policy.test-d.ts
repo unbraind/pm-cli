@@ -68,6 +68,22 @@ const inferredNotUnknown: number = decideSecretGuardFinding({ default: true }, f
 void inferredBoolean;
 void inferredString;
 void inferredNotUnknown;
+// A policy checked with `satisfies` keeps its literal types; the helper still
+// infers the union of the default and every override decision.
+const satisfied = { default: "refuse", categories: { network: "allow" } } satisfies SecretGuardPolicy<"refuse" | "allow">;
+const fromSatisfied: "refuse" | "allow" = decideSecretGuardFinding(satisfied, finding);
+void fromSatisfied;
+// An inline policy with overrides infers the same union, null included.
+const inlineMixed: boolean = decideSecretGuardFinding({ default: true, categories: { network: false } }, finding);
+const inlineNullable: string | null = decideSecretGuardFinding({ default: "refuse", rules: { private_ip: null } }, finding);
+// @ts-expect-error the null override stays in the inferred union
+const inlineNotNull: string = decideSecretGuardFinding({ default: "refuse", rules: { private_ip: null } }, finding);
+void inlineMixed;
+void inlineNullable;
+void inlineNotNull;
+// @ts-expect-error an inferred union is not narrowed to the default alone
+const onlyDefault: "refuse" = decideSecretGuardFinding(satisfied, finding);
+void onlyDefault;
 // A finding decoded from JSON carries only a string rule.
 const decoded: boolean = decideSecretGuardFinding(byCategory, { rule: "rule-from-a-newer-host" });
 void decoded;

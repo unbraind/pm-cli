@@ -196,9 +196,11 @@ entry for it still applies, and otherwise it takes the default. Entries whose
 value is `undefined` count as absent; a `rules` entry may name a rule this SDK
 does not ship yet, and other keys that name no rule or category are ignored.
 Only the policy's own `default`, `categories` and `rules` are read, never
-inherited ones. The default must be defined (`null` is a valid decision; when a policy mixes
-decision types, such as a string default with `null` overrides, annotate it as
-`SecretGuardPolicy<string | null>` so TypeScript keeps both); a
+inherited ones. The default must be defined (`null` is a valid decision). The
+decision type is inferred from the default and every override together, so an
+inline policy, or one declared with `satisfies SecretGuardPolicy<"refuse" |
+"allow">`, returns the union of all its decisions, a string default with
+`null` overrides included; a
 policy that is not an object, has no own `default` or has `default:
 undefined`, holds non-object `categories` or `rules`, or a finding without a
 string `rule`, throws a `TypeError`.

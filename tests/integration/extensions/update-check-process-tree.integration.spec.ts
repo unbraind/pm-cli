@@ -34,11 +34,22 @@ function isRunning(pid: number): boolean {
   // Bounded, so a hanging ps cannot block the test worker past its deadline.
   const state = spawnSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8", timeout: 5_000, killSignal: "SIGKILL" });
   const row = state.stdout?.trim() ?? "";
-  // ps exits 1 with no row when the pid disappeared between the two probes;
-  // any other outcome that is not a clean answer cannot prove anything.
-  if (state.status === 1 && row.length === 0) return false;
+  // ps exits 1 with no row when the pid disappeared between the two probes.
+  // That counts only when ps printed no diagnostic and the kernel confirms
+  // the pid is gone: a ps that rejected its options proves nothing.
+  if (state.status === 1 && row.length === 0 && (state.stderr ?? "").trim().length === 0 && !pidExists(pid)) return false;
   if (state.error || state.status !== 0 || row.length === 0) throw new Error(`ps could not probe pid ${pid}: ${state.error?.message ?? `status ${state.status}, signal ${state.signal}`}`);
   return !row.startsWith("Z");
+}
+
+/** Whether the kernel still has `pid`, as a live process or an unreaped zombie. */
+function pidExists(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== "ESRCH";
+  }
 }
 
 /** Wait for a subprocess to exit, or report `undefined` after `limitMs` so the caller's cleanup still runs. */
@@ -192,6 +203,19 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
       await exitWithin(exited, 10_000);
     }
   }, 30_000);
+
+  it("reports a deliberately surviving child as still running, so the stop assertions can fail", async () => {
+    const survivor = spawn("sleep", ["30"], { stdio: "ignore" });
+    const exited = new Promise((resolve) => survivor.once("exit", resolve));
+    try {
+      expect(survivor.pid).toBeTypeOf("number");
+      expect(await waitUntilStopped(survivor.pid!, 300)).toBe(false);
+    } finally {
+      survivor.kill("SIGKILL");
+      await exited;
+    }
+    expect(await waitUntilStopped(survivor.pid!, 5000)).toBe(true);
+  });
 
   it("never reports the provider's stderr in a failed lookup", async () => {
     // A provider that writes a credential-shaped marker to stderr, then fails.

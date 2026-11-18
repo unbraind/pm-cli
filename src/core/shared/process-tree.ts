@@ -164,19 +164,30 @@ export function resolveTrustedPs(exists: (file: string) => boolean = existsSync)
   return TRUSTED_PS_PATHS.find((file) => exists(file));
 }
 
+/** The standard Windows directory, tried only when the environment names none. */
+const DEFAULT_WINDOWS_ROOT = "C:\\Windows";
+
 /**
- * The fully qualified Windows directory from `SystemRoot` or `windir`, or
- * `undefined` when neither names an absolute drive path: an empty, relative
- * or UNC value would let `taskkill.exe` resolve somewhere the host does not
- * control.
+ * The fully qualified Windows directory from `SystemRoot` or `windir`, or,
+ * when neither names an absolute drive path, the standard `C:\\Windows` if its
+ * System32 `taskkill.exe` exists; otherwise `undefined`. An empty, relative or
+ * UNC value is never used, since it would let `taskkill.exe` resolve somewhere
+ * the host does not control.
  */
-export function resolveWindowsSystemRoot(env: NodeJS.ProcessEnv = process.env): string | undefined {
+export function resolveWindowsSystemRoot(
+  env: NodeJS.ProcessEnv = process.env,
+  exists: (file: string) => boolean = existsSync,
+): string | undefined {
   // Keys are matched case-insensitively: a worker thread's env copy is case-sensitive.
   const valueOf = (name: string): string | undefined =>
     Object.entries(env).find(([key]) => key.toLowerCase() === name)?.[1];
-  return [valueOf("systemroot"), valueOf("windir")].find(
+  const fromEnv = [valueOf("systemroot"), valueOf("windir")].find(
     (candidate): candidate is string => typeof candidate === "string" && /^[A-Za-z]:[\\/]/u.test(candidate),
   );
+  if (fromEnv !== undefined) return fromEnv;
+  // A minimal environment may drop both: the standard location is still a
+  // fixed, fully qualified path, used only when its taskkill really exists.
+  return exists(path.win32.join(DEFAULT_WINDOWS_ROOT, "System32", "taskkill.exe")) ? DEFAULT_WINDOWS_ROOT : undefined;
 }
 
 /** Kill `pid` itself, treating a process that is already gone as stopped. */
