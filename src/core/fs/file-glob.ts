@@ -46,14 +46,17 @@ const SLASH = 0x2f;
 
 /**
  * Parsed pattern. A `globstar` is a run of exactly two stars followed by "/"
- * (`slash`) or by the end of the pattern or of a brace alternative. Whether it
- * spans directories is decided where it is reached (see Nfa), not here.
+ * (`slash`) or by the end of the pattern. Whether it spans directories is
+ * decided where it is reached (see Nfa), not here. A `pending` globstar ends
+ * a brace or extglob alternative before the pattern ends; the enclosing
+ * construct settles it (see settle and distributeSlash) and none survives
+ * parsing.
  */
 type Node =
   | { kind: "char"; value: number }
   | { kind: "any" }
   | { kind: "star" }
-  | { kind: "globstar"; slash: boolean }
+  | { kind: "globstar"; slash: boolean; pending?: true }
   | { kind: "class"; negated: boolean; ranges: Array<[number, number]>; literal: number[] }
   | { kind: "alt"; options: Node[][] }
   | { kind: "repeat"; optional: boolean; many: boolean; options: Node[][] };
@@ -263,6 +266,28 @@ interface Token {
   next: number;
 }
 
+/** Turn every pending globstar into the single star it is when text other than "/" follows its construct. */
+function settle(nodes: Node[]): Node[] {
+  return nodes.map((node): Node => {
+    if (node.kind === "globstar" && node.pending) return { kind: "star" };
+    if (node.kind === "alt" || node.kind === "repeat") return { ...node, options: node.options.map(settle) };
+    return node;
+  });
+}
+
+/**
+ * Append the "/" that follows a brace or `@(…)` to each alternative, so the
+ * construct still equals the union of its expansions: `{a,**}/x` is `a/x`
+ * plus `**\/x`. A pending globstar becomes a `**\/` globstar; a nested
+ * alternation at the end receives the "/" in each of its own alternatives.
+ */
+function distributeSlash(nodes: Node[]): Node[] {
+  const last = nodes.at(-1);
+  if (last?.kind === "globstar" && last.pending) return [...nodes.slice(0, -1), { kind: "globstar", slash: true }];
+  if (last?.kind === "alt") return [...settle(nodes.slice(0, -1)), { kind: "alt", options: last.options.map(distributeSlash) }];
+  return [...settle(nodes), { kind: "char", value: SLASH }];
+}
+
 /** Recursive-descent parser over pre-paired constructs; recursion depth is bounded by MAX_NESTING. */
 class Parser {
   private readonly chars: string[];
@@ -275,12 +300,15 @@ class Parser {
     this.brackets = brackets;
   }
 
-  /** Parse `[start, end)` into alternatives split at top-level `separator` characters. */
-  alternatives(start: number, end: number, separator: string | undefined): Node[][] {
+  /**
+   * Parse `[start, end)` into alternatives split at top-level `separator`
+   * characters. `atEnd` says whether `end` is the end of the whole pattern.
+   */
+  alternatives(start: number, end: number, separator: string | undefined, atEnd: boolean): Node[][] {
     const options: Node[][] = [];
     let cursor = start;
     for (;;) {
-      const { nodes, stop } = this.sequence(cursor, end, separator);
+      const { nodes, stop } = this.sequence(cursor, end, separator, atEnd);
       options.push(nodes);
       if (stop >= end) return options;
       cursor = stop + 1;
@@ -288,12 +316,12 @@ class Parser {
   }
 
   /** Parse one sequence until `end` or an unnested `separator`, returning where it stopped. */
-  sequence(start: number, end: number, separator: string | undefined): { nodes: Node[]; stop: number } {
+  sequence(start: number, end: number, separator: string | undefined, atEnd: boolean): { nodes: Node[]; stop: number } {
     const nodes: Node[] = [];
     let index = start;
     while (index < end) {
       if (this.chars[index] === separator) return { nodes, stop: index };
-      const token = this.token(index, end, separator);
+      const token = this.token(index, end, separator, atEnd);
       nodes.push(...token.nodes);
       index = token.next;
     }
@@ -301,49 +329,65 @@ class Parser {
   }
 
   /** Parse the token at `index`. */
-  private token(index: number, end: number, separator: string | undefined): Token {
+  private token(index: number, end: number, separator: string | undefined, atEnd: boolean): Token {
     const char = this.chars[index]!;
     if (char === "\\") return { nodes: literalNodes(index + 1 < end ? this.chars[index + 1]! : "\\"), next: index + 2 };
     const closer = this.closers.get(index);
-    if (closer !== undefined) return char === "{" ? this.brace(index, closer) : this.extglob(char, index, closer);
+    if (closer !== undefined) return this.construct(char, index, closer, end, separator, atEnd);
     const bracket = this.brackets.get(index);
     if (bracket !== undefined) return { nodes: [parseClass(this.chars, index, bracket)], next: bracket };
-    if (char === "*") return this.stars(index, end, separator);
+    if (char === "*") return this.stars(index, end, separator, atEnd);
     return { nodes: char === "?" ? [{ kind: "any" }] : literalNodes(char), next: index + 1 };
   }
 
+  /**
+   * Parse a brace or extglob and settle the pending globstars of its
+   * alternatives from what follows it: a "/" is distributed into a brace or
+   * `@(…)`, the end of the enclosing alternative passes them upwards, and
+   * any other text makes them single stars.
+   */
+  private construct(char: string, index: number, closer: number, end: number, separator: string | undefined, atEnd: boolean): Token {
+    const following = closer + 1 < end ? this.chars[closer + 1] : undefined;
+    const endsSequence = following === undefined || following === separator;
+    const parsed = char === "{" ? this.brace(index, closer, endsSequence && atEnd) : this.extglob(char, index, closer, endsSequence && atEnd);
+    const [node] = parsed;
+    if (following === "/" && parsed.length === 1 && node!.kind === "alt") {
+      return { nodes: [{ kind: "alt", options: node!.options.map(distributeSlash) }], next: closer + 2 };
+    }
+    return { nodes: endsSequence ? parsed : settle(parsed), next: closer + 1 };
+  }
+
   /** Parse an extglob whose operator is at `index` and whose ")" is at `closer`. */
-  private extglob(operator: string, index: number, closer: number): Token {
-    const options = this.alternatives(index + 2, closer, "|");
-    const node: Node = operator === "@"
+  private extglob(operator: string, index: number, closer: number, atEnd: boolean): Node[] {
+    const options = this.alternatives(index + 2, closer, "|", atEnd);
+    return [operator === "@"
       ? { kind: "alt", options }
-      : { kind: "repeat", optional: operator !== "+", many: operator !== "?", options };
-    return { nodes: [node], next: closer + 1 };
+      : { kind: "repeat", optional: operator !== "+", many: operator !== "?", options: options.map(settle) }];
   }
 
   /** Parse a paired brace: alternation, a range, or (with one part) literal braces around a pattern. */
-  private brace(index: number, closer: number): Token {
-    const options = this.alternatives(index + 1, closer, ",");
-    const next = closer + 1;
-    if (options.length > 1) return { nodes: [{ kind: "alt", options }], next };
+  private brace(index: number, closer: number, atEnd: boolean): Node[] {
+    const options = this.alternatives(index + 1, closer, ",", atEnd);
+    if (options.length > 1) return [{ kind: "alt", options }];
     const range = braceRange(this.chars.slice(index + 1, closer).join(""));
-    if (range !== undefined) return { nodes: [{ kind: "alt", options: range.map(literalNodes) }], next };
-    return { nodes: [...literalNodes("{"), ...options[0]!, ...literalNodes("}")], next };
+    if (range !== undefined) return [{ kind: "alt", options: range.map(literalNodes) }];
+    // Literal braces: the inner text is followed by "}", so its globstars are single stars.
+    return [...literalNodes("{"), ...settle(options[0]!), ...literalNodes("}")];
   }
 
   /**
    * Parse a run of stars. Exactly two followed by "/" are a globstar that
-   * consumes the "/"; exactly two at the end of the pattern or of a brace or
-   * extglob alternative are a trailing globstar. Every other run is one star.
-   * Whether a globstar spans directories is decided where it is reached.
+   * consumes the "/". Exactly two at the end of the pattern are a trailing
+   * globstar, and at the end of an alternative a pending one, which the
+   * enclosing construct settles. Every other run is one star.
    */
-  private stars(index: number, end: number, separator: string | undefined): Token {
+  private stars(index: number, end: number, separator: string | undefined, atEnd: boolean): Token {
     let run = 1;
     while (this.chars[index + run] === "*" && index + run < end && !this.closers.has(index + run)) run += 1;
     const after = index + run < end ? this.chars[index + run] : undefined;
     if (run === 2 && after === "/") return { nodes: [{ kind: "globstar", slash: true }], next: index + run + 1 };
-    const trailing = run === 2 && (after === undefined || after === separator);
-    return { nodes: [trailing ? { kind: "globstar", slash: false } : { kind: "star" }], next: index + run };
+    if (run !== 2 || (after !== undefined && after !== separator)) return { nodes: [{ kind: "star" }], next: index + run };
+    return { nodes: [atEnd ? { kind: "globstar", slash: false } : { kind: "globstar", slash: false, pending: true }], next: index + run };
   }
 }
 
@@ -610,7 +654,7 @@ class PathMatcher {
 function compile(text: string, limits: DfaLimits = DFA_LIMITS): PathMatcher {
   const chars = Array.from(text);
   const { closers, brackets } = pairConstructs(chars);
-  const nodes = new Parser(chars, closers, brackets).sequence(0, chars.length, undefined).nodes;
+  const nodes = new Parser(chars, closers, brackets).sequence(0, chars.length, undefined, true).nodes;
   const nfa = new Nfa();
   const start = nfa.add();
   const accept = nfa.add();
@@ -756,8 +800,13 @@ export async function expandFileGlob(pattern: string, cwd: string): Promise<stri
   if (real === undefined) return [];
   const out: string[] = [];
   await walk(matcher, parts.root, real, "", matcher.start, new Set([real]), out);
-  return out.map((relative) => path.posix.join(parts.base, relative));
+  return out.map((relative) => joinOutput(parts.base, relative));
+}
+
+/** Join an output base and a walked path, keeping a UNC base's leading "//", which path.posix.join collapses. */
+function joinOutput(base: string, relative: string): string {
+  return base.startsWith("//") ? `/${path.posix.join(base.slice(1), relative)}` : path.posix.join(base, relative);
 }
 
 /** Internal hooks for bound and cache tests; not part of any public surface. */
-export const _testOnly = { compile, normalizePattern };
+export const _testOnly = { compile, joinOutput, normalizePattern };

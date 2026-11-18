@@ -140,6 +140,15 @@ describe("file glob semantics", () => {
       ["child/@(**|x)", ["child/**", "child/x"]],
       ["@(child/**|*.md)", ["child/**", "*.md"]],
       ["@(**|x)", ["**", "x"]],
+      // Text after a construct belongs to every alternative: a "/" is shared,
+      // anything else keeps a trailing globstar a single star.
+      ["{**,x}.ts", ["**.ts", "x.ts"]],
+      ["@(**|x).ts", ["**.ts", "x.ts"]],
+      ["{child,**}/n.ts", ["child/n.ts", "**/n.ts"]],
+      ["@(sub|**)/s.md", ["sub/s.md", "**/s.md"]],
+      ["{a,{b,**}}/d.ts", ["a/d.ts", "b/d.ts", "**/d.ts"]],
+      ["{child/,{sub/,**}}", ["child/**", "sub/**", "**"]],
+      ["*(**|x).ts", ["*.ts"]],
     ];
     await withTempDir("pm-glob-union-", async (root) => {
       const workspace = await fixture(root);
@@ -263,6 +272,10 @@ describe("file glob semantics", () => {
   });
 
   it("keeps a UNC root while normalizing the rest of the pattern", async () => {
+    expect(_testOnly.joinOutput("//server/share/work", "src/a.ts")).toBe("//server/share/work/src/a.ts");
+    expect(_testOnly.joinOutput("/tmp/x", "a.ts")).toBe("/tmp/x/a.ts");
+    expect(_testOnly.joinOutput("../other", "o.ts")).toBe("../other/o.ts");
+    expect(_testOnly.joinOutput("", "a.ts")).toBe("a.ts");
     expect(_testOnly.normalizePattern("//server/share/work/./src/../*.ts")).toBe("//server/share/work/*.ts");
     expect(_testOnly.normalizePattern("///x//y/./z")).toBe("/x/y/z");
     expect(_testOnly.normalizePattern("a//b/./c")).toBe("a/b/c");
