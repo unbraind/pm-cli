@@ -29,7 +29,9 @@ export interface ProcessTreeRoot {
 
 /** One descendant from a process table, with the parent it had in that snapshot. */
 export interface ProcessTableDescendant {
+  /** Process id the snapshot listed for the descendant. */
   pid: number;
+  /** Process id of the descendant's parent in that snapshot. */
   parent: number;
 }
 
