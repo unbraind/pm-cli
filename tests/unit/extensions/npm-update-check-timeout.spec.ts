@@ -136,6 +136,23 @@ describe("npm update lookup budget", () => {
     expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
   });
 
+  it("kills a provider whose teardown is still pending when the host exits, and listens only meanwhile", async () => {
+    vi.useFakeTimers();
+    hang();
+    const before = process.listeners("exit");
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    const added = process.listeners("exit").filter((listener) => !before.includes(listener));
+    expect(added).toHaveLength(1);
+    // The host exits before the deferred teardown ran.
+    (added[0] as () => void)();
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+    await flushTeardown();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(process.listeners("exit")).toEqual(before);
+  });
+
   it("delivers the timeout before the teardown starts", async () => {
     vi.useFakeTimers();
     hang();
@@ -565,6 +582,18 @@ describe("managed update status budget evidence", () => {
     const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500, update_available: true })] });
     expect(state?.entries[0]?.update_check_timeout_ms).toBe(2500);
     expect(state?.entries[0]?.update_available).toBeNull();
+  });
+
+  it("reads a GitHub failure persisted as git's own text by an earlier release as a stable reason", () => {
+    const legacy = ["Git command failed: git ls-remote https://github.com/o/r.git HEAD HEAD^{}", PRIVATE_FIXTURE].join("\n");
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [
+      managedEntry("github-legacy", githubSource, { update_error: legacy }),
+      managedEntry("github-stable", githubSource, { update_error: "no_remote_reference_found" }),
+      managedEntry("npm-text", npmSource, { update_error: "offline fixture" }),
+    ] });
+    const byName = Object.fromEntries((state?.entries ?? []).map((entry) => [entry.name, entry.update_error]));
+    expect(byName).toEqual({ "github-legacy": GITHUB_REMOTE_LOOKUP_FAILED, "github-stable": "no_remote_reference_found", "npm-text": "offline fixture" });
+    expect(JSON.stringify(state)).not.toContain("private-fixture-value");
   });
 
   it("keeps availability beside a reason that is not a timeout", () => {

@@ -146,7 +146,11 @@ another askpass program or credential helper that prompts can still hold the
 lookup until its budget runs out.
 A GitHub remote that resolves no reference still reports
 `no_remote_reference_found`, and one checked without an installed commit
-reports `missing_installed_commit`.
+reports `missing_installed_commit`. A GitHub failure that an earlier release
+recorded as git's own command line and stderr is read back as
+`github_remote_lookup_failed`. If a host exits before a timed-out provider's
+deferred teardown runs, the provider itself is still killed through its
+handle as the host exits.
 
 Lookups are neither detached nor hidden from the console: they stay in `pm`'s
 process group (and console on Windows), so a terminal Ctrl-C reaches them as it

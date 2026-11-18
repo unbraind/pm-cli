@@ -118,6 +118,30 @@ interface UpdateQuerySpec {
 interface ProviderTeardown {
   /** Start tearing the provider down; resolves once it is gone or the exit wait ran out. */
   stop(): Promise<void>;
+  /** Kill the provider itself through its handle, at once and synchronously. */
+  killNow(): void;
+}
+
+/**
+ * Providers whose teardown has not finished yet. If the host exits before the
+ * deferred teardown runs (an SDK host calling `process.exit()` right after a
+ * result), the one `exit` listener kills each provider through its handle,
+ * synchronously, so no timed-out npm or git outlives the host. It installs no
+ * signal handlers and exists only while a teardown is pending.
+ */
+const pendingProviderKills = new Set<() => void>();
+
+function killPendingProviders(): void {
+  for (const kill of pendingProviderKills) kill();
+}
+
+function trackPendingProviderKill(kill: () => void): () => void {
+  if (pendingProviderKills.size === 0) process.on("exit", killPendingProviders);
+  pendingProviderKills.add(kill);
+  return () => {
+    pendingProviderKills.delete(kill);
+    if (pendingProviderKills.size === 0) process.off("exit", killPendingProviders);
+  };
 }
 
 /**
@@ -161,6 +185,7 @@ function createProviderTeardown(lookup: ChildProcess): ProviderTeardown {
       exited() || lookup.pid === undefined
         ? Promise.resolve().then(finish)
         : killProcessTree(lookup.pid, { kill: killDirectChild, alive: () => !exited() }).then(finish, finish),
+    killNow: killDirectChild,
   };
 }
 
@@ -209,11 +234,12 @@ function runBoundedUpdateQuery(file: string, args: string[], timeout: number, sp
     // classification past the deadline. It is recorded before settling, so
     // the overdue path reports it too.
     const deferTeardown = (): Promise<void> => {
+      const untrack = trackPendingProviderKill(provider.killNow);
       teardown = new Promise<void>((resolve) => {
         setTimeout(() => {
           void provider.stop().then(resolve, resolve);
         }, 0);
-      });
+      }).finally(untrack);
       return teardown;
     };
     const deadline = setTimeout(() => {
