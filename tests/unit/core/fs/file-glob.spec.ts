@@ -32,11 +32,25 @@ async function fixture(root: string): Promise<string> {
 }
 
 /** Expand through tinyglobby with the options the linked-artifact path used before pm-gh1748. */
-async function reference(pattern: string, cwd: string): Promise<string[]> {
+async function tinyglobby(pattern: string, cwd: string): Promise<string[]> {
   const matches = await glob(pattern, {
     cwd, absolute: path.isAbsolute(pattern), onlyFiles: true, dot: true, expandDirectories: false, followSymbolicLinks: true,
   });
   return matches.map((match) => match.replaceAll("\\", "/")).sort();
+}
+
+/**
+ * The previous expansion's files, without one documented quirk: tinyglobby
+ * sometimes returned a file `x` for `x/**` (as for `a.ts/**`, though not for
+ * `*\/**`). Here `x/**` matches only paths under `x`.
+ */
+async function reference(pattern: string, cwd: string): Promise<string[]> {
+  const files = await tinyglobby(pattern, cwd);
+  const parent = pattern.slice(0, -3);
+  // Only a fixed-depth parent can be the quirk; under "**" the same file is a real match.
+  if (!pattern.endsWith("/**") || parent.includes("**")) return files;
+  const parents = await tinyglobby(parent, cwd).catch((): string[] => []);
+  return files.filter((file) => !parents.includes(file));
 }
 
 /** Expand through the in-repo walker. */
@@ -134,6 +148,8 @@ const CONSTRUCT_TOKENS: Array<{ text: string; options: string[] }> = [
   { text: "@(child/|sub/)", options: ["child/", "sub/"] },
   { text: "@(**|n)", options: ["**", "n"] },
   { text: "@(child/**|*.md)", options: ["child/**", "*.md"] },
+  { text: "?(child/**)", options: ["", "child/**"] },
+  { text: "?(x)", options: ["", "x"] },
 ];
 
 /** Draw one to four tokens from a seeded generator, never starting with "/". */
@@ -185,8 +201,11 @@ describe("file glob union and parity properties (pm-gh1748)", () => {
       const checked = { parity: 0, unions: 0 };
       while (checked.parity < 200 || checked.unions < 150) {
         const { pattern, expansions, constructs } = spellAndExpand(drawTokens(random));
-        const usable = expansions.filter((expansion) => expansion !== "" && !expansion.startsWith("/"));
-        if (pattern === "" || seen.has(pattern) || usable.length === 0 || usable.some(adjacentGlobstar)) continue;
+        // Normalization and trailing-slash stripping apply to the written pattern,
+        // not to each expansion, so only expansions already in normal form compare.
+        const normal = (expansion: string) => expansion !== "" && !expansion.endsWith("/") && path.posix.normalize(expansion) === expansion;
+        const usable = expansions.filter((expansion) => !expansion.startsWith("/"));
+        if (pattern === "" || seen.has(pattern) || usable.length === 0 || !usable.every(normal) || usable.some(adjacentGlobstar)) continue;
         seen.add(pattern);
         const union = await unionMatchingReference(usable, workspace);
         if (union === undefined) continue;
@@ -226,6 +245,14 @@ describe("file glob semantics", () => {
       ["{a,{b,**}}/d.ts", ["a/d.ts", "b/d.ts", "**/d.ts"]],
       ["{child/,{sub/,**}}", ["child/**", "sub/**", "**"]],
       ["*(**|x).ts", ["*.ts"]],
+      // A repeat followed by "/" shares it with its last repetition. In this
+      // fixture no second repetition can match, so each equals one repetition.
+      ["+(child/**)/n.ts", ["child/**/n.ts"]],
+      ["?(child/**)/n.ts", ["child/**/n.ts"]],
+      ["*(child/**)/n.ts", ["child/**/n.ts"]],
+      ["+(child/**)/d.ts", ["child/**/d.ts"]],
+      ["+(app/**)/page.tsx", ["app/**/page.tsx"]],
+      ["+(child/|sub/)*", ["child/*", "sub/*", "child/child/*", "child/sub/*", "sub/child/*", "sub/sub/*"]],
     ];
     await withTempDir("pm-glob-union-", async (root) => {
       const workspace = await fixture(root);

@@ -99,8 +99,10 @@ describe("dependency advisory waiver matching", () => {
     expect(describeReport({ package: "picomatch", version: "4.0.7", advisory: "GHSA-fc5q-39xc-vjpf" })).toBe("picomatch@4.0.7 GHSA-fc5q-39xc-vjpf");
     expect(describeReport({ package: null, version: null, advisory: null, id: "9" })).toBe("unknown package@unknown version 9");
     expect(describeReport({ package: null, version: null, advisory: null })).toBe("unknown package@unknown version unknown advisory");
-    // An unvalidated registry key is never printed.
+    // No field is printed unless its validator accepts it.
     expect(describeReport({ package: null, version: null, advisory: null, id: "9\u001b[2Jinjected" })).toBe("unknown package@unknown version unknown advisory");
+    expect(describeReport({ package: "bad\nname", version: "1.0\u001b[2J", advisory: "GHSA-\u001b]x", id: "7" })).toBe("unknown package@unknown version 7");
+    expect(describeReport({ package: "@scope/pkg", version: "1.2.3-beta+build", advisory: "MAL-2026-1", id: "x" })).toBe("@scope/pkg@1.2.3-beta+build MAL-2026-1");
   });
 });
 

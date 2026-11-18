@@ -10,7 +10,7 @@
  * runtime tinyglobby/fdir/picomatch graph, whose extglob compiler is subject to
  * GHSA-fc5q-39xc-vjpf.
  *
- * Grammar (docs/SDK.md "Linked-artifact globs"): `*`, `?`, `**` as a whole
+ * Grammar (docs/COMMANDS.md, "Linked Artifacts"): `*`, `?`, `**` as a whole
  * segment, bracket expressions with ranges, `!`/`^` negation and POSIX classes
  * (each also matches its own literal text, so `app/[slug]/*` reaches a
  * `[slug]` directory), `{a,b}` alternation, `{1..3}` and `{a..c}` ranges, the
@@ -283,9 +283,23 @@ function settle(nodes: Node[]): Node[] {
  */
 function distributeSlash(nodes: Node[]): Node[] {
   const last = nodes.at(-1);
-  if (last?.kind === "globstar" && last.pending) return [...nodes.slice(0, -1), { kind: "globstar", slash: true }];
-  if (last?.kind === "alt") return [...settle(nodes.slice(0, -1)), { kind: "alt", options: last.options.map(distributeSlash) }];
+  const head = settle(nodes.slice(0, -1));
+  if (last?.kind === "globstar" && last.pending) return [...head, { kind: "globstar", slash: true }];
+  if (last?.kind === "alt") return [...head, { kind: "alt", options: last.options.map(distributeSlash) }];
+  if (last?.kind === "repeat") return [...head, ...repeatWithSlash(last)];
   return [...settle(nodes), { kind: "char", value: SLASH }];
+}
+
+/**
+ * A repeat followed by "/": only its last repetition is followed by the "/",
+ * so it receives the distributed "/" and earlier repetitions are settled.
+ * `?(X)/` is "/" or `X/`; `+(X)/` is zero or more `X` then `X/`; `*(X)/` is
+ * "/" or `+(X)/`.
+ */
+function repeatWithSlash(node: Extract<Node, { kind: "repeat" }>): Node[] {
+  const last: Node = { kind: "alt", options: node.options.map(distributeSlash) };
+  const repeated: Node[] = node.many ? [{ kind: "repeat", optional: true, many: true, options: node.options.map(settle) }, last] : [last];
+  return node.optional ? [{ kind: "alt", options: [[{ kind: "char", value: SLASH }], repeated] }] : repeated;
 }
 
 /** Recursive-descent parser over pre-paired constructs; recursion depth is bounded by MAX_NESTING. */
@@ -342,17 +356,17 @@ class Parser {
 
   /**
    * Parse a brace or extglob and settle the pending globstars of its
-   * alternatives from what follows it: a "/" is distributed into a brace or
-   * `@(…)`, the end of the enclosing alternative passes them upwards, and
-   * any other text makes them single stars.
+   * alternatives from what follows it: a "/" is distributed into it (into
+   * the last repetition of a repeat), the end of the enclosing alternative
+   * passes them upwards, and any other text makes them single stars.
    */
   private construct(char: string, index: number, closer: number, end: number, separator: string | undefined, atEnd: boolean): Token {
     const following = closer + 1 < end ? this.chars[closer + 1] : undefined;
     const endsSequence = following === undefined || following === separator;
     const parsed = char === "{" ? this.brace(index, closer, endsSequence && atEnd) : this.extglob(char, index, closer, endsSequence && atEnd);
     const [node] = parsed;
-    if (following === "/" && parsed.length === 1 && node!.kind === "alt") {
-      return { nodes: [{ kind: "alt", options: node!.options.map(distributeSlash) }], next: closer + 2 };
+    if (following === "/" && parsed.length === 1 && (node!.kind === "alt" || node!.kind === "repeat")) {
+      return { nodes: distributeSlash(parsed), next: closer + 2 };
     }
     return { nodes: endsSequence ? parsed : settle(parsed), next: closer + 1 };
   }
@@ -362,7 +376,7 @@ class Parser {
     const options = this.alternatives(index + 2, closer, "|", atEnd);
     return [operator === "@"
       ? { kind: "alt", options }
-      : { kind: "repeat", optional: operator !== "+", many: operator !== "?", options: options.map(settle) }];
+      : { kind: "repeat", optional: operator !== "+", many: operator !== "?", options }];
   }
 
   /** Parse a paired brace: alternation, a range, or (with one part) literal braces around a pattern. */

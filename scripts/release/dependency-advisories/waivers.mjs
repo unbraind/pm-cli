@@ -22,6 +22,8 @@ const PACKAGE_NAME = /^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/u;
 const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;
 const OWNER = /^pm-[a-z0-9]{1,64}$/u;
 const REGISTRY_ID = /^\d{1,12}$/u;
+/** OSV and GitHub advisory identities, as the OSV collector admits them. */
+const ADVISORY_LABEL = /^[A-Za-z0-9._-]{1,160}$/u;
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/u;
 const WAIVER_KEYS = ["advisory", "expires_at", "owner", "package", "reason", "versions"];
 
@@ -223,9 +225,11 @@ export function applyWaivers(reports, live) {
 
 /** Spell an uncovered report for a refusal message from validated fields only. */
 export function describeReport(report) {
-  const name = report.package ?? "unknown package";
-  const version = report.version ?? "unknown version";
-  // A registry key is printed only in the numeric form npm uses; anything else could carry control text.
+  // Every field is checked again here: a receipt is a local file, so a value
+  // that fails its validator is replaced, never printed with control text.
+  const name = isPackageName(report.package) ? report.package : "unknown package";
+  const version = isExactVersion(report.version) ? report.version : "unknown version";
+  const advisory = typeof report.advisory === "string" && ADVISORY_LABEL.test(report.advisory) ? report.advisory : undefined;
   const id = typeof report.id === "string" && REGISTRY_ID.test(report.id) ? report.id : undefined;
-  return `${name}@${version} ${report.advisory ?? id ?? "unknown advisory"}`;
+  return `${name}@${version} ${advisory ?? id ?? "unknown advisory"}`;
 }
