@@ -635,7 +635,7 @@ export interface SecretGuardPolicy<Decision> {
    * `undefined`, even when `Decision` allows it, while `null` stays allowed.
    * The decision type is inferred from it when no override names one.
    */
-  default: Decision & ({} | null);
+  default: NonNullable<Decision> | Extract<Decision, null>;
   /** Decisions for whole detector families. */
   categories?: Partial<Record<SecretGuardRuleCategory, Decision>>;
   /** Decisions for single detectors; they override their category's decision. */

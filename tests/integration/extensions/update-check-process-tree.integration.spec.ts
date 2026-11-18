@@ -76,22 +76,46 @@ describe.skipIf(process.platform === "win32")("update lookup deadline over a rea
     expect(await waitUntilStopped(descendant!, 5000)).toBe(true);
   });
 
-  it("stops the detached lookup group when the host is interrupted before the deadline", async () => {
+  /** Run the built SDK's lookup against a stalled fake git in a host process, then signal the host. */
+  async function interruptHost(hostSetup: string, signal: NodeJS.Signals): Promise<{ exit: { code: number | null; signal: NodeJS.Signals | null }; root: string; pids: number[] }> {
     const { root, pidFile } = await fakeGit("sleep 30");
     const host = spawn(process.execPath, ["--input-type=module", "-e", [
       `import { checkGithubUpdate } from ${JSON.stringify(distUpdateCheck)};`,
+      hostSetup,
       `void checkGithubUpdate(${JSON.stringify(GITHUB_SOURCE)});`,
       "setInterval(() => undefined, 1000);",
     ].join("\n")], {
-      env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "60000" },
+      env: { ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "60000", PM_HOST_MARKER: path.join(root, "shutdown") },
       stdio: "ignore",
     });
-    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("exit", (code, signal) => resolve({ code, signal })));
-    const [launcher, descendant] = (await waitForFile(pidFile, 15_000)).trim().split(" ").map(Number);
-    expect(isRunning(launcher!)).toBe(true);
-    host.kill("SIGINT");
-    expect(await exited).toEqual({ code: null, signal: "SIGINT" });
-    expect(await waitUntilStopped(launcher!, 5000)).toBe(true);
-    expect(await waitUntilStopped(descendant!, 5000)).toBe(true);
+    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("exit", (code, exitSignal) => resolve({ code, signal: exitSignal })));
+    try {
+      const pids = (await waitForFile(pidFile, 15_000)).trim().split(" ").map(Number);
+      expect(isRunning(pids[0]!)).toBe(true);
+      host.kill(signal);
+      return { exit: await exited, root, pids };
+    } finally {
+      // Never leave the host behind, whatever failed above.
+      if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+      await exited;
+    }
+  }
+
+  it("stops the detached lookup group when the host is interrupted before the deadline", async () => {
+    const { exit, pids } = await interruptHost("", "SIGINT");
+    expect(exit).toEqual({ code: null, signal: "SIGINT" });
+    for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
+  }, 30_000);
+
+  it("keeps a host's one-shot shutdown handler in charge of the signal", async () => {
+    // The host's handler is registered before the lookup and removes itself
+    // when it runs; it must still finish its asynchronous shutdown.
+    const { exit, root, pids } = await interruptHost([
+      `import { writeFileSync } from "node:fs";`,
+      `process.once("SIGTERM", () => setTimeout(() => { writeFileSync(process.env.PM_HOST_MARKER, "done"); process.exit(0); }, 200));`,
+    ].join("\n"), "SIGTERM");
+    expect(exit).toEqual({ code: 0, signal: null });
+    expect(await readFile(path.join(root, "shutdown"), "utf8")).toBe("done");
+    for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
   }, 30_000);
 });

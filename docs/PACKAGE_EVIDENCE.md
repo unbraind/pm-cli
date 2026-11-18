@@ -129,13 +129,9 @@ A GitHub remote that resolves no reference still reports
 `no_remote_reference_found`, and one checked without an installed commit
 reports `missing_installed_commit`.
 
-`pm package manage --fix-managed-state` holds the extension state lock only
-while it reads managed state and adopts unmanaged packages; the update lookups
-run after the lock is released, so a slow lookup never makes a concurrent
-install, uninstall or adoption wait for it
-([pm-9x9drr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9x9drr.toon);
-tracker record excluded from npm). While a lookup runs, interrupting `pm`
-(SIGINT, SIGTERM or SIGHUP) stops the lookup's process tree too.
+While a lookup runs, interrupting `pm` (SIGINT, SIGTERM or SIGHUP) stops the
+lookup's process tree too; a host that handles the signal itself keeps its own
+shutdown.
 
 Use `pm package doctor --project --detail deep --json` to inspect activation
 alongside update-check status totals. A strict doctor run may fail for partial

@@ -68,18 +68,22 @@ function killTrackedGroups(): void {
 }
 
 function onTerminatingSignal(signal: NodeJS.Signals): void {
+  // This listener is prepended, so it runs before the host's own listeners
+  // and before Node removes a host's `once` listener: the count still sees
+  // every handler the host registered for this signal.
+  const hostHandlesSignal = process.listenerCount(signal) > 1;
   killTrackedGroups();
   trackedGroups.clear();
   uninstallGroupCleanup();
   // With this listener gone the signal's default action applies again, so
   // re-raising it ends the host exactly as it would have without tracking;
-  // another listener keeps whatever handling it installed.
-  if (process.listenerCount(signal) === 0) process.kill(process.pid, signal);
+  // a host that handles the signal keeps its own handling.
+  if (!hostHandlesSignal) process.kill(process.pid, signal);
 }
 
 function installGroupCleanup(): void {
   process.on("exit", killTrackedGroups);
-  for (const signal of TERMINATING_SIGNALS) process.on(signal, onTerminatingSignal);
+  for (const signal of TERMINATING_SIGNALS) process.prependListener(signal, onTerminatingSignal);
 }
 
 function uninstallGroupCleanup(): void {

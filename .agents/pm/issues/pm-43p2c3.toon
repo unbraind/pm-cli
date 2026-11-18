@@ -2,13 +2,13 @@ id: pm-43p2c3
 title: "GitHub managed-package update checks report git's command line and stderr as update_error instead of a stable code, and a timed-out ls-remote looks like any other failure"
 description: "Found while fixing pm-5kfzjh. checkGithubUpdate in src/sdk/extension/update-check.ts reports error.message from runGitCommand as update_error, and the extension summary repeats it as update_check_reason. runGitCommand (src/sdk/extension/install-sources.ts) builds that message as \"Git command failed: git ls-remote <repository> <ref> <ref>^{}\" followed by git's stderr, or by execFile's own \"Command failed\" text. A GitHub update check therefore reports a multi-line string, not a stable code. Callers cannot branch on it, and it repeats git's stderr, which can name proxy hosts, credential helper prompts or local paths. A lookup killed by its budget is not told apart from a missing repository, the same gap pm-5kfzjh closed for npm. The npm path reports stable codes (npm_registry_lookup_failed, npm_registry_lookup_timed_out with update_check_timeout_ms). The GitHub path should do the same, with codes such as github_remote_lookup_failed and github_remote_lookup_timed_out, while keeping no_remote_reference_found and missing_installed_commit."
 type: Issue
-status: in_progress
+status: closed
 priority: 3
 tags[5]: diagnostics,extensions,github,stable-codes,update-check
 created_at: "2026-11-18T09:38:17.161Z"
-updated_at: "2026-11-18T10:27:28.225Z"
-assignee: "harness:claude-code"
-claim_principal: "harness:claude-code#928e5cd9a3bda9591c204f9f"
+updated_at: "2026-11-18T11:26:01.910Z"
+closed_at: "2026-11-18T11:26:00.887Z"
+completed_at: "2026-11-18T11:26:00.887Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: "A failed GitHub update check reports a stable update_error code, never git's command line, repository URL or stderr; a git ls-remote lookup killed by its budget reports a distinct timed-out code and names the budget in update_check_timeout_ms, as the npm path does; unit tests cover the timeout, failure and success classifications; docs/PACKAGE_EVIDENCE.md lists the GitHub codes"
@@ -16,8 +16,9 @@ parent: pm-ugqx
 risk: low
 confidence: high
 severity: low
+resolution: "checkGithubUpdate's default runner runs git ls-remote through runBoundedUpdateQuery with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never. It reports github_remote_lookup_timed_out with update_check_timeout_ms when the deadline passes, and github_remote_lookup_failed for any other failure, never git's command line, the repository URL or stderr. An injected runner takes (args, timeoutMs). no_remote_reference_found and missing_installed_commit are unchanged. docs/PACKAGE_EVIDENCE.md lists the codes, and a contract_change declares the migration."
 expected_result: "A GitHub update check failure is a stable, private-data-free code that tells a timeout apart from an unavailable remote"
-actual_result: "update_error carries 'Git command failed: git ls-remote <repository> ...' plus git's stderr, and a timeout is indistinguishable from other failures"
+actual_result: "Unit tests assert both codes and that a failed status contains no ls-remote, repository host or stderr; a real fake-git integration test settles a stalled lookup in about 1 s as github_remote_lookup_timed_out and kills its descendant"
 component: extensions
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-5kfzjh,discovered_from,"2026-11-18T09:38:17.161Z","harness:claude-code","cli:create:dep",detected
@@ -33,9 +34,18 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
 docs[2]{path,scope}:
   docs/CONFIGURATION.md,project
   docs/PACKAGE_EVIDENCE.md,project
+close_reason: GitHub managed-package update checks report stable github_remote_lookup_failed and github_remote_lookup_timed_out codes instead of git's command line and stderr
 contract_change:
   api: "Managed GitHub update checks: update_error and update_check_reason"
   before: "A failed git ls-remote reported git's command line and stderr, starting 'Git command failed: git ls-remote', as update_error"
   after: "It reports github_remote_lookup_timed_out with update_check_timeout_ms when the budget ran out and github_remote_lookup_failed otherwise, and git runs with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never"
   migrate: "Match the two stable codes instead of parsing git's message, and run git ls-remote directly to see git's own error"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-43p2c3
+  gate_id: extension-update-check-reasons
+  negative_control: "tests/unit/extensions/npm-update-check-timeout.spec.ts asserts a failed GitHub lookup's status never contains ls-remote, the repository host or stderr; the previous runGitCommand path, which reported 'Git command failed: git ls-remote <repository> ...' plus stderr, fails that assertion"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/extensions/npm-update-check-timeout.spec.ts tests/unit/extensions/extension-command.spec.ts
+  hosted_checks[1]: Gates (coverage)
 body: ""

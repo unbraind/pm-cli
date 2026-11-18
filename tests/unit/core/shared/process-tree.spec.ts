@@ -74,8 +74,9 @@ describe.skipIf(process.platform === "win32")("trackDetachedProcessGroup", () =>
     const countsBefore = listenerCounts();
     releases.push(trackDetachedProcessGroup(333));
     const onSignal = addedListener(signal, beforeSignal);
+    expect(process.listeners(signal)[0]).toBe(onSignal);
     const kill = vi.spyOn(process, "kill").mockImplementation(() => true);
-    vi.spyOn(process, "listenerCount").mockReturnValue(0);
+    vi.spyOn(process, "listenerCount").mockReturnValue(1);
     onSignal(signal);
     expect(kill.mock.calls).toEqual([[-333, "SIGKILL"], [process.pid, signal]]);
     vi.mocked(process.listenerCount).mockRestore();
@@ -87,7 +88,7 @@ describe.skipIf(process.platform === "win32")("trackDetachedProcessGroup", () =>
     releases.push(trackDetachedProcessGroup(444));
     const onSignal = addedListener("SIGINT", beforeSignal);
     const kill = vi.spyOn(process, "kill").mockImplementation(() => true);
-    vi.spyOn(process, "listenerCount").mockReturnValue(1);
+    vi.spyOn(process, "listenerCount").mockReturnValue(2);
     onSignal("SIGINT");
     expect(kill.mock.calls).toEqual([[-444, "SIGKILL"]]);
   });

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- GitHub managed-package update checks report git's command line and stderr as update_error instead of a stable code, and a timed-out ls-remote looks like any other failure: A failed git ls-remote reported git's command line and stderr, starting 'Git command failed: git ls-remote', as update_error → It reports github_remote_lookup_timed_out with update_check_timeout_ms when the budget ran out and github_remote_lookup_failed otherwise, and git runs with GIT_TERMINAL_PROMPT=0 and GCM_INTERACTIVE=never. Migrate: Match the two stable codes instead of parsing git's message, and run git ls-remote directly to see git's own error ([pm-43p2c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-43p2c3.toon))
+- Managed npm update checks report a subprocess timeout as npm_registry_lookup_failed, and the fixed 10 s npm view budget makes the Windows nightly extension-freshness test flaky: An npm update lookup that ran out of its fixed 10-second budget reported npm_registry_lookup_failed, like an unavailable registry, and ManagedExtensionRecord had no budget field → It reports npm_registry_lookup_timed_out, and the managed record and extension summary carry update_check_timeout_ms naming the budget; other failures still report npm_registry_lookup_failed; PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS sets the budget (default 10000, clamped to 1000-120000). Migrate: Match npm_registry_lookup_timed_out wherever npm_registry_lookup_failed is matched, add update_check_timeout_ms to any exhaustive keyof ManagedExtensionRecord mapping, and raise PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS for a slow registry or cold start ([pm-5kfzjh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5kfzjh.toon))
+- GH-1749: adding a secret-guard rule breaks typed consumers' exhaustive Record<SecretGuardFinding\['rule'\], ...\> policy maps; offer a stable category per rule and a default-plus-overrides policy helper: Typed consumers kept an exhaustive Record over the SecretGuardFinding rule union, so every new detector failed their compilation with TS2741 → Every detector has a stable credential, network or path category, and decideSecretGuardFinding decides a finding from a default plus optional category and rule decisions, so a new detector takes its category's decision. Migrate: Replace an exhaustive Record over SecretGuardFinding\['rule'\] with a SecretGuardPolicy and decideSecretGuardFinding, or key an exhaustive map by SecretGuardRuleCategory ([pm-gh1749](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1749.toon))
+
 ## 2026.11.18 - 2026-11-18
 
 ### Security
