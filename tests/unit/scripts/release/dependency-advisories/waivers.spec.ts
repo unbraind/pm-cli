@@ -12,7 +12,6 @@ import {
   readRuntimePackages,
   readWaiverRegistry,
   runtimeFindings,
-  RUNTIME_LEDGER_PATH,
   WAIVERS_PATH,
 } from "../../../../../scripts/release/dependency-advisories/waivers.mjs";
 
@@ -122,32 +121,46 @@ describe("dependency advisory waiver file", () => {
     });
   });
 
-  it("reads the published runtime graph and refuses a waiver that covers any of it", async () => {
+  it("projects the published runtime graph from the manifest and lockfile and refuses a waiver that covers any of it", async () => {
     await withTempDir("pm-advisory-runtime-", async (root) => {
       await expect(readRuntimePackages(root)).resolves.toBeUndefined();
-      // Without a ledger, a live waiver cannot be shown clear of the runtime graph.
+      // Without the sources, a live waiver cannot be shown clear of the runtime graph.
       expect(runtimeFindings([], undefined)).toEqual([]);
-      expect(runtimeFindings([waiver], undefined)).toEqual([{ kind: "runtime_ledger_missing", detail: expect.stringContaining("runtime-dependencies.json is missing") }]);
+      expect(runtimeFindings([waiver], undefined)).toEqual([{ kind: "runtime_ledger_missing", detail: expect.stringContaining("package.json and pnpm-lock.yaml cannot be read") }]);
       await mkdir(path.join(root, "config"));
       await writeFile(path.join(root, WAIVERS_PATH), JSON.stringify(registry([waiver])));
       await expect(judgeWaivers(root, now)).resolves.toMatchObject({ findings: [{ kind: "runtime_ledger_missing" }] });
-      await writeFile(path.join(root, RUNTIME_LEDGER_PATH), JSON.stringify({ packages: {
-        "": { name: "root", version: "1.0.0" },
-        "node_modules/picomatch": { version: "4.0.7" },
-        "node_modules/a/node_modules/@scope/b": { version: "2.0.0" },
-        "node_modules/linked": { resolved: "link" },
-      } }));
+      // picomatch is a direct runtime dependency; @scope/b arrives through a.
+      await writeFile(path.join(root, "package.json"), JSON.stringify({ name: "probe", version: "1.0.0", dependencies: { picomatch: "4.0.7", a: "1.0.0" } }));
+      await writeFile(path.join(root, "pnpm-lock.yaml"), [
+        "lockfileVersion: '9.0'",
+        "importers:",
+        "  .:",
+        "    dependencies:",
+        "      picomatch: {specifier: 4.0.7, version: 4.0.7}",
+        "      a: {specifier: 1.0.0, version: 1.0.0}",
+        "packages:",
+        "  'picomatch@4.0.7': {resolution: {integrity: sha512-p}}",
+        "  'a@1.0.0': {resolution: {integrity: sha512-a}}",
+        "  '@scope/b@2.0.0': {resolution: {integrity: sha512-b}}",
+        "snapshots:",
+        "  'picomatch@4.0.7': {}",
+        "  'a@1.0.0': {dependencies: {'@scope/b': 2.0.0}}",
+        "  '@scope/b@2.0.0': {}",
+        "",
+      ].join("\n"));
       const runtime = await readRuntimePackages(root);
-      expect(runtime).toEqual(new Set(["picomatch@4.0.7", "@scope/b@2.0.0"]));
+      expect(runtime).toEqual(new Set(["picomatch@4.0.7", "a@1.0.0", "@scope/b@2.0.0"]));
       expect(runtimeFindings([waiver, { ...waiver, package: "other" }], runtime)).toEqual([
         { kind: "waiver_covers_runtime_dependency", subject_id: "GHSA-fc5q-39xc-vjpf in picomatch", detail: expect.stringContaining("covers picomatch@4.0.7, which the published package installs") },
       ]);
       await expect(judgeWaivers(root, now)).resolves.toMatchObject({ live: [waiver], findings: [{ kind: "waiver_covers_runtime_dependency" }] });
-      await writeFile(path.join(root, RUNTIME_LEDGER_PATH), "{");
+      await writeFile(path.join(root, "package.json"), "{");
       await expect(readRuntimePackages(root)).rejects.toThrow(SyntaxError);
     });
     await withTempDir("pm-advisory-runtime-", async (root) => {
-      await mkdir(path.join(root, RUNTIME_LEDGER_PATH));
+      await mkdir(path.join(root, "package.json"));
+      await writeFile(path.join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
       await expect(readRuntimePackages(root)).rejects.toThrow();
     });
   });

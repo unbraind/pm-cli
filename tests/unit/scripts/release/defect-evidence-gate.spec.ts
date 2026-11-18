@@ -377,7 +377,8 @@ describe("defect evidence repository gate", () => {
           JSON.stringify({ version: 1, inventory_scope: "Advisory waivers", boundaries: [] }),
         ),
         writeFile(path.join(tempRoot, "config/defect-recurrence-policy.json"), JSON.stringify(policy)),
-        writeFile(path.join(tempRoot, "runtime-dependencies.json"), JSON.stringify({ packages: {} })),
+        writeFile(path.join(tempRoot, "package.json"), "{}"),
+        writeFile(path.join(tempRoot, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n"),
       ]);
       const writeWaivers = (registry: object) =>
         writeFile(path.join(tempRoot, "config/dependency-advisory-waivers.json"), JSON.stringify(registry));
@@ -423,10 +424,11 @@ describe("defect evidence repository gate", () => {
       const missingOwner = await run(completeContext, new Date("2026-11-18T00:00:00.000Z"));
       expect(missingOwner.report.checks[2].findings[0].kind).toBe("waiver_owner_not_open");
 
-      await writeFile(path.join(tempRoot, "runtime-dependencies.json"), JSON.stringify({ packages: { "node_modules/fixture-glob": { version: "1.0.0" } } }));
+      await writeFile(path.join(tempRoot, "package.json"), JSON.stringify({ name: "probe", version: "1.0.0", dependencies: { "fixture-glob": "1.0.0" } }));
+      await writeFile(path.join(tempRoot, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\nimporters:\n  .:\n    dependencies:\n      fixture-glob: {specifier: 1.0.0, version: 1.0.0}\npackages:\n  'fixture-glob@1.0.0':\n    resolution: {integrity: sha512-fixture}\nsnapshots:\n  'fixture-glob@1.0.0': {}\n");
       const runtime = await run(ownerOpen, new Date("2026-11-18T00:00:00.000Z"));
       expect(runtime.report.checks[2].findings).toMatchObject([{ kind: "waiver_covers_runtime_dependency" }]);
-      await writeFile(path.join(tempRoot, "runtime-dependencies.json"), JSON.stringify({ packages: {} }));
+      await writeFile(path.join(tempRoot, "package.json"), "{}");
 
       const expired = await run(ownerOpen, new Date("2026-11-23T00:00:00.000Z"));
       expect(expired.code).toBe(1);

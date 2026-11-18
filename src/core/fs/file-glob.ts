@@ -757,32 +757,62 @@ function trimTrailingSeparators(pattern: string): string {
   return text;
 }
 
+/** Return whether `name` appears exactly in `directory`'s listing; an unreadable directory lists nothing. */
+async function listed(directory: string, name: string): Promise<boolean> {
+  const names = await readdir(directory).catch((): string[] => []);
+  return names.includes(name);
+}
+
+/**
+ * Return whether every literal segment of a relative path appears exactly in
+ * its parent's listing, after leading "../" segments. A case-insensitive file
+ * system resolves `DOCS/` for `docs/`; matching is case-sensitive like the
+ * walker and the previous expansion, so such a link would break on a
+ * case-sensitive checkout.
+ */
+async function exactCase(cwd: string, segments: string[]): Promise<boolean> {
+  let directory = cwd;
+  let index = 0;
+  while (segments[index] === "..") {
+    directory = path.dirname(directory);
+    index += 1;
+  }
+  for (; index < segments.length; index += 1) {
+    if (!(await listed(directory, segments[index]!))) return false;
+    directory = path.join(directory, segments[index]!);
+  }
+  return true;
+}
+
 /**
  * Resolve a pattern without glob syntax as a literal path; only an existing
- * file matches. Its name must appear exactly in its directory's listing, so a
- * case-insensitive file system cannot link `readme.md` for `README.md`; the
- * walker and the previous expansion were case-sensitive too.
+ * file matches. Its name, and for a relative pattern every directory too,
+ * must appear exactly in its directory's listing. An absolute pattern's root
+ * is the caller's own spelling (it may use Windows short names), so only its
+ * final name is checked.
  */
 async function literalMatch(text: string, cwd: string): Promise<string[]> {
   const target = path.resolve(cwd, text);
   const found = await stat(target).catch(() => undefined);
   if (found === undefined || !found.isFile()) return [];
-  const names = await readdir(path.dirname(target)).catch((): string[] => []);
-  if (!names.includes(path.basename(target))) return [];
-  return [path.isAbsolute(text) ? target.replaceAll("\\", "/") : path.posix.normalize(text)];
+  const absolute = path.isAbsolute(text);
+  const exact = absolute ? await listed(path.dirname(target), path.basename(target)) : await exactCase(cwd, text.split("/"));
+  if (!exact) return [];
+  return [absolute ? target.replaceAll("\\", "/") : path.posix.normalize(text)];
 }
 
 /** Split the leading literal segments off a pattern: the walk root, its output base and the remainder. */
-function splitStatic(text: string, cwd: string): { root: string; base: string; rest: string } | undefined {
+function splitStatic(text: string, cwd: string): { root: string; base: string; rest: string; prefix: string[] } | undefined {
   const segments = text.split("/");
   let count = 0;
   while (count < segments.length && isStaticSegment(segments[count]!)) count += 1;
   if (count === segments.length) return undefined;
   const prefix = count === 0 ? "" : `${segments.slice(0, count).join("/")}/`;
   const root = path.resolve(cwd, prefix);
-  if (path.isAbsolute(text)) return { root, base: root.replaceAll("\\", "/"), rest: segments.slice(count).join("/") };
+  const rest = segments.slice(count).join("/");
+  if (path.isAbsolute(text)) return { root, base: root.replaceAll("\\", "/"), rest, prefix: [] };
   const relative = path.posix.normalize(prefix === "" ? "." : prefix).replace(/\/$/u, "");
-  return { root, base: relative === "." ? "" : relative, rest: segments.slice(count).join("/") };
+  return { root, base: relative === "." ? "" : relative, rest, prefix: segments.slice(0, count) };
 }
 
 /** Compile a remainder, or return nothing when it exceeds a declared bound. */
@@ -810,7 +840,7 @@ export async function expandFileGlob(pattern: string, cwd: string): Promise<stri
   const parts = splitStatic(text, cwd);
   if (parts === undefined) return literalMatch(text, cwd);
   const matcher = compileWithinBounds(parts.rest);
-  if (matcher === undefined) return [];
+  if (matcher === undefined || !(await exactCase(cwd, parts.prefix))) return [];
   const real = await realpath(parts.root).catch(() => undefined);
   if (real === undefined) return [];
   const out: string[] = [];

@@ -87,8 +87,10 @@ gate accepts: a recorded waiver in `config/dependency-advisory-waivers.json`.
   judges it. Renew a waiver only after re-verifying it, and record that
   verification on the owner. The owner is a pm item id and the reason must be
   at least 20 characters.
-- A waiver never covers a package that the published artifact installs, as
-  listed in `runtime-dependencies.json`. Consumers audit that graph
+- A waiver never covers a package that the published artifact installs. That
+  graph is projected from `package.json` and `pnpm-lock.yaml` with the same
+  function that writes `runtime-dependencies.json`, so a stale ledger cannot
+  hide a runtime package. Consumers audit that graph
   themselves and cannot rely on this repository's exception
   ([pm-gh1748](../.agents/pm/issues/pm-gh1748.toon)), so the fix for a
   runtime package is to remove it from the runtime graph.

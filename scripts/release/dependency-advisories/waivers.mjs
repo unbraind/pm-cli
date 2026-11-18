@@ -7,11 +7,13 @@
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { parse } from "yaml";
+import { buildRuntimeLock } from "../runtime-lock.mjs";
 
 /** Repository-relative waiver registry; an absent file declares no waivers. */
 export const WAIVERS_PATH = "config/dependency-advisory-waivers.json";
-/** Repository-relative ledger of the published runtime dependency graph (pm-gh1417). */
-export const RUNTIME_LEDGER_PATH = "runtime-dependencies.json";
+/** Where the published runtime graph is projected from (pm-gh1417); runtime-dependencies.json records the same projection. */
+export const RUNTIME_SOURCES = "package.json and pnpm-lock.yaml";
 /** Furthest a waiver may reach past the run that evaluates it, in whole days. */
 export const MAX_WAIVER_DAYS = 30;
 /** Largest number of declared waivers. */
@@ -101,19 +103,24 @@ export async function readWaiverRegistry(root) {
   return JSON.parse(text);
 }
 
-/** Read every name@version the published package installs, or undefined when there is no ledger. */
+/**
+ * Read every name@version the published package installs, projected from the
+ * manifest and lockfile with the same function that writes
+ * runtime-dependencies.json, so a stale ledger can never hide a runtime
+ * package. Undefined when either source is absent.
+ */
 export async function readRuntimePackages(root) {
-  let text;
+  let texts;
   try {
-    text = await readFile(path.join(root, RUNTIME_LEDGER_PATH), "utf8");
+    texts = await Promise.all(["package.json", "pnpm-lock.yaml"].map((name) => readFile(path.join(root, name), "utf8")));
   } catch (error) {
     if (error?.code === "ENOENT") return undefined;
     throw error;
   }
   const packages = new Set();
-  for (const [key, entry] of Object.entries(JSON.parse(text).packages)) {
+  for (const [key, entry] of Object.entries(buildRuntimeLock(JSON.parse(texts[0]), parse(texts[1])).packages)) {
     const marker = key.lastIndexOf("node_modules/");
-    if (marker !== -1 && typeof entry.version === "string") packages.add(`${key.slice(marker + "node_modules/".length)}@${entry.version}`);
+    if (marker !== -1) packages.add(`${key.slice(marker + "node_modules/".length)}@${entry.version}`);
   }
   return packages;
 }
@@ -128,7 +135,7 @@ export function runtimeFindings(live, runtime) {
   if (runtime === undefined) {
     return live.length === 0 ? [] : [{
       kind: "runtime_ledger_missing",
-      detail: `${RUNTIME_LEDGER_PATH} is missing, so no waiver can be shown to stay clear of the published runtime graph; restore it with node scripts/release/runtime-lock.mjs apply.`,
+      detail: `${RUNTIME_SOURCES} cannot be read, so no waiver can be shown to stay clear of the published runtime graph.`,
     }];
   }
   return live.flatMap((waiver) => waiver.versions
@@ -136,7 +143,7 @@ export function runtimeFindings(live, runtime) {
     .map((version) => ({
       kind: "waiver_covers_runtime_dependency",
       subject_id: waiverSubject(waiver),
-      detail: `${waiverSubject(waiver)} waiver covers ${waiver.package}@${version}, which the published package installs (${RUNTIME_LEDGER_PATH}); remove it from the runtime graph instead of waiving it.`,
+      detail: `${waiverSubject(waiver)} waiver covers ${waiver.package}@${version}, which the published package installs (projected from ${RUNTIME_SOURCES}); remove it from the runtime graph instead of waiving it.`,
     })));
 }
 

@@ -44,6 +44,23 @@ describe("literal file glob casing (pm-gh1748)", () => {
     });
   });
 
+  it("checks the case of every literal directory of a relative pattern, but not an absolute root", async () => {
+    await withTempDir("pm-glob-literal-dir-case-", async (root) => {
+      await mkdir(path.join(root, "docs"));
+      await writeFile(path.join(root, "docs", "readme.md"), "x");
+      expect(await expandFileGlob("docs/readme.md", root)).toEqual(["docs/readme.md"]);
+      expect(await expandFileGlob("docs/*.md", root)).toEqual(["docs/readme.md"]);
+      // The directory as a case-insensitive file system lists it.
+      listing.directory = root;
+      listing.names = ["DOCS"];
+      expect(await expandFileGlob("docs/readme.md", root)).toEqual([]);
+      expect(await expandFileGlob("docs/*.md", root)).toEqual([]);
+      // An absolute root is the caller's spelling; only the final name is checked.
+      const absolute = `${root.replaceAll("\\", "/")}/docs/readme.md`;
+      expect(await expandFileGlob(absolute, root)).toEqual([absolute]);
+    });
+  });
+
   it("matches nothing when the directory cannot be listed", async () => {
     await withTempDir("pm-glob-literal-unlisted-", async (root) => {
       await writeFile(path.join(root, "a.ts"), "x");
