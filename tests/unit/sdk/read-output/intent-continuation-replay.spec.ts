@@ -234,6 +234,20 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     expect(replay.items).toBeUndefined();
   });
 
+  it("retries only producer-paged reads outside an output session", () => {
+    // A next-work page has no producer cursor: a charged retry would drop ready rows with no way back to them.
+    const ready = Array.from({ length: 3 }, (_, index) => ({ id: `pm-${index}`, title: "x".repeat(200), status: "open", type: "Task", priority: 2, description: "" }));
+    const next = attachReadOutputContracts("next", { for: "execute", resolvedOutputFormat: "json", outputBudget: 600, outputRowContract: true }, {
+      recommended: ready[0], ready, decision_needed: [], gate_needed: [], containers: [], blocked: [], held_by_others: [], summary: { ready: 3, blocked: 0 },
+    }) as { output_budget_exceeded?: unknown };
+    expect(next.output_budget_exceeded).toBeDefined();
+    // Inside a tight output session the session ceiling also binds the measuring pass, so the refusal stands.
+    const sessionRows = Array.from({ length: 6 }, (_, index) => ({ id: `pm-${index}`, title: "x".repeat(100), status: "open", type: "Task", priority: 2 }));
+    const session = { version: 1, id: "s1", token_budget: 5000, spent_tokens: 5000 - 340, seen_item_ids: [] };
+    const bounded = read({ for: "triage", resolvedOutputFormat: "json", outputSession: session }, { items: sessionRows, count: 6, total: 20, has_more: true, next_cursor: producerCursor });
+    expect(bounded.output_budget_exceeded).toBeDefined();
+  });
+
   it("keeps the structured refusal when the charged replay omits every row", () => {
     const now = "2026-11-19T07:00:00.000Z";
     const sized: Array<[number, number]> = [[280, 0], [42, 576], [483, 541]];

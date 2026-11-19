@@ -1418,19 +1418,22 @@ export function attachReadOutputContracts(
   intentEnvelopeOverheads.set(charged, settled.estimated - Number(intentEstimate));
   const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
   // The charged pass keeps a shorter prefix; its output cursors stay bound to
-  // the first pass's prefix, which is what a replay reproduces.
-  const recharged = finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
+  // the first pass's prefix, which is what a replay reproduces. A charged page
+  // that delivers no row is decided like a page that still does not fit.
+  const recharged = finalizeChargedIntentPage(surface, options, charged, result, rechargedIntent, binding);
   // Reserving the measured overhead does not guarantee that the re-settled
   // envelope fits; a read still over its intent budget is omitted.
-  const residual = settledIntentOverBudget(options, recharged, rechargedIntent.context_intent);
-  if (residual === undefined) return recharged;
-  const receipt = { ...residual.receipt, estimated_tokens: residual.estimated };
+  const residual = recharged === undefined ? settled : settledIntentOverBudget(options, recharged, rechargedIntent.context_intent);
+  // No residual means the charged page was finalized and fits.
+  if (residual === undefined) return recharged as Record<string, unknown>;
+  const omitted = { ...residual.receipt, estimated_tokens: residual.estimated };
+  // The refusal carries no rows, so it is finalized without the incoming cursor.
   return finalizeReadOutputEnvelope(
     surface,
-    options,
+    { ...options, outputCursor: undefined, output_cursor: undefined },
     result,
-    intentBudgetOutcome(canonicalIntentOutputBudget(options), receipt, recharged, () =>
-      buildContextIntentRecoveryCommand(surface, receipt.command as BuiltInContextIntentCommand, receipt.intent, receipt, source, options),
+    intentBudgetOutcome(canonicalIntentOutputBudget(options), omitted, recharged ?? finalized, () =>
+      buildContextIntentRecoveryCommand(surface, omitted.command as BuiltInContextIntentCommand, omitted.intent, omitted, source, options),
     ),
   );
 }
@@ -1438,9 +1441,11 @@ export function attachReadOutputContracts(
 /**
  * Whether the read-output stage refused a page the intent pass fitted: its
  * receipts pushed the page over the budget, and its continuation metadata
- * left no room for even one row. A read with a canonical include selection
- * keeps the refusal: a charged prefix can drop every row the selection names,
- * or the only row a validated selector matches.
+ * left no room for even one row. Only a producer-paged read (list, search)
+ * outside an output session and without a canonical include selection is
+ * retried: a charged prefix can drop every row a selection names, or the only
+ * row a validated selector matches; a session ceiling also binds the
+ * measuring pass; and a next-work page has no cursor for the rows it drops.
  */
 function readOutputStageOmittedIntentPage(
   options: Record<string, unknown>,
@@ -1452,9 +1457,18 @@ function readOutputStageOmittedIntentPage(
     Object.hasOwn(finalized, "output_budget_exceeded") &&
     isOutputRecord(intent) &&
     intent.result_omitted !== true &&
-    (options.outputInclude ?? options.output_include) === undefined
+    PRODUCER_PAGED_INTENT_COMMANDS.has(String(intent.command)) &&
+    (options.outputInclude ?? options.output_include) === undefined &&
+    (options.outputSession ?? options.output_session) === undefined
   );
 }
+
+/**
+ * Intent commands whose charged pass rebases a producer cursor over the rows
+ * it drops. A next-work page has no producer cursor, so dropping its rows
+ * would leave neither a continuation nor a recovery.
+ */
+const PRODUCER_PAGED_INTENT_COMMANDS: ReadonlySet<string> = new Set(["list", "search"]);
 
 /**
  * Decide a refused intent page again with the receipts' measured overhead
@@ -1488,18 +1502,32 @@ function chargedIntentPassOrRefusal(
   const charged = { ...options };
   intentEnvelopeOverheads.set(charged, estimateReadOutputTokens(measured, readOutputMeasurementFormat(options)) - intentEstimate);
   const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
-  // A charged page the intent omits, or whose prefix ends before an incoming
-  // cursor, is never finalized: the cursor would be applied to rows it does
-  // not cover, and the refusal already names the recovery.
-  const recharged =
-    isReadResultOmittedForBudget(rechargedIntent) || chargedPrefixEndsBeforeCursor(options, rechargedIntent)
-      ? undefined
-      : finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
+  const recharged = finalizeChargedIntentPage(surface, options, charged, result, rechargedIntent, binding);
   return recharged === undefined ||
     Object.hasOwn(recharged, "output_budget_exceeded") ||
     settledIntentOverBudget(options, recharged, rechargedIntent.context_intent) !== undefined
     ? refusal
     : recharged;
+}
+
+/**
+ * Finalize a charged intent page, or report that it would deliver no row: the
+ * intent omitted it, or a replayed prefix ends at or before the incoming
+ * cursor's offset. Such a page is never finalized, because the cursor would
+ * be applied to rows it does not cover and the caller's refusal already names
+ * the recovery.
+ */
+function finalizeChargedIntentPage(
+  surface: string,
+  options: Record<string, unknown>,
+  charged: Record<string, unknown>,
+  result: unknown,
+  rechargedIntent: Record<string, unknown>,
+  binding: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  return isReadResultOmittedForBudget(rechargedIntent) || chargedPrefixEndsBeforeCursor(options, rechargedIntent)
+    ? undefined
+    : finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
 }
 
 /**
