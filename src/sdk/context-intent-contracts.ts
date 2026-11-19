@@ -11,6 +11,7 @@ import { attachOutputOmissionReceipt } from "./output-projection.js";
 import { encodeQueryCursor } from "./pagination.js";
 import {
   applyReadOutputDimensions,
+  decodeReadOutputContinuationCursor,
   isReadResultOmittedForBudget,
   resolveReadOutputSurface,
   stabilizeReadOutputReceiptEstimates,
@@ -1467,20 +1468,40 @@ function chargedIntentPassOrRefusal(
 ): Record<string, unknown> {
   // Measure the first pass with its receipts and no compaction; the receipt
   // copy keeps the measuring pass from settling the first pass's own receipt.
+  // An incoming output cursor validates against the same binding as the
+  // bounded pass, so a budget refusal is never reported as a stale snapshot.
   const measured = finalizeReadOutputEnvelope(
     surface,
     { ...options, outputBudget: "unbounded" },
     result,
     { ...intentProjected, context_intent: { ...(intentProjected.context_intent as Record<string, unknown>) } },
+    binding,
   );
   const charged = { ...options };
   intentEnvelopeOverheads.set(charged, estimateReadOutputTokens(measured, readOutputMeasurementFormat(options)) - intentEstimate);
   const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
   const recharged = finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
   return Object.hasOwn(recharged, "output_budget_exceeded") ||
-    settledIntentOverBudget(options, recharged, rechargedIntent.context_intent) !== undefined
+    settledIntentOverBudget(options, recharged, rechargedIntent.context_intent) !== undefined ||
+    chargedPrefixEndsBeforeCursor(options, rechargedIntent)
     ? refusal
     : recharged;
+}
+
+/**
+ * Whether a replayed page's charged prefix ends at or before the incoming
+ * cursor's offset: slicing it would deliver no row, and an empty page would
+ * read as completion where the refusal it replaces names a recovery.
+ */
+function chargedPrefixEndsBeforeCursor(
+  options: Record<string, unknown>,
+  rechargedIntent: Record<string, unknown>,
+): boolean {
+  const raw = options.outputCursor ?? options.output_cursor;
+  if (typeof raw !== "string") return false;
+  const cursor = decodeReadOutputContinuationCursor(raw);
+  const rows = rechargedIntent[cursor.path];
+  return Array.isArray(rows) && rows.length <= cursor.offset;
 }
 
 /**

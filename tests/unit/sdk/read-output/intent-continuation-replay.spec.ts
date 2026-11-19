@@ -191,6 +191,35 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     expect(refused.items).toBeUndefined();
   });
 
+  it("replays a cursor through the charged retry without a stale refusal or an empty success", () => {
+    // Small rows before a large one: the replayed page cannot fit its remaining rows within the budget.
+    const mixed = Array.from({ length: 5 }, (_, index) => ({ id: `demo-${index}`, title: "x".repeat(index >= 1 ? 600 : 40), status: "open", type: "Task", priority: 2 }));
+    const source = { items: mixed, count: 5, total: 15, has_more: true, next_cursor: producerCursor };
+    const options = { for: "triage", limit: "5", full: true, resolvedOutputFormat: "json", outputBudget: "700" };
+    let page = read(options, source);
+    for (let hop = 0; page.output_budget_truncation !== undefined && hop < 10; hop += 1) {
+      // The measuring pass validates the cursor against the same uncompacted binding as the bounded pass.
+      page = read({ ...options, outputCursor: page.output_budget_truncation.continuations[0]!.cursor }, source);
+      expect(page.output_budget_exceeded !== undefined || page.items!.length > 0).toBe(true);
+    }
+    // A charged prefix that ends before the cursor's offset keeps the refusal instead of an empty page.
+    const now = "2026-11-19T07:00:00.000Z";
+    const pair: Array<Record<string, unknown>> = [0, 1].map((index) => ({
+      id: `demo-${index}`, title: index === 0 ? "short" : "x".repeat(180), type: "Issue", status: "open", priority: 2, tags: [], created_at: now, updated_at: now,
+    }));
+    for (const [index, field] of ["description", "acceptance_criteria", "expected_result", "actual_result"].entries()) {
+      pair[1]![field] = "z".repeat(Math.min(820 - index * 240, 240));
+    }
+    const pairCursor = Buffer.from(JSON.stringify({ version: 1, fingerprint: "Z".repeat(16), after_id: "demo-1", after_index: 1 })).toString("base64url");
+    const pairSource = { items: pair, count: 2, total: 25, has_more: true, next_cursor: pairCursor, filters: { limit: "2" }, now };
+    const pairOptions = { for: "triage", full: true, limit: "2", resolvedOutputFormat: "toon", outputRowContract: true, outputBudget: 700 };
+    const first = read(pairOptions, pairSource);
+    expect(first.items!.map((row) => row.id)).toEqual(["demo-0"]);
+    const replay = read({ ...pairOptions, outputCursor: first.output_budget_truncation!.continuations[0]!.cursor }, pairSource);
+    expect(replay.output_budget_exceeded).toBeDefined();
+    expect(replay.items).toBeUndefined();
+  });
+
   it("settles a compacted page on the smaller estimate across a digit boundary", () => {
     // The page measures 999 with two three-digit receipt estimates and 1000 with two four-digit ones.
     const fields = Object.fromEntries(Array.from({ length: 10 }, (_, index) => [`custom_${index}`, "y".repeat(220)]));
