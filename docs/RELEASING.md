@@ -489,8 +489,9 @@ whenever their evidence is already available. A pull request is not complete
 while known tracker or changelog closeout remains queued for a direct push.
 
 When a repository update genuinely depends on the merge SHA or a post-merge
-hosted result, create a normal follow-up branch from `main` and land that update
-through another reviewed pull request. Do not push `.agents/pm/**` or
+hosted result, land it through the next reviewed pull request from `main`: fold
+it into the next feature branch instead of opening a pull request for tracker
+data alone. Do not push `.agents/pm/**` or
 `CHANGELOG.md` closeout directly to `main`. Although tracker-only commits do not
 create package-release eligibility by themselves, the direct commit still
 becomes the default-branch head and lacks the reviewed analyzer evidence needed
