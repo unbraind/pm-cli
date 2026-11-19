@@ -28,6 +28,8 @@ import {
   readOutputMeasurementFormat,
   projectReadOutputItemToBrief,
   preserveReadOutputRowContract,
+  mirrorReadOutputReceiptEstimate,
+  resolveReadOutputPassHooks,
   resolveReadOutputRecoveryBudget,
   updateReadOutputReceiptEstimate,
 } from "./read-output-budget.js";
@@ -42,6 +44,7 @@ import {
   countReadOutputRows,
   mapReadOutputRows,
   readOutputBudgetCollections,
+  type PmReadOutputRowCollection,
   readOutputContinuationRowCollections,
   readOutputRowPaths,
   readOutputRowCollections,
@@ -1532,6 +1535,47 @@ function includeProjectionApplies(
   return resolved.include?.source === "canonical" && !isReadResultOmittedForBudget(result);
 }
 
+/** Apply the projections that shape continuation rows before any cursor slices them. */
+function prepareReadOutputContinuationSource(
+  result: Record<string, unknown>,
+  resolved: PmResolvedReadOutputDimensions,
+): Record<string, unknown> {
+  let projected = { ...result };
+  if (includeProjectionApplies(resolved, result)) {
+    projected = applyIncludeProjection(
+      resolved.command,
+      projected,
+      resolved.include!.value,
+    );
+  }
+  return resolved.command === "assurance"
+    ? prioritizeAssuranceAssertions(projected)
+    : projected;
+}
+
+/**
+ * Resolve the forward collections that bind this pass's output cursors when
+ * the intent layer registered the projection a replay reproduces (GH-1753).
+ * The bound result is shaped exactly like the delivered one, so its rows and
+ * fingerprint are the ones a replay's first pass computes.
+ */
+function resolveReadOutputContinuationBindings(
+  resolved: PmResolvedReadOutputDimensions,
+  options: Record<string, unknown>,
+): ReadonlyMap<string, PmReadOutputRowCollection> | undefined {
+  const binding = resolveReadOutputPassHooks(options)?.continuationBinding;
+  if (binding === undefined) return undefined;
+  const source = prepareReadOutputContinuationSource(
+    attachValidateDiagnosticRowContract(resolved.command, binding),
+    resolved,
+  );
+  return new Map(
+    readOutputContinuationRowCollections(source)
+      .filter((collection) => !readOutputRetainsTail(resolved.command, collection.path))
+      .map((collection) => [collection.path, collection]),
+  );
+}
+
 /** Capture continuation coordinates before amount bounds, then apply row and repeat projections. */
 function projectReadOutputRows(
   result: Record<string, unknown>,
@@ -1543,19 +1587,10 @@ function projectReadOutputRows(
   projected: Record<string, unknown>;
   continuationState: ReadOutputContinuationState;
 } {
-  let projected = { ...result };
-  if (includeProjectionApplies(resolved, result)) {
-    projected = applyIncludeProjection(
-      resolved.command,
-      projected,
-      resolved.include!.value,
-    );
-  }
-  if (resolved.command === "assurance") {
-    projected = prioritizeAssuranceAssertions(projected);
-  }
+  let projected = prepareReadOutputContinuationSource(result, resolved);
   refreshReadOutputDeliveredCounts(projected, result);
-  projected = applyReadOutputContinuation(projected, resolved.command, cursor);
+  const bindings = resolveReadOutputContinuationBindings(resolved, options);
+  projected = applyReadOutputContinuation(projected, resolved.command, cursor, bindings);
   if (resolved.command === "history" && cursor) {
     const historyRowKeys = [
       "compact_history",
@@ -1593,6 +1628,7 @@ function projectReadOutputRows(
     resolved.command,
     cursor,
     options,
+    bindings,
   );
   if (resolved.amount?.source === "canonical") {
     projected = applyAmountBound(
@@ -2088,6 +2124,11 @@ interface ReadOutputContinuationState {
   producer: Record<string, unknown>;
 }
 
+/** Count array entries or object-map values in one row collection. */
+function rowCount(value: unknown[] | Record<string, unknown>): number {
+  return Array.isArray(value) ? value.length : Object.keys(value).length;
+}
+
 /** Bind replay fingerprints and positional fallback to the uncapped selected producer page. */
 function captureReadOutputContinuationState(
   projected: Record<string, unknown>,
@@ -2095,28 +2136,31 @@ function captureReadOutputContinuationState(
   command: PmReadOutputSurface,
   cursor: PmReadOutputCursorEnvelope | undefined,
   options: Record<string, unknown>,
+  bindings?: ReadonlyMap<string, PmReadOutputRowCollection>,
 ): ReadOutputContinuationState {
   const collectionsBeforeBudget = new Map(
     readOutputContinuationRowCollections(projected).map((collection) => {
-      const rows = Array.isArray(collection.value)
-        ? collection.value.length
-        : Object.keys(collection.value).length;
+      const rows = rowCount(collection.value);
       const continued = cursor?.path === collection.path;
       const backward = readOutputRetainsTail(command, collection.path);
+      // An intent read issues cursors against the uncompacted rows its first
+      // pass keeps, which a replay rebuilds (GH-1753).
+      const bound = bindings?.get(collection.path) ?? collection;
+      let fingerprint: string | undefined;
       return [
         collection.path,
         {
           rows,
-          totalRows: continued ? cursor.total_rows : rows,
+          totalRows: continued ? cursor.total_rows : rowCount(bound.value),
           baseOffset: continued && !backward ? cursor.offset : 0,
           backward,
-          fingerprint: continued
-            ? cursor.fingerprint
-            : readOutputCollectionFingerprint(
-                collection.path,
-                collection.value,
-                command,
-              ),
+          // Hashing waits for a continuation that needs it: most reads fit and issue none.
+          get fingerprint(): string {
+            fingerprint ??= continued
+              ? cursor.fingerprint
+              : readOutputCollectionFingerprint(collection.path, bound.value, command);
+            return fingerprint;
+          },
         },
       ];
     }),
@@ -2219,6 +2263,7 @@ function compactReadOutputProjection(
     },
     resolved.command === "history" && Array.isArray(projected.diff),
     (path) => readOutputRetainsTail(resolved.command, path),
+    resolved.command,
   );
 }
 
@@ -2292,6 +2337,8 @@ export function applyReadOutputDimensions<
     result_omitted: intentOmitted,
   };
   projected.read_output = receipt;
+  const estimateMirror = resolveReadOutputPassHooks(options)?.mirrorEstimate;
+  if (estimateMirror !== undefined) mirrorReadOutputReceiptEstimate(receipt, estimateMirror);
   projected =
     session === undefined
       ? projected

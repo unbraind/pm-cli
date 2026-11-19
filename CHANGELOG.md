@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Windows: a glob pattern with a leading backslash returns absolute workspace paths, because the matcher judges absoluteness with win32 path.isAbsolute ([pm-y8zgkg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y8zgkg.toon))
+- GH-1753: the triage projection advertises an output cursor that is stale on unchanged replay (read_output_cursor_stale) ([pm-gh1753](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1753.toon))
+- GH-1754: cursor-named fields inside items block string compaction, so a budgeted list omits its rows (regression since 2026.11.11) ([pm-gh1754](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1754.toon))
+
 ## 2026.11.19 - 2026-11-19
 
 ### Changed (SDK contract)

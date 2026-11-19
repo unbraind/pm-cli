@@ -17,6 +17,7 @@ import type {
 } from "../read-output-contracts.js";
 import { resolveReadOutputSurface } from "../read-output-contracts.js";
 import {
+  type PmReadOutputRowCollection,
   readOutputContinuationRowCollections,
   sliceReadOutputRowCollection,
 } from "../read-output-rows.js";
@@ -309,11 +310,28 @@ export function prioritizeAssuranceAssertions(
   };
 }
 
-/** Validate and apply a continuation suffix to its declared row collection. */
+/** The collection a cursor on `path` validates against: the bound one when the result declares the path. */
+function continuationSnapshot(
+  result: Record<string, unknown>,
+  path: string,
+  bindings: ReadonlyMap<string, PmReadOutputRowCollection> | undefined,
+): PmReadOutputRowCollection | undefined {
+  const own = readOutputContinuationRowCollections(result).find((entry) => entry.path === path);
+  return own && (bindings?.get(path) ?? own);
+}
+
+/**
+ * Validate and apply a continuation suffix to its declared row collection.
+ * `bindings` names the collections the cursor was issued against when they
+ * differ from the result's own: an intent read's charged second pass keeps a
+ * prefix of the rows its first pass kept, so the cursor validates against the
+ * first pass's collection and slices the delivered one (GH-1753).
+ */
 export function applyReadOutputContinuation(
   result: Record<string, unknown>,
   command: PmReadOutputSurface,
   cursor: PmReadOutputCursorEnvelope | undefined,
+  bindings?: ReadonlyMap<string, PmReadOutputRowCollection>,
 ): Record<string, unknown> {
   if (!cursor) return result;
   if (cursor.command !== command) {
@@ -323,9 +341,7 @@ export function applyReadOutputContinuation(
       { code: "read_output_cursor_command_mismatch" },
     );
   }
-  const collection = readOutputContinuationRowCollections(result).find(
-    (entry) => entry.path === cursor.path,
-  );
+  const collection = continuationSnapshot(result, cursor.path, bindings);
   const totalRows = collection
     ? Array.isArray(collection.value)
       ? collection.value.length

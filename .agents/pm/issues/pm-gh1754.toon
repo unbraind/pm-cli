@@ -2,11 +2,13 @@ id: pm-gh1754
 title: "GH-1754: cursor-named fields inside items block string compaction, so a budgeted list omits its rows (regression since 2026.11.11)"
 description: "Reported in GH-1754 against 2026.11.18. The protection that keeps emitted continuation tokens replayable also exempts item fields that merely share a continuation key name (next_cursor, output_cursor) from string compaction. At a 2,000-token budget, a list whose one item carries a 30,000-character next_cursor or output_cursor field exits 2 with read_output.result_omitted true and strings_compacted false. The same request on 2026.11.11 returned one compacted row and exited 0. An ordinary_text control still compacts to a 255-character value. Only the envelope's continuation tokens should be exempt; the cursor-clipping fix is related."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: "area:output",compaction,"gh:1754",output-budget,read-output,regression
 created_at: "2026-11-19T00:19:32.036Z"
-updated_at: "2026-11-19T00:19:32.036Z"
+updated_at: "2026-11-19T07:44:14.744Z"
+closed_at: "2026-11-19T07:44:14.725Z"
+completed_at: "2026-11-19T07:44:14.725Z"
 author: "harness:claude-code"
 estimated_minutes: 150
 acceptance_criteria: A budgeted list whose item carries an oversized next_cursor or output_cursor field returns its compacted row and exits 0; An envelope next_cursor or output_cursor is still delivered intact and replays; Tests cover both the replayable envelope cursor and compaction of cursor-named item metadata
@@ -14,8 +16,31 @@ parent: pm-5t33or
 risk: medium
 confidence: high
 severity: high
-expected_result: "Producer and output continuation tokens in the response envelope stay replayable, while oversized strings under items, including fields named like a continuation key, are still compacted so the budgeted list returns its rows."
-actual_result: "An item field named next_cursor or output_cursor is exempt from compaction, so at a 2,000-token budget the list is omitted (result_omitted true, strings_compacted false, exit 2) instead of returning a compacted row as 2026.11.11 did."
+resolution: "Both string-compaction walkers stop the GH-1710 continuation-token exemption at tracker item documents. On the native item reads get, list and search, the fields of item and of every items row are content: a custom field named next_cursor, output_cursor, source_cursor, cursor or sync_cursor compacts to the 240-character prefix plus the compaction marker. Envelope tokens stay whole (next_cursor, output_cursor, output_budget_truncation continuations, nested section cursors, events row cursors), and so does every token inside an extension's declared items rows. docs/READ_OUTPUT_CONTRACTS.md documents the scope."
+expected_result: "A budgeted list whose item carries an oversized next_cursor or output_cursor field returns its compacted row and exits 0, while envelope continuation tokens stay replayable"
+actual_result: "On src the GH-1754 fixture returns one row with a 255-character value for next_cursor, output_cursor and ordinary_text in JSON and TOON, with and without --for triage; envelope cursors stay whole and the producer page cursor replays; an extension's items[0].evidence.next_cursor stays whole beside a compacted note"
+component: sdk
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1710,related,"2026-11-19T00:19:32.036Z","harness:claude-code","cli:create:dep",detected
+notes[2]{created_at,author,text}:
+  "2026-11-19T06:03:07.671Z","harness:claude-code","Root cause: both string-compaction walkers (compactStrings in src/sdk/read-output-budget.ts and compactContextIntentValue in src/sdk/context-intent-contracts.ts) exempted any string under a key named cursor or ending in _cursor at every depth, so a tracker item's own field with such a name was treated as a continuation token. Fix: the exemption now stops at tracker item documents. isTrackerItemDocumentKey in src/core/shared/text-normalization.ts names the top-level item and items keys, and both walkers switch the exemption off beneath them. Envelope tokens stay whole: next_cursor, output_cursor, output_budget_truncation continuations, nested section cursors, and pm events per-row cursors under events. A census found no producer that emits a real continuation token inside an item or items row. Evidence: on src the GH-1754 fixture returns one row with a 255-character value for next_cursor, output_cursor, source_cursor, cursor, sync_cursor and ordinary_text, in JSON and TOON, with and without --for triage. Negative controls: reverting either walker fails all three new specs in tests/unit/sdk/read-output/continuation-tokens.spec.ts, and the GH-1710 specs keep passing."
+  "2026-11-19T06:49:30.062Z","harness:claude-code","Review (Codex, uncommitted diff): restricting the exemption by key alone also shortened genuine tokens inside an extension's items rows, since extensions may declare row_keys [\"items\"] for records that are not tracker items. Fixed by scoping on the surface as well as the key. isTrackerItemDocumentKey(surface, key) is true only for item and items on the native item reads get, list and search. Both walkers now receive the resolved surface: compactReadOutputToBudget takes resolved.command, and the intent walker takes resolveReadOutputSurface(command), which resolves extension commands first, so an extension named list probe stays extension:list probe. A new spec covers a registered extension's items[0].evidence.next_cursor kept whole beside a compacted note, and a key-by-surface table covers get/list/search against next, context, events and extension surfaces. Negative control: forcing the list surface fails the extension spec."
+files[4]{path,scope,note}:
+  src/core/shared/text-normalization.ts,project,isTrackerItemDocumentKey scopes the continuation-token exemption
+  src/sdk/context-intent-contracts.ts,project,compactContextIntentValue stops exempting cursor-named keys inside item documents
+  src/sdk/read-output-budget.ts,project,compactStrings stops exempting cursor-named keys inside item documents
+  tests/unit/sdk/read-output/continuation-tokens.spec.ts,project,GH-1754 regression specs
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/continuation-tokens.spec.ts,project,600,"harness:claude-code","2026-11-19T07:03:48.791Z",local_mutation,fix/output-budget-cursor-regressions
+docs[1]{path,scope,note}:
+  docs/READ_OUTPUT_CONTRACTS.md,project,read-output compaction and intent cursor binding contract
+close_reason: "Budget compaction exempts only the envelope's continuation tokens, so a budgeted list whose item carries an oversized cursor-named field returns its compacted row again"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1754
+  gate_id: test-coverage
+  negative_control: "Reverting either walker to the key-only exemption (compactStrings in read-output-budget.ts or compactContextIntentValue in context-intent-contracts.ts) fails the three GH-1754 specs in tests/unit/sdk/read-output/continuation-tokens.spec.ts; forcing the list surface for every read fails the extension-rows spec, so genuine tokens in an extension's items rows stay protected"
+  local_checks[6]: node scripts/run-tests.mjs test -- tests/unit/sdk/read-output/continuation-tokens.spec.ts,pnpm typecheck,"pnpm quality:token-surface","pnpm contracts:check",node scripts/run-tests.mjs test -- tests/integration/read-output/composed-continuation.integration.spec.ts tests/unit/sdk/pagination.spec.ts tests/unit/sdk/read-output/delivered-counts.spec.ts tests/unit/sdk/read-output-contracts.spec.ts,node scripts/run-tests.mjs test -- tests/integration/read-output/context-evidence.integration.spec.ts tests/integration/sdk/sdk-consumer-receipts.integration.spec.ts
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
 body: ""

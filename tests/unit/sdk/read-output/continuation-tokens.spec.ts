@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { readCompactionMarker } from "../../../../src/core/shared/text-normalization.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { setActiveExtensionRegistrations } from "../../../../src/core/extensions/index.js";
+import { isTrackerItemDocumentKey, readCompactionMarker } from "../../../../src/core/shared/text-normalization.js";
+import { activateSyntheticExtensions } from "../../../helpers/extensions.js";
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
-import { attachContextIntentReceipt } from "../../../../src/sdk/context-intent-contracts.js";
+import { attachContextIntentReceipt, attachReadOutputContracts } from "../../../../src/sdk/context-intent-contracts.js";
 import { decodeQueryCursorEnvelope } from "../../../../src/sdk/pagination.js";
 import { decodeReadOutputContinuationCursor } from "../../../../src/sdk/read-output/continuation.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
@@ -89,3 +91,108 @@ describe("continuation tokens survive string compaction (GH-1710)", () => {
     expect(capture(() => decodeQueryCursorEnvelope("not-a-cursor")).message).toBe("Query cursor is malformed.");
   });
 });
+
+/**
+ * GH-1754: the GH-1710 exemption keyed on the field name alone, so a tracker
+ * item's own field named like a continuation key (a custom next_cursor,
+ * output_cursor or sync_cursor) was never compacted and a budgeted list
+ * omitted its only row. Only the envelope's tokens are exempt.
+ */
+describe("tracker item fields named like continuation keys compact like content (GH-1754)", () => {
+  const oversized = "x".repeat(30_000);
+  const singleRow = (key: string) => ({
+    items: [{ id: "demo-one", [key]: oversized }],
+    count: 1,
+    total: 1,
+    has_more: false,
+  });
+
+  it("returns the compacted row for every cursor-named item field, with and without an intent, in JSON and TOON", () => {
+    for (const format of ["json", "toon"] as const) {
+      for (const intent of [{}, { for: "triage" }]) {
+        for (const key of ["next_cursor", "output_cursor", "source_cursor", "cursor", "sync_cursor", "ordinary_text"]) {
+          const outcome = attachReadOutputContracts("list", { full: true, outputBudget: "2000", resolvedOutputFormat: format, ...intent }, singleRow(key)) as {
+            count?: number;
+            items?: Array<Record<string, string>>;
+            read_output: { result_omitted: boolean };
+          };
+          expect({ format, intent, key, omitted: outcome.read_output.result_omitted, count: outcome.count }).toEqual({ format, intent, key, omitted: false, count: 1 });
+          expect(outcome.items![0]![key]).toHaveLength(255);
+          expect(readCompactionMarker(outcome.items![0]![key]!)).toBe(30_000 - 240);
+        }
+      }
+    }
+  });
+
+  it("compacts cursor-named fields of a single item read and of nested item records", () => {
+    const bounded = applyReadOutputDimensions("get", { outputFormat: "json", outputBudget: 2000 }, {
+      item: { id: "pm-one", title: "One", sync_cursor: oversized, nested: { next_cursor: oversized } },
+    });
+    expect(readCompactionMarker(bounded.item.sync_cursor)).toBe(30_000 - 240);
+    expect(readCompactionMarker(bounded.item.nested.next_cursor)).toBe(30_000 - 240);
+    const intent = attachContextIntentReceipt("list", { for: "triage", tokenBudget: 2000 }, {
+      items: [{ id: "pm-one", title: "One", output_cursor: oversized, nested: [{ cursor: oversized }] }],
+      count: 1,
+      total: 1,
+      has_more: false,
+    });
+    expect(readCompactionMarker(intent.items[0]!.output_cursor)).toBe(30_000 - 240);
+    expect(readCompactionMarker(intent.items[0]!.nested[0]!.cursor)).toBe(30_000 - 240);
+  });
+
+  it("still delivers the envelope's own continuation tokens whole beside a compacted item field, and the page cursor replays", () => {
+    const cursor = `eyJ2${"QUJD".repeat(120)}`;
+    const page = {
+      items: [1, 2, 3].map((index) => ({ id: `pm-${index}`, title: `${"T".repeat(2000)}${index}`, next_cursor: oversized })),
+      count: 3,
+      total: 8,
+      has_more: true,
+      next_cursor: cursor,
+      nested: { section: { next_cursor: cursor, output_cursor: cursor } },
+    };
+    for (const format of ["json", "toon"] as const) {
+      const bounded = applyReadOutputDimensions("list", { outputFormat: format, outputBudget: 2000 }, structuredClone(page));
+      expect(bounded.next_cursor).toBe(cursor);
+      expect(bounded.nested.section).toEqual({ next_cursor: cursor, output_cursor: cursor });
+      expect(bounded.items.map((item) => readCompactionMarker(item.next_cursor))).toEqual(bounded.items.map(() => 30_000 - 240));
+    }
+    const intent = attachContextIntentReceipt("list", { for: "triage", tokenBudget: 2000 }, structuredClone(page));
+    expect(intent.next_cursor).toBe(cursor);
+    expect(intent.nested.section).toEqual({ next_cursor: cursor, output_cursor: cursor });
+    expect(readCompactionMarker(intent.items[0]!.next_cursor)).toBe(30_000 - 240);
+    // A real producer page cursor emitted beside compacted cursor-named item fields still replays.
+    const producer = Buffer.from(JSON.stringify({ version: 1, fingerprint: "fp", after_id: "pm-3", after_index: 3 })).toString("base64url");
+    const replayable = applyReadOutputDimensions("list", { outputFormat: "json", outputBudget: 2000 }, { ...structuredClone(page), next_cursor: producer });
+    expect(decodeQueryCursorEnvelope(replayable.next_cursor as string)).toMatchObject({ fingerprint: "fp" });
+  });
+
+  it("keeps genuine tokens inside an extension's items rows, which are not tracker items", async () => {
+    const activation = await activateSyntheticExtensions([{
+      name: "evidence-probe", capabilities: ["commands"], activate(api) {
+        api.registerCommand({ name: "probe evidence", read_output: { row_keys: ["items"] }, run: () => ({}) });
+      },
+    }]);
+    setActiveExtensionRegistrations(activation.registrations);
+    const token = `eyJ2${"QUJD".repeat(120)}`;
+    const outcome = attachReadOutputContracts("probe evidence", { outputBudget: "2000", resolvedOutputFormat: "json" }, {
+      items: [{ id: "row-one", evidence: { next_cursor: token }, note: "N".repeat(12_000) }],
+      count: 1,
+    }) as { items: Array<{ evidence: { next_cursor: string }; note: string }>; read_output: { result_omitted: boolean; strings_compacted: boolean } };
+    expect(outcome.read_output).toMatchObject({ result_omitted: false, strings_compacted: true });
+    expect(outcome.items[0]!.evidence.next_cursor).toBe(token);
+    expect(readCompactionMarker(outcome.items[0]!.note)).toBe(12_000 - 240);
+  });
+
+  it("scopes item documents to the native item reads", () => {
+    for (const surface of ["get", "list", "search"]) {
+      expect(isTrackerItemDocumentKey(surface, "item")).toBe(true);
+      expect(isTrackerItemDocumentKey(surface, "items")).toBe(true);
+      expect(isTrackerItemDocumentKey(surface, "rows")).toBe(false);
+    }
+    for (const surface of [undefined, "next", "context", "events", "extension:probe evidence", "extension:list probe"]) {
+      expect(isTrackerItemDocumentKey(surface, "items")).toBe(false);
+    }
+  });
+});
+
+afterEach(() => setActiveExtensionRegistrations(null));

@@ -358,7 +358,7 @@ rows; it can never leave the packer's earlier inclusions marked as served.
 `PmClient` finalizes the receipt before resolving, while the CLI finalizes it
 from the exact active result passed to telemetry and after-command hooks.
 
-String compaction shortens an explanatory string longer than 240 UTF-16 code units to a Unicode-safe prefix followed by the compaction marker `…[+N chars]`, where `N` is the number of code units left out. The marker is the write-side signal: `pm comments`, `pm notes` and `pm learnings` refuse an `--edit` whose replacement text ends with it (`annotation_text_compacted`, exit 2, nothing written), because that text came from a compacted read and would replace the stored entry with the prefix. Re-read the entry with `--output-budget unbounded`, apply the change to the full text, and retry; a bare trailing ellipsis is ordinary text and is accepted. A continuation token is never compacted: any string under a `cursor` key or a key ending in `_cursor` (`next_cursor`, `output_cursor`, `source_cursor`, ...) is emitted whole in JSON and TOON, with or without `--for`. A cursor argument that still carries an ellipsis is refused with `invalid_query_cursor` (or `read_output_cursor_invalid` for `--output-cursor`) and the reason `cursor_compacted`, naming the larger-budget read that returns it whole.
+String compaction shortens an explanatory string longer than 240 UTF-16 code units to a Unicode-safe prefix followed by the compaction marker `…[+N chars]`, where `N` is the number of code units left out. The marker is the write-side signal: `pm comments`, `pm notes` and `pm learnings` refuse an `--edit` whose replacement text ends with it (`annotation_text_compacted`, exit 2, nothing written), because that text came from a compacted read and would replace the stored entry with the prefix. Re-read the entry with `--output-budget unbounded`, apply the change to the full text, and retry; a bare trailing ellipsis is ordinary text and is accepted. A continuation token is never compacted: any string under a `cursor` key or a key ending in `_cursor` (`next_cursor`, `output_cursor`, `source_cursor`, ...) is emitted whole in JSON and TOON, with or without `--for`. The exemption covers the envelope and its sections, not tracker item documents: on the native item reads `get`, `list` and `search`, the fields of `item` and of every `items` row are item content, so a custom field named like a continuation key (`sync_cursor`, `next_cursor`) compacts like any other string and a budgeted page still returns its rows. Every other surface keeps the exemption at any depth, including an extension that declares `items` rows, because its rows may carry genuine tokens. A cursor argument that still carries an ellipsis is refused with `invalid_query_cursor` (or `read_output_cursor_invalid` for `--output-cursor`) and the reason `cursor_compacted`, naming the larger-budget read that returns it whole.
 
 When rows are dropped to satisfy a ceiling, the result also carries `output_budget_truncation`, naming the binding budget and its source, any explicitly requested dimension the budget overrode, every compacted collection path, and executable CLI/SDK/MCP recovery options — a default ceiling can override an explicit `--output-limit unbounded`, and that override is reported rather than silent. If a producer supplied an opaque item-page cursor, compaction rebases it to the last row actually returned and reports `continuation_cursor_rebased: true`; following the cursor therefore cannot skip rows removed from the middle of a producer page. If no useful content can fit, `PmReadOutputBudgetExceeded` provides a discriminated omission result, a compact `{ outputBudget: "unbounded" }` recovery object, and `omitted_result_estimated_tokens`, the last useful-result estimate before omission; use `isReadOutputBudgetExceeded` before accessing result-specific fields. The encoding control `--output-format <toon|json>` also applies to mutation envelopes, including the mutation modes of `comments`, `notes`, `files`, and `docs`. Other universal read controls remain rejected before mutation execution. `--json` remains supported.
 
@@ -388,6 +388,18 @@ bounded recovery therefore does not require replacing a 600-token request with
 an unbounded multi-megabyte response;
 `recovery_budget_multiplier: 1` declares that each next page retains the same
 useful-result ceiling.
+
+An intent read (`--for`) binds its output cursors to the producer's
+uncompacted rows, cut to the prefix its intent projection keeps before any
+envelope overhead is charged. That is the collection an unchanged replay
+rebuilds, and because the fingerprint covers the uncompacted text, string
+compaction cannot hide an edit in an omitted suffix. Row compaction measures the intent
+receipt with the estimate it will finally report, so the settled envelope fits
+the budget it was compacted to. When a settled envelope still exceeds the intent
+budget and is projected again with that overhead charged, the second pass
+delivers a shorter prefix, but its cursors keep the first pass's row count and
+fingerprint. A replay therefore resumes right after the last delivered row, and
+`read_output_cursor_stale` stays reserved for a changed source.
 
 Chronological annotation collections keep their newest rows instead
 ([pm-8s53lj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8s53lj.toon);

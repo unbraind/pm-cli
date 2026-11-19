@@ -785,6 +785,18 @@ async function exactCase(cwd: string, segments: string[]): Promise<boolean> {
 }
 
 /**
+ * Whether a pattern is absolute in glob syntax: a leading "/" (a root, or a
+ * "//server/share" UNC root) or, on Windows, a drive root such as "C:/". A
+ * backslash is the glob escape character on every platform, so "\a.ts" names
+ * the relative file "a.ts". Win32 path.isAbsolute reads a leading backslash
+ * as root-relative while the walk still starts at cwd, which returned
+ * absolute workspace paths for escaped relative patterns (pm-y8zgkg).
+ */
+function isAbsolutePattern(text: string, platform: NodeJS.Platform = process.platform): boolean {
+  return text.startsWith("/") || (platform === "win32" && /^[A-Za-z]:\//u.test(text));
+}
+
+/**
  * Resolve a pattern without glob syntax as a literal path; only an existing
  * file matches. Its name, and for a relative pattern every directory too,
  * must appear exactly in its directory's listing. An absolute pattern's root
@@ -795,7 +807,7 @@ async function literalMatch(text: string, cwd: string): Promise<string[]> {
   const target = path.resolve(cwd, text);
   const found = await stat(target).catch(() => undefined);
   if (found === undefined || !found.isFile()) return [];
-  const absolute = path.isAbsolute(text);
+  const absolute = isAbsolutePattern(text);
   const exact = absolute ? await listed(path.dirname(target), path.basename(target)) : await exactCase(cwd, text.split("/"));
   if (!exact) return [];
   return [absolute ? target.replaceAll("\\", "/") : path.posix.normalize(text)];
@@ -810,7 +822,7 @@ function splitStatic(text: string, cwd: string): { root: string; base: string; r
   const prefix = count === 0 ? "" : `${segments.slice(0, count).join("/")}/`;
   const root = path.resolve(cwd, prefix);
   const rest = segments.slice(count).join("/");
-  if (path.isAbsolute(text)) return { root, base: root.replaceAll("\\", "/"), rest, prefix: [] };
+  if (isAbsolutePattern(text)) return { root, base: root.replaceAll("\\", "/"), rest, prefix: [] };
   const relative = path.posix.normalize(prefix === "" ? "." : prefix).replace(/\/$/u, "");
   return { root, base: relative === "." ? "" : relative, rest, prefix: segments.slice(0, count) };
 }
@@ -854,4 +866,4 @@ function joinOutput(base: string, relative: string): string {
 }
 
 /** Internal hooks for bound and cache tests; not part of any public surface. */
-export const _testOnly = { compile, joinOutput, normalizePattern };
+export const _testOnly = { compile, isAbsolutePattern, joinOutput, normalizePattern };

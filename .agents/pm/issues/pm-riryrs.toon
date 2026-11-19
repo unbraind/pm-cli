@@ -1,0 +1,27 @@
+id: pm-riryrs
+title: "Release reliability: skipped issue events count as failed blocker-retry attempts (118 of 123), and the primary morning-dispatcher path has no failure-rate policy (12/30 first attempts failed, none flagged)"
+description: "Found on the 2026-11-19 review of the Release Reliability workflow, which is red on every run (latest 44464565181). Collectors run locally over the 30-day window ending 2026-11-19T06:04Z. Two measurement gaps keep a real regression on the primary release path out of view.\n(1) scripts/release/release-reliability.mjs treats every completed run whose conclusion is not success as failed, including skipped runs. Issue events unrelated to a release blocker fire Auto Release (blocker_retry), and the job guard skips them. 118 of the 123 failed blocker_retry attempts in the window are such skipped runs, so the origin series reports a 0.92 failure rate (123/133) for a path that attempted 15 releases: 10 succeeded, 2 failed and 3 were cancelled.\n(2) The morning dispatcher (pm-9url9h), the primary release path since 2026-09-26, has a per-origin series but no failure-rate policy. It failed 12 of 30 first attempts (sentry-telemetry-gate 5, static-quality-gate 4, compatibility-check 1, release-workflow 1, producer-binding-or-push 1), and no violation names it. The native schedule keeps its policy and stays red by design: dispatch_window and missing_scheduled_run fire every morning because GitHub starts the 02:35 cron 2.5-4 h late (pm-44u3wt). So the one rate that measures what users get has no threshold and no owner. pm-prrlce owns origin attribution and the series themselves, and pm-e70zh5 owned the native-schedule measure."
+type: Issue
+status: open
+priority: 2
+tags[5]: "area:release",auto-release,ci,measurement,release-reliability
+created_at: "2026-11-19T06:14:35.038Z"
+updated_at: "2026-11-19T07:15:38.700Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "A completed run whose conclusion is skipped is reported as a non-attempt (a skipped count per series) and never counted in completed or failed, in the scheduled, dispatcher and every origin series; cancelled, failure and timed_out still count as failed (negative control); config/release-reliability-policy.json declares a morning_dispatcher failure-rate policy (max_failure_rate, min_completed_runs) evaluated by the same release-reliability evaluator, reported as a distinct dispatcher_failure_rate violation with its failing stages; the native scheduled policy and denominator stay unchanged; The Release Reliability step summary reports skipped counts and the dispatcher verdict beside the native-schedule findings, each with its pm owner; covering specs in the same change keep scripts at 100% coverage"
+parent: pm-u9d0
+risk: low
+confidence: high
+severity: medium
+expected_result: "Skipped runs are reported as non-attempts in every origin series, and the morning dispatcher series is judged against a declared failure-rate policy whose violation names its failing stages and owner."
+actual_result: "Skipped blocker_retry runs count as failures (origin rate 0.92 from 118 skipped of 123 failed), and the dispatcher's 12/30 first-attempt failure rate raises no violation while the Release Reliability workflow is red every day from the native-schedule policy alone."
+dependencies[5]{id,kind,created_at,author,source_kind,author_source}:
+  pm-44u3wt,related,"2026-11-19T06:14:35.038Z","harness:claude-code","cli:create:dep",detected
+  pm-9url9h,related,"2026-11-19T06:14:35.038Z","harness:claude-code","cli:create:dep",detected
+  pm-e70zh5,related,"2026-11-19T06:14:35.038Z","harness:claude-code","cli:create:dep",detected
+  pm-prrlce,related,"2026-11-19T06:14:35.038Z","harness:claude-code","cli:create:dep",detected
+  pm-0trehk,related,"2026-11-19T07:15:38.440Z","harness:claude-code","cli:update:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-19T07:15:31.966Z","harness:claude-code","Duplicate check before filing. Searched the tracker for release reliability, failure rate, scheduled and dispatcher terms, and read the never-refile registry. Neither gap belongs to an existing item:\n- pm-prrlce (open) owns trigger-origin attribution and the existence of a separate series per origin. Its acceptance criteria require the series to report attempts, failures and stages; they set no rate policy and do not say how a skipped run counts.\n- pm-0trehk (open) owns nightly re-shard lineage (warm-up for renamed legs). It covers nightly families only, not the release origin series.\n- pm-e70zh5 (closed) delivered the native-schedule rolling measure, and pm-44u3wt (closed) made the cron window and missing runs detectable. Both acceptance criteria required detection only, and both remain correct: the native schedule stays red by design.\n- pm-9url9h is the dispatcher decision; it keeps the native scheduled denominator unchanged, and this item leaves it unchanged too.\nThe nightly Node 24 Ubuntu leg's 10/30 failure rate is not filed: its failures cluster in 2026-10-24..31 and age out of the window."
+body: ""
