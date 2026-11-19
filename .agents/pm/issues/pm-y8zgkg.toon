@@ -1,0 +1,21 @@
+id: pm-y8zgkg
+title: "Windows: a glob pattern with a leading backslash returns absolute workspace paths, because the matcher judges absoluteness with win32 path.isAbsolute"
+description: "Root cause of the Windows nightly failure GH-1755 (windows-latest, Node 24, shard 2/4, run 44307203866). It reproduces on the 2026.11.18 release. In src/core/fs/file-glob.ts, splitStatic and literalMatch decide whether a pattern is absolute with path.isAbsolute(text). On win32 that call treats a leading backslash as drive-root-relative. A pattern such as \\\\a.ts has no static prefix, so the walk still starts at cwd, but the output base becomes the absolute cwd. The matches therefore come back as absolute workspace paths (C:/.../w/a.ts) instead of matching neither reading: as a glob escape the result would be relative (a.ts), and as root-relative the walk would start at the drive root (the previous tinyglobby expansion returned no files). Two file-glob.spec.ts cases fail only on Windows: the tinyglobby parity case for \\\\a.ts and the escaped-negation case for \\\\!x.ts, which expects !x.ts. Proposed fix: judge absoluteness by the glob's own syntax (a leading / or a drive prefix such as C:/), so a leading backslash is always an escape, identically on every platform. Then keep the parity list's \\\\a.ts entry POSIX-only (it remains a superset of the old result) and add a cross-platform escape test."
+type: Issue
+status: open
+priority: 1
+tags[6]: file-glob,"gh:1755",glob,nightly,regression,windows
+created_at: "2026-11-19T00:26:38.140Z"
+updated_at: "2026-11-19T00:26:38.140Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "Absolute-pattern detection uses glob syntax (a leading / or a drive prefix), never win32 path.isAbsolute on the raw pattern; tests/unit/core/fs/file-glob.spec.ts passes on windows-latest, with the leading-backslash parity entry POSIX-only and a cross-platform escape test; The Windows nightly shard that runs file-glob.spec.ts is green"
+parent: pm-i7w2
+risk: medium
+confidence: high
+severity: medium
+expected_result: "A pattern with a leading backslash is read as a glob escape on every platform, so \\\\a.ts matches a.ts relative to cwd and \\\\!x.ts matches the file !x.ts, with the same relative output on Windows and POSIX."
+actual_result: "On Windows, \\\\a.ts and \\\\!x.ts return absolute workspace paths (for example C:/.../!x.ts), because win32 path.isAbsolute treats the leading backslash as root-relative while the walk still starts at cwd."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1748,discovered_from,"2026-11-19T00:26:38.140Z","harness:claude-code","cli:create:dep",detected
+body: ""

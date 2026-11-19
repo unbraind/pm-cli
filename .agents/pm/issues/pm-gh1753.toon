@@ -1,0 +1,22 @@
+id: pm-gh1753
+title: "GH-1753: the triage projection advertises an output cursor that is stale on unchanged replay (read_output_cursor_stale)"
+description: "Reported in GH-1753 against 2026.11.18. A budget-driven second projection of the list triage delivery step advertises a continuation whose replay, against identical rows and options, is refused with read_output_cursor_stale. The reporter's in-memory fixture of 43 synthetic rows (output budget 1000 TOON tokens, limit 30, output limit 100) replays cleanly with filter padding 134 and 138, but padding 136 delivers 12 rows and the advertised cursor is refused. This follows the composed amount and token ceilings work and the producer next_cursor clipping fix, both related."
+type: Issue
+status: open
+priority: 2
+tags[6]: "area:output",cursor,"gh:1753",output-budget,read-output,triage
+created_at: "2026-11-19T00:19:10.491Z"
+updated_at: "2026-11-19T00:19:10.491Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: Replaying the advertised cursor of a budget-driven second triage projection against unchanged rows and options resumes after the last delivered row; A changed source still refuses the cursor with read_output_cursor_stale; Coverage includes the second-projection case and the adjacent passing paddings as controls
+parent: pm-5t33or
+risk: medium
+confidence: high
+severity: medium
+expected_result: An output cursor from the first response resumes after its last delivered row when the same query and item data are replayed; the stale refusal remains only for a changed source.
+actual_result: With filter padding 136 the first response delivers 12 rows and advertises a cursor that the unchanged replay refuses with read_output_cursor_stale; paddings 134 and 138 replay successfully.
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1411,related,"2026-11-19T00:19:10.491Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1710,related,"2026-11-19T00:19:10.491Z","harness:claude-code","cli:create:dep",detected
+body: ""
