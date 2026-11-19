@@ -1,0 +1,294 @@
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { Worker } from "node:worker_threads";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { processTableSharesNamespace } from "../../../src/core/shared/process-tree.js";
+import { runExtension } from "../../../src/sdk/extension.js";
+import { GITHUB_REMOTE_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_TIMED_OUT, checkGithubUpdate } from "../../../src/sdk/extension/update-check.js";
+import { withTempPmPath } from "../../helpers/withTempPmPath.js";
+
+// pm-5kfzjh and pm-43p2c3: the deadline must settle the lookup even when the
+// launcher exits while a descendant still holds its pipes, must kill a live
+// provider tree, and must leave the provider where a terminal Ctrl-C reaches
+// it with the host.
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const distUpdateCheck = pathToFileURL(path.join(repoRoot, "dist", "sdk", "extension", "update-check.js")).href;
+const distExtension = pathToFileURL(path.join(repoRoot, "dist", "sdk", "extension.js")).href;
+const GITHUB_SOURCE = { kind: "github", input: "github:o/r", location: "o/r", repository: "https://github.com/o/r.git", commit: "abc123" } as const;
+const tempRoots: string[] = [];
+
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+});
+
+/** A killed process counts as stopped once it is gone or only an unreaped zombie; a probe that cannot run fails the test. */
+function isRunning(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+  } catch (error) {
+    // Only ESRCH proves absence; EPERM means it exists but is not ours.
+    if ((error as NodeJS.ErrnoException).code === "ESRCH") return false;
+    throw error;
+  }
+  // Bounded, so a hanging ps cannot block the test worker past its deadline.
+  const state = spawnSync("ps", ["-o", "stat=", "-p", String(pid)], { encoding: "utf8", timeout: 5_000, killSignal: "SIGKILL" });
+  const row = state.stdout?.trim() ?? "";
+  // ps exits 1 with no row when the pid disappeared between the two probes.
+  // That counts only when ps printed no diagnostic and the kernel confirms
+  // the pid is gone: a ps that rejected its options proves nothing.
+  if (state.status === 1 && row.length === 0 && (state.stderr ?? "").trim().length === 0 && !pidExists(pid)) return false;
+  if (state.error || state.status !== 0 || row.length === 0) throw new Error(`ps could not probe pid ${pid}: ${state.error?.message ?? `status ${state.status}, signal ${state.signal}`}`);
+  return !row.startsWith("Z");
+}
+
+/** Whether the kernel still has `pid`, as a live process or an unreaped zombie. */
+function pidExists(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== "ESRCH";
+  }
+}
+
+/** Wait for a subprocess to exit, or report `undefined` after `limitMs` so the caller's cleanup still runs. */
+async function exitWithin<T>(exited: Promise<T>, limitMs: number): Promise<T | undefined> {
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    return await Promise.race([exited, new Promise<undefined>((resolve) => {
+      timer = setTimeout(() => resolve(undefined), limitMs);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function waitUntilStopped(pid: number, limitMs: number): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < limitMs) {
+    if (!isRunning(pid)) return true;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  return !isRunning(pid);
+}
+
+async function waitForFile(file: string, limitMs: number): Promise<string> {
+  const started = Date.now();
+  while (Date.now() - started < limitMs) {
+    const text = await readFile(file, "utf8").catch(() => "");
+    if (text.trim().length > 0) return text;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`Timed out waiting for ${file}`);
+}
+
+/**
+ * A fake git on a private PATH entry: it records its pids, leaves `sleep 30`
+ * on its pipes and then `tail` runs. The pid file path reaches the script as
+ * data (PM_FIXTURE_PID_FILE), never interpolated into its text.
+ */
+async function fakeGit(tail: string): Promise<{ root: string; pidFile: string }> {
+  const root = await mkdtemp(path.join(os.tmpdir(), "pm-update-deadline-"));
+  tempRoots.push(root);
+  const pidFile = path.join(root, "pids");
+  await writeFile(path.join(root, "git"), `#!/bin/sh\nsleep 30 &\necho "$$ $!" > "$PM_FIXTURE_PID_FILE"\n${tail}\n`);
+  await chmod(path.join(root, "git"), 0o755);
+  vi.stubEnv("PM_FIXTURE_PID_FILE", pidFile);
+  return { root, pidFile };
+}
+
+// Fixture processes are never signalled by recorded PID during cleanup: a PID
+// sampled by the test may be recycled by then. Every fixture sleep is
+// `sleep 30`, so a leftover after a failed assertion ends on its own.
+
+async function readPids(pidFile: string, limitMs = 15_000): Promise<number[]> {
+  return (await waitForFile(pidFile, limitMs)).trim().split(/\s+/u).map(Number);
+}
+
+/**
+ * A fake git whose descendant runs in the foreground, as a remote helper
+ * does. A background job of a non-interactive shell ignores SIGINT by POSIX
+ * rule, so it would not model a terminal Ctrl-C.
+ */
+async function fakeGitWithForegroundHelper(): Promise<{ root: string; launcherFile: string; helperFile: string }> {
+  const root = await mkdtemp(path.join(os.tmpdir(), "pm-update-interrupt-"));
+  tempRoots.push(root);
+  const launcherFile = path.join(root, "launcher.pid");
+  const helperFile = path.join(root, "helper.pid");
+  // The pid file paths reach the scripts as data, never interpolated.
+  await writeFile(path.join(root, "git"), `#!/bin/sh\necho "$$" > "$PM_FIXTURE_LAUNCHER_FILE"\nsh -c 'echo "$$" > "$PM_FIXTURE_HELPER_FILE"; exec sleep 30'\n`);
+  await chmod(path.join(root, "git"), 0o755);
+  return { root, launcherFile, helperFile };
+}
+
+describe.skipIf(process.platform === "win32")("update lookup deadline over a real process tree", () => {
+  it("settles at its budget when the launcher exits while a descendant still holds the pipes", async () => {
+    const { root, pidFile } = await fakeGit("exit 0");
+    vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
+    vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
+    const started = Date.now();
+    const status = await checkGithubUpdate(GITHUB_SOURCE);
+    const elapsed = Date.now() - started;
+    // The re-parented descendant is outside the live tree the deadline walks;
+    // it no longer delays the result and ends on its own.
+    expect(await readPids(pidFile)).toHaveLength(2);
+    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
+    expect(elapsed).toBeGreaterThanOrEqual(900);
+    expect(elapsed).toBeLessThan(10_000);
+  });
+
+  // Descendant teardown needs the system ps and a process table from this PID
+  // namespace; without either (NixOS keeps ps only on PATH, a nested namespace
+  // may inherit an outer /proc) only the launcher is stopped, by design.
+  it.skipIf((!existsSync("/bin/ps") && !existsSync("/usr/bin/ps")) || !processTableSharesNamespace())("kills a still-running launcher and its descendant at the deadline", async () => {
+    // The launcher waits for its recorded descendant, so the whole fixture
+    // tree is the launcher and that one sleep.
+    const { root, pidFile } = await fakeGit("wait");
+    vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
+    vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", "1000");
+    const status = await checkGithubUpdate(GITHUB_SOURCE);
+    const pids = await readPids(pidFile);
+    // Both the launcher and its recorded descendant, distinct and valid.
+    expect(new Set(pids).size).toBe(2);
+    for (const pid of pids) expect(Number.isSafeInteger(pid) && pid > 0).toBe(true);
+    expect(status).toMatchObject({ error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 1000 });
+    for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
+  });
+
+  // A worker thread runs no exit listener when it is terminated, so a
+  // package action there must finish its provider teardowns before returning.
+  it.skipIf((!existsSync("/bin/ps") && !existsSync("/usr/bin/ps")) || !processTableSharesNamespace())("finishes the provider tree's teardown before a worker's package manage returns, so terminating the worker at once leaks nothing", async () => {
+    await withTempPmPath(async (context) => {
+      const fixture = path.join(context.tempRoot, "worker-extension");
+      await mkdir(fixture);
+      await writeFile(path.join(fixture, "manifest.json"), JSON.stringify({ name: "worker-extension", version: "1.0.0", entry: "index.mjs", capabilities: ["commands"] }));
+      await writeFile(path.join(fixture, "index.mjs"), "export function activate(api) { api.registerCommand({ name: 'worker-probe', description: 'Worker fixture', run: () => ({ ok: true }) }); }\n");
+      await runExtension(fixture, { install: true, project: true }, { path: context.pmPath });
+      const managedPath = path.join(context.pmPath, "extensions", ".managed-extensions.json");
+      const state = JSON.parse(await readFile(managedPath, "utf8"));
+      state.entries[0].source = { kind: "npm", input: "npm:worker-registry-package", location: "worker-registry-package", package: "worker-registry-package", version: "1.0.0" };
+      await writeFile(managedPath, JSON.stringify(state));
+      // A stalled npm that records itself and the descendant it waits for.
+      const bin = path.join(context.tempRoot, "stalled-npm-bin");
+      const pidFile = path.join(context.tempRoot, "npm.pids");
+      await mkdir(bin);
+      await writeFile(path.join(bin, "npm"), '#!/bin/sh\nsleep 30 &\necho "$$ $!" > "$PM_FIXTURE_PID_FILE"\nwait\n', { mode: 0o755 });
+      const worker = new Worker([
+        'const { parentPort, workerData } = require("node:worker_threads");',
+        `import(${JSON.stringify(distExtension)}).then(async ({ runExtension }) => {`,
+        "  const result = await runExtension(undefined, { manage: true, project: true }, { path: workerData.pmPath });",
+        "  parentPort.postMessage(result.details.extensions[0]);",
+        // Only terminate() ends this worker.
+        "  setInterval(() => undefined, 1000);",
+        "});",
+      ].join("\n"), {
+        eval: true,
+        workerData: { pmPath: context.pmPath },
+        env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "1000", PM_FIXTURE_PID_FILE: pidFile },
+      });
+      let extension: unknown;
+      try {
+        // Bounded, so a regression that leaves the action pending still
+        // reaches the cleanup below instead of leaving the worker live.
+        extension = await exitWithin(new Promise((resolve, reject) => {
+          worker.once("error", reject);
+          worker.once("message", (message) => {
+            // The host terminates the worker the moment the result arrives.
+            void worker.terminate();
+            resolve(message);
+          });
+        }), 20_000);
+      } finally {
+        await worker.terminate();
+      }
+      expect(extension).toMatchObject({ update_check_status: "failed", update_error: "npm_registry_lookup_timed_out", update_check_timeout_ms: 1000 });
+      const pids = await readPids(pidFile);
+      expect(new Set(pids).size).toBe(2);
+      for (const pid of pids) expect(await waitUntilStopped(pid, 1000)).toBe(true);
+    });
+  });
+
+  // The liveness probe reads ps, which needs this PID namespace's process table.
+  it.skipIf(!processTableSharesNamespace())("leaves the lookup in the host's process group, so a terminal Ctrl-C stops it with the host", async () => {
+    const { root, launcherFile, helperFile } = await fakeGitWithForegroundHelper();
+    // The host leads its own group, as a shell's foreground job does; Ctrl-C
+    // signals that whole group.
+    const host = spawn(process.execPath, ["--input-type=module", "-e", [
+      `import { checkGithubUpdate } from ${JSON.stringify(distUpdateCheck)};`,
+      `void checkGithubUpdate(${JSON.stringify(GITHUB_SOURCE)});`,
+      "setInterval(() => undefined, 1000);",
+    ].join("\n")], {
+      detached: true,
+      env: {
+        ...process.env, PATH: `${root}${path.delimiter}${process.env.PATH ?? ""}`, PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS: "25000",
+        PM_FIXTURE_LAUNCHER_FILE: launcherFile, PM_FIXTURE_HELPER_FILE: helperFile,
+      },
+      stdio: "ignore",
+    });
+    // close follows exit, and also follows a failed launch that emits only
+    // error, so the cleanup wait always ends.
+    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => host.on("close", (code, signal) => resolve({ code, signal })));
+    let launchError: Error | undefined;
+    host.on("error", (error) => {
+      launchError = error;
+    });
+    const pids: number[] = [];
+    try {
+      pids.push(...(await readPids(helperFile)));
+      pids.push(...(await readPids(launcherFile)));
+      expect(launchError).toBeUndefined();
+      for (const pid of pids) expect(isRunning(pid)).toBe(true);
+      process.kill(-host.pid!, "SIGINT");
+      expect(await exitWithin(exited, 10_000)).toEqual({ code: null, signal: "SIGINT" });
+      for (const pid of pids) expect(await waitUntilStopped(pid, 5000)).toBe(true);
+    } finally {
+      // The host leads the fixture's own process group. While Node has not
+      // reaped the host its pid, and so the group id, cannot be reused, so
+      // this reaches only the fixture; after that, leftovers end on their own.
+      if (host.exitCode === null && host.signalCode === null) {
+        try {
+          process.kill(-host.pid!, "SIGKILL");
+        } catch {
+          // The whole group already ended.
+        }
+      }
+      await exitWithin(exited, 10_000);
+    }
+  }, 30_000);
+
+  it.skipIf(!processTableSharesNamespace())("reports a deliberately surviving child as still running, so the stop assertions can fail", async () => {
+    const survivor = spawn("sleep", ["30"], { stdio: "ignore" });
+    const exited = new Promise((resolve) => survivor.once("exit", resolve));
+    try {
+      expect(survivor.pid).toBeTypeOf("number");
+      expect(await waitUntilStopped(survivor.pid!, 300)).toBe(false);
+    } finally {
+      survivor.kill("SIGKILL");
+      await exited;
+    }
+    expect(await waitUntilStopped(survivor.pid!, 5000)).toBe(true);
+  });
+
+  it("never reports the provider's stderr in a failed lookup", async () => {
+    // A provider that writes a credential-shaped marker to stderr, then fails.
+    const root = await mkdtemp(path.join(os.tmpdir(), "pm-update-stderr-"));
+    tempRoots.push(root);
+    const marker = ["stderr-marker", "private-fixture-value"].join("-");
+    const ran = path.join(root, "fixture-ran");
+    // The fixture records that it ran after writing stderr, so a launch
+    // failure cannot pass for redaction.
+    await writeFile(path.join(root, "git"), `#!/bin/sh\necho "fatal: ${marker}" >&2\necho ran > "$PM_FIXTURE_RAN_FILE"\nexit 128\n`);
+    await chmod(path.join(root, "git"), 0o755);
+    vi.stubEnv("PATH", `${root}${path.delimiter}${process.env.PATH ?? ""}`);
+    vi.stubEnv("PM_FIXTURE_RAN_FILE", ran);
+    const status = await checkGithubUpdate(GITHUB_SOURCE);
+    expect(await readFile(ran, "utf8")).toBe("ran\n");
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
+    expect(JSON.stringify(status)).not.toContain(marker);
+  });
+});

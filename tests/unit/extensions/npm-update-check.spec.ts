@@ -1,6 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkNpmUpdate } from "../../../src/sdk/extension/update-check.js";
 import type { ManagedExtensionSource } from "../../../src/sdk/extension/managed-state.js";
+
+// The default-budget assertions must not depend on a budget the caller's shell exports.
+beforeEach(() => vi.stubEnv("PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS", undefined));
+afterEach(() => vi.unstubAllEnvs());
 
 const source: ManagedExtensionSource = { kind: "npm", input: "npm:@scope/example@1.0.0", location: "@scope/example@1.0.0", package: "@scope/example", version: "1.0.0" };
 

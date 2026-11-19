@@ -329,6 +329,9 @@ export {
   listMutationActions,
   PM_MUTATION_ACTION_CONTRACTS,
   scanMutationSecrets,
+  decideSecretGuardFinding,
+  SECRET_GUARD_RULE_CATEGORIES,
+  secretGuardRuleCategory,
   type EvaluateMutationGuardOptions,
   type MutationActionContract,
   type MutationGuardResult,
@@ -336,6 +339,10 @@ export {
   type MutationHistoryScope,
   type SecretGuardFinding,
   type SecretGuardMode,
+  type SecretGuardPolicy,
+  type SecretGuardPolicyDecision,
+  type SecretGuardRule,
+  type SecretGuardRuleCategory,
   type SecretNormalizationKind,
 } from "./mutation-guard.js";
 export {

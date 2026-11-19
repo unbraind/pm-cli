@@ -766,6 +766,9 @@ describe("extension command runtime", () => {
       });
       let githubRunnerArgs: string[] = [];
       let githubRunnerTimeout: number | undefined;
+      // The default budget must not depend on a budget the caller's shell exports.
+      const exportedBudget = process.env.PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS;
+      delete process.env.PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS;
       const annotatedTag = await extensionCommandTestOnly.checkGithubUpdate(
         {
           kind: "github",
@@ -775,12 +778,13 @@ describe("extension command runtime", () => {
           ref: "v1.0.0",
           commit: "peeled-commit",
         } as never,
-        async (args, _runner, timeoutMs) => {
+        async (args, timeoutMs) => {
           githubRunnerArgs = args;
           githubRunnerTimeout = timeoutMs;
           return "tag-object\trefs/tags/v1.0.0\npeeled-commit\trefs/tags/v1.0.0^{}\n";
         },
       );
+      if (exportedBudget !== undefined) process.env.PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS = exportedBudget;
       expect(githubRunnerArgs).toEqual(["ls-remote", "https://example.test/repo.git", "v1.0.0", "v1.0.0^{}"]);
       expect(githubRunnerTimeout).toBe(10_000);
       expect(annotatedTag).toMatchObject({

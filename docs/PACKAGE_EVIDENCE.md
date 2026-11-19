@@ -97,6 +97,72 @@ or npm sources. Expected host-owned built-ins remain exempt from unmanaged
 adoption warnings and adoption remediation. Runtime activation health and update freshness are separate
 verdicts; inspect both before claiming that installed packages are current.
 
+A failed check reports a stable `update_error` (also its
+`update_check_reason`) and never the provider's command line, stderr or
+environment
+([pm-5kfzjh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5kfzjh.toon),
+[pm-43p2c3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-43p2c3.toon);
+tracker records excluded from npm):
+
+| Source | Lookup ran out of its budget | Other provider execution failure |
+| ------ | ---------------------------- | -------------------------------- |
+| npm    | `npm_registry_lookup_timed_out` | `npm_registry_lookup_failed` |
+| GitHub | `github_remote_lookup_timed_out` | `github_remote_lookup_failed` |
+
+A provider that runs but returns output that cannot be read reports its own
+validation code instead (for example `invalid_npm_registry_metadata` or
+`no_remote_reference_found`). A timed-out check also carries
+`update_check_timeout_ms`, the budget that ran out. Each lookup settles at its
+own deadline without waiting for teardown, so an SDK caller has its result at
+once; the `pm` process itself may stay alive up to about four more seconds
+while a timed-out provider is torn down (a teardown helper is bounded to two
+seconds, and the wait for the killed provider to exit to two more); `pm package manage` returns once
+every lookup has settled, and outside `--fix-managed-state` a queued lookup
+starts only when a timed-out provider's teardown frees one of the four
+provider slots. Each lookup (`npm view` or `git ls-remote`) has a 10-second budget by
+default; set `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS` to integer milliseconds
+(clamped to 1000–25000, below the extension state lock's 30-second wait) for
+a slow registry, proxy or cold start, for example on a Windows runner.
+`pm package manage --fix-managed-state` runs its lookups while it holds that
+lock, so it keeps the 10-second default and ignores the override
+([pm-9x9drr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9x9drr.toon)
+tracks moving them out of the lock; tracker record excluded from npm). A
+result that arrives after the deadline counts as a timeout even if the host's
+event loop was busy when the deadline passed. The deadline settles the check without waiting for the
+provider's pipes, so a launcher such as `cmd.exe` or an npm shim cannot extend
+it by exiting while a descendant keeps running. It then makes a best-effort
+attempt to stop a provider that is still running and its live descendants
+(`taskkill /T` on Windows, a tree walk over the system `ps` elsewhere): a
+descendant is missed when that tool cannot run, and one whose launcher already
+exited is not reached. The timeout result never depends on the teardown. A lookup still running at its deadline is reported as timed
+out even if the provider then exits cleanly. A recorded `update_check_timeout_ms`
+is kept only beside a timed-out reason. A provider whose failed exit is
+observed before the deadline is reported as failed at once, even while a
+descendant still holds its output.
+The GitHub lookup runs with `GIT_TERMINAL_PROMPT=0` and
+`GCM_INTERACTIVE=never`, so neither Git's terminal prompt nor Git Credential
+Manager prompts interactively; a slow remote can still use up the budget, and
+another askpass program or credential helper that prompts can still hold the
+lookup until its budget runs out.
+A GitHub remote that resolves no reference still reports
+`no_remote_reference_found`, and one checked without an installed commit
+reports `missing_installed_commit`. A GitHub failure that an earlier release
+recorded as git's own command line and stderr is read back as
+`github_remote_lookup_failed`. If a host exits before a timed-out provider's
+deferred teardown runs, the provider itself is still killed through its
+handle as the host exits. Inside a worker thread, where `terminate()` runs no
+exit listener, the package action (`runExtension`, and `runAction` through it)
+finishes the provider teardowns it started before it returns, so a host may
+terminate the worker as soon as the result arrives; a concurrent action that
+started no provider never waits for another action's teardown. Each lookup still settles at its
+budget, and the wait happens after the extension state lock is released, so
+the locked `--fix-managed-state` scan keeps its timing; the action itself
+returns up to about 4 seconds later.
+
+Lookups are neither detached nor hidden from the console: they stay in `pm`'s
+process group (and console on Windows), so a terminal Ctrl-C reaches them as it
+reaches `pm`, and `pm` installs no signal handlers for them.
+
 Use `pm package doctor --project --detail deep --json` to inspect activation
 alongside update-check status totals. A strict doctor run may fail for partial
 update coverage even when activation succeeds. Empty scopes and applicable

@@ -80,6 +80,8 @@ export interface ManagedExtensionRecord {
   update_available?: boolean | null;
   /** Value that configures or reports update error for this contract. */
   update_error?: string;
+  /** Budget in milliseconds that a diagnostic lookup ran out of; diagnostics never persist this field. */
+  update_check_timeout_ms?: number;
 }
 
 /** Documents the managed extension state payload exchanged by command, SDK, and package integrations. */
@@ -167,6 +169,43 @@ export function managedExtensionSourcesEquivalent(
 /** Narrow `value` to a string, or `undefined` for any other type — the normalization applied to every optional managed-state string field so an absent or malformed value is dropped rather than carried through as `unknown`. */
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+/**
+ * The update-check reasons that carry a budget: `npm_registry_lookup_timed_out`
+ * and `github_remote_lookup_timed_out` from `./update-check.ts`, spelled here
+ * because that module reaches this one through its import graph.
+ */
+const TIMED_OUT_UPDATE_ERROR = /^(?:npm_registry|github_remote)_lookup_timed_out$/u;
+
+/**
+ * Keep a recorded update-check budget only beside a timed-out reason and only
+ * when it is a positive safe integer; otherwise omit the field, so a stale
+ * budget never reads as timeout evidence.
+ */
+/**
+ * The recorded update failure as a stable reason. Releases before pm-43p2c3
+ * persisted a failed GitHub check as git's command line and stderr ("Git
+ * command failed: git ls-remote ..."); such free text is read as
+ * `github_remote_lookup_failed`, so upgraded workspaces never surface it.
+ */
+function stableUpdateError(source: ManagedExtensionSource, value: unknown): string | undefined {
+  const error = optionalString(value);
+  // A blank reason has always meant "no error"; only real free text is legacy.
+  if (error === undefined || source.kind !== "github" || error.trim().length === 0) return error;
+  return /^[a-z0-9_]+$/u.test(error.trim()) ? error : "github_remote_lookup_failed";
+}
+
+/** Whether a recorded reason is a timeout, read trimmed as the extension summary reads it. */
+function isTimedOutUpdateError(error: unknown): boolean {
+  return typeof error === "string" && TIMED_OUT_UPDATE_ERROR.test(error.trim());
+}
+
+function optionalTimeoutBudget(error: unknown, value: unknown): { update_check_timeout_ms?: number } {
+  return isTimedOutUpdateError(error) &&
+    typeof value === "number" && Number.isSafeInteger(value) && value > 0
+    ? { update_check_timeout_ms: value }
+    : {};
 }
 
 /**
@@ -278,12 +317,15 @@ function normalizeManagedRecord(raw: unknown): ManagedExtensionRecord | null {
     last_update_check_at: optionalString(entry.last_update_check_at),
     last_update_remote_commit: optionalString(entry.last_update_remote_commit),
     last_update_remote_version: optionalString(entry.last_update_remote_version),
+    // A timed-out lookup decided nothing, so its availability is unknown.
     update_available:
-      typeof entry.update_available === "boolean" ||
-      entry.update_available === null
-        ? entry.update_available
-        : undefined,
-    update_error: optionalString(entry.update_error),
+      isTimedOutUpdateError(entry.update_error)
+        ? null
+        : typeof entry.update_available === "boolean" || entry.update_available === null
+          ? entry.update_available
+          : undefined,
+    update_error: stableUpdateError(source, entry.update_error),
+    ...optionalTimeoutBudget(entry.update_error, entry.update_check_timeout_ms),
   };
 }
 

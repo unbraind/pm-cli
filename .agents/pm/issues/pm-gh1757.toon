@@ -1,0 +1,21 @@
+id: pm-gh1757
+title: "GH-1757: credential refusal next_steps tell agents to restore the redacted URL credentials before replay, which reproduces the same refusal"
+description: "Reported in GH-1757 against 2026.11.18. When pm claim is refused because the author value is a URL that carries userinfo (via --author or PM_AUTHOR), the refusal correctly redacts the userinfo in recovery.attempted_command. But its next_steps tell the agent to restore the redacted credentials before replaying, and following that advice reproduces the byte-identical refusal. The guidance should instead steer to a replay that can succeed: an author value without URL credentials. The refusal-redaction work that introduced the redaction is related."
+type: Issue
+status: open
+priority: 2
+tags[6]: agent-ux,claim,credential-redaction,"gh:1757",recovery,refusal
+created_at: "2026-11-19T00:19:42.403Z"
+updated_at: "2026-11-19T00:19:42.403Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: The refusal's next_steps never advise restoring redacted URL credentials when those credentials are the cause of the refusal; Following the emitted next_steps leads to a successful claim; Covered for both the --author flag and PM_AUTHOR
+parent: pm-doxj
+risk: low
+confidence: high
+severity: medium
+expected_result: "A refusal caused by URL credentials in the author value gives next_steps that lead to a successful replay, such as using an author value without URL credentials, and never advises restoring the redacted credentials."
+actual_result: "next_steps say to restore the redacted URL credentials before replaying; doing so reproduces the identical refusal, while a plain author retry succeeds."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-nhauur,related,"2026-11-19T00:19:42.403Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -1,0 +1,21 @@
+id: pm-gh1754
+title: "GH-1754: cursor-named fields inside items block string compaction, so a budgeted list omits its rows (regression since 2026.11.11)"
+description: "Reported in GH-1754 against 2026.11.18. The protection that keeps emitted continuation tokens replayable also exempts item fields that merely share a continuation key name (next_cursor, output_cursor) from string compaction. At a 2,000-token budget, a list whose one item carries a 30,000-character next_cursor or output_cursor field exits 2 with read_output.result_omitted true and strings_compacted false. The same request on 2026.11.11 returned one compacted row and exited 0. An ordinary_text control still compacts to a 255-character value. Only the envelope's continuation tokens should be exempt; the cursor-clipping fix is related."
+type: Issue
+status: open
+priority: 1
+tags[6]: "area:output",compaction,"gh:1754",output-budget,read-output,regression
+created_at: "2026-11-19T00:19:32.036Z"
+updated_at: "2026-11-19T00:19:32.036Z"
+author: "harness:claude-code"
+estimated_minutes: 150
+acceptance_criteria: A budgeted list whose item carries an oversized next_cursor or output_cursor field returns its compacted row and exits 0; An envelope next_cursor or output_cursor is still delivered intact and replays; Tests cover both the replayable envelope cursor and compaction of cursor-named item metadata
+parent: pm-5t33or
+risk: medium
+confidence: high
+severity: high
+expected_result: "Producer and output continuation tokens in the response envelope stay replayable, while oversized strings under items, including fields named like a continuation key, are still compacted so the budgeted list returns its rows."
+actual_result: "An item field named next_cursor or output_cursor is exempt from compaction, so at a 2,000-token budget the list is omitted (result_omitted true, strings_compacted false, exit 2) instead of returning a compacted row as 2026.11.11 did."
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1710,related,"2026-11-19T00:19:32.036Z","harness:claude-code","cli:create:dep",detected
+body: ""

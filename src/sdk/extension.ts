@@ -90,7 +90,12 @@ import { mapWithFixedConcurrency } from "./extension/concurrency.js";
 import { summarizeRuntimeCommandPathsForExtension } from "./extension/runtime-summary.js";
 import { collectGlobalOutputOverrideDoctorWarnings } from "./extension/output-ownership.js";
 import { collectMcpCustomFieldCollisionDoctorWarnings } from "./extension/custom-field-collisions.js";
-import { checkGithubUpdate } from "./extension/update-check.js";
+import {
+  checkGithubUpdate,
+  EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
+  resolveExtensionUpdateCheckTimeoutMs,
+  withUpdateCheckTeardownScope,
+} from "./extension/update-check.js";
 import { refreshManagedExtensionUpdates } from "./extension/managed-update-status.js";
 import { runExtensionMigrateAction } from "./extension/migrations.js";
 import { buildBundledInstallReceipt } from "./extension/install-receipts.js";
@@ -316,6 +321,8 @@ export interface ManagedExtensionSummary {
   last_update_remote_version?: string;
   /** Value that configures or reports update error for this contract. */
   update_error?: string;
+  /** Budget in milliseconds that the update lookup ran out of, present only when it timed out. */
+  update_check_timeout_ms?: number;
   /** Outcome of the registry update check for this extension. */
   update_check_status: ExtensionUpdateCheckStatus;
   /** Value that configures or reports update check reason for this contract. */
@@ -1063,6 +1070,11 @@ const buildInstalledExtensionSummary = (
     last_update_remote_commit: managed.last_update_remote_commit,
     last_update_remote_version: managed.last_update_remote_version,
     update_error: managed.update_error,
+    // The budget is timeout evidence only for a failed check; a skipped or
+    // completed check never carries one.
+    ...(updateCheck.status === "failed" && managed.update_check_timeout_ms !== undefined
+      ? { update_check_timeout_ms: managed.update_check_timeout_ms }
+      : {}),
     update_check_status: updateCheck.status,
     update_check_reason: updateCheck.reason,
   };
@@ -1875,7 +1887,10 @@ export const runExtension = async (
     ...actionContext,
     withResult,
   };
-  return await dispatchExtensionAction(ctx);
+  // In a worker thread, the update-lookup teardowns this action started
+  // finish before it returns, so a host may terminate the worker at once; the
+  // wait follows the dispatch, so the state lock is released first.
+  return await withUpdateCheckTeardownScope(() => dispatchExtensionAction(ctx));
 };
 
 /** Build copy-pasteable setup and validation guidance for a fresh scaffold. */
@@ -3518,7 +3533,19 @@ const prepareExploreManageState = async (
     state = fix.state;
   }
   if (ctx.action === "manage") {
-    state = await refreshManagedExtensionUpdates(state, ctx.options.offline);
+    // With --fix-managed-state this refresh runs under the extension state
+    // lock, so it keeps the default budget rather than the override: a raised
+    // budget would let the lookups outlast a concurrent package action's lock
+    // wait. Moving the refresh out of the lock is pm-9x9drr.
+    // Under the lock, later lookups also never wait for an earlier
+    // provider's teardown, so the locked scan takes no longer than on main.
+    const locked = ctx.options.fixManagedState === true;
+    state = await refreshManagedExtensionUpdates(
+      state,
+      ctx.options.offline,
+      locked ? EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS : resolveExtensionUpdateCheckTimeoutMs(),
+      !locked,
+    );
   }
   return { state, fix };
 };

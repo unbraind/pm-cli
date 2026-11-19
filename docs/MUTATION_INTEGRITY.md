@@ -154,6 +154,78 @@ whether a blocking policy was explicitly overridden. `scanMutationSecrets` is
 available separately for package-specific preflight UIs. Cyclic inputs are
 safe; scanner failures fail open with `secret_guard_scan_failed_open`.
 
+### Deciding findings by category
+
+`SecretGuardFinding["rule"]` (exported as `SecretGuardRule`) gains a member
+whenever a detector is added, so an exhaustive
+`Record<SecretGuardRule, Decision>` breaks compilation on a routine upgrade
+([pm-gh1749](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1749.toon);
+tracker record excluded from npm). Decide findings with a policy instead:
+
+```ts
+import {
+  decideSecretGuardFinding,
+  scanMutationSecrets,
+  type SecretGuardPolicy,
+} from "@unbrained/pm-cli/sdk";
+
+const policy: SecretGuardPolicy<boolean> = {
+  default: true, // refuse
+  categories: { network: false, path: false },
+  rules: { private_ssh_target: true },
+};
+// A finding whose inspection did not complete needs review, whatever the
+// policy says about its category.
+const refused = scanMutationSecrets(mutationInput).some(
+  (finding) =>
+    finding.normalization_incomplete === true ||
+    decideSecretGuardFinding(policy, finding),
+);
+```
+
+Every detector belongs to one stable category: `credential` (tokens, keys,
+password, high-entropy and credential-key assignments), `network` (private
+IPv4 addresses, private SSH targets and user-at-private-host addresses) or
+`path` (absolute home-directory paths). The most specific entry wins: a `rules`
+entry, then the finding's `categories` entry, then `default`. A detector added
+later joins an existing category and takes that category's decision, or the
+default when the policy names no such category, without a policy change, unless the
+policy already holds a defined own `rules` entry for it, which still wins. A rule the running SDK does not know, such as
+one in a finding decoded from a newer host, has no category: an exact `rules`
+entry for it still applies, and otherwise it takes the default. Entries whose
+value is `undefined` count as absent; a `rules` entry may name a rule this SDK
+does not ship yet, and other keys that name no rule or category are ignored.
+Only the policy's own `default`, `categories` and `rules` are read, never
+inherited ones. The default must be defined (`null` is a valid decision). The
+helper returns `D` without `undefined` for a policy typed as
+`SecretGuardPolicy<D>`, including inside a generic wrapper. For any other
+policy shape it infers the policy's own type and returns every decision that
+type can hold (`SecretGuardPolicyDecision<typeof policy>`): the union of the
+named decisions for an inline policy or one declared with `satisfies`, even
+when they mix kinds such as `true | "allow"` or a string default with `null`
+overrides. A union of policy types yields every member's decisions, and a
+`categories` key that names no category adds none. A wrapper generic over the
+policy type itself calls `decideSecretGuardFinding<P>(policy, finding)` to
+return `SecretGuardPolicyDecision<P>`, and a `rules` map typed by a named
+interface passes to the helper as it is. A map typed only as `object` hides
+its keys, so it widens the result to `unknown`. The types cannot see entries
+that TypeScript's own assignability rules let through, such as a
+`Record<string, unknown>` from a configuration loader or a value typed `{}`
+assigned to a typed policy, so validate untyped input before annotating it as
+`SecretGuardPolicy<D>`, or type it as `SecretGuardPolicy<unknown>`; a
+policy that is not an object, has no own `default` or has `default:
+undefined`, holds `categories` or `rules` that are not plain objects (their
+prototype must be `Object.prototype`, of any realm, or `null`: an array,
+`Map`, `URLSearchParams`, class instance or a map that inherits entries keeps
+them where an own-property lookup never finds them), or a finding without a
+string `rule`, throws a `TypeError`.
+
+`SECRET_GUARD_RULE_CATEGORIES` maps every shipped rule to its category and
+`secretGuardRuleCategory(rule)` returns `undefined` for an unknown one.
+`Record<SecretGuardRuleCategory, Decision>` is the stable exhaustive key: a new
+category is released as a declared SDK contract change, and so is every new
+rule, so the release notes list the new literal under Changed (SDK contract).
+
 Direct SDK persistence does not automatically apply this host preflight.
 Integrations that require the policy must evaluate it before dispatching their
 SDK mutations. CLI and MCP adapters already do this.

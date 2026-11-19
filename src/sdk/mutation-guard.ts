@@ -4,7 +4,7 @@
  * Provides SDK-first pre-write provenance and secret-detection guardrails for
  * CLI, MCP, and package-owned mutation dispatchers.
  */
-import { SECRET_RULES, acceptsStructuredValue, findSecretRuleMatches, structuredKeyShape, type SecretNormalizationKind, type SecretRule, type SecretRuleMatch } from "../core/shared/secret-rules.js";
+import { SECRET_RULES, acceptsStructuredValue, findSecretRuleMatches, structuredKeyShape, type SecretNormalizationKind, type SecretRule, type SecretRuleCategory, type SecretRuleMatch } from "../core/shared/secret-rules.js";
 export type { SecretNormalizationKind } from "../core/shared/secret-rules.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -22,9 +22,31 @@ export interface MutationGuardSettings {
   stale_in_progress_hours: number;
 }
 
+/**
+ * Stable identifier of one secret-guard detector. The union gains a member
+ * whenever a detector is added, so decide findings through
+ * {@link SecretGuardPolicy} instead of an exhaustive record over it.
+ */
+export type SecretGuardRule = SecretGuardFinding["rule"];
+
+/**
+ * Stable family of a detector: `credential` for secrets that grant access,
+ * `network` for private infrastructure addresses and `path` for local paths
+ * that reveal an account. A new detector joins an existing category, and a new
+ * category is a declared SDK contract change (pm-gh1749).
+ */
+export type SecretGuardRuleCategory = "credential" | "network" | "path";
+
+// Spelled out above so the SDK surface snapshot records the literals; this
+// fails to compile when the rule inventory's category set drifts from it.
+const CATEGORY_SETS_MATCH: [SecretRuleCategory] extends [SecretGuardRuleCategory]
+  ? [SecretGuardRuleCategory] extends [SecretRuleCategory] ? true : never
+  : never = true;
+void CATEGORY_SETS_MATCH;
+
 /** One redacted credential-shaped match. Secret values are never returned. */
 export interface SecretGuardFinding {
-  /** Stable detector identifier suitable for tests and telemetry. */
+  /** Stable detector identifier suitable for tests and telemetry; see {@link SecretGuardRule}. */
   rule: (typeof SECRET_RULES)[number]["mutationRule"];
   /**
    * Object path or argument index containing the match. A property name that a
@@ -572,6 +594,245 @@ export function evaluateMutationGuard(
     override_applied:
       options.settings.secret_guard === "block" && options.force === true,
   };
+}
+
+/**
+ * Category of every detector this SDK ships, keyed by rule (pm-gh1749). Read
+ * it to group or label findings; to decide them, prefer
+ * {@link decideSecretGuardFinding}, which also handles a rule this SDK does
+ * not know yet.
+ */
+export const SECRET_GUARD_RULE_CATEGORIES: Readonly<Record<SecretGuardRule, SecretGuardRuleCategory>> =
+  Object.freeze(
+    Object.fromEntries(SECRET_RULES.map((rule) => [rule.mutationRule, rule.category])) as Record<
+      SecretGuardRule,
+      SecretGuardRuleCategory
+    >,
+  );
+
+/**
+ * Return the category of a detector, or `undefined` for a rule this SDK does
+ * not ship, such as one reported by a newer host.
+ */
+export function secretGuardRuleCategory(rule: string): SecretGuardRuleCategory | undefined {
+  return Object.hasOwn(SECRET_GUARD_RULE_CATEGORIES, rule)
+    ? SECRET_GUARD_RULE_CATEGORIES[rule as SecretGuardRule]
+    : undefined;
+}
+
+/**
+ * One decision for every secret-guard finding, so adding a detector never
+ * breaks a typed consumer (pm-gh1749). The most specific entry wins: a
+ * decision under `rules`, then one under `categories` for the rule's
+ * category, then `default`. A rule added later, or one this SDK does not know,
+ * takes its defined own `rules` entry if it has one, and otherwise its
+ * category's decision or the default. An entry whose value is `undefined`
+ * counts as absent; a `rules` entry may name a rule this SDK does not ship
+ * yet, and keys that name no category are ignored, so a policy written for a
+ * newer SDK still applies.
+ */
+export interface SecretGuardPolicy<Decision> {
+  /**
+   * Decision for a finding that no category or rule entry decides; never
+   * `undefined`, even when `Decision` allows it, while `null` stays allowed.
+   */
+  default: Decision & (NonNullable<Decision> | null);
+  /** Decisions for whole detector families; an `undefined` entry counts as absent. */
+  categories?: { [Category in SecretGuardRuleCategory]?: Decision | undefined };
+  /**
+   * Decisions for single detectors, overriding their category's decision; an
+   * `undefined` entry counts as absent. Any rule name may appear, including
+   * one this SDK does not ship, so a policy can already decide a detector a
+   * newer host reports; every entry is therefore typed as a decision.
+   */
+  rules?: { [Rule in SecretGuardRule]?: Decision | undefined } & { readonly [rule: string]: Decision | undefined };
+}
+
+/**
+ * The decisions an optional `rules` map holds under the string and numeric
+ * keys a rule name can look up, without the `undefined` of an absent entry; a
+ * symbol-keyed entry is never read.
+ */
+type PolicyEntryDecisions<Entries> = Entries extends object
+  ? OpaqueEntries<Entries> extends true
+    ? unknown
+    : Exclude<ExplicitEntries<Entries>[keyof ExplicitEntries<Entries>] | PatternEntries<Entries>[keyof PatternEntries<Entries>], undefined>
+  : never;
+
+/**
+ * A map type's index-signature entries (`string`, `number` or template-literal
+ * patterns), kept apart from its named entries: a merged type such as
+ * `Record<string, string> & { private_ip: false }` reports only the index
+ * signature through `keyof`, and indexing it by a name intersects both value
+ * types, so each kind of key is read on its own. Symbol keys are never read.
+ */
+type PatternEntries<Entries> = {
+  [Key in keyof Entries as Key extends symbol ? never : Record<never, never> extends Record<Key, 1> ? Key : never]: Entries[Key];
+};
+
+/** A map type's named (literal-key) entries; see {@link PatternEntries}. */
+type ExplicitEntries<Entries> = {
+  [Key in keyof Entries as Key extends symbol ? never : Record<never, never> extends Record<Key, 1> ? never : Key]: Entries[Key];
+};
+
+/**
+ * Whether a map type names no keys (`object`, `{}` or a memberless
+ * interface). Any value with entries is assignable to such a type, so any
+ * decision may sit in it at runtime, and its decisions are then `unknown`.
+ */
+type OpaqueEntries<Entries> = [keyof Entries] extends [never] ? true : false;
+
+/**
+ * The decisions a `categories` map holds under each stable category, which is
+ * all the helper reads. Each category is looked up as a key, so an index
+ * signature that covers one counts, while a key naming no category does not.
+ */
+type PolicyCategoryDecisions<Entries> = Entries extends object
+  ? OpaqueEntries<Entries> extends true
+    ? unknown
+    : Exclude<
+        {
+          [Category in SecretGuardRuleCategory]:
+            | (Category extends keyof ExplicitEntries<Entries> ? ExplicitEntries<Entries>[Category] : never)
+            | (Category extends keyof PatternEntries<Entries> ? PatternEntries<Entries>[Category] : never);
+        }[SecretGuardRuleCategory],
+        undefined
+      >
+  : never;
+
+/** A policy's own `categories` or `rules` map type, or `never` when the policy type has none. */
+type PolicyEntries<Policy, Field extends "categories" | "rules"> = Field extends keyof Policy ? NonNullable<Policy[Field]> : never;
+
+/**
+ * Every decision a policy type can return: its default and each category and
+ * rule entry. For a `SecretGuardPolicy<D>` this is `D` without `undefined`;
+ * for a policy declared with `satisfies`, or written inline, it is the union of
+ * the decisions it names, even when they mix kinds such as `true | "allow"`.
+ * A union of policy types yields every member's decisions. A `categories` key
+ * that names no stable category is ignored, as the helper ignores it; every
+ * `rules` key counts, since any rule name may be decided.
+ */
+export type SecretGuardPolicyDecision<Policy> = Policy extends unknown
+  ? // Distributed per member, so a key only one member declares still counts.
+    | (Policy extends { readonly default: infer Default } ? Default : never)
+    | PolicyCategoryDecisions<PolicyEntries<Policy, "categories">>
+    | PolicyEntryDecisions<PolicyEntries<Policy, "rules">>
+  : never;
+
+function ownPolicyEntry<Decision>(
+  entries: Partial<Record<string, Decision>> | undefined,
+  key: string | undefined,
+): Decision | undefined {
+  return entries !== undefined && key !== undefined && Object.hasOwn(entries, key) ? entries[key] : undefined;
+}
+
+/** The own keys of `Object.prototype`, which every realm's copy carries and no more. */
+const OBJECT_PROTOTYPE_KEYS: ReadonlySet<PropertyKey> = new Set(Reflect.ownKeys(Object.prototype));
+
+/**
+ * Whether a null-prototype object is another realm's `Object.prototype`: it
+ * carries exactly `Object.prototype`'s own keys, and its `constructor` is a
+ * function whose own `prototype` is that object. Both are read as data
+ * descriptors, so no getter runs.
+ */
+function isForeignObjectPrototype(prototype: object): boolean {
+  const keys = Reflect.ownKeys(prototype);
+  if (keys.length !== OBJECT_PROTOTYPE_KEYS.size) return false;
+  if (!keys.every((key) => OBJECT_PROTOTYPE_KEYS.has(key))) return false;
+  const constructor: unknown = Object.getOwnPropertyDescriptor(prototype, "constructor")?.value;
+  return typeof constructor === "function" && Object.getOwnPropertyDescriptor(constructor, "prototype")?.value === prototype;
+}
+
+/**
+ * Whether a value is a plain property map: its prototype is `null`, this
+ * realm's `Object.prototype`, another realm's (see
+ * {@link isForeignObjectPrototype}), or an empty null-prototype object. Any
+ * other object (an array, `Map`, `Set`, `URLSearchParams`, a class instance,
+ * or a map inheriting from a dictionary with entries) may hold entries an
+ * own-property lookup never finds, so it is never read as overrides. The
+ * prototype decides, so a `Symbol.toStringTag` changes nothing.
+ */
+function isPlainPropertyMap(value: object): boolean {
+  const prototype = Object.getPrototypeOf(value) as object | null;
+  if (prototype === null || prototype === Object.prototype) return true;
+  if (Object.getPrototypeOf(prototype) !== null) return false;
+  // An empty null-prototype parent holds nothing a lookup could drop.
+  return Reflect.ownKeys(prototype).length === 0 || isForeignObjectPrototype(prototype);
+}
+
+/**
+ * Read an own `categories` or `rules` map of a policy, refusing one that is
+ * not a plain property map, so a configured decision is never silently
+ * ignored.
+ */
+function ownPolicyEntries<Decision>(policy: object, field: "categories" | "rules"): Partial<Record<string, Decision>> | undefined {
+  const entries: unknown = Object.hasOwn(policy, field) ? (policy as Record<string, unknown>)[field] : undefined;
+  if (entries !== undefined && (typeof entries !== "object" || entries === null || !isPlainPropertyMap(entries))) {
+    throw new TypeError(`Secret guard policy ${field} must be an object keyed by ${field === "rules" ? "rule" : "category"}.`);
+  }
+  return entries as Partial<Record<string, Decision>> | undefined;
+}
+
+/**
+ * Decide one finding under a {@link SecretGuardPolicy}. The finding needs only
+ * its `rule`, so a finding decoded from JSON is accepted as well. Only the
+ * policy's own `default`, `categories` and `rules` are read, never inherited
+ * ones.
+ *
+ * A policy typed as `SecretGuardPolicy<D>`, including one in a generic
+ * wrapper, returns `D` without `undefined`.
+ *
+ * @throws {TypeError} When the policy is not an object, has no `default`
+ * decision, or holds `categories` or `rules` that are not plain objects (an
+ * array, `Map`, `URLSearchParams` or class instance is refused), or when the
+ * finding has no string `rule`.
+ */
+export function decideSecretGuardFinding<Decision>(
+  policy: SecretGuardPolicy<Decision>,
+  finding: { readonly rule: string },
+): Exclude<Decision, undefined>;
+/**
+ * Decide one finding under any other policy shape: the policy's own type is
+ * inferred, so the result is every decision it can hold
+ * ({@link SecretGuardPolicyDecision}), even when they mix kinds, as for an
+ * inline policy, one declared with `satisfies`, or a union of policy types.
+ * A wrapper generic over the policy type itself passes it explicitly
+ * (`decideSecretGuardFinding<P>(policy, finding)`) to get
+ * `SecretGuardPolicyDecision<P>`. A `rules` map may be any plain object type,
+ * including a named interface without an index signature, but not an
+ * iterable container such as a `Map` or an array.
+ *
+ * @throws {TypeError} As for the overload above.
+ */
+export function decideSecretGuardFinding<
+  Policy extends Omit<SecretGuardPolicy<unknown>, "rules"> & { readonly rules?: object & { readonly [Symbol.iterator]?: never } },
+>(
+  policy: Policy,
+  finding: { readonly rule: string },
+): SecretGuardPolicyDecision<Policy>;
+/** Implementation shared by both overloads: rule entry, then category entry, then default. */
+export function decideSecretGuardFinding(
+  policy: SecretGuardPolicy<unknown>,
+  finding: { readonly rule: string },
+): unknown {
+  if (typeof policy !== "object" || policy === null || Array.isArray(policy)) {
+    throw new TypeError("Secret guard policy must be an object with a default decision.");
+  }
+  // Each field is read once, so the value validated is the value used.
+  const fallback: unknown = Object.hasOwn(policy, "default") ? policy.default : undefined;
+  if (fallback === undefined) {
+    throw new TypeError("Secret guard policy requires a default decision.");
+  }
+  const categories = ownPolicyEntries<unknown>(policy, "categories");
+  const rules = ownPolicyEntries<unknown>(policy, "rules");
+  const rule: unknown = typeof finding === "object" && finding !== null ? finding.rule : undefined;
+  if (typeof rule !== "string") {
+    throw new TypeError("Secret guard finding must have a string rule.");
+  }
+  const ruleDecision = ownPolicyEntry(rules, rule);
+  if (ruleDecision !== undefined) return ruleDecision;
+  const categoryDecision = ownPolicyEntry(categories, secretGuardRuleCategory(rule));
+  return categoryDecision === undefined ? fallback : categoryDecision;
 }
 
 /** Identify native actions that can persist tracker or workspace state. */

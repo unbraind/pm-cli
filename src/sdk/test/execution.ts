@@ -19,6 +19,10 @@ import { admitLinkedTestRequest, assertLinkedTestCommand, linkedTestsHaveSameIde
 import { countFailureCategories, createLinkedTestSetupGate, isLinkedTestSetup, orderLinkedTestsSetupFirst, parseLinkedTestPhase, resolveSetupWorkspaceRefusal, withLinkedTestSetupEntries, type LinkedTestFailureCategory } from "./run-phases.js";
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { spawn, type ChildProcess } from "node:child_process";
+import { killProcessTree } from "../../core/shared/process-tree.js";
+
+/** Linked-test cleanup lets a slow `taskkill` finish rather than abandoning the tree. */
+const LINKED_TEST_TREE_KILL = { taskkillTimeoutMs: null } as const;
 import {
   cp,
   mkdir,
@@ -1215,36 +1219,6 @@ function endLinkedTestProgress(
   );
 }
 
-/* c8 ignore start -- process-tree teardown paths are highly platform-dependent. */
-async function killProcessTree(pid: number): Promise<void> {
-  if (!Number.isInteger(pid) || pid <= 0) {
-    return;
-  }
-  if (process.platform === "win32") {
-    await new Promise<void>((resolve) => {
-      const killer = spawn("taskkill", ["/pid", String(pid), "/T", "/F"], {
-        stdio: "ignore",
-        windowsHide: true,
-      });
-      killer.on("error", () => resolve());
-      killer.on("close", () => resolve());
-    });
-    return;
-  }
-  try {
-    process.kill(-pid, "SIGKILL");
-    return;
-  } catch {
-    // Fall back to direct child kill when no process group is available.
-  }
-  try {
-    process.kill(pid, "SIGKILL");
-  } catch {
-    // The process can already be gone.
-  }
-}
-/* c8 ignore stop */
-
 /* c8 ignore start -- process lifecycle timing/error race branches are covered by cross-platform integration runners */
 interface LinkedTestTimerState {
   heartbeat: NodeJS.Timeout | null;
@@ -1277,6 +1251,14 @@ function createLinkedTestTerminationRequester(
     }
     terminationRequested = true;
     const pid = child.pid;
+    // The root is identified by its handle: once Node reports its exit, its
+    // PID may belong to another process and is never signalled again.
+    const childRoot = {
+      alive: (): boolean => child.exitCode === null && child.signalCode === null,
+      kill: (): void => {
+        if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+      },
+    };
     if (!pid || pid <= 0) {
       try {
         child.kill("SIGTERM");
@@ -1285,8 +1267,10 @@ function createLinkedTestTerminationRequester(
       }
       return;
     }
+    // Linked-test cleanup waits for taskkill to finish, as it always did:
+    // only an update lookup's teardown needs the short helper deadline.
     if (process.platform === "win32") {
-      await killProcessTree(pid);
+      await killProcessTree(pid, childRoot, LINKED_TEST_TREE_KILL);
       return;
     }
     try {
@@ -1301,7 +1285,7 @@ function createLinkedTestTerminationRequester(
     }
     /* c8 ignore next 3 -- exercised only when timeout escalation triggers force-kill fallback. */
     timers.forceKillTimer = setTimeout(() => {
-      void killProcessTree(pid);
+      void killProcessTree(pid, childRoot, LINKED_TEST_TREE_KILL);
     }, linkedTestTimeoutForceKillDelayMs());
     timers.forceKillTimer.unref?.();
   };

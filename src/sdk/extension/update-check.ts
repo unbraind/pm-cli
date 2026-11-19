@@ -4,15 +4,46 @@
  * Provides bounded and annotated-tag-aware update checks for managed extensions.
  */
 import { nowIso } from "../../core/shared/time.js";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn, type ChildProcess } from "node:child_process";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { isMainThread } from "node:worker_threads";
 import npa from "npm-package-arg";
+import { killProcessTree } from "../../core/shared/process-tree.js";
 import type { ManagedExtensionSource } from "./managed-state.js";
-import { resolveNpmCommandName, runGitCommand, shouldRunNpmCommandInShell } from "./install-sources.js";
+import { resolveNpmCommandName, shouldRunNpmCommandInShell } from "./install-sources.js";
 
-const execFileAsync = promisify(execFile);
+/** Environment variable that overrides the per-lookup update-check budget. */
+export const PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV = "PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS";
+/** Default budget of one managed-extension update lookup. */
+export const EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS = 10_000;
+const EXTENSION_UPDATE_CHECK_TIMEOUT_MIN_MS = 1_000;
+// Below the extension state lock's 30-second wait (120 attempts of 250 ms), so
+// one lookup run under that lock cannot outlast a concurrent package action.
+const EXTENSION_UPDATE_CHECK_TIMEOUT_MAX_MS = 25_000;
 
-const GITHUB_UPDATE_CHECK_TIMEOUT_MS = 10_000;
+/** Longest a teardown waits for a killed provider to report its exit. */
+const PROVIDER_EXIT_WAIT_MS = 2_000;
+
+/** Stable reason for an npm lookup that failed for any reason other than its budget. */
+export const NPM_REGISTRY_LOOKUP_FAILED = "npm_registry_lookup_failed";
+/** Stable reason for an npm lookup killed when its budget ran out (pm-5kfzjh). */
+export const NPM_REGISTRY_LOOKUP_TIMED_OUT = "npm_registry_lookup_timed_out";
+/** Stable reason for a `git ls-remote` lookup that failed for any reason other than its budget. */
+export const GITHUB_REMOTE_LOOKUP_FAILED = "github_remote_lookup_failed";
+/** Stable reason for a `git ls-remote` lookup killed when its budget ran out (pm-43p2c3). */
+export const GITHUB_REMOTE_LOOKUP_TIMED_OUT = "github_remote_lookup_timed_out";
+
+/**
+ * Resolve the budget of one update lookup: `PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS`
+ * as integer milliseconds, clamped to 1000–25000, or the 10000 ms default when
+ * it is unset or not a finite number.
+ */
+export function resolveExtensionUpdateCheckTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env[PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV]?.trim();
+  const configured = raw ? Number(raw) : Number.NaN;
+  if (!Number.isFinite(configured)) return EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS;
+  return Math.min(EXTENSION_UPDATE_CHECK_TIMEOUT_MAX_MS, Math.max(EXTENSION_UPDATE_CHECK_TIMEOUT_MIN_MS, Math.trunc(configured)));
+}
 
 /** Describes the remote revision health of one managed GitHub extension. */
 export interface GithubUpdateStatus {
@@ -24,12 +55,259 @@ export interface GithubUpdateStatus {
   remote_commit?: string;
   /** Stable failure reason when the comparison is incomplete. */
   error?: string;
+  /** Budget in milliseconds that ran out, present only with a `*_timed_out` reason. */
+  timeout_ms?: number;
 }
 
 /** Result of comparing the installed npm identity with its registry latest dist-tag. */
 export interface NpmUpdateStatus extends Omit<GithubUpdateStatus, "remote_commit"> {
   /** Registry version selected by the latest dist-tag, when valid. */
   remote_version?: string;
+}
+
+/** One bounded update lookup: run the provider command and return its trimmed stdout. */
+type UpdateQueryRunner = (args: string[], timeoutMs: number) => Promise<string>;
+
+/** Bounded lookup failure whose message is a stable reason, never the provider's own output. */
+class UpdateQueryError extends Error {
+  readonly timeout_ms: number | undefined;
+  /** Teardown of the provider's process tree still running when the lookup settled. */
+  readonly teardown: Promise<void> | undefined;
+
+  constructor(reason: string, timeoutMs?: number, teardown?: Promise<void>) {
+    super(reason);
+    this.name = "UpdateQueryError";
+    this.timeout_ms = timeoutMs;
+    this.teardown = teardown;
+  }
+}
+
+/** Teardowns still running for failed statuses, kept off the serializable status itself. */
+const statusTeardowns = new WeakMap<object, Promise<void>>();
+
+/**
+ * Resolve once the provider teardown behind a failed status has finished; at
+ * once for any other status. A caller that bounds how many providers run at a
+ * time holds its slot until then, without delaying the status itself.
+ */
+export function updateCheckTeardown(status: object): Promise<void> {
+  return statusTeardowns.get(status) ?? Promise.resolve();
+}
+
+/** Project a lookup failure onto a status: its message, and the budget when one ran out. */
+function failedUpdateStatus(checkedAt: string, error: unknown): GithubUpdateStatus {
+  const status: GithubUpdateStatus = { checked_at: checkedAt, available: null, error: error instanceof Error ? error.message : String(error) };
+  if (error instanceof UpdateQueryError && error.timeout_ms !== undefined) status.timeout_ms = error.timeout_ms;
+  if (error instanceof UpdateQueryError && error.teardown !== undefined) statusTeardowns.set(status, error.teardown);
+  return status;
+}
+
+/** How one provider lookup runs and which stable reasons it reports. */
+interface UpdateQuerySpec {
+  /** Environment of the provider process. */
+  env: NodeJS.ProcessEnv;
+  /** Run through the platform shell (the Windows npm shim needs it). */
+  shell?: boolean;
+  /** Largest stdout accepted, in bytes; more is a failed lookup. */
+  maxBuffer: number;
+  /** Reason for a lookup still running at its deadline. */
+  timedOut: string;
+  /** Reason for any other failure. */
+  failed: string;
+}
+
+/** The process side of one lookup: whether it exited, and how to stop it with its tree. */
+interface ProviderTeardown {
+  /** Start tearing the provider down; resolves once it is gone or the exit wait ran out. */
+  stop(): Promise<void>;
+  /** Kill the provider itself through its handle, at once and synchronously. */
+  killNow(): void;
+}
+
+/**
+ * Providers whose teardown has not finished yet. If the host exits before the
+ * deferred teardown runs (an SDK host calling `process.exit()` right after a
+ * result), the one `exit` listener kills each provider through its handle,
+ * synchronously, so no timed-out npm or git outlives the host. It installs no
+ * signal handlers and exists only while a teardown is pending.
+ */
+const pendingProviderKills = new Set<() => void>();
+
+function killPendingProviders(): void {
+  for (const kill of pendingProviderKills) kill();
+}
+
+/** The teardowns each scoped invocation started, followed through its awaits and timers. */
+const invocationTeardowns = new AsyncLocalStorage<Set<Promise<void>>>();
+
+/**
+ * Run one SDK action so that, inside a worker thread, every provider
+ * teardown it started has finished before it settles; on the main thread
+ * nothing is waited for. A worker has no shutdown hook that is sure to run
+ * (`terminate()` runs no exit listener), so its host may terminate it as soon
+ * as the result arrives; the main thread relies on the exit listener. Only
+ * this invocation's own teardowns are awaited, never another action's, and
+ * the wait runs after `run` settles, so a lock `run` holds is released first.
+ */
+export async function withUpdateCheckTeardownScope<T>(run: () => Promise<T>): Promise<T> {
+  const started = new Set<Promise<void>>();
+  try {
+    return await invocationTeardowns.run(started, run);
+  } finally {
+    if (!isMainThread) await Promise.all(started);
+  }
+}
+
+function trackPendingProviderKill(kill: () => void): () => void {
+  if (pendingProviderKills.size === 0) process.on("exit", killPendingProviders);
+  pendingProviderKills.add(kill);
+  return () => {
+    pendingProviderKills.delete(kill);
+    if (pendingProviderKills.size === 0) process.off("exit", killPendingProviders);
+  };
+}
+
+/**
+ * Tear down one provider. stdout stays open, its data discarded, until the
+ * tree is captured: closing it first could SIGPIPE the provider and orphan its
+ * helpers before ps lists them. Once the launcher has exited its PID may
+ * already belong to another process, so only a live launcher's tree is torn
+ * down by PID, and its root is killed through Node's handle. The teardown ends
+ * once Node reports the provider's exit (bounded, in case the kill cannot take
+ * effect), so a caller limiting live providers never counts a provider as
+ * gone while it still runs; without a PID, spawn never created a process and
+ * no exit will come.
+ */
+function createProviderTeardown(lookup: ChildProcess): ProviderTeardown {
+  const exited = (): boolean => lookup.exitCode !== null || lookup.signalCode !== null;
+  const killDirectChild = (): void => {
+    if (!exited()) lookup.kill("SIGKILL");
+  };
+  const awaitExit = (): Promise<void> => {
+    if (exited() || lookup.pid === undefined) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      // A provider still alive when the wait runs out (an uninterruptible
+      // kernel wait) is unreferenced, so it cannot keep the host running.
+      const bound = setTimeout(() => {
+        lookup.unref();
+        resolve();
+      }, PROVIDER_EXIT_WAIT_MS);
+      lookup.once("exit", () => {
+        clearTimeout(bound);
+        resolve();
+      });
+    });
+  };
+  const finish = (): Promise<void> => {
+    killDirectChild();
+    lookup.stdout?.destroy();
+    return awaitExit();
+  };
+  return {
+    stop: () =>
+      exited() || lookup.pid === undefined
+        ? Promise.resolve().then(finish)
+        : killProcessTree(lookup.pid, { kill: killDirectChild, alive: () => !exited() }).then(finish, finish),
+    killNow: killDirectChild,
+  };
+}
+
+/**
+ * Run one provider lookup under an explicit deadline. The deadline settles the
+ * lookup as timed out on its own, without waiting for the child's pipes,
+ * because a launcher (`cmd.exe`, an npm shim, `git`) can exit while a
+ * descendant still holds them. It then kills the provider and its live
+ * descendants (`taskkill /T` on Windows, a `ps` tree walk elsewhere), which
+ * reaches the helpers of a launcher that is still running, as `cmd.exe` and
+ * `git` are while they wait for npm and the remote helper; when that teardown
+ * cannot run, the direct child is still killed through its handle. A launcher
+ * that already exited is never torn down by its possibly reused PID. A child
+ * that exits after the deadline, cleanly or not, cannot replace the timed-out
+ * result with partial output, and a failed exit settles at once even while a
+ * descendant holds stdout. The child is neither detached nor hidden from the
+ * console, so a terminal Ctrl-C reaches it as it reaches the host. Any other
+ * failure, including stdout beyond `maxBuffer`, reports the failed reason.
+ * stdin and stderr are ignored, so the provider's command line, stderr and
+ * environment never reach the reason.
+ */
+function runBoundedUpdateQuery(file: string, args: string[], timeout: number, spec: UpdateQuerySpec): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    let child;
+    try {
+      // stderr is ignored rather than piped, so a descendant that inherits
+      // only stderr cannot hold the lookup open.
+      child = spawn(file, args, { env: spec.env, shell: spec.shell, stdio: ["ignore", "pipe", "ignore"] });
+    } catch {
+      reject(new UpdateQueryError(spec.failed));
+      return;
+    }
+    const lookup = child;
+    // A monotonic deadline: if the host's event loop was blocked across it, a
+    // queued exit or close may run before the overdue timer, and must still be
+    // reported as a timeout.
+    const deadlineAt = performance.now() + timeout;
+    let settled = false;
+    let stdout = "";
+    let stdoutBytes = 0;
+    const provider = createProviderTeardown(lookup);
+    // The invocation's scope is read once, as the lookup starts, so a
+    // teardown started later from a timer is still recorded against it.
+    const scope = invocationTeardowns.getStore();
+    let teardown: Promise<void> | undefined;
+    // Every outcome is classified first; the teardown, whose first steps are
+    // synchronous process and filesystem checks, starts on a later turn of
+    // the event loop so it can neither hold up the caller nor push the
+    // classification past the deadline. It is recorded before settling, so
+    // the overdue path reports it too.
+    const deferTeardown = (): Promise<void> => {
+      const untrack = trackPendingProviderKill(provider.killNow);
+      const running: Promise<void> = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          void provider.stop().then(resolve, resolve);
+        }, 0);
+      }).finally(untrack);
+      scope?.add(running);
+      teardown = running;
+      return running;
+    };
+    const deadline = setTimeout(() => {
+      settle(new UpdateQueryError(spec.timedOut, timeout, deferTeardown()));
+    }, timeout);
+    function settle(error?: UpdateQueryError): void {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      if (performance.now() >= deadlineAt) reject(new UpdateQueryError(spec.timedOut, timeout, teardown));
+      else if (error) reject(error);
+      else resolve(stdout.trim());
+    }
+    // The error listener comes first: a spawn that ran out of descriptors can
+    // return a child without stdio and report the error on the next tick.
+    lookup.on("error", () => settle(new UpdateQueryError(spec.failed)));
+    if (!lookup.stdout) {
+      settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
+      return;
+    }
+    lookup.stdout.setEncoding("utf8");
+    lookup.stdout.on("data", (chunk: string) => {
+      if (settled) return;
+      stdoutBytes += Buffer.byteLength(chunk);
+      if (stdoutBytes > spec.maxBuffer) {
+        settle(new UpdateQueryError(spec.failed, undefined, deferTeardown()));
+        return;
+      }
+      stdout += chunk;
+    });
+    // A provider that fails has nothing more to say: settle at its exit even
+    // if a descendant still holds stdout. A successful exit waits for close,
+    // so the result is the complete output.
+    lookup.on("exit", (code, signal) => {
+      if (code === 0 && signal === null) return;
+      settle(new UpdateQueryError(spec.failed));
+      lookup.stdout.destroy();
+    });
+    lookup.on("close", (code, signal) => settle(code === 0 && signal === null ? undefined : new UpdateQueryError(spec.failed)));
+  });
 }
 
 /** Resolve an exact registry version without reflecting untrusted provenance or metadata in diagnostics. */
@@ -45,26 +323,40 @@ function resolveExactNpmVersion(packageName: string, version: unknown, errorCode
   throw new Error(errorCode);
 }
 
-/** Query npm's configured registry with bounded execution and no lifecycle scripts. */
-async function runNpmUpdateQuery(args: string[], timeout: number): Promise<string> {
-  try {
-    const result = await execFileAsync(resolveNpmCommandName(), args, {
-      encoding: "utf8", timeout, maxBuffer: 64 * 1024,
-      shell: shouldRunNpmCommandInShell(),
-      env: { ...process.env, npm_config_ignore_scripts: "true" },
-    });
-    return result.stdout.trim();
-  } catch {
-    // Registry configuration can contain credentials; public diagnostics carry
-    // a stable failure code rather than npm's command, stderr, or environment.
-    throw new Error("npm_registry_lookup_failed");
-  }
-}
+/**
+ * Query npm's configured registry with bounded execution and no lifecycle
+ * scripts. Registry configuration can contain credentials, so only the stable
+ * reasons are reported.
+ */
+const runNpmUpdateQuery: UpdateQueryRunner = (args, timeout) =>
+  runBoundedUpdateQuery(resolveNpmCommandName(), args, timeout, {
+    env: { ...process.env, npm_config_ignore_scripts: "true" },
+    shell: shouldRunNpmCommandInShell(),
+    maxBuffer: 64 * 1024,
+    timedOut: NPM_REGISTRY_LOOKUP_TIMED_OUT,
+    failed: NPM_REGISTRY_LOOKUP_FAILED,
+  });
+
+/**
+ * Query a GitHub remote with bounded execution. Git's terminal prompt and Git
+ * Credential Manager's interactive prompts are disabled, so a remote that asks
+ * for credentials through them fails at once; git's command line and stderr can
+ * name the remote, a proxy or a local path, so only the stable reasons are
+ * reported.
+ */
+const runGitUpdateQuery: UpdateQueryRunner = (args, timeout) =>
+  runBoundedUpdateQuery("git", args, timeout, {
+    env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" },
+    maxBuffer: 1024 * 1024,
+    timedOut: GITHUB_REMOTE_LOOKUP_TIMED_OUT,
+    failed: GITHUB_REMOTE_LOOKUP_FAILED,
+  });
 
 /** Compare recorded npm provenance without persisting diagnostic results or guessing missing versions. */
 export async function checkNpmUpdate(
   source: ManagedExtensionSource,
-  npmRunner: typeof runNpmUpdateQuery = runNpmUpdateQuery,
+  npmRunner: UpdateQueryRunner = runNpmUpdateQuery,
+  timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<NpmUpdateStatus> {
   const checkedAt = nowIso();
   try {
@@ -72,7 +364,7 @@ export async function checkNpmUpdate(
       throw new Error("missing_or_invalid_npm_package_identity");
     }
     const installedVersion = resolveExactNpmVersion(source.package, source.version, "missing_or_invalid_installed_npm_version");
-    const registryOutput = await npmRunner(["view", source.package, "dist-tags.latest", "--json", "--ignore-scripts"], GITHUB_UPDATE_CHECK_TIMEOUT_MS);
+    const registryOutput = await npmRunner(["view", source.package, "dist-tags.latest", "--json", "--ignore-scripts"], timeoutMs);
     let output: unknown;
     try {
       output = JSON.parse(registryOutput);
@@ -83,7 +375,7 @@ export async function checkNpmUpdate(
     const latestVersion = resolveExactNpmVersion(source.package, version, "invalid_npm_registry_version");
     return { checked_at: checkedAt, available: latestVersion !== installedVersion, remote_version: latestVersion };
   } catch (error: unknown) {
-    return { checked_at: checkedAt, available: null, error: error instanceof Error ? error.message : String(error) };
+    return failedUpdateStatus(checkedAt, error);
   }
 }
 
@@ -129,7 +421,8 @@ const resolveGithubUpdateOutput = (
 /** Compare one managed GitHub extension against its remote revision. */
 export const checkGithubUpdate = async (
   source: ManagedExtensionSource,
-  gitCommandRunner: typeof runGitCommand = runGitCommand,
+  gitCommandRunner: UpdateQueryRunner = runGitUpdateQuery,
+  timeoutMs: number = resolveExtensionUpdateCheckTimeoutMs(),
 ): Promise<GithubUpdateStatus> => {
   const checkedAt = nowIso();
   if (source.kind !== "github" || !source.repository) {
@@ -143,15 +436,10 @@ export const checkGithubUpdate = async (
     const ref = [source.ref?.trim(), "HEAD"].find(Boolean) as string;
     const output = await gitCommandRunner(
       ["ls-remote", source.repository, ref, `${ref}^{}`],
-      undefined,
-      GITHUB_UPDATE_CHECK_TIMEOUT_MS,
+      timeoutMs,
     );
     return resolveGithubUpdateOutput(output, source.commit, checkedAt);
   } catch (error: unknown) {
-    return {
-      checked_at: checkedAt,
-      available: null,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    return failedUpdateStatus(checkedAt, error);
   }
 };

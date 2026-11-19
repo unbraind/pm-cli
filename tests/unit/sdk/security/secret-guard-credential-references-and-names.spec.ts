@@ -231,7 +231,7 @@ describe("credential-key values are judged by the literal they spell (pm-hw00c2)
 
   it("scans a baseline reading for a rule without structured spellings", () => {
     const rule: SecretRule = {
-      name: "baseline-probe", mutationRule: "baseline_probe", regex: /(?!)/g,
+      name: "baseline-probe", mutationRule: "baseline_probe", category: "credential", regex: /(?!)/g,
       baseline: { regex: /probe=(\w+)/g, value: "" },
     };
     expect([...findSecretRuleMatches(rule, "probe=abc")]).toHaveLength(1);

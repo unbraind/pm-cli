@@ -1,0 +1,634 @@
+import { EventEmitter } from "node:events";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ManagedExtensionSource } from "../../../src/sdk/extension/managed-state.js";
+
+// pm-5kfzjh and pm-43p2c3: a lookup that runs out of its budget reports its
+// own stable reason and the budget, never the provider's command, stderr or
+// environment.
+const spawnMock = vi.hoisted(() => vi.fn());
+type TreeRoot = { kill(): void; alive(): boolean };
+const killProcessTreeMock = vi.hoisted(() => vi.fn(async (_pid: number, _root?: { kill(): void; alive(): boolean }) => undefined));
+vi.mock("node:child_process", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:child_process")>()),
+  spawn: spawnMock,
+}));
+vi.mock("../../../src/core/shared/process-tree.js", () => ({ killProcessTree: killProcessTreeMock }));
+
+const {
+  EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
+  GITHUB_REMOTE_LOOKUP_FAILED,
+  GITHUB_REMOTE_LOOKUP_TIMED_OUT,
+  NPM_REGISTRY_LOOKUP_FAILED,
+  NPM_REGISTRY_LOOKUP_TIMED_OUT,
+  PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV,
+  checkGithubUpdate,
+  checkNpmUpdate,
+  resolveExtensionUpdateCheckTimeoutMs,
+  updateCheckTeardown,
+  withUpdateCheckTeardownScope,
+} = await import("../../../src/sdk/extension/update-check.js");
+const { normalizeManagedState } = await import("../../../src/sdk/extension/managed-state.js");
+const { refreshManagedExtensionUpdates } = await import("../../../src/sdk/extension/managed-update-status.js");
+
+const source: ManagedExtensionSource = { kind: "npm", input: "npm:@scope/example@1.0.0", location: "@scope/example@1.0.0", package: "@scope/example", version: "1.0.0" };
+const github: ManagedExtensionSource = { kind: "github", input: "github:o/r", location: "o/r", repository: "https://github.com/o/r.git", commit: "abc123" };
+// Assembled from parts so the repository never holds a credential-shaped literal.
+const PRIVATE_FIXTURE = ["npm ERR! //registry.example.test/:", "_auth", "Token=", "private-fixture-value"].join("");
+
+class FakeStream extends EventEmitter {
+  readonly setEncoding = vi.fn();
+  readonly destroy = vi.fn();
+  readonly resume = vi.fn();
+}
+
+/** A spawned provider whose events the test drives. */
+class FakeChild extends EventEmitter {
+  readonly stdout = new FakeStream();
+  readonly stderr = new FakeStream();
+  /** SIGKILL takes effect: Node reports the exit shortly after the request. */
+  readonly kill = vi.fn((_signal?: NodeJS.Signals) => {
+    queueMicrotask(() => {
+      if (this.exitCode === null && this.signalCode === null) this.exit(null, "SIGKILL");
+    });
+    return true;
+  });
+  readonly unref = vi.fn();
+  exitCode: number | null = null;
+  signalCode: NodeJS.Signals | null = null;
+  constructor(readonly pid: number | undefined = 4242) {
+    super();
+  }
+
+  /** Exit with `code` and `signal`, as Node reports it before the pipes close. */
+  exit(code: number | null, signal: NodeJS.Signals | null = null): void {
+    this.exitCode = code;
+    this.signalCode = signal;
+    this.emit("exit", code, signal);
+  }
+
+  /** Write stdout, exit, then close with `code` and `signal`. */
+  finish(code: number | null, signal: NodeJS.Signals | null = null, stdout = ""): void {
+    if (stdout) this.stdout.emit("data", stdout);
+    this.exit(code, signal);
+    this.emit("close", code, signal);
+  }
+}
+
+let children: FakeChild[] = [];
+
+/** Spawn fake children and drive each one once its listeners are attached. */
+function provide(drive: (child: FakeChild, file: string) => void): void {
+  spawnMock.mockImplementation((file: string) => {
+    const child = new FakeChild();
+    children.push(child);
+    queueMicrotask(() => drive(child, file));
+    return child;
+  });
+}
+
+const succeedWith = (stdout: string): void => provide((child) => child.finish(0, null, stdout));
+const hang = (): void => provide(() => undefined);
+const spawnOptions = (call = 0): Record<string, unknown> => spawnMock.mock.calls[call]?.[2] as Record<string, unknown>;
+
+/** Run a lookup under fake timers, advancing past `budget` while it is pending. */
+async function settleAfter<T>(budget: number, lookup: () => Promise<T>): Promise<T> {
+  const pending = lookup();
+  await vi.advanceTimersByTimeAsync(budget);
+  const result = await pending;
+  await flushTeardown();
+  return result;
+}
+
+/** Run the teardown the deadline deferred to a later turn of the event loop. */
+async function flushTeardown(): Promise<void> {
+  await vi.advanceTimersByTimeAsync(1);
+}
+
+beforeEach(() => {
+  // Isolate from a budget the contributor's shell may export.
+  vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, undefined);
+});
+
+afterEach(async () => {
+  // Finish deferred teardowns (and drop their exit listeners) before the
+  // fake clock is discarded, so nothing leaks into the next test.
+  if (vi.isFakeTimers()) await vi.runAllTimersAsync();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+  spawnMock.mockReset();
+  killProcessTreeMock.mockReset();
+  killProcessTreeMock.mockImplementation(async () => undefined);
+
+  children = [];
+  vi.unstubAllEnvs();
+});
+
+describe("npm update lookup budget", () => {
+  it("settles a lookup at its budget as timed out with the budget and tears down its process tree", async () => {
+    vi.useFakeTimers();
+    hang();
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS - 1);
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    const status = await pending;
+    await flushTeardown();
+    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
+    expect(children[0]?.stdout.destroy).toHaveBeenCalled();
+    // The tree teardown ran; a direct child still running is killed as well.
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+  });
+
+  it("kills a provider whose teardown is still pending when the host exits, and listens only meanwhile", async () => {
+    vi.useFakeTimers();
+    hang();
+    const before = process.listeners("exit");
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    const added = process.listeners("exit").filter((listener) => !before.includes(listener));
+    expect(added).toHaveLength(1);
+    // The host exits before the deferred teardown ran.
+    (added[0] as () => void)();
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+    await flushTeardown();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(process.listeners("exit")).toEqual(before);
+  });
+
+  it("never makes a main-thread action wait for a running teardown", async () => {
+    vi.useFakeTimers();
+    hang();
+    const action = withUpdateCheckTeardownScope(() => checkNpmUpdate(source));
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    // The action settles with its result before the teardown has run; the
+    // main thread relies on its exit listener.
+    expect(await action).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("delivers the timeout before the teardown starts", async () => {
+    vi.useFakeTimers();
+    hang();
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    // The teardown's synchronous first steps run on a later turn of the loop.
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    await flushTeardown();
+    expect(killProcessTreeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("never tears down by PID a provider that exited before its deferred teardown started", async () => {
+    provide((child) => {
+      child.stdout.emit("data", "x".repeat(64 * 1024 + 1));
+      child.finish(0);
+    });
+    expect(await checkNpmUpdate(source)).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("settles a failed exit at once while a descendant still holds stdout, without tearing down by PID", async () => {
+    provide((child) => child.exit(128));
+    const status = await checkNpmUpdate(source);
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(children[0]?.stdout.destroy).toHaveBeenCalled();
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("times out a launcher that exited cleanly while a descendant holds stdout, without reusing its PID", async () => {
+    vi.useFakeTimers();
+    provide((child) => child.exit(0));
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.stdout.destroy).toHaveBeenCalled();
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("kills the root through its handle when the tree teardown asks for it", async () => {
+    vi.useFakeTimers();
+    hang();
+    let root: TreeRoot | undefined;
+    let aliveDuringTeardown: boolean | undefined;
+    let killsByRoot: unknown[][] = [];
+    killProcessTreeMock.mockImplementationOnce(async (_pid: number, treeRoot?: TreeRoot) => {
+      root = treeRoot;
+      aliveDuringTeardown = treeRoot?.alive();
+      treeRoot?.kill();
+      // Recorded before the runner's own fallback can kill the child.
+      killsByRoot = [...(children[0]?.kill.mock.calls ?? [])];
+    });
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(aliveDuringTeardown).toBe(true);
+    expect(killsByRoot).toEqual([["SIGKILL"]]);
+    // Once Node reports the exit, the root no longer counts as the spawned process.
+    children[0]?.exit(null, "SIGKILL");
+    expect(root?.alive()).toBe(false);
+  });
+
+  it("registers its error listener before touching stdio, so a spawn without stdout fails cleanly", async () => {
+    spawnMock.mockImplementation(() => {
+      // A spawn that failed before launch has neither stdio nor a PID.
+      const child = new FakeChild(undefined);
+      Object.defineProperty(child, "pid", { value: undefined });
+      Object.defineProperty(child, "stdout", { value: null });
+      children.push(child);
+      // Node reports the spawn failure on the next tick.
+      queueMicrotask(() => child.emit("error", new Error(`spawn EMFILE ${PRIVATE_FIXTURE}`)));
+      return child;
+    });
+    const status = await checkNpmUpdate(source);
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    // No process was created, so the teardown waits for no exit.
+    let tornDown = false;
+    await updateCheckTeardown(status).then(() => {
+      tornDown = true;
+    });
+    expect(tornDown).toBe(true);
+  });
+
+  it("holds the teardown until Node reports the provider's exit, bounded when it never comes", async () => {
+    vi.useFakeTimers();
+    hang();
+    const status = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source));
+    expect(status).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    let tornDown = false;
+    void updateCheckTeardown(status).then(() => {
+      tornDown = true;
+    });
+    await flushTeardown();
+    // The fake SIGKILL took effect, so the teardown is done.
+    expect(tornDown).toBe(true);
+    // A provider whose kill never takes effect holds the teardown for 2 s.
+    spawnMock.mockImplementation(() => {
+      const child = new FakeChild();
+      child.kill.mockImplementation(() => true);
+      children.push(child);
+      return child;
+    });
+    const stuck = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source));
+    let stuckDown = false;
+    void updateCheckTeardown(stuck).then(() => {
+      stuckDown = true;
+    });
+    // The exit wait started with the deferred teardown, about 1 ms after the deadline.
+    await vi.advanceTimersByTimeAsync(1_990);
+    expect(stuckDown).toBe(false);
+    expect(children[1]?.unref).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(20);
+    expect(stuckDown).toBe(true);
+    // A provider that never exited no longer keeps the host running.
+    expect(children[1]?.unref).toHaveBeenCalledTimes(1);
+    expect(children[0]?.unref).not.toHaveBeenCalled();
+  });
+
+  it("keeps stdout open, discarding its data, until the tree is captured", async () => {
+    vi.useFakeTimers();
+    hang();
+    let releaseTeardown: () => void = () => undefined;
+    killProcessTreeMock.mockImplementationOnce(() => new Promise<undefined>((resolve) => {
+      releaseTeardown = () => resolve(undefined);
+    }));
+    const status = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source));
+    // The timeout is delivered while the teardown is still running.
+    expect(status).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.stdout.destroy).not.toHaveBeenCalled();
+    children[0]?.stdout.emit("data", "x".repeat(64 * 1024 + 1));
+    expect(killProcessTreeMock).toHaveBeenCalledTimes(1);
+    releaseTeardown();
+    await vi.waitFor(() => expect(children[0]?.stdout.destroy).toHaveBeenCalled());
+  });
+
+  it("does not signal a direct child that already exited after the tree teardown", async () => {
+    vi.useFakeTimers();
+    hang();
+    killProcessTreeMock.mockImplementationOnce(async () => {
+      children[0]!.signalCode = "SIGKILL";
+    });
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.kill).not.toHaveBeenCalled();
+  });
+
+  it("still kills the direct child when the tree teardown fails", async () => {
+    vi.useFakeTimers();
+    hang();
+    killProcessTreeMock.mockImplementationOnce(async () => {
+      throw new Error("taskkill unavailable");
+    });
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    await vi.waitFor(() => expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL"));
+  });
+
+  it("kills the child itself when it has no process id", async () => {
+    vi.useFakeTimers();
+    spawnMock.mockImplementation(() => {
+      const child = new FakeChild();
+      Object.defineProperty(child, "pid", { value: undefined });
+      children.push(child);
+      return child;
+    });
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT });
+    expect(children[0]?.kill).toHaveBeenCalledWith("SIGKILL");
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+
+  });
+
+  it("keeps the timed-out result when the provider exits cleanly with partial output after the deadline", async () => {
+    vi.useFakeTimers();
+    hang();
+    killProcessTreeMock.mockImplementationOnce(async () => children[0]?.finish(0, null, '"2.0'));
+    expect(await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => checkNpmUpdate(source))).toEqual({
+      checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS,
+    });
+  });
+
+  it.each([
+    ["an exit status", (child: FakeChild) => child.finish(1)],
+    ["a signal", (child: FakeChild) => child.finish(null, "SIGKILL")],
+    ["a spawn error", (child: FakeChild) => { child.emit("error", new Error(PRIVATE_FIXTURE)); child.emit("close", null, null); }],
+    // The provider keeps running after the overflow; later output is discarded.
+    ["stdout beyond its buffer", (child: FakeChild) => { child.stdout.emit("data", "x".repeat(64 * 1024 + 1)); child.stdout.emit("data", '"2.0.0"'); }],
+  ])("reports %s before the deadline as a failed lookup without a budget", async (label, drive) => {
+    provide(drive);
+    const status = await checkNpmUpdate(source);
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+    expect(JSON.stringify(status)).not.toContain("private-fixture-value");
+    // The overflow is classified first; its teardown starts on a later turn.
+    if (label === "stdout beyond its buffer") await vi.waitFor(() => expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) })));
+  });
+
+  it("reports a result that arrives after its monotonic deadline as timed out, whatever ran first", async () => {
+    // The host's event loop was blocked across the deadline, so the child's
+    // close is processed before the overdue timer.
+    const realNow = performance.now.bind(performance);
+    let offset = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => realNow() + offset);
+    provide((child) => {
+      offset = EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS + 1;
+      child.finish(0, null, '"2.0.0"');
+    });
+    expect(await checkNpmUpdate(source)).toEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
+  });
+
+  it("uses an explicit budget instead of the configured one", async () => {
+    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "20000");
+    vi.useFakeTimers();
+    hang();
+    expect(await settleAfter(3000, () => checkNpmUpdate(source, undefined, 3000))).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 3000 });
+    const runner = vi.fn(async () => "abc123\tHEAD");
+    await checkGithubUpdate(github, runner, 4000);
+    expect(runner).toHaveBeenCalledWith(expect.any(Array), 4000);
+  });
+
+  it("reports a spawn that throws as a failed lookup", async () => {
+    spawnMock.mockImplementation(() => {
+      throw new Error(PRIVATE_FIXTURE);
+    });
+    expect(await checkNpmUpdate(source)).toStrictEqual({ checked_at: expect.any(String), available: null, error: NPM_REGISTRY_LOOKUP_FAILED });
+  });
+
+  it("applies the configured budget and names it when it runs out", async () => {
+    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "20000");
+    vi.useFakeTimers();
+    hang();
+    const pending = checkNpmUpdate(source);
+    await vi.advanceTimersByTimeAsync(19_999);
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await pending).toMatchObject({ error: NPM_REGISTRY_LOOKUP_TIMED_OUT, timeout_ms: 20000 });
+  });
+
+  it("runs npm attached with closed stdin, discarded stderr and no lifecycle scripts, and clears its deadline", async () => {
+    vi.useFakeTimers();
+    succeedWith('"2.0.0"\n');
+    expect(await checkNpmUpdate(source)).toStrictEqual({ checked_at: expect.any(String), available: true, remote_version: "2.0.0" });
+    expect(vi.getTimerCount()).toBe(0);
+    expect(spawnMock.mock.calls[0]?.[1]).toEqual(["view", "@scope/example", "dist-tags.latest", "--json", "--ignore-scripts"]);
+    expect(spawnOptions()).toMatchObject({
+      stdio: ["ignore", "pipe", "ignore"],
+      env: expect.objectContaining({ npm_config_ignore_scripts: "true" }),
+    });
+    expect(killProcessTreeMock).not.toHaveBeenCalled();
+
+  });
+
+  it("passes the configured budget to an injected GitHub runner", async () => {
+    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "2500");
+    const runner = vi.fn(async () => "abc123\trefs/heads/main");
+    await checkGithubUpdate(github, runner);
+    expect(runner).toHaveBeenCalledWith(["ls-remote", "https://github.com/o/r.git", "HEAD", "HEAD^{}"], 2500);
+  });
+});
+
+describe("GitHub update lookup reasons", () => {
+  it("runs a bounded git ls-remote without interactive prompts and compares the peeled commit", async () => {
+    succeedWith("def456\tHEAD\n");
+    expect(await checkGithubUpdate(github)).toStrictEqual({ checked_at: expect.any(String), available: true, remote_commit: "def456" });
+    expect(spawnMock.mock.calls[0]?.slice(0, 2)).toEqual(["git", ["ls-remote", "https://github.com/o/r.git", "HEAD", "HEAD^{}"]]);
+    expect(spawnOptions()).toMatchObject({
+      stdio: ["ignore", "pipe", "ignore"],
+      env: expect.objectContaining({ GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" }),
+    });
+    expect(spawnOptions().shell).toBeUndefined();
+    expect(spawnOptions()).not.toHaveProperty("detached");
+    expect(spawnOptions()).not.toHaveProperty("windowsHide");
+  });
+
+  it("reports a lookup still running at its budget as timed out and names the budget", async () => {
+    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "3000");
+    vi.useFakeTimers();
+    hang();
+    const status = await settleAfter(3000, () => checkGithubUpdate(github));
+    expect(status).toEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, timeout_ms: 3000 });
+    expect(killProcessTreeMock).toHaveBeenCalledWith(4242, expect.objectContaining({ kill: expect.any(Function), alive: expect.any(Function) }));
+  });
+
+  it.each([
+    ["an exit status", (child: FakeChild) => child.finish(128)],
+    ["stdout beyond its buffer", (child: FakeChild) => child.stdout.emit("data", "x".repeat(1024 * 1024 + 1))],
+  ])("reports %s as a failed lookup without git's command line or stderr", async (_label, drive) => {
+    provide(drive);
+    const status = await checkGithubUpdate(github);
+    // A deferred overflow teardown finishes here, never inside a later test.
+    await updateCheckTeardown(status);
+    expect(status).toStrictEqual({ checked_at: expect.any(String), available: null, error: GITHUB_REMOTE_LOOKUP_FAILED });
+    expect(JSON.stringify(status)).not.toMatch(/private-fixture-value|ls-remote|github\.com/u);
+  });
+});
+
+describe("resolveExtensionUpdateCheckTimeoutMs", () => {
+  it.each([
+    [undefined, 10000],
+    ["", 10000],
+    ["   ", 10000],
+    ["not-a-number", 10000],
+    ["Infinity", 10000],
+    ["20000", 20000],
+    [" 2500.9 ", 2500],
+    ["1", 1000],
+    ["-5", 1000],
+    ["999999", 25000],
+    ["25001", 25000],
+  ])("resolves %j to %i ms", (raw, expected) => {
+    expect(resolveExtensionUpdateCheckTimeoutMs(raw === undefined ? {} : { [PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV]: raw })).toBe(expected);
+  });
+
+  it("reads the process environment by default", () => {
+    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "15000");
+    expect(resolveExtensionUpdateCheckTimeoutMs()).toBe(15000);
+  });
+});
+
+function managedEntry(name: string, entrySource: Record<string, unknown>, extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    name, directory: name, scope: "project", manifest_version: "1.0.0", manifest_entry: "index.js", capabilities: ["commands"],
+    installed_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z", source: entrySource, ...extra,
+  };
+}
+
+describe("managed update status budget evidence", () => {
+  const npmSource = { kind: "npm", input: "npm:@scope/example", location: "@scope/example", package: "@scope/example", version: "1.0.0" };
+  const githubSource = { kind: "github", input: "o/r", location: "https://github.com/o/r.git", repository: "https://github.com/o/r.git", owner: "o", repo: "r", commit: "abc123" };
+
+  it("carries the budget only for a timed-out lookup and drops it offline and on the next completed check", async () => {
+    vi.useFakeTimers();
+    provide((child, file) => {
+      if (file === "git") child.finish(0, null, "abc123\tHEAD\n");
+    });
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource), managedEntry("github-example", githubSource, { update_error: GITHUB_REMOTE_LOOKUP_TIMED_OUT, update_check_timeout_ms: 5000 })] })!;
+    expect(state.entries.find((entry) => entry.name === "github-example")?.update_check_timeout_ms).toBe(5000);
+    const refreshed = await settleAfter(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, () => refreshManagedExtensionUpdates(state));
+    expect(refreshed.entries.find((entry) => entry.name === "npm-example")).toMatchObject({ update_available: null, update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT, update_check_timeout_ms: EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS });
+    const checked = refreshed.entries.find((entry) => entry.name === "github-example");
+    expect(checked).toMatchObject({ update_available: false, last_update_remote_commit: "abc123" });
+    expect(checked).not.toHaveProperty("update_check_timeout_ms");
+    const offline = await refreshManagedExtensionUpdates(refreshed, true);
+    expect(offline.entries.map((entry) => entry.name)).toEqual(refreshed.entries.map((entry) => entry.name));
+    expect(offline.entries).toHaveLength(2);
+    for (const entry of offline.entries) expect(entry).not.toHaveProperty("update_check_timeout_ms");
+  });
+
+  it("keeps at most four providers alive through teardown, yet reports results without waiting for it", async () => {
+    vi.useFakeTimers();
+    hang();
+    const releases: Array<() => void> = [];
+    killProcessTreeMock.mockImplementation(() => new Promise<undefined>((resolve) => {
+      releases.push(() => resolve(undefined));
+    }));
+    const entries = ["a", "b", "c", "d", "e"].map((name) => managedEntry(`npm-${name}`, { ...npmSource, package: `@scope/${name}`, input: `npm:@scope/${name}`, location: `@scope/${name}` }));
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries })!;
+    let refreshed: Awaited<ReturnType<typeof refreshManagedExtensionUpdates>> | undefined;
+    const pending = refreshManagedExtensionUpdates(state).then((result) => {
+      refreshed = result;
+    });
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    await flushTeardown();
+    // Four providers timed out and are still being torn down: the fifth waits.
+    expect(spawnMock).toHaveBeenCalledTimes(4);
+    expect(releases).toHaveLength(4);
+    releases[0]!();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(spawnMock).toHaveBeenCalledTimes(5);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    await pending;
+    await flushTeardown();
+    // Every result is reported while three teardowns and the fifth's are still running.
+    expect(releases).toHaveLength(5);
+    expect(refreshed?.entries.map((entry) => entry.update_error)).toEqual(Array(5).fill(NPM_REGISTRY_LOOKUP_TIMED_OUT));
+    for (const release of releases.slice(1)) release();
+  });
+
+  it("lets a locked caller release permits as lookups settle, never waiting for a teardown", async () => {
+    const exitListenersBefore = process.listenerCount("exit");
+    vi.useFakeTimers();
+    hang();
+    const releases: Array<() => void> = [];
+    killProcessTreeMock.mockImplementation(() => new Promise<undefined>((resolve) => {
+      releases.push(() => resolve(undefined));
+    }));
+    const entries = ["a", "b", "c", "d", "e"].map((name) => managedEntry(`npm-${name}`, { ...npmSource, package: `@scope/${name}`, input: `npm:@scope/${name}`, location: `@scope/${name}` }));
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries })!;
+    const pending = refreshManagedExtensionUpdates(state, false, EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS, false);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    await flushTeardown();
+    // Four teardowns are still pending, yet the fifth lookup already started.
+    expect(releases).toHaveLength(4);
+    expect(spawnMock).toHaveBeenCalledTimes(5);
+    await vi.advanceTimersByTimeAsync(EXTENSION_UPDATE_CHECK_TIMEOUT_DEFAULT_MS);
+    expect((await pending).entries).toHaveLength(5);
+    // Start the fifth teardown too, then release and drain all five, so no
+    // teardown or exit listener outlives the test.
+    await flushTeardown();
+    expect(releases).toHaveLength(5);
+    for (const release of releases) release();
+    await vi.runAllTimersAsync();
+    expect(process.listenerCount("exit")).toBe(exitListenersBefore);
+  });
+
+  it("passes an explicit refresh budget to every lookup", async () => {
+    vi.stubEnv(PM_EXTENSION_UPDATE_CHECK_TIMEOUT_MS_ENV, "20000");
+    vi.useFakeTimers();
+    hang();
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource)] })!;
+    const refreshed = await settleAfter(3000, () => refreshManagedExtensionUpdates(state, false, 3000));
+    expect(refreshed.entries[0]).toMatchObject({ update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT, update_check_timeout_ms: 3000 });
+  });
+
+  it.each([
+    [1000, 1000],
+    [45000, 45000],
+    [0, undefined],
+    [-5, undefined],
+    [1.5, undefined],
+    [Number.NaN, undefined],
+    [2 ** 60, undefined],
+    ["1000", undefined],
+    [null, undefined],
+  ])("normalizes a recorded budget of %j to %j", (recorded, expected) => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT, update_check_timeout_ms: recorded })] });
+    const entry = state?.entries[0];
+    expect(state?.entries).toHaveLength(1);
+    expect(entry).toMatchObject({ name: "npm-example", update_error: NPM_REGISTRY_LOOKUP_TIMED_OUT, source: { package: "@scope/example" } });
+    expect(entry?.update_check_timeout_ms).toBe(expected);
+    expect(entry !== undefined && Object.hasOwn(entry, "update_check_timeout_ms")).toBe(expected !== undefined);
+  });
+
+  it.each([NPM_REGISTRY_LOOKUP_TIMED_OUT, GITHUB_REMOTE_LOOKUP_TIMED_OUT])("keeps a recorded budget beside %s and leaves availability unknown", (reason) => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500, update_available: true })] });
+    expect(state?.entries[0]?.update_check_timeout_ms).toBe(2500);
+    expect(state?.entries[0]?.update_available).toBeNull();
+  });
+
+  it("reads a GitHub failure persisted as git's own text by an earlier release as a stable reason", () => {
+    const legacy = ["Git command failed: git ls-remote https://github.com/o/r.git HEAD HEAD^{}", PRIVATE_FIXTURE].join("\n");
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [
+      managedEntry("github-legacy", githubSource, { update_error: legacy }),
+      managedEntry("github-stable", githubSource, { update_error: "no_remote_reference_found" }),
+      managedEntry("github-blank", githubSource, { update_error: "   " }),
+      managedEntry("npm-text", npmSource, { update_error: "offline fixture" }),
+    ] });
+    const byName = Object.fromEntries((state?.entries ?? []).map((entry) => [entry.name, entry.update_error]));
+    // A blank reason stays a non-error, as the update-check resolver reads it.
+    expect(byName).toEqual({ "github-legacy": GITHUB_REMOTE_LOOKUP_FAILED, "github-stable": "no_remote_reference_found", "github-blank": "   ", "npm-text": "offline fixture" });
+    expect(JSON.stringify(state)).not.toContain("private-fixture-value");
+  });
+
+  it("keeps availability beside a reason that is not a timeout", () => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_available: true }), managedEntry("npm-other", npmSource, { update_available: "yes" })] });
+    expect(state?.entries.map((entry) => entry.update_available)).toEqual([true, undefined]);
+  });
+
+  it.each([undefined, NPM_REGISTRY_LOOKUP_FAILED, GITHUB_REMOTE_LOOKUP_FAILED, "no_remote_reference_found", `${NPM_REGISTRY_LOOKUP_TIMED_OUT}_stale`, 7])("drops a stale budget beside update_error %j", (reason) => {
+    const state = normalizeManagedState({ version: 1, updated_at: "2026-01-01T00:00:00.000Z", entries: [managedEntry("npm-example", npmSource, { update_error: reason, update_check_timeout_ms: 2500 })] });
+    expect(state?.entries).toHaveLength(1);
+    expect(state?.entries[0]).toMatchObject({ name: "npm-example" });
+    expect(state?.entries[0]).not.toHaveProperty("update_check_timeout_ms");
+  });
+});
