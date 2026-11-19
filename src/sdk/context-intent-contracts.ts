@@ -1488,10 +1488,16 @@ function chargedIntentPassOrRefusal(
   const charged = { ...options };
   intentEnvelopeOverheads.set(charged, estimateReadOutputTokens(measured, readOutputMeasurementFormat(options)) - intentEstimate);
   const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
-  const recharged = finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
-  return Object.hasOwn(recharged, "output_budget_exceeded") ||
-    settledIntentOverBudget(options, recharged, rechargedIntent.context_intent) !== undefined ||
-    chargedPrefixEndsBeforeCursor(options, rechargedIntent)
+  // A charged page the intent omits, or whose prefix ends before an incoming
+  // cursor, is never finalized: the cursor would be applied to rows it does
+  // not cover, and the refusal already names the recovery.
+  const recharged =
+    isReadResultOmittedForBudget(rechargedIntent) || chargedPrefixEndsBeforeCursor(options, rechargedIntent)
+      ? undefined
+      : finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
+  return recharged === undefined ||
+    Object.hasOwn(recharged, "output_budget_exceeded") ||
+    settledIntentOverBudget(options, recharged, rechargedIntent.context_intent) !== undefined
     ? refusal
     : recharged;
 }

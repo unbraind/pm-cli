@@ -234,6 +234,21 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     expect(replay.items).toBeUndefined();
   });
 
+  it("keeps the structured refusal when the charged replay omits every row", () => {
+    const now = "2026-11-19T07:00:00.000Z";
+    const sized: Array<[number, number]> = [[280, 0], [42, 576], [483, 541]];
+    const rowsWithExtras = sized.map(([title, size], index) => ({
+      id: `demo-${index}`, title: "x".repeat(title), type: "Issue", status: "open", priority: 2, tags: [], created_at: now, updated_at: now,
+      ...Object.fromEntries(Array.from({ length: Math.ceil(size / 240) }, (_, part) => [`extra${part}`, "z".repeat(Math.min(size - part * 240, 240))])),
+    }));
+    const source = { items: rowsWithExtras, count: 3, total: 3, has_more: false, next_cursor: null, filters: { limit: "3" }, now };
+    const options = { for: "triage", full: true, limit: "3", resolvedOutputFormat: "toon", outputBudget: 692 };
+    const first = read(options, source);
+    const replay = read({ ...options, outputCursor: first.output_budget_truncation!.continuations[0]!.cursor }, source);
+    // Not read_output_cursor_stale: the omitted charged page is never finalized against the cursor.
+    expect(replay.output_budget_exceeded).toBeDefined();
+  });
+
   it("settles a compacted page on the smaller estimate across a digit boundary", () => {
     // The page measures 999 with two three-digit receipt estimates and 1000 with two four-digit ones.
     const fields = Object.fromEntries(Array.from({ length: 10 }, (_, index) => [`custom_${index}`, "y".repeat(220)]));
