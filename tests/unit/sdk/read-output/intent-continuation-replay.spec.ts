@@ -167,6 +167,30 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     expect(read({ ...projected, outputCursor: cursor }, source).items![0]!.id).toBe(`demo-${first.items!.length}`);
   });
 
+  it("decides a page the read-output stage refused again with the receipts' overhead charged to the intent", () => {
+    const now = "2026-11-19T07:00:00.000Z";
+    const long = ["description", "acceptance_criteria", "expected_result", "actual_result", "resolution", "close_reason", "manual_estimate_reason", "body", "custom1"];
+    const page = (count: number, characters: number) => {
+      const items: Array<Record<string, unknown>> = Array.from({ length: count }, (_, index) => ({
+        id: `demo-${index}`, title: `Example item ${index}`, type: "Issue", status: "open", priority: 2, tags: [], created_at: now, updated_at: now,
+      }));
+      for (let index = 0; index * 240 < characters; index += 1) items[0]![long[index]!] = "z".repeat(Math.min(characters - index * 240, 240));
+      const producer = Buffer.from(JSON.stringify({ version: 1, fingerprint: "Z".repeat(16), after_id: `demo-${count - 1}`, after_index: count - 1 })).toString("base64url");
+      return { items, count, total: 25, has_more: true, next_cursor: producer, filters: { limit: String(count) }, now };
+    };
+    const options = (count: number) => ({ for: "triage", full: true, limit: String(count), resolvedOutputFormat: "toon", outputRowContract: true, outputBudget: 1000 });
+    // The receipts push two rows over; universal compaction's continuation metadata leaves no room even for one.
+    const charged = read(options(2), page(2, 1862));
+    expect(charged.items!.map((row) => row.id)).toEqual(["demo-0"]);
+    expect(charged.read_output.result_omitted).toBe(false);
+    expect(charged.read_output.estimated_tokens).toBeLessThanOrEqual(1000);
+    expect(JSON.parse(Buffer.from(charged.next_cursor!, "base64url").toString("utf8"))).toMatchObject({ after_id: "demo-0", after_index: 0 });
+    // A single row that cannot fit once its receipts are charged keeps the refusal.
+    const refused = read(options(1), page(1, 2076));
+    expect(refused.output_budget_exceeded).toBeDefined();
+    expect(refused.items).toBeUndefined();
+  });
+
   it("settles a compacted page on the smaller estimate across a digit boundary", () => {
     // The page measures 999 with two three-digit receipt estimates and 1000 with two four-digit ones.
     const fields = Object.fromEntries(Array.from({ length: 10 }, (_, index) => [`custom_${index}`, "y".repeat(220)]));

@@ -1408,7 +1408,11 @@ export function attachReadOutputContracts(
   // decided again with that measured overhead charged, so both budget spellings
   // bound the bytes actually delivered.
   const settled = settledIntentOverBudget(options, finalized, intentProjected.context_intent);
-  if (settled === undefined) return finalized;
+  if (settled === undefined) {
+    return readOutputStageOmittedIntentPage(finalized, intentProjected)
+      ? chargedIntentPassOrRefusal(surface, options, result, source, intentProjected, Number(intentEstimate), binding, finalized)
+      : finalized;
+  }
   const charged = { ...options };
   intentEnvelopeOverheads.set(charged, settled.estimated - Number(intentEstimate));
   const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
@@ -1428,6 +1432,55 @@ export function attachReadOutputContracts(
       buildContextIntentRecoveryCommand(surface, receipt.command as BuiltInContextIntentCommand, receipt.intent, receipt, source, options),
     ),
   );
+}
+
+/**
+ * Whether the read-output stage refused a page the intent pass fitted: its
+ * receipts pushed the page over the budget, and its continuation metadata
+ * left no room for even one row.
+ */
+function readOutputStageOmittedIntentPage(
+  finalized: Record<string, unknown>,
+  intentProjected: Record<string, unknown>,
+): boolean {
+  const intent = intentProjected.context_intent;
+  return Object.hasOwn(finalized, "output_budget_exceeded") && isOutputRecord(intent) && intent.result_omitted !== true;
+}
+
+/**
+ * Decide a refused intent page again with the receipts' measured overhead
+ * charged against the intent budget, as a settled envelope over its budget
+ * is. The charged intent pass shrinks the page and rebases its producer
+ * cursor, which costs less than the read-output stage's continuation metadata,
+ * so it can deliver rows where that stage refused. A charged page that still
+ * does not fit keeps the refusal.
+ */
+function chargedIntentPassOrRefusal(
+  surface: string,
+  options: Record<string, unknown>,
+  result: unknown,
+  source: Record<string, unknown>,
+  intentProjected: Record<string, unknown>,
+  intentEstimate: number,
+  binding: Record<string, unknown> | undefined,
+  refusal: Record<string, unknown>,
+): Record<string, unknown> {
+  // Measure the first pass with its receipts and no compaction; the receipt
+  // copy keeps the measuring pass from settling the first pass's own receipt.
+  const measured = finalizeReadOutputEnvelope(
+    surface,
+    { ...options, outputBudget: "unbounded" },
+    result,
+    { ...intentProjected, context_intent: { ...(intentProjected.context_intent as Record<string, unknown>) } },
+  );
+  const charged = { ...options };
+  intentEnvelopeOverheads.set(charged, estimateReadOutputTokens(measured, readOutputMeasurementFormat(options)) - intentEstimate);
+  const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
+  const recharged = finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
+  return Object.hasOwn(recharged, "output_budget_exceeded") ||
+    settledIntentOverBudget(options, recharged, rechargedIntent.context_intent) !== undefined
+    ? refusal
+    : recharged;
 }
 
 /**
