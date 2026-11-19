@@ -180,7 +180,7 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     expect(readCompactionMarker(page.items![0]!.title)).toBe(3000 - 240);
   });
 
-  it("still replays a cursor issued before GH-1753, which bound the intent-compacted rows", () => {
+  it("fails closed on a cursor an earlier release issued over a string-compacted page, and on an edit that compacts to the same text", () => {
     const longRows = rows(43).map((row, index) => ({ ...row, title: `${"t".repeat(1999)}${index}` }));
     const source = triageSource(120, longRows);
     const options = triageOptions();
@@ -193,14 +193,13 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
       total_rows: intent.items.length,
       fingerprint: readOutputCollectionFingerprint("items", intent.items, "list"),
     });
-    expect(read({ ...options, outputCursor: legacy }, source).items![0]!.id).toBe("demo-5");
-    // A current cursor binds the uncompacted rows instead, and both stay stale on a changed source.
-    const current = read(options, source).output_budget_truncation!.continuations[0]!.cursor;
-    expect(decodeReadOutputContinuationCursor(current).fingerprint).not.toBe(decodeReadOutputContinuationCursor(legacy).fingerprint);
-    const changed = triageSource(120, longRows.map((row, index) => (index === 7 ? { ...row, title: `changed ${row.title}` } : row)));
-    for (const cursor of [legacy, current]) {
-      expect(refusal(() => read({ ...options, outputCursor: cursor }, changed)).context).toMatchObject({ code: "read_output_cursor_stale" });
-    }
+    expect(refusal(() => read({ ...options, outputCursor: legacy }, source)).context).toMatchObject({ code: "read_output_cursor_stale" });
+    // A field that already ends in a literal compaction marker, replaced by full text that compacts to the same value.
+    const marked = (full: boolean) =>
+      rows(43).map((row) => ({ ...row, sync_cursor: full ? `${"s".repeat(240)}${"z".repeat(1760)}` : `${"s".repeat(240)}\u2026[+1760 chars]` }));
+    const first = read(options, triageSource(120, marked(false)));
+    const cursor = first.output_budget_truncation!.continuations[0]!.cursor;
+    expect(refusal(() => read({ ...options, outputCursor: cursor }, triageSource(120, marked(true)))).context).toMatchObject({ code: "read_output_cursor_stale" });
   });
 
   it("issues and replays a cursor over compacted SDK rows that hold a non-JSON value", () => {

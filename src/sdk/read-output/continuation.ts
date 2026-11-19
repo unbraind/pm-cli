@@ -313,10 +313,10 @@ export function prioritizeAssuranceAssertions(
 /**
  * Whether a cursor still matches the rows it was issued against: the bound
  * collection when the intent layer registered one, else the result's own.
- * A cursor issued before GH-1753 bound an intent read's delivered rows, so it
- * still replays while those rows are unchanged. The fallback accepts only a
- * fingerprint of the delivered rows, which a current cursor never carries
- * unless they equal the bound rows, so hidden-edit detection is unchanged.
+ * A cursor an earlier release issued over a string-compacted intent page
+ * fingerprinted the compacted rows, so it fails closed here and the caller
+ * restarts the bounded read: accepting that fingerprint as well would let an
+ * edit that compacts to the same text replay a current cursor (GH-1753).
  */
 function continuationMatches(
   result: Record<string, unknown>,
@@ -332,10 +332,7 @@ function continuationMatches(
   // end of the collection, so it is as stale as a changed snapshot.
   const backward = readOutputRetainsTail(command, cursor.path);
   if (totalRows !== cursor.total_rows || cursor.offset > totalRows || backward !== (cursor.direction === "backward")) return false;
-  return (
-    readOutputCollectionFingerprint(cursor.path, bound.value, command) === cursor.fingerprint ||
-    (bound !== own && readOutputCollectionFingerprint(cursor.path, own.value, command) === cursor.fingerprint)
-  );
+  return readOutputCollectionFingerprint(cursor.path, bound.value, command) === cursor.fingerprint;
 }
 
 /**

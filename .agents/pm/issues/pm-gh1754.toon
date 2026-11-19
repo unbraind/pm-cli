@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:output",compaction,"gh:1754",output-budget,read-output,regression
 created_at: "2026-11-19T00:19:32.036Z"
-updated_at: "2026-11-19T08:37:05.648Z"
+updated_at: "2026-11-19T09:17:28.683Z"
 closed_at: "2026-11-19T07:44:14.725Z"
 completed_at: "2026-11-19T07:44:14.725Z"
 author: "harness:claude-code"
@@ -36,6 +36,11 @@ tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,
 docs[1]{path,scope,note}:
   docs/READ_OUTPUT_CONTRACTS.md,project,read-output compaction and intent cursor binding contract
 close_reason: "Budget compaction exempts only the envelope's continuation tokens, so a budgeted list whose item carries an oversized cursor-named field returns its compacted row again"
+contract_change:
+  api: "Read-output string compaction on get, list and search (budgeted reads, with or without --for)"
+  before: "Since 2026.11.12 every string under a key named cursor or ending in _cursor stayed whole at any depth, including an item field such as a custom sync_cursor, so a budgeted list could omit its rows"
+  after: "Only the envelope and non-item surfaces keep that exemption; the fields of item and of every items row compact like other content, as before 2026.11.12"
+  migrate: "To read an item field named like a cursor in full, repeat the read with --output-budget unbounded (outputBudget: \"unbounded\"); continuation tokens in the envelope are unchanged"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_strengthened

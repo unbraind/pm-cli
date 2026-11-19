@@ -399,7 +399,10 @@ the budget it was compacted to. When a settled envelope still exceeds the intent
 budget and is projected again with that overhead charged, the second pass
 delivers a shorter prefix, but its cursors keep the first pass's row count and
 fingerprint. A replay therefore resumes right after the last delivered row, and
-`read_output_cursor_stale` stays reserved for a changed source.
+`read_output_cursor_stale` stays reserved for a changed source. An output
+cursor issued by 2026.11.19 or earlier over a string-compacted intent page
+fingerprinted the compacted rows, so after upgrading it fails closed with
+`read_output_cursor_stale`; restart the bounded read without the cursor.
 
 Chronological annotation collections keep their newest rows instead
 ([pm-8s53lj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8s53lj.toon);
