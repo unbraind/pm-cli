@@ -124,6 +124,18 @@ describe("tracker item fields named like continuation keys compact like content 
     }
   });
 
+  it("compacts an item's own focus_row_states field; only the envelope's focus-row state stays whole", () => {
+    const outcome = attachReadOutputContracts("list", { full: true, outputBudget: "2000", resolvedOutputFormat: "json" }, {
+      items: [{ id: "demo-one", focus_row_states: { next_cursor: oversized, note: oversized } }],
+      count: 1,
+      total: 1,
+      has_more: false,
+    }) as { count: number; items: Array<{ focus_row_states: { next_cursor: string; note: string } }>; read_output: { result_omitted: boolean } };
+    expect({ omitted: outcome.read_output.result_omitted, count: outcome.count }).toEqual({ omitted: false, count: 1 });
+    expect(readCompactionMarker(outcome.items[0]!.focus_row_states.next_cursor)).toBe(30_000 - 240);
+    expect(readCompactionMarker(outcome.items[0]!.focus_row_states.note)).toBe(30_000 - 240);
+  });
+
   it("compacts cursor-named fields of a single item read and of nested item records", () => {
     const bounded = applyReadOutputDimensions("get", { outputFormat: "json", outputBudget: 2000 }, {
       item: { id: "pm-one", title: "One", sync_cursor: oversized, nested: { next_cursor: oversized } },

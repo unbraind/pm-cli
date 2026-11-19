@@ -280,8 +280,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Recursively shorten explanatory strings while preserving the selected row
  * collection. A continuation token is machine input for the next call, so it
  * is never shortened (GH-1710); a shortened string ends with the compaction
- * marker that write paths recognise (pm-n98pir). Inside a tracker item
- * document every string is content, whatever its key (GH-1754).
+ * marker that write paths recognise (pm-n98pir). Envelope focus-row state
+ * strings stay whole too. Inside a tracker item document every string is
+ * content, whatever its key (GH-1754).
  */
 function compactStrings(
   value: unknown,
@@ -307,8 +308,7 @@ function compactStrings(
         entry,
         state,
         preserveStrings ||
-          key === "focus_row_states" ||
-          (exemptTokens && typeof entry === "string" && isContinuationTokenKey(key)),
+          (exemptTokens && (key === "focus_row_states" || (typeof entry === "string" && isContinuationTokenKey(key)))),
         exemptTokens,
       ),
     ]),

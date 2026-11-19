@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:output",compaction,"gh:1754",output-budget,read-output,regression
 created_at: "2026-11-19T00:19:32.036Z"
-updated_at: "2026-11-19T07:44:14.744Z"
+updated_at: "2026-11-19T08:37:05.648Z"
 closed_at: "2026-11-19T07:44:14.725Z"
 completed_at: "2026-11-19T07:44:14.725Z"
 author: "harness:claude-code"
@@ -22,9 +22,10 @@ actual_result: "On src the GH-1754 fixture returns one row with a 255-character 
 component: sdk
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1710,related,"2026-11-19T00:19:32.036Z","harness:claude-code","cli:create:dep",detected
-notes[2]{created_at,author,text}:
+notes[3]{created_at,author,text}:
   "2026-11-19T06:03:07.671Z","harness:claude-code","Root cause: both string-compaction walkers (compactStrings in src/sdk/read-output-budget.ts and compactContextIntentValue in src/sdk/context-intent-contracts.ts) exempted any string under a key named cursor or ending in _cursor at every depth, so a tracker item's own field with such a name was treated as a continuation token. Fix: the exemption now stops at tracker item documents. isTrackerItemDocumentKey in src/core/shared/text-normalization.ts names the top-level item and items keys, and both walkers switch the exemption off beneath them. Envelope tokens stay whole: next_cursor, output_cursor, output_budget_truncation continuations, nested section cursors, and pm events per-row cursors under events. A census found no producer that emits a real continuation token inside an item or items row. Evidence: on src the GH-1754 fixture returns one row with a 255-character value for next_cursor, output_cursor, source_cursor, cursor, sync_cursor and ordinary_text, in JSON and TOON, with and without --for triage. Negative controls: reverting either walker fails all three new specs in tests/unit/sdk/read-output/continuation-tokens.spec.ts, and the GH-1710 specs keep passing."
   "2026-11-19T06:49:30.062Z","harness:claude-code","Review (Codex, uncommitted diff): restricting the exemption by key alone also shortened genuine tokens inside an extension's items rows, since extensions may declare row_keys [\"items\"] for records that are not tracker items. Fixed by scoping on the surface as well as the key. isTrackerItemDocumentKey(surface, key) is true only for item and items on the native item reads get, list and search. Both walkers now receive the resolved surface: compactReadOutputToBudget takes resolved.command, and the intent walker takes resolveReadOutputSurface(command), which resolves extension commands first, so an extension named list probe stays extension:list probe. A new spec covers a registered extension's items[0].evidence.next_cursor kept whole beside a compacted note, and a key-by-surface table covers get/list/search against next, context, events and extension surfaces. Negative control: forcing the list surface fails the extension spec."
+  "2026-11-19T08:37:05.648Z","harness:claude-code","PR #1758 review (CodeRabbit, minor): the focus_row_states exception in compactStrings kept a whole string under an item's own focus_row_states field even inside a tracker item document, so a 30,000-character focus_row_states.next_cursor on a list row could still omit the page. The exception now requires the same envelope scope as the token exemption. A spec compacts both strings of an item's focus_row_states, and the negative control (the unscoped exception) fails it. Envelope summary.focus_row_states stays whole."
 files[4]{path,scope,note}:
   src/core/shared/text-normalization.ts,project,isTrackerItemDocumentKey scopes the continuation-token exemption
   src/sdk/context-intent-contracts.ts,project,compactContextIntentValue stops exempting cursor-named keys inside item documents
