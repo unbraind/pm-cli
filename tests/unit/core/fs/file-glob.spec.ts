@@ -64,7 +64,7 @@ const PARITY_PATTERNS = [
   "x[.ts", "[[:alpha:]].ts", "[[:digit:]].ts", "[é].ts", "[x]y[z].ts", "*.@(ts|md)", "?(a).ts", "*(a).ts", "+(a).ts",
   "+(a)b.ts", "*(a|b).ts", "@(a|@(b|c)).ts", "a.{ts,md}", "{child,sub}/*", "{child/deep,sub}/*", "./*.md", "./child/n.ts",
   "child/./n.ts", "child/../a.ts", "**/", "*/", "*.TS", "a b.ts", "(p).ts", "**.md", "***", "child/**/d.ts", "child/**/",
-  "**/deep/*", "**/**", "*/**", "**/child/*", "\\a.ts", "a.ts/", "{,child/}n.ts", "{a,{b,1}}.*", ".*", "{a,}.ts", "{,}.ts",
+  "**/deep/*", "**/**", "*/**", "**/child/*", "a.ts/", "{,child/}n.ts", "{a,{b,1}}.*", ".*", "{a,}.ts", "{,}.ts",
   "{}.ts", "{01..03}.ts", "{a..c}.ts", "{a..c}*", "??.ts", "{x.ts", "a,b.ts", "app/[slug]/*.tsx", "*/[slug]/*", "app/*/page.tsx",
   "../other/*.ts", "../other/o.ts", "missing/**", "missing", "a.ts/*",
   "*/./n.ts", "child/*/../n.ts", "child//n.ts", "*//n.ts", "c*/./deep/d.ts", "./*/deep/../n.ts", "@(**/d.ts|*.md)",
@@ -73,6 +73,9 @@ const PARITY_PATTERNS = [
   "{child/,x}**/d.ts", "+(child/)**/d.ts", "?(child/)**/d.ts", "@(*/)**/d.ts", "c**", "chi**/n.ts", "a**.ts",
   "@(x(y)|b).md", "*(x(y)|a).ts", "@(((p))|c).ts",
   ...(posix ? ["@(q.ts", "a|b.ts", "linkdir/*", "linkdir/../a.ts", "link.ts", "dangling.ts", "*link*", "**/d.ts"] : []),
+  // On Windows the previous expansion read a leading backslash as a drive-root
+  // path and matched nothing; the escape reading below is a superset (pm-y8zgkg).
+  ...(posix ? ["\\a.ts"] : []),
 ];
 
 describe("file glob parity with the previous tinyglobby expansion (pm-gh1748)", () => {
@@ -404,6 +407,29 @@ describe("file glob semantics", () => {
         expect(await expanded(`[![:${name}:]].ts`, root)).toEqual(["-.ts", "B.ts", "].ts", "_.ts", "a.ts", "z.ts"]);
       }
     });
+  });
+
+  it("reads a leading backslash as an escape, with the same relative output on every platform (pm-y8zgkg)", async () => {
+    await withTempDir("pm-glob-escape-", async (root) => {
+      await writeFile(path.join(root, "a.ts"), "a");
+      await writeFile(path.join(root, "!x.ts"), "x");
+      expect(await expanded("\\a.ts", root)).toEqual(["a.ts"]);
+      expect(await expanded("\\a*.ts", root)).toEqual(["a.ts"]);
+      expect(await expanded("\\!x.ts", root)).toEqual(["!x.ts"]);
+    });
+    for (const platform of ["win32", "linux", "darwin"] as const) {
+      expect(_testOnly.isAbsolutePattern("\\a.ts", platform)).toBe(false);
+      expect(_testOnly.isAbsolutePattern("\\\\server\\share\\*.ts", platform)).toBe(false);
+      expect(_testOnly.isAbsolutePattern("/work/*.ts", platform)).toBe(true);
+      expect(_testOnly.isAbsolutePattern("//server/share/*.ts", platform)).toBe(true);
+      expect(_testOnly.isAbsolutePattern("src/*.ts", platform)).toBe(false);
+      expect(_testOnly.isAbsolutePattern("C:x/*.ts", platform)).toBe(false);
+    }
+    // A drive root is absolute only where drives exist; on POSIX "C:" is a directory name.
+    expect(_testOnly.isAbsolutePattern("C:/work/*.ts", "win32")).toBe(true);
+    expect(_testOnly.isAbsolutePattern("c:/work/*.ts", "win32")).toBe(true);
+    expect(_testOnly.isAbsolutePattern("C:/work/*.ts", "linux")).toBe(false);
+    expect(_testOnly.isAbsolutePattern("/work/*.ts")).toBe(true);
   });
 
   it("keeps a UNC root while normalizing the rest of the pattern", async () => {

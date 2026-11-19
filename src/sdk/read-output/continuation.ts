@@ -17,6 +17,7 @@ import type {
 } from "../read-output-contracts.js";
 import { resolveReadOutputSurface } from "../read-output-contracts.js";
 import {
+  type PmReadOutputRowCollection,
   readOutputContinuationRowCollections,
   sliceReadOutputRowCollection,
 } from "../read-output-rows.js";
@@ -309,11 +310,43 @@ export function prioritizeAssuranceAssertions(
   };
 }
 
-/** Validate and apply a continuation suffix to its declared row collection. */
+/**
+ * Whether a cursor still matches the rows it was issued against: the bound
+ * collection when the intent layer registered one, else the result's own.
+ * A cursor an earlier release issued over a string-compacted intent page
+ * fingerprinted the compacted rows, so it fails closed here and the caller
+ * restarts the bounded read: accepting that fingerprint as well would let an
+ * edit that compacts to the same text replay a current cursor (GH-1753).
+ */
+function continuationMatches(
+  result: Record<string, unknown>,
+  command: PmReadOutputSurface,
+  cursor: PmReadOutputCursorEnvelope,
+  bindings: ReadonlyMap<string, PmReadOutputRowCollection> | undefined,
+): boolean {
+  const own = readOutputContinuationRowCollections(result).find((entry) => entry.path === cursor.path);
+  if (!own) return false;
+  const bound = bindings?.get(cursor.path) ?? own;
+  const totalRows = Array.isArray(bound.value) ? bound.value.length : Object.keys(bound.value).length;
+  // A cursor issued under the other retention direction would page the wrong
+  // end of the collection, so it is as stale as a changed snapshot.
+  const backward = readOutputRetainsTail(command, cursor.path);
+  if (totalRows !== cursor.total_rows || cursor.offset > totalRows || backward !== (cursor.direction === "backward")) return false;
+  return readOutputCollectionFingerprint(cursor.path, bound.value, command) === cursor.fingerprint;
+}
+
+/**
+ * Validate and apply a continuation suffix to its declared row collection.
+ * `bindings` names the collections the cursor was issued against when they
+ * differ from the result's own: an intent read's charged second pass keeps a
+ * prefix of the rows its first pass kept, so the cursor validates against the
+ * first pass's collection and slices the delivered one (GH-1753).
+ */
 export function applyReadOutputContinuation(
   result: Record<string, unknown>,
   command: PmReadOutputSurface,
   cursor: PmReadOutputCursorEnvelope | undefined,
+  bindings?: ReadonlyMap<string, PmReadOutputRowCollection>,
 ): Record<string, unknown> {
   if (!cursor) return result;
   if (cursor.command !== command) {
@@ -323,32 +356,14 @@ export function applyReadOutputContinuation(
       { code: "read_output_cursor_command_mismatch" },
     );
   }
-  const collection = readOutputContinuationRowCollections(result).find(
-    (entry) => entry.path === cursor.path,
-  );
-  const totalRows = collection
-    ? Array.isArray(collection.value)
-      ? collection.value.length
-      : Object.keys(collection.value).length
-    : 0;
-  // A cursor issued under the other retention direction would page the wrong
-  // end of the collection, so it is as stale as a changed snapshot.
-  const backward = readOutputRetainsTail(command, cursor.path);
-  if (
-    !collection ||
-    totalRows !== cursor.total_rows ||
-    cursor.offset > totalRows ||
-    backward !== (cursor.direction === "backward") ||
-    readOutputCollectionFingerprint(cursor.path, collection.value, command) !==
-      cursor.fingerprint
-  ) {
+  if (!continuationMatches(result, command, cursor, bindings)) {
     throw new PmCliError(
       "The read-output continuation no longer matches the declared row collection; restart the bounded read.",
       EXIT_CODE.USAGE,
       { code: "read_output_cursor_stale" },
     );
   }
-  if (!backward) return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
+  if (!readOutputRetainsTail(command, cursor.path)) return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
   // A replayed annotation page reports the rows it delivers even when no
   // further compaction runs to recount them.
   const sliced = sliceReadOutputRowCollection(result, cursor.path, 0, cursor.offset);

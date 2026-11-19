@@ -5,7 +5,12 @@
  * read-output contract without expanding its public declaration module.
  */
 import { formatBuiltInOutput } from "../core/output/output.js";
-import { COMPACTED_STRING_LENGTH, compactExplanatoryString, isContinuationTokenKey } from "../core/shared/text-normalization.js";
+import {
+  COMPACTED_STRING_LENGTH,
+  compactExplanatoryString,
+  isContinuationTokenKey,
+  isTrackerItemDocumentKey,
+} from "../core/shared/text-normalization.js";
 import type { PmReadOutputReceipt } from "./read-output-contracts.js";
 import {
   countReadOutputRows,
@@ -23,6 +28,55 @@ const MAX_COMPACTION_ITERATIONS = 64;
 const RECOVERY_MARGIN_NUMERATOR = 5;
 const RECOVERY_MARGIN_DENOMINATOR = 4;
 const RECOVERY_ROUNDING_TOKENS = 100;
+
+/** Hooks the trusted intent layer registers for one read-output pass. */
+export interface ReadOutputPassHooks {
+  /**
+   * Result whose continuation collections bind this pass's output cursors
+   * (GH-1753): an intent read's uncompacted producer rows, cut to the prefix
+   * its first pass kept. The delivered rows may be string-compacted, and a
+   * settled intent read over its budget is projected again with the envelope
+   * overhead charged, keeping a shorter prefix; binding either would let
+   * compaction hide an edit or leave a cursor that a replay, whose first pass
+   * keeps the uncharged prefix, could never accept.
+   */
+  continuationBinding?: Record<string, unknown>;
+  /**
+   * Copy each candidate estimate into a companion receipt that reports the
+   * same delivered envelope, so compaction measures the digits and fit flag
+   * that receipt will finally carry instead of a stale earlier estimate.
+   */
+  mirrorEstimate?: (result: Record<string, unknown>, estimate: number) => void;
+}
+
+/** Pass hooks keyed by the exact options object the intent layer hands to that pass. */
+const readOutputPassHooks = new WeakMap<object, ReadOutputPassHooks>();
+
+/** Estimate mirrors keyed by the read-output receipt whose fixpoint settles them. */
+const readOutputEstimateMirrors = new WeakMap<object, NonNullable<ReadOutputPassHooks["mirrorEstimate"]>>();
+
+/** Register the hooks of the read-output pass invoked with exactly `options`. */
+export function registerReadOutputPassHooks(
+  options: Record<string, unknown>,
+  hooks: ReadOutputPassHooks,
+): void {
+  readOutputPassHooks.set(options, hooks);
+}
+
+/** The hooks the intent layer registered for the pass invoked with `options`. */
+export function resolveReadOutputPassHooks(
+  options: Record<string, unknown>,
+): ReadOutputPassHooks | undefined {
+  return readOutputPassHooks.get(options);
+}
+
+/** Settle `mirror` inside every estimate fixpoint of `receipt`. */
+export function mirrorReadOutputReceiptEstimate(
+  receipt: PmReadOutputReceipt,
+  mirror: NonNullable<ReadOutputPassHooks["mirrorEstimate"]>,
+): void {
+  readOutputEstimateMirrors.set(receipt, mirror);
+}
 
 /** Project a standard item read to brief depth, preserving metadata and disclosing every removed section. */
 export function projectReadOutputItemToBrief(
@@ -226,9 +280,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Recursively shorten explanatory strings while preserving the selected row
  * collection. A continuation token is machine input for the next call, so it
  * is never shortened (GH-1710); a shortened string ends with the compaction
- * marker that write paths recognise (pm-n98pir).
+ * marker that write paths recognise (pm-n98pir). Envelope focus-row state
+ * strings stay whole too. Inside a tracker item document every string is
+ * content, whatever its key (GH-1754).
  */
-function compactStrings(value: unknown, state: StringCompactionState, preserveStrings = false): unknown {
+function compactStrings(
+  value: unknown,
+  state: StringCompactionState,
+  preserveStrings = false,
+  exemptTokens = true,
+): unknown {
   if (typeof value === "string") {
     if (preserveStrings) return value;
     // Longer than the cutoff means shown compacted, including a string an
@@ -237,7 +298,7 @@ function compactStrings(value: unknown, state: StringCompactionState, preserveSt
     return compactExplanatoryString(value);
   }
   if (Array.isArray(value)) {
-    return value.map((entry) => compactStrings(entry, state, preserveStrings));
+    return value.map((entry) => compactStrings(entry, state, preserveStrings, exemptTokens));
   }
   if (!isRecord(value)) return value;
   return Object.fromEntries(
@@ -246,27 +307,77 @@ function compactStrings(value: unknown, state: StringCompactionState, preserveSt
       compactStrings(
         entry,
         state,
-        preserveStrings || key === "focus_row_states" || (typeof entry === "string" && isContinuationTokenKey(key)),
+        preserveStrings ||
+          (exemptTokens && (key === "focus_row_states" || (typeof entry === "string" && isContinuationTokenKey(key)))),
+        exemptTokens,
       ),
     ]),
   );
 }
 
-/** Update a receipt to the fixed-point estimate of the result containing it. */
+/**
+ * Update a receipt to the fixed-point estimate of the result containing it,
+ * returning whether it converged. A renderer whose layout depends on the
+ * estimate need not converge; the bounded result is then no proof of fit.
+ */
 export function updateReadOutputReceiptEstimate(
   result: Record<string, unknown>,
   receipt: PmReadOutputReceipt,
   format?: "json" | "toon",
-): void {
+): boolean {
   let estimate = receipt.estimated_tokens;
   for (let iteration = 0; iteration < MAX_ESTIMATE_ITERATIONS; iteration += 1) {
-    receipt.estimated_tokens = estimate;
+    setReadOutputEstimate(result, receipt, estimate);
     const measured = estimateReadOutputTokens(result, format);
-    if (measured === estimate) return;
+    if (measured === estimate) return true;
     estimate = measured;
   }
-  receipt.estimated_tokens = estimate;
+  setReadOutputEstimate(result, receipt, estimate);
+  return false;
 }
+
+/** Set a receipt's estimate and every companion receipt that mirrors it. */
+function setReadOutputEstimate(
+  result: Record<string, unknown>,
+  receipt: PmReadOutputReceipt,
+  estimate: number,
+): void {
+  receipt.estimated_tokens = estimate;
+  readOutputEstimateMirrors.get(receipt)?.(result, estimate);
+}
+
+/** Tokens a page can shed when every estimate it prints loses a digit. */
+const DIGIT_BOUNDARY_SLACK_TOKENS = 4;
+
+/**
+ * Settle a compaction candidate's estimate for a fit decision. The
+ * measurement grows with the digits of the estimates the page prints, so a
+ * page just above a power of ten can also be consistent one digit shorter
+ * (1000 and 999). Only when the settled estimate misses the budget there is
+ * the candidate settled again from zero, which rises to that smaller
+ * estimate; a candidate that fits, or misses by more than a digit can explain,
+ * keeps its estimate and costs no further rendering. Only a converged retry
+ * that fits is kept; any other restores the first estimate.
+ */
+function settleCandidateEstimate(
+  result: Record<string, unknown>,
+  receipt: PmReadOutputReceipt,
+  budget: number,
+  format: "json" | "toon" | undefined,
+): void {
+  updateReadOutputReceiptEstimate(result, receipt, format);
+  const estimate = receipt.estimated_tokens;
+  if (estimate <= budget || estimate - 10 ** (String(estimate).length - 1) >= DIGIT_BOUNDARY_SLACK_TOKENS) return;
+  receipt.estimated_tokens = 0;
+  if (updateReadOutputReceiptEstimate(result, receipt, format) && receipt.estimated_tokens <= budget) return;
+  // The retry missed, or did not converge (a renderer whose layout depends on
+  // the estimate). Restore the first estimate and its mirror as they were, so
+  // the next, smaller candidate starts from the same seed.
+  setReadOutputEstimate(result, receipt, estimate);
+}
+
+/** Internal hooks for estimate-settlement tests; not part of any public surface. */
+export const _testOnly = { settleCandidateEstimate };
 
 /** Select the largest reducible declared row collection, breaking ties by path. */
 function selectCompactionCollection(
@@ -311,7 +422,7 @@ function compactRowsToBudget(
     iteration += 1
   ) {
     finalize?.(result);
-    updateReadOutputReceiptEstimate(result, receipt, format);
+    settleCandidateEstimate(result, receipt, budget, format);
     if (receipt.estimated_tokens <= budget) return;
     const candidate = selectCompactionCollection(result, minimumRowsByPath);
     if (!candidate) return;
@@ -336,7 +447,7 @@ function compactRowsToBudget(
       if (typeof result.returned_count === "number") result.returned_count = countReadOutputRows(result);
       if (candidate.path === "items") result.applied_limit = length;
       finalize?.(result);
-      updateReadOutputReceiptEstimate(result, receipt, format);
+      settleCandidateEstimate(result, receipt, budget, format);
     };
     receipt.rows_compacted = true;
     receipt.compacted_row_paths = [
@@ -373,6 +484,7 @@ export function compactReadOutputToBudget(
   finalize?: (result: Record<string, unknown>) => void,
   preserveStrings = false,
   retainsTail: (path: string) => boolean = () => false,
+  surface?: string,
 ): Record<string, unknown> {
   const stringCompactionState: StringCompactionState = { compacted: false };
   const compacted = Object.fromEntries(
@@ -382,6 +494,7 @@ export function compactReadOutputToBudget(
         value,
         stringCompactionState,
         (preserveStrings && key === "diff") || (typeof value === "string" && isContinuationTokenKey(key)),
+        !isTrackerItemDocumentKey(surface, key),
       ),
     ]),
   );

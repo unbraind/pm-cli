@@ -11,19 +11,28 @@ import { attachOutputOmissionReceipt } from "./output-projection.js";
 import { encodeQueryCursor } from "./pagination.js";
 import {
   applyReadOutputDimensions,
+  decodeReadOutputContinuationCursor,
   isReadResultOmittedForBudget,
+  resolveReadOutputSurface,
   stabilizeReadOutputReceiptEstimates,
 } from "./read-output-contracts.js";
 import {
   estimateReadOutputTokens,
   MAX_ESTIMATE_ITERATIONS,
   readOutputMeasurementFormat,
+  registerReadOutputPassHooks,
   resolveReadOutputRecoveryBudget,
+  type ReadOutputPassHooks,
 } from "./read-output-budget.js";
 import { propagateContextUsageServingReceipt } from "./context-usage.js";
+import { readOutputContinuationRowCollections } from "./read-output-rows.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { compactExplanatoryString, isContinuationTokenKey } from "../core/shared/text-normalization.js";
+import {
+  compactExplanatoryString,
+  isContinuationTokenKey,
+  isTrackerItemDocumentKey,
+} from "../core/shared/text-normalization.js";
 
 /** Read commands that ship built-in intent projections. */
 export type PmContextIntentCommand =
@@ -602,19 +611,20 @@ const MINIMUM_CONTEXT_INTENT_TOKEN_BUDGET = 256;
 /**
  * Bound explanatory strings without dropping rows or invalidating pagination
  * metadata: a continuation token stays whole (GH-1710), and a shortened string
- * ends with the compaction marker (pm-n98pir).
+ * ends with the compaction marker (pm-n98pir). The fields of a tracker item
+ * document are content, so they compact whatever their key (GH-1754).
  */
-function compactContextIntentValue(value: unknown): unknown {
+function compactContextIntentValue(value: unknown, surface: string | undefined, exemptTokens = true, root = true): unknown {
   if (Array.isArray(value)) {
-    return value.map(compactContextIntentValue);
+    return value.map((entry) => compactContextIntentValue(entry, surface, exemptTokens, false));
   }
   if (value !== null && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [
         key,
-        typeof entry === "string" && isContinuationTokenKey(key)
+        exemptTokens && typeof entry === "string" && isContinuationTokenKey(key)
           ? entry
-          : compactContextIntentValue(entry),
+          : compactContextIntentValue(entry, surface, exemptTokens && !(root && isTrackerItemDocumentKey(surface, key)), false),
       ]),
     );
   }
@@ -1025,7 +1035,7 @@ export function attachContextIntentReceipt<
   // An explicitly unbounded read keeps everything it asked for: no string or row compaction.
   const projected = canonicalBudget === "unbounded"
     ? estimatedIntentProjection(resultWithDiagnostics, receipt, options)
-    : compactIntentProjection(builtInCommand, resultWithDiagnostics, receipt, options);
+    : compactIntentProjection(builtInCommand, resultWithDiagnostics, receipt, options, resolveReadOutputSurface(command, options));
   receipt.declaration_feasible =
     receipt.estimated_tokens <= receipt.declared_token_budget;
   const outcome = intentBudgetOutcome(canonicalBudget, receipt, projected, () =>
@@ -1066,11 +1076,12 @@ function compactIntentProjection(
   result: Record<string, unknown>,
   receipt: PmContextIntentReceipt,
   options: Record<string, unknown>,
+  surface: string | undefined,
 ): Record<string, unknown> {
   let projected = estimatedIntentProjection(result, receipt, options);
   if (receipt.estimated_tokens > receipt.token_budget) {
     receipt.degradation = "recursive_budget_compaction";
-    projected = estimatedIntentProjection(compactContextIntentValue(result) as Record<string, unknown>, receipt, options);
+    projected = estimatedIntentProjection(compactContextIntentValue(result, surface) as Record<string, unknown>, receipt, options);
   }
   if (
     receipt.estimated_tokens > receipt.token_budget &&
@@ -1334,6 +1345,48 @@ function reconcileIntentFit(result: Record<string, unknown>): void {
   if (isOutputRecord(intent) && Number(intent.estimated_tokens) > Number(intent.token_budget)) intent.within_budget = false;
 }
 
+/**
+ * The rows an intent read's output cursors bind to (GH-1753): the delivered
+ * envelope, with each top-level row collection the intent cut to a prefix
+ * replaced by the producer's uncompacted rows of that prefix. A replay
+ * rebuilds exactly these, so an unchanged source replays; string compaction
+ * cannot hide an edit from the fingerprint; a charged second pass that keeps a
+ * shorter prefix still issues cursors a replay accepts; and an include
+ * selector naming an intent-only section resolves as it does on the delivered
+ * envelope. A collection the intent lengthened (an appended warning) keeps
+ * its delivered rows.
+ */
+function intentContinuationBinding(
+  source: Record<string, unknown>,
+  intentProjected: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  const intent = intentProjected.context_intent;
+  if (!isOutputRecord(intent) || intent.result_omitted === true) return undefined;
+  // Compacted rows went through the compaction walk, which also turns any
+  // non-JSON value (a Date) into a plain record; the bound rows take the same
+  // walk with every string kept whole, so hashing them never throws where the
+  // delivered rows would not.
+  const compacted = intent.degradation === "recursive_budget_compaction" || intent.degradation === "budget_row_compaction";
+  const binding: Record<string, unknown> = { ...intentProjected };
+  for (const collection of readOutputContinuationRowCollections(source)) {
+    const delivered = intentProjected[collection.path];
+    if (Array.isArray(delivered) && Array.isArray(collection.value) && delivered.length <= collection.value.length) {
+      const prefix = collection.value.slice(0, delivered.length);
+      binding[collection.path] = compacted ? prefix.map(normalizeContextIntentValue) : prefix;
+    }
+  }
+  return binding;
+}
+
+/** Copy a value through the intent compaction walk while keeping every string whole. */
+function normalizeContextIntentValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeContextIntentValue);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeContextIntentValue(entry)]));
+  }
+  return value;
+}
+
 /** Attach universal row, omission, and optional intent-budget contracts in rendering order. */
 export function attachReadOutputContracts(
   command: string | undefined,
@@ -1349,30 +1402,148 @@ export function attachReadOutputContracts(
   const source = disclosedResult as Record<string, unknown>;
   const intentProjected = attachContextIntentReceipt(surface, options, source);
   const intentEstimate = receiptEstimate(intentProjected.context_intent, "estimated_tokens");
-  const finalized = finalizeReadOutputEnvelope(surface, options, result, intentProjected);
+  const binding = intentContinuationBinding(source, intentProjected);
+  const finalized = finalizeReadOutputEnvelope(surface, options, result, intentProjected, binding);
   // The intent decision saw the projection before the read-output receipt and any
   // requested row contract joined it. A settled envelope over the intent budget is
   // decided again with that measured overhead charged, so both budget spellings
   // bound the bytes actually delivered.
   const settled = settledIntentOverBudget(options, finalized, intentProjected.context_intent);
-  if (settled === undefined) return finalized;
+  if (settled === undefined) {
+    return readOutputStageOmittedIntentPage(options, finalized, intentProjected)
+      ? chargedIntentPassOrRefusal(surface, options, result, source, intentProjected, Number(intentEstimate), binding, finalized)
+      : finalized;
+  }
   const charged = { ...options };
   intentEnvelopeOverheads.set(charged, settled.estimated - Number(intentEstimate));
   const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
-  const recharged = finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent);
+  // The charged pass keeps a shorter prefix; its output cursors stay bound to
+  // the first pass's prefix, which is what a replay reproduces. A charged page
+  // that delivers no row is decided like a page that still does not fit.
+  const recharged = finalizeChargedIntentPage(surface, options, charged, result, rechargedIntent, binding);
   // Reserving the measured overhead does not guarantee that the re-settled
   // envelope fits; a read still over its intent budget is omitted.
-  const residual = settledIntentOverBudget(options, recharged, rechargedIntent.context_intent);
-  if (residual === undefined) return recharged;
-  const receipt = { ...residual.receipt, estimated_tokens: residual.estimated };
+  const residual = recharged === undefined ? settled : settledIntentOverBudget(options, recharged, rechargedIntent.context_intent);
+  // No residual means the charged page was finalized and fits.
+  if (residual === undefined) return recharged as Record<string, unknown>;
+  const omitted = { ...residual.receipt, estimated_tokens: residual.estimated };
+  // The refusal carries no rows, so it is finalized without the incoming cursor.
   return finalizeReadOutputEnvelope(
     surface,
-    options,
+    { ...options, outputCursor: undefined, output_cursor: undefined },
     result,
-    intentBudgetOutcome(canonicalIntentOutputBudget(options), receipt, recharged, () =>
-      buildContextIntentRecoveryCommand(surface, receipt.command as BuiltInContextIntentCommand, receipt.intent, receipt, source, options),
+    intentBudgetOutcome(canonicalIntentOutputBudget(options), omitted, recharged ?? finalized, () =>
+      buildContextIntentRecoveryCommand(surface, omitted.command as BuiltInContextIntentCommand, omitted.intent, omitted, source, options),
     ),
   );
+}
+
+/**
+ * Whether the read-output stage refused a page the intent pass fitted: its
+ * receipts pushed the page over the budget, and its continuation metadata
+ * left no room for even one row. Only a producer-paged read (list, search)
+ * outside an output session and without a canonical include selection is
+ * retried: a charged prefix can drop every row a selection names, or the only
+ * row a validated selector matches; a session ceiling also binds the
+ * measuring pass; and a next-work page has no cursor for the rows it drops.
+ */
+function readOutputStageOmittedIntentPage(
+  options: Record<string, unknown>,
+  finalized: Record<string, unknown>,
+  intentProjected: Record<string, unknown>,
+): boolean {
+  const intent = intentProjected.context_intent;
+  return (
+    Object.hasOwn(finalized, "output_budget_exceeded") &&
+    isOutputRecord(intent) &&
+    intent.result_omitted !== true &&
+    PRODUCER_PAGED_INTENT_COMMANDS.has(String(intent.command)) &&
+    (options.outputInclude ?? options.output_include) === undefined &&
+    (options.outputSession ?? options.output_session) === undefined
+  );
+}
+
+/**
+ * Intent commands whose charged pass rebases a producer cursor over the rows
+ * it drops. A next-work page has no producer cursor, so dropping its rows
+ * would leave neither a continuation nor a recovery.
+ */
+const PRODUCER_PAGED_INTENT_COMMANDS: ReadonlySet<string> = new Set(["list", "search"]);
+
+/**
+ * Decide a refused intent page again with the receipts' measured overhead
+ * charged against the intent budget, as a settled envelope over its budget
+ * is. The charged intent pass shrinks the page and rebases its producer
+ * cursor, which costs less than the read-output stage's continuation metadata,
+ * so it can deliver rows where that stage refused. A charged page that still
+ * does not fit keeps the refusal.
+ */
+function chargedIntentPassOrRefusal(
+  surface: string,
+  options: Record<string, unknown>,
+  result: unknown,
+  source: Record<string, unknown>,
+  intentProjected: Record<string, unknown>,
+  intentEstimate: number,
+  binding: Record<string, unknown> | undefined,
+  refusal: Record<string, unknown>,
+): Record<string, unknown> {
+  // Measure the first pass with its receipts and no compaction; the receipt
+  // copy keeps the measuring pass from settling the first pass's own receipt.
+  // An incoming output cursor validates against the same binding as the
+  // bounded pass, so a budget refusal is never reported as a stale snapshot.
+  const measured = finalizeReadOutputEnvelope(
+    surface,
+    { ...options, outputBudget: "unbounded" },
+    result,
+    { ...intentProjected, context_intent: { ...(intentProjected.context_intent as Record<string, unknown>) } },
+    binding,
+  );
+  const charged = { ...options };
+  intentEnvelopeOverheads.set(charged, estimateReadOutputTokens(measured, readOutputMeasurementFormat(options)) - intentEstimate);
+  const rechargedIntent = attachContextIntentReceipt(surface, charged, source);
+  const recharged = finalizeChargedIntentPage(surface, options, charged, result, rechargedIntent, binding);
+  return recharged === undefined ||
+    Object.hasOwn(recharged, "output_budget_exceeded") ||
+    settledIntentOverBudget(options, recharged, rechargedIntent.context_intent) !== undefined
+    ? refusal
+    : recharged;
+}
+
+/**
+ * Finalize a charged intent page, or report that it would deliver no row: the
+ * intent omitted it, or a replayed prefix ends at or before the incoming
+ * cursor's offset. Such a page is never finalized, because the cursor would
+ * be applied to rows it does not cover and the caller's refusal already names
+ * the recovery.
+ */
+function finalizeChargedIntentPage(
+  surface: string,
+  options: Record<string, unknown>,
+  charged: Record<string, unknown>,
+  result: unknown,
+  rechargedIntent: Record<string, unknown>,
+  binding: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  return isReadResultOmittedForBudget(rechargedIntent) || chargedPrefixEndsBeforeCursor(options, rechargedIntent)
+    ? undefined
+    : finalizeReadOutputEnvelope(surface, charged, result, rechargedIntent, binding);
+}
+
+/**
+ * Whether a replayed page's charged prefix ends at or before the incoming
+ * cursor's offset: slicing it would deliver no row, and an empty page would
+ * read as completion where the refusal it replaces names a recovery.
+ */
+function chargedPrefixEndsBeforeCursor(
+  options: Record<string, unknown>,
+  rechargedIntent: Record<string, unknown>,
+): boolean {
+  const raw = options.outputCursor ?? options.output_cursor;
+  if (typeof raw !== "string") return false;
+  const cursor = decodeReadOutputContinuationCursor(raw);
+  const rows = rechargedIntent[cursor.path];
+  return Array.isArray(rows) && rows.length <= cursor.offset;
 }
 
 /**
@@ -1399,16 +1570,47 @@ function settledIntentOverBudget(
     : { receipt, estimated };
 }
 
+/**
+ * Mirror the read-output estimate into a delivered intent receipt: both report
+ * the same envelope, so row compaction must measure the digits the intent
+ * receipt finally carries. Measuring its earlier, smaller estimate let a page
+ * settle one token over the budget it was compacted to (GH-1753). The fit flag
+ * keeps the intent pass's value while candidates are measured, because an
+ * accepted candidate fits and the final reconcile only ever clears the flag;
+ * mirroring it would let an oversized start settle a fitting page on "false".
+ */
+function intentEstimateMirror(
+  intentReceipt: unknown,
+): Pick<ReadOutputPassHooks, "mirrorEstimate"> {
+  if (!isOutputRecord(intentReceipt) || intentReceipt.result_omitted === true) return {};
+  return {
+    mirrorEstimate: (result, estimate) => {
+      if (isOutputRecord(result.context_intent)) result.context_intent.estimated_tokens = estimate;
+    },
+  };
+}
+
 /** Apply read-output dimensions to an intent projection and settle every receipt over the delivered envelope. */
 function finalizeReadOutputEnvelope(
   command: string,
   options: Record<string, unknown>,
   result: unknown,
   intentProjected: Record<string, unknown>,
+  continuationBinding?: Record<string, unknown>,
 ): Record<string, unknown> {
+  const dimensionOptions = {
+    ...options,
+    outputRowContract: options.outputRowContract === true || options.output_row_contract === true,
+  };
+  registerReadOutputPassHooks(dimensionOptions, {
+    ...(continuationBinding === undefined
+      ? {}
+      : { continuationBinding: collapseContinuationMetadata(options, continuationBinding) }),
+    ...intentEstimateMirror(intentProjected.context_intent),
+  });
   const projected = applyReadOutputDimensions(
     command,
-    { ...options, outputRowContract: options.outputRowContract === true || options.output_row_contract === true },
+    dimensionOptions,
     collapseContinuationMetadata(options, intentProjected),
   ) as Record<string, unknown>;
   propagateContextUsageServingReceipt(result, projected);

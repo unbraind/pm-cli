@@ -55,6 +55,21 @@ export function isContinuationTokenKey(key: string): boolean {
   return key === "cursor" || key.endsWith("_cursor");
 }
 
+/** Native read surfaces whose `item` and `items` hold tracker item documents. */
+const TRACKER_ITEM_READ_SURFACES: ReadonlySet<string> = new Set(["get", "list", "search"]);
+
+/**
+ * Whether an envelope key of a read surface holds tracker item documents: the
+ * item `get` returns, or the rows of a `list` or `search` page. An item's
+ * fields are content, not continuation tokens, so a custom field named like
+ * one (`next_cursor`, `sync_cursor`) compacts like any other string
+ * (GH-1754). Any other surface, an extension's included, keeps the exemption
+ * for every key: its rows may carry genuine tokens.
+ */
+export function isTrackerItemDocumentKey(surface: string | undefined, key: string): boolean {
+  return (key === "item" || key === "items") && surface !== undefined && TRACKER_ITEM_READ_SURFACES.has(surface);
+}
+
 /**
  * Whether a cursor argument carries an ellipsis, which no encoder emits: the
  * caller pasted a value a compacted read shortened (GH-1710).

@@ -2,11 +2,13 @@ id: pm-y8zgkg
 title: "Windows: a glob pattern with a leading backslash returns absolute workspace paths, because the matcher judges absoluteness with win32 path.isAbsolute"
 description: "Root cause of the Windows nightly failure GH-1755 (windows-latest, Node 24, shard 2/4, run 44307203866). It reproduces on the 2026.11.18 release. In src/core/fs/file-glob.ts, splitStatic and literalMatch decide whether a pattern is absolute with path.isAbsolute(text). On win32 that call treats a leading backslash as drive-root-relative. A pattern such as \\\\a.ts has no static prefix, so the walk still starts at cwd, but the output base becomes the absolute cwd. The matches therefore come back as absolute workspace paths (C:/.../w/a.ts) instead of matching neither reading: as a glob escape the result would be relative (a.ts), and as root-relative the walk would start at the drive root (the previous tinyglobby expansion returned no files). Two file-glob.spec.ts cases fail only on Windows: the tinyglobby parity case for \\\\a.ts and the escaped-negation case for \\\\!x.ts, which expects !x.ts. Proposed fix: judge absoluteness by the glob's own syntax (a leading / or a drive prefix such as C:/), so a leading backslash is always an escape, identically on every platform. Then keep the parity list's \\\\a.ts entry POSIX-only (it remains a superset of the old result) and add a cross-platform escape test."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: file-glob,"gh:1755",glob,nightly,regression,windows
 created_at: "2026-11-19T00:26:38.140Z"
-updated_at: "2026-11-19T00:26:38.140Z"
+updated_at: "2026-11-19T09:09:07.020Z"
+closed_at: "2026-11-19T07:44:16.145Z"
+completed_at: "2026-11-19T07:44:16.145Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "Absolute-pattern detection uses glob syntax (a leading / or a drive prefix), never win32 path.isAbsolute on the raw pattern; tests/unit/core/fs/file-glob.spec.ts passes on windows-latest, with the leading-backslash parity entry POSIX-only and a cross-platform escape test; The Windows nightly shard that runs file-glob.spec.ts is green"
@@ -14,8 +16,27 @@ parent: pm-i7w2
 risk: medium
 confidence: high
 severity: medium
-expected_result: "A pattern with a leading backslash is read as a glob escape on every platform, so \\\\a.ts matches a.ts relative to cwd and \\\\!x.ts matches the file !x.ts, with the same relative output on Windows and POSIX."
-actual_result: "On Windows, \\\\a.ts and \\\\!x.ts return absolute workspace paths (for example C:/.../!x.ts), because win32 path.isAbsolute treats the leading backslash as root-relative while the walk still starts at cwd."
+resolution: "isAbsolutePattern in src/core/fs/file-glob.ts treats a pattern as absolute only for a leading / (root or //server/share UNC) or, on win32, a drive root C:/. splitStatic and literalMatch use it instead of win32 path.isAbsolute, so \\a.ts matches a.ts and \\!x.ts matches !x.ts relative to cwd on Windows as on POSIX. The tinyglobby parity entry for \\a.ts is POSIX-only (on Windows the old expansion matched nothing, a subset), and a cross-platform escape spec covers isAbsolutePattern on win32, linux and darwin."
+expected_result: "A pattern with a leading backslash is read as a glob escape on every platform, with the same relative output on Windows and POSIX"
+actual_result: "file-glob.spec.ts passes 17/17 on Linux, including the cross-platform escape spec; judging absoluteness with path.win32.isAbsolute fails it; the Windows proof is the PR's Windows regression (Node 24) job and the next nightly"
+component: core
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1748,discovered_from,"2026-11-19T00:26:38.140Z","harness:claude-code","cli:create:dep",detected
+notes[2]{created_at,author,text}:
+  "2026-11-19T06:03:12.127Z","harness:claude-code","Implemented as proposed. isAbsolutePattern in src/core/fs/file-glob.ts treats a pattern as absolute only when it has a leading / (a root or a //server/share UNC root) or, on win32, a drive root matching ^[A-Za-z]:/. splitStatic and literalMatch both use it instead of path.isAbsolute, so a leading backslash is always the glob escape: \\a.ts matches a.ts and \\!x.ts matches !x.ts, with relative output on every platform. The tinyglobby parity entry \\a.ts is now POSIX-only, because on Windows the old expansion matched nothing and the escape reading is a superset. A new cross-platform spec covers the escape plus isAbsolutePattern on win32, linux and darwin. Behaviour that does not change: on win32, path.isAbsolute also treated C:\\x as absolute, but in glob grammar that pattern reads C: plus an escaped x, and both readings match no file because Windows file names cannot contain ':'. A POSIX directory named C: stays relative. Verified on Linux (17/17 in file-glob.spec.ts); the Windows proof is the PR's windows-latest matrix and the next nightly."
+  "2026-11-19T09:09:07.019Z","harness:claude-code","Windows proof: a Nightly Validation dispatch on the PR #1758 branch (run 44488532359) completed green on all four windows-latest / Node 24 shards. tests/unit/core/fs/file-glob.spec.ts passed 17/17 on Windows (job 135437997812), including the cross-platform escape spec. The PR's own Windows regression cohorts do not run this spec, so the nightly is the evidence."
+files[2]{path,scope,note}:
+  src/core/fs/file-glob.ts,project,isAbsolutePattern judges absoluteness by glob syntax
+  tests/unit/core/fs/file-glob.spec.ts,project,cross-platform escape spec; parity entry POSIX-only
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/core/fs/file-glob.spec.ts,project,600,"harness:claude-code","2026-11-19T07:03:50.229Z",local_mutation,fix/output-budget-cursor-regressions
+close_reason: "File glob absoluteness is judged by glob syntax, so a leading backslash is an escape with the same relative output on every platform"
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-y8zgkg
+  gate_id: test-coverage
+  negative_control: "isAbsolutePattern unit cases fail when absoluteness is judged by win32 path.isAbsolute (a leading backslash reads as root-relative), and the cross-platform escape spec expects the relative outputs a.ts and !x.ts that the previous code returned as absolute workspace paths on Windows"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/core/fs/file-glob.spec.ts,pnpm typecheck
+  hosted_checks[2]: CI / Windows regression (Node 24),CI / Gates (coverage)
 body: ""

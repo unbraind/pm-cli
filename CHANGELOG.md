@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed (SDK contract)
+
+- GH-1753: the triage projection advertises an output cursor that is stale on unchanged replay (read_output_cursor_stale): An intent read fingerprinted the rows its intent pass delivered after string compaction, and a charged second pass bound cursors to its own shorter prefix → An intent read binds its output cursors to the uncompacted rows its first pass keeps, so unchanged replays resume and an edit hidden by compaction is refused. Migrate: An output cursor issued by 2026.11.19 or earlier over a string-compacted intent page is refused with read_output_cursor_stale after upgrading; restart the bounded read without --output-cursor ([pm-gh1753](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1753.toon))
+- GH-1754: cursor-named fields inside items block string compaction, so a budgeted list omits its rows (regression since 2026.11.11): Since 2026.11.12 every string under a key named cursor or ending in \_cursor stayed whole at any depth, including an item field such as a custom sync_cursor, so a budgeted list could omit its rows → Only the envelope and non-item surfaces keep that exemption; the fields of item and of every items row compact like other content, as before 2026.11.12. Migrate: To read an item field named like a cursor in full, repeat the read with --output-budget unbounded (outputBudget: "unbounded"); continuation tokens in the envelope are unchanged ([pm-gh1754](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1754.toon))
+
+### Fixed
+
+- Windows: a glob pattern with a leading backslash returns absolute workspace paths, because the matcher judges absoluteness with win32 path.isAbsolute ([pm-y8zgkg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y8zgkg.toon))
+
 ## 2026.11.19 - 2026-11-19
 
 ### Changed (SDK contract)
