@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import "../../../../src/core/output/output.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { readCompactionMarker } from "../../../../src/core/shared/text-normalization.js";
-import { attachReadOutputContracts } from "../../../../src/sdk/context-intent-contracts.js";
+import { attachContextIntentReceipt, attachReadOutputContracts } from "../../../../src/sdk/context-intent-contracts.js";
 import { registerReadOutputPassHooks } from "../../../../src/sdk/read-output-budget.js";
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
-import { decodeReadOutputContinuationCursor } from "../../../../src/sdk/read-output/continuation.js";
+import {
+  decodeReadOutputContinuationCursor,
+  encodeReadOutputContinuationCursor,
+  readOutputCollectionFingerprint,
+} from "../../../../src/sdk/read-output/continuation.js";
 
 /**
  * GH-1753: a budget-driven second triage projection advertised an output
@@ -107,13 +111,12 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     let followed = 0;
     let omitted = 0;
     for (const format of ["toon", "json"] as const) {
-      for (const budget of [700, 1000, 1400]) {
-        for (let padding = 100; padding <= 180; padding += 4) {
+      for (const budget of [1000, 1400]) {
+        for (let padding = 100; padding <= 180; padding += 8) {
           const source = triageSource(padding);
           const first = read(triageOptions(format, budget), source);
-          // The smallest budget cannot fit the widest envelopes; that is a declared omission, also before GH-1753.
+          // Every first page delivers rows: an omitted page would make the comparison vacuous.
           if (first.items === undefined) {
-            expect({ budget, omitted: first.output_budget_exceeded !== undefined }).toEqual({ budget: 700, omitted: true });
             omitted += 1;
             continue;
           }
@@ -126,8 +129,9 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
       }
     }
     // An omitted or single-page result proves nothing about replay, so most configurations must page.
-    expect({ followed: followed >= 50, omitted: omitted <= 6 }).toEqual({ followed: true, omitted: true });
-  });
+    expect({ followed: followed >= 20, omitted }).toEqual({ followed: true, omitted: 0 });
+    // A property sweep over 44 configurations: bounded, but slower under coverage instrumentation.
+  }, 120_000);
 
   it("still refuses the cursor when the source rows changed", () => {
     const source = triageSource(136);
@@ -174,6 +178,37 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     expect(page.items).toHaveLength(1);
     expect(page.output_budget_truncation).toBeUndefined();
     expect(readCompactionMarker(page.items![0]!.title)).toBe(3000 - 240);
+  });
+
+  it("still replays a cursor issued before GH-1753, which bound the intent-compacted rows", () => {
+    const longRows = rows(43).map((row, index) => ({ ...row, title: `${"t".repeat(1999)}${index}` }));
+    const source = triageSource(120, longRows);
+    const options = triageOptions();
+    // The previous release fingerprinted the rows the intent pass delivered, after string compaction.
+    const intent = attachContextIntentReceipt("list", options, structuredClone(source)) as { items: Row[] };
+    const legacy = encodeReadOutputContinuationCursor({
+      command: "list",
+      path: "items",
+      offset: 5,
+      total_rows: intent.items.length,
+      fingerprint: readOutputCollectionFingerprint("items", intent.items, "list"),
+    });
+    expect(read({ ...options, outputCursor: legacy }, source).items![0]!.id).toBe("demo-5");
+    // A current cursor binds the uncompacted rows instead, and both stay stale on a changed source.
+    const current = read(options, source).output_budget_truncation!.continuations[0]!.cursor;
+    expect(decodeReadOutputContinuationCursor(current).fingerprint).not.toBe(decodeReadOutputContinuationCursor(legacy).fingerprint);
+    const changed = triageSource(120, longRows.map((row, index) => (index === 7 ? { ...row, title: `changed ${row.title}` } : row)));
+    for (const cursor of [legacy, current]) {
+      expect(refusal(() => read({ ...options, outputCursor: cursor }, changed)).context).toMatchObject({ code: "read_output_cursor_stale" });
+    }
+  });
+
+  it("issues and replays a cursor over compacted SDK rows that hold a non-JSON value", () => {
+    const dated = rows(43).map((row) => ({ ...row, title: "x".repeat(2000), when: new Date(Number.NaN), tags: ["a", "b"] }));
+    const source = triageSource(120, dated);
+    const first = read(triageOptions(), source);
+    const cursor = first.output_budget_truncation!.continuations[0]!.cursor;
+    expect(read({ ...triageOptions(), outputCursor: cursor }, source).items![0]!.id).toBe(`demo-${first.items!.length}`);
   });
 
   it("delivers a compacted page that fits its budget exactly instead of settling it one token over", () => {

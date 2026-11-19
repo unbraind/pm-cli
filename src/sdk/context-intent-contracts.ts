@@ -1361,14 +1361,29 @@ function intentContinuationBinding(
 ): Record<string, unknown> | undefined {
   const intent = intentProjected.context_intent;
   if (!isOutputRecord(intent) || intent.result_omitted === true) return undefined;
+  // Compacted rows went through the compaction walk, which also turns any
+  // non-JSON value (a Date) into a plain record; the bound rows take the same
+  // walk with every string kept whole, so hashing them never throws where the
+  // delivered rows would not.
+  const compacted = intent.degradation === "recursive_budget_compaction" || intent.degradation === "budget_row_compaction";
   const binding: Record<string, unknown> = { ...intentProjected };
   for (const collection of readOutputContinuationRowCollections(source)) {
     const delivered = intentProjected[collection.path];
     if (Array.isArray(delivered) && Array.isArray(collection.value) && delivered.length <= collection.value.length) {
-      binding[collection.path] = collection.value.slice(0, delivered.length);
+      const prefix = collection.value.slice(0, delivered.length);
+      binding[collection.path] = compacted ? prefix.map(normalizeContextIntentValue) : prefix;
     }
   }
   return binding;
+}
+
+/** Copy a value through the intent compaction walk while keeping every string whole. */
+function normalizeContextIntentValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeContextIntentValue);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeContextIntentValue(entry)]));
+  }
+  return value;
 }
 
 /** Attach universal row, omission, and optional intent-budget contracts in rendering order. */

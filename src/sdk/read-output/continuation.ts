@@ -310,14 +310,32 @@ export function prioritizeAssuranceAssertions(
   };
 }
 
-/** The collection a cursor on `path` validates against: the bound one when the result declares the path. */
-function continuationSnapshot(
+/**
+ * Whether a cursor still matches the rows it was issued against: the bound
+ * collection when the intent layer registered one, else the result's own.
+ * A cursor issued before GH-1753 bound an intent read's delivered rows, so it
+ * still replays while those rows are unchanged. The fallback accepts only a
+ * fingerprint of the delivered rows, which a current cursor never carries
+ * unless they equal the bound rows, so hidden-edit detection is unchanged.
+ */
+function continuationMatches(
   result: Record<string, unknown>,
-  path: string,
+  command: PmReadOutputSurface,
+  cursor: PmReadOutputCursorEnvelope,
   bindings: ReadonlyMap<string, PmReadOutputRowCollection> | undefined,
-): PmReadOutputRowCollection | undefined {
-  const own = readOutputContinuationRowCollections(result).find((entry) => entry.path === path);
-  return own && (bindings?.get(path) ?? own);
+): boolean {
+  const own = readOutputContinuationRowCollections(result).find((entry) => entry.path === cursor.path);
+  if (!own) return false;
+  const bound = bindings?.get(cursor.path) ?? own;
+  const totalRows = Array.isArray(bound.value) ? bound.value.length : Object.keys(bound.value).length;
+  // A cursor issued under the other retention direction would page the wrong
+  // end of the collection, so it is as stale as a changed snapshot.
+  const backward = readOutputRetainsTail(command, cursor.path);
+  if (totalRows !== cursor.total_rows || cursor.offset > totalRows || backward !== (cursor.direction === "backward")) return false;
+  return (
+    readOutputCollectionFingerprint(cursor.path, bound.value, command) === cursor.fingerprint ||
+    (bound !== own && readOutputCollectionFingerprint(cursor.path, own.value, command) === cursor.fingerprint)
+  );
 }
 
 /**
@@ -341,30 +359,14 @@ export function applyReadOutputContinuation(
       { code: "read_output_cursor_command_mismatch" },
     );
   }
-  const collection = continuationSnapshot(result, cursor.path, bindings);
-  const totalRows = collection
-    ? Array.isArray(collection.value)
-      ? collection.value.length
-      : Object.keys(collection.value).length
-    : 0;
-  // A cursor issued under the other retention direction would page the wrong
-  // end of the collection, so it is as stale as a changed snapshot.
-  const backward = readOutputRetainsTail(command, cursor.path);
-  if (
-    !collection ||
-    totalRows !== cursor.total_rows ||
-    cursor.offset > totalRows ||
-    backward !== (cursor.direction === "backward") ||
-    readOutputCollectionFingerprint(cursor.path, collection.value, command) !==
-      cursor.fingerprint
-  ) {
+  if (!continuationMatches(result, command, cursor, bindings)) {
     throw new PmCliError(
       "The read-output continuation no longer matches the declared row collection; restart the bounded read.",
       EXIT_CODE.USAGE,
       { code: "read_output_cursor_stale" },
     );
   }
-  if (!backward) return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
+  if (!readOutputRetainsTail(command, cursor.path)) return sliceReadOutputRowCollection(result, cursor.path, cursor.offset);
   // A replayed annotation page reports the rows it delivers even when no
   // further compaction runs to recount them.
   const sliced = sliceReadOutputRowCollection(result, cursor.path, 0, cursor.offset);
