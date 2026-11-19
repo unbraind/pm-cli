@@ -3,7 +3,7 @@ import "../../../../src/core/output/output.js";
 import { PmCliError } from "../../../../src/core/shared/errors.js";
 import { readCompactionMarker } from "../../../../src/core/shared/text-normalization.js";
 import { attachContextIntentReceipt, attachReadOutputContracts } from "../../../../src/sdk/context-intent-contracts.js";
-import { registerReadOutputPassHooks } from "../../../../src/sdk/read-output-budget.js";
+import { registerReadOutputPassHooks, withDeliveredOutputRenderer } from "../../../../src/sdk/read-output-budget.js";
 import { applyReadOutputDimensions } from "../../../../src/sdk/read-output-contracts.js";
 import {
   decodeReadOutputContinuationCursor,
@@ -165,6 +165,49 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     const first = read(projected, source);
     const cursor = first.output_budget_truncation!.continuations[0]!.cursor;
     expect(read({ ...projected, outputCursor: cursor }, source).items![0]!.id).toBe(`demo-${first.items!.length}`);
+  });
+
+  it("settles a compacted page on the smaller estimate across a digit boundary", () => {
+    // The page measures 999 with two three-digit receipt estimates and 1000 with two four-digit ones.
+    const fields = Object.fromEntries(Array.from({ length: 10 }, (_, index) => [`custom_${index}`, "y".repeat(220)]));
+    const page = read({ for: "triage", outputBudget: 999, outputFormat: "toon", outputRowContract: true, full: true }, {
+      items: [{ id: "pm-0", title: "x".repeat(500), status: "open", type: "Task", priority: 2, ...fields, label: "z".repeat(21) }],
+      count: 1,
+      total: 1,
+      has_more: false,
+    });
+    expect(page.items).toHaveLength(1);
+    expect(page.read_output).toMatchObject({ estimated_tokens: 999, result_omitted: false });
+    expect(page.context_intent).toMatchObject({ estimated_tokens: 999, within_budget: true });
+    // Two more label characters: the retry from zero misses too, so the first estimate is restored and the page is omitted.
+    const over = read({ for: "triage", outputBudget: 999, outputFormat: "toon", outputRowContract: true, full: true }, {
+      items: [{ id: "pm-0", title: "x".repeat(500), status: "open", type: "Task", priority: 2, ...fields, label: "z".repeat(23) }],
+      count: 1,
+      total: 1,
+      has_more: false,
+    });
+    expect(over.output_budget_exceeded).toBeDefined();
+    expect(over.read_output).toMatchObject({ result_omitted: true });
+  });
+
+  it("keeps a fitting estimate for a renderer whose layout depends on it, retrying from zero only at a digit boundary", () => {
+    // A delivered renderer may print a guide for some estimates; a page that fits as measured keeps that estimate.
+    const render = (result: unknown): string => {
+      const estimate = Number((result as { read_output?: { estimated_tokens?: unknown } }).read_output?.estimated_tokens);
+      const guide = estimate === 0 || (estimate >= 650 && estimate <= 900) ? "g".repeat(1600) : "";
+      return `${JSON.stringify(result)}${guide}`;
+    };
+    const page = withDeliveredOutputRenderer("json", render, () =>
+      read({ outputBudget: 600, resolvedOutputFormat: "json" }, {
+        items: Array.from({ length: 8 }, (_, index) => ({ id: `pm-${index}`, title: "x".repeat(300) })),
+        count: 8,
+        total: 8,
+        has_more: false,
+      }),
+    );
+    // Settling every candidate from zero lands inside the guide range and omits the page.
+    expect(page.read_output).toMatchObject({ result_omitted: false, estimated_tokens: 538 });
+    expect(page.items).toHaveLength(3);
   });
 
   it("fingerprints rows only when a continuation needs them", () => {

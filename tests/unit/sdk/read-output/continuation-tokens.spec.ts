@@ -152,7 +152,7 @@ describe("tracker item fields named like continuation keys compact like content 
     expect(readCompactionMarker(intent.items[0]!.nested[0]!.cursor)).toBe(30_000 - 240);
   });
 
-  it("still delivers the envelope's own continuation tokens whole beside a compacted item field, and the page cursor replays", () => {
+  it("still delivers the envelope's own continuation tokens whole beside a compacted item field, and the page cursor unchanged", () => {
     const cursor = `eyJ2${"QUJD".repeat(120)}`;
     const page = {
       items: [1, 2, 3].map((index) => ({ id: `pm-${index}`, title: `${"T".repeat(2000)}${index}`, next_cursor: oversized })),
@@ -172,10 +172,11 @@ describe("tracker item fields named like continuation keys compact like content 
     expect(intent.next_cursor).toBe(cursor);
     expect(intent.nested.section).toEqual({ next_cursor: cursor, output_cursor: cursor });
     expect(readCompactionMarker(intent.items[0]!.next_cursor)).toBe(30_000 - 240);
-    // A real producer page cursor emitted beside compacted cursor-named item fields still replays.
+    // A decodable producer page cursor beside compacted cursor-named item fields is delivered unchanged.
     const producer = Buffer.from(JSON.stringify({ version: 1, fingerprint: "fp", after_id: "pm-3", after_index: 3 })).toString("base64url");
-    const replayable = applyReadOutputDimensions("list", { outputFormat: "json", outputBudget: 2000 }, { ...structuredClone(page), next_cursor: producer });
-    expect(decodeQueryCursorEnvelope(replayable.next_cursor as string)).toMatchObject({ fingerprint: "fp" });
+    const delivered = applyReadOutputDimensions("list", { outputFormat: "json", outputBudget: 2000 }, { ...structuredClone(page), next_cursor: producer });
+    expect(delivered.next_cursor).toBe(producer);
+    expect(decodeQueryCursorEnvelope(delivered.next_cursor as string)).toMatchObject({ fingerprint: "fp" });
   });
 
   it("keeps genuine tokens inside an extension's items rows, which are not tracker items", async () => {
