@@ -1410,7 +1410,7 @@ export function attachReadOutputContracts(
   // bound the bytes actually delivered.
   const settled = settledIntentOverBudget(options, finalized, intentProjected.context_intent);
   if (settled === undefined) {
-    return readOutputStageOmittedIntentPage(finalized, intentProjected)
+    return readOutputStageOmittedIntentPage(options, finalized, intentProjected)
       ? chargedIntentPassOrRefusal(surface, options, result, source, intentProjected, Number(intentEstimate), binding, finalized)
       : finalized;
   }
@@ -1438,14 +1438,22 @@ export function attachReadOutputContracts(
 /**
  * Whether the read-output stage refused a page the intent pass fitted: its
  * receipts pushed the page over the budget, and its continuation metadata
- * left no room for even one row.
+ * left no room for even one row. A read with a canonical include selection
+ * keeps the refusal: a charged prefix can drop every row the selection names,
+ * or the only row a validated selector matches.
  */
 function readOutputStageOmittedIntentPage(
+  options: Record<string, unknown>,
   finalized: Record<string, unknown>,
   intentProjected: Record<string, unknown>,
 ): boolean {
   const intent = intentProjected.context_intent;
-  return Object.hasOwn(finalized, "output_budget_exceeded") && isOutputRecord(intent) && intent.result_omitted !== true;
+  return (
+    Object.hasOwn(finalized, "output_budget_exceeded") &&
+    isOutputRecord(intent) &&
+    intent.result_omitted !== true &&
+    (options.outputInclude ?? options.output_include) === undefined
+  );
 }
 
 /**

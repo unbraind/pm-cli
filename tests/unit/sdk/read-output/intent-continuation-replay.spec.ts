@@ -189,6 +189,20 @@ describe("intent read output cursors replay against unchanged rows (GH-1753)", (
     const refused = read(options(1), page(1, 2076));
     expect(refused.output_budget_exceeded).toBeDefined();
     expect(refused.items).toBeUndefined();
+    // An include selection keeps the refusal: the selector matches only the later row, which a charged prefix drops.
+    const optional = {
+      items: [
+        { id: "demo-0", title: "x".repeat(60), status: "open", type: "Task", priority: 2 },
+        { id: "demo-1", title: "y", status: "open", type: "Task", priority: 2, opt: "o".repeat(20) },
+      ],
+      count: 2,
+      total: 9,
+      has_more: true,
+      next_cursor: producerCursor,
+    };
+    // Retrying would revalidate the selector against the shorter prefix and throw for a valid selector.
+    const selected = read({ for: "triage", full: true, limit: "2", resolvedOutputFormat: "json", outputBudget: 400, outputInclude: "items.opt" }, optional);
+    expect(selected.output_budget_exceeded).toBeDefined();
   });
 
   it("replays a cursor through the charged retry without a stale refusal or an empty success", () => {
