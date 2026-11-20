@@ -94,6 +94,36 @@ describe("history stream summary (GH-1664)", () => {
     expect(isCanonicalHistoryTimestamp(1_700_000_000_000)).toBe(false);
   });
 
+  it("judges canonical timestamps exactly like the Date round trip, on calendar edges and random fields", () => {
+    const oracle = (value: unknown): boolean => {
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u.test(value)) return false;
+      const parsed = Date.parse(value);
+      return Number.isFinite(parsed) && new Date(parsed).toISOString() === value;
+    };
+    const pad = (value: number, width: number) => String(value).padStart(width, "0");
+    const cases: string[] = [];
+    for (const year of [0, 4, 100, 400, 1900, 1999, 2000, 2023, 2024, 2100, 9999]) {
+      for (const month of [0, 1, 2, 4, 6, 9, 11, 12, 13]) {
+        for (const day of [0, 1, 28, 29, 30, 31, 32]) {
+          cases.push(`${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}T12:30:45.678Z`);
+        }
+      }
+    }
+    for (const time of ["00:00:00.000", "23:59:59.999", "24:00:00.000", "23:60:00.000", "23:59:60.000", "99:99:99.999"]) {
+      cases.push(`2024-02-29T${time}Z`);
+    }
+    // Seeded random fields, including out-of-range values.
+    let seed = 1664;
+    const next = (bound: number) => {
+      seed = (Math.imul(seed, 1_103_515_245) + 12_345) >>> 0;
+      return seed % bound;
+    };
+    for (let index = 0; index < 5_000; index += 1) {
+      cases.push(`${pad(next(10_000), 4)}-${pad(next(14), 2)}-${pad(next(33), 2)}T${pad(next(26), 2)}:${pad(next(62), 2)}:${pad(next(62), 2)}.${pad(next(1000), 3)}Z`);
+    }
+    for (const value of cases) expect(isCanonicalHistoryTimestamp(value), value).toBe(oracle(value));
+  });
+
   it("summarizes the oldest and newest canonical timestamps and flags irregular ones", () => {
     expect(summarizeHistoryStreamBounds([])).toEqual({ count: 0, oldest: null, newest: null, irregular: false });
     expect(

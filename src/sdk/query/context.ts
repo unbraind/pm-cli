@@ -1850,15 +1850,20 @@ function pushUnparentedSection(
 }
 
 function pushActivitySection(lines: string[], result: ContextResult): void {
-  if (!result.activity || result.activity.length === 0) {
+  const receipt = result.activity_history_read;
+  if ((!result.activity || result.activity.length === 0) && receipt === undefined) {
     return;
   }
   lines.push("## Recent activity");
-  for (const entry of result.activity) {
+  for (const entry of result.activity ?? []) {
     const msg = entry.msg ? ` ${entry.msg}` : "";
     lines.push(
       `- ${entry.ts.slice(0, 16)}Z ${entry.id} ${entry.op} by:${entry.author}${msg}`,
     );
+  }
+  // A read that could not be bounded says so in every format (GH-1664).
+  if (receipt !== undefined) {
+    lines.push(`- history read: ${receipt.reason}, ${receipt.streams_read}/${receipt.streams_total} streams parsed`);
   }
   lines.push("");
 }

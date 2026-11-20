@@ -165,13 +165,35 @@ interface StoredSummary {
 const CANONICAL_TIMESTAMP =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
 
-/** Whether a value is a canonical millisecond UTC timestamp whose string order is its time order. */
+/** Days in a proleptic Gregorian month, as Date computes them. */
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28;
+  return month === 4 || month === 6 || month === 9 || month === 11 ? 30 : 31;
+}
+
+/**
+ * Whether a value is a canonical millisecond UTC timestamp whose string order
+ * is its time order: exactly what `new Date(Date.parse(v)).toISOString() === v`
+ * accepts for the fixed `YYYY-MM-DDTHH:mm:ss.sssZ` shape, checked on the
+ * calendar fields instead of a Date round trip, which dominated summary
+ * rebuilds (about 256 ms per 200,000 entries).
+ */
 export function isCanonicalHistoryTimestamp(value: unknown): value is string {
   if (typeof value !== "string" || !CANONICAL_TIMESTAMP.test(value)) {
     return false;
   }
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) && new Date(parsed).toISOString() === value;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= daysInMonth(year, month) &&
+    Number(value.slice(11, 13)) < 24 &&
+    Number(value.slice(14, 16)) < 60 &&
+    Number(value.slice(17, 19)) < 60
+  );
 }
 
 /** Derive the bounds a full read of one stream observed. */
