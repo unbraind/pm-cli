@@ -658,6 +658,7 @@ For documentation-only changes, at minimum run:
 
 ```bash
 pnpm build
+pnpm quality:docs-links
 rg -n "forbidden-private-token-or-path" README.md docs
 ```
 

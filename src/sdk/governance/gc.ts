@@ -218,6 +218,49 @@ async function removeCacheFile(
   }
 }
 
+/**
+ * Remove the selected path-based targets. A runtime/ that is a link or
+ * junction leads out of the tracker, so nothing under it is removed, whichever
+ * target names it, and the workspace snapshot temp sweep is skipped too.
+ */
+async function removePathTargets(
+  pmRoot: string,
+  scopes: readonly string[],
+  dryRun: boolean,
+): Promise<{ removed: string[]; retained: string[]; warnings: string[] }> {
+  const removed: string[] = [];
+  const retained: string[] = [];
+  const warnings: string[] = [];
+  const runtimeRedirected = scopes.includes("runtime") && (await isRedirectedRuntimeDirectory(pmRoot));
+  if (runtimeRedirected) warnings.push("redirected_runtime_directory:runtime");
+  for (const target of GC_TARGETS.filter((candidate) => scopes.includes(candidate.scope))) {
+    if (target.scope === "runtime" && runtimeRedirected) {
+      retained.push(target.relativePath);
+      continue;
+    }
+    const result = await removeCacheFile(pmRoot, target, dryRun);
+    (result.removed ? removed : retained).push(target.relativePath);
+    warnings.push(...result.warnings);
+  }
+  if (scopes.includes("runtime") && !runtimeRedirected) {
+    const snapshotTempResult = await sweepWorkspaceSnapshotTemps(pmRoot, dryRun);
+    removed.push(...snapshotTempResult.removed);
+    retained.push(...snapshotTempResult.retained);
+    warnings.push(...snapshotTempResult.warnings);
+  }
+  return { removed, retained, warnings };
+}
+
+/** Whether runtime/ exists but is not a real directory (a symbolic link, junction or file). */
+async function isRedirectedRuntimeDirectory(pmRoot: string): Promise<boolean> {
+  try {
+    return !(await fs.lstat(path.join(pmRoot, "runtime"))).isDirectory();
+  } catch (error: unknown) {
+    if (isFileMissingError(error)) return false;
+    throw error;
+  }
+}
+
 async function sweepWorkspaceSnapshotTemps(
   pmRoot: string,
   dryRun: boolean,
@@ -375,30 +418,7 @@ export async function runGc(
   const settings = await readSettings(pmRoot);
   const dryRun = options.dryRun === true;
   const scopes = parseScopes(options.scope);
-  const selectedTargets = GC_TARGETS.filter((target) =>
-    scopes.includes(target.scope),
-  );
-
-  const removed: string[] = [];
-  const retained: string[] = [];
-  const warnings: string[] = [];
-
-  for (const target of selectedTargets) {
-    const result = await removeCacheFile(pmRoot, target, dryRun);
-    if (result.removed) {
-      removed.push(target.relativePath);
-    } else {
-      retained.push(target.relativePath);
-    }
-    warnings.push(...result.warnings);
-  }
-
-  if (scopes.includes("runtime")) {
-    const snapshotTempResult = await sweepWorkspaceSnapshotTemps(pmRoot, dryRun);
-    removed.push(...snapshotTempResult.removed);
-    retained.push(...snapshotTempResult.retained);
-    warnings.push(...snapshotTempResult.warnings);
-  }
+  const { removed, retained, warnings } = await removePathTargets(pmRoot, scopes, dryRun);
 
   // The locks scope is not a path-based GC_TARGET: it sweeps the locks/ directory
   // and removes only locks whose own embedded ttl has expired (crashed-process
@@ -495,7 +515,7 @@ export async function runGc(
   warnings.push(
     ...(await runActiveOnIndexHooks({
       mode: dryRun ? "gc:dry-run" : "gc",
-      total_items: selectedTargets.length,
+      total_items: GC_TARGETS.filter((target) => scopes.includes(target.scope)).length,
     })),
   );
   const guidance = buildGcGuidance({

@@ -158,11 +158,18 @@ describe("history stream summary (GH-1664)", () => {
   });
 
   it("never persists bounds read inside the racy window of the stream's last change", async () => {
-    // The default wall clock: a stream written just now is inside the window.
+    // The default wall clock, and a source whose last change is later than the
+    // read began, so the stream is inside the racy window however the runner
+    // schedules this test.
     restoreClock();
     restoreClock = () => undefined;
     await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
-    const session = await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const session = await open(["pm-a.jsonl"]);
+    const real = await sourceOf("pm-a.jsonl");
+    const changedLater = BigInt(Date.now() + 60_000) * 1_000_000n;
+    const source = Object.assign(Object.create(Object.getPrototypeOf(real) as object) as typeof real, real, { mtimeNs: changedLater, ctimeNs: changedLater });
+    session.record("pm-a.jsonl", snapshotOf([entry("2026-11-01T00:00:00.000Z")], source, await sizeOf("pm-a.jsonl")));
+    await session.commit();
     expect(session.fallback).toBe("summary_missing");
     await expect(stat(path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH))).rejects.toMatchObject({ code: "ENOENT" });
   });

@@ -844,9 +844,11 @@ bounds, named by the larger cause), `read_hooks_active`, `unwindowed_query`
 `window_reaches_most_streams` (current bounds, but the window still reached
 most streams).
 `readRecentActivity({ limit }, global)` returns the newest compact rows (the
-first page of `raw: true`) without totals or a cursor, so it reads only the
-streams those rows come from; `pm context` builds its activity section with it
-and reports a fallback as `activity_history_read`. Repository tracking:
+first page of `raw: true`) without totals or a cursor. `limit` caps the rows
+returned, not the streams parsed: with usable stream bounds and no active read
+hooks it prunes streams that cannot reach those rows, while under 500 streams
+or with read hooks it parses every stream. `pm context` builds its activity
+section with it and reports a fallback as `activity_history_read`. Repository tracking:
 [pm-gh1664](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1664.toon).
 
 `runCalendar` uses the same `after` contract and frozen clock. `total_count`

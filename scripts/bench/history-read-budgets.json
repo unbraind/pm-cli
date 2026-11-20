@@ -6,7 +6,7 @@
     "min_history_bytes": 104857600
   },
   "orient_three_rows": {
-    "max_p50_ms": 2246,
+    "max_p50_ms": 1440,
     "max_p50_fraction_of_full_scan": 0.6
   }
 }

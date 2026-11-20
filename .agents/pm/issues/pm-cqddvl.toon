@@ -2,11 +2,13 @@ id: pm-cqddvl
 title: pm gc --scope runtime removes derived caches through a redirected runtime directory
 description: "Raised by the Codex review of the pm-gh1664 change on 2026-11-20. The runtime gc scope removes registry targets such as runtime/test-runs, runtime/history-drift-cache.json and, since pm-gh1664, runtime/history-stream-summary.json by joining them under the tracker root and removing them. If runtime/ is a symbolic link or Windows junction, the removal follows it and deletes files outside the tracker. The new stream summary's own reads and writes already refuse a redirected runtime directory (lstat must report a real directory), as does the context-usage ledger (src/sdk/context/usage-ledger.ts, docs/BOUNDED_CONTEXT_READS.md), but the gc registry path predates that rule and applies to every runtime target. Duplicate check: searched gc runtime, redirected runtime, symlink, junction and gc follow; no item owns it."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: gc,runtime,safety,symlink
 created_at: "2026-11-20T13:55:29.388Z"
-updated_at: "2026-11-20T13:55:29.388Z"
+updated_at: "2026-11-20T16:12:41.334Z"
+closed_at: "2026-11-20T16:12:40.631Z"
+completed_at: "2026-11-20T16:12:40.631Z"
 author: "harness:claude-code"
 estimated_minutes: 60
 acceptance_criteria: pm gc refuses to remove any runtime-scope target when runtime/ is not a real directory (lstat) and reports a warning naming the redirected directory; existing removals of real runtime targets are unchanged; a spec covers a symlinked runtime directory
@@ -14,8 +16,23 @@ parent: pm-o2kc
 risk: low
 confidence: medium
 severity: low
+resolution: "runGc checks once, by lstat, whether runtime/ is a real directory. When it is a symbolic link, junction or file, every runtime-scope target and the workspace snapshot temp sweep are retained, and gc reports redirected_runtime_directory:runtime. A failure to inspect runtime/ other than its absence is rethrown."
 expected_result: Garbage collection never deletes outside the tracker
-actual_result: A symlinked runtime directory makes pm gc remove the targets inside its link target
+actual_result: "A symlinked runtime directory keeps its link target's test-runs, history-drift-cache.json and history-stream-summary.json, and gc warns; real runtime directories are cleaned as before (gc spec 21/21)"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1664,discovered_from,"2026-11-20T13:55:29.388Z","harness:claude-code","cli:create:dep",detected
+files[2]{path,scope,note}:
+  src/sdk/governance/gc.ts,project,runtime-scope targets and the snapshot temp sweep are retained when runtime/ is not a real directory
+  tests/unit/commands/governance/gc-command.spec.ts,project,symlinked runtime directory and lstat failure
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/gc-command.spec.ts,project,300,"harness:claude-code","2026-11-20T16:12:39.019Z",local_mutation,fix/bounded-activity-reads,redirected runtime directory is never followed
+close_reason: pm gc never removes runtime targets through a redirected runtime directory
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-cqddvl
+  gate_id: test-coverage
+  negative_control: "With runtime/ a symbolic link to another directory, runGc with scope runtime previously removed that directory test-runs, history-drift-cache.json and history-stream-summary.json; the new spec asserts all three survive and the warning redirected_runtime_directory:runtime is reported"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/commands/governance/gc-command.spec.ts
+  hosted_checks[2]: CI / Gates (coverage),CI / Gates (static)
 body: ""

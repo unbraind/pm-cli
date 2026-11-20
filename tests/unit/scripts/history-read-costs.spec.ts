@@ -116,6 +116,7 @@ describe("history read cost benchmark (GH-1664)", () => {
     process.env.PM_SEED = "inherited";
     process.env.PM_CLOCK_TICK_MS = "1";
     const calls: string[] = [];
+    const phases: string[] = [];
     let workspaceRoot = "";
     let summaryPresentDuringFullScan = false;
     const settled: number[] = [];
@@ -127,25 +128,26 @@ describe("history read cost benchmark (GH-1664)", () => {
       fullScanIterations: 2,
       settle: async () => { settled.push(calls.length); },
       measureControl: async () => ({ duration_ms: 40, peak_rss_bytes: 1_000 }),
-      measure: async (args: string[], environment: { workspaceRoot: string; env: Record<string, string> }) => {
+      measure: async (args: string[], environment: { workspaceRoot: string; env: Record<string, string> }, phase: string) => {
         calls.push(args.join(" "));
+        phases.push(phase);
         workspaceRoot = environment.workspaceRoot;
         expect(environment.env.PM_CLOCK).toBeUndefined();
         expect(environment.env.PM_SEED).toBeUndefined();
         const summaryFile = path.join(environment.env.PM_PATH!, "runtime", "history-stream-summary.json");
-        const fullScan = calls.length > 2 + 2;
+        const fullScan = phase === "full_scan";
         if (fullScan) {
-          summaryPresentDuringFullScan ||= await stat(summaryFile).then(() => true, () => false);
-          await mkdir(path.dirname(summaryFile), { recursive: true });
-          await writeFile(summaryFile, "{}");
+          // The control blocks the summary path with a directory before each sample.
+          summaryPresentDuringFullScan ||= !(await stat(summaryFile)).isDirectory();
         }
         return {
           duration_ms: fullScan ? 3_000 : 1_000,
-          output: { activity: [{}, {}, {}], ...(fullScan ? { activity_history_read: { reason: "summary_missing" } } : {}) },
+          output: { activity: [{}, {}, {}], ...(fullScan ? { activity_history_read: { reason: "summary_invalid" } } : {}) },
         };
       },
     });
     expect(calls).toHaveLength(2 + 2 + 2);
+    expect(phases).toEqual(["warmup", "warmup", "bounded", "bounded", "full_scan", "full_scan"]);
     expect(new Set(calls)).toEqual(new Set([ORIENT_ARGS.join(" ")]));
     expect(settled).toEqual([1]);
     expect(summaryPresentDuringFullScan).toBe(false);
@@ -159,10 +161,10 @@ describe("history read cost benchmark (GH-1664)", () => {
   });
 
   it("drives the real CLI, control and racy settle, and refuses a fixture too small to keep stream bounds", async () => {
-    // Below the 500-stream minimum the summary is never written, so the
-    // forced full scan carries no summary_missing receipt.
+    // Below the 500-stream minimum the summary is never consulted, so the
+    // forced full scan carries no summary_invalid receipt.
     await expect(buildHistoryReadReport({ streams: 3, entriesPerStream: 1, padBytes: 1, boundedIterations: 1, fullScanIterations: 1 }))
-      .rejects.toThrow("reported a bounded read, expected summary_missing");
+      .rejects.toThrow("reported a bounded read, expected summary_invalid");
   }, 60_000);
 
   it("refuses a bounded read that was not bounded and a full scan that was", async () => {
@@ -186,7 +188,7 @@ describe("history read cost benchmark (GH-1664)", () => {
         call += 1;
         return { duration_ms: 1, output: { activity: [{}, {}, {}] } };
       },
-    })).rejects.toThrow("reported a bounded read, expected summary_missing");
+    })).rejects.toThrow("reported a bounded read, expected summary_invalid");
     expect(call).toBe(4);
     await expect(buildHistoryReadReport({
       ...options,
@@ -205,7 +207,7 @@ describe("history read cost benchmark (GH-1664)", () => {
     const committed = { orient_three_rows: { max_p50_ms: 1_200 } };
     expect(buildHistoryReadBudgets(report(), committed).orient_three_rows.max_p50_ms).toBe(1_200);
     expect(buildHistoryReadBudgets(report(), { orient_three_rows: { max_p50_ms: 9_000 } }).orient_three_rows.max_p50_ms).toBe(2_000);
-    expect(buildHistoryReadBudgets(report(), committed, true).orient_three_rows.max_p50_ms).toBe(2_000);
+    expect(buildHistoryReadBudgets(report(), committed, "reviewed").orient_three_rows).toMatchObject({ max_p50_ms: 2_000, last_increase: { reason: "reviewed", from_ms: 1_200, to_ms: 2_000 } });
     expect(buildHistoryReadBudgets(report(), {}).orient_three_rows.max_p50_ms).toBe(2_000);
 
     const regressed = report();
@@ -283,9 +285,14 @@ describe("history read cost benchmark (GH-1664)", () => {
     await main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => slower });
     expect(JSON.parse(await readFile(budgetPath, "utf8")).orient_three_rows.max_p50_ms).toBe(2_000);
     await main(["--update", "--allow-increase", "reviewed runner image change"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => slower });
-    expect(JSON.parse(await readFile(budgetPath, "utf8")).orient_three_rows.max_p50_ms).toBe(2_400);
+    const raised = JSON.parse(await readFile(budgetPath, "utf8")).orient_three_rows;
+    expect(raised.max_p50_ms).toBe(2_400);
+    // The reviewed reason is recorded with the increase and carried forward.
+    expect(raised.last_increase).toEqual({ reason: "reviewed runner image change", from_ms: 2_000, to_ms: 2_400, measured_on: "v24.22.3" });
+    await main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => slower });
+    expect(JSON.parse(await readFile(budgetPath, "utf8")).orient_three_rows.last_increase.reason).toBe("reviewed runner image change");
     expect(await readFile(documentationPath, "utf8")).toContain("--allow-increase <reviewed reason>");
-    for (const argv of [["--check", "--allow-increase", "why"], ["--update", "--allow-increase"], ["--update", "--allow-increase", "--check"]]) {
+    for (const argv of [["--check", "--allow-increase", "why"], ["--update", "--allow-increase"], ["--update", "--allow-increase", "   "], ["--update", "--allow-increase", "--check"]]) {
       await expect(main(argv, { buildReport: async () => report() })).rejects.toThrow("Usage:");
     }
   });

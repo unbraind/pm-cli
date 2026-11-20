@@ -188,20 +188,25 @@ export async function buildHistoryReadReport(options = {}) {
     const environment = benchmarkEnvironment(workspaceRoot, manifest.pm_root, lifecycle.signal);
     // The first read builds every derived projection; only reads after the
     // racy window may persist stream bounds.
-    await measure(ORIENT_ARGS, environment);
+    await measure(ORIENT_ARGS, environment, "warmup");
     await settle();
-    await measure(ORIENT_ARGS, environment);
+    await measure(ORIENT_ARGS, environment, "warmup");
     const bounded = [];
     for (let index = 0; index < settings.boundedIterations; index += 1) {
-      const sample = await measure(ORIENT_ARGS, environment);
+      const sample = await measure(ORIENT_ARGS, environment, "bounded");
       assertOrientRead(sample.output, undefined);
       bounded.push(sample);
     }
+    // The control forces the complete traversal without timing a rebuild:
+    // a directory at the summary path makes it unreadable and unwritable, so
+    // each sample parses every stream and persists nothing.
     const fullScan = [];
+    const summaryPath = path.join(manifest.pm_root, SUMMARY_RELATIVE_PATH);
     for (let index = 0; index < settings.fullScanIterations; index += 1) {
-      await rm(path.join(manifest.pm_root, SUMMARY_RELATIVE_PATH), { force: true });
-      const sample = await measure(ORIENT_ARGS, environment);
-      assertOrientRead(sample.output, "summary_missing");
+      await rm(summaryPath, { recursive: true, force: true });
+      await mkdir(summaryPath, { recursive: true });
+      const sample = await measure(ORIENT_ARGS, environment, "full_scan");
+      assertOrientRead(sample.output, "summary_invalid");
       fullScan.push(sample);
     }
     return {
@@ -228,10 +233,15 @@ export async function buildHistoryReadReport(options = {}) {
  * ratchet: a committed ceiling is kept when the measurement would raise it,
  * unless a reviewed increase is explicitly allowed.
  */
-export function buildHistoryReadBudgets(report, committed, allowIncrease = false) {
+export function buildHistoryReadBudgets(report, committed, increaseReason = undefined) {
   const measured = Math.ceil(report.bounded.p50_ms * CEILING_HEADROOM);
   const previous = committed?.orient_three_rows?.max_p50_ms;
-  const ceiling = Number.isFinite(previous) && !allowIncrease ? Math.min(measured, previous) : measured;
+  const ceiling = Number.isFinite(previous) && increaseReason === undefined ? Math.min(measured, previous) : measured;
+  // A reviewed increase is recorded with the budget it changed; otherwise the
+  // last recorded increase is carried forward.
+  const lastIncrease = Number.isFinite(previous) && ceiling > previous
+    ? { reason: increaseReason, from_ms: previous, to_ms: ceiling, measured_on: report.node_version }
+    : committed?.orient_three_rows?.last_increase;
   return {
     schema_version: 1,
     policy: "Ceilings may only decrease unless a reviewed platform correction is documented. The fraction gate applies on every runner; the absolute ceiling and its negative control apply on qualified runners.",
@@ -242,6 +252,7 @@ export function buildHistoryReadBudgets(report, committed, allowIncrease = false
     orient_three_rows: {
       max_p50_ms: ceiling,
       max_p50_fraction_of_full_scan: 0.6,
+      ...(lastIncrease === undefined ? {} : { last_increase: lastIncrease }),
     },
   };
 }
@@ -296,7 +307,7 @@ ${report.platform}/${report.architecture}. Each sample is a fresh CLI process.
 | Path | runs | best | p50 | max |
 |---|---:|---:|---:|---:|
 | Bounded (trusted stream bounds) | ${report.bounded.runs} | ${report.bounded.min_ms} ms | ${report.bounded.p50_ms} ms | ${report.bounded.max_ms} ms |
-| Full scan (summary removed before each sample) | ${report.full_scan.runs} | ${report.full_scan.min_ms} ms | ${report.full_scan.p50_ms} ms | ${report.full_scan.max_ms} ms |
+| Full scan (summary path blocked before each sample) | ${report.full_scan.runs} | ${report.full_scan.min_ms} ms | ${report.full_scan.p50_ms} ms | ${report.full_scan.max_ms} ms |
 
 The ceiling is a ratchet: \`--update\` keeps the committed ceiling when a
 measurement would raise it, unless \`--allow-increase <reviewed reason>\` is
@@ -321,10 +332,10 @@ function parseArguments(argv) {
   const check = argv.includes("--check");
   const increaseIndex = argv.indexOf("--allow-increase");
   const increaseReason = increaseIndex === -1 ? undefined : argv[increaseIndex + 1];
-  if (update === check || (increaseIndex !== -1 && (!update || !increaseReason || increaseReason.startsWith("--")))) {
+  if (update === check || (increaseIndex !== -1 && (!update || !increaseReason?.trim() || increaseReason.startsWith("--")))) {
     throw new Error("Usage: node scripts/bench/history-read-costs.mjs --update [--allow-increase <reviewed reason>]|--check");
   }
-  return { mode: update ? "update" : "check", allowIncrease: increaseReason !== undefined };
+  return { mode: update ? "update" : "check", increaseReason: increaseReason?.trim() };
 }
 
 /** Run the benchmark in update or check mode; `options.buildReport` measures the report. */
@@ -345,7 +356,7 @@ export async function main(argv, options) {
   if (parsed.mode === "update") {
     if (!qualified) throw benchmarkAdmissionError("History read", report, [], qualification);
     const committed = await readFile(budgetPath, "utf8").then(JSON.parse, () => undefined);
-    const budgets = buildHistoryReadBudgets(report, committed, parsed.allowIncrease);
+    const budgets = buildHistoryReadBudgets(report, committed, parsed.increaseReason);
     // A committed ceiling must be one this measurement proves can fail.
     const violations = [
       ...compareHistoryReadBudgets(report, budgets, true),

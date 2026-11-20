@@ -67,8 +67,8 @@ Recent-activity reads are gated on history volume rather than item count
 (GH-1664). `node scripts/bench/history-read-costs.mjs --check`, part of
 `pnpm quality:static`, measures `pm context --for orient --limit 3` on a
 fixture with 2,000 history streams and over 100 MiB of history, once with
-trusted derived stream bounds and once with the summary removed before every
-sample. The bounded p50 must stay below 0.6 of the same runner's full-scan p50;
+trusted derived stream bounds and once with the summary path blocked before
+every sample, which forces a complete traversal that persists nothing. The bounded p50 must stay below 0.6 of the same runner's full-scan p50;
 on a qualified runner whose full scan exceeds the declared ceiling it must also
 stay below that ceiling, and elsewhere the absolute check is reported as
 unverified. See the

@@ -606,6 +606,44 @@ describe("runGc", () => {
     });
   });
 
+  it.runIf(process.platform !== "win32")("never removes runtime targets through a redirected runtime directory", async () => {
+    await withTempPmPath(async (context) => {
+      const elsewhere = await mkdtemp(path.join(os.tmpdir(), "pm-gc-elsewhere-"));
+      try {
+        // runtime/ points at another tracker's runtime directory.
+        await mkdir(path.join(elsewhere, "test-runs"), { recursive: true });
+        await writeFile(path.join(elsewhere, "history-stream-summary.json"), "{}\n");
+        await writeFile(path.join(elsewhere, "history-drift-cache.json"), "{}\n");
+        await rm(path.join(context.pmPath, "runtime"), { recursive: true, force: true });
+        await fs.symlink(elsewhere, path.join(context.pmPath, "runtime"));
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+        expect(gc.removed).toEqual([]);
+        expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json", "runtime/history-stream-summary.json"]);
+        expect(gc.warnings).toEqual(["redirected_runtime_directory:runtime"]);
+        await expect(fs.stat(path.join(elsewhere, "history-stream-summary.json"))).resolves.toBeTruthy();
+        await expect(fs.stat(path.join(elsewhere, "test-runs"))).resolves.toBeTruthy();
+      } finally {
+        await rm(elsewhere, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it("rethrows an unexpected failure to inspect the runtime directory", async () => {
+    await withTempPmPath(async (context) => {
+      const runtimePath = path.join(context.pmPath, "runtime");
+      const actualLstat = fs.lstat.bind(fs);
+      const lstatSpy = vi.spyOn(fs, "lstat").mockImplementation(async (target, ...rest) => {
+        if (target === runtimePath) throw Object.assign(new Error("lstat failure"), { code: "EACCES" });
+        return actualLstat(target, ...(rest as []));
+      });
+      try {
+        await expect(runGc({ path: context.pmPath }, { scope: ["runtime"] })).rejects.toThrow("lstat failure");
+      } finally {
+        lstatSpy.mockRestore();
+      }
+    });
+  });
+
   it("rethrows unexpected filesystem errors", async () => {
     await withTempPmPath(async (context) => {
       const failedTarget = path.join(context.pmPath, "index", "manifest.json");

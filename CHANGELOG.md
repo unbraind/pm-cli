@@ -11,6 +11,7 @@
 
 ### Fixed
 
+- pm gc --scope runtime removes derived caches through a redirected runtime directory ([pm-cqddvl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cqddvl.toon))
 - A history entry whose agent_harness is not a string crashes pm activity --raw, provenance reads and pm context with unknown_error ([pm-sew1dj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sew1dj.toon))
 - GH-1730: the MCP flat-parameter parity spec compares the output-size token estimate of two concurrent reads that both write the context-usage ledger, so a Windows shard fails when one read waits on the ledger ([pm-gh1730](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1730.toon))
 
