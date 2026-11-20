@@ -44,6 +44,17 @@ const FIXED_CONTRACT_FIELDS: ReadonlySet<string> = new Set([
 export const RESTORE_CREDENTIALS_STEP =
   `URL credentials in this invocation were replaced with ${URL_CREDENTIAL_PLACEHOLDER}; restore them before replaying any command shown here.`;
 
+/**
+ * The step that replaces {@link RESTORE_CREDENTIALS_STEP} when the refusal
+ * rejects the URL credentials in `source`: restoring those would reproduce
+ * the refusal byte for byte, while any other redacted credential in the
+ * invocation still has to be restored (GH-1757). It carries the correction
+ * itself, so a bounded rendering that keeps only the first step stays actionable.
+ */
+export function rejectedCredentialsStep(source: string): string {
+  return `URL credentials in this invocation were replaced with ${URL_CREDENTIAL_PLACEHOLDER}. Those in ${source} caused this refusal, so do not restore them: give ${source} a value without URL credentials, and restore any other redacted credentials before replaying.`;
+}
+
 /** Redact each token, so builders derive guidance only from credential-free arguments. */
 export function redactRefusalArgv(argv: readonly string[]): string[] {
   return argv.map(redactUrlCredentialsInToken);
@@ -53,6 +64,8 @@ interface RedactionPass {
   /** Shared or cyclic references map to one redacted copy, so no alias keeps the raw value. */
   copies: Map<object, unknown>;
   changed: boolean;
+  /** This module's own credential steps for the guidance being redacted, left intact and never repeated. */
+  ownSteps: ReadonlySet<string>;
 }
 
 /**
@@ -89,9 +102,18 @@ function redactString(value: string, pass: RedactionPass, tokenField: boolean): 
   return redacted;
 }
 
+/**
+ * Schema entries copied whole: the fixed contract strings, and the
+ * code-defined rejected-credentials source, so every pass builds the same step.
+ */
+function isVerbatimSchemaEntry(position: Position, key: string, entry: unknown): boolean {
+  if (position !== "schema") return false;
+  return key === "urlCredentialsRejected" || (FIXED_CONTRACT_FIELDS.has(key) && typeof entry === "string");
+}
+
 function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean, position: Position): unknown {
-  // The restore step is this module's own text; redacting it again would garble and duplicate it.
-  if (value === RESTORE_CREDENTIALS_STEP) return value;
+  // The credential steps are this module's own text; redacting them again would garble and duplicate them.
+  if (typeof value === "string" && pass.ownSteps.has(value)) return value;
   if (typeof value === "string") return redactString(value, pass, tokenField);
   if (typeof value !== "object" || value === null) return value;
   const existing = pass.copies.get(value);
@@ -105,7 +127,7 @@ function redactValue(value: unknown, pass: RedactionPass, tokenField: boolean, p
   const copy: Record<string, unknown> = {};
   pass.copies.set(value, copy);
   for (const [key, entry] of Object.entries(value)) {
-    if (position === "schema" && FIXED_CONTRACT_FIELDS.has(key) && typeof entry === "string") {
+    if (isVerbatimSchemaEntry(position, key, entry)) {
       copy[key] = entry;
       continue;
     }
@@ -122,15 +144,22 @@ type RecoveryShape = { suggested_retry?: string; suggested_retry_args?: string[]
  * so the diagnostic budget and output accounting measure what is delivered.
  * When anything was removed or the invocation carried credentials, the
  * executable retry is withheld, since it would run a different command, and
- * the guidance gains one leading restore step. Returns the original object otherwise.
+ * the guidance gains one leading credential step: restore the redacted
+ * credentials, or, when the refusal rejected those credentials themselves
+ * (`urlCredentialsRejected`), replay without them. Returns the original object otherwise.
  */
-export function redactGuidanceCredentials<T extends { recovery?: RecoveryShape; nextSteps?: string[] }>(guidance: T): T {
-  const pass: RedactionPass = { copies: new Map(), changed: false };
+export function redactGuidanceCredentials<
+  T extends { recovery?: RecoveryShape; nextSteps?: string[]; urlCredentialsRejected?: { source: string } },
+>(guidance: T): T {
+  const rejected = guidance.urlCredentialsRejected;
+  const leadingStep = rejected === undefined ? RESTORE_CREDENTIALS_STEP : rejectedCredentialsStep(rejected.source);
+  const ownSteps = new Set([RESTORE_CREDENTIALS_STEP, leadingStep]);
+  const pass: RedactionPass = { copies: new Map(), changed: false, ownSteps };
   const safe = redactValue(guidance, pass, false, "schema") as T;
   if (!pass.changed && !invocationCarriesUrlCredentials()) return guidance;
   if (safe.recovery) safe.recovery = { ...safe.recovery, suggested_retry: undefined, suggested_retry_args: undefined };
   // First, so a bounded rendering that drops trailing steps keeps it.
-  const steps = (safe.nextSteps ?? []).filter((step) => step !== RESTORE_CREDENTIALS_STEP);
-  safe.nextSteps = [RESTORE_CREDENTIALS_STEP, ...steps];
+  const steps = (safe.nextSteps ?? []).filter((step) => !ownSteps.has(step));
+  safe.nextSteps = [leadingStep, ...steps];
   return safe;
 }

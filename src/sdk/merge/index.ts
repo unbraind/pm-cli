@@ -60,6 +60,7 @@ export {
   refreshMergeAttributeFenceIfInstalled,
   resolveMergeInstallContext,
   runMergeInstall,
+  type MergeFenceAuditOptions,
   type MergeFenceAuditResult,
   type MergeDriverConfigurationAuditResult,
   type MergeFenceRefreshOutcome,

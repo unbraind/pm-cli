@@ -2,11 +2,13 @@ id: pm-gh1757
 title: "GH-1757: credential refusal next_steps tell agents to restore the redacted URL credentials before replay, which reproduces the same refusal"
 description: "Reported in GH-1757 against 2026.11.18. When pm claim is refused because the author value is a URL that carries userinfo (via --author or PM_AUTHOR), the refusal correctly redacts the userinfo in recovery.attempted_command. But its next_steps tell the agent to restore the redacted credentials before replaying, and following that advice reproduces the byte-identical refusal. The guidance should instead steer to a replay that can succeed: an author value without URL credentials. The refusal-redaction work that introduced the redaction is related."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,claim,credential-redaction,"gh:1757",recovery,refusal
 created_at: "2026-11-19T00:19:42.403Z"
-updated_at: "2026-11-19T00:19:42.403Z"
+updated_at: "2026-11-20T05:51:56.792Z"
+closed_at: "2026-11-20T05:12:59.373Z"
+completed_at: "2026-11-20T05:12:59.373Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: The refusal's next_steps never advise restoring redacted URL credentials when those credentials are the cause of the refusal; Following the emitted next_steps leads to a successful claim; Covered for both the --author flag and PM_AUTHOR
@@ -14,8 +16,36 @@ parent: pm-doxj
 risk: low
 confidence: high
 severity: medium
-expected_result: "A refusal caused by URL credentials in the author value gives next_steps that lead to a successful replay, such as using an author value without URL credentials, and never advises restoring the redacted credentials."
-actual_result: "next_steps say to restore the redacted URL credentials before replaying; doing so reproduces the identical refusal, while a plain author retry succeeds."
+resolution: "The identity refusal declares the typed PmCliErrorContext marker url_credentials_rejected; redactGuidanceCredentials then leads with REJECTED_CREDENTIALS_STEP (the credentials caused this refusal, do not restore them, replay with a value that carries none) instead of the restore step. The refusal's requirement text no longer holds a credential-shaped sample, which redaction used to rewrite into user:[redacted]@ and count as a removed credential, so a PM_AUTHOR refusal carries only its plain-name step. contract_change and the SDK surface acknowledgement record the new optional key."
+expected_result: "A refusal caused by URL credentials in an identity never advises restoring them, and following its next_steps leads to a successful claim, for both --author and PM_AUTHOR."
+actual_result: "claim --author with a credential URL now leads with the do-not-restore step plus Rerun with --author set to a plain name (JSON and text); PM_AUTHOR yields only Rerun with PM_AUTHOR set to a plain name, with an unredacted requirement; the plain-author replay claims the item with exit 0. Without the marker the GH-1757 spec fails; the full suite passes."
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-nhauur,related,"2026-11-19T00:19:42.403Z","harness:claude-code","cli:create:dep",detected
+comments[3]{created_at,author,text}:
+  "2026-11-20T04:53:45.257Z","harness:claude-code","Root cause has two halves. (1) redactGuidanceCredentials always led with the restore step whenever anything was redacted or the invocation carried credentials, with no notion of the credentials being the refusal's cause. (2) For PM_AUTHOR the command line carries no credential, yet the step still appeared: the identity refusal's own requirement text held a credential-shaped sample (user:password@), which the text rule rewrote to user:[redacted]@, so the pass reported a removal. Fix: the identity refusal declares url_credentials_rejected (a typed PmCliErrorContext marker, not a message heuristic), and the redactor then leads with a step that says not to restore them and to replay without URL credentials; the requirement text no longer contains a credential-shaped sample, so a PM_AUTHOR refusal carries only 'Rerun with PM_AUTHOR set to a plain name.' Verified through dist for --author JSON and text, PM_AUTHOR JSON, and the successful plain replay."
+  "2026-11-20T05:34:33.633Z","harness:claude-code","Codex review of the first head found the do-not-restore step over-attributed: with PM_AUTHOR carrying userinfo and an unrelated credential URL in a create description, the step claimed every redacted credential caused the refusal, and a bounded text rendering could keep it while dropping the PM_AUTHOR correction. The marker now carries its source (url_credentials_rejected: { source }), and the step names that source, gives the correction itself and still asks to restore any other redacted credentials. The integration spec covers that mixed case; the unit spec covers idempotence across a second redaction pass."
+  "2026-11-20T05:51:56.792Z","harness:claude-code","Codex review round 2: a registered secret sharing a six-character fragment with the code-defined source label (for example one containing pm_author) made the second redaction pass, run by text rendering, rewrite the marker's source and build a different step. The urlCredentialsRejected marker is now copied whole like the fixed contract fields, so both passes build the identical step; PmCliErrorContext documents that source is a code-defined label, never caller input. Unit spec covers two passes under such a secret."
+files[6]{path,scope,note}:
+  src/cli/error-guidance.ts,project,maps url_credentials_rejected into guidance
+  src/cli/runtime/refusal-credential-redaction.ts,project,REJECTED_CREDENTIALS_STEP replaces the restore step when the refusal rejected the credentials (GH-1757)
+  src/core/shared/errors.ts,project,PmCliErrorContext.url_credentials_rejected
+  src/core/shared/url-credentials.ts,project,identity refusal declares url_credentials_rejected; requirement text carries no credential-shaped sample
+  tests/integration/cli/credential-redaction.integration.spec.ts,project,"GH-1757 --author, text rendering, PM_AUTHOR and successful plain replay"
+  tests/unit/cli/runtime/refusal-credential-redaction.spec.ts,project,"rejected-credential step, idempotence, clean pass-through"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/cli/runtime/refusal-credential-redaction.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts tests/unit/core/shared/url-credentials.spec.ts,project,400,"harness:claude-code","2026-11-20T04:53:44.489Z",local_mutation,fix/diagnostic-population-truth
+close_reason: Identity refusals caused by URL credentials steer to a replay without them instead of advising their restoration
+contract_change:
+  api: PmCliErrorContext.url_credentials_rejected and identity refusal next_steps
+  before: "A refusal of an identity carrying URL userinfo (--author, PM_AUTHOR, --assignee and other identity options) led its next_steps with restoring the redacted credentials, and its requirement text held a credential-shaped sample that redaction rewrote"
+  after: "Such refusals set url_credentials_rejected: { source }; their first next step names that source, says its credentials caused the refusal and must not be restored, and asks to restore any other redacted credentials; a PM_AUTHOR refusal whose command line carries no credential has only the plain-name step"
+  migrate: "Agents and clients matching the old restore-them step text for identity refusals should follow the source-specific step; producers whose refusal rejects URL credentials themselves set url_credentials_rejected: { source } on the PmCliError context"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1757
+  gate_id: test-coverage
+  negative_control: Without the url_credentials_rejected marker the GH-1757 specs in tests/unit/cli/runtime/refusal-credential-redaction.spec.ts and tests/integration/cli/credential-redaction.integration.spec.ts fail on the restore-them step; with the old credential-shaped requirement text the PM_AUTHOR case fails on a redacted required field and an added credential step
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/cli/runtime/refusal-credential-redaction.spec.ts tests/integration/cli/credential-redaction.integration.spec.ts tests/unit/core/shared/url-credentials.spec.ts,node scripts/run-tests.mjs test,pnpm typecheck,node scripts/sdk-surface-snapshot.mjs --check
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

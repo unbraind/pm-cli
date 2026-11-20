@@ -9,7 +9,7 @@
  */
 import { assertInitializedTracker } from "../environment/tracker-preflight.js";
 import { isFileMissingError, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { access, readFile, realpath } from "node:fs/promises";
+import { access, lstat, readFile, realpath } from "node:fs/promises";
 import { constants } from "node:fs";
 import { execFile } from "node:child_process";
 import path from "node:path";
@@ -34,6 +34,7 @@ import { resolveSourceContextWritePolicy } from "../environment/source-context.j
 import {
   gitWorkspaceEnvironment,
   resolveMergeDriverConfigScope,
+  stripGitPathTerminator,
   writeMergeDriverGitConfig,
 } from "./worktree-config.js";
 import { discoverProjectRuntimeVersionPins } from "../environment/project-runtime-compatibility.js";
@@ -312,7 +313,8 @@ export async function findGitWorkspaceRoot(
         timeout: 10_000,
       },
     );
-    return await realpath(stdout.trim());
+    // Strip only Git's line terminator: a worktree directory name may end in whitespace.
+    return await realpath(stripGitPathTerminator(stdout));
   } catch {
     return null;
   }
@@ -592,15 +594,17 @@ async function reconcileGitattributesBlock(
   // read/modify/write transaction through its Git directory, not a tracker lock.
   const gitDirectory = dryRun
     ? null
-    : (
-        await execFileAsync("git", ["rev-parse", "--absolute-git-dir"], {
-          cwd: workspaceRoot,
-          env: gitWorkspaceEnvironment(),
-          encoding: "utf8",
-          windowsHide: true,
-          timeout: 10_000,
-        })
-      ).stdout.trim();
+    : stripGitPathTerminator(
+        (
+          await execFileAsync("git", ["rev-parse", "--absolute-git-dir"], {
+            cwd: workspaceRoot,
+            env: gitWorkspaceEnvironment(),
+            encoding: "utf8",
+            windowsHide: true,
+            timeout: 10_000,
+          })
+        ).stdout,
+      );
   const releaseLock =
     gitDirectory === null
       ? null
@@ -646,7 +650,11 @@ async function reconcileGitattributesBlock(
       const prefix = current.trimEnd();
       next = `${prefix.length > 0 ? `${prefix}\n\n` : ""}${block}\n`;
     }
-    if (next === current) {
+    // Git ignores a symlinked .gitattributes in the working tree, so a fence in
+    // its target protects nothing: the atomic write replaces the link with a
+    // regular file holding the target's lines and the block (GH-1759). An
+    // unchanged block means the file exists, so lstat cannot miss it here.
+    if (next === current && !(await lstat(gitattributesPath)).isSymbolicLink()) {
       return { path: gitattributesPath, changed: false };
     }
     if (!dryRun) {
@@ -682,44 +690,118 @@ export function resolveProjectMergeTypeFolders(
   );
 }
 
+/** Options for {@link auditMergeAttributeFence}. */
+export interface MergeFenceAuditOptions {
+  /**
+   * Top level of the Git worktree that holds the tracker, as
+   * {@link findGitWorkspaceRoot} reports it. Git never reads a
+   * `.gitattributes` above its own top level, so the walk stops there
+   * (GH-1759). Omit it to resolve the worktree from the tracker root; pass
+   * `null` for a tracker outside any Git worktree, which keeps the bounded
+   * filesystem walk.
+   */
+  gitWorkspaceRoot?: string | null;
+}
+
+/** Canonical path of a directory, or null when it cannot be resolved. */
+async function realDirectory(directory: string): Promise<string | null> {
+  try {
+    return await realpath(directory);
+  } catch {
+    return null;
+  }
+}
+
+/** Whether `directory` is `root` or below it, judged by native path components. */
+function isWithinDirectory(root: string, directory: string): boolean {
+  const relative = path.relative(root, directory);
+  return relative === "" || (!path.isAbsolute(relative) && relative.split(path.sep)[0] !== "..");
+}
+
+/**
+ * Read a working-tree `.gitattributes` the way Git does: only a regular
+ * file, never through a symbolic link (Git stopped following in-tree
+ * attribute symlinks in 2.32). Null when absent or not readable as one.
+ */
+async function readWorktreeAttributeFile(candidate: string): Promise<string | null> {
+  try {
+    return (await lstat(candidate)).isFile() ? await readFile(candidate, "utf8") : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Read any `.gitattributes` at a path, for a tracker outside Git. */
+async function readAttributeFile(candidate: string): Promise<string | null> {
+  try {
+    return await readFile(candidate, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Where the fence walk runs. Inside a Git worktree it starts at the tracker's
+ * canonical path and ends at the worktree's canonical top level, the only
+ * directories whose attribute files Git consults for the tracker (GH-1759);
+ * null when the tracker is not inside that worktree or cannot be resolved.
+ * Outside Git it is the logical tracker path, with no top level.
+ */
+async function resolveFenceWalk(
+  resolvedRoot: string,
+  gitWorkspaceRoot: string | null | undefined,
+): Promise<{ trackerRoot: string; topLevel: string | null } | null> {
+  const requested = gitWorkspaceRoot === undefined ? await findGitWorkspaceRoot(resolvedRoot) : gitWorkspaceRoot;
+  if (requested === null) return { trackerRoot: resolvedRoot, topLevel: null };
+  const [trackerRoot, topLevel] = await Promise.all([realDirectory(resolvedRoot), realDirectory(requested)]);
+  if (trackerRoot === null || topLevel === null || !isWithinDirectory(topLevel, trackerRoot)) return null;
+  return { trackerRoot, topLevel };
+}
+
+/**
+ * The nearest attribute file on the walk that holds a managed block. Inside
+ * Git the walk ends at the top level however deep the tracker sits; outside
+ * Git it stops after eight levels.
+ */
+async function findManagedFenceFile(walk: {
+  trackerRoot: string;
+  topLevel: string | null;
+}): Promise<{ directory: string; content: string } | null> {
+  const read = walk.topLevel === null ? readAttributeFile : readWorktreeAttributeFile;
+  let directory = walk.trackerRoot;
+  for (let depth = 0; walk.topLevel !== null || depth < 8; depth += 1) {
+    const content = await read(path.join(directory, ".gitattributes"));
+    if (content !== null && (content.includes(PM_GITATTRIBUTES_V2_START) || content.includes(PM_GITATTRIBUTES_START))) {
+      return { directory, content };
+    }
+    const parent = path.dirname(directory);
+    if (parent === directory || (walk.topLevel !== null && path.relative(walk.topLevel, directory) === "")) {
+      return null;
+    }
+    directory = parent;
+  }
+  return null;
+}
+
 /**
  * Audit the committed `.gitattributes` merge fence against the coverage the
- * active schema requires, without touching git configuration. The fence file
- * is discovered by walking up from the tracker root (bounded), so the audit
- * stays filesystem-only and safe to run inside `pm validate`. A `drift`
- * result means items of some type folder (or a tracker JSONL store) would
- * merge under git's default text driver despite the fence being installed.
+ * active schema requires, without touching git configuration. Inside a Git
+ * worktree the fence file is discovered by walking the tracker's canonical
+ * path up to the worktree's top level and reading only regular attribute
+ * files, the files Git applies: a matching fence in an enclosing, different
+ * repository, or one reached through a symlink, never counts (GH-1759).
+ * Outside Git the walk is bounded at eight levels. A `drift` result means
+ * items of some type folder (or a tracker JSONL store) would merge under
+ * git's default text driver despite the fence being installed.
  */
 export async function auditMergeAttributeFence(
   pmRoot: string,
   typeFolders: string[],
+  options: MergeFenceAuditOptions = {},
 ): Promise<MergeFenceAuditResult> {
-  const resolvedRoot = path.resolve(pmRoot);
-  let fenceDirectory: string | null = null;
-  let fenceContent = "";
-  let directory = resolvedRoot;
-  for (let depth = 0; depth < 8; depth += 1) {
-    const candidate = path.join(directory, ".gitattributes");
-    try {
-      const raw = await readFile(candidate, "utf8");
-      if (
-        raw.includes(PM_GITATTRIBUTES_V2_START) ||
-        raw.includes(PM_GITATTRIBUTES_START)
-      ) {
-        fenceDirectory = directory;
-        fenceContent = raw;
-        break;
-      }
-    } catch {
-      // No .gitattributes at this level; keep walking up.
-    }
-    const parent = path.dirname(directory);
-    if (parent === directory) {
-      break;
-    }
-    directory = parent;
-  }
-  if (fenceDirectory === null) {
+  const walk = await resolveFenceWalk(path.resolve(pmRoot), options.gitWorkspaceRoot);
+  const fence = walk === null ? null : await findManagedFenceFile(walk);
+  if (walk === null || fence === null) {
     return {
       status: "not_installed",
       missing_patterns: [],
@@ -727,8 +809,10 @@ export async function auditMergeAttributeFence(
       schema_scope: "project",
     };
   }
+  const fenceDirectory = fence.directory;
+  const fenceContent = fence.content;
   const fencePath = path.join(fenceDirectory, ".gitattributes");
-  const relativeRoot = toPosixRelative(fenceDirectory, resolvedRoot);
+  const relativeRoot = toPosixRelative(fenceDirectory, walk.trackerRoot);
   const blocks = managedMergeBlocks(fenceContent);
   const expected = buildMergeAttributePatterns(relativeRoot, typeFolders);
   const owned = blocks.filter((block) =>

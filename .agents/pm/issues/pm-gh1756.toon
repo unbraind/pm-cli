@@ -2,11 +2,13 @@ id: pm-gh1756
 title: "GH-1756: pm context counts in_progress_unowned and in_progress_idle over a different population than in_progress"
 description: "Reported in GH-1756 against 2026.11.18. With a custom progress status (workflow.in_progress_status set to doing), the summary's in_progress counts items by the status role, but in_progress_unowned and in_progress_idle count items by the configured progress status. When doing carries the blocked role, pm context reports in_progress 0 alongside in_progress_unowned 2 and in_progress_idle 2, so the advisories exceed their own total. All three counts must describe the same population. The unowned in-progress hygiene and the idle advisory that introduced these counts are related."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: advisories,"area:context","gh:1756",in-progress,status-roles
 created_at: "2026-11-19T00:19:36.461Z"
-updated_at: "2026-11-19T00:19:36.461Z"
+updated_at: "2026-11-20T05:34:47.519Z"
+closed_at: "2026-11-20T05:12:58.002Z"
+completed_at: "2026-11-20T05:12:58.002Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "For any status-role configuration, in_progress_unowned and in_progress_idle never exceed in_progress; A custom progress status is counted consistently by all three summary fields; Tests cover a custom progress status with the blocked role and with the active role"
@@ -14,9 +16,35 @@ parent: pm-dj98
 risk: low
 confidence: high
 severity: medium
-expected_result: "in_progress, in_progress_unowned and in_progress_idle count the same population, so neither advisory can exceed in_progress for any status configuration."
-actual_result: "With a doing progress status whose role is blocked, pm context reports in_progress 0 while in_progress_unowned and in_progress_idle both report 2."
+resolution: "summary.in_progress counts every item in workflow.in_progress_status, the predicate the advisory scan and the focus ranking already use, while open stays the active items outside that status, so active_items equals open plus in_progress whenever the progress status carries the active role. ContextSummary, COMMANDS.md and MUTATION_INTEGRITY.md document the population; contract_change declares the non-default-workflow difference."
+expected_result: "in_progress, in_progress_unowned and in_progress_idle count the same population, so neither advisory exceeds in_progress for any status-role configuration."
+actual_result: "With a doing progress status carrying the blocked role, context reports in_progress 2, in_progress_unowned 2, in_progress_idle 2, active_items 1 and open 1; with the active role, 2/2/2 with active_items 3 and open 1. Counting over active items only (the old code) fails the spec with in_progress 0; the full suite passes."
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1724,related,"2026-11-19T00:19:36.461Z","harness:claude-code","cli:create:dep",detected
   pm-w8q4,related,"2026-11-19T00:19:36.461Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-20T05:34:32.926Z","harness:claude-code","Codex review of the first head raised two findings, both fixed. (1) The workflow may name the progress status by an alias: the advisory scan resolved it through the registry but the summary compared item statuses with the raw id, so an aliased status still gave in_progress 0 beside advisories 2/2. context.ts now resolves the progress status once (progressStatusOf) for the summary counts, the focus rank, the open/in-progress predicates and returned focus row states. (2) The markdown summary printed in_progress inside active_items even when the progress status is not active; it now renders on its own line marked outside active_items, and WORKSPACE_POSITION_AND_LIFECYCLE.md qualifies the active_items = open + in_progress guarantee. Specs cover the alias and both renderings."
+files[2]{path,scope,note}:
+  src/sdk/query/context.ts,project,summary in_progress counts the configured progress status like both advisories (GH-1756)
+  tests/unit/commands/governance/health-in-progress-work.spec.ts,project,custom doing status with the blocked and the active role
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-in-progress-work.spec.ts tests/unit/commands/query/context-command.spec.ts,project,300,"harness:claude-code","2026-11-20T04:51:32.174Z",local_mutation,fix/diagnostic-population-truth
+docs[3]{path,scope,note}:
+  docs/COMMANDS.md,project,context in-progress population
+  docs/MUTATION_INTEGRITY.md,project,context in-progress population
+  docs/WORKSPACE_POSITION_AND_LIFECYCLE.md,project,active_items equation qualified for a non-active progress status
+close_reason: pm context counts in_progress and both in-progress advisories over one population
+contract_change:
+  api: pm context summary.in_progress
+  before: "summary.in_progress counted only items in the progress status that also carried the active role, compared by the raw workflow id, while in_progress_unowned and in_progress_idle counted every item in that status, so the advisories could exceed the total"
+  after: "summary.in_progress counts every item in workflow.in_progress_status, alias-resolved and whatever role it carries, the same population as both advisories; open stays the active items outside it, and markdown renders a non-active progress count apart from active_items"
+  migrate: "No change for the default workflow, where the progress status carries the active role. With a non-active progress status, read in_progress as the count of items in that status rather than active_items - open"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1756
+  gate_id: test-coverage
+  negative_control: "Counting summary.in_progress over active-role items only, as before, fails the GH-1756 spec in tests/unit/commands/governance/health-in-progress-work.spec.ts with in_progress 0 against advisories 2/2 for a progress status carrying the blocked role"
+  local_checks[3]: node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-in-progress-work.spec.ts tests/unit/commands/query/context-command.spec.ts,node scripts/run-tests.mjs test,pnpm typecheck
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

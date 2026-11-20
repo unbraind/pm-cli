@@ -104,7 +104,9 @@ time: it can include an item whose history is newer than its `updated_at`
 (for example after a restore), which the advisory does not count;
 `pm claim <id> --takeover-stale` re-judges each one under the item lock. `pm context` reports `in_progress_unowned`
 and `in_progress_idle` next to `in_progress` in its summary when they are
-non-zero, so unattended work is not read as active work.
+non-zero, so unattended work is not read as active work. `in_progress` counts
+the same population as both advisories: every item in the configured progress
+status, whatever role that status carries (GH-1756).
 
 A blocking secret policy may be bypassed only by an explicit `--force` on a
 force-capable mutation. The warning records that an override occurred while

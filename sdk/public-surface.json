@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2164,
+    "covered_symbols": 2165,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2165
+    "required_symbols": 2166
   },
   "breaking_acknowledgements": [
     {
@@ -3466,6 +3466,15 @@
       ],
       "package_version": "2026.11.18",
       "reason": "pm-5kfzjh: ManagedExtensionRecord gains the optional update_check_timeout_ms field, present only after a diagnostic update check whose lookup ran out of its budget (update_error npm_registry_lookup_timed_out or github_remote_lookup_timed_out) and never persisted by a diagnostic; existing fields are unchanged, but keyof ManagedExtensionRecord gains a key, so a consumer that derives a required mapping from it (for example Record<keyof ManagedExtensionRecord, string>) or asserts its exact key set must add update_check_timeout_ms."
+    },
+    {
+      "changes": [
+        "signature ./sdk:auditMergeAttributeFence",
+        "signature ./sdk:PmCliErrorContext",
+        "signature ./sdk/merge:auditMergeAttributeFence"
+      ],
+      "package_version": "2026.11.20",
+      "reason": "GH-1759 (pm-gh1759): auditMergeAttributeFence gains an optional third options parameter ({ gitWorkspaceRoot }). Inside a Git worktree it now walks the tracker's canonical path up to the worktree's canonical top level and reads only regular .gitattributes files, so a matching fence in an enclosing, different repository, or one reached through a symlink, no longer counts (Git never applies either); outside Git, or with gitWorkspaceRoot: null, it keeps the eight-level walk. GH-1757 (pm-gh1757): PmCliErrorContext gains the optional url_credentials_rejected: { source } marker, which makes refusal guidance replace the restore-credentials step with one that says the credentials in that source must not be restored while any other redacted credentials still must. Existing fields and parameters are unchanged, but keyof PmCliErrorContext gains a key, so a consumer that derives a required mapping from it (for example Record<keyof PmCliErrorContext, string>) or asserts its exact key set must add url_credentials_rejected."
     }
   ],
   "entrypoints": {
@@ -5042,7 +5051,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "auditMergeAttributeFence",
-          "signature": "(pmRoot: string, typeFolders: string[]) => Promise<MergeFenceAuditResult> | calls: (pmRoot: string, typeFolders: string[]) => Promise<MergeFenceAuditResult>"
+          "signature": "(pmRoot: string, typeFolders: string[], options?: MergeFenceAuditOptions) => Promise<MergeFenceAuditResult> | calls: (pmRoot: string, typeFolders: string[], options?: MergeFenceAuditOptions) => Promise<MergeFenceAuditResult>"
         },
         {
           "classification": "supported",
@@ -12991,6 +13000,12 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "MergeFenceAuditOptions",
+          "signature": "export interface MergeFenceAuditOptions { gitWorkspaceRoot?: string | null; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "MergeFenceAuditResult",
           "signature": "export interface MergeFenceAuditResult { status: \"not_installed\" | \"ok\" | \"drift\"; path?: string; missing_patterns: string[]; stale_patterns: string[]; schema_scope: \"project\"; }"
         },
@@ -15482,7 +15497,7 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "PmCliErrorContext",
-          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; claim_activity?: { last_activity_at: string | null; history_unreadable?: true; unproven_activity?: \"claim_record_unavailable\" | \"discarded_history_tail\" | \"rewritten_history\" | \"workspace_restored\"; claim_age_hours: number | null; idle_hours: number | null; stale_policy: { setting: \"mutation_guard.stale_in_progress_hours\"; threshold_hours: number; stale: boolean; eligible_at: string | null; }; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; details?: PmCliErrorDetails; details_omitted?: PmCliErrorDetailsOmission; }"
+          "signature": "export interface PmCliErrorContext { side_effects?: Array<{ path: string; op: string; record_hash?: string; }>; changed?: false; code?: string; original_code?: string; id?: string; path?: string; item_id?: string; transaction_operation?: { index: number; op: string; id: string; }; preview_storage?: { storage_area: string; relative_entry?: string; entry_redacted: boolean; }; tombstone?: { deleted: true; deleted_at: string; recoverable: boolean; last_materialized_version: number | null; }; policy_violations?: Array<{ policy_id: string; rule: string; description?: string; missing_fields: string[]; }>; policy_violation_count?: number; item_path?: string; paths?: string[]; byte_length?: number; empty?: boolean; reason?: string; field?: string; allowed?: string[]; history_merge?: { branch: \"ours\" | \"theirs\"; line: number; op: string; patch_index: number; patch_path: string; }; gate_id?: string; assertion_id?: string; measurement_id?: string; source_kind?: string; source_id?: string; source_created_at?: string; target_id?: string; target_created_at?: string; temporal_order?: string; relationship_cardinality?: { kind: string; direction: \"outgoing\" | \"incoming\"; node_id: string; endpoint_ids: string[]; }; check?: string; format?: string; flag?: string; value?: string; format_version?: number; type?: string; required?: string; why?: string; resolved_path?: string; requested_path?: string; suggested_path?: string; examples?: string[]; nextSteps?: string[]; url_credentials_rejected?: { source: string; }; unmatched?: string[]; unmatched_selectors?: Array<{ id: string; kind?: string; source_kind?: string; author?: string; created_at?: string; }>; available_dependencies?: Array<{ id: string; kind: string; source_kind?: string; author?: string; created_at?: string; }>; verification_errors?: string[]; unresolved_targets?: string[]; valid_range?: { first_version: number | null; last_version: number | null; first_timestamp: string | null; last_timestamp: string | null; }; claimed_by?: string; claimed_at?: string | null; claim_source?: \"claim\" | \"assignment\" | \"unknown\"; claim_activity?: { last_activity_at: string | null; history_unreadable?: true; unproven_activity?: \"claim_record_unavailable\" | \"discarded_history_tail\" | \"rewritten_history\" | \"workspace_restored\"; claim_age_hours: number | null; idle_hours: number | null; stale_policy: { setting: \"mutation_guard.stale_in_progress_hours\"; threshold_hours: number; stale: boolean; eligible_at: string | null; }; }; lease?: { owner: string; acquired_at: string; ttl_seconds: number; expires_at: string; }; current_owner?: { owner: string; pid: number; created_at: string; ttl_seconds: number; } | null; lock_component?: string; expected_revision?: string | null; current_revision?: string | null; recovery?: PmCliErrorRecoveryPayload; details?: PmCliErrorDetails; details_omitted?: PmCliErrorDetailsOmission; }"
         },
         {
           "classification": "advanced_export",
@@ -33962,7 +33977,7 @@
           "classification": "supported",
           "kind": "function",
           "name": "auditMergeAttributeFence",
-          "signature": "(pmRoot: string, typeFolders: string[]) => Promise<MergeFenceAuditResult> | calls: (pmRoot: string, typeFolders: string[]) => Promise<MergeFenceAuditResult>"
+          "signature": "(pmRoot: string, typeFolders: string[], options?: MergeFenceAuditOptions) => Promise<MergeFenceAuditResult> | calls: (pmRoot: string, typeFolders: string[], options?: MergeFenceAuditOptions) => Promise<MergeFenceAuditResult>"
         },
         {
           "classification": "supported",
@@ -34137,6 +34152,12 @@
           "kind": "interface",
           "name": "MergeDriverResult",
           "signature": "export interface MergeDriverResult { ok: boolean; artifact: MergeDriverArtifact; output_path: string; requested_preference: MergePreferredSide; conflicts: string[]; history?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; relationship?: { strategy: string; common_entries: number; entries_from_ours: number; entries_from_theirs: number; entries_total: number; reanchored: boolean; }; item?: { fields_from_theirs: string[]; union_fields: string[]; conflict_resolution: \"latest_document_update\"; requested_preference_applied: false; }; json?: { paths_from_theirs: string[]; }; receipt?: MergeDecisionReceiptSummary; guidance: string[]; generated_at: string; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "MergeFenceAuditOptions",
+          "signature": "export interface MergeFenceAuditOptions { gitWorkspaceRoot?: string | null; }"
         },
         {
           "classification": "supported",
@@ -41301,7 +41322,7 @@
       "checked_functions": 1351,
       "checked_values": 401,
       "exempt_test_seams": 15,
-      "referenced_types": 1057
+      "referenced_types": 1058
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -41337,7 +41358,7 @@
       "checked_functions": 24,
       "checked_values": 8,
       "exempt_test_seams": 0,
-      "referenced_types": 24
+      "referenced_types": 25
     },
     "./sdk/query": {
       "checked_functions": 120,

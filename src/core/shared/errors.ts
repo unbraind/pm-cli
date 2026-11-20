@@ -280,6 +280,14 @@ export interface PmCliErrorContext {
   examples?: string[];
   /** Value that configures or reports next steps for this contract. */
   nextSteps?: string[];
+  /**
+   * The refusal rejects the URL credentials carried by `source` (an option,
+   * environment variable or field name), such as an identity with userinfo,
+   * so recovery never advises restoring those redacted credentials: replaying
+   * with them reproduces this refusal (GH-1757). `source` is a code-defined
+   * label, never caller input: guidance prints it unredacted.
+   */
+  url_credentials_rejected?: { source: string };
   /** Exact selectors that could not be matched by a lossless removal. */
   unmatched?: string[];
   /** Dependency selectors that matched no stored edge. */

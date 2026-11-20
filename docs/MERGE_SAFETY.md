@@ -109,6 +109,14 @@ Removing a sibling worktree does not remove a separately installed main driver.
 Use `pm merge install` in the affected worktree to repair stale, missing, or
 incompatible commands. A dry run changes neither configuration nor attributes.
 
+Attribute evidence stops at the active worktree's top level
+([pm-gh1759](../.agents/pm/issues/pm-gh1759.toon)). Git never reads a
+`.gitattributes` above it, so a matching fence in an enclosing, different
+repository never satisfies `pm health`, `pm validate` or the workspace
+position read: a linked worktree without its own fence reports
+`merge_fence_missing`. A fence at the worktree root, or in a directory between
+that root and the tracker, still counts.
+
 ### Fence coverage contract
 
 Extension assets are tracked by [pm-gh1460](../.agents/pm/issues/pm-gh1460.toon).

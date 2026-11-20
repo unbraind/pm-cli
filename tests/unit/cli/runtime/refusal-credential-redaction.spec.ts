@@ -3,6 +3,7 @@ import { runWithUrlCredentialInvocation } from "../../../../src/core/shared/url-
 import { formatPmCliErrorForDisplay, formatPmCliErrorForJson } from "../../../../src/cli/error-guidance.js";
 import {
   RESTORE_CREDENTIALS_STEP,
+  rejectedCredentialsStep,
   redactGuidanceCredentials,
   redactRefusalArgv,
 } from "../../../../src/cli/runtime/refusal-credential-redaction.js";
@@ -52,6 +53,39 @@ describe("refusal credential redaction (pm-nhauur)", () => {
   it("adds the restore step once", () => {
     const guidance = { nextSteps: ["first", RESTORE_CREDENTIALS_STEP], detail: SOURCE };
     expect(redactGuidanceCredentials(guidance).nextSteps).toEqual([RESTORE_CREDENTIALS_STEP, "first"]);
+  });
+
+  it("never advises restoring credentials that the refusal itself rejected (GH-1757)", () => {
+    const rejected = {
+      nextSteps: ["Rerun with --author set to a plain name.", RESTORE_CREDENTIALS_STEP],
+      detail: SOURCE,
+      urlCredentialsRejected: { source: "--author" },
+    };
+    const safe = runWithUrlCredentialInvocation(["claim", "pm-a", "--author", SOURCE], () => redactGuidanceCredentials(rejected));
+    expect(safe.nextSteps).toEqual([rejectedCredentialsStep("--author"), "Rerun with --author set to a plain name."]);
+    expect(safe.nextSteps[0]).toBe(
+      "URL credentials in this invocation were replaced with [redacted]. Those in --author caused this refusal, so do not restore them: give --author a value without URL credentials, and restore any other redacted credentials before replaying.",
+    );
+    expect(safe.nextSteps.join(" ")).not.toMatch(/restore them before replaying/u);
+    // The module's own step survives a second pass unchanged and is never repeated.
+    expect(runWithUrlCredentialInvocation(["claim", SOURCE], () => redactGuidanceCredentials(safe)).nextSteps).toEqual(safe.nextSteps);
+    // A source other than the redacted argument names that source and still asks to restore the rest.
+    const environment = runWithUrlCredentialInvocation(["create", "--description", SOURCE], () =>
+      redactGuidanceCredentials({ nextSteps: ["Rerun with PM_AUTHOR set to a plain name."], urlCredentialsRejected: { source: "PM_AUTHOR" } }),
+    );
+    expect(environment.nextSteps[0]).toBe(rejectedCredentialsStep("PM_AUTHOR"));
+    expect(environment.nextSteps[0]).toMatch(/restore any other redacted credentials/u);
+    // A secret sharing a fragment with the code-defined source label never changes the step between passes.
+    const overlapping = runWithUrlCredentialInvocation(["create", "--description", "https://u:xpm_authorx@example.invalid"], () => {
+      const first = redactGuidanceCredentials({ nextSteps: ["first"], urlCredentialsRejected: { source: "PM_AUTHOR" } });
+      return [first, redactGuidanceCredentials(first)] as const;
+    });
+    expect(overlapping[0].nextSteps).toEqual([rejectedCredentialsStep("PM_AUTHOR"), "first"]);
+    expect(overlapping[1].nextSteps).toEqual(overlapping[0].nextSteps);
+    expect(overlapping[1].urlCredentialsRejected).toEqual({ source: "PM_AUTHOR" });
+    // Without a redaction or a credential-bearing invocation, nothing is added.
+    const clean = { nextSteps: ["Rerun with PM_AUTHOR set to a plain name."], urlCredentialsRejected: { source: "PM_AUTHOR" } };
+    expect(redactGuidanceCredentials(clean)).toBe(clean);
   });
 
   it("redacts a whitespace-bearing userinfo whole in token fields and through the registry in text", () => {

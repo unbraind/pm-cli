@@ -1,3 +1,5 @@
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runHealth } from "../../../../src/sdk/governance/health.js";
 import { renderContextMarkdown, runContext } from "../../../../src/sdk/query/context.js";
@@ -89,6 +91,72 @@ describe("unowned and idle in-progress work (GH-1724)", () => {
       const orient = await runContext({}, global);
       expect(orient.summary).toMatchObject({ in_progress: 3, in_progress_unowned: 1, in_progress_idle: 3 });
       expect(renderContextMarkdown(orient)).toContain("(in_progress: 3, in_progress_unowned: 1, in_progress_idle: 3, open: 0)");
+    });
+  });
+
+  it("counts a custom progress status as one population for in_progress and both advisories, whatever its role (GH-1756)", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = path.join(context.pmPath, "schema");
+      const writeProgressRoles = async (roles: string[]): Promise<void> => {
+        const statusesPath = path.join(schema, "statuses.json");
+        const document = JSON.parse(await readFile(statusesPath, "utf8")) as {
+          statuses: Array<{ id: string; roles?: string[]; aliases?: string[] }>;
+        };
+        document.statuses = document.statuses.map((status) =>
+          status.id === "in_progress" || status.id === "doing" ? { id: "doing", roles } : status,
+        );
+        await writeFile(statusesPath, `${JSON.stringify(document, null, 2)}\n`);
+      };
+      await writeProgressRoles(["blocked"]);
+      const workflowsPath = path.join(schema, "workflows.json");
+      const workflows = JSON.parse(await readFile(workflowsPath, "utf8")) as { workflow: Record<string, string> };
+      workflows.workflow.in_progress_status = "doing";
+      await writeFile(workflowsPath, `${JSON.stringify(workflows, null, 2)}\n`);
+      for (const title of ["First", "Second"]) {
+        expect(context.runCli(["create", "Task", title, "--status", "doing", "--json", "--author", "test-author"]).code).toBe(0);
+      }
+      expect(context.runCli(["create", "Task", "Queued", "--json", "--author", "test-author"]).code).toBe(0);
+      vi.useFakeTimers({ toFake: ["Date"], now: new Date(Date.now() + 96 * HOUR) });
+      const global = { path: context.pmPath };
+
+      const blockedRole = await runContext({}, global);
+      expect(blockedRole.summary).toMatchObject({
+        active_items: 1,
+        open: 1,
+        in_progress: 2,
+        in_progress_unowned: 2,
+        in_progress_idle: 2,
+      });
+
+      await writeProgressRoles(["active"]);
+      const activeRole = await runContext({}, global);
+      expect(activeRole.summary).toMatchObject({
+        active_items: 3,
+        open: 1,
+        in_progress: 2,
+        in_progress_unowned: 2,
+        in_progress_idle: 2,
+      });
+      // The workflow may name the progress status by an alias; every count resolves it like item statuses.
+      const statusesPath = path.join(schema, "statuses.json");
+      const statuses = JSON.parse(await readFile(statusesPath, "utf8")) as { statuses: Array<{ id: string; aliases?: string[] }> };
+      statuses.statuses = statuses.statuses.map((status) => (status.id === "doing" ? { ...status, aliases: ["wip"] } : status));
+      await writeFile(statusesPath, `${JSON.stringify(statuses, null, 2)}\n`);
+      workflows.workflow.in_progress_status = "wip";
+      await writeFile(workflowsPath, `${JSON.stringify(workflows, null, 2)}\n`);
+      const aliased = await runContext({}, global);
+      expect(aliased.summary).toMatchObject({ active_items: 3, open: 1, in_progress: 2, in_progress_unowned: 2, in_progress_idle: 2 });
+      for (const summary of [blockedRole.summary, activeRole.summary, aliased.summary]) {
+        expect(summary.in_progress_unowned ?? 0).toBeLessThanOrEqual(summary.in_progress);
+        expect(summary.in_progress_idle ?? 0).toBeLessThanOrEqual(summary.in_progress);
+      }
+      // A progress status outside the active role renders apart from active_items, not as a part of it.
+      expect(renderContextMarkdown(blockedRole)).toContain(
+        "- active_items: 1 (open: 1)\n- in_progress: 2 (outside active_items, in_progress_unowned: 2, in_progress_idle: 2)",
+      );
+      expect(renderContextMarkdown(activeRole)).toContain(
+        "- active_items: 3 (in_progress: 2, in_progress_unowned: 2, in_progress_idle: 2, open: 1)",
+      );
     });
   });
 
