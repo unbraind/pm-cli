@@ -1574,10 +1574,10 @@ and `streams_total`; `--stream` carries it on the `meta` record and markdown con
 adds a `history read:` line. Bounded reads add nothing. On POSIX the summary file is written owner-only (mode 0600) and is
 trusted only when the reading user owns it and no one else can write it; on
 Windows it inherits the runtime directory's ACL. A summary in a redirected
-`runtime/` (symbolic link or junction), a link, a non-regular file or an
-oversized file is never read or written; when no write could ever succeed (a
-redirected `runtime/`, or a directory at the summary path) the read computes no
-bounds at all. Like the context-usage ledger, the
+`runtime/` (symbolic link or junction), or any entry at the summary path that
+is not a regular file (a link, directory, FIFO or socket), is never read,
+written or replaced, and the read then computes no bounds at all; an oversized
+summary is never read. Like the context-usage ledger, the
 checks reject existing redirections and require trusted, stable workspace
 directories: portable Node APIs cannot pin `runtime/` against an actor that
 replaces it concurrently.

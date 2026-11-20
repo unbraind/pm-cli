@@ -343,18 +343,31 @@ async function hasRealRuntimeDirectory(pmRoot: string): Promise<boolean> {
 }
 
 /**
- * Whether no commit could ever persist the summary here: runtime/ exists but
- * is not a real directory (a link, junction or file), or a directory occupies
- * the summary path, which no rename can replace. Any other state, including a
- * missing runtime/ or an unreadable entry, is left to the read and write paths.
+ * Whether an entry other than a regular file (a link, directory, FIFO, socket
+ * or device) occupies the summary path. The summary never reads through such
+ * an entry and never replaces it. A missing or uninspectable entry is not one;
+ * the read and write paths handle those themselves.
+ */
+async function hasNonRegularSummaryEntry(pmRoot: string): Promise<boolean> {
+  try {
+    return !(await fs.lstat(summaryPath(pmRoot))).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether no commit may ever persist the summary here: runtime/ exists but is
+ * not a real directory (a link, junction or file), or a non-regular entry
+ * occupies the summary path. A missing runtime/ is left to the commit.
  */
 async function isSummaryUnwritable(pmRoot: string): Promise<boolean> {
   try {
     if (!(await hasRealRuntimeDirectory(pmRoot))) return true;
-    return (await fs.lstat(summaryPath(pmRoot))).isDirectory();
   } catch {
     return false;
   }
+  return hasNonRegularSummaryEntry(pmRoot);
 }
 
 /**
@@ -488,7 +501,7 @@ export async function openHistoryStreamSummary(params: {
   // Read hooks observe every stream a command reads; skipping streams would
   // silence them, so extensions with read hooks keep the complete read.
   if (hasActiveOnReadHooks()) return disabledSession("read_hooks_active");
-  // Bounds that can never be persisted are not worth computing: the read is
+  // Bounds that may never be persisted are not worth computing: the read is
   // the complete read, without a stat pass or per-stream bounds work.
   if (await isSummaryUnwritable(params.pmRoot)) return disabledSession("summary_invalid");
   const observedAtNs = BigInt(Math.floor(wallClockMs())) * 1_000_000n;
@@ -531,24 +544,32 @@ export async function openHistoryStreamSummary(params: {
     commit: async () => {
       if (!dirty) return;
       dirty = false;
-      try {
-        // Only beneath an existing tracker: a tracker moved or removed during
-        // the read must not be recreated as a cache-only directory tree.
-        await fs.mkdir(path.join(params.pmRoot, "runtime")).catch((error: unknown) => {
-          if (!isFileExistsError(error)) throw error;
-        });
-        // Never write through a redirected runtime directory.
-        if (!(await hasRealRuntimeDirectory(params.pmRoot))) return;
-        // Owner-only on POSIX: the bounds describe streams other accounts may
-        // not be allowed to read. Windows ignores the mode, and the file
-        // inherits the runtime directory's ACL.
-        await writeFileAtomic(summaryPath(params.pmRoot), serializeSummary(next), { createParentDirectories: false, mode: 0o600 });
-      } catch {
-        // Derived bounds are an optimization: a read-only or contended runtime
-        // directory leaves the next bounded read to rebuild them.
-      }
+      await persistSummary(params.pmRoot, next);
     },
   };
+}
+
+/** Write the summary best-effort; any failure leaves the next bounded read to rebuild it. */
+async function persistSummary(pmRoot: string, streams: ReadonlyMap<string, StoredStream>): Promise<void> {
+  try {
+    // Only beneath an existing tracker: a tracker moved or removed during
+    // the read must not be recreated as a cache-only directory tree.
+    await fs.mkdir(path.join(pmRoot, "runtime")).catch((error: unknown) => {
+      if (!isFileExistsError(error)) throw error;
+    });
+    // Never write through a redirected runtime directory, and replace only
+    // a regular file: an entry that became a link, directory, FIFO or
+    // socket since the read began is left alone.
+    if (!(await hasRealRuntimeDirectory(pmRoot))) return;
+    if (await hasNonRegularSummaryEntry(pmRoot)) return;
+    // Owner-only on POSIX: the bounds describe streams other accounts may
+    // not be allowed to read. Windows ignores the mode, and the file
+    // inherits the runtime directory's ACL.
+    await writeFileAtomic(summaryPath(pmRoot), serializeSummary(streams), { createParentDirectories: false, mode: 0o600 });
+  } catch {
+    // Derived bounds are an optimization: a read-only or contended runtime
+    // directory leaves the next bounded read to rebuild them.
+  }
 }
 
 /** Test-only seams for the engagement threshold and racy window. */

@@ -125,7 +125,7 @@ Additional SDK, operations, and generated contracts:
 - [SDK Runtime Boundaries](SDK_RUNTIME_BOUNDARIES.md) - runtime ownership and import boundaries.
 - [Sentry Contract Epochs](SENTRY_CONTRACT_EPOCHS.md) - diagnostic compatibility and release epochs.
 - [Generated Agent Command Surface](generated/AGENT_COMMAND_SURFACE.md) - command routing inventory.
-- [Generated Flag Lexicon Budgets](generated/FLAG_LEXICON_BUDGETS.md) - flag vocabulary and budget inventory.
+- [Generated Flag Lexicon Budgets](https://github.com/unbraind/pm-cli/blob/main/docs/generated/FLAG_LEXICON_BUDGETS.md) (repository-only, excluded from npm; `listPmFlagLexicon()` returns the same inventory) - flag vocabulary and budget inventory.
 
 ## Guide Topic Map
 

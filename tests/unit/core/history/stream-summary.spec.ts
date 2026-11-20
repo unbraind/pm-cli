@@ -353,7 +353,46 @@ describe("history stream summary (GH-1664)", () => {
     const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
     await rename(summaryFile, path.join(pmRoot, "elsewhere.json"));
     await symlink(path.join(pmRoot, "elsewhere.json"), summaryFile);
-    expect((await open(["pm-a.jsonl"])).fallback).toBe("summary_invalid");
+    const session = await open(["pm-a.jsonl"]);
+    expect(session).toMatchObject({ enabled: false, fallback: "summary_invalid" });
+    await session.commit();
+    // The link is neither followed nor replaced.
+    expect((await fsPromises.lstat(summaryFile)).isSymbolicLink()).toBe(true);
+  });
+
+  it.runIf(process.platform !== "win32")("never replaces an entry that stopped being a regular file during the read", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    await writeStream("pm-b.jsonl", ["2026-11-02T00:00:00.000Z"]);
+    const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+    const session = await open(["pm-a.jsonl", "pm-b.jsonl"]);
+    expect(session.enabled).toBe(true);
+    // New bounds for pm-b make the session worth committing.
+    session.record("pm-b.jsonl", snapshotOf([entry("2026-11-02T00:00:00.000Z")], await sourceOf("pm-b.jsonl"), await sizeOf("pm-b.jsonl")));
+    // Another process replaces the summary with a link before the commit.
+    await rename(summaryFile, path.join(pmRoot, "elsewhere.json"));
+    await symlink(path.join(pmRoot, "elsewhere.json"), summaryFile);
+    await session.commit();
+    expect((await fsPromises.lstat(summaryFile)).isSymbolicLink()).toBe(true);
+  });
+
+  it("still refuses a summary entry that becomes a link after the writability check", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+    const actual = fsPromises.lstat.bind(fsPromises);
+    let entryChecks = 0;
+    // Windows has no O_NOFOLLOW, so the read checks the entry itself as well.
+    const lstat = vi.spyOn(fsPromises, "lstat").mockImplementation(async (target, ...rest) => {
+      if (target === summaryFile && ++entryChecks === 2) return { isFile: () => false, isSymbolicLink: () => true } as never;
+      return actual(target, ...(rest as []));
+    });
+    try {
+      expect(await open(["pm-a.jsonl"])).toMatchObject({ enabled: true, fallback: "summary_invalid" });
+      expect(entryChecks).toBe(2);
+    } finally {
+      lstat.mockRestore();
+    }
   });
 
   it("identifies the reader by user id, by account name without one, and refuses trust without either", async () => {
@@ -490,13 +529,26 @@ describe("history stream summary (GH-1664)", () => {
     await expect(stat(pmRoot)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
+  it.runIf(process.platform !== "win32")("distrusts a regular summary file that is hard-linked elsewhere", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+    // A second name for the file means another writer may rewrite it unseen.
+    await fsPromises.link(summaryFile, path.join(pmRoot, "summary-alias.json"));
+    const session = await open(["pm-a.jsonl"]);
+    expect(session).toMatchObject({ enabled: true, fallback: "summary_invalid" });
+    expect(session.trusted("pm-a.jsonl")).toBeUndefined();
+  });
+
   it.runIf(process.platform !== "win32")("treats a FIFO at the summary path as invalid instead of waiting for a writer", async () => {
     await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
     const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
     await mkdir(path.dirname(summaryFile), { recursive: true });
     execFileSync("mkfifo", [summaryFile]);
     const session = await open(["pm-a.jsonl"]);
-    expect(session.fallback).toBe("summary_invalid");
+    expect(session).toMatchObject({ enabled: false, fallback: "summary_invalid" });
+    await session.commit();
+    expect((await fsPromises.lstat(summaryFile)).isFIFO()).toBe(true);
   });
 
   it.runIf(process.platform !== "win32")("writes the summary owner-only, since it describes streams others may not read", async () => {

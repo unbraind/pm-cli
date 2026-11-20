@@ -103,6 +103,15 @@ export function transactionPreviewNonRegularFileError(relativePath?: string): Pm
   });
 }
 
+/** Remove a temporary file; cleanup is best effort, so a failure is ignored. */
+async function unlinkQuietly(filePath: string): Promise<void> {
+  try {
+    await fs.unlink(filePath);
+  } catch {
+    // Best-effort cleanup only.
+  }
+}
+
 /**
  * Replace a UTF-8 file through a sibling temporary file and atomic rename.
  * Parent directories are created by default. Background consumers can disable
@@ -122,7 +131,14 @@ export async function writeFileAtomic(
     dirPath,
     `.${path.basename(targetPath)}.${process.pid}.${Date.now()}.${crypto.randomBytes(4).toString("hex")}.tmp`,
   );
-  await fs.writeFile(tempPath, contents, options.mode === undefined ? "utf8" : { encoding: "utf8", mode: options.mode });
+  try {
+    await fs.writeFile(tempPath, contents, options.mode === undefined ? "utf8" : { encoding: "utf8", mode: options.mode });
+  } catch (error: unknown) {
+    // A write that fails after creating the file (ENOSPC, EDQUOT) must not
+    // leave a partial temporary file behind.
+    await unlinkQuietly(tempPath);
+    throw error;
+  }
   try {
     await fs.rename(tempPath, targetPath);
   } catch (error: unknown) {
@@ -143,30 +159,18 @@ export async function writeFileAtomic(
           }
         }
       }
-      try {
-        await fs.unlink(tempPath);
-      } catch {
-        // Best-effort cleanup only.
-      }
+      await unlinkQuietly(tempPath);
       throw lastError;
     }
     if (isErrno(error, "EXDEV")) {
       try {
         await fs.copyFile(tempPath, targetPath);
       } finally {
-        try {
-          await fs.unlink(tempPath);
-        } catch {
-          // Best-effort cleanup only.
-        }
+        await unlinkQuietly(tempPath);
       }
       return;
     }
-    try {
-      await fs.unlink(tempPath);
-    } catch {
-      // Best-effort cleanup only.
-    }
+    await unlinkQuietly(tempPath);
     throw error;
   }
 }
