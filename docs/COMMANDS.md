@@ -1575,7 +1575,9 @@ adds a `history read:` line. Bounded reads add nothing. On POSIX the summary fil
 trusted only when the reading user owns it and no one else can write it; on
 Windows it inherits the runtime directory's ACL. A summary in a redirected
 `runtime/` (symbolic link or junction), a link, a non-regular file or an
-oversized file is never read or written. Like the context-usage ledger, the
+oversized file is never read or written; when no write could ever succeed (a
+redirected `runtime/`, or a directory at the summary path) the read computes no
+bounds at all. Like the context-usage ledger, the
 checks reject existing redirections and require trusted, stable workspace
 directories: portable Node APIs cannot pin `runtime/` against an actor that
 replaces it concurrently.

@@ -128,6 +128,38 @@ describe("history stream policy probes (GH-1664)", () => {
     await expect(stat(getHistoryPath(pmRoot, "pm-c"))).resolves.toBeTruthy();
   });
 
+  it("stops probing after the first chunk that holds a missing stream under strict_error", async () => {
+    const pmRoot = await trackerRoot();
+    const ids = Array.from({ length: 200 }, (_, index) => `pm-${String(index).padStart(3, "0")}`);
+    for (const id of ids.filter((_, index) => index !== 70)) await writeFile(getHistoryPath(pmRoot, id), "");
+    const probed = new Set<string>();
+    const actual = fsUtils.pathExists;
+    vi.spyOn(fsUtils, "pathExists").mockImplementation(async (target: string) => {
+      probed.add(path.basename(target));
+      return actual(target);
+    });
+    await expect(enforceHistoryStreamPolicyForItems({ pmRoot, settings: settings("strict_error"), itemIds: ids, commandLabel: "activity" }))
+      .rejects.toThrow("Missing history stream for pm-070");
+    // Chunks of 64: pm-064..pm-127 holds the missing stream, so later chunks are never probed.
+    expect(probed.has("pm-127.jsonl")).toBe(true);
+    expect(probed.has("pm-128.jsonl")).toBe(false);
+  });
+
+  it("still refuses a missing stream past the early stop when the first one was created meanwhile", async () => {
+    const pmRoot = await trackerRoot();
+    const ids = Array.from({ length: 200 }, (_, index) => `pm-${String(index).padStart(3, "0")}`);
+    for (const id of ids.filter((_, index) => index !== 70 && index !== 150)) await writeFile(getHistoryPath(pmRoot, id), "");
+    const actual = fsUtils.pathExists;
+    let pm070Probes = 0;
+    vi.spyOn(fsUtils, "pathExists").mockImplementation(async (target: string) => {
+      // Another writer creates pm-070 between the bulk probe and its turn.
+      if (target.endsWith("pm-070.jsonl") && ++pm070Probes === 2) await writeFile(target, "");
+      return actual(target);
+    });
+    await expect(enforceHistoryStreamPolicyForItems({ pmRoot, settings: settings("strict_error"), itemIds: ids, commandLabel: "activity" }))
+      .rejects.toThrow("Missing history stream for pm-150");
+  });
+
   it("probes beyond one concurrency chunk and refuses the first missing stream under strict_error", async () => {
     const pmRoot = await trackerRoot();
     const ids = Array.from({ length: 130 }, (_, index) => `pm-${String(index).padStart(3, "0")}`);

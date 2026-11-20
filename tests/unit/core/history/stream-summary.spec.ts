@@ -2,7 +2,7 @@ import fsPromises, { appendFile, mkdir, mkdtemp, readFile, rename, rm, stat, sym
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   HISTORY_STREAM_SUMMARY_MINIMUM_STREAMS,
   HISTORY_STREAM_SUMMARY_RELATIVE_PATH,
@@ -122,6 +122,12 @@ describe("history stream summary (GH-1664)", () => {
       cases.push(`${pad(next(10_000), 4)}-${pad(next(14), 2)}-${pad(next(33), 2)}T${pad(next(26), 2)}:${pad(next(62), 2)}:${pad(next(62), 2)}.${pad(next(1000), 3)}Z`);
     }
     for (const value of cases) expect(isCanonicalHistoryTimestamp(value), value).toBe(oracle(value));
+  });
+
+  it("counts non-object entries as irregular instead of throwing", () => {
+    // JSON lines such as null, 7 or "text" decode as entries without a timestamp.
+    const entries = [null, 7, "text", [], entry("2026-11-01T00:00:00.000Z")] as unknown as HistoryEntry[];
+    expect(summarizeHistoryStreamBounds(entries)).toEqual({ count: 5, oldest: "2026-11-01T00:00:00.000Z", newest: "2026-11-01T00:00:00.000Z", irregular: true });
   });
 
   it("summarizes the oldest and newest canonical timestamps and flags irregular ones", () => {
@@ -522,6 +528,8 @@ describe("history stream summary (GH-1664)", () => {
       await symlink(path.join(elsewhere, "runtime"), path.join(pmRoot, "runtime"));
       const session = await open(["pm-a.jsonl"]);
       expect(session.fallback).toBe("summary_invalid");
+      // Nothing could be persisted, so no bounds are computed or trusted.
+      expect(session.enabled).toBe(false);
       session.record("pm-a.jsonl", snapshotOf([entry("2026-11-01T00:00:00.000Z")], await sourceOf("pm-a.jsonl"), await sizeOf("pm-a.jsonl")));
       const before = await stat(path.join(elsewhere, "runtime", "history-stream-summary.json"));
       await session.commit();
@@ -531,12 +539,51 @@ describe("history stream summary (GH-1664)", () => {
     }
   });
 
+  it("computes no bounds when a directory occupies the summary path, since no write could replace it", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+    await mkdir(summaryFile, { recursive: true });
+    const session = await open(["pm-a.jsonl"]);
+    expect(session).toMatchObject({ enabled: false, fallback: "summary_invalid", staleAtOpen: 0 });
+    expect(session.trusted("pm-a.jsonl")).toBeUndefined();
+    session.record("pm-a.jsonl", snapshotOf([entry("2026-11-01T00:00:00.000Z")], await sourceOf("pm-a.jsonl"), await sizeOf("pm-a.jsonl")));
+    expect(await session.revalidate(["pm-a.jsonl"])).toEqual([]);
+    await session.commit();
+    expect((await stat(summaryFile)).isDirectory()).toBe(true);
+  });
+
+  it("still refuses a runtime directory that is redirected after the writability check", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+    const before = await stat(summaryFile);
+    const runtimeDir = path.join(pmRoot, "runtime");
+    const actual = fsPromises.lstat.bind(fsPromises);
+    let runtimeChecks = 0;
+    // runtime/ is replaced by a link right after the first check: both the
+    // read and the commit must re-check it themselves.
+    const lstat = vi.spyOn(fsPromises, "lstat").mockImplementation(async (target, ...rest) => {
+      if (target === runtimeDir && ++runtimeChecks > 1) return { isDirectory: () => false, isSymbolicLink: () => true } as never;
+      return actual(target, ...(rest as []));
+    });
+    try {
+      const session = await open(["pm-a.jsonl"]);
+      expect(session).toMatchObject({ enabled: true, fallback: "summary_invalid" });
+      session.record("pm-a.jsonl", snapshotOf([entry("2026-11-02T00:00:00.000Z")], await sourceOf("pm-a.jsonl"), await sizeOf("pm-a.jsonl")));
+      await session.commit();
+      expect(runtimeChecks).toBe(3);
+    } finally {
+      lstat.mockRestore();
+    }
+    expect((await stat(summaryFile)).mtimeMs).toBe(before.mtimeMs);
+  });
+
   it("keeps the read successful when the summary cannot be persisted", async () => {
     await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
     // A regular file where the runtime directory belongs blocks the write.
     await writeFile(path.join(pmRoot, "runtime"), "not a directory");
     const session = await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
-    expect(session.fallback).toBe("summary_invalid");
+    expect(session).toMatchObject({ enabled: false, fallback: "summary_invalid" });
     await session.commit();
   });
 });

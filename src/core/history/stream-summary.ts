@@ -204,7 +204,9 @@ export function summarizeHistoryStreamBounds(
   let newest: string | null = null;
   let irregular = false;
   for (const entry of entries) {
-    const timestamp: unknown = entry.ts;
+    // The decoder accepts any JSON value per line; a non-object entry has no
+    // usable timestamp, so the stream is irregular and always read in full.
+    const timestamp: unknown = typeof entry === "object" && entry !== null ? (entry as { ts?: unknown }).ts : undefined;
     if (!isCanonicalHistoryTimestamp(timestamp)) {
       irregular = true;
       continue;
@@ -341,6 +343,21 @@ async function hasRealRuntimeDirectory(pmRoot: string): Promise<boolean> {
 }
 
 /**
+ * Whether no commit could ever persist the summary here: runtime/ exists but
+ * is not a real directory (a link, junction or file), or a directory occupies
+ * the summary path, which no rename can replace. Any other state, including a
+ * missing runtime/ or an unreadable entry, is left to the read and write paths.
+ */
+async function isSummaryUnwritable(pmRoot: string): Promise<boolean> {
+  try {
+    if (!(await hasRealRuntimeDirectory(pmRoot))) return true;
+    return (await fs.lstat(summaryPath(pmRoot))).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Read the summary only from a trusted file inside a real runtime directory,
  * opened without following links and non-blocking, so a FIFO, device,
  * redirected directory or oversized file cannot stall or mislead a read.
@@ -471,6 +488,9 @@ export async function openHistoryStreamSummary(params: {
   // Read hooks observe every stream a command reads; skipping streams would
   // silence them, so extensions with read hooks keep the complete read.
   if (hasActiveOnReadHooks()) return disabledSession("read_hooks_active");
+  // Bounds that can never be persisted are not worth computing: the read is
+  // the complete read, without a stat pass or per-stream bounds work.
+  if (await isSummaryUnwritable(params.pmRoot)) return disabledSession("summary_invalid");
   const observedAtNs = BigInt(Math.floor(wallClockMs())) * 1_000_000n;
   const reader = readerIdentity();
   const [stored, observed] = await Promise.all([

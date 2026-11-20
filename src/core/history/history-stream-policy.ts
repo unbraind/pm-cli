@@ -79,9 +79,12 @@ async function createStream(
 /**
  * Ids whose history stream is absent, probed in bounded parallel chunks and
  * kept in input order. An id whose path cannot be resolved stays a candidate,
- * so its error is raised at its own turn in the ordered loop.
+ * so its error is raised at its own turn in the ordered loop. With
+ * `stopAtFirstMissing` (strict_error refuses the first missing stream) probing
+ * ends after the first chunk that holds a candidate; any id not probed is
+ * rechecked in order by the caller.
  */
-async function probeMissingStreams(pmRoot: string, ids: readonly string[]): Promise<string[]> {
+async function probeMissingStreams(pmRoot: string, ids: readonly string[], stopAtFirstMissing: boolean): Promise<string[]> {
   const missing: string[] = [];
   for (let start = 0; start < ids.length; start += EXISTENCE_PROBE_CONCURRENCY) {
     const chunk = ids.slice(start, start + EXISTENCE_PROBE_CONCURRENCY);
@@ -99,6 +102,7 @@ async function probeMissingStreams(pmRoot: string, ids: readonly string[]): Prom
     chunk.forEach((itemId, index) => {
       if (!present[index]) missing.push(itemId);
     });
+    if (stopAtFirstMissing && missing.length > 0) break;
   }
   return missing;
 }
@@ -129,10 +133,12 @@ export async function enforceHistoryStreamPolicyForItems(
   // streams), so they run in bounded parallel chunks; refusal and creation
   // stay in sorted id order either way.
   const sequential = hasActiveOnWriteHooks();
-  const candidates = sequential ? ids : await probeMissingStreams(params.pmRoot, ids);
-  // After creating streams, re-probe the ones the bulk probe found present, so
-  // a stream removed meanwhile still gets the missing-stream policy. With
-  // nothing missing there is nothing to re-probe, keeping the fast path.
+  const strict = params.settings.history.missing_stream === "strict_error";
+  const candidates = sequential ? ids : await probeMissingStreams(params.pmRoot, ids, strict);
+  // After the candidates, re-probe every id the bulk probe found present or
+  // never reached (strict mode stops early), so a stream removed meanwhile
+  // still gets the missing-stream policy. With nothing missing there is
+  // nothing to re-probe, keeping the fast path.
   const probedMissing = new Set(candidates);
   const recheck = sequential || candidates.length === 0
     ? []
@@ -145,7 +151,7 @@ export async function enforceHistoryStreamPolicyForItems(
     if (await pathExists(historyPath)) {
       continue;
     }
-    if (params.settings.history.missing_stream === "strict_error") {
+    if (strict) {
       throw strictMissingStreamError(itemId, params.commandLabel);
     }
     warnings.push(...(await createStream(historyPath, params.commandLabel)));

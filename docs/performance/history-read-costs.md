@@ -12,8 +12,8 @@ linux/x64. Each sample is a fresh CLI process.
 
 | Path | runs | best | p50 | max |
 |---|---:|---:|---:|---:|
-| Bounded (trusted stream bounds) | 5 | 894 ms | 925 ms | 1480 ms |
-| Full scan (summary path blocked before each sample) | 3 | 2454 ms | 2630 ms | 2702 ms |
+| Bounded (trusted stream bounds) | 5 | 778 ms | 843 ms | 950 ms |
+| Full scan (summary path blocked before each sample) | 3 | 2077 ms | 2227 ms | 2340 ms |
 
 The ceiling is a ratchet: `--update` keeps the committed ceiling when a
 measurement would raise it, unless `--allow-increase <reviewed reason>` is
