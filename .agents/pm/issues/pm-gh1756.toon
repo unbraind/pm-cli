@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: advisories,"area:context","gh:1756",in-progress,status-roles
 created_at: "2026-11-19T00:19:36.461Z"
-updated_at: "2026-11-20T05:12:58.727Z"
+updated_at: "2026-11-20T05:34:47.519Z"
 closed_at: "2026-11-20T05:12:58.002Z"
 completed_at: "2026-11-20T05:12:58.002Z"
 author: "harness:claude-code"
@@ -22,19 +22,22 @@ actual_result: "With a doing progress status carrying the blocked role, context 
 dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1724,related,"2026-11-19T00:19:36.461Z","harness:claude-code","cli:create:dep",detected
   pm-w8q4,related,"2026-11-19T00:19:36.461Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-20T05:34:32.926Z","harness:claude-code","Codex review of the first head raised two findings, both fixed. (1) The workflow may name the progress status by an alias: the advisory scan resolved it through the registry but the summary compared item statuses with the raw id, so an aliased status still gave in_progress 0 beside advisories 2/2. context.ts now resolves the progress status once (progressStatusOf) for the summary counts, the focus rank, the open/in-progress predicates and returned focus row states. (2) The markdown summary printed in_progress inside active_items even when the progress status is not active; it now renders on its own line marked outside active_items, and WORKSPACE_POSITION_AND_LIFECYCLE.md qualifies the active_items = open + in_progress guarantee. Specs cover the alias and both renderings."
 files[2]{path,scope,note}:
   src/sdk/query/context.ts,project,summary in_progress counts the configured progress status like both advisories (GH-1756)
   tests/unit/commands/governance/health-in-progress-work.spec.ts,project,custom doing status with the blocked and the active role
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/commands/governance/health-in-progress-work.spec.ts tests/unit/commands/query/context-command.spec.ts,project,300,"harness:claude-code","2026-11-20T04:51:32.174Z",local_mutation,fix/diagnostic-population-truth
-docs[2]{path,scope,note}:
+docs[3]{path,scope,note}:
   docs/COMMANDS.md,project,context in-progress population
   docs/MUTATION_INTEGRITY.md,project,context in-progress population
+  docs/WORKSPACE_POSITION_AND_LIFECYCLE.md,project,active_items equation qualified for a non-active progress status
 close_reason: pm context counts in_progress and both in-progress advisories over one population
 contract_change:
   api: pm context summary.in_progress
-  before: "summary.in_progress counted only items in the progress status that also carried the active role, while in_progress_unowned and in_progress_idle counted every item in that status, so the advisories could exceed the total"
-  after: "summary.in_progress counts every item in workflow.in_progress_status, whatever role it carries, the same population as both advisories; open stays the active items outside it"
+  before: "summary.in_progress counted only items in the progress status that also carried the active role, compared by the raw workflow id, while in_progress_unowned and in_progress_idle counted every item in that status, so the advisories could exceed the total"
+  after: "summary.in_progress counts every item in workflow.in_progress_status, alias-resolved and whatever role it carries, the same population as both advisories; open stays the active items outside it, and markdown renders a non-active progress count apart from active_items"
   migrate: "No change for the default workflow, where the progress status carries the active role. With a non-active progress status, read in_progress as the count of items in that status rather than active_items - open"
 escape_class: production_defect
 gate_evidence:

@@ -177,7 +177,7 @@ it("steers an identity refusal to a replay that succeeds instead of restoring th
     expect(flag.refusal.code).toBe("invalid_argument_value");
     expect(flag.refusal.recovery.attempted_command).toContain("https://[redacted]@example.invalid");
     expect(flag.refusal.next_steps).toEqual([
-      "URL credentials in this invocation were replaced with [redacted]; they caused this refusal, so do not restore them: replay with a value that carries no URL credentials.",
+      "URL credentials in this invocation were replaced with [redacted]. Those in --author caused this refusal, so do not restore them: give --author a value without URL credentials, and restore any other redacted credentials before replaying.",
       "Rerun with --author set to a plain name.",
     ]);
     // The text rendering carries the same advice.
@@ -191,7 +191,12 @@ it("steers an identity refusal to a replay that succeeds instead of restoring th
     const previousAuthor = context.env.PM_AUTHOR;
     context.env.PM_AUTHOR = credential;
     const env = refuse(["claim", id, "--json"]);
+    // An unrelated credential elsewhere in the command is still to be restored; only PM_AUTHOR's are not.
+    const mixed = refuse(["create", "--type", "Task", "--title", "mixed", "--description", `see https://u:${SECRET}@other.invalid/x`, "--json"]);
     context.env.PM_AUTHOR = previousAuthor;
+    expect(mixed.refusal.next_steps[0]).toBe(
+      "URL credentials in this invocation were replaced with [redacted]. Those in PM_AUTHOR caused this refusal, so do not restore them: give PM_AUTHOR a value without URL credentials, and restore any other redacted credentials before replaying.",
+    );
     expect(env.refusal.next_steps).toEqual(["Rerun with PM_AUTHOR set to a plain name."]);
     expect(env.refusal.required).not.toContain("[redacted]");
     expect(env.refusal.recovery.attempted_command).toMatch(new RegExp(`claim ${id} --json$`, "u"));

@@ -137,10 +137,26 @@ describe("unowned and idle in-progress work (GH-1724)", () => {
         in_progress_unowned: 2,
         in_progress_idle: 2,
       });
-      for (const summary of [blockedRole.summary, activeRole.summary]) {
+      // The workflow may name the progress status by an alias; every count resolves it like item statuses.
+      const statusesPath = path.join(schema, "statuses.json");
+      const statuses = JSON.parse(await readFile(statusesPath, "utf8")) as { statuses: Array<{ id: string; aliases?: string[] }> };
+      statuses.statuses = statuses.statuses.map((status) => (status.id === "doing" ? { ...status, aliases: ["wip"] } : status));
+      await writeFile(statusesPath, `${JSON.stringify(statuses, null, 2)}\n`);
+      workflows.workflow.in_progress_status = "wip";
+      await writeFile(workflowsPath, `${JSON.stringify(workflows, null, 2)}\n`);
+      const aliased = await runContext({}, global);
+      expect(aliased.summary).toMatchObject({ active_items: 3, open: 1, in_progress: 2, in_progress_unowned: 2, in_progress_idle: 2 });
+      for (const summary of [blockedRole.summary, activeRole.summary, aliased.summary]) {
         expect(summary.in_progress_unowned ?? 0).toBeLessThanOrEqual(summary.in_progress);
         expect(summary.in_progress_idle ?? 0).toBeLessThanOrEqual(summary.in_progress);
       }
+      // A progress status outside the active role renders apart from active_items, not as a part of it.
+      expect(renderContextMarkdown(blockedRole)).toContain(
+        "- active_items: 1 (open: 1)\n- in_progress: 2 (outside active_items, in_progress_unowned: 2, in_progress_idle: 2)",
+      );
+      expect(renderContextMarkdown(activeRole)).toContain(
+        "- active_items: 3 (in_progress: 2, in_progress_unowned: 2, in_progress_idle: 2, open: 1)",
+      );
     });
   });
 

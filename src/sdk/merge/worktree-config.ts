@@ -31,6 +31,17 @@ export async function writeMergeDriverGitConfig(cwd: string, args: string[]): Pr
   }
 }
 
+/**
+ * Remove the one line terminator Git appends to a path it prints. A directory
+ * name may itself end in whitespace, or on POSIX in a carriage return, so
+ * nothing more is stripped; a Windows name cannot hold a carriage return, so
+ * a CRLF terminator is removed whole there (GH-1759).
+ */
+export function stripGitPathTerminator(stdout: string, platform: NodeJS.Platform = process.platform): string {
+  const line = stdout.endsWith("\n") ? stdout.slice(0, -1) : stdout;
+  return platform === "win32" && line.endsWith("\r") ? line.slice(0, -1) : line;
+}
+
 /** Preserve caller tools and preferences while binding Git repository discovery and writes to the explicit cwd. */
 export function gitWorkspaceEnvironment(): NodeJS.ProcessEnv {
   const env = { ...process.env };
@@ -59,8 +70,11 @@ async function readLocalGitConfig(cwd: string, key: string): Promise<string | un
  */
 export async function resolveMergeDriverConfigScope(workspaceRoot: string): Promise<"--local" | "--worktree"> {
   if ((await readLocalGitConfig(workspaceRoot, "extensions.worktreeConfig")) === "true") return "--worktree";
-  const { stdout } = await execFileAsync("git", ["rev-parse", "--path-format=absolute", "--git-dir", "--git-common-dir"], { cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000 });
-  const [gitDir, commonDir] = stdout.trim().split(/\r?\n/);
+  // One path per query: a directory name may contain a line break, so the two are never split from one output.
+  const readGitPath = async (flag: string): Promise<string> =>
+    stripGitPathTerminator((await execFileAsync("git", ["rev-parse", "--path-format=absolute", flag], { cwd: workspaceRoot, env: gitWorkspaceEnvironment(), timeout: 10_000 })).stdout);
+  const gitDir = await readGitPath("--git-dir");
+  const commonDir = await readGitPath("--git-common-dir");
   if (gitDir === commonDir) return "--local";
   const mainConfig = path.join(commonDir, "config.worktree");
   for (const key of ["core.bare", "core.worktree"]) {

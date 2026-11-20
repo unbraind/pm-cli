@@ -111,7 +111,7 @@ export function assertIdentityWithoutUrlCredentials(identity: unknown, source: s
       // No credential-shaped sample here: redaction would rewrite it and report a removed credential.
       required: `Set ${source} to a plain name such as agent-a, with no URL userinfo (no user, password or token before the host).`,
       nextSteps: [`Rerun with ${source} set to a plain name.`],
-      url_credentials_rejected: true,
+      url_credentials_rejected: { source },
     },
   );
 }

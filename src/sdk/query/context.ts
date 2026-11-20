@@ -815,6 +815,15 @@ function parseStaleThresholdDays(
 // Status helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * The configured progress status as items normalize to it. The workflow may
+ * name a status by an alias, and every comparison here, like the advisory
+ * scan, resolves it the way item statuses resolve (GH-1756).
+ */
+function progressStatusOf(statusRegistry: RuntimeStatusRegistry): ItemStatus {
+  return normalizeStatusForRegistry(statusRegistry.in_progress_status, statusRegistry);
+}
+
 function statusRank(
   status: ItemStatus,
   statusRegistry: RuntimeStatusRegistry,
@@ -822,7 +831,7 @@ function statusRank(
   const normalizedStatus = normalizeStatusForRegistry(status, statusRegistry);
   const blockedStatus = normalizeStatusInput("blocked", statusRegistry);
   const draftStatus = normalizeStatusInput("draft", statusRegistry);
-  if (normalizedStatus === statusRegistry.in_progress_status) return 0;
+  if (normalizedStatus === progressStatusOf(statusRegistry)) return 0;
   if (statusRegistry.active_statuses.has(normalizedStatus)) return 1;
   if (blockedStatus && normalizedStatus === blockedStatus) return 2;
   if (draftStatus && normalizedStatus === draftStatus) return 3;
@@ -845,7 +854,7 @@ function isInProgressStatus(
 ): boolean {
   return (
     normalizeStatusForRegistry(status, statusRegistry) ===
-    statusRegistry.in_progress_status
+    progressStatusOf(statusRegistry)
   );
 }
 
@@ -855,7 +864,7 @@ function isOpenStatus(
 ): boolean {
   const normalizedStatus = normalizeStatusForRegistry(status, statusRegistry);
   return (
-    normalizedStatus !== statusRegistry.in_progress_status &&
+    normalizedStatus !== progressStatusOf(statusRegistry) &&
     statusRegistry.active_statuses.has(normalizedStatus)
   );
 }
@@ -1976,6 +1985,23 @@ function renderUnattendedCounts(summary: ContextSummary): string {
   ].join("");
 }
 
+/**
+ * Render the active and in-progress counts. While the progress status carries
+ * the active role, in_progress is a part of active_items and renders inside
+ * it; otherwise it renders on its own line, so it never reads as a
+ * subdivision of a total it is not part of (GH-1756).
+ */
+function renderActiveSummaryLines(summary: ContextSummary): string[] {
+  const unattended = renderUnattendedCounts(summary);
+  if (summary.active_items === summary.open + summary.in_progress) {
+    return [`- active_items: ${summary.active_items} (in_progress: ${summary.in_progress}${unattended}, open: ${summary.open})`];
+  }
+  return [
+    `- active_items: ${summary.active_items} (open: ${summary.open})`,
+    `- in_progress: ${summary.in_progress} (outside active_items${unattended})`,
+  ];
+}
+
 /** Implements render context markdown for the public runtime surface of this module. */
 export function renderContextMarkdown(result: ContextResult): string {
   const lines: string[] = [];
@@ -1991,9 +2017,7 @@ export function renderContextMarkdown(result: ContextResult): string {
   if (result.filters.parent) {
     lines.push(`- scope: subtree of ${result.filters.parent}`);
   }
-  lines.push(
-    `- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}${renderUnattendedCounts(result.summary)}, open: ${result.summary.open})`,
-  );
+  lines.push(...renderActiveSummaryLines(result.summary));
   if (result.summary.total_items !== undefined) {
     lines.push(
       `- total_items: ${result.summary.total_items} (closed: ${result.summary.closed ?? 0}, canceled: ${result.summary.canceled ?? 0})`,
@@ -2521,7 +2545,7 @@ function countContextStatus(
   status: string | undefined,
   statusRegistry: RuntimeStatusRegistry,
 ): number {
-  const targetStatus = String(status);
+  const targetStatus = normalizeStatusForRegistry(String(status), statusRegistry);
   return items.filter(
     (item) =>
       normalizeStatusForRegistry(item.status, statusRegistry) === targetStatus,
@@ -3035,7 +3059,7 @@ export async function runContext(
   }
   rememberReadOutputFocusRows(result as unknown as Record<string, unknown>, [...focusGroups.highLevel, ...focusGroups.lowLevel, ...focusGroups.blockedFallback].map((row) => ({
     id: row.id,
-    status: normalizeStatusForRegistry(row.status, runtime.statusRegistry) === runtime.statusRegistry.in_progress_status ? "in_progress" : "open",
+    status: normalizeStatusForRegistry(row.status, runtime.statusRegistry) === progressStatusOf(runtime.statusRegistry) ? "in_progress" : "open",
     blocked: row.blocked,
   })));
   applyContextFocusProjection(result, runtime.focusFields);

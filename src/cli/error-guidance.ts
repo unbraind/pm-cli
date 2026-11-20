@@ -71,8 +71,8 @@ interface GuidanceMessage {
   why?: string;
   examples?: string[];
   nextSteps?: string[];
-  /** The refused value's URL credentials caused the refusal, so they must not be restored (GH-1757). */
-  urlCredentialsRejected?: true;
+  /** The URL credentials in this source caused the refusal, so they must not be restored (GH-1757). */
+  urlCredentialsRejected?: { source: string };
   /** Host-only domain fault evidence retained during text compaction, never serialized as a new field. */
   partialLegalDomainNotice?: string;
   verificationErrors?: string[];

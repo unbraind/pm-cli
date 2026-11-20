@@ -28,7 +28,7 @@ Role-derived behavior is shared:
 - `pm next` treats every `active` status as actionable unless dependency or blocker rules exclude it.
 - `pm list --status open` and the deprecated `pm list-open` alias include active statuses other than the configured `in_progress_status`.
 - `pm list --status in_progress` and `pm list-in-progress` select the configured in-progress workflow anchor.
-- `pm context` guarantees `summary.active_items = summary.open + summary.in_progress`; custom active statuses cannot disappear from that accounting.
+- `pm context` guarantees `summary.active_items = summary.open + summary.in_progress` while the configured `in_progress_status` carries the `active` role; custom active statuses cannot disappear from that accounting. `summary.in_progress` always counts every item in that status, the population of its `in_progress_unowned` and `in_progress_idle` advisories, so a progress status with another role is counted, and rendered, apart from `active_items` (GH-1756).
 - `pm list-blocked` continues to combine blocked-role status and unresolved dependency evidence.
 
 Legacy hand-edited or older trackers may still contain roleless definitions. Both commands surface the same warning and bounded affected-item evidence:
