@@ -1,0 +1,20 @@
+id: pm-0vthox
+title: "contracts-command.spec.ts reads the developer's own tracker, so a locally installed calendar package fails two specs"
+description: "Found while verifying PR #1761. tests/unit/commands/workspace/contracts-command.spec.ts calls runContracts with GLOBAL_OPTIONS, which has no path, so the tracker resolves from process.cwd(): the repository's own .agents/pm. Two specs ('returns schema, actions, command flags, and alias surfaces' and 'supports lightweight flags-only and availability-only projections') assert that the optional calendar action is unavailable (disabled_reason optional_package_not_installed:calendar). On a working copy where the bundled calendar package is installed into the repository tracker (the gitignored .agents/pm/extensions/builtin-calendar, present here since 2026-10-11), the action is available and both specs fail. CI passes because a fresh clone has no such package. The result depends on gitignored local state, so the full local suite is not reproducible across contributors."
+type: Issue
+status: open
+priority: 3
+tags[3]: flaky,isolation,tests
+created_at: "2026-11-20T18:44:21.100Z"
+updated_at: "2026-11-20T18:44:29.209Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: Every runContracts call in contracts-command.spec.ts that asserts optional-package availability runs against an isolated temporary tracker (withTempPmPath) or an explicit noExtensions setting; Both specs pass with and without the calendar package installed in the repository tracker; A census of other specs that resolve the tracker from process.cwd() is recorded on this item
+parent: pm-doxj
+risk: low
+confidence: 85
+expected_result: Specs pass regardless of which optional packages the developer installed into the repository tracker
+actual_result: Two contracts specs fail locally when builtin-calendar is installed in the repository tracker
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1664,discovered_from,"2026-11-20T18:44:28.961Z","harness:claude-code","cli:update:dep",detected
+body: ""

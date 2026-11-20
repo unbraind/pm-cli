@@ -1565,12 +1565,16 @@ was read or rechecked is not reflected. The
 context activity section takes the newest rows directly and returns no
 cursor. When a read could not be bounded it adds `history_read` (context:
 `activity_history_read`) with `reason` (`summary_missing`, `summary_invalid`,
-`summary_stale` or `irregular_timestamps` once more than half of the streams
-lack usable regular bounds because they changed or hold timestamps that are not
-canonical millisecond UTC, `read_hooks_active`, `unwindowed_query` when a
+`summary_stale` or `irregular_timestamps`, named by the larger cause, when
+streams lack usable regular bounds because they changed or hold timestamps that
+are not canonical millisecond UTC: more than half of all streams as the read
+opens, or, when the read parsed most streams, more than half of those it
+parsed; `read_hooks_active` when read hooks were active as the read opened or
+became active while it ran, which ends pruning; `unwindowed_query` when a
 read with no `--from` bound parsed most streams, or `window_reaches_most_streams`
 when current bounds still left most streams inside the window), `streams_read`
-and `streams_total`; `--stream` carries it on the `meta` record and markdown context
+(streams parsed; one removed after the listing is not counted) and
+`streams_total`; `--stream` carries it on the `meta` record and markdown context
 adds a `history read:` line. Bounded reads add nothing. On POSIX the summary file is written owner-only (mode 0600) and is
 trusted only when the reading user owns it and no one else can write it; on
 Windows it inherits the runtime directory's ACL. A summary in a redirected

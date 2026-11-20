@@ -21,6 +21,7 @@ import {
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
+import { hasActiveOnReadHooks } from "../../core/extensions/index.js";
 import { readHistorySnapshot, readIdentifiedHistorySnapshot } from "../../core/history/read.js";
 import {
   openHistoryStreamSummary,
@@ -555,6 +556,8 @@ interface ActivityStreamRead {
   revalidatedStale: number;
   /** Streams parsed because their trusted bounds hold irregular timestamps. */
   irregularRead: number;
+  /** Whether read hooks became active while the read ran, ending pruning. */
+  hooksActivated: boolean;
 }
 
 async function openActivityStreamRead(
@@ -571,11 +574,21 @@ async function openActivityStreamRead(
     streamsRead: 0,
     revalidatedStale: 0,
     irregularRead: 0,
+    hooksActivated: false,
   };
 }
 
-/** Revalidate skipped streams and count the ones whose bounds went stale. */
+/**
+ * Revalidate skipped streams and count the ones whose bounds went stale. Read
+ * hooks registered while the read ran must observe every stream it has not
+ * read, so then every skipped stream is returned for reading; streams already
+ * read are not replayed.
+ */
 async function revalidateSkipped(read: ActivityStreamRead, files: string[]): Promise<Set<string>> {
+  if (read.summary.enabled && hasActiveOnReadHooks()) {
+    read.hooksActivated = true;
+    return new Set(files);
+  }
   const changed = await read.summary.revalidate(files);
   read.revalidatedStale = changed.length;
   return new Set(changed);
@@ -596,7 +609,8 @@ async function readActivityStream(
   const snapshot = read.summary.enabled
     ? await readIdentifiedHistorySnapshot(historyPath, id)
     : { ...(await readHistorySnapshot(historyPath, id)), source: null };
-  read.streamsRead += 1;
+  // A stream removed since the listing contributed no bytes, so it was not parsed.
+  if (snapshot.raw_bytes !== null) read.streamsRead += 1;
   read.summary.record(file, snapshot);
   for (const entry of snapshot.entries) {
     const candidate = normalizeActivityEntry(id, entry);
@@ -623,7 +637,7 @@ function activityHistoryReadReceipt(
     : unwindowed
       ? "unwindowed_query"
       : "window_reaches_most_streams";
-  const reason = summary.fallback ?? (parsedMost ? queryReason : undefined);
+  const reason = summary.fallback ?? (read.hooksActivated ? "read_hooks_active" : parsedMost ? queryReason : undefined);
   return reason === undefined
     ? undefined
     : { reason, streams_read: streamsRead, streams_total: files.length };

@@ -4,7 +4,7 @@
  * equal the complete read on the same corpus, including streams rewritten by
  * redaction, compaction, repair and restore.
  */
-import { appendFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -257,6 +257,62 @@ describe("bounded activity reads (GH-1664)", () => {
       expect(bounded).toMatchObject({ code: "history_json_invalid" });
       expect(complete).toMatchObject({ code: "history_json_invalid", message: (bounded as Error).message });
       await expect(readRecentActivity({ limit: 1 }, global)).rejects.toMatchObject({ code: "history_json_invalid" });
+    });
+  });
+
+  it("ends pruning when read hooks become active while the read runs, in both read paths", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const streams = (await readdir(path.join(context.pmPath, "history"))).filter((file) => file.endsWith(".jsonl"));
+      const actual = historyReadModule.readIdentifiedHistorySnapshot;
+      const reads: Array<() => Promise<{ history_read?: { reason: string; streams_read: number; streams_total: number } }>> = [
+        () => runActivity({}, global),
+        () => readRecentActivity({ limit: 1 }, global),
+      ];
+      for (const read of reads) {
+        await runActivity({}, global);
+        const observed = new Set<string>();
+        let registered = false;
+        const spy = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot").mockImplementation(async (historyPath, itemId) => {
+          // An SDK host registers an observer after the summary session opened.
+          if (!registered) {
+            registered = true;
+            setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "late-observer", run: (hook) => { observed.add(path.basename(hook.path)); } }] });
+          }
+          return actual(historyPath, itemId);
+        });
+        try {
+          const result = await read();
+          expect(result.history_read).toMatchObject({ reason: "read_hooks_active", streams_read: streams.length, streams_total: streams.length });
+          // The hook observed every stream, each exactly once per read.
+          expect([...observed].sort()).toEqual([...streams].sort());
+        } finally {
+          spy.mockRestore();
+          clearActiveExtensionHooks();
+        }
+      }
+      await assertParity(context.pmPath);
+    });
+  });
+
+  it("does not count a stream removed after the listing as parsed", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const streams = (await readdir(path.join(context.pmPath, "history"))).filter((file) => file.endsWith(".jsonl"));
+      const actual = historyReadModule.readIdentifiedHistorySnapshot;
+      const spy = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot").mockImplementation(async (historyPath, itemId) => {
+        // A checkout removes one stream between the listing and its read.
+        if (path.basename(String(historyPath)) === "pm-old1.jsonl") await rm(historyPath, { force: true });
+        return actual(historyPath, itemId);
+      });
+      try {
+        const cold = await runActivity({}, global);
+        expect(cold.history_read).toEqual({ reason: "summary_missing", streams_read: streams.length - 1, streams_total: streams.length });
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 

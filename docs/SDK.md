@@ -838,8 +838,11 @@ full, so the cost follows the streams with entries in the window, not the
 archive. A read that could not be bounded carries
 `history_read: { reason, streams_read, streams_total }`, where `reason` is
 `summary_missing`, `summary_invalid`, `summary_stale` or
-`irregular_timestamps` (more than half of the streams lack usable regular
-bounds, named by the larger cause), `read_hooks_active`, `unwindowed_query`
+`irregular_timestamps` (named by the larger cause, when more than half of all
+streams lack usable regular bounds as the read opens, or when the read parsed
+most streams and more than half of those it parsed were stale or irregular),
+`read_hooks_active` (read hooks were active when the read opened, or became
+active while it ran, which ends pruning), `unwindowed_query`
 (no `from` bound and most streams parsed; pass one to bound the read), or
 `window_reaches_most_streams` (current bounds, but the window still reached
 most streams).

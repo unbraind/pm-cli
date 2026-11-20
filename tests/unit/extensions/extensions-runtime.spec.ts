@@ -294,6 +294,25 @@ describe("core/extensions runtime wrappers", () => {
       });
       expect(hasActiveOnReadHooks()).toBe(false);
       expect(hasActiveOnWriteHooks()).toBe(false);
+      // Each predicate answers only for its own hook kind.
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [],
+        onRead: [{ layer: "project", name: "read-only", run: () => undefined }],
+        onIndex: [],
+      });
+      expect(hasActiveOnReadHooks()).toBe(true);
+      expect(hasActiveOnWriteHooks()).toBe(false);
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [{ layer: "project", name: "write-only", run: () => undefined }],
+        onRead: [],
+        onIndex: [],
+      });
+      expect(hasActiveOnReadHooks()).toBe(false);
+      expect(hasActiveOnWriteHooks()).toBe(true);
       setActiveExtensionHooks({
         beforeCommand: [],
         afterCommand: [],

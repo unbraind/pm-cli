@@ -166,13 +166,18 @@ async function removeCacheFile(
   pmRoot: string,
   target: GcTarget,
   dryRun: boolean,
-): Promise<{ removed: boolean; warnings: string[] }> {
+): Promise<{ removed: boolean; redirected?: true; warnings: string[] }> {
   const relativePath = target.relativePath;
   const absolutePath = path.join(pmRoot, relativePath);
   const warnings = await runActiveOnReadHooks({
     path: absolutePath,
     scope: "project",
   });
+  // Checked after the hook and right before removal, so a runtime/ redirected
+  // since gc began (by a hook or a concurrent migration) is never followed.
+  if (target.scope === "runtime" && (await isRedirectedRuntimeDirectory(pmRoot))) {
+    return { removed: false, redirected: true, warnings };
+  }
   try {
     const stats = await fs.stat(absolutePath);
     if (target.kind === "file" && !stats.isFile()) {
@@ -231,18 +236,22 @@ async function removePathTargets(
   const removed: string[] = [];
   const retained: string[] = [];
   const warnings: string[] = [];
-  const runtimeRedirected = scopes.includes("runtime") && (await isRedirectedRuntimeDirectory(pmRoot));
-  if (runtimeRedirected) warnings.push("redirected_runtime_directory:runtime");
+  let runtimeRedirected = false;
   for (const target of GC_TARGETS.filter((candidate) => scopes.includes(candidate.scope))) {
     if (target.scope === "runtime" && runtimeRedirected) {
       retained.push(target.relativePath);
       continue;
     }
     const result = await removeCacheFile(pmRoot, target, dryRun);
+    runtimeRedirected ||= result.redirected === true;
     (result.removed ? removed : retained).push(target.relativePath);
     warnings.push(...result.warnings);
   }
-  if (scopes.includes("runtime") && !runtimeRedirected) {
+  // Re-checked once more, since the last target's hooks ran after its check.
+  if (scopes.includes("runtime") && !runtimeRedirected) runtimeRedirected = await isRedirectedRuntimeDirectory(pmRoot);
+  if (runtimeRedirected) {
+    warnings.push("redirected_runtime_directory:runtime");
+  } else if (scopes.includes("runtime")) {
     const snapshotTempResult = await sweepWorkspaceSnapshotTemps(pmRoot, dryRun);
     removed.push(...snapshotTempResult.removed);
     retained.push(...snapshotTempResult.retained);

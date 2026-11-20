@@ -628,6 +628,68 @@ describe("runGc", () => {
     });
   });
 
+  it.runIf(process.platform !== "win32")("re-checks the runtime directory after each target's hooks, before removing anything", async () => {
+    await withTempPmPath(async (context) => {
+      const elsewhere = await mkdtemp(path.join(os.tmpdir(), "pm-gc-elsewhere-"));
+      const runtimeDir = path.join(context.pmPath, "runtime");
+      try {
+        await writeFile(path.join(elsewhere, "history-stream-summary.json"), "{}\n");
+        await writeFile(path.join(elsewhere, "history-drift-cache.json"), "{}\n");
+        await mkdir(path.join(runtimeDir, "test-runs"), { recursive: true });
+        setActiveExtensionHooks({
+          beforeCommand: [], afterCommand: [], onIndex: [], onWrite: [],
+          onRead: [{ layer: "project", name: "redirects-runtime", run: async (hook) => {
+            // The first runtime target's read hook redirects runtime/ to another tracker's.
+            if (hook.path.endsWith("test-runs")) {
+              await rm(runtimeDir, { recursive: true, force: true });
+              await fs.symlink(elsewhere, runtimeDir);
+            }
+          } }],
+        });
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+        expect(gc.removed).toEqual([]);
+        expect(gc.warnings).toContain("redirected_runtime_directory:runtime");
+        await expect(fs.stat(path.join(elsewhere, "history-stream-summary.json"))).resolves.toBeTruthy();
+        await expect(fs.stat(path.join(elsewhere, "history-drift-cache.json"))).resolves.toBeTruthy();
+      } finally {
+        clearActiveExtensionHooks();
+        await rm(elsewhere, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it.runIf(process.platform !== "win32")("skips the snapshot temp sweep when the last target's hooks redirected runtime/", async () => {
+    await withTempPmPath(async (context) => {
+      const elsewhere = await mkdtemp(path.join(os.tmpdir(), "pm-gc-elsewhere-"));
+      const runtimeDir = path.join(context.pmPath, "runtime");
+      try {
+        // Stale publish debris in the other tracker would be swept if followed.
+        const staleObject = path.join(elsewhere, "workspace-snapshots", "objects", ".create-stale");
+        await mkdir(staleObject, { recursive: true });
+        const staleTime = new Date(Date.now() - 2 * 24 * 60 * 60 * 1_000);
+        await utimes(staleObject, staleTime, staleTime);
+        await mkdir(runtimeDir, { recursive: true });
+        await writeFile(path.join(runtimeDir, "history-stream-summary.json"), "{}\n");
+        setActiveExtensionHooks({
+          beforeCommand: [], afterCommand: [], onIndex: [], onRead: [],
+          onWrite: [{ layer: "project", name: "redirects-after-last-target", run: async (hook) => {
+            if (hook.path.endsWith("history-stream-summary.json")) {
+              await rm(runtimeDir, { recursive: true, force: true });
+              await fs.symlink(elsewhere, runtimeDir);
+            }
+          } }],
+        });
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+        expect(gc.removed).toEqual(["runtime/history-stream-summary.json"]);
+        expect(gc.warnings).toContain("redirected_runtime_directory:runtime");
+        await expect(fs.stat(staleObject)).resolves.toBeTruthy();
+      } finally {
+        clearActiveExtensionHooks();
+        await rm(elsewhere, { recursive: true, force: true });
+      }
+    });
+  });
+
   it("rethrows an unexpected failure to inspect the runtime directory", async () => {
     await withTempPmPath(async (context) => {
       const runtimePath = path.join(context.pmPath, "runtime");
