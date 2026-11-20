@@ -3186,16 +3186,17 @@ async function buildStorageIntegrityCheck(
       `validate_storage_tracked_runtime_cache_files:${trackedRuntimeCache.tracked_path_count}`,
     );
   }
+  const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
   const fenceAudit = await auditMergeAttributeFence(
     pmRoot,
     resolveProjectMergeTypeFolders(settings),
+    { gitWorkspaceRoot },
   );
   if (fenceAudit.status === "drift") {
     warnings.push(
       `validate_merge_fence_drift:${fenceAudit.missing_patterns.length + fenceAudit.stale_patterns.length}`,
     );
   }
-  const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
   const mergeDriverAudit =
     gitWorkspaceRoot === null
       ? null

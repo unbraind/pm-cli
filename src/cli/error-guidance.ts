@@ -71,6 +71,8 @@ interface GuidanceMessage {
   why?: string;
   examples?: string[];
   nextSteps?: string[];
+  /** The refused value's URL credentials caused the refusal, so they must not be restored (GH-1757). */
+  urlCredentialsRejected?: true;
   /** Host-only domain fault evidence retained during text compaction, never serialized as a new field. */
   partialLegalDomainNotice?: string;
   verificationErrors?: string[];
@@ -1422,6 +1424,7 @@ function applyPmCliErrorContext(
     why: normalizeContextValue(context.why, guidance.why),
     examples,
     nextSteps,
+    urlCredentialsRejected: context.url_credentials_rejected ?? guidance.urlCredentialsRejected,
     partialLegalDomainNotice: partialDomain,
     verificationErrors,
     policyViolations: context.policy_violations,

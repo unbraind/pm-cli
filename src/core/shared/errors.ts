@@ -280,6 +280,12 @@ export interface PmCliErrorContext {
   examples?: string[];
   /** Value that configures or reports next steps for this contract. */
   nextSteps?: string[];
+  /**
+   * The refusal rejects URL credentials themselves, such as an identity that
+   * carries userinfo, so recovery never advises restoring the redacted
+   * credentials: replaying with them reproduces this refusal (GH-1757).
+   */
+  url_credentials_rejected?: true;
   /** Exact selectors that could not be matched by a lossless removal. */
   unmatched?: string[];
   /** Dependency selectors that matched no stored edge. */

@@ -188,7 +188,9 @@ pm list --status in_progress --assignee-filter unassigned --updated-before -72h 
 `pm health` prints these sweeps (with the configured status id and threshold)
 as the remedies of its `in_progress_unowned`, `in_progress_idle` and
 `stale_in_progress_items` advisories, and `pm context` counts
-`in_progress_unowned` and `in_progress_idle` next to `in_progress`. The sweeps
+`in_progress_unowned` and `in_progress_idle` next to `in_progress`. All three
+count items in the configured progress status, whatever role that status
+carries, so neither advisory can exceed `in_progress` (GH-1756). The sweeps
 select by `updated_at`, so they are candidate lists: an item restored within
 the window keeps an older `updated_at` but recent history, and only
 `--takeover-stale` applies the full activity clock.

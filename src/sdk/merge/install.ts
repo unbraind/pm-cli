@@ -682,23 +682,66 @@ export function resolveProjectMergeTypeFolders(
   );
 }
 
+/** Options for {@link auditMergeAttributeFence}. */
+export interface MergeFenceAuditOptions {
+  /**
+   * Top level of the Git worktree that holds the tracker, as
+   * {@link findGitWorkspaceRoot} reports it. Git never reads a
+   * `.gitattributes` above its own top level, so the walk stops there
+   * (GH-1759). Omit it to resolve the worktree from the tracker root; pass
+   * `null` for a tracker outside any Git worktree, which keeps the bounded
+   * filesystem walk.
+   */
+  gitWorkspaceRoot?: string | null;
+}
+
+/** Real path of one walked directory, or null when it cannot be resolved. */
+async function realDirectory(directory: string): Promise<string | null> {
+  try {
+    return await realpath(directory);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether Git applies the `.gitattributes` of `directory` inside the worktree
+ * rooted at `boundary`. Each walked directory is compared by real path, so a
+ * symlinked tracker path is judged where Git sees it while the fence patterns
+ * stay relative to the logical path.
+ */
+async function isAttributeDirectoryInWorktree(directory: string, boundary: string): Promise<boolean> {
+  const real = await realDirectory(directory);
+  return real !== null && !isPathOutsideRoot(path.relative(boundary, real));
+}
+
 /**
  * Audit the committed `.gitattributes` merge fence against the coverage the
  * active schema requires, without touching git configuration. The fence file
- * is discovered by walking up from the tracker root (bounded), so the audit
- * stays filesystem-only and safe to run inside `pm validate`. A `drift`
- * result means items of some type folder (or a tracker JSONL store) would
- * merge under git's default text driver despite the fence being installed.
+ * is discovered by walking up from the tracker root (bounded), and inside a
+ * Git worktree only as far as its top level: a matching fence in an
+ * enclosing, different repository is one Git never applies, so it never
+ * counts (GH-1759). A `drift` result means items of some type folder (or a
+ * tracker JSONL store) would merge under git's default text driver despite
+ * the fence being installed.
  */
 export async function auditMergeAttributeFence(
   pmRoot: string,
   typeFolders: string[],
+  options: MergeFenceAuditOptions = {},
 ): Promise<MergeFenceAuditResult> {
   const resolvedRoot = path.resolve(pmRoot);
+  const boundary =
+    options.gitWorkspaceRoot === undefined
+      ? await findGitWorkspaceRoot(resolvedRoot)
+      : options.gitWorkspaceRoot;
   let fenceDirectory: string | null = null;
   let fenceContent = "";
   let directory = resolvedRoot;
   for (let depth = 0; depth < 8; depth += 1) {
+    if (boundary !== null && !(await isAttributeDirectoryInWorktree(directory, boundary))) {
+      break;
+    }
     const candidate = path.join(directory, ".gitattributes");
     try {
       const raw = await readFile(candidate, "utf8");

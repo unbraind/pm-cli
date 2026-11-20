@@ -189,7 +189,7 @@ export async function readWorkspacePosition(
   });
   const gitWorkspaceRoot = await findGitWorkspaceRoot(pmRoot);
   const [fence, drivers, receiptEvidence, drift] = await Promise.all([
-    auditMergeAttributeFence(pmRoot, resolveProjectMergeTypeFolders(settings)),
+    auditMergeAttributeFence(pmRoot, resolveProjectMergeTypeFolders(settings), { gitWorkspaceRoot }),
     gitWorkspaceRoot === null
       ? Promise.resolve(null)
       : auditMergeDriverConfiguration(gitWorkspaceRoot),

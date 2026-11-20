@@ -34,9 +34,11 @@ export async function resolveMergeFenceHealthEvidence(
   if (gitWorkspaceRoot === null) {
     return { audit: null, count: 0, warnings: [] };
   }
+  // Only attribute files inside the active worktree count (GH-1759).
   const audit = await auditMergeAttributeFence(
     pmRoot,
     resolveProjectMergeTypeFolders(settings),
+    { gitWorkspaceRoot },
   );
   if (audit.status === "ok") {
     return { audit, count: 0, warnings: [] };

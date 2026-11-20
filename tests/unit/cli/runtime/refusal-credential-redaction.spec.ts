@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runWithUrlCredentialInvocation } from "../../../../src/core/shared/url-credentials.js";
 import { formatPmCliErrorForDisplay, formatPmCliErrorForJson } from "../../../../src/cli/error-guidance.js";
 import {
+  REJECTED_CREDENTIALS_STEP,
   RESTORE_CREDENTIALS_STEP,
   redactGuidanceCredentials,
   redactRefusalArgv,
@@ -52,6 +53,18 @@ describe("refusal credential redaction (pm-nhauur)", () => {
   it("adds the restore step once", () => {
     const guidance = { nextSteps: ["first", RESTORE_CREDENTIALS_STEP], detail: SOURCE };
     expect(redactGuidanceCredentials(guidance).nextSteps).toEqual([RESTORE_CREDENTIALS_STEP, "first"]);
+  });
+
+  it("never advises restoring credentials that the refusal itself rejected (GH-1757)", () => {
+    const rejected = { nextSteps: ["Rerun with --author set to a plain name.", RESTORE_CREDENTIALS_STEP], detail: SOURCE, urlCredentialsRejected: true as const };
+    const safe = runWithUrlCredentialInvocation(["claim", "pm-a", "--author", SOURCE], () => redactGuidanceCredentials(rejected));
+    expect(safe.nextSteps).toEqual([REJECTED_CREDENTIALS_STEP, "Rerun with --author set to a plain name."]);
+    expect(safe.nextSteps.join(" ")).not.toMatch(/restore them before replaying/u);
+    // The module's own step survives a second pass unchanged and is never repeated.
+    expect(runWithUrlCredentialInvocation(["claim", SOURCE], () => redactGuidanceCredentials(safe)).nextSteps).toEqual(safe.nextSteps);
+    // Without a redaction or a credential-bearing invocation, nothing is added.
+    const clean = { nextSteps: ["Rerun with PM_AUTHOR set to a plain name."], urlCredentialsRejected: true as const };
+    expect(redactGuidanceCredentials(clean)).toBe(clean);
   });
 
   it("redacts a whitespace-bearing userinfo whole in token fields and through the registry in text", () => {

@@ -403,6 +403,11 @@ interface ContextSummary {
   /** Optional per-section role/blocker codes for projected rows: i/I in progress, o/O open; uppercase is blocked. */
   focus_row_states?: Record<string, string>;
   active_items: number;
+  /**
+   * Items in `workflow.in_progress_status`, whatever role it carries, so both
+   * advisories below count subsets of it (GH-1756). It equals
+   * `active_items - open` while that status carries the `active` role.
+   */
   in_progress: number;
   /** In-progress items with no assignee, so no live claim; omitted when zero (GH-1724). */
   in_progress_unowned?: number;
@@ -2627,11 +2632,14 @@ function buildContextSummaryExtras(
   const activeItems = allItems.filter((item) =>
     statusRegistry.active_statuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
-  const inProgress = countContextStatus(activeItems, statusRegistry.in_progress_status, statusRegistry);
+  // in_progress and its two advisories count one population: every item in
+  // the configured progress status, whatever role that status carries
+  // (GH-1756). open stays the active items outside it.
+  const inProgress = countContextStatus(allItems, statusRegistry.in_progress_status, statusRegistry);
   return {
     scope: "matching_items",
     active_items: activeItems.length,
-    open: activeItems.length - inProgress,
+    open: activeItems.length - countContextStatus(activeItems, statusRegistry.in_progress_status, statusRegistry),
     in_progress: inProgress,
     ...(inProgressWork.unowned.count > 0 ? { in_progress_unowned: inProgressWork.unowned.count } : {}),
     ...(inProgressWork.idle.count > 0 ? { in_progress_idle: inProgressWork.idle.count } : {}),

@@ -266,6 +266,7 @@ export {
   resolveMergeInstallContext,
   resolveProjectMergeTypeFolders,
   runMergeInstall,
+  type MergeFenceAuditOptions,
   type MergeFenceAuditResult,
   type MergeFenceRefreshOutcome,
   type MergeInstallOptions,

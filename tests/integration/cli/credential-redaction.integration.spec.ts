@@ -158,6 +158,51 @@ it("classifies Commander's message before any secret fragment can rewrite it (pm
 }, 120_000);
 
 
+it("steers an identity refusal to a replay that succeeds instead of restoring the rejected credentials (GH-1757)", async () => {
+  await withTempPmPath(async (context) => {
+    const credential = `https://fixture:${SECRET}@example.invalid`;
+    const created = context.runCli(["create", "--type", "Task", "--title", "probe", "--description", "d", "--acceptance-criteria", "a", "--json"]);
+    expect(created.code, created.stderr).toBe(0);
+    const createdJson = JSON.parse(created.stdout) as { id?: string; item?: { id: string } };
+    const id = createdJson.item?.id ?? createdJson.id!;
+    type Refusal = { code: string; required: string; next_steps: string[]; recovery: { attempted_command: string } };
+    const refuse = (args: string[]): { refusal: Refusal; stderr: string } => {
+      const refused = context.runCli(args, { cwd: context.tempRoot });
+      expect(refused.code, refused.stderr).toBe(2);
+      expect(`${refused.stdout}${refused.stderr}`).not.toContain(SECRET);
+      return { refusal: JSON.parse(refused.stderr) as Refusal, stderr: refused.stderr };
+    };
+
+    const flag = refuse(["claim", id, "--author", credential, "--json"]);
+    expect(flag.refusal.code).toBe("invalid_argument_value");
+    expect(flag.refusal.recovery.attempted_command).toContain("https://[redacted]@example.invalid");
+    expect(flag.refusal.next_steps).toEqual([
+      "URL credentials in this invocation were replaced with [redacted]; they caused this refusal, so do not restore them: replay with a value that carries no URL credentials.",
+      "Rerun with --author set to a plain name.",
+    ]);
+    // The text rendering carries the same advice.
+    const text = context.runCli(["claim", id, "--author", credential]);
+    expect(text.code).toBe(2);
+    expect(text.stderr).not.toMatch(/restore them before replaying/u);
+    expect(text.stderr).toMatch(/do not restore them/u);
+
+    // PM_AUTHOR leaves no credential in the command line, so no credential step appears at all, and
+    // the requirement text is not rewritten by redaction.
+    const previousAuthor = context.env.PM_AUTHOR;
+    context.env.PM_AUTHOR = credential;
+    const env = refuse(["claim", id, "--json"]);
+    context.env.PM_AUTHOR = previousAuthor;
+    expect(env.refusal.next_steps).toEqual(["Rerun with PM_AUTHOR set to a plain name."]);
+    expect(env.refusal.required).not.toContain("[redacted]");
+    expect(env.refusal.recovery.attempted_command).toMatch(new RegExp(`claim ${id} --json$`, "u"));
+    expect(env.refusal.recovery.attempted_command).not.toContain("[redacted]");
+
+    // Following the advice succeeds.
+    const plain = context.runCli(["claim", id, "--author", "fixture-author", "--json"]);
+    expect(plain.code, plain.stderr).toBe(0);
+  });
+}, 120_000);
+
 it("refuses URL userinfo in asserted identities and never echoes a stored one (GH-1707)", async () => {
   await withTempPmPath(async (context) => {
     const { readFile, writeFile } = await import("node:fs/promises");

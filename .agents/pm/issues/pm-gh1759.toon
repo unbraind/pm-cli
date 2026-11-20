@@ -1,0 +1,55 @@
+id: pm-gh1759
+title: "GH-1759: strict health accepts a merge fence from an enclosing repository for a separate linked worktree"
+description: "Reported in GH-1759 against 2026.11.19. auditMergeAttributeFence (src/sdk/merge/install.ts) looks for the managed .gitattributes block by walking filesystem parents of the tracker root up to eight levels, and it does not stop at the active Git worktree root. When a linked worktree of one repository is checked out inside a different repository that has a stale matching fence, the walk finds the outer file. Git never reads attributes above its own top level, so git check-attr reports merge unspecified, yet pm health --strict-exit reports ok with no warnings and exits 0. pm validate and the workspace position read use the same audit. The fix bounds the walk at the active Git worktree root, keeping support for several trackers inside one repository (pm-kynkl8) and the per-worktree driver isolation of GH-1306 (pm-c1dwbt)."
+type: Issue
+status: closed
+priority: 1
+tags[6]: "area:merge",false-success,"gh:1759",health,merge-fence,worktree
+created_at: "2026-11-20T04:44:11.213Z"
+updated_at: "2026-11-20T05:12:57.341Z"
+closed_at: "2026-11-20T05:12:56.767Z"
+completed_at: "2026-11-20T05:12:56.767Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "A matching managed fence in a .gitattributes above the active Git worktree root never counts: strict health reports merge_fence_missing and exits 1 for a linked worktree with no own fence; An installed fence at the linked worktree root still passes strict health, and a fence inside the same repository between the root and the tracker still counts; pm validate and the workspace position read use the same bounded audit; a tracker outside any Git repository keeps today's bounded walk; A real-Git regression test reproduces the GH-1759 layout and checks both git check-attr and strict health"
+parent: pm-o2kc
+risk: low
+confidence: high
+severity: high
+resolution: "auditMergeAttributeFence takes an optional gitWorkspaceRoot (resolved from the tracker root when omitted, null keeps the old walk) and stops its .gitattributes walk at that top level, comparing each walked directory by real path so a symlinked tracker path keeps its patterns. pm health, pm validate and the workspace position read pass the root they already resolve. MERGE_SAFETY.md documents the bound; the SDK surface snapshot acknowledges the new parameter."
+expected_result: "A linked worktree without its own fence fails strict health with merge_fence_missing even when an enclosing, different repository carries a matching fence; an inner fence and an in-repository nested fence still pass."
+actual_result: "The GH-1759 reproduction against this branch's dist exits 1 with failed_because merge_fence_missing:1 while git check-attr reports merge unspecified; restoring the inner fence gives exit 0, ok true, 0 warnings. The real-Git spec passes and fails without the boundary (negative control); the full suite passes (13447 tests)."
+component: merge
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-c1dwbt,related,"2026-11-20T04:44:11.213Z","harness:claude-code","cli:create:dep",detected
+  pm-kynkl8,related,"2026-11-20T04:44:11.213Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-20T04:46:55.032Z","harness:claude-code","Investigation note: auditMergeAttributeFence walks up to eight filesystem parents of the tracker root and accepts the first .gitattributes holding a managed block, with no Git-root bound. All three callers share it: health (resolveMergeFenceHealthEvidence), validate (validate_merge_fence_drift) and the workspace position read. Plan: an optional gitWorkspaceRoot bound, compared by realpath per level so a symlinked logical path keeps its tracker-relative patterns; directories outside the bound are never read. Callers pass the git root they already resolve; a tracker outside Git keeps the bounded walk."
+  "2026-11-20T04:50:13.037Z","harness:claude-code","Evidence: the GH-1759 shell reproduction against this branch's dist now reports git check-attr merge unspecified, strict health exit 1 with failed_because merge_fence_missing:1; restoring the inner fence gives exit 0, ok true, 0 warnings. The new real-Git spec covers that layout, a fence in an in-repository directory between the root and the tracker (still counted), a symlinked logical tracker path (same fence, same patterns), a boundary that does not hold the tracker, and an unresolvable tracker directory. Negative control: with the boundary check disabled both tests fail at the not_installed expectation (the outer fence is accepted as ok)."
+files[7]{path,scope,note}:
+  src/sdk/governance/health-merge-evidence.ts,project,health passes its resolved worktree root
+  src/sdk/governance/validate.ts,project,validate resolves the worktree root before the fence audit
+  src/sdk/governance/workspace-position.ts,project,workspace position passes its worktree root
+  src/sdk/index.ts,project,exports MergeFenceAuditOptions
+  src/sdk/merge/index.ts,project,exports MergeFenceAuditOptions
+  src/sdk/merge/install.ts,project,auditMergeAttributeFence stops at the active Git worktree root (GH-1759)
+  tests/unit/sdk/merge/fence-worktree-boundary.spec.ts,project,"real-Git GH-1759 layout, in-repository nested fence, symlinked path and negative control"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/merge/fence-worktree-boundary.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/governance/health-verdict-authority.spec.ts,project,300,"harness:claude-code","2026-11-20T04:50:12.229Z",local_mutation,fix/diagnostic-population-truth
+docs[1]{path,scope,note}:
+  docs/MERGE_SAFETY.md,project,attribute evidence bounded at the worktree top level
+close_reason: Merge-fence evidence is bounded to the active Git worktree; an enclosing repository's fence never satisfies strict health
+contract_change:
+  api: "auditMergeAttributeFence (@unbrained/pm-cli/sdk, @unbrained/pm-cli/sdk/merge)"
+  before: "The fence audit walked up to eight filesystem parents of the tracker root and accepted the first .gitattributes with a managed block, even one above the Git worktree top level that Git never applies"
+  after: "The audit stops at the tracker's Git worktree top level (resolved from the tracker root, or passed as options.gitWorkspaceRoot), so pm health, pm validate and the workspace position read report a linked worktree without its own fence as merge_fence_missing"
+  migrate: "No change for a fence at the worktree root or inside the same repository. To keep the old unbounded walk, pass { gitWorkspaceRoot: null }; a strict health check that newly fails needs pm merge install in that worktree"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1759
+  gate_id: test-coverage
+  negative_control: "With the worktree boundary check in auditMergeAttributeFence disabled, both tests in tests/unit/sdk/merge/fence-worktree-boundary.spec.ts fail at the not_installed expectation because the enclosing repository fence is accepted as ok"
+  local_checks[4]: node scripts/run-tests.mjs test -- tests/unit/sdk/merge/fence-worktree-boundary.spec.ts tests/unit/sdk/merge-safety.spec.ts tests/unit/sdk/governance/health-verdict-authority.spec.ts,node scripts/run-tests.mjs test,pnpm typecheck,node scripts/sdk-surface-snapshot.mjs --check
+  hosted_checks[3]: CI / Gates (static),CI / Gates (coverage),CI / Windows regression (Node 24)
+body: ""
