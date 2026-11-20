@@ -578,26 +578,35 @@ async function openActivityStreamRead(
   };
 }
 
+/** Whether read hooks are active on a read that may skip streams, which ends pruning for it. */
+function readHooksEndPruning(read: ActivityStreamRead): boolean {
+  if (!read.summary.enabled || !hasActiveOnReadHooks()) return false;
+  read.hooksActivated = true;
+  return true;
+}
+
 /**
- * Revalidate skipped streams and count the ones whose bounds went stale. Read
- * hooks registered while the read ran must observe every stream it has not
- * read, so then every skipped stream is returned for reading; streams already
- * read are not replayed.
+ * Read the skipped streams that must still be read before the read finishes:
+ * those whose bounds went stale while it ran, or every one of them once read
+ * hooks are active, so a hook registered at any point during the read
+ * observes every stream it has not yet read, exactly once. Each check follows
+ * the await before it; after the last one no skipped stream remains unread.
  */
-async function revalidateSkipped(read: ActivityStreamRead, files: string[]): Promise<Set<string>> {
-  if (read.summary.enabled && hasActiveOnReadHooks()) {
-    read.hooksActivated = true;
-    return new Set(files);
-  }
-  const changed = await read.summary.revalidate(files);
-  // Checked again after the stats: a hook registered meanwhile must still
-  // observe every stream this read skipped.
-  if (hasActiveOnReadHooks()) {
-    read.hooksActivated = true;
-    return new Set(files);
-  }
-  read.revalidatedStale = changed.length;
-  return new Set(changed);
+async function readSkippedStreams<T extends { file: string }>(
+  read: ActivityStreamRead,
+  skipped: readonly T[],
+  readStream: (stream: T) => Promise<void>,
+): Promise<void> {
+  const readAll = async (streams: readonly T[]) => {
+    for (const stream of streams) await readStream(stream);
+  };
+  if (skipped.length === 0) return;
+  if (readHooksEndPruning(read)) return readAll(skipped);
+  const changed = new Set(await read.summary.revalidate(skipped.map(({ file }) => file)));
+  if (readHooksEndPruning(read)) return readAll(skipped);
+  read.revalidatedStale = changed.size;
+  await readAll(skipped.filter(({ file }) => changed.has(file)));
+  if (readHooksEndPruning(read)) await readAll(skipped.filter(({ file }) => !changed.has(file)));
 }
 
 /** Parse one stream completely, record its bounds, and append its matching rows. */
@@ -661,20 +670,17 @@ async function collectActivityEntries(
   const read = await openActivityStreamRead(pmRoot, historyDir, filters);
   // Rows per history file, so streams re-read after revalidation keep file order.
   const rowsByPosition: ActivityEntry[][] = read.files.map(() => []);
-  const skipped: number[] = [];
+  const skipped: Array<{ file: string; position: number }> = [];
   for (const [position, file] of read.files.entries()) {
     const bounds = read.summary.trusted(file);
     if (bounds !== undefined && !streamMayMatchWindow(bounds, filters)) {
-      skipped.push(position);
+      skipped.push({ file, position });
       continue;
     }
     await readActivityStream(read, historyDir, file, filters, rowsByPosition[position]!);
   }
-  const changed = await revalidateSkipped(read, skipped.map((position) => read.files[position]!));
-  for (const position of skipped) {
-    const file = read.files[position]!;
-    if (changed.has(file)) await readActivityStream(read, historyDir, file, filters, rowsByPosition[position]!);
-  }
+  await readSkippedStreams(read, skipped, ({ file, position }) =>
+    readActivityStream(read, historyDir, file, filters, rowsByPosition[position]!));
   const combined = rowsByPosition.flat();
   await read.summary.commit();
   const receipt = activityHistoryReadReceipt(read, filters.from === undefined);
@@ -816,13 +822,10 @@ async function collectRecentActivityEntries(
   // Streams skipped on their bounds that changed while the read ran are read
   // now; a better cutoff from them can only exclude more, never readmit.
   const skipped = [...deferred.slice(consumed), ...outsideWindow];
-  const changed = await revalidateSkipped(read, skipped.map(({ file }) => file));
-  for (const stream of skipped) {
-    if (changed.has(stream.file)) {
-      await pool.read(read, historyDir, filters, stream);
-      pool.cutWhenFull();
-    }
-  }
+  await readSkippedStreams(read, skipped, async (stream) => {
+    await pool.read(read, historyDir, filters, stream);
+    pool.cutWhenFull();
+  });
   const entries = pool.cut();
   await read.summary.commit();
   const receipt = activityHistoryReadReceipt(read, false);

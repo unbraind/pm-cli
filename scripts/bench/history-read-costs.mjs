@@ -360,7 +360,13 @@ function parseArguments(argv) {
 
 /** Ratchet and write the committed budget and report from a qualified measurement. */
 async function updateHistoryReadBudgets(report, increaseReason, { budgetPath, documentationPath }, qualification) {
-  const committed = await readFile(budgetPath, "utf8").then(JSON.parse, () => undefined);
+  // Only an absent budget is a first calibration; any other read failure
+  // would otherwise drop the ratchet's previous ceiling.
+  const committedText = await readFile(budgetPath, "utf8").catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    throw error;
+  });
+  const committed = committedText === undefined ? undefined : JSON.parse(committedText);
   // A malformed committed budget would lose the ratchet's previous ceiling.
   if (committed !== undefined) validateHistoryReadBudgets(committed);
   const budgets = buildHistoryReadBudgets(report, committed, increaseReason);

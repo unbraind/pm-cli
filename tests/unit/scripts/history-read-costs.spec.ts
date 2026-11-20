@@ -257,6 +257,12 @@ describe("history read cost benchmark (GH-1664)", () => {
     await expect(main(["--check"], { budgetPath, buildReport: async () => report() })).rejects.toThrow("History read budget is malformed");
     await expect(main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => report() }))
       .rejects.toThrow("History read budget is malformed");
+
+    // An existing budget that cannot be read is not a first calibration.
+    const unreadable = path.join(root, "unreadable-budget");
+    await mkdir(unreadable);
+    await expect(main(["--update"], { nodeVersion: "v24.22.3", budgetPath: unreadable, documentationPath, buildReport: async () => report() }))
+      .rejects.toMatchObject({ code: "EISDIR" });
   });
 
   it("writes budgets and documentation on a qualified update and verifies them on check", async () => {

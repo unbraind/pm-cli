@@ -336,6 +336,73 @@ describe("bounded activity reads (GH-1664)", () => {
     });
   });
 
+  it("ends pruning when a read hook arrives while a stale skipped stream is re-read", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const streams = (await readdir(path.join(context.pmPath, "history"))).filter((file) => file.endsWith(".jsonl"));
+      const actualOpen = streamSummaryModule.openHistoryStreamSummary;
+      const actualRead = historyReadModule.readIdentifiedHistorySnapshot;
+      const reads: Array<() => Promise<{ history_read?: { reason: string; streams_read: number; streams_total: number } }>> = [
+        () => runActivity({}, global),
+        () => readRecentActivity({ limit: 1 }, global),
+      ];
+      for (const read of reads) {
+        await runActivity({}, global);
+        const observed: string[] = [];
+        let revalidated = false;
+        let registered = false;
+        const openSpy = vi.spyOn(streamSummaryModule, "openHistoryStreamSummary").mockImplementation(async (params) => {
+          const session = await actualOpen(params);
+          return {
+            ...session,
+            // One skipped stream went stale, so it is re-read before the read finishes.
+            revalidate: async (files) => {
+              await session.revalidate(files);
+              revalidated = true;
+              return files.slice(0, 1);
+            },
+          };
+        });
+        const readSpy = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot").mockImplementation(async (historyPath, itemId) => {
+          // The observer arrives while that stale stream is being re-read.
+          if (revalidated && !registered) {
+            registered = true;
+            setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "late-observer", run: (hook) => { observed.push(path.basename(hook.path)); } }] });
+          }
+          return actualRead(historyPath, itemId);
+        });
+        try {
+          const result = await read();
+          expect(registered).toBe(true);
+          expect(result.history_read).toMatchObject({ reason: "read_hooks_active", streams_read: streams.length, streams_total: streams.length });
+          expect(observed.length).toBeGreaterThan(1);
+          expect(new Set(observed).size).toBe(observed.length);
+        } finally {
+          openSpy.mockRestore();
+          readSpy.mockRestore();
+          clearActiveExtensionHooks();
+        }
+      }
+    });
+  });
+
+  it("adds no receipt to reads below the summary threshold, even with read hooks active", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const restore = summaryInternals.setMinimumStreams(NEVER);
+      setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "observer", run: () => undefined }] });
+      try {
+        expect((await runActivity({}, global)).history_read).toBeUndefined();
+        expect((await readRecentActivity({ limit: 1 }, global)).history_read).toBeUndefined();
+      } finally {
+        restore();
+        clearActiveExtensionHooks();
+      }
+    });
+  });
+
   it("does not count a stream removed after the listing as parsed", async () => {
     await withTempPmPath(async (context) => {
       await seedCorpus(context);
