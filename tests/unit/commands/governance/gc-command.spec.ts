@@ -690,6 +690,23 @@ describe("runGc", () => {
     });
   });
 
+  it.runIf(process.platform !== "win32")("retains a cache target that is a link, even a circular one, instead of aborting", async () => {
+    await withTempPmPath(async (context) => {
+      const summary = path.join(context.pmPath, "runtime", "history-stream-summary.json");
+      await mkdir(path.dirname(summary), { recursive: true });
+      // A circular link: following it would fail with ELOOP.
+      await fs.symlink(summary, summary);
+      for (const dryRun of [true, false]) {
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime", "locks"], dryRun });
+        expect(gc.retained).toContain("runtime/history-stream-summary.json");
+        expect(gc.warnings).toContain("not_a_file:runtime/history-stream-summary.json");
+        // Later scopes still run.
+        expect(gc.locks).toBeDefined();
+      }
+      expect((await fs.lstat(summary)).isSymbolicLink()).toBe(true);
+    });
+  });
+
   it("rethrows an unexpected failure to inspect the runtime directory", async () => {
     await withTempPmPath(async (context) => {
       const runtimePath = path.join(context.pmPath, "runtime");
@@ -709,12 +726,12 @@ describe("runGc", () => {
   it("rethrows unexpected filesystem errors", async () => {
     await withTempPmPath(async (context) => {
       const failedTarget = path.join(context.pmPath, "index", "manifest.json");
-      const actualStat = fs.stat.bind(fs);
-      const statSpy = vi.spyOn(fs, "stat").mockImplementation(async (target) => {
+      const actualLstat = fs.lstat.bind(fs);
+      const statSpy = vi.spyOn(fs, "lstat").mockImplementation(async (target, ...rest) => {
         if (target === failedTarget) {
           throw new Error("stat failure");
         }
-        return actualStat(target);
+        return actualLstat(target, ...(rest as []));
       });
       try {
         await expect(runGc({ path: context.pmPath })).rejects.toThrow("stat failure");

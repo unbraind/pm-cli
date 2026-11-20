@@ -1357,7 +1357,7 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 
 `pm gc --scope` accepts `index`, `embeddings`, `runtime`, `locks`, and `checkpoints`, comma-separated or repeated. Omitting the flag selects all scopes:
 
-- `runtime` clears `runtime/test-runs/`, `runtime/history-drift-cache.json` and `runtime/history-stream-summary.json`. The next health check rescans history drift, and the next activity or context read parses every history stream once to rebuild the stream summary.
+- `runtime` clears `runtime/test-runs/`, `runtime/history-drift-cache.json` and `runtime/history-stream-summary.json`. It never follows a link: a cache target that is one is retained with a `not_a_file` or `not_a_directory` warning, and when `runtime/` itself is a link, junction or file nothing under it is removed (`redirected_runtime_directory:runtime`). The next health check rescans history drift, and the next activity or context read parses every history stream once to rebuild the stream summary.
 - `embeddings` removes keyword/semantic artifacts (`search/embeddings.jsonl`, `search/vectorization-status.json`, `search/lancedb/`) plus `search/pending-refresh.json` and its gate, preventing a background worker from rebuilding a partial index against an empty ledger. Rebuild with keyword reindex and semantic reindex when enabled.
 - `locks` removes locks with an expired embedded `created_at + ttl_seconds` lease or positive same-host original-owner death evidence. It rechecks the observed receipt under the writer cleanup gate before deletion; replaced or initializing locks remain. Active, unreadable, or unparseable locks remain. The result reports `scanned`, `removed`, and `retained` counts.
 

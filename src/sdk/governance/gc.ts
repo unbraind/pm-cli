@@ -179,7 +179,9 @@ async function removeCacheFile(
     return { removed: false, redirected: true, warnings };
   }
   try {
-    const stats = await fs.stat(absolutePath);
+    // Never follow a link: a cache target that is one (even circular or
+    // dangling) is retained with a warning instead of aborting gc.
+    const stats = await fs.lstat(absolutePath);
     if (target.kind === "file" && !stats.isFile()) {
       return {
         removed: false,
