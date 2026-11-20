@@ -830,6 +830,23 @@ Content fingerprints hash canonical rows incrementally, bounding additional
 serialization storage to the largest row. Digest activity also hashes its full
 source events incrementally so hidden patch changes still invalidate a cursor.
 
+On a tracker with 500 or more history streams, `runActivity` parses only the
+streams its window can reach, using derived per-stream bounds that are trusted
+only while each stream's stat signature is unchanged; rows, totals, cursors and
+errors are those of a complete read. A stream the window reaches is parsed in
+full, so the cost follows the streams with entries in the window, not the
+archive. A read that could not be bounded carries
+`history_read: { reason, streams_read, streams_total }`, where `reason` is
+`summary_missing`, `summary_invalid`, `summary_stale` or
+`irregular_timestamps` (more than half of the streams lack usable regular
+bounds, named by the larger cause), `read_hooks_active`, or
+`unwindowed_query` (no `from` bound; pass one to bound the read).
+`readRecentActivity({ limit }, global)` returns the newest compact rows (the
+first page of `raw: true`) without totals or a cursor, so it reads only the
+streams those rows come from; `pm context` builds its activity section with it
+and reports a fallback as `activity_history_read`. Repository tracking:
+[pm-gh1664](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gh1664.toon).
+
 `runCalendar` uses the same `after` contract and frozen clock. `total_count`
 counts matching expanded rows within the selected window and recurrence caps;
 `count`, `page_start`, `omitted_count`, `has_more`, and `next_cursor` describe

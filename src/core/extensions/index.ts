@@ -557,6 +557,13 @@ export async function runActiveOnReadHooks(
   return runOnReadHooks(hooks, context);
 }
 
+/** Synchronous predicate: true only when at least one onWrite hook is registered, so a bulk writer can keep per-path ordering for hooks that may touch later paths. */
+export function hasActiveOnWriteHooks(): boolean {
+  const state = runtimeState();
+  const hooks = state ? state.hooks : activeExtensionHooks;
+  return (hooks?.onWrite?.length ?? 0) > 0;
+}
+
 /** Synchronous fast-path predicate: true only when at least one onRead hook is registered. Bulk readers (e.g. the metadata cache scanning hundreds of files) use this to skip per-file `await runActiveOnReadHooks(...)` calls entirely when no extension observes reads, avoiding hundreds of needless microtasks. */
 export function hasActiveOnReadHooks(): boolean {
   const state = runtimeState();

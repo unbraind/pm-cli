@@ -63,6 +63,21 @@ costs are independently gated with `pnpm benchmark:sdk-entrypoints:check` and
 documented in the
 [SDK entrypoint report](performance/sdk-entrypoint-import-costs.md).
 
+Recent-activity reads are gated on history volume rather than item count
+(GH-1664). `node scripts/bench/history-read-costs.mjs --check`, part of
+`pnpm quality:static`, measures `pm context --for orient --limit 3` on a
+fixture with 2,000 history streams and over 100 MiB of history, once with
+trusted derived stream bounds and once with the summary removed before every
+sample. The bounded p50 must stay below 0.6 of the same runner's full-scan p50;
+on a qualified runner whose full scan exceeds the declared ceiling it must also
+stay below that ceiling, and elsewhere the absolute check is reported as
+unverified. See the
+[history read report](performance/history-read-costs.md). The bounds live in
+`runtime/history-stream-summary.json`, a checksummed derived file trusted per
+stream only while the stream's stat signature (device, inode, size, mtime,
+ctime and the reader's credentials) is unchanged; it is safe to delete, and trackers
+under 500 history streams never write it.
+
 The metadata read cache is rebuildable derived state. Workspaces with at least
 500 indexed items use its directory-validated fast path to avoid per-item
 stats; validation and recovery can force a canonical source scan. Every

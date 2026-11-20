@@ -85,6 +85,13 @@ const GC_TARGETS: readonly GcTarget[] = [
     relativePath: "runtime/history-drift-cache.json",
     kind: "file",
   },
+  {
+    // Derived stream bounds for bounded activity reads (GH-1664); the next
+    // activity or context read rebuilds them.
+    scope: "runtime",
+    relativePath: "runtime/history-stream-summary.json",
+    kind: "file",
+  },
 ] as const;
 
 /** Documents the gc command options payload exchanged by command, SDK, and package integrations. */
@@ -331,6 +338,11 @@ function buildGcGuidance(params: {
   if (params.removed.includes("runtime/history-drift-cache.json")) {
     guidance.push(
       'History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.',
+    );
+  }
+  if (params.removed.includes("runtime/history-stream-summary.json")) {
+    guidance.push(
+      'History stream summary was removed; the next "pm activity" or "pm context" read parses every history stream once to rebuild it.',
     );
   }
   if (

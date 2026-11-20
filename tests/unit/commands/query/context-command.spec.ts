@@ -659,11 +659,12 @@ describe("context command module", () => {
     expect(omittedBlockersMarkdown).not.toContain("- sections:");
 
     const activityModule = await import("../../../../src/sdk/query/activity.js");
-    const runActivitySpy = vi.spyOn(activityModule, "runActivity").mockResolvedValue({ compact_activity: undefined } as never);
+    const recentActivitySpy = vi.spyOn(activityModule, "readRecentActivity").mockResolvedValue({ rows: [] });
     try {
-      await expect(contextInternals.buildActivity(3, { path: "/tmp" } as never)).resolves.toEqual([]);
+      await expect(contextInternals.buildActivity(3, { path: "/tmp" } as never)).resolves.toEqual({ rows: [] });
+      expect(recentActivitySpy).toHaveBeenCalledWith({ limit: 3 }, { path: "/tmp" });
     } finally {
-      runActivitySpy.mockRestore();
+      recentActivitySpy.mockRestore();
     }
   });
 

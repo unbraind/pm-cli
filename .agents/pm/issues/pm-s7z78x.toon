@@ -1,0 +1,23 @@
+id: pm-s7z78x
+title: "The first pm context --for orient on a fresh clone or worktree rebuilds the whole SQLite history event index on the read path, although orient only needs the latest substantive event of its focus items"
+description: "Measured 2026-11-20 on a copy of this repository's tracker (3,354 history streams, 135 MB) with runtime/ and search/ removed, as every fresh clone and agent worktree starts: the first pm context --for orient --limit 3 took 20.0 s, the next two 2.0 s and 2.4 s. A CPU profile of the cold run (tsx, 21 s) attributes about 6 s to the history event index (populateHistoryEventIndex 3.8 s with insertEvent 3.7 s, plus readHistorySnapshot of every stream about 2 s) and produces a 214 MB runtime/history-event-index.sqlite; the remaining cold cost is the item metadata cache rebuild (readCachedDocumentParts 5.2 s parsing every TOON item, rebuildItemMetadataQueryIndex 2.0 s, persistCache 0.9 s), which is item-scale and owned by the derived read index work (pm-801d). The trigger is readLatestSubstantiveHistoryEvents in src/core/history/event-index.ts: when the index is missing it calls rebuildHistoryEventIndex(pmRoot, { lockWaitMs: 0 }) for the whole corpus before answering for the few requested focus streams, although its own authoritative per-stream fallback answers those streams by reading only them. Found while bounding the activity section of the same read (pm-gh1664), whose fixture benchmark excludes this first read for the same reason. Duplicate check: searched fresh clone, cold start, event index rebuild, first read and worktree; pm-431035 owns the graph index's per-clone rebuild and pm-801d the item metadata index, neither the history event index."
+type: Issue
+status: open
+priority: 2
+tags[7]: cold-start,context,event-index,history,performance,scale,worktree
+created_at: "2026-11-20T10:22:51.476Z"
+updated_at: "2026-11-20T10:22:51.476Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "A read that needs at most a bounded number of streams answers from those streams when the event index is missing, without building the global index on the read path; The global index is built by an explicit reindex, a write path that already maintains it, or a background step whose cost is not charged to the requesting read; A cold pm context --for orient --limit 3 on a fresh copy of a tracker with thousands of streams and more than 100 MB of history spends no time in populateHistoryEventIndex, proven by a spec that counts streams read on the cold path; Output is identical to the warm path"
+parent: pm-9rxu
+risk: medium
+confidence: high
+severity: medium
+expected_result: "A cold-start orient read on a fresh clone costs time proportional to the streams it needs, not to the history archive"
+actual_result: "20.0 s for the first orient on a fresh copy of a 135 MB tracker, about 6 s of it rebuilding a 214 MB SQLite event index"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-431035,related,"2026-11-20T10:22:51.476Z","harness:claude-code","cli:create:dep",detected
+  pm-801d,related,"2026-11-20T10:22:51.476Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1664,discovered_from,"2026-11-20T10:22:51.476Z","harness:claude-code","cli:create:dep",detected
+body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[6]: agent-ux,claim,credential-redaction,"gh:1757",recovery,refusal
 created_at: "2026-11-19T00:19:42.403Z"
-updated_at: "2026-11-20T05:51:56.792Z"
+updated_at: "2026-11-20T06:35:55.560Z"
 closed_at: "2026-11-20T05:12:59.373Z"
 completed_at: "2026-11-20T05:12:59.373Z"
 author: "harness:claude-code"
@@ -25,6 +25,8 @@ comments[3]{created_at,author,text}:
   "2026-11-20T04:53:45.257Z","harness:claude-code","Root cause has two halves. (1) redactGuidanceCredentials always led with the restore step whenever anything was redacted or the invocation carried credentials, with no notion of the credentials being the refusal's cause. (2) For PM_AUTHOR the command line carries no credential, yet the step still appeared: the identity refusal's own requirement text held a credential-shaped sample (user:password@), which the text rule rewrote to user:[redacted]@, so the pass reported a removal. Fix: the identity refusal declares url_credentials_rejected (a typed PmCliErrorContext marker, not a message heuristic), and the redactor then leads with a step that says not to restore them and to replay without URL credentials; the requirement text no longer contains a credential-shaped sample, so a PM_AUTHOR refusal carries only 'Rerun with PM_AUTHOR set to a plain name.' Verified through dist for --author JSON and text, PM_AUTHOR JSON, and the successful plain replay."
   "2026-11-20T05:34:33.633Z","harness:claude-code","Codex review of the first head found the do-not-restore step over-attributed: with PM_AUTHOR carrying userinfo and an unrelated credential URL in a create description, the step claimed every redacted credential caused the refusal, and a bounded text rendering could keep it while dropping the PM_AUTHOR correction. The marker now carries its source (url_credentials_rejected: { source }), and the step names that source, gives the correction itself and still asks to restore any other redacted credentials. The integration spec covers that mixed case; the unit spec covers idempotence across a second redaction pass."
   "2026-11-20T05:51:56.792Z","harness:claude-code","Codex review round 2: a registered secret sharing a six-character fragment with the code-defined source label (for example one containing pm_author) made the second redaction pass, run by text rendering, rewrite the marker's source and build a different step. The urlCredentialsRejected marker is now copied whole like the fixed contract fields, so both passes build the identical step; PmCliErrorContext documents that source is a code-defined label, never caller input. Unit spec covers two passes under such a secret."
+notes[1]{created_at,author,text}:
+  "2026-11-20T06:35:55.560Z","harness:claude-code","Shipped in PR #1760, merged to main as 4ff1d83a7 on 2026-11-20 after 32/32 hosted checks passed, CodeRabbit full review (no actionable comments), Greptile 5/5 and three Codex gpt-6.2-sol xhigh rounds; the GitHub issue closed on merge and its blocker_retry run skipped (one release per day held). Reaches users in the next daily release after 2026.11.20."
 files[6]{path,scope,note}:
   src/cli/error-guidance.ts,project,maps url_credentials_rejected into guidance
   src/cli/runtime/refusal-credential-redaction.ts,project,REJECTED_CREDENTIALS_STEP replaces the restore step when the refusal rejected the credentials (GH-1757)

@@ -48,6 +48,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual([]);
       expect(gc.checkpoints).toEqual({ scanned: 0, removed: 0, retained: 0, retention_days: 14 });
@@ -69,6 +70,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gcSecondRun.warnings).toEqual([]);
       expect(gcSecondRun.guidance).toEqual([]);
@@ -91,6 +93,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual(["not_a_file:index/manifest.json"]);
     });
@@ -104,7 +107,7 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual([]);
-      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
+      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json", "runtime/history-stream-summary.json"]);
       expect(gc.warnings).toEqual(["not_a_directory:runtime/test-runs"]);
     });
   });
@@ -139,6 +142,7 @@ describe("runGc", () => {
         "search/pending-refresh.json",
         "search/pending-refresh.gate.lock",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.guidance).toEqual([
         "Dry-run preview only: no cache artifacts were deleted.",
@@ -163,6 +167,7 @@ describe("runGc", () => {
       await mkdir(path.join(context.pmPath, "runtime", "test-runs"), { recursive: true });
       await writeFile(path.join(context.pmPath, "runtime", "test-runs", "seed.log"), "seed\n", "utf8");
       await writeFile(path.join(context.pmPath, "runtime", "history-drift-cache.json"), '{"version":1,"entries":[]}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "runtime", "history-stream-summary.json"), '{"version":1,"streams":{}}\n', "utf8");
 
       const indexOnly = await runGc({ path: context.pmPath }, { scope: ["index"] });
       expect(indexOnly.scope).toEqual(["index"]);
@@ -173,11 +178,13 @@ describe("runGc", () => {
 
       const runtimeOnly = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
       expect(runtimeOnly.scope).toEqual(["runtime"]);
-      expect(runtimeOnly.removed).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
+      expect(runtimeOnly.removed).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json", "runtime/history-stream-summary.json"]);
       expect(runtimeOnly.retained).toEqual([]);
       expect(runtimeOnly.guidance).toEqual([
         'History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.',
+        'History stream summary was removed; the next "pm activity" or "pm context" read parses every history stream once to rebuild it.',
       ]);
+      await expect(fs.stat(path.join(context.pmPath, "runtime", "history-stream-summary.json"))).rejects.toBeTruthy();
       await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs"))).rejects.toBeTruthy();
       await expect(fs.stat(path.join(context.pmPath, "runtime", "history-drift-cache.json"))).rejects.toBeTruthy();
 
@@ -535,6 +542,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual([
         "extension_hook_failed:project:boom-read-hook:onRead",
@@ -545,7 +553,9 @@ describe("runGc", () => {
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
+        "extension_hook_failed:project:boom-read-hook:onRead",
       ]);
+      expect(events).toContain("read:history-stream-summary.json");
       expect(events).toContain("read:manifest.json");
       expect(events).toContain("read:embeddings.jsonl");
       expect(events).toContain("read:vectorization-status.json");
@@ -556,7 +566,7 @@ describe("runGc", () => {
       expect(events).toContain("write:gc:remove:embeddings.jsonl");
       expect(events).toContain("write:gc:remove:vectorization-status.json");
       expect(events).toContain("write:gc:remove:lancedb");
-      expect(events).toContain("index:gc:8");
+      expect(events).toContain("index:gc:9");
     });
   });
 
@@ -590,6 +600,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual(["extension_hook_failed:project:boom-index-hook:onIndex"]);
     });

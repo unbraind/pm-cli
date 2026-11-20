@@ -1,0 +1,350 @@
+/**
+ * GH-1664: bounded recent-activity reads. Derived stream bounds may only
+ * decide which streams a read parses; every row, total, cursor and error must
+ * equal the complete read on the same corpus, including streams rewritten by
+ * redaction, compaction, repair and restore.
+ */
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  readRecentActivity,
+  runActivity,
+  _testOnly as activityInternals,
+  type ActivityCommandOptions,
+  type ActivityResult,
+} from "../../../../src/sdk/query/activity.js";
+import { runContext } from "../../../../src/sdk/query/context.js";
+import * as historyReadModule from "../../../../src/core/history/read.js";
+import {
+  HISTORY_STREAM_SUMMARY_RELATIVE_PATH,
+  _testOnly as summaryInternals,
+} from "../../../../src/core/history/stream-summary.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+} from "../../../../src/core/extensions/index.js";
+import { createTaskFixture } from "../../../helpers/createTaskFixture.js";
+import {
+  withTempPmPath,
+  type TempPmContext,
+} from "../../../helpers/withTempPmPath.js";
+
+const REAL_NOW = Date.now();
+// One hour ahead keeps every item written during the spec inside the
+// default 24-hour digest window while the clock stays fixed between reads.
+const FIXED_NOW = REAL_NOW + 60 * 60 * 1000;
+const NEVER = Number.MAX_SAFE_INTEGER;
+
+const QUERIES: ReadonlyArray<ActivityCommandOptions> = [
+  {},
+  { limit: "2" },
+  { raw: true, limit: "3", from: "-400d" },
+  { raw: true, limit: "4" },
+  { raw: true, unbounded: true },
+  { compact: false, raw: true, limit: "2", from: "2025-01-01T00:00:00.000Z" },
+  { provenance: true, from: "2025-06-01T00:00:00.000Z", limit: "5" },
+  { from: "2025-01-01T00:00:00.000Z", to: "2025-07-01T00:00:00.000Z" },
+  { raw: true, op: "comment_add", from: "-30d", limit: "50" },
+  { raw: true, author: "spec-old", from: "2024-01-01T00:00:00.000Z", unbounded: true },
+];
+
+function oldEntry(ts: unknown, op = "update", author = "spec-old") {
+  return { ts, author, op, patch: [], before_hash: "x", after_hash: "y", message: `${op} at ${String(ts)}` };
+}
+
+async function writeStream(pmPath: string, id: string, entries: unknown[]): Promise<void> {
+  await writeFile(
+    path.join(pmPath, "history", `${id}.jsonl`),
+    entries.map((entry) => `${JSON.stringify(entry)}\n`).join(""),
+  );
+}
+
+function withoutReceipt(result: ActivityResult): Omit<ActivityResult, "history_read"> {
+  const { history_read: _receipt, ...rest } = result;
+  return rest;
+}
+
+/** Run every query once with the summary disabled and once engaged and warm. */
+async function assertParity(pmPath: string): Promise<void> {
+  const global = { path: pmPath };
+  const restore = summaryInternals.setMinimumStreams(NEVER);
+  const complete: unknown[] = [];
+  try {
+    for (const query of QUERIES) complete.push(withoutReceipt(await runActivity({ ...query }, global)));
+    complete.push((await readRecentActivity({ limit: 50 }, global)).rows);
+    complete.push((await readRecentActivity({ limit: 3 }, global)).rows);
+  } finally {
+    restore();
+  }
+  const bounded: unknown[] = [];
+  for (const query of QUERIES) bounded.push(withoutReceipt(await runActivity({ ...query }, global)));
+  // A limit above the matching rows reads every reachable stream once.
+  bounded.push((await readRecentActivity({ limit: 50 }, global)).rows);
+  bounded.push((await readRecentActivity({ limit: 3 }, global)).rows);
+  expect(bounded).toEqual(complete);
+  expect((complete.at(-1) as unknown[]).length).toBeGreaterThan(0);
+}
+
+describe("bounded activity reads (GH-1664)", () => {
+  let restoreMinimum: () => void;
+  let restoreClock: () => void;
+
+  beforeEach(() => {
+    restoreMinimum = summaryInternals.setMinimumStreams(2);
+    restoreClock = summaryInternals.setWallClock(() => FIXED_NOW + 60_000);
+    vi.useFakeTimers({ toFake: ["Date"], now: FIXED_NOW });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    restoreClock();
+    restoreMinimum();
+    clearActiveExtensionHooks();
+  });
+
+  async function seedCorpus(context: TempPmContext): Promise<string[]> {
+    const ids = ["pm-live1", "pm-live2", "pm-live3"];
+    for (const id of ids) createTaskFixture(context, id, `${id} bounded activity corpus`);
+    expect(context.runCli(["comments", "pm-live1", "--add", "a comment that says private-token-123"]).code).toBe(0);
+    expect(context.runCli(["update", "pm-live2", "--priority", "1"]).code).toBe(0);
+    expect(context.runCli(["update", "pm-live2", "--priority", "2"]).code).toBe(0);
+    expect(context.runCli(["update", "pm-live2", "--priority", "3"]).code).toBe(0);
+    // Real rewrites: a redacted and a compacted stream.
+    expect(context.runCli(["history-redact", "pm-live1", "--literal", "private-token-123", "--replacement", "[redacted]"]).code).toBe(0);
+    expect(context.runCli(["history-compact", "pm-live2", "--before", "3"]).code).toBe(0);
+    const historyDir = path.join(context.pmPath, "history");
+    await mkdir(historyDir, { recursive: true });
+    // Old streams that a default digest must never need to parse.
+    await writeStream(context.pmPath, "pm-old1", [oldEntry("2025-02-01T00:00:00.000Z", "create"), oldEntry("2025-03-01T00:00:00.000Z")]);
+    await writeStream(context.pmPath, "pm-old2", [oldEntry("2025-05-01T00:00:00.000Z", "create"), oldEntry("2025-08-01T00:00:00.000Z", "comment_add")]);
+    // Ties: equal newest timestamps decided by item id, then operation.
+    await writeStream(context.pmPath, "pm-tie-b", [oldEntry("2025-09-01T00:00:00.000Z", "update")]);
+    await writeStream(context.pmPath, "pm-tie-a", [oldEntry("2025-09-01T00:00:00.000Z", "update"), oldEntry("2025-09-01T00:00:00.000Z", "close")]);
+    // Irregular timestamps must always be read.
+    await writeStream(context.pmPath, "pm-odd", [oldEntry(""), oldEntry("2025-04-01 10:00"), oldEntry(17)]);
+    // An empty stream contributes nothing.
+    await writeFile(path.join(historyDir, "pm-empty.jsonl"), "");
+    return ids;
+  }
+
+  it("returns exactly the complete read's rows, totals and cursors, with redacted and compacted streams", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      // First engaged read rebuilds the summary and discloses it.
+      const first = await runActivity({}, { path: context.pmPath });
+      expect(first.history_read).toEqual({
+        reason: "summary_missing",
+        streams_read: expect.any(Number),
+        streams_total: expect.any(Number),
+      });
+      expect(first.history_read!.streams_read).toBe(first.history_read!.streams_total);
+      await assertParity(context.pmPath);
+    });
+  });
+
+  it("parses only the streams a default digest window can reach once bounds are trusted", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await runActivity({}, global);
+      const reads = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot");
+      const digest = await runActivity({}, global);
+      expect(digest.history_read).toBeUndefined();
+      const parsed = new Set(reads.mock.calls.map(([file]) => path.basename(String(file))));
+      expect([...parsed].filter((file) => file.startsWith("pm-old") || file.startsWith("pm-tie") || file === "pm-empty.jsonl")).toEqual([]);
+      expect(parsed.has("pm-odd.jsonl")).toBe(true);
+      expect(parsed.has("pm-live1.jsonl")).toBe(true);
+
+      reads.mockClear();
+      const recent = await readRecentActivity({ limit: 2 }, global);
+      expect(recent.rows).toHaveLength(2);
+      expect(recent.history_read).toBeUndefined();
+      const recentFiles = reads.mock.calls.map(([file]) => path.basename(String(file)));
+      expect(recentFiles.some((file) => file.startsWith("pm-old") || file.startsWith("pm-tie"))).toBe(false);
+    });
+  });
+
+  it("re-reads a stream after every write path and still matches the complete read", async () => {
+    await withTempPmPath(async (context) => {
+      const [live1, live2, live3] = await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await runActivity({}, global);
+      const mutations: Array<[string, () => Promise<void> | void]> = [
+        ["append", () => { expect(context.runCli(["comments", live3!, "--add", "second pass"]).code).toBe(0); }],
+        ["redaction", () => { expect(context.runCli(["history-redact", live3!, "--literal", "second pass", "--replacement", "[gone]"]).code).toBe(0); }],
+        ["compaction", () => { expect(context.runCli(["history-compact", live1!, "--before", "2"]).code).toBe(0); }],
+        ["restore", () => { const restored = context.runCli(["restore", live3!, "1"]); expect(restored.code, restored.stderr).toBe(0); }],
+        ["update", () => { expect(context.runCli(["update", live2!, "--priority", "0"]).code).toBe(0); }],
+        ["repair", async () => {
+          await appendFile(path.join(context.pmPath, "history", `${live3!}.jsonl`), "{ torn tail\n");
+          const repaired = context.runCli(["history-repair", live3!, "--salvage-tail", "--message", "salvage torn tail"]);
+          expect(repaired.code, repaired.stderr).toBe(0);
+        }],
+        ["raw append", () => appendFile(path.join(context.pmPath, "history", "pm-old1.jsonl"), `${JSON.stringify(oldEntry(new Date(FIXED_NOW - 1000).toISOString(), "comment_add"))}\n`)],
+      ];
+      for (const [label, mutate] of mutations) {
+        await mutate();
+        const reads = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot");
+        await runActivity({}, global);
+        expect(reads.mock.calls.length, label).toBeGreaterThan(0);
+        reads.mockRestore();
+        await assertParity(context.pmPath);
+      }
+      // The raw append moved an old stream into the digest window.
+      const digest = await runActivity({}, global);
+      expect(digest.activity_digest!.map((row) => row.id)).toContain("pm-old1");
+    });
+  });
+
+  it("names the fallback when the summary is unreadable, matches no stream, or read hooks are active", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await runActivity({}, global);
+      expect((await runActivity({}, global)).history_read).toBeUndefined();
+      expect((await runActivity({ raw: true, limit: "1" }, global)).history_read).toMatchObject({ reason: "unwindowed_query" });
+      // An upper bound before most of the archive keeps the read bounded.
+      expect((await runActivity({ raw: true, limit: "1", to: "2025-01-01T00:00:00.000Z" }, global)).history_read).toBeUndefined();
+
+      const summaryFile = path.join(context.pmPath, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+      await writeFile(summaryFile, "{ torn");
+      expect((await runActivity({}, global)).history_read).toMatchObject({ reason: "summary_invalid" });
+      expect((await runActivity({}, global)).history_read).toBeUndefined();
+
+      // A copied tracker keeps the file but no stream identity.
+      const stored = JSON.parse(await readFile(summaryFile, "utf8")) as { version: number; streams: Record<string, unknown[]> };
+      for (const value of Object.values(stored.streams)) value[0] = `other-device:${String(value[0])}`;
+      await writeFile(summaryFile, JSON.stringify({ ...stored, checksum: summaryInternals.checksumOf(stored.streams) }));
+      expect((await runActivity({}, global)).history_read).toMatchObject({ reason: "summary_stale" });
+
+      setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "observer", run: () => undefined }] });
+      const hooked = await runActivity({}, global);
+      expect(hooked.history_read).toMatchObject({ reason: "read_hooks_active" });
+      expect(hooked.history_read!.streams_read).toBe(hooked.history_read!.streams_total);
+      expect((await readRecentActivity({ limit: 1 }, global)).history_read).toMatchObject({ reason: "read_hooks_active" });
+    });
+  });
+
+  it("raises the complete read's error for a stream corrupted after its bounds were trusted", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await runActivity({}, global);
+      await appendFile(path.join(context.pmPath, "history", "pm-old2.jsonl"), "{ not json\n");
+      const bounded = await runActivity({}, global).catch((error: unknown) => error);
+      const restore = summaryInternals.setMinimumStreams(NEVER);
+      const complete = await runActivity({}, global).catch((error: unknown) => error).finally(restore);
+      expect(bounded).toMatchObject({ code: "history_json_invalid" });
+      expect(complete).toMatchObject({ code: "history_json_invalid", message: (bounded as Error).message });
+      await expect(readRecentActivity({ limit: 1 }, global)).rejects.toMatchObject({ code: "history_json_invalid" });
+    });
+  });
+
+  it("returns no rows for a zero limit, reads no trusted stream, and still raises a damaged stream's error", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await readRecentActivity({ limit: 3 }, global);
+      const reads = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot");
+      expect(await readRecentActivity({ limit: 0 }, global)).toEqual({ rows: [] });
+      // Only the stream with irregular timestamps is read; no trusted regular one.
+      expect(reads.mock.calls.map(([file]) => path.basename(String(file)))).toEqual(["pm-odd.jsonl"]);
+      await appendFile(path.join(context.pmPath, "history", "pm-old1.jsonl"), "{ not json\n");
+      await expect(readRecentActivity({ limit: 0 }, global)).rejects.toMatchObject({ code: "history_json_invalid" });
+    });
+  });
+
+  it("breaks timestamp ties at the row cutoff by item id, as the complete read does", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const tie = new Date(FIXED_NOW - 1_000).toISOString();
+      for (const id of ["pm-cut-c", "pm-cut-a", "pm-cut-b", "pm-cut-z"]) {
+        // Two entries with equal sort keys keep their stream order.
+        await writeStream(context.pmPath, id, [oldEntry("2025-01-01T00:00:00.000Z", "create"), oldEntry(tie, "update", "spec-cut"), oldEntry(tie, "update", "spec-cut-2")]);
+      }
+      await readRecentActivity({ limit: 2 }, global);
+      const reads = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot");
+      const pair = await readRecentActivity({ limit: 2 }, global);
+      expect(pair.rows.map((row) => [row.id, row.author])).toEqual([["pm-cut-a", "spec-cut"], ["pm-cut-a", "spec-cut-2"]]);
+      const read = reads.mock.calls.map(([file]) => path.basename(String(file)));
+      expect(read).toContain("pm-cut-a.jsonl");
+      expect(read).not.toContain("pm-cut-c.jsonl");
+      // An untrusted stream fills the selection first; a tied stream with a
+      // smaller id must still be read to displace it.
+      await appendFile(path.join(context.pmPath, "history", "pm-cut-z.jsonl"), `${JSON.stringify(oldEntry("2025-01-02T00:00:00.000Z"))}\n`);
+      reads.mockClear();
+      const single = await readRecentActivity({ limit: 1 }, global);
+      expect(single.rows.map((row) => row.id)).toEqual(["pm-cut-a"]);
+      expect(reads.mock.calls.map(([file]) => path.basename(String(file)))).toEqual(expect.arrayContaining(["pm-cut-z.jsonl", "pm-cut-a.jsonl"]));
+      const fractional = await readRecentActivity({ limit: 2.5 }, global);
+      expect(fractional.rows).toHaveLength(2);
+      await assertParity(context.pmPath);
+      const restore = summaryInternals.setMinimumStreams(NEVER);
+      try {
+        expect((await readRecentActivity({ limit: 1 }, global)).rows).toEqual(single.rows);
+      } finally {
+        restore();
+      }
+    });
+  });
+
+  it("carries the fallback receipt into pm context and omits it once bounds are trusted", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const first = await runContext({ section: ["activity"], activityLimit: "2" } as never, global);
+      expect(first.activity).toHaveLength(2);
+      expect(first.activity_history_read).toMatchObject({ reason: "summary_missing" });
+      const second = await runContext({ section: ["activity"], activityLimit: "2" } as never, global);
+      expect(second.activity).toEqual(first.activity);
+      expect(second.activity_history_read).toBeUndefined();
+    });
+  });
+
+  it("returns a row with a non-string recorded harness instead of crashing either read", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await writeStream(context.pmPath, "pm-harness", [{ ...oldEntry(new Date(FIXED_NOW - 500).toISOString(), "update", "spec-harness"), agent_harness: 42 }]);
+      const raw = await runActivity({ raw: true, limit: "1" }, global);
+      expect(raw.compact_activity).toEqual([expect.objectContaining({ id: "pm-harness", author: "spec-harness" })]);
+      expect((await readRecentActivity({ limit: 1 }, global)).rows).toEqual(raw.compact_activity);
+      const provenance = await runActivity({ provenance: true, from: "-1d", limit: "1" }, global);
+      expect(provenance.provenance_activity![0]).toMatchObject({ item_id: "pm-harness", harness_source: "unresolved" });
+      await assertParity(context.pmPath);
+    });
+  });
+
+  it("orders unread streams by their best possible row and stops only when none can outrank the cutoff", () => {
+    const { streamCanOutrank, compareDeferredStreams } = activityInternals;
+    const last = { id: "pm-b", ts: "2026-11-02T00:00:00.000Z" } as never;
+    expect(streamCanOutrank("2026-11-03T00:00:00.000Z", "pm-z", last)).toBe(true);
+    expect(streamCanOutrank("2026-11-01T00:00:00.000Z", "pm-a", last)).toBe(false);
+    expect(streamCanOutrank("2026-11-02T00:00:00.000Z", "pm-a", last)).toBe(true);
+    expect(streamCanOutrank("2026-11-02T00:00:00.000Z", "pm-b", last)).toBe(true);
+    expect(streamCanOutrank("2026-11-02T00:00:00.000Z", "pm-c", last)).toBe(false);
+    // Distinct file names that collate equally (NFC and NFD) keep file order.
+    const streams = [
+      { file: "pm-e\u0301.jsonl", position: 3, id: "pm-e\u0301", newest: "2026-11-02T00:00:00.000Z" },
+      { file: "pm-\u00e9.jsonl", position: 2, id: "pm-\u00e9", newest: "2026-11-02T00:00:00.000Z" },
+      { file: "pm-a.jsonl", position: 1, id: "pm-a", newest: "2026-11-02T00:00:00.000Z" },
+      { file: "pm-z.jsonl", position: 0, id: "pm-z", newest: "2026-11-03T00:00:00.000Z" },
+    ];
+    expect([...streams].sort(compareDeferredStreams).map((stream) => stream.position)).toEqual([0, 1, 2, 3]);
+  });
+
+  it("excludes streams outside the window only when their bounds prove it", () => {
+    const { streamMayMatchWindow } = activityInternals;
+    const bounds = { count: 2, oldest: "2025-01-01T00:00:00.000Z", newest: "2025-02-01T00:00:00.000Z", irregular: false };
+    expect(streamMayMatchWindow({ ...bounds, count: 0 }, {})).toBe(false);
+    expect(streamMayMatchWindow({ ...bounds, irregular: true }, { from: "2026-01-01T00:00:00.000Z" })).toBe(true);
+    expect(streamMayMatchWindow(bounds, { from: "2025-02-01T00:00:00.001Z" })).toBe(false);
+    expect(streamMayMatchWindow(bounds, { from: "2025-02-01T00:00:00.000Z" })).toBe(true);
+    expect(streamMayMatchWindow(bounds, { to: "2025-01-01T00:00:00.000Z" })).toBe(false);
+    expect(streamMayMatchWindow(bounds, { to: "2025-01-01T00:00:00.001Z" })).toBe(true);
+    expect(streamMayMatchWindow(bounds, {})).toBe(true);
+  });
+});

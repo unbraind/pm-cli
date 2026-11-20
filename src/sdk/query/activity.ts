@@ -21,7 +21,13 @@ import {
   resolvePmRoot,
   readSettings,
 } from "../runtime-primitives.js";
-import { readHistoryEntries } from "../history-read.js";
+import { readHistorySnapshot, readIdentifiedHistorySnapshot } from "../../core/history/read.js";
+import {
+  openHistoryStreamSummary,
+  type HistoryStreamBounds,
+  type HistoryStreamSummaryFallback,
+  type HistoryStreamSummarySession,
+} from "../../core/history/stream-summary.js";
 import { parseLimit } from "./parsers.js";
 import { fingerprintWindowRows, paginateWindowQuery, resolveWindowQueryClock } from "./window-pagination.js";
 import type { HistoryEntry } from "../../types/index.js";
@@ -189,6 +195,38 @@ export interface ActivityResult {
   };
   /** Constant-size provenance completeness metrics. */
   provenance_summary?: HistoryProvenanceSummary;
+  /** Present only when a tracker that keeps derived stream bounds could not bound this read by its window. */
+  history_read?: ActivityHistoryReadReceipt;
+}
+
+/**
+ * Constant-size disclosure that a read on a tracker large enough to keep
+ * derived stream bounds was not bounded by its window, so its cost followed
+ * the history archive (GH-1664). Bounded reads emit no receipt.
+ */
+export interface ActivityHistoryReadReceipt {
+  /**
+   * `summary_missing` / `summary_invalid` / `summary_stale`: the derived bounds
+   * were absent, unreadable, or current for at most half of the streams, and
+   * this read rebuilds them; `irregular_timestamps`: most streams hold
+   * timestamps that are not canonical millisecond UTC, so bounds cannot
+   * exclude them; `read_hooks_active`: an extension observes every stream
+   * read; `unwindowed_query`: no `--from` bound, so every stream can
+   * contribute (add `--from` to bound the read).
+   */
+  reason: HistoryStreamSummaryFallback | "unwindowed_query";
+  /** History streams parsed by this read. */
+  streams_read: number;
+  /** History streams present when the read began. */
+  streams_total: number;
+}
+
+/** Bounded recent-activity rows for context-style readers that need no page cursor. */
+export interface RecentActivityResult {
+  /** Newest matching events, in the activity sort order. */
+  rows: CompactActivityEntry[];
+  /** Present only when a tracker that keeps derived stream bounds could not bound this read. */
+  history_read?: ActivityHistoryReadReceipt;
 }
 
 interface ActivityFilters {
@@ -317,14 +355,17 @@ function normalizeActivityEntry(
   };
 }
 
+/** Newest first, then item id and operation; equal keys keep stream order (stable sort). */
+function compareActivityEntries(a: ActivityEntry, b: ActivityEntry): number {
+  const byTimestamp = b.ts.localeCompare(a.ts);
+  if (byTimestamp !== 0) return byTimestamp;
+  const byId = a.id.localeCompare(b.id);
+  if (byId !== 0) return byId;
+  return a.op.localeCompare(b.op);
+}
+
 function sortActivity(entries: ActivityEntry[]): ActivityEntry[] {
-  return [...entries].sort((a, b) => {
-    const byTimestamp = b.ts.localeCompare(a.ts);
-    if (byTimestamp !== 0) return byTimestamp;
-    const byId = a.id.localeCompare(b.id);
-    if (byId !== 0) return byId;
-    return a.op.localeCompare(b.op);
-  });
+  return [...entries].sort(compareActivityEntries);
 }
 
 async function listHistoryFiles(historyDir: string): Promise<string[]> {
@@ -483,25 +524,239 @@ function includeActivityEntry(
   return includeByTimeWindow(candidate, filters.from, filters.to);
 }
 
-async function collectActivityEntries(
+function historyStreamId(file: string): string {
+  return file.slice(0, -".jsonl".length);
+}
+
+/**
+ * Whether trusted bounds leave any entry of the stream inside `[from, to)`.
+ * Window bounds are canonical instants (resolveIsoOrRelative) and regular
+ * entry timestamps compare chronologically under compareTimestampStrings, so
+ * the newest entry below `from` or the oldest at or after `to` excludes every
+ * entry; irregular streams are always read.
+ */
+function streamMayMatchWindow(
+  bounds: HistoryStreamBounds,
+  filters: Pick<ActivityFilters, "from" | "to">,
+): boolean {
+  if (bounds.count === 0) return false;
+  if (bounds.irregular) return true;
+  if (filters.from && compareTimestampStrings(bounds.newest!, filters.from) < 0) return false;
+  return !(filters.to && compareTimestampStrings(bounds.oldest!, filters.to) >= 0);
+}
+
+interface ActivityStreamRead {
+  summary: HistoryStreamSummarySession;
+  files: string[];
+  streamsRead: number;
+}
+
+async function openActivityStreamRead(
+  pmRoot: string,
   historyDir: string,
   filters: ActivityFilters,
-): Promise<ActivityEntry[]> {
-  const combined: ActivityEntry[] = [];
-  for (const file of await listHistoryFiles(historyDir)) {
-    const id = file.slice(0, -".jsonl".length);
-    if (filters.id && id !== filters.id) {
-      continue;
-    }
-    const entries = await readHistoryEntries(path.join(historyDir, file), id);
-    for (const entry of entries) {
-      const candidate = normalizeActivityEntry(id, entry);
-      if (includeActivityEntry(entry, candidate, filters)) {
-        combined.push(candidate);
-      }
+): Promise<ActivityStreamRead> {
+  const files = (await listHistoryFiles(historyDir)).filter(
+    (file) => !filters.id || historyStreamId(file) === filters.id,
+  );
+  return {
+    summary: await openHistoryStreamSummary({ pmRoot, historyDir, files }),
+    files,
+    streamsRead: 0,
+  };
+}
+
+/** Parse one stream completely, record its bounds, and append its matching rows. */
+async function readActivityStream(
+  read: ActivityStreamRead,
+  historyDir: string,
+  file: string,
+  filters: ActivityFilters,
+  target: ActivityEntry[],
+): Promise<void> {
+  const id = historyStreamId(file);
+  const historyPath = path.join(historyDir, file);
+  // Only a session that keeps bounds needs the identity of the bytes read.
+  const snapshot = read.summary.enabled
+    ? await readIdentifiedHistorySnapshot(historyPath, id)
+    : { ...(await readHistorySnapshot(historyPath, id)), source: null };
+  read.streamsRead += 1;
+  read.summary.record(file, snapshot);
+  for (const entry of snapshot.entries) {
+    const candidate = normalizeActivityEntry(id, entry);
+    if (includeActivityEntry(entry, candidate, filters)) {
+      target.push(candidate);
     }
   }
-  return combined;
+}
+
+/** Disclose an unbounded read on a tracker large enough to keep stream bounds. */
+function activityHistoryReadReceipt(
+  read: ActivityStreamRead,
+  unwindowed: boolean,
+): ActivityHistoryReadReceipt | undefined {
+  const { summary, files, streamsRead } = read;
+  // Without a lower bound the cost follows the archive only when most streams
+  // were parsed; an upper bound before most of the history is still bounded.
+  const reason =
+    summary.fallback ??
+    (summary.enabled && unwindowed && streamsRead * 2 > files.length ? "unwindowed_query" : undefined);
+  return reason === undefined
+    ? undefined
+    : { reason, streams_read: streamsRead, streams_total: files.length };
+}
+
+/**
+ * Collect every matching entry in history-file order. Trusted bounds skip
+ * streams outside the window; the rows are exactly those of a complete read.
+ */
+async function collectActivityEntries(
+  pmRoot: string,
+  historyDir: string,
+  filters: ActivityFilters,
+): Promise<{ entries: ActivityEntry[]; history_read?: ActivityHistoryReadReceipt }> {
+  const read = await openActivityStreamRead(pmRoot, historyDir, filters);
+  const combined: ActivityEntry[] = [];
+  for (const file of read.files) {
+    const bounds = read.summary.trusted(file);
+    if (bounds !== undefined && !streamMayMatchWindow(bounds, filters)) continue;
+    await readActivityStream(read, historyDir, file, filters, combined);
+  }
+  await read.summary.commit();
+  const receipt = activityHistoryReadReceipt(read, filters.from === undefined);
+  return receipt === undefined ? { entries: combined } : { entries: combined, history_read: receipt };
+}
+
+/**
+ * Whether an unread regular stream can still place an entry above `last`.
+ * Its entries sort no earlier than its newest timestamp, and entries tied on
+ * that timestamp sort by item id, which is the stream's own id.
+ */
+function streamCanOutrank(newest: string, streamId: string, last: ActivityEntry): boolean {
+  const byTimestamp = newest.localeCompare(last.ts);
+  return byTimestamp > 0 || (byTimestamp === 0 && streamId.localeCompare(last.id) <= 0);
+}
+
+interface DeferredActivityStream {
+  file: string;
+  /** Position in history-file order, the complete read's tie-breaker. */
+  position: number;
+  id: string;
+  newest: string;
+}
+
+/**
+ * Order unread regular streams by the activity order of their best possible
+ * entry (newest timestamp, then item id, then file order for distinct names
+ * that collate equally), so once one stream cannot outrank the last selected
+ * row, no later stream can either.
+ */
+function compareDeferredStreams(left: DeferredActivityStream, right: DeferredActivityStream): number {
+  return (
+    right.newest.localeCompare(left.newest) ||
+    left.id.localeCompare(right.id) ||
+    left.position - right.position
+  );
+}
+
+/**
+ * The newest-rows selection: rows accumulate unsorted and are cut back to
+ * `limit` only once the pool doubles, so each row is sorted a bounded number
+ * of times. Between cuts the cutoff is the last cut's row, which ranks no
+ * higher than the true cutoff, so stopping against it never skips a stream
+ * that could contribute. Equal sort keys keep history-file order.
+ */
+class RecentActivityPool {
+  private rows: ActivityEntry[] = [];
+  // Weak keys let rows (and their patch payloads) cut from the pool be freed.
+  private readonly filePosition = new WeakMap<ActivityEntry, number>();
+  private cutoff: ActivityEntry | undefined;
+  private readonly limit: number;
+
+  constructor(limit: number) {
+    this.limit = limit;
+  }
+
+  /** Parse one stream into the pool, remembering its history-file position. */
+  async read(read: ActivityStreamRead, historyDir: string, filters: ActivityFilters, stream: { file: string; position: number }): Promise<void> {
+    const start = this.rows.length;
+    await readActivityStream(read, historyDir, stream.file, filters, this.rows);
+    for (let index = start; index < this.rows.length; index += 1) this.filePosition.set(this.rows[index]!, stream.position);
+  }
+
+  /** Whether an unread regular stream may still contribute a selected row. */
+  admits(stream: DeferredActivityStream): boolean {
+    if (this.limit === 0) return false;
+    return this.cutoff === undefined || streamCanOutrank(stream.newest, stream.id, this.cutoff);
+  }
+
+  /** Cut once the pool first fills, then whenever it doubles. */
+  cutWhenFull(): void {
+    if (this.rows.length >= (this.cutoff === undefined ? this.limit : 2 * this.limit)) this.cut();
+  }
+
+  /** Sort and keep the `limit` best rows; the last one becomes the cutoff. */
+  cut(): ActivityEntry[] {
+    this.rows = this.rows
+      .sort((left, right) => compareActivityEntries(left, right) || this.filePosition.get(left)! - this.filePosition.get(right)!)
+      .slice(0, this.limit);
+    this.cutoff = this.limit > 0 && this.rows.length === this.limit ? this.rows[this.limit - 1] : undefined;
+    return this.rows;
+  }
+}
+
+/**
+ * Split the streams a recent read can reach: untrusted and irregular streams
+ * are read first, so a damaged stream raises the complete read's error even
+ * for a zero limit; trusted regular streams are deferred in the activity
+ * order of their newest entry.
+ */
+function partitionRecentActivityStreams(
+  read: ActivityStreamRead,
+  filters: ActivityFilters,
+): { readFirst: Array<{ file: string; position: number }>; deferred: DeferredActivityStream[] } {
+  const readFirst: Array<{ file: string; position: number }> = [];
+  const deferred: DeferredActivityStream[] = [];
+  for (const [position, file] of read.files.entries()) {
+    const bounds = read.summary.trusted(file);
+    if (bounds !== undefined && !streamMayMatchWindow(bounds, filters)) continue;
+    if (bounds !== undefined && !bounds.irregular) {
+      deferred.push({ file, position, id: historyStreamId(file), newest: bounds.newest! });
+    } else {
+      readFirst.push({ file, position });
+    }
+  }
+  return { readFirst, deferred: deferred.sort(compareDeferredStreams) };
+}
+
+/**
+ * Select the `limit` newest matching entries, reading deferred streams until
+ * the next one cannot outrank the cutoff row, so no unread entry can enter
+ * the selection.
+ */
+async function collectRecentActivityEntries(
+  pmRoot: string,
+  historyDir: string,
+  filters: ActivityFilters,
+  limit: number,
+): Promise<{ entries: ActivityEntry[]; history_read?: ActivityHistoryReadReceipt }> {
+  const read = await openActivityStreamRead(pmRoot, historyDir, filters);
+  const { readFirst, deferred } = partitionRecentActivityStreams(read, filters);
+  const pool = new RecentActivityPool(limit);
+  for (const stream of readFirst) {
+    await pool.read(read, historyDir, filters, stream);
+    pool.cutWhenFull();
+  }
+  pool.cut();
+  for (const stream of deferred) {
+    if (!pool.admits(stream)) break;
+    await pool.read(read, historyDir, filters, stream);
+    pool.cutWhenFull();
+  }
+  const entries = pool.cut();
+  await read.summary.commit();
+  const receipt = activityHistoryReadReceipt(read, false);
+  return receipt === undefined ? { entries } : { entries, history_read: receipt };
 }
 
 function formatCompactActivity(
@@ -641,6 +896,9 @@ export const _testOnly = {
   readActivityString,
   normalizeActivityEntry,
   sortActivity,
+  streamMayMatchWindow,
+  streamCanOutrank,
+  compareDeferredStreams,
   listHistoryFiles,
   buildActivityDigest,
   activityOperationCounts,
@@ -669,9 +927,14 @@ export async function runActivity(
     vocabulary,
     provenanceDimensions,
   );
-  const matchingActivity = sortActivity(
-    await collectActivityEntries(prepared.historyDir, filters),
-  ).filter(matchesProvenance);
+  const collected = await collectActivityEntries(
+    context.pmRoot,
+    prepared.historyDir,
+    filters,
+  );
+  const matchingActivity = sortActivity(collected.entries).filter(
+    matchesProvenance,
+  );
   const projected = projectActivityRows(
     projectionMode,
     matchingActivity,
@@ -724,5 +987,35 @@ export async function runActivity(
       source: filters.limitSource,
       value: filters.limit ?? null,
     },
+    ...(collected.history_read ? { history_read: collected.history_read } : {}),
+  };
+}
+
+/**
+ * Read the newest compact activity rows without a page cursor or totals, so
+ * the read is bounded by the rows returned instead of the history archive.
+ * Rows equal the first page of `pm activity --raw --limit <limit>`.
+ */
+export async function readRecentActivity(
+  options: { limit: number },
+  global: GlobalOptions,
+): Promise<RecentActivityResult> {
+  const context = await resolveActivityRuntimeContext(global);
+  const clock = resolveWindowQueryClock("activity", undefined);
+  const filters = resolveActivityFilters(
+    { compact: true, limit: String(options.limit) },
+    "compact",
+    clock,
+  );
+  const prepared = await prepareActivityHistoryRead(context);
+  const collected = await collectRecentActivityEntries(
+    context.pmRoot,
+    prepared.historyDir,
+    filters,
+    filters.limit!,
+  );
+  return {
+    rows: formatCompactActivity(collected.entries),
+    ...(collected.history_read ? { history_read: collected.history_read } : {}),
   };
 }

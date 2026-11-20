@@ -50,7 +50,12 @@ import {
   type CalendarRow,
 } from "./calendar.js";
 import { runList, type ListOptions } from "./list.js";
-import { runActivity, type CompactActivityEntry } from "./activity.js";
+import {
+  readRecentActivity,
+  type ActivityHistoryReadReceipt,
+  type CompactActivityEntry,
+  type RecentActivityResult,
+} from "./activity.js";
 import {
   scoreContextCandidatesWithActiveExtensions,
   type ContextRelevanceContributions,
@@ -478,6 +483,8 @@ export interface ContextResult extends Partial<PmReadOutputMetadata> {
   hierarchy?: HierarchyNode[];
   /** Value that configures or reports activity for this contract. */
   activity?: CompactActivityEntry[];
+  /** Present only when a tracker that keeps derived stream bounds could not bound the activity section (GH-1664). */
+  activity_history_read?: ActivityHistoryReadReceipt;
   /** Value that configures or reports progress for this contract. */
   progress?: ProgressEntry[];
   /** Value that configures or reports blockers for this contract. */
@@ -1416,15 +1423,12 @@ export const _testOnly = {
   toContextFocusItem,
 };
 
+/** Newest compact rows only: the section needs no page cursor or archive-wide totals. */
 async function buildActivity(
   activityLimit: number,
   global: GlobalOptions,
-): Promise<CompactActivityEntry[]> {
-  const result = await runActivity(
-    { compact: true, limit: String(activityLimit) },
-    global,
-  );
-  return result.compact_activity ?? [];
+): Promise<RecentActivityResult> {
+  return readRecentActivity({ limit: activityLimit }, global);
 }
 
 function buildProgress(
@@ -2166,7 +2170,7 @@ interface ContextFocusGroups {
 
 interface ContextOptionalSections {
   hierarchy?: HierarchyNode[];
-  activity?: CompactActivityEntry[];
+  activity?: RecentActivityResult;
   progress?: ProgressEntry[];
   blockersSection?: BlockerEntry[];
   recentlyCreated?: RecentContextItem[];
@@ -2686,7 +2690,12 @@ function attachOptionalContextSections(
   warningDetails: ContextSignalStoreReadResult["warning_details"],
 ): void {
   if (sections.hierarchy) result.hierarchy = sections.hierarchy;
-  if (sections.activity) result.activity = sections.activity;
+  if (sections.activity) {
+    result.activity = sections.activity.rows;
+    if (sections.activity.history_read) {
+      result.activity_history_read = sections.activity.history_read;
+    }
+  }
   if (sections.progress) result.progress = sections.progress;
   if (sections.blockersSection) result.blockers = sections.blockersSection;
   if (sections.recentlyCreated)

@@ -1357,7 +1357,7 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 
 `pm gc --scope` accepts `index`, `embeddings`, `runtime`, `locks`, and `checkpoints`, comma-separated or repeated. Omitting the flag selects all scopes:
 
-- `runtime` clears `runtime/test-runs/` and `runtime/history-drift-cache.json`. The next health check rescans history drift.
+- `runtime` clears `runtime/test-runs/`, `runtime/history-drift-cache.json` and `runtime/history-stream-summary.json`. The next health check rescans history drift, and the next activity or context read parses every history stream once to rebuild the stream summary.
 - `embeddings` removes keyword/semantic artifacts (`search/embeddings.jsonl`, `search/vectorization-status.json`, `search/lancedb/`) plus `search/pending-refresh.json` and its gate, preventing a background worker from rebuilding a partial index against an empty ledger. Rebuild with keyword reindex and semantic reindex when enabled.
 - `locks` removes locks with an expired embedded `created_at + ttl_seconds` lease or positive same-host original-owner death evidence. It rechecks the observed receipt under the writer cleanup gate before deletion; replaced or initializing locks remain. Active, unreadable, or unparseable locks remain. The result reports `scanned`, `removed`, and `retained` counts.
 
@@ -1540,6 +1540,37 @@ metadata changes may also require a restart. Continuation does not retain a
 persisted or atomic cross-file snapshot. Use `--from` for a starting timestamp;
 `--since` refusals suggest that correction. Use an envelope (for example `--json`
 without `--stream`) when paging: stream mode emits rows without cursor metadata.
+
+On a tracker with 500 or more history streams, activity reads and the
+`pm context` activity section are bounded by their window instead of the
+history archive (GH-1664). A derived, gitignored
+`runtime/history-stream-summary.json` records each stream's entry count and
+oldest/newest timestamps under the stat signature (device, inode, size, mtime,
+ctime and the reader's credentials: effective user, group and supplementary
+groups on POSIX, the account name on Windows) of the open file that supplied
+the bytes, with a checksum over the file. A read skips a stream only while that
+signature is unchanged and the stream had not changed within two seconds of the
+read that recorded it, so appends, redaction, compaction, repair and restore
+all invalidate it without cooperation, and other POSIX credentials never reuse
+bounds for a stream they may not be allowed to read. Like the metadata cache,
+the summary trusts the filesystem's stat results: on Windows, processes of one
+account share it whatever their token, and a network mount that caches
+attributes can delay invalidation until its cache expires. Rows, totals, cursors and errors equal those of a complete read.
+A stream the window reaches is still parsed in full, so a read costs the size
+of the streams with entries in its window, not the size of the archive. Like a
+complete read, a bounded read is not an atomic snapshot: a stream that changes
+while the read runs may or may not be reflected. The
+context activity section takes the newest rows directly and returns no
+cursor. When a read could not be bounded it adds `history_read` (context:
+`activity_history_read`) with `reason` (`summary_missing`, `summary_invalid`,
+`summary_stale` or `irregular_timestamps` once more than half of the streams
+lack usable regular bounds because they changed or hold timestamps that are not
+canonical millisecond UTC, `read_hooks_active`, or `unwindowed_query` when a
+read with no `--from` bound parsed most streams), `streams_read` and
+`streams_total`; `--stream` carries it on the `meta` record. Bounded reads add
+nothing.
+Extensions with read hooks keep the complete read, so every stream read is
+still observed.
 Workspace-scoped mutations to settings, schema, profiles, init state, and
 extension/package activation are recorded in
 `.agents/pm/history/_workspace.jsonl` using the same patch/hash format.

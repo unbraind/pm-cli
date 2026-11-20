@@ -1142,6 +1142,11 @@ describe("registration helpers", () => {
       ]);
 
       stdoutSpy.mockClear();
+      const receipt = { reason: "summary_missing", streams_read: 600, streams_total: 600 };
+      printActivityJsonStream({ count: 0, compact: false, history_read: receipt } as never, {}, { quiet: false });
+      expect(JSON.parse(String(stdoutSpy.mock.calls[0]![0]))).toMatchObject({ type: "meta", history_read: receipt });
+
+      stdoutSpy.mockClear();
       printActivityJsonStream(
         { count: 0, compact: false } as never,
         {},

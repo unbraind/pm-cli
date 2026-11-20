@@ -8,11 +8,14 @@ export type { PmReadOutputMetadata } from "./read-output-contracts.js";
 export * from "./query/complete-list.js";
 export * from "./query/search.js";
 export {
+  readRecentActivity,
   runActivity,
   type ActivityCommandOptions,
   type ActivityEntry,
+  type ActivityHistoryReadReceipt,
   type ActivityResult,
   type CompactActivityEntry,
+  type RecentActivityResult,
 } from "./query/activity.js";
 export * from "./query/aggregate.js";
 export * from "./query/calendar.js";

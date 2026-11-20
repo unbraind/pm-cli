@@ -1,0 +1,23 @@
+id: pm-4zqpr3
+title: Stat-keyed derived caches cannot establish freshness on attribute-caching network mounts or across Windows tokens of one account
+description: "Raised by the Codex review of the pm-gh1664 change on 2026-11-20 against the new history stream summary, but it applies to every stat-keyed derived cache, the item metadata cache first (ADR pm-vnie: three-tier metadata cache keyed by file stat). (1) On an NFS mount with attribute caching (actimeo), stat can keep reporting the old size and times after another client finished appending, so a derived entry stays trusted until the attribute cache expires, while a full read revalidates on open (close-to-open consistency) and sees the append. (2) On Windows the cache identity is the account name, so an elevated and a standard process of one account share derived state although their tokens can differ in read access to an NTFS file. Neither is a regression of pm-gh1664 (it copies the trust model the metadata cache already has), and both need one tracker-wide policy rather than per-cache patches: detect network filesystems with fs.statfs (NFS 0x6969, SMB/CIFS 0xFF534D42/0xFE534D42, FUSE) and/or a setting that disables stat-keyed fast paths, and on Windows include the token's elevation or decline trust when only the account name is known. Duplicate check: searched network filesystem, NFS, attribute cache, stat signature and derived cache; pm-vnie owns the metadata cache design, pm-up22 (closed) fixed an mtime-preserving copy false hit in the drift cache; no item owns network-mount or cross-token freshness."
+type: Issue
+status: open
+priority: 3
+tags[5]: cache,derived-index,network-filesystem,storage,windows
+created_at: "2026-11-20T12:12:03.625Z"
+updated_at: "2026-11-20T12:12:03.625Z"
+author: "harness:claude-code"
+estimated_minutes: 240
+acceptance_criteria: "Every stat-keyed derived cache (metadata cache, metadata query index, drift cache, history stream summary) consults one policy that disables its stat fast path on a detected network filesystem or by setting; On Windows the cache identity distinguishes token elevation or the fast path is disabled when it cannot; Specs cover the policy with a simulated statfs type and a simulated elevation change"
+parent: pm-o2kc
+risk: low
+confidence: medium
+severity: low
+expected_result: A derived cache is trusted only where its stat signature can establish freshness for the reading process
+actual_result: Stat-keyed caches trust stat on network mounts and share trust across tokens of one Windows account
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1664,discovered_from,"2026-11-20T12:12:03.625Z","harness:claude-code","cli:create:dep",detected
+  pm-up22,related,"2026-11-20T12:12:03.625Z","harness:claude-code","cli:create:dep",detected
+  pm-vnie,related,"2026-11-20T12:12:03.625Z","harness:claude-code","cli:create:dep",detected
+body: ""

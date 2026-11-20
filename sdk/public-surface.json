@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2165,
+    "covered_symbols": 2168,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2166
+    "required_symbols": 2169
   },
   "breaking_acknowledgements": [
     {
@@ -3475,6 +3475,18 @@
       ],
       "package_version": "2026.11.20",
       "reason": "GH-1759 (pm-gh1759): auditMergeAttributeFence gains an optional third options parameter ({ gitWorkspaceRoot }). Inside a Git worktree it now walks the tracker's canonical path up to the worktree's canonical top level and reads only regular .gitattributes files, so a matching fence in an enclosing, different repository, or one reached through a symlink, no longer counts (Git never applies either); outside Git, or with gitWorkspaceRoot: null, it keeps the eight-level walk. GH-1757 (pm-gh1757): PmCliErrorContext gains the optional url_credentials_rejected: { source } marker, which makes refusal guidance replace the restore-credentials step with one that says the credentials in that source must not be restored while any other redacted credentials still must. Existing fields and parameters are unchanged, but keyof PmCliErrorContext gains a key, so a consumer that derives a required mapping from it (for example Record<keyof PmCliErrorContext, string>) or asserts its exact key set must add url_credentials_rejected."
+    },
+    {
+      "changes": [
+        "signature ./sdk:ActivityResult",
+        "signature ./sdk:ContextResult",
+        "signature ./sdk/core:ContextResult",
+        "signature ./sdk/query:ActivityResult",
+        "signature ./sdk/query:ContextResult",
+        "signature ./sdk/runtime:ContextResult"
+      ],
+      "package_version": "2026.11.20",
+      "reason": "GH-1664: ActivityResult gains an optional history_read receipt and ContextResult an optional activity_history_read receipt, present only when a read on a tracker with 500 or more history streams could not be bounded; existing fields and values are unchanged"
     }
   ],
   "entrypoints": {
@@ -3760,8 +3772,14 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ActivityHistoryReadReceipt",
+          "signature": "export interface ActivityHistoryReadReceipt { reason: HistoryStreamSummaryFallback | \"unwindowed_query\"; streams_read: number; streams_total: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ActivityResult",
-          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; page_start: number; window: { anchor: string; from: string | null; to: string | null; }; next_cursor?: string; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; page_start: number; window: { anchor: string; from: string | null; to: string | null; }; next_cursor?: string; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; history_read?: ActivityHistoryReadReceipt; }"
         },
         {
           "classification": "advanced_export",
@@ -6827,7 +6845,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; activity_history_read?: ActivityHistoryReadReceipt; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "supported",
@@ -17780,6 +17798,12 @@
           "signature": "export type ReadPromise<Result, Options> = Promise<PmReadOutputResultFor<Result, Options>>;"
         },
         {
+          "classification": "supported",
+          "kind": "function",
+          "name": "readRecentActivity",
+          "signature": "(options: { limit: number; }, global: GlobalOptions) => Promise<RecentActivityResult> | calls: (options: { limit: number; }, global: GlobalOptions) => Promise<RecentActivityResult>"
+        },
+        {
           "classification": "advanced_export",
           "kind": "function",
           "name": "readRequiredString",
@@ -17910,6 +17934,12 @@
           "kind": "interface",
           "name": "ReanchorResult",
           "signature": "export interface ReanchorResult { entries: HistoryEntry[]; finalDocument: ReplayDocument; entriesRehashed: number; entriesPatchRepaired: number; convertedReplaceToAdd: number; skippedOps: number; details: ReanchorEntryDetail[]; itemHashVersion: HistoryItemHashVersion; explicitItemHashVersion: boolean; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RecentActivityResult",
+          "signature": "export interface RecentActivityResult { rows: CompactActivityEntry[]; history_read?: ActivityHistoryReadReceipt; }"
         },
         {
           "classification": "supported",
@@ -29003,7 +29033,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; activity_history_read?: ActivityHistoryReadReceipt; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "supported",
@@ -34438,8 +34468,14 @@
         {
           "classification": "supported",
           "kind": "interface",
+          "name": "ActivityHistoryReadReceipt",
+          "signature": "export interface ActivityHistoryReadReceipt { reason: HistoryStreamSummaryFallback | \"unwindowed_query\"; streams_read: number; streams_total: number; }"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
           "name": "ActivityResult",
-          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; page_start: number; window: { anchor: string; from: string | null; to: string | null; }; next_cursor?: string; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; }"
+          "signature": "export interface ActivityResult { activity_digest?: ActivityDigestEntry[]; activity?: ActivityEntry[]; compact_activity?: CompactActivityEntry[]; provenance_activity?: HistoryProvenanceRow[]; compact: boolean; projection: { mode: \"digest\" | \"compact\" | \"provenance\" | \"full\"; row_key: \"activity_digest\" | \"compact_activity\" | \"provenance_activity\" | \"activity\"; }; omission_receipt: OutputOmissionReceipt; count: number; total_count: number; limit: number | null; page_start: number; window: { anchor: string; from: string | null; to: string | null; }; next_cursor?: string; omitted_count: number; has_more: boolean; applied_bound: { kind: \"limit\" | \"unbounded\"; source: \"default\" | \"explicit\"; value: number | null; }; activity_summary?: { window: { from: string | null; to: string | null; }; event_count: number; item_count: number; author_count: number; operation_counts: Record<string, number>; }; provenance_summary?: HistoryProvenanceSummary; history_read?: ActivityHistoryReadReceipt; }"
         },
         {
           "classification": "supported",
@@ -34961,7 +34997,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; activity_history_read?: ActivityHistoryReadReceipt; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "supported",
@@ -35956,6 +35992,12 @@
         {
           "classification": "supported",
           "kind": "function",
+          "name": "readRecentActivity",
+          "signature": "(options: { limit: number; }, global: GlobalOptions) => Promise<RecentActivityResult> | calls: (options: { limit: number; }, global: GlobalOptions) => Promise<RecentActivityResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "function",
           "name": "readWorkspaceContextSignals",
           "signature": "(items: readonly ItemMetadata[], options: ReadWorkspaceContextSignalsOptions) => Promise<ContextSignalStoreReadResult> | calls: (items: readonly ItemMetadata[], options: ReadWorkspaceContextSignalsOptions) => Promise<ContextSignalStoreReadResult>"
         },
@@ -35970,6 +36012,12 @@
           "kind": "function",
           "name": "readWorkspaceMemory",
           "signature": "(items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult> | calls: (items: readonly ItemMetadata[], options: { pmRoot: string; statusRegistry: RuntimeStatusRegistry; now: string; minimumItems?: number; sourceCursor?: string; }) => Promise<WorkspaceMemoryReadResult>"
+        },
+        {
+          "classification": "supported",
+          "kind": "interface",
+          "name": "RecentActivityResult",
+          "signature": "export interface RecentActivityResult { rows: CompactActivityEntry[]; history_read?: ActivityHistoryReadReceipt; }"
         },
         {
           "classification": "supported",
@@ -36887,7 +36935,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ContextResult",
-          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
+          "signature": "export interface ContextResult extends Partial<PmReadOutputMetadata> { output_default: \"toon\"; now: string; depth: ContextDepth; sections_included: ContextSectionName[]; window: { anchor: string; start: string | null; end: string | null; past: boolean; from: string | null; to: string | null; }; filters: { type: string | null; tag: string | null; priority: string | null; assignee: string | null; assignee_filter: string | null; sprint: string | null; release: string | null; limit: string | null; parent: string | null; token_budget: number; runtime_filters?: Record<string, unknown>; }; summary: ContextSummary; high_level: ContextFocusItem[]; low_level: ContextFocusItem[]; blocked_fallback: ContextFocusItem[]; agenda: { summary: ContextAgendaSummary; events: ContextAgendaEvent[]; }; hierarchy?: HierarchyNode[]; activity?: CompactActivityEntry[]; activity_history_read?: ActivityHistoryReadReceipt; progress?: ProgressEntry[]; blockers?: BlockerEntry[]; recently_created?: RecentContextItem[]; unparented?: ContextFocusItem[]; files?: HotFile[]; workload?: WorkloadEntry[]; staleness?: StaleEntry[]; tests?: TestHealthSummary; extension_health?: ContextExtensionHealth; workspace_memory?: { cache_status: \"fresh\" | \"rebuilt\"; source_cursor: string; rollups: WorkspaceMemoryRollup[]; }; suggestions?: string[]; focus_fields?: string[]; warnings?: string[]; warning_details?: ContextSignalStoreReadResult[\"warning_details\"]; ranking?: ContextRankingSummary; packing?: ContextPackingSummary; has_more?: boolean; next_cursor?: string; applied_limit?: number; truncated?: true; }"
         },
         {
           "classification": "advanced_export",
@@ -41319,10 +41367,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1351,
+      "checked_functions": 1352,
       "checked_values": 401,
       "exempt_test_seams": 15,
-      "referenced_types": 1058
+      "referenced_types": 1059
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -41361,10 +41409,10 @@
       "referenced_types": 25
     },
     "./sdk/query": {
-      "checked_functions": 120,
+      "checked_functions": 121,
       "checked_values": 28,
       "exempt_test_seams": 5,
-      "referenced_types": 112
+      "referenced_types": 113
     },
     "./sdk/runtime": {
       "checked_functions": 235,
