@@ -6,7 +6,7 @@ status: open
 priority: 3
 tags[5]: cache,derived-index,network-filesystem,storage,windows
 created_at: "2026-11-20T12:12:03.625Z"
-updated_at: "2026-11-20T17:34:26.092Z"
+updated_at: "2026-11-20T21:21:07.985Z"
 author: "harness:claude-code"
 estimated_minutes: 240
 acceptance_criteria: "Every stat-keyed derived cache (metadata cache, metadata query index, drift cache, history stream summary) consults one policy that disables its stat fast path on a detected network filesystem or by setting; The cache identity is access-equivalent on every platform: on Windows it distinguishes tokens of one account that differ in elevation, enabled groups or restricted SIDs, and on POSIX a sandbox or MAC layer that denies opening a stream without changing credentials (Landlock, LSM profiles) cannot make a skip succeed where the complete read fails; otherwise the fast path is disabled when equivalence cannot be established; Specs cover the policy with a simulated statfs type, simulated token differences and a stat-allowed, open-denied stream"
@@ -20,7 +20,8 @@ dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1664,discovered_from,"2026-11-20T12:12:03.625Z","harness:claude-code","cli:create:dep",detected
   pm-up22,related,"2026-11-20T12:12:03.625Z","harness:claude-code","cli:create:dep",detected
   pm-vnie,related,"2026-11-20T12:12:03.625Z","harness:claude-code","cli:create:dep",detected
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-20T16:12:37.351Z","harness:claude-code","CodeRabbit (PR #1761) noted that elevation alone does not make two Windows tokens access-equivalent, because tokens of one account and elevation can differ in enabled groups or restricted SIDs. The acceptance criteria now require an access-equivalent identity, or a disabled fast path when equivalence cannot be established."
   "2026-11-20T17:34:25.493Z","harness:claude-code","Codex (PR #1761, round 16) found the same gap on Linux: a mandatory access-control or sandbox layer (Landlock, an LSM profile, a container seccomp or bind policy) can allow stat but deny opening a stream for reading without changing the process's uid or groups. A summary warmed by an unrestricted process would then let a restricted one skip a stream the complete read rejects with EACCES. The rows returned are still correct, because a skipped stream contributes none, but the error differs. Access equivalence therefore cannot be judged from credentials alone on any platform. Options: a cheap open-for-read probe of a skipped stream (open plus close, no read) before accepting the skip, or disable the stat fast path whenever the reader's access cannot be established."
+  "2026-11-20T21:21:07.985Z","harness:claude-code","Codex (PR #1761, round 25) gave another instance of the same POSIX gap: a process that keeps its uid and groups but drops capabilities (CAP_DAC_OVERRIDE, CAP_DAC_READ_SEARCH), for example a service sandbox, can stat a stream it can no longer open. Bounds recorded by an earlier privileged process then let it skip the stream where the complete read reports EACCES. The criterion on sandboxes and MAC layers that deny open without changing credentials covers it, and the remedy is the same: an open-for-read probe of a skipped stream, or a disabled fast path when the reader's access cannot be established."
 body: ""

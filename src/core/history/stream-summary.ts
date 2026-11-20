@@ -381,20 +381,32 @@ async function readSummaryText(pmRoot: string, streamCount: number): Promise<str
   if ((await fs.lstat(summaryPath(pmRoot))).isSymbolicLink()) throw new Error("history stream summary is a link");
   const handle = await fs.open(summaryPath(pmRoot), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
   try {
-    if (!isTrustedSummaryFile(await handle.stat(), streamCount, process.geteuid?.())) {
+    const stats = await handle.stat();
+    if (!isTrustedSummaryFile(stats, streamCount, process.geteuid?.())) {
       throw new Error("history stream summary is not a trusted file");
     }
-    return await readAtMost(handle, summaryByteCap(streamCount));
+    return await readAtMost(handle, summaryByteCap(streamCount), stats.size);
   } finally {
     await handle.close();
   }
 }
 
-/** Read the whole file, refusing one that grew past the cap after its stat. */
-async function readAtMost(handle: FileHandle, cap: number): Promise<string> {
-  const buffer = Buffer.alloc(cap + 1);
+/**
+ * Read the whole file, refusing one that grew past the cap after its stat.
+ * The buffer starts at the stat'ed size (plus one byte to notice growth) and
+ * doubles only while the file keeps growing, never past the cap, so a warm
+ * read allocates what the summary holds rather than the whole allowance.
+ */
+async function readAtMost(handle: FileHandle, cap: number, expectedSize: number): Promise<string> {
+  let buffer = Buffer.alloc(Math.min(Math.max(expectedSize, 0), cap) + 1);
   let length = 0;
   for (;;) {
+    if (length === buffer.length) {
+      // Within the cap here, since a longer read already refused the file.
+      const grown = Buffer.alloc(Math.min(buffer.length * 2, cap + 1));
+      buffer.copy(grown, 0, 0, length);
+      buffer = grown;
+    }
     const { bytesRead } = await handle.read(buffer, length, buffer.length - length, length);
     if (bytesRead === 0) break;
     length += bytesRead;

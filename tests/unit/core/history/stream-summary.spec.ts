@@ -358,13 +358,41 @@ describe("history stream summary (GH-1664)", () => {
     expect(_testOnly.readerDigest(undefined)).toBeUndefined();
   });
 
+  it("allocates for the summary's own size, not the whole allowance, on a warm read", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const size = (await stat(path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH))).size;
+    const alloc = vi.spyOn(Buffer, "alloc");
+    try {
+      // An allowance for 100,000 streams is about 98 MiB; the read allocates the file.
+      const restore = _testOnly.setMinimumStreams(1);
+      try {
+        await open(["pm-a.jsonl"]);
+      } finally {
+        restore();
+      }
+      const sizes = alloc.mock.calls.map(([length]) => Number(length));
+      expect(sizes).toContain(size + 1);
+      expect(Math.max(...sizes)).toBeLessThan(_testOnly.summaryByteCap(1));
+    } finally {
+      alloc.mockRestore();
+    }
+  });
+
   it("reads the summary only up to its size cap, even if it grew after the stat", async () => {
     const file = path.join(pmRoot, "capped.json");
     await writeFile(file, "x".repeat(10));
     const handle = await fsPromises.open(file, "r");
     try {
-      expect(await _testOnly.readAtMost(handle, 10)).toBe("x".repeat(10));
-      await expect(_testOnly.readAtMost(handle, 9)).rejects.toThrow("grew past its size cap");
+      expect(await _testOnly.readAtMost(handle, 10, 10)).toBe("x".repeat(10));
+      await expect(_testOnly.readAtMost(handle, 9, 9)).rejects.toThrow("grew past its size cap");
+      // A file that grew after its stat is still read whole, growing the
+      // buffer from the stat'ed size, but never past the cap.
+      expect(await _testOnly.readAtMost(handle, 4096, 0)).toBe("x".repeat(10));
+      expect(await _testOnly.readAtMost(handle, 10, 3)).toBe("x".repeat(10));
+      await expect(_testOnly.readAtMost(handle, 9, 2)).rejects.toThrow("grew past its size cap");
+      // A negative stat size is treated as empty.
+      expect(await _testOnly.readAtMost(handle, 64, -1)).toBe("x".repeat(10));
     } finally {
       await handle.close();
     }
