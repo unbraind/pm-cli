@@ -16,6 +16,7 @@ import {
   runCliRead,
   runEntrypoint,
   summarizeLatency,
+  withFixtureGlobalProfile,
 } from "../../../scripts/bench/history-read-costs.mjs";
 
 const temporaryRoots: string[] = [];
@@ -67,6 +68,21 @@ describe("history read cost benchmark (GH-1664)", () => {
     expect(fixture.history_bytes).toBe(
       (await stat(path.join(pmRoot, "history", "pm-a.jsonl"))).size + (await stat(path.join(pmRoot, "history", "pm-b.jsonl"))).size,
     );
+  });
+
+  it("generates the fixture under its own global profile and restores the caller's", async () => {
+    const previous = process.env.PM_GLOBAL_PATH;
+    try {
+      delete process.env.PM_GLOBAL_PATH;
+      await expect(withFixtureGlobalProfile("/tmp/fixture-a", async () => process.env.PM_GLOBAL_PATH)).resolves.toBe(path.join("/tmp/fixture-a", ".pm-global"));
+      expect(process.env.PM_GLOBAL_PATH).toBeUndefined();
+      process.env.PM_GLOBAL_PATH = "/caller/global";
+      await expect(withFixtureGlobalProfile("/tmp/fixture-b", async () => { throw new Error("generator failed"); })).rejects.toThrow("generator failed");
+      expect(process.env.PM_GLOBAL_PATH).toBe("/caller/global");
+    } finally {
+      if (previous === undefined) delete process.env.PM_GLOBAL_PATH;
+      else process.env.PM_GLOBAL_PATH = previous;
+    }
   });
 
   it("summarizes latency with the nearest-rank median", () => {

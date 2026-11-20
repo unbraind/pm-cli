@@ -1575,7 +1575,10 @@ add nothing. On POSIX the summary file is written owner-only (mode 0600) and is
 trusted only when the reading user owns it and no one else can write it; on
 Windows it inherits the runtime directory's ACL. A summary in a redirected
 `runtime/` (symbolic link or junction), a link, a non-regular file or an
-oversized file is never read or written.
+oversized file is never read or written. Like the context-usage ledger, the
+checks reject existing redirections and require trusted, stable workspace
+directories: portable Node APIs cannot pin `runtime/` against an actor that
+replaces it concurrently.
 Extensions with read hooks keep the complete read, so every stream read is
 still observed.
 Workspace-scoped mutations to settings, schema, profiles, init state, and

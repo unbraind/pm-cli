@@ -330,6 +330,26 @@ describe("bounded activity reads (GH-1664)", () => {
     });
   });
 
+  it("names irregular timestamps when they caused most of the parsed streams", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      for (let index = 0; index < 12; index += 1) await writeStream(context.pmPath, `pm-irregular-${String(index).padStart(2, "0")}`, [oldEntry("2024-01-01")]);
+      for (let index = 0; index < 8; index += 1) await writeStream(context.pmPath, `pm-regular-${String(index).padStart(2, "0")}`, [oldEntry("2024-01-01T00:00:00.000Z")]);
+      await runActivity({}, global);
+      const files = (await readdir(path.join(context.pmPath, "history"))).filter((file) => file.endsWith(".jsonl"));
+      const session = await openHistoryStreamSummary({ pmRoot: context.pmPath, historyDir: path.join(context.pmPath, "history"), files });
+      const irregular = files.filter((file) => session.trusted(file)?.irregular === true).length;
+      // Fewer than half of all streams are irregular, so the summary itself is served...
+      expect(session.fallback).toBeUndefined();
+      expect(irregular * 2).toBeLessThan(files.length);
+      // ...but irregular streams are most of what the digest parses.
+      const digest = await runActivity({}, global);
+      expect(digest.history_read).toMatchObject({ reason: "irregular_timestamps" });
+      expect(irregular * 2).toBeGreaterThan(digest.history_read!.streams_read);
+    });
+  });
+
   it("returns no rows for a zero limit, reads no trusted stream, and still raises a damaged stream's error", async () => {
     await withTempPmPath(async (context) => {
       await seedCorpus(context);

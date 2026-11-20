@@ -553,6 +553,8 @@ interface ActivityStreamRead {
   streamsRead: number;
   /** Skipped streams whose bounds went stale while the read ran. */
   revalidatedStale: number;
+  /** Streams parsed because their trusted bounds hold irregular timestamps. */
+  irregularRead: number;
 }
 
 async function openActivityStreamRead(
@@ -568,6 +570,7 @@ async function openActivityStreamRead(
     files,
     streamsRead: 0,
     revalidatedStale: 0,
+    irregularRead: 0,
   };
 }
 
@@ -588,6 +591,7 @@ async function readActivityStream(
 ): Promise<void> {
   const id = historyStreamId(file);
   const historyPath = path.join(historyDir, file);
+  if (read.summary.trusted(file)?.irregular === true) read.irregularRead += 1;
   // Only a session that keeps bounds needs the identity of the bytes read.
   const snapshot = read.summary.enabled
     ? await readIdentifiedHistorySnapshot(historyPath, id)
@@ -607,15 +611,15 @@ function activityHistoryReadReceipt(
   read: ActivityStreamRead,
   unwindowed: boolean,
 ): ActivityHistoryReadReceipt | undefined {
-  const { summary, files, streamsRead, revalidatedStale } = read;
+  const { summary, files, streamsRead, revalidatedStale, irregularRead } = read;
   // A healthy summary still discloses a read that parsed most streams: its
   // cost followed the archive because the query, not the summary, reached it,
-  // unless most streams lacked current bounds at open or went stale mid-read
-  // (disjoint counts: revalidation only sees streams trusted at open).
+  // unless most of the parsed streams had stale bounds (at open or mid-read;
+  // disjoint counts) or irregular timestamps, which are always read.
   const parsedMost = summary.enabled && streamsRead * 2 > files.length;
-  // Stale streams are always read, so compare them with the streams parsed.
-  const queryReason = (summary.staleAtOpen + revalidatedStale) * 2 > streamsRead
-    ? "summary_stale"
+  const staleReads = summary.staleAtOpen + revalidatedStale;
+  const queryReason = (staleReads + irregularRead) * 2 > streamsRead
+    ? (staleReads >= irregularRead ? "summary_stale" : "irregular_timestamps")
     : unwindowed
       ? "unwindowed_query"
       : "window_reaches_most_streams";

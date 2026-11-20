@@ -157,6 +157,18 @@ async function measureNodeControl(measure) {
   return summarizeImportSamples(samples);
 }
 
+/** Run `operation` with PM_GLOBAL_PATH pointing into the fixture, restoring the caller's value. */
+export async function withFixtureGlobalProfile(workspaceRoot, operation) {
+  const previous = process.env.PM_GLOBAL_PATH;
+  process.env.PM_GLOBAL_PATH = path.join(workspaceRoot, ".pm-global");
+  try {
+    return await operation();
+  } finally {
+    if (previous === undefined) delete process.env.PM_GLOBAL_PATH;
+    else process.env.PM_GLOBAL_PATH = previous;
+  }
+}
+
 /** Measure bounded and forced full-scan orient reads on one generated fixture. */
 export async function buildHistoryReadReport(options = {}) {
   const settings = { ...DEFAULT_OPTIONS, ...options };
@@ -168,7 +180,10 @@ export async function buildHistoryReadReport(options = {}) {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-history-read-costs-"));
   const lifecycle = registerTempOperation(workspaceRoot);
   try {
-    const manifest = await generateSyntheticWorkspace({ workspaceRoot, itemCount: settings.streams, seed: 1664, mode: "direct", force: true });
+    // The generator initializes a tracker in-process, so it runs under the
+    // fixture's own global profile, never the caller's.
+    const manifest = await withFixtureGlobalProfile(workspaceRoot, () =>
+      generateSyntheticWorkspace({ workspaceRoot, itemCount: settings.streams, seed: 1664, mode: "direct", force: true }));
     const fixture = await padHistoryStreams(manifest.pm_root, settings);
     const environment = benchmarkEnvironment(workspaceRoot, manifest.pm_root, lifecycle.signal);
     // The first read builds every derived projection; only reads after the
