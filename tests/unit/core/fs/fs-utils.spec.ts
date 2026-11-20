@@ -110,6 +110,14 @@ describe("core/fs/fs-utils", () => {
 
       await writeFileAtomic(filePath, "rewritten");
       expect(await fs.readFile(filePath, "utf8")).toBe("rewritten");
+
+      // An explicit mode creates the replacement with those permission bits.
+      const privatePath = path.join(tempDir, "nested", "private.json");
+      await writeFileAtomic(privatePath, "{}", { mode: 0o600 });
+      expect(await fs.readFile(privatePath, "utf8")).toBe("{}");
+      if (process.platform !== "win32") {
+        expect((await fs.stat(privatePath)).mode & 0o777).toBe(0o600);
+      }
     });
   });
 

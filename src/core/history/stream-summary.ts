@@ -19,7 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import type { BigIntStats } from "node:fs";
 import { hasActiveOnReadHooks } from "../extensions/index.js";
-import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
+import { isFileMissingError, readRegularFile, writeFileAtomic } from "../fs/fs-utils.js";
 import type { HistoryEntry } from "../../types/index.js";
 import type { IdentifiedHistoryStreamSnapshot } from "./read.js";
 
@@ -122,6 +122,14 @@ export interface HistoryStreamSummarySession {
    * the path.
    */
   record(file: string, snapshot: Pick<IdentifiedHistoryStreamSnapshot, "entries" | "raw_bytes" | "source">): void;
+  /**
+   * Re-stat streams this read skipped on trusted bounds, just before the read
+   * finishes, and return those whose signature changed since the session
+   * opened (they are no longer trusted). Reading them keeps a change that
+   * completed while the read ran from being dropped; a change after this
+   * check is one a complete read could also have missed.
+   */
+  revalidate(files: readonly string[]): Promise<string[]>;
   /** Persist changed bounds best-effort; a failure leaves the next read to rebuild. */
   commit(): Promise<void>;
 }
@@ -282,7 +290,9 @@ function parseStoredStream(value: unknown): StoredStream | undefined {
 async function readStoredSummary(pmRoot: string): Promise<StoredSummary> {
   let raw: string;
   try {
-    raw = await fs.readFile(summaryPath(pmRoot), "utf8");
+    // Only a regular file, opened without following links and non-blocking,
+    // so a FIFO or device at the path cannot stall a read of an optional cache.
+    raw = await readRegularFile(summaryPath(pmRoot), new Error("history stream summary is not a regular file"));
   } catch (error: unknown) {
     return { state: isFileMissingError(error) ? "missing" : "invalid", streams: new Map() };
   }
@@ -356,6 +366,7 @@ function disabledSession(fallback: HistoryStreamSummaryFallback | undefined): Hi
     fallback,
     trusted: () => undefined,
     record: () => undefined,
+    revalidate: async () => [],
     commit: async () => undefined,
   };
 }
@@ -405,6 +416,12 @@ export async function openHistoryStreamSummary(params: {
       });
       dirty = true;
     },
+    revalidate: async (files) => {
+      const current = await observeStreams(params.historyDir, files, reader);
+      const changed = files.filter((file) => current.get(file)?.signature !== next.get(file)?.signature);
+      for (const file of changed) next.delete(file);
+      return changed;
+    },
     commit: async () => {
       if (!dirty) return;
       dirty = false;
@@ -414,7 +431,10 @@ export async function openHistoryStreamSummary(params: {
         await fs.mkdir(path.join(params.pmRoot, "runtime")).catch((error: unknown) => {
           if (!isFileExistsError(error)) throw error;
         });
-        await writeFileAtomic(summaryPath(params.pmRoot), serializeSummary(next), { createParentDirectories: false });
+        // Owner-only on POSIX: the bounds describe streams other accounts may
+        // not be allowed to read. Windows ignores the mode, and the file
+        // inherits the runtime directory's ACL.
+        await writeFileAtomic(summaryPath(params.pmRoot), serializeSummary(next), { createParentDirectories: false, mode: 0o600 });
       } catch {
         // Derived bounds are an optimization: a read-only or contended runtime
         // directory leaves the next bounded read to rebuild them.

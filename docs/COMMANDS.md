@@ -1557,18 +1557,22 @@ the summary trusts the filesystem's stat results: on Windows, processes of one
 account share it whatever their token, and a network mount that caches
 attributes can delay invalidation until its cache expires. Rows, totals, cursors and errors equal those of a complete read.
 A stream the window reaches is still parsed in full, so a read costs the size
-of the streams with entries in its window, not the size of the archive. Like a
-complete read, a bounded read is not an atomic snapshot: a stream that changes
-while the read runs may or may not be reflected. The
+of the streams with entries in its window, not the size of the archive. Before
+it finishes, a bounded read re-stats the streams it skipped on their bounds and
+reads any that changed, a best-effort per-stream recheck. Like a complete read,
+it is not an atomic snapshot: a write that lands in a stream after that stream
+was read or rechecked is not reflected. The
 context activity section takes the newest rows directly and returns no
 cursor. When a read could not be bounded it adds `history_read` (context:
 `activity_history_read`) with `reason` (`summary_missing`, `summary_invalid`,
 `summary_stale` or `irregular_timestamps` once more than half of the streams
 lack usable regular bounds because they changed or hold timestamps that are not
-canonical millisecond UTC, `read_hooks_active`, or `unwindowed_query` when a
-read with no `--from` bound parsed most streams), `streams_read` and
-`streams_total`; `--stream` carries it on the `meta` record. Bounded reads add
-nothing.
+canonical millisecond UTC, `read_hooks_active`, `unwindowed_query` when a
+read with no `--from` bound parsed most streams, or `window_reaches_most_streams`
+when current bounds still left most streams inside the window), `streams_read`
+and `streams_total`; `--stream` carries it on the `meta` record. Bounded reads
+add nothing. On POSIX the summary file is written owner-only (mode 0600); on
+Windows it inherits the runtime directory's ACL.
 Extensions with read hooks keep the complete read, so every stream read is
 still observed.
 Workspace-scoped mutations to settings, schema, profiles, init state, and

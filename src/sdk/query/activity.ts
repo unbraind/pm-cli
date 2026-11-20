@@ -211,10 +211,12 @@ export interface ActivityHistoryReadReceipt {
    * this read rebuilds them; `irregular_timestamps`: most streams hold
    * timestamps that are not canonical millisecond UTC, so bounds cannot
    * exclude them; `read_hooks_active`: an extension observes every stream
-   * read; `unwindowed_query`: no `--from` bound, so every stream can
-   * contribute (add `--from` to bound the read).
+   * read; `unwindowed_query`: no `--from` bound and most streams were parsed
+   * (add `--from` to bound the read); `window_reaches_most_streams`: the
+   * bounds were current but the window (or, for recent rows, a clock pinned
+   * before most streams' newest entries) still reached most streams.
    */
-  reason: HistoryStreamSummaryFallback | "unwindowed_query";
+  reason: HistoryStreamSummaryFallback | "unwindowed_query" | "window_reaches_most_streams";
   /** History streams parsed by this read. */
   streams_read: number;
   /** History streams present when the read began. */
@@ -549,6 +551,8 @@ interface ActivityStreamRead {
   summary: HistoryStreamSummarySession;
   files: string[];
   streamsRead: number;
+  /** Skipped streams whose bounds went stale while the read ran. */
+  revalidatedStale: number;
 }
 
 async function openActivityStreamRead(
@@ -563,7 +567,15 @@ async function openActivityStreamRead(
     summary: await openHistoryStreamSummary({ pmRoot, historyDir, files }),
     files,
     streamsRead: 0,
+    revalidatedStale: 0,
   };
+}
+
+/** Revalidate skipped streams and count the ones whose bounds went stale. */
+async function revalidateSkipped(read: ActivityStreamRead, files: string[]): Promise<Set<string>> {
+  const changed = await read.summary.revalidate(files);
+  read.revalidatedStale = changed.length;
+  return new Set(changed);
 }
 
 /** Parse one stream completely, record its bounds, and append its matching rows. */
@@ -595,12 +607,17 @@ function activityHistoryReadReceipt(
   read: ActivityStreamRead,
   unwindowed: boolean,
 ): ActivityHistoryReadReceipt | undefined {
-  const { summary, files, streamsRead } = read;
-  // Without a lower bound the cost follows the archive only when most streams
-  // were parsed; an upper bound before most of the history is still bounded.
-  const reason =
-    summary.fallback ??
-    (summary.enabled && unwindowed && streamsRead * 2 > files.length ? "unwindowed_query" : undefined);
+  const { summary, files, streamsRead, revalidatedStale } = read;
+  // A healthy summary still discloses a read that parsed most streams: its
+  // cost followed the archive because the query, not the summary, reached it,
+  // unless most of those reads were forced by bounds that went stale mid-read.
+  const parsedMost = summary.enabled && streamsRead * 2 > files.length;
+  const queryReason = revalidatedStale * 2 > files.length
+    ? "summary_stale"
+    : unwindowed
+      ? "unwindowed_query"
+      : "window_reaches_most_streams";
+  const reason = summary.fallback ?? (parsedMost ? queryReason : undefined);
   return reason === undefined
     ? undefined
     : { reason, streams_read: streamsRead, streams_total: files.length };
@@ -616,12 +633,23 @@ async function collectActivityEntries(
   filters: ActivityFilters,
 ): Promise<{ entries: ActivityEntry[]; history_read?: ActivityHistoryReadReceipt }> {
   const read = await openActivityStreamRead(pmRoot, historyDir, filters);
-  const combined: ActivityEntry[] = [];
-  for (const file of read.files) {
+  // Rows per history file, so streams re-read after revalidation keep file order.
+  const rowsByPosition: ActivityEntry[][] = read.files.map(() => []);
+  const skipped: number[] = [];
+  for (const [position, file] of read.files.entries()) {
     const bounds = read.summary.trusted(file);
-    if (bounds !== undefined && !streamMayMatchWindow(bounds, filters)) continue;
-    await readActivityStream(read, historyDir, file, filters, combined);
+    if (bounds !== undefined && !streamMayMatchWindow(bounds, filters)) {
+      skipped.push(position);
+      continue;
+    }
+    await readActivityStream(read, historyDir, file, filters, rowsByPosition[position]!);
   }
+  const changed = await revalidateSkipped(read, skipped.map((position) => read.files[position]!));
+  for (const position of skipped) {
+    const file = read.files[position]!;
+    if (changed.has(file)) await readActivityStream(read, historyDir, file, filters, rowsByPosition[position]!);
+  }
+  const combined = rowsByPosition.flat();
   await read.summary.commit();
   const receipt = activityHistoryReadReceipt(read, filters.from === undefined);
   return receipt === undefined ? { entries: combined } : { entries: combined, history_read: receipt };
@@ -714,19 +742,23 @@ class RecentActivityPool {
 function partitionRecentActivityStreams(
   read: ActivityStreamRead,
   filters: ActivityFilters,
-): { readFirst: Array<{ file: string; position: number }>; deferred: DeferredActivityStream[] } {
+): { readFirst: Array<{ file: string; position: number }>; deferred: DeferredActivityStream[]; outsideWindow: Array<{ file: string; position: number }> } {
   const readFirst: Array<{ file: string; position: number }> = [];
   const deferred: DeferredActivityStream[] = [];
+  const outsideWindow: Array<{ file: string; position: number }> = [];
   for (const [position, file] of read.files.entries()) {
     const bounds = read.summary.trusted(file);
-    if (bounds !== undefined && !streamMayMatchWindow(bounds, filters)) continue;
+    if (bounds !== undefined && !streamMayMatchWindow(bounds, filters)) {
+      outsideWindow.push({ file, position });
+      continue;
+    }
     if (bounds !== undefined && !bounds.irregular) {
       deferred.push({ file, position, id: historyStreamId(file), newest: bounds.newest! });
     } else {
       readFirst.push({ file, position });
     }
   }
-  return { readFirst, deferred: deferred.sort(compareDeferredStreams) };
+  return { readFirst, deferred: deferred.sort(compareDeferredStreams), outsideWindow };
 }
 
 /**
@@ -741,17 +773,29 @@ async function collectRecentActivityEntries(
   limit: number,
 ): Promise<{ entries: ActivityEntry[]; history_read?: ActivityHistoryReadReceipt }> {
   const read = await openActivityStreamRead(pmRoot, historyDir, filters);
-  const { readFirst, deferred } = partitionRecentActivityStreams(read, filters);
+  const { readFirst, deferred, outsideWindow } = partitionRecentActivityStreams(read, filters);
   const pool = new RecentActivityPool(limit);
   for (const stream of readFirst) {
     await pool.read(read, historyDir, filters, stream);
     pool.cutWhenFull();
   }
   pool.cut();
+  let consumed = 0;
   for (const stream of deferred) {
     if (!pool.admits(stream)) break;
     await pool.read(read, historyDir, filters, stream);
     pool.cutWhenFull();
+    consumed += 1;
+  }
+  // Streams skipped on their bounds that changed while the read ran are read
+  // now; a better cutoff from them can only exclude more, never readmit.
+  const skipped = [...deferred.slice(consumed), ...outsideWindow];
+  const changed = await revalidateSkipped(read, skipped.map(({ file }) => file));
+  for (const stream of skipped) {
+    if (changed.has(stream.file)) {
+      await pool.read(read, historyDir, filters, stream);
+      pool.cutWhenFull();
+    }
   }
   const entries = pool.cut();
   await read.summary.commit();

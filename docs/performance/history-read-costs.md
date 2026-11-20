@@ -12,8 +12,8 @@ linux/x64. Each sample is a fresh CLI process.
 
 | Path | runs | best | p50 | max |
 |---|---:|---:|---:|---:|
-| Bounded (trusted stream bounds) | 5 | 686 ms | 721 ms | 741 ms |
-| Full scan (summary removed before each sample) | 3 | 2158 ms | 2282 ms | 2539 ms |
+| Bounded (trusted stream bounds) | 5 | 1027 ms | 1140 ms | 1478 ms |
+| Full scan (summary removed before each sample) | 3 | 3332 ms | 3578 ms | 3902 ms |
 
 The ceiling is a ratchet: `--update` keeps the committed ceiling when a
 measurement would raise it, unless `--allow-increase <reviewed reason>` is
@@ -23,7 +23,7 @@ The gate (`node scripts/bench/history-read-costs.mjs --check`, part of
 `pnpm quality:static`) fails when the bounded p50 exceeds
 0.6 of the same runner's
 full-scan p50. On a runner whose bare-Node control is within its budget and
-whose full scan exceeds the declared 1442 ms
+whose full scan exceeds the declared 2280 ms
 ceiling plus a 100 ms noise margin, it also fails when
 the bounded p50 exceeds that enforced ceiling. Where the full scan does not
 exceed it, the absolute check could not detect a regression, so it is

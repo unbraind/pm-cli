@@ -3480,13 +3480,15 @@
       "changes": [
         "signature ./sdk:ActivityResult",
         "signature ./sdk:ContextResult",
+        "signature ./sdk:writeFileAtomic",
         "signature ./sdk/core:ContextResult",
         "signature ./sdk/query:ActivityResult",
         "signature ./sdk/query:ContextResult",
-        "signature ./sdk/runtime:ContextResult"
+        "signature ./sdk/runtime:ContextResult",
+        "signature ./sdk/runtime:writeFileAtomic"
       ],
       "package_version": "2026.11.20",
-      "reason": "GH-1664: ActivityResult gains an optional history_read receipt and ContextResult an optional activity_history_read receipt, present only when a read on a tracker with 500 or more history streams could not be bounded; existing fields and values are unchanged"
+      "reason": "GH-1664: ActivityResult gains an optional history_read receipt and ContextResult an optional activity_history_read receipt, present only when a read on a tracker with 500 or more history streams could not be bounded; readRecentActivity and its result types are new query exports; writeFileAtomic gains an optional mode option. Existing fields, values and calls are unchanged"
     }
   ],
   "entrypoints": {
@@ -3773,7 +3775,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityHistoryReadReceipt",
-          "signature": "export interface ActivityHistoryReadReceipt { reason: HistoryStreamSummaryFallback | \"unwindowed_query\"; streams_read: number; streams_total: number; }"
+          "signature": "export interface ActivityHistoryReadReceipt { reason: HistoryStreamSummaryFallback | \"unwindowed_query\" | \"window_reaches_most_streams\"; streams_read: number; streams_total: number; }"
         },
         {
           "classification": "supported",
@@ -24449,7 +24451,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "writeFileAtomic",
-          "signature": "(targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void> | calls: (targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void>"
+          "signature": "(targetPath: string, contents: string, options?: { createParentDirectories?: boolean; mode?: number; }) => Promise<void> | calls: (targetPath: string, contents: string, options?: { createParentDirectories?: boolean; mode?: number; }) => Promise<void>"
         },
         {
           "classification": "advanced_export",
@@ -34469,7 +34471,7 @@
           "classification": "supported",
           "kind": "interface",
           "name": "ActivityHistoryReadReceipt",
-          "signature": "export interface ActivityHistoryReadReceipt { reason: HistoryStreamSummaryFallback | \"unwindowed_query\"; streams_read: number; streams_total: number; }"
+          "signature": "export interface ActivityHistoryReadReceipt { reason: HistoryStreamSummaryFallback | \"unwindowed_query\" | \"window_reaches_most_streams\"; streams_read: number; streams_total: number; }"
         },
         {
           "classification": "supported",
@@ -39989,7 +39991,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "writeFileAtomic",
-          "signature": "(targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void> | calls: (targetPath: string, contents: string, options?: { createParentDirectories?: boolean; }) => Promise<void>"
+          "signature": "(targetPath: string, contents: string, options?: { createParentDirectories?: boolean; mode?: number; }) => Promise<void> | calls: (targetPath: string, contents: string, options?: { createParentDirectories?: boolean; mode?: number; }) => Promise<void>"
         }
       ],
       "types": "dist/sdk/runtime.d.ts"

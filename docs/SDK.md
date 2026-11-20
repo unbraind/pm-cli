@@ -839,8 +839,10 @@ archive. A read that could not be bounded carries
 `history_read: { reason, streams_read, streams_total }`, where `reason` is
 `summary_missing`, `summary_invalid`, `summary_stale` or
 `irregular_timestamps` (more than half of the streams lack usable regular
-bounds, named by the larger cause), `read_hooks_active`, or
-`unwindowed_query` (no `from` bound; pass one to bound the read).
+bounds, named by the larger cause), `read_hooks_active`, `unwindowed_query`
+(no `from` bound and most streams parsed; pass one to bound the read), or
+`window_reaches_most_streams` (current bounds, but the window still reached
+most streams).
 `readRecentActivity({ limit }, global)` returns the newest compact rows (the
 first page of `raw: true`) without totals or a cursor, so it reads only the
 streams those rows come from; `pm context` builds its activity section with it

@@ -1,6 +1,7 @@
 import { appendFile, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   HISTORY_STREAM_SUMMARY_MINIMUM_STREAMS,
@@ -343,6 +344,24 @@ describe("history stream summary (GH-1664)", () => {
     expect((await open(files)).fallback).toBe("summary_stale");
   });
 
+  it("revalidates skipped streams before a read finishes and stops trusting the changed ones", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await writeStream("pm-b.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl", "pm-b.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"], "pm-b.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const session = await open(["pm-a.jsonl", "pm-b.jsonl"]);
+    await appendFile(path.join(historyDir, "pm-b.jsonl"), `${JSON.stringify(entry("2026-11-02T00:00:00.000Z"))}\n`);
+    // An appended stream changed; one never trusted was not skipped on bounds.
+    expect(await session.revalidate(["pm-a.jsonl", "pm-b.jsonl", "pm-gone.jsonl"])).toEqual(["pm-b.jsonl"]);
+    expect(session.trusted("pm-b.jsonl")).toBeUndefined();
+    expect(session.trusted("pm-a.jsonl")).toBeDefined();
+    // A trusted stream deleted while the read ran also changed.
+    await rm(path.join(historyDir, "pm-a.jsonl"));
+    expect(await session.revalidate(["pm-a.jsonl"])).toEqual(["pm-a.jsonl"]);
+    restoreMinimum();
+    restoreMinimum = _testOnly.setMinimumStreams(HISTORY_STREAM_SUMMARY_MINIMUM_STREAMS);
+    expect(await (await open(["pm-a.jsonl"])).revalidate(["pm-a.jsonl"])).toEqual([]);
+  });
+
   it("rejects a well-formed summary whose values changed after it was written", async () => {
     await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z", "2026-11-05T00:00:00.000Z"]);
     await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z", "2026-11-05T00:00:00.000Z"] });
@@ -397,6 +416,21 @@ describe("history stream summary (GH-1664)", () => {
     await rm(pmRoot, { recursive: true, force: true });
     await session.commit();
     await expect(stat(pmRoot)).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it.runIf(process.platform !== "win32")("treats a FIFO at the summary path as invalid instead of waiting for a writer", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+    await mkdir(path.dirname(summaryFile), { recursive: true });
+    execFileSync("mkfifo", [summaryFile]);
+    const session = await open(["pm-a.jsonl"]);
+    expect(session.fallback).toBe("summary_invalid");
+  });
+
+  it.runIf(process.platform !== "win32")("writes the summary owner-only, since it describes streams others may not read", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    expect((await stat(path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH))).mode & 0o777).toBe(0o600);
   });
 
   it("keeps the read successful when the summary cannot be persisted", async () => {

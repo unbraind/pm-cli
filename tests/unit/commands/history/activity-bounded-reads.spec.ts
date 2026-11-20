@@ -4,7 +4,7 @@
  * equal the complete read on the same corpus, including streams rewritten by
  * redaction, compaction, repair and restore.
  */
-import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -19,6 +19,7 @@ import * as historyReadModule from "../../../../src/core/history/read.js";
 import {
   HISTORY_STREAM_SUMMARY_RELATIVE_PATH,
   _testOnly as summaryInternals,
+  openHistoryStreamSummary,
 } from "../../../../src/core/history/stream-summary.js";
 import {
   clearActiveExtensionHooks,
@@ -171,24 +172,30 @@ describe("bounded activity reads (GH-1664)", () => {
       const [live1, live2, live3] = await seedCorpus(context);
       const global = { path: context.pmPath };
       await runActivity({}, global);
-      const mutations: Array<[string, () => Promise<void> | void]> = [
-        ["append", () => { expect(context.runCli(["comments", live3!, "--add", "second pass"]).code).toBe(0); }],
-        ["redaction", () => { expect(context.runCli(["history-redact", live3!, "--literal", "second pass", "--replacement", "[gone]"]).code).toBe(0); }],
-        ["compaction", () => { expect(context.runCli(["history-compact", live1!, "--before", "2"]).code).toBe(0); }],
-        ["restore", () => { const restored = context.runCli(["restore", live3!, "1"]); expect(restored.code, restored.stderr).toBe(0); }],
-        ["update", () => { expect(context.runCli(["update", live2!, "--priority", "0"]).code).toBe(0); }],
-        ["repair", async () => {
+      const mutations: Array<[string, string, () => Promise<void> | void]> = [
+        ["append", live3!, () => { expect(context.runCli(["comments", live3!, "--add", "second pass"]).code).toBe(0); }],
+        ["redaction", live3!, () => { expect(context.runCli(["history-redact", live3!, "--literal", "second pass", "--replacement", "[gone]"]).code).toBe(0); }],
+        ["compaction", live1!, () => { expect(context.runCli(["history-compact", live1!, "--before", "2"]).code).toBe(0); }],
+        ["restore", live3!, () => { const restored = context.runCli(["restore", live3!, "1"]); expect(restored.code, restored.stderr).toBe(0); }],
+        ["update", live2!, () => { expect(context.runCli(["update", live2!, "--priority", "0"]).code).toBe(0); }],
+        ["repair", live3!, async () => {
           await appendFile(path.join(context.pmPath, "history", `${live3!}.jsonl`), "{ torn tail\n");
           const repaired = context.runCli(["history-repair", live3!, "--salvage-tail", "--message", "salvage torn tail"]);
           expect(repaired.code, repaired.stderr).toBe(0);
         }],
-        ["raw append", () => appendFile(path.join(context.pmPath, "history", "pm-old1.jsonl"), `${JSON.stringify(oldEntry(new Date(FIXED_NOW - 1000).toISOString(), "comment_add"))}\n`)],
+        ["raw append", "pm-old1", () => appendFile(path.join(context.pmPath, "history", "pm-old1.jsonl"), `${JSON.stringify(oldEntry(new Date(FIXED_NOW - 1000).toISOString(), "comment_add"))}\n`)],
       ];
-      for (const [label, mutate] of mutations) {
+      const historyDir = path.join(context.pmPath, "history");
+      for (const [label, id, mutate] of mutations) {
         await mutate();
+        // The write path invalidated the stream's bounds without cooperation...
+        const files = (await readdir(historyDir)).filter((file) => file.endsWith(".jsonl"));
+        const session = await openHistoryStreamSummary({ pmRoot: context.pmPath, historyDir, files });
+        expect(session.trusted(`${id}.jsonl`), label).toBeUndefined();
+        // ...so the next digest re-reads exactly that stream.
         const reads = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot");
         await runActivity({}, global);
-        expect(reads.mock.calls.length, label).toBeGreaterThan(0);
+        expect(reads.mock.calls.map(([file]) => path.basename(String(file))), label).toContain(`${id}.jsonl`);
         reads.mockRestore();
         await assertParity(context.pmPath);
       }
@@ -207,6 +214,17 @@ describe("bounded activity reads (GH-1664)", () => {
       expect((await runActivity({ raw: true, limit: "1" }, global)).history_read).toMatchObject({ reason: "unwindowed_query" });
       // An upper bound before most of the archive keeps the read bounded.
       expect((await runActivity({ raw: true, limit: "1", to: "2025-01-01T00:00:00.000Z" }, global)).history_read).toBeUndefined();
+      // Current bounds, but a window that reaches most streams, is disclosed too.
+      expect((await runActivity({ from: "2020-01-01T00:00:00.000Z" }, global)).history_read).toMatchObject({ reason: "window_reaches_most_streams" });
+      // A clock pinned between most streams' oldest and newest entries defeats
+      // the newest-first cut: every straddling stream can still outrank it.
+      for (let index = 0; index < 12; index += 1) {
+        await writeStream(context.pmPath, `pm-straddle-${String(index).padStart(2, "0")}`, [oldEntry("2024-01-01T00:00:00.000Z", "create"), oldEntry("2026-01-01T00:00:00.000Z")]);
+      }
+      await runActivity({}, global);
+      vi.setSystemTime(Date.parse("2025-01-01T00:00:00.000Z"));
+      expect((await readRecentActivity({ limit: 1 }, global)).history_read).toMatchObject({ reason: "window_reaches_most_streams" });
+      vi.setSystemTime(FIXED_NOW);
 
       const summaryFile = path.join(context.pmPath, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
       await writeFile(summaryFile, "{ torn");
@@ -239,6 +257,56 @@ describe("bounded activity reads (GH-1664)", () => {
       expect(bounded).toMatchObject({ code: "history_json_invalid" });
       expect(complete).toMatchObject({ code: "history_json_invalid", message: (bounded as Error).message });
       await expect(readRecentActivity({ limit: 1 }, global)).rejects.toMatchObject({ code: "history_json_invalid" });
+    });
+  });
+
+  it("re-reads a skipped stream that changed while the read ran, in both read paths", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await runActivity({}, global);
+      const fresh = new Date(FIXED_NOW - 200).toISOString();
+      const actual = historyReadModule.readIdentifiedHistorySnapshot;
+      const appendDuringRead = (stream: string) => {
+        let appended = false;
+        return vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot").mockImplementation(async (historyPath, itemId) => {
+          // Another writer appends to a stream the read already skipped on its bounds.
+          if (!appended) {
+            appended = true;
+            await appendFile(path.join(context.pmPath, "history", `${stream}.jsonl`), `${JSON.stringify(oldEntry(fresh, "comment_add", "spec-concurrent"))}\n`);
+          }
+          return actual(historyPath, itemId);
+        });
+      };
+      // Window path: pm-old2 is outside the digest window until the append lands.
+      const windowSpy = appendDuringRead("pm-old2");
+      const digest = await runActivity({ raw: true, from: "-1h", limit: "50" }, global);
+      windowSpy.mockRestore();
+      expect(digest.compact_activity!.some((row) => row.id === "pm-old2" && row.author === "spec-concurrent")).toBe(true);
+      // Recent path: pm-old1's stale newest bound could not outrank the cutoff.
+      await runActivity({}, global);
+      const recentSpy = appendDuringRead("pm-old1");
+      const recent = await readRecentActivity({ limit: 1 }, global);
+      recentSpy.mockRestore();
+      expect(recent.rows).toEqual([expect.objectContaining({ id: "pm-old1", author: "spec-concurrent" })]);
+      await assertParity(context.pmPath);
+
+      // A bulk rewrite of most skipped streams during the read is stale bounds,
+      // not a wide window.
+      const archive = Array.from({ length: 16 }, (_, index) => `pm-archive-${String(index).padStart(2, "0")}`);
+      for (const id of archive) await writeStream(context.pmPath, id, [oldEntry("2024-01-01T00:00:00.000Z", "create")]);
+      await runActivity({}, global);
+      let rewritten = false;
+      const bulkSpy = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot").mockImplementation(async (historyPath, itemId) => {
+        if (!rewritten) {
+          rewritten = true;
+          for (const id of archive) await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), `${JSON.stringify(oldEntry("2024-01-02T00:00:00.000Z"))}\n`);
+        }
+        return actual(historyPath, itemId);
+      });
+      const bulk = await runActivity({}, global);
+      bulkSpy.mockRestore();
+      expect(bulk.history_read).toMatchObject({ reason: "summary_stale" });
     });
   });
 
