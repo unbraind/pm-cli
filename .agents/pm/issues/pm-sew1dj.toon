@@ -6,24 +6,26 @@ status: closed
 priority: 2
 tags[6]: activity,crash,history,provenance,robustness,sentry
 created_at: "2026-11-20T11:44:46.491Z"
-updated_at: "2026-11-20T12:31:06.923Z"
+updated_at: "2026-11-20T14:31:22.483Z"
 closed_at: "2026-11-20T12:31:04.746Z"
 completed_at: "2026-11-20T12:31:04.746Z"
 author: "harness:claude-code"
 estimated_minutes: 30
-acceptance_criteria: "A recorded agent_harness that is not a string resolves as unresolved instead of throwing, for runActivity in every mode, readRecentActivity, provenance projection and summaries; pm activity --raw returns the malformed row; a spec reproduces the crash shape"
+acceptance_criteria: "A recorded agent_harness that is not a string is ignored rather than trimmed: the author's vocabulary alias resolves the harness when one matches (harness_source vocabulary), and the harness is otherwise unresolved; runActivity in every mode, readRecentActivity, provenance projection and summaries return the row instead of throwing; pm activity --raw returns the malformed row; a spec reproduces the crash shape"
 parent: pm-33cw
 risk: low
 confidence: high
 severity: medium
 repro_steps: "pm init; write a history entry with agent_harness: 42 to .agents/pm/history/pm-x.jsonl; run pm activity --raw --limit 3 --json"
 resolution: "resolveCanonicalHarness in src/sdk/history-provenance.ts requires a string before trimming, so runActivity in every mode, readRecentActivity, provenance projection and summaries return the malformed row with harness_source unresolved"
-expected_result: A malformed provenance field is reported as unresolved provenance
+expected_result: "A malformed recorded harness falls back to vocabulary resolution, or to unresolved provenance when no alias matches"
 actual_result: "The spec writes agent_harness 42 and gets the row from raw, recent and provenance reads, where the released 2026.11.20 build exits 1 with unknown_error"
 affected_version: 2026.11.20
 component: activity
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1664,discovered_from,"2026-11-20T11:44:46.491Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-20T14:31:22.482Z","harness:claude-code","CodeRabbit (review of 1b1bd929c) pointed out that the close text overstated the outcome. A non-string recorded harness is ignored, so an author with a vocabulary alias still resolves as harness_source vocabulary; unresolved applies only when no alias matches. The acceptance criteria and expected result now say so. The spec's author has no alias, so its unresolved assertion is that fallback."
 files[2]{path,scope,note}:
   src/sdk/history-provenance.ts,project,resolveCanonicalHarness treats a non-string recorded harness as unresolved
   tests/unit/commands/history/activity-bounded-reads.spec.ts,project,"raw, recent and provenance reads return the malformed row"

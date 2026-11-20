@@ -1,0 +1,40 @@
+id: pm-55jxhy
+title: "Move contributor-only testing docs, benchmark reports and two repository-only pages out of the npm tarball to restore publication headroom for bounded activity reads"
+description: "Tranche of pm-998juj for PR #1761 (pm-gh1664). With the bounded-activity bundle the base distribution measured 20,044,200 of 20,000,000 B in CI (main was 19,992,307 B locally, 7.7 KB headroom). Measured cut: (1) docs/TESTING.md is split. The product half (linked tests, pm context modes, source workspace modes, command trust, assertions, background runs) stays packaged at 26.2 KB. The 16 sections about this repository's own checks (standard local checks, CI layout and retries, coverage governance, quality gates, published-workspace compatibility, release readiness, contract snapshots) move verbatim to the new repository-only docs/REPOSITORY_TESTING.md (36.4 KB). (2) docs/performance/** is excluded entirely; only its JSON was excluded before, and the four generated benchmark reports were packaged. (3) docs/QUALITY_EVIDENCE.md (this repository's release-acceptance and test-strength evidence) and docs/MCP_2026_07_28_CONFORMANCE.md (a matrix whose every owner link resolves only against this tracker) are excluded. Every packaged page that linked them now uses a canonical GitHub URL marked repository-only: TESTING.md, README.md, SDK.md, PERFORMANCE.md, CONTRIBUTING.md, and the pm-sdk and pm-test-audit skills. scripts/release/docs-reachability-exceptions.json records each reason, and docs/README.md now indexes HISTORY_RECOVERY.md, whose only inbound link was in a moved section. docs/agent-task-token-baseline.json and agent-task-transcripts.json stay packaged because OUTPUT_TOKEN_ACCOUNTING.md documents the baseline as externally shipped. Duplicate check: pm-998juj owns publication weight; earlier tranches pm-tuxw1i and pm-7ouxrr used the same canonical-URL pattern."
+type: Chore
+status: closed
+priority: 2
+tags[4]: docs,npm,package-size,publication-weight
+created_at: "2026-11-20T14:16:59.196Z"
+updated_at: "2026-11-20T14:27:49.780Z"
+closed_at: "2026-11-20T14:27:48.879Z"
+completed_at: "2026-11-20T14:27:48.879Z"
+author: "harness:claude-code"
+estimated_minutes: 60
+acceptance_criteria: "The clean-build base distribution is below 20,000,000 B with the bounded-activity bundle; no product documentation leaves the package; every packaged link to an excluded page is a canonical GitHub URL marked repository-only; the docs/skills gate, the package boundary audit and the package artifact gate pass"
+parent: pm-998juj
+risk: low
+confidence: high
+resolution: "docs/TESTING.md keeps its product linked-test half. The 16 sections about this repository's own checks moved verbatim to the repository-only docs/REPOSITORY_TESTING.md. package.json excludes docs/performance/**, REPOSITORY_TESTING.md, QUALITY_EVIDENCE.md and MCP_2026_07_28_CONFORMANCE.md. Packaged pages link them by canonical GitHub URL marked repository-only, docs-reachability-exceptions.json records each reason, and docs/README.md indexes HISTORY_RECOVERY.md."
+expected_result: "The clean-build base distribution is below 20,000,000 B with the bounded-activity bundle, and no product documentation leaves the package"
+actual_result: "Clean rebuild: base distribution 19,994,182 of 20,000,000 B (5.8 KB headroom; it was 20,044,200 B in CI before the tranche); the docs/skills gate, the package boundary audit and the package artifact gate pass"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-7ouxrr,related,"2026-11-20T14:16:59.196Z","harness:claude-code","cli:create:dep",detected
+  pm-gh1664,related,"2026-11-20T14:16:59.196Z","harness:claude-code","cli:create:dep",detected
+  pm-tuxw1i,related,"2026-11-20T14:16:59.196Z","harness:claude-code","cli:create:dep",detected
+files[10]{path,scope,note}:
+  .agents/skills/pm-sdk/SKILL.md,project,canonical conformance link
+  .agents/skills/pm-test-audit/SKILL.md,project,canonical quality evidence link
+  CONTRIBUTING.md,project,links Repository Testing
+  docs/PERFORMANCE.md,project,canonical benchmark report links
+  docs/README.md,project,canonical links and the HISTORY_RECOVERY index entry
+  docs/REPOSITORY_TESTING.md,project,new repository-only contributor testing page
+  docs/SDK.md,project,canonical entrypoint report link
+  docs/TESTING.md,project,keeps the product linked-test half
+  package.json,project,"excludes docs/performance/**, REPOSITORY_TESTING, QUALITY_EVIDENCE and the MCP conformance matrix"
+  scripts/release/docs-reachability-exceptions.json,project,reasons for the seven new exceptions
+tests[2]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/release/docs-skills-gate.mjs,project,300,"harness:claude-code","2026-11-20T14:17:11.880Z",local_mutation,fix/bounded-activity-reads,docs reachability and packaged links
+  node scripts/release/package-artifact-gate.mjs,project,600,"harness:claude-code","2026-11-20T14:17:11.880Z",local_mutation,fix/bounded-activity-reads,base distribution under budget
+close_reason: "Repository-only testing docs, benchmark reports and two repository-only pages left the npm tarball, restoring headroom for bounded activity reads"
+body: ""

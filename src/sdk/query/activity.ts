@@ -610,9 +610,11 @@ function activityHistoryReadReceipt(
   const { summary, files, streamsRead, revalidatedStale } = read;
   // A healthy summary still discloses a read that parsed most streams: its
   // cost followed the archive because the query, not the summary, reached it,
-  // unless most of those reads were forced by bounds that went stale mid-read.
+  // unless most streams lacked current bounds at open or went stale mid-read
+  // (disjoint counts: revalidation only sees streams trusted at open).
   const parsedMost = summary.enabled && streamsRead * 2 > files.length;
-  const queryReason = revalidatedStale * 2 > files.length
+  // Stale streams are always read, so compare them with the streams parsed.
+  const queryReason = (summary.staleAtOpen + revalidatedStale) * 2 > streamsRead
     ? "summary_stale"
     : unwindowed
       ? "unwindowed_query"
@@ -1036,9 +1038,11 @@ export async function runActivity(
 }
 
 /**
- * Read the newest compact activity rows without a page cursor or totals, so
- * the read is bounded by the rows returned instead of the history archive.
- * Rows equal the first page of `pm activity --raw --limit <limit>`.
+ * Read the newest compact activity rows without a page cursor or totals.
+ * Rows equal the first page of `pm activity --raw --limit <limit>`. The limit
+ * caps the rows returned, not the history parsed: trusted stream bounds let
+ * the read skip streams that cannot reach those rows, but a tracker under the
+ * summary threshold (500 streams) parses every stream, with no receipt.
  */
 export async function readRecentActivity(
   options: { limit: number },

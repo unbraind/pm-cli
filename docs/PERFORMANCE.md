@@ -57,11 +57,11 @@ For a fast, deterministic one-item cold-start floor covering `get`, `list`,
 pnpm benchmark:transport:check
 ```
 
-The committed [CLI transport report](performance/cli-transport-overhead.md)
+The committed [CLI transport report](https://github.com/unbraind/pm-cli/blob/main/docs/performance/cli-transport-overhead.md)
 contains best/p50/p95 measurements and a stage breakdown. SDK entrypoint import
 costs are independently gated with `pnpm benchmark:sdk-entrypoints:check` and
 documented in the
-[SDK entrypoint report](performance/sdk-entrypoint-import-costs.md).
+[SDK entrypoint report](https://github.com/unbraind/pm-cli/blob/main/docs/performance/sdk-entrypoint-import-costs.md). The committed reports under `docs/performance/` are repository-only and excluded from npm.
 
 Recent-activity reads are gated on history volume rather than item count
 (GH-1664). `node scripts/bench/history-read-costs.mjs --check`, part of
@@ -72,7 +72,7 @@ sample. The bounded p50 must stay below 0.6 of the same runner's full-scan p50;
 on a qualified runner whose full scan exceeds the declared ceiling it must also
 stay below that ceiling, and elsewhere the absolute check is reported as
 unverified. See the
-[history read report](performance/history-read-costs.md). The bounds live in
+[history read report](https://github.com/unbraind/pm-cli/blob/main/docs/performance/history-read-costs.md). The bounds live in
 `runtime/history-stream-summary.json`, a checksummed derived file trusted per
 stream only while the stream's stat signature (device, inode, size, mtime,
 ctime and the reader's credentials) is unchanged; it is safe to delete, and trackers

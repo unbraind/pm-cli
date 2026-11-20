@@ -1571,8 +1571,11 @@ canonical millisecond UTC, `read_hooks_active`, `unwindowed_query` when a
 read with no `--from` bound parsed most streams, or `window_reaches_most_streams`
 when current bounds still left most streams inside the window), `streams_read`
 and `streams_total`; `--stream` carries it on the `meta` record. Bounded reads
-add nothing. On POSIX the summary file is written owner-only (mode 0600); on
-Windows it inherits the runtime directory's ACL.
+add nothing. On POSIX the summary file is written owner-only (mode 0600) and is
+trusted only when the reading user owns it and no one else can write it; on
+Windows it inherits the runtime directory's ACL. A summary in a redirected
+`runtime/` (symbolic link or junction), a link, a non-regular file or an
+oversized file is never read or written.
 Extensions with read hooks keep the complete read, so every stream read is
 still observed.
 Workspace-scoped mutations to settings, schema, profiles, init state, and

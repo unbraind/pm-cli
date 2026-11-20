@@ -128,9 +128,17 @@ export async function enforceHistoryStreamPolicyForItems(
   // probes are independent reads (a whole-tracker read checks thousands of
   // streams), so they run in bounded parallel chunks; refusal and creation
   // stay in sorted id order either way.
-  const candidates = hasActiveOnWriteHooks() ? ids : await probeMissingStreams(params.pmRoot, ids);
+  const sequential = hasActiveOnWriteHooks();
+  const candidates = sequential ? ids : await probeMissingStreams(params.pmRoot, ids);
+  // After creating streams, re-probe the ones the bulk probe found present, so
+  // a stream removed meanwhile still gets the missing-stream policy. With
+  // nothing missing there is nothing to re-probe, keeping the fast path.
+  const probedMissing = new Set(candidates);
+  const recheck = sequential || candidates.length === 0
+    ? []
+    : ids.filter((itemId) => !probedMissing.has(itemId));
 
-  for (const itemId of candidates) {
+  for (const itemId of [...candidates, ...recheck]) {
     const historyPath = getHistoryPath(params.pmRoot, itemId);
     // Another writer may have created the stream since the bulk probe; only
     // an actual creation is reported.

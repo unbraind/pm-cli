@@ -1,4 +1,4 @@
-import { appendFile, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import fsPromises, { appendFile, mkdir, mkdtemp, readFile, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -284,6 +284,35 @@ describe("history stream summary (GH-1664)", () => {
     expect(_testOnly.signatureOf(base as never, undefined)).toBeUndefined();
   });
 
+  it("keeps every record small with a fixed-length reader digest", () => {
+    const many = `uid:1000:gid:1000:groups:${Array.from({ length: 125 }, (_, index) => 1_000_000_000 + index).join(",")}`;
+    expect(_testOnly.readerDigest(many)).toMatch(/^[0-9a-f]{16}$/u);
+    expect(_testOnly.readerDigest(many)).toBe(_testOnly.readerDigest(many));
+    expect(_testOnly.readerDigest(`${many},7`)).not.toBe(_testOnly.readerDigest(many));
+    expect(_testOnly.readerDigest(undefined)).toBeUndefined();
+  });
+
+  it("reads the summary only up to its size cap, even if it grew after the stat", async () => {
+    const file = path.join(pmRoot, "capped.json");
+    await writeFile(file, "x".repeat(10));
+    const handle = await fsPromises.open(file, "r");
+    try {
+      expect(await _testOnly.readAtMost(handle, 10)).toBe("x".repeat(10));
+      await expect(_testOnly.readAtMost(handle, 9)).rejects.toThrow("grew past its size cap");
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it.runIf(process.platform !== "win32")("never follows a summary file that is a symbolic link", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const summaryFile = path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+    await rename(summaryFile, path.join(pmRoot, "elsewhere.json"));
+    await symlink(path.join(pmRoot, "elsewhere.json"), summaryFile);
+    expect((await open(["pm-a.jsonl"])).fallback).toBe("summary_invalid");
+  });
+
   it("identifies the reader by user id, by account name without one, and refuses trust without either", async () => {
     // Effective ids decide file access, so a host that dropped privileges differs.
     const posix = { geteuid: () => 1001, getegid: () => 100, getgroups: () => [27, 100, 4, 27] };
@@ -431,6 +460,38 @@ describe("history stream summary (GH-1664)", () => {
     await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
     await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
     expect((await stat(path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH))).mode & 0o777).toBe(0o600);
+  });
+
+  it("trusts only an unshared, plausibly sized summary the reader owns and no one else can write", () => {
+    const owned = { isFile: () => true, nlink: 1, size: 100, uid: 1000, mode: 0o100600 };
+    expect(_testOnly.summaryByteCap(2)).toBe(4096 + 2 * 1024);
+    expect(_testOnly.isTrustedSummaryFile(owned as never, 2, 1000)).toBe(true);
+    expect(_testOnly.isTrustedSummaryFile({ ...owned, uid: 1001 } as never, 2, 1000)).toBe(false);
+    expect(_testOnly.isTrustedSummaryFile({ ...owned, mode: 0o100620 } as never, 2, 1000)).toBe(false);
+    expect(_testOnly.isTrustedSummaryFile({ ...owned, mode: 0o100602 } as never, 2, 1000)).toBe(false);
+    expect(_testOnly.isTrustedSummaryFile({ ...owned, nlink: 2 } as never, 2, 1000)).toBe(false);
+    expect(_testOnly.isTrustedSummaryFile({ ...owned, size: 1_000_000 } as never, 2, 1000)).toBe(false);
+    expect(_testOnly.isTrustedSummaryFile({ ...owned, isFile: () => false } as never, 2, 1000)).toBe(false);
+    // Without an effective user id (Windows) ownership cannot be judged.
+    expect(_testOnly.isTrustedSummaryFile({ ...owned, uid: 0, mode: 0o100666 } as never, 2, undefined)).toBe(true);
+  });
+
+  it.runIf(process.platform !== "win32")("never reads or writes the summary through a redirected runtime directory", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const elsewhere = await mkdtemp(path.join(os.tmpdir(), "pm-stream-summary-elsewhere-"));
+    try {
+      await rename(path.join(pmRoot, "runtime"), path.join(elsewhere, "runtime"));
+      await symlink(path.join(elsewhere, "runtime"), path.join(pmRoot, "runtime"));
+      const session = await open(["pm-a.jsonl"]);
+      expect(session.fallback).toBe("summary_invalid");
+      session.record("pm-a.jsonl", snapshotOf([entry("2026-11-01T00:00:00.000Z")], await sourceOf("pm-a.jsonl"), await sizeOf("pm-a.jsonl")));
+      const before = await stat(path.join(elsewhere, "runtime", "history-stream-summary.json"));
+      await session.commit();
+      expect((await stat(path.join(elsewhere, "runtime", "history-stream-summary.json"))).mtimeMs).toBe(before.mtimeMs);
+    } finally {
+      await rm(elsewhere, { recursive: true, force: true });
+    }
   });
 
   it("keeps the read successful when the summary cannot be persisted", async () => {

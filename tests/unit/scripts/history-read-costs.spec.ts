@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   DEFAULT_OPTIONS,
   ORIENT_ARGS,
+  RELEASE_NODE_MAJOR,
   absoluteCeilingDiscriminates,
   buildHistoryReadBudgets,
   buildHistoryReadReport,
@@ -29,7 +30,7 @@ async function temporaryRoot(prefix: string): Promise<string> {
 function report() {
   return {
     schema_version: 1,
-    node_version: "v26.13.1",
+    node_version: "v24.22.3",
     platform: "linux",
     architecture: "x64",
     command: `pm ${ORIENT_ARGS.join(" ")}`,
@@ -222,7 +223,7 @@ describe("history read cost benchmark (GH-1664)", () => {
     const root = await temporaryRoot("pm-history-read-budgets-");
     const budgetPath = path.join(root, "budgets.json");
     const documentationPath = path.join(root, "docs", "history-read-costs.md");
-    await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => report() }))
+    await expect(main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => report() }))
       .resolves.toMatchObject({ mode: "update", violations: [] });
     expect(JSON.parse(await readFile(budgetPath, "utf8")).orient_three_rows.max_p50_ms).toBe(2_000);
     expect(await readFile(documentationPath, "utf8")).toContain("# History read costs");
@@ -243,7 +244,7 @@ describe("history read cost benchmark (GH-1664)", () => {
     // An update refuses a ceiling its own full scan does not exceed.
     const undiscriminating = report();
     undiscriminating.full_scan.p50_ms = 2_050;
-    await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => undiscriminating }))
+    await expect(main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => undiscriminating }))
       .rejects.toMatchObject({ violations: [expect.stringContaining("negative control: full-scan p50 2050ms")] });
 
     const regressed = report();
@@ -260,12 +261,12 @@ describe("history read cost benchmark (GH-1664)", () => {
     const root = await temporaryRoot("pm-history-read-ratchet-");
     const budgetPath = path.join(root, "budgets.json");
     const documentationPath = path.join(root, "doc.md");
-    await main(["--update"], { budgetPath, documentationPath, buildReport: async () => report() });
+    await main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => report() });
     const slower = report();
     slower.bounded.p50_ms = 1_200;
-    await main(["--update"], { budgetPath, documentationPath, buildReport: async () => slower });
+    await main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => slower });
     expect(JSON.parse(await readFile(budgetPath, "utf8")).orient_three_rows.max_p50_ms).toBe(2_000);
-    await main(["--update", "--allow-increase", "reviewed runner image change"], { budgetPath, documentationPath, buildReport: async () => slower });
+    await main(["--update", "--allow-increase", "reviewed runner image change"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => slower });
     expect(JSON.parse(await readFile(budgetPath, "utf8")).orient_three_rows.max_p50_ms).toBe(2_400);
     expect(await readFile(documentationPath, "utf8")).toContain("--allow-increase <reviewed reason>");
     for (const argv of [["--check", "--allow-increase", "why"], ["--update", "--allow-increase"], ["--update", "--allow-increase", "--check"]]) {
@@ -273,19 +274,34 @@ describe("history read cost benchmark (GH-1664)", () => {
     }
   });
 
+  it("calibrates only on the release Node major, which matches the release workflow pin", async () => {
+    const release = await readFile(path.resolve(".github/workflows/release.yml"), "utf8");
+    expect(release).toContain(`node-version: ${RELEASE_NODE_MAJOR}`);
+    const root = await temporaryRoot("pm-history-read-major-");
+    const budgetPath = path.join(root, "budgets.json");
+    let measured = false;
+    await expect(main(["--update"], { nodeVersion: "v26.13.1", budgetPath, documentationPath: path.join(root, "doc.md"), buildReport: async () => { measured = true; return report(); } }))
+      .rejects.toThrow("calibrated on Node 24, the release major; this runtime is v26.13.1");
+    // The refusal comes before the fixture is built or any sample runs.
+    expect(measured).toBe(false);
+    await expect(stat(budgetPath)).rejects.toMatchObject({ code: "ENOENT" });
+    // Checks run on any supported major.
+    await expect(main(["--check"], { buildReport: async () => ({ ...report(), node_version: "v26.13.1" }) })).resolves.toMatchObject({ mode: "check" });
+  });
+
   it("refuses an update from an unqualified runner or a measurement that violates its own gate", async () => {
     const root = await temporaryRoot("pm-history-read-update-");
     const budgetPath = path.join(root, "budgets.json");
     const documentationPath = path.join(root, "doc.md");
-    await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => ({ ...report(), baseline: { runs: 5, p50_ms: 9_999 } }) }))
+    await expect(main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => ({ ...report(), baseline: { runs: 5, p50_ms: 9_999 } }) }))
       .rejects.toMatchObject({ code: "benchmark_runner_unqualified" });
     const flat = report();
     flat.full_scan.p50_ms = 1_100;
-    await expect(main(["--update"], { budgetPath, documentationPath, buildReport: async () => flat }))
+    await expect(main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => flat }))
       .rejects.toMatchObject({ code: "benchmark_product_budget_exceeded" });
     await expect(stat(budgetPath)).rejects.toMatchObject({ code: "ENOENT" });
     await expect(main([], { buildReport: async () => report() })).rejects.toThrow("Usage:");
-    await expect(main(["--update", "--check"], { buildReport: async () => report() })).rejects.toThrow("Usage:");
+    await expect(main(["--update", "--check"], { nodeVersion: "v24.22.3", buildReport: async () => report() })).rejects.toThrow("Usage:");
     // The committed budget accepts a report inside its declared ceiling.
     await expect(main(["--check"], { buildReport: async () => report() })).resolves.toMatchObject({ absolute_admission: "passed" });
   });

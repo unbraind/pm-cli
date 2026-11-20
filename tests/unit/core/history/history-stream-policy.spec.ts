@@ -107,6 +107,29 @@ describe("history stream policy probes (GH-1664)", () => {
     await expect(stat(getHistoryPath(pmRoot, "pm-a"))).resolves.toBeTruthy();
   });
 
+  it("re-probes streams the bulk probe found present once it had to create one", async () => {
+    const pmRoot = await trackerRoot();
+    await writeFile(getHistoryPath(pmRoot, "pm-c"), "");
+    const actual = fsUtils.pathExists;
+    let removed = false;
+    vi.spyOn(fsUtils, "pathExists").mockImplementation(async (target: string) => {
+      // Another process removes pm-c after the bulk probe saw it, while pm-a is created.
+      if (!removed && target.endsWith("pm-a.jsonl") && (await actual(getHistoryPath(pmRoot, "pm-c")))) {
+        const present = await actual(target);
+        if (!present) {
+          removed = true;
+          await rm(getHistoryPath(pmRoot, "pm-c"));
+        }
+        return present;
+      }
+      return actual(target);
+    });
+    const result = await enforceHistoryStreamPolicyForItems({ pmRoot, settings: settings("auto_create"), itemIds: ["pm-a", "pm-c"], commandLabel: "activity" });
+    expect(removed).toBe(true);
+    expect(result.auto_created_ids).toEqual(["pm-a", "pm-c"]);
+    await expect(stat(getHistoryPath(pmRoot, "pm-c"))).resolves.toBeTruthy();
+  });
+
   it("probes beyond one concurrency chunk and refuses the first missing stream under strict_error", async () => {
     const pmRoot = await trackerRoot();
     const ids = Array.from({ length: 130 }, (_, index) => `pm-${String(index).padStart(3, "0")}`);

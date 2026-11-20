@@ -22,7 +22,7 @@ pm guide release --json
 | New user                            | [Quickstart](QUICKSTART.md)                 | [Command Reference](COMMANDS.md)                                                                                                                               |
 | New maintainer                      | [Onboarding](ONBOARDING.md)                 | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md), [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm)                                                                                |
 | Coding agent                        | [Agent Guide](AGENT_GUIDE.md)               | [Configuration](CONFIGURATION.md), then command help                                                                                                           |
-| Maintainer                          | [Contributing](../CONTRIBUTING.md)          | [Testing](TESTING.md), [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm), [Architecture](ARCHITECTURE.md)                                                                              |
+| Maintainer                          | [Contributing](../CONTRIBUTING.md)          | [Testing](TESTING.md), [Repository Testing](https://github.com/unbraind/pm-cli/blob/main/docs/REPOSITORY_TESTING.md) (repository-only, excluded from npm), [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm), [Architecture](ARCHITECTURE.md)                                                                              |
 | Package author                      | [Packages and Extensions](EXTENSIONS.md)    | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md)                                                                                       |
 | Codex or ChatGPT plugin implementer | [Codex Plugin](CODEX_PLUGIN.md)             | [Native ChatGPT and Codex Plugin Implementation Plan](https://github.com/unbraind/pm-cli/blob/main/docs/CHATGPT_CODEX_PLUGIN_IMPLEMENTATION.md) (repository-only, excluded from npm)                                                                  |
 | Codex user                          | [Codex Plugin](CODEX_PLUGIN.md)             | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md)                                                                                           |
@@ -43,7 +43,8 @@ pm guide release --json
 - [CLI Scripting Contract](SCRIPTING.md) - exit codes, flat mutation receipts versus read envelopes, stdout/stderr boundaries, stable JSON fields, uniform OR filters, and shell composition recipes.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
 - [Semantic Batching and Retrieval Quality](SEARCH_QUALITY.md) - independent request bounds, execution receipts, and per-query quality floors.
-- [Testing](TESTING.md) - sandbox-safe local tests and linked-test orchestration.
+- [Testing](TESTING.md) - sandbox-safe linked-test orchestration.
+- [Repository Testing](https://github.com/unbraind/pm-cli/blob/main/docs/REPOSITORY_TESTING.md) - this repository's own local checks, CI layout, coverage governance and release gates (repository-only, excluded from npm).
 - [Faithful Package Acceptance](PACKAGE_GATE_ACCEPTANCE.md) - self-isolating package gates, independent Git snapshots, native diagnostics and isolated timing admission.
 - [Completion Portability and Bounded Replication Checks](VALIDATION_PORTABILITY.md) - literal Bash choices across versions and locales, and semantic Git diff collection.
 - [Build and Release Acceptance](BUILD_AND_RELEASE_ACCEPTANCE.md) - complete-build leases and cross-platform registry installation controls.
@@ -56,7 +57,7 @@ pm guide release --json
 - [SDK Action and Boundary Conformance](SDK_ACTION_CONFORMANCE.md) - derived CLI/SDK/MCP action vocabulary, public-import ratchets, intent budget diagnostics, and package-runner proof.
 - [MCP 2026-07-28 Protocol Decision](MCP_2026_07_28.md) - stateless request metadata, discovery, result envelopes, explicit legacy boundary, and migration policy.
 - [Progressive Tool Discovery](PROGRESSIVE_TOOL_DISCOVERY.md) - opt-in bounded MCP catalogs, public SDK ranking and pagination, canonical results, and compatibility isolation.
-- [MCP 2026-07-28 Conformance Matrix](MCP_2026_07_28_CONFORMANCE.md) - official revision changes mapped to canonical owners and executable evidence.
+- [MCP 2026-07-28 Conformance Matrix](https://github.com/unbraind/pm-cli/blob/main/docs/MCP_2026_07_28_CONFORMANCE.md) - official revision changes mapped to canonical owners and executable evidence (repository-only, excluded from npm).
 - [MCP Interaction and Task SDK](SDK_MCP_INTERACTIONS.md) - public MRTR continuation, cache/schema validation, and durable task-store contracts.
 - [MCP Skills and Apps](MCP_SKILLS_AND_APPS.md) - negotiated draft workflow discovery, stable interactive views, digests, provenance, accessibility, and trust boundaries.
 - [MCP Remote Transport, Authorization, and Migration](MCP_REMOTE_TRANSPORT_SECURITY.md) - Streamable HTTP operation, subscriptions, OAuth and trace boundaries, threat model, and deprecated-feature ratchet.
@@ -76,6 +77,7 @@ pm guide release --json
 - [History Algorithms and Detached Attestations](HISTORY_ATTESTATION.md) - named record digests, portable exact-byte proofs, and read-only verification.
 - [History-derived Governance Repair](HISTORY_GOVERNANCE_REPAIR.md) - verified closure timestamps and typed issue-code lineage.
 - [History Maintenance and Recovery](HISTORY_MAINTENANCE.md) - native history commands, permanent aliases, shared SDK transforms, and transactional recovery.
+- [History Durability and Recovery](HISTORY_RECOVERY.md) - history-only lifecycle reconstruction and recovery contracts.
 - [Agent Recovery and Guidance](AGENT_RECOVERY_AND_GUIDANCE.md) - policy refusal evidence, canonical help, and managed instruction freshness.
 - [Declarative Workflow Policies](WORKFLOW_POLICIES.md) - portable lifecycle requirements, independent approvals, and completeness reports.
 - [Mutation Integrity](MUTATION_INTEGRITY.md) - shared CLI/SDK/MCP author, secret, append-only disposition, and stale-work guardrails.

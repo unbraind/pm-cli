@@ -14,12 +14,12 @@
  * the next bounded read, and persistence failures never fail that read.
  */
 import { createHash } from "node:crypto";
-import fs from "node:fs/promises";
+import fs, { type FileHandle } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { BigIntStats } from "node:fs";
+import type { BigIntStats, Stats } from "node:fs";
 import { hasActiveOnReadHooks } from "../extensions/index.js";
-import { isFileMissingError, readRegularFile, writeFileAtomic } from "../fs/fs-utils.js";
+import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import type { HistoryEntry } from "../../types/index.js";
 import type { IdentifiedHistoryStreamSnapshot } from "./read.js";
 
@@ -45,7 +45,15 @@ let minimumStreams = HISTORY_STREAM_SUMMARY_MINIMUM_STREAMS;
 let wallClockMs: () => number = () => Date.now();
 // Read once per summary session, never cached for the process: a long-lived
 // SDK host can change its effective credentials between reads.
-let readerIdentity: () => string | undefined = () => readerIdentityOf(process, os.userInfo);
+let readerIdentity: () => string | undefined = () => readerDigest(readerIdentityOf(process, os.userInfo));
+
+/**
+ * A fixed-length digest of the reader identity, so every record stays small
+ * however many supplementary groups the account has.
+ */
+function readerDigest(identity: string | undefined): string | undefined {
+  return identity === undefined ? undefined : createHash("sha256").update(identity).digest("hex").slice(0, 16);
+}
 
 /** The credential sources readerIdentityOf consults; process and os in production. */
 interface ReaderCredentials {
@@ -111,6 +119,8 @@ export interface HistoryStreamSummarySession {
    * read hooks require every stream to be read.
    */
   readonly fallback: HistoryStreamSummaryFallback | undefined;
+  /** Streams without current bounds when the session opened (stale or never recorded). */
+  readonly staleAtOpen: number;
   /** Bounds recorded for the stream's unchanged signature, or undefined when it must be read. */
   trusted(file: string): HistoryStreamBounds | undefined;
   /**
@@ -287,12 +297,64 @@ function parseStoredStream(value: unknown): StoredStream | undefined {
   return areConsistentBounds(bounds) ? { signature, bounds } : undefined;
 }
 
-async function readStoredSummary(pmRoot: string): Promise<StoredSummary> {
+/** Generous per-record allowance plus envelope; a larger file is not a summary of these streams. */
+function summaryByteCap(streamCount: number): number {
+  return 4096 + streamCount * 1024;
+}
+
+/**
+ * Whether an opened summary can be evidence for this reader: an unshared
+ * regular file of plausible size and, on POSIX, owned by the effective user
+ * and writable by no one else, so another account that can write runtime/
+ * cannot author bounds that suppress history it may not alter.
+ */
+function isTrustedSummaryFile(stats: Stats, streamCount: number, euid: number | undefined): boolean {
+  if (!stats.isFile() || stats.nlink !== 1 || stats.size > summaryByteCap(streamCount)) return false;
+  return euid === undefined || (stats.uid === euid && (stats.mode & 0o022) === 0);
+}
+
+/** Whether runtime/ is a real directory, never a symbolic link or junction out of the tracker. */
+async function hasRealRuntimeDirectory(pmRoot: string): Promise<boolean> {
+  return (await fs.lstat(path.join(pmRoot, "runtime"))).isDirectory();
+}
+
+/**
+ * Read the summary only from a trusted file inside a real runtime directory,
+ * opened without following links and non-blocking, so a FIFO, device,
+ * redirected directory or oversized file cannot stall or mislead a read.
+ */
+async function readSummaryText(pmRoot: string, streamCount: number): Promise<string> {
+  if (!(await hasRealRuntimeDirectory(pmRoot))) throw new Error("runtime directory is redirected");
+  // Windows has no O_NOFOLLOW, so the entry itself is checked before opening.
+  if ((await fs.lstat(summaryPath(pmRoot))).isSymbolicLink()) throw new Error("history stream summary is a link");
+  const handle = await fs.open(summaryPath(pmRoot), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);
+  try {
+    if (!isTrustedSummaryFile(await handle.stat(), streamCount, process.geteuid?.())) {
+      throw new Error("history stream summary is not a trusted file");
+    }
+    return await readAtMost(handle, summaryByteCap(streamCount));
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Read the whole file, refusing one that grew past the cap after its stat. */
+async function readAtMost(handle: FileHandle, cap: number): Promise<string> {
+  const buffer = Buffer.alloc(cap + 1);
+  let length = 0;
+  for (;;) {
+    const { bytesRead } = await handle.read(buffer, length, buffer.length - length, length);
+    if (bytesRead === 0) break;
+    length += bytesRead;
+    if (length > cap) throw new Error("history stream summary grew past its size cap");
+  }
+  return buffer.subarray(0, length).toString("utf8");
+}
+
+async function readStoredSummary(pmRoot: string, streamCount: number): Promise<StoredSummary> {
   let raw: string;
   try {
-    // Only a regular file, opened without following links and non-blocking,
-    // so a FIFO or device at the path cannot stall a read of an optional cache.
-    raw = await readRegularFile(summaryPath(pmRoot), new Error("history stream summary is not a regular file"));
+    raw = await readSummaryText(pmRoot, streamCount);
   } catch (error: unknown) {
     return { state: isFileMissingError(error) ? "missing" : "invalid", streams: new Map() };
   }
@@ -363,6 +425,7 @@ function summaryFallback(
 function disabledSession(fallback: HistoryStreamSummaryFallback | undefined): HistoryStreamSummarySession {
   return {
     enabled: false,
+    staleAtOpen: 0,
     fallback,
     trusted: () => undefined,
     record: () => undefined,
@@ -389,7 +452,7 @@ export async function openHistoryStreamSummary(params: {
   const observedAtNs = BigInt(Math.floor(wallClockMs())) * 1_000_000n;
   const reader = readerIdentity();
   const [stored, observed] = await Promise.all([
-    readStoredSummary(params.pmRoot),
+    readStoredSummary(params.pmRoot, params.files.length),
     observeStreams(params.historyDir, params.files, reader),
   ]);
   const next = new Map<string, StoredStream>();
@@ -401,6 +464,7 @@ export async function openHistoryStreamSummary(params: {
   let dirty = false;
   return {
     enabled: true,
+    staleAtOpen: params.files.length - next.size,
     fallback: summaryFallback(stored.state, next, params.files.length),
     trusted: (file) => next.get(file)?.bounds,
     record: (file, { entries, raw_bytes: rawBytes, source }) => {
@@ -431,6 +495,8 @@ export async function openHistoryStreamSummary(params: {
         await fs.mkdir(path.join(params.pmRoot, "runtime")).catch((error: unknown) => {
           if (!isFileExistsError(error)) throw error;
         });
+        // Never write through a redirected runtime directory.
+        if (!(await hasRealRuntimeDirectory(params.pmRoot))) return;
         // Owner-only on POSIX: the bounds describe streams other accounts may
         // not be allowed to read. Windows ignores the mode, and the file
         // inherits the runtime directory's ACL.
@@ -446,6 +512,10 @@ export async function openHistoryStreamSummary(params: {
 /** Test-only seams for the engagement threshold and racy window. */
 export const _testOnly = {
   areConsistentBounds,
+  readAtMost,
+  readerDigest,
+  isTrustedSummaryFile,
+  summaryByteCap,
   readerIdentityOf,
   checksumOf,
   setMinimumStreams,

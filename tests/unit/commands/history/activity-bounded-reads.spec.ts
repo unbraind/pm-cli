@@ -307,6 +307,26 @@ describe("bounded activity reads (GH-1664)", () => {
       const bulk = await runActivity({}, global);
       bulkSpy.mockRestore();
       expect(bulk.history_read).toMatchObject({ reason: "summary_stale" });
+
+      // Streams stale at open and streams that go stale mid-read count together.
+      await runActivity({}, global);
+      const files = (await readdir(path.join(context.pmPath, "history"))).filter((file) => file.endsWith(".jsonl"));
+      const atOpen = archive.slice(0, 8);
+      const midRead = archive.slice(8);
+      expect((atOpen.length + midRead.length) * 2).toBeGreaterThan(files.length);
+      expect(atOpen.length * 2).toBeLessThan(files.length);
+      for (const id of atOpen) await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), `${JSON.stringify(oldEntry("2024-01-03T00:00:00.000Z"))}\n`);
+      let staled = false;
+      const mixedSpy = vi.spyOn(historyReadModule, "readIdentifiedHistorySnapshot").mockImplementation(async (historyPath, itemId) => {
+        if (!staled) {
+          staled = true;
+          for (const id of midRead) await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), `${JSON.stringify(oldEntry("2024-01-04T00:00:00.000Z"))}\n`);
+        }
+        return actual(historyPath, itemId);
+      });
+      const mixed = await runActivity({}, global);
+      mixedSpy.mockRestore();
+      expect(mixed.history_read).toMatchObject({ reason: "summary_stale" });
     });
   });
 

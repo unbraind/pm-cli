@@ -33,6 +33,12 @@ const SUMMARY_RELATIVE_PATH = path.join("runtime", "history-stream-summary.json"
 const MIB = 1024 * 1024;
 const CONTROL_NOISE_MARGIN_MS = 30;
 const LATENCY_NOISE_MARGIN_MS = 100;
+/**
+ * Baselines are calibrated on the Node major pinned by the release and primary
+ * CI workflows (docs/PERFORMANCE.md); newer runtimes stay compatibility targets
+ * and must not rewrite the release baseline.
+ */
+export const RELEASE_NODE_MAJOR = 24;
 /** A fresh ceiling allows this multiple of the measured bounded p50. */
 const CEILING_HEADROOM = 2;
 /** Longer than the summary's two-second racy window, so warm-up bounds persist. */
@@ -309,6 +315,12 @@ function parseArguments(argv) {
 /** Run the benchmark in update or check mode; `options.buildReport` measures the report. */
 export async function main(argv, options) {
   const parsed = parseArguments(argv);
+  // Refuse a calibration on another major before building the fixture.
+  const runtimeVersion = options.nodeVersion ?? process.version;
+  const runtimeMajor = Number(String(runtimeVersion).replace(/^v/u, "").split(".")[0]);
+  if (parsed.mode === "update" && runtimeMajor !== RELEASE_NODE_MAJOR) {
+    throw new Error(`History read budgets are calibrated on Node ${RELEASE_NODE_MAJOR}, the release major; this runtime is ${runtimeVersion}. Run --update under Node ${RELEASE_NODE_MAJOR}.`);
+  }
   const report = await options.buildReport();
   const budgetPath = options.budgetPath ?? BUDGET_PATH;
   const documentationPath = options.documentationPath ?? DOCUMENTATION_PATH;

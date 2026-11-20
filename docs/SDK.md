@@ -129,7 +129,7 @@ surface change. The bare
 `@unbrained/pm-cli` root export is recorded as an `aggregate_alias` of
 `@unbrained/pm-cli/sdk`: its symbols are not duplicated, but a retarget of its
 declaration path is a snapshot change. The committed
-[entrypoint import-cost table](performance/sdk-entrypoint-import-costs.md)
+[entrypoint import-cost table](https://github.com/unbraind/pm-cli/blob/main/docs/performance/sdk-entrypoint-import-costs.md) (repository-only, excluded from npm)
 records fresh-process latency, RSS, and reduction versus the aggregate barrel.
 Every narrow entrypoint is bundled and type-tested independently.
 
