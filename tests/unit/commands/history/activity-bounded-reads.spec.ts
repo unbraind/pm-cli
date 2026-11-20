@@ -16,6 +16,7 @@ import {
 } from "../../../../src/sdk/query/activity.js";
 import { runContext } from "../../../../src/sdk/query/context.js";
 import * as historyReadModule from "../../../../src/core/history/read.js";
+import * as streamSummaryModule from "../../../../src/core/history/stream-summary.js";
 import {
   HISTORY_STREAM_SUMMARY_RELATIVE_PATH,
   _testOnly as summaryInternals,
@@ -293,6 +294,45 @@ describe("bounded activity reads (GH-1664)", () => {
         }
       }
       await assertParity(context.pmPath);
+    });
+  });
+
+  it("reads every skipped stream when a read hook is registered while skipped streams are revalidated", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const streams = (await readdir(path.join(context.pmPath, "history"))).filter((file) => file.endsWith(".jsonl"));
+      const actualOpen = streamSummaryModule.openHistoryStreamSummary;
+      const reads: Array<() => Promise<{ history_read?: { reason: string; streams_read: number; streams_total: number } }>> = [
+        () => runActivity({}, global),
+        () => readRecentActivity({ limit: 1 }, global),
+      ];
+      for (const read of reads) {
+        await runActivity({}, global);
+        const observed: string[] = [];
+        const spy = vi.spyOn(streamSummaryModule, "openHistoryStreamSummary").mockImplementation(async (params) => {
+          const session = await actualOpen(params);
+          return {
+            ...session,
+            // The observer arrives while the skipped streams' stats are in flight.
+            revalidate: async (files) => {
+              const changed = await session.revalidate(files);
+              setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "late-observer", run: (hook) => { observed.push(path.basename(hook.path)); } }] });
+              return changed;
+            },
+          };
+        });
+        try {
+          const result = await read();
+          expect(result.history_read).toMatchObject({ reason: "read_hooks_active", streams_read: streams.length, streams_total: streams.length });
+          // Only streams not read before the hook existed are observed, once each.
+          expect(observed.length).toBeGreaterThan(0);
+          expect(new Set(observed).size).toBe(observed.length);
+        } finally {
+          spy.mockRestore();
+          clearActiveExtensionHooks();
+        }
+      }
     });
   });
 

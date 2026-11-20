@@ -135,16 +135,11 @@ export async function enforceHistoryStreamPolicyForItems(
   const sequential = hasActiveOnWriteHooks();
   const strict = params.settings.history.missing_stream === "strict_error";
   const candidates = sequential ? ids : await probeMissingStreams(params.pmRoot, ids, strict);
-  // After the candidates, re-probe every id the bulk probe found present or
-  // never reached (strict mode stops early), so a stream removed meanwhile
-  // still gets the missing-stream policy. With nothing missing there is
-  // nothing to re-probe, keeping the fast path.
-  const probedMissing = new Set(candidates);
-  const recheck = sequential || candidates.length === 0
-    ? []
-    : ids.filter((itemId) => !probedMissing.has(itemId));
-
-  for (const itemId of [...candidates, ...recheck]) {
+  // Once anything is missing, every id is verified in sorted order, so a
+  // stream removed after the bulk probe (or one strict mode never reached)
+  // still gets the missing-stream policy at its own turn. With nothing
+  // missing there is nothing to verify, keeping the fast path.
+  for (const itemId of candidates.length === 0 ? [] : ids) {
     const historyPath = getHistoryPath(params.pmRoot, itemId);
     // Another writer may have created the stream since the bulk probe; only
     // an actual creation is reported.

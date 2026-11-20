@@ -258,6 +258,26 @@ export function buildHistoryReadBudgets(report, committed, increaseReason = unde
 }
 
 /**
+ * Refuse a budget whose thresholds are missing or not positive numbers: a
+ * misspelled key would compare as NaN and silently disable the gate.
+ */
+export function validateHistoryReadBudgets(budgets) {
+  const fraction = budgets?.orient_three_rows?.max_p50_fraction_of_full_scan;
+  const required = {
+    "fixture.min_streams": budgets?.fixture?.min_streams,
+    "fixture.min_history_bytes": budgets?.fixture?.min_history_bytes,
+    "orient_three_rows.max_p50_ms": budgets?.orient_three_rows?.max_p50_ms,
+    "orient_three_rows.max_p50_fraction_of_full_scan": fraction,
+  };
+  const malformed = Object.entries(required)
+    .filter(([, value]) => typeof value !== "number" || !Number.isFinite(value) || value <= 0)
+    .map(([key]) => key);
+  if (typeof fraction === "number" && fraction > 1) malformed.push("orient_three_rows.max_p50_fraction_of_full_scan");
+  if (malformed.length > 0) throw new TypeError(`History read budget is malformed: ${malformed.join(", ")} must be positive numbers (the fraction at most 1).`);
+  return budgets;
+}
+
+/**
  * Whether the full scan exceeds the enforced ceiling on this runner, so the
  * absolute check could catch a regression to the complete read here.
  */
@@ -338,6 +358,23 @@ function parseArguments(argv) {
   return { mode: update ? "update" : "check", increaseReason: increaseReason?.trim() };
 }
 
+/** Ratchet and write the committed budget and report from a qualified measurement. */
+async function updateHistoryReadBudgets(report, increaseReason, { budgetPath, documentationPath }, qualification) {
+  const committed = await readFile(budgetPath, "utf8").then(JSON.parse, () => undefined);
+  // A malformed committed budget would lose the ratchet's previous ceiling.
+  if (committed !== undefined) validateHistoryReadBudgets(committed);
+  const budgets = buildHistoryReadBudgets(report, committed, increaseReason);
+  // A committed ceiling must be one this measurement proves can fail.
+  const violations = [
+    ...compareHistoryReadBudgets(report, budgets, true),
+    ...(absoluteCeilingDiscriminates(report, budgets) ? [] : [negativeControlViolation(report, budgets)]),
+  ];
+  if (violations.length > 0) throw benchmarkAdmissionError("History read", report, violations, qualification);
+  await mkdir(path.dirname(documentationPath), { recursive: true });
+  await writeFile(budgetPath, `${JSON.stringify(budgets, null, 2)}\n`, "utf8");
+  await writeFile(documentationPath, renderHistoryReadMarkdown(report, budgets), "utf8");
+}
+
 /** Run the benchmark in update or check mode; `options.buildReport` measures the report. */
 export async function main(argv, options) {
   const parsed = parseArguments(argv);
@@ -355,20 +392,10 @@ export async function main(argv, options) {
   const qualified = qualification.status === "qualified";
   if (parsed.mode === "update") {
     if (!qualified) throw benchmarkAdmissionError("History read", report, [], qualification);
-    const committed = await readFile(budgetPath, "utf8").then(JSON.parse, () => undefined);
-    const budgets = buildHistoryReadBudgets(report, committed, parsed.increaseReason);
-    // A committed ceiling must be one this measurement proves can fail.
-    const violations = [
-      ...compareHistoryReadBudgets(report, budgets, true),
-      ...(absoluteCeilingDiscriminates(report, budgets) ? [] : [negativeControlViolation(report, budgets)]),
-    ];
-    if (violations.length > 0) throw benchmarkAdmissionError("History read", report, violations, qualification);
-    await mkdir(path.dirname(documentationPath), { recursive: true });
-    await writeFile(budgetPath, `${JSON.stringify(budgets, null, 2)}\n`, "utf8");
-    await writeFile(documentationPath, renderHistoryReadMarkdown(report, budgets), "utf8");
+    await updateHistoryReadBudgets(report, parsed.increaseReason, { budgetPath, documentationPath }, qualification);
     return { mode: parsed.mode, report, violations: [], runner_qualification: qualification };
   }
-  const budgets = JSON.parse(await readFile(budgetPath, "utf8"));
+  const budgets = validateHistoryReadBudgets(JSON.parse(await readFile(budgetPath, "utf8")));
   // The absolute ceiling is evidence only where it could fail: on a qualified
   // runner whose full scan exceeds it. Elsewhere the fraction gate decides.
   const discriminates = absoluteCeilingDiscriminates(report, budgets);

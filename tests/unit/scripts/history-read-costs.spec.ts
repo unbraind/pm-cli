@@ -16,6 +16,7 @@ import {
   runCliRead,
   runEntrypoint,
   summarizeLatency,
+  validateHistoryReadBudgets,
   withFixtureGlobalProfile,
 } from "../../../scripts/bench/history-read-costs.mjs";
 
@@ -235,6 +236,27 @@ describe("history read cost benchmark (GH-1664)", () => {
     expect(markdown).toContain("200.0 MiB");
     expect(markdown).toContain("| Bounded (trusted stream bounds) | 5 | 900 ms | 1000 ms | 1100 ms |");
     expect(markdown).toContain("declared 2000 ms");
+  });
+
+  it("refuses a malformed budget instead of comparing against NaN", async () => {
+    const valid = buildHistoryReadBudgets(report(), undefined);
+    expect(validateHistoryReadBudgets(valid)).toBe(valid);
+    const misspelled = { ...valid, orient_three_rows: { max_p50_ms: 2_000, max_p50_fraction_of_full_scn: 0.6 } };
+    expect(() => validateHistoryReadBudgets(misspelled)).toThrow("orient_three_rows.max_p50_fraction_of_full_scan must be positive numbers");
+    expect(() => validateHistoryReadBudgets({ ...valid, fixture: { min_streams: "2000", min_history_bytes: -1 } }))
+      .toThrow("fixture.min_streams, fixture.min_history_bytes must be positive numbers");
+    expect(() => validateHistoryReadBudgets({ ...valid, orient_three_rows: { max_p50_ms: 2_000, max_p50_fraction_of_full_scan: 1.5 } }))
+      .toThrow("the fraction at most 1");
+    expect(() => validateHistoryReadBudgets(undefined)).toThrow("History read budget is malformed");
+
+    // Both modes refuse it: check would pass silently, update would lose the ratchet.
+    const root = await temporaryRoot("pm-history-read-malformed-");
+    const budgetPath = path.join(root, "budgets.json");
+    const documentationPath = path.join(root, "docs", "history-read-costs.md");
+    await writeFile(budgetPath, JSON.stringify(misspelled));
+    await expect(main(["--check"], { budgetPath, buildReport: async () => report() })).rejects.toThrow("History read budget is malformed");
+    await expect(main(["--update"], { nodeVersion: "v24.22.3", budgetPath, documentationPath, buildReport: async () => report() }))
+      .rejects.toThrow("History read budget is malformed");
   });
 
   it("writes budgets and documentation on a qualified update and verifies them on check", async () => {

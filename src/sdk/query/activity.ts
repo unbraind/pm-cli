@@ -590,6 +590,12 @@ async function revalidateSkipped(read: ActivityStreamRead, files: string[]): Pro
     return new Set(files);
   }
   const changed = await read.summary.revalidate(files);
+  // Checked again after the stats: a hook registered meanwhile must still
+  // observe every stream this read skipped.
+  if (hasActiveOnReadHooks()) {
+    read.hooksActivated = true;
+    return new Set(files);
+  }
   read.revalidatedStale = changed.length;
   return new Set(changed);
 }

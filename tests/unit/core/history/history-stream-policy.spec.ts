@@ -128,6 +128,29 @@ describe("history stream policy probes (GH-1664)", () => {
     await expect(stat(getHistoryPath(pmRoot, "pm-c"))).resolves.toBeTruthy();
   });
 
+  it("verifies in sorted order once anything is missing, so an earlier stream removed after the bulk probe comes first", async () => {
+    const pmRoot = await trackerRoot();
+    const actual = fsUtils.pathExists;
+    const presentAtBulkProbe = () => {
+      let pmAProbes = 0;
+      // pm-a looks present to the bulk probe, then is found missing: a checkout
+      // removed it in between. pm-c is missing all along.
+      return vi.spyOn(fsUtils, "pathExists").mockImplementation(async (target: string) => {
+        if (target.endsWith("pm-a.jsonl") && ++pmAProbes === 1) return true;
+        return actual(target);
+      });
+    };
+    let spy = presentAtBulkProbe();
+    await expect(enforceHistoryStreamPolicyForItems({ pmRoot, settings: settings("strict_error"), itemIds: ["pm-c", "pm-a"], commandLabel: "activity" }))
+      .rejects.toThrow("Missing history stream for pm-a");
+    spy.mockRestore();
+    spy = presentAtBulkProbe();
+    const created = await enforceHistoryStreamPolicyForItems({ pmRoot, settings: settings("auto_create"), itemIds: ["pm-c", "pm-a"], commandLabel: "activity" });
+    spy.mockRestore();
+    expect(created.auto_created_ids).toEqual(["pm-a", "pm-c"]);
+    expect(created.warnings).toEqual(["history_stream_auto_created:pm-a", "history_stream_auto_created:pm-c"]);
+  });
+
   it("stops probing after the first chunk that holds a missing stream under strict_error", async () => {
     const pmRoot = await trackerRoot();
     const ids = Array.from({ length: 200 }, (_, index) => `pm-${String(index).padStart(3, "0")}`);
