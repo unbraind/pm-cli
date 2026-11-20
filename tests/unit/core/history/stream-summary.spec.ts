@@ -193,6 +193,29 @@ describe("history stream summary (GH-1664)", () => {
     await expect(stat(path.join(pmRoot, HISTORY_STREAM_SUMMARY_RELATIVE_PATH))).rejects.toMatchObject({ code: "ENOENT" });
   });
 
+  it("disables itself when a read hook is registered while the summary loads", async () => {
+    await writeStream("pm-a.jsonl", ["2026-11-01T00:00:00.000Z"]);
+    await recordAll(["pm-a.jsonl"], { "pm-a.jsonl": ["2026-11-01T00:00:00.000Z"] });
+    const actualStat = fsPromises.stat.bind(fsPromises);
+    let registered = false;
+    // An SDK host registers an observer while the stream stat pass is in flight.
+    const statSpy = vi.spyOn(fsPromises, "stat").mockImplementation(async (target, ...rest) => {
+      if (!registered) {
+        registered = true;
+        setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "late", run: () => undefined }] });
+      }
+      return actualStat(target, ...(rest as []));
+    });
+    try {
+      const session = await open(["pm-a.jsonl"]);
+      expect(registered).toBe(true);
+      expect(session).toMatchObject({ enabled: false, fallback: "read_hooks_active" });
+      expect(session.trusted("pm-a.jsonl")).toBeUndefined();
+    } finally {
+      statSpy.mockRestore();
+    }
+  });
+
   it("never persists bounds read inside the racy window of the stream's last change", async () => {
     // The default wall clock, and a source whose last change is later than the
     // read began, so the stream is inside the racy window however the runner

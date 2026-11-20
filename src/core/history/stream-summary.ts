@@ -510,6 +510,9 @@ export async function openHistoryStreamSummary(params: {
     readStoredSummary(params.pmRoot, params.files.length),
     observeStreams(params.historyDir, params.files, reader),
   ]);
+  // A read hook registered while the summary loaded is active before any
+  // stream is read, so the read keeps the complete read and its file order.
+  if (hasActiveOnReadHooks()) return disabledSession("read_hooks_active");
   const next = new Map<string, StoredStream>();
   for (const [file, stream] of stored.streams) {
     if (observed.get(file)?.signature === stream.signature) next.set(file, stream);
