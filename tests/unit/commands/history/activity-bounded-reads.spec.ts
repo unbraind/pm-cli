@@ -387,6 +387,78 @@ describe("bounded activity reads (GH-1664)", () => {
     });
   });
 
+  it("ends pruning when a read hook arrives while the summary is written, in both read paths", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      const streams = (await readdir(path.join(context.pmPath, "history"))).filter((file) => file.endsWith(".jsonl"));
+      const actualOpen = streamSummaryModule.openHistoryStreamSummary;
+      const reads: Array<() => Promise<{ history_read?: { reason: string; streams_read: number; streams_total: number } }>> = [
+        () => runActivity({}, global),
+        () => readRecentActivity({ limit: 1 }, global),
+      ];
+      for (const read of reads) {
+        await runActivity({}, global);
+        const observed: string[] = [];
+        const spy = vi.spyOn(streamSummaryModule, "openHistoryStreamSummary").mockImplementation(async (params) => {
+          const session = await actualOpen(params);
+          return {
+            ...session,
+            // The observer arrives during the summary write, the read's last await.
+            commit: async () => {
+              await session.commit();
+              setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "late-observer", run: (hook) => { observed.push(path.basename(hook.path)); } }] });
+            },
+          };
+        });
+        try {
+          const result = await read();
+          expect(result.history_read).toMatchObject({ reason: "read_hooks_active", streams_read: streams.length, streams_total: streams.length });
+          expect(observed.length).toBeGreaterThan(0);
+          expect(new Set(observed).size).toBe(observed.length);
+        } finally {
+          spy.mockRestore();
+          clearActiveExtensionHooks();
+        }
+      }
+    });
+  });
+
+  it("names the read hooks, not stale bounds, when a late hook ended pruning", async () => {
+    await withTempPmPath(async (context) => {
+      await seedCorpus(context);
+      const global = { path: context.pmPath };
+      await runActivity({}, global);
+      // Most recorded signatures no longer match (a copied tracker), but two
+      // archive streams keep trusted bounds and are skipped.
+      const summaryFile = path.join(context.pmPath, HISTORY_STREAM_SUMMARY_RELATIVE_PATH);
+      const stored = JSON.parse(await readFile(summaryFile, "utf8")) as { version: number; streams: Record<string, unknown[]> };
+      for (const [file, value] of Object.entries(stored.streams)) {
+        if (file !== "pm-old1.jsonl" && file !== "pm-old2.jsonl") value[0] = `other-device:${String(value[0])}`;
+      }
+      await writeFile(summaryFile, JSON.stringify({ ...stored, checksum: summaryInternals.checksumOf(stored.streams) }));
+      const actualOpen = streamSummaryModule.openHistoryStreamSummary;
+      const spy = vi.spyOn(streamSummaryModule, "openHistoryStreamSummary").mockImplementation(async (params) => {
+        const session = await actualOpen(params);
+        expect(session.fallback).toBe("summary_stale");
+        return {
+          ...session,
+          revalidate: async (files) => {
+            const changed = await session.revalidate(files);
+            setActiveExtensionHooks({ beforeCommand: [], afterCommand: [], onWrite: [], onIndex: [], onRead: [{ layer: "project", name: "late", run: () => undefined }] });
+            return changed;
+          },
+        };
+      });
+      try {
+        expect((await runActivity({}, global)).history_read).toMatchObject({ reason: "read_hooks_active" });
+      } finally {
+        spy.mockRestore();
+        clearActiveExtensionHooks();
+      }
+    });
+  });
+
   it("adds no receipt to reads below the summary threshold, even with read hooks active", async () => {
     await withTempPmPath(async (context) => {
       await seedCorpus(context);
