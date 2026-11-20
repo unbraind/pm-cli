@@ -166,7 +166,8 @@ Start with the [documentation index](docs/README.md). Focused pages:
 - [Agent Guide](docs/AGENT_GUIDE.md) - canonical `pm` workflow for coding agents.
 - [Command Reference](docs/COMMANDS.md) - command families and examples.
 - [Configuration](docs/CONFIGURATION.md) - settings, output, storage, search, and validation.
-- [Testing](docs/TESTING.md) - sandbox-safe local and linked-test workflows.
+- [Testing](docs/TESTING.md) - sandbox-safe linked-test workflows.
+- [Repository Testing](https://github.com/unbraind/pm-cli/blob/main/docs/REPOSITORY_TESTING.md) - local checks, CI layout, coverage governance and release gates for this repository (repository-only, excluded from npm).
 - [Architecture](docs/ARCHITECTURE.md) - source tree, storage, mutation contract, history, search, and extension host internals.
 - [Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) - extension lifecycle and public SDK.
 - [Releasing](https://github.com/unbraind/pm-cli/blob/main/docs/RELEASING.md) (repository-only, excluded from npm) - maintainer release procedure.

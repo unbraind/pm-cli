@@ -602,6 +602,25 @@ describe("context command module", () => {
     expect(markdown).toContain('- pm-u1 "Unassigned" blocked_by:-');
     expect(markdown).toContain("- (unassigned) active:1 wip:0 items:[pm-u1]");
 
+    // A read that could not be bounded is disclosed in markdown too, rows or not.
+    const receiptBase = {
+      now: "2026-05-01T00:00:00.000Z",
+      depth: "standard",
+      filters: {},
+      sections_included: ["activity"],
+      summary: { active_items: 0, in_progress: 0, open: 0, blocked: 0, blocked_fallback_used: false, agenda_events: 0 },
+      high_level: [],
+      low_level: [],
+      blocked_fallback: [],
+      agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
+      activity_history_read: { reason: "summary_missing", streams_read: 600, streams_total: 600 },
+    };
+    const receiptOnly = renderContextMarkdown({ ...receiptBase, activity: [] } as never);
+    expect(receiptOnly).toContain("## Recent activity\n- history read: summary_missing, 600/600 streams parsed");
+    expect(renderContextMarkdown({ ...receiptBase, activity: undefined } as never)).toContain("- history read: summary_missing, 600/600 streams parsed");
+    const withRows = renderContextMarkdown({ ...receiptBase, activity: [{ ts: "2026-05-01T08:00:00.000Z", id: "pm-u1", op: "update", author: "agent" }] } as never);
+    expect(withRows).toContain("- 2026-05-01T08:00Z pm-u1 update by:agent\n- history read: summary_missing, 600/600 streams parsed");
+
     const emptyBlockersMarkdown = renderContextMarkdown({
       now: "2026-05-01T00:00:00.000Z",
       depth: "deep",
@@ -659,11 +678,12 @@ describe("context command module", () => {
     expect(omittedBlockersMarkdown).not.toContain("- sections:");
 
     const activityModule = await import("../../../../src/sdk/query/activity.js");
-    const runActivitySpy = vi.spyOn(activityModule, "runActivity").mockResolvedValue({ compact_activity: undefined } as never);
+    const recentActivitySpy = vi.spyOn(activityModule, "readRecentActivity").mockResolvedValue({ rows: [] });
     try {
-      await expect(contextInternals.buildActivity(3, { path: "/tmp" } as never)).resolves.toEqual([]);
+      await expect(contextInternals.buildActivity(3, { path: "/tmp" } as never)).resolves.toEqual({ rows: [] });
+      expect(recentActivitySpy).toHaveBeenCalledWith({ limit: 3 }, { path: "/tmp" });
     } finally {
-      runActivitySpy.mockRestore();
+      recentActivitySpy.mockRestore();
     }
   });
 

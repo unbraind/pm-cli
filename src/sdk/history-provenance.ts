@@ -133,11 +133,17 @@ function resolveCanonicalHarness(
   entry: Pick<HistoryEntry, "agent_harness" | "author">,
   vocabulary: AuthorIdentityVocabulary,
 ): Pick<HistoryProvenanceRow, "agent_harness" | "harness_source"> {
-  if (entry.agent_harness?.trim()) {
+  // Recorded history is untrusted input: a non-string harness is unresolved,
+  // never a crash of every read that projects provenance.
+  if (typeof entry.agent_harness === "string" && entry.agent_harness.trim()) {
     return { agent_harness: entry.agent_harness, harness_source: "recorded" };
   }
-  const interpreted = vocabulary.aliases[entry.author];
-  return interpreted
+  // Only a configured alias counts: an author such as "constructor" must not
+  // resolve through the object prototype.
+  const interpreted = Object.hasOwn(vocabulary.aliases, entry.author)
+    ? vocabulary.aliases[entry.author]
+    : undefined;
+  return typeof interpreted === "string" && interpreted.length > 0
     ? { agent_harness: interpreted, harness_source: "vocabulary" }
     : { harness_source: "unresolved" };
 }

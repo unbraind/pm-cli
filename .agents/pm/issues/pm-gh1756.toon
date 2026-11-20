@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: advisories,"area:context","gh:1756",in-progress,status-roles
 created_at: "2026-11-19T00:19:36.461Z"
-updated_at: "2026-11-20T05:34:47.519Z"
+updated_at: "2026-11-20T06:35:54.983Z"
 closed_at: "2026-11-20T05:12:58.002Z"
 completed_at: "2026-11-20T05:12:58.002Z"
 author: "harness:claude-code"
@@ -24,6 +24,8 @@ dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
   pm-w8q4,related,"2026-11-19T00:19:36.461Z","harness:claude-code","cli:create:dep",detected
 comments[1]{created_at,author,text}:
   "2026-11-20T05:34:32.926Z","harness:claude-code","Codex review of the first head raised two findings, both fixed. (1) The workflow may name the progress status by an alias: the advisory scan resolved it through the registry but the summary compared item statuses with the raw id, so an aliased status still gave in_progress 0 beside advisories 2/2. context.ts now resolves the progress status once (progressStatusOf) for the summary counts, the focus rank, the open/in-progress predicates and returned focus row states. (2) The markdown summary printed in_progress inside active_items even when the progress status is not active; it now renders on its own line marked outside active_items, and WORKSPACE_POSITION_AND_LIFECYCLE.md qualifies the active_items = open + in_progress guarantee. Specs cover the alias and both renderings."
+notes[1]{created_at,author,text}:
+  "2026-11-20T06:35:54.983Z","harness:claude-code","Shipped in PR #1760, merged to main as 4ff1d83a7 on 2026-11-20 after 32/32 hosted checks passed, CodeRabbit full review (no actionable comments), Greptile 5/5 and three Codex gpt-6.2-sol xhigh rounds; the GitHub issue closed on merge and its blocker_retry run skipped (one release per day held). Reaches users in the next daily release after 2026.11.20."
 files[2]{path,scope,note}:
   src/sdk/query/context.ts,project,summary in_progress counts the configured progress status like both advisories (GH-1756)
   tests/unit/commands/governance/health-in-progress-work.spec.ts,project,custom doing status with the blocked and the active role

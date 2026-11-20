@@ -104,7 +104,7 @@ so a new public entrypoint cannot ship ungoverned.
 The [generated capability routing](../../../docs/generated/AGENT_CAPABILITY_ROUTING.md)
 covers every declared family. Expand only the family needed, then query its
 published SDK symbols and runtime contract. For MCP integrations, start with
-the [current conformance matrix](../../../docs/MCP_2026_07_28_CONFORMANCE.md)
+the [current conformance matrix](https://github.com/unbraind/pm-cli/blob/main/docs/MCP_2026_07_28_CONFORMANCE.md) (repository-only, excluded from npm)
 and its SDK-owned request, transport, task, subscription, Skills, and Apps
 contracts; distinguish implementation evidence from exact-release acceptance.
 

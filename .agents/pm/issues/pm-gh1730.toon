@@ -1,0 +1,37 @@
+id: pm-gh1730
+title: "GH-1730: the MCP flat-parameter parity spec compares the output-size token estimate of two concurrent reads that both write the context-usage ledger, so a Windows shard fails when one read waits on the ledger"
+description: "GitHub issue #1730 (Nightly Validation, windows-latest / Node 24 shard 3/4, run 43589248357 on fcdd5f89d). tests/unit/mcp/read-tool-flat-parameters.spec.ts › 'applies flat intent and limit arguments exactly like nested options' runs the flat and the nested pm_next read concurrently (Promise.all) on one tracker and compared their whole context_intent blocks, which include estimated_tokens (325 vs 313 on the failing shard). Both context and next record context-usage serving rows under the ledger lock (recordContextUsageServing in src/sdk/query/next.ts and context.ts), so the rendered output of two concurrent reads can differ in runtime state (lock wait and signal-store warnings) while their parameter resolution is identical. estimated_tokens measures the rendered output, not the parameters. Root-cause comment already on the issue; family owner pm-2zjs0g is closed. Duplicate check: searched GH-1730, flat parameters, estimated_tokens concurrent reads; no open item owns the spec."
+type: Issue
+status: closed
+priority: 2
+tags[6]: flaky-test,"gh:1730",mcp,nightly,test-reliability,windows
+created_at: "2026-11-20T10:20:32.471Z"
+updated_at: "2026-11-20T12:31:06.105Z"
+closed_at: "2026-11-20T12:31:03.341Z"
+completed_at: "2026-11-20T12:31:03.341Z"
+author: "harness:claude-code"
+estimated_minutes: 30
+acceptance_criteria: The spec compares every parameter-derived context_intent field of the flat and nested reads and only requires estimated_tokens to be a number on both; it passes regardless of which concurrent read waits on the context-usage ledger
+parent: pm-u9d0
+risk: low
+confidence: high
+severity: low
+resolution: "tests/unit/mcp/read-tool-flat-parameters.spec.ts compares every context_intent field except estimated_tokens, which measures the rendered output and depends on context-usage ledger state that both concurrent reads write, and requires that estimate to be a number on both sides"
+expected_result: Flat and nested MCP read arguments are proven to resolve the same intent regardless of concurrent ledger timing
+actual_result: The spec passes locally and in the full coverage run; the comparison no longer depends on which concurrent read waits on the ledger
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2zjs0g,discovered_from,"2026-11-20T10:20:32.471Z","harness:claude-code","cli:create:dep",detected
+files[1]{path,scope,note}:
+  tests/unit/mcp/read-tool-flat-parameters.spec.ts,project,"compares parameter-derived intent fields, not the output-size estimate"
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref},note}:
+  node scripts/run-tests.mjs test -- tests/unit/mcp/read-tool-flat-parameters.spec.ts,project,300,"harness:claude-code","2026-11-20T10:25:21.525Z",local_mutation,fix/bounded-activity-reads,flat and nested MCP read parity
+close_reason: The MCP flat-parameter parity spec compares parameter-derived intent fields instead of the output-size estimate of two concurrent reads
+escape_class: nightly_regression
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-gh1730
+  gate_id: test-coverage
+  negative_control: "Comparing the whole context_intent, including the output-size estimated_tokens, of the two concurrent reads fails whenever one read waits on the context-usage ledger (325 vs 313 on windows-latest shard 3/4, run 43589248357); the spec now compares the parameter-derived fields and requires a numeric estimate on both"
+  local_checks[2]: node scripts/run-tests.mjs test -- tests/unit/mcp/read-tool-flat-parameters.spec.ts,node scripts/run-tests.mjs coverage
+  hosted_checks[2]: CI / Gates (coverage),CI / Windows regression (Node 24)
+body: ""

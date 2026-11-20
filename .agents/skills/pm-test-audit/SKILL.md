@@ -73,7 +73,7 @@ node scripts/run-tests.mjs coverage
   being tested. Use real temporary persistence when proving writes or recovery.
 - Run relevant functional, integration, package, performance, and acceptance
   gates according to the changed contract. A focused green run is not a full
-  suite result. [Quality evidence](../../../docs/QUALITY_EVIDENCE.md) defines the
+  suite result. [Quality evidence](https://github.com/unbraind/pm-cli/blob/main/docs/QUALITY_EVIDENCE.md) (repository-only, excluded from npm) defines the
   bounded mutation gate; do not describe it as whole-repository mutation proof.
 - Preserve static quality, docstring, security, release, and public-surface gates.
   This skill does not grant exceptions to repository coding rules.

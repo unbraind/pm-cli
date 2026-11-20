@@ -7,6 +7,7 @@
  * maintenance APIs from depending on presentation-layer modules.
  */
 import fs from "node:fs/promises";
+import type { BigIntStats } from "node:fs";
 import { isFileAbsentError } from "../fs/fs-utils.js";
 import { runActiveOnReadHooks } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
@@ -33,6 +34,45 @@ export async function readHistorySnapshot(
     if (isFileAbsentError(error)) return null;
     throw error;
   });
+  return decodeHistorySnapshot(historyPath, itemId, rawBytes);
+}
+
+/** A snapshot plus the identity of the open file that supplied its bytes. */
+export interface IdentifiedHistoryStreamSnapshot extends HistoryStreamSnapshot {
+  /** Stat of the open handle the bytes were read from; null when the stream was absent. */
+  source: BigIntStats | null;
+}
+
+/**
+ * Read one history stream through a single open handle and report that
+ * handle's stat, so derived state can be bound to the exact file revision
+ * that supplied the bytes, whatever happens to the path meanwhile.
+ */
+export async function readIdentifiedHistorySnapshot(
+  historyPath: string,
+  itemId: string,
+): Promise<IdentifiedHistoryStreamSnapshot> {
+  const handle = await fs.open(historyPath, "r").catch((error: unknown) => {
+    if (isFileAbsentError(error)) return null;
+    throw error;
+  });
+  if (handle === null) {
+    return { ...(await decodeHistorySnapshot(historyPath, itemId, null)), source: null };
+  }
+  try {
+    const source = await handle.stat({ bigint: true });
+    const rawBytes = await handle.readFile();
+    return { ...(await decodeHistorySnapshot(historyPath, itemId, rawBytes)), source };
+  } finally {
+    await handle.close();
+  }
+}
+
+async function decodeHistorySnapshot(
+  historyPath: string,
+  itemId: string,
+  rawBytes: Buffer | null,
+): Promise<HistoryStreamSnapshot> {
   const raw = rawBytes?.toString("utf8") ?? null;
   if (raw === null) {
     return { raw, raw_bytes: rawBytes, entries: [] };

@@ -1,0 +1,21 @@
+id: pm-jbplbq
+title: "A history line that is valid JSON but not an object (null, a number, an array) crashes pm activity and pm context with unknown_error"
+description: "Found while addressing a CodeRabbit finding on PR #1761. The shared history decoder (decodeHistorySnapshot in src/core/history/read.ts) pushes any JSON value per line as a HistoryEntry, so a line such as null reaches readers that dereference entry.ts. Reproduced against the released 2026.11.20 build: append the line null to one history stream, then pm activity --limit 3 --json and pm context --for orient --json both exit 1 with code unknown_error and detail \"Cannot read properties of null (reading 'ts')\". It is the same class as pm-sew1dj, a released crash on a malformed history value. The recovery is not obvious either: pm history-repair --salvage-tail refuses non-object lines with history_salvage_refused (\"would conceal interior corruption or a malformed record\"), so the error must name a recovery that actually works (pm restore, or an explicit repair) and the advised command must be executed in a spec. Before tightening the shared decoder, census every reader of it (history, restore, verify, compaction, redaction, provenance, activity, context, stats) and the readers with their own parsers (drift-scan, health, history-storage-stats), since some may tolerate or diagnose such lines today. PR #1761 only stops the derived stream summary from adding a crash of its own (non-object entries count as irregular)."
+type: Issue
+status: open
+priority: 2
+tags[3]: crash,history,robustness
+created_at: "2026-11-20T17:17:27.931Z"
+updated_at: "2026-11-20T18:30:07.752Z"
+author: "harness:claude-code"
+estimated_minutes: 180
+acceptance_criteria: "Every command reading a history stream with a non-object JSON line refuses with a typed, documented error naming the item and the line, never unknown_error; The refusal's recovery step is executed in a spec and leaves a readable stream; A census of history readers is recorded, and readers that diagnose such lines today (health, verify) keep that behaviour"
+parent: pm-doxj
+risk: medium
+confidence: 80
+expected_result: "A typed refusal naming the stream, the line and a recovery that works"
+actual_result: "unknown_error: Cannot read properties of null (reading 'ts') from pm activity and pm context"
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1664,discovered_from,"2026-11-20T17:17:38.914Z","harness:claude-code","cli:update:dep",detected
+  pm-sew1dj,related,"2026-11-20T17:17:38.914Z","harness:claude-code","cli:update:dep",detected
+body: ""

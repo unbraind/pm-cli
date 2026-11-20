@@ -103,16 +103,27 @@ export function transactionPreviewNonRegularFileError(relativePath?: string): Pm
   });
 }
 
+/** Remove a temporary file; cleanup is best effort, so a failure is ignored. */
+async function unlinkQuietly(filePath: string): Promise<void> {
+  try {
+    await fs.unlink(filePath);
+  } catch {
+    // Best-effort cleanup only.
+  }
+}
+
 /**
  * Replace a UTF-8 file through a sibling temporary file and atomic rename.
  * Parent directories are created by default. Background consumers can disable
  * that behavior to respect removal of their storage while work is in flight;
  * missing parents then produce the native filesystem error without recreation.
+ * `mode` creates the temporary file, and so the result, with those permission
+ * bits (subject to the umask), for derived state that must stay private.
  */
 export async function writeFileAtomic(
   targetPath: string,
   contents: string,
-  options: { createParentDirectories?: boolean } = {},
+  options: { createParentDirectories?: boolean; mode?: number } = {},
 ): Promise<void> {
   const dirPath = path.dirname(targetPath);
   if (options.createParentDirectories !== false) await ensureDir(dirPath);
@@ -120,7 +131,14 @@ export async function writeFileAtomic(
     dirPath,
     `.${path.basename(targetPath)}.${process.pid}.${Date.now()}.${crypto.randomBytes(4).toString("hex")}.tmp`,
   );
-  await fs.writeFile(tempPath, contents, "utf8");
+  try {
+    await fs.writeFile(tempPath, contents, options.mode === undefined ? "utf8" : { encoding: "utf8", mode: options.mode });
+  } catch (error: unknown) {
+    // A write that fails after creating the file (ENOSPC, EDQUOT) must not
+    // leave a partial temporary file behind.
+    await unlinkQuietly(tempPath);
+    throw error;
+  }
   try {
     await fs.rename(tempPath, targetPath);
   } catch (error: unknown) {
@@ -141,30 +159,18 @@ export async function writeFileAtomic(
           }
         }
       }
-      try {
-        await fs.unlink(tempPath);
-      } catch {
-        // Best-effort cleanup only.
-      }
+      await unlinkQuietly(tempPath);
       throw lastError;
     }
     if (isErrno(error, "EXDEV")) {
       try {
         await fs.copyFile(tempPath, targetPath);
       } finally {
-        try {
-          await fs.unlink(tempPath);
-        } catch {
-          // Best-effort cleanup only.
-        }
+        await unlinkQuietly(tempPath);
       }
       return;
     }
-    try {
-      await fs.unlink(tempPath);
-    } catch {
-      // Best-effort cleanup only.
-    }
+    await unlinkQuietly(tempPath);
     throw error;
   }
 }

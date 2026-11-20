@@ -110,6 +110,49 @@ describe("core/fs/fs-utils", () => {
 
       await writeFileAtomic(filePath, "rewritten");
       expect(await fs.readFile(filePath, "utf8")).toBe("rewritten");
+
+      // An explicit mode creates the replacement with those permission bits.
+      const privatePath = path.join(tempDir, "nested", "private.json");
+      await writeFileAtomic(privatePath, "{}", { mode: 0o600 });
+      expect(await fs.readFile(privatePath, "utf8")).toBe("{}");
+      if (process.platform !== "win32") {
+        expect((await fs.stat(privatePath)).mode & 0o777).toBe(0o600);
+      }
+    });
+  });
+
+  it("removes a partially written temporary file when the write itself fails", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const filePath = path.join(tempDir, "summary.json");
+      const full = Object.assign(new Error("no space left on device"), { code: "ENOSPC" });
+      try {
+        vi.resetModules();
+        vi.doMock("node:fs/promises", async () => {
+          const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+          return {
+            ...actual,
+            // The temporary file is created and partly written, then the disk fills.
+            writeFile: async (target: Parameters<typeof actual.writeFile>[0]) => {
+              await actual.writeFile(target, "partial");
+              throw full;
+            },
+          };
+        });
+        const reloadedModule = await import("../../../../src/core/fs/fs-utils.js");
+        await expect(reloadedModule.writeFileAtomic(filePath, "contents")).rejects.toBe(full);
+        expect(await fs.readdir(tempDir)).toEqual([]);
+      } finally {
+        vi.doUnmock("node:fs/promises");
+        vi.resetModules();
+      }
+    });
+  });
+
+  it("rethrows the write failure when the temporary file was never created", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const missingParent = path.join(tempDir, "absent", "summary.json");
+      await expect(writeFileAtomic(missingParent, "contents", { createParentDirectories: false })).rejects.toMatchObject({ code: "ENOENT" });
+      expect(await fs.readdir(tempDir)).toEqual([]);
     });
   });
 

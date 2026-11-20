@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "policy": "Ceilings may only decrease unless a reviewed platform correction is documented. The fraction gate applies on every runner; the absolute ceiling and its negative control apply on qualified runners.",
+  "fixture": {
+    "min_streams": 2000,
+    "min_history_bytes": 104857600
+  },
+  "orient_three_rows": {
+    "max_p50_ms": 1440,
+    "max_p50_fraction_of_full_scan": 0.6
+  }
+}

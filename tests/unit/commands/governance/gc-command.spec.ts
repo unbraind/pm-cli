@@ -48,6 +48,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual([]);
       expect(gc.checkpoints).toEqual({ scanned: 0, removed: 0, retained: 0, retention_days: 14 });
@@ -69,6 +70,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gcSecondRun.warnings).toEqual([]);
       expect(gcSecondRun.guidance).toEqual([]);
@@ -91,6 +93,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual(["not_a_file:index/manifest.json"]);
     });
@@ -104,7 +107,7 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual([]);
-      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
+      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json", "runtime/history-stream-summary.json"]);
       expect(gc.warnings).toEqual(["not_a_directory:runtime/test-runs"]);
     });
   });
@@ -139,6 +142,7 @@ describe("runGc", () => {
         "search/pending-refresh.json",
         "search/pending-refresh.gate.lock",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.guidance).toEqual([
         "Dry-run preview only: no cache artifacts were deleted.",
@@ -163,6 +167,7 @@ describe("runGc", () => {
       await mkdir(path.join(context.pmPath, "runtime", "test-runs"), { recursive: true });
       await writeFile(path.join(context.pmPath, "runtime", "test-runs", "seed.log"), "seed\n", "utf8");
       await writeFile(path.join(context.pmPath, "runtime", "history-drift-cache.json"), '{"version":1,"entries":[]}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "runtime", "history-stream-summary.json"), '{"version":1,"streams":{}}\n', "utf8");
 
       const indexOnly = await runGc({ path: context.pmPath }, { scope: ["index"] });
       expect(indexOnly.scope).toEqual(["index"]);
@@ -173,11 +178,13 @@ describe("runGc", () => {
 
       const runtimeOnly = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
       expect(runtimeOnly.scope).toEqual(["runtime"]);
-      expect(runtimeOnly.removed).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
+      expect(runtimeOnly.removed).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json", "runtime/history-stream-summary.json"]);
       expect(runtimeOnly.retained).toEqual([]);
       expect(runtimeOnly.guidance).toEqual([
         'History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.',
+        'History stream summary was removed; the next "pm activity" or "pm context" read parses every history stream once to rebuild it.',
       ]);
+      await expect(fs.stat(path.join(context.pmPath, "runtime", "history-stream-summary.json"))).rejects.toBeTruthy();
       await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs"))).rejects.toBeTruthy();
       await expect(fs.stat(path.join(context.pmPath, "runtime", "history-drift-cache.json"))).rejects.toBeTruthy();
 
@@ -535,6 +542,7 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual([
         "extension_hook_failed:project:boom-read-hook:onRead",
@@ -545,7 +553,9 @@ describe("runGc", () => {
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
+        "extension_hook_failed:project:boom-read-hook:onRead",
       ]);
+      expect(events).toContain("read:history-stream-summary.json");
       expect(events).toContain("read:manifest.json");
       expect(events).toContain("read:embeddings.jsonl");
       expect(events).toContain("read:vectorization-status.json");
@@ -556,7 +566,7 @@ describe("runGc", () => {
       expect(events).toContain("write:gc:remove:embeddings.jsonl");
       expect(events).toContain("write:gc:remove:vectorization-status.json");
       expect(events).toContain("write:gc:remove:lancedb");
-      expect(events).toContain("index:gc:8");
+      expect(events).toContain("index:gc:9");
     });
   });
 
@@ -590,20 +600,138 @@ describe("runGc", () => {
         "search/pending-refresh.gate.lock",
         "runtime/test-runs",
         "runtime/history-drift-cache.json",
+        "runtime/history-stream-summary.json",
       ]);
       expect(gc.warnings).toEqual(["extension_hook_failed:project:boom-index-hook:onIndex"]);
+    });
+  });
+
+  it.runIf(process.platform !== "win32")("never removes runtime targets through a redirected runtime directory", async () => {
+    await withTempPmPath(async (context) => {
+      const elsewhere = await mkdtemp(path.join(os.tmpdir(), "pm-gc-elsewhere-"));
+      try {
+        // runtime/ points at another tracker's runtime directory.
+        await mkdir(path.join(elsewhere, "test-runs"), { recursive: true });
+        await writeFile(path.join(elsewhere, "history-stream-summary.json"), "{}\n");
+        await writeFile(path.join(elsewhere, "history-drift-cache.json"), "{}\n");
+        await rm(path.join(context.pmPath, "runtime"), { recursive: true, force: true });
+        await fs.symlink(elsewhere, path.join(context.pmPath, "runtime"));
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+        expect(gc.removed).toEqual([]);
+        expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json", "runtime/history-stream-summary.json"]);
+        expect(gc.warnings).toEqual(["redirected_runtime_directory:runtime"]);
+        await expect(fs.stat(path.join(elsewhere, "history-stream-summary.json"))).resolves.toBeTruthy();
+        await expect(fs.stat(path.join(elsewhere, "test-runs"))).resolves.toBeTruthy();
+      } finally {
+        await rm(elsewhere, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it.runIf(process.platform !== "win32")("re-checks the runtime directory after each target's hooks, before removing anything", async () => {
+    await withTempPmPath(async (context) => {
+      const elsewhere = await mkdtemp(path.join(os.tmpdir(), "pm-gc-elsewhere-"));
+      const runtimeDir = path.join(context.pmPath, "runtime");
+      try {
+        await writeFile(path.join(elsewhere, "history-stream-summary.json"), "{}\n");
+        await writeFile(path.join(elsewhere, "history-drift-cache.json"), "{}\n");
+        await mkdir(path.join(runtimeDir, "test-runs"), { recursive: true });
+        setActiveExtensionHooks({
+          beforeCommand: [], afterCommand: [], onIndex: [], onWrite: [],
+          onRead: [{ layer: "project", name: "redirects-runtime", run: async (hook) => {
+            // The first runtime target's read hook redirects runtime/ to another tracker's.
+            if (hook.path.endsWith("test-runs")) {
+              await rm(runtimeDir, { recursive: true, force: true });
+              await fs.symlink(elsewhere, runtimeDir);
+            }
+          } }],
+        });
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+        expect(gc.removed).toEqual([]);
+        expect(gc.warnings).toContain("redirected_runtime_directory:runtime");
+        await expect(fs.stat(path.join(elsewhere, "history-stream-summary.json"))).resolves.toBeTruthy();
+        await expect(fs.stat(path.join(elsewhere, "history-drift-cache.json"))).resolves.toBeTruthy();
+      } finally {
+        clearActiveExtensionHooks();
+        await rm(elsewhere, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it.runIf(process.platform !== "win32")("skips the snapshot temp sweep when the last target's hooks redirected runtime/", async () => {
+    await withTempPmPath(async (context) => {
+      const elsewhere = await mkdtemp(path.join(os.tmpdir(), "pm-gc-elsewhere-"));
+      const runtimeDir = path.join(context.pmPath, "runtime");
+      try {
+        // Stale publish debris in the other tracker would be swept if followed.
+        const staleObject = path.join(elsewhere, "workspace-snapshots", "objects", ".create-stale");
+        await mkdir(staleObject, { recursive: true });
+        const staleTime = new Date(Date.now() - 2 * 24 * 60 * 60 * 1_000);
+        await utimes(staleObject, staleTime, staleTime);
+        await mkdir(runtimeDir, { recursive: true });
+        await writeFile(path.join(runtimeDir, "history-stream-summary.json"), "{}\n");
+        setActiveExtensionHooks({
+          beforeCommand: [], afterCommand: [], onIndex: [], onRead: [],
+          onWrite: [{ layer: "project", name: "redirects-after-last-target", run: async (hook) => {
+            if (hook.path.endsWith("history-stream-summary.json")) {
+              await rm(runtimeDir, { recursive: true, force: true });
+              await fs.symlink(elsewhere, runtimeDir);
+            }
+          } }],
+        });
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
+        expect(gc.removed).toEqual(["runtime/history-stream-summary.json"]);
+        expect(gc.warnings).toContain("redirected_runtime_directory:runtime");
+        await expect(fs.stat(staleObject)).resolves.toBeTruthy();
+      } finally {
+        clearActiveExtensionHooks();
+        await rm(elsewhere, { recursive: true, force: true });
+      }
+    });
+  });
+
+  it.runIf(process.platform !== "win32")("retains a cache target that is a link, even a circular one, instead of aborting", async () => {
+    await withTempPmPath(async (context) => {
+      const summary = path.join(context.pmPath, "runtime", "history-stream-summary.json");
+      await mkdir(path.dirname(summary), { recursive: true });
+      // A circular link: following it would fail with ELOOP.
+      await fs.symlink(summary, summary);
+      for (const dryRun of [true, false]) {
+        const gc = await runGc({ path: context.pmPath }, { scope: ["runtime", "locks"], dryRun });
+        expect(gc.retained).toContain("runtime/history-stream-summary.json");
+        expect(gc.warnings).toContain("not_a_file:runtime/history-stream-summary.json");
+        // Later scopes still run.
+        expect(gc.locks).toBeDefined();
+      }
+      expect((await fs.lstat(summary)).isSymbolicLink()).toBe(true);
+    });
+  });
+
+  it("rethrows an unexpected failure to inspect the runtime directory", async () => {
+    await withTempPmPath(async (context) => {
+      const runtimePath = path.join(context.pmPath, "runtime");
+      const actualLstat = fs.lstat.bind(fs);
+      const lstatSpy = vi.spyOn(fs, "lstat").mockImplementation(async (target, ...rest) => {
+        if (target === runtimePath) throw Object.assign(new Error("lstat failure"), { code: "EACCES" });
+        return actualLstat(target, ...(rest as []));
+      });
+      try {
+        await expect(runGc({ path: context.pmPath }, { scope: ["runtime"] })).rejects.toThrow("lstat failure");
+      } finally {
+        lstatSpy.mockRestore();
+      }
     });
   });
 
   it("rethrows unexpected filesystem errors", async () => {
     await withTempPmPath(async (context) => {
       const failedTarget = path.join(context.pmPath, "index", "manifest.json");
-      const actualStat = fs.stat.bind(fs);
-      const statSpy = vi.spyOn(fs, "stat").mockImplementation(async (target) => {
+      const actualLstat = fs.lstat.bind(fs);
+      const statSpy = vi.spyOn(fs, "lstat").mockImplementation(async (target, ...rest) => {
         if (target === failedTarget) {
           throw new Error("stat failure");
         }
-        return actualStat(target);
+        return actualLstat(target, ...(rest as []));
       });
       try {
         await expect(runGc({ path: context.pmPath })).rejects.toThrow("stat failure");

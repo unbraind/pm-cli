@@ -890,6 +890,8 @@ export function printActivityJsonStream(
       to: options.to ?? null,
       limit: options.limit ?? null,
     },
+    // A read that could not be bounded says so in streams too (GH-1664).
+    ...(result.history_read ? { history_read: result.history_read } : {}),
   };
   if (!writeStdout(`${JSON.stringify(metaPayload)}\n`)) {
     return;

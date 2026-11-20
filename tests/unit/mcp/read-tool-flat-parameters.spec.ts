@@ -28,6 +28,18 @@ describe("MCP read tools read every declared flat parameter (pm-hke9z7)", () => 
     expect(optionsWithAuthor({ for: "orient" }, "update")).not.toHaveProperty("for");
   });
 
+  /**
+   * The intent resolution a flat argument must reproduce. `estimated_tokens`
+   * measures the rendered output, which depends on runtime state such as the
+   * context signal store that the two concurrent reads write; it is not
+   * derived from the parameters (GH-1730).
+   */
+  function resolvedIntent(result: Record<string, unknown>): Record<string, unknown> {
+    const { estimated_tokens: estimatedTokens, ...resolved } = result.context_intent as Record<string, unknown>;
+    expect(estimatedTokens).toEqual(expect.any(Number));
+    return resolved;
+  }
+
   it("applies flat intent and limit arguments exactly like nested options", async () => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Flat MCP argument" });
@@ -46,7 +58,7 @@ describe("MCP read tools read every declared flat parameter (pm-hke9z7)", () => 
       ] as const) {
         const [flat, nested] = await read(action, args);
         expect(flat.context_intent).toMatchObject({ intent: args.for });
-        expect(flat.context_intent).toEqual(nested.context_intent);
+        expect(resolvedIntent(flat)).toEqual(resolvedIntent(nested));
       }
       const [flatContext] = await read("context", { for: "orient", limit: 10 });
       expect(flatContext).toMatchObject({ filters: { limit: "3", requested_limit: "10" } });
@@ -55,7 +67,7 @@ describe("MCP read tools read every declared flat parameter (pm-hke9z7)", () => 
         runAction({ ...common, action: "get", id, options: { for: "inspect" } }),
       ]) as Array<Record<string, unknown>>;
       expect(flatGet.context_intent).toMatchObject({ intent: "inspect" });
-      expect(flatGet.context_intent).toEqual(nestedGet.context_intent);
+      expect(resolvedIntent(flatGet)).toEqual(resolvedIntent(nestedGet));
       const flatSearch = (await runAction({ ...common, action: "search", query: "Flat", for: "discover" })) as Record<string, unknown>;
       expect(flatSearch.context_intent).toMatchObject({ intent: "discover" });
       const aliased = (await runAction({ ...common, action: "search", keywords: "Flat" })) as { items: Array<{ id: string }> };

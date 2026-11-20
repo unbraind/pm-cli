@@ -5,7 +5,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { runActiveOnWriteHooks } from "../extensions/index.js";
+import { hasActiveOnWriteHooks, runActiveOnWriteHooks } from "../extensions/index.js";
 import { ensureDir, pathExists } from "../fs/fs-utils.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
@@ -44,6 +44,8 @@ export interface HistoryStreamPolicyResult {
   warnings: string[];
 }
 
+const EXISTENCE_PROBE_CONCURRENCY = 64;
+
 function toSortedUniqueItemIds(itemIds: string[]): string[] {
   return [...new Set(itemIds.filter((value) => value.trim().length > 0))].sort(
     (left, right) => left.localeCompare(right),
@@ -74,6 +76,37 @@ async function createStream(
   });
 }
 
+/**
+ * Ids whose history stream is absent, probed in bounded parallel chunks and
+ * kept in input order. An id whose path cannot be resolved stays a candidate,
+ * so its error is raised at its own turn in the ordered loop. With
+ * `stopAtFirstMissing` (strict_error refuses the first missing stream) probing
+ * ends after the first chunk that holds a candidate; any id not probed is
+ * rechecked in order by the caller.
+ */
+async function probeMissingStreams(pmRoot: string, ids: readonly string[], stopAtFirstMissing: boolean): Promise<string[]> {
+  const missing: string[] = [];
+  for (let start = 0; start < ids.length; start += EXISTENCE_PROBE_CONCURRENCY) {
+    const chunk = ids.slice(start, start + EXISTENCE_PROBE_CONCURRENCY);
+    const present = await Promise.all(
+      chunk.map((itemId) => {
+        let historyPath: string;
+        try {
+          historyPath = getHistoryPath(pmRoot, itemId);
+        } catch {
+          return false;
+        }
+        return pathExists(historyPath);
+      }),
+    );
+    chunk.forEach((itemId, index) => {
+      if (!present[index]) missing.push(itemId);
+    });
+    if (stopAtFirstMissing && missing.length > 0) break;
+  }
+  return missing;
+}
+
 /** Implements enforce history stream policy for item for the public runtime surface of this module. */
 export async function enforceHistoryStreamPolicyForItem(
   params: HistoryStreamPolicyParams,
@@ -94,12 +127,26 @@ export async function enforceHistoryStreamPolicyForItems(
   const autoCreated: string[] = [];
   const warnings: string[] = [];
 
-  for (const itemId of ids) {
+  // A write hook may create or remove a later stream, so with write hooks
+  // every id is probed in order right before its turn. Without them the
+  // probes are independent reads (a whole-tracker read checks thousands of
+  // streams), so they run in bounded parallel chunks; refusal and creation
+  // stay in sorted id order either way.
+  const sequential = hasActiveOnWriteHooks();
+  const strict = params.settings.history.missing_stream === "strict_error";
+  const candidates = sequential ? ids : await probeMissingStreams(params.pmRoot, ids, strict);
+  // Once anything is missing, every id is verified in sorted order, so a
+  // stream removed after the bulk probe (or one strict mode never reached)
+  // still gets the missing-stream policy at its own turn. With nothing
+  // missing there is nothing to verify, keeping the fast path.
+  for (const itemId of candidates.length === 0 ? [] : ids) {
     const historyPath = getHistoryPath(params.pmRoot, itemId);
+    // Another writer may have created the stream since the bulk probe; only
+    // an actual creation is reported.
     if (await pathExists(historyPath)) {
       continue;
     }
-    if (params.settings.history.missing_stream === "strict_error") {
+    if (strict) {
       throw strictMissingStreamError(itemId, params.commandLabel);
     }
     warnings.push(...(await createStream(historyPath, params.commandLabel)));

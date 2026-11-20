@@ -85,6 +85,13 @@ const GC_TARGETS: readonly GcTarget[] = [
     relativePath: "runtime/history-drift-cache.json",
     kind: "file",
   },
+  {
+    // Derived stream bounds for bounded activity reads (GH-1664); the next
+    // activity or context read rebuilds them.
+    scope: "runtime",
+    relativePath: "runtime/history-stream-summary.json",
+    kind: "file",
+  },
 ] as const;
 
 /** Documents the gc command options payload exchanged by command, SDK, and package integrations. */
@@ -159,15 +166,22 @@ async function removeCacheFile(
   pmRoot: string,
   target: GcTarget,
   dryRun: boolean,
-): Promise<{ removed: boolean; warnings: string[] }> {
+): Promise<{ removed: boolean; redirected?: true; warnings: string[] }> {
   const relativePath = target.relativePath;
   const absolutePath = path.join(pmRoot, relativePath);
   const warnings = await runActiveOnReadHooks({
     path: absolutePath,
     scope: "project",
   });
+  // Checked after the hook and right before removal, so a runtime/ redirected
+  // since gc began (by a hook or a concurrent migration) is never followed.
+  if (target.scope === "runtime" && (await isRedirectedRuntimeDirectory(pmRoot))) {
+    return { removed: false, redirected: true, warnings };
+  }
   try {
-    const stats = await fs.stat(absolutePath);
+    // Never follow a link: a cache target that is one (even circular or
+    // dangling) is retained with a warning instead of aborting gc.
+    const stats = await fs.lstat(absolutePath);
     if (target.kind === "file" && !stats.isFile()) {
       return {
         removed: false,
@@ -207,6 +221,53 @@ async function removeCacheFile(
         warnings,
       };
     }
+    throw error;
+  }
+}
+
+/**
+ * Remove the selected path-based targets. A runtime/ that is a link or
+ * junction leads out of the tracker, so nothing under it is removed, whichever
+ * target names it, and the workspace snapshot temp sweep is skipped too.
+ */
+async function removePathTargets(
+  pmRoot: string,
+  scopes: readonly string[],
+  dryRun: boolean,
+): Promise<{ removed: string[]; retained: string[]; warnings: string[] }> {
+  const removed: string[] = [];
+  const retained: string[] = [];
+  const warnings: string[] = [];
+  let runtimeRedirected = false;
+  for (const target of GC_TARGETS.filter((candidate) => scopes.includes(candidate.scope))) {
+    if (target.scope === "runtime" && runtimeRedirected) {
+      retained.push(target.relativePath);
+      continue;
+    }
+    const result = await removeCacheFile(pmRoot, target, dryRun);
+    runtimeRedirected ||= result.redirected === true;
+    (result.removed ? removed : retained).push(target.relativePath);
+    warnings.push(...result.warnings);
+  }
+  // Re-checked once more, since the last target's hooks ran after its check.
+  if (scopes.includes("runtime") && !runtimeRedirected) runtimeRedirected = await isRedirectedRuntimeDirectory(pmRoot);
+  if (runtimeRedirected) {
+    warnings.push("redirected_runtime_directory:runtime");
+  } else if (scopes.includes("runtime")) {
+    const snapshotTempResult = await sweepWorkspaceSnapshotTemps(pmRoot, dryRun);
+    removed.push(...snapshotTempResult.removed);
+    retained.push(...snapshotTempResult.retained);
+    warnings.push(...snapshotTempResult.warnings);
+  }
+  return { removed, retained, warnings };
+}
+
+/** Whether runtime/ exists but is not a real directory (a symbolic link, junction or file). */
+async function isRedirectedRuntimeDirectory(pmRoot: string): Promise<boolean> {
+  try {
+    return !(await fs.lstat(path.join(pmRoot, "runtime"))).isDirectory();
+  } catch (error: unknown) {
+    if (isFileMissingError(error)) return false;
     throw error;
   }
 }
@@ -333,6 +394,11 @@ function buildGcGuidance(params: {
       'History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.',
     );
   }
+  if (params.removed.includes("runtime/history-stream-summary.json")) {
+    guidance.push(
+      'History stream summary was removed; the next "pm activity" or "pm context" read parses every history stream once to rebuild it.',
+    );
+  }
   if (
     !params.dryRun &&
     params.removed.some((entry) => entry.startsWith("checkpoints/"))
@@ -363,30 +429,7 @@ export async function runGc(
   const settings = await readSettings(pmRoot);
   const dryRun = options.dryRun === true;
   const scopes = parseScopes(options.scope);
-  const selectedTargets = GC_TARGETS.filter((target) =>
-    scopes.includes(target.scope),
-  );
-
-  const removed: string[] = [];
-  const retained: string[] = [];
-  const warnings: string[] = [];
-
-  for (const target of selectedTargets) {
-    const result = await removeCacheFile(pmRoot, target, dryRun);
-    if (result.removed) {
-      removed.push(target.relativePath);
-    } else {
-      retained.push(target.relativePath);
-    }
-    warnings.push(...result.warnings);
-  }
-
-  if (scopes.includes("runtime")) {
-    const snapshotTempResult = await sweepWorkspaceSnapshotTemps(pmRoot, dryRun);
-    removed.push(...snapshotTempResult.removed);
-    retained.push(...snapshotTempResult.retained);
-    warnings.push(...snapshotTempResult.warnings);
-  }
+  const { removed, retained, warnings } = await removePathTargets(pmRoot, scopes, dryRun);
 
   // The locks scope is not a path-based GC_TARGET: it sweeps the locks/ directory
   // and removes only locks whose own embedded ttl has expired (crashed-process
@@ -483,7 +526,7 @@ export async function runGc(
   warnings.push(
     ...(await runActiveOnIndexHooks({
       mode: dryRun ? "gc:dry-run" : "gc",
-      total_items: selectedTargets.length,
+      total_items: GC_TARGETS.filter((target) => scopes.includes(target.scope)).length,
     })),
   );
   const guidance = buildGcGuidance({
