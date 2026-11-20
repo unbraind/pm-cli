@@ -551,6 +551,20 @@ describe("register-list-query context NDJSON", () => {
     await runRaw("context", "--format", "ndjson");
     await runRaw("context", "--format", "ndjson", "--quiet");
     expect(vi.mocked(writeStdout)).not.toHaveBeenCalled();
+    expect(vi.mocked(printError)).not.toHaveBeenCalledWith(expect.stringContaining("activity_history_read"));
+  });
+
+  it("discloses a history read that could not be bounded on stderr, keeping stdout rows only", async () => {
+    vi.mocked(resolveContextOutputFormat).mockReturnValue("ndjson" as never);
+    vi.mocked(runContext).mockResolvedValueOnce({
+      high_level: [{ id: "pm-feature" }],
+      low_level: [],
+      blocked_fallback: [],
+      activity_history_read: { reason: "summary_missing", streams_read: 600, streams_total: 600 },
+    } as never);
+    await runRaw("context", "--format", "ndjson");
+    expect(vi.mocked(writeStdout)).toHaveBeenLastCalledWith('{"id":"pm-feature"}\n');
+    expect(vi.mocked(printError)).toHaveBeenCalledWith("[pm] warning: activity_history_read reason=summary_missing streams_read=600/600");
   });
 });
 

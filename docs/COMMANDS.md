@@ -1577,8 +1577,10 @@ reordered read already parsed is not reflected); `unwindowed_query` when a
 read with no `--from` bound parsed most streams, or `window_reaches_most_streams`
 when current bounds still left most streams inside the window), `streams_read`
 (streams parsed; one removed after the listing is not counted) and
-`streams_total`; `--stream` carries it on the `meta` record and markdown context
-adds a `history read:` line. Bounded reads add nothing. On POSIX the summary file is written owner-only (mode 0600) and is
+`streams_total`; `--stream` carries it on the `meta` record, markdown context
+adds a `history read:` line, and NDJSON context, whose stdout carries focus rows
+only, writes `[pm] warning: activity_history_read reason=<reason>
+streams_read=<read>/<total>` to stderr. Bounded reads add nothing. On POSIX the summary file is written owner-only (mode 0600) and is
 trusted only when the reading user owns it and no one else can write it; on
 Windows it inherits the runtime directory's ACL. A summary in a redirected
 `runtime/` (symbolic link or junction), or any entry at the summary path that

@@ -673,6 +673,12 @@ async function runContextAction(
     if (!globalOptions.quiet && rendered.length > 0) {
       writeStdout(`${rendered}\n`);
     }
+    // The row stream carries focus rows only; a history read that could not
+    // be bounded is still disclosed, as a diagnostic on stderr (GH-1664).
+    const historyRead = result.activity_history_read;
+    if (historyRead !== undefined) {
+      printError(`[pm] warning: activity_history_read reason=${historyRead.reason} streams_read=${historyRead.streams_read}/${historyRead.streams_total}`);
+    }
   } else {
     printResult(result, {
       ...globalOptions,
