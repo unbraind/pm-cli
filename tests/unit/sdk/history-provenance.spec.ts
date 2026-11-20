@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_AUTHOR_IDENTITY_VOCABULARY,
   compileHistoryProvenanceMatcher,
   historyEntryMatchesProvenance,
   parseHistoryProvenanceFilters,
@@ -205,5 +206,17 @@ describe("history provenance SDK primitives", () => {
       { author: "alpha", entries: 1 },
       { author: "zeta", entries: 1 },
     ]);
+  });
+  it("resolves a malformed recorded harness only through an own configured alias", () => {
+    const entry = (author: string) => ({ ts: "2026-11-20T00:00:00.000Z", author, op: "update", patch: [], before_hash: "a", after_hash: "b", agent_harness: 42 }) as unknown as HistoryEntry;
+    const vocabulary = { ...DEFAULT_AUTHOR_IDENTITY_VOCABULARY, aliases: { "legacy-bot": "codex", "blank-bot": "" } };
+    expect(projectHistoryProvenance(entry("blank-bot"), vocabulary)).toMatchObject({ harness_source: "unresolved" });
+    // A non-string harness is ignored, so a configured alias still resolves it.
+    expect(projectHistoryProvenance(entry("legacy-bot"), vocabulary)).toMatchObject({ agent_harness: "codex", harness_source: "vocabulary" });
+    // Inherited object properties are never aliases.
+    for (const author of ["constructor", "toString", "__proto__"]) {
+      expect(projectHistoryProvenance(entry(author), vocabulary)).toMatchObject({ harness_source: "unresolved" });
+      expect(projectHistoryProvenance(entry(author))).toMatchObject({ harness_source: "unresolved" });
+    }
   });
 });

@@ -237,7 +237,7 @@ the mandatory matrix without rewriting the tagged source or skipping policy.
 ## Focused Test Runs
 
 ```bash
-node scripts/run-tests.mjs test -- tests/unit/output.spec.ts
+node scripts/run-tests.mjs test -- tests/unit/core/output/output.spec.ts
 node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
 ```
 

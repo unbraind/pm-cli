@@ -286,7 +286,8 @@ describe("history read cost benchmark (GH-1664)", () => {
     expect(measured).toBe(false);
     await expect(stat(budgetPath)).rejects.toMatchObject({ code: "ENOENT" });
     // Checks run on any supported major.
-    await expect(main(["--check"], { buildReport: async () => ({ ...report(), node_version: "v26.13.1" }) })).resolves.toMatchObject({ mode: "check" });
+    await writeFile(budgetPath, JSON.stringify(buildHistoryReadBudgets(report())));
+    await expect(main(["--check"], { budgetPath, buildReport: async () => ({ ...report(), node_version: "v26.13.1" }) })).resolves.toMatchObject({ mode: "check" });
   });
 
   it("refuses an update from an unqualified runner or a measurement that violates its own gate", async () => {
@@ -302,8 +303,17 @@ describe("history read cost benchmark (GH-1664)", () => {
     await expect(stat(budgetPath)).rejects.toMatchObject({ code: "ENOENT" });
     await expect(main([], { buildReport: async () => report() })).rejects.toThrow("Usage:");
     await expect(main(["--update", "--check"], { nodeVersion: "v24.22.3", buildReport: async () => report() })).rejects.toThrow("Usage:");
-    // The committed budget accepts a report inside its declared ceiling.
-    await expect(main(["--check"], { buildReport: async () => report() })).resolves.toMatchObject({ absolute_admission: "passed" });
+  });
+
+  it("accepts, against the committed budget, a report derived from that budget's own ceiling", async () => {
+    const committed = JSON.parse(await readFile(path.resolve("scripts/bench/history-read-budgets.json"), "utf8"));
+    const ceiling = committed.orient_three_rows.max_p50_ms;
+    const derived = report();
+    // Bounded well inside the ceiling and the fraction, a full scan that exceeds it.
+    derived.bounded = { runs: 5, min_ms: Math.floor(ceiling / 4), p50_ms: Math.floor(ceiling / 3), max_ms: Math.floor(ceiling / 2) };
+    derived.full_scan = { runs: 3, min_ms: ceiling * 2, p50_ms: ceiling * 2, max_ms: ceiling * 2 };
+    derived.fixture = { streams: committed.fixture.min_streams, history_bytes: committed.fixture.min_history_bytes, entries_per_stream: 100 };
+    await expect(main(["--check"], { buildReport: async () => derived })).resolves.toMatchObject({ absolute_admission: "passed", violations: [] });
   });
 
   it("executes, skips and reports failures through the script entrypoint", async () => {

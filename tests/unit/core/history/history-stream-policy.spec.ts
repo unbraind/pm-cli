@@ -112,15 +112,13 @@ describe("history stream policy probes (GH-1664)", () => {
     await writeFile(getHistoryPath(pmRoot, "pm-c"), "");
     const actual = fsUtils.pathExists;
     let removed = false;
+    let pmAProbes = 0;
     vi.spyOn(fsUtils, "pathExists").mockImplementation(async (target: string) => {
-      // Another process removes pm-c after the bulk probe saw it, while pm-a is created.
-      if (!removed && target.endsWith("pm-a.jsonl") && (await actual(getHistoryPath(pmRoot, "pm-c")))) {
-        const present = await actual(target);
-        if (!present) {
-          removed = true;
-          await rm(getHistoryPath(pmRoot, "pm-c"));
-        }
-        return present;
+      // The second pm-a probe is its pre-creation check, after the bulk probe
+      // saw pm-c present; another process removes pm-c then.
+      if (target.endsWith("pm-a.jsonl") && ++pmAProbes === 2) {
+        removed = true;
+        await rm(getHistoryPath(pmRoot, "pm-c"));
       }
       return actual(target);
     });
