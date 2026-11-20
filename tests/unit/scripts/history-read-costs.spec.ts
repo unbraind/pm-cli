@@ -245,8 +245,11 @@ describe("history read cost benchmark (GH-1664)", () => {
     expect(() => validateHistoryReadBudgets(misspelled)).toThrow("orient_three_rows.max_p50_fraction_of_full_scan must be positive numbers");
     expect(() => validateHistoryReadBudgets({ ...valid, fixture: { min_streams: "2000", min_history_bytes: -1 } }))
       .toThrow("fixture.min_streams, fixture.min_history_bytes must be positive numbers");
-    expect(() => validateHistoryReadBudgets({ ...valid, orient_three_rows: { max_p50_ms: 2_000, max_p50_fraction_of_full_scan: 1.5 } }))
-      .toThrow("the fraction at most 1");
+    for (const fraction of [1, 1.5]) {
+      // A bounded read as slow as the full scan must never pass the relative gate.
+      expect(() => validateHistoryReadBudgets({ ...valid, orient_three_rows: { max_p50_ms: 2_000, max_p50_fraction_of_full_scan: fraction } }))
+        .toThrow("the fraction below 1");
+    }
     expect(() => validateHistoryReadBudgets(undefined)).toThrow("History read budget is malformed");
 
     // Both modes refuse it: check would pass silently, update would lose the ratchet.

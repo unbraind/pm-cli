@@ -1570,7 +1570,10 @@ streams lack usable regular bounds because they changed or hold timestamps that
 are not canonical millisecond UTC: more than half of all streams as the read
 opens, or, when the read parsed most streams, more than half of those it
 parsed; `read_hooks_active` when read hooks were active as the read opened or
-became active while it ran, which ends pruning; `unwindowed_query` when a
+became active while it ran, which ends pruning (a hook active at open keeps the
+complete read in file order; one registered mid-read observes every stream the
+read has not yet read, exactly once, but a side effect it has on a stream the
+reordered read already parsed is not reflected); `unwindowed_query` when a
 read with no `--from` bound parsed most streams, or `window_reaches_most_streams`
 when current bounds still left most streams inside the window), `streams_read`
 (streams parsed; one removed after the listing is not counted) and

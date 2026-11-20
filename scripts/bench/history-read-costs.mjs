@@ -272,8 +272,9 @@ export function validateHistoryReadBudgets(budgets) {
   const malformed = Object.entries(required)
     .filter(([, value]) => typeof value !== "number" || !Number.isFinite(value) || value <= 0)
     .map(([key]) => key);
-  if (typeof fraction === "number" && fraction > 1) malformed.push("orient_three_rows.max_p50_fraction_of_full_scan");
-  if (malformed.length > 0) throw new TypeError(`History read budget is malformed: ${malformed.join(", ")} must be positive numbers (the fraction at most 1).`);
+  // A fraction of 1 or more would admit a bounded read as slow as the full scan.
+  if (typeof fraction === "number" && fraction >= 1) malformed.push("orient_three_rows.max_p50_fraction_of_full_scan");
+  if (malformed.length > 0) throw new TypeError(`History read budget is malformed: ${malformed.join(", ")} must be positive numbers (the fraction below 1).`);
   return budgets;
 }
 
