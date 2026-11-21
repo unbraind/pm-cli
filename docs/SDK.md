@@ -1375,7 +1375,8 @@ any `filter*` key, any key of a nested `list` record), on an outer key beside a
 nested `update` record, and on a key that is no declared update option, such as
 a schema or extension field (clear those with `unset`). Those refusals belong
 to action dispatch; a direct `runUpdateMany` does not add them.
-MCP tools keep `null` as an omitted argument; use `unset` there.
+MCP tools are unchanged: they never clear a field from a `null`, so use `unset`
+there.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
 literal data, including `"none"` and `"null"`. Explicit CLI flags override
@@ -1861,9 +1862,10 @@ await commitItemMutations({
   workspace schema before it is stored, and every `set` value must be stored
   in its own JSON shape, an array with every entry. A value the reader
   refuses, or one that normalization would drop, shorten or replace
-  (`tags: "a"`, `tags: [1]`, duplicate tags, a blank `assignee`), or a field name the
-  item format reserves (`front_matter`, `body`), refuses the step with
-  `finalization_invalid_document` and writes nothing. Other
+  (`tags: "a"`, `tags: [1]`, duplicate tags, a blank `assignee`), or a set
+  field named like a part of the item format (`front_matter`), refuses the
+  step with `finalization_invalid_document` and writes nothing. `unset`
+  refuses `body` and `front_matter` at admission. Other
   canonicalization (tag order, status aliases, trimmed strings) applies as it
   does for every write.
 - A finalization is a raw front-matter write. Workflow policies and

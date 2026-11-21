@@ -1062,7 +1062,8 @@ function assertValidBulkFinalization(mutation: BulkItemFinalizeMutation, index: 
   if (unknown.length > 0) throw new TypeError(`${label} has unsupported keys: ${unknown.join(", ")}; a finalization carries only ${FINALIZE_ROW_KEYS.join(", ")}`);
   if (mutation.force !== undefined && typeof mutation.force !== "boolean") throw new TypeError(`${label} force must be a boolean`);
   // The journal replays the guard, so its value must survive serialization unchanged, like every set value.
-  if (mutation.match !== undefined && !isJournalValue(mutation.match.value)) throw new TypeError(`${label} match value must be a JSON value`);
+  // A guard built from getters or a class would lose its key and value when the row is snapshotted, and then pass every item.
+  if (mutation.match !== undefined && !isJournalValue(mutation.match)) throw new TypeError(`${label} match must be a plain object with a JSON value`);
   assertValidItemFinalization(mutation, label);
 }
 

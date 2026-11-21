@@ -102,6 +102,8 @@ export function assertValidItemFinalization(patch: ItemFinalizationPatch, label:
   }
   for (const field of unsetFields) {
     assertFinalizationField(field, label);
+    // The item format keeps these beside the front matter, so removing them from it would change nothing.
+    if (field === "body" || field === "front_matter") throw new TypeError(`${label} cannot unset "${field}"; the item format reserves that name`);
     if (setFields.includes(field)) throw new TypeError(`${label} both sets and unsets "${field}"`);
   }
   if (new Set(unsetFields).size !== unsetFields.length) throw new TypeError(`${label} unset repeats a field`);
