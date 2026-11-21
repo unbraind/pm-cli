@@ -8,6 +8,8 @@
  * names it, checks the recorded links inside the bridged segment, and
  * re-anchors replay on the bridge's own after_hash.
  */
+import { historyDigest, resolveHistoryHashAlgorithm } from "./digest.js";
+import { stableStringify } from "../shared/serialization.js";
 import type {
   HistoryBridge,
   HistoryBridgeBreak,
@@ -53,7 +55,8 @@ export function readHistoryBridge(
   }
   const candidate = bridge as Record<string, unknown>;
   return candidate.version === HISTORY_BRIDGE_VERSION &&
-    Object.keys(candidate).length === 2 &&
+    Object.keys(candidate).length === 3 &&
+    typeof candidate.segment_digest === "string" &&
     Array.isArray(candidate.breaks) &&
     candidate.breaks.length > 0 &&
     candidate.breaks.every(isHistoryBridgeBreak)
@@ -84,6 +87,21 @@ export function matchesHistoryBreak(
     descriptor.gap_from === previous.after_hash &&
     descriptor.gap_to === entry.before_hash &&
     descriptor.record_hash === (entry.record_hash ?? null)
+  );
+}
+
+/**
+ * Digest the records a bridge covers, from the first break up to the bridge,
+ * under the bridge record's algorithm. Inside a segment replay cannot prove
+ * each recorded state, so the bridge commits to the exact records instead.
+ */
+export function digestBridgedSegment(
+  segment: readonly HistoryEntry[],
+  bridge: Pick<HistoryEntry, "hash_algorithm">,
+): string {
+  return historyDigest(
+    stableStringify(segment),
+    resolveHistoryHashAlgorithm(bridge.hash_algorithm),
   );
 }
 

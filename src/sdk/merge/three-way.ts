@@ -15,6 +15,7 @@ import {
   reanchorHistoryEntries,
   toReplayDocument,
   tryApplyReplayPatch,
+  verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import jsonPatch from "fast-json-patch";
@@ -308,29 +309,34 @@ function historyBridgeRepairIdentity(entry: HistoryEntry): string | null {
  * Two clones that bridged the same break independently append the same repair
  * under different provenance (GH-1715). Keep ours byte-for-byte and append
  * theirs as a neutral record: its effect is already applied, and its original
- * sealed bridge stays as rewrite evidence instead of being dropped.
+ * sealed bridge stays as rewrite evidence instead of being dropped. Both input
+ * chains and the result must verify, so an invalid side is never reported as
+ * a resolved merge.
  */
 function mergeEquivalentBridges(
   ours: HistoryEntry[],
-  oursSuffix: HistoryEntry[],
-  theirsSuffix: HistoryEntry[],
-): HistoryEntry[] | null {
+  theirs: HistoryEntry[],
+  shared: number,
+): HistoryEntry | null {
+  const oursSuffix = ours.slice(shared);
+  const theirsSuffix = theirs.slice(shared);
   if (oursSuffix.length !== 1 || theirsSuffix.length !== 1) return null;
   const identity = historyBridgeRepairIdentity(oursSuffix[0]!);
   if (identity === null || historyBridgeRepairIdentity(theirsSuffix[0]!) !== identity) {
     return null;
   }
-  const theirs = theirsSuffix[0]!;
+  if (![ours, theirs].every((side) => verifyHistoryChainWithVersion(side).ok)) {
+    return null;
+  }
+  const original = theirsSuffix[0]!;
   const anchor = oursSuffix[0]!.after_hash;
-  const { bridge: _bridge, ...neutral } = theirs;
-  return [
-    ...ours,
-    resealHistoryRewrite(
-      theirs,
-      { ...neutral, patch: [], before_hash: anchor, after_hash: anchor },
-      { retainOriginalPatch: true, retainPriorRecord: true },
-    ),
-  ];
+  const { bridge: _bridge, ...neutral } = original;
+  const appended = resealHistoryRewrite(
+    original,
+    { ...neutral, patch: [], before_hash: anchor, after_hash: anchor },
+    { retainOriginalPatch: true, retainPriorRecord: true },
+  );
+  return verifyHistoryChainWithVersion([...ours, appended]).ok ? appended : null;
 }
 
 /**
@@ -405,15 +411,16 @@ export function mergeHistoryStreams(
   }
 
   const oursSuffix = ours.slice(shared);
-  const bridged = mergeEquivalentBridges(ours, oursSuffix, theirs.slice(shared));
-  if (bridged !== null) {
+  const neutralBridge = mergeEquivalentBridges(ours, theirs, shared);
+  if (neutralBridge !== null) {
+    const separator = oursRaw.endsWith("\n") ? "" : "\n";
     return {
-      merged: historyEntriesToRaw(bridged),
+      merged: `${oursRaw}${separator}${JSON.stringify(neutralBridge)}\n`,
       strategy: "equivalent_bridges",
       common_entries: shared,
       entries_from_ours: 1,
       entries_from_theirs: 1,
-      entries_total: bridged.length,
+      entries_total: ours.length + 1,
       reanchored: false,
     };
   }

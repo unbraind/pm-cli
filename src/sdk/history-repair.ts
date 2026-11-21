@@ -857,7 +857,10 @@ export async function runHistoryRepair(
       operation: "history-repair",
       options,
       transform: (snapshot) =>
-        buildAppendOnlyRepairPlan(subject, options, snapshot),
+        buildAppendOnlyRepairPlan(subject, options, snapshot, {
+          analyzeDiscard: analyzeReconciliationDiscard,
+          collectWarnings: collectHistoryRepairWarnings,
+        }),
     });
   }
   return runHistoryMaintenance({

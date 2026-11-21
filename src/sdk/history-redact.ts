@@ -28,9 +28,11 @@ import {
 } from "./history/maintenance.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
+  collectBridgedInteriorIndexes,
   historyEntriesToRaw,
   replayHash,
   replayToItemDocument,
+  verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../core/history/replay.js";
 import { applyHistoryPatch } from "../core/history/projection.js";
@@ -512,6 +514,12 @@ function rewriteHistoryEntries(
   let entriesChanged = 0;
   let replacements = 0;
   const rewrittenEntries: HistoryEntry[] = [];
+  // Redaction recomputes every state anchor from replay, which cannot prove a
+  // bridged segment's recorded states: it dissolves each bridge and marks the
+  // segment's entries replay_inexact so history reads keep refusing them.
+  const inexact = collectBridgedInteriorIndexes(
+    verifyHistoryChainWithVersion(entries).bridged_segments ?? [],
+  );
 
   for (let index = 0; index < entries.length; index += 1) {
     const original = entries[index];
@@ -535,16 +543,18 @@ function rewriteHistoryEntries(
       redacted.entry.op,
     );
     const afterHash = replayHash(replay, undefined, resolveHistoryHashAlgorithm(original.hash_algorithm));
+    const { bridge: _dissolvedBridge, ...unbridged } = redacted.entry;
     rewrittenEntries.push(
       resealHistoryRewrite(
         original,
         {
-          ...redacted.entry,
+          ...unbridged,
+          ...(inexact.has(index) ? { replay_inexact: true as const } : {}),
           before_hash: beforeHash,
           after_hash: afterHash,
         },
         {
-          retainPriorRecord: redacted.changed,
+          retainPriorRecord: redacted.changed || _dissolvedBridge !== undefined,
           retainPriorRecordHash: !redacted.changed,
         },
       ),

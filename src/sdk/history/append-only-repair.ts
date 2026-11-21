@@ -10,15 +10,23 @@
 import { isUtf8 } from "node:buffer";
 import { readFile } from "node:fs/promises";
 import jsonPatch from "fast-json-patch";
-import { describeHistoryBreak } from "../../core/history/bridge.js";
-import { resolveHistoryHashAlgorithm } from "../../core/history/digest.js";
+import {
+  describeHistoryBreak,
+  digestBridgedSegment,
+} from "../../core/history/bridge.js";
+import {
+  resolveHistoryHashAlgorithm,
+  type HistoryHashAlgorithm,
+} from "../../core/history/digest.js";
 import { classifyHistoryEvent } from "../../core/history/event-classification.js";
-import { sealHistoryRecord } from "../../core/history/history.js";
+import {
+  sealHistoryRecord,
+  type HistoryItemHashVersion,
+} from "../../core/history/history.js";
 import { writeHistoryRawWithRollback } from "../../core/history/history-rewrite.js";
 import {
   cloneEmptyReplayDocument,
   replayHashVerificationCandidates,
-  resolveHistoryRepairItemHashVersion,
   toReplayDocument,
   tryApplyReplayPatch,
   verifyHistoryChainWithVersion,
@@ -35,6 +43,7 @@ import type {
 import type { HistorySubject } from "../history-redact.js";
 import type {
   HistoryRepairCommandOptions,
+  HistoryRepairReconciliationReport,
   HistoryRepairResult,
 } from "../history-repair.js";
 import type {
@@ -119,36 +128,84 @@ function replayStrictly(id: string, entries: HistoryEntry[]): ReplayDocument {
   return replay;
 }
 
+/** The hash epoch and algorithm the appended record must anchor with. */
+interface AppendedRecordSurface {
+  itemHashVersion: HistoryItemHashVersion;
+  explicitVersion: boolean;
+  algorithm: HistoryHashAlgorithm;
+}
+
+/**
+ * Keep the epoch the verified part of the stream proves (the whole stream, or
+ * the prefix before the first break), so a bridge never downgrades an
+ * implicit epoch-2 stream to epoch 1 the way the rewrite resolver would.
+ */
+function resolveAppendedRecordSurface(
+  entries: HistoryEntry[],
+  firstBreak: number | null,
+): AppendedRecordSurface {
+  const verified = firstBreak === null ? entries : entries.slice(0, firstBreak);
+  // A verified nonempty chain always proves its epoch; every other verdict was refused earlier.
+  const itemHashVersion = verifyHistoryChainWithVersion(verified).item_hash_version!;
+  return {
+    itemHashVersion,
+    explicitVersion:
+      itemHashVersion !== 1 ||
+      entries.some((entry) => entry.item_hash_version !== undefined),
+    algorithm: resolveHistoryHashAlgorithm(entries.at(-1)!.hash_algorithm),
+  };
+}
+
 /** Build the sealed bridge or reconciliation record appended after the last entry. */
 function buildAppendedRepairRecord(params: {
   entries: HistoryEntry[];
+  surface: AppendedRecordSurface;
   finalReplay: ReplayDocument;
   itemReplay: ReplayDocument;
   author: string;
   message: string;
-  bridge: HistoryBridge | null;
+  breaks: HistoryBridge["breaks"];
+  segmentStart: number;
 }): HistoryEntry {
-  const { entries, finalReplay, itemReplay } = params;
-  const algorithm = resolveHistoryHashAlgorithm(entries.at(-1)!.hash_algorithm);
-  const itemHashVersion = resolveHistoryRepairItemHashVersion(entries);
-  const explicitVersion =
-    itemHashVersion !== 1 ||
-    entries.some((entry) => entry.item_hash_version !== undefined);
+  const { entries, surface, finalReplay, itemReplay } = params;
+  const previousAfterHash = entries.at(-1)!.after_hash;
+  // Epoch 2 has two semantic variants; reuse the tail's variant on both sides.
+  const variant = Math.max(
+    0,
+    replayHashVerificationCandidates(
+      finalReplay,
+      surface.itemHashVersion,
+      surface.algorithm,
+    ).indexOf(previousAfterHash),
+  );
   const record: HistoryEntry = {
-    hash_algorithm: algorithm,
+    hash_algorithm: surface.algorithm,
     ts: nowIso(),
     author: params.author,
     op: "history_repair",
     patch: jsonPatch.compare(finalReplay, itemReplay) as HistoryPatchOp[],
-    before_hash: entries.at(-1)!.after_hash,
+    before_hash: previousAfterHash,
     after_hash: replayHashVerificationCandidates(
       itemReplay,
-      itemHashVersion,
-      algorithm,
-    )[0],
+      surface.itemHashVersion,
+      surface.algorithm,
+    )[variant]!,
     message: params.message,
-    ...(explicitVersion ? { item_hash_version: itemHashVersion } : {}),
-    ...(params.bridge === null ? {} : { bridge: params.bridge }),
+    ...(surface.explicitVersion
+      ? { item_hash_version: surface.itemHashVersion }
+      : {}),
+    ...(params.breaks.length === 0
+      ? {}
+      : {
+          bridge: {
+            version: 1,
+            breaks: params.breaks,
+            segment_digest: digestBridgedSegment(
+              entries.slice(params.segmentStart),
+              { hash_algorithm: surface.algorithm },
+            ),
+          },
+        }),
   };
   return sealHistoryRecord({
     ...record,
@@ -172,6 +229,68 @@ function describeAppendOnlyRepair(
   return `${parts.join("; ")}.`;
 }
 
+/** Name the first replay mismatch and every later recorded link the stream breaks. */
+function collectBreaks(
+  entries: HistoryEntry[],
+  firstBreak: number | null,
+): HistoryBridge["breaks"] {
+  if (firstBreak === null) return [];
+  const breaks = [describeHistoryBreak(entries[firstBreak - 1]!, entries[firstBreak]!)];
+  for (let index = firstBreak + 1; index < entries.length; index += 1) {
+    if (entries[index]!.before_hash !== entries[index - 1]!.after_hash) {
+      breaks.push(describeHistoryBreak(entries[index - 1]!, entries[index]!));
+    }
+  }
+  return breaks;
+}
+
+/** Reconciliation-loss analysis and warnings shared with the rewriting repair. */
+export interface AppendOnlyRepairHelpers {
+  /** Name the recorded effects the reconciliation patch overwrites. */
+  analyzeDiscard: (
+    entries: HistoryEntry[],
+    finalReplay: ReplayDocument,
+    itemReplay: ReplayDocument,
+  ) => HistoryRepairReconciliationReport | undefined;
+  /** Derive the repair warnings from the change and its losses. */
+  collectWarnings: (
+    changed: boolean,
+    skippedOps: number,
+    reconciliation: HistoryRepairReconciliationReport | undefined,
+  ) => string[];
+}
+
+/** Append the planned record to the exact bytes the shared under-lock check verified. */
+async function appendRepairRecord(
+  id: string,
+  historyPath: string,
+  verifiedRaw: string | null,
+  record: HistoryEntry,
+): Promise<void> {
+  const bytes = await readFile(historyPath);
+  if (!isUtf8(bytes)) {
+    refuseAppendOnly(
+      id,
+      "stream_not_utf8",
+      `History for ${id} is not valid UTF-8, so its bytes cannot be kept exactly.`,
+    );
+  }
+  const raw = bytes.toString("utf8");
+  if (raw !== verifiedRaw) {
+    refuseAppendOnly(
+      id,
+      "stream_changed",
+      `History for ${id} changed after the repair verified it; retry.`,
+    );
+  }
+  const separator = raw === "" || raw.endsWith("\n") ? "" : "\n";
+  await writeHistoryRawWithRollback({
+    historyPath,
+    historyRawUnderLock: verifiedRaw,
+    nextHistoryRaw: `${raw}${separator}${JSON.stringify(record)}\n`,
+  });
+}
+
 /**
  * Plan an append-only repair: name every recorded break after the first
  * replay mismatch, append one record that reconciles replay with the on-disk
@@ -181,23 +300,13 @@ export function buildAppendOnlyRepairPlan(
   subject: HistorySubject,
   options: HistoryRepairCommandOptions,
   snapshot: HistoryMaintenanceSnapshot,
+  helpers: AppendOnlyRepairHelpers,
 ): HistoryMaintenancePlan<HistoryRepairResult> {
   const { entries } = snapshot;
   const id = subject.id;
   const before = verifyHistoryChainWithVersion(entries);
   const firstBreak = locateFirstBreak(id, before);
-  const breaks =
-    firstBreak === null
-      ? []
-      : entries
-          .map((entry, index) => ({ entry, index }))
-          .filter(
-            ({ entry, index }) =>
-              index === firstBreak ||
-              (index > firstBreak &&
-                entry.before_hash !== entries[index - 1]!.after_hash),
-          )
-          .map(({ index }) => describeHistoryBreak(entries[index - 1]!, entries[index]!));
+  const breaks = collectBreaks(entries, firstBreak);
   if (breaks.length > 0 && snapshot.loadedItem === null) {
     refuseAppendOnly(
       id,
@@ -210,21 +319,23 @@ export function buildAppendOnlyRepairPlan(
     snapshot.loadedItem === null
       ? null
       : toReplayDocument(snapshot.loadedItem.document);
-  const reconcile =
-    itemReplay !== null &&
-    jsonPatch.compare(finalReplay, itemReplay).length > 0;
+  const reconciliation =
+    itemReplay === null
+      ? undefined
+      : helpers.analyzeDiscard(entries, finalReplay, itemReplay);
+  const reconcile = reconciliation !== undefined;
   const changed = breaks.length > 0 || reconcile;
-  const message = describeAppendOnlyRepair(options.message, breaks.length, reconcile);
-  const bridge: HistoryBridge | null =
-    breaks.length === 0 ? null : { version: 1, breaks };
+  const surface = resolveAppendedRecordSurface(entries, firstBreak);
   const appended = changed
     ? buildAppendedRepairRecord({
         entries,
+        surface,
         finalReplay,
         itemReplay: itemReplay!,
         author: snapshot.author,
-        message,
-        bridge,
+        message: describeAppendOnlyRepair(options.message, breaks.length, reconcile),
+        breaks,
+        segmentStart: firstBreak ?? entries.length,
       })
     : null;
   const rewrittenEntries = appended === null ? entries : [...entries, appended];
@@ -238,73 +349,97 @@ export function buildAppendOnlyRepairPlan(
     );
   }
   const receipt: HistoryRepairBridgeReceipt | undefined =
-    bridge === null
+    appended?.bridge === undefined
       ? undefined
-      : { ...bridge, first_break_entry: firstBreak! + 1 };
+      : { ...appended.bridge, first_break_entry: firstBreak! + 1 };
+  const planWarnings = helpers.collectWarnings(changed, 0, reconciliation);
   return {
     changed,
     rewrittenEntries,
     /** Append the record to the exact bytes read under the lock. */
-    applyRewrite: async (verified) => {
-      const bytes = await readFile(subject.historyPath);
-      if (!isUtf8(bytes)) {
-        refuseAppendOnly(
-          id,
-          "stream_not_utf8",
-          `History for ${id} is not valid UTF-8, so its bytes cannot be kept exactly.`,
-        );
-      }
-      const raw = verified.historyRawUnderLock ?? "";
-      const separator = raw === "" || raw.endsWith("\n") ? "" : "\n";
-      await writeHistoryRawWithRollback({
-        historyPath: subject.historyPath,
-        historyRawUnderLock: verified.historyRawUnderLock,
-        nextHistoryRaw: `${raw}${separator}${JSON.stringify(appended)}\n`,
-      });
-    },
-    report: ({ verification, warnings }) => ({
-      id,
-      dry_run: options.dryRun === true,
-      changed,
-      history: {
-        path: subject.historyPath,
-        entries_scanned: entries.length,
-        chain_drift_before: !before.ok,
-        entries_rehashed: 0,
-        entries_patch_repaired: 0,
-        converted_replace_to_add: 0,
-        skipped_ops: 0,
-        reconciled_with_item: reconcile,
-        audit_entry_added: changed && options.dryRun !== true,
-        verify_ok: verification.ok,
-        verify_errors: verification.errors,
-        item_hash_version_before: before.item_hash_version ?? null,
-        item_hash_version_after:
-          after.item_hash_version ?? resolveHistoryRepairItemHashVersion(entries),
-        version_disposition: "preserved",
-      },
-      item: {
-        exists: subject.located !== null,
-        path: subject.located?.itemPath ?? null,
-        matched_chain_before:
-          itemReplay === null
-            ? null
-            : replayHashVerificationCandidates(
-                itemReplay,
-                resolveHistoryRepairItemHashVersion(entries),
-                resolveHistoryHashAlgorithm(entries.at(-1)!.hash_algorithm),
-              ).includes(entries.at(-1)!.after_hash),
-      },
-      provenance_normalization: {
-        requested: false,
-        changed: false,
-        events_changed: 0,
-        observations_removed: 0,
-        invalid_values: [],
-      },
-      ...(receipt === undefined ? {} : { bridge: receipt }),
-      warnings,
-      generated_at: nowIso(),
-    }),
+    applyRewrite: async (verified) =>
+      appendRepairRecord(id, subject.historyPath, verified.historyRawUnderLock, appended!),
+    report: ({ verification, warnings }) =>
+      reportAppendOnlyRepair({
+        subject,
+        options,
+        entries,
+        before,
+        surface,
+        changed,
+        itemReplay,
+        reconciliation,
+        receipt,
+        verification,
+        warnings: [...planWarnings, ...warnings],
+      }),
   };
 }
+
+/** Render the public repair result for an append-only plan. */
+function reportAppendOnlyRepair(params: {
+  subject: HistorySubject;
+  options: HistoryRepairCommandOptions;
+  entries: HistoryEntry[];
+  before: ReturnType<typeof verifyHistoryChainWithVersion>;
+  surface: AppendedRecordSurface;
+  changed: boolean;
+  itemReplay: ReplayDocument | null;
+  reconciliation: HistoryRepairReconciliationReport | undefined;
+  receipt: HistoryRepairBridgeReceipt | undefined;
+  verification: { ok: boolean; errors: string[] };
+  warnings: string[];
+}): HistoryRepairResult {
+  const { subject, entries, surface, itemReplay } = params;
+  return {
+    id: subject.id,
+    dry_run: params.options.dryRun === true,
+    changed: params.changed,
+    history: {
+      path: subject.historyPath,
+      entries_scanned: entries.length,
+      chain_drift_before: !params.before.ok,
+      entries_rehashed: 0,
+      entries_patch_repaired: 0,
+      converted_replace_to_add: 0,
+      skipped_ops: 0,
+      reconciled_with_item: params.reconciliation !== undefined,
+      audit_entry_added: params.changed && params.options.dryRun !== true,
+      verify_ok: params.verification.ok,
+      verify_errors: params.verification.errors,
+      item_hash_version_before: params.before.item_hash_version ?? null,
+      item_hash_version_after: surface.itemHashVersion,
+      version_disposition: "preserved",
+    },
+    item: {
+      exists: subject.located !== null,
+      path: subject.located?.itemPath ?? null,
+      matched_chain_before:
+        itemReplay === null
+          ? null
+          : replayHashVerificationCandidates(
+              itemReplay,
+              surface.itemHashVersion,
+              surface.algorithm,
+            ).includes(entries.at(-1)!.after_hash),
+    },
+    provenance_normalization: {
+      requested: false,
+      changed: false,
+      events_changed: 0,
+      observations_removed: 0,
+      invalid_values: [],
+    },
+    ...(params.receipt === undefined ? {} : { bridge: params.receipt }),
+    ...(params.reconciliation === undefined
+      ? {}
+      : { reconciliation: params.reconciliation }),
+    warnings: [...new Set(params.warnings)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
+    generated_at: nowIso(),
+  };
+}
+
+/** Internal helpers exported only for focused tests. */
+export const _testOnly = { appendRepairRecord };

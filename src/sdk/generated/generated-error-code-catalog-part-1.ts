@@ -833,6 +833,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/history/projection.ts"],
   },
   {
+    code: "history_version_unreconstructable",
+    exit_code: 2,
+    sources: ["core/history/projection.ts"],
+  },
+  {
     code: "host_environment_capacity_fault",
     exit_code: 1,
     sources: ["core/fs/host-environment-errors.ts"],
@@ -1386,11 +1391,5 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     code: "merge_fence_missing",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
-    code: "merge_git_config_unwritable",
-    exit_code: 5,
-    stable: true,
-    sources: ["sdk/merge/install.ts"],
   },
 ];

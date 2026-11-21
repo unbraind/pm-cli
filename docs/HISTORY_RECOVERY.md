@@ -129,30 +129,46 @@ pm health --strict-exit
 
 The repair appends one sealed `history_repair` record carrying a `bridge`. The
 bridge names each break by the `after_hash` before it (`gap_from`), the
-`before_hash` after it (`gap_to`) and that entry's `record_hash`. Its patch
-reconciles replay with the on-disk item. Every earlier line stays
+`before_hash` after it (`gap_to`) and that entry's `record_hash`. Its
+`segment_digest` commits to every record from the first break up to the bridge,
+so no record it covers can change under it, sealed or not. Its patch
+reconciles replay with the on-disk item, and its anchors keep the hash epoch
+and variant the verified records already use. Every earlier line stays
 byte-identical, so the stream before the repair remains a prefix of the
 repaired stream. Other clones, worktrees and append-only consumers keep the
 bytes they already hold. `--all --append-only` bridges every drifted stream.
 
 Verification accepts a break exactly when the next bridge names it. Inside the
 bridged segment it checks the recorded links, and each further break must be
-the next one the bridge names. The bridge must name no break that did not occur
-and must re-anchor replay on its own `after_hash`. A forged, unsealed or
-partial bridge is drift (`bridge_invalid`, `bridge_unnamed_break`,
-`bridge_names_absent_break`, `bridge_link_mismatch` or
-`bridge_after_hash_mismatch`). A later rewriting repair keeps a verified bridged
-segment byte-identical. A rewrite that must change an entry before the segment,
-or a merge union that rebases every patch, dissolves the bridge into an ordinary
-re-anchored record and retains the original bridge as rewrite evidence. When two
-clones bridged the same break independently, the merge driver keeps one bridge.
-It appends the other as a neutral record with an empty patch, so both repairs'
-provenance survives (`equivalent_bridges`).
+the next one the bridge names. Wherever replay proves an entry's recorded
+before-state, for example after a later change overwrote the edited field, that
+entry's recorded effect must match too. The bridge must name no break that did
+not occur, must match its `segment_digest`, and must re-anchor replay on its
+own `after_hash`. A forged, unsealed or partial bridge is drift
+(`bridge_invalid`, `bridge_unnamed_break`, `bridge_names_absent_break`,
+`bridge_link_mismatch`, `bridge_segment_mismatch` or
+`bridge_after_hash_mismatch`).
+
+A later rewriting repair keeps a verified bridged segment byte-identical.
+Three rewrites must dissolve the bridge into an ordinary re-anchored record:
+
+- a rewrite that changes an entry before the segment
+- a merge union, which rebases every patch
+- `history-redact`, which recomputes every state anchor
+
+Each keeps the original bridge as rewrite evidence. It also marks every entry
+the segment covered with a sealed `replay_inexact`, because those states were
+re-anchored without the unrecorded change. When two clones bridged the same
+break independently, the merge driver keeps ours byte-for-byte. It appends the
+other bridge as a neutral record with an empty patch (`equivalent_bridges`), so
+both repairs' provenance survives. It does this only when both sides and the
+result verify.
 
 Versions between a break and its bridge cannot be reconstructed exactly,
 because the unrecorded change is missing from replay. `pm restore` and
-`pm get --at` refuse them with `history_replay_invalid`. Versions before the
-break and from the bridge onward remain addressable.
+`pm get --at` refuse them with `history_version_unreconstructable`, both before
+and after a dissolution. Versions before the break and from the bridge onward
+remain addressable.
 
 The repair refuses with `history_append_only_repair_unavailable` and names the
 rewriting repair as the fallback when a bridge cannot carry the drift:
@@ -163,10 +179,14 @@ rewriting repair as the fallback when a bridge cannot carry the drift:
 | `patch_does_not_replay` | A recorded patch only applies on top of the unrecorded change. |
 | `item_missing` | No on-disk item exists to anchor the bridge. |
 | `stream_not_utf8` | The stream bytes cannot be kept exactly. |
+| `stream_changed` | The stream changed after the repair verified it; retry. |
 | `bridge_does_not_verify` | The extended stream would not verify. |
 
-`pm history-repair <id>` without `--append-only` still re-anchors every recorded
-entry after the break, for single-writer trackers that want a continuous chain.
+A preview reports the recorded effects the reconciliation overwrites
+(`reconciliation`, with the `history_repair_reconcile_discards_events` warning),
+as the rewriting repair does. `pm history-repair <id>` without `--append-only`
+still re-anchors every recorded entry after the break, for single-writer
+trackers that want a continuous chain.
 
 ## Permanent item identities
 

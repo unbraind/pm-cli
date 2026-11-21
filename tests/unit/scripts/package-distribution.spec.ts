@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { compactMarkdownTables, exportedDeclarationClosure, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, exportedDeclarationClosure, findUnresolvedModuleImports, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -325,6 +325,46 @@ it("publishes only the dist declarations an exported types entry reaches, leavin
   await writeFile(path.join(root, "package.json"), JSON.stringify({ ...manifest, files: [...manifest.files, "dist/**", "types/**"] }));
   const unmapped = (await packDistribution(root)).files.map((file: { path: string }) => file.path) as string[];
   expect(unmapped).toEqual(expect.arrayContaining(["dist/index.d.ts", "dist/value.d.ts", "dist/internal.d.ts", "types/ambient.d.ts"]));
+}, 60_000);
+
+it("proves the staged module graph is closed with a comment- and string-aware lexer (pm-998juj)", () => {
+  const files: Record<string, string> = {
+    "dist/cli.js": [
+      'import{a}from"./sdk/kept.mjs";export*from "./sdk/kept.mjs";import"./sdk/kept.mjs";',
+      'import b from /* comment */ "./sdk/hidden.js";',
+      '// import "./sdk/commented.js"',
+      'const template = `import c from "./index.ts"`;',
+      'const lazy = await import(`./sdk/${name}.js`);',
+      'const json = require("./data.json");',
+      'import node from "node:fs";',
+    ].join("\n"),
+    "dist/sdk/kept.mjs": 'export const k = await import("../sdk/excluded.cjs");',
+    "node_modules/dep/index.js": 'import "./missing.js";',
+    "docs/README.md": 'import "./not-code.js"',
+  };
+  const read = (file: string): string => files[file]!;
+  expect(findUnresolvedModuleImports(Object.keys(files), read)).toEqual([
+    "dist/cli.js -> ./sdk/hidden.js",
+    "dist/cli.js -> ./data.json",
+    "dist/sdk/kept.mjs -> ../sdk/excluded.cjs",
+  ]);
+  expect(
+    findUnresolvedModuleImports([...Object.keys(files), "dist/sdk/hidden.js", "dist/data.json", "dist/sdk/excluded.cjs"], (file) => files[file] ?? ""),
+  ).toEqual([]);
+});
+
+it("refuses to pack a module that imports a file the files list excludes (pm-998juj)", async () => {
+  const { root, manifest } = await createBundleFixture();
+  await mkdir(path.join(root, "dist"), { recursive: true });
+  await writeFile(path.join(root, "dist/index.js"), 'export * from "./excluded.js";\n');
+  await writeFile(path.join(root, "dist/excluded.js"), "export const value = 1;\n");
+  await writeFile(path.join(root, "package.json"), JSON.stringify({
+    ...manifest,
+    files: [...manifest.files, "dist/**", "!dist/excluded.js"],
+  }));
+  await expect(packDistribution(root)).rejects.toThrow(
+    "Packed modules import files the package excludes:\ndist/index.js -> ./excluded.js",
+  );
 }, 60_000);
 
 it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {

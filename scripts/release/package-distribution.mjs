@@ -360,6 +360,35 @@ export function exportedDeclarationClosure(manifest, packedPaths, readText) {
   return reachable;
 }
 
+/** Lex one JavaScript module's import specifiers with TypeScript's comment- and string-aware pre-processor. */
+function lexModuleImports(text) {
+  const typescript = createRequire(import.meta.url)("typescript");
+  return typescript.preProcessFile(text, true, true).importedFiles.map(
+    (file) => file.fileName,
+  );
+}
+
+/**
+ * Prove the staged module graph is closed (pm-998juj). The files list leaves
+ * out tsc emit that no bin, export or shipped script reaches; every relative
+ * static, re-export, side-effect, require or literal dynamic import in a
+ * staged JavaScript module must therefore name another staged file, or the
+ * pack refuses. Bundled runtime packages own their own graphs.
+ */
+export function findUnresolvedModuleImports(paths, readText, lex = lexModuleImports) {
+  const packed = new Set(paths);
+  const unresolved = [];
+  for (const file of paths) {
+    if (!/\.[cm]?js$/u.test(file) || file.startsWith("node_modules/")) continue;
+    for (const specifier of lex(readText(file))) {
+      if (!/^\.{1,2}\//u.test(specifier)) continue;
+      const target = path.posix.join(path.posix.dirname(file), specifier);
+      if (!packed.has(target)) unresolved.push(`${file} -> ${specifier}`);
+    }
+  }
+  return unresolved;
+}
+
 /** Stage first-party files with compact JSON and markdown tables, retaining values and readable checkout bytes. */
 function copyPublicationFile(relative, source, target) {
   if (relative.endsWith(".md")) {
@@ -471,6 +500,14 @@ function packLeasedDistribution(root, options) {
       ),
     );
     stageSourceFiles(root, stage, manifest, sourceReport.files);
+    const unresolvedImports = findUnresolvedModuleImports(
+      sourceReport.files.map((file) => file.path),
+      (file) => readFileSync(path.join(stage, file), "utf8"),
+    );
+    if (unresolvedImports.length > 0)
+      throw new Error(
+        `Packed modules import files the package excludes:\n${unresolvedImports.join("\n")}`,
+      );
     stageRuntime(root, stage, manifest, ledger);
     const published = structuredClone(manifest);
     delete published.devDependencies;

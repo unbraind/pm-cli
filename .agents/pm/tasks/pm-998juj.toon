@@ -6,7 +6,7 @@ status: in_progress
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-21T01:38:16.583Z"
+updated_at: "2026-11-21T02:21:07.804Z"
 assignee: "harness:claude-code"
 claim_principal: "harness:claude-code#7a4af4b641f1e7f9180f8b98"
 author: unknown
@@ -73,7 +73,7 @@ dependencies[11]:
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
-comments[65]:
+comments[66]:
   - created_at: "2026-07-25T07:12:23.380Z"
     author: "harness:claude-code"
     text: "Duplicate-check evidence (all-status pm search over install, size, tarball, sourcemap, footprint, packaging): matched closed pm-oxq2, pm-59gj, pm-vnjh, pm-hcrmye and open pm-feecbs, pm-quzx. pm-oxq2 fixed the nested host copy inside project-scope extension installs and explicitly parked the slim-package idea; pm-feecbs governs the 18 external packages, not the host tarball; pm-hcrmye kept production source maps as part of its fix without examining tarball composition. No open item owns host artifact size."
@@ -272,13 +272,16 @@ comments[65]:
   - created_at: "2026-11-20T17:51:14.712Z"
     author: "harness:claude-code"
     text: "Headroom at the final bounded-activity head (PR #1761, after Codex rounds 13 to 16): review fixes added about 7.8 KB of runtime code, specs-driven guards and docs, taking a clean local build to 20,000,278 B, over the 20,000,000 B base ceiling (hosted static runners measure about 1.2 KB less). The pm-55jxhy tranche was extended with docs/generated/FLAG_LEXICON_BUDGETS.md (4,387 B): generated governance evidence for the flag-lexicon gate, which package consumers get from listPmFlagLexicon(). docs/README.md now links it by canonical URL, and it has a reachability exception. Result: 19,996,083 B locally (3,917 B left). Census for the next tranche: no repository-only Markdown remains in the tarball. Every remaining packaged doc documents product behaviour, the agent-task JSON corpora are published evidence, packages/ holds bundled managed extensions, and dist/sdk/public-surface.json (2,085,541 B) is a required path. The next tranche must therefore be structural, for example a compact encoding of public-surface.json or deduplicating dist/sdk modules that the CLI bundle already carries, rather than another doc move."
+  - created_at: "2026-11-21T01:52:05.278Z"
+    author: "harness:claude-code"
+    text: "Structural tranche with the append-only history bundle (branch fix/append-only-history-recovery, PR #1762), measured 2026-11-21 on a clean local build. The export map routes every SDK subpath to dist/cli-bundle, so 25 tsc-emitted modules under dist/sdk were reachable from no bin, no export and no packed script: the barrels index, testing, compose, core, query, contracts, authoring, define, governance, core-governance, graph, workspace-recipe, relationship-migration and corpus-shape, plus agent/refusal-reachability, agent/task-transcript-contracts, agent/tracker-preflight-contracts, agent/refusal-closure, environment/agent-environment, graph/adapter, graph/conformance, graph/index, governance/reliability, governance/artifact-ledgers and governance/coverage-assurance. package.json files now excludes them. Their .d.ts files stay, because types resolve through them.\n\nMeasured: before the tranche, 19,998,575 of 20,000,000 B (1,425 B left). The tranche alone brought it to 19,797,130 B, about 203 KB freed. With the bundle's new runtime code it is 19,856,246 B (143,754 B left, 1,578 files).\n\nGuard: package-artifact-gate now proves the packed module graph is closed. Every static, re-export, side-effect or literal dynamic import of a relative .js/.mjs/.cjs module in a packed JavaScript file must name a packed file (793 modules checked). The check refused the first exclusion list, because the unreachable dist/sdk/graph.js barrel still imported two excluded modules; it is now excluded too. Reachability used a conservative census: any quoted relative .js path counts as a reference, and packed scripts such as generate-agent-capability-surfaces.mjs are roots, which kept the three dist/sdk/agent modules that script imports. An installed tarball imported every SDK subpath and ./cli, ran init, create, list, context, contracts, health, search and a managed package install, and answered an MCP initialize.\n\nNext tranche census: dist/sdk JavaScript still ships about 3.78 MB that bin/pm-mcp, dist/cli/public.js (./cli) and the shipped scripts reach through tsc emit, while dist/cli-bundle carries the same modules. Routing pm-mcp and ./cli through bundle chunks would remove most of it.\n"
 notes[2]{created_at,author,text}:
   "2026-07-25T21:18:48.881Z","harness:claude-code","Artifact-weight re-measurement 2026-07-25 (evening ecosystem review), measured on the freshly built dist/ tree at version 2026.7.25 (pnpm build, exit 0, \"Already up to date\").\n\ndist/ totals 40MB across 1,460 files. Of that, 526 .map files account for 28MB — roughly 70% of the whole published artifact is sourcemaps. The previously recorded baseline on this item was 40.66MB / 1,668 files with ~20MB of inlineSources sourcemaps, so total size and file count are flat-to-slightly-down while the sourcemap share has grown from about half to about seven tenths. The ratio is moving the wrong way even though the headline number is not.\n\nThat reinforces this item's existing framing rather than changing it: the sourcemaps are already uploaded to Sentry, so shipping them to every npm consumer buys nothing at install time, and they are now the dominant cost by a wide margin. The other two components this item tracks are unchanged — the artifact still carries both the tsc emit and the esbuild bundle, and the dead `typebox` peer is still declared in package.json (line 178, \"typebox\": \"*\", with a peerDependenciesMeta entry) against zero occurrences of the string typebox anywhere under src/. Confirmed by grep this pass.\n\nLive-state cross-check performed at the same time, all healthy: npm dist-tags.latest 2026.7.25 matching the local build, GitHub release v2026.7.25 present, and the last completed runs of CI, CodeQL, CodSpeed, OSSF Scorecard and Security and Script Quality all conclusion=success."
   "2026-11-05T22:54:21.153Z","harness:claude-code","Next-tranche headroom census, 2026-11-05. Measured at the PR 1672 head on the npm packlist from package-distribution.mjs, excluding the bundled runtime.\n\nCurrent state: base 19,980,344 of 20,000,000 bytes (about 19.7 KB headroom) and 1,799 of 1,800 files. Headroom is one file, so the next change that ships one more emitted module or packaged doc fails the PR base gate.\n\nMeasured candidate groups (files, bytes):\n\n| Group | Files | Bytes |\n| --- | ---: | ---: |\n| dist tsc JavaScript under dist/sdk | 388 | 3,823,149 |\n| dist **/*.d.ts | 684 | 2,655,971 |\n| docs/*.md | 108 | 1,506,584 |\n| packages/pm-* | 85 | 387,014 |\n| .agents/skills | 27 | 77,198 |\n| plugins/ | 57 | 72,944 |\n| docs/examples | 27 | 46,155 |\n| repo-only community files (CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md) | 3 | 16,234 |\n\nThe community files are referenced only by the validate well-known-files list and by docs-skills and release-readiness specs, not by any runtime package read.\n\nEach of these is a user-visible packaging decision. It belongs in its own tranche with consumer proof (npx, bunx, the SDK entrypoints and extension installs), not in a release-blocker fix."
 learnings[2]{created_at,author,text}:
   "2026-10-10T06:04:52.512Z","harness:codex","Compact first-party machine metadata in the publication staging copy, verify the serialized values before writing, and preserve third-party bytes. The artifact budget should reject new weight rather than grow. Real archive comparisons must retain the complete copied helper import closure; module-loading setup failures are not negative-control evidence."
   "2026-10-16T05:26:36.181Z","harness:codex","Bind package measurements to the packing pipeline, source tree or patch, and archive hash. Keep raw checkout bytes, staged compact JSON, first-party distribution size, and bundled-runtime totals distinct; only a controlled same-candidate comparison proves an exclusion delta."
-files[21]:
+files[19]:
   - path: .github/workflows/ci.yml
     scope: project
     note: mandatory PR artifact gate
@@ -306,9 +309,6 @@ files[21]:
   - path: scripts/release/package-artifact-budget.json
     scope: project
     note: reviewable artifact size and contents budgets
-  - path: scripts/release/package-artifact-gate.mjs
-    scope: project
-    note: npm packlist artifact contract gate
   - path: scripts/release/package-distribution.mjs
     scope: project
   - path: src/sdk/generated/error-code-catalog-rows.ts
@@ -327,9 +327,6 @@ files[21]:
     note: Declaration semantic and directive preservation regression
   - path: tests/unit/scripts/package-distribution.spec.ts
     scope: project
-  - path: tests/unit/scripts/release/package-artifact-gate.spec.ts
-    scope: project
-    note: fail-closed artifact negative controls
   - path: tests/unit/scripts/release/run-gates.spec.ts
     scope: project
     note: Asserts the artifact gate runs after build in preflight
@@ -338,10 +335,7 @@ files[21]:
     note: Binds the per-file injection allowance to the installed sentry-cli
   - path: tests/unit/scripts/runtime-compaction.spec.ts
     scope: project
-tests[8]:
-  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts
-    scope: project
-    timeout_seconds: 240
+tests[9]:
   - command: node scripts/release/package-artifact-gate.mjs
     scope: project
     timeout_seconds: 180
@@ -397,6 +391,20 @@ tests[8]:
     provenance:
       author: "harness:claude-code"
       created_at: "2026-11-21T01:38:16.463Z"
+      source_kind: local_mutation
+      source_ref: fix/append-only-history-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/package-distribution.spec.ts
+    scope: project
+    provenance:
+      author: "harness:claude-code"
+      created_at: "2026-11-21T02:20:53.088Z"
+      source_kind: local_mutation
+      source_ref: fix/append-only-history-recovery
+  - command: node scripts/run-tests.mjs test -- tests/unit/scripts/release/package-artifact-gate.spec.ts tests/integration/ci-workflow-contract.spec.ts
+    scope: project
+    provenance:
+      author: "harness:claude-code"
+      created_at: "2026-11-21T02:21:07.767Z"
       source_kind: local_mutation
       source_ref: fix/append-only-history-recovery
 test_runs[5]:

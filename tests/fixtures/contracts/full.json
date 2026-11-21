@@ -23885,6 +23885,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "history_version_unreconstructable",
+      "class": "usage",
+      "code": "history_version_unreconstructable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "History version unreconstructable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/history/projection.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "host_environment_capacity_fault",
       "class": "generic_failure",
       "code": "host_environment_capacity_fault",

@@ -156,42 +156,8 @@ function resolveRuntimeBundleBudget(budget) {
   return budget;
 }
 
-/**
- * Static, re-export, side-effect and literal dynamic imports of a relative
- * JavaScript module. Emitted ESM always names the extension; other relative
- * strings (scaffold templates that mention `./index.ts`) are not module edges.
- */
-const RELATIVE_IMPORT_PATTERN =
-  /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s*)(["'`])(\.{1,2}\/[^"'`]*\.[cm]?js)\1/g;
-
-/**
- * Prove the packed module graph is closed: every relative import in a packed
- * JavaScript module names another packed file. The files list excludes tsc
- * emit that no entrypoint reaches (pm-998juj); this check fails the artifact
- * the moment a packed module starts importing one of those exclusions.
- */
-export function findUnresolvedPackageImports(paths, readText) {
-  const packed = new Set(paths);
-  const unresolved = [];
-  let checkedFiles = 0;
-  for (const file of paths) {
-    if (!/\.m?js$/u.test(file) || file.startsWith("node_modules/")) continue;
-    checkedFiles += 1;
-    for (const match of readText(file).matchAll(RELATIVE_IMPORT_PATTERN)) {
-      const specifier = match[2];
-      if (specifier.includes("${")) continue;
-      const target = path.posix.join(path.posix.dirname(file), specifier);
-      if (!packed.has(target)) unresolved.push(`${file}->${specifier}`);
-    }
-  }
-  return { checked_files: checkedFiles, unresolved };
-}
-
-/**
- * Validate one npm pack report against a named committed distribution budget.
- * `readText` reads one packed file, so the verdict covers the module graph too.
- */
-export function validatePackageArtifact(report, budget, profile, readText) {
+/** Validate one npm pack report against a named committed distribution budget. */
+export function validatePackageArtifact(report, budget, profile = "base") {
   const artifact = readSingleArtifact(report);
   const paths = artifact.files
     .map((file) =>
@@ -242,10 +208,6 @@ export function validatePackageArtifact(report, budget, profile, readText) {
       .filter((required) => !paths.includes(required))
       .map((required) => `required_path_missing:${required}`),
   );
-  const importClosure = findUnresolvedPackageImports(paths, readText);
-  violations.push(
-    ...importClosure.unresolved.map((edge) => `unresolved_import:${edge}`),
-  );
   if (violations.length > 0) {
     throw new Error(`Package artifact gate failed:\n${violations.join("\n")}`);
   }
@@ -263,7 +225,6 @@ export function validatePackageArtifact(report, budget, profile, readText) {
     runtime_bundle_size: runtimeSize,
     runtime_bundle_file_count: runtimeFiles.length,
     forbidden_suffixes: budget.forbidden_suffixes,
-    import_closure: { checked_files: importClosure.checked_files },
   };
 }
 
@@ -372,9 +333,6 @@ if (
   throw new TypeError("Package artifact gate requires --profile=<name>");
 }
 const profile = profileArgument?.slice("--profile=".length) ?? "base";
-/** Read one packed module from the checkout npm packs. */
-const readPackedText = (file) =>
-  readFileSync(path.join(process.cwd(), file), "utf8");
 if (process.argv.slice(2).includes("--simulate-injection")) {
   const root = process.cwd();
   const { report: injectedReport, simulation } = simulateInjection(
@@ -386,12 +344,7 @@ if (process.argv.slice(2).includes("--simulate-injection")) {
   console.log(
     JSON.stringify(
       {
-        ...validatePackageArtifact(
-          injectedReport,
-          budget,
-          profile,
-          readPackedText,
-        ),
+        ...validatePackageArtifact(injectedReport, budget, profile),
         simulation,
       },
       null,
@@ -400,10 +353,6 @@ if (process.argv.slice(2).includes("--simulate-injection")) {
   );
 } else {
   console.log(
-    JSON.stringify(
-      validatePackageArtifact(report, budget, profile, readPackedText),
-      null,
-      2,
-    ),
+    JSON.stringify(validatePackageArtifact(report, budget, profile), null, 2),
   );
 }

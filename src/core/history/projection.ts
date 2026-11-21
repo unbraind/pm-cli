@@ -12,6 +12,7 @@ import type { HistoryEntry, HistoryPatchOp } from "../../types/index.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
   verifyHistoryChain,
+  verifyHistoryChainWithVersion,
   tryApplyReplayPatch,
   type ReplayDocument,
 } from "./replay.js";
@@ -236,6 +237,19 @@ export function applyHistoryPatch(
   );
 }
 
+/** Refuse a version whose recorded state lacks an unrecorded change (GH-1715). */
+function unreconstructableHistoryVersion(targetIndex: number): PmCliError {
+  return new PmCliError(
+    `History entry ${targetIndex + 1} lies between an unrecorded change and the bridge that names it, so its historical state cannot be reconstructed.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "history_version_unreconstructable",
+      required: "Choose a version before the bridged break or from its bridge onward.",
+      nextSteps: ["Run pm history <id> --full to find the bridge record and the versions around it."],
+    },
+  );
+}
+
 /** Replay and hash-verify a history stream through a zero-based target entry. */
 export function replayHistoryToTarget(
   history: readonly HistoryEntry[],
@@ -252,6 +266,9 @@ export function replayHistoryToTarget(
       });
     }
   }
+  if (history[targetIndex]?.replay_inexact === true) {
+    throw unreconstructableHistoryVersion(targetIndex);
+  }
   const selected = history.slice(0, targetIndex + 1);
   const verification = verifyHistoryChain([...selected]);
   let document: ReplayDocument = structuredClone(EMPTY_REPLAY_DOCUMENT);
@@ -266,6 +283,17 @@ export function replayHistoryToTarget(
     document = applyHistoryPatch(document, entry.patch, index + 1, entry.op);
   }
   if (!verification.ok) {
+    // A prefix that ends inside a verified bridged segment fails only because
+    // its bridge lies beyond the target: that version lacks the unrecorded change.
+    const bridged = verifyHistoryChainWithVersion([...history]);
+    if (
+      bridged.ok &&
+      bridged.bridged_segments?.some(
+        (segment) => segment.start <= targetIndex && targetIndex < segment.end,
+      )
+    ) {
+      throw unreconstructableHistoryVersion(targetIndex);
+    }
     throw new PmCliError(`History cannot be replayed: ${verification.errors.join(", ")}.`, EXIT_CODE.GENERIC_FAILURE, {
       code: "history_replay_invalid",
       verification_errors: verification.errors,

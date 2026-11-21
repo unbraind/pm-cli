@@ -13,6 +13,9 @@ import {
   verifyHistoryChainWithVersion,
 } from "../../../src/core/history/replay.js";
 import { runHistoryRepair, runHistoryRepairAll } from "../../../src/sdk/history-repair.js";
+import { runHistoryRedact } from "../../../src/sdk/history-redact.js";
+import { inspectHistoryTail } from "../../../src/sdk/history/salvage.js";
+import { replayHistoryToTarget } from "../../../src/core/history/projection.js";
 import { mergeHistoryStreams } from "../../../src/sdk/merge/three-way.js";
 import { runRestore } from "../../../src/sdk/lifecycle/restore.js";
 import type { HistoryEntry } from "../../../src/types/index.js";
@@ -54,6 +57,12 @@ async function breakChain(context: TempPmContext, edits = 1): Promise<string> {
   return readFile(paths(context).history, "utf8");
 }
 
+/** Turn one entry into an unsealed legacy record with a change, as an attacker without a key could. */
+function stripSeal(entry: HistoryEntry, change: Partial<HistoryEntry>): HistoryEntry {
+  const { record_hash: _hash, record_hash_version: _version, ...rest } = { ...entry, ...change };
+  return rest as HistoryEntry;
+}
+
 /** Reseal one entry after a deliberate change so only the targeted rule can refuse it. */
 function reseal(entry: HistoryEntry, change: Partial<HistoryEntry>): HistoryEntry {
   const { record_hash: _hash, ...rest } = { ...entry, ...change };
@@ -71,7 +80,10 @@ describe("append-only history repair (GH-1715)", () => {
         dry_run: true,
         bridge: { version: 1, first_break_entry: 3, breaks: [expect.any(Object)] },
         history: { chain_drift_before: true, entries_rehashed: 0, reconciled_with_item: true },
+        // The reconciliation overwrites the recorded title, so the preview names that loss.
+        reconciliation: { reverted_fields: ["title"], discarded_events: [expect.objectContaining({ op: "create" })] },
       });
+      expect(preview.warnings).toContain("history_repair_reconcile_discards_events:1");
       expect(await readFile(paths(context).history, "utf8")).toBe(before);
 
       const cli = context.runCli(["history-repair", ID, "--append-only", "--json"], { expectJson: true });
@@ -96,7 +108,7 @@ describe("append-only history repair (GH-1715)", () => {
       // Versions inside the bridged segment lack the unrecorded change, so restore refuses them;
       // versions before the break and the bridged head stay reconstructable.
       await expect(runRestore(ID, "3", {}, { path: context.pmPath })).rejects.toMatchObject({
-        context: { code: "history_replay_invalid" },
+        context: { code: "history_version_unreconstructable" },
       });
       await expect(runRestore(ID, "2", { dryRun: true } as never, { path: context.pmPath })).resolves.toBeDefined();
 
@@ -117,15 +129,21 @@ describe("append-only history repair (GH-1715)", () => {
       const [first, second] = bridge.bridge!.breaks;
       const withBridge = (change: Partial<HistoryEntry>) => [...entries.slice(0, -1), reseal(bridge, change)];
       const cases: Array<[HistoryEntry[], string]> = [
-        [withBridge({ bridge: { version: 1, breaks: [first!] } }), "bridge_unnamed_break"],
-        [withBridge({ bridge: { version: 1, breaks: [first!, second!, second!] } }), "bridge_names_absent_break"],
-        [withBridge({ bridge: { version: 1, breaks: [{ ...first!, gap_from: "0".repeat(64) }, second!] } }), "before_hash_mismatch"],
+        [withBridge({ bridge: { ...bridge.bridge!, breaks: [first!] } }), "bridge_unnamed_break"],
+        [withBridge({ bridge: { ...bridge.bridge!, breaks: [first!, second!, second!] } }), "bridge_names_absent_break"],
+        [withBridge({ bridge: { ...bridge.bridge!, breaks: [{ ...first!, gap_from: "0".repeat(64) }, second!] } }), "before_hash_mismatch"],
         [withBridge({ after_hash: "f".repeat(64) }), "bridge_after_hash_mismatch"],
         [withBridge({ before_hash: "e".repeat(64) }), "bridge_link_mismatch"],
-        [withBridge({ bridge: { version: 2, breaks: [first!] } as never }), "bridge_invalid"],
-        [withBridge({ bridge: { version: 1, breaks: [] } }), "bridge_invalid"],
-        [withBridge({ bridge: { version: 1, breaks: [{ ...first!, extra: 1 } as never] } }), "bridge_invalid"],
-        [withBridge({ bridge: { version: 1, breaks: [{ ...first!, gap_to: first!.gap_from }] } }), "bridge_invalid"],
+        [withBridge({ bridge: { ...bridge.bridge!, version: 2 } as never }), "bridge_invalid"],
+        [withBridge({ bridge: { ...bridge.bridge!, breaks: [] } }), "bridge_invalid"],
+        [withBridge({ bridge: { ...bridge.bridge!, breaks: [{ ...first!, extra: 1 } as never] } }), "bridge_invalid"],
+        [withBridge({ bridge: { ...bridge.bridge!, breaks: [{ ...first!, gap_to: first!.gap_from }] } }), "bridge_invalid"],
+        [withBridge({ bridge: { version: 1, breaks: [first!, second!] } as never }), "bridge_invalid"],
+        [withBridge({ bridge: { ...bridge.bridge!, segment_digest: "0".repeat(64) } }), "bridge_segment_mismatch"],
+        // A record whose seal was stripped and whose text changed is still caught by the segment digest.
+        [[...entries.slice(0, 4), stripSeal(entries[4]!, { message: "rewritten without a seal" }), ...entries.slice(5)], "bridge_segment_mismatch"],
+        // Stripping a named break's seal changes the record hash the bridge names.
+        [[...entries.slice(0, 3), stripSeal(entries[3]!, {}), ...entries.slice(4)], "bridge_unnamed_break"],
         [withBridge({ op: "update" }), "bridge_invalid"],
         [[...entries.slice(0, -1), { ...bridge, record_hash: undefined, record_hash_version: undefined } as HistoryEntry], "bridge_invalid"],
         [[...entries, reseal(bridge, { ts: "2099-01-01T00:00:00.000Z" })], "bridge_without_break"],
@@ -136,6 +154,31 @@ describe("append-only history repair (GH-1715)", () => {
         expect(verdict.ok, error).toBe(false);
         expect(verdict.errors.join(","), error).toContain(`verify_failed:${error}:`);
       }
+    });
+  });
+
+  it("checks recorded effects again wherever replay realigns inside a bridged segment", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, ID, "Realign");
+      comment(context, "first");
+      await editOutsidePm(context, "Edited outside pm");
+      // Recording a new title realigns replay with the recorded state.
+      const update = context.runCli(["update", ID, "--title", "Recorded title", "--json"], { expectJson: true });
+      expect(update.code, update.stderr).toBe(0);
+      comment(context, "last");
+      const file = paths(context).history;
+      const entries = await readHistoryEntries(file, ID);
+      const tampered = [...entries.slice(0, -1), reseal(entries.at(-1)!, { patch: [{ op: "replace", path: "/metadata/priority", value: 0 }] })];
+      await writeFile(file, historyEntriesToRaw(tampered));
+      await expect(runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath })).rejects.toMatchObject({
+        context: { code: "history_append_only_repair_unavailable", reason: "bridge_does_not_verify" },
+      });
+      await writeFile(file, historyEntriesToRaw(entries));
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      const bridged = await readHistoryEntries(file, ID);
+      expect(verifyHistoryChainWithVersion(bridged).ok).toBe(true);
+      const forged = [...bridged.slice(0, -2), reseal(bridged.at(-2)!, { patch: [{ op: "replace", path: "/metadata/priority", value: 0 }] }), bridged.at(-1)!];
+      expect(verifyHistoryChainWithVersion(forged).errors.join(",")).toContain("verify_failed:after_hash_mismatch:");
     });
   });
 
@@ -273,13 +316,36 @@ describe("append-only history repair (GH-1715)", () => {
       expect(mergedEntries.at(-1)).toMatchObject({ patch: [], message: "second clone" });
       expect(mergedEntries.at(-1)?.reanchor_evidence?.at(-1)?.record?.bridge).toBeDefined();
 
+      // The merge appends to ours' exact bytes, even with CRLF line endings.
+      const oursCrlf = ours.replace(/\n/gu, "\r\n");
+      expect(mergeHistoryStreams(base, oursCrlf, theirs).merged.startsWith(oursCrlf)).toBe(true);
+      // An invalid side is never reported as an equivalent-bridge merge.
+      const oursLines = ours.trimEnd().split("\n");
+      const tamperedBridge = { ...(JSON.parse(oursLines.at(-1)!) as HistoryEntry), message: "tampered" };
+      const tamperedOurs = `${[...oursLines.slice(0, -1), JSON.stringify(tamperedBridge)].join("\n")}\n`;
+      let tamperedStrategy: string | undefined;
+      try {
+        tamperedStrategy = mergeHistoryStreams(base, tamperedOurs, theirs).strategy;
+      } catch {
+        tamperedStrategy = "refused";
+      }
+      expect(tamperedStrategy).not.toBe("equivalent_bridges");
+
       // Bridges with different reconciliations are different repairs and take the union path.
       await writeFile(paths(context).history, base);
       await editOutsidePm(context, "A different on-disk title");
       await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
       const divergent = await readFile(paths(context).history, "utf8");
       expect(() => mergeHistoryStreams(base, ours, divergent)).not.toThrow();
-      expect(mergeHistoryStreams(base, ours, divergent).strategy).toBe("union_reanchor");
+      const union = mergeHistoryStreams(base, ours, divergent);
+      expect(union.strategy).toBe("union_reanchor");
+      const unionEntries = union.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(verifyHistoryChainWithVersion(unionEntries).ok).toBe(true);
+      // The dissolved segment keeps refusing to present its versions as historical.
+      const inexact = unionEntries.findIndex((entry) => entry.replay_inexact === true);
+      expect(inexact).toBe(2);
+      expect(() => replayHistoryToTarget(unionEntries, inexact)).toThrow(/cannot be reconstructed/);
+      expect(() => replayHistoryToTarget(unionEntries, 1)).not.toThrow();
 
       // A union rebases every suffix patch, so it dissolves the bridge into an ordinary record.
       const projected = reanchorHistoryEntries(
@@ -288,6 +354,7 @@ describe("append-only history repair (GH-1715)", () => {
         { projectPatch: (entry) => entry.patch },
       );
       expect(projected.entries.some((entry) => Object.hasOwn(entry, "bridge"))).toBe(false);
+      expect(projected.entries.map((entry) => entry.replay_inexact === true)).toEqual([false, false, true, true, false]);
       expect(projected.entries.at(-1)?.reanchor_evidence?.at(-1)?.record?.bridge).toBeDefined();
       expect(verifyHistoryChainWithVersion(projected.entries).ok).toBe(true);
 
@@ -297,6 +364,26 @@ describe("append-only history repair (GH-1715)", () => {
       const dissolved = reanchorHistoryEntries(unversioned);
       expect(dissolved.entries.some((entry) => Object.hasOwn(entry, "bridge"))).toBe(false);
       expect(verifyHistoryChainWithVersion(dissolved.entries).ok).toBe(true);
+    });
+  });
+});
+
+describe("redaction of a bridged stream (GH-1715)", () => {
+  it("dissolves the bridge, keeps the segment unreconstructable and verifies", async () => {
+    await withTempPmPath(async (context) => {
+      await breakChain(context);
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      const result = await runHistoryRedact(ID, { literal: "first" }, { path: context.pmPath });
+      expect(result).toMatchObject({ changed: true });
+      const entries = await readHistoryEntries(paths(context).history, ID);
+      expect(verifyHistoryChainWithVersion(entries).ok).toBe(true);
+      expect(entries.some((entry) => Object.hasOwn(entry, "bridge"))).toBe(false);
+      expect(entries.map((entry) => entry.replay_inexact === true).slice(0, 5)).toEqual([false, false, true, true, false]);
+      await expect(runRestore(ID, "3", {}, { path: context.pmPath })).rejects.toMatchObject({
+        context: { code: "history_version_unreconstructable" },
+      });
+      expect(JSON.stringify(entries)).not.toContain('"text":"first"');
+      expect(context.runCli(["health", "--strict-exit", "--json"]).code).toBe(0);
     });
   });
 });
@@ -322,6 +409,15 @@ describe("non-record history lines (pm-jbplbq)", () => {
         expect(`${result.stdout}${result.stderr}`).toContain("history_record_invalid");
         expect(`${result.stdout}${result.stderr}`).not.toContain("unknown_error");
       }
+    });
+  });
+
+  it("judges BOM-prefixed lines the way the shared reader does", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, ID, "BOM lines");
+      const original = await readFile(paths(context).history, "utf8");
+      expect(inspectHistoryTail(`\uFEFFnull\n${original}`)).toMatchObject({ prefix: original, receipt: { non_record_lines: 1 } });
+      expect(inspectHistoryTail(`\uFEFF${original}null\n`)).toMatchObject({ prefix: `\uFEFF${original}`, receipt: { non_record_lines: 1 } });
     });
   });
 

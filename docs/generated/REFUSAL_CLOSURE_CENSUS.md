@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 479
+- Catalog error codes: 480
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 460
-- Coverage fraction: 0.039666
+- Uncovered error codes: 461
+- Coverage fraction: 0.039583
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -160,6 +160,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `history_unknown_author_events` | `history_unknown_author_events` | uncovered | none | 0 |
 | `history_version_mapping_unavailable` | `history_version_mapping_unavailable` | uncovered | none | 0 |
 | `history_version_pruned` | `history_version_pruned` | uncovered | none | 0 |
+| `history_version_unreconstructable` | `history_version_unreconstructable` | uncovered | none | 0 |
 | `host_environment_capacity_fault` | `host_environment_capacity_fault` | uncovered | none | 0 |
 | `host_environment_operation_invalid` | `host_environment_operation_invalid` | uncovered | none | 0 |
 | `host_environment_permission_fault` | `host_environment_permission_fault` | uncovered | none | 0 |

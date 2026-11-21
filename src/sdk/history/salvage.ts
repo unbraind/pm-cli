@@ -80,13 +80,16 @@ type SalvageLine =
 
 /** Decode a whole record or identify a disposable line without hiding a valid record. */
 function decodeSalvageLine(line: string): SalvageLine {
+  // Judge the same trimmed text the shared reader parses (it drops a BOM and
+  // surrounding whitespace); the caller keeps the original bytes and offsets.
+  const text = line.trim();
   let parsed: unknown;
   try {
-    parsed = JSON.parse(line);
+    parsed = JSON.parse(text);
   } catch {
     // A complete record followed by crash padding is not a disposable line.
     // Refuse instead of silently dropping that record along with the padding.
-    if (line.trimStart().startsWith("{") && line.includes("}")) {
+    if (text.startsWith("{") && text.includes("}")) {
       throw new PmCliError(
         "History salvage cannot discard a potentially complete record with trailing corruption.",
         EXIT_CODE.CONFLICT,
