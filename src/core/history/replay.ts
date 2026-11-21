@@ -792,7 +792,7 @@ export interface ReanchorResult {
   convertedReplaceToAdd: number;
   /** Value that configures or reports skipped ops for this contract. */
   skippedOps: number;
-  /** Entries resealed to dissolve a bridge or to add a replay_inexact marker; an epoch label alone does not count. */
+  /** Entries resealed to dissolve a bridge or add a replay_inexact marker, or for any reason when the input failed verification; an epoch label alone on a verified input does not count. */
   entriesResealed: number;
   /** Value that configures or reports details for this contract. */
   details: ReanchorEntryDetail[];
@@ -884,9 +884,11 @@ function applyProjectedReanchorPatch(replay: ReplayDocument, entry: HistoryEntry
 function indexBridgedSegments(
   entries: HistoryEntry[],
   options: ReanchorHistoryOptions,
-): { preservable: Map<number, number>; inexact: Set<number> } {
-  const verified = verifyHistoryChainWithVersion(entries).bridged_segments ?? [];
+): { preservable: Map<number, number>; inexact: Set<number>; inputVerifies: boolean } {
+  const verification = verifyHistoryChainWithVersion(entries);
+  const verified = verification.bridged_segments ?? [];
   return {
+    inputVerifies: verification.ok,
     preservable: new Map(
       options.projectPatch === undefined
         ? verified.map((segment) => [segment.start, segment.end])
@@ -989,8 +991,9 @@ function finalizeReanchoredEntry(
     rehashed: boolean;
     patchRepaired: boolean;
     inexact: boolean;
+    inputVerifies: boolean;
   },
-): { entry: HistoryEntry; changed: boolean; unbridged: boolean } {
+): { entry: HistoryEntry; changed: boolean; persist: boolean } {
   if (flags.itemHashVersion === undefined) delete rewrittenEntry.item_hash_version;
   else rewrittenEntry.item_hash_version = flags.itemHashVersion;
   if (flags.inexact) rewrittenEntry.replay_inexact = true;
@@ -1004,7 +1007,9 @@ function finalizeReanchoredEntry(
     rewrittenEntry.item_hash_version !== entry.item_hash_version;
   return {
     changed,
-    unbridged,
+    // On a verified input only a dissolved bridge or a new marker is worth
+    // writing; on a failing one every reseal, epoch labels included, is the repair.
+    persist: flags.inputVerifies ? unbridged : changed,
     entry: changed
       ? resealHistoryRewrite(entry, rewrittenEntry, {
           retainOriginalPatch: flags.patchRepaired,
@@ -1101,10 +1106,11 @@ export function reanchorHistoryEntries(
         rehashed,
         patchRepaired,
         inexact: bridged.inexact.has(index),
+        inputVerifies: bridged.inputVerifies,
       },
     );
     unchangedPrefix &&= !finalized.changed;
-    entriesResealed += Number(finalized.unbridged);
+    entriesResealed += Number(finalized.persist);
     rewritten.push(finalized.entry);
     details.push({
       index: index + 1,

@@ -386,7 +386,8 @@ describe("append-only history repair (GH-1715)", () => {
       // Merging both directions and then the two results needs no ordering between the copies.
       const reverse = mergeHistoryStreams(base, theirs, ours);
       const combined = mergeHistoryStreams(base, merged.merged, reverse.merged);
-      expect(combined).toMatchObject({ strategy: "equivalent_bridges", entries_total: 6 });
+      expect(combined).toMatchObject({ strategy: "equivalent_bridges", entries_total: 6, entries_from_theirs: 0 });
+      expect(merged).toMatchObject({ entries_from_ours: 1, entries_from_theirs: 1 });
       expect(combined.merged).toBe(merged.merged);
       expect(merged.merged.startsWith(ours)).toBe(true);
       const mergedEntries = merged.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);

@@ -345,11 +345,11 @@ function collectUnionInexactIndexes(
   sides: HistoryEntry[][],
   bridgesDissolve: boolean,
 ): Set<number> {
-  const position = occurrencePositions(merged);
+  const position = occurrencePositions(merged).positions;
   const marked = new Set<number>();
   for (const side of sides) {
-    const located = occurrencePositions(side);
-    const place = (index: number) => mergedPosition(position, side, located, index);
+    const { occurrence } = occurrencePositions(side);
+    const place = (index: number) => mergedPosition(position, side, occurrence, index);
     side.forEach((entry, index) => {
       if (entry.replay_inexact === true) addUnionPosition(marked, place(index));
     });
@@ -360,26 +360,33 @@ function collectUnionInexactIndexes(
 }
 
 /** Positions of each identity in stream order, so repeated identical events stay distinct. */
-function occurrencePositions(entries: HistoryEntry[]): Map<string, number[]> {
+function occurrencePositions(entries: HistoryEntry[]): {
+  positions: Map<string, number[]>;
+  occurrence: number[];
+} {
   const positions = new Map<string, number[]>();
-  entries.forEach((entry, index) => {
+  const occurrence = entries.map((entry, index) => {
     const identity = historyEntryIdentity(entry);
-    positions.set(identity, [...(positions.get(identity) ?? []), index]);
+    const seen = positions.get(identity);
+    if (seen === undefined) {
+      positions.set(identity, [index]);
+      return 0;
+    }
+    seen.push(index);
+    return seen.length - 1;
   });
-  return positions;
+  return { positions, occurrence };
 }
 
 /** The merged index of a branch record: the same occurrence of its identity in the merged stream. */
 function mergedPosition(
   merged: ReadonlyMap<string, number[]>,
   side: HistoryEntry[],
-  sidePositions: ReadonlyMap<string, number[]>,
+  sideOccurrence: readonly number[],
   index: number,
 ): number | undefined {
-  const identity = historyEntryIdentity(side[index]!);
-  const occurrence = sidePositions.get(identity)!.indexOf(index);
   /* c8 ignore start -- every branch record keeps a copy in the merged stream, shared or from its own suffix. */
-  return merged.get(identity)?.[occurrence];
+  return merged.get(historyEntryIdentity(side[index]!))?.[sideOccurrence[index]!];
   /* c8 ignore stop */
 }
 
@@ -564,7 +571,7 @@ export function mergeHistoryStreams(
       strategy: "equivalent_bridges",
       common_entries: shared,
       entries_from_ours: ours.length - shared,
-      entries_from_theirs: theirs.length - shared,
+      entries_from_theirs: neutralBridges.length,
       entries_total: ours.length + neutralBridges.length,
       reanchored: false,
     };
