@@ -9,8 +9,8 @@
  */
 import { isUtf8 } from "node:buffer";
 import { constants } from "node:fs";
-import { lstat, mkdir, open, readFile, stat, unlink, type FileHandle } from "node:fs/promises";
-import path from "node:path";
+import { lstat, open, readFile, stat, type FileHandle } from "node:fs/promises";
+import { AtomicLinkUnsupportedError, createFileAtomic } from "../../core/fs/atomic-create.js";
 import { invalidateHistoryDriftCacheForPath } from "../../core/history/drift-cache.js";
 import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 import jsonPatch from "fast-json-patch";
@@ -353,51 +353,6 @@ async function readStreamPrefix(handle: FileHandle, limit: number): Promise<Buff
   return buffer.subarray(0, filled);
 }
 
-/**
- * Open the stream to append to. An existing stream is opened as it is; an
- * absent one is created exclusively (O_EXCL), so a stream, or link, another
- * writer created meanwhile is never replaced. O_NOFOLLOW: a stream entry that
- * is a link must never carry the record into another stream (Windows defines
- * none, and an undefined flag ORs as 0).
- */
-async function openStreamForAppend(id: string, historyPath: string, create: boolean): Promise<FileHandle> {
-  if (create) await mkdir(path.dirname(historyPath), { recursive: true });
-  const flags =
-    constants.O_RDWR | constants.O_APPEND | constants.O_NOFOLLOW | (create ? constants.O_CREAT | constants.O_EXCL : 0);
-  return open(historyPath, flags).catch((error: unknown) => {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (create && code === "EEXIST") {
-      refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
-    }
-    if (!create && isFileAbsentError(error)) {
-      refuseAppendOnly(id, "stream_changed", `History for ${id} was removed after the repair verified it; retry.`);
-    }
-    if (code === "ELOOP") refuseLinkedStream(id);
-    throw error;
-  });
-}
-
-/**
- * A stream this repair created and only partly wrote is removed again, so a
- * retry finds it absent instead of holding a truncated record. Bytes anyone
- * else added keep it in place.
- */
-async function removeOwnPartialStream(handle: FileHandle, historyPath: string, appended: string): Promise<void> {
-  const intended = Buffer.from(appended);
-  const written = await readStreamPrefix(handle, intended.length + 1);
-  if (!written.equals(intended.subarray(0, written.length))) return;
-  const [own, [current]] = [await handle.stat(), await Promise.allSettled([stat(historyPath)])];
-  if (current.status === "fulfilled" && current.value.ino === own.ino && current.value.dev === own.dev) {
-    await unlink(historyPath);
-  }
-}
-
-/**
- * Append one record through O_APPEND on the very handle whose bytes were
- * checked: the write can never replace bytes another writer added, and
- * nothing rolls the stream back from a stale snapshot. The path is created
- * only when the verified snapshot was absent, and then exclusively.
- */
 async function appendRepairRecord(
   id: string,
   historyPath: string,
@@ -405,8 +360,22 @@ async function appendRepairRecord(
   record: HistoryEntry,
   statPath: (file: string) => Promise<{ ino: number; dev: number }> = stat,
 ): Promise<void> {
-  const create = verifiedRaw === null;
-  const handle = await openStreamForAppend(id, historyPath, create);
+  // Append through O_APPEND on the very handle whose bytes were checked: the
+  // write can never replace bytes another writer added, and nothing rolls the
+  // stream back from a stale snapshot.
+  // Never create the path: an empty stream reserves an identity, so a stream
+  // removed meanwhile must stay absent.
+  // O_NOFOLLOW: a stream entry that is a link must never carry this record into another
+  // stream (Windows defines none, and an undefined flag ORs as 0).
+  const handle = await open(historyPath, constants.O_RDWR | constants.O_APPEND | constants.O_NOFOLLOW).catch(
+    (error: unknown) => {
+      if (isFileAbsentError(error)) {
+        refuseAppendOnly(id, "stream_changed", `History for ${id} was removed after the repair verified it; retry.`);
+      }
+      if ((error as NodeJS.ErrnoException).code === "ELOOP") refuseLinkedStream(id);
+      throw error;
+    },
+  );
   try {
     const bytes = await handle.readFile();
     if (!isUtf8(bytes)) {
@@ -417,7 +386,7 @@ async function appendRepairRecord(
       );
     }
     const raw = bytes.toString("utf8");
-    if (raw !== (verifiedRaw ?? "")) {
+    if (raw !== verifiedRaw) {
       refuseAppendOnly(
         id,
         "stream_changed",
@@ -426,14 +395,8 @@ async function appendRepairRecord(
     }
     const separator = raw === "" || raw.endsWith("\n") ? "" : "\n";
     const appended = `${separator}${JSON.stringify(record)}\n`;
-    try {
-      await handle.appendFile(appended);
-      await handle.sync();
-    } catch (error: unknown) {
-      // Cleanup never masks the write failure that the caller must see.
-      if (create) await Promise.allSettled([removeOwnPartialStream(handle, historyPath, appended)]);
-      throw error;
-    }
+    await handle.appendFile(appended);
+    await handle.sync();
     await assertSameStream(id, handle, historyPath, statPath);
     // A writer that ignores pm's lock can still append between the check and
     // this write; O_APPEND keeps its bytes, so report the stale bridge instead
@@ -455,6 +418,36 @@ async function appendRepairRecord(
 }
 
 /**
+ * Publish an absent stream complete and without replacing anything: the
+ * record is staged beside it and hard-linked into the absent pathname, so a
+ * stream (or link) another writer created meanwhile wins untouched.
+ */
+async function createStreamExclusively(id: string, historyPath: string, record: HistoryEntry): Promise<void> {
+  let published: boolean;
+  try {
+    published = await createFileAtomic(historyPath, `${JSON.stringify(record)}\n`, { sync: true });
+  } catch (error: unknown) {
+    if (!(error instanceof AtomicLinkUnsupportedError)) throw error;
+    throw new PmCliError(
+      `History for ${id} cannot be rebuilt here: the tracker's filesystem cannot publish a new stream atomically (${error.code}).`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "history_append_only_repair_unavailable",
+        item_id: id,
+        reason: "stream_publish_unsupported",
+        required: "Rebuilding an absent stream needs a filesystem with hard links; no stream was published.",
+        nextSteps: [
+          `Restore ${id}'s history stream from version control or a backup, or run the repair from a clone on a filesystem with hard links.`,
+        ],
+      },
+    );
+  }
+  if (!published) {
+    refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
+  }
+}
+
+/**
  * Append one record to the exact bytes the shared under-lock check verified,
  * through O_APPEND so bytes another writer added are never replaced; an
  * absent stream is created exclusively (pm-3os5p6).
@@ -465,7 +458,9 @@ export async function appendRecordToVerifiedStream(
   verifiedRaw: string | null,
   record: HistoryEntry,
 ): Promise<void> {
-  await appendRepairRecord(id, historyPath, verifiedRaw, record);
+  await (verifiedRaw === null
+    ? createStreamExclusively(id, historyPath, record)
+    : appendRepairRecord(id, historyPath, verifiedRaw, record));
   await invalidateHistoryDriftCacheForPath(historyPath);
 }
 

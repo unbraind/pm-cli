@@ -326,9 +326,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "history_drift_unrepairable_stream",
-    command: "pm history-repair <id> --dry-run",
+    command: "pm history <id> --verify --full",
     summary:
-      "Neither history repair can keep this stream (details.repair_refusals names both refusal reasons), for example because a sealed record no longer matches its seal or the stream entry is a link. The preview refuses with the typed reason and its recovery: restore the item's own stream from version control or a backup, then run pm history <id> --verify --strict-exit.",
+      "Neither history repair can keep this stream (details.repair_refusals names both refusal reasons). Inspect it: a record that no longer matches its seal, or a malformed chain, needs the item's own stream restored from version control or a backup; a stream entry that is a link (reason stream_not_regular_file) needs the item's own stream restored as a regular file. Then run pm history <id> --verify --strict-exit.",
   },
   {
     code: "history_drift_version_skew",

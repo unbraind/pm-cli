@@ -153,12 +153,16 @@ pm health --strict-exit
 
 The repair writes one sealed `history_repair` record from the empty document
 to the on-disk item, after any whitespace the stream held, so it keeps every
-existing byte in either repair mode. It appends with `O_APPEND` to the exact
-bytes it verified, and creates an absent stream exclusively. A stream that
-another writer created or extended meanwhile refuses with `stream_changed`, and
-a stream it created but could not finish writing is removed again. A history
-path that is a symbolic link refuses with `stream_not_regular_file`, both in
-the preview and in the write, and `pm health` reports it as
+existing byte in either repair mode. An existing empty stream gets the record
+through `O_APPEND`, on the exact bytes the repair verified. An absent stream is
+published complete: the record is staged and flushed beside it, then
+hard-linked into the absent path, so no partial or empty stream is ever
+visible. A stream that another writer created or extended meanwhile refuses
+with `stream_changed`. A filesystem that cannot hard-link refuses with
+`stream_publish_unsupported` and publishes nothing; restore the stream from
+version control, or repair from a clone on a filesystem with hard links. A
+history path that is a symbolic link refuses with `stream_not_regular_file`,
+both in the preview and in the write, and `pm health` reports it as
 `history_drift_unrepairable_stream` instead of advising the rebuild. `context.history_reseed` and the result's
 `reseed` receipt record why (`missing_stream` or `empty_stream`) and
 `prior_versions: "unrecorded"`: version 1 is the item as of the repair, and

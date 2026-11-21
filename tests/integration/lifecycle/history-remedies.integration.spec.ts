@@ -208,13 +208,13 @@ describe("history-drift remedies converge (pm-3os5p6)", () => {
         repair_refusals: [{ id, reason: "chain_failure_not_a_break", rewrite_refusal: "record_hash_mismatch" }],
       });
       expect(drift.remedies).toEqual({
-        history_drift_unrepairable_stream: "pm history-repair <id> --dry-run",
+        history_drift_unrepairable_stream: "pm history <id> --verify --full",
         history_drift_missing_stream: "pm history-repair <id>",
       });
+      runRemedy(context, drift.remedies.history_drift_unrepairable_stream!, id);
       runRemedy(context, drift.remedies.history_drift_missing_stream!, "pm-sealed-missing");
-      // The advised preview refuses typed and names the recovery, without writing.
-      const remedyArgs = drift.remedies.history_drift_unrepairable_stream!.replace(/^pm /u, "").replace("<id>", id).split(" ");
-      const refused = context.runCli([...remedyArgs, "--json"]);
+      // The repair itself refuses typed and names the recovery, without writing.
+      const refused = context.runCli(["history-repair", id, "--json"]);
       expect(refused.code).toBe(4);
       expect(JSON.parse(refused.stdout || refused.stderr)).toMatchObject({
         code: "history_record_integrity_invalid",
