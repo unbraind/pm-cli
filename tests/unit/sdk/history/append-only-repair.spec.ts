@@ -199,6 +199,13 @@ describe("append-only repair hash surfaces", () => {
         _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, peer),
       ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
       expect(await readFile(file, "utf8")).toContain('{"peer":true}');
+      // A path replaced during the readback is caught by the second identity check.
+      let calls = 0;
+      const replacedLater = async (target: string) => (++calls === 1 ? fsPromises.stat(target) : { ino: -1, dev: -1 });
+      await expect(
+        _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, replacedLater),
+      ).rejects.toMatchObject({ context: { reason: "stream_changed" } });
+      expect(calls).toBe(2);
       const sameInode = (await fsPromises.stat(file)).ino;
       await expect(
         _testOnly.appendRepairRecord("pm-epoch", file, await readFile(file, "utf8"), record, async () => ({ ino: sameInode, dev: -1 })),

@@ -322,6 +322,23 @@ export interface AppendOnlyRepairHelpers {
 }
 
 /** Append the planned record to the exact bytes the shared under-lock check verified. */
+/** Refuse when the history path no longer names the file the open handle wrote. */
+async function assertSameStream(
+  id: string,
+  handle: FileHandle,
+  historyPath: string,
+  statPath: (file: string) => Promise<{ ino: number; dev: number }>,
+): Promise<void> {
+  const [written, current] = [await handle.stat(), await statPath(historyPath).catch(() => null)];
+  if (current === null || current.ino !== written.ino || current.dev !== written.dev) {
+    refuseAppendOnly(
+      id,
+      "stream_changed",
+      `History for ${id} was replaced while the repair appended; the bridge was not recorded, retry.`,
+    );
+  }
+}
+
 /** Read from position zero until EOF or `limit` bytes; a short read never ends it early. */
 async function readStreamPrefix(handle: FileHandle, limit: number): Promise<Buffer> {
   const buffer = Buffer.alloc(limit);
@@ -375,14 +392,7 @@ async function appendRepairRecord(
     const appended = `${separator}${JSON.stringify(record)}\n`;
     await handle.appendFile(appended);
     await handle.sync();
-    const [written, current] = [await handle.stat(), await statPath(historyPath).catch(() => null)];
-    if (current === null || current.ino !== written.ino || current.dev !== written.dev) {
-      refuseAppendOnly(
-        id,
-        "stream_changed",
-        `History for ${id} was replaced while the repair appended; the bridge was not recorded, retry.`,
-      );
-    }
+    await assertSameStream(id, handle, historyPath, statPath);
     // A writer that ignores pm's lock can still append between the check and
     // this write; O_APPEND keeps its bytes, so report the stale bridge instead
     // of rolling anything back. Writers that share the lock cannot race here.
@@ -394,6 +404,9 @@ async function appendRepairRecord(
         `History for ${id} received another write while the repair appended; run pm health to re-verify the stream.`,
       );
     }
+    // Checked again after the readback, while the handle is open: a path
+    // replaced during the readback leaves the bridge only in the detached file.
+    await assertSameStream(id, handle, historyPath, statPath);
   } finally {
     await handle.close();
   }

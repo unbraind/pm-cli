@@ -760,7 +760,7 @@ complete -c pm -n '__pm_history_operation history-redact redact' -l dry-run -d '
 complete -c pm -n '__pm_history_operation history-redact redact' -l author -d 'Mutation author' -r
 complete -c pm -n '__pm_history_operation history-redact redact' -l message -d 'Audit history message' -r
 complete -c pm -n '__pm_history_operation history-redact redact' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__pm_history_operation history-repair repair' -l salvage-tail -d 'Remove non-record lines and an invalid suffix after a verified prefix'
+complete -c pm -n '__pm_history_operation history-repair repair' -l salvage-tail -d 'Remove JSON null, boolean and number lines and an invalid suffix after a verified prefix'
 complete -c pm -n '__pm_history_operation history-repair repair' -l append-only -d 'Bridge chain breaks with one appended record'
 complete -c pm -n '__pm_history_operation history-repair repair' -l id -d 'Item ID (alternative to positional ID)' -r
 complete -c pm -n '__pm_history_operation history-repair repair' -l normalize-provenance -d 'Remove invalid provenance with aggregate evidence'

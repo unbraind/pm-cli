@@ -111,7 +111,7 @@ describe("append-only history repair (GH-1715)", () => {
       // Versions inside the bridged segment lack the unrecorded change, so restore refuses them;
       // versions before the break and the bridged head stay reconstructable.
       await expect(runRestore(ID, "3", {}, { path: context.pmPath })).rejects.toMatchObject({
-        context: { code: "history_version_unreconstructable" },
+        context: { code: "history_version_unreconstructable", nextSteps: [expect.stringContaining("find the bridge record")] },
       });
       expect(() => replayHistoryToTarget(entries, 1)).not.toThrow();
       expect(() => replayHistoryToTarget(entries, entries.length - 1)).not.toThrow();
@@ -157,6 +157,9 @@ describe("append-only history repair (GH-1715)", () => {
         [withBridge({ patch: undefined as never }), "record_incomplete"],
         // A break record whose patch cannot change state may not claim a state change.
         [[...entries.slice(0, 2), reseal(entries[2]!, { patch: [] }), ...entries.slice(3)], "before_hash_mismatch"],
+        // Copying or moving a value onto itself cannot change state either.
+        [[...entries.slice(0, 2), reseal(entries[2]!, { patch: [{ op: "copy", from: "/body", path: "/body" }] }), ...entries.slice(3)], "before_hash_mismatch"],
+        [[...entries.slice(0, 2), reseal(entries[2]!, { patch: [{ op: "move", from: "/body", path: "/body" }] }), ...entries.slice(3)], "before_hash_mismatch"],
         // An incomplete break entry never opens a bridged segment.
         [[...entries.slice(0, 2), stripSeal(entries[2]!, { patch: undefined as never }), ...entries.slice(3)], "before_hash_mismatch"],
         // Stripping a named break's seal changes the record hash the bridge names.
@@ -171,6 +174,9 @@ describe("append-only history repair (GH-1715)", () => {
         expect(verdict.ok, error).toBe(false);
         expect(verdict.errors.join(","), error).toContain(`verify_failed:${error}:`);
       }
+      // A copy between different paths can change state, so it is judged by its effect instead.
+      const copied = [...entries.slice(0, 2), reseal(entries[2]!, { patch: [{ op: "copy", from: "/metadata/title", path: "/body" }] }), ...entries.slice(3)];
+      expect(verifyHistoryChainWithVersion(copied).ok).toBe(false);
     });
   });
 
@@ -459,12 +465,13 @@ describe("append-only history repair (GH-1715)", () => {
       expect(projected.entries.at(-1)?.reanchor_evidence?.at(-1)?.record?.bridge).toBeDefined();
       expect(verifyHistoryChainWithVersion(projected.entries).ok).toBe(true);
 
-      // A rewrite before the segment also dissolves it rather than keeping stale break hashes.
+      // A rewrite before the segment that only restores an epoch label keeps the bridge: no hash it rests on changed.
+      // (A rewrite that changes a hash before the segment dissolves it; see the bad-anchor case below.)
       const oursEntries = ours.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
       const unversioned = [reseal(oursEntries[0]!, { item_hash_version: undefined }), ...oursEntries.slice(1)];
-      const dissolved = reanchorHistoryEntries(unversioned);
-      expect(dissolved.entries.some((entry) => Object.hasOwn(entry, "bridge"))).toBe(false);
-      expect(verifyHistoryChainWithVersion(dissolved.entries).ok).toBe(true);
+      const relabelled = reanchorHistoryEntries(unversioned);
+      expect(relabelled.entries.filter((entry) => Object.hasOwn(entry, "bridge"))).toHaveLength(1);
+      expect(verifyHistoryChainWithVersion(relabelled.entries).ok).toBe(true);
     });
   });
 });
@@ -480,8 +487,9 @@ describe("redaction of a bridged stream (GH-1715)", () => {
       expect(verifyHistoryChainWithVersion(entries).ok).toBe(true);
       expect(entries.some((entry) => Object.hasOwn(entry, "bridge"))).toBe(false);
       expect(entries.map((entry) => entry.replay_inexact === true).slice(0, 5)).toEqual([false, false, true, true, false]);
+      // With the bridge dissolved, the guidance points at the markers instead.
       await expect(runRestore(ID, "3", {}, { path: context.pmPath })).rejects.toMatchObject({
-        context: { code: "history_version_unreconstructable" },
+        context: { code: "history_version_unreconstructable", nextSteps: [expect.stringContaining("no replay_inexact marker")] },
       });
       expect(JSON.stringify(entries)).not.toContain('"text":"first"');
       expect(context.runCli(["health", "--strict-exit", "--json"]).code).toBe(0);
@@ -512,6 +520,12 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       expect(verifyHistoryChainWithVersion(entries).ok).toBe(true);
       const covered = entries.flatMap((entry, index) => (entry.replay_inexact === true ? [index] : []));
       expect(covered.map((index) => entries[index]!.op)).toEqual(["comment_add", "comment_add"]);
+      // Exactly the two comments recorded after the unrecorded edit are refused.
+      const texts = ["theirs", "ours after edit", "ours last"];
+      expect(covered.map((index) => texts.find((text) => JSON.stringify(entries[index]!.patch).includes(`"text":"${text}"`)))).toEqual([
+        "ours after edit",
+        "ours last",
+      ]);
       for (const index of covered) {
         expect(() => replayHistoryToTarget(entries, index)).toThrow(/cannot be reconstructed/);
       }
@@ -625,6 +639,12 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
           nextSteps: [`Run pm history-compact <id> --before "${compacted[1]!.ts}", or with a timestamp after "${compacted[3]!.ts}".`],
         },
       });
+      // A timestamp through the bridge that does not parse leaves only the earlier cutoff.
+      compacted[3] = reseal(compacted[3]!, { ts: "not a timestamp" });
+      await writeFile(paths(context).history, historyEntriesToRaw(compacted));
+      await expect(runHistoryCompact(ID, { before: compacted[2]!.ts }, { path: context.pmPath })).rejects.toMatchObject({
+        context: { code: "history_compact_boundary_bridged", nextSteps: [`Run pm history-compact <id> --before "${compacted[1]!.ts}".`] },
+      });
     });
   });
 
@@ -640,6 +660,24 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       expect(verifyHistoryChainWithVersion(await readHistoryEntries(paths(context).history, ID)).ok).toBe(true);
       expect(await runHistoryRepair(ID, {}, { path: context.pmPath })).toMatchObject({ changed: false });
       expect(await readFile(paths(context).history, "utf8")).toBe(bridged);
+    });
+  });
+
+  it("keeps a valid bridge when the only rewrite before it adds an epoch label", async () => {
+    await withTempPmPath(async (context) => {
+      await breakChain(context);
+      const lines = (await readFile(paths(context).history, "utf8")).trimEnd().split("\n");
+      const { item_hash_version: _epoch, ...legacy } = stripSeal(JSON.parse(lines[1]!) as HistoryEntry, {});
+      lines[1] = JSON.stringify(legacy);
+      await writeFile(paths(context).history, `${lines.join("\n")}\n`);
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      const bridged = await readFile(paths(context).history, "utf8");
+      expect(verifyHistoryChainWithVersion(await readHistoryEntries(paths(context).history, ID)).bridged_segments).toHaveLength(1);
+      await runHistoryRepair(ID, {}, { path: context.pmPath });
+      const after = await readHistoryEntries(paths(context).history, ID);
+      expect(after.filter((entry) => Object.hasOwn(entry, "bridge"))).toHaveLength(1);
+      expect(verifyHistoryChainWithVersion(after).ok).toBe(true);
+      expect(bridged.length).toBeGreaterThan(0);
     });
   });
 
@@ -851,6 +889,17 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       });
       expect(verifyHistoryChainWithVersion(oneSided.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry)).ok).toBe(true);
       expect(oneSided.merged).toContain('"text":"theirs next"');
+      // A copy of a repair theirs marked keeps the marker, and ours' bytes stay a prefix.
+      const theirsMarked = theirs.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      theirsMarked[theirsMarked.length - 1] = reseal(theirsMarked.at(-1)!, { replay_inexact: true });
+      const markedCopy = mergeHistoryStreams(base, ours, historyEntriesToRaw(theirsMarked));
+      expect(markedCopy.strategy).toBe("equivalent_bridges");
+      expect(markedCopy.merged.startsWith(ours)).toBe(true);
+      expect(JSON.parse(markedCopy.merged.trimEnd().split("\n").at(-1)!)).toMatchObject({ replay_inexact: true });
+      // A normalized merge that begins with all of ours keeps ours' exact bytes, line endings included.
+      const crlf = ours.replace(/\n/gu, "\r\n");
+      expect(mergeHistoryStreams(base, crlf, theirsNext).merged.startsWith(crlf)).toBe(true);
+      expect(mergeHistoryStreams(base, ours.trimEnd(), theirsNext).merged.startsWith(ours)).toBe(true);
       // A marker only theirs carries on a shared record survives normalization.
       const theirsLines = theirsNext.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
       theirsLines[1] = reseal(theirsLines[1]!, { replay_inexact: true });

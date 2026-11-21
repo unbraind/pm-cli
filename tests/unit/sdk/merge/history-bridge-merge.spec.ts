@@ -59,6 +59,11 @@ describe("union marking by occurrence", () => {
     // A later marker reseal adds digest-only evidence; the copy still aliases its original.
     const marked = { ...neutral, reanchor_evidence: [{ record: repair }, { prior_record_hash: "8".repeat(64) }] } as unknown as HistoryEntry;
     expect(_testOnly.repairRecursAfterRuns([repair], [later, marked])).toBe(true);
+    // Malformed evidence never aliases and never throws.
+    for (const evidence of [[null], [5], "evidence", [{ record: null }]]) {
+      const odd = { ...record({ op: "history_repair", patch: [], ts: "2026-11-21T00:00:03.000Z" }), reanchor_evidence: evidence } as unknown as HistoryEntry;
+      expect(_testOnly.repairRecursAfterRuns([repair], [odd])).toBe(false);
+    }
     // A plain no-op repair without evidence is its own identity.
     const plain = record({ op: "history_repair", patch: [], ts: "2026-11-21T00:00:02.000Z" });
     expect(_testOnly.repairRecursAfterRuns([repair], [plain])).toBe(false);

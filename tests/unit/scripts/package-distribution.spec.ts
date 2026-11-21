@@ -416,8 +416,16 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   ]);
   // Comments may sit between the loader name and its parenthesis.
   expect(referencesIn("dist/sdk/a.cjs", 'require /* local SDK */ ("./")', indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
-  // A transformed argument keeps its loader context, so a dot-only prefix still names the directory.
-  expect(referencesIn("dist/sdk/a.cjs", 'require("./" + "index.js")', indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  // Constant concatenations fold before resolution; a dot-only prefix of a dynamic expression names nothing.
+  expect(referencesIn("dist/sdk/a.cjs", 'require("./" + "index.js")', indexes)).toEqual(["dist/sdk/a.cjs -> ./index.js"]);
+  expect(referencesIn("dist/sdk/a.cjs", "require('./' /* part */ + 'history-compact.js')", layoutsOf(["dist/sdk/index.js"], ["dist/sdk/history-compact.js"]))).toEqual([]);
+  expect(referencesIn("dist/sdk/a.cjs", 'require("./" + name)', indexes)).toEqual([]);
+  // An import resolves as a URL: escaped whitespace is dropped, a query and fragment stripped, percent escapes decoded.
+  const graph = layoutsOf(["dist/sdk/graph.js"], []);
+  expect(referencesIn("dist/cli.mjs", "import('./sdk/graph.js?worker\\n')", graph)).toEqual(["dist/cli.mjs -> ./sdk/graph.js?worker\\n"]);
+  expect(referencesIn("dist/cli.mjs", 'import("./sdk/%67raph.js")', graph)).toEqual(['dist/cli.mjs -> ./sdk/%67raph.js']);
+  expect(referencesIn("dist/cli.mjs", 'import("./sdk/%zz.js"); import("../../../graph.js")', layoutsOf(["dist/sdk/%zz.js"], []))).toEqual([]);
+  expect(referencesIn("cli.mjs", 'import("./")', layoutsOf(["index.js"], []))).toEqual(["cli.mjs -> ./"]);
   // A block comment ends at its first "*/": an expression between two comments is still an expression.
   expect(referencesIn("dist/cli.js", 'require("./sdk/graph.js?worker" /* lead */ .split("?")[0] /* tail */)', layoutsOf(["dist/sdk/graph.js"], []))).toEqual([
     "dist/cli.js -> ./sdk/graph.js?worker",
@@ -491,7 +499,7 @@ it("reads checkout and stage layouts from regular files and the manifests each h
     await put(root, "dist/broken.json", "{");
     for (const file of ["dist/cli.js", "README.md"]) await put(stage, file);
     await put(stage, "dist/nomain/package.json", JSON.stringify({ name: "x" }));
-    const layouts = createModuleLayouts(root, stage);
+    const layouts = createModuleLayouts(root, stage, ["dist/cli.js", "README.md", "dist/nomain/package.json"]);
     expect(["dist/sdk/index.js", "dist/cli.js", "dist/local/package.json"].every(layouts.checkout.has)).toBe(true);
     expect(["dist/sdk", "dist/missing.js"].some(layouts.checkout.has)).toBe(false);
     expect(layouts.package.has("dist/cli.js")).toBe(true);
@@ -500,18 +508,23 @@ it("reads checkout and stage layouts from regular files and the manifests each h
     expect(layouts.checkout.main("dist/nomain/package.json")).toBeUndefined();
     expect(layouts.checkout.main("dist/absent/package.json")).toBeUndefined();
     expect(layouts.checkout.main("dist/broken.json")).toBeUndefined();
+    // A manifest path that is not a regular file is never opened.
+    await mkdir(path.join(root, "dist/odd/package.json"), { recursive: true });
+    expect(layouts.checkout.main("dist/odd/package.json")).toBeUndefined();
     expect(layouts.package.main("dist/local/package.json")).toBeUndefined();
     expect(layouts.package.main("dist/nomain/package.json")).toBeUndefined();
     expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./local'); import '../outside.js'; import './node_modules/dep/index.js'")).toEqual([
       "dist/cli.js -> ./local",
     ]);
-    // A main into a dependency resolves when the stage bundles it, and refuses when only the checkout has it.
+    // A main into a dependency resolves only when npm ships that file, not merely when the stage holds it.
     await put(root, "dist/dep/package.json", JSON.stringify({ main: "../../node_modules/dep/index.js" }));
     await put(stage, "dist/dep/package.json", JSON.stringify({ main: "../../node_modules/dep/index.js" }));
     await put(root, "node_modules/dep/index.js");
-    expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./dep')")).toEqual(["dist/cli.js -> ./dep"]);
     await put(stage, "node_modules/dep/index.js");
-    expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./dep')")).toEqual([]);
+    const omitted = createModuleLayouts(root, stage, ["dist/cli.js", "dist/dep/package.json"]);
+    expect(findExcludedModuleReferences(["dist/cli.js"], omitted, () => "require('./dep')")).toEqual(["dist/cli.js -> ./dep"]);
+    const bundled = createModuleLayouts(root, stage, ["dist/cli.js", "dist/dep/package.json", "node_modules/dep/index.js"]);
+    expect(findExcludedModuleReferences(["dist/cli.js"], bundled, () => "require('./dep')")).toEqual([]);
   } finally {
     await rm(root, { recursive: true, force: true });
     await rm(stage, { recursive: true, force: true });
@@ -776,7 +789,10 @@ it("packs real npm artifacts through the npm 12 keyed receipt format", async () 
   expect(
     await readFile(path.join(destination, artifact.filename)),
   ).not.toHaveLength(0);
-  expect(execute).toHaveBeenCalledTimes(2);
+  // Source listing, a dry run of the stage that the closure check judges, then the real pack.
+  expect(execute).toHaveBeenCalledTimes(3);
+  expect(execute.mock.calls[1]![1]).toContain("--dry-run");
+  expect(execute.mock.calls[2]![1]).toContain("--pack-destination");
   const extracted = await harness.createTempRoot("pm-keyed-extracted-");
   await extractTar({
     file: path.join(destination, artifact.filename),

@@ -218,12 +218,12 @@ export function normalizeReplayPatchOps(
   if (!Array.isArray(patch)) {
     return [];
   }
-  // Values are copied: applying an operation inserts its value into the
+  // Inserted values are copied: add and replace put their value into the
   // replay document, and a later operation of the same patch would otherwise
   // mutate the recorded entry itself before its digest or seal is checked.
   return patch.filter(isHistoryPatchOp).map((operation) => ({
     ...operation,
-    ...(Object.hasOwn(operation, "value")
+    ...((operation.op === "add" || operation.op === "replace") && Object.hasOwn(operation, "value")
       ? { value: structuredClone(operation.value) }
       : {}),
     path: normalizeReplayPatchPath(operation.path),
@@ -398,7 +398,11 @@ function isBridgeableRecord(entry: HistoryEntry): boolean {
   if (!digest.test(entry.before_hash) || !digest.test(entry.after_hash)) return false;
   // A record whose patch cannot change state must not claim a state change,
   // even where replay cannot prove its before-state.
-  const effectless = normalizeReplayPatchOps(entry.patch).every((operation) => operation.op === "test");
+  const effectless = normalizeReplayPatchOps(entry.patch).every(
+    (operation) =>
+      operation.op === "test" ||
+      ((operation.op === "copy" || operation.op === "move") && operation.from === operation.path),
+  );
   return !effectless || entry.before_hash === entry.after_hash || Object.hasOwn(entry, "bridge");
 }
 
@@ -1009,7 +1013,7 @@ function finalizeReanchoredEntry(
     inexact: boolean;
     inputVerifies: boolean;
   },
-): { entry: HistoryEntry; changed: boolean; persist: boolean } {
+): { entry: HistoryEntry; changed: boolean; persist: boolean; anchorsChanged: boolean } {
   if (flags.itemHashVersion === undefined) delete rewrittenEntry.item_hash_version;
   else rewrittenEntry.item_hash_version = flags.itemHashVersion;
   if (flags.inexact) rewrittenEntry.replay_inexact = true;
@@ -1026,6 +1030,9 @@ function finalizeReanchoredEntry(
     // On a verified input only a dissolved bridge or a new marker is worth
     // writing; on a failing one every reseal, epoch labels included, is the repair.
     persist: flags.inputVerifies ? unbridged : changed,
+    // Only a changed hash or patch breaks what a later segment rests on; an
+    // epoch label or marker added to an earlier record keeps it verbatim.
+    anchorsChanged: flags.rehashed || flags.patchRepaired,
     entry: changed
       ? resealHistoryRewrite(entry, rewrittenEntry, {
           retainOriginalPatch: flags.patchRepaired,
@@ -1125,7 +1132,7 @@ export function reanchorHistoryEntries(
         inputVerifies: bridged.inputVerifies,
       },
     );
-    unchangedPrefix &&= !finalized.changed;
+    unchangedPrefix &&= !finalized.anchorsChanged;
     entriesResealed += Number(finalized.persist);
     rewritten.push(finalized.entry);
     details.push({

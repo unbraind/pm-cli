@@ -93,8 +93,10 @@ with attached corruption. Recover those cases from version control or a backup.
 Non-UTF-8 streams are also refused, so receipt hashes and rollback snapshots
 always describe the original bytes rather than a lossy decoded approximation.
 
-Every reader refuses a history line that is valid JSON but not an object with
-`history_record_invalid`. The error names the item (`item_id`), the value kind
+Every reader that goes through the shared history decoder refuses a history
+line that is valid JSON but not an object with `history_record_invalid`. The
+merge driver parses its inputs itself and reports such a line as invalid JSON
+at that line. The error names the item (`item_id`), the value kind
 (`reason`, for example `a JSON null`) and the physical line (`details.line`), and
 its next step is the salvage preview above. Readers never report such a line as
 `unknown_error`. `pm health` keeps reporting the stream under `unreadable_streams`.
@@ -197,19 +199,23 @@ void the bridge:
   either branch already carries, except on records a retained live bridge
   covers.
 - A compaction checkpoint taken at an inexact version keeps the marker. When two clones bridged the same
-break independently, the merge driver keeps ours byte-for-byte. It appends the
-other bridge as a neutral record with an empty patch (`equivalent_bridges`), so
-both repairs' provenance survives. It does this only when both sides and the
-result verify.
+break independently, the merge driver keeps ours byte-for-byte unless a marker
+theirs carries must be propagated onto one of ours' records, in which case the
+changed stream is written. It appends the other bridge as a neutral record with
+an empty patch (`equivalent_bridges`), so both repairs' provenance survives. It
+does this only when both sides and the result verify.
 
 Versions between a break and its bridge cannot be reconstructed exactly,
 because the unrecorded change is missing from replay. `pm restore` and
 `pm get --at` refuse them with `history_version_unreconstructable`, both before
 and after a dissolution. Versions before the break and from the bridge onward
-remain addressable. `pm history-compact` cannot checkpoint such a version
-either. It refuses with `history_compact_boundary_bridged` and names the
+remain addressable. While the bridge is live, `pm history-compact` cannot
+checkpoint such a version either. It refuses with
+`history_compact_boundary_bridged` and names the
 nearest durable `--before` versions before the break and from the bridge
-onward, or timestamps when a legacy checkpoint has no trustworthy offset.
+onward, or timestamps when a legacy checkpoint has no trustworthy offset. After
+a rewrite has dissolved the bridge, a checkpoint at a marked version is allowed
+and inherits the marker, so reads and restores keep refusing it.
 
 Clones that repaired the same break independently and then kept working
 diverge in a run of the same repair, live or neutral and in either order,
@@ -230,7 +236,7 @@ rewriting repair as the fallback when a bridge cannot carry the drift:
 | `patch_does_not_replay` | A recorded patch only applies on top of the unrecorded change. |
 | `item_missing` | No on-disk item exists to anchor the bridge. |
 | `stream_not_utf8` | The stream bytes cannot be kept exactly. |
-| `stream_changed` | The stream changed or was replaced after the repair verified it; retry. |
+| `stream_changed` | The stream changed or was replaced after the repair verified it. The record may already be in the stream, so run `pm health` and inspect the stream before retrying. |
 | `hash_surface_ambiguous` | Neither replay nor the on-disk item proves the tail's epoch-2 variant. |
 | `bridge_does_not_verify` | The extended stream would not verify. |
 

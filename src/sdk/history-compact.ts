@@ -319,14 +319,17 @@ function timestampBoundaryGuidance(
   segment: { start: number; end: number },
 ): [string, string, string] {
   const earliest = entries[segment.start]!.ts;
+  const times = entries.slice(0, segment.end + 1).map((entry) => Date.parse(entry.ts));
+  // A later cutoff would scan a timestamp that does not parse and fail, so only the earlier one is offered.
+  if (!times.every(Number.isFinite)) {
+    return [
+      "that boundary",
+      `Choose a --before timestamp at or before "${earliest}".`,
+      `Run pm history-compact <id> --before "${earliest}".`,
+    ];
+  }
   // A fold, not a spread, so a long stream cannot exceed the argument limit.
-  const latest = new Date(
-    entries
-      .slice(0, segment.end + 1)
-      .map((entry) => Date.parse(entry.ts))
-      .filter(Number.isFinite)
-      .reduce((max, time) => Math.max(max, time), Number.NEGATIVE_INFINITY),
-  ).toISOString();
+  const latest = new Date(times.reduce((max, time) => Math.max(max, time), Number.NEGATIVE_INFINITY)).toISOString();
   return [
     "that boundary",
     `Choose a --before timestamp at or before "${earliest}", or after "${latest}".`,

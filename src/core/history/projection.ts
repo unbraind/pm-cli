@@ -238,14 +238,20 @@ export function applyHistoryPatch(
 }
 
 /** Refuse a version whose recorded state lacks an unrecorded change (GH-1715). */
-function unreconstructableHistoryVersion(targetIndex: number): PmCliError {
+function unreconstructableHistoryVersion(targetIndex: number, liveBridge: boolean): PmCliError {
   return new PmCliError(
-    `History entry ${targetIndex + 1} lies between an unrecorded change and the bridge that names it, so its historical state cannot be reconstructed.`,
+    `History entry ${targetIndex + 1} lies between an unrecorded change and the record that repaired it, so its historical state cannot be reconstructed.`,
     EXIT_CODE.USAGE,
     {
       code: "history_version_unreconstructable",
-      required: "Choose a version before the bridged break or from its bridge onward.",
-      nextSteps: ["Run pm history <id> --full to find the bridge record and the versions around it."],
+      required: liveBridge
+        ? "Choose a version before the bridged break or from its bridge onward."
+        : "Choose a version whose record is not marked replay_inexact.",
+      nextSteps: [
+        liveBridge
+          ? "Run pm history <id> --full to find the bridge record and the versions around it."
+          : "Run pm history <id> --full and pick a version whose record has no replay_inexact marker.",
+      ],
     },
   );
 }
@@ -267,7 +273,7 @@ export function replayHistoryToTarget(
     }
   }
   if (history[targetIndex]?.replay_inexact === true) {
-    throw unreconstructableHistoryVersion(targetIndex);
+    throw unreconstructableHistoryVersion(targetIndex, false);
   }
   const selected = history.slice(0, targetIndex + 1);
   const verification = verifyHistoryChain([...selected]);
@@ -292,7 +298,7 @@ export function replayHistoryToTarget(
         (segment) => segment.start <= targetIndex && targetIndex < segment.end,
       )
     ) {
-      throw unreconstructableHistoryVersion(targetIndex);
+      throw unreconstructableHistoryVersion(targetIndex, true);
     }
     throw new PmCliError(`History cannot be replayed: ${verification.errors.join(", ")}.`, EXIT_CODE.GENERIC_FAILURE, {
       code: "history_replay_invalid",

@@ -130,6 +130,12 @@ describe("history bridge envelope", () => {
     expect(digestBridgedSegment(indexed, {})).toBe(createHash("sha256").update(stableStringify(indexed), "utf8").digest("hex"));
   });
 
+  it("copies only inserted values, so an unused value never has to be cloneable", () => {
+    const patch = [{ op: "remove", path: "/metadata/nested", value: () => 1 }] as unknown as HistoryPatchOp[];
+    const applied = tryApplyReplayPatch({ metadata: { nested: 1 }, body: "" }, patch);
+    expect(applied.ok && applied.document.metadata).toEqual({});
+  });
+
   it("never lets replay mutate the recorded patch it applies", () => {
     const patch: HistoryPatchOp[] = [
       { op: "add", path: "/metadata/nested", value: { a: 1 } },
