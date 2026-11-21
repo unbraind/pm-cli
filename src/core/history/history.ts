@@ -90,6 +90,22 @@ export function sealHistoryRecord(entry: HistoryEntry): HistoryEntry {
   return { ...sealed, record_hash: hashHistoryRecord(canonical) };
 }
 
+/**
+ * Whether a record carries a complete seal in a numeric record format newer
+ * than this runtime reads. A malformed or incomplete seal is damage, not a
+ * newer format, so it never qualifies (pm-3os5p6).
+ */
+export function hasNewerRecordSealFormat(entry: HistoryEntry): boolean {
+  const version: unknown = entry.record_hash_version;
+  return (
+    typeof version === "number" &&
+    Number.isInteger(version) &&
+    version > Math.max(...SUPPORTED_HISTORY_RECORD_HASH_VERSIONS) &&
+    typeof entry.record_hash === "string" &&
+    entry.record_hash.length > 0
+  );
+}
+
 /** Verify record-level attribution coverage while accepting explicit legacy item-state-only entries. */
 export function verifyHistoryRecordHash(entry: HistoryEntry):
   | { ok: true; coverage: "record_and_item_state" | "item_state_only" }

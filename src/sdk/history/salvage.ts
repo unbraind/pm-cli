@@ -24,6 +24,7 @@ import {
   cloneEmptyReplayDocument,
   lenientApplyReplayPatch,
   replayToItemDocument,
+  tryApplyReplayPatch,
   verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../../core/history/replay.js";
@@ -255,13 +256,23 @@ function salvageHashAlgorithm(last: HistoryEntry): ReturnType<typeof resolveHist
   try {
     return resolveHistoryHashAlgorithm(last.hash_algorithm);
   } catch {
+    // A well-formed unknown label may come from a newer pm; any other label is damage an upgrade cannot fix.
+    const unknownLabel = typeof (last.hash_algorithm as unknown) === "string";
     throw new PmCliError(
-      "History salvage cannot anchor its record: the last kept record uses a digest algorithm this pm version cannot compute.",
+      unknownLabel
+        ? "History salvage cannot anchor its record: the last kept record uses a digest algorithm this pm version cannot compute."
+        : "History salvage cannot anchor its record: the last kept record's digest label is malformed.",
       EXIT_CODE.CONFLICT,
       {
         code: "history_salvage_refused",
-        required: "Upgrade pm to a version that reads the stream's digest algorithm; no bytes were changed.",
-        nextSteps: ["Run npm install -g @unbrained/pm-cli@latest, then preview the salvage again."],
+        required: unknownLabel
+          ? "Upgrade pm to a version that reads the stream's digest algorithm; no bytes were changed."
+          : "Recover the damaged record from version control or a backup; no bytes were changed.",
+        nextSteps: [
+          unknownLabel
+            ? "Run npm install -g @unbrained/pm-cli@latest, then preview the salvage again."
+            : "Run pm history <id> --verify --full to locate the record, then restore the stream from version control or a backup.",
+        ],
       },
     );
   }
@@ -317,12 +328,15 @@ function assertSalvageIdentity(id: string, replay: ReplayDocument): void {
  * does not replays leniently.
  */
 function replayRetainedRecords(id: string, selected: ReturnType<typeof inspectHistoryTail>): ReplayDocument {
+  const strict = selected.verification.ok;
   let replay = cloneEmptyReplayDocument();
   for (const entry of selected.entries) {
-    replay = lenientApplyReplayPatch(replay, entry.patch).document;
+    // A verified chain is judged on the states its readers replay; only a broken one replays leniently.
+    const applied = strict ? tryApplyReplayPatch(replay, entry.patch) : undefined;
+    replay = applied?.ok === true ? applied.document : lenientApplyReplayPatch(replay, entry.patch).document;
     assertSalvageIdentity(id, replay);
   }
-  if (selected.verification.ok && selected.entries.length > 0) {
+  if (strict && selected.entries.length > 0) {
     return replayHistoryToTarget(selected.entries, selected.entries.length - 1);
   }
   return replay;
@@ -441,8 +455,8 @@ export async function salvageHistoryTail(params: {
   await runActiveOnReadHooks({ path: subject.historyPath, scope: "project" });
   const selected = inspectHistoryTail(raw);
   const document = replayToItemDocument(replayRetainedRecords(subject.id, selected));
-  // Plan the salvaged stream now, so a preview refuses exactly where the write would.
-  const nextHistoryRaw = salvagedStream(selected, document, author, options.message);
+  // Plan the salvaged stream now, so a preview refuses exactly where the write would; nothing to remove plans nothing.
+  const nextHistoryRaw = selected.receipt === null ? raw : salvagedStream(selected, document, author, options.message);
   const ownership = await readSalvageOwnership(subject.located, settings, document);
   const warnings = checkHistoryRewriteOwnership({
     itemDocument: ownership.document,

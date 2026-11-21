@@ -23796,6 +23796,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "history_record_version_unsupported",
+      "class": "conflict",
+      "code": "history_record_version_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History record version unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/history/reanchor-refusal.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "history_redact_bridge_unlocated",
       "class": "generic_failure",
       "code": "history_redact_bridge_unlocated",

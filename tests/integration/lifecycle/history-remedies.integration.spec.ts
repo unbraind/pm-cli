@@ -316,6 +316,57 @@ describe("review hardening of the advised remedies", () => {
     });
   });
 
+  it("treats a malformed record seal as damage, not as a newer format", async () => {
+    await withTempPmPath(async (context) => {
+      for (const [id, change] of [
+        ["pm-seal-string", { record_hash_version: "1" }],
+        ["pm-seal-incomplete", { record_hash_version: 2, record_hash: undefined }],
+      ] as const) {
+        createTaskFixture(context, id, "Damaged seal");
+        run(context, ["comments", id, "--add", "second"]);
+        const file = historyFile(context, id);
+        const lines = (await readFile(file, "utf8")).trimEnd().split("\n");
+        lines[1] = JSON.stringify({ ...(JSON.parse(lines[1]!) as HistoryEntry), ...change });
+        await writeFile(file, `${lines.join("\n")}\n`);
+      }
+      const drift = await driftCheck(context);
+      expect(drift.warnings).toEqual([
+        "history_drift_chain_unrepairable:pm-seal-incomplete",
+        "history_drift_chain_unrepairable:pm-seal-string",
+      ]);
+      await expect(runHistoryRepair("pm-seal-string", { dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
+        code: "history_record_integrity_invalid",
+      });
+    });
+  });
+
+  it("refuses to salvage another item's verified stream", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, "pm-verified-other", "Other item");
+      run(context, ["comments", "pm-verified-other", "--add", "second"]);
+      const foreign = await readFile(historyFile(context, "pm-verified-other"), "utf8");
+      createTaskFixture(context, "pm-verified-subject", "Subject");
+      await writeFile(historyFile(context, "pm-verified-subject"), `${foreign}null\n`);
+      await expect(
+        runHistoryRepair("pm-verified-subject", { salvageTail: true, dryRun: true }, { path: context.pmPath }),
+      ).rejects.toThrow(/belongs to another item/u);
+    });
+  });
+
+  it("names the restore, not an upgrade, for a malformed digest label", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-digest-null";
+      createTaskFixture(context, id, "Malformed digest");
+      const file = historyFile(context, id);
+      const [line] = (await readFile(file, "utf8")).trimEnd().split("\n");
+      await writeFile(file, `${JSON.stringify({ ...(JSON.parse(line!) as HistoryEntry), hash_algorithm: null })}\nnull\n`);
+      await expect(runHistoryRepair(id, { salvageTail: true, dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
+        code: "history_salvage_refused",
+        context: { nextSteps: [expect.stringContaining("restore the stream")] },
+      });
+    });
+  });
+
   it("refuses a salvage preview whose record could not be anchored, as the write would", async () => {
     await withTempPmPath(async (context) => {
       const id = "pm-digest";

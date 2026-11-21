@@ -9,8 +9,8 @@
  */
 import { isUtf8 } from "node:buffer";
 import { constants } from "node:fs";
-import { mkdir, open, readFile, stat, type FileHandle } from "node:fs/promises";
-import path from "node:path";
+import { open, readFile, stat, type FileHandle } from "node:fs/promises";
+import { createFileAtomic } from "../../core/fs/atomic-create.js";
 import { invalidateHistoryDriftCacheForPath } from "../../core/history/drift-cache.js";
 import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 import jsonPatch from "fast-json-patch";
@@ -365,10 +365,15 @@ async function appendRepairRecord(
   // stream back from a stale snapshot.
   // Never create the path: an empty stream reserves an identity, so a stream
   // removed meanwhile must stay absent.
-  const handle = await open(historyPath, constants.O_RDWR | constants.O_APPEND).catch(
+  // O_NOFOLLOW: a stream entry that is a link must never carry this record into another
+  // stream (Windows defines none, and an undefined flag ORs as 0).
+  const handle = await open(historyPath, constants.O_RDWR | constants.O_APPEND | constants.O_NOFOLLOW).catch(
     (error: unknown) => {
       if (isFileAbsentError(error)) {
         refuseAppendOnly(id, "stream_changed", `History for ${id} was removed after the repair verified it; retry.`);
+      }
+      if ((error as NodeJS.ErrnoException).code === "ELOOP") {
+        refuseAppendOnly(id, "stream_not_regular_file", `History for ${id} is a symbolic link, so a repair could write another stream; replace it with the stream file.`);
       }
       throw error;
     },
@@ -414,20 +419,14 @@ async function appendRepairRecord(
   }
 }
 
-/** Create an absent stream exclusively, so a stream another writer created meanwhile is never replaced. */
+/**
+ * Publish an absent stream complete and without replacing anything: the
+ * record is staged beside it and hard-linked into the absent pathname, so a
+ * stream (or link) another writer created meanwhile wins untouched.
+ */
 async function createStreamExclusively(id: string, historyPath: string, record: HistoryEntry): Promise<void> {
-  await mkdir(path.dirname(historyPath), { recursive: true });
-  const handle = await open(historyPath, "wx").catch((error: unknown) => {
-    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
-      refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
-    }
-    throw error;
-  });
-  try {
-    await handle.writeFile(`${JSON.stringify(record)}\n`);
-    await handle.sync();
-  } finally {
-    await handle.close();
+  if (!(await createFileAtomic(historyPath, `${JSON.stringify(record)}\n`))) {
+    refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
   }
 }
 

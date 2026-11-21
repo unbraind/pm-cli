@@ -5,14 +5,14 @@
  * its seal is the authoritative part, so it refuses such a record. This turns
  * that refusal into a typed error with the recovery that works (pm-3os5p6).
  */
+import { hasNewerRecordSealFormat } from "../../core/history/history.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import type { HistoryEntry } from "../../types/index.js";
 
 /** Integrity failures re-anchoring refuses: a record whose seal or rewrite evidence no longer matches its content. */
 const RECORD_INTEGRITY_FAILURE =
-  /^(incomplete_record_hash_envelope|record_hash_mismatch|rewrite_evidence_[a-z_]+):entry_(\d+)$/u;
-/** A record sealed in a format newer than this runtime reads. */
-const RECORD_VERSION_UNSUPPORTED = /^unsupported_record_hash_version:entry_(\d+)$/u;
+  /^(incomplete_record_hash_envelope|record_hash_mismatch|unsupported_record_hash_version|rewrite_evidence_[a-z_]+):entry_(\d+)$/u;
 
 /** A newer pm wrote a seal this runtime cannot read; the fix is the upgrade, not a restore. */
 function recordVersionRefusal(id: string, entry: string): PmCliError {
@@ -35,15 +35,21 @@ function recordVersionRefusal(id: string, entry: string): PmCliError {
  * authoritative part, so it refuses such a record. Report that refusal typed,
  * with the recovery that works, instead of an unhandled error.
  */
-export function reanchorOrRefuse<T>(id: string, reanchor: () => T): T {
+export function reanchorOrRefuse<T>(
+  id: string,
+  entries: readonly HistoryEntry[],
+  reanchor: () => T,
+): T {
   try {
     return reanchor();
   } catch (error: unknown) {
-    if (!(error instanceof TypeError)) throw error;
-    const unsupported = RECORD_VERSION_UNSUPPORTED.exec(error.message);
-    if (unsupported !== null) throw recordVersionRefusal(id, unsupported[1]!);
-    const failure = RECORD_INTEGRITY_FAILURE.exec(error.message);
+    const failure = error instanceof TypeError ? RECORD_INTEGRITY_FAILURE.exec(error.message) : null;
     if (failure === null) throw error;
+    // Only a complete seal in a newer numeric format needs an upgrade; any other unreadable seal is damage.
+    const record = entries[Number(failure[2]) - 1];
+    if (record !== undefined && hasNewerRecordSealFormat(record)) {
+      throw recordVersionRefusal(id, failure[2]!);
+    }
     throw new PmCliError(
       `History entry ${failure[2]} of ${id} no longer matches its seal (${failure[1]}), so a repair cannot tell which part of the record to keep.`,
       EXIT_CODE.CONFLICT,

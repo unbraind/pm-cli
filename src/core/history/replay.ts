@@ -746,10 +746,6 @@ function tryApplySingleOp(
       true,
       false,
     ).newDocument as unknown;
-    // A root replacement that leaves no object cannot be an item state; skip it like any unappliable op.
-    if (typeof applied !== "object" || applied === null || Array.isArray(applied)) {
-      return { ok: false };
-    }
     return { ok: true, document: applied };
   } catch {
     return { ok: false };
@@ -782,7 +778,11 @@ export function lenientApplyReplayPatch(
     skippedOps += 1;
   }
 
-  const candidate = working as { metadata?: unknown; body?: unknown };
+  // A patch may pass through a non-object root; only its final state must be read as an item.
+  const candidate = (typeof working === "object" && working !== null ? working : {}) as {
+    metadata?: unknown;
+    body?: unknown;
+  };
   const document: ReplayDocument = {
     metadata:
       typeof candidate.metadata === "object" && candidate.metadata !== null

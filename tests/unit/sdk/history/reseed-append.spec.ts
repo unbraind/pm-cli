@@ -1,5 +1,5 @@
 /** The reseed baseline is appended to verified bytes or creates the stream exclusively (pm-3os5p6). */
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -42,6 +42,29 @@ describe("appendRecordToVerifiedStream", () => {
     await withDir(async (dir) => {
       const file = path.join(dir, `${"x".repeat(300)}.jsonl`);
       await expect(appendRecordToVerifiedStream("pm-a", file, null, record)).rejects.toMatchObject({ code: "ENAMETOOLONG" });
+    });
+  });
+
+  it.skipIf(process.platform === "win32")("refuses a stream entry that links to another stream", async () => {
+    await withDir(async (dir) => {
+      const other = path.join(dir, "pm-b.jsonl");
+      await writeFile(other, "");
+      await symlink(other, path.join(dir, "pm-a.jsonl"));
+      await expect(appendRecordToVerifiedStream("pm-a", path.join(dir, "pm-a.jsonl"), "", record)).rejects.toMatchObject({
+        context: expect.objectContaining({ reason: "stream_not_regular_file" }),
+      });
+      expect(await readFile(other, "utf8")).toBe("");
+      // A dangling link is never replaced by an exclusive create either.
+      await symlink(path.join(dir, "absent.jsonl"), path.join(dir, "pm-c.jsonl"));
+      await expect(appendRecordToVerifiedStream("pm-c", path.join(dir, "pm-c.jsonl"), null, record)).rejects.toMatchObject({
+        context: expect.objectContaining({ reason: "stream_changed" }),
+      });
+    });
+  });
+
+  it("passes other open failures through", async () => {
+    await withDir(async (dir) => {
+      await expect(appendRecordToVerifiedStream("pm-a", dir, "", record)).rejects.toMatchObject({ code: "EISDIR" });
     });
   });
 

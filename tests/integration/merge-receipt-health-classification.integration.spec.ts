@@ -780,11 +780,13 @@ describe("merge receipt health classification", () => {
         pending_merge_decisions: 0,
         lossless_merge_receipts: 1,
       });
+      // --all would also reconcile the receipt-attributed stream without its merge audit, so the
+      // unrelated drift keeps its per-item remedy (pm-3os5p6).
       expect(checkDetails(healthResult, "history_drift")).toMatchObject({
         merge_receipt_attributed_items: ["pm-merge-lossless"],
         remediation_map: {
           history_drift_merge_receipt: "pm merge reconcile",
-          history_drift_hash_mismatch: "pm history-repair --all",
+          history_drift_hash_mismatch: "pm history-repair <id>",
         },
       });
       expect(

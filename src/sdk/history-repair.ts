@@ -1007,7 +1007,7 @@ async function buildHistoryRepairPlan(
   // When normalization changed anything, the bridges' coverage was already
   // materialized on the original records; locating it again after the reseals
   // could only widen it from a digest the rewrite itself invalidated.
-  const reanchor = reanchorOrRefuse(subject.id, () =>
+  const reanchor = reanchorOrRefuse(subject.id, provenanceNormalization.entries, () =>
     reanchorHistoryEntries(provenanceNormalization.entries, itemHashVersion, {
       callerMarksBridgeCoverage: provenanceNormalization.receipt.changed,
     }),
