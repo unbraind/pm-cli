@@ -42,7 +42,7 @@ export interface HistoryMaintenanceOptions {
 
 /** Inputs captured before a transform, bound to the later under-lock drift checks. */
 export interface HistoryMaintenanceSnapshot {
-  /** Original bytes used to decode `entries`, never a second independent read. */
+  /** Original bytes used to decode `entries`, never a second independent read; empty for a reseed of an absent stream. */
   raw: string;
   /** Original stream, including historical anchors and immutable record evidence. */
   entries: HistoryEntry[];
@@ -98,6 +98,37 @@ export interface HistoryMaintenanceParams<Result> {
   ) =>
     | HistoryMaintenancePlan<Result>
     | Promise<HistoryMaintenancePlan<Result>>;
+  /**
+   * Plan for a live item whose stream is absent or holds no record, receiving
+   * an empty `raw` and `entries`. Without it such a stream refuses, because
+   * the transform has no record to work on (pm-3os5p6).
+   */
+  reseed?: (
+    snapshot: HistoryMaintenanceSnapshot,
+    stream: { absent: boolean },
+  ) =>
+    | HistoryMaintenancePlan<Result>
+    | Promise<HistoryMaintenancePlan<Result>>;
+}
+
+/** Refuse a stream with no record to transform. */
+function assertTransformableStream(
+  id: string,
+  operation: HistoryMaintenanceOperation,
+  snapshot: { raw: string | null; entries: HistoryEntry[] },
+): void {
+  if (snapshot.raw === null) {
+    throw new PmCliError(
+      `No history stream exists for ${id}.`,
+      EXIT_CODE.NOT_FOUND,
+    );
+  }
+  if (snapshot.entries.length === 0) {
+    throw new PmCliError(
+      `No history entries exist for ${id}; nothing to ${operation.slice("history-".length)}.`,
+      EXIT_CODE.USAGE,
+    );
+  }
 }
 
 /** Verify every transform before writing and reject concurrent item or stream changes under the lock. */
@@ -109,29 +140,28 @@ export async function runHistoryMaintenance<Result>(
     subject.historyPath,
     subject.id,
   );
-  if (snapshot.raw === null) {
-    throw new PmCliError(
-      `No history stream exists for ${subject.id}.`,
-      EXIT_CODE.NOT_FOUND,
-    );
-  }
-  if (snapshot.entries.length === 0) {
-    throw new PmCliError(
-      `No history entries exist for ${subject.id}; nothing to ${operation.slice("history-".length)}.`,
-      EXIT_CODE.USAGE,
-    );
+  // Only a live item can rebuild a stream: a deleted item has nothing to anchor on.
+  const reseed =
+    snapshot.entries.length === 0 && subject.located !== null
+      ? params.reseed
+      : undefined;
+  if (reseed === undefined) {
+    assertTransformableStream(subject.id, operation, snapshot);
   }
   const loadedItem = subject.located
     ? await readLocatedItem(subject.located, { schema: settings.schema })
     : null;
   const author = resolveAuthor(options.author, settings.author_default);
-  const plan = await params.transform({
-    raw: snapshot.raw,
+  const planSnapshot: HistoryMaintenanceSnapshot = {
+    raw: snapshot.raw ?? "",
     entries: snapshot.entries,
     verification: verifyHistoryChain(snapshot.entries),
     loadedItem,
     author,
-  });
+  };
+  const plan = await (reseed === undefined
+    ? params.transform(planSnapshot)
+    : reseed(planSnapshot, { absent: snapshot.raw === null }));
   const verification = verifyHistoryChain(plan.rewrittenEntries);
   if (!verification.ok) {
     throw new PmCliError(

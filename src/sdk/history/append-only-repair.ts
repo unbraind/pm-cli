@@ -9,7 +9,9 @@
  */
 import { isUtf8 } from "node:buffer";
 import { constants } from "node:fs";
-import { open, readFile, stat, type FileHandle } from "node:fs/promises";
+import { lstat, open, readFile, stat, type FileHandle } from "node:fs/promises";
+import { AtomicLinkUnsupportedError, createFileAtomic } from "../../core/fs/atomic-create.js";
+import { invalidateHistoryDriftCacheForPath } from "../../core/history/drift-cache.js";
 import { isFileAbsentError } from "../../core/fs/fs-utils.js";
 import jsonPatch from "fast-json-patch";
 import {
@@ -363,11 +365,14 @@ async function appendRepairRecord(
   // stream back from a stale snapshot.
   // Never create the path: an empty stream reserves an identity, so a stream
   // removed meanwhile must stay absent.
-  const handle = await open(historyPath, constants.O_RDWR | constants.O_APPEND).catch(
+  // O_NOFOLLOW: a stream entry that is a link must never carry this record into another
+  // stream (Windows defines none, and an undefined flag ORs as 0).
+  const handle = await open(historyPath, constants.O_RDWR | constants.O_APPEND | constants.O_NOFOLLOW).catch(
     (error: unknown) => {
       if (isFileAbsentError(error)) {
         refuseAppendOnly(id, "stream_changed", `History for ${id} was removed after the repair verified it; retry.`);
       }
+      if ((error as NodeJS.ErrnoException).code === "ELOOP") refuseLinkedStream(id);
       throw error;
     },
   );
@@ -412,11 +417,82 @@ async function appendRepairRecord(
   }
 }
 
+/**
+ * Publish an absent stream complete and without replacing anything: the
+ * record is staged beside it and hard-linked into the absent pathname, so a
+ * stream (or link) another writer created meanwhile wins untouched.
+ */
+async function createStreamExclusively(id: string, historyPath: string, record: HistoryEntry): Promise<void> {
+  let published: boolean;
+  try {
+    published = await createFileAtomic(historyPath, `${JSON.stringify(record)}\n`, { sync: true });
+  } catch (error: unknown) {
+    if (!(error instanceof AtomicLinkUnsupportedError)) throw error;
+    throw new PmCliError(
+      `History for ${id} cannot be rebuilt here: the tracker's filesystem cannot publish a new stream atomically (${error.code}).`,
+      EXIT_CODE.CONFLICT,
+      {
+        code: "history_append_only_repair_unavailable",
+        item_id: id,
+        reason: "stream_publish_unsupported",
+        required: "Rebuilding an absent stream needs a filesystem with hard links; no stream was published.",
+        nextSteps: [
+          `Restore ${id}'s history stream from version control or a backup, or run the repair from a clone on a filesystem with hard links.`,
+        ],
+      },
+    );
+  }
+  if (!published) {
+    refuseAppendOnly(id, "stream_changed", `History for ${id} was created after the repair verified it; retry.`);
+  }
+}
+
+/**
+ * Append one record to the exact bytes the shared under-lock check verified,
+ * through O_APPEND so bytes another writer added are never replaced; an
+ * absent stream is created exclusively (pm-3os5p6).
+ */
+export async function appendRecordToVerifiedStream(
+  id: string,
+  historyPath: string,
+  verifiedRaw: string | null,
+  record: HistoryEntry,
+): Promise<void> {
+  await (verifiedRaw === null
+    ? createStreamExclusively(id, historyPath, record)
+    : appendRepairRecord(id, historyPath, verifiedRaw, record));
+  await invalidateHistoryDriftCacheForPath(historyPath);
+}
+
+/** A stream entry that is a link could carry an appended record into another stream. */
+function refuseLinkedStream(id: string): never {
+  throw new PmCliError(
+    `History for ${id} is a symbolic link, so an appended record could land in another stream.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "history_append_only_repair_unavailable",
+      item_id: id,
+      reason: "stream_not_regular_file",
+      required: "A history stream must be a regular file at its own path; no bytes were changed.",
+      nextSteps: [
+        `Restore ${id}'s own history stream as a regular file from version control or a backup. When none exists and the item is live, move the link aside and preview the rebuild with pm history-repair ${id} --dry-run.`,
+      ],
+    },
+  );
+}
+
+/** Refuse a linked stream entry before planning, so a preview never offers an append the write must refuse. */
+export async function assertRegularStreamEntry(id: string, historyPath: string): Promise<void> {
+  const entry = await lstat(historyPath).catch(() => null);
+  if (entry?.isSymbolicLink() === true) refuseLinkedStream(id);
+}
+
 /** Refuse a stream whose bytes are not UTF-8 before planning, so a preview never offers a repair the write must refuse. */
 export async function assertAppendOnlyStreamEncoding(
   id: string,
   historyPath: string,
 ): Promise<void> {
+  await assertRegularStreamEntry(id, historyPath);
   const bytes = await readFile(historyPath).catch(() => null);
   if (bytes !== null && !isUtf8(bytes)) {
     refuseAppendOnly(

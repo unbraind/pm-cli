@@ -206,15 +206,20 @@ describe("history-repair command", () => {
         message: expect.stringContaining("Run pm init first"),
       });
 
+      // A live item's absent or empty stream is rebuilt from the item (pm-3os5p6).
       await rm(historyPath(context, id), { force: true });
       await expect(
         runHistoryRepair(id, {}, { path: context.pmPath }),
-      ).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.NOT_FOUND,
-        message: expect.stringContaining("No history stream exists"),
-      });
+      ).resolves.toMatchObject({ changed: true, reseed: { reason: "missing_stream" } });
 
       await writeFile(historyPath(context, id), "", "utf8");
+      await expect(
+        runHistoryRepair(id, {}, { path: context.pmPath }),
+      ).resolves.toMatchObject({ changed: true, reseed: { reason: "empty_stream" } });
+
+      // Without a live item there is nothing to anchor on, so the refusals remain.
+      await writeFile(historyPath(context, id), "", "utf8");
+      await rm(itemPath(context, id), { force: true });
       await expect(
         runHistoryRepair(id, {}, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({

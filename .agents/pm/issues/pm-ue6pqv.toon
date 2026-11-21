@@ -1,0 +1,22 @@
+id: pm-ue6pqv
+title: "Absent-stream publication and linked history entries: exotic-filesystem outcomes of createFileAtomic, and history reads that follow a linked stream"
+description: "Deferred from Codex review round 7 of PR #1763 (pm-3os5p6) on 2026-11-21, because none of these can lose another writer's bytes or serve a wrong restore. (1) createFileAtomic removes its private mkdtemp staging directory recursively. A same-user process that deliberately writes into that random 0700 directory before the exclusive open loses its file. Cleanup should remove only the entry this call created, then the directory non-recursively. (2) On Windows exFAT, Node reports EISDIR for a hard link to an absent path, so the absent-stream reseed fails with a raw EISDIR instead of the typed stream_publish_unsupported refusal. Recognize that result when the staged source is a regular file and the destination is absent. (3) An NFS server can create the link and fail before acknowledging it, so a retry's EEXIST reports stream_changed although the reseed published its own baseline. Before cleanup, compare the destination's dev and ino with the staged file's using lstat. (4) The history_drift_unrepairable_stream remedy pm history <id> --verify --full, the default missing_stream auto_create policy (history-stream-policy.ts) and history reads follow a history entry that is a symbolic link, so they read, or recreate, another item's stream. The repair already refuses such an entry with stream_not_regular_file. Check the entry itself before applying the missing-stream policy and report the link without reading or creating its target. Duplicate check: searched createFileAtomic, hard link, staging, exFAT, NFS, linked history entry and auto_create follows link; pm-6vv6 (closed) handled EXDEV for writeFileAtomic, and pm-jd2zim owns lock-directory swaps, not history streams."
+type: Issue
+status: open
+priority: 3
+tags[4]: filesystem,follow-up,history,robustness
+created_at: "2026-11-21T14:59:21.256Z"
+updated_at: "2026-11-21T14:59:21.256Z"
+author: "harness:claude-code"
+estimated_minutes: 120
+acceptance_criteria: "createFileAtomic cleanup never removes an entry the call did not create; A Windows exFAT EISDIR link result refuses the reseed typed with stream_publish_unsupported; An acknowledged-late NFS link that published the call's own file reports success; Health, history reads and the missing-stream policy report a linked history entry without reading or creating its target"
+parent: pm-o2kc
+risk: low
+confidence: medium
+expected_result: "Every absent-stream publication outcome is reported truthfully, and no read follows a linked history entry into another stream"
+actual_result: "Staging cleanup is recursive, exFAT and NFS link results are misreported, and history reads and auto_create follow a linked entry"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
+  pm-3os5p6,discovered_from,"2026-11-21T14:59:21.256Z","harness:claude-code","cli:create:dep",detected
+  pm-6vv6,related,"2026-11-21T14:59:21.256Z","harness:claude-code","cli:create:dep",detected
+  pm-jd2zim,related,"2026-11-21T14:59:21.256Z","harness:claude-code","cli:create:dep",detected
+body: ""

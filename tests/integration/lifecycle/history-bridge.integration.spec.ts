@@ -344,11 +344,17 @@ describe("append-only history repair (GH-1715)", () => {
     });
   });
 
-  it("reports a missing stream instead of guessing its encoding", async () => {
+  it("rebuilds a live item's missing stream instead of guessing its encoding (pm-3os5p6)", async () => {
     await withTempPmPath(async (context) => {
       createTaskFixture(context, ID, "Missing stream");
       await rm(paths(context).history);
-      await expect(runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath })).rejects.toThrow(/No history stream exists/);
+      await expect(runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath })).resolves.toMatchObject({
+        changed: true,
+        reseed: { reason: "missing_stream" },
+      });
+      const [entry, ...rest] = (await readFile(paths(context).history, "utf8")).trimEnd().split("\n");
+      expect(rest).toEqual([]);
+      expect(JSON.parse(entry!)).toMatchObject({ op: "history_repair", context: { history_reseed: { reason: "missing_stream" } } });
     });
   });
 

@@ -20,6 +20,14 @@ describe("atomic seed publication", () => {
     expect(await readdir(root)).toEqual(["schema.json"]);
   });
 
+  it("flushes the staged bytes before publishing when asked to", async () => {
+    const target = path.join(root, "stream.jsonl");
+    expect(await createFileAtomic(target, "durable\n", { sync: true })).toBe(true);
+    expect(await readFile(target, "utf8")).toBe("durable\n");
+    expect(await createFileAtomic(target, "again\n", { sync: true })).toBe(false);
+    expect(await readdir(root)).toEqual(["stream.jsonl"]);
+  });
+
   it("cleans staging bytes when the filesystem refuses the destination", async () => {
     await expect(createFileAtomic(path.join(root, "x".repeat(300)), "seed")).rejects.toThrow();
     expect(await readdir(root)).toEqual([]);

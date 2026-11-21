@@ -739,6 +739,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     aliases: ["validate_history_drift_chain_mismatches"],
   },
   {
+    code: "history_drift_chain_unbridgeable",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
     code: "history_drift_hash_mismatch",
     exit_code: 1,
     stable: true,
@@ -765,6 +770,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     aliases: ["validate_history_drift_unreadable_streams"],
   },
   {
+    code: "history_drift_unrepairable_stream",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
     code: "history_drift_version_skew",
     exit_code: 1,
     stable: true,
@@ -784,9 +794,19 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     canonical_code: "merge_conflict_markers_detected",
   },
   {
+    code: "history_record_integrity_invalid",
+    exit_code: 4,
+    sources: ["sdk/history/reanchor-refusal.ts"],
+  },
+  {
     code: "history_record_invalid",
     exit_code: 1,
     sources: ["core/history/read.ts"],
+  },
+  {
+    code: "history_record_version_unsupported",
+    exit_code: 4,
+    sources: ["sdk/history/reanchor-refusal.ts"],
   },
   {
     code: "history_redact_bridge_unlocated",
@@ -1384,16 +1404,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
   },
   {
     code: "merge_driver_configuration_drift",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
-    code: "merge_driver_configuration_missing",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
-    code: "merge_fence_drift",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],
   },

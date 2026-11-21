@@ -1,0 +1,33 @@
+id: pm-rnrefn
+title: "Refresh matured tar 7.5.23, ESLint 10.15.0, knip 6.45.1, marked 18.2.0 and gpt-tokenizer 4.1.2"
+description: "Five updates passed the seven-day release-age window by 2026-11-21: tar 7.5.23 (runtime, published 2026-11-11), eslint 10.15.0 (2026-11-13), knip 6.45.1 (2026-11-11), marked 18.2.0 (2026-11-09) and gpt-tokenizer 4.1.2 (2026-11-10). The weekly Dependabot run has not proposed them. Still inside the window and held: vitest and @vitest/coverage-v8 5.1.1, fast-check 4.10.3 (2026-11-18), knip 6.46.1, marked 18.2.1, typescript-eslint 8.73.0 (2026-11-16) and eslint-plugin-unicorn 80.0.0 (2026-11-15). @codspeed/vitest-plugin 6.1.1 stays held because the repository's pnpm patch is pinned to @codspeed/core 6.1.0. The majors have their own owners: @sentry/node 11 (pm-jy61mz), typescript 7 (pm-do5b) and npm-package-arg 14 (pm-ksr40d). Duplicate check: searched dependency refresh, tar, eslint and knip; pm-2h8ohq (closed) took the previous matured set."
+type: Chore
+status: closed
+priority: 2
+tags[2]: dependencies,quality
+created_at: "2026-11-21T11:55:39.800Z"
+updated_at: "2026-11-21T15:00:18.386Z"
+closed_at: "2026-11-21T15:00:17.436Z"
+completed_at: "2026-11-21T15:00:17.436Z"
+author: "harness:claude-code"
+estimated_minutes: 45
+acceptance_criteria: "Every changed package is verified past the seven-day publication window, with exact manifest pins and a reproducible lockfile and runtime lock; quality:static, the full test suite and exact-head hosted checks pass; The held-back updates are recorded with their reasons"
+parent: pm-u9d0
+risk: medium
+confidence: high
+resolution: "tar 7.5.23 (runtime, with the runtime lock), eslint 10.15.0, knip 6.45.1, marked 18.2.0 and gpt-tokenizer 4.1.2 adopted past the seven-day window; vitest and coverage-v8 5.1.1, fast-check 4.10.3, knip 6.46.1, marked 18.2.1, typescript-eslint 8.73.0 and eslint-plugin-unicorn 80 stay inside the window, codspeed 6.1.1 stays held for its patch pin, and the Sentry 11, TypeScript 7 and npm-package-arg 14 majors keep their owners. pm-changelog moved to 2026.11.20. Delivered on PR #1763."
+expected_result: "Every adopted package is past the seven-day window with exact pins, and the lockfile, runtime lock and every gate stay green"
+actual_result: "runtime-lock check, quality:dependencies, ESLint 10.15 and knip pass locally, and every hosted check on the PR passed"
+dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
+  pm-2h8ohq,related,"2026-11-21T11:55:39.800Z","harness:claude-code","cli:create:dep",detected
+  pm-do5b,related,"2026-11-21T11:55:39.800Z","harness:claude-code","cli:create:dep",detected
+  pm-jy61mz,related,"2026-11-21T11:55:39.800Z","harness:claude-code","cli:create:dep",detected
+  pm-ksr40d,related,"2026-11-21T11:55:39.800Z","harness:claude-code","cli:create:dep",detected
+files[3]{path,scope,note}:
+  package.json,project,"exact pins for tar, eslint, knip, marked and gpt-tokenizer"
+  pnpm-lock.yaml,project,reproducible lockfile
+  runtime-dependencies.json,project,runtime lock for tar 7.5.23
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test,project,3600,"harness:claude-code","2026-11-21T11:55:51.036Z",local_mutation,fix/history-remedies-converge
+close_reason: Matured dependency pins adopted; the rest stay held with reasons
+body: ""

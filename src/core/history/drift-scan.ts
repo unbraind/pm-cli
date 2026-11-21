@@ -17,6 +17,7 @@ import { isFileMissingError, writeFileAtomic } from "../fs/fs-utils.js";
 import {
   CURRENT_HISTORY_ITEM_HASH_VERSION,
   SUPPORTED_HISTORY_ITEM_HASH_VERSIONS,
+  hasNewerRecordSealFormat,
   hashDocumentVerificationCandidates,
   type HistoryItemHashVersion,
 } from "./history.js";
@@ -59,7 +60,8 @@ export interface DriftScanResult {
 }
 
 const READABLE_HISTORY_HASH_ALGORITHMS = new Set<string | undefined>([undefined, ...HISTORY_HASH_ALGORITHMS]);
-const DRIFT_CACHE_VERSION = 12;
+// 13: a complete seal in a newer record format now counts as version skew (pm-3os5p6).
+const DRIFT_CACHE_VERSION = 13;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */
@@ -250,7 +252,9 @@ async function scanWorkspaceHistory(
 function hasUnsupportedHistoryCapability(entry: HistoryEntry): boolean {
   return !READABLE_HISTORY_HASH_ALGORITHMS.has(entry.hash_algorithm) ||
     (entry.item_hash_version !== undefined &&
-      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(entry.item_hash_version));
+      !(SUPPORTED_HISTORY_ITEM_HASH_VERSIONS as readonly number[]).includes(entry.item_hash_version)) ||
+    // A complete seal in a newer record format is unreadable here, not a mismatch (pm-3os5p6).
+    hasNewerRecordSealFormat(entry);
 }
 
 /** Read and fully verify one history stream's hash chain. Returns null for an empty/missing stream (caller records it as a missing stream). */

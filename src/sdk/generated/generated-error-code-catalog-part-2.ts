@@ -8,6 +8,16 @@ import type { PmErrorCodeCatalogRow } from "./error-code-catalog-rows.js";
 /** Generated partition 2 of the exhaustive error-code catalog, as compact rows. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
+    code: "merge_driver_configuration_missing",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
+    code: "merge_fence_drift",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
     code: "merge_fence_missing",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],

@@ -1,12 +1,14 @@
 id: pm-03q389
-title: "picomatch through 4.0.7 has a high ReDoS advisory with no patched release (GHSA-fc5q-39xc-vjpf), so the dependency advisory gate blocks Gates (static) on every branch and the next release"
+title: Retire the picomatch advisory waiver and its mirrored .trivyignore entry after GitHub withdrew GHSA-fc5q-39xc-vjpf on 2026-11-18
 description: "Found 2026-11-17 on PR 1746 when hosted Gates (static) failed at scripts/release/dependency-advisories/gate.mjs. GitHub updated advisory GHSA-fc5q-39xc-vjpf (npm advisory 1247710, high, ReDoS through single-branch repeated extglobs such as +(*)) on 2026-11-17 15:56Z to cover picomatch through 4.0.7, which is the latest release; first_patched_version is null. Both independent feeds report it (registry high count 1; OSV row picomatch 4.0.7), and the gate's all-severity policy (pm-eqxjzl: do not suppress actionable advisories) therefore blocks every run, including main, independent of any branch change; the lockfile is unchanged by PR 1746. Paths: tinyglobby (runtime, used by src/sdk/linked-artifacts.ts for linked-file globs), fdir via tinyglobby, and vite via @codspeed/vitest-plugin (dev). Exposure in pm: a caller-supplied linked-artifact glob compiled by picomatch could stall the process (self-inflicted). Upstream micromatch/picomatch opened fix PRs 257 to 261 on 2026-11-17 around 20:10Z; none is merged or released yet. Dependabot shows no open alert yet. Plan: when a patched picomatch is published, update the lockfile (direct pnpm update or an override to the patched version), confirm both feeds clear with node scripts/release/dependency-advisories/gate.mjs, and land it in a reviewed PR before the daily release cut; if no patch arrives, decide explicitly whether a time-bounded, recorded waiver belongs in the gate (it has none today)."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[6]: advisory,dependency,github-alert,picomatch,release-blocker,security
 created_at: "2026-11-17T20:50:14.563Z"
-updated_at: "2026-11-18T02:55:38.987Z"
+updated_at: "2026-11-21T15:24:55.889Z"
+closed_at: "2026-11-21T15:00:15.488Z"
+completed_at: "2026-11-21T15:00:15.488Z"
 author: "harness:claude-code"
 estimated_minutes: 45
 acceptance_criteria: "A patched picomatch is in the lockfile, or an explicit recorded decision covers the interim; node scripts/release/dependency-advisories/gate.mjs passes with both feeds clean; hosted Gates (static) passes on main and the daily release is not blocked"
@@ -14,25 +16,39 @@ parent: pm-i7w2
 risk: medium
 confidence: high
 severity: high
+resolution: "GitHub withdrew GHSA-fc5q-39xc-vjpf on 2026-11-18; the gate then listed the waiver as unused, so the waiver and its mirrored .trivyignore entry CVE-2026-112366 are deleted together, the registry keeps an empty list and its notice window, and DEVELOPMENT_DEPENDENCY_SECURITY.md records the withdrawal. Delivered on PR #1763."
 expected_result: The dependency advisory gate passes with no actionable advisory in the lockfile
-actual_result: "Both advisory feeds report picomatch 4.0.7 (GHSA-fc5q-39xc-vjpf, no patched release) and the gate blocks every branch"
+actual_result: "node scripts/release/dependency-advisories/gate.mjs passes over 552 packages with no waivers, defect-evidence-gate --waiver-notice passes with 0 advisory waivers, and hosted Gates (static) and Trivy pass on the PR"
 component: dependencies
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-eqxjzl,related,"2026-11-17T20:50:14.563Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-21T11:20:09.951Z","harness:claude-code","Evidence 2026-11-21: GitHub withdrew GHSA-fc5q-39xc-vjpf on 2026-11-18T15:38:56Z (gh api /advisories/GHSA-fc5q-39xc-vjpf reports withdrawn_at; first_patched_version is still null, picomatch is still 4.0.7). On main 06326bcf2, node scripts/release/dependency-advisories/gate.mjs passed over 552 packages with waived [] and unused_waivers ['GHSA-fc5q-39xc-vjpf in picomatch'], so neither the registry feed nor OSV reports picomatch any more. On branch fix/history-remedies-converge the waiver registry keeps version 1 and its 3-day notice window with an empty waivers list, the mirrored .trivyignore entry CVE-2026-112366 is gone, and docs/DEVELOPMENT_DEPENDENCY_SECURITY.md records the withdrawal. After the change the gate passes with no waivers, defect-evidence-gate.mjs --waiver-notice passes (live dependency advisory waivers 0), and the dependency-advisories and defect-evidence-gate specs pass (126 tests). The built-in linear-time glob matcher from pm-gh1748 stays."
+  "2026-11-21T15:24:55.888Z","harness:claude-code","Retitled on 2026-11-21 from the original problem statement ('picomatch through 4.0.7 has a high ReDoS advisory with no patched release ... blocks Gates (static) on every branch and the next release'), because the changelog renders the title of the closed item, and the shipped change is the withdrawal and the retired waiver (CodeRabbit and Greptile on PR #1763)."
 notes[4]{created_at,author,text}:
   "2026-11-17T21:32:17.484Z","harness:claude-code","Owner decision 2026-11-17: admin-merge PR 1746 despite the environmental advisory failure, and add a time-bounded waiver so the daily release continues while upstream has no patch. Design (this PR): config/dependency-advisory-waivers.json declares exact waivers (GitHub advisory id + npm package + exact locked versions + pm owner + reason >= 20 chars + RFC 3339 UTC expiry at most 30 days past the judging run; notice window 0 to 30 days). scripts/release/dependency-advisories/waivers.mjs validates them with no dist import (the gate runs before pnpm build in quality:static). Receipt version 2 records each registry advisory's validated package, severity, GitHub id and finding versions; a malformed detail voids the advisory's waivability. verifyReceipt checks counts, ids and advisory list agree, then covers each OSV row id and each registry finding version only by an exact live waiver; the verdict discloses waived and unused_waivers. Any malformed, duplicate, expired or over-long waiver refuses even when unused. The gate's refusal now names the uncovered package@version advisory (validated fields only) instead of the generic message. defect-evidence-gate --waiver-notice gained a dependency_advisory check: same validity rules, the declared notice window through the SDK waiverNoticeFor primitive, and an owner that must be an open tracker item; its negative control seeds an advisory waiver an hour from expiry."
   "2026-11-17T22:39:29.038Z","harness:claude-code","Runtime side: pm-gh1748 removed tinyglobby (and so fdir and picomatch) from the published runtime graph, so consumers' production audits are clean; picomatch remains only in development tooling. The waiver mechanism is tracked by child pm-3mdmtd; this item stays open as the waiver's owner until a patched picomatch is in the lockfile and the waiver is deleted (the scheduled notice gate fails if this item closes while the waiver exists)."
   "2026-11-18T01:56:29.888Z","harness:claude-code","The required Trivy job flags the same advisory under its CVE alias CVE-2026-112366. .trivyignore now carries 'CVE-2026-112366 exp:2026-12-01', with a comment naming this item and GHSA-fc5q-39xc-vjpf. A unit test (waivers.spec.ts) keeps every .trivyignore entry time-bounded, mirroring a declared waiver, and expiring no later than it. Verified locally with Trivy: exit 0 with the entry, exit 1 without it. When the patched picomatch lands, delete the waiver and the .trivyignore entry together."
   "2026-11-18T02:55:38.986Z","harness:claude-code","OpenSSF Scorecard code-scanning alert 29 (rule VulnerabilitiesID, high) now cites GHSA-fc5q-39xc-vjpf through the development graph. It is the same advisory and is left open deliberately: the vulnerability is real, and Scorecard re-raises the alert on its next run, so dismissing it would only hide state. It clears when the patched picomatch lands, together with the waiver and the .trivyignore entry."
-files[6]{path,scope,note}:
-  .trivyignore,project,time-bounded Trivy exception mirroring the waiver
-  config/dependency-advisory-waivers.json,project,declared picomatch waiver
+files[7]{path,scope,note}:
+  .trivyignore,project,time-bounded Trivy exception mirroring the waiver; mirrored CVE-2026-112366 exception removed
+  config/dependency-advisory-waivers.json,project,declared picomatch waiver; waiver registry emptied after the advisory was withdrawn
   scripts/release/defect-evidence-gate.mjs,project,notice-mode advisory waiver check
   scripts/release/dependency-advisories/receipt.mjs,project,receipt v2 verification with waivers
   scripts/release/dependency-advisories/waivers.mjs,project,waiver validation and exact matching
+  src/core/fs/file-glob.ts,project,module comment records the withdrawal
   tests/unit/scripts/release/dependency-advisories/waivers.spec.ts,project,"waiver validation, matching and registry file tests"
 tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
   node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories tests/unit/scripts/release/defect-evidence-gate.spec.ts,project,600,"harness:claude-code","2026-11-17T21:32:19.140Z",local_mutation,fix/advisory-gate-time-bounded-waiver
 docs[1]{path,scope,note}:
-  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project,Time-bounded advisory waivers and the picomatch section
+  docs/DEVELOPMENT_DEPENDENCY_SECURITY.md,project,Time-bounded advisory waivers and the picomatch section; Withdrawn picomatch extglob advisory section
+close_reason: The withdrawn picomatch advisory's waiver is retired and the advisory gate passes with no exception
+escape_class: scanner_finding
+gate_evidence:
+  disposition: gate_strengthened
+  owner: pm-03q389
+  gate_id: dependency-advisory-evidence
+  negative_control: "With GHSA-fc5q-39xc-vjpf withdrawn on 2026-11-18 and the waiver retired, the advisory gate again runs with no exception at all: tests/unit/scripts/release/dependency-advisories/gate.spec.ts keeps refusing every advisory no exact live waiver covers, and node scripts/release/defect-evidence-gate.mjs --waiver-notice --negative-control still fails on a seeded waiver inside its notice window."
+  local_checks[3]: node scripts/release/dependency-advisories/gate.mjs,node scripts/release/defect-evidence-gate.mjs --waiver-notice,node scripts/run-tests.mjs test -- tests/unit/scripts/release/dependency-advisories tests/unit/scripts/release/defect-evidence-gate.spec.ts
+  hosted_checks[2]: CI / Gates (static),Trivy
 body: ""

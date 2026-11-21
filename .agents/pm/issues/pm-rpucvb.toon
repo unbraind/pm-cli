@@ -2,20 +2,52 @@ id: pm-rpucvb
 title: "A history stream with both a non-record line and a chain break has no pm recovery: salvage needs a verified chain and repair reads through the refusing decoder"
 description: "Found while fixing pm-jbplbq on 2026-11-21. The shared decoder now refuses a line that is valid JSON but not an object with history_record_invalid, and names pm history-repair <id> --salvage-tail as the recovery. Salvage removes a JSON null, boolean or number line wherever it sits, but it still requires the retained records to verify (inspectHistoryTail refuses with 'History salvage requires a nonempty verified prefix'). pm history-repair, with or without --append-only, reads through the decoder, so it refuses before it can repair the chain. A stream with both faults, for example an out-of-band edit followed by a tool that appended null, therefore has no pm-native recovery, and the only way out is restoring the stream from version control. Fix: let salvage remove scalar lines without requiring a verified chain when no invalid suffix is discarded (removal cannot conceal a record), report the chain verdict honestly instead of the hard-coded verify_ok true, and leave chain repair to the next history-repair. Duplicate check: searched salvage, chain break, scalar and history repair; pm-jbplbq owns the refusal and the single-fault salvage, pm-gh1715 the append-only chain repair."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: history,recovery,robustness,salvage
 created_at: "2026-11-21T01:43:06.212Z"
-updated_at: "2026-11-21T01:43:06.212Z"
+updated_at: "2026-11-21T16:30:10.251Z"
+closed_at: "2026-11-21T15:00:14.205Z"
+completed_at: "2026-11-21T15:00:14.205Z"
 author: "harness:claude-code"
 estimated_minutes: 120
 acceptance_criteria: "A stream with a JSON null line and a chain break recovers with pm history-repair <id> --salvage-tail followed by pm history-repair <id> --append-only, executed in a spec; Salvage that only removes scalar lines never requires a verified chain and reports the real verify_ok and verify_errors; Salvage that discards an invalid suffix keeps its verified-prefix requirement"
 parent: pm-o2kc
 risk: low
 confidence: 80
+resolution: "Salvage removes lines that cannot hold a record without requiring a verified chain, reports the real chain verdict and names the repair previews; discarding an invalid suffix keeps the verified-prefix rule; a scalar-only stream salvages to an empty stream that pm history-repair rebuilds; identity is checked at every replayed state and ownership uses the last state that held the item; lenient replay keeps applied ops and records deletions. Delivered on PR #1763."
 expected_result: Every combination of a non-record line and a chain break has a pm-native recovery sequence
-actual_result: "Salvage refuses because the chain does not verify, and history-repair refuses because the decoder refuses the line"
-dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+actual_result: "A null line plus a bridgeable break salvages with verify_ok false, then pm history-repair <id> --append-only bridges it to a clean history_drift check and history --verify --strict-exit; the suffix refusal, nothing-to-discard next step, scalar-only rebuild, foreign-stream refusal and strict ownership cases pass"
+dependencies[3]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1715,related,"2026-11-21T01:43:06.212Z","harness:claude-code","cli:create:dep",detected
   pm-jbplbq,discovered_from,"2026-11-21T01:43:06.212Z","harness:claude-code","cli:create:dep",detected
+  pm-3os5p6,related,"2026-11-21T11:55:13.552Z","harness:claude-code","cli:update:dep",detected
+comments[5]{created_at,author,text}:
+  "2026-11-21T11:55:06.687Z","harness:claude-code","Implementation on branch fix/history-remedies-converge, 2026-11-21. In src/sdk/history/salvage.ts, inspectHistoryTail now separates the line scan (scanSalvageLines) from the chain judgment (judgeRetainedChain). Discarding an invalid suffix still requires a nonempty hash-verified prefix. Removing only lines that cannot hold a record (JSON null, boolean or number) no longer requires the chain to verify, because removal conceals nothing. The retained records then replay leniently for the id check and the ownership fallback, and the history_salvage record keeps the newest epoch a record declares, or none for an implicit stream. The result reports the real verdict: chain_drift_before, verify_ok and verify_errors, which were hard-coded to false, true and [] before. A history_chain_unverified warning names pm history-repair <id> --append-only --dry-run. A record-less stream (only scalar lines) still refuses. A broken chain with nothing to discard refuses with a next step naming the append-only repair preview. pm health then reports the stream as a bridgeable history_drift_chain_mismatch (pm-3os5p6), and the advised append-only repair bridges the break with the salvaged stream as a byte prefix. Proven in tests/integration/lifecycle/history-remedies.integration.spec.ts (the null line plus the bridgeable break, then salvage, append-only repair, a clean history_drift check and history --verify --strict-exit), together with the suffix refusal, the nothing-to-discard next step and the implicit-epoch case."
+  "2026-11-21T12:39:42.804Z","harness:claude-code","Review round 1 on PR #1763, 2026-11-21. Fixed: (a) salvage checks the item identity at every replayed state, so a misfiled stream that names another item refuses even when a later delete cleared the id. (b) The salvage record is planned before the lock, so a preview refuses wherever the write would; a digest algorithm this pm cannot compute refuses typed with history_salvage_refused and the upgrade step. (c) The follow-up warning names the append-only preview and the rewriting preview for a break a bridge cannot repair. (d) Lenient replay skips a root replacement that leaves no item object instead of throwing, in replay.ts lenientApplyReplayPatch, which the rewriting repair shares. (e) A stream of only scalar lines salvages to an empty stream without a salvage record, and for a live item the warning names pm history-repair <id>, which rebuilds it (pm-3os5p6)."
+  "2026-11-21T13:58:37.012Z","harness:claude-code","Review rounds 2 to 4 on PR #1763, 2026-11-21. Fixed in the shared lenient replay (replay.ts lenientApplyReplayPatch), which salvage and the rewriting repair both use. A patch may pass through a non-object root and restore the item. A patch that ends without an item root is a deletion when its entry is a delete, and replays as the canonical empty document. Any other such patch is replayed again, skipping only the ops that would leave no root, so the ops that did apply are kept. Salvage judges a verified chain's identity on its strict replay states, plans its record only when something will be removed, and gives restore advice for a malformed digest label and upgrade advice only for a well-formed unknown one."
+  "2026-11-21T15:24:56.728Z","harness:claude-code","Review round 8 (CodeRabbit on 43c44786b), 2026-11-21: the salvage record is built from the canonical empty document, keeping its empty patch and the last kept record's anchors. Unverified legacy metadata that does not canonicalize, for example metadata.comments set to {}, therefore no longer throws before the scalar line is removed. Regression test: 'salvages an unverified legacy stream whose metadata does not canonicalize' in tests/integration/lifecycle/history-remedies.integration.spec.ts."
+  "2026-11-21T16:30:10.250Z","harness:claude-code","Review round 9 (CodeRabbit on d67d097f4), 2026-11-21: a leniently replayed owner can hold any JSON value. Salvage now refuses typed when the recorded owner is not a string (history_salvage_refused, reason owner_malformed) instead of throwing on .trim(), and it never treats such an owner as unassigned. checkHistoryRewriteOwnership applies --force before it reads the owner, so a deliberate override always works. Regression test: 'refuses typed when a deleted item's recorded owner is not a name, unless --force overrides ownership'."
+files[3]{path,scope,note}:
+  src/core/history/history-rewrite.ts,project,"--force overrides ownership before the owner is read"
+  src/sdk/history/salvage.ts,project,scalar-only salvage keeps an unverified chain and reports it; suffix salvage keeps the verified-prefix rule
+  tests/integration/lifecycle/history-remedies.integration.spec.ts,project,salvage then append-only repair of a double-fault stream
+tests[1]{command,scope,timeout_seconds,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-remedies.integration.spec.ts tests/integration/history-durability.integration.spec.ts,project,900,"harness:claude-code","2026-11-21T11:43:30.370Z",local_mutation,fix/history-remedies-converge
+docs[1]{path,scope,note}:
+  docs/HISTORY_RECOVERY.md,project,"Recover an invalid history tail: double faults"
+close_reason: A stream with a non-record line and a chain break recovers with salvage followed by the advised repair
+contract_change:
+  api: pm history-repair <id> --salvage-tail result and behavior
+  before: "Salvage refused any stream whose chain did not verify, even when it only removed lines that cannot hold a record, and reported verify_ok true, verify_errors [] and chain_drift_before false unconditionally"
+  after: "Removing only non-record lines no longer requires a verified chain; the result reports the real chain verdict and a history_chain_unverified warning names the repair previews. A scalar-only stream salvages to an empty stream with no salvage record, and for a live item a history_stream_empty warning names the rebuild. Discarding an invalid suffix still requires a verified prefix"
+  migrate: "Read history.verify_ok and the warnings after a salvage instead of assuming a verified chain, and run the named repair when the chain is unverified"
+escape_class: production_defect
+gate_evidence:
+  disposition: gate_added
+  owner: pm-rpucvb
+  gate_id: history-salvage-double-fault
+  negative_control: "tests/integration/lifecycle/history-remedies.integration.spec.ts appends a JSON null to a stream with a bridgeable chain break, salvages it, and requires verify_ok false with the real verify_errors, a byte-prefix-preserving result, the bridgeable chain_mismatch remedy, and a clean history_drift check and history --verify --strict-exit after pm history-repair <id> --append-only. It also asserts that discarding an invalid suffix after a broken chain still refuses, that nothing to discard names the repair, that a scalar-only stream salvages to an empty stream which pm history-repair <id> rebuilds, that a stream naming another item refuses, and that a deleted item keeps its last assignee for strict ownership. tests/unit/core/history/history-replay.spec.ts fixes the lenient replay of root transitions and deletions."
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/integration/lifecycle/history-remedies.integration.spec.ts tests/integration/history-durability.integration.spec.ts tests/unit/core/history/history-replay.spec.ts
+  hosted_checks[2]: CI / Gates (static),CI / Gates (coverage)
 body: ""

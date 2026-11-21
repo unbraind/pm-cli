@@ -23600,6 +23600,23 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_chain_unbridgeable",
+      "class": "generic_failure",
+      "code": "history_drift_chain_unbridgeable",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift chain unbridgeable condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_drift_hash_mismatches"
       ],
@@ -23674,6 +23691,23 @@
       "stability": "stable"
     },
     {
+      "aliases": [],
+      "canonical_code": "history_drift_unrepairable_stream",
+      "class": "generic_failure",
+      "code": "history_drift_unrepairable_stream",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift unrepairable stream condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
       "aliases": [
         "validate_history_drift_version_skews"
       ],
@@ -23728,6 +23762,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "history_record_integrity_invalid",
+      "class": "conflict",
+      "code": "history_record_integrity_invalid",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History record integrity invalid condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/history/reanchor-refusal.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "history_record_invalid",
       "class": "generic_failure",
       "code": "history_record_invalid",
@@ -23740,6 +23791,23 @@
       "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
       "sources": [
         "core/history/read.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_record_version_unsupported",
+      "class": "conflict",
+      "code": "history_record_version_unsupported",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 4,
+      "meaning": "History record version unsupported condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/history/reanchor-refusal.ts"
       ],
       "stability": "provisional"
     },

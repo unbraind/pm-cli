@@ -10,9 +10,15 @@ import {
 } from "./history/salvage.js";
 import {
   assertAppendOnlyStreamEncoding,
+  assertRegularStreamEntry,
   buildAppendOnlyRepairPlan,
   type HistoryRepairBridgeReceipt,
 } from "./history/append-only-repair.js";
+import {
+  buildHistoryReseedPlan,
+  type HistoryRepairReseedReceipt,
+} from "./history/reseed.js";
+import { reanchorOrRefuse } from "./history/reanchor-refusal.js";
 import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
@@ -79,6 +85,13 @@ import {
   type ProvenanceNormalizationReceipt,
 } from "./governance/provenance-health.js";
 
+// Receipt types named by HistoryRepairResult, exported so consumers can name them directly.
+export type {
+  HistoryRepairBridgeReceipt,
+  HistoryRepairReseedReceipt,
+  HistorySalvageReceipt,
+};
+
 /** Documents the history repair command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairCommandOptions {
   /** Remove lines that cannot hold a record (a JSON null, boolean or number) and an invalid trailing suffix after a verified prefix; never re-anchor or reconcile. */
@@ -131,6 +144,8 @@ export interface HistoryRepairResult {
   salvage?: HistorySalvageReceipt;
   /** Present when an append-only repair planned or appended a bridge over chain breaks. */
   bridge?: HistoryRepairBridgeReceipt;
+  /** Present when the repair rebuilt a live item's absent or record-less stream from the on-disk item (pm-3os5p6). */
+  reseed?: HistoryRepairReseedReceipt;
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports dry run for this contract. */
@@ -864,8 +879,17 @@ export async function runHistoryRepair(
           analyzeDiscard: analyzeReconciliationDiscard,
           collectWarnings: collectHistoryRepairWarnings,
         }),
+      reseed: (snapshot, stream) =>
+        buildHistoryReseedPlan(subject, options, snapshot, stream),
     });
   }
+  // The reseed appends in both modes, so a linked stream refuses at planning as the write would.
+  const reseed = isEvidenceBoundRepair(options)
+    ? undefined
+    : async (snapshot: HistoryMaintenanceSnapshot, stream: { absent: boolean }) => {
+        await assertRegularStreamEntry(subject.id, subject.historyPath);
+        return buildHistoryReseedPlan(subject, options, snapshot, stream);
+      };
   return runHistoryMaintenance({
     pmRoot,
     subject,
@@ -876,7 +900,25 @@ export async function runHistoryRepair(
     /** Plan repairs against the same bytes later checked under the write lock. */
     transform: (snapshot) =>
       buildHistoryRepairPlan({ pmRoot, subject, options }, snapshot),
+    reseed,
   });
+}
+
+/**
+ * Merge reconciliation and other audited workflows prove their evidence
+ * against recorded history, so a stream with no record keeps refusing them
+ * instead of being rebuilt underneath the audit.
+ */
+function isEvidenceBoundRepair(options: HistoryRepairCommandOptions): boolean {
+  return [
+    options.auditOperation,
+    options.auditContext,
+    options.auditContextById,
+    options.forceAuditEntry,
+    options.mergeReceiptProof,
+    options.mergeReceiptProofById,
+    options.mergeAbandonmentProof,
+  ].some((value) => value !== undefined && value !== false);
 }
 
 /** An append-only bridge records its own reconciliation; it cannot carry another mode's audit or rewrite. */
@@ -970,9 +1012,11 @@ async function buildHistoryRepairPlan(
   // When normalization changed anything, the bridges' coverage was already
   // materialized on the original records; locating it again after the reseals
   // could only widen it from a digest the rewrite itself invalidated.
-  const reanchor = reanchorHistoryEntries(provenanceNormalization.entries, itemHashVersion, {
-    callerMarksBridgeCoverage: provenanceNormalization.receipt.changed,
-  });
+  const reanchor = reanchorOrRefuse(subject.id, provenanceNormalization.entries, () =>
+    reanchorHistoryEntries(provenanceNormalization.entries, itemHashVersion, {
+      callerMarksBridgeCoverage: provenanceNormalization.receipt.changed,
+    }),
+  );
 
   const itemReplayContext = describeHistoryRepairItemReplay(
     subject,

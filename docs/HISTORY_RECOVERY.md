@@ -6,8 +6,10 @@ Tracked by [pm-96fsma](../.agents/pm/issues/pm-96fsma.toon),
 [pm-e3gn0z](../.agents/pm/issues/pm-e3gn0z.toon),
 [pm-wlqxg3](../.agents/pm/tasks/pm-wlqxg3.toon),
 [pm-nb4zwz](../.agents/pm/issues/pm-nb4zwz.toon),
-[pm-jbplbq](../.agents/pm/issues/pm-jbplbq.toon), and
-[pm-gh1715](../.agents/pm/issues/pm-gh1715.toon).
+[pm-jbplbq](../.agents/pm/issues/pm-jbplbq.toon),
+[pm-gh1715](../.agents/pm/issues/pm-gh1715.toon),
+[pm-3os5p6](../.agents/pm/issues/pm-3os5p6.toon), and
+[pm-rpucvb](../.agents/pm/issues/pm-rpucvb.toon).
 
 Project management depends on trustworthy context. History is not just an
 activity feed: it is the reconstructable source for prior item states, including
@@ -78,9 +80,25 @@ pm history-repair <id> --salvage-tail --json
 pm history <id> --verify --strict-exit
 ```
 
-Salvage requires a nonempty, hash-verified prefix and retains every record byte
-unchanged. It also removes lines whose JSON value is a null, a boolean or a
-number wherever they sit, because such a value cannot hold a record. A string,
+Salvage retains every record byte unchanged. Discarding an invalid suffix
+requires a nonempty, hash-verified prefix, because truncation must not cut a
+chain whose damage it cannot see. It also removes lines whose JSON value is a
+null, a boolean or a number wherever they sit, because such a value cannot hold
+a record. Removing only such lines conceals nothing, so it does not require the
+chain to verify: a stream with both a scalar line and a chain break is salvaged
+first, the result reports `verify_ok: false` with the `verify_errors`, and its
+`history_chain_unverified` warning names the append-only repair preview, with
+the rewriting preview for a break a bridge cannot repair. `pm history-repair
+<id> --append-only` then bridges the break. A stream of only scalar lines is
+salvaged to an empty stream without a salvage record, because no record is
+left to anchor one on. For a live item, the result's `history_stream_empty`
+warning names `pm history-repair <id>`, which rebuilds the stream (see below).
+With nothing to discard, salvage refuses and names the repair the chain needs.
+Salvage checks the item identity at every replayed state, so a stream that
+names another item anywhere refuses, even when a later delete cleared the id.
+The salvage record is planned before the lock, so a preview refuses wherever
+the write would, for example on a digest algorithm this pm cannot compute. A
+broken stream that declares no hash epoch keeps its salvage record implicit. A string,
 an array or a complete malformed object might encode one, so salvage refuses
 those. A truncated object at the tail, such as `{"ts":`, is part of the invalid
 suffix after the verified prefix and is discarded with it.
@@ -119,11 +137,69 @@ console.log(preview.salvage);
 The CLI and MCP expose this SDK-owned contract; package authors do not need a
 separate recovery implementation.
 
+## Rebuild a missing history stream
+
+A live item whose history stream is absent, or holds no record (the default
+`history.missing_stream: auto_create` policy recreates a deleted stream as an
+empty file on read), is reported by `pm health` as
+`history_drift_missing_stream`. When the stream was deleted by mistake, restore
+it from version control first. Otherwise rebuild it:
+
+```bash
+pm history-repair <id> --dry-run --json
+pm history-repair <id> --json
+pm health --strict-exit
+```
+
+The repair writes one sealed `history_repair` record from the empty document
+to the on-disk item, after any whitespace the stream held, so it keeps every
+existing byte in either repair mode. An existing empty stream gets the record
+through `O_APPEND`, on the exact bytes the repair verified. An absent stream is
+published complete: the record is staged and flushed beside it, then
+hard-linked into the absent path, so no partial or empty stream is ever
+visible. A stream that another writer created or extended meanwhile refuses
+with `stream_changed`. A filesystem whose link call fails with `EPERM`,
+`ENOTSUP`, `EOPNOTSUPP` or `ENOSYS` refuses with `stream_publish_unsupported`;
+any other link failure (for example `EISDIR`, which Windows exFAT reports;
+[pm-ue6pqv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ue6pqv.toon),
+tracker record excluded from npm) surfaces as that error. On a local
+filesystem nothing is published either way. A network filesystem can publish
+the link and lose the reply, so before restoring or retrying, check whether the
+item's stream file exists as a regular file, without running a pm command on
+the item first: under the default `auto_create` policy a pm read recreates an
+absent stream as an empty file. If it exists, verify it with `pm history <id>
+--verify --full`. Restore the stream from version control, or repair from a
+clone on a filesystem with hard links, only when nothing valid was published. A
+history path that is a symbolic link refuses with `stream_not_regular_file`,
+both in the preview and in the write, and `pm health` reports it as
+`history_drift_unrepairable_stream` instead of advising the rebuild. `context.history_reseed` and the result's
+`reseed` receipt record why (`missing_stream` or `empty_stream`) and
+`prior_versions: "unrecorded"`: version 1 is the item as of the repair, and
+earlier versions cannot be read or restored. The record is maintenance, so it
+does not count as work on the item. `pm history-repair --all`, with or without
+`--append-only`, rebuilds every missing stream in one pass. A deleted item's
+empty stream has nothing to anchor on and keeps refusing, as do the audited
+merge-reconciliation modes, which prove their evidence against recorded
+history.
+
 ## Bridge a broken chain without rewriting it
 
 A change made outside pm, such as a hand edit or a merge resolution that
-bypassed the driver, breaks the item's history chain. `pm health` reports
-`history_drift_chain_mismatch`. Repair it append-only:
+bypassed the driver, breaks the item's history chain. `pm health` previews
+the append-only repair for every broken chain and reports
+`history_drift_chain_mismatch` when a bridge can repair it. A break only the
+rewriting repair can fix (`pm history-repair <id>`), such as a recorded patch
+that applies only on top of the unrecorded change, is reported as
+`history_drift_chain_unbridgeable`. A stream neither repair can keep, such as
+one whose sealed record no longer matches its seal, is reported as
+`history_drift_unrepairable_stream`. Restore that one from version control:
+the rewriting repair refuses it with `history_record_integrity_invalid`. Such a
+stream, and one a newer pm wrote (`history_drift_version_skew`, including a
+record seal format this pm cannot read, which refuses with
+`history_record_version_unsupported`), keeps only that verdict: its chain- and
+hash-mismatch warnings would advise a repair that refuses, so health drops
+them from the advice while `details` keeps the evidence.
+Repair a bridgeable break append-only:
 
 ```bash
 pm history-repair <id> --append-only --dry-run --json
@@ -151,11 +227,14 @@ repair verified. If another writer that ignores pm's lock appends in the same
 moment, its bytes are kept and the repair reports `stream_changed`. Every earlier line stays
 byte-identical, so the stream before the repair remains a prefix of the
 repaired stream. Other clones, worktrees and append-only consumers keep the
-bytes they already hold. `--all --append-only` attempts every drifted stream,
-and a stream a bridge cannot repair, such as a missing one, refuses with a
-typed reason. When several streams drift and every one has a chain mismatch,
-`pm health` names it as the bulk remedy for `history_drift_chain_mismatch`;
-with other drift present it keeps the per-item `--append-only` remedy.
+bytes they already hold. `--all --append-only` attempts every drifted stream:
+it bridges each bridgeable break, rebuilds each missing stream, and refuses a
+stream a bridge cannot repair with a typed reason. When several streams drift
+and every one is a bridgeable chain mismatch or a missing stream, `pm health`
+names it as the bulk remedy. With other drift present a bridgeable mismatch
+keeps its per-item `--append-only` remedy, and while any stream is unreadable,
+unrepairable, written by a newer pm or attributed to a pending merge receipt,
+every remedy stays per item.
 
 Verification accepts a break exactly when the next bridge names it. Inside the
 bridged segment it checks the recorded links, and each further break must be

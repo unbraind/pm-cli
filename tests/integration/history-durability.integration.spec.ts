@@ -516,8 +516,12 @@ describe("history durability across storage maintenance", () => {
       expect(() => inspectHistoryTail("<<<<<<< ours\n")).toThrow(
         /merge conflicts/,
       );
-      // A JSON scalar cannot hold a record, but salvage still needs one verified record to keep.
-      expect(() => inspectHistoryTail("null\n")).toThrow(/nonempty verified prefix/);
+      // A JSON scalar cannot hold a record, so a stream of only such lines salvages to an empty stream (pm-3os5p6).
+      expect(inspectHistoryTail("null\n")).toMatchObject({
+        entries: [],
+        prefix: "",
+        receipt: { non_record_lines: 1, retained_entries: 0 },
+      });
       // A string or array line might encode a record, so salvage refuses to drop it.
       expect(() => inspectHistoryTail(`${original}"${"x"}"\n${original}`)).toThrow(
         /interior corruption/,

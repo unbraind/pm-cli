@@ -9,6 +9,7 @@ import {
 } from "../../src/core/history/history.js";
 import { verifyHistoryChain } from "../../src/core/history/replay.js";
 import { runHealth } from "../../src/sdk/governance/health.js";
+import { runHistoryRepair } from "../../src/sdk/history-repair.js";
 import { runHistoryRedact } from "../../src/sdk/history-redact.js";
 import type { HistoryEntry } from "../../src/types.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -185,7 +186,11 @@ describe("history redaction record integrity", () => {
         { path: context.pmPath },
         { full: true, skipVectors: true },
       );
-      expect(health.warnings).toContain(`history_drift_chain_mismatch:${id}`);
+      // Neither repair can keep a record whose seal no longer matches (pm-3os5p6).
+      expect(health.warnings).toContain(`history_drift_unrepairable_stream:${id}`);
+      await expect(
+        runHistoryRepair(id, { dryRun: true }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ code: "history_record_integrity_invalid" });
       await expect(
         runHistoryRedact(
           id,

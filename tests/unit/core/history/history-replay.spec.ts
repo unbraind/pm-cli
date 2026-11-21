@@ -51,6 +51,35 @@ function buildEntry(before: ReplayDocument, after: ReplayDocument, op = "update"
 }
 
 describe("history replay helpers", () => {
+  it("replays a patch that ends without an item root again without its root transitions", () => {
+    // The ops that did apply are kept, and no empty state is invented (pm-rpucvb review).
+    for (const value of [null, 7, ["a"]]) {
+      expect(
+        lenientApplyReplayPatch({ metadata: { id: "pm-a" }, body: "b" }, [
+          { op: "add", path: "/body", value: "updated" },
+          { op: "replace", path: "", value } as never,
+          { op: "add", path: "/metadata/title", value: "kept" },
+        ]),
+      ).toEqual({ document: { metadata: { id: "pm-a", title: "kept" }, body: "updated" }, convertedReplaceToAdd: 0, skippedOps: 1 });
+    }
+    // A root removal that ends a delete entry records the deletion as the canonical empty document.
+    expect(
+      lenientApplyReplayPatch({ metadata: { id: "pm-a" }, body: "b" }, [
+        { op: "remove", path: "" } as never,
+        { op: "remove", path: "/metadata/missing" },
+      ], "delete"),
+    ).toEqual({ document: { metadata: {}, body: "" }, convertedReplaceToAdd: 0, skippedOps: 1 });
+    // A patch may pass through a non-object root and restore the item before it ends.
+    const item = { metadata: { id: "pm-a", title: "t" }, body: "b" };
+    expect(
+      lenientApplyReplayPatch({ metadata: { id: "pm-a" }, body: "b" }, [
+        { op: "replace", path: "", value: [item] } as never,
+        { op: "move", from: "/0", path: "" } as never,
+        { op: "remove", path: "/metadata/missing" },
+      ]),
+    ).toEqual({ document: item, convertedReplaceToAdd: 0, skippedOps: 1 });
+  });
+
   it("clones the empty replay document without aliasing the shared constant", () => {
     const clone = cloneEmptyReplayDocument();
     expect(clone).toEqual({ metadata: {}, body: "" });
