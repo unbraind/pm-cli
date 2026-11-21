@@ -8,6 +8,11 @@ import {
   salvageHistoryTail,
   type HistorySalvageReceipt,
 } from "./history/salvage.js";
+import {
+  assertAppendOnlyStreamEncoding,
+  buildAppendOnlyRepairPlan,
+  type HistoryRepairBridgeReceipt,
+} from "./history/append-only-repair.js";
 import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
 import { realpath } from "node:fs/promises";
 import path from "node:path";
@@ -21,6 +26,7 @@ import {
   toReplayDocument,
   verifyHistoryChainWithVersion,
   type ReplayDocument,
+  materializeBridgedSegments,
 } from "../core/history/replay.js";
 import {
   sealHistoryRecord,
@@ -75,8 +81,10 @@ import {
 
 /** Documents the history repair command options payload exchanged by command, SDK, and package integrations. */
 export interface HistoryRepairCommandOptions {
-  /** Remove only an invalid trailing suffix after a verified prefix; never re-anchor or reconcile. */
+  /** Remove lines that cannot hold a record (a JSON null, boolean or number) and an invalid trailing suffix after a verified prefix; never re-anchor or reconcile. */
   salvageTail?: boolean;
+  /** Bridge chain breaks with one appended record instead of re-anchoring recorded entries, so every earlier line stays byte-identical (GH-1715). */
+  appendOnly?: boolean;
   /** Value that configures or reports dry run for this contract. */
   dryRun?: boolean;
   /** Value that configures or reports author for this contract. */
@@ -121,6 +129,8 @@ export interface HistoryRepairCommandOptions {
 export interface HistoryRepairResult {
   /** Present when invalid trailing bytes were selected for explicit salvage. */
   salvage?: HistorySalvageReceipt;
+  /** Present when an append-only repair planned or appended a bridge over chain breaks. */
+  bridge?: HistoryRepairBridgeReceipt;
   /** Stable identifier used to reference this record across commands and storage. */
   id: string;
   /** Value that configures or reports dry run for this contract. */
@@ -824,6 +834,12 @@ export async function runHistoryRepair(
   );
 
   if (options.salvageTail === true) {
+    if (options.appendOnly === true) {
+      throw new PmCliError(
+        "Tail salvage cannot be combined with other repair modes.",
+        EXIT_CODE.USAGE,
+      );
+    }
     return salvageHistoryTail({
       pmRoot,
       subject,
@@ -831,6 +847,23 @@ export async function runHistoryRepair(
       typeRegistry,
       options,
       author: resolveAuthor(options.author, settings.author_default),
+    });
+  }
+  if (options.appendOnly === true) {
+    assertAppendOnlyRepairOptions(options);
+    await assertAppendOnlyStreamEncoding(subject.id, subject.historyPath);
+    return runHistoryMaintenance({
+      pmRoot,
+      subject,
+      settings,
+      typeRegistry,
+      operation: "history-repair",
+      options,
+      transform: (snapshot) =>
+        buildAppendOnlyRepairPlan(subject, options, snapshot, {
+          analyzeDiscard: analyzeReconciliationDiscard,
+          collectWarnings: collectHistoryRepairWarnings,
+        }),
     });
   }
   return runHistoryMaintenance({
@@ -844,6 +877,27 @@ export async function runHistoryRepair(
     transform: (snapshot) =>
       buildHistoryRepairPlan({ pmRoot, subject, options }, snapshot),
   });
+}
+
+/** An append-only bridge records its own reconciliation; it cannot carry another mode's audit or rewrite. */
+function assertAppendOnlyRepairOptions(options: HistoryRepairCommandOptions): void {
+  if (
+    [
+      options.normalizeProvenance,
+      options.auditOperation,
+      options.auditContext,
+      options.auditContextById,
+      options.forceAuditEntry,
+      options.mergeReceiptProof,
+      options.mergeReceiptProofById,
+      options.mergeAbandonmentProof,
+    ].some((value) => value !== undefined && value !== false)
+  ) {
+    throw new PmCliError(
+      "An append-only repair cannot be combined with other repair modes.",
+      EXIT_CODE.USAGE,
+    );
+  }
 }
 
 /** Preserve explicit audit requests while reusing an identical receipt disposition in verified history. */
@@ -868,6 +922,19 @@ function shouldAppendForcedHistoryAudit(
   return options.forceAuditEntry === true && !alreadyRecorded;
 }
 
+/**
+ * Normalization reseals the records it changes, which voids a covering
+ * bridge's segment digest before re-anchoring can see it. When it changes
+ * anything, the bridges' unreconstructable ranges are first written onto the
+ * covered records so the rewrite keeps refusing those versions.
+ */
+function normalizeHistoryProvenancePreservingBridges(entries: HistoryEntry[]) {
+  const probe = normalizeInvalidHistoryProvenance(entries);
+  return probe.receipt.changed
+    ? normalizeInvalidHistoryProvenance(materializeBridgedSegments(entries))
+    : probe;
+}
+
 /** Reanchor and reconcile as a plan whose receipt proof is repeated under the shared write lock. */
 async function buildHistoryRepairPlan(
   params: {
@@ -882,7 +949,7 @@ async function buildHistoryRepairPlan(
   const chainBefore = snapshot.verification;
   const chainVersionBefore = verifyHistoryChainWithVersion(historyEntries);
   const provenanceNormalization = options.normalizeProvenance
-    ? normalizeInvalidHistoryProvenance(historyEntries)
+    ? normalizeHistoryProvenancePreservingBridges(historyEntries)
     : {
         entries: historyEntries,
         receipt: {
@@ -900,10 +967,12 @@ async function buildHistoryRepairPlan(
       .map((entry) => entry.item_hash_version)
       .filter((version): version is number => version !== undefined),
   );
-  const reanchor = reanchorHistoryEntries(
-    provenanceNormalization.entries,
-    itemHashVersion,
-  );
+  // When normalization changed anything, the bridges' coverage was already
+  // materialized on the original records; locating it again after the reseals
+  // could only widen it from a digest the rewrite itself invalidated.
+  const reanchor = reanchorHistoryEntries(provenanceNormalization.entries, itemHashVersion, {
+    callerMarksBridgeCoverage: provenanceNormalization.receipt.changed,
+  });
 
   const itemReplayContext = describeHistoryRepairItemReplay(
     subject,
@@ -955,6 +1024,8 @@ async function buildHistoryRepairPlan(
   const changed = [
     reanchor.entriesRehashed > 0,
     reanchor.entriesPatchRepaired > 0,
+    // A dissolved stray bridge or a replay_inexact marker changes the stream too.
+    reanchor.entriesResealed > 0,
     reconcileNeeded,
     shouldAppendForcedHistoryAudit(options, reanchor.entries, effectiveAuditContext),
     provenanceNormalization.receipt.changed,

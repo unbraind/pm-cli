@@ -1071,6 +1071,26 @@ export interface HistoryReanchorEvidence {
   record?: HistoryEntry;
 }
 
+/** One chain break an append-only history repair names (GH-1715). */
+export interface HistoryBridgeBreak {
+  /** after_hash recorded by the entry before the break. */
+  gap_from: string;
+  /** before_hash recorded by the first entry after the break. */
+  gap_to: string;
+  /** record_hash of that first entry; null when it is a legacy entry without one. */
+  record_hash: string | null;
+}
+
+/** Sealed bridge envelope carried by an append-only `history_repair` record. */
+export interface HistoryBridge {
+  /** Envelope version. */
+  version: 1;
+  /** Every break the bridge closes, in stream order. */
+  breaks: HistoryBridgeBreak[];
+  /** Digest, under the record's hash algorithm, of every record from the first break up to the bridge, so none of them can change under it. */
+  segment_digest: string;
+}
+
 /** Documents the history entry payload exchanged by command, SDK, and package integrations. */
 export interface HistoryEntry {
   /** Algorithm for before_hash, after_hash and record_hash; absent means legacy SHA-256. */
@@ -1150,6 +1170,10 @@ export interface HistoryEntry {
   record_hash?: string;
   /** Append-only evidence for every prior anchor or patch representation replaced by maintenance. */
   reanchor_evidence?: HistoryReanchorEvidence[];
+  /** Chain breaks this append-only `history_repair` record closes (GH-1715). */
+  bridge?: HistoryBridge;
+  /** Set when maintenance re-anchored this entry across an unrecorded change by dissolving a bridge: its replayed state lacks that change, so history reads refuse to present it as the historical version. */
+  replay_inexact?: true;
   /** Human-readable explanation suitable for logs and agent-facing output. */
   message?: string;
   /** Structured audit metadata that does not alter replayed item state. */

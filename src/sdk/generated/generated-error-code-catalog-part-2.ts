@@ -8,6 +8,22 @@ import type { PmErrorCodeCatalogRow } from "./error-code-catalog-rows.js";
 /** Generated partition 2 of the exhaustive error-code catalog, as compact rows. */
 export const PM_ERROR_CODE_CATALOG_PART_2: PmErrorCodeCatalogRow[] = [
   {
+    code: "merge_fence_missing",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
+  },
+  {
+    code: "merge_git_config_unwritable",
+    exit_code: 5,
+    stable: true,
+    sources: ["sdk/merge/install.ts"],
+  },
+  {
+    code: "merge_receipt_evidence_invalid",
+    exit_code: 4,
+    sources: ["core/diagnostics/remediation.ts", "sdk/merge/reconcile.ts"],
+  },
+  {
     code: "merge_receipt_history_reference_missing",
     exit_code: 1,
     sources: ["core/diagnostics/remediation.ts"],

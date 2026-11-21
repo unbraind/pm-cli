@@ -55,7 +55,8 @@ Use `listMutationEvents({ item: "pm-abcd", verify: true })` or
 The SDK reads authoritative bytes and verifies each complete selected stream
 before applying operation, author, timestamp, cursor, or row-limit filters.
 Selected-record failures are detected even outside the returned page. JSON
-parsing failures from `readHistorySnapshot` report `history_json_invalid`;
+parsing failures from `readHistorySnapshot` report `history_json_invalid`, and a
+line that is valid JSON but not an object reports `history_record_invalid`;
 chain-verification failures report `event_history_integrity_failed` with
 history-inspection recovery. Follow the returned typed recovery guidance. Select
 `item` to bound verification cost and exclude unrelated streams. With no item

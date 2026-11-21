@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { compactMarkdownTables, exportedDeclarationClosure, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, createModuleLayouts, exportedDeclarationClosure, findExcludedModuleReferences, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -327,6 +327,244 @@ it("publishes only the dist declarations an exported types entry reaches, leavin
   expect(unmapped).toEqual(expect.arrayContaining(["dist/index.d.ts", "dist/value.d.ts", "dist/internal.d.ts", "types/ambient.d.ts"]));
 }, 60_000);
 
+/** Checkout and package layouts over in-memory file lists; `mains` maps a manifest path to its main. */
+function layoutsOf(checkout: string[], packed: string[], mains: Record<string, string> = {}) {
+  const view = (files: Set<string>) => ({
+    has: (candidate: string) => files.has(candidate),
+    main: (manifest: string) => (files.has(manifest) ? mains[manifest] : undefined),
+  });
+  return { checkout: view(new Set([...checkout, ...packed])), package: view(new Set(packed)) };
+}
+
+/** References one module's text makes, judged against the given layouts. */
+const referencesIn = (file: string, text: string, layouts: ReturnType<typeof layoutsOf>) =>
+  findExcludedModuleReferences([file], layouts, () => text);
+
+it("refuses any quoted relative reference from a packed module to an excluded module (pm-998juj)", () => {
+  const files: Record<string, string> = {
+    "dist/cli.js": [
+      'import{a}from"./sdk/kept.mjs";',
+      'import b from /* comment */ "./sdk/hidden.js";',
+      "const worker = new URL('./sdk/worker.js', import.meta.url);",
+      "const lazy = await import(`./sdk/${name}.js`);",
+      'const pattern = /import".\\/sdk\\/excluded.cjs"/;',
+      'const text = "see ./sdk/hidden.js";',
+      "const legacy = require('./sdk/legacy');",
+      'const folder = await import("./sdk/folder");',
+      'const query = await import("./sdk/hidden.js?worker#main");',
+    ].join("\n"),
+    "dist/sdk/kept.mjs": 'export const k = await import("../sdk/excluded.cjs"); import "./../sdk/excluded.cjs";',
+    "node_modules/dep/index.js": 'import "../../dist/sdk/hidden.js";',
+    "docs/README.md": 'import "./dist/sdk/hidden.js"',
+  };
+  const read = (file: string): string => files[file]!;
+  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.js", "dist/sdk/folder/index.js"];
+  expect(findExcludedModuleReferences(Object.keys(files), layoutsOf(excluded, Object.keys(files)), read)).toEqual([
+    "dist/cli.js -> ./sdk/hidden.js",
+    "dist/cli.js -> ./sdk/worker.js",
+    "dist/cli.js -> ./sdk/legacy",
+    "dist/cli.js -> ./sdk/folder",
+    "dist/cli.js -> ./sdk/hidden.js?worker#main",
+    "dist/sdk/kept.mjs -> ../sdk/excluded.cjs",
+    "dist/sdk/kept.mjs -> ./../sdk/excluded.cjs",
+  ]);
+  expect(findExcludedModuleReferences(Object.keys(files), layoutsOf([], [...Object.keys(files), ...excluded]), read)).toEqual([]);
+  // require() reads "#" literally, so a file named with one is judged by its literal path too.
+  expect(referencesIn("dist/index.cjs", "require('./helper#legacy.cjs')", layoutsOf(["dist/helper#legacy.cjs"], []))).toEqual([
+    "dist/index.cjs -> ./helper#legacy.cjs",
+  ]);
+  // Dot-only strings such as "../" are path checks outside a loader call; inside one they name a directory.
+  const indexes = layoutsOf(["index.js", "dist/index.js", "dist/sdk/index.js"], []);
+  expect(referencesIn("dist/sdk/a.js", 'x.startsWith("../") || x === "./../" || p.startsWith("./")', indexes)).toEqual([]);
+  expect(referencesIn("dist/sdk/a.cjs", 'const x = require("./");', indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  expect(referencesIn("dist/sdk/a.cjs", "require( /* local directory */ './')", indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  expect(referencesIn("dist/sdk/a.cjs", "require( // local directory\n  '../')", indexes)).toEqual(["dist/sdk/a.cjs -> ../"]);
+  expect(referencesIn("dist/a.cjs", "require('./sdk/')", indexes)).toEqual(["dist/a.cjs -> ./sdk/"]);
+  // A root module's directory reference resolves to the packed root index.
+  expect(referencesIn("cli.cjs", "require('./')", layoutsOf([], ["cli.cjs", "index.js"]))).toEqual([]);
+  // A trailing slash never names the same-named sibling file.
+  expect(referencesIn("dist/a.cjs", "require('./graph/')", layoutsOf(["dist/graph.js"], ["dist/graph/index.js"]))).toEqual([]);
+  // CommonJS appends only .js, .json and .node: a packed .cjs sibling never stands in for the index.
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/index.js"], ["dist/local.cjs"]))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  expect(referencesIn("dist/cli.cjs", "require('./legacy')", layoutsOf(["dist/legacy.cjs"], []))).toEqual([]);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/package.json"], ["dist/local.json", "dist/local/entry.js"], {
+    "dist/local/package.json": "entry.js",
+  }))).toEqual([]);
+  // A terminal "/." or "/.." names the directory, not a same-named sibling.
+  const dotted = layoutsOf(["dist/types/index.js", "index.js"], ["dist/types.js"]);
+  expect(referencesIn("dist/cli.cjs", "require('./types/.')", dotted)).toEqual(["dist/cli.cjs -> ./types/."]);
+  expect(referencesIn("dist/types/x.cjs", "require('./..')", layoutsOf(["dist/index.js"], ["dist.js"]))).toEqual(["dist/types/x.cjs -> ./.."]);
+  // require() resolves the literal spelling only, an import only the URL spelling.
+  const hashed = layoutsOf(["dist/local/package.json"], ["dist/local#prod.js", "dist/local/entry.js"], { "dist/local/package.json": "entry.js" });
+  expect(referencesIn("dist/cli.cjs", "require('./local#prod.js')", hashed)).toEqual([]);
+  expect(referencesIn("dist/cli.mjs", "import('./local#prod.js')", layoutsOf(["dist/local.js"], ["dist/local#prod.js"]))).toEqual([
+    "dist/cli.mjs -> ./local#prod.js",
+  ]);
+  // Escapes are decoded: the string value names the module, not its source spelling.
+  const escaped = layoutsOf(["dist/sdk/index.js"], []);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/\\u0069ndex.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/\\u0069ndex.js"]);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/\\u{69}nde\\x78\\.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/\\u{69}nde\\x78\\.js"]);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/index.js";', escaped)).toEqual(["dist/cli.js -> ./sdk/index.js"]);
+  expect(referencesIn("dist/cli.js", 'import "./sdk/\\u{110000}index.js";', escaped)).toEqual([]);
+  // Control-character escapes decode to their JavaScript values.
+  const tabbed = layoutsOf(["dist/tindex.js"], ["dist/\tindex.js"]);
+  expect(referencesIn("dist/cli.cjs", "require('./\\tindex.js')", tabbed)).toEqual([]);
+  expect(referencesIn("dist/cli.cjs", "require('./\\tindex.js')", layoutsOf(["dist/\tindex.js"], ["dist/tindex.js"]))).toEqual([
+    "dist/cli.cjs -> ./\\tindex.js",
+  ]);
+  // Comments may sit between the loader name and its parenthesis.
+  expect(referencesIn("dist/sdk/a.cjs", 'require /* local SDK */ ("./")', indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  // Constant concatenations fold before resolution; a dot-only prefix of a dynamic expression names nothing.
+  expect(referencesIn("dist/sdk/a.cjs", 'require("./" + "index.js")', indexes)).toEqual(["dist/sdk/a.cjs -> ./index.js"]);
+  expect(referencesIn("dist/sdk/a.cjs", "require('./' /* part */ + 'history-compact.js')", layoutsOf(["dist/sdk/index.js"], ["dist/sdk/history-compact.js"]))).toEqual([]);
+  expect(referencesIn("dist/sdk/a.cjs", 'require("./" + name)', indexes)).toEqual([]);
+  // Only complete operands fold: a literal an expression transforms ends the fold.
+  const sdk = layoutsOf(["dist/sdk/index.js"], ["dist/sdk/init.js", "dist/sdk/index.js.js"]);
+  expect(referencesIn("dist/cli/public.js", 'import("../sdk/index.js" + ".js".slice(3))', sdk)).toEqual(["dist/cli/public.js -> ../sdk/index.js"]);
+  expect(referencesIn("dist/cli/public.js", 'import("../sdk/i" + "ndex.js".replace("ndex", "nit"))', sdk)).toEqual([]);
+  expect(referencesIn("dist/cli/public.js", 'import("../sdk/" + "index.js")', sdk)).toEqual(["dist/cli/public.js -> ../sdk/index.js"]);
+  // A ternary colon ends a folded operand, in either branch.
+  const core = layoutsOf(["dist/sdk/core.js", "dist/sdk/index.js"], ["dist/sdk/history-repair.js", "dist/sdk/history-compact.js"]);
+  expect(referencesIn("dist/cli.js", 'import(legacy ? "./sdk/co" + "re.js" : "./sdk/history-repair.js")', core)).toEqual(["dist/cli.js -> ./sdk/core.js"]);
+  expect(referencesIn("dist/cli.js", 'import(legacy ? "./sdk/" + "history-compact.js" : "./sdk/history-repair.js")', core)).toEqual([]);
+  // An optional chain transforms the operand, so it ends the fold; "??" does not.
+  expect(referencesIn("dist/cli.js", 'import("./sdk/core.js" + ".js"?.slice(3))', core)).toEqual(["dist/cli.js -> ./sdk/core.js"]);
+  expect(referencesIn("dist/cli.js", 'import("./sdk/co" + "re.js" ?? fallback)', core)).toEqual(["dist/cli.js -> ./sdk/core.js"]);
+  // Inside a loader call a query-bearing dot-only string is still judged.
+  expect(referencesIn("dist/sdk/comments.js", 'require("./?mode=compat".split("?")[0])', core)).toEqual(["dist/sdk/comments.js -> ./?mode=compat"]);
+  // A dot-only directory URL with a query outside a loader is a directory read, not a module reference.
+  expect(referencesIn("dist/sdk/history-compact.js", 'readdirSync(new URL("./?view=modules", import.meta.url))', sdk)).toEqual([]);
+  // An import resolves as a URL: escaped whitespace is dropped, a query and fragment stripped, percent escapes decoded.
+  const graph = layoutsOf(["dist/sdk/graph.js"], []);
+  expect(referencesIn("dist/cli.mjs", "import('./sdk/graph.js?worker\\n')", graph)).toEqual(["dist/cli.mjs -> ./sdk/graph.js?worker\\n"]);
+  expect(referencesIn("dist/cli.mjs", 'import("./sdk/%67raph.js")', graph)).toEqual(['dist/cli.mjs -> ./sdk/%67raph.js']);
+  expect(referencesIn("dist/cli.mjs", 'import("./sdk/%zz.js"); import("../../../graph.js")', layoutsOf(["dist/sdk/%zz.js"], []))).toEqual([]);
+  expect(referencesIn("cli.mjs", 'import("./")', layoutsOf(["index.js"], []))).toEqual(["cli.mjs -> ./"]);
+  // A block comment ends at its first "*/": an expression between two comments is still an expression.
+  expect(referencesIn("dist/cli.js", 'require("./sdk/graph.js?worker" /* lead */ .split("?")[0] /* tail */)', layoutsOf(["dist/sdk/graph.js"], []))).toEqual([
+    "dist/cli.js -> ./sdk/graph.js?worker",
+  ]);
+  const comments = `require("./sdk/graph.js?worker" ${"/**/ ".repeat(40)}.slice(0))`;
+  const started = performance.now();
+  expect(referencesIn("dist/cli.js", comments, layoutsOf(["dist/sdk/graph.js"], []))).toEqual(["dist/cli.js -> ./sdk/graph.js?worker"]);
+  expect(performance.now() - started).toBeLessThan(1000);
+  // A string an expression transforms before loading is judged in both spellings.
+  const transformed = layoutsOf(["dist/sdk/graph.js"], []);
+  expect(referencesIn("dist/cli.js", "require('./sdk/graph.js?worker'.split('?')[0])", transformed)).toEqual([
+    "dist/cli.js -> ./sdk/graph.js?worker",
+  ]);
+  expect(referencesIn("dist/cli.js", "require('./sdk/graph.js?worker' /* literal */ )", transformed)).toEqual([]);
+  // Node loads a packed sibling file before it consults a same-named directory.
+  const precedence = layoutsOf(["dist/helper/package.json", "dist/helper/private.js"], ["dist/helper.js"], {
+    "dist/helper/package.json": "private.js",
+  });
+  expect(referencesIn("dist/cli.cjs", "require('./helper')", precedence)).toEqual([]);
+});
+
+it("resolves a directory's package.json main as Node does and refuses one the package cannot follow (pm-998juj)", () => {
+  const main = { "dist/local/package.json": "./entry" };
+  // An extensionless main resolves through extensions and an index; its unpacked target refuses.
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/entry.js"], ["dist/local/package.json"], main))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/entry/index.js"], ["dist/local/package.json"], main))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf([], ["dist/local/package.json", "dist/local/entry.js"], main))).toEqual([]);
+  // A manifest left out of the package leaves installed Node without the main it names.
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/package.json"], ["dist/local/entry.js"], main))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  // A main that resolves nowhere falls back to the directory index.
+  const missing = { "dist/local/package.json": "gone.js" };
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/index.js"], ["dist/local/package.json"], missing))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  // An empty main is ignored in favor of the directory index.
+  const empty = layoutsOf(["dist/local/index.js"], ["dist/local.js", "dist/local/package.json"], { "dist/local/package.json": "" });
+  expect(referencesIn("dist/cli.cjs", "require('./local/')", empty)).toEqual(["dist/cli.cjs -> ./local/"]);
+  // A main that leaves the packed first-party tree refuses: the package cannot prove it loads.
+  const external = layoutsOf(["node_modules/dep/index.js"], ["dist/local/package.json"], { "dist/local/package.json": "../../node_modules/dep/index.js" });
+  expect(referencesIn("dist/cli.cjs", "require('./local')", external)).toEqual(["dist/cli.cjs -> ./local"]);
+  // Node drops a trailing slash on the main before probing extensions.
+  const slashed = layoutsOf(["dist/local/entry/index.js"], ["dist/local.js", "dist/local/package.json", "dist/local/entry.js"], {
+    "dist/local/package.json": "./entry/",
+  });
+  expect(referencesIn("dist/cli.cjs", "require('./local/.')", slashed)).toEqual([]);
+  // A JSON or native module CommonJS selects is judged for require(), never for a plain string.
+  const json = layoutsOf(["dist/local.json", "dist/local/index.js"], []);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", json)).toEqual(["dist/cli.cjs -> ./local"]);
+  expect(referencesIn("dist/cli.cjs", "readFileSync('./local.json')", json)).toEqual([]);
+  // A reference the checkout resolves to no module, or only to a non-module file, is not judged.
+  expect(referencesIn("dist/cli.cjs", "require('./absent'); read('./notes.md')", layoutsOf(["dist/notes.md"], []))).toEqual([]);
+});
+
+it("reads checkout and stage layouts from regular files and the manifests each holds (pm-998juj)", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "pm-excluded-modules-"));
+  const stage = await mkdtemp(path.join(tmpdir(), "pm-excluded-stage-"));
+  const put = async (base: string, file: string, text = "") => {
+    await mkdir(path.dirname(path.join(base, file)), { recursive: true });
+    await writeFile(path.join(base, file), text);
+  };
+  try {
+    for (const file of ["dist/cli.js", "dist/sdk/index.js", "dist/local/hidden.js", "README.md"]) await put(root, file);
+    await put(root, "dist/local/package.json", JSON.stringify({ main: "hidden.js" }));
+    await put(root, "dist/nomain/package.json", JSON.stringify({ name: "x" }));
+    await put(root, "dist/broken.json", "{");
+    for (const file of ["dist/cli.js", "README.md"]) await put(stage, file);
+    await put(stage, "dist/nomain/package.json", JSON.stringify({ name: "x" }));
+    const layouts = createModuleLayouts(root, stage, ["dist/cli.js", "README.md", "dist/nomain/package.json"]);
+    expect(["dist/sdk/index.js", "dist/cli.js", "dist/local/package.json"].every(layouts.checkout.has)).toBe(true);
+    expect(["dist/sdk", "dist/missing.js"].some(layouts.checkout.has)).toBe(false);
+    expect(layouts.package.has("dist/cli.js")).toBe(true);
+    expect(layouts.package.has("dist/sdk/index.js")).toBe(false);
+    expect(layouts.checkout.main("dist/local/package.json")).toBe("hidden.js");
+    expect(layouts.checkout.main("dist/nomain/package.json")).toBeUndefined();
+    expect(layouts.checkout.main("dist/absent/package.json")).toBeUndefined();
+    expect(layouts.checkout.main("dist/broken.json")).toBeUndefined();
+    // A manifest path that is not a regular file is never opened.
+    await mkdir(path.join(root, "dist/odd/package.json"), { recursive: true });
+    expect(layouts.checkout.main("dist/odd/package.json")).toBeUndefined();
+    expect(layouts.package.main("dist/local/package.json")).toBeUndefined();
+    expect(layouts.package.main("dist/nomain/package.json")).toBeUndefined();
+    expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./local'); import '../outside.js'; import './node_modules/dep/index.js'")).toEqual([
+      "dist/cli.js -> ./local",
+    ]);
+    // A main into a dependency resolves only when npm ships that file, not merely when the stage holds it.
+    await put(root, "dist/dep/package.json", JSON.stringify({ main: "../../node_modules/dep/index.js" }));
+    await put(stage, "dist/dep/package.json", JSON.stringify({ main: "../../node_modules/dep/index.js" }));
+    await put(root, "node_modules/dep/index.js");
+    await put(stage, "node_modules/dep/index.js");
+    const omitted = createModuleLayouts(root, stage, ["dist/cli.js", "dist/dep/package.json"]);
+    expect(findExcludedModuleReferences(["dist/cli.js"], omitted, () => "require('./dep')")).toEqual(["dist/cli.js -> ./dep"]);
+    const bundled = createModuleLayouts(root, stage, ["dist/cli.js", "dist/dep/package.json", "node_modules/dep/index.js"]);
+    expect(findExcludedModuleReferences(["dist/cli.js"], bundled, () => "require('./dep')")).toEqual([]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(stage, { recursive: true, force: true });
+  }
+});
+
+it("refuses to pack a module that imports a file the files list excludes (pm-998juj)", async () => {
+  const { root, manifest } = await createBundleFixture();
+  await mkdir(path.join(root, "dist"), { recursive: true });
+  await writeFile(path.join(root, "dist/index.js"), 'export * from "./excluded.js";\nimport "../root-only.js";\nimport "../private/lib.mjs";\n');
+  await writeFile(path.join(root, "dist/excluded.js"), "export const value = 1;\n");
+  await writeFile(path.join(root, "root-only.js"), "export {};\n");
+  await mkdir(path.join(root, "private"), { recursive: true });
+  await writeFile(path.join(root, "private/lib.mjs"), "export {};\n");
+  await writeFile(path.join(root, "package.json"), JSON.stringify({
+    ...manifest,
+    files: [...manifest.files, "dist/**", "!dist/excluded.js"],
+  }));
+  // Excluded siblings, root-level files and wholly excluded directories all refuse.
+  await expect(packDistribution(root)).rejects.toThrow(
+    "Packed modules import files the package excludes:\ndist/index.js -> ./excluded.js\ndist/index.js -> ../root-only.js\ndist/index.js -> ../private/lib.mjs",
+  );
+}, 60_000);
+
 it("pins only required, root-installed, undeclared peers of the tested closure in sorted order (pm-2csj4k)", () => {
   const ledger = {
     packages: {
@@ -567,7 +805,10 @@ it("packs real npm artifacts through the npm 12 keyed receipt format", async () 
   expect(
     await readFile(path.join(destination, artifact.filename)),
   ).not.toHaveLength(0);
-  expect(execute).toHaveBeenCalledTimes(2);
+  // Source listing, a dry run of the stage that the closure check judges, then the real pack.
+  expect(execute).toHaveBeenCalledTimes(3);
+  expect(execute.mock.calls[1]![1]).toContain("--dry-run");
+  expect(execute.mock.calls[2]![1]).toContain("--pack-destination");
   const extracted = await harness.createTempRoot("pm-keyed-extracted-");
   await extractTar({
     file: path.join(destination, artifact.filename),

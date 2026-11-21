@@ -516,7 +516,15 @@ describe("history durability across storage maintenance", () => {
       expect(() => inspectHistoryTail("<<<<<<< ours\n")).toThrow(
         /merge conflicts/,
       );
-      expect(() => inspectHistoryTail("null\n")).toThrow(/interior corruption/);
+      // A JSON scalar cannot hold a record, but salvage still needs one verified record to keep.
+      expect(() => inspectHistoryTail("null\n")).toThrow(/nonempty verified prefix/);
+      // A string or array line might encode a record, so salvage refuses to drop it.
+      expect(() => inspectHistoryTail(`${original}"${"x"}"\n${original}`)).toThrow(
+        /interior corruption/,
+      );
+      expect(() => inspectHistoryTail(`${original}[1]\n`)).toThrow(
+        /interior corruption/,
+      );
       expect(inspectHistoryTail(repaired).receipt).toBeNull();
       expect(
         await runHistoryRepair(
@@ -539,11 +547,30 @@ describe("history durability across storage maintenance", () => {
       expect((await readHistoryEntries(file, id)).at(-1)?.event_class).toBe(
         "maintenance",
       );
-      for (const invalid of ["{}", "[]", "false", '{"patch":[]}']) {
+      for (const invalid of ["{}", "[]", '"text"', '{"patch":[]}']) {
         expect(() => inspectHistoryTail(`${original}${invalid}\n`)).toThrow(
           /History salvage/,
         );
       }
+      // pm-jbplbq: a JSON scalar cannot hold a record, so salvage removes it
+      // wherever it sits and keeps every record byte-identical.
+      for (const scalar of ["false", "null", "-1.5e3"]) {
+        const interior = inspectHistoryTail(`${scalar}\n${original}${scalar}`);
+        expect(interior.prefix).toBe(original);
+        expect(interior.receipt).toMatchObject({
+          first_invalid_line: 1,
+          discarded_bytes: scalar.length * 2 + 1,
+          retained_entries: 1,
+          non_record_lines: 2,
+        });
+      }
+      const unterminated = inspectHistoryTail(
+        `${original}null\n${original.trimEnd()}`.replace(original, ""),
+      );
+      expect(unterminated.prefix.endsWith("\n")).toBe(true);
+      expect(
+        inspectHistoryTail(`${original}null\n\0\0`).receipt,
+      ).toMatchObject({ first_invalid_line: 2, non_record_lines: 1, discarded_bytes: 7 });
       expect(() => inspectHistoryTail(`${original.trimEnd()}\0`)).toThrow(
         /potentially complete record/,
       );

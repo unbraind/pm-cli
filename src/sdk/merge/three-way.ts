@@ -15,9 +15,14 @@ import {
   reanchorHistoryEntries,
   toReplayDocument,
   tryApplyReplayPatch,
+  verifyHistoryChainWithVersion,
+  collectBridgedInteriorIndexes,
+  markHistoryEntryInexact,
   type ReplayDocument,
 } from "../../core/history/replay.js";
 import jsonPatch from "fast-json-patch";
+import { locateBridgedSegments, readHistoryBridge } from "../../core/history/bridge.js";
+import { resealHistoryRewrite } from "../../core/history/history.js";
 import { rebaseHistoryScalarPatch } from "./history-scalar-rebase.js";
 import {
   canonicalDocument,
@@ -95,6 +100,7 @@ export type HistoryMergeStrategy =
   | "identical"
   | "fast_forward_ours"
   | "fast_forward_theirs"
+  | "equivalent_bridges"
   | "union_reanchor";
 
 /** Documents the history stream merge result payload exchanged by command, SDK, and package integrations. */
@@ -149,13 +155,42 @@ function parseHistoryJsonl(raw: string, label: string): HistoryEntry[] {
   return entries;
 }
 
+/** The original bridge a neutral equivalent-bridge record was made from, if it is one. */
+function neutralizedBridgeOriginal(entry: HistoryEntry): HistoryEntry | undefined {
+  // Legacy records may lack a patch array; only an explicit empty patch can be a neutral copy.
+  if (
+    entry.op !== "history_repair" ||
+    Object.hasOwn(entry, "bridge") ||
+    !Array.isArray(entry.patch) ||
+    entry.patch.length > 0
+  ) {
+    return undefined;
+  }
+  // A later marker reseal adds digest-only evidence, so search back for the
+  // newest evidence that still holds the bridged original.
+  const evidence: unknown = entry.reanchor_evidence;
+  if (!Array.isArray(evidence)) return undefined;
+  return evidence
+    .map((item: unknown) => (item !== null && typeof item === "object" ? (item as { record?: unknown }).record : undefined))
+    .reverse()
+    .find((original): original is HistoryEntry => original !== null && typeof original === "object" && Object.hasOwn(original, "bridge"));
+}
+
+/** Identity used to match one event across branches; a neutralized bridge keeps its original's identity. */
 function historyEntryIdentity(entry: HistoryEntry): string {
+  const subject = neutralizedBridgeOriginal(entry) ?? entry;
+  return historyRecordIdentity(subject);
+}
+
+function historyRecordIdentity(entry: HistoryEntry): string {
   return stableStringify({
     ts: entry.ts,
     author: entry.author,
     op: entry.op,
     patch: entry.patch,
     message: entry.message ?? null,
+    // Bridges that differ are different repairs and never one shared record.
+    ...(Object.hasOwn(entry, "bridge") ? { bridge: entry.bridge } : {}),
   });
 }
 
@@ -286,6 +321,300 @@ function historyUnionPatchProjection(ours: HistoryEntry[], theirs: HistoryEntry[
   };
 }
 
+/** Bridge fields that must agree for two independent repairs to be the same repair. */
+function historyBridgeRepairIdentity(entry: HistoryEntry): string | null {
+  const bridge = readHistoryBridge(entry);
+  return typeof bridge === "object"
+    ? stableStringify({
+        bridge,
+        patch: entry.patch,
+        before_hash: entry.before_hash,
+        after_hash: entry.after_hash,
+        item_hash_version: entry.item_hash_version,
+        hash_algorithm: entry.hash_algorithm,
+      })
+    : null;
+}
+
+/**
+ * Indexes of `merged` records that cannot be presented as historical states
+ * (GH-1715): copies of records either branch already marked replay_inexact
+ * and, when the merge dissolves bridges, every record a branch's bridge
+ * covers plus every record the merged order places between that segment's
+ * first covered record and its bridge. An event interleaved there replays
+ * without the unrecorded change too. Records a retained live bridge covers
+ * are never marked, since marking would void the digest that keeps them.
+ */
+function collectUnionInexactIndexes(
+  merged: HistoryEntry[],
+  sides: HistoryEntry[][],
+  bridgesDissolve: boolean,
+  markerOnlySides: HistoryEntry[][] = [],
+): Set<number> {
+  const position = occurrencePositions(merged).positions;
+  const marked = new Set<number>();
+  // Coverage comes from the streams being merged; markerOnlySides (inputs a
+  // normalization rewrote) contribute only the markers they recorded.
+  [...sides, ...markerOnlySides].forEach((side, sideIndex) => {
+    const { occurrence } = occurrencePositions(side);
+    const place = (index: number) => mergedPosition(position, side, occurrence, index);
+    side.forEach((entry, index) => {
+      if (entry.replay_inexact === true) addUnionPosition(marked, place(index));
+    });
+    if (bridgesDissolve && sideIndex < sides.length) markBranchBridgeCoverage(marked, side, place);
+  });
+  if (!bridgesDissolve) releaseRetainedBridgeSegments(marked, merged);
+  return marked;
+}
+
+/** Positions of each identity in stream order, so repeated identical events stay distinct. */
+function occurrencePositions(entries: HistoryEntry[]): {
+  positions: Map<string, number[]>;
+  occurrence: number[];
+} {
+  const positions = new Map<string, number[]>();
+  const occurrence = entries.map((entry, index) => {
+    const identity = historyEntryIdentity(entry);
+    const seen = positions.get(identity);
+    if (seen === undefined) {
+      positions.set(identity, [index]);
+      return 0;
+    }
+    seen.push(index);
+    return seen.length - 1;
+  });
+  return { positions, occurrence };
+}
+
+/** The merged index of a branch record: the same occurrence of its identity in the merged stream. */
+function mergedPosition(
+  merged: ReadonlyMap<string, number[]>,
+  side: HistoryEntry[],
+  sideOccurrence: readonly number[],
+  index: number,
+): number | undefined {
+  /* c8 ignore start -- every branch record keeps a copy in the merged stream, shared or from its own suffix. */
+  return merged.get(historyEntryIdentity(side[index]!))?.[sideOccurrence[index]!];
+  /* c8 ignore stop */
+}
+
+/** Record one merged position, when the merge kept a copy of the record. */
+function addUnionPosition(marked: Set<number>, index: number | undefined): void {
+  /* c8 ignore start -- every branch record keeps a copy in the merged stream, shared or from its own suffix. */
+  if (index === undefined) return;
+  /* c8 ignore stop */
+  marked.add(index);
+}
+
+/** Mark what one branch's bridges cover, and every merged event placed inside such a segment. */
+function markBranchBridgeCoverage(
+  marked: Set<number>,
+  side: HistoryEntry[],
+  place: (index: number) => number | undefined,
+): void {
+  for (const segment of locateBridgedSegments(side).segments) {
+    for (const index of collectBridgedInteriorIndexes([segment])) addUnionPosition(marked, place(index));
+    const from = place(segment.start);
+    const to = place(segment.end);
+    /* c8 ignore start -- both ends of a branch segment keep a copy in the merged stream. */
+    if (from === undefined || to === undefined) continue;
+    /* c8 ignore stop */
+    for (let index = from; index < to; index += 1) marked.add(index);
+  }
+}
+
+/** Never mark records a retained live bridge proves, which would void its digest. */
+function releaseRetainedBridgeSegments(marked: Set<number>, merged: HistoryEntry[]): void {
+  // The digest covers [start, end); the closer itself may carry a marker.
+  for (const segment of locateBridgedSegments(merged).segments) {
+    if (!segment.exact) continue;
+    for (let index = segment.start; index < segment.end; index += 1) marked.delete(index);
+  }
+}
+
+/** Mark the retained copies at `indexes` replay_inexact; reports whether anything changed. */
+function markInexactUnionEntries(
+  entries: HistoryEntry[],
+  indexes: ReadonlySet<number>,
+): { entries: HistoryEntry[]; changed: boolean } {
+  let changed = false;
+  const marked = entries.map((entry, index) => {
+    if (entry.replay_inexact === true || !indexes.has(index)) return entry;
+    changed = true;
+    return markHistoryEntryInexact(entry);
+  });
+  return { entries: marked, changed };
+}
+
+/**
+ * The equivalent-bridge merge: ours' records, with ours' exact bytes when no
+ * marker lands on them, plus neutral copies of theirs' repairs. Markers are
+ * collected over the complete output, so a copy of a repair theirs marked
+ * keeps the marker. A result that does not verify is never produced: the
+ * union merge handles it.
+ */
+function mergeEquivalentBridgeResult(
+  ours: HistoryEntry[],
+  theirs: HistoryEntry[],
+  shared: number,
+  oursRaw: string,
+  recordedSides: HistoryEntry[][],
+): HistoryMergeResult | null {
+  const neutralBridges = mergeEquivalentBridges(ours, theirs, shared);
+  if (neutralBridges === null) return null;
+  const output = [...ours, ...neutralBridges];
+  const marked = markInexactUnionEntries(output, collectUnionInexactIndexes(output, [ours, theirs], false, recordedSides));
+  const oursKept = ours.every((entry, index) => marked.entries[index] === entry);
+  const appended = marked.entries.slice(ours.length);
+  const separator = oursRaw.endsWith("\n") || appended.length === 0 ? "" : "\n";
+  return {
+    merged: oursKept
+      ? `${oursRaw}${separator}${appended.map((entry) => `${JSON.stringify(entry)}\n`).join("")}`
+      : historyEntriesToRaw(marked.entries),
+    strategy: "equivalent_bridges",
+    common_entries: shared,
+    entries_from_ours: ours.length - shared,
+    entries_from_theirs: neutralBridges.length,
+    entries_total: output.length,
+    reanchored: false,
+  };
+}
+
+/**
+ * Two clones that bridged the same break independently append the same repair
+ * under different provenance (GH-1715). Keep ours byte-for-byte and append
+ * theirs as a neutral record: its effect is already applied, and its original
+ * sealed bridge stays as rewrite evidence instead of being dropped. Both input
+ * chains and the result must verify, so an invalid side is never reported as
+ * a resolved merge.
+ */
+function mergeEquivalentBridges(
+  ours: HistoryEntry[],
+  theirs: HistoryEntry[],
+  shared: number,
+): HistoryEntry[] | null {
+  const oursSuffix = ours.slice(shared);
+  const theirsSuffix = theirs.slice(shared);
+  // Every diverging record, live or already neutral, must be the same repair.
+  const classes = new Set(
+    [...oursSuffix, ...theirsSuffix].map((entry) =>
+      historyBridgeRepairIdentity(neutralizedBridgeOriginal(entry) ?? entry),
+    ),
+  );
+  if (oursSuffix.length === 0 || theirsSuffix.length === 0 || classes.size !== 1 || classes.has(null)) {
+    return null;
+  }
+  // The output must verify too: ours re-anchored to a newer epoch would leave
+  // theirs' copies anchored on a hash their own epoch does not produce.
+  const copies = neutralRepairCopies(oursSuffix, theirsSuffix, ours.at(-1)!.after_hash);
+  if (![ours, theirs, [...ours, ...copies]].every((side) => verifyHistoryChainWithVersion(side).ok)) {
+    return null;
+  }
+  return copies;
+}
+
+/** Repair class of a live bridge or neutral copy: what independent equivalent repairs share. */
+function repairClassIdentity(entry: HistoryEntry | undefined): string | null {
+  return entry === undefined ? null : historyBridgeRepairIdentity(neutralizedBridgeOriginal(entry) ?? entry);
+}
+
+/**
+ * Neutral copies of theirs' repairs that ours does not represent yet, anchored
+ * on the state ours' repair already established: their effect is applied, and
+ * each original sealed bridge stays as rewrite evidence for its provenance.
+ */
+function neutralRepairCopies(ours: HistoryEntry[], theirs: HistoryEntry[], anchor: string): HistoryEntry[] {
+  const present = new Set(ours.map(historyEntryIdentity));
+  return theirs
+    .filter((entry) => !present.has(historyEntryIdentity(entry)))
+    .map((entry) => {
+      const original = neutralizedBridgeOriginal(entry) ?? entry;
+      const { bridge: _bridge, replay_inexact: _marker, ...neutral } = original;
+      return resealHistoryRewrite(
+        original,
+        // A copy of a repair theirs already marked keeps the marker.
+        { ...neutral, patch: [], before_hash: anchor, after_hash: anchor, ...(entry.replay_inexact === true ? { replay_inexact: true as const } : {}) },
+        { retainOriginalPatch: true, retainPriorRecord: true },
+      );
+    });
+}
+
+/** Records an equivalent-repair normalization moved into the shared prefix, for receipt accounting. */
+interface RepairRunNormalization {
+  /** Common prefix length of the original streams. */
+  shared: number;
+  /** Neutral copies of theirs' repairs added to the shared run. */
+  neutralCopies: number;
+}
+
+/**
+ * Whether a repair of the runs recurs among the later records, live or as a
+ * neutral copy. Moving it into the shared run would then record it twice.
+ */
+function repairRecursAfterRuns(runs: HistoryEntry[], rests: HistoryEntry[]): boolean {
+  const runIdentities = new Set(runs.map(historyEntryIdentity));
+  return rests.some((entry) => runIdentities.has(historyEntryIdentity(entry)));
+}
+
+/** Whether normalized runs may replace the recorded ones: no repair recurs later and every side verifies. */
+function normalizationApplies(runs: HistoryEntry[], rests: HistoryEntry[], sides: HistoryEntry[][]): boolean {
+  return !repairRecursAfterRuns(runs, rests) && sides.every((side) => verifyHistoryChainWithVersion(side).ok);
+}
+
+/** Length of the run of records of one repair class starting at `from`. */
+function repairRunLength(side: HistoryEntry[], from: number, repairClass: string): number {
+  let length = 0;
+  while (repairClassIdentity(side[from + length]) === repairClass) length += 1;
+  return length;
+}
+
+/**
+ * Two clones that resolved one out-of-band change with equivalent repairs and
+ * then kept working diverge in a run of the same repair (live or neutral, in
+ * either order) followed by ordinary records. Ordering those runs record by
+ * record would demand contradictory orders, so the runs become one shared run
+ * first: ours' run plus neutral copies of theirs' repairs it lacks. Only the
+ * later records are then ordered (GH-1715). It applies only when no repair of
+ * the run recurs later and both rewritten sides still verify; otherwise the
+ * streams merge as recorded.
+ */
+function normalizeEquivalentRepairRuns(
+  ours: HistoryEntry[],
+  theirs: HistoryEntry[],
+): { ours: HistoryEntry[]; theirs: HistoryEntry[]; normalization: RepairRunNormalization | null } {
+  const unchanged = { ours, theirs, normalization: null };
+  const shared = commonHistoryPrefixLength(ours, theirs);
+  const repairClass = repairClassIdentity(ours[shared]);
+  if (repairClass === null || repairClassIdentity(theirs[shared]) !== repairClass) return unchanged;
+  const oursRun = ours.slice(shared, shared + repairRunLength(ours, shared, repairClass));
+  const theirsRun = theirs.slice(shared, shared + repairRunLength(theirs, shared, repairClass));
+  const oursRest = ours.slice(shared + oursRun.length);
+  const theirsRest = theirs.slice(shared + theirsRun.length);
+  if (oursRest.length === 0 && theirsRest.length === 0) return unchanged;
+  const neutral = neutralRepairCopies(oursRun, theirsRun, oursRun.at(-1)!.after_hash);
+  const prefix = [...ours.slice(0, shared), ...oursRun, ...neutral];
+  const normalized = { ours: [...prefix, ...oursRest], theirs: [...prefix, ...theirsRest] };
+  const sides = [ours, theirs, normalized.ours, normalized.theirs];
+  if (!normalizationApplies([...oursRun, ...theirsRun], [...oursRest, ...theirsRest], sides)) return unchanged;
+  return { ...normalized, normalization: { shared, neutralCopies: neutral.length } };
+}
+
+/**
+ * Report a normalized merge in the original streams' coordinates: neither
+ * input was a prefix of the other, so a fast-forward of the rewritten sides
+ * is an equivalent-bridge merge, and theirs' neutral copies count as theirs.
+ */
+function accountNormalizedMerge(result: HistoryMergeResult, normalization: RepairRunNormalization): HistoryMergeResult {
+  const entriesFromTheirs = result.entries_from_theirs + normalization.neutralCopies;
+  return {
+    ...result,
+    strategy: result.strategy === "union_reanchor" ? "union_reanchor" : "equivalent_bridges",
+    common_entries: normalization.shared,
+    entries_from_ours: result.entries_total - normalization.shared - entriesFromTheirs,
+    entries_from_theirs: entriesFromTheirs,
+  };
+}
+
 /**
  * Deterministically merge two diverged versions of one append-only history
  * JSONL stream. Identical streams and one-sided fast-forwards keep the winning
@@ -305,8 +634,43 @@ export function mergeHistoryStreams(
   theirsRaw: string,
 ): HistoryMergeResult {
   const base = parseHistoryJsonl(baseRaw, "base");
-  const ours = parseHistoryJsonl(oursRaw, "ours");
-  const theirs = parseHistoryJsonl(theirsRaw, "theirs");
+  const recorded = [parseHistoryJsonl(oursRaw, "ours"), parseHistoryJsonl(theirsRaw, "theirs")];
+  const { ours, theirs, normalization } = normalizeEquivalentRepairRuns(recorded[0]!, recorded[1]!);
+  // Normalization rebuilds the shared prefix from ours, so markers either
+  // recorded input carries are still collected from the inputs themselves;
+  // bridge coverage comes from the normalized streams.
+  const result = mergeParsedHistoryStreams(
+    base,
+    ours,
+    theirs,
+    normalization === null || normalization.neutralCopies === 0 ? oursRaw : historyEntriesToRaw(ours),
+    normalization === null ? [] : recorded,
+  );
+  return normalization === null ? result : keepRecordedPrefixBytes(accountNormalizedMerge(result, normalization), recorded[0]!, oursRaw);
+}
+
+/**
+ * When a normalized merge begins with every record ours recorded, unchanged,
+ * emit ours' original bytes (line endings included) for that prefix.
+ */
+function keepRecordedPrefixBytes(result: HistoryMergeResult, recordedOurs: HistoryEntry[], oursRaw: string): HistoryMergeResult {
+  const lines = result.merged.split("\n");
+  if (!recordedOurs.every((entry, index) => lines[index] === JSON.stringify(entry))) return result;
+  return { ...result, merged: `${oursRaw.replace(/(?<!\n)$/u, "\n")}${lines.slice(recordedOurs.length).join("\n")}` };
+}
+
+/**
+ * Merge parsed history streams. `oursRaw` holds ours' exact bytes, kept when
+ * nothing else changes; `recordedSides` are inputs a normalization rewrote,
+ * whose replay_inexact markers still mark the merged records.
+ */
+function mergeParsedHistoryStreams(
+  base: HistoryEntry[],
+  ours: HistoryEntry[],
+  theirs: HistoryEntry[],
+  oursRaw: string,
+  recordedSides: HistoryEntry[][],
+): HistoryMergeResult {
   const creates = [base, ours, theirs].map((entries) =>
     entries.filter((entry) => entry.op === "create"),
   );
@@ -322,10 +686,15 @@ export function mergeHistoryStreams(
     );
   }
   const shared = commonHistoryPrefixLength(ours, theirs);
+  /** Keep a side's records unless either side proves one of them inexact. */
+  const keepSide = (entries: HistoryEntry[]) =>
+    historyEntriesToRaw(
+      markInexactUnionEntries(entries, collectUnionInexactIndexes(entries, [ours, theirs], false, recordedSides)).entries,
+    );
 
   if (shared === ours.length && shared === theirs.length) {
     return {
-      merged: historyEntriesToRaw(ours),
+      merged: keepSide(ours),
       strategy: "identical",
       common_entries: shared,
       entries_from_ours: 0,
@@ -336,7 +705,7 @@ export function mergeHistoryStreams(
   }
   if (shared === theirs.length) {
     return {
-      merged: historyEntriesToRaw(ours),
+      merged: keepSide(ours),
       strategy: "fast_forward_ours",
       common_entries: shared,
       entries_from_ours: ours.length - shared,
@@ -347,7 +716,7 @@ export function mergeHistoryStreams(
   }
   if (shared === ours.length) {
     return {
-      merged: historyEntriesToRaw(theirs),
+      merged: keepSide(theirs),
       strategy: "fast_forward_theirs",
       common_entries: shared,
       entries_from_ours: 0,
@@ -358,15 +727,25 @@ export function mergeHistoryStreams(
   }
 
   const oursSuffix = ours.slice(shared);
+  const equivalent = mergeEquivalentBridgeResult(ours, theirs, shared, oursRaw, recordedSides);
+  if (equivalent !== null) return equivalent;
   const seenIdentities = new Set(oursSuffix.map(historyEntryIdentity));
   const theirsSuffix = theirs
     .slice(shared)
     .filter((entry) => !seenIdentities.has(historyEntryIdentity(entry)));
   const mergedSuffix = orderHistoryUnionSuffix(oursSuffix, theirs.slice(shared), theirsSuffix, seenIdentities);
+  const unionInput = [...ours.slice(0, shared), ...mergedSuffix];
   const reanchored = reanchorHistoryEntries(
-    [...ours.slice(0, shared), ...mergedSuffix],
+    markInexactUnionEntries(
+      unionInput,
+      collectUnionInexactIndexes(unionInput, [ours, theirs], true, recordedSides),
+    ).entries,
     undefined,
-    { continuousHashSurface: true, projectPatch: historyUnionPatchProjection(ours, theirs, shared) },
+    {
+      continuousHashSurface: true,
+      projectPatch: historyUnionPatchProjection(ours, theirs, shared),
+      callerMarksBridgeCoverage: true,
+    },
   );
   if (reanchored.skippedOps > 0) {
     throw new PmCliError(
@@ -1418,3 +1797,6 @@ export function mergeJsonDocuments(
     preferred,
   };
 }
+
+/** Internal helpers exported only for focused tests. */
+export const _testOnly = { collectUnionInexactIndexes, normalizationApplies, repairRecursAfterRuns };

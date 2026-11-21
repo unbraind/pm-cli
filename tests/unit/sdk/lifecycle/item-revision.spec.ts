@@ -629,13 +629,18 @@ describe("pm-gh1576 guarded writes beyond the item store", () => {
     });
   });
 
-  it("keeps the typed refusal when malformed history defeats its change evidence", async () => {
+  // A null line is refused by the shared reader (pm-jbplbq); a record without a patch array
+  // reads but defeats the change summary. Either way the typed refusal stays unchanged.
+  it.each([
+    ["a non-record line", "null"],
+    ["a record without a patch array", '{"ts":"2026-11-21T00:00:00.000Z","author":"peer","op":"update","before_hash":"x","after_hash":"y"}'],
+  ])("keeps the typed refusal when %s defeats its change evidence", async (_label, line) => {
     await withTempPmPath(async (context) => {
       const id = createTestItemId(context, { title: "Malformed history" });
       const pm = client(context);
       const stale = (await pm.readItemRevision(id)).item_hash;
       await pm.update(id, { title: "Malformed history, edited by a peer" });
-      await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), "null\n");
+      await appendFile(path.join(context.pmPath, "history", `${id}.jsonl`), `${line}\n`);
       const refusal = await captureError(() => pm.withExpectedItemRevisions([{ id, itemHash: stale }], () => pm.update(id, { priority: "1" })));
       expect(refusal).toMatchObject({ exitCode: EXIT_CODE.CONFLICT, context: { code: "item_revision_conflict", item_id: id, expected_revision: stale } });
       expect(refusal.context.details).toBeUndefined();

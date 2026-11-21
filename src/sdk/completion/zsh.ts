@@ -815,7 +815,8 @@ ${renderZshArgumentSpecs(ATTEST_INVOCATIONS.map((flag) => `'${flag.flag}[${flag.
         history-repair)
           _arguments \\
             '--id[Item ID (alternative to positional ID)]:id' \\
-            '--salvage-tail[Recover an invalid suffix after a verified prefix]' \\
+            '--salvage-tail[Remove JSON null, boolean and number lines and an invalid suffix after a verified prefix]' \\
+            '--append-only[Bridge chain breaks with one appended record]' \\
             '--normalize-provenance[Remove invalid provenance with aggregate evidence]' \\
             '--all[Repair every drifted stream in one audited pass]' \\
             '--dry-run[Preview the re-anchor impact without writing the history file]' \\

@@ -24,6 +24,7 @@ import {
   replayHashVerificationCandidates,
   replayToItemDocument,
   toReplayDocument,
+  verifyHistoryChainWithVersion,
   type ReplayDocument,
 } from "../core/history/replay.js";
 import { applyHistoryPatch } from "../core/history/projection.js";
@@ -302,6 +303,64 @@ function assertPrunedRecordsJudgeable(entries: readonly HistoryEntry[], compactC
 }
 
 /** Replace the pruned prefix with a durable-addressed checkpoint while retaining original records and hash semantics. */
+/**
+ * A checkpoint must be a reconstructable state: never a version between an
+ * unrecorded change and the bridge that names it (GH-1715), whose replayed
+ * state lacks that change.
+ */
+/**
+ * Timestamp guidance around a bridged segment. A cutoff compacts the leading
+ * records older than it, so a later cutoff must pass every timestamp through
+ * the bridge, however they are ordered. Only a timestamp cutoff reaches this,
+ * and its scan already parsed the leading records, so the latest is finite.
+ */
+function timestampBoundaryGuidance(
+  entries: HistoryEntry[],
+  segment: { start: number; end: number },
+): [string, string, string] {
+  const earliest = entries[segment.start]!.ts;
+  const times = entries.slice(0, segment.end + 1).map((entry) => Date.parse(entry.ts));
+  // A later cutoff would scan a timestamp that does not parse and fail, so only the earlier one is offered.
+  if (!times.every(Number.isFinite)) {
+    return [
+      "that boundary",
+      `Choose a --before timestamp at or before "${earliest}".`,
+      `Run pm history-compact <id> --before "${earliest}".`,
+    ];
+  }
+  // A fold, not a spread, so a long stream cannot exceed the argument limit.
+  const latest = new Date(times.reduce((max, time) => Math.max(max, time), Number.NEGATIVE_INFINITY)).toISOString();
+  return [
+    "that boundary",
+    `Choose a --before timestamp at or before "${earliest}", or after "${latest}".`,
+    `Run pm history-compact <id> --before "${earliest}", or with a timestamp after "${latest}".`,
+  ];
+}
+
+function assertReconstructableCompactBoundary(entries: HistoryEntry[], compactCount: number): void {
+  const checkpoint = compactCount - 1;
+  const segment = (verifyHistoryChainWithVersion(entries).bridged_segments ?? []).find(
+    ({ start, end }) => start <= checkpoint && checkpoint < end,
+  );
+  if (segment === undefined) return;
+  // Report durable versions: physical index i is version offset + i + 1. A
+  // legacy checkpoint without a trustworthy offset gets timestamps instead.
+  const offset = historyVersionOffset(entries, true);
+  const [checkpointName, required, nextStep] =
+    offset === null
+      ? timestampBoundaryGuidance(entries, segment)
+      : [
+          `version ${offset + compactCount}`,
+          `Choose --before ${offset + segment.start + 1} or lower, or --before ${offset + segment.end + 2} or higher.`,
+          `Run pm history-compact <id> --before ${offset + segment.start + 1} or --before ${offset + segment.end + 2}.`,
+        ];
+  throw new PmCliError(
+    `history-compact cannot checkpoint ${checkpointName}: it lies inside a bridged segment whose states cannot be reconstructed.`,
+    EXIT_CODE.USAGE,
+    { code: "history_compact_boundary_bridged", required, nextSteps: [nextStep] },
+  );
+}
+
 function buildHistoryCompactEntries(params: {
   historyEntries: HistoryEntry[];
   boundary: HistoryCompactBoundary;
@@ -321,6 +380,7 @@ function buildHistoryCompactEntries(params: {
       auditEntryAdded: false,
     };
   }
+  assertReconstructableCompactBoundary(params.historyEntries, params.boundary.compactCount);
   const { checkpoint, finalReplay } = replayHistoryAndResolveCheckpoint(
     params.historyEntries,
     params.boundary.compactCount,
@@ -371,6 +431,8 @@ function buildHistoryCompactEntries(params: {
       )[0],
       after_hash: checkpointEntry.after_hash,
       item_hash_version: checkpointEntry.item_hash_version,
+      // A checkpoint taken at a version re-anchored across an unrecorded change keeps refusing it.
+      ...(checkpointEntry.replay_inexact === true ? { replay_inexact: true as const } : {}),
     }),
     ...retained,
   ];

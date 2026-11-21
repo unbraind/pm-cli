@@ -2845,6 +2845,24 @@ function buildHealthFindings(params: {
   return findings;
 }
 
+/**
+ * Bulk history-drift remedies. --all --append-only also runs on every other
+ * drifted stream, which a bridge cannot repair (a missing stream refuses), so
+ * it is the bulk remedy only when every drifted stream has a chain mismatch;
+ * otherwise a chain mismatch keeps its per-item append-only remedy.
+ */
+function rewriteBulkHistoryDriftRemediation(remediationMap: Record<string, string>): void {
+  const codes = Object.keys(remediationMap);
+  const onlyChainMismatch = codes.every((code) => code === "history_drift_chain_mismatch");
+  for (const code of codes) {
+    if (code === "history_drift_chain_mismatch") {
+      if (onlyChainMismatch) remediationMap[code] = "pm history-repair --all --append-only";
+    } else if (code !== "history_drift_merge_receipt" && code !== "history_drift_version_skew") {
+      remediationMap[code] = "pm history-repair --all";
+    }
+  }
+}
+
 function rewriteBulkHealthRemediation(params: {
   check: HealthCheck;
   remediationMap: Record<string, string>;
@@ -2852,14 +2870,7 @@ function rewriteBulkHealthRemediation(params: {
   overThresholdCount: number;
 }): void {
   if (params.check.name === "history_drift" && params.historyDriftedCount > 1) {
-    for (const code of Object.keys(params.remediationMap)) {
-      if (
-        code !== "history_drift_merge_receipt" &&
-        code !== "history_drift_version_skew"
-      ) {
-        params.remediationMap[code] = "pm history-repair --all";
-      }
-    }
+    rewriteBulkHistoryDriftRemediation(params.remediationMap);
   }
   if (params.check.name === "storage" && params.overThresholdCount > 1) {
     for (const code of Object.keys(params.remediationMap)) {

@@ -9,6 +9,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
@@ -360,6 +361,222 @@ export function exportedDeclarationClosure(manifest, packedPaths, readText) {
   return reachable;
 }
 
+const MODULE_FILE = /\.[cm]?js$/u;
+/** Extensions CommonJS appends to an extensionless request, in Node's order; .cjs and .mjs load only by exact name. */
+const MODULE_EXTENSIONS = [".js", ".json", ".node"];
+const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
+
+/** The `main` a manifest declares, read only from a regular file (never a FIFO or device). */
+function readManifestMain(directory, manifest, isFile) {
+  if (!isFile(manifest)) return undefined;
+  try {
+    const declared = JSON.parse(readFileSync(path.join(directory, manifest), "utf8")).main;
+    return typeof declared === "string" ? declared : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The two file layouts the closure check resolves against: the checkout, and
+ * the package as npm ships it. `shipped` is npm's final packlist for the
+ * stage (first-party files and the bundled runtime, after each bundled
+ * dependency's own files list), so a directory main into a shipped
+ * production dependency resolves while one into a development-only
+ * dependency, or a file npm omits, does not.
+ */
+export function createModuleLayouts(root, stage, shipped) {
+  const isCheckoutFile = (candidate) => {
+    try {
+      return statSync(path.join(root, candidate)).isFile();
+    } catch {
+      return false;
+    }
+  };
+  const packed = new Set(shipped);
+  const isShipped = (candidate) => packed.has(candidate);
+  return {
+    checkout: { has: isCheckoutFile, main: (manifest) => readManifestMain(root, manifest, isCheckoutFile) },
+    package: { has: isShipped, main: (manifest) => readManifestMain(stage, manifest, isShipped) },
+  };
+}
+
+const resolveModuleFile = (layout, target) =>
+  [target, ...MODULE_EXTENSIONS.map((extension) => `${target}${extension}`)].find((candidate) => layout.has(candidate));
+const resolveModuleIndex = (layout, target) =>
+  MODULE_EXTENSIONS.map((extension) => path.posix.join(target, `index${extension}`)).find((candidate) => layout.has(candidate));
+
+/** First file Node would load for `target` in `layout`: the file, then the directory's main, then its index. */
+function resolveModule(layout, target, directoryOnly) {
+  const file = directoryOnly ? undefined : resolveModuleFile(layout, target);
+  if (file !== undefined) return file;
+  const main = layout.main(path.posix.join(target, "package.json"));
+  // Node ignores an empty main and falls back to the directory index.
+  // Node resolves the main as a path, so a trailing slash on it is dropped too.
+  const entry =
+    main === undefined || main.length === 0 ? undefined : path.posix.join(target, main).replace(/(.)\/+$/u, "$1");
+  return (
+    (entry === undefined ? undefined : (resolveModuleFile(layout, entry) ?? resolveModuleIndex(layout, entry))) ??
+    resolveModuleIndex(layout, target)
+  );
+}
+
+// Whitespace and comments; a block comment ends at its first "*/", so the
+// pattern never spans code and cannot backtrack across adjacent comments.
+const SKIPPED_TRIVIA = String.raw`(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/|\/\/[^\n]*\n)*`;
+const LOADER_BEFORE = new RegExp(
+  String.raw`(?:\b(require)${SKIPPED_TRIVIA}\(|\b(import)${SKIPPED_TRIVIA}\(|\bfrom|\bimport)${SKIPPED_TRIVIA}$`,
+  "u",
+);
+const ARGUMENT_END = new RegExp(String.raw`^${SKIPPED_TRIVIA}[),]`, "u");
+// Only a complete operand folds: a literal an expression goes on to transform
+// (".js".slice(3)) ends the fold, so the literal before it is judged as written.
+const CONCATENATED_LITERAL = new RegExp(
+  // A "?" ends the operand as a ternary or "??", never as the optional chain "?." (which a digit after the dot rules out).
+  String.raw`^${SKIPPED_TRIVIA}\+${SKIPPED_TRIVIA}(["'])([^"'\x60\r\n]*)\1(?=${SKIPPED_TRIVIA}(?:[+),;:\]}]|\?(?!\.(?!\d))|$))`,
+  "u",
+);
+
+/** Fold string literals concatenated onto the quoted string ending at `end`: './' + 'a.js' is './a.js'. */
+function foldConcatenation(text, specifier, end) {
+  let folded = specifier;
+  let at = end;
+  for (let next = CONCATENATED_LITERAL.exec(text.slice(at, at + 400)); next !== null; next = CONCATENATED_LITERAL.exec(text.slice(at, at + 400))) {
+    folded += next[2];
+    at += next[0].length;
+  }
+  return { specifier: folded, end: at };
+}
+
+/**
+ * The loader the quoted string spanning `start` to `end` is an argument of
+ * ("require" for require(), "import" for an import clause or import(), or
+ * null) and whether it is the whole specifier. A call argument the string
+ * only begins, because an expression transforms it before loading, is not
+ * whole, so both spellings are judged. Comments around the string are skipped.
+ */
+function loaderContext(text, start, end) {
+  const loader = LOADER_BEFORE.exec(text.slice(Math.max(0, start - 400), start));
+  if (loader === null) return { kind: null, whole: false };
+  const call = loader[1] ?? loader[2];
+  return {
+    kind: loader[1] === undefined ? "import" : "require",
+    whole: call === undefined || ARGUMENT_END.test(text.slice(end, end + 400)),
+  };
+}
+
+const CHARACTER_ESCAPES = { b: "\b", f: "\f", n: "\n", r: "\r", t: "\t", v: "\v", 0: "\0" };
+
+/**
+ * The value of a quoted specifier with its JavaScript escapes decoded, so
+ * "./index.js" names "./index.js". An escape outside Unicode stays as written.
+ */
+function decodeSpecifier(raw) {
+  return raw.replace(
+    /\\(?:u\{([0-9a-fA-F]+)\}|u([0-9a-fA-F]{4})|x([0-9a-fA-F]{2})|([\s\S]))/gu,
+    (escape, braced, unicode, hex, other) => {
+      if (other !== undefined) return CHARACTER_ESCAPES[other] ?? other;
+      const point = Number.parseInt(braced ?? unicode ?? hex, 16);
+      return point <= 0x10ffff ? String.fromCodePoint(point) : escape;
+    },
+  );
+}
+
+/** Where require() reads a relative specifier: the literal path, "#" and "?" included. */
+function literalTarget(file, specifier) {
+  return {
+    target: path.posix.join(path.posix.dirname(file), specifier).replace(/(.)\/+$/u, "$1"),
+    // A trailing "/", "/." or "/.." names a directory, never a same-named sibling file.
+    directoryOnly: /\/(?:\.{1,2})?$/u.test(specifier),
+  };
+}
+
+const URL_ROOT = "file:///package/";
+
+/**
+ * Where Node's ESM loader reads a relative specifier: the URL resolved
+ * against the importing module (whitespace, query and fragment handled by the
+ * URL parser), percent-decoded. A target above the package root stays above it.
+ */
+function urlTarget(file, specifier) {
+  const url = new URL(specifier, `${URL_ROOT}${file.split("/").map(encodeURIComponent).join("/")}`);
+  if (!url.href.startsWith(URL_ROOT)) return { target: "..", directoryOnly: false };
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname.slice("/package/".length));
+  } catch {
+    // A malformed escape fails to load in either layout.
+    return { target: "..", directoryOnly: false };
+  }
+  return { target: pathname.replace(/(.)\/+$/u, "$1").replace(/^$/u, "."), directoryOnly: pathname === "" || pathname.endsWith("/") };
+}
+
+/** Targets of a specifier: require() reads it literally, an import as a URL, an ambiguous string both ways. */
+function specifierTargets(file, specifier, loader) {
+  if (loader === "require") return [literalTarget(file, specifier)];
+  if (loader === "import") return [urlTarget(file, specifier)];
+  return [literalTarget(file, specifier), urlTarget(file, specifier)];
+}
+
+const DOT_ONLY = /^(?:\.{1,2}\/)+$/u;
+
+/** A target outside the package root or inside node_modules is not first-party. */
+const isFirstPartyTarget = (target) => target !== ".." && !target.startsWith("../") && !target.split("/").includes("node_modules");
+
+/** Whether the checkout loads a module for this target that the package does not load the same way. */
+function isDanglingTarget(layouts, { target, directoryOnly }, loader) {
+  if (!isFirstPartyTarget(target)) return false;
+  const loaded = resolveModule(layouts.checkout, target, directoryOnly);
+  // A directory main that leaves the shipped tree refuses: the package cannot prove it loads.
+  return (
+    loaded !== undefined &&
+    (MODULE_FILE.test(loaded) || (loader === "require" && /\.(?:json|node)$/u.test(loaded))) &&
+    resolveModule(layouts.package, target, directoryOnly) !== loaded
+  );
+}
+
+/** The specifier, as written, of a quoted string the package cannot load the same way, or null. */
+function danglingSpecifier(file, text, match, layouts) {
+  const folded = foldConcatenation(text, match[2], match.index + match[0].length);
+  const { kind: loader, whole } = loaderContext(text, match.index, folded.end);
+  const specifier = decodeSpecifier(folded.specifier);
+  // A dot-only string is a path check, or the unknown prefix of an expression,
+  // unless it is a loader's whole argument. Outside any loader call a query or
+  // fragment does not change that: new URL("./?view", import.meta.url) reads a directory.
+  const bare = loader === null ? specifier.replace(/[?#][\s\S]*$/u, "") : specifier;
+  if (!(whole && loader !== null) && DOT_ONLY.test(bare)) return null;
+  const targets = specifierTargets(file, specifier, whole ? loader : null);
+  return targets.some((target) => isDanglingTarget(layouts, target, loader)) ? folded.specifier : null;
+}
+
+/**
+ * Prove no staged module refers to a module the package cannot load the same
+ * way (pm-998juj). Every quoted relative string in a staged JavaScript module,
+ * with its escapes decoded and constant concatenations folded, is resolved as
+ * Node would load it: literally for require(), as a URL for an import, both
+ * ways for any other string; then the exact file, a CommonJS extension (.js,
+ * .json, .node), a directory's package.json main, then its index. It refuses
+ * the pack when the checkout resolves the string to a module and the shipped
+ * package does not resolve it to that same file: a static, dynamic or require
+ * import or a worker path built from a string, a module the files list
+ * excludes or a directory manifest left out. The check fails closed: a comment
+ * or string spelling such a path refuses too. A dot-only string such as "../"
+ * is a path check unless it is a loader's whole argument. It needs no parser,
+ * so release controls copied without node_modules still run it.
+ */
+export function findExcludedModuleReferences(packedPaths, layouts, readText) {
+  const references = [];
+  for (const file of packedPaths) {
+    if (!MODULE_FILE.test(file) || file.startsWith("node_modules/")) continue;
+    const text = readText(file);
+    for (const match of text.matchAll(QUOTED_RELATIVE_PATH)) {
+      const dangling = danglingSpecifier(file, text, match, layouts);
+      if (dangling !== null) references.push(`${file} -> ${dangling}`);
+    }
+  }
+  return [...new Set(references)];
+}
+
 /** Stage first-party files with compact JSON and markdown tables, retaining values and readable checkout bytes. */
 function copyPublicationFile(relative, source, target) {
   if (relative.endsWith(".md")) {
@@ -484,18 +701,26 @@ function packLeasedDistribution(root, options) {
       path.join(stage, "package.json"),
       `${JSON.stringify(published, null, 2)}\n`,
     );
-    const args = [...prefix, "pack", "--json", "--ignore-scripts"];
-    if (options.destination)
-      args.push("--pack-destination", path.resolve(options.destination));
-    else args.push("--dry-run");
-    return readArtifact(
-      execFileSync(npm, args, {
-        cwd: stage,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-        timeout: 120_000,
-      }),
+    const pack = (destination) =>
+      readArtifact(
+        execFileSync(
+          npm,
+          [...prefix, "pack", "--json", "--ignore-scripts", ...(destination ? ["--pack-destination", path.resolve(destination)] : ["--dry-run"])],
+          { cwd: stage, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], timeout: 120_000 },
+        ),
+      );
+    // Judge npm's final packlist, which is exactly what the package ships.
+    const listed = pack(undefined);
+    const excludedReferences = findExcludedModuleReferences(
+      sourceReport.files.map((file) => file.path),
+      createModuleLayouts(root, stage, listed.files.map((file) => file.path)),
+      (file) => readFileSync(path.join(stage, file), "utf8"),
     );
+    if (excludedReferences.length > 0)
+      throw new Error(
+        `Packed modules import files the package excludes:\n${excludedReferences.join("\n")}`,
+      );
+    return options.destination ? pack(options.destination) : listed;
   } finally {
     rmSync(stage, { recursive: true, force: true });
     releaseCleanup();

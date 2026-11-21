@@ -14,6 +14,7 @@ export {
 } from "./history/subject.js";
 import fs from "node:fs/promises";
 import { resolveHistoryHashAlgorithm } from "../core/history/digest.js";
+import { locateBridgedSegments } from "../core/history/bridge.js";
 import { writeFileAtomic } from "../core/fs/fs-utils.js";
 import {
   createHistoryEntry,
@@ -28,6 +29,7 @@ import {
 } from "./history/maintenance.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
+  collectBridgedInteriorIndexes,
   historyEntriesToRaw,
   replayHash,
   replayToItemDocument,
@@ -512,6 +514,27 @@ function rewriteHistoryEntries(
   let entriesChanged = 0;
   let replacements = 0;
   const rewrittenEntries: HistoryEntry[] = [];
+  // Redaction recomputes every state anchor from replay, which cannot prove a
+  // bridged segment's recorded states: it dissolves each bridge and marks the
+  // segment's entries replay_inexact so history reads keep refusing them.
+  const located = locateBridgedSegments(entries);
+  // Redaction rewrites the live item from replay and removes each bridge, so
+  // only a segment whose digest still matches may be dissolved: never a
+  // fallback range, and never one located only through existing markers.
+  const unproven = [...located.unlocated, ...located.undigested];
+  if (unproven.length > 0) {
+    throw new PmCliError(
+      `history-redact refuses a stream whose bridge at record ${Math.min(...unproven) + 1} does not prove its segment; repair the history first.`,
+      EXIT_CODE.GENERIC_FAILURE,
+      {
+        code: "history_redact_bridge_unlocated",
+        required:
+          "Every bridge's segment digest must match the records it covers, so redaction can keep that segment's versions refused.",
+        nextSteps: ["Run pm history-repair <id> --dry-run to see how the stream would be repaired."],
+      },
+    );
+  }
+  const inexact = collectBridgedInteriorIndexes(located.segments);
 
   for (let index = 0; index < entries.length; index += 1) {
     const original = entries[index];
@@ -535,16 +558,18 @@ function rewriteHistoryEntries(
       redacted.entry.op,
     );
     const afterHash = replayHash(replay, undefined, resolveHistoryHashAlgorithm(original.hash_algorithm));
+    const { bridge: _dissolvedBridge, ...unbridged } = redacted.entry;
     rewrittenEntries.push(
       resealHistoryRewrite(
         original,
         {
-          ...redacted.entry,
+          ...unbridged,
+          ...(inexact.has(index) ? { replay_inexact: true as const } : {}),
           before_hash: beforeHash,
           after_hash: afterHash,
         },
         {
-          retainPriorRecord: redacted.changed,
+          retainPriorRecord: redacted.changed || _dissolvedBridge !== undefined,
           retainPriorRecordHash: !redacted.changed,
         },
       ),

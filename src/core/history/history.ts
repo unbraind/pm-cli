@@ -242,6 +242,15 @@ function isRetainedHistoryRecordShape(value: unknown): value is HistoryEntry {
   );
 }
 
+/**
+ * Whether an entry carries every field replay and chain verification read:
+ * string ts, author, op and anchors, and a well-formed patch. Bridged segments
+ * check recorded links instead of replayed states, so they require this.
+ */
+export function isCompleteHistoryRecord(entry: HistoryEntry): boolean {
+  return isRetainedHistoryRecordShape(entry);
+}
+
 /** Return whether optional retained record-hash fields form a complete pair. */
 function hasCompleteRetainedRecordHashEnvelope(
   evidence: Record<string, unknown>,
