@@ -416,6 +416,26 @@ describe("review hardening of the advised remedies", () => {
     });
   });
 
+  it("refuses typed when a deleted item's recorded owner is not a name, unless --force overrides ownership", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-owner-malformed";
+      createTaskFixture(context, id, "Malformed owner");
+      run(context, ["delete", id, "--force"]);
+      const file = historyFile(context, id);
+      const [created, ...rest] = (await readFile(file, "utf8")).trimEnd().split("\n");
+      const { record_hash: _hash, record_hash_version: _version, ...legacy } = JSON.parse(created!) as HistoryEntry;
+      const patch = [...legacy.patch, { op: "add", path: "/metadata/assignee", value: 42 }];
+      await writeFile(file, `${[JSON.stringify({ ...legacy, patch, after_hash: "0".repeat(64) }), ...rest].join("\n")}\nnull\n`);
+      await expect(runHistoryRepair(id, { salvageTail: true, dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
+        code: "history_salvage_refused",
+        context: expect.objectContaining({ reason: "owner_malformed" }),
+      });
+      await expect(runHistoryRepair(id, { salvageTail: true, dryRun: true, force: true }, { path: context.pmPath })).resolves.toMatchObject({
+        changed: true,
+      });
+    });
+  });
+
   it("names the restore, not an upgrade, for a malformed digest label", async () => {
     await withTempPmPath(async (context) => {
       const id = "pm-digest-null";

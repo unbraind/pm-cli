@@ -48,10 +48,11 @@ export interface HistoryRewriteOwnershipParams {
 export function checkHistoryRewriteOwnership(
   params: HistoryRewriteOwnershipParams,
 ): string[] {
-  if (!params.itemDocument) return [];
+  // --force overrides ownership before the owner is read, so no owner value can fail the override.
+  if (!params.itemDocument || params.force) return [];
   // Compared exactly, echoed only in redacted form (GH-1707).
   const stored = params.itemDocument.metadata?.assignee?.trim();
-  if (!stored || stored === params.author || params.force) return [];
+  if (!stored || stored === params.author) return [];
   const assigned = redactOptionalIdentityCredentials(stored);
 
   const governance = resolveGovernanceKnobs(params.settings);

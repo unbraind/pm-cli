@@ -385,6 +385,29 @@ function selectSalvagedBytes(
   };
 }
 
+/**
+ * A leniently replayed owner can hold any JSON value. A non-string owner
+ * cannot be compared, and treating it as unassigned would skip the ownership
+ * check, so it refuses typed unless --force overrides ownership.
+ */
+function assertJudgeableSalvageOwner(id: string, document: ItemDocument, force: boolean): void {
+  const assignee: unknown = document.metadata?.assignee;
+  if (force || assignee === undefined || assignee === null || typeof assignee === "string") return;
+  throw new PmCliError(
+    `The recorded owner of ${id} is not a name, so salvage cannot check ownership.`,
+    EXIT_CODE.CONFLICT,
+    {
+      code: "history_salvage_refused",
+      item_id: id,
+      reason: "owner_malformed",
+      required: "Recover the damaged record from version control or a backup, or override ownership deliberately; no bytes were changed.",
+      nextSteps: [
+        `Run pm history ${id} --verify --full to locate the record, then restore the stream, or rerun the salvage with --force to override ownership.`,
+      ],
+    },
+  );
+}
+
 /** Prefer the live item's owner; history supplies ownership only when its file is unreadable. */
 async function readSalvageOwnership(
   located: HistorySubject["located"],
@@ -467,6 +490,7 @@ export async function salvageHistoryTail(params: {
   // Plan the salvaged stream now, so a preview refuses exactly where the write would; nothing to remove plans nothing.
   const nextHistoryRaw = selected.receipt === null ? raw : salvagedStream(selected, author, options.message);
   const ownership = await readSalvageOwnership(subject.located, settings, replayToItemDocument(replayed.lastItem));
+  assertJudgeableSalvageOwner(subject.id, ownership.document, options.force === true);
   const warnings = checkHistoryRewriteOwnership({
     itemDocument: ownership.document,
     subjectId: subject.id,
