@@ -432,7 +432,7 @@ const ARGUMENT_END = new RegExp(String.raw`^${SKIPPED_TRIVIA}[),]`, "u");
 // Only a complete operand folds: a literal an expression goes on to transform
 // (".js".slice(3)) ends the fold, so the literal before it is judged as written.
 const CONCATENATED_LITERAL = new RegExp(
-  String.raw`^${SKIPPED_TRIVIA}\+${SKIPPED_TRIVIA}(["'])([^"'\x60\r\n]*)\1(?=${SKIPPED_TRIVIA}(?:[+),;\]}]|$))`,
+  String.raw`^${SKIPPED_TRIVIA}\+${SKIPPED_TRIVIA}(["'])([^"'\x60\r\n]*)\1(?=${SKIPPED_TRIVIA}(?:[+),;:?\]}]|$))`,
   "u",
 );
 
@@ -534,6 +534,20 @@ function isDanglingTarget(layouts, { target, directoryOnly }, loader) {
   );
 }
 
+/** The specifier, as written, of a quoted string the package cannot load the same way, or null. */
+function danglingSpecifier(file, text, match, layouts) {
+  const folded = foldConcatenation(text, match[2], match.index + match[0].length);
+  const { kind: loader, whole } = loaderContext(text, match.index, folded.end);
+  const specifier = decodeSpecifier(folded.specifier);
+  // A dot-only string is a path check, or the unknown prefix of an expression,
+  // unless it is a loader's whole argument. Outside any loader call a query or
+  // fragment does not change that: new URL("./?view", import.meta.url) reads a directory.
+  const bare = loader === null ? specifier.replace(/[?#][\s\S]*$/u, "") : specifier;
+  if (!(whole && loader !== null) && DOT_ONLY.test(bare)) return null;
+  const targets = specifierTargets(file, specifier, whole ? loader : null);
+  return targets.some((target) => isDanglingTarget(layouts, target, loader)) ? folded.specifier : null;
+}
+
 /**
  * Prove no staged module refers to a module the package cannot load the same
  * way (pm-998juj). Every quoted relative string in a staged JavaScript module,
@@ -555,14 +569,8 @@ export function findExcludedModuleReferences(packedPaths, layouts, readText) {
     if (!MODULE_FILE.test(file) || file.startsWith("node_modules/")) continue;
     const text = readText(file);
     for (const match of text.matchAll(QUOTED_RELATIVE_PATH)) {
-      const folded = foldConcatenation(text, match[2], match.index + match[0].length);
-      const { kind: loader, whole } = loaderContext(text, match.index, folded.end);
-      const specifier = decodeSpecifier(folded.specifier);
-      // A dot-only string, with or without a query or fragment, is a path check or
-      // the unknown prefix of an expression unless it is a loader's whole argument.
-      if (!(whole && loader !== null) && DOT_ONLY.test(specifier.replace(/[?#][\s\S]*$/u, ""))) continue;
-      const targets = specifierTargets(file, specifier, whole ? loader : null);
-      if (targets.some((target) => isDanglingTarget(layouts, target, loader))) references.push(`${file} -> ${folded.specifier}`);
+      const dangling = danglingSpecifier(file, text, match, layouts);
+      if (dangling !== null) references.push(`${file} -> ${dangling}`);
     }
   }
   return [...new Set(references)];

@@ -425,6 +425,12 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   expect(referencesIn("dist/cli/public.js", 'import("../sdk/index.js" + ".js".slice(3))', sdk)).toEqual(["dist/cli/public.js -> ../sdk/index.js"]);
   expect(referencesIn("dist/cli/public.js", 'import("../sdk/i" + "ndex.js".replace("ndex", "nit"))', sdk)).toEqual([]);
   expect(referencesIn("dist/cli/public.js", 'import("../sdk/" + "index.js")', sdk)).toEqual(["dist/cli/public.js -> ../sdk/index.js"]);
+  // A ternary colon ends a folded operand, in either branch.
+  const core = layoutsOf(["dist/sdk/core.js", "dist/sdk/index.js"], ["dist/sdk/history-repair.js", "dist/sdk/history-compact.js"]);
+  expect(referencesIn("dist/cli.js", 'import(legacy ? "./sdk/co" + "re.js" : "./sdk/history-repair.js")', core)).toEqual(["dist/cli.js -> ./sdk/core.js"]);
+  expect(referencesIn("dist/cli.js", 'import(legacy ? "./sdk/" + "history-compact.js" : "./sdk/history-repair.js")', core)).toEqual([]);
+  // Inside a loader call a query-bearing dot-only string is still judged.
+  expect(referencesIn("dist/sdk/comments.js", 'require("./?mode=compat".split("?")[0])', core)).toEqual(["dist/sdk/comments.js -> ./?mode=compat"]);
   // A dot-only directory URL with a query outside a loader is a directory read, not a module reference.
   expect(referencesIn("dist/sdk/history-compact.js", 'readdirSync(new URL("./?view=modules", import.meta.url))', sdk)).toEqual([]);
   // An import resolves as a URL: escaped whitespace is dropped, a query and fragment stripped, percent escapes decoded.
