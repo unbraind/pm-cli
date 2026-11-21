@@ -53,6 +53,8 @@ describe("history bridge envelope", () => {
     ["a numeric record hash", { bridge: { version: 1, breaks: [{ ...descriptor, record_hash: 1 }], segment_digest } }],
     ["a missing break key", { bridge: { version: 1, breaks: [{ gap_from: "a", gap_to: "b" }], segment_digest } }],
     ["an unsealed record", { record_hash: undefined, bridge: { version: 1, breaks: [descriptor], segment_digest } }],
+    ["a sparse breaks array", { bridge: { version: 1, breaks: Object.assign(new Array(2), { 1: descriptor }), segment_digest } }],
+    ["a breaks array with only a hole", { bridge: { version: 1, breaks: new Array(1), segment_digest } }],
   ])("refuses %s", (_label, fields) => {
     expect(readHistoryBridge(entry(fields))).toBe("invalid");
   });

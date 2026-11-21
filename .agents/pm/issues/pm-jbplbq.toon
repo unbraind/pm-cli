@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: crash,history,robustness
 created_at: "2026-11-20T17:17:27.931Z"
-updated_at: "2026-11-21T05:16:35.253Z"
+updated_at: "2026-11-21T10:12:47.368Z"
 closed_at: "2026-11-21T05:16:07.471Z"
 completed_at: "2026-11-21T05:16:07.471Z"
 author: "harness:claude-code"
@@ -41,7 +41,7 @@ close_reason: Non-record history lines refuse with a typed error and salvage rec
 contract_change:
   api: History stream readers and pm history-repair --salvage-tail
   before: "A history line that was valid JSON but not an object crashed pm activity, pm context, pm history and pm get with unknown_error, and --salvage-tail refused a line holding a JSON null, boolean or number"
-  after: "Every reader refuses such a line with history_record_invalid naming item_id, reason and details.line; --salvage-tail removes JSON null, boolean and number lines wherever they sit, reports non_record_lines in its receipt, and still refuses strings, arrays and incomplete objects"
+  after: "Readers that use the shared history decoder refuse such a line with history_record_invalid naming item_id, reason and details.line; readers with their own parser keep their diagnostics. --salvage-tail removes JSON null, boolean and number lines wherever they sit, reports non_record_lines in its receipt, and still refuses strings, arrays and complete malformed objects; a truncated object at the tail is part of the invalid suffix it discards"
   migrate: "Branch on history_record_invalid instead of unknown_error and follow its next step, pm history-repair <id> --salvage-tail --dry-run"
 escape_class: production_defect
 gate_evidence:

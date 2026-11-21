@@ -425,9 +425,10 @@ function markBranchBridgeCoverage(
 
 /** Never mark records a retained live bridge proves, which would void its digest. */
 function releaseRetainedBridgeSegments(marked: Set<number>, merged: HistoryEntry[]): void {
+  // The digest covers [start, end); the closer itself may carry a marker.
   for (const segment of locateBridgedSegments(merged).segments) {
     if (!segment.exact) continue;
-    for (let index = segment.start; index <= segment.end; index += 1) marked.delete(index);
+    for (let index = segment.start; index < segment.end; index += 1) marked.delete(index);
   }
 }
 

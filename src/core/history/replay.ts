@@ -398,7 +398,16 @@ function isBridgeableRecord(entry: HistoryEntry): boolean {
   if (!digest.test(entry.before_hash) || !digest.test(entry.after_hash)) return false;
   // A record whose patch cannot change state must not claim a state change,
   // even where replay cannot prove its before-state.
-  const effectless = normalizeReplayPatchOps(entry.patch).every(isEffectFreeOperation);
+  // Classified by operation name and normalized paths only: values are never
+  // cloned here, so an uncloneable value fails in tryApplyReplayPatch instead.
+  const effectless = entry.patch
+    .filter(isHistoryPatchOp)
+    .map((operation) => ({
+      op: operation.op,
+      path: normalizeReplayPatchPath(operation.path),
+      from: typeof operation.from === "string" ? normalizeReplayPatchPath(operation.from) : undefined,
+    }))
+    .every((operation) => isEffectFreeOperation(operation as HistoryPatchOp));
   return !effectless || entry.before_hash === entry.after_hash || Object.hasOwn(entry, "bridge");
 }
 

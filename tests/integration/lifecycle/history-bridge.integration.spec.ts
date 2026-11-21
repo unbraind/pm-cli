@@ -174,6 +174,9 @@ describe("append-only history repair (GH-1715)", () => {
         expect(verdict.ok, error).toBe(false);
         expect(verdict.errors.join(","), error).toContain(`verify_failed:${error}:`);
       }
+      // A value replay cannot clone yields a failed verdict, never a thrown error.
+      const uncloneable = [...entries.slice(0, 4), { ...entries[4]!, patch: [{ op: "add", path: "/metadata/x", value: () => 1 }] } as unknown as HistoryEntry, ...entries.slice(5)];
+      expect(verifyHistoryChainWithVersion(uncloneable).ok).toBe(false);
       // A copy between different paths can change state, so it is judged by its effect instead.
       const copied = [...entries.slice(0, 2), reseal(entries[2]!, { patch: [{ op: "copy", from: "/metadata/title", path: "/body" }] }), ...entries.slice(3)];
       expect(verifyHistoryChainWithVersion(copied).ok).toBe(false);
@@ -786,7 +789,7 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
       const bulk = context.runCli(["history-repair", "--all", "--json"], { expectJson: true });
       expect(bulk.code, `${bulk.stderr}${bulk.stdout}`).toBe(0);
-      expect(await readFile(paths(context).history, "utf8")).toContain(base);
+      expect((await readFile(paths(context).history, "utf8")).startsWith(base)).toBe(true);
       const healed = await runHealth({ path: context.pmPath });
       expect(healed.checks.find((check) => check.name === "history_drift")?.status).toBe("ok");
       // When every drifted stream has a chain mismatch, the bulk remedy is append-only and repairs them all.
@@ -897,6 +900,14 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       });
       expect(verifyHistoryChainWithVersion(oneSided.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry)).ok).toBe(true);
       expect(oneSided.merged).toContain('"text":"theirs next"');
+      // A marker theirs put on the shared live bridge's closer survives; the digest does not cover the closer.
+      const closerMarked = ours.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      closerMarked[closerMarked.length - 1] = reseal(closerMarked.at(-1)!, { replay_inexact: true });
+      const keptCloser = mergeHistoryStreams(base, ours, historyEntriesToRaw(closerMarked));
+      const keptEntries = keptCloser.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      expect(keptEntries.at(-1)).toMatchObject({ replay_inexact: true });
+      expect(Object.hasOwn(keptEntries.at(-1)!, "bridge")).toBe(true);
+      expect(verifyHistoryChainWithVersion(keptEntries).ok).toBe(true);
       // A copy of a repair theirs marked keeps the marker, and ours' bytes stay a prefix.
       const theirsMarked = theirs.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
       theirsMarked[theirsMarked.length - 1] = reseal(theirsMarked.at(-1)!, { replay_inexact: true });

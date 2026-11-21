@@ -58,7 +58,8 @@ export function readHistoryBridge(
     typeof candidate.segment_digest === "string" &&
     Array.isArray(candidate.breaks) &&
     candidate.breaks.length > 0 &&
-    candidate.breaks.every(isHistoryBridgeBreak)
+    // Spread turns holes into undefined, which every() would otherwise skip.
+    [...candidate.breaks].every(isHistoryBridgeBreak)
     ? (candidate as unknown as HistoryBridge)
     : "invalid";
 }

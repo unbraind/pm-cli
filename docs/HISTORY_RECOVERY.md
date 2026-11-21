@@ -81,7 +81,9 @@ pm history <id> --verify --strict-exit
 Salvage requires a nonempty, hash-verified prefix and retains every record byte
 unchanged. It also removes lines whose JSON value is a null, a boolean or a
 number wherever they sit, because such a value cannot hold a record. A string,
-an array or an incomplete object might encode one, so salvage refuses those.
+an array or a complete malformed object might encode one, so salvage refuses
+those. A truncated object at the tail, such as `{"ts":`, is part of the invalid
+suffix after the verified prefix and is discarded with it.
 The receipt records the first discarded physical line, discarded UTF-8 byte
 count, SHA-256 of the discarded bytes in file order, retained record count, and
 `non_record_lines` when scalar lines were removed. An appended `history_salvage`
