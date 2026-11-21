@@ -153,7 +153,13 @@ pm health --strict-exit
 
 The repair writes one sealed `history_repair` record from the empty document
 to the on-disk item, after any whitespace the stream held, so it keeps every
-existing byte in either repair mode. `context.history_reseed` and the result's
+existing byte in either repair mode. It appends with `O_APPEND` to the exact
+bytes it verified, and creates an absent stream exclusively. A stream that
+another writer created or extended meanwhile refuses with `stream_changed`, and
+a stream it created but could not finish writing is removed again. A history
+path that is a symbolic link refuses with `stream_not_regular_file`, both in
+the preview and in the write, and `pm health` reports it as
+`history_drift_unrepairable_stream` instead of advising the rebuild. `context.history_reseed` and the result's
 `reseed` receipt record why (`missing_stream` or `empty_stream`) and
 `prior_versions: "unrecorded"`: version 1 is the item as of the repair, and
 earlier versions cannot be read or restored. The record is maintenance, so it
@@ -173,7 +179,7 @@ rewriting repair can fix (`pm history-repair <id>`), such as a recorded patch
 that applies only on top of the unrecorded change, is reported as
 `history_drift_chain_unbridgeable`. A stream neither repair can keep, such as
 one whose sealed record no longer matches its seal, is reported as
-`history_drift_chain_unrepairable`. Restore that one from version control:
+`history_drift_unrepairable_stream`. Restore that one from version control:
 the rewriting repair refuses it with `history_record_integrity_invalid`. Such a
 stream, and one a newer pm wrote (`history_drift_version_skew`, including a
 record seal format this pm cannot read, which refuses with

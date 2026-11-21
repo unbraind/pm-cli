@@ -11,8 +11,8 @@ const runHistoryRepair = vi.hoisted(() => vi.fn());
 vi.mock("../../../../src/sdk/history-repair.js", () => ({ runHistoryRepair }));
 
 const {
-  applyUnbridgeableChainMismatches,
-  findUnbridgeableChainMismatches,
+  applyHistoryRepairRefusals,
+  findHistoryRepairRefusals,
   rewriteBulkHistoryDriftRemediation,
 } = await import("../../../../src/sdk/governance/health/history-drift-remedies.js");
 
@@ -48,15 +48,17 @@ describe("history drift remedies", () => {
     const check = driftCheck({
       chain_mismatches: ["pm-bare", "pm-bridge", "pm-code", "pm-reason", "pm-skew", 7],
       version_skews: ["pm-skew"],
+      // A missing stream whose entry cannot be read is left to its own remedy.
+      missing_streams: ["pm-gone"],
     });
-    await expect(findUnbridgeableChainMismatches(check, { path: "/tracker" })).resolves.toEqual([
+    await expect(findHistoryRepairRefusals(check, { path: "/tracker" }, "/tracker")).resolves.toEqual([
       { id: "pm-bare", reason: "append_only_preview_failed", rewrite_refusal: "rewrite_preview_failed" },
       { id: "pm-code", reason: "history_record_invalid", rewrite_refusal: "record_hash_mismatch" },
       { id: "pm-reason", reason: "patch_does_not_replay" },
     ]);
     // A version-skewed stream is never previewed, and malformed details are ignored.
     expect(runHistoryRepair.mock.calls.map(([id]) => id)).not.toContain("pm-skew");
-    await expect(findUnbridgeableChainMismatches(driftCheck({ chain_mismatches: "pm-x" }), {})).resolves.toEqual([]);
+    await expect(findHistoryRepairRefusals(driftCheck({ chain_mismatches: "pm-x" }), {}, "/tracker")).resolves.toEqual([]);
   });
 
   it("re-codes refused chain mismatches and drops the redundant warning of a skewed stream", () => {
@@ -73,7 +75,7 @@ describe("history drift remedies", () => {
       "history_drift_hash_mismatch:pm-skew",
       "history_drift_workspace_state_mismatch:a:b.json",
     );
-    applyUnbridgeableChainMismatches(check, [
+    applyHistoryRepairRefusals(check, [
       { id: "pm-a", reason: "patch_does_not_replay" },
       { id: "pm-b", reason: "chain_failure_not_a_break", rewrite_refusal: "record_hash_mismatch" },
     ]);
@@ -81,17 +83,17 @@ describe("history drift remedies", () => {
     expect(check.warnings).toEqual([
       "history_drift_chain_mismatch:pm-c",
       "history_drift_chain_unbridgeable:pm-a",
-      "history_drift_chain_unrepairable:pm-b",
       "history_drift_hash_mismatch:pm-a",
+      "history_drift_unrepairable_stream:pm-b",
       "history_drift_version_skew:pm-skew",
       "history_drift_workspace_state_mismatch:a:b.json",
     ]);
-    expect(check.check.details.chain_unbridgeable).toHaveLength(2);
+    expect(check.check.details.repair_refusals).toHaveLength(2);
     // With nothing refused, the details stay as the scan wrote them.
     const clean = driftCheck({ chain_mismatches: ["pm-c"] }, ["history_drift_chain_mismatch:pm-c"]);
-    applyUnbridgeableChainMismatches(clean, []);
+    applyHistoryRepairRefusals(clean, []);
     expect(clean.warnings).toEqual(["history_drift_chain_mismatch:pm-c"]);
-    expect(clean.check.details).not.toHaveProperty("chain_unbridgeable");
+    expect(clean.check.details).not.toHaveProperty("repair_refusals");
   });
 
   it("chooses a bulk remedy only when it repairs every stream it runs on", () => {
@@ -118,7 +120,7 @@ describe("history drift remedies", () => {
     });
     for (const blocking of [
       "history_drift_unreadable_stream",
-      "history_drift_chain_unrepairable",
+      "history_drift_unrepairable_stream",
       "history_drift_version_skew",
       "history_drift_merge_receipt",
     ]) {

@@ -60,7 +60,8 @@ export interface DriftScanResult {
 }
 
 const READABLE_HISTORY_HASH_ALGORITHMS = new Set<string | undefined>([undefined, ...HISTORY_HASH_ALGORITHMS]);
-const DRIFT_CACHE_VERSION = 12;
+// 13: a complete seal in a newer record format now counts as version skew (pm-3os5p6).
+const DRIFT_CACHE_VERSION = 13;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 /** Controls how cached history stream verification is trusted when the file stat tuple still matches a previous scan. */

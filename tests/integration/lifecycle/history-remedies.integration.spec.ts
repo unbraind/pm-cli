@@ -169,7 +169,7 @@ describe("history-drift remedies converge (pm-3os5p6)", () => {
       expect(unbridgeable.warnings).toEqual(["history_drift_chain_unbridgeable:pm-unbridgeable"]);
       expect(unbridgeable.details).toMatchObject({
         chain_mismatches: ["pm-unbridgeable"],
-        chain_unbridgeable: [{ id: "pm-unbridgeable", reason: "patch_does_not_replay" }],
+        repair_refusals: [{ id: "pm-unbridgeable", reason: "patch_does_not_replay" }],
       });
       expect(unbridgeable.remedies).toEqual({ history_drift_chain_unbridgeable: "pm history-repair <id>" });
       // The append-only remedy health no longer advises would refuse.
@@ -180,7 +180,7 @@ describe("history-drift remedies converge (pm-3os5p6)", () => {
       await breakChainBridgeably(context, "pm-bridgeable");
       const bridgeable = await driftCheck(context);
       expect(bridgeable.remedies).toEqual({ history_drift_chain_mismatch: "pm history-repair <id> --append-only" });
-      expect(bridgeable.details).not.toHaveProperty("chain_unbridgeable");
+      expect(bridgeable.details).not.toHaveProperty("repair_refusals");
       runRemedy(context, bridgeable.remedies.history_drift_chain_mismatch!, "pm-bridgeable");
       expect((await driftCheck(context)).status).toBe("ok");
     });
@@ -201,19 +201,20 @@ describe("history-drift remedies converge (pm-3os5p6)", () => {
       await rm(historyFile(context, "pm-sealed-missing"));
       const drift = await driftCheck(context);
       expect(drift.warnings).toEqual([
-        `history_drift_chain_unrepairable:${id}`,
         "history_drift_missing_stream:pm-sealed-missing",
+        `history_drift_unrepairable_stream:${id}`,
       ]);
       expect(drift.details).toMatchObject({
-        chain_unbridgeable: [{ id, reason: "chain_failure_not_a_break", rewrite_refusal: "record_hash_mismatch" }],
+        repair_refusals: [{ id, reason: "chain_failure_not_a_break", rewrite_refusal: "record_hash_mismatch" }],
       });
       expect(drift.remedies).toEqual({
-        history_drift_chain_unrepairable: "pm history <id> --verify --full",
+        history_drift_unrepairable_stream: "pm history-repair <id> --dry-run",
         history_drift_missing_stream: "pm history-repair <id>",
       });
-      runRemedy(context, drift.remedies.history_drift_chain_unrepairable!, id);
       runRemedy(context, drift.remedies.history_drift_missing_stream!, "pm-sealed-missing");
-      const refused = context.runCli(["history-repair", id, "--json"]);
+      // The advised preview refuses typed and names the recovery, without writing.
+      const remedyArgs = drift.remedies.history_drift_unrepairable_stream!.replace(/^pm /u, "").replace("<id>", id).split(" ");
+      const refused = context.runCli([...remedyArgs, "--json"]);
       expect(refused.code).toBe(4);
       expect(JSON.parse(refused.stdout || refused.stderr)).toMatchObject({
         code: "history_record_integrity_invalid",
@@ -331,8 +332,8 @@ describe("review hardening of the advised remedies", () => {
       }
       const drift = await driftCheck(context);
       expect(drift.warnings).toEqual([
-        "history_drift_chain_unrepairable:pm-seal-incomplete",
-        "history_drift_chain_unrepairable:pm-seal-string",
+        "history_drift_unrepairable_stream:pm-seal-incomplete",
+        "history_drift_unrepairable_stream:pm-seal-string",
       ]);
       await expect(runHistoryRepair("pm-seal-string", { dryRun: true }, { path: context.pmPath })).rejects.toMatchObject({
         code: "history_record_integrity_invalid",
@@ -352,7 +353,34 @@ describe("review hardening of the advised remedies", () => {
           context: expect.objectContaining({ reason: "stream_not_regular_file" }),
         });
       }
+      // Health never advises the rebuild the repair refuses for a linked stream.
+      const drift = await driftCheck(context);
+      expect(drift.warnings).toContain("history_drift_unrepairable_stream:pm-linked");
+      expect(drift.warnings).not.toContain("history_drift_missing_stream:pm-linked");
+      expect(drift.details).toMatchObject({
+        repair_refusals: expect.arrayContaining([
+          { id: "pm-linked", reason: "stream_not_regular_file", rewrite_refusal: "stream_not_regular_file" },
+        ]),
+      });
       expect(await readFile(historyFile(context, "pm-link-target"), "utf8")).toBe("");
+    });
+  });
+
+  it("keeps a deleted item's last assignee for salvage ownership under strict governance", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-deleted-owned";
+      createTaskFixture(context, id, "Owned then deleted");
+      run(context, ["update", id, "--assignee", "alice", "--force"]);
+      run(context, ["delete", id, "--force"]);
+      run(context, ["config", "project", "set", "governance-preset", "--policy", "strict"]);
+      await writeFile(historyFile(context, id), `${await readFile(historyFile(context, id), "utf8")}null\n`);
+      // The stream replays to the deleted state; ownership comes from the last state that held the item.
+      await expect(
+        runHistoryRepair(id, { salvageTail: true, dryRun: true, author: "bob" }, { path: context.pmPath }),
+      ).rejects.toThrow(/assigned to alice/u);
+      await expect(
+        runHistoryRepair(id, { salvageTail: true, dryRun: true, author: "bob", force: true }, { path: context.pmPath }),
+      ).resolves.toMatchObject({ changed: true, dry_run: true });
     });
   });
 

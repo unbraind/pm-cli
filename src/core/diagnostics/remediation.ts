@@ -316,19 +316,19 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "history_drift_chain_mismatch",
     command: "pm history-repair <id> --append-only",
     summary:
-      "The item's history chain is broken; append one record that bridges every break in the stream and keeps every recorded line byte-identical (pm history-repair <id> re-anchors the recorded entries instead). pm health previews the bridge for every chain mismatch, so a break a bridge cannot repair is reported as history_drift_chain_unbridgeable instead.",
+      "The item's history chain is broken; append one record that bridges every break in the stream and keeps every recorded line byte-identical (pm history-repair <id> re-anchors the recorded entries instead). pm health previews the bridge for every chain mismatch, so a break a bridge cannot repair is reported as history_drift_chain_unbridgeable, and a stream no repair can keep as history_drift_unrepairable_stream, instead.",
   },
   {
     code: "history_drift_chain_unbridgeable",
     command: "pm history-repair <id>",
     summary:
-      "The item's history chain is broken in a way an append-only bridge cannot repair, for example a recorded patch that applies only on top of the unrecorded change (details.chain_unbridgeable names the refusal reason); re-anchor the recorded entries instead (pm history-repair --all repairs every drifted stream in one pass).",
+      "The item's history chain is broken in a way an append-only bridge cannot repair, for example a recorded patch that applies only on top of the unrecorded change (details.repair_refusals names the refusal reason); re-anchor the recorded entries instead (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
-    code: "history_drift_chain_unrepairable",
-    command: "pm history <id> --verify --full",
+    code: "history_drift_unrepairable_stream",
+    command: "pm history-repair <id> --dry-run",
     summary:
-      "Neither history repair can keep this stream: both previews refused (details.chain_unbridgeable names both reasons), for example because a sealed record no longer matches its seal. Locate the record, restore the stream from version control or a backup, then run pm history <id> --verify --strict-exit.",
+      "Neither history repair can keep this stream (details.repair_refusals names both refusal reasons), for example because a sealed record no longer matches its seal or the stream entry is a link. The preview refuses with the typed reason and its recovery: restore the item's own stream from version control or a backup, then run pm history <id> --verify --strict-exit.",
   },
   {
     code: "history_drift_version_skew",

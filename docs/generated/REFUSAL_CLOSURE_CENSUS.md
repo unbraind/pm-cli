@@ -145,11 +145,11 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `history_compact_boundary_bridged` | `history_compact_boundary_bridged` | uncovered | none | 0 |
 | `history_drift_chain_mismatch` | `history_drift_chain_mismatch` | uncovered | none | 0 |
 | `history_drift_chain_unbridgeable` | `history_drift_chain_unbridgeable` | uncovered | none | 0 |
-| `history_drift_chain_unrepairable` | `history_drift_chain_unrepairable` | uncovered | none | 0 |
 | `history_drift_hash_mismatch` | `history_drift_hash_mismatch` | uncovered | none | 0 |
 | `history_drift_merge_receipt` | `history_drift_merge_receipt` | uncovered | none | 0 |
 | `history_drift_missing_stream` | `history_drift_missing_stream` | uncovered | none | 0 |
 | `history_drift_unreadable_stream` | `history_drift_unreadable_stream` | uncovered | none | 0 |
+| `history_drift_unrepairable_stream` | `history_drift_unrepairable_stream` | uncovered | none | 0 |
 | `history_drift_version_skew` | `history_drift_version_skew` | uncovered | none | 0 |
 | `history_json_invalid` | `history_json_invalid` | uncovered | none | 0 |
 | `history_merge_conflict_markers_detected` | `merge_conflict_markers_detected` | uncovered | none | 0 |

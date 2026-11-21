@@ -23617,23 +23617,6 @@
       "stability": "provisional"
     },
     {
-      "aliases": [],
-      "canonical_code": "history_drift_chain_unrepairable",
-      "class": "generic_failure",
-      "code": "history_drift_chain_unrepairable",
-      "emitting_commands": [
-        "*"
-      ],
-      "exit_code": 1,
-      "meaning": "History drift chain unrepairable condition.",
-      "owned_states": [],
-      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
-      "sources": [
-        "core/diagnostics/remediation.ts"
-      ],
-      "stability": "provisional"
-    },
-    {
       "aliases": [
         "validate_history_drift_hash_mismatches"
       ],
@@ -23706,6 +23689,23 @@
         "core/diagnostics/remediation.ts"
       ],
       "stability": "stable"
+    },
+    {
+      "aliases": [],
+      "canonical_code": "history_drift_unrepairable_stream",
+      "class": "generic_failure",
+      "code": "history_drift_unrepairable_stream",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 1,
+      "meaning": "History drift unrepairable stream condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "core/diagnostics/remediation.ts"
+      ],
+      "stability": "provisional"
     },
     {
       "aliases": [

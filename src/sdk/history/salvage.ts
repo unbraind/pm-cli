@@ -327,19 +327,25 @@ function assertSalvageIdentity(id: string, replay: ReplayDocument): void {
  * A chain that verifies uses strict replay for the final document; one that
  * does not replays leniently.
  */
-function replayRetainedRecords(id: string, selected: ReturnType<typeof inspectHistoryTail>): ReplayDocument {
+function replayRetainedRecords(
+  id: string,
+  selected: ReturnType<typeof inspectHistoryTail>,
+): { final: ReplayDocument; lastItem: ReplayDocument } {
   const strict = selected.verification.ok;
   let replay = cloneEmptyReplayDocument();
+  // A deleted item replays to the empty document; its ownership is the last state that held the item.
+  let lastItem = replay;
   for (const entry of selected.entries) {
     // A verified chain is judged on the states its readers replay; only a broken one replays leniently.
     const applied = strict ? tryApplyReplayPatch(replay, entry.patch) : undefined;
     replay = applied?.ok === true ? applied.document : lenientApplyReplayPatch(replay, entry.patch, entry.op).document;
     assertSalvageIdentity(id, replay);
+    if (Object.keys(replay.metadata).length > 0) lastItem = replay;
   }
   if (strict && selected.entries.length > 0) {
-    return replayHistoryToTarget(selected.entries, selected.entries.length - 1);
+    return { final: replayHistoryToTarget(selected.entries, selected.entries.length - 1), lastItem };
   }
-  return replay;
+  return { final: replay, lastItem };
 }
 
 /** Bytes kept and the receipt for those removed: non-record lines plus the invalid suffix. */
@@ -454,10 +460,11 @@ export async function salvageHistoryTail(params: {
     );
   await runActiveOnReadHooks({ path: subject.historyPath, scope: "project" });
   const selected = inspectHistoryTail(raw);
-  const document = replayToItemDocument(replayRetainedRecords(subject.id, selected));
+  const replayed = replayRetainedRecords(subject.id, selected);
+  const document = replayToItemDocument(replayed.final);
   // Plan the salvaged stream now, so a preview refuses exactly where the write would; nothing to remove plans nothing.
   const nextHistoryRaw = selected.receipt === null ? raw : salvagedStream(selected, document, author, options.message);
-  const ownership = await readSalvageOwnership(subject.located, settings, document);
+  const ownership = await readSalvageOwnership(subject.located, settings, replayToItemDocument(replayed.lastItem));
   const warnings = checkHistoryRewriteOwnership({
     itemDocument: ownership.document,
     subjectId: subject.id,

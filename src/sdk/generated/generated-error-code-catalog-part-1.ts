@@ -744,11 +744,6 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/diagnostics/remediation.ts"],
   },
   {
-    code: "history_drift_chain_unrepairable",
-    exit_code: 1,
-    sources: ["core/diagnostics/remediation.ts"],
-  },
-  {
     code: "history_drift_hash_mismatch",
     exit_code: 1,
     stable: true,
@@ -773,6 +768,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     stable: true,
     sources: ["core/diagnostics/remediation.ts"],
     aliases: ["validate_history_drift_unreadable_streams"],
+  },
+  {
+    code: "history_drift_unrepairable_stream",
+    exit_code: 1,
+    sources: ["core/diagnostics/remediation.ts"],
   },
   {
     code: "history_drift_version_skew",

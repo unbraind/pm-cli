@@ -150,8 +150,8 @@ import {
 } from "./merge-receipt-history.js";
 import { runHistoryRepair } from "../history-repair.js";
 import {
-  applyUnbridgeableChainMismatches,
-  findUnbridgeableChainMismatches,
+  applyHistoryRepairRefusals,
+  findHistoryRepairRefusals,
   rewriteBulkHistoryDriftRemediation,
 } from "./health/history-drift-remedies.js";
 import { summarizeDeferredFieldCuration, type DeferredFieldCuration } from "./validate-deferred-fields.js";
@@ -3101,9 +3101,9 @@ export async function runHealth(
     historyDriftCheck,
     mergeReceiptAttributedHistoryDriftItems,
   );
-  applyUnbridgeableChainMismatches(
+  applyHistoryRepairRefusals(
     historyDriftCheck,
-    await findUnbridgeableChainMismatches(historyDriftCheck, global),
+    await findHistoryRepairRefusals(historyDriftCheck, global, pmRoot),
   );
   const vectorizationCheck = skipPolicy.skipVectors
     ? buildSkippedHealthCheck("vectorization")

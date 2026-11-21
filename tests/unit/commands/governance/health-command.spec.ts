@@ -1508,7 +1508,7 @@ describe("runHealth", () => {
           `history_drift_missing_stream:${missingId}`,
           `history_drift_unreadable_stream:${unreadableId}`,
           // Neither repair can keep a sealed record edited without a reseal (pm-3os5p6).
-          `history_drift_chain_unrepairable:${mismatchId}`,
+          `history_drift_unrepairable_stream:${mismatchId}`,
         ]),
       );
       // Its hash mismatch stays evidence in details but no longer advises a repair that refuses.
@@ -1624,7 +1624,7 @@ describe("runHealth", () => {
       const health = await runHealth({ path: context.pmPath });
       expect(health.ok).toBe(false);
       // The first record was edited without a reseal, so neither repair can keep it (pm-3os5p6).
-      expect(health.warnings).toContain(`history_drift_chain_unrepairable:${id}`);
+      expect(health.warnings).toContain(`history_drift_unrepairable_stream:${id}`);
       expect(health.warnings).not.toContain(
         `history_drift_hash_mismatch:${id}`,
       );

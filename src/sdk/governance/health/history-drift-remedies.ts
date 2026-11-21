@@ -5,29 +5,33 @@
  * one repairs the streams it names (pm-3os5p6). A chain mismatch that an
  * append-only bridge cannot repair, because a recorded patch applies only on
  * top of the unrecorded change, is reported as `history_drift_chain_unbridgeable`
- * with the rewriting repair as its remedy. The decision runs the append-only
- * repair's own preview, so health and the repair never disagree about a stream.
+ * with the rewriting repair as its remedy. A stream no repair can keep is
+ * reported as `history_drift_unrepairable_stream`. The decision runs the
+ * repairs' own previews, so health and the repair never disagree about a stream.
  */
+import { lstat } from "node:fs/promises";
 import type { GlobalOptions } from "../../../core/shared/command-types.js";
 import { PmCliError } from "../../../core/shared/errors.js";
+import { getHistoryPath } from "../../../core/store/paths.js";
 import { runHistoryRepair } from "../../history-repair.js";
 import type { HealthCheck } from "../health.js";
 
-/** A chain mismatch whose append-only preview refused, with the refusal reasons. */
-export interface UnbridgeableChainMismatch {
-  /** Item whose stream an append-only bridge cannot repair. */
+/** A drifted stream whose repair preview refused, with the refusal reasons. */
+export interface HistoryRepairRefusal {
+  /** Item whose stream the advised repair would refuse. */
   id: string;
-  /** The append-only refusal reason, for example `patch_does_not_replay`. */
+  /** The first refusal reason, for example `patch_does_not_replay`. */
   reason: string;
-  /** Present when the rewriting repair's preview refused too, so no pm repair applies. */
+  /** Present when the rewriting repair refuses too, so no pm repair applies. */
   rewrite_refusal?: string;
 }
 
-/** Warning-code prefixes for chain mismatches, by remedy. */
+/** Warning-code prefixes, by remedy. */
 const CHAIN_MISMATCH = "history_drift_chain_mismatch";
 const CHAIN_UNBRIDGEABLE = "history_drift_chain_unbridgeable";
-const CHAIN_UNREPAIRABLE = "history_drift_chain_unrepairable";
+const UNREPAIRABLE_STREAM = "history_drift_unrepairable_stream";
 const HASH_MISMATCH = "history_drift_hash_mismatch";
+const MISSING_STREAM = "history_drift_missing_stream";
 /**
  * Streams a bulk repair must not run on: it would fail the row of an
  * unreadable, unrepairable or version-skewed stream, and it would reconcile a
@@ -35,12 +39,12 @@ const HASH_MISMATCH = "history_drift_hash_mismatch";
  */
 const BULK_BLOCKING_CODES = [
   "history_drift_unreadable_stream",
-  CHAIN_UNREPAIRABLE,
+  UNREPAIRABLE_STREAM,
   "history_drift_version_skew",
   "history_drift_merge_receipt",
 ];
 /** Codes `pm history-repair --all --append-only` repairs on every stream it names. */
-const APPEND_ONLY_BULK_CODES = new Set([CHAIN_MISMATCH, "history_drift_missing_stream"]);
+const APPEND_ONLY_BULK_CODES = new Set([CHAIN_MISMATCH, MISSING_STREAM]);
 
 /** Read a string array detail written by the history-drift check. */
 function stringList(value: unknown): string[] {
@@ -70,16 +74,33 @@ async function previewRefusal(
   }
 }
 
+/** Missing streams whose entry is a link: a rebuild appends, so both repairs refuse them. */
+async function findLinkedMissingStreams(
+  historyDriftCheck: { check: HealthCheck },
+  pmRoot: string,
+): Promise<HistoryRepairRefusal[]> {
+  const linked: HistoryRepairRefusal[] = [];
+  for (const id of stringList(historyDriftCheck.check.details.missing_streams)) {
+    const [entry] = await Promise.allSettled([lstat(getHistoryPath(pmRoot, id))]);
+    if (entry.status === "fulfilled" && entry.value.isSymbolicLink()) {
+      linked.push({ id, reason: "stream_not_regular_file", rewrite_refusal: "stream_not_regular_file" });
+    }
+  }
+  return linked;
+}
+
 /**
  * Preview the append-only repair of every chain-mismatched stream; for each
  * refusal, preview the rewriting repair too, so a stream neither repair can
- * keep is reported without a remedy that would refuse.
+ * keep is reported without a remedy that would refuse. A missing stream whose
+ * entry is a link is reported the same way.
  */
-export async function findUnbridgeableChainMismatches(
+export async function findHistoryRepairRefusals(
   historyDriftCheck: { check: HealthCheck },
   global: GlobalOptions,
-): Promise<UnbridgeableChainMismatch[]> {
-  const unbridgeable: UnbridgeableChainMismatch[] = [];
+  pmRoot: string,
+): Promise<HistoryRepairRefusal[]> {
+  const refusals: HistoryRepairRefusal[] = [];
   // This runtime cannot judge the chain of a stream from a newer hash epoch; its remedy is the upgrade.
   const skewed = new Set(stringList(historyDriftCheck.check.details.version_skews));
   for (const id of stringList(historyDriftCheck.check.details.chain_mismatches)) {
@@ -87,24 +108,25 @@ export async function findUnbridgeableChainMismatches(
     const reason = await previewRefusal(id, true, global);
     if (reason === undefined) continue;
     const rewriteRefusal = await previewRefusal(id, false, global);
-    unbridgeable.push({
+    refusals.push({
       id,
       reason,
       ...(rewriteRefusal === undefined ? {} : { rewrite_refusal: rewriteRefusal }),
     });
   }
-  return unbridgeable;
+  return [...refusals, ...(await findLinkedMissingStreams(historyDriftCheck, pmRoot))];
 }
 
-/** Rewrite one chain- or hash-mismatch warning; other warnings pass through. */
+/** Rewrite one chain-, missing- or hash-mismatch warning; other warnings pass through. */
 function reviseDriftWarning(
   warning: string,
-  chainCodeById: ReadonlyMap<string, string | null>,
+  codeById: ReadonlyMap<string, string | null>,
   withoutRepairAdvice: ReadonlySet<string>,
 ): string[] {
-  if (warning.startsWith(`${CHAIN_MISMATCH}:`)) {
-    const id = warning.slice(CHAIN_MISMATCH.length + 1);
-    const code = chainCodeById.get(id);
+  for (const prefix of [CHAIN_MISMATCH, MISSING_STREAM]) {
+    if (!warning.startsWith(`${prefix}:`)) continue;
+    const id = warning.slice(prefix.length + 1);
+    const code = codeById.get(id);
     if (code === null) return [];
     return [code === undefined ? warning : `${code}:${id}`];
   }
@@ -115,35 +137,35 @@ function reviseDriftWarning(
 }
 
 /**
- * Report each unbridgeable chain mismatch under its own code so health
- * advises the repair that works. A stream no repair can keep, and a stream a
- * newer pm wrote, keep only that verdict: their chain- and hash-mismatch
- * warnings would advise a repair that refuses, so they are dropped from the
- * advice while `details` keeps the scan's evidence.
+ * Report each refused stream under the code whose remedy works. A stream no
+ * repair can keep, and a stream a newer pm wrote, keep only that verdict:
+ * their chain- and hash-mismatch warnings would advise a repair that refuses,
+ * so they are dropped from the advice while `details` keeps the scan's
+ * evidence.
  */
-export function applyUnbridgeableChainMismatches(
+export function applyHistoryRepairRefusals(
   historyDriftCheck: { check: HealthCheck; warnings: string[] },
-  unbridgeable: UnbridgeableChainMismatch[],
+  refusals: HistoryRepairRefusal[],
 ): void {
   const skewed = stringList(historyDriftCheck.check.details.version_skews);
-  const chainCodeById = new Map<string, string | null>([
+  const codeById = new Map<string, string | null>([
     ...skewed.map((id): [string, null] => [id, null]),
-    ...unbridgeable.map((row): [string, string] => [
+    ...refusals.map((row): [string, string] => [
       row.id,
-      row.rewrite_refusal === undefined ? CHAIN_UNBRIDGEABLE : CHAIN_UNREPAIRABLE,
+      row.rewrite_refusal === undefined ? CHAIN_UNBRIDGEABLE : UNREPAIRABLE_STREAM,
     ]),
   ]);
   const withoutRepairAdvice = new Set([
     ...skewed,
-    ...unbridgeable.filter((row) => row.rewrite_refusal !== undefined).map((row) => row.id),
+    ...refusals.filter((row) => row.rewrite_refusal !== undefined).map((row) => row.id),
   ]);
   historyDriftCheck.warnings = historyDriftCheck.warnings
-    .flatMap((warning) => reviseDriftWarning(warning, chainCodeById, withoutRepairAdvice))
+    .flatMap((warning) => reviseDriftWarning(warning, codeById, withoutRepairAdvice))
     .sort((left, right) => left.localeCompare(right));
-  if (unbridgeable.length === 0) return;
+  if (refusals.length === 0) return;
   historyDriftCheck.check.details = {
     ...historyDriftCheck.check.details,
-    chain_unbridgeable: unbridgeable,
+    repair_refusals: refusals,
   };
 }
 

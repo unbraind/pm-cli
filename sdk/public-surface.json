@@ -3536,6 +3536,13 @@
       ],
       "package_version": "2026.11.21",
       "reason": "pm-3os5p6/pm-rpucvb: HistoryRepairResult gains an optional reseed receipt and HistoryMaintenanceParams an optional reseed plan; both are additive optional members, and the three repair receipt types are now exported beside the result that names them"
+    },
+    {
+      "changes": [
+        "error code history_drift_chain_unrepairable removed"
+      ],
+      "package_version": "2026.11.21",
+      "reason": "pm-3os5p6: history_drift_chain_unrepairable was introduced earlier in this same unreleased PR (#1763) and is renamed to history_drift_unrepairable_stream before any release, because it now also covers linked missing streams"
     }
   ],
   "entrypoints": {
@@ -41082,11 +41089,11 @@
     "history_compact_boundary_bridged",
     "history_drift_chain_mismatch",
     "history_drift_chain_unbridgeable",
-    "history_drift_chain_unrepairable",
     "history_drift_hash_mismatch",
     "history_drift_merge_receipt",
     "history_drift_missing_stream",
     "history_drift_unreadable_stream",
+    "history_drift_unrepairable_stream",
     "history_drift_version_skew",
     "history_json_invalid",
     "history_merge_conflict_markers_detected",

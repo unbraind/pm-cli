@@ -187,7 +187,7 @@ describe("history redaction record integrity", () => {
         { full: true, skipVectors: true },
       );
       // Neither repair can keep a record whose seal no longer matches (pm-3os5p6).
-      expect(health.warnings).toContain(`history_drift_chain_unrepairable:${id}`);
+      expect(health.warnings).toContain(`history_drift_unrepairable_stream:${id}`);
       await expect(
         runHistoryRepair(id, { dryRun: true }, { path: context.pmPath }),
       ).rejects.toMatchObject({ code: "history_record_integrity_invalid" });
