@@ -112,7 +112,8 @@ describe("append-only history repair (GH-1715)", () => {
       await expect(runRestore(ID, "3", {}, { path: context.pmPath })).rejects.toMatchObject({
         context: { code: "history_version_unreconstructable" },
       });
-      await expect(runRestore(ID, "2", { dryRun: true } as never, { path: context.pmPath })).resolves.toBeDefined();
+      expect(() => replayHistoryToTarget(entries, 1)).not.toThrow();
+      expect(() => replayHistoryToTarget(entries, entries.length - 1)).not.toThrow();
 
       // New writes after the bridge verify normally.
       comment(context, "after bridge");
@@ -305,6 +306,14 @@ describe("append-only history repair (GH-1715)", () => {
       expect(entries.at(-1)).toMatchObject({ message: "legacy bridge" });
       expect(entries.at(-1)).not.toHaveProperty("item_hash_version");
       expect(verifyHistoryChainWithVersion(entries).ok).toBe(true);
+    });
+  });
+
+  it("reports a missing stream instead of guessing its encoding", async () => {
+    await withTempPmPath(async (context) => {
+      createTaskFixture(context, ID, "Missing stream");
+      await rm(paths(context).history);
+      await expect(runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath })).rejects.toThrow(/No history stream exists/);
     });
   });
 
@@ -521,7 +530,7 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const repaired = await readHistoryEntries(file, ID);
       expect(verifyHistoryChainWithVersion(repaired).ok).toBe(true);
       expect(repaired.map((entry) => entry.replay_inexact === true).slice(0, 5)).toEqual([false, true, true, true, true]);
-      await expect(runRestore(ID, "1", { dryRun: true } as never, { path: context.pmPath })).resolves.toBeDefined();
+      expect(() => replayHistoryToTarget(repaired, 0)).not.toThrow();
     });
   });
 

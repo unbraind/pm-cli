@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { compactMarkdownTables, exportedDeclarationClosure, findExcludedModuleReferences, listExcludedModules, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, createExcludedModulePredicate, exportedDeclarationClosure, findExcludedModuleReferences, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -345,8 +345,9 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
     "docs/README.md": 'import "./dist/sdk/hidden.js"',
   };
   const read = (file: string): string => files[file]!;
-  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.cjs", "dist/sdk/folder/index.js"];
-  expect(findExcludedModuleReferences(Object.keys(files), excluded, read)).toEqual([
+  const excluded = new Set(["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.cjs", "dist/sdk/folder/index.js"]);
+  const isExcluded = (candidate: string) => excluded.has(candidate);
+  expect(findExcludedModuleReferences(Object.keys(files), isExcluded, read)).toEqual([
     "dist/cli.js -> ./sdk/hidden.js",
     "dist/cli.js -> ./sdk/worker.js",
     "dist/cli.js -> ./sdk/legacy",
@@ -355,20 +356,21 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
     "dist/sdk/kept.mjs -> ../sdk/excluded.cjs",
     "dist/sdk/kept.mjs -> ./../sdk/excluded.cjs",
   ]);
-  expect(findExcludedModuleReferences(Object.keys(files), ["dist/sdk/unreferenced.js"], read)).toEqual([]);
+  expect(findExcludedModuleReferences(Object.keys(files), () => false, read)).toEqual([]);
+  // A trailing slash names a directory, as path checks such as "../" do.
+  expect(findExcludedModuleReferences(["dist/a.js"], () => true, () => 'x.startsWith("../")')).toEqual([]);
 });
 
-it("lists the modules a checkout holds under shipped module directories but the package leaves out (pm-998juj)", async () => {
+it("treats a checkout module as excluded only when it exists inside the checkout and is not packed (pm-998juj)", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "pm-excluded-modules-"));
   try {
-    for (const file of ["dist/cli.js", "dist/sdk/index.js", "dist/sdk/kept.mjs", "dist/sdk/readme.md", "dist/node_modules/dep/index.js", "scripts/build.mjs", "scripts/private.mjs", "src/index.js", "top.js"]) {
+    for (const file of ["dist/cli.js", "dist/sdk/index.js", "top.js", "lib/private.mjs", "dist/node_modules/dep/index.js", "README.md"]) {
       await mkdir(path.dirname(path.join(root, file)), { recursive: true });
       await writeFile(path.join(root, file), "");
     }
-    expect(listExcludedModules(root, ["dist/cli.js", "dist/sdk/kept.mjs", "scripts/build.mjs", "top.js", "node_modules/dep/index.js", "README.md"]).sort()).toEqual([
-      "dist/sdk/index.js",
-      "scripts/private.mjs",
-    ]);
+    const isExcluded = createExcludedModulePredicate(root, ["dist/cli.js", "README.md"]);
+    expect(["dist/sdk/index.js", "top.js", "lib/private.mjs"].every(isExcluded)).toBe(true);
+    expect(["dist/cli.js", "README.md", "dist/missing.js", "../outside.js", "dist/node_modules/dep/index.js"].some(isExcluded)).toBe(false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -377,14 +379,18 @@ it("lists the modules a checkout holds under shipped module directories but the 
 it("refuses to pack a module that imports a file the files list excludes (pm-998juj)", async () => {
   const { root, manifest } = await createBundleFixture();
   await mkdir(path.join(root, "dist"), { recursive: true });
-  await writeFile(path.join(root, "dist/index.js"), 'export * from "./excluded.js";\n');
+  await writeFile(path.join(root, "dist/index.js"), 'export * from "./excluded.js";\nimport "../root-only.js";\nimport "../private/lib.mjs";\n');
   await writeFile(path.join(root, "dist/excluded.js"), "export const value = 1;\n");
+  await writeFile(path.join(root, "root-only.js"), "export {};\n");
+  await mkdir(path.join(root, "private"), { recursive: true });
+  await writeFile(path.join(root, "private/lib.mjs"), "export {};\n");
   await writeFile(path.join(root, "package.json"), JSON.stringify({
     ...manifest,
     files: [...manifest.files, "dist/**", "!dist/excluded.js"],
   }));
+  // Excluded siblings, root-level files and wholly excluded directories all refuse.
   await expect(packDistribution(root)).rejects.toThrow(
-    "Packed modules import files the package excludes:\ndist/index.js -> ./excluded.js",
+    "Packed modules import files the package excludes:\ndist/index.js -> ./excluded.js\ndist/index.js -> ../root-only.js\ndist/index.js -> ../private/lib.mjs",
   );
 }, 60_000);
 

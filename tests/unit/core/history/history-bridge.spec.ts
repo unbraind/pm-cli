@@ -92,12 +92,17 @@ describe("history bridge envelope", () => {
     const wrongDigest = entry({ bridge: { version: 1, breaks: [descriptor], segment_digest } });
     const marked = covered.map((record) => ({ ...record, replay_inexact: true as const }));
     expect(locateBridgedSegments([first, ...marked, wrongDigest]).segments).toEqual([{ start: 1, end: 3, exact: true }]);
-    // Otherwise an unproven bridge contributes the conservative range since the previous bridge.
+    // Otherwise an unproven bridge contributes the conservative range since the last proven bridge;
+    // an unproven bridge never moves that boundary, so it cannot hide an earlier segment start.
     const malformed = entry({ bridge: { version: 1 } });
     expect(locateBridgedSegments([first, ...covered, wrongDigest, malformed])).toEqual({
-      segments: [{ start: 1, end: 3, exact: false }, { start: 4, end: 4, exact: false }],
+      segments: [{ start: 1, end: 3, exact: false }, { start: 1, end: 4, exact: false }],
       unlocated: [3, 4],
     });
+    expect(locateBridgedSegments([first, ...covered, bridge, malformed]).segments).toEqual([
+      { start: 1, end: 3, exact: true },
+      { start: 4, end: 4, exact: false },
+    ]);
     const lostAnchors = entry({ bridge: { version: 1, breaks: [{ ...descriptor, gap_from: "0".repeat(64) }], segment_digest } });
     expect(locateBridgedSegments([first, ...covered, lostAnchors])).toEqual({
       segments: [{ start: 1, end: 3, exact: false }],

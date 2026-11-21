@@ -6,7 +6,6 @@ import {
   lstatSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -366,51 +365,40 @@ const MODULE_EXTENSIONS = [".js", ".cjs", ".mjs"];
 const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
 
 /**
- * Every JavaScript module the checkout holds under a directory the package
- * ships modules from, but that the files list leaves out (pm-998juj).
+ * Whether a checkout path is a module the package leaves out: it exists in
+ * the checkout, inside it and outside node_modules, but is not packed.
  */
-export function listExcludedModules(root, packedPaths) {
+export function createExcludedModulePredicate(root, packedPaths) {
   const packed = new Set(packedPaths);
-  const directories = new Set(
-    packedPaths
-      .filter((file) => MODULE_FILE.test(file) && !file.startsWith("node_modules/"))
-      .map((file) => file.split("/")[0])
-      .filter((top) => top !== undefined && !MODULE_FILE.test(top)),
-  );
-  const excluded = [];
-  const walk = (relative) => {
-    for (const entry of readdirSync(path.join(root, relative), { withFileTypes: true })) {
-      const child = `${relative}/${entry.name}`;
-      if (entry.isDirectory() && entry.name !== "node_modules") walk(child);
-      else if (entry.isFile() && MODULE_FILE.test(child) && !packed.has(child)) excluded.push(child);
-    }
-  };
-  for (const directory of [...directories].sort()) walk(directory);
-  return excluded;
+  return (candidate) =>
+    MODULE_FILE.test(candidate) &&
+    !candidate.startsWith("../") &&
+    !candidate.split("/").includes("node_modules") &&
+    !packed.has(candidate) &&
+    existsSync(path.join(root, candidate));
 }
 
 /**
- * Prove no staged module refers to a module the package excludes. Every
- * quoted relative reference from a staged JavaScript module to an excluded
- * module refuses the pack, whether it is a static, dynamic or require import
- * or a worker path built from a string. The check fails closed: a comment or
- * string that spells an excluded module's path refuses too. It needs no
- * parser, so release controls copied without node_modules still run it.
+ * Prove no staged module refers to a module the package excludes (pm-998juj).
+ * Every quoted relative string in a staged JavaScript module is resolved the
+ * way Node would load it (exact, CommonJS extension or directory index, with
+ * any URL query or fragment dropped). It refuses the pack when the target
+ * exists in the checkout but is not packed: a static, dynamic or require
+ * import or a worker path built from a string. The check fails closed: a
+ * comment or string spelling such a path refuses too. It needs no parser,
+ * so release controls copied without node_modules still run it.
  */
-export function findExcludedModuleReferences(packedPaths, excludedPaths, readText) {
-  const excluded = new Set(excludedPaths);
+export function findExcludedModuleReferences(packedPaths, isExcluded, readText) {
   const references = [];
   for (const file of packedPaths) {
     if (!MODULE_FILE.test(file) || file.startsWith("node_modules/")) continue;
-    // Resolve every quoted relative string, so non-canonical spellings such as
-    // "../sdk/x.js" from inside sdk/ name the same excluded module.
     for (const [, , specifier] of readText(file).matchAll(QUOTED_RELATIVE_PATH)) {
-      const target = path.posix.join(path.posix.dirname(file), specifier.replace(/[?#].*$/u, ""));
-      // Every file Node could load for the specifier: exact, CommonJS extension, or directory index.
+      const pathname = specifier.replace(/[?#].*$/u, "");
+      // A trailing slash names a directory, as path checks such as "../" do; no loader resolves it.
+      if (pathname.endsWith("/")) continue;
+      const target = path.posix.join(path.posix.dirname(file), pathname);
       const candidates = [target, ...MODULE_EXTENSIONS.flatMap((extension) => [`${target}${extension}`, `${target}/index${extension}`])];
-      if (candidates.some((candidate) => excluded.has(candidate))) {
-        references.push(`${file} -> ${specifier}`);
-      }
+      if (candidates.some(isExcluded)) references.push(`${file} -> ${specifier}`);
     }
   }
   return [...new Set(references)];
@@ -530,7 +518,7 @@ function packLeasedDistribution(root, options) {
     const packedPaths = sourceReport.files.map((file) => file.path);
     const excludedReferences = findExcludedModuleReferences(
       packedPaths,
-      listExcludedModules(root, packedPaths),
+      createExcludedModulePredicate(root, packedPaths),
       (file) => readFileSync(path.join(stage, file), "utf8"),
     );
     if (excludedReferences.length > 0)

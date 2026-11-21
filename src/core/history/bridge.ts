@@ -176,7 +176,9 @@ export function locateBridgedSegments(entries: readonly HistoryEntry[]): Located
       typeof bridge === "object" ? findBridgedSegmentStart(entries, bridge, floor, index) : -1;
     if (start < 0) located.unlocated.push(index);
     located.segments.push({ start: start < 0 ? floor : start, end: index, exact: start >= 0 });
-    floor = index + 1;
+    // Only a proven bridge closes what came before it: an unproven one must
+    // not hide the start of a later bridge's segment.
+    if (start >= 0) floor = index + 1;
   });
   return located;
 }
