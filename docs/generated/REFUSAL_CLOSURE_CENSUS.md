@@ -4,12 +4,12 @@ Tracker: `pm-f05lsg`.
 
 Every catalog code is listed. An `uncovered` row is an explicit closure obligation, never an omission or implied approval.
 
-- Catalog error codes: 486
+- Catalog error codes: 487
 - Executable error codes: 19
 - Executable-code ratchet floor: 18
 - Required executable canonical codes: `bulk_ids_input_empty`, `bulk_ids_input_missing_path`, `bulk_ids_input_unreadable`, `invalid_argument_value`, `manifest_unknown_key`, `missing_lifecycle_target`, `missing_required_argument`, `no_version_bounds_declared`, `projection_options_mutually_exclusive`, `tracker_not_initialized`, `tracker_root_missing`, `tracker_root_not_directory`, `tracker_root_unreadable`, `unknown_context_intent`, `unknown_field_projection`, `unknown_option`, `unknown_subcommand`
-- Uncovered error codes: 467
-- Coverage fraction: 0.039095
+- Uncovered error codes: 468
+- Coverage fraction: 0.039014
 - Closed-domain probes: 19
 - Grammar probes: 117
 
@@ -128,6 +128,7 @@ Every catalog code is listed. An `uncovered` row is an explicit closure obligati
 | `field_duplicate` | `field_duplicate` | uncovered | none | 0 |
 | `field_invalid` | `field_invalid` | uncovered | none | 0 |
 | `field_mcp_input_collision` | `field_mcp_input_collision` | uncovered | none | 0 |
+| `finalization_invalid_document` | `finalization_invalid_document` | uncovered | none | 0 |
 | `github_source_entry_unbuilt` | `github_source_entry_unbuilt` | uncovered | none | 0 |
 | `hierarchy_cardinality_created` | `hierarchy_cardinality_created` | uncovered | none | 0 |
 | `hierarchy_cycle_created` | `hierarchy_cycle_created` | uncovered | none | 0 |

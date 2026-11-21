@@ -1,0 +1,24 @@
+id: pm-xp7ldt
+title: update-many ignores an unknown flat update key where a single update refuses it by name
+description: "Observed while fixing typed null handling in update-many. runAction('update-many', { options: { ids: [id], bogus: 'x', description: 'changed' } }) changes the description and reports one updated row; the unknown key is dropped without a warning. The same payload through runAction('update') refuses with: Unknown update option \"bogus\". Did you mean \"body\"? No changes were made. The GH-1520 admission check covers native create and update only, so a misspelled bulk field (for example asignee) is silently not applied to any matched row."
+type: Issue
+status: open
+priority: 3
+tags[4]: admission,"area:sdk",honesty,update-many
+created_at: "2026-11-21T19:34:43.782Z"
+updated_at: "2026-11-21T21:42:48.289Z"
+author: "harness:claude-code"
+estimated_minutes: 90
+acceptance_criteria: "runAction update-many refuses an undeclared flat update key by name with the nearest declared key before any row changes, in the flat and nested spellings; Declared aliases, runtime schema fields and extension fields stay accepted; MCP update-many keeps its transport contract; A spec proves parity with the single update refusal for the same key"
+parent: pm-9rgaal
+risk: low
+confidence: high
+expected_result: "An unknown update key in an update-many payload is refused by name, as a single update refuses it"
+actual_result: The unknown key is dropped and the remaining fields are applied to every matched row
+dependencies[2]{id,kind,created_at,author,source_kind,author_source}:
+  pm-fl3phm,related,"2026-11-21T19:34:43.782Z","harness:claude-code","cli:create:dep",detected
+  pm-w7clh6,discovered_from,"2026-11-21T19:34:43.782Z","harness:claude-code","cli:create:dep",detected
+comments[2]{created_at,author,text}:
+  "2026-11-21T19:34:43.782Z","harness:claude-code","Duplicate check: pm search for 'update-many unknown option key silently ignored' returned the closed GH-1520 item (create and update admission, not bulk) and no open item for the bulk path."
+  "2026-11-21T21:42:48.288Z","harness:claude-code","Related shape from the third Codex review of PR 1764: a JSON-decoded options bag with an own __proto__ key loses that key when normalization copies it into a plain object, so neither the unknown-key check nor the typed null scan sees it. The admission check should read the caller's own keys before any copy."
+body: ""

@@ -69,7 +69,7 @@ pm release <ID>
 
 Before closing a repository defect, inspect its declared `escape_class` and
 `gate_evidence` contract and record the required structured evidence. In pm-cli,
-follow [Defect Evidence](../../../docs/DEFECT_RECURRENCE.md#defect-evidence-on-pm-items)
+follow [Defect Evidence](https://github.com/unbraind/pm-cli/blob/main/docs/DEFECT_RECURRENCE.md#defect-evidence-on-pm-items) (repository-only, excluded from npm)
 and run `pnpm quality:defect-evidence` **after** closure: a gate run while the item
 is active cannot prove terminal-only requirements. Verify runner changes with
 both build-enabled and prebuilt CI environments.

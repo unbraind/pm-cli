@@ -1,6 +1,6 @@
 {
   "aggregate_completeness": {
-    "covered_symbols": 2168,
+    "covered_symbols": 2169,
     "excluded": [
       {
         "name": "_testOnlyCliContracts",
@@ -8,7 +8,7 @@
       }
     ],
     "missing": [],
-    "required_symbols": 2169
+    "required_symbols": 2170
   },
   "breaking_acknowledgements": [
     {
@@ -3543,6 +3543,25 @@
       ],
       "package_version": "2026.11.21",
       "reason": "pm-3os5p6: history_drift_chain_unrepairable was introduced earlier in this same unreleased PR (#1763) and is renamed to history_drift_unrepairable_stream before any release, because it now also covers linked missing streams"
+    },
+    {
+      "changes": [
+        "signature ./sdk:BulkItemMutation",
+        "signature ./sdk:parseItemMutationBatch",
+        "signature ./sdk:ResolvedItemMutationDocument",
+        "signature ./sdk:ResolvedItemMutationRow",
+        "signature ./sdk:validateItemMutationRows"
+      ],
+      "package_version": "2026.11.21",
+      "reason": "pm-gh1656: BulkItemMutation gains the additive finalize row (BulkItemFinalizeMutation). The structured document planner still emits only create, update, close and release, so parseItemMutationBatch, validateItemMutationRows, ResolvedItemMutationDocument and ResolvedItemMutationRow now name the narrower BulkItemLifecycleMutation union; their values are unchanged and remain assignable to BulkItemMutation. Callers that switch exhaustively over BulkItemMutation.op add a finalize case"
+    },
+    {
+      "changes": [
+        "signature ./sdk:PmUpdateManyActionOptions",
+        "signature ./sdk/contracts:PmUpdateManyActionOptions"
+      ],
+      "package_version": "2026.11.21",
+      "reason": "pm-w7clh6: PmUpdateManyActionOptions widens its clearable update fields to accept null, matching PmUpdateActionOptions; every previously valid value stays valid"
     }
   ],
   "entrypoints": {
@@ -5639,9 +5658,21 @@
         },
         {
           "classification": "advanced_export",
+          "kind": "interface",
+          "name": "BulkItemFinalizeMutation",
+          "signature": "export interface BulkItemFinalizeMutation { op: \"finalize\"; id: string; set?: Readonly<Record<string, WorkspaceTransactionJsonValue>>; unset?: readonly string[]; match?: BulkItemUniqueKey; force?: boolean; }"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "type",
+          "name": "BulkItemLifecycleMutation",
+          "signature": "export type BulkItemLifecycleMutation = BulkItemCreateMutation | BulkItemUpdateMutation | BulkItemCloseMutation | BulkItemReleaseMutation;"
+        },
+        {
+          "classification": "advanced_export",
           "kind": "type",
           "name": "BulkItemMutation",
-          "signature": "export type BulkItemMutation = BulkItemCreateMutation | BulkItemUpdateMutation | BulkItemCloseMutation | BulkItemReleaseMutation;"
+          "signature": "export type BulkItemMutation = BulkItemLifecycleMutation | BulkItemFinalizeMutation;"
         },
         {
           "classification": "advanced_export",
@@ -14215,7 +14246,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "parseItemMutationBatch",
-          "signature": "(input: string, parseOptions?: ParseItemMutationBatchOptions) => BulkItemMutation[] | calls: (input: string, parseOptions?: ParseItemMutationBatchOptions) => BulkItemMutation[]"
+          "signature": "(input: string, parseOptions?: ParseItemMutationBatchOptions) => BulkItemLifecycleMutation[] | calls: (input: string, parseOptions?: ParseItemMutationBatchOptions) => BulkItemLifecycleMutation[]"
         },
         {
           "classification": "advanced_export",
@@ -16987,7 +17018,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = WithNullClears<Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\">, UpdateNullClearableOptionKey> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -19495,13 +19526,13 @@
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ResolvedItemMutationDocument",
-          "signature": "export interface ResolvedItemMutationDocument { schema_version: 1; mutations: BulkItemMutation[]; references: Record<string, string>; rows: ResolvedItemMutationRow[]; }"
+          "signature": "export interface ResolvedItemMutationDocument { schema_version: 1; mutations: BulkItemLifecycleMutation[]; references: Record<string, string>; rows: ResolvedItemMutationRow[]; }"
         },
         {
           "classification": "advanced_export",
           "kind": "interface",
           "name": "ResolvedItemMutationRow",
-          "signature": "export interface ResolvedItemMutationRow { index: number; ref?: string; id: string; op: BulkItemMutation[\"op\"]; upserted?: true; warnings?: readonly string[]; }"
+          "signature": "export interface ResolvedItemMutationRow { index: number; ref?: string; id: string; op: BulkItemLifecycleMutation[\"op\"]; upserted?: true; warnings?: readonly string[]; }"
         },
         {
           "classification": "advanced_export",
@@ -20594,6 +20625,12 @@
           "kind": "function",
           "name": "runHistoryRepairAll",
           "signature": "(options: HistoryRepairCommandOptions, global: GlobalOptions) => Promise<HistoryRepairAllResult> | calls: (options: HistoryRepairCommandOptions, global: GlobalOptions) => Promise<HistoryRepairAllResult>"
+        },
+        {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runInActiveExtensionScope",
+          "signature": "<T>(pmRoot: string, run: () => Promise<T>) => Promise<T> | calls: <T>(pmRoot: string, run: () => Promise<T>) => Promise<T>"
         },
         {
           "classification": "advanced_export",
@@ -23647,7 +23684,7 @@
           "classification": "advanced_export",
           "kind": "function",
           "name": "validateItemMutationRows",
-          "signature": "(value: unknown) => BulkItemMutation[] | calls: (value: unknown) => BulkItemMutation[]"
+          "signature": "(value: unknown) => BulkItemLifecycleMutation[] | calls: (value: unknown) => BulkItemLifecycleMutation[]"
         },
         {
           "classification": "advanced_export",
@@ -28141,7 +28178,7 @@
           "classification": "contract_data",
           "kind": "type",
           "name": "PmUpdateManyActionOptions",
-          "signature": "export type PmUpdateManyActionOptions = Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\"> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
+          "signature": "export type PmUpdateManyActionOptions = WithNullClears<Omit<PmUpdateActionFields, \"allowMissingParent\" | \"completedAt\">, UpdateNullClearableOptionKey> & PmBulkMutationFilterOptions & PmBulkMutationControlOptions;"
         },
         {
           "classification": "contract_data",
@@ -39058,6 +39095,12 @@
           "signature": "export interface RunHealthOptions { strictExit?: boolean; failOnWarn?: boolean; strictDirectories?: boolean; requireMergeDrivers?: boolean; checkOnly?: boolean; checkTelemetry?: boolean; noRefresh?: boolean; refreshVectors?: boolean; verboseStaleItems?: boolean; verboseAuthorEvents?: boolean; skipVectors?: boolean; skipIntegrity?: boolean; skipDrift?: boolean; full?: boolean; brief?: boolean; summary?: boolean; }"
         },
         {
+          "classification": "advanced_export",
+          "kind": "function",
+          "name": "runInActiveExtensionScope",
+          "signature": "<T>(pmRoot: string, run: () => Promise<T>) => Promise<T> | calls: <T>(pmRoot: string, run: () => Promise<T>) => Promise<T>"
+        },
+        {
           "classification": "supported",
           "kind": "function",
           "name": "runList",
@@ -41072,6 +41115,7 @@
     "field_duplicate",
     "field_invalid",
     "field_mcp_input_collision",
+    "finalization_invalid_document",
     "github_source_entry_unbuilt",
     "hierarchy_cardinality_created",
     "hierarchy_cycle_created",
@@ -41456,10 +41500,10 @@
       "referenced_types": 0
     },
     "./sdk": {
-      "checked_functions": 1352,
+      "checked_functions": 1353,
       "checked_values": 401,
       "exempt_test_seams": 15,
-      "referenced_types": 1060
+      "referenced_types": 1061
     },
     "./sdk/authoring": {
       "checked_functions": 54,
@@ -41504,7 +41548,7 @@
       "referenced_types": 113
     },
     "./sdk/runtime": {
-      "checked_functions": 235,
+      "checked_functions": 236,
       "checked_values": 34,
       "exempt_test_seams": 0,
       "referenced_types": 224

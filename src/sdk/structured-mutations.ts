@@ -24,7 +24,7 @@ import {
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
 } from "./cli-contracts/commander-mutation-options.js";
 import type { PmClientFullMutationOptions } from "./runtime.js";
-import type { BulkItemMutation, BulkItemUniqueKey } from "./item-transaction.js";
+import type { BulkItemLifecycleMutation, BulkItemUniqueKey } from "./item-transaction.js";
 import { runtimeFieldOptionTarget, type RuntimeFieldDefinitionResolved, type RuntimeFieldRegistry } from "../core/schema/runtime-schema.js";
 import { CORE_ITEM_FIELD_KEYS as ITEM_FIELD_KEYS, resolveCoreUpsertMetadataKey } from "./lifecycle/core-item-fields.js";
 import { DEFERRABLE_ITEM_FIELDS } from "../core/item/deferred-fields.js";
@@ -97,7 +97,7 @@ const UPDATE_READ_ONLY_ITEM_KEYS = new Set([
 ]);
 
 const MUTATION_OPTION_KEYS: Readonly<
-  Record<BulkItemMutation["op"], readonly string[]>
+  Record<BulkItemLifecycleMutation["op"], readonly string[]>
 > = {
   create: CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS.map(
     (contract) => contract.target,
@@ -155,7 +155,7 @@ export interface ResolvedItemMutationRow {
   /** Concrete item id the mutation targets. */
   id: string;
   /** Operation applied for this row after upsert resolution. */
-  op: BulkItemMutation["op"];
+  op: BulkItemLifecycleMutation["op"];
   /** Whether keyed upsert turned a create row into an update of an existing item. */
   upserted?: true;
   /** Lifecycle warnings for this row when returned by a staged document preview. */
@@ -167,7 +167,7 @@ export interface ResolvedItemMutationDocument {
   /** Versioned structured-input contract. */
   schema_version: 1;
   /** Atomic mutations with every local reference replaced by a concrete id. */
-  mutations: BulkItemMutation[];
+  mutations: BulkItemLifecycleMutation[];
   /** Batch-local alias to concrete-id receipt. */
   references: Record<string, string>;
   /** Input-ordered receipt mapping each source record to its resolved id and operation. */
@@ -318,7 +318,7 @@ function validateMutationObject(
  */
 function validateMutationOptions(
   options: unknown,
-  op: BulkItemMutation["op"],
+  op: BulkItemLifecycleMutation["op"],
   index: number,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): Record<string, unknown> | undefined {
@@ -355,7 +355,7 @@ export interface ParseItemMutationBatchOptions {
 /** Validate an optional key guard (`unique` on create rows, `match` on update rows): it needs a non-empty key and a present value. */
 function validateMutationKeyGuard(
   value: unknown,
-  op: BulkItemMutation["op"],
+  op: BulkItemLifecycleMutation["op"],
   index: number,
   field: "unique" | "match",
 ): BulkItemUniqueKey | undefined {
@@ -381,7 +381,7 @@ function validateMutationRow(
   value: unknown,
   index: number,
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
-): BulkItemMutation {
+): BulkItemLifecycleMutation {
   const mutation = validateMutationObject(value, index);
   const { op, id, reason } = mutation;
   if (
@@ -449,7 +449,7 @@ function validateMutationRow(
 export function parseItemMutationBatch(
   input: string,
   parseOptions: ParseItemMutationBatchOptions = {},
-): BulkItemMutation[] {
+): BulkItemLifecycleMutation[] {
   const parsed = parseJsonValue(input, "Mutation batch");
   const rows = Array.isArray(parsed)
     ? parsed
@@ -840,7 +840,7 @@ function itemDocumentToBatchOptions(
 
 /** Option keys the declared schema adds to one operation's batch options. */
 function runtimeFieldOptionKeys(
-  op: BulkItemMutation["op"],
+  op: BulkItemLifecycleMutation["op"],
   runtimeFields: readonly RuntimeFieldDefinitionResolved[],
 ): string[] {
   if (op !== "create" && op !== "update") return [];
@@ -1468,6 +1468,6 @@ export function itemDocumentToMutationOptions(
 }
 
 /** Validate an already-decoded MCP mutation array through the same strict parser as CLI stdin. */
-export function validateItemMutationRows(value: unknown): BulkItemMutation[] {
+export function validateItemMutationRows(value: unknown): BulkItemLifecycleMutation[] {
   return parseItemMutationBatch(JSON.stringify(value));
 }

@@ -2743,6 +2743,16 @@ export async function runWithActiveExtensions<T>(
 }
 
 /**
+ * Run direct item-store work with the workspace's extensions active, as a
+ * dispatched action would: reuse the caller's scope when one is open, otherwise
+ * activate for this call. Guards, hooks and extension fields then judge a
+ * store write that bypasses {@link runAction} the same way on every call path.
+ */
+export function runInActiveExtensionScope<T>(pmRoot: string, run: () => Promise<T>): Promise<T> {
+  return activeExtensionScope.getStore() === true ? run() : runWithActiveExtensions({ path: pmRoot }, run);
+}
+
+/**
  * Describe an activation failure for stderr as a primitive string. Console
  * capture serializes an error's own properties, which could carry
  * producer-owned diagnostics, so only a string is ever logged; the stack keeps

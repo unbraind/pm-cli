@@ -1037,9 +1037,70 @@ function normalizeMcpMutationOptions(
     : normalizeUpdateOptions(normalizedInput);
 }
 
-/** Build update-many command options from one flat MCP parameter payload. */
+/** Canonical update option for each accepted spelling, so a null keeps its field through alias normalization. */
+const UPDATE_OPTION_TARGET_BY_KEY: ReadonlyMap<string, string> = new Map(
+  UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS.flatMap(({ target, keys }) => keys.map((key): [string, string] => [key, target])),
+);
+
+/** Flat update-many keys that select rows; a null there is neither a filter value nor a field clear. */
+function isUpdateManySelectionKey(key: string): boolean {
+  return key.startsWith("filter") || key === "ids" || key === "limit" || key === "offset";
+}
+
+/** Refuse a typed null that is neither a field clear nor a selection value, naming the key. */
+function refuseUpdateManyNull(key: string, required: string): never {
+  throw new PmCliError(`update-many "${key}" cannot be null. No changes were made.`, EXIT_CODE.USAGE, {
+    code: "invalid_argument_value", reason: "invalid_mutation_option_value", changed: false, field: key, required,
+  });
+}
+
+/** Per-item update fields of a flat payload before normalization, so typed nulls stay visible. */
+function flatUpdateManyFields(options: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(options).filter(([key]) => !UPDATE_MANY_FLAT_CONTROL_KEYS.has(key)));
+}
+
+/**
+ * Keep typed nulls that string normalization would drop (pm-w7clh6). A typed
+ * caller's `null` on an update field reaches the update judge under its
+ * canonical option, which clears a clearable field and refuses any other by
+ * name, exactly as a single update does. A `null` on a selection or control
+ * key (flat or inside `list`), on an outer key beside a nested `update`, and
+ * on a key that is no declared update option are refused here by name. Only a typed SDK dispatch opts in: an MCP client's
+ * `null` commonly stands for an omitted argument, so it stays absent there.
+ */
+function carryUpdateManyNulls(
+  typedNulls: boolean,
+  options: Record<string, unknown>,
+  normalizedUpdate: Record<string, unknown>,
+): void {
+  if (!typedNulls) return;
+  const list = isRuntimeRecord(options.list) ? options.list : {};
+  const nested = isRuntimeRecord(options.update) ? options.update : undefined;
+  // A null on a selection or control key (ids, list, dryRun, ...) would be read as absent and widen or change the run;
+  // beside a nested update record no other outer key is an update field, so a null there has no meaning either.
+  const strayKey = Object.keys(options).find((key) => options[key] === null && (nested !== undefined || UPDATE_MANY_FLAT_CONTROL_KEYS.has(key) || isUpdateManySelectionKey(key)))
+    ?? Object.keys(list).filter((key) => list[key] === null).map((key) => `list.${key}`)[0];
+  if (strayKey !== undefined) {
+    refuseUpdateManyNull(strayKey, `"${strayKey}" selects rows or controls the run: omit it or pass a value. To clear an item field, pass null on the field itself${nested === undefined ? "" : " inside update"}.`);
+  }
+  const updateSource = nested ?? flatUpdateManyFields(options);
+  for (const [key, value] of Object.entries(updateSource)) {
+    if (value !== null) continue;
+    const target = UPDATE_OPTION_TARGET_BY_KEY.get(key);
+    // Only a declared update option has a clear-or-refuse rule; a schema or extension field would coerce null into a stored value.
+    if (target === undefined) refuseUpdateManyNull(key, `Pass unset: ["${key}"] to clear a field, or omit "${key}".`);
+    normalizedUpdate[target] = null;
+  }
+}
+
+/**
+ * Build update-many command options from one flat or nested action payload.
+ * `typedNulls` is set for a typed SDK dispatch, where a `null` is a decision
+ * (clear or refusal) instead of an omitted argument.
+ */
 export function updateManyOptionsFromFlat(
   options: Record<string, unknown>,
+  typedNulls = false,
 ): UpdateManyCommandOptions {
   if (isRuntimeRecord(options.list) || isRuntimeRecord(options.update)) {
     const updateSource = isRuntimeRecord(options.update)
@@ -1049,6 +1110,7 @@ export function updateManyOptionsFromFlat(
       options,
       normalizeMcpUpdateOptions(updateSource),
     );
+    carryUpdateManyNulls(typedNulls, options, normalizedUpdate);
     return {
       status: readRuntimeScalarString(options, "filterStatus"),
       list: isRuntimeRecord(options.list)
@@ -1069,13 +1131,15 @@ export function updateManyOptionsFromFlat(
           : undefined,
     };
   }
+  const flatUpdate = preserveTransportLiteralOptions(
+    options,
+    updateManyUpdateOptionsFromFlat(options),
+  );
+  carryUpdateManyNulls(typedNulls, options, flatUpdate);
   return {
     status: readRuntimeScalarString(options, "filterStatus"),
     list: mutationListOptions(options),
-    update: preserveTransportLiteralOptions(
-      options,
-      updateManyUpdateOptionsFromFlat(options),
-    ) as never,
+    update: flatUpdate as never,
     dryRun:
       options.dryRun === true || options.dry_run === true ? true : undefined,
     rollback: resolveCheckpointRollbackId(options.rollback),

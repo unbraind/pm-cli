@@ -1,0 +1,22 @@
+id: pm-eqlsg9
+title: "Item transaction compensation has two fail-open or fail-stuck edges: an item write that landed without its history event, and a format upgrade that restore retains"
+description: "Reported by the second Codex review of PR 1764; both predate the finalize row and affect update rows the same way. (1) The item store replaces the item file and then appends the history event. A process that stops between the two leaves a changed item whose history is unchanged. On resume a step with a match guard judges the already-changed value, refuses, and compensation finds history equal to its captured prefix, so it returns without restoring; the coordinator then treats the step as compensated while the unjournaled change stays on disk. (2) A step that raises pm_format_version (for example by writing deferred_fields on an older item) is restored with the newer format stamp retained, so the restored document hash differs from the sibling step's recorded after_hash and hasOwnedCompensationEffects refuses the sibling with transaction_partial_mutation although no other writer touched the item. The second edge fails closed; the first leaves an unowned change."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:sdk",compensation,durability,transactions
+created_at: "2026-11-21T20:55:26.247Z"
+updated_at: "2026-11-21T20:55:26.247Z"
+author: "harness:claude-code"
+estimated_minutes: 300
+acceptance_criteria: "Compensation and resume detect an item whose document hash differs from the after_hash of its newest history entry and refuse with a typed error that names the item and the divergence, instead of reporting the step compensated; A fault-injection spec stops the store between the item write and the history append for an update row and a finalize row with a match guard; A batch whose later step raised the item format compensates every step when no other writer intervened, or refuses the format-raising step before it writes, proven by a spec on a format-1 item; The ownership hash fence is not weakened"
+parent: pm-o2kc
+risk: medium
+confidence: medium
+expected_result: "A crash between the item write and its history event is detected on recovery, and a format upgrade inside a batch does not block the batch's own rollback"
+actual_result: "The unjournaled change survives a reported compensation, and a format upgrade makes the sibling step refuse with transaction_partial_mutation"
+dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
+  pm-gh1656,discovered_from,"2026-11-21T20:55:26.247Z","harness:claude-code","cli:create:dep",detected
+comments[1]{created_at,author,text}:
+  "2026-11-21T20:55:26.247Z","harness:claude-code","Duplicate check: pm search for 'item write landed without history event compensation' and 'format upgrade restore sibling compensation' found no open item covering either edge."
+body: ""

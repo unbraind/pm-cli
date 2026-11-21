@@ -288,6 +288,7 @@ export type {
   RuntimeFieldValueSchema,
 } from "./schema.js";
 export {
+  runInActiveExtensionScope,
   runWithActiveExtensions,
   type ActiveExtensionScopeOptions,
 } from "./runtime.js";
