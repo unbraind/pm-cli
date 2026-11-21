@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[5]: "area:release",distribution,ecosystem,packaging,performance
 created_at: "2026-07-25T07:10:06.541Z"
-updated_at: "2026-11-21T09:15:06.299Z"
+updated_at: "2026-11-21T09:52:59.666Z"
 author: unknown
 estimated_minutes: 300
 acceptance_criteria: "The published tarball no longer ships .js.map files (or ships only what symbolication provably needs), with Sentry release symbolication verified against a real captured event after the change; a documented decision records whether both the tsc emit and the esbuild bundle must ship, and any redundant output is dropped from package.json files or justified in writing; the unused typebox peer dependency is removed or a source reference is added; a size assertion in the release gates fails when unpacked size or file count regresses beyond a committed budget; npx and global install still work from a packed tarball (existing smoke:npx and package-first dogfood proofs stay green) and no runtime feature, type, or export is removed"
@@ -19,7 +19,7 @@ risk: low
 confidence: high
 expected_result: "Real source and Sentry-injected distributions fit unchanged ceilings while retaining all first-party metadata values, runtime bytes, SDK/CLI entrypoints and install behavior; verify Sentry release symbolication against a real captured post-change error event before closing the original acceptance criteria."
 actual_result: "Lossless first-party JSON staging is implemented and verified: all 6378 archive paths, 69 parsed JSON values, 4731 runtime digests and 1578 other file bytes remain identical; 34690 bytes are saved in the paired original/candidate proof. Final current-source base 19971036 and real offline Sentry-injected 20212760 satisfy unchanged ceilings with the identical 4731-file/23334884-byte runtime closure. npm/Bun installs, Node24/26/Bun SDK clients, isolated init, npx and bunx pass. Original acceptance still requires real captured-event Sentry symbolication after this change. The CLI empty-query receipt covered unresolved issues only; an explicit resolved query returns four historical groups, latest October 7 in release 2026.10.6, whose inspected event retains seven invalid-location symbolicator diagnostics. These historical events neither establish current-candidate failure nor prove the required post-change symbolication. This broader item remains open and unclaimed; offline debug-ID injection is packaging evidence. Final connected source passes 10090 tests with exact 100/100/100/100 coverage across 776 source files. Already-published main-source recovery now skips remote Sentry release metadata, commits, maps and finalization; its real Bash regression preserves tag-source upload and upload-failure propagation. Final packed-archive proof uses real offline Sentry injection, verifies both original budgets and preserves the entire checkout. Current-candidate captured-error symbolication and fresh trace visibility remain unverified."
-dependencies[11]:
+dependencies[12]:
   - id: pm-feecbs
     kind: related
     created_at: "2026-07-25T07:11:55.544Z"
@@ -68,6 +68,12 @@ dependencies[11]:
   - id: pm-gh1664
     kind: related
     created_at: "2026-11-20T14:17:46.039Z"
+    author: "harness:claude-code"
+    source_kind: "cli:update:dep"
+    author_source: detected
+  - id: pm-gh1715
+    kind: related
+    created_at: "2026-11-21T09:52:59.284Z"
     author: "harness:claude-code"
     source_kind: "cli:update:dep"
     author_source: detected
