@@ -9,6 +9,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
@@ -365,48 +366,76 @@ const MODULE_EXTENSIONS = [".js", ".cjs", ".mjs"];
 const QUOTED_RELATIVE_PATH = /(["'`])(\.{1,2}\/[^"'`\r\n]*)\1/gu;
 
 /**
- * Whether a checkout path is a module the package leaves out: it exists in
- * the checkout, inside it and outside node_modules, but is not packed.
+ * The two file layouts the closure check resolves against: the checkout and
+ * the packed package. Each answers which regular files exist and which
+ * `main` a directory's package.json declares. A manifest only counts in the
+ * package when it is packed too.
  */
-export function createExcludedModulePredicate(root, packedPaths) {
+export function createModuleLayouts(root, packedPaths) {
   const packed = new Set(packedPaths);
-  const isExcluded = (candidate) =>
-    MODULE_FILE.test(candidate) &&
-    !candidate.startsWith("../") &&
-    !candidate.split("/").includes("node_modules") &&
-    !packed.has(candidate) &&
-    existsSync(path.join(root, candidate));
-  /** The `main` a directory's package.json declares, which CommonJS loads before the index. */
-  isExcluded.directoryMain = (directory) => {
+  const isFile = (candidate) => {
     try {
-      const main = JSON.parse(readFileSync(path.join(root, directory, "package.json"), "utf8")).main;
-      return typeof main === "string" ? path.posix.join(directory, main) : undefined;
+      return statSync(path.join(root, candidate)).isFile();
+    } catch {
+      return false;
+    }
+  };
+  const readMain = (manifest) => {
+    try {
+      const main = JSON.parse(readFileSync(path.join(root, manifest), "utf8")).main;
+      return typeof main === "string" ? main : undefined;
     } catch {
       return undefined;
     }
   };
-  return isExcluded;
+  return {
+    checkout: { has: isFile, main: (manifest) => (isFile(manifest) ? readMain(manifest) : undefined) },
+    package: { has: (candidate) => packed.has(candidate), main: (manifest) => (packed.has(manifest) ? readMain(manifest) : undefined) },
+  };
+}
+
+const resolveModuleFile = (layout, target) =>
+  [target, ...MODULE_EXTENSIONS.map((extension) => `${target}${extension}`)].find((candidate) => layout.has(candidate));
+const resolveModuleIndex = (layout, target) =>
+  MODULE_EXTENSIONS.map((extension) => path.posix.join(target, `index${extension}`)).find((candidate) => layout.has(candidate));
+
+/** First file Node would load for `target` in `layout`: the file, then the directory's main, then its index. */
+function resolveModule(layout, target, directoryOnly) {
+  const file = directoryOnly ? undefined : resolveModuleFile(layout, target);
+  if (file !== undefined) return file;
+  const main = layout.main(path.posix.join(target, "package.json"));
+  const entry = main === undefined ? undefined : path.posix.join(target, main);
+  return (
+    (entry === undefined ? undefined : (resolveModuleFile(layout, entry) ?? resolveModuleIndex(layout, entry))) ??
+    resolveModuleIndex(layout, target)
+  );
 }
 
 /** Whether the quoted string at `index` is the argument of a loader call or an import clause. */
 function isLoaderArgument(text, index) {
-  return /(?:\brequire\s*\(|\bimport\s*\(|\bfrom|\bimport)\s*$/u.test(text.slice(Math.max(0, index - 16), index));
+  const before = text.slice(Math.max(0, index - 400), index).replace(/\/\*[\s\S]*?\*\//gu, " ");
+  return /(?:\brequire\s*\(|\bimport\s*\(|\bfrom|\bimport)(?:\s|\/\/[^\n]*\n)*$/u.test(before);
 }
 
+/** A target outside the package root or inside node_modules is not first-party. */
+const isFirstPartyTarget = (target) => target !== ".." && !target.startsWith("../") && !target.split("/").includes("node_modules");
+
 /**
- * Prove no staged module refers to a module the package excludes (pm-998juj).
- * Every quoted relative string in a staged JavaScript module is resolved the
- * way Node would load it: its literal and URL-stripped spelling, a CommonJS
- * extension, a directory's package.json main or its index. It refuses the
- * pack when the target exists in the checkout but is not packed: a static,
- * dynamic or require import or a worker path built from a string. The check
- * fails closed: a comment or string spelling such a path refuses too. Only a
+ * Prove no staged module refers to a module the package cannot load the same
+ * way (pm-998juj). Every quoted relative string in a staged JavaScript module
+ * is resolved as Node would load it, in its literal and URL-stripped
+ * spelling: the exact file, a CommonJS extension, a directory's package.json
+ * main, then its index; a trailing slash names only the directory. It
+ * refuses the pack when the checkout resolves the string to a module and the
+ * package does not resolve it to that same file: a static, dynamic or
+ * require import or a worker path built from a string, a module the files
+ * list excludes or a directory manifest left unpacked. The check fails
+ * closed: a comment or string spelling such a path refuses too. Only a
  * dot-only string such as "../" outside a loader call is taken as a path
  * check. It needs no parser, so release controls copied without node_modules
  * still run it.
  */
-export function findExcludedModuleReferences(packedPaths, isExcluded, readText) {
-  const directoryMain = isExcluded.directoryMain ?? (() => undefined);
+export function findExcludedModuleReferences(packedPaths, layouts, readText) {
   const references = [];
   for (const file of packedPaths) {
     if (!MODULE_FILE.test(file) || file.startsWith("node_modules/")) continue;
@@ -415,20 +444,16 @@ export function findExcludedModuleReferences(packedPaths, isExcluded, readText) 
       const specifier = match[2];
       const loader = isLoaderArgument(text, match.index);
       // require() reads "#" and "?" literally while an ESM URL drops them: judge both spellings.
-      const candidates = [...new Set([specifier, specifier.replace(/[?#].*$/u, "")])]
+      const dangling = [...new Set([specifier, specifier.replace(/[?#].*$/u, "")])]
         .filter((pathname) => loader || !/^(?:\.{1,2}\/)+$/u.test(pathname))
-        .flatMap((pathname) => {
-          const target = path.posix.join(path.posix.dirname(file), pathname).replace(/\/+$/u, "");
-          const directory = [
-            directoryMain(target),
-            ...MODULE_EXTENSIONS.map((extension) => `${target}/index${extension}`),
-          ].filter((candidate) => candidate !== undefined);
-          // A trailing slash names only the directory, never a same-named sibling module.
-          return pathname.endsWith("/")
-            ? directory
-            : [target, ...MODULE_EXTENSIONS.map((extension) => `${target}${extension}`), ...directory];
+        .some((pathname) => {
+          const target = path.posix.join(path.posix.dirname(file), pathname).replace(/(.)\/+$/u, "$1");
+          if (!isFirstPartyTarget(target)) return false;
+          const directoryOnly = pathname.endsWith("/");
+          const loaded = resolveModule(layouts.checkout, target, directoryOnly);
+          return loaded !== undefined && MODULE_FILE.test(loaded) && resolveModule(layouts.package, target, directoryOnly) !== loaded;
         });
-      if (candidates.some((candidate) => isExcluded(candidate))) references.push(`${file} -> ${specifier}`);
+      if (dangling) references.push(`${file} -> ${specifier}`);
     }
   }
   return [...new Set(references)];
@@ -548,7 +573,7 @@ function packLeasedDistribution(root, options) {
     const packedPaths = sourceReport.files.map((file) => file.path);
     const excludedReferences = findExcludedModuleReferences(
       packedPaths,
-      createExcludedModulePredicate(root, packedPaths),
+      createModuleLayouts(root, packedPaths),
       (file) => readFileSync(path.join(stage, file), "utf8"),
     );
     if (excludedReferences.length > 0)

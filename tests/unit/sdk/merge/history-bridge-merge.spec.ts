@@ -46,6 +46,22 @@ describe("union marking by occurrence", () => {
     expect([..._testOnly.collectUnionInexactIndexes(merged, [side], true)].sort()).toEqual([1, 2, 3, 4]);
   });
 
+  it("detects a repair that recurs after the equivalent-repair runs, live or as a neutral copy", () => {
+    const bridge = { version: 1, breaks: [{ gap_from: "1".repeat(64), gap_to: "2".repeat(64), record_hash: null }], segment_digest: "3".repeat(64) };
+    const repair = record({ op: "history_repair", record_hash: "f".repeat(64), bridge } as Partial<HistoryEntry>);
+    const later = record({ op: "comment_add", ts: "2026-11-21T00:00:01.000Z" });
+    const { bridge: _bridge, ...unbridged } = repair;
+    const neutral = { ...unbridged, patch: [], reanchor_evidence: [{ record: repair }] } as unknown as HistoryEntry;
+    expect(_testOnly.repairRecursAfterRuns([repair], [later])).toBe(false);
+    expect(_testOnly.repairRecursAfterRuns([repair], [later, repair])).toBe(true);
+    expect(_testOnly.repairRecursAfterRuns([repair], [later, neutral])).toBe(true);
+    expect(_testOnly.repairRecursAfterRuns([neutral], [later, repair])).toBe(true);
+    expect(_testOnly.repairRecursAfterRuns([], [later, repair])).toBe(false);
+    // A recurring repair keeps the recorded runs before any side is verified.
+    expect(_testOnly.normalizationApplies([repair], [later, neutral], [])).toBe(false);
+    expect(_testOnly.normalizationApplies([repair], [later], [])).toBe(true);
+  });
+
   it("keeps a legacy repair record without a patch array on the ordinary identity path", () => {
     const legacy = { ...record({ op: "history_repair" }), patch: undefined } as unknown as HistoryEntry;
     expect([..._testOnly.collectUnionInexactIndexes([legacy], [[legacy]], false)]).toEqual([]);

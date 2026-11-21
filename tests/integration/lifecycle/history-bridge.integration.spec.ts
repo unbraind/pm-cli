@@ -595,11 +595,30 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
     await withTempPmPath(async (context) => {
       await breakChain(context);
       await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
-      await expect(runHistoryCompact(ID, { before: "4" }, { path: context.pmPath })).rejects.toMatchObject({
-        context: { code: "history_compact_boundary_bridged" },
-      });
+      const nearest = { code: "history_compact_boundary_bridged", nextSteps: ["Run pm history-compact <id> --before 3 or --before 6."] };
+      await expect(runHistoryCompact(ID, { before: "4" }, { path: context.pmPath })).rejects.toMatchObject({ context: nearest });
       await expect(runHistoryCompact(ID, { before: "3" }, { path: context.pmPath })).resolves.toMatchObject({ changed: true });
       expect(verifyHistoryChainWithVersion(await readHistoryEntries(paths(context).history, ID)).ok).toBe(true);
+      // After a compaction the refusal still names durable versions.
+      await expect(runHistoryCompact(ID, { before: "5" }, { path: context.pmPath })).rejects.toMatchObject({
+        message: expect.stringContaining("cannot checkpoint version 4"),
+        context: nearest,
+      });
+    });
+  });
+
+  it("keeps a bridged segment whose unversioned legacy record inherits the declared epoch", async () => {
+    await withTempPmPath(async (context) => {
+      await breakChain(context);
+      const lines = (await readFile(paths(context).history, "utf8")).trimEnd().split("\n");
+      const { item_hash_version: _epoch, ...legacy } = stripSeal(JSON.parse(lines[3]!) as HistoryEntry, {});
+      lines[3] = JSON.stringify(legacy);
+      await writeFile(paths(context).history, `${lines.join("\n")}\n`);
+      await runHistoryRepair(ID, { appendOnly: true }, { path: context.pmPath });
+      const bridged = await readFile(paths(context).history, "utf8");
+      expect(verifyHistoryChainWithVersion(await readHistoryEntries(paths(context).history, ID)).ok).toBe(true);
+      expect(await runHistoryRepair(ID, {}, { path: context.pmPath })).toMatchObject({ changed: false });
+      expect(await readFile(paths(context).history, "utf8")).toBe(bridged);
     });
   });
 
@@ -764,6 +783,20 @@ describe("rewrites that dissolve a bridge keep its versions unreconstructable (G
       const reverseNext = await readFile(history, "utf8");
       const third = mergeHistoryStreams(base, oursNext, reverseNext);
       const thirdEntries = third.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry);
+      // Receipts keep the original coordinates: four shared records, the rest from each side.
+      expect(third).toMatchObject({ common_entries: 4, entries_total: thirdEntries.length });
+      expect(third.common_entries + third.entries_from_ours + third.entries_from_theirs).toBe(thirdEntries.length);
+      // Equivalent repairs where only theirs kept working are not a fast-forward of either input.
+      const oneSided = mergeHistoryStreams(base, ours, theirsNext);
+      expect(oneSided).toMatchObject({
+        strategy: "equivalent_bridges",
+        common_entries: 4,
+        entries_from_ours: 1,
+        entries_from_theirs: 2,
+        entries_total: 7,
+      });
+      expect(verifyHistoryChainWithVersion(oneSided.merged.trimEnd().split("\n").map((line) => JSON.parse(line) as HistoryEntry)).ok).toBe(true);
+      expect(oneSided.merged).toContain('"text":"theirs next"');
       expect(verifyHistoryChainWithVersion(thirdEntries).ok).toBe(true);
       expect(thirdEntries.filter((entry) => Object.hasOwn(entry, "bridge"))).toHaveLength(0);
       expect(third.merged).toContain('"text":"ours next"');

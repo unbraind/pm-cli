@@ -889,12 +889,16 @@ function indexBridgedSegments(
   const verification = verifyHistoryChainWithVersion(entries);
   // A projected or continuous-surface rewrite re-anchors every record, and a
   // segment recorded under another epoch than the one requested cannot be
-  // kept verbatim either; those rewrites dissolve the bridge.
+  // kept verbatim either; those rewrites dissolve the bridge. A segment is on
+  // the requested epoch when its closer verified under it and every covered
+  // record declares that epoch or inherits it by declaring none.
   const keepsVerbatim = options.projectPatch === undefined && options.continuousHashSurface !== true;
-  const verified = (verification.bridged_segments ?? []).filter((segment) =>
-    entries
-      .slice(segment.start, segment.end + 1)
-      .every((entry) => (entry.item_hash_version ?? 1) === itemHashVersion),
+  const verified = (verification.bridged_segments ?? []).filter(
+    (segment) =>
+      verifyHistoryChainWithVersion(entries.slice(0, segment.end + 1)).item_hash_version === itemHashVersion &&
+      entries
+        .slice(segment.start, segment.end + 1)
+        .every((entry) => entry.item_hash_version === undefined || entry.item_hash_version === itemHashVersion),
   );
   return {
     inputVerifies: verification.ok,

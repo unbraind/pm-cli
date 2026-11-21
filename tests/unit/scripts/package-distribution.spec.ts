@@ -18,7 +18,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { x as extractTar } from "tar";
 import { afterEach, expect, it, vi } from "vitest";
-import { compactMarkdownTables, createExcludedModulePredicate, exportedDeclarationClosure, findExcludedModuleReferences, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
+import { compactMarkdownTables, createModuleLayouts, exportedDeclarationClosure, findExcludedModuleReferences, packDistribution, pinRuntimePeers } from "../../../scripts/release/package-distribution.mjs";
 import { withBuildLease } from "../../../scripts/build-lease.mjs";
 import { verifyRuntimeInstallation } from "../../../scripts/release/verify-runtime-installation.mjs";
 import { createScriptHarness } from "../../helpers/scriptModule.js";
@@ -327,6 +327,19 @@ it("publishes only the dist declarations an exported types entry reaches, leavin
   expect(unmapped).toEqual(expect.arrayContaining(["dist/index.d.ts", "dist/value.d.ts", "dist/internal.d.ts", "types/ambient.d.ts"]));
 }, 60_000);
 
+/** Checkout and package layouts over in-memory file lists; `mains` maps a manifest path to its main. */
+function layoutsOf(checkout: string[], packed: string[], mains: Record<string, string> = {}) {
+  const view = (files: Set<string>) => ({
+    has: (candidate: string) => files.has(candidate),
+    main: (manifest: string) => (files.has(manifest) ? mains[manifest] : undefined),
+  });
+  return { checkout: view(new Set([...checkout, ...packed])), package: view(new Set(packed)) };
+}
+
+/** References one module's text makes, judged against the given layouts. */
+const referencesIn = (file: string, text: string, layouts: ReturnType<typeof layoutsOf>) =>
+  findExcludedModuleReferences([file], layouts, () => text);
+
 it("refuses any quoted relative reference from a packed module to an excluded module (pm-998juj)", () => {
   const files: Record<string, string> = {
     "dist/cli.js": [
@@ -345,9 +358,8 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
     "docs/README.md": 'import "./dist/sdk/hidden.js"',
   };
   const read = (file: string): string => files[file]!;
-  const excluded = new Set(["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.cjs", "dist/sdk/folder/index.js"]);
-  const isExcluded = (candidate: string) => excluded.has(candidate);
-  expect(findExcludedModuleReferences(Object.keys(files), isExcluded, read)).toEqual([
+  const excluded = ["dist/sdk/hidden.js", "dist/sdk/worker.js", "dist/sdk/excluded.cjs", "dist/sdk/unreferenced.js", "dist/sdk/legacy.cjs", "dist/sdk/folder/index.js"];
+  expect(findExcludedModuleReferences(Object.keys(files), layoutsOf(excluded, Object.keys(files)), read)).toEqual([
     "dist/cli.js -> ./sdk/hidden.js",
     "dist/cli.js -> ./sdk/worker.js",
     "dist/cli.js -> ./sdk/legacy",
@@ -356,44 +368,77 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
     "dist/sdk/kept.mjs -> ../sdk/excluded.cjs",
     "dist/sdk/kept.mjs -> ./../sdk/excluded.cjs",
   ]);
-  expect(findExcludedModuleReferences(Object.keys(files), () => false, read)).toEqual([]);
+  expect(findExcludedModuleReferences(Object.keys(files), layoutsOf([], [...Object.keys(files), ...excluded]), read)).toEqual([]);
   // require() reads "#" literally, so a file named with one is judged by its literal path too.
-  expect(findExcludedModuleReferences(["dist/index.cjs"], (candidate) => candidate === "dist/helper#legacy.cjs", () => "require('./helper#legacy.cjs')")).toEqual([
+  expect(referencesIn("dist/index.cjs", "require('./helper#legacy.cjs')", layoutsOf(["dist/helper#legacy.cjs"], []))).toEqual([
     "dist/index.cjs -> ./helper#legacy.cjs",
   ]);
-  // Dot-only strings such as "../" are path checks; a named directory still resolves to its index.
-  expect(findExcludedModuleReferences(["dist/a.js"], () => true, () => 'x.startsWith("../") || x === "./../"')).toEqual([]);
-  expect(findExcludedModuleReferences(["dist/a.cjs"], (candidate) => candidate === "dist/sdk/index.js", () => "require('./sdk/')")).toEqual([
-    "dist/a.cjs -> ./sdk/",
-  ]);
-  // Inside a loader call even a dot-only specifier names a module.
-  expect(findExcludedModuleReferences(["dist/sdk/a.cjs"], (candidate) => candidate === "dist/sdk/index.js", () => 'const x = require("./"); const y = p.startsWith("./");')).toEqual([
-    "dist/sdk/a.cjs -> ./",
-  ]);
+  // Dot-only strings such as "../" are path checks outside a loader call; inside one they name a directory.
+  const indexes = layoutsOf(["index.js", "dist/index.js", "dist/sdk/index.js"], []);
+  expect(referencesIn("dist/sdk/a.js", 'x.startsWith("../") || x === "./../" || p.startsWith("./")', indexes)).toEqual([]);
+  expect(referencesIn("dist/sdk/a.cjs", 'const x = require("./");', indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  expect(referencesIn("dist/sdk/a.cjs", "require( /* local directory */ './')", indexes)).toEqual(["dist/sdk/a.cjs -> ./"]);
+  expect(referencesIn("dist/sdk/a.cjs", "require( // local directory\n  '../')", indexes)).toEqual(["dist/sdk/a.cjs -> ../"]);
+  expect(referencesIn("dist/a.cjs", "require('./sdk/')", indexes)).toEqual(["dist/a.cjs -> ./sdk/"]);
+  // A root module's directory reference resolves to the packed root index.
+  expect(referencesIn("cli.cjs", "require('./')", layoutsOf([], ["cli.cjs", "index.js"]))).toEqual([]);
   // A trailing slash never names the same-named sibling file.
-  expect(findExcludedModuleReferences(["dist/a.cjs"], (candidate) => candidate === "dist/graph.js", () => "require('./graph/')")).toEqual([]);
+  expect(referencesIn("dist/a.cjs", "require('./graph/')", layoutsOf(["dist/graph.js"], ["dist/graph/index.js"]))).toEqual([]);
+  // Node loads a packed sibling file before it consults a same-named directory.
+  const precedence = layoutsOf(["dist/helper/package.json", "dist/helper/private.js"], ["dist/helper.js"], {
+    "dist/helper/package.json": "private.js",
+  });
+  expect(referencesIn("dist/cli.cjs", "require('./helper')", precedence)).toEqual([]);
 });
 
-it("treats a checkout module as excluded only when it exists inside the checkout and is not packed (pm-998juj)", async () => {
+it("resolves a directory's package.json main as Node does and refuses one the package cannot follow (pm-998juj)", () => {
+  const main = { "dist/local/package.json": "./entry" };
+  // An extensionless main resolves through extensions and an index; its unpacked target refuses.
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/entry.js"], ["dist/local/package.json"], main))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/entry/index.js"], ["dist/local/package.json"], main))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf([], ["dist/local/package.json", "dist/local/entry.js"], main))).toEqual([]);
+  // A manifest left out of the package leaves installed Node without the main it names.
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/package.json"], ["dist/local/entry.js"], main))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  // A main that resolves nowhere falls back to the directory index.
+  const missing = { "dist/local/package.json": "gone.js" };
+  expect(referencesIn("dist/cli.cjs", "require('./local')", layoutsOf(["dist/local/index.js"], ["dist/local/package.json"], missing))).toEqual([
+    "dist/cli.cjs -> ./local",
+  ]);
+  // A reference the checkout resolves to no module, or only to a non-module file, is not judged.
+  expect(referencesIn("dist/cli.cjs", "require('./absent'); read('./notes.md')", layoutsOf(["dist/notes.md"], []))).toEqual([]);
+});
+
+it("reads checkout and package layouts from regular files and packed manifests only (pm-998juj)", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "pm-excluded-modules-"));
   try {
-    for (const file of ["dist/cli.js", "dist/sdk/index.js", "top.js", "lib/private.mjs", "dist/node_modules/dep/index.js", "README.md"]) {
+    for (const file of ["dist/cli.js", "dist/sdk/index.js", "dist/local/hidden.js", "README.md"]) {
       await mkdir(path.dirname(path.join(root, file)), { recursive: true });
       await writeFile(path.join(root, file), "");
     }
-    const isExcluded = createExcludedModulePredicate(root, ["dist/cli.js", "README.md"]);
-    expect(["dist/sdk/index.js", "top.js", "lib/private.mjs"].every(isExcluded)).toBe(true);
-    // A directory's package.json main is a load target too.
-    await mkdir(path.join(root, "dist/local"), { recursive: true });
     await writeFile(path.join(root, "dist/local/package.json"), JSON.stringify({ main: "hidden.js" }));
-    await writeFile(path.join(root, "dist/local/hidden.js"), "");
     await mkdir(path.join(root, "dist/nomain"), { recursive: true });
     await writeFile(path.join(root, "dist/nomain/package.json"), JSON.stringify({ name: "x" }));
-    expect(isExcluded.directoryMain("dist/local")).toBe("dist/local/hidden.js");
-    expect(isExcluded.directoryMain("dist/nomain")).toBeUndefined();
-    expect(isExcluded.directoryMain("dist/absent")).toBeUndefined();
-    expect(findExcludedModuleReferences(["dist/cli.js"], isExcluded, () => "require('./local')")).toEqual(["dist/cli.js -> ./local"]);
-    expect(["dist/cli.js", "README.md", "dist/missing.js", "../outside.js", "dist/node_modules/dep/index.js"].some(isExcluded)).toBe(false);
+    await writeFile(path.join(root, "dist/broken.json"), "{");
+    const layouts = createModuleLayouts(root, ["dist/cli.js", "README.md", "dist/nomain/package.json"]);
+    expect(["dist/sdk/index.js", "dist/cli.js", "dist/local/package.json"].every(layouts.checkout.has)).toBe(true);
+    expect(["dist/sdk", "dist/missing.js"].some(layouts.checkout.has)).toBe(false);
+    expect(layouts.package.has("dist/cli.js")).toBe(true);
+    expect(layouts.package.has("dist/sdk/index.js")).toBe(false);
+    expect(layouts.checkout.main("dist/local/package.json")).toBe("hidden.js");
+    expect(layouts.checkout.main("dist/nomain/package.json")).toBeUndefined();
+    expect(layouts.checkout.main("dist/absent/package.json")).toBeUndefined();
+    expect(layouts.checkout.main("dist/broken.json")).toBeUndefined();
+    expect(layouts.package.main("dist/local/package.json")).toBeUndefined();
+    expect(layouts.package.main("dist/nomain/package.json")).toBeUndefined();
+    expect(findExcludedModuleReferences(["dist/cli.js"], layouts, () => "require('./local'); import '../outside.js'; import './node_modules/dep/index.js'")).toEqual([
+      "dist/cli.js -> ./local",
+    ]);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

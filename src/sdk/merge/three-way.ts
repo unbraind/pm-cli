@@ -492,35 +492,80 @@ function neutralRepairCopies(ours: HistoryEntry[], theirs: HistoryEntry[], ancho
     });
 }
 
+/** Records an equivalent-repair normalization moved into the shared prefix, for receipt accounting. */
+interface RepairRunNormalization {
+  /** Common prefix length of the original streams. */
+  shared: number;
+  /** Neutral copies of theirs' repairs added to the shared run. */
+  neutralCopies: number;
+}
+
+/**
+ * Whether a repair of the runs recurs among the later records, live or as a
+ * neutral copy. Moving it into the shared run would then record it twice.
+ */
+function repairRecursAfterRuns(runs: HistoryEntry[], rests: HistoryEntry[]): boolean {
+  const runIdentities = new Set(runs.map(historyEntryIdentity));
+  return rests.some((entry) => runIdentities.has(historyEntryIdentity(entry)));
+}
+
+/** Whether normalized runs may replace the recorded ones: no repair recurs later and every side verifies. */
+function normalizationApplies(runs: HistoryEntry[], rests: HistoryEntry[], sides: HistoryEntry[][]): boolean {
+  return !repairRecursAfterRuns(runs, rests) && sides.every((side) => verifyHistoryChainWithVersion(side).ok);
+}
+
+/** Length of the run of records of one repair class starting at `from`. */
+function repairRunLength(side: HistoryEntry[], from: number, repairClass: string): number {
+  let length = 0;
+  while (repairClassIdentity(side[from + length]) === repairClass) length += 1;
+  return length;
+}
+
 /**
  * Two clones that resolved one out-of-band change with equivalent repairs and
  * then kept working diverge in a run of the same repair (live or neutral, in
  * either order) followed by ordinary records. Ordering those runs record by
  * record would demand contradictory orders, so the runs become one shared run
  * first: ours' run plus neutral copies of theirs' repairs it lacks. Only the
- * later records are then ordered (GH-1715).
+ * later records are then ordered (GH-1715). It applies only when no repair of
+ * the run recurs later and both rewritten sides still verify; otherwise the
+ * streams merge as recorded.
  */
 function normalizeEquivalentRepairRuns(
   ours: HistoryEntry[],
   theirs: HistoryEntry[],
-): { ours: HistoryEntry[]; theirs: HistoryEntry[] } {
+): { ours: HistoryEntry[]; theirs: HistoryEntry[]; normalization: RepairRunNormalization | null } {
+  const unchanged = { ours, theirs, normalization: null };
   const shared = commonHistoryPrefixLength(ours, theirs);
-  const runLength = (side: HistoryEntry[], repairClass: string) => {
-    let length = 0;
-    while (repairClassIdentity(side[shared + length]) === repairClass) length += 1;
-    return length;
-  };
   const repairClass = repairClassIdentity(ours[shared]);
-  if (repairClass === null || repairClassIdentity(theirs[shared]) !== repairClass) return { ours, theirs };
-  const oursRun = ours.slice(shared, shared + runLength(ours, repairClass));
-  const theirsRun = theirs.slice(shared, shared + runLength(theirs, repairClass));
+  if (repairClass === null || repairClassIdentity(theirs[shared]) !== repairClass) return unchanged;
+  const oursRun = ours.slice(shared, shared + repairRunLength(ours, shared, repairClass));
+  const theirsRun = theirs.slice(shared, shared + repairRunLength(theirs, shared, repairClass));
   const oursRest = ours.slice(shared + oursRun.length);
   const theirsRest = theirs.slice(shared + theirsRun.length);
-  if (oursRest.length === 0 && theirsRest.length === 0) return { ours, theirs };
-  if (![ours, theirs].every((side) => verifyHistoryChainWithVersion(side).ok)) return { ours, theirs };
-  const run = [...oursRun, ...neutralRepairCopies(oursRun, theirsRun, oursRun.at(-1)!.after_hash)];
-  const prefix = ours.slice(0, shared);
-  return { ours: [...prefix, ...run, ...oursRest], theirs: [...prefix, ...run, ...theirsRest] };
+  if (oursRest.length === 0 && theirsRest.length === 0) return unchanged;
+  const neutral = neutralRepairCopies(oursRun, theirsRun, oursRun.at(-1)!.after_hash);
+  const prefix = [...ours.slice(0, shared), ...oursRun, ...neutral];
+  const normalized = { ours: [...prefix, ...oursRest], theirs: [...prefix, ...theirsRest] };
+  const sides = [ours, theirs, normalized.ours, normalized.theirs];
+  if (!normalizationApplies([...oursRun, ...theirsRun], [...oursRest, ...theirsRest], sides)) return unchanged;
+  return { ...normalized, normalization: { shared, neutralCopies: neutral.length } };
+}
+
+/**
+ * Report a normalized merge in the original streams' coordinates: neither
+ * input was a prefix of the other, so a fast-forward of the rewritten sides
+ * is an equivalent-bridge merge, and theirs' neutral copies count as theirs.
+ */
+function accountNormalizedMerge(result: HistoryMergeResult, normalization: RepairRunNormalization): HistoryMergeResult {
+  const entriesFromTheirs = result.entries_from_theirs + normalization.neutralCopies;
+  return {
+    ...result,
+    strategy: result.strategy === "union_reanchor" ? "union_reanchor" : "equivalent_bridges",
+    common_entries: normalization.shared,
+    entries_from_ours: result.entries_total - normalization.shared - entriesFromTheirs,
+    entries_from_theirs: entriesFromTheirs,
+  };
 }
 
 /**
@@ -542,10 +587,26 @@ export function mergeHistoryStreams(
   theirsRaw: string,
 ): HistoryMergeResult {
   const base = parseHistoryJsonl(baseRaw, "base");
-  const { ours, theirs } = normalizeEquivalentRepairRuns(
+  const { ours, theirs, normalization } = normalizeEquivalentRepairRuns(
     parseHistoryJsonl(oursRaw, "ours"),
     parseHistoryJsonl(theirsRaw, "theirs"),
   );
+  const result = mergeParsedHistoryStreams(
+    base,
+    ours,
+    theirs,
+    normalization === null ? oursRaw : historyEntriesToRaw(ours),
+  );
+  return normalization === null ? result : accountNormalizedMerge(result, normalization);
+}
+
+/** Merge parsed history streams; `oursRaw` holds ours' exact bytes, kept when nothing else changes. */
+function mergeParsedHistoryStreams(
+  base: HistoryEntry[],
+  ours: HistoryEntry[],
+  theirs: HistoryEntry[],
+  oursRaw: string,
+): HistoryMergeResult {
   const creates = [base, ours, theirs].map((entries) =>
     entries.filter((entry) => entry.op === "create"),
   );
@@ -1691,4 +1752,4 @@ export function mergeJsonDocuments(
 }
 
 /** Internal helpers exported only for focused tests. */
-export const _testOnly = { collectUnionInexactIndexes };
+export const _testOnly = { collectUnionInexactIndexes, normalizationApplies, repairRecursAfterRuns };
