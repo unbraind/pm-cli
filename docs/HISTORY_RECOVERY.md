@@ -161,9 +161,13 @@ visible. A stream that another writer created or extended meanwhile refuses
 with `stream_changed`. A filesystem whose link call fails with `EPERM`,
 `ENOTSUP`, `EOPNOTSUPP` or `ENOSYS` refuses with `stream_publish_unsupported`;
 any other link failure (for example `EISDIR`, which Windows exFAT reports;
-[pm-ue6pqv](../.agents/pm/issues/pm-ue6pqv.toon)) surfaces as that error.
-Either way nothing is published: restore the stream from version control, or
-repair from a clone on a filesystem with hard links. A
+[pm-ue6pqv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ue6pqv.toon),
+tracker record excluded from npm) surfaces as that error. On a local
+filesystem nothing is published either way. A network filesystem can publish
+the link and lose the reply, so before restoring or retrying, check the
+destination with `pm history <id> --verify --full`; restore the stream from
+version control, or repair from a clone on a filesystem with hard links, only
+when nothing valid was published. A
 history path that is a symbolic link refuses with `stream_not_regular_file`,
 both in the preview and in the write, and `pm health` reports it as
 `history_drift_unrepairable_stream` instead of advising the rebuild. `context.history_reseed` and the result's

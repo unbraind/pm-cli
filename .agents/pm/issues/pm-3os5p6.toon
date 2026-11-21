@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: health,history,remediation,ux
 created_at: "2026-11-21T07:24:50.200Z"
-updated_at: "2026-11-21T15:24:57.442Z"
+updated_at: "2026-11-21T15:39:30.416Z"
 closed_at: "2026-11-21T15:00:04.137Z"
 completed_at: "2026-11-21T15:00:04.137Z"
 author: "harness:claude-code"
@@ -58,7 +58,7 @@ contract_change:
   api: pm health history_drift warnings and remediation_map; pm history-repair on a record-less stream
   before: "A missing stream was advised pm history-repair <id>, which refused with nothing to repair. Every chain break was history_drift_chain_mismatch with the append-only remedy, even when the bridge or both repairs refuse. The unreadable-stream remedy was the rewriting repair. A sealed record edited without a reseal crashed the rewriting repair with unknown_error"
   after: "history-repair rebuilds a live item record-less stream with one sealed baseline (result.reseed). Health previews the repairs and reports history_drift_chain_unbridgeable (pm history-repair <id>) or history_drift_unrepairable_stream (pm history <id> --verify --full), with details.repair_refusals. The unreadable-stream remedy is the salvage preview. Bulk remedies apply only where they repair every stream. The rewriting repair refuses a damaged seal with history_record_integrity_invalid and a newer seal format with history_record_version_unsupported"
-  migrate: "Callers that matched history_drift_chain_mismatch for every chain break also match history_drift_chain_unbridgeable and history_drift_unrepairable_stream, and read details.repair_refusals for the reason; counts.chain_mismatches still counts every chain break"
+  migrate: "Callers that matched history_drift_chain_mismatch for every chain break also match history_drift_chain_unbridgeable and history_drift_unrepairable_stream, and read details.repair_refusals for the reason; counts.chain_mismatches still counts every stream whose chain fails verification"
 escape_class: production_defect
 gate_evidence:
   disposition: gate_added
