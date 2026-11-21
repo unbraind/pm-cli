@@ -429,6 +429,9 @@ it("refuses any quoted relative reference from a packed module to an excluded mo
   const core = layoutsOf(["dist/sdk/core.js", "dist/sdk/index.js"], ["dist/sdk/history-repair.js", "dist/sdk/history-compact.js"]);
   expect(referencesIn("dist/cli.js", 'import(legacy ? "./sdk/co" + "re.js" : "./sdk/history-repair.js")', core)).toEqual(["dist/cli.js -> ./sdk/core.js"]);
   expect(referencesIn("dist/cli.js", 'import(legacy ? "./sdk/" + "history-compact.js" : "./sdk/history-repair.js")', core)).toEqual([]);
+  // An optional chain transforms the operand, so it ends the fold; "??" does not.
+  expect(referencesIn("dist/cli.js", 'import("./sdk/core.js" + ".js"?.slice(3))', core)).toEqual(["dist/cli.js -> ./sdk/core.js"]);
+  expect(referencesIn("dist/cli.js", 'import("./sdk/co" + "re.js" ?? fallback)', core)).toEqual(["dist/cli.js -> ./sdk/core.js"]);
   // Inside a loader call a query-bearing dot-only string is still judged.
   expect(referencesIn("dist/sdk/comments.js", 'require("./?mode=compat".split("?")[0])', core)).toEqual(["dist/sdk/comments.js -> ./?mode=compat"]);
   // A dot-only directory URL with a query outside a loader is a directory read, not a module reference.

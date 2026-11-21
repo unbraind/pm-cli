@@ -432,7 +432,8 @@ const ARGUMENT_END = new RegExp(String.raw`^${SKIPPED_TRIVIA}[),]`, "u");
 // Only a complete operand folds: a literal an expression goes on to transform
 // (".js".slice(3)) ends the fold, so the literal before it is judged as written.
 const CONCATENATED_LITERAL = new RegExp(
-  String.raw`^${SKIPPED_TRIVIA}\+${SKIPPED_TRIVIA}(["'])([^"'\x60\r\n]*)\1(?=${SKIPPED_TRIVIA}(?:[+),;:?\]}]|$))`,
+  // A "?" ends the operand as a ternary or "??", never as the optional chain "?." (which a digit after the dot rules out).
+  String.raw`^${SKIPPED_TRIVIA}\+${SKIPPED_TRIVIA}(["'])([^"'\x60\r\n]*)\1(?=${SKIPPED_TRIVIA}(?:[+),;:\]}]|\?(?!\.(?!\d))|$))`,
   "u",
 );
 
