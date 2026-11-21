@@ -158,9 +158,12 @@ through `O_APPEND`, on the exact bytes the repair verified. An absent stream is
 published complete: the record is staged and flushed beside it, then
 hard-linked into the absent path, so no partial or empty stream is ever
 visible. A stream that another writer created or extended meanwhile refuses
-with `stream_changed`. A filesystem that cannot hard-link refuses with
-`stream_publish_unsupported` and publishes nothing; restore the stream from
-version control, or repair from a clone on a filesystem with hard links. A
+with `stream_changed`. A filesystem whose link call fails with `EPERM`,
+`ENOTSUP`, `EOPNOTSUPP` or `ENOSYS` refuses with `stream_publish_unsupported`;
+any other link failure (for example `EISDIR`, which Windows exFAT reports;
+[pm-ue6pqv](../.agents/pm/issues/pm-ue6pqv.toon)) surfaces as that error.
+Either way nothing is published: restore the stream from version control, or
+repair from a clone on a filesystem with hard links. A
 history path that is a symbolic link refuses with `stream_not_regular_file`,
 both in the preview and in the write, and `pm health` reports it as
 `history_drift_unrepairable_stream` instead of advising the rebuild. `context.history_reseed` and the result's

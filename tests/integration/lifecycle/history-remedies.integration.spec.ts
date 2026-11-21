@@ -397,6 +397,25 @@ describe("review hardening of the advised remedies", () => {
     });
   });
 
+  it("salvages an unverified legacy stream whose metadata does not canonicalize", async () => {
+    await withTempPmPath(async (context) => {
+      const id = "pm-legacy-comments";
+      createTaskFixture(context, id, "Legacy comments");
+      const file = historyFile(context, id);
+      const [line] = (await readFile(file, "utf8")).trimEnd().split("\n");
+      const { record_hash: _hash, record_hash_version: _version, ...legacy } = JSON.parse(line!) as HistoryEntry;
+      const patch = [...legacy.patch, { op: "add", path: "/metadata/comments", value: {} }];
+      await writeFile(file, `${JSON.stringify({ ...legacy, patch, after_hash: "0".repeat(64) })}\nnull\n`);
+      await expect(runHistoryRepair(id, { salvageTail: true }, { path: context.pmPath })).resolves.toMatchObject({
+        changed: true,
+        salvage: { non_record_lines: 1 },
+        history: { verify_ok: false },
+      });
+      const [, audit] = (await readFile(file, "utf8")).trimEnd().split("\n").map((raw) => JSON.parse(raw) as HistoryEntry);
+      expect(audit).toMatchObject({ op: "history_salvage", patch: [], before_hash: "0".repeat(64), after_hash: "0".repeat(64) });
+    });
+  });
+
   it("names the restore, not an upgrade, for a malformed digest label", async () => {
     await withTempPmPath(async (context) => {
       const id = "pm-digest-null";

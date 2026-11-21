@@ -285,20 +285,22 @@ function salvageHashAlgorithm(last: HistoryEntry): ReturnType<typeof resolveHist
  */
 function salvagedStream(
   selected: ReturnType<typeof inspectHistoryTail>,
-  document: ItemDocument,
   author: string,
   message: string | undefined,
 ): string {
   const last = selected.entries.at(-1);
   if (last === undefined) return selected.prefix;
+  // The no-op record's patch is empty and its anchors are the last kept record's, so it is built
+  // from the canonical empty document: unverified legacy metadata is never canonicalized here.
   // createHistoryEntry stamps the current epoch; the record keeps the stream's own, or none.
+  const empty = EMPTY_CANONICAL_DOCUMENT as unknown as ItemDocument;
   const { item_hash_version: _stamped, ...entry } = createHistoryEntry({
     hashAlgorithm: salvageHashAlgorithm(last),
     nowIso: nowIso(),
     author,
     op: "history_salvage",
-    before: document,
-    after: document,
+    before: empty,
+    after: empty,
     message,
     context: { history_salvage: selected.receipt },
   });
@@ -463,7 +465,7 @@ export async function salvageHistoryTail(params: {
   const replayed = replayRetainedRecords(subject.id, selected);
   const document = replayToItemDocument(replayed.final);
   // Plan the salvaged stream now, so a preview refuses exactly where the write would; nothing to remove plans nothing.
-  const nextHistoryRaw = selected.receipt === null ? raw : salvagedStream(selected, document, author, options.message);
+  const nextHistoryRaw = selected.receipt === null ? raw : salvagedStream(selected, author, options.message);
   const ownership = await readSalvageOwnership(subject.located, settings, replayToItemDocument(replayed.lastItem));
   const warnings = checkHistoryRewriteOwnership({
     itemDocument: ownership.document,

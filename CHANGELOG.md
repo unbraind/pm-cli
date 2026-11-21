@@ -11,7 +11,7 @@
 
 ### Security
 
-- picomatch through 4.0.7 has a high ReDoS advisory with no patched release (GHSA-fc5q-39xc-vjpf), so the dependency advisory gate blocks Gates (static) on every branch and the next release ([pm-03q389](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-03q389.toon))
+- Retire the picomatch advisory waiver and its mirrored .trivyignore entry after GitHub withdrew GHSA-fc5q-39xc-vjpf on 2026-11-18 ([pm-03q389](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-03q389.toon))
 
 ### Other
 
