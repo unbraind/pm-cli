@@ -1,25 +1,61 @@
 id: pm-gh1656
-title: "GH-1656: a transaction-owned finalization step for commitItemMutations, so importers keep rollback under the GH-1591 ownership guard"
+title: "GH-1656: commitItemMutations accepts a transaction-owned finalize row, so an importer's exact lifecycle and extension fields are journaled and rolled back with the batch"
 description: "Since GH-1591 (pm-pllp78) commitItemMutations compensates only effects it can prove a step owns. pm-github's importer finalizes exact GitHub source-lifecycle fields (persistImportFidelity, a raw mutateItem op 'import') from the committing transition observer. That event is outside every step's ownership proof, so a failure after finalization reports transaction_partial_mutation and leaves a half-imported tracker. The bulk union accepts only create, update, close and release, and update cannot write native lifecycle fields (closed_at, completed_at) or arbitrary extension fields. Need a journaled step the transaction owns, with its own snapshot and compensation, without weakening the ownership guard. Related to transaction inspection (pm-gh1597)."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: extensions,"gh:1656",importers,sdk,transactions
 created_at: "2026-11-03T21:20:19.362Z"
-updated_at: "2026-11-03T22:32:57.471Z"
+updated_at: "2026-11-21T20:01:21.247Z"
+closed_at: "2026-11-21T19:51:58.375Z"
+completed_at: "2026-11-21T19:51:58.375Z"
 author: "harness:claude-code"
 estimated_minutes: 480
 acceptance_criteria: "commitItemMutations accepts a finalization step (field-level document patch or SDK-applied finalize step) that is journaled, attributed to the transaction and compensated by restore exactly like an update step; The GH-1656 reproduction (update step plus finalization, then a failure in the committing observer) restores the item to its pre-batch document with no transaction_partial_mutation; An unowned write by another writer between apply and compensation still refuses with transaction_partial_mutation (negative control); The step is exposed through the public SDK types, docs/SDK.md and the SDK surface snapshot; recovery of an interrupted journal re-applies or adopts the finalization deterministically"
 parent: pm-9rgaal
 risk: high
 confidence: medium
+resolution: "Added the finalize row to the bulk mutation union: exact front-matter set and unset under the item lock, validated through the item reader, attributed by the step marker, inspected by marker and compensated by restoring the captured version. The ownership guard is unchanged. Documented in docs/SDK.md; SDK surface, contracts and error catalog regenerated."
 expected_result: "An importer finalization inside commitItemMutations is journaled as a step the transaction owns, so a failure after it restores the pre-batch document"
-actual_result: "Finalization written from the committing observer is unowned, so a later failure reports transaction_partial_mutation and leaves a half-imported tracker"
+actual_result: "Spec finalize-step.spec.ts (36 cases): the GH reproduction restores the pre-batch document with history create, update, import, restore, restore; an unowned write in the same window still refuses with transaction_partial_mutation; interrupted journals re-apply or adopt; an installed guard judges the write on direct and scoped calls"
 dependencies[4]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1597,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
   pm-pllp78,discovered_from,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
   pm-xm7c,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
   pm-y9hq,related,"2026-11-03T21:20:19.362Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-11-03T21:20:19.362Z","harness:claude-code","Duplicate check: the create-time detector matched pm-pllp78 (GH-1591, the ownership guard fix, closed). This item is not a recurrence of that defect: the guard stays as shipped, and this asks for a new journaled step type the guard can attribute. pm search for 'finalization commitItemMutations' found only the closed bulk-helper lineage (pm-xm7c, pm-y9hq)."
+  "2026-11-21T18:42:32.583Z","harness:claude-code","Implementation plan: add a fifth bulk op, finalize, to the commitItemMutations union (option 2 of the GH issue, shaped as declarative data so the journal can retain it). The row carries set (exact front-matter values, including closed_at/completed_at and extension fields) and unset (field names), plus the optional match guard an update row has. The step reuses the update step's contract: prepareRestoreCompensation snapshot, apply marker in history message and item_transaction_step context, isUpdateMarkerApplied inspection, compensateByRestore. Writer-owned fields (id, updated_at, pm_format_version) are refused at admission. The patched document must load through the item reader (serialize then parse under the workspace schema) before it is written. A patch that changes nothing appends no event, so recovery re-applies it as the same no-op. Fixed history op 'finalize'; no custom op or message, to keep ownership attribution unambiguous. SDK-only: the structured document planner does not emit it."
+  "2026-11-21T19:07:46.024Z","harness:claude-code","Implementation evidence. New row { op: 'finalize', id, set?, unset?, match?, force? } in the BulkItemMutation union; the step lives in buildFinalizeStep (src/sdk/item-transaction.ts) and the fenced write in applyItemFinalization (src/sdk/transactions/item-finalization.ts). Decisions taken while building: (1) the event is recorded under the existing native history operation 'import' (the identity pm-github already writes for this finalization), so the declared operation vocabulary, event classification and stale-work readers need no contract change; (2) 'type' joins id, updated_at and pm_format_version as refused fields, because a probe showed set type to an unregistered name moved the document where the locator cannot find it; (3) null is refused and unset removes a field; (4) besides the reader round trip (serialize then parseItemDocument under the workspace schema), each set value must be stored in its own JSON shape, because a probe showed tags: 'a' normalizing to an empty tag list without any refusal; (5) the structured document planner keeps create/update/close/release only and now names the narrower BulkItemLifecycleMutation type, acknowledged in sdk/public-surface.json. Probe before/after on the GH reproduction: update + finalization + throw in the committing observer now ends with history create, update, import, restore, restore and the pre-batch document; the same observer writing through client.update still ends in transaction_partial_mutation (negative control kept as a spec)."
+files[8]{path,scope}:
+  docs/generated/REFUSAL_CLOSURE_CENSUS.md,project
+  sdk/public-surface.json,project
+  src/sdk/generated/generated-error-code-catalog-part-1.ts,project
+  src/sdk/item-transaction.ts,project
+  src/sdk/structured-mutations.ts,project
+  src/sdk/transactions/item-finalization.ts,project
+  tests/fixtures/contracts/full.json,project
+  tests/unit/sdk/transactions/finalize-step.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/finalize-step.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/transactions/guarded-terminal.spec.ts,project,"harness:claude-code","2026-11-21T19:07:44.442Z",local_mutation,feat/transaction-owned-finalization
+test_runs[1]:
+  - run_id: test-local-mwqtqdoc-o6r5uw
+    kind: test
+    status: passed
+    started_at: "2026-11-21T19:51:30.125Z"
+    finished_at: "2026-11-21T19:51:45.084Z"
+    recorded_at: "2026-11-21T19:51:45.084Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/transactions/finalize-step.spec.ts tests/unit/sdk/item-transaction.spec.ts tests/unit/sdk/transactions/guarded-terminal.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: commitItemMutations journals and compensates a finalize row
+contract_change:
+  api: commitItemMutations / previewItemMutations mutation rows (BulkItemMutation)
+  before: "A batch accepted create, update, close and release rows only. An importer finalizing exact lifecycle or extension fields wrote beside the transaction, so a later failure refused compensation with transaction_partial_mutation"
+  after: "A finalize row { op, id, set, unset, match, force } writes exact front-matter fields as a journaled, compensated step recorded under the import history operation. BulkItemMutation gains BulkItemFinalizeMutation; the structured document planner types name BulkItemLifecycleMutation. New refusal finalization_invalid_document. New export runInActiveExtensionScope"
+  migrate: Move a finalization written from an onTransition observer into a finalize row of the same batch. Code that switches exhaustively over BulkItemMutation op adds a finalize case; code that only reads planner output needs no change
 body: ""

@@ -1362,10 +1362,14 @@ the placeholder "none". Pass unset: ["parent"] to clear it, or omit parent.`;
 CLI refusals keep their flag wording. `PmCreateActionOptions`,
 `PmUpdateActionOptions`, `CreateOperationOptions` and `UpdateOperationOptions`
 type the clearable fields as nullable, so `runCreate`/`runUpdate` accept the
-same input as `PmClient.create`/`update`. A direct SDK `runUpdateMany` folds a
-null in its update record like `runUpdate`, but `runAction("update-many")` drops
-it (pm-w7clh6), so `PmUpdateManyActionOptions` stays non-nullable: use `unset`
-there and in MCP tools.
+same input as `PmClient.create`/`update`. `update-many` follows the same rule
+in every typed spelling (pm-w7clh6): a direct SDK `runUpdateMany`, and
+`runAction("update-many")` with flat fields or a nested `update` record, clear a
+clearable field given `null` on every matched row and refuse any other `null`
+by name before a row changes, so `PmUpdateManyActionOptions` types the
+clearable fields as nullable. A flat `null` on a selection key (`ids`, `limit`,
+`offset`, any `filter*` key) is refused by name: it neither filters nor clears.
+MCP tools keep `null` as an omitted argument; use `unset` there.
 CLI adapters retain `--description -`, append stdin, file flags, and legacy
 clear-token compatibility. Values inside CLI `--stdin-json` documents are
 literal data, including `"none"` and `"null"`. Explicit CLI flags override
@@ -1761,6 +1765,12 @@ registries across concurrent requests, and is reentrant: SDK primitives called
 inside the callback reuse the active scope instead of attempting a nested
 activation cycle.
 
+`runInActiveExtensionScope(pmRoot, run)` is the reentrant form for code that
+writes through the item store without dispatching an action: it reuses the
+caller's open scope, and otherwise activates the workspace's extensions for
+that one call. The SDK's own `finalize` step uses it, so guards and extension
+fields judge the write the same way whether or not the caller opened a scope.
+
 ```ts
 import {
   commitItemMutations,
@@ -1795,6 +1805,76 @@ const result = await commitItemMutations({
 `commitWorkspaceTransaction` remains the escape hatch for arbitrary domains
 (relationship events, foreign stores, mixed-step plans); `commitItemMutations`
 covers the item-mutation 90% case with correct-by-construction wiring.
+
+##### Finalization steps
+
+An importer often has to write fields that `update` reserves for the lifecycle
+commands: exact source clocks (`created_at`, `closed_at`, `completed_at`), a
+terminal `status` with its `close_reason`, or extension fields. Writing them
+beside the transaction (for example from an `onTransition` observer) leaves an
+event the transaction does not own, so a later failure refuses compensation
+with `transaction_partial_mutation` and the tracker stays half-imported. A
+`finalize` row makes that write a journaled step (GH-1656):
+
+```ts
+await commitItemMutations({
+  pmRoot,
+  transactionId: "github-import-1042",
+  author: "pm-github",
+  mutations: [
+    { op: "update", id: itemId, options: { title: "Fix login flow" } },
+    {
+      op: "finalize",
+      id: itemId,
+      set: {
+        status: "closed",
+        close_reason: "Closed on GitHub as completed",
+        created_at: "2025-03-01T09:00:00.000Z",
+        closed_at: "2025-03-04T16:20:00.000Z",
+        github_number: 1042,
+      },
+      unset: ["assignee"],
+      match: { key: "github_url", value: issueUrl },
+    },
+  ],
+});
+```
+
+- `set` writes each front-matter field as given and `unset` removes fields. A
+  row needs at least one of them. Values are retained in the journal, so they
+  must be JSON and must not be secrets.
+- `id`, `updated_at`, `pm_format_version` and `type` are refused: the writer
+  derives the first three, and `type` selects the storage location, so it
+  changes through an `update` row. `null` is refused; remove a field with
+  `unset`.
+- The patched document is read back through the item reader under the
+  workspace schema before it is stored, and every `set` value must be stored
+  in its own JSON shape. A value the reader refuses, or one that normalization
+  would drop or replace (`tags: "a"`, a blank `assignee`), refuses the step
+  with `finalization_invalid_document` and writes nothing. Other
+  canonicalization (tag order, status aliases, trimmed strings) applies as it
+  does for every write.
+- A finalization is a raw front-matter write. Workflow policies and
+  `beforeMutation` guards judge it, with the workspace's extensions active on
+  every call path, but the checks the lifecycle commands add (dependency target
+  resolution, close validation, deferral rules) do not run. Use `update`,
+  `close` and `release` rows for everything those commands can express.
+- `match` is re-checked under the item lock and refuses with
+  `upsert_match_changed` when the item no longer carries that field value.
+  `force: true` overrides the assignee-ownership check, as it does for an
+  update.
+- The step is compensated like an update: the journal captures the version
+  before the write and a failure restores it. The ownership guard is unchanged,
+  so a write by anyone else between the finalization and its compensation
+  still refuses with `transaction_partial_mutation`.
+- The event is recorded under the native `import` history operation, with the
+  step marker as its message and in `context.item_transaction_step`. Mutation
+  guards and workflow policies judge it as an `import` operation.
+- A finalization that changes nothing appends no event. Recovery finds no
+  marker, applies the row again, and gets the same no-op.
+
+`finalize` is an SDK row. Structured mutation documents (`pm item mutate`, MCP
+`pm_mutate`) accept `create`, `update`, `close` and `release` only.
 Update mutation options use the same lossless acceptance-criteria contract as
 the CLI: criteria are stored in one string with semicolons as boundaries, so
 each `addAc`/`removeAc` entry must be semicolon-free. Every removal must match or

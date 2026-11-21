@@ -1,12 +1,14 @@
 id: pm-w7clh6
-title: update-many silently drops a null update field in both the flat and nested runAction transports instead of clearing it or refusing
+title: Typed update-many dispatch clears a null on a clearable field in every runAction spelling and refuses any other null by name
 description: "Found by Codex review of the GH-1655 change (pm-gh1655) and corrected by CodeRabbit on PR 1658. In runAction('update-many', ...) both spellings normalize a null update field to undefined before resolveUpdateTransportOptions sees it: { ids: [id], assignee: null, description: 'changed' } and { ids: [id], update: { assignee: null, description: 'changed' } } both change the description and silently keep the assignee (reproduced on the PR 1658 build in a sandbox). Only a direct runUpdateMany call whose update record still carries the null reaches the pm-gh1655 fold. pm-gh1655 therefore kept update-many out of the null-clear contract (PmUpdateManyActionOptions stays non-nullable)."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[4]: bulk,pm-gh1655,sdk,update-many
 created_at: "2026-11-03T23:06:21.402Z"
-updated_at: "2026-11-04T12:20:04.692Z"
+updated_at: "2026-11-21T20:01:21.793Z"
+closed_at: "2026-11-21T19:51:59.149Z"
+completed_at: "2026-11-21T19:51:59.149Z"
 author: "harness:claude-code"
 estimated_minutes: 90
 acceptance_criteria: "A null on a clearable update field (one the update unset table covers) clears it in every update-many spelling (runAction flat, runAction nested and direct runUpdateMany) exactly like a single update; it is never silently dropped; A null on a non-clearable update field (for example title) refuses naming the field in every update-many spelling, exactly as a single update refuses it; Flat and nested update-many spellings of the same request produce the same rows, clears and refusals alike, with a spec for each spelling; A flat null on a key that is a selection filter rather than an update field is refused naming the key, never applied as a clear"
@@ -14,10 +16,48 @@ parent: pm-9rgaal
 risk: low
 confidence: high
 severity: low
+resolution: "updateManyOptionsFromFlat carries a typed null to the normalized update record under its canonical option, so the existing update judge clears or refuses it; selection-key nulls refuse by name; MCP input is unchanged. PmUpdateManyActionOptions is nullable for clearable fields."
 expected_result: "A null on a clearable update field in a flat update-many payload clears it exactly like the nested form, and a null on a non-clearable field refuses like the nested form"
-actual_result: Both runAction spellings (flat and nested) drop the null field silently while the rest of the update applies
+actual_result: "Spec update-many-null-transport.spec.ts (12 cases) passes for flat, nested and nested-with-list spellings; refusal text equals the single update's; MCP-marked dispatch keeps the assignee"
 dependencies[1]{id,kind,created_at,author,source_kind,author_source}:
   pm-gh1655,discovered_from,"2026-11-03T23:06:21.402Z","harness:claude-code","cli:create:dep",detected
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-11-04T12:20:04.691Z","harness:claude-code","Direct SDK spelling covered on PR #1658 (CodeRabbit review of fdb25f6f0). A direct runUpdateMany from the SDK (src/sdk/lifecycle/update-many.ts) folds a null in its update record into unset through resolveUpdateTransportOptions, exactly like runUpdate, and clears every matched row. The CLI compatibility wrapper (src/cli/commands/lifecycle/update-many.ts) marks the record as CLI input, so the same null is refused as 'update assignee must be a string.' New spec in update-many-command.spec.ts asserts both, plus the by-name refusal of title: null. The two runAction spellings, which drop the null before the fold, remain this item's scope. CodeRabbit suggested refusing the null on the direct path. That was declined, because it would contradict this item's first acceptance criterion (a null clears in every update-many spelling)."
+  "2026-11-21T19:34:18.987Z","harness:claude-code","Fix evidence. Cause: updateManyOptionsFromFlat normalizes the update fields through the string readers, which map null to undefined, so the null never reached resolveUpdateTransportOptions (the judge a direct runUpdateMany already uses). Fix: for a typed SDK dispatch the builder now carries each null to the normalized update record under its canonical option, so the existing judge clears a clearable field and refuses any other by name; no second rule set was written. Probe grid on the built CLI (single update beside update-many, same payload): assignee null clears in flat, nested, and nested-with-list spellings; title null and unblock_note null refuse with the identical message in both; a flat null on ids, limit, offset or any filter* key refuses with invalid_argument_value naming the key. A hazard found by the probe and designed out: the MCP provenance mark is on the action arguments, not on the merged options, so a first version cleared assignee for an MCP caller that sent assignee: null. MCP clients commonly send null for an omitted optional argument, so the builder takes an explicit typedNulls flag that only the typed SDK dispatch sets; MCP update-many keeps null as absent, unchanged from main (spec included). PmUpdateManyActionOptions now types the clearable fields as nullable (type test added, surface change acknowledged). Observed but out of scope: update-many silently ignores an unknown flat key such as bogus: 'x' where a single update refuses 'Unknown update option'; that is independent of null handling."
+files[5]{path,scope}:
+  src/sdk/cli-contracts/typed-action-inputs.ts,project
+  src/sdk/runtime-input.ts,project
+  src/sdk/runtime/actions.ts,project
+  tests/types/typed-action-inputs.test-d.ts,project
+  tests/unit/sdk/runtime/update-many-null-transport.spec.ts,project
+tests[1]{command,scope,provenance{author,created_at,source_kind,source_ref}}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/update-many-null-transport.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts,project,"harness:claude-code","2026-11-21T19:34:17.441Z",local_mutation,feat/transaction-owned-finalization
+test_runs[1]:
+  - run_id: test-local-mwqtqnci-xkenvu
+    kind: test
+    status: passed
+    started_at: "2026-11-21T19:51:45.660Z"
+    finished_at: "2026-11-21T19:51:57.618Z"
+    recorded_at: "2026-11-21T19:51:57.618Z"
+    passed: 1
+    failed: 0
+    skipped: 0
+    executions[1]{command,requested_pm_context_mode,pm_context_mode,workspace_context_mode,trust_reason}:
+      node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/update-many-null-transport.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts,schema,schema,source,local_source_ref
+docs[1]{path,scope}:
+  docs/SDK.md,project
+close_reason: Typed update-many dispatch clears or refuses a null like a single update
+contract_change:
+  api: runAction update-many (flat and nested update fields); PmUpdateManyActionOptions
+  before: A null on an update field was dropped silently while the rest of the update applied; the option type refused null
+  after: "For typed SDK dispatch a null on a clearable field clears it on every matched row, any other null refuses by name before a row changes, and a null on ids, limit, offset or a filter key refuses with invalid_argument_value. PmUpdateManyActionOptions types clearable fields as nullable. MCP update-many still treats null as an omitted argument"
+  migrate: "Remove a null you relied on being ignored, or keep it to clear the field. Omit a selection key instead of passing null"
+escape_class: review_caught_late
+gate_evidence:
+  disposition: gate_added
+  owner: pm-w7clh6
+  gate_id: update-many-typed-null-transport
+  negative_control: "tests/unit/sdk/runtime/update-many-null-transport.spec.ts runs one request through the flat, nested and nested-with-list runAction spellings and requires a cleared assignee and sprint beside an applied description; on main all three keep the assignee. It also requires the single-update refusal text for a null title and a null alias, a named refusal for a null on ids, limit, offset and a filter key, and an unchanged assignee for an MCP-marked dispatch"
+  local_checks[1]: node scripts/run-tests.mjs test -- tests/unit/sdk/runtime/update-many-null-transport.spec.ts tests/unit/sdk/runtime/runtime-input-bulk.spec.ts tests/unit/commands/lifecycle/update-many-command.spec.ts
+  hosted_checks[2]: Gates (coverage),Gates (static)
 body: ""

@@ -506,7 +506,8 @@ async function runMcpUpdateManyAction(
     ctx.options,
   );
   return projectMutationResult(
-    await runUpdateMany(updateManyOptionsFromFlat(runnerOptions), ctx.global),
+    // A typed SDK dispatch treats null as a clear or a named refusal; MCP transport input keeps null as absent (pm-w7clh6).
+    await runUpdateMany(updateManyOptionsFromFlat(runnerOptions, !isMcpMutationTransportInput(ctx.args)), ctx.global),
     { changedFields },
   );
 }

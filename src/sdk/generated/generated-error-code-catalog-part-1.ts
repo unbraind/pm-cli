@@ -655,6 +655,11 @@ export const PM_ERROR_CODE_CATALOG_PART_1: PmErrorCodeCatalogRow[] = [
     sources: ["core/profile/profile-lint.ts"],
   },
   {
+    code: "finalization_invalid_document",
+    exit_code: 2,
+    sources: ["sdk/transactions/item-finalization.ts"],
+  },
+  {
     code: "github_source_entry_unbuilt",
     exit_code: 2,
     stable: true,

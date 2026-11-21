@@ -23327,6 +23327,23 @@
     },
     {
       "aliases": [],
+      "canonical_code": "finalization_invalid_document",
+      "class": "usage",
+      "code": "finalization_invalid_document",
+      "emitting_commands": [
+        "*"
+      ],
+      "exit_code": 2,
+      "meaning": "Finalization invalid document condition.",
+      "owned_states": [],
+      "recovery": "Inspect the structured error guidance, then retry the suggested command when one is present.",
+      "sources": [
+        "sdk/transactions/item-finalization.ts"
+      ],
+      "stability": "provisional"
+    },
+    {
+      "aliases": [],
       "canonical_code": "github_source_entry_unbuilt",
       "class": "usage",
       "code": "github_source_entry_unbuilt",

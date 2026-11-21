@@ -1037,9 +1037,56 @@ function normalizeMcpMutationOptions(
     : normalizeUpdateOptions(normalizedInput);
 }
 
-/** Build update-many command options from one flat MCP parameter payload. */
+/** Canonical update option for each accepted spelling, so a null keeps its field through alias normalization. */
+const UPDATE_OPTION_TARGET_BY_KEY: ReadonlyMap<string, string> = new Map(
+  UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS.flatMap(({ target, keys }) => keys.map((key): [string, string] => [key, target])),
+);
+
+/** Flat update-many keys that select rows; a null there is neither a filter value nor a field clear. */
+function isUpdateManySelectionKey(key: string): boolean {
+  return key.startsWith("filter") || key === "ids" || key === "limit" || key === "offset";
+}
+
+/** Per-item update fields of a flat payload before normalization, so typed nulls stay visible. */
+function flatUpdateManyFields(options: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(options).filter(([key]) => !UPDATE_MANY_FLAT_CONTROL_KEYS.has(key)));
+}
+
+/**
+ * Keep typed nulls that string normalization would drop (pm-w7clh6). A typed
+ * caller's `null` on an update field reaches the update judge under its
+ * canonical option, which clears a clearable field and refuses any other by
+ * name, exactly as a single update does. A flat `null` on a selection key is
+ * refused here by name. Only a typed SDK dispatch opts in: an MCP client's
+ * `null` commonly stands for an omitted argument, so it stays absent there.
+ */
+function carryUpdateManyNulls(
+  typedNulls: boolean,
+  options: Record<string, unknown>,
+  normalizedUpdate: Record<string, unknown>,
+): void {
+  if (!typedNulls) return;
+  const updateSource = isRuntimeRecord(options.update) ? options.update : flatUpdateManyFields(options);
+  const selectionKey = Object.keys(options).find((key) => options[key] === null && isUpdateManySelectionKey(key));
+  if (selectionKey !== undefined) {
+    throw new PmCliError(`update-many "${selectionKey}" selects rows and cannot be null. No changes were made.`, EXIT_CODE.USAGE, {
+      code: "invalid_argument_value", reason: "invalid_mutation_option_value", changed: false, field: selectionKey,
+      required: `Omit "${selectionKey}" to leave rows unfiltered by it, or pass a value. To clear an item field, pass null on the field itself.`,
+    });
+  }
+  for (const [key, value] of Object.entries(updateSource)) {
+    if (value === null) normalizedUpdate[UPDATE_OPTION_TARGET_BY_KEY.get(key) ?? key] = null;
+  }
+}
+
+/**
+ * Build update-many command options from one flat or nested action payload.
+ * `typedNulls` is set for a typed SDK dispatch, where a `null` is a decision
+ * (clear or refusal) instead of an omitted argument.
+ */
 export function updateManyOptionsFromFlat(
   options: Record<string, unknown>,
+  typedNulls = false,
 ): UpdateManyCommandOptions {
   if (isRuntimeRecord(options.list) || isRuntimeRecord(options.update)) {
     const updateSource = isRuntimeRecord(options.update)
@@ -1049,6 +1096,7 @@ export function updateManyOptionsFromFlat(
       options,
       normalizeMcpUpdateOptions(updateSource),
     );
+    carryUpdateManyNulls(typedNulls, options, normalizedUpdate);
     return {
       status: readRuntimeScalarString(options, "filterStatus"),
       list: isRuntimeRecord(options.list)
@@ -1069,13 +1117,15 @@ export function updateManyOptionsFromFlat(
           : undefined,
     };
   }
+  const flatUpdate = preserveTransportLiteralOptions(
+    options,
+    updateManyUpdateOptionsFromFlat(options),
+  );
+  carryUpdateManyNulls(typedNulls, options, flatUpdate);
   return {
     status: readRuntimeScalarString(options, "filterStatus"),
     list: mutationListOptions(options),
-    update: preserveTransportLiteralOptions(
-      options,
-      updateManyUpdateOptionsFromFlat(options),
-    ) as never,
+    update: flatUpdate as never,
     dryRun:
       options.dryRun === true || options.dry_run === true ? true : undefined,
     rollback: resolveCheckpointRollbackId(options.rollback),

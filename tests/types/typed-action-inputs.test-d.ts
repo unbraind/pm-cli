@@ -107,6 +107,13 @@ const updateManyOptions: PmUpdateManyActionOptions = {
 };
 void updateManyOptions;
 
+// pm-w7clh6: a clearable update field accepts null in bulk as it does on update; any other field does not.
+const clearingUpdateManyOptions: PmUpdateManyActionOptions = { ids: ["pm-a"], assignee: null, sprint: null, closeReason: null };
+void clearingUpdateManyOptions;
+// @ts-expect-error title is not clearable, so null is not part of its type
+const invalidNullUpdateManyOptions: PmUpdateManyActionOptions = { ids: ["pm-a"], title: null };
+void invalidNullUpdateManyOptions;
+
 const numericUpdateManyOptions: PmUpdateManyActionOptions = { ids: 123 };
 void numericUpdateManyOptions;
 
@@ -177,9 +184,6 @@ const updateWrapper = (id: string, options: PmUpdateActionOptions) => runUpdate(
 void createWrapper({ title: "Wrapped", parent: null });
 void updateWrapper("pm-a", { assignee: null });
 
-// @ts-expect-error update-many keeps the unset form only; its flat transport has no null clear
-const updateManyNull: PmUpdateManyActionOptions = { ids: ["pm-a"], assignee: null };
-void updateManyNull;
 
 // GH-1655: the spelled-out nullable key unions the SDK snapshot records stay equal to the unset tables.
 type ExactKeys<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;

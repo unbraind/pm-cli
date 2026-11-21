@@ -35,6 +35,7 @@ import { stableStringify } from "../core/shared/serialization.js";
 import { assertMutationOptionValueTypes } from "./lifecycle/mutation-option-validation.js";
 import { readHistoryEntries } from "./history-read.js";
 import { readHistorySnapshot } from "../core/history/read.js";
+import { applyItemFinalization, assertValidItemFinalization } from "./transactions/item-finalization.js";
 import { PM_CONTEXT_INTENTS_FILE } from "./context-intent-runtime.js";
 import {
   close,
@@ -44,6 +45,7 @@ import {
   release,
   restore,
   update,
+  runInActiveExtensionScope,
   runWithActiveExtensions,
   type PmClientFullMutationOptions,
 } from "./runtime.js";
@@ -299,12 +301,49 @@ export interface BulkItemReleaseMutation {
   options?: PmClientFullMutationOptions;
 }
 
-/** Union of the item mutations a bulk transaction batch can carry. */
-export type BulkItemMutation =
+/**
+ * One exact front-matter finalization inside a bulk mutation batch (GH-1656).
+ * It writes the declared fields as given, including native lifecycle clocks
+ * (`closed_at`, `completed_at`, `created_at`) and extension fields an `update`
+ * row cannot address. The transaction journals the row, attributes its history
+ * event to the step, and compensates it by restoring the captured version, so
+ * an importer keeps rollback for its source finalization.
+ */
+export interface BulkItemFinalizeMutation {
+  /** Discriminates the finalization operation. */
+  op: "finalize";
+  /** Target item id. */
+  id: string;
+  /**
+   * Front-matter fields written exactly, after the store's canonicalization.
+   * Values are retained in the journal, so they must be JSON and must not be
+   * secrets. `id`, `updated_at`, `pm_format_version` and `type` are refused,
+   * and so is `null` (remove a field with `unset`).
+   */
+  set?: Readonly<Record<string, WorkspaceTransactionJsonValue>>;
+  /** Front-matter fields removed from the item. */
+  unset?: readonly string[];
+  /**
+   * Optional guard re-checked under the item lock: the step refuses with
+   * `upsert_match_changed` unless the locked item still carries this field
+   * value, so a finalization never lands on an item another source now owns.
+   */
+  match?: BulkItemUniqueKey;
+  /** Override the assignee-ownership check, as `force` does for an update. */
+  force?: boolean;
+}
+
+/** Item mutations expressed through lifecycle commands; the structured document planner emits only these. */
+export type BulkItemLifecycleMutation =
   | BulkItemCreateMutation
   | BulkItemUpdateMutation
   | BulkItemCloseMutation
   | BulkItemReleaseMutation;
+
+/** Union of the item mutations a bulk transaction batch can carry. */
+export type BulkItemMutation =
+  | BulkItemLifecycleMutation
+  | BulkItemFinalizeMutation;
 
 /** Options accepted by the bulk item-mutation transaction helper. */
 export interface CommitItemMutationsOptions {
@@ -748,8 +787,7 @@ function buildUpdateStep(
       let currentMatch = match;
       const updated = await runWithItemMutationPrecondition({
             pmRoot: config.pmRoot,
-            // Direct SDK callers may use an unprefixed item id; the locked store uses its canonical identity.
-            id: String(((await get(mutation.id, {}, { pmRoot: config.pmRoot })).item as Record<string, unknown>).id),
+            id: await canonicalItemId(config.pmRoot, mutation.id),
             validate: (document) => { if (currentMatch !== undefined) assertUpsertMatchCurrent(document, mutation.id, currentMatch); },
             committed: (document) => {
               if (match !== undefined) currentMatch = { key: match.key, value: structuredClone((document.metadata as Record<string, unknown>)[match.key]) };
@@ -759,6 +797,58 @@ function buildUpdateStep(
       const updatedItem = updated.item as Record<string, unknown>;
       config.uniqueIndex.invalidate();
       return { id: String(updatedItem.id), op: "update" };
+    },
+    async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
+      await compensateByRestore(config, mutation.id, stepId, data);
+    },
+  };
+}
+
+/** Direct SDK callers may use an unprefixed item id; the locked store uses its canonical identity. */
+async function canonicalItemId(pmRoot: string, id: string): Promise<string> {
+  return String(((await get(id, {}, { pmRoot })).item as Record<string, unknown>).id);
+}
+
+/**
+ * Build the workspace-transaction step for one finalization. It carries the
+ * update step's contract: a captured restore target, an apply marker in the
+ * event's message and context, and marker-based inspection. A finalization
+ * that changes nothing appends no event, so recovery re-applies the same no-op.
+ */
+function buildFinalizeStep(
+  config: BulkMutationStepConfig,
+  mutation: BulkItemFinalizeMutation,
+  stepId: string,
+): WorkspaceTransactionStep {
+  const marker = bulkHistoryMarker(config.transactionId, stepId, "apply");
+  return {
+    id: stepId,
+    compensatePending: true,
+    async inspect(): Promise<WorkspaceTransactionStepInspection> {
+      const snapshot = await readItemSnapshot(config.pmRoot, mutation.id);
+      if (snapshot === undefined || !await isUpdateMarkerApplied(config.pmRoot, snapshot.id, config.transactionId, stepId)) return { state: "pending" };
+      return { state: "applied", result: { id: snapshot.id, op: mutation.op } };
+    },
+    async prepareCompensation(): Promise<WorkspaceTransactionJsonValue> {
+      return prepareRestoreCompensation(config.pmRoot, mutation);
+    },
+    async apply(): Promise<WorkspaceTransactionJsonValue> {
+      const id = await canonicalItemId(config.pmRoot, mutation.id);
+      const { match } = mutation;
+      await runWithItemMutationPrecondition({
+        pmRoot: config.pmRoot,
+        id,
+        // A finalization is one locked write, so the guard judges exactly the document it is about to change.
+        validate: (document) => { if (match !== undefined) assertUpsertMatchCurrent(document, mutation.id, match); },
+        historyContext: { item_transaction_step: marker },
+        // The store write bypasses action dispatch, so it opens the extension scope an update row's dispatch would.
+      }, () => runInActiveExtensionScope(config.pmRoot, () => applyItemFinalization({
+        pmRoot: config.pmRoot, id, author: config.author, message: marker, force: mutation.force,
+        ...(mutation.set === undefined ? {} : { set: mutation.set }),
+        ...(mutation.unset === undefined ? {} : { unset: mutation.unset }),
+      })));
+      config.uniqueIndex.invalidate();
+      return { id, op: mutation.op };
     },
     async compensate(data?: WorkspaceTransactionJsonValue): Promise<void> {
       await compensateByRestore(config, mutation.id, stepId, data);
@@ -905,6 +995,8 @@ function buildPlannedStep(
       return buildCloseStep(config, mutation, stepId);
     case "release":
       return buildReleaseStep(config, mutation, stepId);
+    case "finalize":
+      return buildFinalizeStep(config, mutation, stepId);
   }
 }
 
@@ -920,9 +1012,9 @@ function assertValidBulkMutation(
   ) {
     throw new TypeError(`Bulk mutation ${index + 1} must be an object`);
   }
-  if (!["create", "update", "close", "release"].includes(mutation.op)) {
+  if (!["create", "update", "close", "release", "finalize"].includes(mutation.op)) {
     throw new TypeError(
-      `Bulk mutation ${index + 1} op must be create, update, close, or release`,
+      `Bulk mutation ${index + 1} op must be create, update, close, release, or finalize`,
     );
   }
   if (typeof mutation.id !== "string" || mutation.id.trim().length === 0) {
@@ -936,17 +1028,38 @@ function assertValidBulkMutation(
       `Bulk close mutation ${index + 1} requires a non-empty reason`,
     );
   }
+  assertValidBulkKeyGuard(mutation, index);
+  if (mutation.op === "finalize") {
+    assertValidBulkFinalization(mutation, index);
+    return;
+  }
+  assertMutationOptionValueTypes(mutation.options, mutation.op, index);
+}
+
+/** Reject a malformed key guard: `unique` on a create row, `match` on an update or finalize row. */
+function assertValidBulkKeyGuard(mutation: BulkItemMutation, index: number): void {
   if (mutation.op === "create" && mutation.unique !== undefined && !isValidUniqueKey(mutation.unique)) {
     throw new TypeError(
       `Bulk create mutation ${index + 1} unique must be an object with a non-empty key and a value`,
     );
   }
-  if (mutation.op === "update" && mutation.match !== undefined && !isValidUniqueKey(mutation.match)) {
+  if ((mutation.op === "update" || mutation.op === "finalize") && mutation.match !== undefined && !isValidUniqueKey(mutation.match)) {
     throw new TypeError(
-      `Bulk update mutation ${index + 1} match must be an object with a non-empty key and a value`,
+      `Bulk ${mutation.op} mutation ${index + 1} match must be an object with a non-empty key and a value`,
     );
   }
-  assertMutationOptionValueTypes(mutation.options, mutation.op, index);
+}
+
+/** Fields a finalization row may carry; anything else would be journaled but never read. */
+const FINALIZE_ROW_KEYS: readonly string[] = ["op", "id", "set", "unset", "match", "force"];
+
+/** Reject a finalization row whose patch, flags or extra keys the step would not honor. */
+function assertValidBulkFinalization(mutation: BulkItemFinalizeMutation, index: number): void {
+  const label = `Bulk finalize mutation ${index + 1}`;
+  const unknown = Object.keys(mutation).filter((key) => !FINALIZE_ROW_KEYS.includes(key));
+  if (unknown.length > 0) throw new TypeError(`${label} has unsupported keys: ${unknown.join(", ")}; a finalization carries only ${FINALIZE_ROW_KEYS.join(", ")}`);
+  if (mutation.force !== undefined && typeof mutation.force !== "boolean") throw new TypeError(`${label} force must be a boolean`);
+  assertValidItemFinalization(mutation, label);
 }
 
 /** Validate the complete batch before journal work, including uniqueness guards supplied directly through the SDK. */
@@ -982,7 +1095,7 @@ function snapshotBulkMutations(input: readonly BulkItemMutation[]): BulkItemMuta
   assertValidBulkMutations(mutations);
   return mutations.map(mutation => {
     const snapshot = structuredClone(mutation);
-    if (mutation.options !== undefined && snapshot.options !== undefined) transferMutationStdinTokenPolicy(mutation.options, snapshot.options);
+    if (mutation.op !== "finalize" && snapshot.op !== "finalize" && mutation.options !== undefined && snapshot.options !== undefined) transferMutationStdinTokenPolicy(mutation.options, snapshot.options);
     return snapshot;
   });
 }

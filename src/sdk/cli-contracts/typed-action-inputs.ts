@@ -100,10 +100,10 @@ export type PmBulkMutationControlOptions = {
   noCheckpoint?: boolean;
 };
 
-/** Typed input for the SDK `update-many` action: bulk-supported update fields plus selection filters and checkpoint controls. */
-export type PmUpdateManyActionOptions = Omit<
-  PmUpdateActionFields,
-  "allowMissingParent" | "completedAt"
+/** Typed input for the SDK `update-many` action: bulk-supported update fields plus selection filters and checkpoint controls; clearable update fields also accept `null`, as on `update` (pm-w7clh6). */
+export type PmUpdateManyActionOptions = WithNullClears<
+  Omit<PmUpdateActionFields, "allowMissingParent" | "completedAt">,
+  UpdateNullClearableOptionKey
 > &
   PmBulkMutationFilterOptions &
   PmBulkMutationControlOptions;

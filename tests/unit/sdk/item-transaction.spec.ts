@@ -956,7 +956,7 @@ describe("SDK bulk item-mutation transactions (GH-613)", () => {
             { op: "destroy", id: "pm-x" } as unknown as BulkItemMutation,
           ],
         }),
-      ).rejects.toThrow("op must be create, update, close, or release");
+      ).rejects.toThrow("op must be create, update, close, release, or finalize");
       await expect(
         commitItemMutations({
           ...base,
