@@ -1098,11 +1098,14 @@ function assertValidBulkMutations(mutations: readonly BulkItemMutation[]): void 
 function snapshotBulkMutations(input: readonly BulkItemMutation[]): BulkItemMutation[] {
   const mutations = [...input];
   assertValidBulkMutations(mutations);
-  return mutations.map(mutation => {
+  const snapshots = mutations.map(mutation => {
     const snapshot = structuredClone(mutation);
     if (mutation.op !== "finalize" && snapshot.op !== "finalize" && mutation.options !== undefined && snapshot.options !== undefined) transferMutationStdinTokenPolicy(mutation.options, snapshot.options);
     return snapshot;
   });
+  // Cloning drops getters and non-enumerable properties, so the rows that execute and are journaled are judged again.
+  assertValidBulkMutations(snapshots);
+  return snapshots;
 }
 
 /** Evidence and explicit limits of a non-writing semantic transaction preview. */

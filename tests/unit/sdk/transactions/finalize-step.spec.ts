@@ -252,6 +252,7 @@ describe("transaction-owned finalization step (GH-1656)", () => {
     ["an Object method name", { unset: ["hasOwnProperty"] }, 'names an invalid field "hasOwnProperty"'],
     ["a match value the journal would change", { set: { sprint: "s1" }, match: { key: "source_keys", value: [undefined] } }, "match must be a plain object with a JSON value"],
     ["a match guard built from getters", { set: { sprint: "s1" }, match: new (class { get key() { return "sprint"; } get value() { return "s1"; } })() }, "match must be a plain object with a JSON value"],
+    ["a match guard with non-enumerable members", { set: { sprint: "s1" }, match: Object.defineProperties({}, { key: { value: "sprint" }, value: { value: "s1" } }) }, "Bulk finalize mutation 1 match must be an object with a non-empty key and a value"],
     ["an unset of the item body", { unset: ["body"] }, 'cannot unset "body"'],
     ["an unset of the envelope", { unset: ["front_matter"] }, 'cannot unset "front_matter"'],
     ["an inherited field name", { unset: ["constructor"] }, 'names an invalid field "constructor"'],
